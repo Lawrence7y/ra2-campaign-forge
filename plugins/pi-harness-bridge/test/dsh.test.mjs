@@ -1,0 +1,23 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { HarnessBridge } from '../core.mjs';
+const python = process.env.TEST_PYTHON || (process.platform === 'win32' ? 'C:/Users/Administrator/AppData/Local/Programs/Python/Python312/python.exe' : 'python3');
+const available = spawnSync(python, ['--version']).status === 0;
+test('DSH: native poll waits for NEW nested event.seq, model readback and errors', { skip: !available }, async t => {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-adapter-'));
+  const b = new HarnessBridge({ requestTimeoutMs: 10000, harnesses: { mock: { adapter: 'dsh', command: python, bridgePath: fileURLToPath(new URL('./mock_dsh_bridge.py', import.meta.url)) } } }, dir);
+  t.after(async () => { await b.shutdown(); rmSync(dir, { recursive: true, force: true }); });
+  assert.equal((await b.probe('mock')).state.connection.connected, true);
+  const a = await b.dispatch('mock', 'hello');
+  const wait = async () => { for (let i = 0; i < 300; i++) { if (['completed', 'failed'].includes(b.get(a.taskId).status)) return; await new Promise(r => setTimeout(r, 10)); } throw new Error('DSH settle timeout'); };
+  await wait(); assert.equal(b.get(a.taskId).status, 'completed'); assert.match(JSON.stringify(b.read(a.taskId)), /DSH: hello/);
+  await b.model(a.taskId, 'mock', 'large', 'high');
+  assert.equal((await b.status(a.taskId)).remote.model.reasoningEffort, 'high');
+  await b.prompt(a.taskId, 'error'); await wait(); assert.equal(b.get(a.taskId).status, 'failed');
+  await assert.rejects(b.model(a.taskId, 'deepseek-official', 'small'), /Forbidden/);
+});

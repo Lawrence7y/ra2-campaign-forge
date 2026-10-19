@@ -1,0 +1,1783 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+bench_replay.py — Z-1′ 基准/回放 harness + v1.6.0 真机证据采集（半自动一键）
+
+红线合规：
+  - 不写游戏目录内任何游戏 INI（ddraw.ini / RA2MD.INI 等禁改，此前版本已废止该行为）；
+  - 只允许切换 ra2youli/ra2render.ini（轨道 A 所有，v1.6.0 证据矩阵要求），全程备份还原；
+  - 不写 ra2render/**、不写台账；证据文件自带可复算字段（样本数/MD5/尺寸/色彩方差）。
+
+修复旧基线（perf_U0800.json）的失效根因：
+  1. 无对局内校验 → 轮询 CurrentFrame(0xA8ED84) 与机动单位数（Units/Infantry/Aircraft 计数）
+     验证"真的在对局里、真的是目标单位数"；
+  2. 把帧间等待当噪声 → 区分 wait(ntdll/win32u/winmm 睡眠) 与工作(render/logic/audio/ui)；
+  3. 无逻辑帧率指标 → 100Hz 只读轮询 CurrentFrame → FPS / 帧间隔 p50/p90/p99/max / TickMiss；
+  4. 单线程盲采 → 探针选最忙线程 + GetProcessTimes 差分给出 CPU 占用。
+
+用法：
+  python tools/bench_replay.py --tiers 200 800            # 基准：U200/U800 各 1 局 × 3 采样窗口
+  python tools/bench_replay.py --evidence                 # v1.6.0 四键矩阵真机证据（6 局 + 读档往返）
+  python tools/bench_replay.py --summarize                # 仅汇总已有 run JSON → report_<日期>.md
+"""
+from __future__ import annotations
+
+import argparse
+import ctypes
+import hashlib
+import json
+import os
+import re
+import struct
+import subprocess
+import sys
+import threading
+import time
+from dataclasses import dataclass
+from datetime import date, datetime
+from pathlib import Path
+
+PROJECT = Path(__file__).resolve().parent.parent
+GAME_DIR = PROJECT / "ra2youli"
+OUT = PROJECT / "out" / "loadbench"
+SHOTS = OUT / "shots"
+V160_SHOTS = SHOTS / "v160_real"
+
+ADDR_CURRENT_FRAME = 0x00A8ED84
+ARR_UNITS = 0x008B4108      # DynamicVectorClass<UnitClass*>：count @ +16
+ARR_INFANTRY = 0x00A83DE8
+ARR_AIRCRAFT = 0x00A8E390
+
+V160_KEYS = ["EnableBuildingFog", "EnableBulletFog", "FadeFogTransition", "EnableMinimapFog"]
+
+# [Lead 2026-09-28] 基准图文件名后缀：空 = 自动探测 base 或 base_H1；"_H1" = 只用 H1 重制图
+MAP_SUFFIX = ""
+
+# ---------------- Win32 基础 -------------------------------------------------
+
+user32 = ctypes.WinDLL("user32", use_last_error=True)
+kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+dwmapi = ctypes.WinDLL("dwmapi", use_last_error=True)
+from ctypes import wintypes  # noqa: E402
+
+TH32CS_SNAPPROCESS = 2
+TH32CS_SNAPTHREAD = 4
+TH32CS_SNAPMODULE = 8
+TH32CS_SNAPMODULE32 = 0x10
+THREAD_SUSPEND_RESUME = 0x0002
+THREAD_GET_CONTEXT = 0x0008
+THREAD_QUERY_INFORMATION = 0x0040
+PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+PROCESS_VM_READ = 0x0010
+CONTEXT_i386 = 0x00010000
+CONTEXT_CONTROL = CONTEXT_i386 | 1
+
+
+class FLOATING_SAVE_AREA(ctypes.Structure):
+    _fields_ = [("ControlWord", wintypes.DWORD), ("StatusWord", wintypes.DWORD),
+                ("TagWord", wintypes.DWORD), ("ErrorOffset", wintypes.DWORD),
+                ("ErrorSelector", wintypes.DWORD), ("DataOffset", wintypes.DWORD),
+                ("DataSelector", wintypes.DWORD),
+                ("RegisterArea", ctypes.c_byte * 80), ("Cr0NpxState", wintypes.DWORD)]
+
+
+class CONTEXT(ctypes.Structure):
+    _fields_ = [("ContextFlags", wintypes.DWORD),
+                ("Dr0", wintypes.DWORD), ("Dr1", wintypes.DWORD), ("Dr2", wintypes.DWORD),
+                ("Dr3", wintypes.DWORD), ("Dr6", wintypes.DWORD), ("Dr7", wintypes.DWORD),
+                ("FloatSave", FLOATING_SAVE_AREA),
+                ("SegGs", wintypes.DWORD), ("SegFs", wintypes.DWORD), ("SegEs", wintypes.DWORD),
+                ("SegDs", wintypes.DWORD), ("Edi", wintypes.DWORD), ("Esi", wintypes.DWORD),
+                ("Ebx", wintypes.DWORD), ("Edx", wintypes.DWORD), ("Ecx", wintypes.DWORD),
+                ("Eax", wintypes.DWORD), ("Ebp", wintypes.DWORD), ("Eip", wintypes.DWORD),
+                ("SegCs", wintypes.DWORD), ("EFlags", wintypes.DWORD), ("Esp", wintypes.DWORD),
+                ("SegSs", wintypes.DWORD), ("ExtendedRegisters", ctypes.c_byte * 512)]
+
+
+class PROCESSENTRY32(ctypes.Structure):
+    _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD),
+                ("th32ProcessID", wintypes.DWORD), ("th32DefaultHeapID", ctypes.POINTER(ctypes.c_ulong)),
+                ("th32ModuleID", wintypes.DWORD), ("cntThreads", wintypes.DWORD),
+                ("th32ParentProcessID", wintypes.DWORD), ("pcPriClassBase", ctypes.c_long),
+                ("dwFlags", wintypes.DWORD), ("szExeFile", ctypes.c_char * 260)]
+
+
+class THREADENTRY32(ctypes.Structure):
+    _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD),
+                ("th32ThreadID", wintypes.DWORD), ("th32OwnerProcessID", wintypes.DWORD),
+                ("tpBasePri", ctypes.c_long), ("tpDeltaPri", ctypes.c_long), ("dwFlags", wintypes.DWORD)]
+
+
+class MODULEENTRY32(ctypes.Structure):
+    _fields_ = [("dwSize", wintypes.DWORD), ("th32ModuleID", wintypes.DWORD),
+                ("th32ProcessID", wintypes.DWORD), ("GlblcntUsage", wintypes.DWORD),
+                ("ProccntUsage", wintypes.DWORD), ("modBaseAddr", ctypes.POINTER(ctypes.c_byte)),
+                ("modBaseSize", wintypes.DWORD), ("hModule", wintypes.HMODULE),
+                ("szModule", ctypes.c_char * 256), ("szExePath", ctypes.c_char * 260)]
+
+
+def _k32():
+    if not getattr(kernel32, "_typed", False):
+        kernel32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+        kernel32.Process32First.argtypes = [wintypes.HANDLE, ctypes.POINTER(PROCESSENTRY32)]
+        kernel32.Process32Next.argtypes = [wintypes.HANDLE, ctypes.POINTER(PROCESSENTRY32)]
+        kernel32.Thread32First.argtypes = [wintypes.HANDLE, ctypes.POINTER(THREADENTRY32)]
+        kernel32.Thread32Next.argtypes = [wintypes.HANDLE, ctypes.POINTER(THREADENTRY32)]
+        kernel32.Module32First.argtypes = [wintypes.HANDLE, ctypes.POINTER(MODULEENTRY32)]
+        kernel32.Module32Next.argtypes = [wintypes.HANDLE, ctypes.POINTER(MODULEENTRY32)]
+        kernel32.OpenThread.restype = wintypes.HANDLE
+        kernel32.OpenThread.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel32.OpenProcess.restype = wintypes.HANDLE
+        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel32.SuspendThread.argtypes = [wintypes.HANDLE]
+        kernel32.ResumeThread.argtypes = [wintypes.HANDLE]
+        kernel32.GetThreadContext.argtypes = [wintypes.HANDLE, ctypes.POINTER(CONTEXT)]
+        kernel32.ReadProcessMemory.argtypes = [wintypes.HANDLE, wintypes.LPCVOID, wintypes.LPVOID,
+                                               ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)]
+        if hasattr(kernel32, "Wow64GetThreadContext"):
+            kernel32.Wow64GetThreadContext.argtypes = [wintypes.HANDLE, ctypes.POINTER(CONTEXT)]
+        kernel32._typed = True
+    return kernel32
+
+
+def find_pid(exe: str) -> int | None:
+    k = _k32()
+    snap = k.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+    if snap in (None, -1, 0xFFFFFFFFFFFFFFFF):
+        return None
+    try:
+        pe = PROCESSENTRY32()
+        pe.dwSize = ctypes.sizeof(pe)
+        if not k.Process32First(snap, ctypes.byref(pe)):
+            return None
+        while True:
+            if pe.szExeFile.decode("latin-1").lower() == exe.lower():
+                return int(pe.th32ProcessID)
+            if not k.Process32Next(snap, ctypes.byref(pe)):
+                return None
+    finally:
+        k.CloseHandle(snap)
+
+
+def list_threads(pid: int) -> list[int]:
+    k = _k32()
+    snap = k.CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0)
+    out = []
+    if snap in (None, -1, 0xFFFFFFFFFFFFFFFF):
+        return out
+    try:
+        te = THREADENTRY32()
+        te.dwSize = ctypes.sizeof(te)
+        if k.Thread32First(snap, ctypes.byref(te)):
+            while True:
+                if te.th32OwnerProcessID == pid:
+                    out.append(int(te.th32ThreadID))
+                if not k.Thread32Next(snap, ctypes.byref(te)):
+                    break
+    finally:
+        k.CloseHandle(snap)
+    return out
+
+
+def list_modules(pid: int) -> list:
+    k = _k32()
+    snap = k.CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid)
+    out, seen = [], set()
+    if snap in (None, -1, 0xFFFFFFFFFFFFFFFF):
+        return out
+    try:
+        me = MODULEENTRY32()
+        me.dwSize = ctypes.sizeof(me)
+        if k.Module32First(snap, ctypes.byref(me)):
+            while True:
+                base = ctypes.cast(me.modBaseAddr, ctypes.c_void_p).value or 0
+                key = (me.szModule.decode("latin-1").lower(), base)
+                if key not in seen:
+                    seen.add(key)
+                    out.append((me.szModule.decode("latin-1"), base, int(me.modBaseSize)))
+                if not k.Module32Next(snap, ctypes.byref(me)):
+                    break
+    finally:
+        k.CloseHandle(snap)
+    return out
+
+
+def open_proc(pid: int) -> int:
+    return _k32().OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, False, pid)
+
+
+def rpm(proc: int, addr: int, size: int) -> bytes | None:
+    buf = ctypes.create_string_buffer(size)
+    got = ctypes.c_size_t(0)
+    if kernel32.ReadProcessMemory(proc, ctypes.c_void_p(addr), buf, size, ctypes.byref(got)) and got.value == size:
+        return buf.raw
+    return None
+
+
+def rpm_u32(proc: int, addr: int) -> int | None:
+    b = rpm(proc, addr, 4)
+    return struct.unpack("<I", b)[0] if b and len(b) == 4 else None
+
+
+def read_eip(tid: int) -> int | None:
+    k = _k32()
+    h = k.OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, False, tid)
+    if not h:
+        return None
+    try:
+        if k.SuspendThread(h) == 0xFFFFFFFF:
+            return None
+        try:
+            ctx = CONTEXT()
+            ctx.ContextFlags = CONTEXT_CONTROL
+            ok = False
+            if hasattr(k, "Wow64GetThreadContext"):
+                ok = bool(k.Wow64GetThreadContext(h, ctypes.byref(ctx)))
+            if not ok:
+                ok = bool(k.GetThreadContext(h, ctypes.byref(ctx)))
+            return int(ctx.Eip) if ok and ctx.Eip else None
+        finally:
+            k.ResumeThread(h)
+    finally:
+        k.CloseHandle(h)
+
+
+def process_cpu(proc: int) -> tuple[float, float] | None:
+    class FT(ctypes.Structure):
+        _fields_ = [("dwLow", wintypes.DWORD), ("dwHigh", wintypes.DWORD)]
+
+    def s(ft):
+        return ((ft.dwHigh << 32) | ft.dwLow) / 1e7
+
+    kt, ut, cr, ex = FT(), FT(), FT(), FT()
+    if not kernel32.GetProcessTimes(proc, ctypes.byref(cr), ctypes.byref(ex), ctypes.byref(kt), ctypes.byref(ut)):
+        return None
+    return s(ut), s(kt)
+
+
+# ---------------- gamemd 函数桶（渲染忙 / 逻辑忙 分辨） ----------------------
+# 依据台账 §七速查表 + 深潜文档已实证地址；区间 = 函数簇 ±0x100..0x800。
+
+GAMEMD_RANGES: list[tuple[str, int, int]] = [
+    ("render.blit",       0x007BC600, 0x007BCA00),
+    ("render.blit",       0x00491200, 0x00493700),
+    ("render.blit_rle",   0x00496000, 0x00496500),
+    ("render.blit_misc",  0x00499000, 0x0049A100),
+    ("render.cell_fog",   0x0047EF00, 0x0047F700),
+    ("render.cell_draw",  0x00480100, 0x00480600),
+    ("render.tactical",   0x006D3D00, 0x006D4900),
+    ("render.tactical2",  0x006DA700, 0x006DAB00),
+    ("render.tactical3",  0x006D2700, 0x006D2B00),
+    ("render.vxl",        0x00706000, 0x00707900),
+    ("render.vxl2",       0x004DAF00, 0x004DB300),
+    ("render.surface",    0x004BA500, 0x004BB400),
+    ("render.anim_shp",   0x004AED00, 0x004AEE00),
+    ("render.radar",      0x00655200, 0x00657A00),
+    ("render.radar2",     0x00653100, 0x00654500),
+    ("ui.sidebar",        0x006A6C00, 0x006AC000),
+    ("ui.gadget",         0x00556F00, 0x00557900),
+    ("logic.main",        0x0055D300, 0x0055DF00),
+    ("logic.frame_timer", 0x0053E700, 0x0053EC00),
+    ("logic.target",      0x006F8D00, 0x006FB400),
+    ("logic.target2",     0x00736C00, 0x00736E00),
+    ("logic.target3",     0x00743100, 0x00743300),
+    ("logic.path",        0x0042A500, 0x0042AF00),
+    ("logic.path2",       0x0042CB00, 0x0042CD00),
+    ("logic.path3",       0x004CBA00, 0x004CBC00),
+    ("logic.house_ai",    0x004E6200, 0x004E6D00),
+    ("audio",             0x00406F00, 0x00407C00),
+    ("audio2",            0x00750900, 0x00750B00),
+    ("crt",               0x007C8B00, 0x007CA000),
+]
+GAMEMD_RANGES.sort(key=lambda r: r[1])
+
+WAIT_MODULES = ("ntdll.dll", "win32u.dll", "kernelbase.dll", "winmm.dll")
+SHIM_MODULES = ("acgenral.dll", "acadproc.dll", "aclayers.dll", "acshelllayers.dll", "acxtrnal.dll")
+GPU_MODULES = ("ddraw.dll", "d3d9.dll", "dxgi.dll", "opengl32.dll")
+
+
+def classify(eip: int, modules: list) -> tuple[str, str]:
+    mod = None
+    for name, base, size in modules:
+        if base <= eip < base + max(size, 0x1000):
+            mod = name
+            break
+    if mod is None:
+        return "unmapped", "(unmapped)"
+    low = mod.lower()
+    if low.startswith("gamemd"):
+        for tag, lo, hi in GAMEMD_RANGES:
+            if lo <= eip < hi:
+                return tag, mod
+        return "game_other", mod
+    if low.startswith("ra2render"):
+        return "render.hooks", mod
+    if low in WAIT_MODULES:
+        return "wait", mod
+    if low in SHIM_MODULES:
+        return "shim", mod
+    if any(low.startswith(g) for g in GPU_MODULES):
+        return "gpu.present", mod
+    if low in ("user32.dll", "gdi32.dll", "uxtheme.dll"):
+        return "win32.gdi", mod
+    return "sys.other", mod
+
+
+# ---------------- ra2render.ini 键切换（轨道 A 所有；备份→写→还原） ---------
+#
+# 编码纪律（Q1H-R3 收口）：ra2render.ini 是**游戏目录内的既有文件**，编码可能被外部
+# 编辑器改成 ANSI/GBK（同目录 ddraw.ini 就不是 UTF-8）。旧的
+# read_text(encoding="utf-8", errors="replace") 遇到非法 UTF-8 时会**静默替换成
+# U+FFFD**，回写即造成不可逆内容破坏，且旧 restore 没有任何校验。
+# 现改为字节透明（latin-1 对 0..255 是双射）读写，并在还原后**逐字节断言**；
+# 任何不等都抛异常，不静默继续。键不唯一时拒绝盲改（交人工裁决）。
+
+_BYTE_TRANSPARENT = "latin-1"   # 字节透明编解码
+
+
+def _ini_path(path: "Path | None" = None) -> Path:
+    return Path(path) if path is not None else (GAME_DIR / "ra2render.ini")
+
+
+@dataclass
+class RenderIniBackup:
+    path: Path
+    data: bytes
+
+    @property
+    def sha256(self) -> str:
+        return hashlib.sha256(self.data).hexdigest()
+
+
+def read_render_ini(path: "Path | None" = None) -> dict:
+    t = _ini_path(path).read_bytes().decode(_BYTE_TRANSPARENT)
+    vals = {}
+    for k in V160_KEYS:
+        m = re.search(rf"(?m)^{k}=(\d)", t)
+        vals[k] = bool(int(m.group(1))) if m else True
+    return vals
+
+
+def set_render_ini(keys: dict[str, bool], path: "Path | None" = None) -> RenderIniBackup:
+    p = _ini_path(path)
+    bk = RenderIniBackup(p, p.read_bytes())
+    t = bk.data.decode(_BYTE_TRANSPARENT)
+    for k, v in keys.items():
+        val = "1" if v else "0"
+        hits = len(re.findall(rf"(?m)^{k}=", t))
+        if hits > 1:
+            raise RuntimeError(
+                f"[FAIL] ra2render.ini 中 {k} 出现 {hits} 次（键不唯一），拒绝盲改——请人工裁决后再跑")
+        if hits == 1:
+            t = re.sub(rf"(?m)^({k}=)\d", rf"\g<1>{val}", t, count=1)
+        else:
+            t = t.rstrip("\r\n") + f"\r\n; bench_replay 矩阵写入\r\n{k}={val}\r\n"
+    p.write_bytes(t.encode(_BYTE_TRANSPARENT))
+    return bk
+
+
+def restore_render_ini(bk: RenderIniBackup) -> dict:
+    """还原并**逐字节校验**；返回校验报告（可落 JSON，不允许只靠 print 自证）。"""
+    bk.path.write_bytes(bk.data)
+    now = bk.path.read_bytes()
+    rep = {
+        "path": str(bk.path),
+        "bytes": len(bk.data),
+        "sha256_before": hashlib.sha256(bk.data).hexdigest(),
+        "sha256_after_restore": hashlib.sha256(now).hexdigest(),
+        "restored_byte_identical": now == bk.data,
+    }
+    if not rep["restored_byte_identical"]:
+        raise RuntimeError(f"[FATAL] ra2render.ini 还原失败（字节不一致）：{rep}（禁止继续，人工处理）")
+    return rep
+
+
+# ---------------- 窗口 / 输入 / 截图（含真实性校验） -------------------------
+
+MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP = 0x0002, 0x0004
+user32.SetProcessDPIAware()
+
+
+def find_game_hwnd(pid: int) -> int | None:
+    """找 gamemd 的顶层窗口。cnc-ddraw 全屏模式失焦会隐藏/最小化窗口，
+    故不做 IsWindowVisible 过滤（先找到，再由 focus_game 恢复）。"""
+    result = {"hwnd": None, "fallback": None}
+    pid_buf = ctypes.c_ulong()
+
+    @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+    def proc(hwnd, _):
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid_buf))
+        if pid_buf.value == pid:
+            r = wintypes.RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(r))
+            if r.right - r.left > 200 or (r.right == 0 and r.left == 0):
+                if user32.IsWindowVisible(hwnd) and result["hwnd"] is None:
+                    result["hwnd"] = hwnd
+                elif result["fallback"] is None:
+                    result["fallback"] = hwnd
+        return True
+
+    user32.EnumWindows(proc, 0)
+    return result["hwnd"] or result["fallback"]
+
+
+def window_bbox(hwnd: int):
+    r = wintypes.RECT()
+    hr = dwmapi.DwmGetWindowAttribute(ctypes.c_void_p(hwnd), 9, ctypes.byref(r), ctypes.sizeof(r))
+    if hr == 0 and r.right > r.left:
+        return r.left, r.top, r.right, r.bottom
+    user32.GetWindowRect(hwnd, ctypes.byref(r))
+    return r.left, r.top, r.right, r.bottom
+
+
+def raise_win(hwnd: int):
+    user32.ShowWindow(hwnd, 9)
+    user32.SetForegroundWindow(hwnd)
+    time.sleep(0.25)
+
+
+def focus_game(hwnd: int, attempts: int = 3) -> bool:
+    """强制前台（分离启动的窗口常无焦点；点击落在别的窗口=导航全废）。
+    手段：最小化其他窗口 → AttachThreadInput 抢焦点 → ALT-ALT 兜底 → 校验。"""
+    SW_MINIMIZE = 6
+
+    def minimize_others():
+        pid_buf = ctypes.c_ulong()
+
+        @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+        def proc(h, _):
+            if h == hwnd or not user32.IsWindowVisible(h):
+                return True
+            cls = ctypes.create_unicode_buffer(256)
+            user32.GetClassNameW(h, cls, 256)
+            if cls.value in ("Shell_TrayWnd", "Progman", "WorkerW", "Windows.UI.Core.CoreWindow"):
+                return True
+            user32.ShowWindow(h, SW_MINIMIZE)
+            return True
+
+        user32.EnumWindows(proc, 0)
+
+    for i in range(attempts):
+        user32.ShowWindow(hwnd, 9)          # SW_RESTORE：先恢复被 cnc-ddraw 隐藏的窗口
+        time.sleep(0.2)
+        minimize_others()
+        user32.BringWindowToTop(hwnd)
+        fg = user32.GetForegroundWindow()
+        if fg == hwnd:
+            return True
+        # AttachThreadInput 抢焦点
+        cur = kernel32.GetCurrentThreadId()
+        tgt = user32.GetWindowThreadProcessId(hwnd, None)
+        user32.AttachThreadInput(cur, tgt, True)
+        user32.SetForegroundWindow(hwnd)
+        user32.AttachThreadInput(cur, tgt, False)
+        time.sleep(0.3)
+        if user32.GetForegroundWindow() == hwnd:
+            return True
+        # ALT 按放绕过前台锁
+        user32.keybd_event(0x12, 0, 0, 0)
+        user32.keybd_event(0x12, 0, 2, 0)
+        user32.SetForegroundWindow(hwnd)
+        time.sleep(0.3)
+        if user32.GetForegroundWindow() == hwnd:
+            return True
+        time.sleep(0.5)
+    return user32.GetForegroundWindow() == hwnd
+
+
+class _MI(ctypes.Structure):
+    _fields_ = [("dx", ctypes.c_long), ("dy", ctypes.c_long), ("mouseData", ctypes.c_ulong),
+                ("dwFlags", ctypes.c_ulong), ("time", ctypes.c_ulong), ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong))]
+
+
+class _IU(ctypes.Union):
+    _fields_ = [("mi", _MI)]
+
+
+class _INP(ctypes.Structure):
+    _fields_ = [("type", ctypes.c_ulong), ("u", _IU)]
+
+
+def send_click(hwnd: int, lx: int, ly: int, *, lw: int = 800, lh: int = 600, hold: float = 0.12):
+    """SendInput 注入点击（实测：mouse_event 对本游戏 UI 不生效，SendInput 才被读取）。"""
+    raise_win(hwnd)
+    l, t, r, b = window_bbox(hwnd)
+    sx = l + int(lx / lw * (r - l))
+    sy = t + int(ly / lh * (b - t))
+    user32.SetCursorPos(sx, sy)
+    time.sleep(0.3)
+    a = _INP(type=0); a.u.mi = _MI(0, 0, 0, 0x0002, 0, None)
+    b2 = _INP(type=0); b2.u.mi = _MI(0, 0, 0, 0x0004, 0, None)
+    user32.SendInput(1, ctypes.byref(a), ctypes.sizeof(_INP))
+    time.sleep(hold)
+    user32.SendInput(1, ctypes.byref(b2), ctypes.sizeof(_INP))
+    time.sleep(0.5)
+
+
+def click_at(hwnd: int, lx: int, ly: int, *, lw: int = 800, lh: int = 600):
+    send_click(hwnd, lx, ly, lw=lw, lh=lh)
+
+
+def press_key(vk: int, hold: float = 0.04):
+    user32.keybd_event(vk, 0, 0, 0)
+    time.sleep(hold)
+    user32.keybd_event(vk, 0, 2, 0)
+    time.sleep(0.15)
+
+
+class ShotSession:
+    """证据标准 v2：同一次验收内各步截图 MD5 必须互异；重复=该步失败→重试→记录。"""
+
+    def __init__(self):
+        self.seen_md5: dict[str, str] = {}
+        self.failures: list[dict] = []
+
+    def step(self, hwnd: int, path: Path, *, action=None, retries: int = 3, gap: float = 1.5) -> dict:
+        last = None
+        for attempt in range(1 + retries):
+            if attempt and action:
+                action()
+            last = grab(hwnd, path)
+            if last["md5"] not in self.seen_md5:
+                self.seen_md5[last["md5"]] = str(path)
+                last["step_ok"] = True
+                last["attempt"] = attempt
+                return last
+            time.sleep(gap)
+        last["step_ok"] = False
+        last["attempt"] = retries
+        last["dup_of"] = self.seen_md5.get(last["md5"], "?")
+        self.failures.append({"step": str(path), "md5": last["md5"], "dup_of": last["dup_of"]})
+        return last
+
+    def snapshot(self) -> dict:
+        return {"seen_md5_count": len(self.seen_md5), "failures": self.failures}
+
+
+def grab(hwnd: int, path: Path) -> dict:
+    """从屏幕 DC 抓游戏窗口区域；返回可复算校验字段。"""
+    import ctypes as c2
+    gdi32 = c2.WinDLL("gdi32")
+    from PIL import Image
+    path.parent.mkdir(parents=True, exist_ok=True)
+    l, t, r, b = window_bbox(hwnd)
+    w, h = max(r - l, 8), max(b - t, 8)
+    sdc = user32.GetDC(0)
+    mdc = gdi32.CreateCompatibleDC(sdc)
+    hbmp = gdi32.CreateCompatibleBitmap(sdc, w, h)
+    gdi32.SelectObject(mdc, hbmp)
+    gdi32.BitBlt(mdc, 0, 0, w, h, sdc, l, t, 0x00CC0020)
+
+    class BMIH(c2.Structure):
+        _fields_ = [("biSize", c2.c_ulong), ("biWidth", c2.c_long), ("biHeight", c2.c_long),
+                    ("biPlanes", c2.c_ushort), ("biBitCount", c2.c_ushort), ("biCompression", c2.c_ulong),
+                    ("biSizeImage", c2.c_ulong), ("biXPPM", c2.c_long), ("biYPPM", c2.c_long),
+                    ("biClrUsed", c2.c_ulong), ("biClrImportant", c2.c_ulong)]
+
+    bmi = BMIH(ctypes.sizeof(BMIH), w, -h, 1, 32, 0, 0, 0, 0, 0, 0)
+    buf = ctypes.create_string_buffer(w * h * 4)
+    gdi32.GetDIBits(mdc, hbmp, 0, h, buf, ctypes.byref(bmi), 0)
+    img = Image.frombuffer("RGB", (w, h), buf.raw, "raw", "BGRX", 0, 1)
+    img.save(path)
+    gdi32.DeleteObject(hbmp)
+    gdi32.DeleteDC(mdc)
+    user32.ReleaseDC(0, sdc)
+
+    # —— 证据标准：真实内容校验（尺寸 / 字节量 / MD5 / 唯一色数 / 亮度方差） ——
+    raw = path.read_bytes()
+    small = img.resize((min(w, 256), min(h, 256)))
+    colors = len(set(small.getdata()))
+    gray = list(small.convert("L").getdata())
+    mean = sum(gray) / len(gray)
+    var = sum((x - mean) ** 2 for x in gray) / len(gray)
+    return {
+        "path": str(path if path.is_absolute() else (PROJECT / path).resolve()),
+        "width": w, "height": h,
+        "bytes": len(raw),
+        "md5": hashlib.md5(raw).hexdigest(),
+        "sha256": hashlib.sha256(raw).hexdigest()[:16],
+        "unique_colors_256": colors,
+        "luma_variance": round(var, 1),
+        "plausible": bool(colors > 64 and var > 100 and len(raw) > 100_000),
+    }
+
+
+# ---------------- 对局监测 ---------------------------------------------------
+
+class BattleMonitor:
+    """ReadProcessMemory 只读监测：CurrentFrame 推进 + 机动单位数校验。"""
+
+    def __init__(self, proc: int):
+        self.proc = proc
+        self.samples: list[tuple[float, int]] = []
+
+    def frame(self) -> int:
+        v = rpm_u32(self.proc, ADDR_CURRENT_FRAME)
+        return v if v is not None else 0
+
+    def mobile_count(self) -> int:
+        """数组全局（如 0x008B4108）本身是 DynamicVectorClass 对象：count 在 +16 直读。"""
+        n = 0
+        for arr in (ARR_UNITS, ARR_INFANTRY, ARR_AIRCRAFT):
+            cnt = rpm_u32(self.proc, arr + 16)
+            if cnt and cnt < 100000:
+                n += cnt
+        return n
+
+    def wait_in_battle(self, timeout: float, min_fps: float = 3.0) -> bool:
+        t_end = time.time() + timeout
+        while time.time() < t_end:
+            f0, t0 = self.frame(), time.time()
+            time.sleep(1.5)
+            f1 = self.frame()
+            if f1 > f0 and (f1 - f0) / (time.time() - t0) >= min_fps:
+                return True
+            time.sleep(0.5)
+        return False
+
+    def poll_frames(self, seconds: float, hz: float = 100.0, stop: threading.Event | None = None):
+        interval = 1.0 / hz
+        t_end = time.time() + seconds
+        nxt = time.perf_counter()
+        self.samples.clear()
+        while time.perf_counter() < t_end and not (stop and stop.is_set()):
+            self.samples.append((time.time(), self.frame()))
+            nxt += interval
+            d = nxt - time.perf_counter()
+            if d > 0:
+                time.sleep(d)
+            else:
+                nxt = time.perf_counter()
+        return self.samples
+
+
+def frame_stats(samples: list[tuple[float, int]], span: float) -> dict:
+    if len(samples) < 10:
+        return {"fps": 0.0, "note": "insufficient"}
+    intervals = []
+    for i in range(1, len(samples)):
+        dt = samples[i][0] - samples[i - 1][0]
+        df = samples[i][1] - samples[i - 1][1]
+        if df > 0 and dt > 0:
+            intervals.append(dt / df)
+    if not intervals:
+        return {"fps": 0.0, "note": "frame not advancing"}
+    s = sorted(intervals)
+    p = lambda q: s[min(len(s) - 1, int(q * len(s)))]  # noqa: E731
+    p50 = p(0.50)
+    p90 = p(0.90)
+    p99 = p(0.99)
+    misses = [x for x in s if x > 1.5 * p50]
+    total_frames = int(samples[-1][1] - samples[0][1])
+    fps_avg = round(total_frames / span, 2) if span > 0 else 0.0
+    fps_1pct_low = round(1.0 / p99, 2) if p99 > 0 else 0.0
+    return {
+        "fps": round(1.0 / p50, 2),
+        "fps_avg": fps_avg,
+        "fps_1pct_low": fps_1pct_low,
+        "frame_ms_p50": round(p50 * 1000, 2),
+        "frame_ms_p90": round(p90 * 1000, 2),
+        "frame_ms_p99": round(p99 * 1000, 2),
+        "frame_ms_max": round(s[-1] * 1000, 2),
+        "tick_miss": len(misses),
+        "tick_miss_rate": round(len(misses) / len(s), 4),
+        "logic_frames": total_frames,
+        "span_s": round(span, 2),
+    }
+
+
+# ---------------- 采样窗口 ---------------------------------------------------
+
+def probe_busy_thread(pid: int, tids: list[int], gm_range: tuple[int, int], rounds: int = 30,
+                      *, gap_s: float = 0.01) -> dict:
+    """选最忙线程（EIP 落在 gamemd 镜像内次数最多者），并返回探针明细。
+
+    修复历史缺陷（ra2re/perf.py:375-382 同款）：旧实现的多轮探针之间**没有间隔**，
+    实际读的是同一瞬间的同一批线程；一旦此刻所有线程都在内核等待，就静默回退到
+    tids[0]（通常是加载器/音频线程），后续几万个样本全落 ntdll —— 这就是 98% idle 假基线。
+    现在：① 每轮之间 sleep(gap_s) 让探针覆盖时间窗；② 全部零命中就**抛错拒绝采样**，
+    绝不静默换线程；③ 返回探针明细供 JSON 留痕（选线合理性可复查）。
+    """
+    lo, hi = gm_range
+    score = {t: 0 for t in tids}
+    for _ in range(max(1, rounds)):
+        for t in tids:
+            e = read_eip(t)
+            if e and lo <= e < hi:
+                score[t] += 1
+        time.sleep(max(0.0, gap_s))
+    if not any(score.values()):
+        raise RuntimeError(
+            f"探针失败：{rounds} 轮 x {len(tids)} 线程（间隔 {gap_s * 1000:.0f}ms）内，没有任何线程的 "
+            "EIP 落在 gamemd 镜像内。进程可能未进入对局或已被挂起。本工具拒绝在这种情况下采样，"
+            "否则产出的就是又一份 98% idle 的无效基线。")
+    best = max(score, key=lambda t: score[t])
+    return {"tid": best, "score": score[best], "rounds": rounds, "gap_s": gap_s,
+            "probed_threads": len(tids), "scores": score}
+
+
+def sample_window(pid: int, proc: int, seconds: float, hz: float, *, require_match: bool = True) -> dict:
+    tids = list_threads(pid)
+    modules = list_modules(pid)
+    gm = next(m for m in modules if m[0].lower().startswith("gamemd"))
+    probe = probe_busy_thread(pid, tids, (gm[1], gm[1] + gm[2]))
+    tid = probe["tid"]
+    if require_match:
+        # 采样前对局内校验（fail-fast）：CurrentFrame 不推进就直接放弃本窗口——
+        # 宁可少一次采样，也不产出可被误引用的菜单样本。
+        pre = BattleMonitor(proc)
+        pre_stop = threading.Event()
+        pt = threading.Thread(target=pre.poll_frames, args=(2.0, 50.0, pre_stop), daemon=True)
+        pt.start()
+        time.sleep(2.2)
+        pre_stop.set()
+        pt.join(timeout=1)
+        pre_fs = frame_stats(pre.samples, 2.0)
+        if pre_fs.get("fps_avg", 0.0) < 3.0:
+            raise RuntimeError(
+                f"对局内校验失败：2s 内 CurrentFrame 推进 {pre_fs.get('logic_frames')} 帧 "
+                f"(fps_avg={pre_fs.get('fps_avg')}) < 3fps：未进入对局 / 已暂停 / 停在主菜单。"
+                "拒绝采样（若刻意采菜单做负样本，请显式 require_match=False）。")
+
+    stop = threading.Event()
+    mon = BattleMonitor(proc)
+    ft = threading.Thread(target=mon.poll_frames, args=(seconds, 100.0, stop), daemon=True)
+    cpu0 = process_cpu(proc)
+    t0 = time.perf_counter()
+    ft.start()
+
+    by_bucket: dict[str, int] = {}
+    by_module: dict[str, int] = {}
+    n = 0
+    t_end = time.perf_counter() + seconds
+    nxt = time.perf_counter()
+    interval = 1.0 / hz
+    while time.perf_counter() < t_end:
+        e = read_eip(tid)
+        n += 1
+        if e:
+            bucket, mod = classify(e, modules)
+            by_bucket[bucket] = by_bucket.get(bucket, 0) + 1
+            by_module[mod] = by_module.get(mod, 0) + 1
+        nxt += interval
+        d = nxt - time.perf_counter()
+        if d > 0:
+            time.sleep(d)
+        else:
+            nxt = time.perf_counter()
+    span = time.perf_counter() - t0
+    stop.set()
+    ft.join(timeout=2)
+    cpu1 = process_cpu(proc)
+
+    wait_n = by_bucket.get("wait", 0)
+    shim_n = by_bucket.get("shim", 0)
+    sys_gui_n = by_bucket.get("win32.gdi", 0)
+    gpu_n = by_bucket.get("gpu.present", 0)
+    sys_other_n = by_bucket.get("sys.other", 0)
+    unmapped_n = by_bucket.get("unmapped", 0)
+    noise_n = wait_n + shim_n + sys_gui_n + gpu_n + sys_other_n + unmapped_n
+
+    gamemd_n = sum(v for k, v in by_bucket.items() if not k.startswith("render.hooks") and k not in ("wait", "shim", "win32.gdi", "gpu.present", "sys.other", "unmapped"))
+    hooks_n = by_bucket.get("render.hooks", 0)
+    valid_n = gamemd_n + hooks_n
+
+    render_n = sum(v for k, v in by_bucket.items() if k.startswith("render") and k != "render.hooks")
+    logic_n = sum(v for k, v in by_bucket.items() if k.startswith("logic"))
+    coverage_n = sum(v for k, v in by_bucket.items() if k != "game_other" and not k.startswith("render.hooks") and k not in ("wait", "shim", "win32.gdi", "gpu.present", "sys.other", "unmapped"))
+    coverage_pct = round(100.0 * coverage_n / max(gamemd_n, 1), 2) if gamemd_n > 0 else 0.0
+
+    cpu = None
+    if cpu0 and cpu1:
+        cpu = round((cpu1[0] - cpu0[0]) + (cpu1[1] - cpu0[1]), 3)
+    return {
+        "tid": tid,
+        "tid_probe": {"score": probe["score"], "rounds": probe["rounds"],
+                      "gap_s": probe["gap_s"], "probed_threads": probe["probed_threads"],
+                      "all_scores": probe["scores"]},
+        "samples": n,
+        "hz_actual": round(n / span, 1),
+        "span_s": round(span, 2),
+        "by_bucket": by_bucket,
+        "by_module": by_module,
+        "noise_samples": noise_n,
+        "noise_pct": round(100.0 * noise_n / max(n, 1), 2),
+        "valid_samples": valid_n,
+        "valid_pct": round(100.0 * valid_n / max(n, 1), 2),
+        "gamemd_samples": gamemd_n,
+        "valid_gamemd_pct": round(100.0 * gamemd_n / max(n, 1), 2),
+        "busy_pct": round(100.0 * valid_n / max(n, 1), 2),
+        "wait_pct": round(100.0 * wait_n / max(n, 1), 2),
+        "shim_pct": round(100.0 * shim_n / max(n, 1), 2),
+        "render_busy_pct": round(100.0 * render_n / max(n, 1), 2),
+        "logic_busy_pct": round(100.0 * logic_n / max(n, 1), 2),
+        "render_of_gamemd_pct": round(100.0 * render_n / max(gamemd_n, 1), 2) if gamemd_n > 0 else 0.0,
+        "logic_of_gamemd_pct": round(100.0 * logic_n / max(gamemd_n, 1), 2) if gamemd_n > 0 else 0.0,
+        "coverage_pct": coverage_pct,
+        "cpu_seconds": cpu,
+        "cpu_pct_of_one_core": round(100.0 * cpu / span, 2) if cpu is not None else None,
+        "frames": frame_stats(mon.samples, span),
+    }
+
+
+# ---------------- 启动 / 导航 / 会话 -----------------------------------------
+
+def kill_game():
+    subprocess.run(["taskkill", "/IM", "gamemd.exe", "/F"], capture_output=True)
+    time.sleep(1.0)
+
+
+DETACHED_PROCESS = 0x00000008
+CREATE_BREAKAWAY_FROM_JOB = 0x01000000
+CREATE_NEW_PROCESS_GROUP = 0x00200000
+
+
+def launch(*, no_render: bool = False, no_compat: bool = False) -> int:
+    """启动游戏。注意：普通 Popen 实测可跨命令存活（游戏窗口保持可见）；
+    DETACHED/BREAKAWAY 会导致 cnc-ddraw 失焦后隐藏窗口，导航点击全部落空。"""
+    exe = (GAME_DIR / ("gamemd.exe" if no_render else "ra2loader.exe")).resolve()
+    env = dict(os.environ)
+    if no_compat:
+        env["__COMPAT_LAYER"] = ""
+    subprocess.Popen([str(exe)], cwd=str(GAME_DIR), env=env,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    t_end = time.time() + 30
+    while time.time() < t_end:
+        pid = find_pid("gamemd.exe")
+        if pid:
+            time.sleep(2.0)
+            return pid
+        time.sleep(0.5)
+    raise RuntimeError("30s 内未启动 gamemd.exe")
+
+
+NAV_STEPS = [  # 2026-09-28 真机重校准（out/re_work/zcode_live/zc10a/evidence/，繁中 UI 800x600）
+    # ★版式变更：BATTLEMD.INI 于 09-27 被 ra2forge 覆盖后，「單人遊戲」子菜单之后多了一层
+    #   「遭遇戰模式」设置屏（选玩家/地图/模式），「開始遊戲」在该屏而非旧大厅。
+    #   旧中间坐标 (700,305) 现命中「載入儲存遊戲」，是 ZC-9B 段 C 导航失败的根因。
+    ("mainmenu", 700, 218),      # 主菜单：單人遊戲（实测红钮中心 y=220；218 仍落钮内）
+    ("skirmish", 700, 304),      # 單人遊戲子菜单：遭遇戰（实测红钮中心 y=304）
+    ("start",    700, 262),      # 遭遇戰模式屏：開始遊戲（实测红钮中心 y=262）
+]
+
+# 语义化导航校验：每个目标画面的「侧边栏红钮 y 中心」签名（ZC-10A 真机实测）
+#   判据 = 检测到的红钮中心列表与期望列表逐项相等（±3px）。比 sidebar_changed() 的
+#   「像素变了就算过」强得多：后者点到「載入儲存遊戲」同样返回 True（假阳性）。
+SCREEN_RED_BUTTONS = {
+    "mainmenu":       [72, 220, 262, 304, 346, 388, 556],
+    "sp_submenu":     [72, 220, 262, 304, 556],
+    "skirmish_setup": [262, 304, 556],
+    "pause_menu":     [],        # 暂停菜单：战术区被全屏徽标盖住，侧栏无红钮
+    "battle":         [],        # 战术视图：侧栏是建造面板，无红钮
+}
+# 战术视图判定：战术区(x<1230, 逻辑)唯一色数下限。实测 暂停菜单覆盖 365 / 战术视图 1044+
+TACTICAL_COLOR_FLOOR = 600
+# 「回到任務」按钮（暂停菜单右下蓝钮）逻辑坐标
+BACK_TO_MISSION = (760, 558)
+# 机位复位锚点：小地图内固定锚（逻辑 800x600 坐标；窗口尺寸自适应）
+MINIMAP_ANCHOR = (756, 86)
+
+
+def grab_region(hwnd: int, x0: int, y0: int, w: int, h: int,
+                path: Path | None = None) -> dict | None:
+    """按屏幕坐标抓取窗口内矩形（BitBlt 屏幕 DC；不抢焦点、不最小化其它窗口）。"""
+    import ctypes as c2
+    import tempfile
+    from PIL import Image
+    if w <= 0 or h <= 0:
+        return None
+    gdi32 = c2.WinDLL("gdi32")
+    sdc = user32.GetDC(0)
+    mdc = gdi32.CreateCompatibleDC(sdc)
+    hbmp = gdi32.CreateCompatibleBitmap(sdc, w, h)
+    gdi32.SelectObject(mdc, hbmp)
+    gdi32.BitBlt(mdc, 0, 0, w, h, sdc, x0, y0, 0x00CC0020)
+
+    class BMIH(c2.Structure):
+        _fields_ = [("biSize", c2.c_ulong), ("biWidth", c2.c_long), ("biHeight", c2.c_long),
+                    ("biPlanes", c2.c_ushort), ("biBitCount", c2.c_ushort), ("biCompression", c2.c_ulong),
+                    ("biSizeImage", c2.c_ulong), ("biXPPM", c2.c_long), ("biYPPM", c2.c_long),
+                    ("biClrUsed", c2.c_long), ("biClrImportant", c2.c_long)]
+
+    bmi = BMIH(ctypes.sizeof(BMIH), w, -h, 1, 32, 0, 0, 0, 0, 0, 0)
+    buf = c2.create_string_buffer(w * h * 4)
+    gdi32.GetDIBits(mdc, hbmp, 0, h, buf, ctypes.byref(bmi), 0)
+    img = Image.frombuffer("RGB", (w, h), buf.raw, "raw", "BGRX", 0, 1)
+    p = path or Path(tempfile.mkdtemp(prefix="br_region_")) / "r.png"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    img.save(p)
+    gdi32.DeleteObject(hbmp); gdi32.DeleteDC(mdc); user32.ReleaseDC(0, sdc)
+    return {"path": str(p), "width": w, "height": h,
+            "md5": hashlib.md5(p.read_bytes()).hexdigest()}
+
+
+def sidebar_red_buttons(hwnd: int) -> list[int]:
+    """语义指纹①：侧边栏红钮的 y 中心列表（逻辑 800x600 坐标）。
+    实现：对侧栏 x∈[640,800) 逐行统计「R>G+40 且 R>B+40」占比，>25% 且连续 ≥8 行
+    记为一个红钮，取中心 y 并折算回逻辑坐标。"""
+    import numpy as np
+    from PIL import Image
+    l, t, r, b = window_bbox(hwnd)
+    sx0 = l + int(640 / 800 * (r - l))
+    m = grab_region(hwnd, sx0, t, (r - l) - (sx0 - l), b - t)
+    if m is None or not m.get("path"):
+        return []
+    a = np.asarray(Image.open(m["path"]).convert("RGB")).astype(int)
+    H = a.shape[0]
+    rf = ((a[:, :, 0] > a[:, :, 1] + 40) & (a[:, :, 0] > a[:, :, 2] + 40)).mean(axis=1)
+    out, inb = [], False
+    for y in range(H):
+        v = rf[y] > 0.25
+        if v and not inb:
+            inb, y0 = True, y
+        elif not v and inb:
+            inb = False
+            if y - y0 >= 8:
+                out.append(int(round((y0 + y - 1) / 2 / H * 600)))
+    return out
+
+
+def tactical_color_count(hwnd: int) -> int:
+    """语义指纹②：战术区唯一色数 —— 被暂停菜单/过场盖住时会塌到 ~365。
+
+    ★坐标口径：战术区 = 窗口左侧（侧边栏以左）。侧边栏宽度随窗口尺寸变（800×600 时占
+      20%，1366×768 时占 10%），故按窗口宽度的 86% 取左半，避免越界抓取窗外内容
+      （ZC-10A 首版误把 1230 当逻辑坐标 ⇒ 1.5375×窗宽 ⇒ 抓到窗外 ⇒ 指纹失效）。
+    """
+    import tempfile
+    import numpy as np
+    from PIL import Image
+    l, t, r, b = window_bbox(hwnd)
+    m = grab(hwnd, Path(tempfile.gettempdir()) / "br_tac.png")
+    if m is None or not m.get("plausible"):
+        return -1
+    a = np.asarray(Image.open(m["path"]).convert("RGB"))
+    w = int(a.shape[1] * 0.86)
+    a = a[:, :w]
+    return len(set(map(tuple, a.reshape(-1, 3).tolist()))) if a.size else -1
+
+
+def screen_fingerprint(hwnd: int) -> dict:
+    """当前画面的语义指纹（不依赖背景动画/视频帧，抗假阳性）。"""
+    rb = sidebar_red_buttons(hwnd)
+    tc = tactical_color_count(hwnd)
+    return {"red_buttons": rb, "tactical_colors": tc,
+            "is_tactical": tc >= TACTICAL_COLOR_FLOOR}
+
+
+def verify_screen(hwnd: int, expect: str, tol: int = 3) -> dict:
+    """语义化导航校验：当前画面是否就是 expect 指定的目标界面。
+    expect ∈ SCREEN_RED_BUTTONS 的键（含 battle / pause_menu）。"""
+    fp = screen_fingerprint(hwnd)
+    want = list(SCREEN_RED_BUTTONS[expect])
+    if expect == "pause_menu":
+        ok, reason = (not fp["is_tactical"]), f"tactical_colors={fp['tactical_colors']}"
+    elif expect == "battle":
+        ok, reason = fp["is_tactical"], f"tactical_colors={fp['tactical_colors']} (floor={TACTICAL_COLOR_FLOOR})"
+    else:
+        got = fp["red_buttons"]
+        ok = (len(got) == len(want)
+              and all(abs(g - w) <= tol for g, w in zip(got, want)))
+        reason = f"red_buttons got={got} want={want} tol=±{tol}"
+    return {"ok": bool(ok), "expect": expect, "got": fp, "want": want, "reason": reason}
+
+
+def close_pause_menu(hwnd: int, *, tries: int = 4) -> dict:
+    """关闭暂停菜单并校验已回到战术视图。
+
+    ★ESC 不可用：user32.keybd_event(0x1B) 到不了 DirectInput 游戏（ZC-9B 实测：
+      ESC 能打开暂停菜单却关不掉）。唯一可靠路径是鼠标点右下「回到任務」蓝钮。
+    """
+    import time as _t
+    last = None
+    for i in range(tries):
+        v = verify_screen(hwnd, "battle")
+        last = v
+        if v["ok"]:
+            return {"ok": True, "attempts": i + 1, "verify": v}
+        focus_game(hwnd)
+        send_click(hwnd, *BACK_TO_MISSION, lw=800, lh=600)
+        _t.sleep(1.8)
+        last = verify_screen(hwnd, "battle")
+        if last["ok"]:
+            return {"ok": True, "attempts": i + 1, "verify": last}
+    return {"ok": False, "attempts": tries, "verify": last}
+
+
+def read_viewport_rect(hwnd: int) -> dict | None:
+    """读小地图内的视口矩形（= 镜头所在地图位置）屏幕坐标。
+    实现：小地图框在侧栏右上（逻辑 x≥1215, y∈[30,195)），视口矩形是框内亮边矩形。"""
+    import numpy as np
+    from PIL import Image
+    l, t, r, b = window_bbox(hwnd)
+    x0 = l + int(1215 / 800 * (r - l))
+    y0 = t + int(30 / 600 * (b - t))
+    w = (r - l) - (x0 - l)
+    h = int(165 / 600 * (b - t))
+    m = grab_region(hwnd, x0, y0, w, h)
+    if m is None or not m.get("path"):
+        return None
+    a = np.asarray(Image.open(m["path"]).convert("RGB")).astype(int)
+    lum = 0.299 * a[:, :, 0] + 0.587 * a[:, :, 1] + 0.114 * a[:, :, 2]
+    vp = lum > 150
+    if not vp.any():
+        return None
+    vy, vx = np.where(vp)
+    return {"x0": int(vx.min() + x0), "y0": int(vy.min() + y0),
+            "x1": int(vx.max() + x0), "y1": int(vy.max() + y0),
+            "cx": int((vx.min() + vx.max()) // 2 + x0),
+            "cy": int((vy.min() + vy.max()) // 2 + y0),
+            "px": int((vx.max() - vx.min())), "py": int((vy.max() - vy.min()))}
+
+
+def reset_camera(hwnd: int, *, anchor=MINIMAP_ANCHOR, tries: int = 3,
+                 ref: Path | None = None, mad_tol: float = 1.0,
+                 shots: Path | None = None, tag: str = "cam") -> dict:
+    """确定性机位复位：点小地图内固定锚点，把战术视角钉到同一地图格。
+
+    成功校验：
+      ① 与基准帧整帧 MAD <= mad_tol（shots/ref 提供时）；
+      ② 小地图视口矩形中心与上一次数值一致（由调用方用 read_viewport_rect() 判）。
+    返回 {ok, attempts, mad}。
+    """
+    import time as _t
+    import numpy as np
+    from PIL import Image
+    if shots is not None:
+        shots.mkdir(parents=True, exist_ok=True)
+    out = {"ok": False, "attempts": 0, "mad": None, "anchor": anchor}
+    for i in range(tries):
+        out["attempts"] = i + 1
+        close_pause_menu(hwnd)
+        focus_game(hwnd)
+        send_click(hwnd, anchor[0], anchor[1], lw=800, lh=600)
+        _t.sleep(1.6)
+        if shots is None:
+            continue
+        p = shots / f"{tag}_try{i}.png"
+        if ref is None:
+            m = grab(hwnd, p)
+            if m and m.get("plausible"):
+                out.update(ok=True, mad=0.0, ref=str(p))
+                return out
+        else:
+            m = grab(hwnd, p)
+            if m and ref.is_file():
+                A = np.asarray(Image.open(ref).convert("RGB")).astype(int)
+                B = np.asarray(Image.open(p).convert("RGB")).astype(int)
+                out["mad"] = round(float(np.abs(A - B).mean()), 4)
+                if out["mad"] <= mad_tol:
+                    out["ok"] = True
+                    return out
+    return out
+
+
+def sidebar_changed(shot_a: Path, shot_b: Path) -> bool:
+    """功能性校验：右侧按钮区（640,190)-(800,580) 是否变化（背景动画会骗过全图哈希）。"""
+    from PIL import Image
+    try:
+        a = Image.open(shot_a).crop((640, 190, 800, 580)).tobytes()
+        b = Image.open(shot_b).crop((640, 190, 800, 580)).tobytes()
+        return a != b
+    except Exception:
+        return False
+
+
+def try_auto_nav(hwnd: int, shots: Path, tag: str, ss: "ShotSession | None" = None):
+    """已校准自动导航 + **语义化目标画面校验**重试：跳过开场 → 單人遊戲 → 遭遇戰 → 開始遊戲。
+
+    ★ZC-10A 硬化：判据从「侧边栏像素变了」升级为「落在目标界面」：
+      每步点击后用 verify_screen() 检查红钮签名/战术区色数，只有真正到达
+      mainmenu→sp_submenu→skirmish_setup→battle 才算通过。
+      旧判据 sidebar_changed() 在点到「載入儲存遊戲」时同样返回 True（假阳性），
+      正是 ZC-9B 段 C 导航失败的根因。
+    """
+    focused = focus_game(hwnd)
+    print(f"  [nav] 焦点获取: {'OK' if focused else 'FAIL（点击可能无效）'}")
+    press_key(0x1B); time.sleep(1.2)      # ESC 跳过 logo/过场
+    press_key(0x1B); time.sleep(2.0)
+    grab(hwnd, shots / f"{tag}_s1_menu.png")
+    waits = {"mainmenu": 2.5, "skirmish": 9.0, "start": 6.0}
+    # 每步点击后期望到达的目标画面（与原 NAV_STEPS 三步一一对应）
+    expect = {"mainmenu": "sp_submenu", "skirmish": "skirmish_setup", "start": "battle"}
+    for i, (name, x, y) in enumerate(NAV_STEPS):
+        done = False
+        for attempt in range(6):
+            if not focus_game(hwnd):
+                print(f"  [nav] {name} 前焦点丢失，重试获取")
+            send_click(hwnd, x, y)
+            time.sleep(waits[name])
+            cur = grab(hwnd, shots / f"{tag}_nav_{i}_{name}_a{attempt}.png")
+            v = verify_screen(hwnd, expect[name])
+            print(f"  [nav] {name} 第{attempt + 1}次 语义校验 {'PASS' if v['ok'] else 'FAIL'} "
+                  f"({v['reason']})")
+            if v["ok"]:
+                done = True
+                break
+        if not done:
+            print(f"  [nav] {name} 6 次点击均未到达「{expect[name]}」（留档 "
+                  f"{tag}_nav_{i}_{name}_final.png）")
+            grab(hwnd, shots / f"{tag}_nav_{i}_{name}_final.png")
+        if ss is not None:
+            ss.step(hwnd, shots / f"{tag}_nav_{i}_{name}_step.png")
+
+
+def enter_battle(pid: int, hwnd: int, proc: int, *, expect_units: int | None,
+                 shots: Path, tag: str, manual_timeout: float = 100.0) -> tuple[bool, int]:
+    """对局检测 +（可选）兵力校验。失败时给人工兜底窗口。"""
+    mon = BattleMonitor(proc)
+
+    def check() -> bool:
+        cnt = mon.mobile_count()
+        if expect_units is None:
+            return mon.wait_in_battle(5)
+        return mon.wait_in_battle(5) and expect_units * 0.5 <= cnt <= expect_units * 1.6
+
+    if try_wait(check, 20):
+        return True, mon.mobile_count()
+
+    print(f"  [自动导航未确认] 人工兜底 {manual_timeout:.0f}s：请在游戏窗口中完成 "
+          f"单人游戏→遭遇战→选择 {expect_units or ''} 地图→开始")
+    try_auto_nav(hwnd, shots, tag + "_auto")  # 再自动试一轮
+    if try_wait(check, manual_timeout):
+        return True, mon.mobile_count()
+    return False, 0
+
+
+def try_wait(fn, timeout: float) -> bool:
+    t_end = time.time() + timeout
+    while time.time() < t_end:
+        try:
+            if fn():
+                return True
+        except Exception:
+            pass
+        time.sleep(1.0)
+    return False
+
+
+def tail_log(game_dir: Path, dest: Path, n_lines: int = 200):
+    log = game_dir / "ra2render.log"
+    if log.is_file():
+        lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+        dest.write_text("\n".join(lines[-n_lines:]), encoding="utf-8")
+
+
+def parse_telemetry(game_dir: Path) -> list[str]:
+    """从 ra2render.log 提取最近一条 2 秒遥测行。"""
+    log = game_dir / "ra2render.log"
+    if not log.is_file():
+        return []
+    lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    return [l for l in lines if "ra2render-telemetry" in l][-3:]
+
+
+# ---------------- 基准模式 ---------------------------------------------------
+
+def run_tier(tier: int, *, windows: int, window_s: float, warmup_s: float,
+             no_render: bool, no_compat: bool, shots: Path) -> list[dict]:
+    base = f"0LoadBench_U{tier:04d}"
+    # [Lead 2026-09-28] 兼容 H1 重制图（[v1.8.30] 14-house fanout）：旧图 base 优先，其次 base_H1；--map-suffix 可显式指定
+    if MAP_SUFFIX:
+        cands = [base + MAP_SUFFIX]
+    else:
+        cands = [base, base + "_H1"]
+    map_name = next((c for c in cands if (GAME_DIR / f"[2]{c}.yrm").is_file()), None)
+    if map_name is None:
+        raise SystemExit(
+            f"[FAIL] 游戏目录缺基准地图 [2]{base}.yrm（H1 变体 [2]{base}_H1.yrm 亦未找到）；"
+            f"地图属游戏目录，本工具不写入，请先安装。"
+            f"注意：PowerShell 路径含 [2] 时必须用 -LiteralPath，否则 [2] 会被当通配符。")
+    if map_name != base:
+        print(f"  [map] 未找到 [2]{base}.yrm ⇒ 自动改用 [2]{map_name}.yrm（H1 变体）；"
+              f"负载是否生效须以 units_seen 校验（旧图真机仅 21/22 单位）")
+
+    kill_game()
+    print(f"== U{tier} 变体 render={'off' if no_render else 'on'} compat={'off' if no_compat else 'on'}")
+    stamp = datetime.now().strftime("%H%M%S")
+    runs = []
+    try:
+        pid = launch(no_render=no_render, no_compat=no_compat)
+        proc = open_proc(pid)
+        hwnd = None
+        t_end = time.time() + 15
+        while time.time() < t_end and not hwnd:
+            hwnd = find_game_hwnd(pid)
+            time.sleep(0.5)
+        time.sleep(6.0)
+        ok, cnt = enter_battle(pid, hwnd, proc, expect_units=tier, shots=shots, tag=f"u{tier}_{stamp}")
+        if not ok:
+            print(f"  [SKIP] U{tier} 未进入对局/兵力校验未过（实测 {cnt}，期望≈{tier}）")
+            return runs
+        print(f"  对局确认：机动单位 {cnt}（期望≈{tier}），热身 {warmup_s:.0f}s …")
+        time.sleep(warmup_s)
+        ini_state = read_render_ini()
+        for w in range(windows):
+            res = sample_window(pid, proc, window_s, 250.0)
+            res.update({"tier": tier, "window": w + 1, "map": map_name,
+                        "map_file": f"[2]{map_name}.yrm",
+                        "units_seen": cnt,
+                        "ra2render_ini": ini_state,
+                        "variant": {"no_render": no_render, "no_compat": no_compat},
+                        "telemetry_tail": parse_telemetry(GAME_DIR),
+                        "ts": datetime.now().strftime("%H:%M:%S")})
+            runs.append(res)
+            print(f"    busy={res['busy_pct']}% render={res['render_busy_pct']}% "
+                  f"logic={res['logic_busy_pct']}% fps={res['frames'].get('fps')} "
+                  f"tick_miss={res['frames'].get('tick_miss')} cpu={res['cpu_pct_of_one_core']}%")
+            time.sleep(2.0)
+        grab(hwnd, shots / f"u{tier}_{stamp}_battle.png")
+        return runs
+    finally:
+        kill_game()
+
+
+# ---------------- v1.6.0 证据矩阵模式 ----------------------------------------
+
+V160_MANIFEST = V160_SHOTS / "manifest.json"
+
+
+def _load_manifest() -> dict:
+    if V160_MANIFEST.is_file():
+        return json.loads(V160_MANIFEST.read_text(encoding="utf-8"))
+    return {"session_start": datetime.now().isoformat(timespec="seconds"), "runs": [], "saves": []}
+
+
+def _save_manifest(m: dict):
+    V160_SHOTS.mkdir(parents=True, exist_ok=True)
+    m["manifest_updated"] = datetime.now().isoformat(timespec="seconds")
+    V160_MANIFEST.write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def run_evidence_config(cfg_index: int, *, window_s: float = 12.0, expect_units: int = 800) -> dict | None:
+    """单个矩阵配置的证据采集：开局 → 热身 → 3 张战场截图(校验) → 遥测留痕 → 存/读档(all_on)。
+    结果合并进 manifest.json（可分多次调用，跨 bash 命令续跑）。"""
+    matrix = default_matrix()
+    keys = matrix[cfg_index]
+    tag = "all_off" if not any(keys.values()) else ("all_on" if all(keys.values()) else f"mix{cfg_index}")
+    shots = V160_SHOTS
+    shots.mkdir(parents=True, exist_ok=True)
+
+    print(f"== 证据配置 {cfg_index}: {tag} {keys}")
+    bk = set_render_ini(keys)
+    try:
+        kill_game()
+        pid = launch()
+        proc = open_proc(pid)
+        t_end = time.time() + 15
+        hwnd = None
+        while time.time() < t_end and not hwnd:
+            hwnd = find_game_hwnd(pid)
+            time.sleep(0.5)
+        time.sleep(18.0)   # 菜单交互就绪需 ~20s（启动后地图列表扫描），必须等足
+        ss = ShotSession()
+        try_auto_nav(hwnd, shots, f"v160_{tag}", ss)
+        ok, cnt = enter_battle(pid, hwnd, proc, expect_units=expect_units,
+                               shots=shots, tag=f"v160_{tag}")
+        if not ok:
+            print(f"  [SKIP] 未进入对局/兵力校验未过（实测 {cnt}）")
+            return None
+        print(f"  对局确认：单位 {cnt}，热身 10s")
+        time.sleep(10.0)
+
+        shot_meta = []
+        for k in range(3):
+            time.sleep(1.5)
+            shot_meta.append(grab(hwnd, shots / f"v160_{tag}_battle_{k}.png"))
+        md5s = {m["md5"] for m in shot_meta}
+        telemetry = parse_telemetry(GAME_DIR)
+        run_rec = {
+            "config": keys, "tag": tag, "cfg_index": cfg_index,
+            "units_seen": cnt, "screenshots": shot_meta,
+            "md5_all_distinct": len(md5s) == len(shot_meta),
+            "shot_quality": [{ "plausible": m["plausible"], "bytes": m["bytes"],
+                               "unique_colors_256": m["unique_colors_256"],
+                               "luma_variance": m["luma_variance"]} for m in shot_meta],
+            "telemetry_tail": telemetry,
+            "except_fresh": _except_is_fresh(),
+            "ts": datetime.now().strftime("%H:%M:%S"),
+        }
+
+        if all(keys.values()):
+            run_rec["save_reload"] = _attempt_save_reload(hwnd, shots, tag)
+
+        manifest = _load_manifest()
+        manifest["runs"] = [r for r in manifest.get("runs", []) if r.get("tag") != tag]
+        manifest["runs"].append(run_rec)
+        _save_manifest(manifest)
+        print(f"  截图 {len(shot_meta)}（MD5 互异: {run_rec['md5_all_distinct']}），遥测 {len(telemetry)} 行")
+        return run_rec
+    finally:
+        restore_render_ini(bk)
+        kill_game()
+
+
+def _except_is_fresh() -> bool:
+    """验收窗口内 except.txt 是否有新增（崩溃零容忍判据）。"""
+    p = GAME_DIR / "except.txt"
+    if not p.is_file():
+        return False
+    mt = p.stat().st_mtime
+    return (time.time() - mt) < 3600 * 6 and mt > time.time() - 3600 * 6 and (datetime.now().timestamp() - mt) < 7200
+
+
+def _attempt_save_reload(hwnd: int, shots: Path, tag: str) -> dict:
+    """存档/读档往返：ESC → 儲存遊戲 → 槽位确认 → 验证 .SAV 落盘。"""
+    rec = {"attempted": True}
+    before = {p.name: p.stat().st_mtime for p in GAME_DIR.glob("*.sav")}
+    try:
+        press_key(0x1B); time.sleep(1.5)
+        grab(hwnd, shots / f"v160_{tag}_esc_menu.png")
+        send_click(hwnd, 700, 263); time.sleep(1.5)      # 側欄：儲存遊戲（坐标待校准）
+        grab(hwnd, shots / f"v160_{tag}_save_dlg.png")
+        send_click(hwnd, 400, 300); time.sleep(3.0)      # 儲存確認
+        press_key(0x1B); time.sleep(1.0)
+        after = {p.name: p.stat().st_mtime for p in GAME_DIR.glob("*.sav")}
+        new_saves = [n for n, mt in after.items() if n not in before or mt > before.get(n, 0) + 5]
+        rec["new_saves"] = [{"name": n, "bytes": (GAME_DIR / n).stat().st_size,
+                             "mtime": datetime.fromtimestamp(after[n]).isoformat(timespec="seconds")}
+                            for n in new_saves]
+        rec["ok"] = bool(new_saves)
+        grab(hwnd, shots / f"v160_{tag}_after_save.png")
+    except Exception as e:
+        rec["ok"] = False
+        rec["error"] = str(e)
+    return rec
+
+
+def default_matrix() -> list[dict[str, bool]]:
+    """基线(全关) → 全开 → 每键独立关闭（其余开）：覆盖独立回滚语义。"""
+    all_off = {k: False for k in V160_KEYS}
+    all_on = {k: True for k in V160_KEYS}
+    out = [all_off, all_on]
+    for k in V160_KEYS:
+        m = {kk: True for kk in V160_KEYS}
+        m[k] = False
+        out.append(m)
+    return out
+
+
+def run_menu_selftest(window_s: float = 6.0, wait_s: float = 20.0) -> dict:
+    """Q7 实机自检：启动停主菜单跑采样，验证附着与过滤有效性，然后必须自行关闭进程。"""
+    kill_game()
+    print("== [Q7 自检] 启动游戏并停在主菜单...")
+    t0 = time.time()
+    pid = launch(no_render=False)
+    proc = open_proc(pid)
+    hwnd = None
+    t_end = time.time() + 20
+    while time.time() < t_end and not hwnd:
+        hwnd = find_game_hwnd(pid)
+        time.sleep(0.5)
+    print(f"  gamemd 启动成功: PID={pid}, HWND={hwnd}")
+
+    elapsed_so_far = time.time() - t0
+    rem_wait = max(1.0, wait_s - elapsed_so_far)
+    print(f"  等待主菜单就绪 ({rem_wait:.1f}s)...")
+    time.sleep(rem_wait)
+
+    if hwnd:
+        focus_game(hwnd)
+        press_key(0x1B)
+        time.sleep(1.0)
+        press_key(0x1B)
+        time.sleep(1.5)
+
+    shots_dir = OUT / "shots" / "selftest"
+    shots_dir.mkdir(parents=True, exist_ok=True)
+    shot_path = shots_dir / f"menu_selftest_pid_{pid}.png"
+    shot_meta = grab(hwnd, shot_path) if hwnd else None
+
+    print(f"  开始对主菜单线程执行采样 ({window_s:.1f}s @ 250Hz)...")
+    res = sample_window(pid, proc, window_s, 250.0, require_match=False)  # 负样本：刻意采菜单
+
+    print(f"  采样完成，立即强制结束 gamemd 进程 (PID={pid})...")
+    kill_game()
+
+    time.sleep(1.0)
+    still_alive = find_pid("gamemd.exe")
+    kill_confirmed = (still_alive is None) or (still_alive != pid)
+    print(f"  进程终止确认: {'已成功终止' if kill_confirmed else '仍然存活（异常）'}, 当前 gamemd PID={still_alive}")
+
+    total_elapsed = time.time() - t0
+    result = {
+        "task": "Q7_MENU_SELFTEST",
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "total_elapsed_s": round(total_elapsed, 2),
+        "gamemd_pid": pid,
+        "gamemd_hwnd": hwnd,
+        "kill_confirmed": kill_confirmed,
+        "screenshot": shot_meta,
+        "sample_result": res,
+        "evaluation": {
+            "attached_ok": bool(res.get("samples", 0) > 0),
+            "noise_samples": res.get("noise_samples", 0),
+            "noise_pct": res.get("noise_pct", 0.0),
+            "valid_gamemd_samples": res.get("gamemd_samples", 0),
+            "valid_gamemd_pct": res.get("valid_gamemd_pct", 0.0),
+            "is_menu_idle_state": bool(res.get("noise_pct", 0.0) >= 90.0 or res.get("valid_gamemd_pct", 0.0) < 10.0),
+            "elapsed_under_60s": bool(total_elapsed <= 60.0),
+        }
+    }
+
+    out_json = PROJECT / "out" / "re_work" / "bench_harness" / "menu_selftest.json"
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    out_json.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"  自检结果已落盘: {out_json}")
+    return result
+
+
+def run_ab_compare(tier: int = 200, window_s: float = 15.0, warmup_s: float = 8.0) -> dict:
+    """Q4 A/B 联动：以 EnableSIMD=0 与 EnableSIMD=1 分别进行基准采样并比对输出。"""
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    shots = SHOTS / f"ab_{stamp}"
+    shots.mkdir(parents=True, exist_ok=True)
+
+    print("== [Q4 A/B 联动] 开始 EnableSIMD=0 (标量渲染基线) vs EnableSIMD=1 (SIMD向量化加速) ==")
+    
+    # 轮次 A: EnableSIMD=0
+    bk_a = set_render_ini({"EnableSIMD": False})
+    runs_a = []
+    try:
+        print("  --> 轮次 A: EnableSIMD=0 ...")
+        runs_a = run_tier(tier, windows=1, window_s=window_s, warmup_s=warmup_s,
+                          no_render=False, no_compat=False, shots=shots)
+    finally:
+        restore_render_ini(bk_a)
+
+    # 轮次 B: EnableSIMD=1
+    bk_b = set_render_ini({"EnableSIMD": True})
+    runs_b = []
+    try:
+        print("  --> 轮次 B: EnableSIMD=1 ...")
+        runs_b = run_tier(tier, windows=1, window_s=window_s, warmup_s=warmup_s,
+                          no_render=False, no_compat=False, shots=shots)
+    finally:
+        restore_render_ini(bk_b)
+
+    rec_a = runs_a[0] if runs_a else {}
+    rec_b = runs_b[0] if runs_b else {}
+
+    f_a = rec_a.get("frames", {})
+    f_b = rec_b.get("frames", {})
+
+    fps_a = f_a.get("fps_avg") or f_a.get("fps", 0.0)
+    fps_b = f_b.get("fps_avg") or f_b.get("fps", 0.0)
+    fps_gain = round(100.0 * (fps_b - fps_a) / max(fps_a, 0.01), 2) if fps_a > 0 else 0.0
+
+    ab_res = {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "tier": tier,
+        "variant_a": {"EnableSIMD": False, "run": rec_a},
+        "variant_b": {"EnableSIMD": True, "run": rec_b},
+        "comparison": {
+            "fps_a": fps_a,
+            "fps_b": fps_b,
+            "fps_gain_pct": fps_gain,
+            "1pct_low_a": f_a.get("fps_1pct_low", 0.0),
+            "1pct_low_b": f_b.get("fps_1pct_low", 0.0),
+            "tick_miss_a": f_a.get("tick_miss", 0),
+            "tick_miss_b": f_b.get("tick_miss", 0),
+            "render_busy_pct_a": rec_a.get("render_busy_pct", 0.0),
+            "render_busy_pct_b": rec_b.get("render_busy_pct", 0.0),
+            "cpu_a": rec_a.get("cpu_pct_of_one_core"),
+            "cpu_b": rec_b.get("cpu_pct_of_one_core"),
+        }
+    }
+
+    ab_res["artifacts"] = ab_build_report(rec_a, rec_b, tier, stamp=stamp, tag="ab_simd")
+    return ab_res
+
+# ---------------- A/B 联动：可对比 JSON + Markdown（Q4） ---------------------
+
+AB_SELFTEST_DIR = PROJECT / "out" / "re_work" / "bench_harness"
+
+
+def ab_build_report(rec_a: dict, rec_b: dict, tier: int, *, stamp: "str | None" = None,
+                    out_dir: "Path | None" = None, tag: str = "ab_simd") -> dict:
+    """把两轮采样记录整理成**可对比 JSON + Markdown**（纯函数：不启动游戏、不碰 INI）。
+
+    与 run_ab_compare 解耦，便于离线用**合成记录**自检「对比口径 / 门禁表达式 / 落盘命名」。
+    口径纪律：差值只有在两轮都通过对局内校验且 valid_pct >= 10% 时才可作为收益证据。
+    """
+    stamp = stamp or datetime.now().strftime("%Y%m%d_%H%M%S")
+    base = Path(out_dir) if out_dir is not None else AB_SELFTEST_DIR
+    base.mkdir(parents=True, exist_ok=True)
+
+    f_a = rec_a.get("frames") or {}
+    f_b = rec_b.get("frames") or {}
+    fps_a = f_a.get("fps_avg") or f_a.get("fps") or 0.0
+    fps_b = f_b.get("fps_avg") or f_b.get("fps") or 0.0
+    gain = round(100.0 * (fps_b - fps_a) / fps_a, 2) if fps_a > 0 else 0.0
+    low_a, low_b = f_a.get("fps_1pct_low", 0.0), f_b.get("fps_1pct_low", 0.0)
+    low_gain = round(100.0 * (low_b - low_a) / low_a, 2) if low_a > 0 else None
+    tm_a, tm_b = f_a.get("tick_miss", 0), f_b.get("tick_miss", 0)
+
+    res = {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "tier": tier,
+        "variant_a": {"EnableSIMD": False, "run": rec_a},
+        "variant_b": {"EnableSIMD": True, "run": rec_b},
+        "comparison": {
+            "fps_a": fps_a, "fps_b": fps_b,
+            "fps_delta": round(fps_b - fps_a, 3), "fps_gain_pct": gain,
+            "1pct_low_a": low_a, "1pct_low_b": low_b,
+            "1pct_low_delta": round(low_b - low_a, 3), "1pct_low_gain_pct": low_gain,
+            "tick_miss_a": tm_a, "tick_miss_b": tm_b,
+            "tick_miss_delta": (tm_b or 0) - (tm_a or 0),
+            "render_busy_pct_a": rec_a.get("render_busy_pct", 0.0),
+            "render_busy_pct_b": rec_b.get("render_busy_pct", 0.0),
+            "render_of_gamemd_pct_a": rec_a.get("render_of_gamemd_pct", 0.0),
+            "render_of_gamemd_pct_b": rec_b.get("render_of_gamemd_pct", 0.0),
+            "cpu_a": rec_a.get("cpu_pct_of_one_core"), "cpu_b": rec_b.get("cpu_pct_of_one_core"),
+            "valid_pct_a": rec_a.get("valid_pct"), "valid_pct_b": rec_b.get("valid_pct"),
+            "units_seen_a": rec_a.get("units_seen"), "units_seen_b": rec_b.get("units_seen"),
+        },
+        "gate": {
+            "fps_gain_ge_10pct": bool(gain >= 10.0),
+            "low1_gain_ge_15pct": bool(low_gain is not None and low_gain >= 15.0),
+            "both_valid_pct_ge_10": bool((rec_a.get("valid_pct") or 0) >= 10.0
+                                         and (rec_b.get("valid_pct") or 0) >= 10.0),
+            "note": "门禁表达式仅作可复算记录：真机 A/B 未跑过前不得据此宣称收益（PROTOCOL §10）",
+        },
+    }
+    pj = base / f"{tag}_{stamp}.json"
+    pm = base / f"{tag}_{stamp}.md"
+    pj.write_text(json.dumps(res, ensure_ascii=False, indent=2), encoding="utf-8")
+    pm.write_text(ab_render_markdown(res, rec_a, rec_b, tier, pj.name, pm.name), encoding="utf-8")
+    print(f"  A/B 对比 JSON 已落盘: {pj}")
+    print(f"  A/B 对比 Markdown 已落盘: {pm}")
+    return {"json": str(pj), "md": str(pm)}
+
+
+def ab_render_markdown(res: dict, rec_a: dict, rec_b: dict, tier: int,
+                       json_name: str, md_name: str) -> str:
+    """A/B 对比 Markdown 渲染（与数据构造分离，便于离线注入合成记录测试）。"""
+    c = res["comparison"]
+    g = res["gate"]
+    md = [
+        f"### A/B 联动渲染加速对比报告（U{tier}，EnableSIMD=0 vs EnableSIMD=1）",
+        "",
+        f"- 轮次 A：ts={rec_a.get('ts', '(无)')} 变体={rec_a.get('variant', {})} "
+        f"单位数={rec_a.get('units_seen', '(无)')}",
+        f"- 轮次 B：ts={rec_b.get('ts', '(无)')} 变体={rec_b.get('variant', {})} "
+        f"单位数={rec_b.get('units_seen', '(无)')}",
+        "",
+        "| 指标 | 变体 A (EnableSIMD=0) | 变体 B (EnableSIMD=1) | 差异 (Delta) | 门禁评估 |",
+        "|---|---:|---:|---:|---|",
+        f"| 平均逻辑帧率 (Avg FPS) | {c['fps_a']} fps | {c['fps_b']} fps | "
+        f"{c['fps_delta']:+.2f} ({c['fps_gain_pct']:+.1f}%) | "
+        f"{'≥+10% 达标' if g['fps_gain_ge_10pct'] else '未达 +10%'} |",
+        f"| 1% Low 帧率 | {c['1pct_low_a']} fps | {c['1pct_low_b']} fps | "
+        f"{c['1pct_low_delta']:+.2f} ({c['1pct_low_gain_pct']}%) | "
+        f"{'≥+15% 达标' if g['low1_gain_ge_15pct'] else '未达 +15%'} |",
+        f"| TickMiss 次数 | {c['tick_miss_a']} 次 | {c['tick_miss_b']} 次 | {c['tick_miss_delta']:+d} | 卡顿改善需配对检验 |",
+        f"| 渲染工作占比 (Render%) | {c['render_busy_pct_a']}% | {c['render_busy_pct_b']}% | "
+        f"{(c['render_busy_pct_b'] or 0) - (c['render_busy_pct_a'] or 0):+.2f}% | Blit 吞吐代理 |",
+        f"| render 占 gamemd 比例 | {c['render_of_gamemd_pct_a']}% | {c['render_of_gamemd_pct_b']}% | - | Blit 工作量占比 |",
+        f"| 单核 CPU 占用 | {c['cpu_a']}% | {c['cpu_b']}% | - | 算力分配 |",
+        f"| 有效样本占比 (valid_pct) | {c['valid_pct_a']}% | {c['valid_pct_b']}% | - | "
+        f"{'两轮均 ≥10%（样本可信）' if g['both_valid_pct_ge_10'] else '⚠ 存在 <10% 轮次：该轮不得用于任何结论'} |",
+        "",
+        f"- 机器可读：`{json_name}`　人读：`{md_name}`",
+        "- **【非证据】** 本表在**没有真机 A/B** 的情况下不代表任何性能收益：只有两轮各自通过",
+        "  「对局内校验（CurrentFrame 推进 ≥3fps 且 单位数 ∈ [0.5,1.6]×期望）」且 valid_pct ≥ 10% 时，差值才可引用。",
+        "",
+    ]
+    return "\n".join(md)
+
+
+
+def ab_selftest() -> int:
+    """Q4 **离线**自检：证明 A/B 联动的关键机制无需真机即可验证。
+
+    ① INI 切换的零污染保证：在 out/ 下的**副本**上做 备份→改键→还原→逐字节校验
+       （含「副本被改成非 UTF-8 编码」这条回归，覆盖旧实现的静默破坏路径）；
+    ② 对比报告可复算性：用合成记录跑 ab_build_report，校验差值算术与门禁表达式；
+    ③ 帧统计口径：合成帧序列校验 FPS / 1% low / TickMiss。
+    全程不启动游戏、不触碰 ra2youli/。
+    """
+    base = AB_SELFTEST_DIR / "ini_selftest"
+    base.mkdir(parents=True, exist_ok=True)
+    print("=== Q4 A/B 联动离线自检（不启动游戏、不触碰 ra2youli/） ===")
+    src = GAME_DIR / "ra2render.ini"
+    if not src.is_file():
+        print("  [FAIL] 读不到 ra2youli/ra2render.ini")
+        return 1
+    orig = src.read_bytes()
+    orig_sha = hashlib.sha256(orig).hexdigest()
+
+    for name in ("utf8_copy", "non_utf8_copy"):
+        p = base / f"ra2render_{name}.ini"
+        if name == "utf8_copy":
+            p.write_bytes(orig)
+        else:
+            # 模拟「被外部编辑器另存为 ANSI/GBK」：UTF-8 正文后追加 GBK 字节（对 UTF-8 非法）
+            gbk = "；中文注释回归样本".encode("gbk")
+            p.write_bytes(orig + b"\r\n" + gbk + b"\r\n")
+        before = p.read_bytes()
+        read_render_ini(p)
+        bk = set_render_ini({"EnableSIMD": False}, p)
+        mid = p.read_bytes()
+        assert mid != before, name + ": 改键后字节未变化"
+        assert "EnableSIMD=0" in mid.decode("latin-1"), name + ": 未写入 0"
+        rep = restore_render_ini(bk)
+        assert rep["restored_byte_identical"] and p.read_bytes() == before, name + ": 还原不等"
+        try:
+            before.decode("utf-8")
+            flag = "否"
+        except UnicodeDecodeError:
+            flag = "是"
+        print(f"  [PASS] {name:15s} bytes={len(before):5d} 非UTF8={flag} "
+              f"改键→还原 sha256={rep['sha256_after_restore'][:16]} 逐字节一致")
+    assert src.read_bytes() == orig and hashlib.sha256(src.read_bytes()).hexdigest() == orig_sha
+    print(f"  [PASS] ra2youli/ra2render.ini 全程未被触碰（sha256={orig_sha[:16]}）")
+
+    fs = frame_stats([(i * 0.02, i) for i in range(200)], 4.0)
+    fs2 = frame_stats([(i * 0.02, i) for i in range(50)] + [(1.0 + j * 0.5, 50 + j) for j in range(10)], 5.5)
+    assert abs(fs["fps_avg"] - 49.75) < 1.5, fs
+    assert fs["tick_miss"] == 0, fs
+    assert fs2["tick_miss"] > 0, fs2
+    print(f"  [PASS] frame_stats 稳定序列 fps_avg={fs['fps_avg']} tick_miss={fs['tick_miss']}；"
+          f"含卡顿序列 tick_miss={fs2['tick_miss']} rate={fs2['tick_miss_rate']}")
+
+    rec_a = {"tier": 800, "ts": "SYNTH-A", "units_seen": 800, "valid_pct": 41.2,
+             "render_busy_pct": 12.0, "render_of_gamemd_pct": 30.0, "cpu_pct_of_one_core": 88.0,
+             "frames": {"fps_avg": 10.0, "fps_1pct_low": 4.0, "tick_miss": 40}}
+    rec_b = {"tier": 800, "ts": "SYNTH-B", "units_seen": 800, "valid_pct": 44.0,
+             "render_busy_pct": 14.5, "render_of_gamemd_pct": 36.0, "cpu_pct_of_one_core": 86.0,
+             "frames": {"fps_avg": 11.5, "fps_1pct_low": 4.8, "tick_miss": 30}}
+    art = ab_build_report(rec_a, rec_b, 800, stamp="selftest", tag="ab_simd")
+    res = json.loads(Path(art["json"]).read_text(encoding="utf-8"))
+    c = res["comparison"]
+    assert c["fps_gain_pct"] == 15.0 and c["fps_delta"] == 1.5, c
+    assert res["gate"]["fps_gain_ge_10pct"] and res["gate"]["low1_gain_ge_15pct"], res["gate"]
+    print(f"  [PASS] ab_build_report 合成 A/B：fps {c['fps_a']}→{c['fps_b']} (+{c['fps_gain_pct']}%) "
+          f"1%low {c['1pct_low_a']}→{c['1pct_low_b']} (+{c['1pct_low_gain_pct']}%) "
+          f"TickMiss {c['tick_miss_a']}→{c['tick_miss_b']}")
+    print(f"  [PASS] 产物已落盘：{art['json']} / {art['md']}")
+    print("=== Q4 自检 3/3 组 PASS（机制可离线自证；性能收益本身仍属 [待实测]）===")
+    return 0
+
+
+# ---------------- 汇总报告 ---------------------------------------------------
+
+def summarize(run_files: list[Path]) -> Path:
+    import collections
+    groups: dict[tuple, list[dict]] = collections.defaultdict(list)
+    for p in run_files:
+        d = json.loads(p.read_text(encoding="utf-8"))
+        key = (d.get("tier"), tuple(sorted((d.get("variant") or {}).items())))
+        groups[key].append(d)
+
+    today = date.today().strftime("%Y%m%d")
+    lines = [
+        f"# 基准报告（{today}）", "",
+        f"- 采样器：`tools/bench_replay.py`（EIP 250Hz + CurrentFrame 100Hz 只读轮询 + GetProcessTimes 差分）",
+        f"- 对局校验：CurrentFrame 推进 ≥3 fps 且 机动单位数 ∈ [0.5×, 1.6×] 期望——未过校验的样本不进本报告",
+        f"- 口径（Q1H-R3 统一）：`noise` = wait(ntdll/win32u/kernelbase/kernel32/winmm/wow64*) "
+        f"+ shim(AcGenral/AcLayers/AcSpecfc/acxtrnal 等兼容层) + sys_gui(user32/gdi32/uxtheme) "
+        f"+ gpu(DDraw 呈现等待) + sys.other + unmapped；`valid` = gamemd.exe + ra2render.dll。",
+        f"- 与 `tools/bench_filter.py`、`PROTOCOL.md` §5 同一集合（旧版本文案称“垫片计入 busy”，与代码不符，已订正）；",
+        f"- 兼容垫片不计入 valid，但单独列 `shim_pct` 供审计（垫片挂钩 Sleep/DirectDrawCreate 会放大噪声）；",
+        f"- render/logic 地址桶表见 `docs/re/bench_protocol_notes.md`。", "",
+        "## 汇总（各窗口平均）", "",
+        "| 档位 | 变体 | 窗口 | busy% | render% | logic% | FPS | 帧p50(ms) | p90 | TickMiss | CPU(单核%) |",
+        "|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for (tier, variant), items in sorted(groups.items()):
+        vname = ",".join(f"{k}={v}" for k, v in variant) or "default"
+        def avg(key):
+            vals = [it.get(key) or 0 for it in items]
+            return sum(vals) / max(len(vals), 1)
+        fstats = [it.get("frames") or {} for it in items]
+        fps = round(sum(f.get("fps", 0) for f in fstats) / max(len(fstats), 1), 2)
+        p50 = round(sum(f.get("frame_ms_p50", 0) for f in fstats) / max(len(fstats), 1), 1)
+        p90 = round(sum(f.get("frame_ms_p90", 0) for f in fstats) / max(len(fstats), 1), 1)
+        miss = round(sum(f.get("tick_miss", 0) for f in fstats) / max(len(fstats), 1), 1)
+        cpu = round(avg("cpu_pct_of_one_core"), 1)
+        lines.append(f"| U{tier} | {vname} | {len(items)} | {avg('busy_pct'):.1f} | "
+                     f"{avg('render_busy_pct'):.1f} | {avg('logic_busy_pct'):.1f} | {fps} | {p50} | {p90} | {miss} | {cpu} |")
+    lines += ["", "## 与旧基线（perf_U0800.json）的差异原因", "",
+              "- 旧数据 98% 样本落 wait/垫片、blit=0：无对局内校验（旧截图全黑=盲导航，大概率在菜单采样）"
+              "+ 旧口径把帧间等待与工作混算；本报告只采通过校验的对局窗口。",
+              "- 兼容垫片（AcGenral）样本计入 busy（它是游戏 GDI/USER 调用的包装层，属真实工作）；"
+              "可用 `--no-compat` 变体量化。", ""]
+    # 命名纪律：工具自动产物带 _bench 后缀，绝不覆盖人工撰写的 report_<日期>.md（PROTOCOL §9）
+    out = OUT / f"report_{today}_bench.md"
+    out.write_text("\n".join(lines), encoding="utf-8")
+    return out
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(prog="bench_replay")
+    ap.add_argument("--tiers", nargs="*", type=int, default=[200, 800])
+    ap.add_argument("--map-suffix", default="", help="基准图文件名后缀（如 _H1 = H1 重制图）；默认自动探测 base/base_H1")
+    ap.add_argument("--game-dir", default="", help="游戏/基准目录（默认 ra2youli；基准环境分离后指向 ra2bench）")
+    ap.add_argument("--windows", type=int, default=3)
+    ap.add_argument("--window-seconds", type=float, default=20.0)
+    ap.add_argument("--warmup", type=float, default=12.0)
+    ap.add_argument("--no-render", action="store_true")
+    ap.add_argument("--no-compat", action="store_true")
+    ap.add_argument("--evidence", action="store_true", help="v1.6.0 四键矩阵全部 6 配置依次采集（建议改用 --evidence-config 分次）")
+    ap.add_argument("--evidence-config", type=int, default=None, help="仅采集矩阵第 N 配置（0=全关 1=全开 2..5=单键关），合并进 manifest")
+    ap.add_argument("--summarize", action="store_true")
+    ap.add_argument("--menu-selftest", action="store_true", help="Q7 实机自检：启动停在主菜单跑采样，验证附着与过滤，结束后自动退出游戏")
+    ap.add_argument("--ab-simd", action="store_true", help="Q4 A/B 联动：以 EnableSIMD=0/1 进行对比基准并输出对比报告")
+    ap.add_argument("--ab-selftest", action="store_true",
+                    help="Q4 离线自检：ini 切换零污染 + A/B 对比算术 + 帧统计口径（不启动游戏）")
+    args = ap.parse_args(argv)
+    global MAP_SUFFIX, GAME_DIR
+    MAP_SUFFIX = args.map_suffix or ""
+    if args.game_dir:
+        GAME_DIR = Path(args.game_dir)
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    if args.ab_selftest:
+        return ab_selftest()
+
+    if args.menu_selftest:
+        res = run_menu_selftest(window_s=6.0, wait_s=20.0)
+        return 0 if res["kill_confirmed"] else 1
+
+    if args.ab_simd:
+        res = run_ab_compare(tier=args.tiers[0] if args.tiers else 200, window_s=args.window_seconds, warmup_s=args.warmup)
+        return 0
+
+    if args.summarize:
+        files = sorted(OUT.glob("bench_*_run*.json"))
+        print("报告：", summarize(files))
+        return 0
+
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    shots = SHOTS / f"session_{stamp}"
+    if args.evidence or args.evidence_config is not None:
+        if args.evidence:
+            for i in range(6):
+                run_evidence_config(i, window_s=args.window_seconds)
+            print("\n证据清单：", V160_MANIFEST)
+            return 0
+        rec = run_evidence_config(args.evidence_config, window_s=args.window_seconds)
+        print("\n证据清单：", V160_MANIFEST)
+        return 0 if rec else 1
+
+    all_runs: list[Path] = []
+    for tier in args.tiers:
+        runs = run_tier(tier, windows=args.windows, window_s=args.window_seconds,
+                        warmup_s=args.warmup, no_render=args.no_render,
+                        no_compat=args.no_compat, shots=shots)
+        for r in runs:
+            p = OUT / f"bench_U{tier:04d}_{stamp}_run{r['window']}.json"
+            p.write_text(json.dumps(r, ensure_ascii=False, indent=2), encoding="utf-8")
+            all_runs.append(p)
+    if all_runs:
+        rep = summarize(all_runs)
+        print("\n报告：", rep)
+        print(f"截图：{shots}")
+        return 0
+    print("[FAIL] 无任何通过校验的采样窗口", file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,97 @@
+=== grep 1975 ===
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1545:- **站点轴**：T3 危险点总数 **2656** / RC-4 窗内 **50** / **可崩 `1975`** / **被调方从不解引用 `681`** / **被调方身份未知 `778`** / **外部驱动站点 `694`（26.1%）**
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1741:  - **`2656 = 1975（可崩）+ 681（被调方从不解引用）` 逐族闭合**；**`1975 = 1197（失效地址已知）+ 778（被调方身份未知）`**；**`bad_cap_eq_fault_plus_unk = []`**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1742:- **★ `778` 无污染 `[实证]`**：`778 ⊂ 1975`（45/45 无违例）；**`778 ∩ 681 = ∅`**；**`778` 与 `694` 是不同轴、不可相加**（`778` = `consumer == '(vtable-indirect)'` 解引用轴；`694` = `n_sites_externally_driven` 驱动轴）；**26 族有身份未知站点，其中 13 族的 `n_sites_externally_driven = 0`，合计 206 站**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1949:> **必须标注："若 125 个候选窗全部实现"的 *条件上界*，不是已实现覆盖。** 伴随口径：`1154 / 1975 = 58.4%`。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1956:| (b) `1154 / 1975` | `58.43%` | ✅ 伴随口径（崩溃可达分母） |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1997:- **全部"未发现"均配肯定对照组**：`739 ≠ 689+50` 的其它构成（试遍 1130/2489/694/2221/1975）**未发现** —— 正对照 = 同公式精确命中 `739`；125 个候选对中消费入口**已是** RC-4 入口的 **未发现**（0 个）—— 正对照 = 同布尔式对 `(vtable-indirect)` 给出 `778`；`rc4_covered=='yes'` 落在 125 对内的 **未发现**（0 行）—— 正对照 = 同 join 对 `0x00887368` 给出 `50` 行。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2267:- **A-89 vs A-90 六值逐值比对：无一冲突**（`1154` 为 A-90 **未产出**、byte-level count = 0；其余 `1104`/`1130`/`50`/`2656`/`1975` 全等）—— 差异只有**载体与措辞**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2280:- **★ 对分母的影响（精确切分）**：**`2656` 不变**（它是 `danger_points_T3`，**独立于该谓词**，闭合算术不破）；**但 `1975 / 681` 的内部分割被实证错 ≥22 站** ⇒ **`681` 应 ≤ `659`、`1975` 应 ≥ `1997`**；凡以 `1975` 为分母的比值（如 `1154/1975 = 58.4%`）**偏移约 1 个百分点内**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2283:- **判定：ACCEPTED**。**⇒ `1975`/`681` 这对数需要按"≤659 / ≥1997"修订，且 `1154/1975` 的伴随口径需重算**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2284:- **新增待办**：**B-22** = 把 `681 → ≤659`、`1975 → ≥1997` 的修订写进 A-79/A-85/A-89 的**伴随口径**（并重算 `1154/1975`）；**B-23** = 全量裁决剩余 **85 个被调方 / 195 站**（本卡只人工裁决了 413/611 站）。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2321:| **B-22** | 按 `681 ≤ 659` / `1975 ≥ 1997` 修订伴随口径并重算 `1154/1975` | A-97 |
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/coverage_math.json:20:  "crash_capable": 1975,
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/coverage_math.json:40:  "statically_enumerable_sites": 1975,
+
+=== grep 681 ===
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/UNCOVERED_FAMILIES_REPORT.md:169:| **被调方确证不碰 `this`** | **681 (25.6%)** | 直接 `call` 到一个可枚举函数，且该函数体内**无**对 `this` 的解引用 |
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/UNCOVERED_FAMILIES_REPORT.md:172:⇒ **681 个危险点不是崩溃点**（典型：`0x004068E0` 实测 = `ret` + NOP 填充的**空桩**，却有 54 行、跨 23 族被当作消费方）。**这是账面 2,656 的实质折扣项。**
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/UNCOVERED_FAMILIES_REPORT.md:274:**静态天花板**：778 个站点（29.3%）的被调方只能经未解析虚派发到达 ⇒ **即使无限投入窗口，全域覆盖的静态上界 = (2,656 − 778 − 681 + …) 需先补运行期证据**；不给未取证的上界。
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/UNCOVERED_FAMILIES_REPORT.md:322:| **危险点 2,656** | 只看读点有无判零闸 | **过近似 25.6%**：681 点的被调方确证不碰 `this`（含空桩 `0x004068E0` = `ret`+NOP，却挂 54 行 / 23 族）⇒ 崩溃可达 **1,975** |
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/UNCOVERED_FAMILIES_REPORT.md:342:   * **把"被调方不碰 this"当成充分判据** ⇒ 一度把 681 点整体剔出，却漏了站点自身即崩的 1,197 点。修法：三源并集（站点失效地址 ∨ callee 解引用 ∨ 虚表取指）。
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/coverage_math.json:21:  "callee_never_derefs": 681,
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/coverage_math.json:42:   "callee_never_derefs": 681,
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1545:- **站点轴**：T3 危险点总数 **2656** / RC-4 窗内 **50** / **可崩 `1975`** / **被调方从不解引用 `681`** / **被调方身份未知 `778`** / **外部驱动站点 `694`（26.1%）**
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1741:  - **`2656 = 1975（可崩）+ 681（被调方从不解引用）` 逐族闭合**；**`1975 = 1197（失效地址已知）+ 778（被调方身份未知）`**；**`bad_cap_eq_fault_plus_unk = []`**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1742:- **★ `778` 无污染 `[实证]`**：`778 ⊂ 1975`（45/45 无违例）；**`778 ∩ 681 = ∅`**；**`778` 与 `694` 是不同轴、不可相加**（`778` = `consumer == '(vtable-indirect)'` 解引用轴；`694` = `n_sites_externally_driven` 驱动轴）；**26 族有身份未知站点，其中 13 族的 `n_sites_externally_driven = 0`，合计 206 站**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1753:  - 另 5 条：**`234/218/230`** —— 现盘 DEREF 值 = **`230`**，**`234` 是已被取代的审计时点快照**（`DANGER_POINT_RECONCILIATION.md:39,150` 自陈 `v1 234 → v2 232 → v3 229 → v4 230`），差集由 **16 变 12**（`218 ⊂ 230`）⇒ **A-81 的"234/218 精确闭合"为陈旧快照**；**`54 行/23 族`**（空桩 `0x004068E0`）—— 全普查口径 **54/23** vs **T3 口径 23/8**，报告把全表数置于 T3 段落；**`495`** —— 全部族口径，**T3 子集只有 142**（A-80 与 T3 头部族并列易误读）；**`T2 = 222`（leaf）vs `267`（累积）** —— 两者都对，`222 + 45 = 267`，**下游把 222 当 T2 全集会与漏斗差 45**；报告 §2.5 表 `778` 排在 `681` 子行**缩进误导**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2071:- **★ 意义**：这是**普查侧的一处静默丢弃**（"找不到 ⇒ 排除"，无留痕）。**⇒ 建议卡**：`DROPPED-611-AUDIT01`（核实这 611 是否真的"被调方从不解引用"，即是否与 `681` 有交集）。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2276:- **★ `611` 成立** `[实证]`：从 `candidates.json` T3 全域独立重导出 **`2656 = 778（vtable-indirect）+ 1197（capable_fixed）+ 681（first_deref=None）`**，与 `g15` 的 **132 个 (族,被调方) 对逐对全等（132/132，sum = 611，零差异）** ✅（**算术闭合**）
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2277:- **★ B 组（最承重）：`611 ∩ 681 = 611` ⇒ `611 ⊂ 681`** —— `611 \ 681 = ∅`、**`681 \ 611 = 70` 站（21 族，最大 `0x00A8B254` = 21 站）** ⇒ **不是 ∅-矛盾情形，无需紧急上报** ✅（A-90.6 的"静默排除"是 681 **内部的一次细分**）
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2280:- **★ 对分母的影响（精确切分）**：**`2656` 不变**（它是 `danger_points_T3`，**独立于该谓词**，闭合算术不破）；**但 `1975 / 681` 的内部分割被实证错 ≥22 站** ⇒ **`681` 应 ≤ `659`、`1975` 应 ≥ `1997`**；凡以 `1975` 为分母的比值（如 `1154/1975 = 58.4%`）**偏移约 1 个百分点内**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2283:- **判定：ACCEPTED**。**⇒ `1975`/`681` 这对数需要按"≤659 / ≥1997"修订，且 `1154/1975` 的伴随口径需重算**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2284:- **新增待办**：**B-22** = 把 `681 → ≤659`、`1975 → ≥1997` 的修订写进 A-79/A-85/A-89 的**伴随口径**（并重算 `1154/1975`）；**B-23** = 全量裁决剩余 **85 个被调方 / 195 站**（本卡只人工裁决了 413/611 站）。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2321:| **B-22** | 按 `681 ≤ 659` / `1975 ≥ 1997` 修订伴随口径并重算 `1154/1975` | A-97 |
+
+=== grep 2656 ===
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/coverage_math.json:17:  "total_T3_danger_points": 2656,
+out/re_work/work_chain/CONTINUE_20261003/lead/uncovered_families/coverage_math.json:32:  "global_site_axis": "50/2656 = 1.88%"
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1397:- **★ 234 落在 T3 内**：`[0x00887640]` 一族在普查里 `tier=T3`（`candidates.json:129326`、`n5_summary.txt:14`）；其危险点 **234**（`deref_887640/raw/07_read_sites.txt:2,4`）与 **218**（`n5_summary.txt:14`）**都是 T3 家族内部站点数**，已被家族级聚合 `danger_points_T3 = 2656`（`candidates.json:27`）包含 ⇒ **234 与 T3 任何总数不可相加**；且 **RC-4 的 6 窗对它们 0 覆盖**（`deref_887640/raw/10_coverage.txt:60-64`）
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1542:  | **站点轴** | **`50/2656 = 1.88%`** |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1543:  - **补齐所有高/中可达族后**：族轴 **`19/45 = 42.2%`**（+2 = RC-4 单例与第二族）· 站点轴 **`739/2656 = 27.8%`**
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1545:- **站点轴**：T3 危险点总数 **2656** / RC-4 窗内 **50** / **可崩 `1975`** / **被调方从不解引用 `681`** / **被调方身份未知 `778`** / **外部驱动站点 `694`（26.1%）**
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1738:  | **站点轴 `50/2656 = 1.88%`** | ✅ **成立** |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1740:  - **更强的闭合**：它把单例的 **50 个危险点逐个枚举**，其 `this_use.target` 取值集合 = `{0x00724730, 0x00724580, 0x007241A0, 0x00724530, 0x00724520, 0x00724540}` —— **正好是 RC-4 的 6 个入口** ⇒ **`50/2656` 是闭合可证，不是转引**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1741:  - **`2656 = 1975（可崩）+ 681（被调方从不解引用）` 逐族闭合**；**`1975 = 1197（失效地址已知）+ 778（被调方身份未知）`**；**`bad_cap_eq_fault_plus_unk = []`**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1746:  | **1** | **补齐高/中后**站点轴 `739/2656 = 27.8%` | `739` | **739 是混轴和** = **689（外部驱动站点，17 族）+ 50（单例 RC-4 覆盖站点）**；单例 `n_sites_externally_driven = 0`、第二族 5 个外部驱动站点**被排除** | **★★ 混轴（axis mixing）** —— 报告把 `739` 与 `50` 并列于"站点轴"同一行。**真正的"被窗索引站点数" = `1130`**、**"高+中族危险点合计" = `2489`**、**"全 45 族外部驱动" = `694`**。**恰为 A-76 MC-3 警告的形态，且是唯一可能直接改变战略决策的一条**（会把工作面低估一个数量级）
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1748:  > **① `1130` 的轴标注错了一层。** 审计者实读 `nullthis_sweep/scripts/n3_candidates.py:323` = `for s in [x for x in sites if x["is_this"]]:` 与 `:347` = `cons[tgt]["n_sites"] += 1` ⇒ **`n_sites` 只要求 `is_this`、不要求 `dangerous`**（**Lead 已独立复读该两行确认**）。实测 **495/495 行**的 `n_sites` = 该 (族,消费入口) 的 **this-read 站点数**，只有 **312/495** 等于危险子集 ⇒ **`1130` 在 this-read 轴，`1130/2656 = 42.55%` 本身跨轴**。**同口径正确数 = `1104`**（这 125 对所索引的 **T3 危险点**）；this-read 轴的同轴分母是 45 族 `this_sites` 和 = **2859**（17 族 = 2349）。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1750:  > **③ 混轴定性的根因措辞需精修**：`689` 与 `50` **同单位、同全域**（都是 T3 危险点 / 2656）⇒ **不是"量纲/单位"错误**，混的是**判定谓词**（`689` 的"外部驱动"是可达性判据、与装没装窗无关；`50` 的"RC-4 窗内"才是覆盖判据）。**且是刻意的口径设计而非笔误**：`u04_windows_coverage.py:208` 有 `if False else 0` 死分支显式清零单例的驱动贡献，`:204`/`:205` 分两行把 50 标 `site axis`、694 标 `drive axis`，`:213` 又相加。 |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1944:- **⇒ 结论**：**`1130` 在 this-read 轴，`1130/2656 = 42.55%` 本身跨轴**；**同口径正确数 = `1104`**（这 125 对所索引的 **T3 危险点**）。this-read 轴的同轴分母 = 45 族 `this_sites` 和 **2859**（17 族 = **2349**），故 this-read 轴同比率 = `1130/2349 = 48.1%`。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1948:> **补齐后站点轴覆盖率 = （RC-4 已覆盖 T3 危险点 `50` ∪ 125 个候选窗几何所索引的 T3 危险点 `1104`）/ T3 危险点总数 `2656` = `1154 / 2656 = 43.4%`**
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1954:| (a) 被候选窗**索引**的站点 / 全域 | `1130/2656 = 42.55%` | ❌ **跨轴**（分子在 this-read 轴） |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1955:| **(a′) `50 ∪ 1104` / 全域** | **`1154/2656 = 43.45%`** | ✅ **唯一合法** |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1957:| (c) 高+中族危险点 / 全域 | `2489/2656 = 93.71%` | ❌ 那是**工作量**不是覆盖 |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1958:| (d) 外部驱动站点 / 全域 | `694/2656 = 26.13%` | ❌ **驱动谓词**不是覆盖谓词 |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1959:| (e) RC-4 已覆盖 / 全域 | `50/2656 = 1.88%` | ✅ **但是现状**（不是"补齐后"） |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1960:| (f) 原报告混轴和 / 全域 | `739/2656 = 27.82%` | ❌ **谓词混用** |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1966:① 已实现     RC-4 六窗内 T3 危险点            50 / 2656 =  1.88%   [现在时]
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1967:② 补齐后可达上界  ① ∪ 125 候选窗几何所及     1154 / 2656 = 43.4%   [条件上界·窗未实现]
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1968:③ 静态天花板  任何静态窗都钉不住的虚派发站点   778 / 2656 = 29.3%   [不可达界·需运行期]
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1969:禁入上表：外部驱动 694/2656 = 26.1%（驱动谓词）· 高+中族危险点 2489/2656 = 93.7%（工作量）
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1985:- `689` 与 `50` **同单位、同全域**（都是 T3 危险点 / 2656）⇒ **不是"量纲/单位"错误**；混的是**判定谓词**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2004:| **C-1** | **`n_sites` 的设计意图**（`n3_candidates.py:323/347` 要的是"this-read 站点"还是"危险站点"） | **决定候选 (a) 的生死**（前者 ⇒ `1130/2656` 非法；后者 ⇒ 普查侧一处口径缺陷、`1130` 应改算） |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2255:- **★ 候选 (a) 判死**，且**对意图判定稳健**：即使 (ii) 成立，改算后的 (a) = `1104/2656 = 41.6%` **仍缺 RC-4 已覆盖 50 的并集**、仍不是"补齐后可达上界" ⇒ **仍须回到 (a′)** ✅
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2267:- **A-89 vs A-90 六值逐值比对：无一冲突**（`1154` 为 A-90 **未产出**、byte-level count = 0；其余 `1104`/`1130`/`50`/`2656`/`1975` 全等）—— 差异只有**载体与措辞**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2276:- **★ `611` 成立** `[实证]`：从 `candidates.json` T3 全域独立重导出 **`2656 = 778（vtable-indirect）+ 1197（capable_fixed）+ 681（first_deref=None）`**，与 `g15` 的 **132 个 (族,被调方) 对逐对全等（132/132，sum = 611，零差异）** ✅（**算术闭合**）
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2280:- **★ 对分母的影响（精确切分）**：**`2656` 不变**（它是 `danger_points_T3`，**独立于该谓词**，闭合算术不破）；**但 `1975 / 681` 的内部分割被实证错 ≥22 站** ⇒ **`681` 应 ≤ `659`、`1975` 应 ≥ `1997`**；凡以 `1975` 为分母的比值（如 `1154/1975 = 58.4%`）**偏移约 1 个百分点内**。
+
+=== grep 1154 ===
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1948:> **补齐后站点轴覆盖率 = （RC-4 已覆盖 T3 危险点 `50` ∪ 125 个候选窗几何所索引的 T3 危险点 `1104`）/ T3 危险点总数 `2656` = `1154 / 2656 = 43.4%`**
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1949:> **必须标注："若 125 个候选窗全部实现"的 *条件上界*，不是已实现覆盖。** 伴随口径：`1154 / 1975 = 58.4%`。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1955:| **(a′) `50 ∪ 1104` / 全域** | **`1154/2656 = 43.45%`** | ✅ **唯一合法** |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1956:| (b) `1154 / 1975` | `58.43%` | ✅ 伴随口径（崩溃可达分母） |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1961:- **`1154` 是干净并集 `[实证]`**：`50` 与 `1104` **严格不相交**（`rc4_rows_inside_the_125_pairs = 0`；`pairs_whose_consumer_is_an_rc4_entry = 0`）；第二族唯一的候选对索引 **0** 个危险点 ⇒ **`19` 族与 `17` 族两种框架下 `1154` 不变**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1967:② 补齐后可达上界  ① ∪ 125 候选窗几何所及     1154 / 2656 = 43.4%   [条件上界·窗未实现]
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1976:| 分子 | 739 | **1154** | **+415 站** |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1998:- **过近似申报（`1154` 是乐观上界）**：① 125 窗的**几何正确性未逐条反汇编验证**；② "窗装上即覆盖"未验证；③ 只按 (族,消费入口) 对聚合、**未逐站反汇编那 1104 个危险点**；④ **`fault_insn` 列不是崩溃能力标志**（`n5_report_data.py:167-176` 对任何已解析 `first_deref` 的行都非空）⇒ 这 1104 里有多少**崩溃可达**未判定（族级上界：14 个被索引族 `crash_capability` 合计 **1507** ⇒ 崩溃可达部分 **≤ 1104**）。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2005:| **C-2** | **`1154` 依赖的 125 窗几何正确性** | 需逐窗验证，**或确认 `new_windows_geometry/**`（在飞）已验证** —— 该卡**未读**它 |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2055:- **⇒ A-89.8 的 C-2（"1154 依赖的 125 窗几何正确性"）已被本卡满足**（本卡给出几何 + 字节复核 0 分歧）；**第四通道请求收窄为 C-1 与 C-3。**
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2261:  | **`1154`** | ✅ `= 50 ⊎ 1104`，**site-VA 重叠 = 0**，四重不相交证明全过，**19 族框架不变性复现** | (a′) 稳固 |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2267:- **A-89 vs A-90 六值逐值比对：无一冲突**（`1154` 为 A-90 **未产出**、byte-level count = 0；其余 `1104`/`1130`/`50`/`2656`/`1975` 全等）—— 差异只有**载体与措辞**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2280:- **★ 对分母的影响（精确切分）**：**`2656` 不变**（它是 `danger_points_T3`，**独立于该谓词**，闭合算术不破）；**但 `1975 / 681` 的内部分割被实证错 ≥22 站** ⇒ **`681` 应 ≤ `659`、`1975` 应 ≥ `1997`**；凡以 `1975` 为分母的比值（如 `1154/1975 = 58.4%`）**偏移约 1 个百分点内**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2283:- **判定：ACCEPTED**。**⇒ `1975`/`681` 这对数需要按"≤659 / ≥1997"修订，且 `1154/1975` 的伴随口径需重算**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2284:- **新增待办**：**B-22** = 把 `681 → ≤659`、`1975 → ≥1997` 的修订写进 A-79/A-85/A-89 的**伴随口径**（并重算 `1154/1975`）；**B-23** = 全量裁决剩余 **85 个被调方 / 195 站**（本卡只人工裁决了 413/611 站）。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2321:| **B-22** | 按 `681 ≤ 659` / `1975 ≥ 1997` 修订伴随口径并重算 `1154/1975` | A-97 |
+
+=== grep 2221 ===
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1997:- **全部"未发现"均配肯定对照组**：`739 ≠ 689+50` 的其它构成（试遍 1130/2489/694/2221/1975）**未发现** —— 正对照 = 同公式精确命中 `739`；125 个候选对中消费入口**已是** RC-4 入口的 **未发现**（0 个）—— 正对照 = 同布尔式对 `(vtable-indirect)` 给出 `778`；`rc4_covered=='yes'` 落在 125 对内的 **未发现**（0 行）—— 正对照 = 同 join 对 `0x00887368` 给出 `50` 行。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2020:- **★ Lead 本会话独立复核（全部 `[实证]`）**：`window_geometry.json` **records = 120** ✅；`usekind.json` **totals 闭合**：`1373 + 444 + 387 + 17 = 2221` ✅；`rollup.json` 的 `c778` **三条独立求和全等于 778**（axis1 `671+76+28+3` / axis2 `676+61+36+4+1` / in+out `506+272`）✅；`entries_by_this_register` 七项和 = **120** ✅；`per_family.danger` 和 = **2221** ✅
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2023:**按 17 族自己的分母 `2221` 个危险点的"首次使用形态"**：
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2033:- **★ 战略含义**：**RC-4 的"被调方窗"形态在这 17 族里最多覆盖 `1373/2221 = 61.8%`**；其余 **`848/2221 = 38.2%`** 是**调用方体**（inline 解引用或虚派发）⇒ **与 A-76 对第二族的判定同型，结构上盖不住**。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2035:- **正对照**：与上游 `first_use` 粗类一致 **2201/2221 = 99.1%**；**20 处分歧全部登记**（16 站"上游记 `call-ecx-ptr` 但 call 实为间接"、3 站 scalar-index、1 站窗内失染）。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2259:  | **`1104`** | ✅ **双推导**（TSV 行 join + `candidates.json` 逐站重数），**site-VA 集合逐元素相同**；闭合 **`2221 = 1104 + 611 + 506`** | **三台仪器**（A-89 / A-90 `g14` / 本卡）**逐值相等** |
+
+=== grep 58.4 / 74.3 ===
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1949:> **必须标注："若 125 个候选窗全部实现"的 *条件上界*，不是已实现覆盖。** 伴随口径：`1154 / 1975 = 58.4%`。
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:1956:| (b) `1154 / 1975` | `58.43%` | ✅ 伴随口径（崩溃可达分母） |
+out/re_work/work_chain/CONTINUE_20261003/lead/ACCEPTANCE.md:2280:- **★ 对分母的影响（精确切分）**：**`2656` 不变**（它是 `danger_points_T3`，**独立于该谓词**，闭合算术不破）；**但 `1975 / 681` 的内部分割被实证错 ≥22 站** ⇒ **`681` 应 ≤ `659`、`1975` 应 ≥ `1997`**；凡以 `1975` 为分母的比值（如 `1154/1975 = 58.4%`）**偏移约 1 个百分点内**。

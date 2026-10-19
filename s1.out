@@ -1,0 +1,16 @@
+VA         期望字节                       实际字节                   判定     标签/上下文
+--------------------------------------------------------------------------------------------------------------
+0x400000   4d 5a                      4d 5a                  OK     MZ | dec ebp
+0x7cfc98   8b 4d f4                   8b 4d f4               OK     mov ecx,[ebp-0xC]        (freelist_base, 仅断言不改) [断言 #2] | mov ecx, dword ptr [ebp - 0xc]
+0x7cfc9b   8b 54 f9 04                8b 54 f9 04            OK     mov edx,[ecx+edi*8+4]    (取 head->next; 补丁替换为 E9 rel32) [断言 #3] | mov edx, dword ptr [ecx + edi*8 + 4]
+0x7cfc9f   8b 0a 2b 4d f0 8b f1 89 4d 8b 0a 2b 4d f0 8b f1 89 4d OK     mov ecx,[edx] / sub ecx,[ebp-0x10] / mov esi,ecx / | mov ecx, dword ptr [edx]
+0x7cfcbd   8b 4a 04                   8b 4a 04               OK     mov ecx,[edx+4]          (node->next) [断言 #5] | mov ecx, dword ptr [edx + 4]
+0x7cfcc0   3b 4a 08                   3b 4a 08               OK     cmp ecx,[edx+8]          (node->prev; 单块判定) [断言 #6] | cmp ecx, dword ptr [edx + 8]
+0x7c9bfd   ff 74 24 04                ff 74 24 04            OK     push dword ptr [esp+4]   (补丁替换为 E9 rel32) [断言 #7] | push dword ptr [esp + 4]
+0x7c9c01   e8 6c ff ff ff             e8 6c ff ff ff         OK     call 0x007C9B72          (atoi/strtol 共用体, thunk 调回) [断言 #8] | call 0x7c9b72
+0x7c9c06   59                         59                     OK     pop ecx                 (cave 健康路径回跳点) [断言 #9] | pop ecx
+0x7c9c07   c3                         c3                     OK     ret                      (cave NULL 路径自建 ret 的语义参照) [断言 #10] | ret 
+0x7c9b92   0f b6 07                   0f b6 07               OK     movzx eax,byte ptr [edi] (★ RC-2 崩溃指令; EDI=0 零页读) [断言 #11] | movzx eax, byte ptr [edi]
+0x7cfca1   2b 4d f0                   2b 4d f0               OK     sub ecx,[ebp-0x10]       (cave 回跳点, 独立断言) [断言 #12] | sub ecx, dword ptr [ebp - 0x10]
+--------------------------------------------------------------------------------------------------------------
+合计 12 条：OK=12  MISMATCH/NOREAD/BSS-FAIL=0  格式错误=1

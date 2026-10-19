@@ -1,0 +1,392 @@
+# ==============================================================================
+# docs/re/anchor_claims.txt —— RA2/YR 二进制全库决定性锚点断言库
+# ★ 本文件是**唯一事实源（Single Source of Truth）**：全库任何断言回归均以本文件为准。
+# 规格定案：共计 323 处关键断言 (S1–S20 全局核心 + 存档块 + 触发器 + MIX文件链)
+# 基线目标：ra2youli/gamemd.exe (ImageBase 0x00400000, .text VA 0x00401000)
+# 校验口径：.text 段严格以 raw(SizeOfRawData=0x3E0000) 口径为准
+# 生成工具：tools/verify_anchors.py (100% PASS 自动化回归)
+# ==============================================================================
+#
+# ------------------------------------------------------------------------------
+# 【合并来源与去重规则】（task-11 项4② 定案，[实证]）
+# ------------------------------------------------------------------------------
+# 本文件 = 四个来源的去重并集，来源与条数如下：
+#   来源① PART 1  S1–S20 全局关键架构锚点 ................ 43 条
+#   来源② out/re_work/save_blocks/claims.txt ............. 82 条 -> 去重后 79 条
+#   来源③ out/re_work/triggers/claims.txt ................ 77 条 -> 去重后 77 条
+#   来源④ out/re_work/fs_mix/claims.txt .................. 124 条 -> 去重后 124 条
+# ------------------------------------------------------------------------------
+#   行内合计 = 43 + 82 + 77 + 124 = 326
+#   去重后合计 = 43 + 79 + 77 + 124 = **323**   <- 与下方实际条目数一致
+# ------------------------------------------------------------------------------
+# 去重规则（唯一准则，按序执行）：
+#   R1 【键】以「VA」为唯一主键；VA 一律规范为十六进制整数值，忽略前导零 / 大小写差异。
+#   R2 【同键同值】同一 VA 出现多次且**字节断言串完全相同**的，**折叠为 1 条**，保留首次出现位置，
+#      其后续重复行的注释（comment）信息如需保留则并入该条注释。
+#   R3 【同键异值】同一 VA 出现多次且**字节断言串不同**的 -> **视为冲突，禁止静默取舍**；
+#      必须回到二进制复算后由人工裁决，裁决前不得合入本文件（当前基线：0 例）。
+#   R4 【跨来源】不同来源文件之间不做「近似合并」：只要 VA 不同即各自独立成条，
+#      哪怕地址相邻、注释语义相近（避免误并导致断言丢失）。
+#   R5 【顺序】最终条目按来源分组、组内保持来源文件原始顺序（不重排），PART 标题保留。
+# ------------------------------------------------------------------------------
+# 本次实际命中的去重（唯一 3 处，均来自来源②，R2 规则，字节串逐字相同）：
+#   0x0067E5D2  行 2 次 (源 save_blocks line 43 / 81)  -> 1 条
+#   0x0067E842  行 3 次 (源 save_blocks line 44 / 80 / 82) -> 1 条
+#   => 82 - 3 = 79 条；其余 3 个来源文件内部**无任何重复 VA**。
+# ------------------------------------------------------------------------------
+# 复算校验（task-11 已跑，全绿）：
+#   python tools/verify_anchors.py
+#     -> 断言总数 323 | PASS 323 (100.00%) | FAIL 0 | NOREAD 0
+#     -> .text raw(SizeOfRawData=0x3E0000) 哈希 [PASS]
+#     -> .detour 原生签名 [PASS]
+#   合并/去重复算脚本：python out/re_work/errata/audit_claims_merge.py
+# ------------------------------------------------------------------------------
+# 维护纪律：新增断言一律「追加」，不得就地改写已有行的 VA/字节串；
+#           任何修改后必须重跑 tools/verify_anchors.py 并要求 323/323（新增后总数相应上调）全 PASS。
+# ==============================================================================
+
+# ==============================================================================
+# PART 1: S1–S20 全局关键架构锚点 (43 条)
+# 包含：CurrentFrame 三连、空桩残留、Clock::Now 分发、裂缝保护、间谍卫星、槽 69 虚表、
+#       CRT 内存管理、音频播放与平栈、L4 视口模式、Greatest_Threat、运动模型、联机探针等
+# ==============================================================================
+0x0055DE73 = 8B 15 84 ED A8 00        # CurrentFrame 读取: mov edx, [0x00A8ED84] (引擎全局唯一帧号基准)
+0x0055DE79 = A1 84 77 B0 00           # CurrentFrame 间隔基准读: mov eax, [0x00B07784]
+0x0055DE7E = 42                       # CurrentFrame 定常自增: inc edx (主循环唯一定常单步自增点)
+0x0055DE7F = 3B C7                    # CurrentFrame 边界比较: cmp eax, edi
+0x0055DE81 = 89 15 84 ED A8 00        # CurrentFrame 写回: mov [0x00A8ED84], edx (定常帧步进沉淀)
+0x004068E0 = C3 90 90 90              # 0x004068E0 空桩残留: ret; nop; nop; nop (Release debug stub, 1672处直接调用)
+0x004093B0 = A1 48 E8 87 00           # Clock::Now 间接分发入口: mov eax, [0x0087E848] (全局高精时钟函数指针)
+0x004093B5 = 85 C0 74 02              # Clock::Now 指针有效性测试: test eax, eax; je +2
+0x004093B9 = FF E0                    # Clock::Now 间接跳转: jmp eax (动态分派至 QPC/timeGetTime 实现体)
+0x00406F91 = E8 1A 24 00 00           # AudioFrameUpdate 内部调用 Clock::Now: call 0x004093B0
+0x00409320 = 8B 41 34 8B 49 38 2B C1 C3 # Stream::Get_Unread_Bytes: mov eax,[ecx+0x34]; mov ecx,[ecx+0x38]; sub eax,ecx; ret
+0x00409360 = 83 EC 08 8D 44 24 00 50  # Clock::Init (QPF 初始化): sub esp,8; lea eax,[esp]; push eax
+0x004093C0 = 83 EC 08 8D 44 24 00 50  # Clock::ReadQPC (读取高精计时器): sub esp,8; lea eax,[esp]; push eax
+0x00401000 = 53 56 57 8B F1 BA 00 40 00 00 # .text 代码段首指令: push ebx,esi,edi; mov esi,ecx; mov edx,0x4000
+0x00568273 = 89 99 34 01 00 00        # 裂缝产生器隐匿保护 1: mov [ecx+0x134], ebx (取消隐匿保护写入点)
+0x00577EC5 = 89 B8 34 01 00 00        # 裂缝产生器隐匿保护 2: mov [eax+0x134], edi
+0x00577B60 = 89 98 34 01 00 00        # 裂缝产生器隐匿保护 3: mov [eax+0x134], ebx
+0x00508F88 = 80 B8 A5 16 00 00 00     # 间谍卫星状态检查: cmp byte ptr [eax+0x16a5], 0 (HasSpySat 标志检测)
+0x00508F8F = 74 65                    # 间谍卫星门控短跳: je 0x00508FF6 (无卫星跳过全局揭开黑雾)
+0x007EFA68 = C0 CE 62 00              # ParticleClass 槽 69 虚表项: 0x0062CEC0 (粒子析构/清理实现)
+0x007EFCB0 = 80 E2 62 00              # ParticleSystemClass 槽 69 虚表项: 0x0062E280 (粒子系统析构/清理实现)
+0x007C8E17 = 6A 01 FF 74 24 08        # CRT deleting destructor: push 1; push [esp+8] (析构标量内存释放)
+0x007C8B3D = FF 74 24 04 E8 A2 08 00 00 # CRT operator delete 包装: push [esp+4]; call free
+0x00750920 = 51 A0 AC 64 84 00 89 54 24 00 # 音频 PlayGlobal 序言: push ecx; mov al,[0x8464AC]; mov [esp],edx
+0x00750931 = C2 08 00                 # 音频 PlayGlobal 平栈退出: ret 8 (双参数 callee cleanup)
+0x007509E0 = A0 AC 64 84 00 53 84 C0  # 音频 PlayAt 序言: mov al,[0x8464AC]; push ebx; test al,al
+0x007509EF = C2 04 00                 # 音频 PlayAt 平栈退出: ret 4 (单参数 callee cleanup)
+0x006D3D99 = 0F 8D 98 00 00 00        # 视口 L4 模式切换分支: jge 0x006D3E37 (视口多层级渲染切换)
+0x006F936B = 3B C1                    # Greatest_Threat 严格大于比较点 1: cmp eax, ecx (威胁评分严格大于裁决)
+0x006F9C3C = 3B C1                    # Greatest_Threat 严格大于比较点 2: cmp eax, ecx
+0x006F9D87 = 3B C1                    # Greatest_Threat 严格大于比较点 3: cmp eax, ecx
+0x0075B3E6 = F3 A5                    # WalkLocomotionClass 坐标结构体复制: rep movsd (32字节定点坐标同步)
+0x004B136E = F3 A5                    # DriveLocomotionClass 坐标结构体复制: rep movsd (轮式载具定点坐标同步)
+0x0064C6F2 = 0F 85 69 05 00 00        # 探针 H-D1 包帧分叉检测: jne 0x0064CC61
+0x0064CC61 = A0 80 48 B0 00           # 探针 H-D2 同步状态字节读取: mov al, byte ptr [0x00B04880]
+0x0064DE75 = 5F 5E 5D 5B 83 C4 14 C3  # 探针 H-D5 网络例程尾部恢复: pop edi; pop esi; pop ebp; pop ebx; add esp, 0x14; ret
+0x0064C911 = E8 9A A3 E7 FF           # 探针 H-D6 主分发点: call 0x004C6CB0
+0x0064CC0A = E8 A1 A0 E7 FF           # 探针 H-D6b 备选分发点: call 0x004C6CB0
+0x0064CC0F = A1 D0 3E A8 00           # 探针 H-D6b 后续状态检查: mov eax, [0x00A83ED0]
+0x004C6CB0 = 81 EC 70 03 00 00        # 网络同步发包函数入口: sub esp, 0x370
+0x004D3E3B = 68 D0 07 00 00           # 寻路节点池上限: push 0x7D0 (2000 nodes 内存分配定额)
+0x00420140 = 8B 15 90 A0 88 00        # Alpha 混合表全局基址加载: mov edx, [0x0088A090]
+0x00B93000 = 40 00 00 00 44 74 72 00  # 原生 .detour 段首部签名: @\0\0\0Dtr\0 (VA 0x00B93000, 严禁写入/注入)
+
+# ==============================================================================
+# PART 2: 存档与数据流子系统锚点 (Savegame Blocks & Stream Manifest, 79 条)
+# 包含：Savegame_Magic 常量读取、Game::Save/Load 核心流程、DynamicVectorClass 块前缀、
+#       IStream 虚表调用、OLE 结构化复合存储边界
+# ==============================================================================
+0x0083D560 = 98 B8 02 00              # Savegame_Magic, value 0x0002B898 (little-endian dword)
+0x0086563C = 98 B8 02 00              # second in-image copy of the magic constant (outside any located code path)
+0x0067CF70 = A1 60 D5 83 00           # Game::Load: mov eax,[0x83D560]  -> magic is read from the SAME global
+0x0067CF7D = E8 FE 40 00 00           # Game::Load: call 0x681080 (magic -> local stream helper)
+0x00559F3A = 8B 0D 60 D5 83 00        # other reader of the magic global (LoadOptionsClass path: mov ecx,[0x83D560])
+0x0067D300 = 83 EC 08 53 55 56 8B F1  # Game::Save core prologue (sub esp,8; push ebx,ebp,esi; mov esi,ecx)
+0x0067D310 = E8 FB BF 00 00           # Game::Save core: call 0x689310 (pre-save helper)
+0x0067D327 = E8 04 74 FF FF           # Game::Save core: call 0x674730 (RulesClass::Instance save, ECX=[0x8871E0])
+0x0067D32C = A1 60 41 8B 00           # mov eax,[0x8B4160]  -> first DynamicVectorClass Count
+0x0067D342 = FF 51 10                 # call [ecx+0x10]  -> IStream::Write(4, &count)
+0x0067D351 = 8B 2D F4 15 7E 00        # mov ebp,[0x7E15F4] -> stream operator<<  (pointer cached in ebp)
+0x0067D35D = A1 54 41 8B 00           # mov eax,[0x8B4154] -> first vector Items base (COUNT-0xC)
+0x0067D36A = 8B 04 98                 # mov eax,[eax+ebx*4] -> element fetch of vector #1
+0x0067D36E = 68 80 7C 7F 00           # push 0x7F7C80 -> the shared IPersistStream object
+0x0067D376 = FF 11                    # call [ecx]     -> element vtable[0]
+0x0067D386 = FF D5                    # call ebp -> ole32!OleSaveToStream(obj, stream)
+0x0067D397 = FF 51 08                 # call [ecx+8]   -> element vtable[2] (release)
+0x0067D3DC = 8B 15 3C 41 8B 00        # mov edx,[0x8B413C] -> second vector Count (sparse form, no table base load)
+0x0067D457 = A1 A8 3C A8 00           # mov eax,[0xA83CA8] -> third vector Count
+0x0067DAA2 = 8B 04 9A                 # mov eax,[edx+ebx*4] -> element fetch of vector #16
+0x0067E1B5 = 8B 0C 98                 # mov ecx,[eax+ebx*4] -> element fetch (last block, ecx destination)
+0x0067D1AF = E8 4C 01 00 00           # call 0x67D300 -> the ONLY caller of Game::Save core in the whole image
+0x0067E3A3 = BA D0 4B B0 00           # mov edx,0xB04BD0 -> 35th block object (Game::Save tail)
+0x0067E3AA = E8 41 2B 00 00           # call 0x680EF0 -> 35th block function
+0x0067E3BD = 83 3D 38 B2 A8 00 05     # cmp dword ptr [0xA8B238],5  (SessionClass::Instance GameMode == 5)
+0x0067E3CB = E8 10 85 D8 FF           # call 0x4068E0 -> Debug log "Writing Skirmish Session.Options"
+0x0067E3D9 = E8 82 D1 01 00           # call 0x69B560 -> Write_Skirmish_Session_Options(stream)
+0x0067E3FB = E8 20 32 0D 00           # call 0x751620 (post-save step)
+0x0067E410 = E8 9B 4F 0D 00           # call 0x7533B0 (post-save step)
+0x0067E429 = E8 E2 2B 0A 00           # call 0x721010 (last post-save step, object 0xA83D10)
+0x0067CEF0 = 81 EC 90 04 00 00        # Game::Load prologue (sub esp,0x490)
+0x0067CF05 = E8 D6 99 D8 FF           # Game::Load: call Debug::Log with "\nSAVING GAME [%s - %s]\n"
+0x0067CF42 = FF 15 C8 15 7E 00        # ole32!StgCreateDocfile (IAT 0x7E15C8) - referenced only from here in this image
+0x0067E440 = 81 EC 08 05 00 00        # Game::Load core prologue (sub esp,0x508)
+0x0067E452 = E8 89 84 D8 FF           # call Debug::Log with "\nLOADING GAME [%s]\n" (0x83D620)
+0x0067E489 = 8B 1D E4 15 7E 00        # mov ebx,[0x7E15E4] -> stream open helper
+0x0067E4E3 = E8 E8 2D 00 00           # call 0x6812D0 -> GameMode, then stored to [0xA8B238]
+0x0067E4E8 = A3 38 B2 A8 00           # mov [0xA8B238],eax -> SessionClass::Instance (load restores it)
+0x0067E56C = 68 A8 D5 83 00           # push 0x83D5A8 ("CONTENTS" stream name, referenced as UTF-16 at 0x83D5A8)
+0x0067CF44 = C8 15 7E 00              # (tail of the StgCreateDocfile call site at 0x67CF42; only non-thunk ref in image)
+0x0067D353 = F4 15 7E 00              # (tail of the OleSaveToStream call site at 0x67D351)
+0x0067E48B = E4 15 7E 00              # (tail of the StgOpenStorage call site at 0x67E489)
+0x0067E5D2 = 00 16 7E 00              # (tail of the OleRun call site at 0x67E5D0 in Game::Load_Core)
+0x0067E842 = F8 15 7E 00              # (tail of an OleLoadFromStream call site at 0x67E840)
+0x0067C6B7 = F8 15 7E 00              # (tail of another OleLoadFromStream call site at 0x67C6B5)  -- LOAD side uses OleLoadFromStream
+0x0067E572 = FF 51 10                 # call [ecx+0x10] -> IStorage::OpenStream("CONTENTS")
+0x0067FDF0 = 83 EC 08 53 56 57 8B FA 8B D9 # template block fn #1 (identical body in all 35)
+0x0067FDFA = 6A 00                    # push 0
+0x0067FDFC = 8B 47 10                 # mov eax,[edi+0x10]  -> edi = DynamicVectorClass* , +0x10 = Count
+0x0067FE0D = FF 51 10                 # call [ecx+0x10]  -> IStream::Write(4, &count)
+0x0067FE1E = 8B 47 04                 # mov eax,[edi+4]   -> +4 = Items
+0x0067FE2D = 8B 04 B0                 # mov eax,[eax+esi*4]
+0x0067FE31 = 68 80 7C 7F 00           # push 0x7F7C80  (same shared IPersistStream object)
+0x0067FE45 = FF 15 F4 15 7E 00        # call [0x7E15F4] -> ole32!OleSaveToStream(obj, stream)
+0x0067FE56 = FF 51 08                 # call [ecx+8]    -> element vtable[2]
+0x0067FE6E = C3                       # ret  (block fn #1 end at 0x67FE6F)
+0x0067FE70 = 83 EC 08 53 56 57 8B FA 8B D9 # block fn #2 prologue - byte-identical to #1
+0x00680EF0 = 83 EC 08 53 56 57 8B FA 8B D9 # block fn #35 prologue - byte-identical to #1
+0x006805F0 = 83 EC 08 53 56 57 8B FA 8B D9 # Save_Sides 0x6805F0 - same template (called with 0x8B4120)
+0x0067D315 = B9 E0 38 8A 00           # Game::Save core: mov ecx,0x8A38E0 (first object handed to 0x4C6340)
+0x0067D31B = E8 20 90 E4 FF           # call 0x4C6340 -> writes 0x44 bytes from [ecx]
+0x004C6340 = 8B 44 24 04 6A 00 6A 44 51 8B 10 50 FF 52 10 C2 04 00 # raw "write 0x44 bytes" helper (OLE IStream::Write)
+0x00689310 = 51 53 55 56 57 8B F9     # pre-save helper prologue
+0x00689322 = 68 D4 DD 83 00           # push 0x83DDD4 (debug format string used by the pre-save helper)
+0x0067D0CB = 8D 54 24 20 52 68 C0 7B 81 00 6A 07 55 68 40 95 7E 00 # Save wrapper: CreateFileA(name, 7, 0, 0, ?, 0x817BC0, 0)
+0x00817BC0 = 00 00 00 00 00 00 00 00 C0 00 00 00 00 00 00 # SECURITY_ATTRIBUTES buffer used by the CreateFileA call
+0x0067D0DD = FF 15 FC 15 7E 00        # call [0x7E15FC] -> ole32!CoCreateInstance
+0x0067D107 = FF 11                    # call [ecx] -> IStream write of the stream head
+0x0067D131 = FF 52 0C                 # call [edx+0xC] -> IStream::Write of the CONTENTS payload
+0x0083D564 = 53 41 56 49 4E 47 20 47 41 4D 45 20 5B # "SAVING GAME [" ASCII
+0x0083D584 = 09 2A 2A 2A 2A 2A 20 46 41 49 4C 45 44 21 # "\t***** FAILED!"
+0x0083D5DC = 57 72 69 74 69 6E 67 20 53 6B 69 72 6D 69 73 68 20 53 65 73 73 69 6F 6E 2E 4F 70 74 69 6F 6E 73 # "Writing Skirmish Session.Options"
+0x0083D620 = 0A 4C 4F 41 44 49 4E 47 20 47 41 4D 45 20 5B # "\nLOADING GAME ["
+0x0083D5A8 = 43 00 4F 00 4E 00 54 00 45 00 4E 00 54 00 53 00 00 00 00 00 # "CONTENTS" in UTF-16LE (OLE stream name)
+0x0081FC38 = 2E 3F 41 56 43 53 74 72 65 61 6D 43 6C 61 73 73 40 40 00 # RTTI ".?AVCStreamClass@@" (the stream wrapper type name)
+0x0067E49E = 89 6C 24 28              # Game::Load_Core: arg setup tail before the storage-open call
+0x0067E4A2 = FF D3                    # call ebx -> ole32!StgOpenStorage (ebx loaded at 0x67E489)
+0x0067E4CA = E8 71 33 00 00           # call 0x681840 (push the opened storage into the local stream wrapper)
+0x0067E5D0 = FF 15 00 16 7E 00        # call [0x7E1600] -> ole32!OleRun
+
+# ==============================================================================
+# PART 3: 触发器与动作执行子系统锚点 (Trigger System Manifest, 77 条)
+# 包含：TActionClass::Execute 145 项跳转表、边界校验、各动作分支序言与桩函数特征
+# ==============================================================================
+0x006DD8D7 = 8B 56 2C                 # TActionClass::Execute: mov edx,[esi+0x2c]  (ActionKind @ this+0x2C)
+0x006DD8DA = 4A 81 FA 90 00 00 00     # dec edx / cmp edx,0x90  -> 145-entry bound (ActionKind 1..0x91)
+0x006DD8E7 = FF 24 95 EC FD 6D 00     # jmp dword ptr [edx*4 + 0x6DFDEC]  action jump table
+0x006DFDEC = 37 EA 6D 00 67 EA 6D 00  # table[0]=0x6DEA37 (Win), table[1]=0x6DEA67 (Lose)
+0x006E002C = D6 FD 6D 00              # table[144]=0x6DFDD6 (kind 0x91 JumpCameraHome) last entry
+0x006E0030 = B0 01 C2 10              # first dword AFTER 145 entries (table end 0x6DFDEC+145*4=0x6E0030)
+0x006DFDD6 = E8 C5 17 05              # JumpCameraHome body head: call 0x7315A0
+0x006DFDDB = B0 01                    # Activate/DeactivateFirestorm body: mov al,1 (no-op, TS leftover)
+0x006DFDDD = 5F 5E                    # AllowWin body: epilogue only (no-op)
+0x006DE925 = 8B BC 24 54              # act 0x21 AddOneTimeSuperWeapon body head
+0x006DE93F = E8 1C CC FE FF 39        # act 0x21: push [esi+0x90] (SW id) then call 0x6CB560 (SuperClass::Grant)
+0x006DE98E = 8B BC 24 54              # act 0x22 AddRepeatingSuperWeapon body head
+0x006DEA37 = 8B 0D 4C 3D              # act 0x01 Win body head
+0x006DEB57 = 8B 0D AC E7              # act 0x04 CreateTeam body head
+0x006DE780 = 8B 8E 90 00              # act 0x13 PlaySoundEffect body head
+0x006DE8E4 = 8B 96 90 00              # act 0x14 PlayMusicTheme body head
+0x006DF0E7 = 39 6E 50 0F              # act 0x16 ForceTrigger body head
+0x006DE418 = A1 30 B2 A8              # act 0x17 TimerStart body head
+0x006DE2CE = 8B 8E 90 00              # act 0x1C GlobalSet body head
+0x006DE3A8 = A1 4C 3D A8              # act 0x10 RevealAllMap body head
+0x006DD913 = 8B 56 44 8B              # act 0x5E IonCannonStrike body head (in-table inline copy)
+0x006DE8B7 = 8B 94 24 60              # act 0x65 ReshroudMapAtWaypoint body head
+0x006DF051 = 39 6E 50 0F              # act 0x0C DestroyTrigger body head
+0x006DF546 = 8B 8E 90 00              # act 0x64 PlayIngameMovie body head
+0x006E0050 = 51 8B 41 44              # TActionClass::LightningStrikeAt (ACTION_FUNC slave, YRpp 0x6E0050)
+0x006E16D0 = 56 8B F1 E8              # TActionClass::PlayMovie (slave)
+0x006E2A10 = 56 57 8B F9              # TActionClass::DeleteTrigger (slave)
+0x006E45E0 = 8B 4C 24 04              # TActionClass::FindHouseByIndex
+0x006E3EE0 = 83 C1 F2 33              # TActionClass::GetFlags prologue: add ecx,-0xE / cmp ecx,0x61
+0x006E3B60 = 8D 41 FF 3D              # TActionClass::GetMode prologue: lea eax,[ecx-1] / cmp eax,0x8F
+0x006E3B63 = 3D 8F 00 00 00           # cmp eax,0x8F  -> GetMode covers kinds 1..0x90 (144)
+0x006E3B70 = 8A 88 D8 3C 6E 00        # mov cl,[eax+0x6E3CD8] ; jmp [ecx*4+0x6E3C4C]
+0x006E3EE5 = 83 F9 61                 # cmp ecx,0x61 -> GetFlags covers kinds 0x0E..0x6F (98)
+0x006E3EEC = 8A 91 08 3F 6E 00        # mov dl,[ecx+0x6E3F08] ; jmp [edx*4+0x6E3F00]
+0x006E3F00 = F9 3E 6E 00 FE 3E 6E 00  # GetFlags jump table: 2 targets 0x6E3EF9(flags=2) / 0x6E3EFE(flags=0)
+0x006E3EF9 = B8 02 00 00 00           # flags=2 case: mov eax,2 ; ret
+0x00726605 = E8 A6 72 FB FF           # TriggerClass::FireActions: call 0x6DD8B0 (TActionClass::Execute)
+0x00726540 = E8 FB 83 FF FF           # TriggerClass::RegisterEvent: call 0x71E940 (TEventClass::HasOccured)
+0x007271F4 = E8 87 84 FF FF           # TriggerTypeClass::GetFlags: call 0x71F680 (TEventClass::GetFlags)
+0x0072720F = E8 CC CC FB FF           # TriggerTypeClass::GetFlags: call 0x6E3EE0 (TActionClass::GetFlags)
+0x006DD30B = E8 50 68 00 00           # TActionClass::PrepareSaveToINI: call 0x6E3B60 (GetMode)
+0x006DD31A = 83 F8 2F                 # PrepareSaveToINI: cmp eax,0x2F  (mode=TechnoID string)
+0x006DD3C5 = 83 F8 0B                 # PrepareSaveToINI: cmp eax,0x0B  (mode=TriggerType)
+0x006DD3FE = 83 F8 27                 # PrepareSaveToINI: cmp eax,0x27  (mode=Text field @+0x6D)
+0x0071E94D = 8B 4D 2C                 # TEventClass::HasOccured: mov ecx,[ebp+0x2c] (EventKind @+0x2C)
+0x0071E950 = 8D 41 F3 83 F8 30 0F 87  # lea eax,[ecx-0xD] ; cmp eax,0x30  -> kinds 0x0D..0x3D (49)
+0x0071E964 = FF 24 95 18 F2 71 00     # jmp dword ptr [edx*4 + 0x71F218] (12-entry jump table)
+0x0071F218 = 33 EC 71 00 E9 EB 71 00  # event jt[0]=0x71EC33 (ElapsedTime/RandomDelay), jt[1]=0x71EBE9 (MissionTimerExpired)
+0x0071F248 = 00 01 0B 0B 0B 0B 0B 0B  # 49-byte selector table head: 00 01 0B 0B ...
+0x0071E96B = 8B 3D 10 EB              # kind 0x3C TechTypeExists entry: mov edi,[0xA8EB10] (object-count loop)
+0x0071EA30 = 8B 3D 10 EB              # kind 0x3D TechTypeDoesntExist entry
+0x0071EC63 = 85 C9 0F 84              # HasOccured default path (object/aux events) head
+0x0071EC86 = 83 F8 3A 77 24 33 D2     # cmp eax,0x3A ; mov dl,[eax+0x71F284] ; jmp [edx*4+0x71F27C]
+0x0071EE8E = 83 C1 F4 83 F9 2D        # 3rd-level switch: add ecx,-0xC ; cmp ecx,0x2D (kinds 0x0C..0x39)
+0x0071F07B = 8B 45 2C 83 C0 FD 83     # 4th-level switch: mov eax,[ebp+0x2c] ; add eax,-3 ; cmp eax,0x37
+0x0071F1B1 = 5F 5E 5D B0 01 5B        # 4th-level default: mov al,1 ; pop... ret (event true)
+0x0071EFEB = 8B 80 6C 02              # kind 0x13 entry: mov eax,[eax+0x26c] (house last-built-building id)
+0x0071F0E1 = 8A 86 44 02              # kind 0x03 entry: mov al,[esi+0x244] (house discovery flag)
+0x0071F099 = 8B CE E8 90              # kind 0x1E LowPower entry: call 0x4FCE30 (power check)
+0x0071F950 = 8B 49 2C 8D              # TEventClass::GetStateA prologue
+0x0071F96A = B0 01 C3 32 C0 C3        # GetStateA helpers: mov al,1;ret (true) / xor al,al;ret (false)
+0x0071F9C0 = 8B 49 2C 8D 41 FF        # TEventClass::GetStateB prologue: lea eax,[ecx-0xD]
+0x0071F680 = 56 33 F6 83              # TEventClass::GetFlags prologue
+0x0071F697 = BE 01 00 00 00           # GetFlags(events) helper 1: mov esi,1
+0x006E944B = 83 F8 40                 # TeamClass::AI: cmp eax,0x40 (65-entry script action bound)
+0x006E945B = FF 24 85 74 9F 6E 00     # TeamClass::AI: jmp dword ptr [eax*4 + 0x6E9F74]
+0x006EA038 = E1 9C 6E 00              # team-script table[49]=0x6E9CE1 -> Action 49 (Success)
+0x006E9CE1 = C6 86 80 00 00 00 01 C6 86 84 00 00 # Action 49 body: mov byte [esi+0x80],1 ; mov byte [esi+0x84],1 (anchor 0x6E9CE8)
+0x006E9050 = 55 8B 6C 24              # TeamClass::AI prologue (table owner, not TActionClass)
+0x006DFDE1 = 81 C4 40 02 00 00        # TActionClass::Execute epilogue: add esp,0x240 (table follows at 0x6DFDEC)
+0x006DFDE7 = C2 10 00                 # Execute: ret 0x10 / 0x6DFDEA: 8B FF (hotpatch pad) -> table at 0x6DFDEC
+0x0071F279 = 8D 49 00                 # after 49-byte selector table: 8D 49 00 (align) then 2nd-level jt at 0x71F27C
+0x006E4630 = B8 94 00 00 00 C3        # TActionClass::Size: mov eax,0x94; ret  (instance size 0x94 -> layout total)
+0x006E4650 = 8B 41 24 C3              # TActionClass::GetArrayIndex: mov eax,[ecx+0x24]; ret (ArrayIndex @+0x24)
+0x00751590 = 85 C9 7C 21 3B 0D 88 D3  # GetMode mode=3/0x26 -> VocClass name lookup (array [0xB1D37C], count [0xB1D388])
+0x00752460 = 83 F9 FF 74 15 85 C9 7C  # GetMode mode=4 -> VoxClass name lookup (array [0xB1D4A4], count [0xB1D4B0])
+0x00721270 = 8B 44 24 04 85 C0 7C 0E  # GetMode mode=1 -> Theme name lookup (this+0x18 array, this+0x24 count)
+
+# ==============================================================================
+# PART 4: 文件系统与 MIX 加载链锚点 (FileSystem & Mix Chain Manifest, 124 条)
+# 包含：Init 阶段 Primary/Secondary MIX 加载链、ECACHE/ELOCAL 校验、BATTLEMD 索引、
+#       Blowfish / RSA 密文解析、MIX 头结构体解包序言
+# ==============================================================================
+0x0052BB64 = E8 37 46 00 00           # Init: call 0x5301A0 (primary mixes) | call 0x5301a0
+0x0052BB69 = 84 C0                    # test al,al | test al, al
+0x0052BB6B = 75 28                    # push "Failed to initialize bootstrap mixfiles!" | jne 0x52bb95
+0x0052C307 = E8 F4 3C 00 00           # Init: call 0x530000 (ECACHE*/ELOCAL*) | call 0x530000
+0x0052C58F = 68 80 5F 82 00           # push "Init Secondary Mixfiles....." | push 0x825f80
+0x0052C59C = E8 BF 3E 00 00           # Init: call 0x530460 (secondary mixes) | call 0x530460
+0x0052C5F3 = E8 A8 4C 00 00           # Init: call 0x5312A0 | call 0x5312a0
+0x0052C5F8 = 68 10 5F 82 00           # push "Init Campaigns" @0x825f10 | push 0x825f10
+0x0052C605 = E8 86 05 00 00           # Init: call 0x52CB90 (BATTLEMD*.INI) | call 0x52cb90
+0x005301A0 = 83 EC 68                 # LoadPrimaryMixFiles prologue | sub esp, 0x68
+0x005301BA = BF 63 00 00 00           # mov edi,0x63  -> EXPANDMD loop starts at 99 | mov edi, 0x63
+0x005301C4 = 68 8C 66 82 00           # push "EXPANDMD%02d.MIX" | push 0x82668c
+0x005301CA = E8 25 8D 29 00           # sprintf | call 0x7c8ef4
+0x005301DB = E8 A0 C8 12 00           # CCFileClass ctor | call 0x65ca80
+0x005301E7 = FF 52 14                 # CCFileClass::Open(vtbl+0x14) | call dword ptr [edx + 0x14]
+0x0053028A = 0F 89 2F FF FF FF        # jns 0x5301BF (edi--) | jns 0x5301bf
+0x005302A3 = 68 7C 66 82 00           # push "RA2MD.MIX" | push 0x82667c
+0x005302CB = 68 74 66 82 00           # push "RA2.MIX" | push 0x826674
+0x0053031F = 68 5C 66 82 00           # push "CACHEMD.MIX" | push 0x82665c
+0x00530361 = 68 50 66 82 00           # push "CACHE.MIX" | push 0x826650
+0x005303CD = 68 44 66 82 00           # push "LOCALMD.MIX" | push 0x826644
+0x005303F9 = 68 38 66 82 00           # push "LOCAL.MIX" | push 0x826638
+0x00530274 = 89 34 81                 # vector push_back | mov dword ptr [ecx + eax*4], esi
+0x00530000 = 81 EC 40 01 00 00        # LoadWildcardMix prologue | sub esp, 0x140
+0x00530015 = 68 20 66 82 00           # push "ECACHE*.MIX" | push 0x826620
+0x005300DB = 68 14 66 82 00           # push "ELOCAL*.MIX" | push 0x826614
+0x005300BA = E8 31 43 08 00           # call 0x5B43F0 | call 0x5b43f0
+0x005B3C20 = 81 EC DC 01 00 00        # MixFileClass ctor prologue | sub esp, 0x1dc
+0x005B3C52 = C7 06 50 DF 7E 00        # [esi]=0x7EDF50 MixFileClass vftable | mov dword ptr [esi], 0x7edf50
+0x005B3D11 = 74 2C                    # je -> header not encrypted, skip key | je 0x5b3d3f
+0x005B3D22 = E8 E9 F3 07 00           # call 0x633110 PKStraw::Set_Key | call 0x633110
+0x005B3D33 = E8 88 F3 07 00           # call 0x6330C0 PKStraw::Attach | call 0x6330c0
+0x005B3D3F = 8B 17                    # read 6 bytes through PKStraw | mov edx, dword ptr [edi]
+0x005B3D7E = 89 46 14                 # [esi+0x14]=numFiles | mov dword ptr [esi + 0x14], eax
+0x005B3D8B = E8 87 50 21 00           # new(numFiles*12) | call 0x7c8e17
+0x005B3D95 = 89 46 20                 # [esi+0x20]=entries | mov dword ptr [esi + 0x20], eax
+0x005B3DE2 = 8B 3D F0 EF AB 00        # edi=[0xABEFF0] (tail pointer) | mov edi, dword ptr [0xabeff0]
+0x005B3DE8 = E8 A3 07 00 00           # call 0x5B4590 unlink | call 0x5b4590
+0x005B3DF0 = 89 7E 08                 # this->Prev=edi | mov dword ptr [esi + 8], edi
+0x005B3DF3 = 89 56 04                 # this->Next=edi->Next | mov dword ptr [esi + 4], edx
+0x005B3E00 = 89 77 04                 # edi->Next=this (append at TAIL) | mov dword ptr [edi + 4], esi
+0x005B3AC2 = B8 0C 1B 7E 00           # GenericList static init | mov eax, 0x7e1b0c
+0x005B3AE2 = C7 05 F0 EF AB 00 DC EF AB 00 # [0xABEFF0]=0xABEFDC | mov dword ptr [0xabeff0], 0xabefdc
+0x005B3AEC = C7 05 E0 EF AB 00 E8 EF AB 00 # [0xABEFE0]=0xABEFE8 | mov dword ptr [0xabefe0], 0xabefe8
+0x005B3AF6 = C7 05 D8 EF AB 00 38 DF 7E 00 # [0xABEFD8]=0x7EDF38 | mov dword ptr [0xabefd8], 0x7edf38
+0x005B4430 = 81 EC 18 01 00 00        # MixFileClass::Find prologue | sub esp, 0x118
+0x005B44A1 = 8B 2D E0 EF AB 00        # ebp=[0xABEFE0]=head.Next (oldest first) | mov ebp, dword ptr [0xabefe0]
+0x005B44D5 = 8B C1                    # binary search | mov eax, ecx
+0x005B44E5 = 3B F3                    # cmp entry.id,hash | cmp esi, ebx
+0x005B44FD = 8B 6C 24 14              # ebp=ebp->Next (next mix) | mov ebp, dword ptr [esp + 0x14]
+0x005B4501 = EB A6                    # loop: first match wins | jmp 0x5b44a9
+0x005B454C = 8B 45 24                 # cached: *out=off+[mix+0x24] | mov eax, dword ptr [ebp + 0x24]
+0x005B4565 = 8B 45 1C                 # uncached: offset+=[mix+0x1c] | mov eax, dword ptr [ebp + 0x1c]
+0x005B4400 = 53                       # Uncache: free [esi+0x24] | push ebx
+0x0040D340 = 33 C0                    # DynamicVectorClass<MixFileClass*> ctor | xor eax, eax
+0x0040D35D = C7 05 90 4D 88 00 44 1A 7E 00 # [0x884D90]=0x7E1A44 | mov dword ptr [0x884d90], 0x7e1a44
+0x0040D367 = C7 05 A4 4D 88 00 0A 00 00 00 # [0x884DA4]=10 (GrowthStep) | mov dword ptr [0x884da4], 0xa
+0x0052CB90 = 81 EC B4 01 00 00        # LoadBattleMdIni prologue | sub esp, 0x1b4
+0x0052CBA0 = 68 A8 61 82 00           # push "BATTLEMD*.INI" | push 0x8261a8
+0x0052CBA9 = FF 15 08 12 7E 00        # FindFirstFileA | call dword ptr [0x7e1208]
+0x0052CBBE = 55                       # test dwFileAttributes,0x116 | push ebp
+0x0052CC49 = E8 A2 75 F4 FF           # CCINIClass::Load | call 0x4741f0
+0x0052CC54 = E8 C7 C0 29 00           # _stricmp(name,"BATTLEMD.INI") | call 0x7c8d20
+0x0052CC60 = C6 44 24 13 01           # seen-battlemd flag=1 | mov byte ptr [esp + 0x13], 1
+0x0052CCAB = FF 15 0C 12 7E 00        # FindNextFileA | call dword ptr [0x7e120c]
+0x0052CCBA = FF 15 00 13 7E 00        # FindClose | call dword ptr [0x7e1300]
+0x0052CCC5 = 3A C3                    # cmp flag,0 | cmp al, bl
+0x0052CCCD = 68 98 61 82 00           # fallback push "BATTLEMD.INI" | push 0x826198
+0x0052CBF6 = E8 F5 6D F4 FF           # CCFileClass ctor(name) | call 0x4739f0
+0x004739F0 = 56                       # CCFileClass ctor prologue | push esi
+0x00473C50 = 53                       # CCFileClass::Open (vtbl+0x14) | push ebx
+0x00473C8B = E8 A0 07 14 00           # call 0x5B4430 | call 0x5b4430
+0x00473D10 = 83 EC 10                 # CCFileClass::Get_File (vtbl+0x1C) | sub esp, 0x10
+0x00473D2D = E8 DE E1 FB FF           # call 0x431F10 (disk open first) | call 0x431f10
+0x00473D68 = E8 C3 06 14 00           # call 0x5B4430 (mix fallback) | call 0x5b4430
+0x0065CBF0 = 56                       # RawFileClass::Open prologue | push esi
+0x0065CC59 = FF 15 BC 11 7E 00        # Import CreateFileA | call dword ptr [0x7e11bc]
+0x007DCFC4 = 55                       # strupr | push ebp
+0x004A1DE0 = 53                       # CRC32 engine (table @0x81F7B4) | push ebx
+0x0052A670 = 81 EC 04 05 00 00        # BuildKeyStruct prologue | sub esp, 0x504
+0x0052A6AF = BA 01 00 01 00           # mov edx,0x10001 RSA e=65537 | mov edx, 0x10001
+0x0052A6EC = 68 08 5C 82 00           # push "PrivateKey" | push 0x825c08
+0x0052A716 = 68 14 5C 82 00           # push "PublicKey" | push 0x825c14
+0x0052A745 = F3 A5                    # rep movsd 0x81 dwords -> 516B key struct | rep movsd dword ptr es:[edi], dword ptr [esi]
+0x005C6370 = 8A 02                    # BigNum from DER INTEGER (tag 0x02) | mov al, byte ptr [edx]
+0x00631F60 = 56                       # PublicKey struct ctor | push esi
+0x00631FA6 = 89 86 00 02 00 00        # [esi+0x200]=bits-1 | mov dword ptr [esi + 0x200], eax
+0x00633050 = 8B 44 24 08              # PKStraw ctor | mov eax, dword ptr [esp + 8]
+0x006330C0 = 56                       # PKStraw::Attach | push esi
+0x00633110 = 8B 44 24 04              # PKStraw::Set_Key | mov eax, dword ptr [esp + 4]
+0x00633130 = 81 EC 04 01 00 00        # PKStraw::Get prologue | sub esp, 0x104
+0x0063317F = 8B 80 00 02 00 00        # [key+0x200] bit count | mov eax, dword ptr [eax + 0x200]
+0x0063318E = B8 37 00 00 00           # mov eax,0x37 (55 = 56-byte key) | mov eax, 0x37
+0x006331A6 = E8 35 67 09 00           # call 0x6C98E0 (RSA decrypt helper) | call 0x6c98e0
+0x006BD734 = BF 80 1A 7E 00           # edi=0x7E1A80 "[PublicKey]" | mov edi, 0x7e1a80
+0x006BD7E8 = 68 5C 0D 84 00           # push "LANGMD.MIX" | push 0x840d5c
+0x006BD7EF = E8 2C 64 EF FF           # call 0x5B3C20 | call 0x5b3c20
+0x006BD7F4 = A3 04 4E 88 00           # [0x884E04]=LANGMD.MIX MixFileClass* | mov dword ptr [0x884e04], eax
+0x006BC342 = BE 10 37 7F 00           # esi=0x7F3710 module table | mov esi, 0x7f3710
+0x006BEDD1 = 68 C0 7B 81 00           # push CLSID @0x817BC0 | push 0x817bc0
+0x006BEDDD = FF 15 FC 15 7E 00        # Import CoCreateInstance | call dword ptr [0x7e15fc]
+0x0082668C = 45 58 50 41 4E 44 4D 44 25 30 32 64 2E 4D 49 58 # "EXPANDMD%02d.MIX"
+0x0082667C = 52 41 32 4D 44 2E 4D 49 58 # "RA2MD.MIX"
+0x00826674 = 52 41 32 2E 4D 49 58     # "RA2.MIX"
+0x0082665C = 43 41 43 48 45 4D 44 2E 4D 49 58 # "CACHEMD.MIX"
+0x00826650 = 43 41 43 48 45 2E 4D 49 58 # "CACHE.MIX"
+0x00826644 = 4C 4F 43 41 4C 4D 44 2E 4D 49 58 # "LOCALMD.MIX"
+0x00826638 = 4C 4F 43 41 4C 2E 4D 49 58 # "LOCAL.MIX"
+0x00826614 = 45 4C 4F 43 41 4C 2A 2E 4D 49 58 # "ELOCAL*.MIX"
+0x00826620 = 45 43 41 43 48 45 2A 2E 4D 49 58 # "ECACHE*.MIX"
+0x00825F80 = 49 6E 69 74 20 53 65 63 6F 6E 64 61 72 79 20 4D 69 78 66 69 6C 65 73 2E 2E 2E 2E 2E # "Init Secondary Mixfiles....."
+0x00826100 = 46 61 69 6C 65 64 20 74 6F 20 69 6E 69 74 69 61 6C 69 7A 65 20 62 6F 6F 74 73 74 72 61 70 20 6D 69 78 66 69 6C 65 73 21 # "Failed to initialize bootstrap mixfiles!"
+0x008261A8 = 42 41 54 54 4C 45 4D 44 2A 2E 49 4E 49 # "BATTLEMD*.INI"
+0x00826198 = 42 41 54 54 4C 45 4D 44 2E 49 4E 49 # "BATTLEMD.INI"
+0x00826444 = 52 41 32 4D 44 2E 49 4E 49 # "RA2MD.INI"
+0x00840D4C = 4C 41 4E 47 55 41 47 45 2E 4D 49 58 # "LANGUAGE.MIX"
+0x00840D5C = 4C 41 4E 47 4D 44 2E 4D 49 58 # "LANGMD.MIX"
+0x00840D68 = 49 6E 69 74 5F 4B 65 79  # "Init_Key"
+0x00840A78 = 62 6C 6F 77 66 69 73 68 2E 64 6C 6C # "blowfish.dll"
+0x00825C08 = 50 72 69 76 61 74 65 4B 65 79 # "PrivateKey"
+0x00825C14 = 50 75 62 6C 69 63 4B 65 79 # "PublicKey"
+0x00825F10 = 49 6E 69 74 20 43 61 6D 70 61 69 67 6E 73 # "Init Campaigns"
+0x008189C8 = 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 75 76 77 78 79 7A 30 31 32 33 34 35 36 37 38 39 2B 2F # "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+0x007E1A80 = 5B 50 75 62 6C 69 63 4B 65 79 5D 0A 31 3D 41 69 68 52 76 4E 6F 49 62 54 6E 38 35 46 5A 52 59 4E 5A 52 63 54 2B 69 36 4B 70 55 2B 6D 61 43 73 45 71 72 33 51 35 71 2B 4C 44 42 35 74 48 37 54 7A 32 71 51 33 38 56 0A 0A # "[PublicKey]\n1=AihRvNoIbTn85FZRYNZRcT+i6KpU+maCsEqr3Q5q+LDB5tH7Tz2qQ38V\n\n"
