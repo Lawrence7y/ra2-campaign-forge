@@ -3507,3 +3507,18 @@ a2forge-audittools\（sha 逐件对齐）+原位留桩（py_compile 全过）；
 | **环境取证** | 当前桌面可见大窗 6 个：ChatGPT(pid 56328)、DeepSeek Harness/WorkBuddy(53900)、Notion(38984)、ZCode(50056)、设置(35864/52236)、NVIDIA Overlay(15852)。L1 失败时这些窗口在前台 ⇒ `focus_nav_menu` 三轮全败可解释 |
 | 判别结论 | **优先按「前台遮挡 + 呈现层未全屏」处理**：游戏窗口 696×287（非 2560×1440）说明 ddraw 没接管全屏；叠加前台锁竞争。**两者都指向"环境未就绪"，不是 L1 方案问题** |
 | 重跑前置（建议） | ①关闭/最小化 ChatGPT、DeepSeek Harness、Notion、设置等大窗；②先跑 1 次 boot 探针（`fs_boot_probe` 达主菜单）确认出封印；③再跑 L1（同参数，不改 ddraw/INI） |
+
+## 304 · ★ L1 第二趟：真因定谳 = 游戏完整性检查弹窗（`2026-10-20` 14:57–15:0x）
+
+| 项 | 结果 |
+|:--|:--|
+| 用户令 | 「重跑 L1」；同参数重发（89 件、sf8 `0add791d`、`--measure 1 --fullscreen --evid-diff`） |
+| 现象 | **进到主菜单背景**（`fs_boot_probe.png` 显示 RA2 主菜单 + ♂ 光标），但被一个**模态弹窗盖住**；`nav_menu` 轮询 108 张 `_x` 全未命中 |
+| **真因** | 弹窗标题 **「The following files were modified...」**，正文 **`MOUSE.SHA`**，按钮 `Continue` / `Delete Files` / `Free Up Space` —— 这是 RA2 的**完整性校验失败**对话框 |
+| 证据 | `l1_u0800_20261020/navsig_nav_menu_pre_00_x.png`（及 00–107 全部）：800×600，mean 187.3（近白）；对比 T55k 命中帧 `navsig_nav_menu_pre_00_g.png` mean **57.2**（深色主菜单）；像素差 mean 139.6 / max 255 |
+| 关键澄清 | 载体里的 `except.txt`（`6694b75e`，`EXCEPTION_SINGLE_STEP @ 0x007CFC9F`）是**历史遗留文件**——T55k 与源变体**同 sha**，T55k 带着它照样跑通 ⇒ **不是本次崩溃**，与 §173/§174 的 0x7CFC9F 陷阱无关，不得误记为崩溃 |
+| 载体差异 | L1 vs T55k 载体：88 个同名文件 **sha 全同**，唯一差别 = 新增 `RA2MD Update.ico`（Notion U7 要求）⇒ 完整性失败**不是**文件内容被改 |
+| 判读 | `MOUSE.SHA` 属 RA2 的**鼠标指针资源校验**；`Delete Files` 会删该文件。**本会话不擅自点 `Delete Files`**（会改载体、破坏基线口径），也不点 `Continue` 以外的东西 |
+| 处置 | 本趟作废（未进图、零测量数据）；**未擅自点弹窗、未改配置**；证据存档 `_r2_singlestep/`（命名有误导，实为完整性弹窗证据） |
+| 待用户 | 需要用户决定：①点 `Continue` 放行（不改文件，代价=每趟都弹）；②按 RA2 惯例让游戏 `Delete Files` 重建 MOUSE.SHA（会改载体，需重定基线口径）；③查明 MOUSE.SHA 为何被判修改（可能是 **新增 `RA2MD Update.ico` 改变了目录清单判定**，与 Notion U7 的 89 件口径冲突——高度可疑） |
+| 卫生 | ct 已清（载体自删）、无 gamemd/ra2loader、无 python 残留 ⇒ PASS |
