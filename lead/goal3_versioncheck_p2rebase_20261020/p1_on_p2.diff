@@ -1,18 +1,15 @@
 --- a/ra2render/blitter_hooks.cpp
 +++ b/ra2render/blitter_hooks.cpp
-@@ -1,6 +1,11 @@
+@@ -1,6 +1,8 @@
  #include "ra2render.h"
  #include <cstring>
  #include <cstdlib>
 +#include <bcrypt.h>                 // [VER-GATE V1] SHA-256（Windows CNG；Vista+ 系统自带 bcrypt.dll）
 +#pragma comment(lib, "bcrypt.lib")  // [VER-GATE V1] MSVC 自动链库 ⇒ build.bat 零改动
-+
-+ForgeTelemetry g_telemetry = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-+int g_targetScanInterval = 8;
  
  // ============================================================================
  // [G3-SPLIT 20261019] P2 玩法改动从默认配置拆出 —— 补丁副本（执行者适用；母本零改动）
-@@ -3792,9 +3797,21 @@
+@@ -3792,19 +3794,30 @@
  // 虚表安装与卸载 (零侵入代码段)
  // ============================================================================
  
@@ -21,9 +18,9 @@
 +                               uintptr_t expectOrig) {   // [VER-GATE V2] 新增第 5 参：期望旧值（原虚表函数 VA）
      if (IsBadReadPtr(reinterpret_cast<void*>(targetAddr), sizeof(uintptr_t))) {
          LogMessage("[ra2render] 错误：无法读取虚表条目 0x%08X (%s)", targetAddr, name);
-+        return false;
-+    }
-+
+         return false;
+     }
+ 
 +    // [VER-GATE V2] 逐点原值门（缺口1 修复）：写前核对「当前值 == 期望旧值」。
 +    //   不符 ⇒ 拒绝写入、一字节不动（fail-closed）——与 InstallTextPatch 的 byte-mismatch 拒装
 +    //   （本文件 InstallTextPatch memcmp 前核）与 InstallGapProtectionPatch 的「三点全查；任一不符
@@ -32,10 +29,12 @@
 +    if (orig != expectOrig) {
 +        LogMessage("[ra2render] [错误/拒装] [vergate] 虚表原值不符 0x%08X (%s): 期望 0x%08X, 实测 0x%08X ⇒ 拒绝写入（fail-closed，一字节未写）",
 +                   static_cast<uint32_t>(targetAddr), name, static_cast<uint32_t>(expectOrig), static_cast<uint32_t>(orig));
-         return false;
-     }
- 
-@@ -3804,7 +3821,6 @@
++        return false;
++    }
++
+     DWORD oldProtect = 0;
+     if (!VirtualProtect(reinterpret_cast<void*>(targetAddr), sizeof(uintptr_t), PAGE_EXECUTE_READWRITE, &oldProtect)) {
+         LogMessage("[ra2render] 错误：VirtualProtect 失败 0x%08X (%s), 错误码 %lu", targetAddr, name, GetLastError());
          return false;
      }
  
@@ -43,7 +42,7 @@
      if (outOrigFunc) *outOrigFunc = orig;
      *reinterpret_cast<uintptr_t*>(targetAddr) = newFunc;
  
-@@ -3813,87 +3829,368 @@
+@@ -3813,87 +3826,368 @@
      return true;
  }
  
@@ -425,7 +424,7 @@
  
      // 14. CellClass::Draw Inline Hook (0x004801F0) - 星际争霸式半透明战争迷雾图层渲染
      InstallCellClassDrawHook();
-@@ -3930,67 +4227,80 @@
+@@ -3930,67 +4224,80 @@
  
      if (g_pOrigBlitTransXlatAlphaZRead) {
          PatchVTablePointer(ADDR_VTABLE_BLIT_TRANS_XLAT_ALPHA_ZREAD + 4,
