@@ -3644,3 +3644,114 @@ a2forge-audittools\（sha 逐件对齐）+原位留桩（py_compile 全过）；
 | **发射器** | `scratch/boot_probe/launch_e1.py`：件名不经 PowerShell argv（避免 GBK/UTF-8 误解码），改由脚本读 UTF-8 清单 + `os.spawnv` 传参列表。**这是中文件名丢失的根治** |
 | 取证件 | `l1_u0800_e1b_20261020/E1B_CRASH_DIALOG_IDENTIFIED.md`（崩溃框逐字 + 段表 + 字节）、`l1_u0800_20261020/E1_MAP_ISOLATION_20261020.md`（地图隔离）、`qc151_carrierfix_20261020/RECEIPT` |
 | **下一步** | ①`procdump -e -ma` 抓崩溃转储定写者 ②反汇编找能算出 `0x0084F2BA` 的写点 ③**SBH 守卫 A/B**（若守卫拦住此崩溃 ⇒ RC-1 确证；Notion 裁决3 已放行此路径）|
+
+---
+
+## §313 2026-10-20 20:1x ★★★ D-117 路径长度根因定谳 + L1 基线趟首次成功
+
+### 一、根因：载体绝对路径 ≥131 字符（D-117 复现）
+
+§308–§312 三轮把 L1 失败判读为「csf 缺件」「Windows 崩溃」，**根因都不是它们**。
+
+| 趟 | 载体路径长 | 结局 |
+|:--|--:|:--|
+| t55k_20261020 | **130** | **成功** |
+| l1_u0800_20261020 | 134 | EXIT 19 |
+| l1_u0800_e1_20261020 | 137 | EXIT 19 |
+| l1_u0800_e1b_20261020 | 138 | EXIT 19 |
+| l1_u0800_e1c_dump_20261020 | 143 | EXIT 19 |
+
+### 二、单变量扫描（junction 造同内容不同长度路径）
+
+用 NTFS 目录联接把**同一份** `arm_a` 载体暴露在不同长度的绝对路径下，
+`CreateProcessW` 直启（无 stdio 重定向 —— PIPE 会导致 0.1s 假退出，已实证）。
+
+| 路径长 | 窗口标题 | 结果 |
+|--:|:--|:--|
+| 54 / 125 / 128 / **130** | `Yuri's Revenge` | ✅ 正常 |
+| **131** / 133 / 143 | `Red Alert 2`（464×191）| ❌ csf 失败框 |
+
+**阈值逐字符命中 D-117（2026-10-17 确立的 131 上限）。**
+
+### 三、框正文逐字读出
+
+`EnumChildWindows` 读 Static 控件：
+
+```
+Unable to initialize 'ra2.csf', please reinstall Red Alert.
+Keine Initialisierung von 'ra2.csf' möglich. Bitte installieren Sie Red Alert erneut.
+Initialisation de 'ra2.csf' impossible. Veuillez réinstaller Red Alert.
+```
+
+标题 `Red Alert 2`、464×191、位置 `[623,385,1087,576]` —— 与记忆库
+`u0400-carrier-csf-root-cause` 记录的 T14 现场完全同构。
+
+### 四、修正与推翻
+
+| 项 | 处置 |
+|:--|:--|
+| §308「真因=csf 缺件」 | **推翻**：88/88 件含两件 csf 仍在，根因是路径拼接 |
+| §312「E1b/E1c 崩溃 = ② 主崩溃证据」 | **撤回**：崩溃发生在初始化已失败的进程里（csf 框 t≈0.28s → 崩溃 t≈0.72s），是次生现象 |
+| 「except 零新增 ⇒ 非崩溃」 | 该判据本身仍有效（§312 已纠正），但本案不适用 |
+
+**未定谳**：本次探针在 csf 框上单独发 Esc **未能致死**（存活至 20s 超时）；
+发 `WM_CLOSE` 才 0.25s 内 exit code 0。⇒「harness 里究竟哪一步把 csf 框推进到崩溃」
+待查，但不影响主结论（129 字符路径下框根本不出现）。
+
+### 五、E2 成功趟（out-dir = `l1a_20261020`，载体 129 字符）
+
+| 项 | 值 |
+|:--|:--|
+| EXIT | **0**（main / finalize 全 0）|
+| 导航链 | `nav_menu→nav_setup→nav_start` **全一次过**（attempts=1、fg_is_ours=True、NAV.verdict=OK）|
+| 三窗 | 全 `verdict=ok`，span 各 25.0s |
+| **units0** | **732**（脚本门 ≥150 过；设计门 ≥800 **未达**）|
+| fps_avg | 31.24 / 31.24 / 29.00 |
+| fps_p50 | 30.97 / 31.06 / 30.96 |
+| p90 | 35.15 / 35.24 / 35.18 ms |
+| p99 | 37.7 / 38.7 / 39.0 ms |
+| tick_miss | 0 / 1 / 1 |
+| hz_effective | 500.1（三窗一致）|
+| except.txt | 1046 → 1046，**零新增（本次是真值）** |
+
+**按屋探针（frame 3724）**：h0=175 / h1=91 / h2=225 / h3=240 = 731，与 units0 自洽。
+ShortGame 探针 glob=0 / sess=0 / equal=true ⇒ 会话内武装 `no` 分支（合设计 §2.3）。
+
+### 六、units0=732 vs 设计门 800（按设计 §337 F1 分支回查）
+
+| 检查项 | 结果 |
+|:--|:--|
+| `XMP29U2.MAP` sha | `0add791d…60bc` = spawnfix8 ✅ |
+| 载体件数 | 88/88 齐全 ✅ |
+| `[Units]` / `[Infantry]` 行数 | 3360 / 2240 ✅ |
+| `RA2MD.INI` | `0cc65385`，与 t55k 同 sha ✅ |
+
+⇒ **三项全对，732 是真实值，不是载错图。**
+
+与 T50 的 971 差异（h0 175 vs 283、h1 91 vs 79）**登记为待查项**，本轮不做推断。
+
+### 七、新登记 harness 三缺陷
+
+1. **F-4 恒假**：路径写死 `carrier_dir / "[2]0LoadBench_U0400.yrm"`（`qc151_trip.py:4206`），
+   本轮报 `93c2974b` 而实载 `XMP29U2.MAP`（`0add791d`）。**F-4 不能用作载图证据。**
+2. **`map_sha256` 是 argv 回显**：`measure_w*.json` 的该字段直接来自 `--target-sha256`，
+   不证明实际载入。
+3. **`frame` 阶段耗时 126.7 s**：`pre_capture_wait_polls=253` × 0.5 s —— 全屏下窗口矩形
+   恒为 2560×1440（≠800×600），`qc151_trip.py:6881` 的 while 一直等到 deadline。
+   属设计内降级（D-113 如实继续），但耗时异常，建议另开项。
+
+### 八、对 ② 的影响
+
+**前提已变**：现在有健康进程可对照。主崩溃（`0x0084F2BA` / `0x0054A56E` 类）
+是否在**正常游戏路径**复现，成为 ② 的下一判据。
+
+- 不复现 ⇒ 此前全部崩溃证据皆为 csf 框次生现象，② 的「主崩溃」需要重新定义。
+- 复现 ⇒ 再做 SBH 守卫 A/B（Notion 裁决3 的前提此时才真正满足）。
+
+### 九、取证件与探针
+
+- `qc161_u0400_trip/l1a_20261020/E2_SUCCESS_TRIP_REPORT.md`
+- `qc161_u0400_trip/l1_u0800_e1c_dump_20261020/E2_D117_PATH_LENGTH_ROOTCAUSE.md`
+- `scratch/boot_probe/path_ab_probe.py`（存活/窗口）
+- `scratch/boot_probe/dialog_text_probe.py`（读对话框正文 + Esc/WM_CLOSE 交互）
+- `scratch/boot_probe/launch_e2_shortpath.py`（短 out-dir 发射器）
