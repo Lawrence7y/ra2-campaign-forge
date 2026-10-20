@@ -3477,3 +3477,14 @@ a2forge-audittools\（sha 逐件对齐）+原位留桩（py_compile 全过）；
 | **A12 阻塞** | 载体件数 **88（T55k 实收）vs 89（Notion U7 口径，含 `RA2MD Update.ico`）** 未决；该文件在源目录存在但未进 T55k 载体。**未发射** |
 | 输出 | `goal1_baseline_design_20261020/L1_PRELAUNCH_CHECKLIST.md`（A/B/C 三表实测值 + 阻塞项） |
 | 卫生 | ct=空、无游戏进程 ⇒ PASS |
+
+## 302 · A12 定稿（89 件）+ L1 可发射（`2026-10-20` 13:2x）
+
+| 项 | 结果 |
+|:--|:--|
+| 裁决 | 按 **Notion U7**：L1 载体 **89 件**（84 附加 + `RA2MD Update.ico`，默认 5 件由脚本自动加）|
+| 变体 | `_src_L1_sf8_20261020/` 补齐 `RA2MD Update.ico`（`8e091dc6`）⇒ 目录 89 件（`.mimosa` 不计） |
+| 冻结 | `_src_L1_sf8_20261020_MANIFEST.json`（89 条，含 size+sha256）；默认五件哈希：gamemd `73201cc0` / ra2loader `e10f60c5` / ra2render.dll `39cbd665` / ra2opt_play.bat `4579a730` / except.txt `6694b75e`；图 `0add791d` |
+| A12 | `L1_PRELAUNCH_CHECKLIST.md` 已填定稿串并解除阻塞 ⇒ **A1–A12 + 装1–装8 全过，可发射**（仍需用户在场） |
+| 发射命令（待用户在场） | `--target-map <变体>\XMP29U2.MAP --target-sha256 0add791d…60bc --carrier-create-from <变体> --carrier-create-files "<89件串>" --trip-id QC161-U0800-L1 --out-dir l1_u0800_20261020 --measure 1 --fullscreen --evid-diff --probe-frames 3900,4200,4500,4800,5100,5400,5700,6000` |
+| 卫生 | ct=空、无游戏进程 ⇒ PASS |

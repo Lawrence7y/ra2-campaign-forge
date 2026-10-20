@@ -19,11 +19,17 @@
 | A9 | 载体目录干净 | 空/无旧 `c_*` | `qc161_u0400_trip/ct` = 0 项 | ✅ |
 | A10 | 磁盘余量 | ≥5 GB | D: 410 GB 可用 | ✅ |
 | A11 | 锚哈希 | `517889c6…` | `517889c68f037ab6…5ba636` | ✅ |
-| A12 | `--carrier-create-files` 字符串已落回执 | 含空格项整体引号、字符串已抄进回执 | 见下「载体串」；**89 件（84 t31 + 5 自动）**，含 `RA2MD Update.ico` | ⚠️ 需核对件数 |
+| A12 | `--carrier-create-files` 字符串已落回执 | 含空格项整体引号、字符串已抄进回执 | **89 件已定（Notion U7 口径）**：84 项附加名 + `RA2MD Update.ico`；默认 5 件齐（gamemd `73201cc0` / ra2loader `e10f60c5` / ra2render.dll `39cbd665` / ra2opt_play.bat `4579a730` / except.txt `6694b75e`）。文件清单冻结于 `_src_L1_sf8_20261020_MANIFEST.json`（89 条，含 size+sha256） | ✅ 已解除 |
 
-### A12 载体串（L1 用，89 件目标）
+### A12 载体串（L1 用，**89 件**，已定稿）
 
-T55k 实收为 **88 件**（5 默认 + 83 附加），本变体即按该 88 件复制。**Notion U7 要求 L1 按 89 件（含 `RA2MD Update.ico`）**——该文件在源目录存在但未进 T55k。发射前需决定：按 88 件（与 T55k 一致）或按 89 件（Notion 口径）。此项**未决，属 A12 阻塞**。
+```
+00000409.016,00000409.256,0ne.bat,BATTLEMD.INI,BINKW32.DLL,Blowfish.dll,Blowfish.tlb,Cbnacw32.dll,Conquer.dat,ConquerMD.dat,IsleLand.bat,PATCHW32.DLL,PServer.exe,RA2.ico,RA2MD.INI,RA2MD.ico,Ra2.lcf,Ra2.tlb,Readme.txt,RegSetup.exe,Register.exe,Register.ini,SetupReg.exe,WSOCK32.DLL,Wolapi.dll,Woldata.key,XMP29U2.MAP,XYR.dll,YURI.exe,[2]0LoadBench_U0400.yrm,becdrv.bat,changes.txt,ddraw.dll,ddraw.ini,directplay-win32.reg,directplay-win64.reg,dpwsockx.dll,drvmgt.dll,expandmd01.mix,game.exe,ipxconfig.exe,ipxwrapper.dll,langmd.mix,language.mix,launcher.bmp,launcher.txt,launchermd.bmp,license.txt,maps01.mix,maps02.mix,mapsmd03.mix,movies01.mix,movies02.mix,movmd03.mix,mph.exe,mphmd.exe,mswsock.dll,multi.mix,multimd.mix,notes.ico,patchget.dat,patchgetmd.dat,ra2.csf,ra2.exe,ra2.ini,ra2.mix,ra2md.csf,ra2md.exe,ra2md.lcf,ra2md.mix,ra2render.ini,secdrv.sys,subtitle.txt,subtitlemd.txt,theme.mix,thememd.mix,unins000.dat,wdt.mix,xlh.bat,xwis.dll,xwis0.dll,yuri.lcf,配置器.exe,RA2MD Update.ico
+```
+
+- 该串**不含** `--carrier-create-from` 的默认 5 件（脚本自动加）⇒ 目录 5+84 = **89**。
+- `配置器.exe` 为非 ASCII 名；`RA2MD Update.ico` 含空格 ⇒ 参数整体需引号，且命令行编码须为 UTF-8/系统代码页一致。
+- 源在 `_src_L1_sf8_20261020/`（`XMP29U2.MAP` 已换为 sf8 `0add791d`）。
 
 ## B. 命令装配（草案，待 A12 定后填 trip-id/out-dir）
 
@@ -44,6 +50,6 @@ C7 依 Notion U3 **降为只记录**（写回 INI 不可信，判不了 GameSpee
 
 ## 阻塞项
 
-1. **A12 件数**：88 vs 89（`RA2MD Update.ico` 含否）——需用户/Lead 一句话定。
+1. ~~A12 件数 88 vs 89~~ → **已解除**：按 Notion U7 定 **89 件**（含 `RA2MD Update.ico`），串已定稿、清单已冻结。
 2. **A6 注记**：`ra2render.dll` 在载体中**在位但不加载**（S-4 零命中为硬门），这是 Arm A 的定义，不是缺陷。
-3. 其余 A1–A11、装1–装8 全部实测通过。
+3. 其余 A1–A12、装1–装8 全部实测通过 ⇒ **可发射**（仍需用户在场）。
