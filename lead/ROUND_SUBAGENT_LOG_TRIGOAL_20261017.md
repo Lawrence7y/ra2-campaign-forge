@@ -3247,3 +3247,26 @@ a2-campaign-forge` 加入火绒信任区（截图实锤：文件夹及子目录�
 | 卫生 | ct=空、无游戏进程 ⇒ PASS |
 | 推送 | worklog `8324d6d`；公开仓 `f505822`；PRE_DEPLOY diff 随本轮补推 |
 | 待用户 | P2 部署+冷启冒烟（六判据+日志摘录）→ T55k → 加杀软信任 → #4 批 4 → 批 3 |
+
+## 284 · ★ P2 部署 + 冷启冒烟 PASS（`2026-10-20` 08:53）
+
+| 项 | 结果 |
+|:--|:--|
+| **指令** | 用户直接令：P2 部署+冷启冒烟（按 DEPLOY.md D2 条件与六判据），然后 T55k。**与驱动器铁律冲突（真机动作留主会话）**；用户在场且直接下令，本会话代行并记账 |
+| 部署 | `deploy.cmd` EXIT=0；备份 `deploy/backup_20261020_085227`（旧 DLL `626f98b6`/旧 ini `a28122dd`）；目标 DLL `39cbd665`、ini `27c9a60c` 实测一致 |
+| ddraw | 部署前发现 `windowed=true`（boot hang 旧配置）→ 按 D2④ 改 `false`，原文件备份 `deploy/backup_ddraw/ddraw.ini.pre_p2`（`6d86e1ef`） |
+| 冷启 | `ra2loader.exe` 冷启动成功（gamemd pid 8448 / ra2loader pid 57820）；`ra2render.log` 8,689B；except.txt 未新增 |
+| **六判据** | **全 PASS**：①配置加载目标值全关+来源默认值；②灰雾总闸 0/默认值；③VisibilityMode=vanilla/默认值；④迁移命中 0 项；⑤门控 1->1；⑥无 SpySat 重构行 |
+| 证据 | `SMOKE_RESULT.md` + `smoke_evidence/ra2render.log`（`3526acfa`） |
+| P2 状态 | 按 D2 裁决口径 **P2 [x]**（已施用并通过冒烟）；T2–T4 未跑，另行排期 |
+| 下一步 | 关闭当前 gamemd/ra2loader → T55k |
+
+## 285 · ★ P2 冒烟收卷 + T55k 交接（`2026-10-20` 08:5x）
+
+| 项 | 结果 |
+|:--|:--|
+| 冒烟 | **PASS**（§284）：D2 六判据全过；P2 状态按 D2 口径 [x]；证据 `SMOKE_RESULT.md` + `smoke_evidence/ra2render.log`（`3526acfa`） |
+| 进程 | 冒烟实例已关闭（gamemd 8448 强制终止，ra2loader 正常退出）；当前无 gamemd/ra2loader |
+| **T55k** | **未起跑**：铁律明确禁止驱动器执行 `qc151_trip`；D2/D3 亦定真机趟留主会话。前置（P2 部署+冒烟）已满足；T55k 触发帧预检 (270,300] ⊂ f250-312 ✓。交主会话发射 |
+| 卫生 | ct=空、无游戏进程 ⇒ PASS |
+| 推送 | worklog/public 增 `SMOKE_RESULT.md` + 状态表 P2 [x] + 台账 §284/§285 |
