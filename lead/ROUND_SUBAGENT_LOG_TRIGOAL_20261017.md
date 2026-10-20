@@ -3435,3 +3435,12 @@ a2-campaign-forge` 加入火绒信任区（截图实锤：文件夹及子目录�
 | 瑕疵 | ①§2.2「T50 有 20+ 分钟长战局证书」引用过度（源零命中）；②行号 2 行漂移；③「其余 9 节」实为 25 节；④T50 h2/h3 240/107 挂账未提 |
 | **供应商换令** | 用户 12:2x：**只用 buddy switch(`new-provider-3/`) 与 MUZE(`new-provider-2/`)**；`new-provider/*`、`-4/*`、`-5/*` 全废；dfmodel=DeepSeek V4.1 flash、qfmodel=Qwen 3.8 flash；优先级 DeepSeek>千问>GLM5.3>Step（Step 仍禁）。已改锚点路由表+`automation-07c8dfec`§4+记忆 |
 | 节拍 | `automation-07c8dfec` 已恢复 **active**（enabled=true，*/15） |
+
+## 299 · U1–U9 已发 Notion + 载体清单复原（`2026-10-20` 12:5x）
+
+| 项 | 结果 |
+|:--|:--|
+| U1–U9 | 已按决策协议发入 Notion（公开仓 `e539e9f` 为据），九项逐条带推荐值；已显示「正在处理你的请求」，回复待读回 |
+| **载体清单复原** | 设计件 §6 登记的「T55k `--carrier-create-files` 不可复现」**已撤回**：`carrier_creation_receipt.json` 的 `files` 字典完整记录 88 件（5 默认 + 83 附加，默认项零缺失）⇒ 可确定性重建。复原串与边界写入 `goal1_baseline_design_20261020/T55K_CARRIER_FILES_RECOVERED.md`（2,523B） |
+| 边界 | 只复原文件名清单，不复原引号/转义写法；`RA2MD Update.ico` 在源但未进 T55k 载体（97 vs 88 差额之一，非错误）；`配置器.exe` 非 ASCII 名需确认命令行编码 |
+| 卫生 | ct=空、无游戏进程 ⇒ PASS |
