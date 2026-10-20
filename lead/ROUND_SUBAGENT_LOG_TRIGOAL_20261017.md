@@ -3488,3 +3488,22 @@ a2forge-audittools\（sha 逐件对齐）+原位留桩（py_compile 全过）；
 | A12 | `L1_PRELAUNCH_CHECKLIST.md` 已填定稿串并解除阻塞 ⇒ **A1–A12 + 装1–装8 全过，可发射**（仍需用户在场） |
 | 发射命令（待用户在场） | `--target-map <变体>\XMP29U2.MAP --target-sha256 0add791d…60bc --carrier-create-from <变体> --carrier-create-files "<89件串>" --trip-id QC161-U0800-L1 --out-dir l1_u0800_20261020 --measure 1 --fullscreen --evid-diff --probe-frames 3900,4200,4500,4800,5100,5400,5700,6000` |
 | 卫生 | ct=空、无游戏进程 ⇒ PASS |
+
+## 303 · ★ L1 首趟发射失败：boot 卡在 YR 载入动画（`2026-10-20` 14:45–14:51）
+
+| 项 | 结果 |
+|:--|:--|
+| 发射 | 用户令「跑 L1」；命令按 §302 定稿（`--target-map XMP29U2.MAP`、`--target-sha256 0add791d`、89 件载体、`--measure 1 --fullscreen --evid-diff --probe-frames 3900..6000`） |
+| **结果** | **EXIT=19（EXIT_STAGE_TIMEOUT）**；`internal_verdict_code=70`；失败阶段=`nav_menu`（150.1s 超时） |
+| 现场 | 窗口标题 **`Red Alert 2`**、rect `[935,578,1631,865]` = **696×287 小窗**（T55k 成功趟为 `Yuri's Revenge` 2560×1440）；`fs_arrival.arrived=false`，`fs_boot_probe.png` 连续 3 次 **diff=0.0**（画面完全静止）；截图实为 **YR "Yuri's Revenge" 载入画面**（\m/ 骷髅 + Yuri 头像 + 标题），luma 246.8 一致不变 |
+| 焦点 | `focus_nav_menu.ok=false`（3 次尝试全败，`bring_to_top`/`alt_bypass` 均 `fg_is_ours=False`）；`esc_skip_sent=2` 无效 |
+| 已排除 | `ddraw.ini` 三处哈希全同 `95949842`（L1/T55k/共享变体/evidence）；`RA2MD.INI [Video]` 段与 T55k **逐行相同**（800×600、VideoBackBuffer=no、StretchMovies=no）；`gamemd 73201cc0` 同；S4 零命中（11 模块，Arm A 成立）；T0/T1 零写、终止链 PASS、载体自删 |
+| 判读 | **不是 L1 设计缺陷**——方案预检 A1–A12 全过、Arm A 结构成立；失败形态是 **cnc-ddraw 呈现层未进全屏 + 前台锁竞争**（窗口 696×287 而非 2560×1440），与 §163 boot hang 同族，且本次伴随 `focus_nav_menu` 全败（截图里可见 ZCode/ChatGPT/WorkBuddy 等多个大窗在前台） |
+| 处置 | **未擅自改 ddraw/INI 重跑**（改配置会让基线口径失真）；未重试第二次（同一环境同配置，可预期复现）；本趟作废，不计入 ① 数据 |
+| 待办 | ①确认前台是否有遮挡窗口（截图显示 ChatGPT/WorkBuddy/ZCode 等大窗）→ 清屏后重跑；②或按 §163/§164 先跑 1 次 boot 探针确认环境已出封印；③若仍卡，按 U9/§163 判为 cnc-ddraw 呈现层问题升级处理 |
+| 卫生 | ct=0（脚本自清）、无 gamemd/ra2loader 残留、T0/T1 diff=0 ⇒ PASS |
+
+|:--|:--|
+| **环境取证** | 当前桌面可见大窗 6 个：ChatGPT(pid 56328)、DeepSeek Harness/WorkBuddy(53900)、Notion(38984)、ZCode(50056)、设置(35864/52236)、NVIDIA Overlay(15852)。L1 失败时这些窗口在前台 ⇒ `focus_nav_menu` 三轮全败可解释 |
+| 判别结论 | **优先按「前台遮挡 + 呈现层未全屏」处理**：游戏窗口 696×287（非 2560×1440）说明 ddraw 没接管全屏；叠加前台锁竞争。**两者都指向"环境未就绪"，不是 L1 方案问题** |
+| 重跑前置（建议） | ①关闭/最小化 ChatGPT、DeepSeek Harness、Notion、设置等大窗；②先跑 1 次 boot 探针（`fs_boot_probe` 达主菜单）确认出封印；③再跑 L1（同参数，不改 ddraw/INI） |
