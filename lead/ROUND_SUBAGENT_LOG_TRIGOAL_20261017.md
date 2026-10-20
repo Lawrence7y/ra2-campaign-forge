@@ -3522,3 +3522,18 @@ a2forge-audittools\（sha 逐件对齐）+原位留桩（py_compile 全过）；
 | 处置 | 本趟作废（未进图、零测量数据）；**未擅自点弹窗、未改配置**；证据存档 `_r2_singlestep/`（命名有误导，实为完整性弹窗证据） |
 | 待用户 | 需要用户决定：①点 `Continue` 放行（不改文件，代价=每趟都弹）；②按 RA2 惯例让游戏 `Delete Files` 重建 MOUSE.SHA（会改载体，需重定基线口径）；③查明 MOUSE.SHA 为何被判修改（可能是 **新增 `RA2MD Update.ico` 改变了目录清单判定**，与 Notion U7 的 89 件口径冲突——高度可疑） |
 | 卫生 | ct 已清（载体自删）、无 gamemd/ra2loader、无 python 残留 ⇒ PASS |
+
+## 305 · L1 第三趟（88 件）仍被同一弹窗挡住（`2026-10-20` 15:1x）
+
+| 项 | 结果 |
+|:--|:--|
+| 用户令 | 选 **B**：退回 88 件（去掉 `RA2MD Update.ico`） |
+| 变体 | `_src_L1_sf8_20261020/` 已删 `RA2MD Update.ico` ⇒ **88 件，与 T55k receipt 集合完全相等**（`variant-only=[]`、`receipt-only=[]`）；重生成 `_src_L1_sf8_20261020_MANIFEST.json`（88 条）；`l1_launch_cmd.txt` 改为 **83 项** |
+| 结果 | **EXIT=19**，仍 `nav_menu` 失败；139 帧全 mean **235.9** 一致 |
+| 弹窗内容 | 本趟点名 **`BINKW32.DLL`**（上一趟是 `MOUSE.SHA`）⇒ **不是 U7 的 89 件、也不是某个具体文件引起**，88/89 都触发且点名随机 |
+| 关键否定 | **B 方案无效**——弹窗不是"文件被改"而是 RA2 的**磁盘空间/冗余文件清理提示**（标题原文 "The following files were modified to add more free space on your hard drive"），点名文件在载体里可能存在也可能不存在（`MOUSE.SHA` 载体里根本没有；`BINKW32.DLL` 存在） |
+| 空间 | D 盘 **405 GB 可用**（充足）⇒ 非真实空间不足，是检测逻辑/环境态问题 |
+| 判读 | 该弹窗在**主菜单之前**弹出并模态阻塞，`nav_menu` 判据（want 红带 220/262/304/346/388/556）永远不成立。这是 **boot 环境态**，与 L1 设计、载体件数、ddraw/INI 均无关 |
+| 处置 | 本趟作废；**未自动点任何按钮**（`Continue`/`Delete Files`/`Free Up Space` 都会改变载体或环境）；未再重试 |
+| 待用户 | 需用户**手动**在游戏窗口点 `Continue` 放行一次（不删文件），或先查该提示的触发条件（RA2 会检查硬盘剩余空间阈值与某清单）。**这是需要你亲自操作的一步** |
+| 卫生 | ct=0、无游戏进程、载体自删 ⇒ PASS |

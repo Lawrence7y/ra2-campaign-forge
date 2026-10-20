@@ -248,3 +248,4 @@ a2-campaign-forge 加入火绒信任区**（截图实锤：文件夹及子目录
 - 2026-10-20 13:2x A12 定稿（日志 §302）：L1 载体按 Notion U7 定 89 件（含 RA2MD Update.ico），清单冻结 `_src_L1_sf8_20261020_MANIFEST.json`；A1–A12/装1–装8 全过，**L1 可发射（需用户在场）**。
 - 2026-10-20 14:51 L1 首趟失败（日志 §303）：EXIT=19 nav_menu 超时；窗口 `Red Alert 2` 696×287 小窗、画面静止在 YR 载入动画（diff=0.0）、focus 全败；ddraw/INI/Video 与 T55k 逐项相同 ⇒ 非设计缺陷，属 boot 呈现层/前台锁问题；本趟作废不计入 ① 数据；未擅自改配置重跑。
 - 2026-10-20 15:0x L1 第二趟（日志 §304）：**真因=游戏完整性检查弹窗「The following files were modified / MOUSE.SHA」挡住主菜单**（Continue/Delete Files/Free Up Space），导航 108 张全未命中；载体 88 同名文件 sha 与 T55k 全同、唯一新增 `RA2MD Update.ico`（U7 口径）⇒ 疑似 U7 的 89 件与 RA2 完整性判定冲突；`except.txt 6694b75e` 是历史件非本次崩溃；未擅自点弹窗；本趟作废。
+- 2026-10-20 15:1x L1 第三趟（日志 §305）：按 B 退回 88 件（与 T55k 集合相等），仍 EXIT=19；弹窗本趟点名 `BINKW32.DLL`（上趟 MOUSE.SHA）⇒ **非 89 件引起、非具体文件引起**；实为 RA2 磁盘/冗余清理提示（标题原文），D 盘 405G 充足；弹窗在主菜单前模态阻塞 ⇒ boot 环境态问题，需用户手动点 Continue 放行。
