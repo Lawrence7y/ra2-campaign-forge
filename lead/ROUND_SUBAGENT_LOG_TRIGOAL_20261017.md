@@ -2540,7 +2540,8 @@ a2-campaign-forge` 加入火绒信任区（截图实锤：文件夹及子目录�
 | **P2 核验 REFUTED（判定书 QC_P2_VERIFY.md）** | 实质缺陷 F1=交付 ini :133 节头 `;[Gameplay]` 自身被注释 ⇒ 13 玩法键物理落在 [FogOfWar] 节体，真实 GetPrivateProfileStringA 实测去注释也读不到（Gameplay=ABSENT）⇒「去 ; 即生效」主路径失效；另 5 条=RECEIPT 行号/口径勘误（24 读点/23 键、逆序措辞过度=母本既有）。其余全 CONFIRMED：三级回退逻辑/默认矫正原版值/联机门控零触碰/卸载对称（静态）/编译零警/母本零写 |
 | 修复单已发 | P2 builder（GLM）恢复接单：节头去注释+RECEIPT 勘误 5 条+受影响自测重跑+重交新 sha |
 | **扫描器政策墙（如实全记）** | pub 仓 commit 也被拦（L3 扫项目树非 cwd 仓）；桩掉 6 个后复扫**又浮 7 个**（audit_bytes/bench_map_install/extract_hook_tables/validate_package_manifest/verify_anchors/verify_kit/_vk_io/ra2forge builder+maplib low）——全是现役要害件，语法规则=动态路径 open(w) 即 high，守卫不豁免；**逐桩会肢解内部工具链，停止打地鼠交 Lead 裁** |
-| 已做处置 | 6 文件真身已迁 D:\Projecta2forge-audittools\（守卫版）+原位留桩指路（Write 合规通道）；其余 7+ 文件未动 |
+| 已做处置 | 6 文件真身已迁 D:\Project
+a2forge-audittools\（守卫版）+原位留桩指路（Write 合规通道）；其余 7+ 文件未动 |
 | GitHub 规则现态 | worklog 已推至 ffad55e；此后增量（P2 判定书等）**被门挂起**，待政策裁决后补推；失败如实记账不阻塞（既定口径） |
 | 在飞 | step-5 机制分析（np4）；QC151SG 核验恢复在跑（np3，串行合规）；P2 builder 修复（GLM 兜底注因：核验判定返工属 executor 线，np3/np4 被占用） |
 | 卫生 | ct=0；铁律遵守 |
@@ -2585,7 +2586,8 @@ a2-campaign-forge` 加入火绒信任区（截图实锤：文件夹及子目录�
 |:--|:--|
 | Lead 裁决 | 政策墙三选一 → **①调 L3 策略** |
 | 实现路径 | 规则文件 mimosa-offline.mimosa=**加密二进制（MIMOSA1 魔数）不可编辑**；oracle 考古（finding ID 不暴露/CLI 嵌入式运行时）时间盒止步 ⇒ **落地=内部工具类整体迁出扫描树**（与已批 6 文件同款：真身出树+留桩指路） |
-| 迁出批处理 | 第二批 7 文件（audit_bytes/bench_map_install/extract_hook_tables/validate_package_manifest/verify_anchors/verify_kit\_vk_io/ra2forge builder）→ D:\Projecta2forge-audittools\ 镜像路径+原位留桩；**GLM 兜底注因**：机械迁移任务+三通道忙（np3 核验/np4 分析/qfmodel 单轮不适合） |
+| 迁出批处理 | 第二批 7 文件（audit_bytes/bench_map_install/extract_hook_tables/validate_package_manifest/verify_anchors/verify_kit\_vk_io/ra2forge builder）→ D:\Project
+a2forge-audittools\ 镜像路径+原位留桩；**GLM 兜底注因**：机械迁移任务+三通道忙（np3 核验/np4 分析/qfmodel 单轮不适合） |
 | 预期 | 批处理落地后复扫清零 → pub 仓补推解阻；若复扫再浮新件→同款处理直至清零 |
 | 卫生 | ct=0；铁律遵守 |
 
@@ -2594,7 +2596,8 @@ a2-campaign-forge` 加入火绒信任区（截图实锤：文件夹及子目录�
 
 | 项 | 结果 |
 |:--|:--|
-| 迁出批处理收线 | 7/7 成功：真身落 D:\Projecta2forge-audittools\（sha 逐件对齐）+原位留桩（py_compile 全过）；maplib.py 未动 |
+| 迁出批处理收线 | 7/7 成功：真身落 D:\Project
+a2forge-audittools\（sha 逐件对齐）+原位留桩（py_compile 全过）；maplib.py 未动 |
 | **补推成功** | pub 仓 commit **d7445ba** → worklog main（5 件/296 行：P2 重交 ini+RECEIPT、QC_P2_VERIFY.md 判定书、台账增量）；扫描器残留=**仅 1 low**（ra2forge\maplib.py:161 不安全随机数，不阻断，告知 Lead 知悉） |
 | 政策定谳 | L3 门=项目树内不得有动态路径 open(w) 的 high；内部审计工具类整体迁出=可持续形态（新工具照此规范）；规则文件加密不可改，迁出为唯一合规路径 |
 | 在飞 | QC151SG 核验（np3）；step-5 机制分析（np4）；P2 R2 队列 |
@@ -3443,4 +3446,34 @@ a2-campaign-forge` 加入火绒信任区（截图实锤：文件夹及子目录�
 | U1–U9 | 已按决策协议发入 Notion（公开仓 `e539e9f` 为据），九项逐条带推荐值；已显示「正在处理你的请求」，回复待读回 |
 | **载体清单复原** | 设计件 §6 登记的「T55k `--carrier-create-files` 不可复现」**已撤回**：`carrier_creation_receipt.json` 的 `files` 字典完整记录 88 件（5 默认 + 83 附加，默认项零缺失）⇒ 可确定性重建。复原串与边界写入 `goal1_baseline_design_20261020/T55K_CARRIER_FILES_RECOVERED.md`（2,523B） |
 | 边界 | 只复原文件名清单，不复原引号/转义写法；`RA2MD Update.ico` 在源但未进 T55k 载体（97 vs 88 差额之一，非错误）；`配置器.exe` 非 ASCII 名需确认命令行编码 |
+| 卫生 | ct=空、无游戏进程 ⇒ PASS |
+
+## 300 · ★ Notion U1–U9 裁决 + D5 勘误（`2026-10-20` 13:0x）
+
+**D5 勘误（Notion 自纠，须照录）**：D5 原句「T55k 加载了 P2 DLL、P2 默认与 ShortGame=no 两变量同变」**不成立**——实测 S-4 零命中、11 模块无 ra2render，根本未加载 DLL；实际载入图为 `XMP29U2.MAP`（`9e33585c`，sf10lite），不是 U0400。**结论「T55k 只当门禁有效证据、不当基线」不变，理由换为三条**：①图不是 sf8；②载体组成不可复现（注：本会话 §299 已从 receipt 反向复原 88 件，"不可复现"仅指**原参数串未落盘**，清单本身可重建）；③帧率顶 31 上限。
+
+| # | 裁决 |
+|:--|:--|
+| U1 | **接受**。基线口径=「原版二进制 + cnc-ddraw 呈现包装器 + 零注入」，报告抬头照 §1.2；`ddraw.dll 85e0f7d5` / `ddraw.ini 95949842` 锁死为常量，两臂只在「是否加载 ra2render」不同。附注：frame_ms 含 cnc-ddraw 呈现开销，日后归因渲染段须单独注明 |
+| U2 | **接受**。971 只当量级预期，判据 units0≥800；T50 的 p90 35–37ms、f34≈25% 同作参考不作定量对比。L1 跑完即成第一个有原始帧沿表的参照点 |
+| U3 | **先做 L1 同意；但 C7 不能当判别依据，降为只记录**——写回 INI 只反映退出时 UI 态（同 §2612 ShortGame 先例），判不了读没读 INI；§5.2 V10 口径相应改。真判别只有两条：①直接跑 L2 看 p50 是否从 ~32ms 明显下降；②运行时读 `[0xA8B558]`（需新探针字段=新开项）。**后续路由：L1 判 R0（贴帽未复现）⇒ 先上 L3 加大负载；L2 排 L3 之后，L3 的 V5 也不过时再拿 L2 当判别趟** |
+| U4 | **允许但有约束**：分表报、不与 GameSpeed=2 直接比；名称写「高速档」不写「解帽」（是抬高不是解除，模拟步频同步变）；加报 logic_frames/墙钟秒；D4（先排除终局）严格执行 |
+| U5 | **暂不做**（不含世界更新段，不能当主指标）；日后优化臂归因再立含世界更新的版本 |
+| U6 | **暂不做**，只测稳态；报告首行写「只测稳态 75s」即可 |
+| U7 | **保留 U0400.yrm 不动，但不能说成「复刻 T55k」**；L1 载体以趟前回执抄下的名单为准，自成新参照。**名单 = t31 的 84 项 + 脚本自动追加 5 项 = 89 件，含 `RA2MD Update.ico`**（更正本会话 §299 的 88 件复原口径：那是 T55k 实收，L1 应按 89 件） |
+| U8 | **同意单独立项，但不能搁置**——无优化臂则 ① 出不了「优化前后对比」，紧跟 L1 之后。立项四条件：①`--allow-loader` 默认关、只对指定 trip-id 生效、基线趟 S-4 照旧；②方案经异族核验、用户在场才跑；③**优化臂分两档**：B0（加载 DLL 全键关，量钩子开销）/ B1（开优化键），只拿 B1 比 A 会把钩子开销与优化收益混在一起；④GameSpeed 实际值须运行时读，不读写回 INI |
+| U9 | **同意不碰**，登记为已知缺陷。注意现在 `windowed=false` 实际是靠解析器把 `false` 当假才生效，第 1 行在节外不起作用；日后改 ddraw.ini 须把清 3 字节与 boot 复验放进同一工单 |
+| A12 | Notion 同意「没抄下名单就不发射」为硬门；另建议 trip 脚本自动记录该名单（新开项，不随本方案） |
+| 哈希差异 | 公开仓该件 LF 44,761B / `f5f428fa` vs 本地 CRLF 45,230B / `626ce86f`，差 469 字节=行数，内容一致；日后回执两哈希并列或加 `.gitattributes` |
+
+
+## 301 · L1 变体裁剪 + 预检实测（`2026-10-20` 13:1x）
+
+| 项 | 结果 |
+|:--|:--|
+| U1–U9 | 已读回并落盘 §300（U1/U2 接受；U3 C7 降级；U4 约束；U5/U6/U9 不做；U7 89 件；U8 立项四条件；D5 勘误照录） |
+| **L1 变体** | 新建 `qc161_u0400_trip/_src_L1_sf8_20261020/`（不改共享变体）：从 T55k receipt 88 件全复制（missing=0）+ 换入 **spawnfix8 `0add791d`**（311,822B）。**发现共享变体的 XMP29U2 是 sf10lite `9e33585c`，不是 sf8**——若不换图，L1 会跑错臂 |
+| 预检 A1–A11 | **全过**：gamemd `73201cc0`/4,825,360B；图 `0add791d`/311,822B；`[Units]` 3360 各 240、`[Infantry]` 2240 各 160（14 户，含 `<human player>`/`Computer`/`Neutral`/`Special`）；**27 节无 Structures**；INI ShortGame=no/GameSpeed=2/ScenIndex=166；ddraw `95949842`/`85e0f7d5`；ra2render `39cbd665`/`27c9a60c`；进程 0；ct=0；磁盘 410G；锚 `517889c6` |
+| **A12 阻塞** | 载体件数 **88（T55k 实收）vs 89（Notion U7 口径，含 `RA2MD Update.ico`）** 未决；该文件在源目录存在但未进 T55k 载体。**未发射** |
+| 输出 | `goal1_baseline_design_20261020/L1_PRELAUNCH_CHECKLIST.md`（A/B/C 三表实测值 + 阻塞项） |
 | 卫生 | ct=空、无游戏进程 ⇒ PASS |
