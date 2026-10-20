@@ -3628,3 +3628,19 @@ a2forge-audittools\（sha 逐件对齐）+原位留桩（py_compile 全过）；
 | **开发中修掉的自身 2 bug** | ① 重复 `if` 行 ⇒ IndentationError；② **`else` 被拆开——`py_compile` 不报错但语义全错**（FAILFAST 块插在 `})` 后把原 `else: _stab_series_truncated` 粘到新 `if` 上）⇒ 改插到 `_stab_series_truncated = True` 之后。**教训：语法检查不足以验证补丁正确性，必须读插入点上下文** |
 | 未覆盖 | 未真机；未与 QC151FS 全屏路径交互测试；**退出码 29 尚未登记进 QC161 卡面退出码表**（采用前需同步） |
 | 处置 | 属「另开项，不阻塞 E1」⇒ 已交付待批准施用；**E1 可以先用现锚脚本跑**（裁决1 原意） |
+
+## 312 · ★★★ E1/E1b 真机两趟：弹窗真身=Windows 崩溃对话框，崩溃地址 0x0084F2BA 写入 .data 被拒（`2026-10-20` 17:2x–17:48）
+
+| 项 | 结果 |
+|:--|:--|
+| **E1 第一步（地图隔离）** | `arm_a`(spawnfix8 `0add791d`) 与 `arm_b`(spawnfix10lite `9e33585c`) 双裸起，各存活 12s、均 `Yuri's Revenge` 1707×960 ⇒ **地图版本无关**（证伪「spawnfix8 导致启动失败」）。两载体 88 件唯一差异=该图 |
+| **E1（清屏趟）** | EXIT=19；进程 t=9.735s 死亡；但**抓帧链路修好了**（灰底 0%，拍到 YR 主菜单而非桌面）——上一轮 45.1% 灰底是抓错了桌面 |
+| **E1b（88/88 件 + carrierfix）** | EXIT=19；进程 **t=5.171s 死亡**；`frame_early_01.png`(t=0.719s, 灰底 **15.2%**) **实读到崩溃框** |
+| **★★ 弹窗真身** | **Windows「错误应用程序」崩溃对话框**：标题 `Red Alert 2`、正文 `gamemd.exe - 错误应用程序` / **`0x0084f2ba` 指令引用了 `0x0084f2ba` 内存。该内存不能为 written**。**推翻全部此前判读**：§304 完整性检查、§306 释放空间、工作流 csf 语言表失败 —— 三者都不是 |
+| **崩溃地址分析** | `0x0084F2BA` 落在 **`.data`**（`0x00812000`–`0x00B79BE4`）；file_off `0x44F2BA`；该处是小端 **float 等差查表**（≈0.108, 0.1087, 0.1094…）。`.data` 本该可写 ⇒ 程序把**浮点常量表当输出缓冲区**写 ⇒ **地址计算错误/越界写**，或写指针来自**腐化数据结构**（与 RC-1 SBH 毒值形态一致）|
+| **关键判据纠正** | `except.txt` 1046→1046 **零新增**——但这是 WER 接管后的结果：崩溃框出现时进程直接终止，**引擎自己的 SEH 无机会写文件**。⇒ **「except 零新增」不能再作为「非崩溃」证据**（此前多轮误用此判据）|
+| 排除矩阵 | 前台遮挡✓排除(E1)、地图版本✓排除(E1第一步)、载体件数✓排除(E1b 88/88)、中文件名编码✓已修、csf 语言表✓排除(文案是 WER 非引擎) |
+| **carrierfix 缺陷修复** | `files_verified` 的 `all(... if v)` 跳过 `None` ⇒ 87/88 件却报 verified=True（E1 实证误报）。补丁副本 `qc151_carrierfix_20261020/`：F1 改为 `v is not None and ...`、F2 新增 `files_missing`/`files_requested`/`files_copied`、F3 源件缺失留痕 `missing_source_file`。**逻辑真值表 4/4**（E1 实况旧=True 误报/新=False 正确；全成功 True；sha 不符 False；全未复制旧=True 新=False）。修复后 E1b 实测 `files_copied=88`/`files_missing=[]` |
+| **发射器** | `scratch/boot_probe/launch_e1.py`：件名不经 PowerShell argv（避免 GBK/UTF-8 误解码），改由脚本读 UTF-8 清单 + `os.spawnv` 传参列表。**这是中文件名丢失的根治** |
+| 取证件 | `l1_u0800_e1b_20261020/E1B_CRASH_DIALOG_IDENTIFIED.md`（崩溃框逐字 + 段表 + 字节）、`l1_u0800_20261020/E1_MAP_ISOLATION_20261020.md`（地图隔离）、`qc151_carrierfix_20261020/RECEIPT` |
+| **下一步** | ①`procdump -e -ma` 抓崩溃转储定写者 ②反汇编找能算出 `0x0084F2BA` 的写点 ③**SBH 守卫 A/B**（若守卫拦住此崩溃 ⇒ RC-1 确证；Notion 裁决3 已放行此路径）|

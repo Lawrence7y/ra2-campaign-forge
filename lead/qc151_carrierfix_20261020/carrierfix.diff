@@ -1,0 +1,35 @@
+--- a/qc151_u0400_trip/qc151_trip.py
++++ b/qc151_u0400_trip/qc151_trip.py
+@@ -4945,7 +4945,14 @@
+             raise RuntimeError(f"★ 拒绝不安全件名：{name!r}（{_why}）")
+         s = src_dir / name
+         if not s.exists():
++            # ★ [CARRIERFIX 20261020] F3：源件缺失**必须留痕**（原实现静默 continue）
+             files[name] = None
++            rec.add("CARRIER", "missing_source_file", {
++                "name": name,
++                "name_repr": repr(name),
++                "source": str(s),
++            }, "script:create_isolated_carrier",
++                    note="★ CARRIERFIX：请求的件在源目录中不存在（可能是编码错乱或真缺件）")
+             continue
+         s_sha = sha256_file(s)
+         d = carrier_dir / name
+@@ -4976,8 +4983,15 @@
+         # ★★ U-4：★ **目录对象身份**（★ 缺基线不得放行删除）
+         "identity": _ident,
+         "files": files,
+-        "files_verified": all(v and v["sha256_src"] == v["sha256_dst"]
+-                              for v in files.values() if v),
++        # ★ [CARRIERFIX 20261020] F1：未复制的件（None）必须算失败。
++        #   原式 `all(... if v)` 跳过 None ⇒ 87/88 件却报 verified=True（E1 实证）。
++        "files_verified": all(
++            v is not None and v.get("sha256_src") == v.get("sha256_dst")
++            for v in files.values()),
++        # ★ [CARRIERFIX 20261020] F2：明列未复制的件名（人读；原实现静默吞掉）。
++        "files_missing": sorted(n for n, v in files.items() if v is None),
++        "files_requested": len(files),
++        "files_copied": sum(1 for v in files.values() if v is not None),
+     }
+     rp = Path(WORKDIR) / "carrier_creation_receipt.json"
+     rp.write_text(_dump_json(receipt), encoding="utf-8")
