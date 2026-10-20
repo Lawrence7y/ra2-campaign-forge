@@ -3270,3 +3270,41 @@ a2-campaign-forge` 加入火绒信任区（截图实锤：文件夹及子目录�
 | **T55k** | **未起跑**：铁律明确禁止驱动器执行 `qc151_trip`；D2/D3 亦定真机趟留主会话。前置（P2 部署+冒烟）已满足；T55k 触发帧预检 (270,300] ⊂ f250-312 ✓。交主会话发射 |
 | 卫生 | ct=空、无游戏进程 ⇒ PASS |
 | 推送 | worklog/public 增 `SMOKE_RESULT.md` + 状态表 P2 [x] + 台账 §284/§285 |
+
+## 286 · ★ verify_hooks [5] 口径补丁（D1，`2026-10-20` 09:0x）
+
+| 项 | 结果 |
+|:--|:--|
+| 依据 | Notion D1=B：冒烟后改检查器；要求识别 `GetGameplayIntEx/StrEx`、`[Gameplay]` 注释键算「已声明」、总数 23/23；期限=下一次改 ra2render 源码前 |
+| 补丁 | `tools/verify_hooks.py` 三处：①新增 `GAMEPLAY_KEYS`（13 键白名单）②`extract_ini_keys` 对 `[Gameplay]` 内被 `;` 注释的键按白名单计入，prose 行/其它节注释仍忽略 ③`extract_loadconfig_reads` 新增 `GetGameplay(?:Int|Str)Ex` 第一实参键名提取 |
+| 正控 | `python tools/verify_hooks.py` → **exit 0**；`23/23`；[4] OK；[5] 四键全 OK |
+| 负控 | 临时把 `; EnableBuildingFog=0` 改为 `; EnableBuildingFogX=0` → **22/23、[4] 报缺、[5] 红、exit 1**；随后从 P2 副本恢复 ini 至 `27c9a60c`，正控复跑 exit 0 |
+| 异族核验 | `ra2-re-analyst`（Step）`agent_0ffae732` 在飞（只读 diff/正控/负控/现场哈希） |
+| 待办 | 核验 CONFIRMED 后：状态表 10/10→23/23；public/worklog 补推 `verify_hooks.py` 与台账 |
+| 任务列表 | TodoWrite 10 项已建（P2 T2–T4 / T55k / ①基线 / #4 批4 / 批3 / A5 / P05 / MP-EDGE / 每轮同步） |
+
+## 288 · ★ T55k 真机趟（QC213P2）结果（`2026-10-20` 09:18–09:22）
+
+**用户授权**：本轮明确「授权本轮 T55k、覆盖驱动器铁律」；本会话代行 `qc151_trip.py`，按 D2/D3 条件发射。
+
+| 项 | 结果 |
+|:--|:--|
+| 发射 | `qc151_trip.py`（live 517889c6）T55k，`--measure 1 --fullscreen --evid-diff --frozen-dump`；载体从 `_src_variant_800x600_csf` 排他新建（88 件），源变体已换 P2 DLL `39cbd665`/ini `27c9a60c`（旧件备份 `deploy/source_variant_backup/`），ddraw `windowed=false`、`[Skirmish] ShortGame=no`；目标图 `[2]0LoadBench_U0400.yrm`=`93c2974b` |
+| 退出/清理 | `T55K_EXIT=0`；`final_exit=0`；carrier delete 成功；termination PASS（identity_pid/creation_time 双验）；无 gamemd/ra2loader 残留 |
+| **① 数据点** | **units0=842**（h0 283 / h1 **79** / h2 240 / h3 240；h1 非零出生）；三窗 `fps_avg=31.24/31.28/31.24`、p90=36.74/35.32/35.26ms、max=48.17/42.80/42.66ms、tick_miss=0、logic_frames=781/782/781；测窗末 frame=4681/5463/6245；无冻结、无新 except（new_exception_count=0） |
+| **QC213P2** | 探针已 arm（ladder=64 帧 f10..f312、dropped=138）；**latched=[]、latched_n=0**——**测窗起始 f3774 已越过阶梯末帧 f312，逐帧阶梯全部错过**；early 快照=f3774（h0 283/h1 79/h2 240/h3 240，def1F5 全 0）；first/last=3774/6245；frozen_done=false |
+| P1–P5（f3774 early） | **P2 成立**：ht1A6 h0/h1=0、h2/h3=1；**P3 成立**：ShortGame 全局 0/会话 0、equal=true；**P5 不成立**：sess_byte1=128、clean_bit=0、clean_set=false（0x4FC179 清洗未执行，f373 步兵清零需另寻路径）；P1：elem1 非 NULL、idx_df8=357、h0/h1 count=0、h2/h3 idx_ge_cap=true（count=0 分支成立） |
+| 零写 | T0/T1 634 件全同、diff=0 ⇒ PASS |
+| 结论 | **T55k 未达成主目标（捕获 f250-312 清洗窗）**——探针 arming 在 measure 起点（f3774），该窗在导航期已过；但拿到 **Post-P2 842 单位长战局 31 帽数据点**（h1 79 非零、四屋全活、6245 帧无冻结）——h1 零出生签名在 P2 默认配置下未复现 |
+| 下一步 | 需重设计 QC213P2 arming 时点（导航前 arm 或把阶梯重定基到 measure 起点）后重跑；本轮未改探针常量（LADDER_CAP/SRC 未动） |
+
+## 287B · verify_hooks 补丁异族核验 CONFIRMED（补记）
+
+| 项 | 结果 |
+|:--|:--|
+| 核验 | `ra2-re-analyst`（Step，异族）`agent_0ffae732`：**FINAL: CONFIRMED** |
+| 补丁面 | `diff --strip-trailing-cr` 仅 3 hunk：`GAMEPLAY_KEYS` 常量、`extract_ini_keys` 的 `[Gameplay]` 注释键白名单、`extract_loadconfig_reads` 的 `GetGameplay(?:Int|Str)Ex`；`main()` 零改动 |
+| 正控 | exit 0；`23/23`；[4] OK；[5] 四键全 OK |
+| 负控 | 内存态改键 `EnableBuildingFog`→X ⇒ 22/23、missing 集精确；prose `starcraft=` 不计键；其它节注释仍忽略；`RadarFogGuardMode` 改名亦 FAIL（非橡皮章） |
+| 现场 | `ra2render/ra2render.ini` 与 `ra2youli/ra2render.ini` 均 `27c9a60c`；cpp/h `656e6b4e/10410c98`；无污染 |
+| 状态表 | 配置键对应恢复「23/23（verify_hooks 已含 Gameplay）」 |
