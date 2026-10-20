@@ -1,8 +1,8 @@
 # 裁决包 §313：D-117 路径长度根因定谳 + L1 基线趟首次成功
 
 - 日期：2026-10-20 20:2x
-- 公开仓：https://github.com/Lawrence7y/ra2-campaign-forge-worklog
-- 本包对应提交：见本次 push 后的 commit（下文以 `lead/l1a_20261020/` 与 `lead/l1_u0800_e1c_dump_20261020/` 为准）
+- GitHub 仓库：https://github.com/Lawrence7y/ra2-campaign-forge
+- 本包对应提交：`32f40ba`（下文以 `lead/l1a_20261020/` 与 `lead/l1_u0800_e1c_dump_20261020/` 为准）
 
 ## 零、先看这三行
 
