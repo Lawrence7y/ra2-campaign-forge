@@ -3212,3 +3212,27 @@ a2-campaign-forge` 加入火绒信任区（截图实锤：文件夹及子目录�
 | 决策建议 | `verify_hooks [5]` 口径更新建议排在 P2 冒烟之后，作为独立小补丁+异族核验；本轮不动安全工具 |
 | 推送 | 跳过（无新完成件；§280 随下轮并推） |
 | 等待面 | P2 部署+冷启冒烟 → T55k → #4 批 4 → 批 3 |
+
+## 281 · ★ 决策请求 D1–D4 已发（`2026-10-20` 08:4x，用户令）
+
+| 项 | 结果 |
+|:--|:--|
+| 用户令 | 「需要决策的地方，先把程序全部上传 GitHub，再把链接给 Notion，让它决策」 |
+| 公开仓 | 最新锚点/台账 + `lead/p2_build_20261020/`（RECEIPT_BUILD、DEPLOY、cpp.diff、h.diff、verify_hooks.json、deploy.cmd、rollback.cmd、DECISION_REQUEST）+ 决策请求，commit **`c18bf87`**；预检 PASS（全文本、无禁扩展、无凭据字样） |
+| 源码全文件 | `blitter_hooks.cpp`/`ra2render.h` 全文件上传仍被 Mimosa 源写钩子拦（要求 Write/Edit）；以 `cpp.diff`/`h.diff` 完整改动面替代，D4 交 Notion 裁是否足够 |
+| Notion | D1–D4 已发入会话（D1 verify_hooks [5] 口径 A/B/C；D2 P2 部署批准；D3 排期；D4 diff 是否足够），已显示「正在处理你的请求」 |
+| 待办 | 读回 D1–D4 → 记账 → 按裁决执行（D1 默认推荐 B，冒烟后改） |
+
+## 282 · ★ Notion 裁决记录 D1–D4（`2026-10-20` 08:4x）
+
+**来源**：Notion 会话「RA2 Campaign Forge 仓库分析」，针对公开仓 `c18bf87` 的 D1–D4 提问。
+
+| 项 | 裁决 |
+|:--|:--|
+| D1 | **B**：先部署+冒烟，之后再改检查器。附条件：检查器完全看不到 `[Gameplay]`（`verify_hooks.json` 中 `"Gameplay": []`、`ini_keys` 仅 10）⇒ 状态表标「10/10（verify_hooks，不含 Gameplay）」，23/23 只能由冒烟日志证明；修补期限=下一次改 ra2render 源码之前，须异族核验；要求识别 `GetGameplayIntEx/StrEx`、注释键算「已声明」、总数恢复 23/23；可与 T55k 并行走离线线 |
+| D2 | **有条件批准**：①用户在场、主会话执行，部署前确认 gamemd/ra2loader/YURI 未运行；②先记录 `ra2youli` ini `a28122dd` 与母本 `fd9ebb32` 差异（只记录不移植），部署用 P2 ini **整件覆盖**，判据 4 验证；③复制后手工复核 DLL `39cbd665`/ini `27c9a60c` 并记录 `backup_*` 哈希；④`ddraw.ini` 保持 `windowed=false`；⑤六条判据全满足+日志摘录，任一不满足即回滚并核对 `backup_*` 哈希；**冒烟通过后 P2 才可勾 [x]** |
+| D3 | **维持**：P2 部署+冒烟 → T55k → **给发生器单独加杀软信任** → #4 批 4 安慰剂 1 趟 → 批 3；加信任一步不可省；批 3 前置 G-0a..G-0d/G-0f、spawnfix8 ShortGate 门禁、报告首行单臂局限、用户在场 |
+| D4 | **批准**：diff+记录足够，不要求全文件；cpp/h 公开仓维持搁置，不另找受控路径绕过钩子 |
+| 旧三项 | Notion 指出三项旧裁决（②范围、P2 执行主体、#4 发生器）已在会话中回复，应由驱动器同步；§279「仍无回复」作废——已按 §244 决策记录同步，不重复发问 |
+
+**落地**：`STATUS_TABLES.md` §95 增 D1 注记（10/10 口径）；`deploy/DEPLOY.md` 增 D2 五条附加条件；D1 检查器补丁排冒烟后、可与 T55k 并行。

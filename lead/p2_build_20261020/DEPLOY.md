@@ -41,6 +41,14 @@ rollback.cmd "D:\Project\ra2-campaign-forge\ra2youli" "backup_<时间戳>"
 
 不带第二参数时自动选最新的 `backup_*` 目录。回滚后以 `backup_<时间戳>\` 内实际备份文件的哈希复核；`rollback/` 内的 `pre_p2` 仅代表母本 pre-P2 态（`ra2youli\ra2render.ini` 现行版本可能与母本 pre-P2 版本不同，回滚以 `backup_*` 为准）。
 
+## D2 裁决附加条件（Notion 2026-10-20，日志 §282）
+
+1. 用户在场，由主会话执行；部署前确认 `gamemd`、`ra2loader`、`YURI` 均未运行。
+2. 部署前先记录 `ra2youli\ra2render.ini`（现行 `a28122dd`）与母本 `fd9ebb32` 的差异，**只记录、不移植**；部署时必须用 P2 出厂 ini **整件覆盖**，不得把旧的 `=1` 带进去。部署后判据 4「迁移命中 0 项」即对此的直接验证。
+3. `deploy.cmd` 复制后不校验目标文件：复制完须手工复核 `ra2youli` 下 DLL=`39cbd665`、ini=`27c9a60c`，并记录 `backup_*` 的实际哈希。
+4. 冷启动时 `ddraw.ini` 必须保持 `windowed=false`（boot hang 修复）；若卡片头，先查此项再判断是否 P2 问题。
+5. 六条判据全部满足并把日志原文摘录回执；任一不满足即执行 `rollback.cmd` 并核对回滚后哈希= `backup_*` 实际备份。**冒烟通过后 P2 才可勾 [x]。**
+
 ## 边界
 
 - 本包只覆盖 `ra2youli\ra2render.dll` 与 `ra2youli\ra2render.ini`，不触碰 gamemd.exe、地图、存档或其他目录。
