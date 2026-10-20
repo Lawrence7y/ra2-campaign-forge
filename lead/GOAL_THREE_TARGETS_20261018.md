@@ -8,24 +8,24 @@
 2. **② 修主崩溃**（保留「在现有低负载语料内」）——诊断 → 修复
 3. **③ 建立安全改动能力**——已成立，持续保持（防回退）
 
-## 供应商路由（★ 2026-10-20 08:0x 用户令更新：ZCode 内全部供应商的全部模型均可用）
+## 供应商路由（★ 2026-10-20 12:2x 用户令：**只有 buddy switch 与 MUZE**；旧供应商全部废弃）
 
-**派发优先序**：模型家族 DeepSeek > Qwen > GLM 5.3 > Step；同族内供应商 Qoder > Qoder-AI > workbuddy > workbuddy-ai。
+**派发优先序**：模型家族 DeepSeek > Qwen > GLM 5.3 > Step。**dfmodel=DeepSeek V4.1 flash；qfmodel=Qwen 3.8 flash**。同族内 buddy switch 的 cn 变体优先于 global 变体。
 
 | 家族 | 供应商/模型（按优先序） | 用途 |
 |:--|:--|:--|
-| DeepSeek | `new-provider/dfmodel(deepseek)`（Qoder）→ `new-provider-4/deepseek-v4.1-flash`（workbuddy）→ `new-provider-3/deepseek-v4.1-flash`（workbuddy-ai） | 执行/构建/核验首选 |
-| Qwen | `new-provider/qfmodel(qwen)`（Qoder）→ `new-provider-5/qfmodel(qoen)`（Qoder-AI） | 单轮快问/探针/第二意见 |
-| GLM 5.3 | `new-provider-2/glm-5.3-flash`（muze） | 第三档，正常可用 |
-| Step | `new-provider-4/step-5-preview`（workbuddy）→ `new-provider-3/step-5-preview`（workbuddy-ai） | 末档，仅无时限深水件 |
-| **最终兜底** | `a7775d5c-.../deepseek-v4.1-flash`（opencode，与会话模型同源） | **仅当上述供应商全部不可用时启用**，须注因附健康表快照 |
+| DeepSeek V4.1 flash | `new-provider-3/qoder-cn:dfmodel` → `new-provider-3/qoder-global:dfmodel` → `new-provider-3/wb-cn:deepseek-v4.1-flash` → `new-provider-3/wb-global:deepseek-v4.1-flash`（均 buddy switch） | 执行/构建/核验首选 |
+| Qwen 3.8 flash | `new-provider-3/qoder-cn:qfmodel` → `new-provider-3/qoder-global:qfmodel`（buddy switch） | 单轮快问/探针/第二意见 |
+| GLM 5.3 flash | `new-provider-2/glm-5.3-flash`（MUZE） | 第三档，正常可用 |
+| Step | `new-provider-3/wb-cn:step-5-preview` → `new-provider-3/wb-global:step-5-preview`（buddy switch） | 末档；**2026-10-20 10:0x 用户令禁用（太慢），非经明示不得启用** |
 
+- **废弃**：`new-provider/dfmodel`、`new-provider/qfmodel`、`new-provider-4/*`、`new-provider-5/*` 一律不再派发。
+- 未知/未在册 id（如 opencode 兜底档）不再作为兜底；四档全不可用时停下报用户。
 - 串行单位=供应商+模型；同一模型同时只跑一件，不同模型可并行。
-- 执行者≠核验者：核验须不同模型家族、尽量不同供应商。
-- Agent 类型缓存钉旧通道时，用 `CreateWorkflow subagent_model` 直指上表当前档位。
-- 会话模型默认只做编排；仅在最终兜底时承接派发，且执行者≠核验者纪律不变。
+- 执行者≠核验者：核验须不同模型家族。
+- Agent 类型缓存钉旧通道时，用 `CreateWorkflow subagent_model` 直指上表当前档位（**含括号的 id 必须原样传**，如 `new-provider-3/qoder-cn:qfmodel`）。
 
-**★ 可复用子代理（13:5x 用户令设立，`.zcode/agents/`，按本夜操作员经验固化）**：`ra2-patch-verifier`（deepseek$max=独立补丁核验员）· `ra2-re-analyst`（new-provider-4/step-5-preview=逆向机制分析员）· `ra2-quick-consult`（qfmodel=单轮机制顾问，自主多步禁）。新代理类型或需会话重载后出现在 Agent 工具清单；在此之前 CreateWorkflow+subagent_model 路径照常。
+**★ 可复用子代理（`.zcode/agents/`）**：`ra2-patch-verifier`（独立补丁核验）· `ra2-re-analyst`（逆向机制分析；原钉 step-5，**Step 已禁用 ⇒ 改经 CreateWorkflow + subagent_model 直指当前档**）· `ra2-quick-consult`（单轮顾问；原钉 qfmodel，**旧 id 已废弃 ⇒ 改用 `new-provider-3/qoder-cn:qfmodel`**）。
 
 **纪律**：真机趟一律指挥官亲执或既有可靠通道，串行（同一时刻一个）；执行者与核验者必须不同上下文；"派发回执"≠"已启动"，以盘面产物为准。
 
@@ -234,3 +234,11 @@ a2-campaign-forge 加入火绒信任区**（截图实锤：文件夹及子目录
 - 2026-10-20 09:0x verify_hooks [5] 补丁（日志 §286）：正控 23/23 exit0、负控 22/23 exit1；ini 已恢复 27c9a60c；异族 Step 核验在飞；任务列表 10 项已建。
 - 2026-10-20 09:18–09:22 T55k（日志 §288）：exit0、无新 except；units0=842（h1 79 非零）、三窗 31.24fps/p90 35-37ms/无冻结；**QC213P2 阶梯错过（测窗 f3774 > f312，latched=0）**，主目标未达；P2/P3 预测成立、P5 不成立；待重设计 arming 重跑。
 - 2026-10-20 09:3x Notion D5（日志 §289）：选 C——不改 arming/不重跑；T55k 只作门禁有效证据、不作①基线；QC213P2 标「门禁下不复现不再追」；下一步=①原版基线趟设计（U0800+不受上限指标+h0-h3，先异族核验）。
+- 2026-10-20 09:4x ① 基线方案设计派出（日志 §290）：Step 只读设计（U0800/不受上限指标/解限速/h0-h3），交付后异族核验；T55k evidence 1.8GB=evid-diff 首参缺失回退全量，作为后续差异参照保留。
+- 2026-10-20 09:5x evidence 去重轮（日志 §291）：9.6G→1.8G（释放 7.73GiB），保留 T55k 参照目录与 dmp；抽样逐字节复核后删；① 基线设计仍在飞。
+- 2026-10-20 09:5x 通道健康表刷新轮（日志 §292）：Qoder deepseek 冷却中（核验两连败）、其余全绿；① 基线设计在飞；ct=0。
+- 2026-10-20 10:0x 用户令（日志 §293）：**Step 全面禁用**（太慢）；优先级 DeepSeek>千问>GLM>Step(禁)。在飞 Step 设计件已停，① 基线设计改派 DeepSeek。
+- 2026-10-20 10:1x 重派（日志 §293）：① 基线设计改 DeepSeek `dwfrun-34e6cf45`；**automation-07c8dfec 被 CronUpdate 连带置 paused 且无法自恢复，需用户在新会话重建或在 Automations 页恢复**。
+- 2026-10-20 11:0x 基线前置快照（日志 §294）：载体已换 P2 件的显式快照落盘（含原版备份路径+四项前置）；① 设计仍在飞。
+- 2026-10-20 12:0x ① 基线方案交付（日志 §295）：Arm A 直启原版（Arm B 不可当基线/UnlockGameSpeed 空开关）；负载 XMP29U2=sf8、门 units0≥800；两个假证据（target-map 不证载图、game_speed 写死）；千问异族核验 dwfrun-b2d99084 在飞；U1–U9 待裁。
+- 2026-10-20 12:2x ① 基线方案核验 CONFIRMED（日志 §298）：GLM 异族七项全 PASS（Arm A/S-4/B 臂无条件/空开关/两假证据/地图身份/风险），瑕疵仅表述级；供应商换令=只用 buddy switch+MUZE，节拍已恢复 active。

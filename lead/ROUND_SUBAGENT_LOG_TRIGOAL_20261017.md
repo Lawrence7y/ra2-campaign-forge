@@ -3318,3 +3318,120 @@ a2-campaign-forge` 加入火绒信任区（截图实锤：文件夹及子目录�
 | ① 基线 | T55k 不能当 ① 基线，三处要标清：①加载 P2 DLL（非原版）；②P2 默认 + ShortGame=no 两变量同变，h1 恢复出生不能只归一个；③fps 顶 31 帽，量不出卡顿。① 测量设计须满足：解除速度上限，或用每帧逻辑耗时/tick 耗时等不受上限指标；加大负载（U0800 或更高）直到 fps 明显 <31；**建议两者都做**；测量方案先过异族核验再上真机 |
 | 顺序 | ① 原版基线趟设计（离线，含 U0800、不受上限指标、h0–h3）→ 异族核验 → 用户在场跑基线 → D3：给发生器单独加杀软信任 → #4 批4 → 批3 |
 | 记账 | T55k 由主会话在用户明确授权下代跑，符合「用户在场」口径，不算违反铁律；**驱动器仍不得自跑 trip**。verify_hooks 补丁 CONFIRMED，**D1 结案** |
+
+## 290 · ★ ① 基线方案设计中（`2026-10-20` 09:4x）
+
+| 项 | 结果 |
+|:--|:--|
+| 在飞 | `agent_5f7982b5`（ra2-re-analyst/Step，只读）设计 ① 原版基线测量方案 → `goal1_baseline_design_20261020\BASELINE_MEASURE_DESIGN.md` |
+| 依据 | D5 裁决（§289）：基线须满足「不受 31 帽影响指标」+「加大负载至 fps 明显 <31」，建议两者都做；方案先异族核验 |
+| EVID 观察 | T55k `evidence/` 1.8GB 全量拷贝——`--evid-diff` **参照首次缺失 ⇒ 按设计回退全量并记为参照**（`_EVID_REFERENCE.json` 已生成）；后续趟应为差异件模式。**本轮不删**（是参照基线，删了下一趟又要全量）；批量趟后按纪律 dedup |
+| 卫生 | ct=空、无 gamemd/ra2loader ⇒ PASS；锁心跳已刷 |
+| 待办 | 设计交付 → 异族核验 → 用户在场发射基线趟 |
+
+## 291 · ★ evidence 去重 + 基线设计在飞（`2026-10-20` 09:5x）
+
+| 项 | 结果 |
+|:--|:--|
+| 在飞 | `agent_5f7982b5`（Step）① 基线方案设计 running（未落盘，零干预） |
+| **evidence 去重** | T55k 为 evid-diff **参照首趟**（新 out-dir 无参照 ⇒ 回退全量，88 件 1.8GB，`_EVID_REFERENCE.json` 已生成）；以 T55k manifest 为参照对 `evidence/` 全库去重：**9.6G→1.8G，释放 7.73 GiB**，11 个目录被清理，保留 MANIFEST/README_REBUILD/`*.dmp`；抽样复核 movmd03/movies01/movies02 与参照**逐字节相同**后才删；总账 `evidence/_DEDUP_20261020.json` |
+| 卫生 | ct=空、无 gamemd/ra2loader ⇒ PASS；D 盘余量 406G |
+| 备注 | 参照目录（T55k evidence）**整体保留**——它是后续差异模式的基准；后续趟应直接命中 diff 模式，不再产生 1.8GB |
+| 推送 | worklog 增台账+去重账 |
+
+## 292 · ★ 通道健康表刷新 + 保持盘点（`2026-10-20` 09:5x）
+
+**通道健康表（本轮刷新；距上次 §2717 已跨 4+ 轮）**
+
+| 供应商/模型 | 状态 | 本轮实证 |
+|:--|:--|:--|
+| Qoder `new-provider/dfmodel(deepseek)` | **冷却中**（09:0x 起 30 分钟） | 核验两连失败：typed ask 无 submit_result（errored）+ 文本回执空交付（311 tokens）⇒ 模型层 |
+| Qoder `new-provider/qfmodel(qwen)` | 可用 | 未动用（Qoder 家族：**纯文本 ask，禁 typed JSON**） |
+| Qoder-AI `new-provider-5/qfmodel` | 可用 | 未动用 |
+| workbuddy `new-provider-4/deepseek-v4.1-flash` | 可用 | 未动用 |
+| workbuddy `new-provider-4/step-5-preview` | 可用 | ① 基线设计在飞（`agent_5f7982b5`，只读） |
+| workbuddy-ai `new-provider-3/deepseek-v4.1-flash` | 可用 | 未动用 |
+| workbuddy-ai `new-provider-3/step-5-preview` | 可用 | 未动用 |
+| GLM 5.3 `new-provider-2/glm-5.3-flash` | 可用 | P2 核验 CONFIRMED（§278）实证 |
+| opencode `deepseek-v4.1-flash` | 兜底位 | 未动用（本会话编排用） |
+
+| 项 | 结果 |
+|:--|:--|
+| 在飞 | `agent_5f7982b5`（Step）① 基线设计 running |
+| 卫生 | ct=空、无游戏进程 ⇒ PASS |
+| 新勾门/新派发 | 无（等设计交付） |
+| 推送 | 台账增量随下轮 |
+
+## 293 · ★ 用户令：禁用 Step 模型 + 新优先级（`2026-10-20` 10:0x）
+
+| 项 | 结果 |
+|:--|:--|
+| **用户令** | 「禁用 Step 模型，这个模型实在是太慢了」；模型优先级改为 **1 DeepSeek → 2 千问 → 3 GLM → 4 Step（已禁用）** |
+| 立即动作 | 在飞 Step 设计件 `agent_5f7982b5`（① 基线方案设计，已跑 67 分钟零落盘）**TaskStop 停止**；零交付物，无副作用（只读代理） |
+| 生效范围 | `automation-07c8dfec` §4、GOAL 路由表、记忆 `provider-dispatch-discipline` 三处同步；**Step 两档（workbuddy/workbuddy-ai `step-5-preview`）一律不派**，含核验与兜底 |
+| 通道健康表 | workbuddy `step-5-preview`、workbuddy-ai `step-5-preview` → 标 **DISABLED（用户令）**；剩余可用：DeepSeek×3（Qoder 冷却中/workbuddy/workbuddy-ai）、Qwen×2、GLM 5.3、opencode 兜底 |
+| 重派 | ① 基线设计改派 **DeepSeek**（workbuddy `new-provider-4/deepseek-v4.1-flash`，Qoder deepseek 仍在冷却） |
+
+| 重派 | ① 基线设计改派 **DeepSeek**（workbuddy `new-provider-4/deepseek-v4.1-flash$max`），工作流 `dwfrun-34e6cf45-3e17-4962-a342-e6c2a43d7aed` 在飞 |
+| **节拍任务事故（如实记）** | `CronUpdate` 在改写 prompt 时把 `automation-07c8dfec` 连带置为 **paused**，且 `CronUpdate` 无法改启用态；本会话已归属该定时任务 ⇒ `CronCreate` 报「Cannot create a scheduled task inside a session that already belongs to a scheduled task」。**需用户在新会话重建，或在 Automations 页手动恢复该任务**；恢复前本会话不再被自动触发（手动「继续」仍可推进） |
+
+## 294 · 基线前置快照轮（`2026-10-20` 11:0x）
+
+| 项 | 结果 |
+|:--|:--|
+| 在飞 | `dwfrun-34e6cf45`（DeepSeek，① 基线设计）running，未落盘 |
+| 新增 | `goal1_baseline_design_20261020/CARRIER_STATE_SNAPSHOT.md`——载体源变体**已被换成 P2 件**（DLL `39cbd665`/ini `27c9a60c`）的显式快照，含原版备份路径与基线趟四项必做前置，防后续误把 P2 件当原版 |
+| 现场值 | `ddraw.ini`=windowed=false；`RA2MD.INI`=[Skirmish] ScenIndex=166 / Scenario=U0400 / GameSpeed=2 / UnitCount=10 / **ShortGame=no**；U0800 图 `e3acc130` 在盘 |
+| 卫生 | ct=空、无游戏进程 ⇒ PASS |
+| cron | `automation-07c8dfec` 仍 **paused**（待用户恢复或新会话重建） |
+
+## 295 · ★ ① 基线方案交付 + 异族核验在飞（`2026-10-20` 12:0x）
+
+| 项 | 结果 |
+|:--|:--|
+| 交付 | `goal1_baseline_design_20261020/BASELINE_MEASURE_DESIGN.md`（45,230B / 469 行，sha256 前 8=`626ce86f`）；DeepSeek `dwfrun-34e6cf45` 完成 |
+| **核心结论** | **Arm A=直启原版**（trip 脚本历来就是零注入原版直启：唯一 `Popen`@:1099 指向 gamemd，S-4 要求 ra2render/ra2loader 命中=0@:1003-1025）；**Arm B（P2 DLL+全键关）不可当基线**——DLL 在 ATTACH 无条件挂 3 inline+13 虚表钩子（blitter_hooks.cpp:3896-3903），灰雾/重刷补丁不看键照打；**UnlockGameSpeed=空开关**（`EnforceGameSpeedUnlock()` 空函数体 :1169-1172） |
+| 负载 | `XMP29U2.MAP`=spawnfix8 `0add791d`（[Units]3360/[Infantry]2240，h0/h1 各 240/160，只改 800 个 Owner 令牌）；预期 units0≈971（T50 单点），设计门 **units0≥800**；ShortGame=no 走 INI；「每阵营有建筑」弃用（U0800 全族无 [Structures]） |
+| 指标 | 主判据全帽无关：frame_ms p90/p99/max、越帽面积 E、>34ms 占比 f34、tick_miss、max_stall、logic_frames、n_multi_advance、1Hz 计数；**fps_avg 只作描述**；解上限唯一低成本路径=`[Skirmish] GameSpeed` 2→6（U3 未证） |
+| **两个假证据（重要）** | ①`--target-map/--target-sha256` PASS **不证明载入哪张图**：T55k pin U0400（Neutral 120/80）但窗内 h2/h3 c5574=240 ⇒ 实际载入必是 XMP29U2；且 F-4 路径**写死** U0400 yrm（:4206）不看 --target-map。②`scene_fixed.game_speed=2` **写死**（:3941）非运行期值 |
+| 本会话复核 | 三条关键论断已亲核成立：Popen@:1099、S-4@:1003-1025、EnforceGameSpeedUnlock 空体@:1169-1172、F-4 写死@:4206、game_speed 常量@:3941 |
+| 异族核验 | `dwfrun-b2d99084`（Qoder-AI 千问 `new-provider-5/qfmodel(qoen)`）在飞；注：`ra2-quick-consult` 的 np5 模型 id 已过期（`new-provider-5/qfmodel` 解析失败），实际 id=`new-provider-5/qfmodel(qoen)` |
+| 待 Lead | 方案列 U1–U9 九项（原版口径含 cnc-ddraw、971 单点无原始沿表、GameSpeed 是否读 INI、GameSpeed=6 物理影响、帧体探针、开局窗、其余 yrm、优化臂需 `--allow-loader` 新旗标=新开项、ddraw 0x01 字节） |
+
+## 296 · 换道：Qoder-AI 千问空交付 → Qoder 千问（`2026-10-20` 12:1x）
+
+| 字段 | 内容 |
+|:--|:--|
+| 时间 | 2026-10-20 12:1x |
+| 供应商/模型 | Qoder-AI `new-provider-5/qfmodel(qoen)` |
+| 错误摘要 | 核验工作流 completed 但 **0 tokens / 7 秒 / 结果为空**（空交付） |
+| 判定类型 | 模型层（输出不合格） |
+| 处置 | 该模型冷却 30 分钟；同族下一供应商 = Qoder `new-provider/qfmodel(qwen)` 重派（纯文本 ask） |
+| 备注 | 本轮第二个空交付（前一次 Qoder deepseek 核验 311 tokens 空回），已纳入通道健康表 |
+
+## 297 · 换道：Qwen 家族两连空交付 → GLM 5.3（`2026-10-20` 12:1x）
+
+| 字段 | 内容 |
+|:--|:--|
+| 时间 | 2026-10-20 12:1x |
+| 供应商/模型 | Qoder-AI `new-provider-5/qfmodel(qoen)` → Qoder `new-provider/qfmodel(qwen)` |
+| 错误摘要 | 两次核验工作流均 completed 但 **0 tokens / 5-7 秒 / 结果为空**（连续空交付） |
+| 判定类型 | 模型层（输出不合格）；两供应商同族皆败 ⇒ 降档下一家族 |
+| 处置 | Qwen 家族冷却 30 分钟；换 **GLM 5.3** `new-provider-2/glm-5.3-flash`（异族，与执行者 DeepSeek 不同家族，满足执行者≠核验者） |
+| 观察 | 本轮空交付累计 3 例（Qoder deepseek 311 tokens 空回、qoen 0 tokens、qwen 0 tokens）；GLM 与 DeepSeek(workbuddy) 历史正常 |
+
+## 298 · ★ ① 基线方案异族核验 CONFIRMED + 供应商换令（`2026-10-20` 12:2x）
+
+| 项 | 结果 |
+|:--|:--|
+| 核验 | `dwfrun-a5d42c83`（GLM 5.3，异族；执行者=DeepSeek）**FINAL: CONFIRMED** |
+| 项1 Arm A | PASS：唯一 `Popen`@:1099 指向载体 gamemd.exe（全文 16 处文本提及，真调用点仅 1）；S-4 `s4_injection_gate`@:926、命中即 `EXIT_INJECTION_SUSPECTED=62`@:321、零命中 pass@:1024-1030、调用点@:6464；T55k 实测 11 模块零命中 |
+| 项2 Arm B | PASS：三钩子裸调用 `:3899/:3902/:3905`（方案写 :3896-3903，**2 行漂移**）；B1`:2764`/B2`:2770`/`0x6D3D99`:2783 无条件 |
+| 项3 空开关 | PASS：`EnforceGameSpeedUnlock()` 空体 :1169-1172；**调用点=0**（blitter_hooks=定义、.h=声明、dllmain=0） |
+| 项4 假证据 | PASS：`slot` 写死 U0400 yrm@:4206；`game_speed:2` 常量@:3941；佐证 TARGET 只校验 pin 文件（:6344-6363），T55k `measure_w0.map_sha256=93c2974b`（pin 值）≠ evidence 实载 `XMP29U2=9e33585c` |
+| 项5 地图身份 | PASS（带 caveat）：U0400 实解析 [Units] 14户×120=1680、[Infantry]×80、[Structures] 41 全 Neutral ⇒ **无路径凑出 240**；U0800 族 Neutral/Special 各 240 车 ⇒ 与 h2/h3 吻合；spawnfix8 `0add791d` 311,822B，仅 Units/Infantry 两节 800 行 owner 令牌变化、其余 25 节字节相同。caveat=c5574 语义取自项目自身探针，未从反汇编第一性重推 |
+| 项6 风险 | PASS：GameSpeed 对会话 UNVERIFIABLE（源 2→写回 1/1/2 三值），L1 不依赖它；三窗 25.016s 实测、p90≈78帧/p99≈7帧；units0≥800 为设计门（脚本门 150@:2878），失败有 F1 路径 |
+| 项7 U1–U9 | 已判：U1/U2/U5/U6/U9 事实面亲验；U3 半（靠 L1 趟 C7 定谳）；U4 不能判；U7/U8 纯决策 |
+| 瑕疵 | ①§2.2「T50 有 20+ 分钟长战局证书」引用过度（源零命中）；②行号 2 行漂移；③「其余 9 节」实为 25 节；④T50 h2/h3 240/107 挂账未提 |
+| **供应商换令** | 用户 12:2x：**只用 buddy switch(`new-provider-3/`) 与 MUZE(`new-provider-2/`)**；`new-provider/*`、`-4/*`、`-5/*` 全废；dfmodel=DeepSeek V4.1 flash、qfmodel=Qwen 3.8 flash；优先级 DeepSeek>千问>GLM5.3>Step（Step 仍禁）。已改锚点路由表+`automation-07c8dfec`§4+记忆 |
+| 节拍 | `automation-07c8dfec` 已恢复 **active**（enabled=true，*/15） |
