@@ -8,15 +8,22 @@
 2. **② 修主崩溃**（保留「在现有低负载语料内」）——诊断 → 修复
 3. **③ 建立安全改动能力**——已成立，持续保持（防回退）
 
-## 供应商路由（★ 10-18 01:5x 用户更新：主力=WorkBuddy / WorkBuddy AI，GLM 仅兜底）
+## 供应商路由（★ 2026-10-20 08:0x 用户令更新：ZCode 内全部供应商的全部模型均可用）
 
-| 供应商 | 模型 | 分工 |
+**派发优先序**：模型家族 DeepSeek > Qwen > GLM 5.3 > Step；同族内供应商 Qoder > Qoder-AI > workbuddy > workbuddy-ai。
+
+| 家族 | 供应商/模型（按优先序） | 用途 |
 |:--|:--|:--|
-| WorkBuddy AI | `new-provider-3/deepseek-v4.1-flash`（**主力**）/ `step-5-preview` | ★ 13:2x 用户令恢复使用；★ 13:4x 用户 GUI 重排后**当前任务=暗帧时序分析**（dwfrun-c070c68d）；QC211 核验已被用户调往 new-provider-4 |
-| WorkBuddy | `new-provider-4/step-5-preview` | ★ 13:4x 重签成功 + 用户 GUI 派**当前任务=QC211 独立核验**（dwfrun-d0a4b39b） |
-| Qoder | `new-provider/qfmodel` | 单轮问答/探针（自主多步仍禁）——当前任务=指位机制第二意见（dwfrun-0f1c0816）+ **C1C2 相关性重裁**（dwfrun-4aa6d503，用户 GUI 调派） |
-| Qoder-ai | `new-provider-5/qfmodel` | **★ 2026-10-19 深夜用户令新增第四渠道**：单轮问答/探针第二位（与 Qoder 同分工、互为备份；两通道可并行不同任务；自主多步同样禁） |
-| 会话模型（GLM） | Agent / 指挥官 | 事实主力（兜底三功在案）+ 编排 + 真机趟亲执 + 终检；实现/核验由 Agent 工具新上下文承担（执行者≠核验者纪律保持）；★ 13:2x 起三家供应商按能力轮换，GLM 回兜底位 |
+| DeepSeek | `new-provider/dfmodel(deepseek)`（Qoder）→ `new-provider-4/deepseek-v4.1-flash`（workbuddy）→ `new-provider-3/deepseek-v4.1-flash`（workbuddy-ai） | 执行/构建/核验首选 |
+| Qwen | `new-provider/qfmodel(qwen)`（Qoder）→ `new-provider-5/qfmodel(qoen)`（Qoder-AI） | 单轮快问/探针/第二意见 |
+| GLM 5.3 | `new-provider-2/glm-5.3-flash`（muze） | 第三档，正常可用 |
+| Step | `new-provider-4/step-5-preview`（workbuddy）→ `new-provider-3/step-5-preview`（workbuddy-ai） | 末档，仅无时限深水件 |
+| **最终兜底** | `a7775d5c-.../deepseek-v4.1-flash`（opencode，与会话模型同源） | **仅当上述供应商全部不可用时启用**，须注因附健康表快照 |
+
+- 串行单位=供应商+模型；同一模型同时只跑一件，不同模型可并行。
+- 执行者≠核验者：核验须不同模型家族、尽量不同供应商。
+- Agent 类型缓存钉旧通道时，用 `CreateWorkflow subagent_model` 直指上表当前档位。
+- 会话模型默认只做编排；仅在最终兜底时承接派发，且执行者≠核验者纪律不变。
 
 **★ 可复用子代理（13:5x 用户令设立，`.zcode/agents/`，按本夜操作员经验固化）**：`ra2-patch-verifier`（deepseek$max=独立补丁核验员）· `ra2-re-analyst`（new-provider-4/step-5-preview=逆向机制分析员）· `ra2-quick-consult`（qfmodel=单轮机制顾问，自主多步禁）。新代理类型或需会话重载后出现在 Agent 工具清单；在此之前 CreateWorkflow+subagent_model 路径照常。
 
@@ -54,8 +61,18 @@
 
 ## 驱动方式
 
-- 指挥官（本会话）按通知驱动 + 30 分钟节拍的自动驱动器（非真机类派发/恢复/记账；真机趟留主会话）。
+- 指挥官（本会话）按通知驱动 + 15 分钟节拍自动驱动器 `automation-07c8dfec`（非真机类派发/恢复/记账；回执经飞书 bot DM；真机趟留主会话）。
 - 状态更新：每轮把上表勾选 + 证据路径写回本文件（append-only 末尾状态块）。
+
+## 飞书通知（2026-10-20 07:5x 用户令）
+
+- 通道：lark-cli 1.0.87（`C:\Users\Administrator\.workbuddy\binaries\node\versions\22.22.2\node_modules\@larksuite\cli\bin\lark-cli.exe`）
+- 身份：bot ready/verified（appName=飞书 CLI智能体）；用户授权凭证已过期（只影响用户身份类操作，不影响 bot DM）
+- 收件人：祁烨 `ou_1953508edfa668acbb4afaae16620d0e`
+- 发送模板：`<cli> im +messages-send --user-id ou_1953508edfa668acbb4afaae16620d0e --as bot --text "<回执>"`
+- 发送前统一加 `LARKSUITE_CLI_NO_UPDATE_NOTIFIER=1 LARKSUITE_CLI_NO_SKILLS_NOTIFIER=1`
+- 连通实证：2026-10-20 07:55:00，message_id `om_x100b625e93886ca0c060a0e8a0247e3`
+- 本会话 goal：`automation-07c8dfec-3f8d-4809-ba4b-ed24b67b6b96`（`*/15`，active，首跑 08:10 左右）
 
 ## 状态日志（append-only）
 
@@ -197,3 +214,15 @@ a2-campaign-forge 加入火绒信任区**（截图实锤：文件夹及子目录
 - 2026-10-20 06:3x 保持轮（日志 §270）：状态同前，卫生 PASS。
 - 2026-10-20 06:5x 保持轮（日志 §271）：状态同前，卫生 PASS；增量补推。
 - 2026-10-20 07:0x 保持轮（日志 §272）：状态同前，卫生 PASS。
+- 2026-10-20 06:5x 纠偏二轮（日志 §269B）：决策一律走 Notion（用户令再申明）；三项决策请求已发（P2 施用主体/搁置墙/排期意向），公开仓已同步，下轮读回。
+- 2026-10-20 07:5x 用户令轮（日志 §273）：先连飞书→给本会话设 goal。飞书 bot DM 连通（om_x100b625e93886ca0c060a0e8a0247e3 @07:55）；GOAL-3T 三目标设为会话目标，节拍 automation-07c8dfec（*/15，active）；在飞=0、ct=0、无游戏进程；三项裁决待用户（在线可直接答）。
+- 2026-10-20 08:0x 通道路由更新轮（日志 §274）：用户令全供应商全模型可用；家族 DeepSeek>Qwen>GLM5.3>Step、供应商 Qoder>Qoder-AI>workbuddy>workbuddy-ai；opencode DeepSeek 仅最终兜底。GOAL 路由表+automation-07c8dfec §4+记忆同步。在飞=0。
+- 2026-10-20 08:1x Notion 连通性实测（日志 §275）：桌面端「RA2 Campaign Forge 仓库分析」实发→AI 回复「联动 OK」，双向通道可用。
+- 2026-10-20 08:2x P2 离线 0–3 完成轮（日志 §276）：三母本覆盖 27c9a60c/656e6b4e/10410c98；cl 直编 exit0，新 DLL 39cbd665；verify_hooks exit1 仅 [5] 预期口径差异；部署包 deploy/ 备好未部署；独立核验 dwfrun-8dd36c6e 在飞（用户确认窗改 Qoder deepseek=同族，已标注）。
+- 2026-10-20 08:2x 核验修订轮（日志 §276B）：typed ask 未提交结果致 dwfrun-8dd36c6e errored（零发现）；改纯文本回执后 AmendWorkflow 起 dwfrun-b338b93f 在飞。
+- 2026-10-20 08:2x 换道轮（日志 §276C）：Qoder deepseek 核验空交付（311 tokens 零文本）→ 模型冷却、换 GLM 5.3 异族重跑；P2 构建产物不变。
+- 2026-10-20 08:3x 节拍轮（日志 §277）：P2 离线 0–3 已完成；核验两跑失败/空交付后换 GLM 5.3 异族重跑 dwfrun-3a03a41e 在飞；ct=0、无游戏进程；部署包待用户在场合用。
+- 2026-10-20 08:2x 推送/通知（日志 §277B）：worklog push 两连失败（网络到 github 超时，本地 6f7c362 待补推）；飞书重试成功（om_x100b625f1e14f0b0dd59973c8b876cd）。
+- 2026-10-20 08:4x P2 独立核验 CONFIRMED（日志 §278）：GLM 5.3 异族六项全 PASS、无阻断；[5] 判预期口径差异；DEPLOY.md 回滚注记已修；P2 静态闭环，部署+冒烟待真机。
+- 2026-10-20 08:4x 节拍轮（日志 §279）：P2 核验收官 CONFIRMED、零在飞；P2 静态闭环标「静态通过/待真机」；ct=0；剩余全为真机队列与三项旧裁决。
+- 2026-10-20 08:34 保持轮（日志 §280）：零在飞、卫生 PASS；P2 静态闭环等用户部署；verify_hooks [5] 口径更新建议排在冒烟后；无新派发。

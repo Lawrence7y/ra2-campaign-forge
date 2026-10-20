@@ -1,0 +1,282 @@
+--- /d/Project/ra2-campaign-forge/ra2render/blitter_hooks.cpp	2026-10-01 23:58:19.338774000 +0800
++++ /d/Project/ra2-campaign-forge/out/re_work/work_chain/CONTINUE_20261003/lead/goal3_configsplit_20261019/blitter_hooks.cpp	2026-10-19 19:18:57.243485300 +0800
+@@ -2,32 +2,54 @@
+ #include <cstring>
+ #include <cstdlib>
+ 
++// ============================================================================
++// [G3-SPLIT 20261019] P2 玩法改动从默认配置拆出 —— 补丁副本（执行者适用；母本零改动）
++//   规则依据：玩法改动要独立配置、不混进默认优化配置、默认保持原版行为。
++//   本副本四处改动面（相对母本 ra2render\blitter_hooks.cpp）：
++//     A. 玩法族全局初始化器收敛为原版态（g_targetScanInterval=1 / 各 Enable*=false /
++//        g_visibilityVanilla=true / g_visibilityModeRaw="vanilla"）；
++//     B. 新增 [Gameplay] 节三级回退读取（GetGameplayIntEx / GetGameplayStrEx）：
++//        ①[Gameplay] 现行节 → ②旧节 [Logic]/[FogOfWar] 只读迁移（老用户开启态保留，不写 ini）
++//        → ③原版默认全关；
++//     C. LoadConfig 13 个玩法键改走上述回退；其余 10 个优化键读取路径一字不动；
++//     D. 联机门控零改动：GetEffectiveTargetScanInterval(G-08)/GetEffectiveTargetScanKey(G-02)/
++//        GetEffectiveMinimapFog(G-01)/MpGateEdgeSyncGapProtection 全部原样（只消费全局，
++//        不关心全局来自哪一节）。
++//   迁移留痕：[ra2render-gameplay] 启动行（命中数 + 逐键名，判据②取证锚点）。
++// ============================================================================
++
+ ForgeTelemetry g_telemetry = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+-int g_targetScanInterval = 8;
+-bool g_enableSIMD = true;
+-bool g_unlockGameSpeed = false;
+-bool g_enableLFH = true;
+-bool g_highPrecisionTimer = true;
+-bool g_enableStarCraftFog = true;
+-bool g_enableSpySatRadarSweep = true;
+-int g_radarSweepCooldownFrames = 600;
+-int g_radarSweepRadiusCells = 16;
+-bool g_enableBuildingFog = true;
+-bool g_enableBulletFog = true;
+-bool g_enableUnitFog = true;   // [FOG-SPLIT] 逻辑可见性键（默认 1）：迷雾中敌方机动单位剔除；不受总闸影响
++// ══ [G3-SPLIT 20261019] 玩法/优化配置拆分：全局初始化器一律收敛为**原版行为** ══
++//   项目规则：玩法改动独立配置、不混进默认优化配置、默认保持原版行为。
++//   下列「玩法族」全局的出厂默认全部改为原版态；显式开启只能来自 [Gameplay] 节
++//   （或升级用户的旧节只读迁移回退，见 LoadConfig / GetGameplayIntEx）。
++int g_targetScanInterval = 1;    // [G3-SPLIT] 原版默认 = 1（每帧全量寻敌，无节流）；节流须 [Gameplay] 显式开启（联机恒强制 1，G-08 不变）
++bool g_enableSIMD = true;        // 优化键（渲染吞吐，行为不变）留在优化包
++bool g_unlockGameSpeed = false;  // 优化键（0 = 保护玩家原版速度控制权）
++bool g_enableLFH = true;         // 优化键（堆分配器，行为不变）
++bool g_highPrecisionTimer = true;// 优化键（时钟中断粒度，行为不变）
++bool g_enableStarCraftFog = false;      // [G3-SPLIT] 原版默认 = 关；灰雾压暗须 [Gameplay] EnableStarCraftFog=1
++bool g_enableSpySatRadarSweep = false;  // [G3-SPLIT] 原版默认 = 关；间谍卫星重构为主动雷达须 [Gameplay] 显式开启
++int g_radarSweepCooldownFrames = 600;   // [G3-SPLIT] 伴生键（仅 Sweep=1 时有意义；默认值不变 600）
++int g_radarSweepRadiusCells = 16;       // [G3-SPLIT] 伴生键（仅 Sweep=1 时有意义；默认值不变 16）
++bool g_enableBuildingFog = false; // [G3-SPLIT] 原版默认 = 关（迷雾中敌方建筑三态；须 [Gameplay] 显式开启）
++bool g_enableBulletFog = false;   // [G3-SPLIT] 原版默认 = 关（迷雾中敌方弹道剔除；须 [Gameplay] 显式开启）
++bool g_enableUnitFog = false;     // [G3-SPLIT] 原版默认 = 关（迷雾中敌方机动单位剔除；[FOG-SPLIT] 仍不受总闸影响）
+ // ---- [FOG-MODE] F1：可见性模式（VisibilityMode = starcraft | vanilla）----
+ //   ★用户裁决（2026-09-28）：「两种，一种是原版的一种是现在的状态」⇒ 两种状态都能选。
+-//   starcraft（默认）= 现状态：视距剔除生效（三子键按现有语义各自生效）；
+-//   vanilla          = 原版可见性：**不做任何视距剔除**（单位/建筑/弹道三处剔除全部放行）
++//   [G3-SPLIT 20261019] 出厂默认改为 vanilla（原版可见性）＝「默认保持原版行为」；
++//   starcraft（现状态）须 [Gameplay] VisibilityMode=starcraft 显式开启。
++//   starcraft = 现状态：视距剔除生效（三子键按现有语义各自生效）；
++//   vanilla   = 原版可见性：**不做任何视距剔除**（单位/建筑/弹道三处剔除全部放行）
+ //                      ⇒ 敌方目标在任何区域（含灰雾区、未探索黑区）都会绘制。
+ //   ★优先级：vanilla 时三子键被本键**覆盖（忽略）**；starcraft 时三子键照旧。
+ //   ★vanilla 只「不介入绘制」：不写任何引擎状态、不改 RNG/命令序（见各 Hook 短路支）。
+ //   ★运行期判定：热路径每帧直读本全局 ⇒ 运行期改值 ≤1 帧生效（与总闸同口径）。
+-bool g_visibilityVanilla = false;
+-char g_visibilityModeRaw[32] = "starcraft";    // ini 原始串（日志用；未知值原样打印）
+-bool g_fadeFogTransition = true;
+-bool g_enableMinimapFog = false; // G-01: API 默认值修正为 0（键缺失 = 关闭）
+-int  g_radarFogGuardMode = 3;    // [RADAR-FIX2] 雷达灰化档：0=旧护栏自绘 1=新谓词自绘 2=无护栏自绘 3=引擎原生减暗驱动(默认)
++bool g_visibilityVanilla = true;               // [G3-SPLIT] 出厂默认 = vanilla（原版可见性）
++char g_visibilityModeRaw[32] = "vanilla";      // [G3-SPLIT] ini 原始串默认（日志用；未知值原样打印）
++bool g_fadeFogTransition = true;               // [G3-SPLIT] 迁移键（仅总闸=1 时有意义；默认值不变）
++bool g_enableMinimapFog = false; // G-01: API 默认值修正为 0（键缺失 = 关闭）；[G3-SPLIT] 迁移键（[Gameplay]）
++int  g_radarFogGuardMode = 3;    // [RADAR-FIX2] 雷达灰化档：0=旧护栏自绘 1=新谓词自绘 2=无护栏自绘 3=引擎原生减暗驱动(默认)；[G3-SPLIT] 迁移键（仅 MinimapFog 生效时消费）
+ 
+ // ---- [GAP-P223] 裂缝保护三点表驱动（ZC-GAP-P223 合并 ZC-GAP-P21；landing_pack_gap_p223.md）----
+ //   默认 0 = 不碰 .text（零行为变化）。=1 时 init 把三点「清 GapsCoveringThisCell(+0x134)」
+@@ -388,6 +410,55 @@
+ static const char *IniSrc(bool hit) { return hit ? "ini" : "默认值"; }
+ 
+ // ---------------------------------------------------------------------------
++// [G3-SPLIT 20261019] 玩法键三级回退读取（补丁副本 · 执行者适用）
++//   读取顺序（对每个玩法键）：
++//     ① [Gameplay] 现行玩法节 —— 显式开启/关闭的最高优先级来源；
++//     ② 旧节（[Logic] / [FogOfWar]）—— 升级老用户迁移回退：**只读、不回写、不删除**
++//        （ini 写入不在本 DLL 职责内；保留用户既有开启态 = 验收判据②）；
++//     ③ 出厂默认 = 原版行为（TargetScanInterval=1 / 各 Enable*=0 / VisibilityMode=vanilla）。
++//   命中语义沿用 [RADAR-FIX F3] 哨兵口径：GetIniStringEx 区分「键缺失」与「键值=默认」，
++//   故注释掉的模板键（优化包 ini 的 [Gameplay] 全注释）不会被误判为命中。
++//   线程口径：只在 LoadConfig()（DLL init）调用一次；非热路径、非热重载。
++// ---------------------------------------------------------------------------
++static int GetGameplayIntEx(const char *key, int defVanilla, const char *legacySec, const char *iniPath,
++                            bool *hit, bool *migrated) {
++    bool h = false;
++    int v = GetIniIntEx("Gameplay", key, defVanilla, iniPath, &h);
++    if (h) {                                   // ① 现行节命中
++        if (hit) *hit = true;
++        if (migrated) *migrated = false;
++        return v;
++    }
++    v = GetIniIntEx(legacySec, key, defVanilla, iniPath, &h);   // ② 旧节迁移回退
++    if (hit) *hit = h;
++    if (migrated) *migrated = h;               // 旧节命中 = 迁移来源（日志留痕）
++    return v;                                  // ③ 双缺 ⇒ 原版默认
++}
++
++static void GetGameplayStrEx(const char *key, const char *defVanilla, const char *legacySec, const char *iniPath,
++                             char *out, size_t cap, bool *hit, bool *migrated) {
++    // ① 现行节：GetIniStringEx 返回 true = 键命中（哨兵口径，显式 opt-out 值也算命中）
++    bool h = GetIniStringEx("Gameplay", key, defVanilla, out, cap, iniPath);
++    if (h) {
++        if (hit) *hit = true;
++        if (migrated) *migrated = false;
++        return;
++    }
++    // ② 旧节迁移回退（只读；命中即采纳，即便值与默认相同——「显式配置过」本身是迁移事实）
++    char probe[64] = {0};
++    h = GetIniStringEx(legacySec, key, "", probe, sizeof(probe), iniPath);
++    if (h && probe[0] != 0) {
++        strncpy_s(out, cap, probe, _TRUNCATE);
++        if (migrated) *migrated = true;
++    } else {
++        h = false;
++    }
++    // ③ 双缺 ⇒ out 保持 defVanilla（原版默认）
++    if (hit) *hit = h;
++    if (!h && migrated) *migrated = false;
++}
++
++// ---------------------------------------------------------------------------
+ // [FOG-MODE F1] vanilla 短路放行（三处视距剔除共用，F6① 反汇编验收锚点）
+ //   ★语义：VisibilityMode=vanilla ⇒ **不做任何视距剔除**，直接放行到原版 Draw
+ //     ⇒ 敌方目标在任何区域（含灰雾区、未探索黑区）都会绘制。
+@@ -544,7 +615,14 @@
+     bool h_vxl = false;       // [VXL-PRE] VXL 缓存预热扩容键（[Render]，默认 0）
+     bool h_sw = false;        // [SW-CHARGE] 充能冗余 call 删除键（[Logic]，默认 0）
+ 
+-    g_targetScanInterval = GetIniIntEx("Logic", "TargetScanInterval", 8, iniPath, &h_interval);
++    // [G3-SPLIT] 玩法键旧节迁移标记（true = 从 [Logic]/[FogOfWar] 旧位置只读迁入，用户既有开启态保留）
++    bool mig_key = false, mig_interval = false, mig_mm = false, mig_guard = false;
++    bool mig_scfog = false, mig_sweep = false, mig_cd = false, mig_radius = false;
++    bool mig_bld = false, mig_bullet = false, mig_fade = false, mig_unitfog = false, mig_vis = false;
++
++    // [G3-SPLIT] 玩法键改走 [Gameplay] 节三级回退（①[Gameplay] → ②旧节只读迁移 → ③原版默认）：
++    //   原版默认 = TargetScanInterval 1（每帧全量寻敌）；联机 G-08 恒强制 1 的既有门控不变。
++    g_targetScanInterval = GetGameplayIntEx("TargetScanInterval", 1, "Logic", iniPath, &h_interval, &mig_interval);
+     if (g_targetScanInterval < 1) g_targetScanInterval = 1;
+     if (g_targetScanInterval > 64) g_targetScanInterval = 64;
+ 
+@@ -560,53 +638,59 @@
+     int timerVal = GetIniIntEx("System", "HighPrecisionTimer", 1, iniPath, &h_timer);
+     g_highPrecisionTimer = (timerVal != 0);
+ 
+-    int fogVal = GetIniIntEx("FogOfWar", "EnableStarCraftFog", 1, iniPath, &h_scfog);
++    // [G3-SPLIT] 玩法键：原版默认 = 关；显式开启须 [Gameplay]（或旧节 [FogOfWar] 只读迁移）。
++    int fogVal = GetGameplayIntEx("EnableStarCraftFog", 0, "FogOfWar", iniPath, &h_scfog, &mig_scfog);
+     g_enableStarCraftFog = (fogVal != 0);
+ 
+-    int sweepVal = GetIniIntEx("FogOfWar", "EnableSpySatRadarSweep", 1, iniPath, &h_sweep);
++    int sweepVal = GetGameplayIntEx("EnableSpySatRadarSweep", 0, "FogOfWar", iniPath, &h_sweep, &mig_sweep);
+     g_enableSpySatRadarSweep = (sweepVal != 0);
+ 
+-    g_radarSweepCooldownFrames = GetIniIntEx("FogOfWar", "RadarSweepCooldownFrames", 600, iniPath, &h_cd);
++    g_radarSweepCooldownFrames = GetGameplayIntEx("RadarSweepCooldownFrames", 600, "FogOfWar", iniPath, &h_cd, &mig_cd);
+     if (g_radarSweepCooldownFrames < 60) g_radarSweepCooldownFrames = 60;
+ 
+-    g_radarSweepRadiusCells = GetIniIntEx("FogOfWar", "RadarSweepRadiusCells", 16, iniPath, &h_radius);
++    g_radarSweepRadiusCells = GetGameplayIntEx("RadarSweepRadiusCells", 16, "FogOfWar", iniPath, &h_radius, &mig_radius);
+     if (g_radarSweepRadiusCells < 4) g_radarSweepRadiusCells = 4;
+     if (g_radarSweepRadiusCells > 64) g_radarSweepRadiusCells = 64;
+ 
+     char keyBuf[16] = {0};
+-    h_key = GetIniStringEx("Logic", "TargetScanKey", "position", keyBuf, sizeof(keyBuf), iniPath);
++    GetGameplayStrEx("TargetScanKey", "position", "Logic", iniPath, keyBuf, sizeof(keyBuf), &h_key, &mig_key);
+     g_targetScanKey = (_stricmp(keyBuf, "pointer") == 0) ? 0 : 1;
+ 
+-    int bldFogVal = GetIniIntEx("FogOfWar", "EnableBuildingFog", 1, iniPath, &h_bld);
++    int bldFogVal = GetGameplayIntEx("EnableBuildingFog", 0, "FogOfWar", iniPath, &h_bld, &mig_bld);
+     g_enableBuildingFog = (bldFogVal != 0);
+ 
+-    int bulletFogVal = GetIniIntEx("FogOfWar", "EnableBulletFog", 1, iniPath, &h_bullet);
++    int bulletFogVal = GetGameplayIntEx("EnableBulletFog", 0, "FogOfWar", iniPath, &h_bullet, &mig_bullet);
+     g_enableBulletFog = (bulletFogVal != 0);
+ 
+-    int fadeVal = GetIniIntEx("FogOfWar", "FadeFogTransition", 1, iniPath, &h_fade);
++    int fadeVal = GetGameplayIntEx("FadeFogTransition", 1, "FogOfWar", iniPath, &h_fade, &mig_fade);
+     g_fadeFogTransition = (fadeVal != 0);
+ 
+-    // [FOG-SPLIT] 迷雾中敌方机动单位剔除：逻辑可见性键，API 默认值 = 1（键缺失即开启，与旧行为一致）
+-    //   旧版该能力被总闸（EnableStarCraftFog）裹挟 ⇒ 总闸=0 时「迷雾剔除机动单位」恒 0（违反玩法可见性语义）；
+-    //   本版起独立成键，且与总闸解耦。
+-    int unitFogVal = GetIniIntEx("FogOfWar", "EnableUnitFog", 1, iniPath, &h_unitfog);
++    // [FOG-SPLIT] 迷雾中敌方机动单位剔除：逻辑可见性键，不受总闸影响；
++    //   [G3-SPLIT] 原版默认 = 0（键缺失即关闭；旧版 API 默认 1 的非原版行为随拆分一并矫正）。
++    int unitFogVal = GetGameplayIntEx("EnableUnitFog", 0, "FogOfWar", iniPath, &h_unitfog, &mig_unitfog);
+     g_enableUnitFog = (unitFogVal != 0);
+ 
+-    // ---- [FOG-MODE F1] 可见性模式：VisibilityMode = starcraft | vanilla（默认 starcraft = 现状）----
++    // ---- [FOG-MODE F1] 可见性模式：VisibilityMode = starcraft | vanilla ----
++    //   [G3-SPLIT] 出厂默认 = vanilla（原版可见性）；starcraft（现状态）须 [Gameplay] 显式开启。
+     //   字符串键（同 [RADAR-FIX F3] 口径：字符串 + 哨兵默认值 ⇒ 可区分「键缺失」与「键值=默认」）。
+     //   vanilla ⇒ 三处视距剔除全部放行（原版可见性）；starcraft ⇒ 现状（三子键按现有语义生效）。
+     //   ★优先级：vanilla 时三子键被本键覆盖（忽略），启动日志/遥测行显式标注。
+-    //   未知值/空值 ⇒ 收敛为 starcraft（安全侧：保持现状态），日志打原始串告警。
+-    bool h_vis = GetIniStringEx("FogOfWar", "VisibilityMode", "starcraft",
+-                                g_visibilityModeRaw, sizeof(g_visibilityModeRaw), iniPath);
++    //   未知值/空值 ⇒ 收敛为 vanilla（[G3-SPLIT] 安全侧 = 原版行为），日志打原始串告警。
++    bool h_vis = false;
++    GetGameplayStrEx("VisibilityMode", "vanilla", "FogOfWar", iniPath,
++                     g_visibilityModeRaw, sizeof(g_visibilityModeRaw), &h_vis, &mig_vis);
+     (void)h_vis;
+     if (_stricmp(g_visibilityModeRaw, "vanilla") == 0) {
+         g_visibilityVanilla = true;
++    } else if (_stricmp(g_visibilityModeRaw, "starcraft") == 0) {
++        g_visibilityVanilla = false;   // 显式 starcraft = 现状态（视距剔除生效）
+     } else {
+-        g_visibilityVanilla = false;   // "starcraft" 或任何未知值都收敛为现状态
++        g_visibilityVanilla = true;    // [G3-SPLIT] 未知值收敛为 vanilla（原版行为安全侧；下方告警行照打）
+     }
+ 
+-    int minimapFogVal = GetIniIntEx("FogOfWar", "EnableMinimapFog", 0, iniPath, &h_mm);
++    // [G3-SPLIT] 迁移键：默认本就 0（G-01），行为零变化；改走 [Gameplay] 三级回退。
++    //   【RADAR-FIX2 待裁决】本项尚未通过真机验收（ZC-3 未跑），出厂默认保持 0（原版行为）。
++    int minimapFogVal = GetGameplayIntEx("EnableMinimapFog", 0, "FogOfWar", iniPath, &h_mm, &mig_mm);
+     g_enableMinimapFog = (minimapFogVal != 0);
+     s_minimapFogGate = GetEffectiveMinimapFog() ? 1 : 0;
+ 
+@@ -647,9 +731,45 @@
+     // [RADAR-FIX2 F2] 雷达灰化档（缺省 = 3 引擎原生减暗驱动；缺失/越界都收敛为 3）
+     //   0/1/2 = 自绘 50% 灰化三档（A/B 对照；护栏分别 = 旧 GameMode 判据 / 新谓词 / 不设护栏）
+     //   3     = 不自绘像素，改为在 0x00655D87 按我方三态视野谓词驱动引擎减暗判定位 [esp+0x13]
+-    g_radarFogGuardMode = GetIniIntEx("FogOfWar", "RadarFogGuardMode", RADAR_FOG_GUARD_NATIVE, iniPath, &h_guard);
++    //   [G3-SPLIT] 迁移键：改走 [Gameplay] 三级回退；仅 EnableMinimapFog 生效时被消费（默认档不变）。
++    g_radarFogGuardMode = GetGameplayIntEx("RadarFogGuardMode", RADAR_FOG_GUARD_NATIVE, "FogOfWar", iniPath, &h_guard, &mig_guard);
+     int effGuard = GetEffectiveRadarFogGuardMode();
+ 
++    // ---- [G3-SPLIT] 玩法键迁移留痕（验收判据②取证锚点）----
++    //   只读迁移：不改写、不删除用户 ini 任何内容；命中数 N 与逐键来源在此一次性成行。
++    {
++        int migCount = 0;
++        const char *sep = "";
++        char migList[256] = {0};
++        auto pushMig = [&](bool m, const char *name) {
++            if (!m) return;
++            ++migCount;
++            strncat_s(migList, sep, _TRUNCATE);
++            strncat_s(migList, name, _TRUNCATE);
++            sep = " ";
++        };
++        pushMig(mig_interval, "TargetScanInterval");
++        pushMig(mig_key, "TargetScanKey");
++        pushMig(mig_scfog, "EnableStarCraftFog");
++        pushMig(mig_vis, "VisibilityMode");
++        pushMig(mig_sweep, "EnableSpySatRadarSweep");
++        pushMig(mig_cd, "RadarSweepCooldownFrames");
++        pushMig(mig_radius, "RadarSweepRadiusCells");
++        pushMig(mig_bld, "EnableBuildingFog");
++        pushMig(mig_bullet, "EnableBulletFog");
++        pushMig(mig_unitfog, "EnableUnitFog");
++        pushMig(mig_fade, "FadeFogTransition");
++        pushMig(mig_mm, "EnableMinimapFog");
++        pushMig(mig_guard, "RadarFogGuardMode");
++        LogMessage("[ra2render-gameplay] [G3-SPLIT] 玩法配置拆分: 旧节只读迁移命中 %d 项%s%s | 现行来源 = [Gameplay] 节（缺键 → 旧节 [Logic]/[FogOfWar] 只读回退 → 原版默认全关）；本 DLL 绝不写 ini",
++                   migCount,
++                   migCount > 0 ? "（迁移键: " : "",
++                   migCount > 0 ? migList : "");
++        if (migCount > 0) {
++            LogMessage("[ra2render-gameplay] [G3-SPLIT] 迁移提示: 建议将上述键手工移入 ra2render.ini 的 [Gameplay] 节以固定配置口径（不迁移亦可持续生效，旧节回退为常驻兼容路径）");
++        }
++    }
++
+     LogMessage("[ra2render] 配置加载完成: TargetScanInterval=%d, EnableSIMD=%s, UnlockGameSpeed=%s, EnableLFH=%s, HighPrecisionTimer=%s, EnableStarCraftFog=%s, EnableSpySatRadarSweep=%s (CD=%d, Radius=%d), EnableBuildingFog=%s, EnableBulletFog=%s, FadeFogTransition=%s, EnableMinimapFog=%s, EnableUnitFog=%s",
+                g_targetScanInterval, g_enableSIMD ? "true" : "false", g_unlockGameSpeed ? "true" : "false",
+                g_enableLFH ? "true" : "false", g_highPrecisionTimer ? "true" : "false",
+@@ -693,7 +813,7 @@
+                g_visibilityVanilla ? "vanilla 档要求：机动单位剔除 ≡0 且 建筑剔除 ≡0 且 弹道剔除 ≡0 且 被 mode 覆盖而放行 >0"
+                                    : "starcraft 档要求：三处剔除计数按视野圈判定增长 且 被 mode 覆盖而放行 ≡0");
+     if (_stricmp(g_visibilityModeRaw, "vanilla") != 0 && _stricmp(g_visibilityModeRaw, "starcraft") != 0) {
+-        LogMessage("[ra2render-visibility] [警告/红字] VisibilityMode 取值 \"%s\" 不合法（合法值: starcraft | vanilla）⇒ 已收敛为 starcraft（现状态）", g_visibilityModeRaw);
++        LogMessage("[ra2render-visibility] [警告/红字] VisibilityMode 取值 \"%s\" 不合法（合法值: starcraft | vanilla）⇒ 已收敛为 vanilla（[G3-SPLIT] 安全侧 = 原版可见性）", g_visibilityModeRaw);
+     }
+ 
+     // ---- [FOG-CAL2 F1] 灰雾净强度校准键：FogStrengthPct = auto | <0..100>（默认 auto；允许小数）----

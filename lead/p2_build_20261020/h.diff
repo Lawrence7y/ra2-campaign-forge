@@ -1,0 +1,54 @@
+--- /d/Project/ra2-campaign-forge/ra2render/ra2render.h	2026-10-02 00:11:13.304955500 +0800
++++ /d/Project/ra2-campaign-forge/out/re_work/work_chain/CONTINUE_20261003/lead/goal3_configsplit_20261019/ra2render.h	2026-10-19 19:19:10.176230500 +0800
+@@ -355,30 +355,33 @@
+ };
+ 
+ extern ForgeTelemetry g_telemetry;
+-extern int g_targetScanInterval; // Default = 8 (联机模式强制 1)
+-extern int g_targetScanKey;      // 0=pointer(旧,仅单机) 1=position(默认,联机安全,联机强制1)
+-extern bool g_enableSIMD;        // Default = true
+-extern bool g_unlockGameSpeed;   // Default = false
+-extern bool g_enableLFH;         // Default = true
+-extern bool g_highPrecisionTimer;// Default = true
+-extern bool g_enableStarCraftFog;// Default = true
+-extern bool g_enableSpySatRadarSweep;// Default = true
+-extern int  g_radarSweepCooldownFrames;// Default = 600 (40s at 15fps)
+-extern int  g_radarSweepRadiusCells;   // Default = 16
+-extern bool g_enableBuildingFog; // Default = true  敌方建筑"看见过即常驻"(WC3式)
+-extern bool g_enableBulletFog;   // Default = true  迷雾中敌方弹道剔除
+-extern bool g_enableUnitFog;     // Default = true  [FOG-SPLIT] 迷雾中敌方机动单位剔除
++// [G3-SPLIT 20261019] 下列「玩法族」全局出厂默认 = 原版行为；显式开启只能来自 [Gameplay] 节
++//   （或升级用户旧节 [Logic]/[FogOfWar] 只读迁移回退，见 blitter_hooks.cpp LoadConfig）。
++extern int g_targetScanInterval; // [G3-SPLIT] Default = 1（原版每帧全量寻敌；联机恒强制 1，G-08 不变）
++extern int g_targetScanKey;      // 0=pointer(旧,仅单机) 1=position(默认,联机安全,联机强制1；节流关闭时无消费方)
++extern bool g_enableSIMD;        // Default = true（优化键）
++extern bool g_unlockGameSpeed;   // Default = false（优化键）
++extern bool g_enableLFH;         // Default = true（优化键）
++extern bool g_highPrecisionTimer;// Default = true（优化键）
++extern bool g_enableStarCraftFog;// [G3-SPLIT] Default = false（原版无灰雾压暗；[Gameplay] 显式开启）
++extern bool g_enableSpySatRadarSweep;// [G3-SPLIT] Default = false（原版间谍卫星全图常亮；[Gameplay] 显式开启）
++extern int  g_radarSweepCooldownFrames;// Default = 600 (40s at 15fps；仅 Sweep=1 时有意义)
++extern int  g_radarSweepRadiusCells;   // Default = 16（仅 Sweep=1 时有意义）
++extern bool g_enableBuildingFog; // [G3-SPLIT] Default = false（原版不隐藏敌建筑；开启后"看见过即常驻"WC3式）
++extern bool g_enableBulletFog;   // [G3-SPLIT] Default = false（原版不剔除迷雾中敌方弹道）
++extern bool g_enableUnitFog;     // [G3-SPLIT] Default = false（原版不剔除迷雾中敌方机动单位）
+                                  //   ★[FOG-SPLIT] 逻辑可见性键：**不受** EnableStarCraftFog 总闸影响
+                                  //     （旧版误挂总闸 ⇒ 总闸=0 时"迷雾剔除机动单位"恒 0，违反玩法可见性语义）
+-extern bool g_visibilityVanilla; // [FOG-MODE] Default = false（= VisibilityMode=starcraft 现状态）
++extern bool g_visibilityVanilla; // [FOG-MODE][G3-SPLIT] Default = true（= VisibilityMode=vanilla 原版可见性）
+                                  //   true  = VisibilityMode=vanilla ⇒ **原版可见性**：三处视距剔除
+                                  //           （机动单位 / 建筑 / 弹道）全部放行；三子键被本键**覆盖（忽略）**。
++                                 //   false = VisibilityMode=starcraft ⇒ 现状态（须 [Gameplay] 显式开启）。
+                                  //   ★只「不介入绘制」：不写引擎状态、不改 RNG/命令序（见 FogModeVanillaPassThrough）。
+-// [FOG-MODE] VisibilityMode 原始串（starcraft|vanilla；未知值原样保留供日志告警，生效值收敛为 starcraft）
++// [FOG-MODE] VisibilityMode 原始串（starcraft|vanilla；未知值原样保留供日志告警，生效值收敛为 vanilla）
+ extern char g_visibilityModeRaw[32];
+-extern bool g_fadeFogTransition; // Default = true  灰雾4帧渐变过渡
+-extern bool g_enableMinimapFog;  // Default = false 雷达小地图迷雾化（G-01: API默认改0，联机保守强制0）
+-extern int  g_radarFogGuardMode; // [RADAR-FIX] 雷达灰化护栏模式: 0=旧行为 1=新谓词(默认) 2=无护栏
++extern bool g_fadeFogTransition; // Default = true  灰雾4帧渐变过渡（[G3-SPLIT] 迁移键；仅总闸=1 时有意义）
++extern bool g_enableMinimapFog;  // Default = false 雷达小地图迷雾化（G-01: API默认改0，联机保守强制0；[G3-SPLIT] 迁移键）
++extern int  g_radarFogGuardMode; // [RADAR-FIX] 雷达灰化护栏模式: 0=旧行为 1=新谓词(默认) 2=无护栏（[G3-SPLIT] 迁移键）
+ 
+ // ---- [GAP-P223] 裂缝保护（ZC-GAP-P223；三点表驱动 P-2.1+P-2.2+P-2.3）----
+ extern bool g_enableGapProtection;  // [GAP-P223] Default = false 裂缝保护开关键（同键不拆）

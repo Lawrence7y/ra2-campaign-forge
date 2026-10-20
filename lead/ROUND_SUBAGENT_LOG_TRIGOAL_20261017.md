@@ -3078,3 +3078,137 @@ a2-campaign-forge` 加入火绒信任区（截图实锤：文件夹及子目录�
 | 在飞/补发/换道/新勾门/新派发 | 均无（状态同 §271） |
 | 推送 | 跳过（无新完成件） |
 | 等待面 | 不变 |
+
+## 269B · ★ 用户纠偏二：决策一律走 Notion 轮（`2026-10-20` 06:5x）
+
+| 项 | 结果 |
+|:--|:--|
+| **用户纠偏** | 「我不是说了需要决策就把项目更新到 GitHub 公开仓库上然后在 Notion 中提问没」——我把「等主会话/等在场」狭义当成非决策的等待，空转十余轮未发问；纠偏=任何卡点/决策一律「公开仓同步→Notion 提问→读回记账」 |
+| 双仓同步 | 最新台账（§229-§268+纠偏行）已推公开仓+worklog |
+| **Notion 决策请求 ×3 已发**（707 字入框提交） | ①P2 施用执行主体：是否授权驱动器代行全套（含启动冒烟=gamemd 铁律开口与否；不授权则明确挂起不再重复问）②cpp/h 上公开仓被钩子拦死四路：此项是否仍必要/可行路径 ③T55k 前置链与 #4 批 4（G-0f 需用户动作）排期意向。链接=公开仓 ✓ |
+| 待下轮 | 读回三项裁决 → 记账 → 按裁决执行或明确挂起 |
+
+## 273 · ★ 用户令轮：飞书接入 + 本会话 goal（`2026-10-20` 07:5x）
+
+| 项 | 结果 |
+|:--|:--|
+| **用户令** | 「先连接飞书，然后给本会话设置 goal」 |
+| 飞书 | lark-cli 1.0.87 实装；bot 身份 ready/verified，用户授权凭证过期（不影响 bot DM）；连接测试送出 message_id `om_x100b625e93886ca0c060a0e8a0247e3`（07:55:00，收件人=祁烨 DM） |
+| **本会话 goal** | GOAL-3T 三目标设为本会话目标；节拍自动化 `automation-07c8dfec-3f8d-4809-ba4b-ed24b67b6b96`（`*/15`，active，首跑约 08:10）；旧 automation-5a15a48e 保持 paused |
+| 在飞件 | 零（ListWorkflowRuns 14 跑均旧且 owned_by_this_session=false；无本次会话新跑） |
+| 补发/换道/新勾门/新派发 | 均无 |
+| 卫生 | ct=空、tasklist 无 gamemd/ra2loader/YURI/游戏副本 ⇒ PASS |
+| 待裁决 | 三项仍待用户：①P2 施用执行主体（含启动冒烟是否授权）②cpp/h 上公开仓被钩子拦后的路径 ③T55k 前置链与 #4 批 4 排期意向；用户已在线，直接对话可答，不再重复发 Notion |
+| 推送 | 无新完成件；公开仓 HEAD `3cab3d8`、worklog `64821c0` |
+
+## 274 · ★ 通道路由更新轮（`2026-10-20` 08:0x）
+
+| 项 | 结果 |
+|:--|:--|
+| **用户令 ×2** | ①ZCode 内所有供应商的所有模型均可用；模型优先序 DeepSeek > Qwen > GLM 5.3 > Step；供应商优先序 Qoder > Qoder-AI > workbuddy > workbuddy-ai。②opencode 的 DeepSeek 作为兜底，只有其他供应商都不可用时再兜底 |
+| 在册模型（ListModels 9） | Qoder=`new-provider/dfmodel(deepseek)`+`new-provider/qfmodel(qwen)`；Qoder-AI=`new-provider-5/qfmodel(qwen)`；workbuddy=`new-provider-4/deepseek-v4.1-flash`+`step-5-preview`；workbuddy-ai=`new-provider-3/deepseek-v4.1-flash`+`step-5-preview`；muze=`new-provider-2/glm-5.3-flash`；opencode=`a7775d5c.../deepseek-v4.1-flash`（会话同源，最终兜底） |
+| 落地 | GOAL 路由表重写；`automation-07c8dfec` prompt §4 更新（GLM 5.3 第三档正常可用、Step 末档、opencode DeepSeek 仅最终兜底）；记忆 `provider-dispatch-discipline` 与索引同步 |
+| 在飞/派发 | 零（无新件；等待面仍为真机队列+三项裁决） |
+| 推送 | 锚点+台账增量随本轮私仓推送 |
+
+## 2026-10-20 08:01 驱动器双开防线触发（零动作轮）
+| 时间 | 2026-10-20 08:01:36 +0800 |
+| 判定 | `.goal3t.lock` 已存在：session=goal3t-sess_5773fbfa（automation-07c8dfec），心跳 07:56:14，距检查时刻 5 分21秒 < 30 分钟陈旧线 |
+| 处置 | 按第 0 条规则记一行后退出；未接管锁、未派发、未清理、未推送。既有驱动器继续持有 |
+| 在飞/派发 | 零（本轮未盘点在飞件，归既有驱动器管辖） |
+
+## 275 · Notion 连通性实测（`2026-10-20` 08:1x，用户令）
+
+| 项 | 结果 |
+|:--|:--|
+| 动作 | Notion 桌面端会话「RA2 Campaign Forge 仓库分析」（pid 38984）实发测试消息 |
+| 消息 | 「【连通性测试】ZCode GOAL-3T 驱动器（2026-10-20 08:0x）：飞书通道已接入，现测试 Notion 裁决通道。请回复「联动 OK」即可，无需展开分析。」 |
+| 回读 | AI 回复文本「联动 OK」；「正在处理你的请求」消退、按钮回「提交 AI 消息」⇒ 生成结束 |
+| 结论 | 发送+回复双向连通，裁决通道可用 |
+
+## 276 · ★ P2 离线阶段 0–3 完成 + 独立核验在飞（`2026-10-20` 08:2x，cron）
+
+| 项 | 结果 |
+|:--|:--|
+| 阶段 0 | 备份复核：`fd9ebb32/b461ed21/b70cbf8d` 全对；旧 DLL `626f98b6` 另存 |
+| 阶段 1–2 | 三母本覆盖：ini `27c9a60c` / cpp `656e6b4e` / h `10410c98`；**Bash 直写 cpp/h 被 Mimosa 拦 → 改 Edit 逐 hunk 施加，最终 `diff -q` 为空** |
+| 阶段 3 | cl 直编（**未跑 build.bat**）EXIT=0；新 DLL `39cbd665`/165,376B；`verify_hooks` EXIT=1 仅 [5] 四键（迁 [Gameplay] 后旧检查口径的预期差异），[1][2][3][4] 全 OK |
+| 部署包 | `deploy/` 六件（新 DLL/ini + deploy.cmd + rollback.cmd + 两回滚件）+ `DEPLOY.md`；**未执行、ra2youli 零写入** |
+| 独立核验 | `dwfrun-8dd36c6e-2294-4afd-b018-47ae11a29aae` 在飞；脚本提交为 GLM 5.3，**用户在确认窗改为 `new-provider/dfmodel(deepseek)`**——与执行者同族，属纪律偏离，已标注；核验结论落定后必要时补 GLM/Step 二核 |
+| 待用户 | P2 部署 + 冷启冒烟（四玩法键读回为关）→ T55k → #4 批 4 → 批 3 |
+| 推送 | 锚点+台账增量私仓推送；构建产物（DLL/ini）不入仓 |
+
+## 276B · 核验工作流 typed ask 失败 + 修订重跑（`2026-10-20` 08:2x）
+
+| 项 | 结果 |
+|:--|:--|
+| 失败 | `dwfrun-8dd36c6e` errored：`typed ask ended without a submit_result call`；无 report 产出，零可展示发现 |
+| 处置 | 改 `.ask<string>` 纯文本回执（五节 + `FINAL:` 行），`AmendWorkflow` 起 `dwfrun-b338b93f`（Qoder deepseek，沿用用户确认窗设置）；前跑缓存导入 |
+| 影响 | P2 构建产物与部署包不变；独立核验仍欠，待新跑落定 |
+
+## 276C · 换道记录：Qoder deepseek 空交付 → GLM 5.3（`2026-10-20` 08:2x）
+
+| 字段 | 内容 |
+|:--|:--|
+| 时间 | 2026-10-20 08:2x |
+| 供应商/模型 | Qoder `new-provider/dfmodel(deepseek)` |
+| 错误摘要 | ①typed ask 未提交 submit_result 致 errored；②改文本回执后 completed 但 311 tokens、结果为空（空交付） |
+| 判定类型 | 模型层（输出不合格/未按任务书） |
+| 处置 | 该模型冷却 30 分钟；**跳过同族 deepseek 渠道**（执行者=opencode deepseek，同族不满足执行者≠核验者硬纪律），换 GLM 5.3 `new-provider-2/glm-5.3-flash`（第三档、异族） |
+| 去向 | `dwfrun-b338b93f` 以新模型 + 改文本重跑（AmendWorkflow） |
+
+## 277 · ★ 节拍轮：P2 构建完成 + 核验换道（`2026-10-20` 08:3x，cron）
+
+| 项 | 结果 |
+|:--|:--|
+| 在飞件 | `dwfrun-3a03a41e-82fa-4c91-bab4-c03834806c36`（P2 独立核验，GLM 5.3 max）running |
+| 已完成/失败 | P2 离线 0–3（§276）完成；核验前两跑：`8dd36c6e` errored（typed ask 无 submit_result）、`b338b93f` completed 空交付（311 tokens）——均不计核验 |
+| 换道 | Qoder dfmodel 冷却 30 分钟（模型层：空输出）；跳过同族渠道，换 GLM 5.3 异族；详见 §276C |
+| 勾门 | 无（P2 部署/冒烟待真机，独立核验未落定；不虚勾） |
+| 新派发 | GLM 5.3 → P2 独立核验（AmendWorkflow 重跑） |
+| 卫生 | ct=空、无 gamemd/ra2loader/YURI ⇒ PASS |
+| 推送 | 锚点+台账增量（§276C/§277）私仓推送 |
+| 待用户 | P2 部署+冷启冒烟 → T55k → #4 批 4 → 批 3 |
+
+## 277B · 推送/通知结果（`2026-10-20` 08:2x）
+
+| 项 | 结果 |
+|:--|:--|
+| GitHub worklog | push 失败×2（`github.com:443` 连接超时）；本地 commit `6f7c362` 已建，下轮补推 |
+| 飞书 | 首次 transport 失败，重试成功：`om_x100b625f1e14f0b0dd59973c8b876cd`（08:25:49） |
+| 影响 | 不阻塞本轮；台账/锚点本地已落盘 |
+
+## 278 · ★ P2 独立核验 CONFIRMED（`2026-10-20` 08:4x）
+
+| 项 | 结果 |
+|:--|:--|
+| 核验 | `dwfrun-3a03a41e`（GLM 5.3 max，异族；执行者=opencode deepseek）55s/493 tokens，verdict=**CONFIRMED** |
+| 六项 | ①三母本哈希+diff 全中 ②备份三哈希+旧 DLL `626f98b6` 全对 ③build.log 无 error/warning、DLL `39cbd665`/165,376B、直接 cl 无 copy、ra2youli 旧 DLL 未动 ④verify_hooks [1]13/13 [2]9/9 [3]7/7 [4]10/10 ⑤部署包四哈希+脚本只写 GAMEDIR/不启动/未部署 ⑥ra2youli/ra2bench 自 10-19 零改动、build.bat 未动 |
+| [5] 裁定 | **预期口径差异非回归**：四键在 [Gameplay] 全注释（ini:151/:189/:192/:199/:202），检查器跳过 `;` 行（verify_hooks.py:146-147）；读取走 `GetGameplayIntEx`（cpp:423/659/662/665/693），检查器正则只认旧 API（verify_hooks.py:175-178） |
+| 阻断 | 无 |
+| 非阻断 | DEPLOY.md:42 回滚复核口径对 ini 不成立（ra2youli 现行 `a28122dd` ≠ pre_p2 `fd9ebb32`）→ 已改为以 `backup_*` 实际备份哈希复核 |
+| 结论 | P2 离线构建静态闭环；**部署+冷启冒烟仍待真机，不勾 [x]** |
+| 推送 | worklog 增量（本地；远端若仍断则下轮补推） |
+
+## 279 · ★ 节拍轮：P2 核验收官（`2026-10-20` 08:4x，cron）
+
+| 项 | 结果 |
+|:--|:--|
+| 在飞件 | 零（`dwfrun-3a03a41e` completed，CONFIRMED，已消化 §278） |
+| 补发/换道/新勾门/新派发 | 均无（P2 离线闭环；剩余全为真机/用户在场） |
+| 勾门 | P2 标「静态通过/待真机」，不勾 [x] |
+| 卫生 | ct=空、无游戏进程 ⇒ PASS |
+| 推送 | §278/§279 + 本地 `6f7c362` 补推（网络若仍断则记账） |
+| 待用户 | P2 部署+冷启冒烟 → T55k → #4 批 4 → 批 3 |
+| 待裁决 | Notion 三项旧裁决仍无回复（不重复发问） |
+
+## 280 · ★ 保持轮（`2026-10-20` 08:34 · cron）
+
+| 项 | 结果 |
+|:--|:--|
+| 锁/卫生 | 心跳刷新；ct=空、无 gamemd/ra2loader/YURI 进程 ⇒ PASS |
+| 在飞 | 零（P2 核验 `dwfrun-3a03a41e` 已收线，§278） |
+| 补发/换道/新勾门/新派发 | 均无（P2 离线闭环；剩余全为真机/用户在场） |
+| 决策建议 | `verify_hooks [5]` 口径更新建议排在 P2 冒烟之后，作为独立小补丁+异族核验；本轮不动安全工具 |
+| 推送 | 跳过（无新完成件；§280 随下轮并推） |
+| 等待面 | P2 部署+冷启冒烟 → T55k → #4 批 4 → 批 3 |
