@@ -3615,3 +3615,16 @@ a2forge-audittools\（sha 逐件对齐）+原位留桩（py_compile 全过）；
 | 教训 | 语法层检查必须含「全局符号重复定义」+「关键常量取值唯一性」两项，不能只查标记计数；**离线编译应作为 rebase 必备步骤**（这类缺陷编译器一跑就现形） |
 | **调度器** | 16:46 那拍**未跑成**（`lastRunAt` 仍 09:41、`nextRunAt` 已过期）⇒ 按裁决重建 `automation-07c8dfec`（新标题「buddy switch 全模型·Step 禁用·2026-10-20 17:0x 重建」），**CronList 读回确认 `enabled:true` / `active`**，nextRunAt 17:21。失败原因=09:41 后未成功启动（同族 provider network_error 本日已现两次） |
 | 取证件 | `goal3_versioncheck_p2rebase_20261020/NOTION_RULING_EXEC_20261020.md`（裁决原文要点+执行状态+并发事件实证） |
+
+## 311 · harness 进程死亡 fail-fast 补丁（裁决1 附加项，`2026-10-20` 17:2x）
+
+| 项 | 结果 |
+|:--|:--|
+| **缺陷根因** | `qc151_trip.py:6553` 原本就有 `_pid_alive_check(pid)`，但返回值**只写进诊断数组 `_stab_rect_series`、从不驱动控制流** ⇒ L1 五趟在进程 t=5.188s 死亡后仍空转到 148.063s、采满 240 点、抓 140 张错误截图 |
+| **交付** | `qc151_failfast_20261020/qc151_trip.failfast.py`（7,322 行；母本 7,321 + 净 +1）；`failfast.diff`；`failfast_report.json`；`RECEIPT.md`。**补丁副本制，在用脚本零改动** |
+| 改动 4 处 | ① `_pid_exit_code(pid)` helper（只读 `GetExitCodeProcess`）② `EXIT_PID_DEAD = 29`（**避开已被 `LAUNCH_FAILED` 占用的 20**）③ `_pid_dead_streak = 0` 初值 ④ 稳定性轮询内单次取样 + FAILFAST 判定块 |
+| 三条设计纪律 | 只在 `is False` 时计数（`None`=OpenProcess 失败不等死亡）；**连续 2 次**才触发（防抖动误杀）；**先 `rec.add` 再 `raise`**（退出码必须落盘） |
+| 自检 | `py_compile` **OK**；结构 9/9 全过（含 `no_stage_timeout_change`=STAGE_TIMEOUT_S 未动）；逻辑真值表 **5/5**（L1 实况序列第 10 次触发 @t≈5.1s；单次 False 不触发；None 不误判；一开始就死不误判；240 轮全活不触发） |
+| **开发中修掉的自身 2 bug** | ① 重复 `if` 行 ⇒ IndentationError；② **`else` 被拆开——`py_compile` 不报错但语义全错**（FAILFAST 块插在 `})` 后把原 `else: _stab_series_truncated` 粘到新 `if` 上）⇒ 改插到 `_stab_series_truncated = True` 之后。**教训：语法检查不足以验证补丁正确性，必须读插入点上下文** |
+| 未覆盖 | 未真机；未与 QC151FS 全屏路径交互测试；**退出码 29 尚未登记进 QC161 卡面退出码表**（采用前需同步） |
+| 处置 | 属「另开项，不阻塞 E1」⇒ 已交付待批准施用；**E1 可以先用现锚脚本跑**（裁决1 原意） |

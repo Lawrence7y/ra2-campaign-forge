@@ -1,0 +1,96 @@
+--- a/qc151_u0400_trip/qc151_trip.py
++++ b/qc151_u0400_trip/qc151_trip.py
+@@ -326,6 +326,10 @@
+ # ★★ QC176 / v6 §6.1.1 U-6：★ 未处理 `KeyboardInterrupt` 的**实际**进程退出码
+ #   （★ 与解释器真实行为一致：128 + SIGINT(2) = 130）⇒ ★ 记录不得再声称 70/71。
+ EXIT_KEYBOARD_INTERRUPT = 130
++
++# [FAILFAST] 进程死亡 fail-fast 退出码（Notion 裁决1 附加项）
++#   与既有退出码表不冲突；语义=主进程在等待期内自行退出（非超时、非 harness 错误）。
++EXIT_PID_DEAD = 29
+ 
+ # ★★ `QC162:W2`：★ **模块级收尾失败码容器**（单元素 list）。
+ #   ★ `main()` 的 `finally` 在**收尾跑完后**写入本容器（★ `main()` 的
+@@ -4364,6 +4368,30 @@
+         return None
+ 
+ 
++
++def _pid_exit_code(pid):
++    """[FAILFAST] 读取已退出进程的 exit code（只读；进程仍活则返回 None）。"""
++    try:
++        _k32 = ctypes.windll.kernel32
++        _k32.OpenProcess.argtypes = [wt.DWORD, wt.BOOL, wt.DWORD]
++        _k32.OpenProcess.restype = wt.HANDLE
++        _k32.GetExitCodeProcess.argtypes = [wt.HANDLE, ctypes.POINTER(wt.DWORD)]
++        _k32.GetExitCodeProcess.restype = wt.BOOL
++        _k32.CloseHandle.argtypes = [wt.HANDLE]
++        _k32.CloseHandle.restype = wt.BOOL
++        _h = _k32.OpenProcess(0x1000, False, pid)
++        if not _h:
++            return None
++        try:
++            _ec = wt.DWORD()
++            if _k32.GetExitCodeProcess(_h, ctypes.byref(_ec)):
++                return None if _ec.value == 259 else int(_ec.value)
++            return None
++        finally:
++            _k32.CloseHandle(_h)
++    except Exception:
++        return None
++
+ def _sys_window_scan():
+     try:
+         _u = ctypes.windll.user32
+@@ -6502,6 +6530,7 @@
+         _stab_same = 0
+         _poll = 0
+         _esc_sent = 0
++        _pid_dead_streak = 0      # [FAILFAST] 连续 pid_alive=False 计数
+         # ★★ QC189/T11：T10 实测 main 作用域无 user32 别名（NameError @:3356）⇒ 改用局部 _u32。
+         _u32 = ctypes.windll.user32
+         _u32.keybd_event.argtypes = [wt.BYTE, wt.BYTE, wt.DWORD, wt.WPARAM]
+@@ -6539,6 +6568,7 @@
+             time.sleep(0.5)
+             _poll += 1
+             _sr = rect_of(hwnd)
++            _pid_alive_now = _pid_alive_check(pid)   # [FAILFAST] 单次取样，供字典与判定共用
+             # ★ QC191/T13：逐轮诊断采集（★ 不改控制流）。
+             if len(_stab_rect_series) < 240:
+                 _gwr_r = wt.RECT()
+@@ -6550,10 +6580,34 @@
+                     "vis": bool(_u32.IsWindowVisible(hwnd)),
+                     "gwr_ok": _gwr_ok,
+                     "esc_before": _esc_sent,
+-                    "pid_alive": _pid_alive_check(pid),
++                    "pid_alive": _pid_alive_now,
+                 })
+             else:
+                 _stab_series_truncated = True
++            # >>> FAILFAST-BEGIN（Notion 裁决1 附加项；补丁副本制）
++            # ★ 背景：L1 五趟失败时 gamemd 在 t=5.188s 就自行退出，但 harness 继续对
++            #   死 PID 空转 148 秒并产出 140 张错误截图（实为桌面区域）。此处补 fail-fast。
++            # ★ 纪律：仅在**连续 2 次** pid_alive 明确为 False 时触发（不用 None，
++            #   因为 None = OpenProcess 失败/权限问题，不等于进程已死）。
++            #   退出前把退出码与时刻记进字段，便于事后归因。
++            if _pid_alive_now is False:
++                _pid_dead_streak += 1
++            else:
++                _pid_dead_streak = 0
++            if _pid_dead_streak >= 2:
++                _dead_ec = _pid_exit_code(pid)
++                rec.add("WIN", "pid_dead_failfast", {
++                    "t_dead": round(time.monotonic() - _stab_t0, 3),
++                    "pid": pid,
++                    "exit_code": _dead_ec,
++                    "esc_sent_before_death": _esc_sent,
++                    "polls_before_death": _poll,
++                    "rect_before_death": list(_sr),
++                }, "script:_pid_alive_check",
++                        note="★ FAILFAST：连续 2 次 pid_alive=False ⇒ 主进程已自行退出，"
++                             "不再对死 PID 空转；退出码 EXIT_PID_DEAD=29")
++                raise SystemExit(EXIT_PID_DEAD)
++            # <<< FAILFAST-END
+             # >>> QC151FS-BEGIN stab-arrive（缺省 off ⇒ 锚矩形判据逐字保留）
+             # ★★ QC151FS：全屏 ⇒ 到达**不依赖 800×600 窗口尺寸**（全屏窗=整屏），
+             #   改桌面拷贝帧内容判据（`_fs_arrival_poll`：判定臂=主菜单签名，
