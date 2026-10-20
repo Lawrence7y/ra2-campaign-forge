@@ -3562,3 +3562,23 @@ a2forge-audittools\（sha 逐件对齐）+原位留桩（py_compile 全过）；
 | 两条可行路线 | **R1（轻）**：不改脚本，**延长 nav 阶段预算**（`STAGE_TIMEOUT_S` 150→例如 300）后重跑，给人工点击留足窗口——但改脚本属新开项、需核验。**R2（重）**：给脚本加「检测到该弹窗则自动点 Continue」能力——属新开项，需核验，且要保证不误点 `Delete Files` |
 | 已停 | 本轮不再重跑（避免无意义消耗）；五趟全作废、零测量数据 |
 | 卫生 | ct=0、无游戏进程 ⇒ PASS |
+
+## 308 · ★★ L1 五趟失败根因翻案：不是弹窗，是进程 5 秒自行退出（`2026-10-20` 16:2x）
+
+| 项 | 结果 |
+|:--|:--|
+| **结论** | **§303–§307 的「启动弹窗挡住主菜单」整条判读推翻**。真因=**gamemd 在启动后约 5 秒自行退出**，harness 之后 148 秒在对一个死 PID 空转 |
+| 硬证据 ① | `WIN/stab_rect_series` 240 点：`t=0.500 pid_alive=True rect=[935,578,1631,865]` → **`t=5.188 pid_alive=False rect=[0,0,0,0]`** → 末点 `t=134.141` 仍 False。即进程在 `window` 阶段内（`BUDGET: launch` 起于 t=11.172）就已死亡 |
+| 硬证据 ② | 进程存活期窗口 = **696×287 / 标题 `Red Alert 2`**；本机对 **L1 同款载体**做的 5 组无干预实验全部得到 `Yuri's Revenge` + 1707×960（无 DPI）或 **2560×1440**（有 DPI），存活 15–25 秒 |
+| 硬证据 ③ | `gamemd.exe` VA `0x00840C58` = `Unable to initialize 'ra2.csf', please reinstall Red Alert.`；`0x00840D34` = **`Red Alert 2`** ⇒ 该标题是 **csf 初始化失败消息框**的标题，非游戏主窗 |
+| 硬证据 ④ | Windows 事件日志 Application 15:20–15:40 **零** Application Error / WER / Application Hang ⇒ 干净 `ExitProcess`，非崩溃 |
+| 无干预复现 | 探针 4 件（`scratch/boot_probe/`）：①裸起 → 存活 25s ②加 Esc(t=4.5/9.0) → 存活 25s ③每秒枚举窗口 → 存活 22s、`Yuri's Revenge` 1707×960 ④完整 `_focus_foreground` 三步（ShowWindow/BringWindowToTop/AttachThreadInput） → 存活 15s、`fg_is_ours=True` ⑤DPI 感知 → 存活 6s+、**2560×1440** |
+| 排除矩阵 | 载体件数（88 件集合与 T55k **全同**）/ 86 个文件逐字节同 / `ra2.csf`+`ra2md.csf`（同 hash `91191bad…ec13`、274,057B）/ `language.mix`+`langmd.mix`（同尺寸 52,913,656 / 84,643,206）/ 启动器齐全（`ra2.exe`/`ra2md.exe`/`YURI.exe`/三个 `.lcf`）/ `ddraw.ini`（同 hash `95949842…f26e`）/ Esc / 焦点序列 / DPI / `except.txt` 零新增（1046→1046） |
+| 剩余差异 | `XMP29U2.MAP`：L1 `0add791d` 311,822B（spawnfix8） vs T55k `9e33585c` 324,234B（spawnfix10lite）；`RA2MD.INI`：L1 `0cc65385` 1,785B **= 源文件原样未被改写**，T55k `f488cfcd` 1,783B 被游戏回写 2 字节 |
+| 推论 | L1 的 INI 从未被改写 ⇒ 该次进程根本没走到改写 INI 的阶段，与「5 秒退出」自洽 |
+| 对台账影响 | **R1（延长 nav 预算）/ R2（自动点 Continue）两条路线前提失效**——加弹窗点击对本例无效。§304「完整性检查弹窗」/§305「退回 88 件仍失败」/§306「点名随机」/§307「零弹窗处理」全部标为**前提失效** |
+| 取证件 | `qc161_u0400_trip/l1_u0800_20261020/L1_ROOTCAUSE_FORENSICS.md`（根因）+ `L1_NO_HARNESS_REPRO.md`（复现实验） |
+| 复现脚本 | `scratch/boot_probe/`：`boot_lifetime_probe.py` / `boot_esc_probe.py` / `boot_window_probe.py` / `boot_focus_probe.py` |
+| 下一步 | 真机 E1（清屏后跑 L1 见状）/ E2（若通过 ⇒ 确认「前台遮挡→全屏切换失败→退出」链条）/ E3（若仍失败 ⇒ 抓退出码 + `procdump -e` 转储） |
+| 卫生 | 探测载体 `scratch/boot_probe/arm_a`（88 件）为本轮新建，刻意保留为复现基线；泄漏载体 `c_145725598706_50444`（1.8G）已按四条件删除，ct=0；无游戏进程残留（`tasklist` 实测 0） |
+| 台账 | GOAL 状态日志已 append 同轮记录 |

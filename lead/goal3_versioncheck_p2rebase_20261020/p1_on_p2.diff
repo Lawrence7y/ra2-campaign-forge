@@ -1,0 +1,521 @@
+--- a/ra2render/blitter_hooks.cpp
++++ b/ra2render/blitter_hooks.cpp
+@@ -1,6 +1,11 @@
+ #include "ra2render.h"
+ #include <cstring>
+ #include <cstdlib>
++#include <bcrypt.h>                 // [VER-GATE V1] SHA-256（Windows CNG；Vista+ 系统自带 bcrypt.dll）
++#pragma comment(lib, "bcrypt.lib")  // [VER-GATE V1] MSVC 自动链库 ⇒ build.bat 零改动
++
++ForgeTelemetry g_telemetry = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
++int g_targetScanInterval = 8;
+ 
+ // ============================================================================
+ // [G3-SPLIT 20261019] P2 玩法改动从默认配置拆出 —— 补丁副本（执行者适用；母本零改动）
+@@ -3792,9 +3797,21 @@
+ // 虚表安装与卸载 (零侵入代码段)
+ // ============================================================================
+ 
+-static bool PatchVTablePointer(uintptr_t targetAddr, uintptr_t newFunc, uintptr_t *outOrigFunc, const char *name) {
++static bool PatchVTablePointer(uintptr_t targetAddr, uintptr_t newFunc, uintptr_t *outOrigFunc, const char *name,
++                               uintptr_t expectOrig) {   // [VER-GATE V2] 新增第 5 参：期望旧值（原虚表函数 VA）
+     if (IsBadReadPtr(reinterpret_cast<void*>(targetAddr), sizeof(uintptr_t))) {
+         LogMessage("[ra2render] 错误：无法读取虚表条目 0x%08X (%s)", targetAddr, name);
++        return false;
++    }
++
++    // [VER-GATE V2] 逐点原值门（缺口1 修复）：写前核对「当前值 == 期望旧值」。
++    //   不符 ⇒ 拒绝写入、一字节不动（fail-closed）——与 InstallTextPatch 的 byte-mismatch 拒装
++    //   （本文件 InstallTextPatch memcmp 前核）与 InstallGapProtectionPatch 的「三点全查；任一不符
++    //   ⇒ 整包不写」同一口径。换版本 exe 的典型症状即虚表槽内是**别的函数地址**，在此被拦下。
++    uintptr_t orig = *reinterpret_cast<uintptr_t*>(targetAddr);
++    if (orig != expectOrig) {
++        LogMessage("[ra2render] [错误/拒装] [vergate] 虚表原值不符 0x%08X (%s): 期望 0x%08X, 实测 0x%08X ⇒ 拒绝写入（fail-closed，一字节未写）",
++                   static_cast<uint32_t>(targetAddr), name, static_cast<uint32_t>(expectOrig), static_cast<uint32_t>(orig));
+         return false;
+     }
+ 
+@@ -3804,7 +3821,6 @@
+         return false;
+     }
+ 
+-    uintptr_t orig = *reinterpret_cast<uintptr_t*>(targetAddr);
+     if (outOrigFunc) *outOrigFunc = orig;
+     *reinterpret_cast<uintptr_t*>(targetAddr) = newFunc;
+ 
+@@ -3813,87 +3829,368 @@
+     return true;
+ }
+ 
++// ============================================================================
++// [VER-GATE] 启动版本门 + 虚表逐点原值预核（goal3_versioncheck_20261019；fail-closed 安全门）
++// ----------------------------------------------------------------------------
++// 缺口2 修复（启动无版本门）：DLL 注入后不核对 gamemd.exe 版本 ⇒ 换一版 exe 会按错误
++//   硬编码地址直写。本门在**任何写入发生前**对 gamemd.exe（本进程主模块，磁盘文件）
++//   计算指纹并对照白名单；不匹配 ⇒ 整体不安装（InstallVTableHooks 直接 return false，
++//   13 处虚表 + 全部 Inline/文本补丁一个字节都不碰），日志一行。
++//   ★这是安全门不是优化 ⇒ 无 ini 开关、无旁路；校验失败 = 拒装（安全侧缺省）。
++// 白名单三规则（满足任一即 PASS；全部不满足才 FAIL）：
++//   W1 整文件 sha256 == 现役 ra2bench\gamemd.exe 指纹（01_controls.json:16 / 01_controls.txt:3 实测锚定）
++//   W2 整文件 sha256 == ra2opt KNOWN_GAMEMD 原版 1.001 记录 + 尺寸/编译时间戳双因子
++//      （ra2opt/__init__.py:19-27；size=4825360, tds=0x3BDF544E）
++//   W3 .text 原始段 sha256 == 1.001 代码段指纹 + 尺寸/时间戳/映像基址三因子
++//      （ra2opt/__init__.py:24 text_sha256；ra2opt 头字段类优化 LAA/栈/堆不改代码段 ——
++//        ra2opt/__init__.py:16-18 的既有设计口径，本门沿用 ⇒ 头字段被调整的同版 exe 不误伤，
++//        而虚表槽内容属 .rdata，若被改由 V2 逐点原值门兜底拦截）
++// ============================================================================
++static const char kVerGateShaCur[65] =
++    "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"; // W1 现役整文件
++static const char kVerGateSha1001[65] =
++    "db264305c8a6963d17f5d189a5a9720d9c95f7757cc19c534c2fbe4e015255aa"; // W2 ra2opt 原版 1.001 整文件记录
++static const char kVerGateShaText[65] =
++    "c0368a179f6e1a0f85bf94ebeb3a3e62efc8b1a2000abe164e5e1c61714eb738"; // W3 1.001 .text 原始段（实测=现役 exe 同值）
++static const uint32_t kVerGateTimeStamp = 0x3BDF544E;  // COFF TimeDateStamp（2001-10-31，ra2opt 记录一致）
++static const uint32_t kVerGateFileSize  = 4825360;     // 字节（01_controls.json:17 / ra2opt/__init__.py:22）
++static const uint32_t kVerGateImageBase = 0x00400000;  // PE ImageBase（01_controls.json:18）
++
++// BCrypt 流式 SHA-256：对文件从 offset 起哈希 len 字节，输出小写 hex[65]（含 '\0'）。
++static bool VerGateSha256Hex(FILE *f, long offset, long len, char hex[65]) {
++    static const char kHexDigits[] = "0123456789abcdef";
++    static uint8_t s_chunk[65536];   // 静态缓冲：init 相位单线程，避免大栈占用
++    BCRYPT_ALG_HANDLE hAlg = nullptr;
++    BCRYPT_HASH_HANDLE hHash = nullptr;
++    bool ok = false;
++    do {
++        if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, nullptr, 0) != 0) break;
++        if (BCryptCreateHash(hAlg, &hHash, nullptr, 0, nullptr, 0, 0) != 0) break;
++        if (fseek(f, offset, SEEK_SET) != 0) break;
++        long remaining = len;
++        ok = true;   // 进入哈希循环；任何读/写哈希失败即翻 false
++        while (remaining > 0) {
++            long want = (remaining > static_cast<long>(sizeof(s_chunk))) ? static_cast<long>(sizeof(s_chunk)) : remaining;
++            size_t got = fread(s_chunk, 1, static_cast<size_t>(want), f);
++            if (got == 0 || (got & 0xFFFFFFFFUL) == 0) { ok = false; break; }   // 提前 EOF/读错
++            if (BCryptHashData(hHash, s_chunk, static_cast<ULONG>(got), 0) != 0) { ok = false; break; }
++            remaining -= static_cast<long>(got);
++        }
++        if (ok) {
++            uint8_t digest[32];   // SHA-256 摘要定长 32B（算法固定，无需 BCryptGetProperty）
++            ULONG done = 0;
++            if (BCryptFinishHash(hHash, digest, sizeof(digest), 0) != 0) { ok = false; }
++            else {
++                for (int i = 0; i < 32; ++i) {
++                    hex[i * 2]     = kHexDigits[(digest[i] >> 4) & 0xF];
++                    hex[i * 2 + 1] = kHexDigits[digest[i] & 0xF];
++                }
++                hex[64] = '\0';
++            }
++        }
++    } while (false);
++    if (hHash) BCryptDestroyHash(hHash);
++    if (hAlg) BCryptCloseAlgorithmProvider(hAlg, 0);
++    return ok;
++}
++
++// PE 头解析：TimeDateStamp / ImageBase / .text(PointerToRawData, SizeOfRawData)。只读 4KB 头。
++static bool VerGateParseHeader(FILE *f, uint32_t *outTds, uint32_t *outImageBase,
++                               long *outTextPtr, long *outTextRaw, bool *outHasText) {
++    static uint8_t s_hdr[4096];
++    if (fseek(f, 0, SEEK_SET) != 0) return false;
++    if (fread(s_hdr, 1, sizeof(s_hdr), f) < 0x100) return false;
++    uint32_t eLfa = *reinterpret_cast<uint32_t*>(&s_hdr[0x3C]);
++    if (eLfa == 0 || eLfa + 248 > sizeof(s_hdr)) return false;                  // PE 可选头 32B+节表最短覆盖
++    if (s_hdr[eLfa] != 'P' || s_hdr[eLfa + 1] != 'E' || s_hdr[eLfa + 2] != 0 || s_hdr[eLfa + 3] != 0) return false;
++    uint16_t numSections = *reinterpret_cast<uint16_t*>(&s_hdr[eLfa + 6]);
++    *outTds = *reinterpret_cast<uint32_t*>(&s_hdr[eLfa + 8]);
++    uint16_t sizeOpt = *reinterpret_cast<uint16_t*>(&s_hdr[eLfa + 20]);
++    if (sizeOpt < 224) return false;                                            // PE32 可选头标准长度
++    *outImageBase = *reinterpret_cast<uint32_t*>(&s_hdr[eLfa + 24 + 28]);
++    uint32_t secTab = eLfa + 24 + sizeOpt;
++    *outHasText = false;
++    for (uint32_t i = 0; i < numSections; ++i) {
++        uint32_t off = secTab + 40 * i;
++        if (off + 40 > sizeof(s_hdr)) return false;
++        if (s_hdr[off] == '.' && s_hdr[off + 1] == 't' && s_hdr[off + 2] == 'e' &&
++            s_hdr[off + 3] == 'x' && s_hdr[off + 4] == 't' &&
++            (s_hdr[off + 5] == 0 || s_hdr[off + 5] == ' ')) {
++            uint32_t rawSize = *reinterpret_cast<uint32_t*>(&s_hdr[off + 16]);
++            uint32_t rawPtr  = *reinterpret_cast<uint32_t*>(&s_hdr[off + 20]);
++            *outTextPtr  = static_cast<long>(rawPtr);
++            *outTextRaw  = static_cast<long>(rawSize);
++            *outHasText  = true;
++            break;
++        }
++    }
++    return true;
++}
++
++// [VER-GATE V1] 启动门：本进程主模块（gamemd.exe）磁盘文件指纹白名单核对。PASS/FAIL 各只打一行。
++static bool VerifyGameVersionGate() {
++    char exePath[MAX_PATH] = {0};
++    GetModuleFileNameA(nullptr, exePath, MAX_PATH);   // 主模块 = gamemd.exe（DLL 由其进程加载）
++    FILE *f = fopen(exePath, "rb");
++    if (!f) {
++        LogMessage("[ra2render-vergate] [错误/拒装] 版本门: 无法读取主模块磁盘文件 \"%s\"（errno=%d）⇒ 整体不安装任何补丁（fail-closed）",
++                   exePath, errno);
++        return false;
++    }
++    uint32_t tds = 0, imageBase = 0;
++    long textPtr = 0, textRaw = 0;
++    bool hasText = false;
++    bool hdrOk = VerGateParseHeader(f, &tds, &imageBase, &textPtr, &textRaw, &hasText);
++    long fileSize = -1;
++    if (fseek(f, 0, SEEK_END) == 0) fileSize = ftell(f);
++
++    char hexFull[65] = {0};
++    bool shaOk = (fileSize > 0) && VerGateSha256Hex(f, 0, fileSize, hexFull);
++    const char *passRule = nullptr;
++    if (shaOk && hdrOk) {
++        if (_stricmp(hexFull, kVerGateShaCur) == 0) {
++            passRule = "W1 整文件=现役 ra2bench 指纹";
++        } else if (_stricmp(hexFull, kVerGateSha1001) == 0 &&
++                   static_cast<uint32_t>(fileSize) == kVerGateFileSize && tds == kVerGateTimeStamp) {
++            passRule = "W2 整文件=原版1.001记录(+size/tds双因子)";
++        } else {
++            char hexText[65] = {0};
++            if (hasText && textRaw > 0 && textPtr >= 0 &&
++                VerGateSha256Hex(f, textPtr, textRaw, hexText) &&
++                _stricmp(hexText, kVerGateShaText) == 0 &&
++                static_cast<uint32_t>(fileSize) == kVerGateFileSize &&
++                tds == kVerGateTimeStamp && imageBase == kVerGateImageBase) {
++                passRule = "W3 .text段=1.001指纹(+size/tds/imagebase三因子)";
++            }
++        }
++    }
++    fclose(f);
++    if (passRule) {
++        LogMessage("[ra2render-vergate] 版本门: PASS（%s; sha256=%.16s…, size=%ld, tds=0x%08X）",
++                   passRule, hexFull, fileSize, tds);
++        return true;
++    }
++    LogMessage("[ra2render-vergate] [错误/拒装] 版本门: gamemd.exe 指纹不在白名单 ⇒ 整体不安装任何补丁（白名单 W1=%s / W2=%s / W3=%s；实测 sha256=%s, size=%ld, tds=0x%08X）",
++               kVerGateShaCur, kVerGateSha1001, kVerGateShaText,
++               shaOk ? hexFull : "<sha-fail>", fileSize, tds);
++    return false;
++}
++
++// [VER-GATE V2] 虚表逐点原值预核：13 处全查（任一不符 ⇒ 整体不装，一字节未写）。
++//   期望旧值全部引用 ra2render.h 既有 ADDR_VFUNC_*/ADDR_ORIG_* 常量（:13-28, :37-57, :246-249），
++//   且与真机在用日志 ra2render.log:14-26「原入口」逐项一致 —— 禁漂移常量，禁止另抄一份字面量。
++struct VtableExpectEntry { uintptr_t site; uintptr_t expect; const char *name; };
++static const VtableExpectEntry kVtableExpect[13] = {
++    { ADDR_VTABLE_BLIT_TRANS_XLAT_ALPHA_ZREAD + 4, ADDR_VFUNC_BLIT_TRANS_XLAT_ALPHA_ZREAD, "?$BlitTransXlatAlphaZRead@G::v1" },
++    { ADDR_VTABLE_BLIT_TRANS_XLAT_G + 4,           ADDR_VFUNC_BLIT_TRANS_XLAT_G,           "?$BlitTransXlat@G::v1" },
++    { ADDR_VTABLE_RLE_BLIT_TRANS_XLAT_G + 4,       ADDR_VFUNC_RLE_BLIT_TRANS_XLAT_G,       "?$RLEBlitTransXlat@G::v1" },
++    { ADDR_VTABLE_BLIT_TRANS_G + 4,                ADDR_VFUNC_BLIT_TRANS_G,                "?$BlitTrans@G::v1" },
++    { ADDR_VTABLE_BLIT_TRANS_DARKEN_G + 4,         ADDR_VFUNC_BLIT_TRANS_DARKEN_G,         "?$BlitTransDarken@G::v1" },
++    { ADDR_VTABLE_BLIT_PLAIN_G + 4,                ADDR_VFUNC_BLIT_PLAIN_G,                "?$BlitPlain@G::v1" },
++    { ADDR_VTABLE_ENTRY_TECHNO_AUTO_TARGET,        ADDR_ORIG_TECHNO_AUTO_TARGET,           "TechnoClass::SelectAutoTarget" },
++    { ADDR_VTABLE_ENTRY_UNIT_AUTO_TARGET,          ADDR_ORIG_UNIT_AUTO_TARGET,             "UnitClass::SelectAutoTarget" },
++    { ADDR_VTABLE_ENTRY_UNIT_DRAW,                 ADDR_ORIG_UNIT_DRAW,                    "UnitClass::Draw" },
++    { ADDR_VTABLE_ENTRY_INFANTRY_DRAW,             ADDR_ORIG_INFANTRY_DRAW,                "InfantryClass::Draw" },
++    { ADDR_VTABLE_ENTRY_AIRCRAFT_DRAW,             ADDR_ORIG_AIRCRAFT_DRAW,                "AircraftClass::Draw" },
++    { ADDR_VTABLE_ENTRY_BUILDING_DRAW,             ADDR_ORIG_BUILDING_DRAW,                "BuildingClass::Draw" },
++    { ADDR_VTABLE_ENTRY_BULLET_DRAW,               ADDR_ORIG_BULLET_DRAW,                  "BulletClass::Draw" },
++};
++
++static bool VerifyVtableEntries() {
++    int bad = 0;
++    for (int i = 0; i < 13; ++i) {
++        const VtableExpectEntry &e = kVtableExpect[i];
++        if (IsBadReadPtr(reinterpret_cast<void*>(e.site), sizeof(uintptr_t))) {
++            LogMessage("[ra2render-vergate] [错误] 虚表原值预核 %d/13: 0x%08X (%s) 不可读",
++                       i + 1, static_cast<uint32_t>(e.site), e.name);
++            ++bad;
++            continue;
++        }
++        uintptr_t cur = *reinterpret_cast<uintptr_t*>(e.site);
++        if (cur != e.expect) {
++            LogMessage("[ra2render-vergate] [错误/拒装] 虚表原值预核 %d/13: 0x%08X (%s) 期望 0x%08X, 实测 0x%08X",
++                       i + 1, static_cast<uint32_t>(e.site), e.name,
++                       static_cast<uint32_t>(e.expect), static_cast<uint32_t>(cur));
++            ++bad;
++        }
++    }
++    if (bad > 0) {
++        LogMessage("[ra2render-vergate] [错误/拒装] 虚表原值预核失败 %d/13 处不符 ⇒ 整体不安装（一字节未写，fail-closed；与 InstallGapProtectionPatch G0「任一不符整包不写」同口径）",
++                   bad);
++        return false;
++    }
++    LogMessage("[ra2render-vergate] 虚表原值预核: 13/13 全部匹配期望旧值 ⇒ 放行安装");
++    return true;
++}
++
++// [VER-GATE V3] 直接改码位点原字节预核（Lead 判据③：超武补丁 InstallTextPatch 的「原字节核对后
++//   才写」模式推广到**全部无条件直接写码位点**）。9 处 = CellClass::Draw 5B / 灰雾混色 B1 49B /
++//   B2 51B / 视口刷新 6B / 黑幕计数 6B / Greatest_Threat 9B / 雷达 Plot 9B / 跳帧刷新 5B /
++//   原生减暗 7B（各长度与安装器 s_orig*Bytes 缓冲声明逐一相等，见 RECEIPT 对照表）。
++//   字节来源（禁漂移、有据可查）：
++//     · 7 处与文档总表逐字节吻合：REVERSE_ENGINEERING_AND_PATCHES.md:219/223/226/248/249、
++//       ra2render.h:66/77、docs/re/fog_switch_report.md:107；
++//     · 全部 9 处取自封存现役 gamemd.exe（整文件 sha256=73201cc0…、.text sha256=c0368a17…
++//       = ra2opt KNOWN_GAMEMD 权威键）静态提取——B1/B2 文档无完整 hex，以同一封存件为源。
++struct CodeSiteExpectEntry { uintptr_t site; const uint8_t *expect; uint32_t len; const char *name; };
++static const uint8_t kOrigCellClassDraw[5]    = {0x53, 0x55, 0x56, 0x8B, 0xF1};
++static const uint8_t kOrigFogBlendB1[49]      = {0x66, 0x8B, 0x08, 0x66, 0x83, 0xF9, 0x7F, 0x75, 0x07, 0x66, 0x33, 0xC9, 0x8A, 0xCB, 0xEB, 0x1E, 0x8B, 0x54, 0x24, 0x48, 0x81, 0xE1, 0xFF, 0xFF, 0x00, 0x00, 0x81, 0xE2, 0xFF, 0x00, 0x00, 0x00, 0x8D, 0x4C, 0x11, 0x81, 0x33, 0xD2, 0x85, 0xC9, 0x0F, 0x9E, 0xC2, 0x4A, 0x23, 0xCA, 0x66, 0x89, 0x08};
++static const uint8_t kOrigFogBlendB2[51]      = {0x66, 0x8B, 0x08, 0x66, 0x83, 0xF9, 0x7F, 0x75, 0x09, 0x66, 0x0F, 0xB6, 0xD2, 0x66, 0x89, 0x10, 0xEB, 0x21, 0x8B, 0x54, 0x24, 0x48, 0x81, 0xE1, 0xFF, 0xFF, 0x00, 0x00, 0x81, 0xE2, 0xFF, 0x00, 0x00, 0x00, 0x8D, 0x4C, 0x11, 0x81, 0x33, 0xD2, 0x85, 0xC9, 0x0F, 0x9E, 0xC2, 0x4A, 0x23, 0xCA, 0x66, 0x89, 0x08};
++static const uint8_t kOrigTacticalRedraw[6]   = {0x0F, 0x8D, 0x98, 0x00, 0x00, 0x00};
++static const uint8_t kOrigDrawShroudFog[6]    = {0x55, 0x8B, 0xEC, 0x83, 0xEC, 0x34};
++static const uint8_t kOrigGreatestThreat[9]   = {0x83, 0xEC, 0x5C, 0x8B, 0x15, 0x34, 0xEC, 0xA8, 0x00};
++static const uint8_t kOrigRadarPlot[9]        = {0x89, 0x44, 0x24, 0x28, 0xA1, 0x50, 0x35, 0xB7, 0x00};
++static const uint8_t kOrigRadarPending[5]     = {0xE8, 0x91, 0x93, 0x00, 0x00};
++static const uint8_t kOrigRadarNativeDecide[7]= {0x8B, 0x47, 0x04, 0x89, 0x6C, 0x24, 0x14};
++static const CodeSiteExpectEntry kCodeSiteExpect[9] = {
++    { ADDR_CELLCLASS_DRAW,             kOrigCellClassDraw,     5, "CellClass::Draw Inline" },
++    { ADDR_DRAW_FOG_PIXEL_BLEND_B1,    kOrigFogBlendB1,       49, "FogBlendB1" },
++    { ADDR_DRAW_FOG_PIXEL_BLEND_B2,    kOrigFogBlendB2,       51, "FogBlendB2" },
++    { ADDR_TACTICAL_FULL_REDRAW_JUMP,  kOrigTacticalRedraw,    6, "TacticalFullRedraw" },
++    { ADDR_DRAW_SHROUD_FOG,            kOrigDrawShroudFog,     6, "DrawShroudFogCounter" },
++    { ADDR_ORIG_TECHNO_GREATEST_THREAT,kOrigGreatestThreat,    9, "GreatestThreat Inline" },
++    { 0x00655D38,                      kOrigRadarPlot,         9, "RadarPlotCell Inline" },
++    { ADDR_RADAR_PENDING_CALLSITE,     kOrigRadarPending,      5, "RadarPendingCall" },
++    { ADDR_RADAR_NATIVE_DECIDE,        kOrigRadarNativeDecide, 7, "RadarNativeDecide" },
++};
++
++static bool VerifyCodeSites() {
++    int bad = 0;
++    uint8_t cur[64];
++    for (int i = 0; i < 9; ++i) {
++        const CodeSiteExpectEntry &e = kCodeSiteExpect[i];
++        if (e.len > sizeof(cur) || IsBadReadPtr(reinterpret_cast<void*>(e.site), e.len)) {
++            LogMessage("[ra2render-vergate] [错误] 改码位点预核 %d/9: 0x%08X (%s, %uB) 不可读",
++                       i + 1, static_cast<uint32_t>(e.site), e.name, e.len);
++            ++bad;
++            continue;
++        }
++        memcpy(cur, reinterpret_cast<void*>(e.site), e.len);
++        if (memcmp(cur, e.expect, e.len) != 0) {
++            LogMessage("[ra2render-vergate] [错误/拒装] 改码位点预核 %d/9: 0x%08X (%s, %uB) 原字节与期望不符 ⇒ 拒装",
++                       i + 1, static_cast<uint32_t>(e.site), e.name, e.len);
++            GapProtectLogBytes("code-actual", e.name, static_cast<uint32_t>(e.site), cur, e.len);
++            GapProtectLogBytes("code-expect", e.name, static_cast<uint32_t>(e.site), e.expect, e.len);
++            ++bad;
++        }
++    }
++    if (bad > 0) {
++        LogMessage("[ra2render-vergate] [错误/拒装] 改码位点预核失败 %d/9 处不符 ⇒ 整体不安装（一字节未写，fail-closed）",
++                   bad);
++        return false;
++    }
++    LogMessage("[ra2render-vergate] 改码位点预核: 9/9 全部匹配原版字节 ⇒ 放行安装");
++    return true;
++}
++
+ bool InstallVTableHooks() {
+     LoadConfig();
++
++    // [VER-GATE V1] 启动门：指纹白名单不过 ⇒ 整体不安装（vtable/inline/text 补丁全部不碰）
++    if (!VerifyGameVersionGate()) {
++        return false;
++    }
++    // [VER-GATE V2] 逐点预核：13 处虚表原值全查通过才进入下方写入段
++    if (!VerifyVtableEntries()) {
++        return false;
++    }
++    // [VER-GATE V3] 直接改码位点预核：9 处原字节全查通过才进入写入段（预核全部完成后才允许第一笔写）
++    if (!VerifyCodeSites()) {
++        return false;
++    }
++
+     LogMessage("[ra2render] 正在安装 L1 渲染、L2 寻敌逻辑与 L3 星际战争迷雾虚表劫持...");
+ 
+     // 1. BlitTransXlatAlphaZRead@G
+     uintptr_t hook1 = union_cast<uintptr_t>(&BlitterHooks::Hook_BlitTransXlatAlphaZRead);
+     PatchVTablePointer(ADDR_VTABLE_BLIT_TRANS_XLAT_ALPHA_ZREAD + 4, hook1,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigBlitTransXlatAlphaZRead),
+-                       "?$BlitTransXlatAlphaZRead@G::v1");
++                       "?$BlitTransXlatAlphaZRead@G::v1",
++                       ADDR_VFUNC_BLIT_TRANS_XLAT_ALPHA_ZREAD);
+ 
+     // 2. BlitTransXlat@G
+     uintptr_t hook2 = union_cast<uintptr_t>(&BlitterHooks::Hook_BlitTransXlat_G);
+     PatchVTablePointer(ADDR_VTABLE_BLIT_TRANS_XLAT_G + 4, hook2,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigBlitTransXlat_G),
+-                       "?$BlitTransXlat@G::v1");
++                       "?$BlitTransXlat@G::v1",
++                       ADDR_VFUNC_BLIT_TRANS_XLAT_G);
+ 
+     // 3. RLEBlitTransXlat@G
+     uintptr_t hook3 = union_cast<uintptr_t>(&BlitterHooks::Hook_RLEBlitTransXlat_G);
+     PatchVTablePointer(ADDR_VTABLE_RLE_BLIT_TRANS_XLAT_G + 4, hook3,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigRLEBlitTransXlat_G),
+-                       "?$RLEBlitTransXlat@G::v1");
++                       "?$RLEBlitTransXlat@G::v1",
++                       ADDR_VFUNC_RLE_BLIT_TRANS_XLAT_G);
+ 
+     // 4. BlitTrans@G
+     uintptr_t hook4 = union_cast<uintptr_t>(&BlitterHooks::Hook_BlitTrans_G);
+     PatchVTablePointer(ADDR_VTABLE_BLIT_TRANS_G + 4, hook4,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigBlitTrans_G),
+-                       "?$BlitTrans@G::v1");
++                       "?$BlitTrans@G::v1",
++                       ADDR_VFUNC_BLIT_TRANS_G);
+ 
+     // 5. BlitTransDarken@G
+     uintptr_t hook5 = union_cast<uintptr_t>(&BlitterHooks::Hook_BlitTransDarken_G);
+     PatchVTablePointer(ADDR_VTABLE_BLIT_TRANS_DARKEN_G + 4, hook5,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigBlitTransDarken_G),
+-                       "?$BlitTransDarken@G::v1");
++                       "?$BlitTransDarken@G::v1",
++                       ADDR_VFUNC_BLIT_TRANS_DARKEN_G);
+ 
+     // 6. BlitPlain@G
+     uintptr_t hook6 = union_cast<uintptr_t>(&BlitterHooks::Hook_BlitPlain_G);
+     PatchVTablePointer(ADDR_VTABLE_BLIT_PLAIN_G + 4, hook6,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigBlitPlain_G),
+-                       "?$BlitPlain@G::v1");
++                       "?$BlitPlain@G::v1",
++                       ADDR_VFUNC_BLIT_PLAIN_G);
+ 
+     // 7. TechnoClass::SelectAutoTarget (vtable[265])
+     uintptr_t hook7 = union_cast<uintptr_t>(&TargetHooks::Hook_Techno_SelectAutoTarget);
+     PatchVTablePointer(ADDR_VTABLE_ENTRY_TECHNO_AUTO_TARGET, hook7,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigTechnoSelectAutoTarget),
+-                       "TechnoClass::SelectAutoTarget");
++                       "TechnoClass::SelectAutoTarget",
++                       ADDR_ORIG_TECHNO_AUTO_TARGET);
+ 
+     // 8. UnitClass::SelectAutoTarget (vtable[265])
+     uintptr_t hook8 = union_cast<uintptr_t>(&TargetHooks::Hook_Unit_SelectAutoTarget);
+     PatchVTablePointer(ADDR_VTABLE_ENTRY_UNIT_AUTO_TARGET, hook8,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigUnitSelectAutoTarget),
+-                       "UnitClass::SelectAutoTarget");
++                       "UnitClass::SelectAutoTarget",
++                       ADDR_ORIG_UNIT_AUTO_TARGET);
+ 
+     // 9. UnitClass::Draw (vtable[69]) - 星际式迷雾单位视距剔除
+     uintptr_t hook9 = union_cast<uintptr_t>(&FogHooks::Hook_Unit_Draw);
+     PatchVTablePointer(ADDR_VTABLE_ENTRY_UNIT_DRAW, hook9,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigUnitDraw),
+-                       "UnitClass::Draw");
++                       "UnitClass::Draw",
++                       ADDR_ORIG_UNIT_DRAW);
+ 
+     // 10. InfantryClass::Draw (vtable[69]) - 星际式迷雾步兵视距剔除
+     uintptr_t hook10 = union_cast<uintptr_t>(&FogHooks::Hook_Infantry_Draw);
+     PatchVTablePointer(ADDR_VTABLE_ENTRY_INFANTRY_DRAW, hook10,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigInfantryDraw),
+-                       "InfantryClass::Draw");
++                       "InfantryClass::Draw",
++                       ADDR_ORIG_INFANTRY_DRAW);
+ 
+     // 11. AircraftClass::Draw (vtable[69]) - 星际式迷雾空军战机视距剔除
+     uintptr_t hook11 = union_cast<uintptr_t>(&FogHooks::Hook_Aircraft_Draw);
+     PatchVTablePointer(ADDR_VTABLE_ENTRY_AIRCRAFT_DRAW, hook11,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigAircraftDraw),
+-                       "AircraftClass::Draw");
++                       "AircraftClass::Draw",
++                       ADDR_ORIG_AIRCRAFT_DRAW);
+ 
+     // 12. BuildingClass::Draw (vtable[69]) - 敌方建筑"看见过即常驻"迷雾门控
+     uintptr_t hook12 = union_cast<uintptr_t>(&FogHooks::Hook_Building_Draw);
+     PatchVTablePointer(ADDR_VTABLE_ENTRY_BUILDING_DRAW, hook12,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigBuildingDraw),
+-                       "BuildingClass::Draw");
++                       "BuildingClass::Draw",
++                       ADDR_ORIG_BUILDING_DRAW);
+ 
+     // 13. BulletClass::Draw (vtable[69]) - 迷雾中敌方弹道剔除
+     uintptr_t hook13 = union_cast<uintptr_t>(&FogHooks::Hook_Bullet_Draw);
+     PatchVTablePointer(ADDR_VTABLE_ENTRY_BULLET_DRAW, hook13,
+                        reinterpret_cast<uintptr_t*>(&g_pOrigBulletDraw),
+-                       "BulletClass::Draw");
++                       "BulletClass::Draw",
++                       ADDR_ORIG_BULLET_DRAW);
+ 
+     // 14. CellClass::Draw Inline Hook (0x004801F0) - 星际争霸式半透明战争迷雾图层渲染
+     InstallCellClassDrawHook();
+@@ -3930,67 +4227,80 @@
+ 
+     if (g_pOrigBlitTransXlatAlphaZRead) {
+         PatchVTablePointer(ADDR_VTABLE_BLIT_TRANS_XLAT_ALPHA_ZREAD + 4,
+-                           reinterpret_cast<uintptr_t>(g_pOrigBlitTransXlatAlphaZRead), nullptr, "还原 BlitTransXlatAlphaZRead");
++                           reinterpret_cast<uintptr_t>(g_pOrigBlitTransXlatAlphaZRead), nullptr, "还原 BlitTransXlatAlphaZRead",
++                           union_cast<uintptr_t>(&BlitterHooks::Hook_BlitTransXlatAlphaZRead));
+         g_pOrigBlitTransXlatAlphaZRead = nullptr;
+     }
+     if (g_pOrigBlitTransXlat_G) {
+         PatchVTablePointer(ADDR_VTABLE_BLIT_TRANS_XLAT_G + 4,
+-                           reinterpret_cast<uintptr_t>(g_pOrigBlitTransXlat_G), nullptr, "还原 BlitTransXlat_G");
++                           reinterpret_cast<uintptr_t>(g_pOrigBlitTransXlat_G), nullptr, "还原 BlitTransXlat_G",
++                           union_cast<uintptr_t>(&BlitterHooks::Hook_BlitTransXlat_G));
+         g_pOrigBlitTransXlat_G = nullptr;
+     }
+     if (g_pOrigRLEBlitTransXlat_G) {
+         PatchVTablePointer(ADDR_VTABLE_RLE_BLIT_TRANS_XLAT_G + 4,
+-                           reinterpret_cast<uintptr_t>(g_pOrigRLEBlitTransXlat_G), nullptr, "还原 RLEBlitTransXlat_G");
++                           reinterpret_cast<uintptr_t>(g_pOrigRLEBlitTransXlat_G), nullptr, "还原 RLEBlitTransXlat_G",
++                           union_cast<uintptr_t>(&BlitterHooks::Hook_RLEBlitTransXlat_G));
+         g_pOrigRLEBlitTransXlat_G = nullptr;
+     }
+     if (g_pOrigBlitTrans_G) {
+         PatchVTablePointer(ADDR_VTABLE_BLIT_TRANS_G + 4,
+-                           reinterpret_cast<uintptr_t>(g_pOrigBlitTrans_G), nullptr, "还原 BlitTrans_G");
++                           reinterpret_cast<uintptr_t>(g_pOrigBlitTrans_G), nullptr, "还原 BlitTrans_G",
++                           union_cast<uintptr_t>(&BlitterHooks::Hook_BlitTrans_G));
+         g_pOrigBlitTrans_G = nullptr;
+     }
+     if (g_pOrigBlitTransDarken_G) {
+         PatchVTablePointer(ADDR_VTABLE_BLIT_TRANS_DARKEN_G + 4,
+-                           reinterpret_cast<uintptr_t>(g_pOrigBlitTransDarken_G), nullptr, "还原 BlitTransDarken_G");
++                           reinterpret_cast<uintptr_t>(g_pOrigBlitTransDarken_G), nullptr, "还原 BlitTransDarken_G",
++                           union_cast<uintptr_t>(&BlitterHooks::Hook_BlitTransDarken_G));
+         g_pOrigBlitTransDarken_G = nullptr;
+     }
+     if (g_pOrigBlitPlain_G) {
+         PatchVTablePointer(ADDR_VTABLE_BLIT_PLAIN_G + 4,
+-                           reinterpret_cast<uintptr_t>(g_pOrigBlitPlain_G), nullptr, "还原 BlitPlain_G");
++                           reinterpret_cast<uintptr_t>(g_pOrigBlitPlain_G), nullptr, "还原 BlitPlain_G",
++                           union_cast<uintptr_t>(&BlitterHooks::Hook_BlitPlain_G));
+         g_pOrigBlitPlain_G = nullptr;
+     }
+     if (g_pOrigTechnoSelectAutoTarget) {
+         PatchVTablePointer(ADDR_VTABLE_ENTRY_TECHNO_AUTO_TARGET,
+-                           reinterpret_cast<uintptr_t>(g_pOrigTechnoSelectAutoTarget), nullptr, "还原 TechnoClass::SelectAutoTarget");
++                           reinterpret_cast<uintptr_t>(g_pOrigTechnoSelectAutoTarget), nullptr, "还原 TechnoClass::SelectAutoTarget",
++                           union_cast<uintptr_t>(&TargetHooks::Hook_Techno_SelectAutoTarget));
+         g_pOrigTechnoSelectAutoTarget = nullptr;
+     }
+     if (g_pOrigUnitSelectAutoTarget) {
+         PatchVTablePointer(ADDR_VTABLE_ENTRY_UNIT_AUTO_TARGET,
+-                           reinterpret_cast<uintptr_t>(g_pOrigUnitSelectAutoTarget), nullptr, "还原 UnitClass::SelectAutoTarget");
++                           reinterpret_cast<uintptr_t>(g_pOrigUnitSelectAutoTarget), nullptr, "还原 UnitClass::SelectAutoTarget",
++                           union_cast<uintptr_t>(&TargetHooks::Hook_Unit_SelectAutoTarget));
+         g_pOrigUnitSelectAutoTarget = nullptr;
+     }
+     if (g_pOrigUnitDraw) {
+         PatchVTablePointer(ADDR_VTABLE_ENTRY_UNIT_DRAW,
+-                           reinterpret_cast<uintptr_t>(g_pOrigUnitDraw), nullptr, "还原 UnitClass::Draw");
++                           reinterpret_cast<uintptr_t>(g_pOrigUnitDraw), nullptr, "还原 UnitClass::Draw",
++                           union_cast<uintptr_t>(&FogHooks::Hook_Unit_Draw));
+         g_pOrigUnitDraw = nullptr;
+     }
+     if (g_pOrigInfantryDraw) {
+         PatchVTablePointer(ADDR_VTABLE_ENTRY_INFANTRY_DRAW,
+-                           reinterpret_cast<uintptr_t>(g_pOrigInfantryDraw), nullptr, "还原 InfantryClass::Draw");
++                           reinterpret_cast<uintptr_t>(g_pOrigInfantryDraw), nullptr, "还原 InfantryClass::Draw",
++                           union_cast<uintptr_t>(&FogHooks::Hook_Infantry_Draw));
+         g_pOrigInfantryDraw = nullptr;
+     }
+     if (g_pOrigAircraftDraw) {
+         PatchVTablePointer(ADDR_VTABLE_ENTRY_AIRCRAFT_DRAW,
+-                           reinterpret_cast<uintptr_t>(g_pOrigAircraftDraw), nullptr, "还原 AircraftClass::Draw");
++                           reinterpret_cast<uintptr_t>(g_pOrigAircraftDraw), nullptr, "还原 AircraftClass::Draw",
++                           union_cast<uintptr_t>(&FogHooks::Hook_Aircraft_Draw));
+         g_pOrigAircraftDraw = nullptr;
+     }
+     if (g_pOrigBuildingDraw) {
+         PatchVTablePointer(ADDR_VTABLE_ENTRY_BUILDING_DRAW,
+-                           reinterpret_cast<uintptr_t>(g_pOrigBuildingDraw), nullptr, "还原 BuildingClass::Draw");
++                           reinterpret_cast<uintptr_t>(g_pOrigBuildingDraw), nullptr, "还原 BuildingClass::Draw",
++                           union_cast<uintptr_t>(&FogHooks::Hook_Building_Draw));
+         g_pOrigBuildingDraw = nullptr;
+     }
+     if (g_pOrigBulletDraw) {
+         PatchVTablePointer(ADDR_VTABLE_ENTRY_BULLET_DRAW,
+-                           reinterpret_cast<uintptr_t>(g_pOrigBulletDraw), nullptr, "还原 BulletClass::Draw");
++                           reinterpret_cast<uintptr_t>(g_pOrigBulletDraw), nullptr, "还原 BulletClass::Draw",
++                           union_cast<uintptr_t>(&FogHooks::Hook_Bullet_Draw));
+         g_pOrigBulletDraw = nullptr;
+     }
+ 
