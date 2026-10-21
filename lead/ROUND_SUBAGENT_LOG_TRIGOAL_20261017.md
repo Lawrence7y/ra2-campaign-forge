@@ -6039,3 +6039,140 @@ v1 草稿把「文件复制 mtime」误当「崩溃发生时刻」，据此得�
 - harness 收尾是否改 `WM_CLOSE` —— 未动。
 - ① 跑法是否加「第 0 步确认 31 档」—— 未动。
 - 四项全部按 §4 标「待裁决」，**不执行推荐方案、不重复发问**。
+
+---
+
+## §339 2026-10-22 02:0x 轮次：WER 观测通道核验（找到 AppHang 现场 + 载体隔离旁路定根因）
+
+**本轮性质**：纯离线取证。零真机、零母本改动、零注入。
+**卫生检查**：0 残留进程；13 个 `ct` 目录全空；三处母本哈希未变；HEAD 与 `origin/main` tree 一致。
+**起因**：上一轮 §338 把「复现可被可靠观测」列为 A/B 前置阻塞，本轮去查该阻塞现状。
+
+### 一、★★ 找到一份此前未登记的 gamemd 挂起现场
+
+`C:\ProgramData\Microsoft\Windows\WER\ReportArchive\AppHang_gamemd.exe_fe8cb8e8…8997\Report.wer`
+
+| 字段 | 值 |
+|:--|:--|
+| `EventType` | **`AppHangB1`**（挂起，**不是** AppCrash） |
+| 发生时刻 | **2026-10-16 18:25:04.492**（本地，FILETIME 换算） |
+| `IsFatal` | **1** |
+| `AppPath` | `…\lead\qc111_run_ready\carrier\gamemd.exe` |
+| `Hang Signature` | `5408` = `0x1520` |
+| `Hang Type` | `134217728` = **`0x8000000`** |
+| `LoadedModule` | **106 个**（完整清单在案） |
+
+事件日志同刻两条：`Application Hang` **ID 1002** + `Windows Error Reporting` **ID 1001**。
+
+**★ 与 QC111 那趟的时序对齐（关键）**：
+
+| 时刻 | 事件 |
+|:--|:--|
+| 18:19:21 | trip1 结束（91 采样，`first_zero_i=None`，`except_delta=0`） |
+| 18:21:55 | watcher 8min 窗口超时，进程仍活（`exit_code=259` 哨兵） |
+| **18:22:14** | **forensics 采集 → `wer.gamemd_dirs: []`（当时是真话）** |
+| **18:25:04** | **WER 判挂起**（比 forensics 晚 2 分 50 秒） |
+| 18:26:52 | 卡面写 `status=DONE` |
+
+⇒ **forensics 采集早于挂起判定**，卡面据此写「进程全程存活」在当时合理，
+但**随后被事件推翻**。卡面 18:26 写 DONE 时没回头复查 WER。
+
+### 二、§312 的第二个独立实例
+
+`QC111_RUN_READY.json` 的 `still_alive_at_trip_end=true` 与 `except_txt.delta_bytes=0` **都是真的**，
+但据此推「进程全程存活」**不成立**。
+
+- **第一个实例**（E1b/E1c）：崩溃走 SEH，WER 接管后引擎**没机会**写 `except.txt`。
+- **第二个实例**（本条）：**挂起根本不进 SEH**，走 AppHang 通道，同样不写 `except.txt`。
+
+⇒ §312 的覆盖面要扩：**`except.txt` 零新增对"崩溃"和"挂起"两类失效都零判别力。**
+
+### 三、这条现场**不能**认定为 RC-4（归"未归族"）
+
+**支持**：RC-4 规格明写「表现为**挂留而非崩溃**」（`RC4_HARDEN_SPEC.md:39`），形态逐字吻合。
+
+**反对（三条硬缺口）**：
+1. **无 Eip** —— AppHang 记录里没有任何指令地址，只有 `Hang Signature/Type`。按 §682 六项判别器**判不了族**。
+2. **无 dump** —— LocalDumps 未配 gamemd（见四），无内存镜像，无法补读 `[0x887368]`。
+3. **挂起 ≠ 崩溃** —— `Hang Type=0x8000000` 语义是"UI 线程 5 秒未处理消息"；RC-4 是 AV（读 `0x250`）。
+   挂起可能只是"消息泵停了但没崩"，与"空 this 解引用"未必同源。**当 RC-4 是推断不是证据。**
+
+**唯一能定族的动作**：挂起进程里 RPM 读 `[0x887368]`（0 ⇒ 与 RC-4 前提一致；非 0 ⇒ 另有原因）。
+**但进程 10-16 已结束 ⇒ 这次补不了，只能登记。**
+
+### 四、★ WER LocalDumps 口径更正（上一轮说法要改）
+
+`l1-baseline-trip-popup-block` 记忆写「WER LocalDumps 不生效（非托管路径）需 procdump」。实测拆分：
+
+| 说法 | 实测 | 判定 |
+|:--|:--|:--|
+| 「WER 对 gamemd 不工作」 | `AppHang_gamemd.exe` 记录**存在** | ❌ **不成立**，WER 通道是通的 |
+| 「WER LocalDumps 不生效」 | `LocalDumps` 有 **14 个子键**，**无任何 gamemd**；根键 `ValueCount=0` | ⚠️ 应改为「**从未配置**」 |
+
+`Test-Path …\LocalDumps\gamemd.exe` = **False**。WER 默认只上报不落盘 ⇒
+**历史上所有 gamemd 的 WER 记录（含本条）都没有 dmp**。
+
+### 五、★★★ 载体隔离存在注册表旁路（**已定根因**）
+
+WER 模块表第 58 项是载体外路径：`D:\Red2\Mental Omega\Blowfish.dll`，
+而载体清单（410 件）里**明明有** `Blowfish.dll` 且 `byte_identical_all: True`。
+
+**根因**：
+
+```
+HKLM\SOFTWARE\WOW6432Node\Westwood\Yuri's Revenge\InstallPath = D:\Red2\Mental Omega\RA2MD.EXE
+HKLM\SOFTWARE\WOW6432Node\Westwood\Red Alert 2\InstallPath     = D:\Red2\Mental Omega\RA2.EXE
+```
+
+gamemd 读该键拼绝对路径加载 ⇒ **凡走 `InstallPath` 的加载都绕开载体**。
+
+**★ 但不是"污染"**：三处 `Blowfish.dll` 的 sha256 **完全相同**
+（`68e4896b1fc0e5828162fbefe1bfb2cc7a1dd4ac34957b5b0194550e36fe7992`，225,331 B）⇒
+**同一二进制被按绝对路径加载**，问题在「隔离边界」不在「代码来源」。
+
+**影响面**：
+- 不受影响：`gamemd.exe` 本体哈希（`LoadedModule[0]` 是载体路径）、`ra2render.dll` 注入目标（`[54]` 载体路径）、件数与路径门禁。
+- **受影响**：A/B 绝对数值混入载体外资源；「这趟跑的是我复制的那份游戏」**不严格成立**。
+  （相对比较仍成立——两臂走同一 `InstallPath`，差异被同样引入。）
+
+### 六、方案 A 已实现并验证判别力
+
+新增 `goal2_wer_observation_20261022/wer_module_isolation_audit.py`（只读，零改动）：
+从 `Report.wer` 模块表判「载体 / 系统 / 越界」。
+
+**判别力验证（防"恒返回"假绿）**：
+
+| 测试 | 构造 | 越界数 | EXIT |
+|:--|:--|--:|--:|
+| 真样本 | 原始 WER | **1** | **1** |
+| **肯定对照** | 越界行改写成载体路径 | **0** | **0** |
+
+⇒ 有真实判别力。真样本实测输出：载体内 6 / 系统 99 / 越界 1，
+载体内含 `gamemd.exe`、`WSOCK32.dll`、`xyr.dll`、`DDRAW.dll`、`binkw32.dll`、**`ra2render.dll`**。
+
+**已知口径**：载体基准须给**趟载体目录**，给上级目录（如仓库根）会把子目录算作载体内。
+
+### 七、harness3 缺 WER 检测（纯代码缺口）
+
+```
+grep -c "ReportArchive"       qc151_trip.harness3.py → 0
+grep -c "AppHang"             qc151_trip.harness3.py → 0
+grep -c "wer_new_gamemd_dirs" qc151_trip.harness3.py → 0
+```
+
+`wer_new_gamemd_dirs` 只存在于 **QC111 那一代脚本**，**未继承到 harness3**。
+⇒ 现行 harness3 每趟收尾不查 WER，"这趟有没有挂/崩"只能靠 `except.txt`（§312 已知不可靠）+ 退出码。
+
+### 八、本轮未做（受裁决阻塞）
+
+- 未配 `LocalDumps\gamemd.exe`（改系统状态，须授权）
+- 未改 harness3 补 WER 检测（须走补丁副本制 + 异族核验）
+- 未改 `InstallPath`（改系统状态，须授权）
+
+### 九、新增待裁三项（接 §338 四项，共七项）
+
+| # | 事项 | 要点 |
+|:--|:--|:--|
+| 5 | 配 `LocalDumps\gamemd.exe`？ | ② 能否定族的前提；须授权；要选 `DumpType=1/2` |
+| 6 | harness3 补 WER 检测？ | 纯离线可做；不改则 A/B 里"挂起"整类失效不可见 |
+| 7 | 载体隔离旁路怎么处理？ | 建议先做检测（方案 A 已实现），暂不改注册表 |
