@@ -583,3 +583,97 @@ count                       = *(u32*)(obj + count_off(cls))
 | **L-12** | **`+0xA4` 的真实角色**（`TaskForce` 传入参数 vs `ScriptType` 未用） |
 | **L-13** | **`ScriptTypeClass+0x24` 那个对象的类型**（5 参调用的首实参） |
 | **L-14** | `0x528A10` 的**第 2/3 实参语义**（已证 5 参 + `ret 0x14`；段/键/默认/缓冲/宽度 的顺位待确认） |
+
+---
+
+## 14. ★ L-9/L-12/L-10 一并解决：`TaskForceClass` 的成员数组 = `{id, value}` 对，stride 8
+
+`TaskForceClass` slot25 的**存储路径**给出了完整答案（`0x006E8470..0x006E84BC`）：
+
+```
+0x006E8470  68 80 00 00 00         push 0x80              ; 缓冲宽 128
+0x006E8475  51                     push ecx               ; 键名缓冲
+0x006E8476  68 64 9F 88 00         push <模板 .data>
+0x006E847B  52                     push edx
+0x006E847C  53                     push ebx               ; 段对象
+0x006E847D  8B CD                  mov  ecx, ebp
+0x006E847F  E8 8C 05 E4 FF         call 0x528A10          ; 5 参读取
+0x006E8484  85 C0                  test eax, eax
+0x006E8486  7E 3F                  jle  0x6E84C7          ; 读空 ⇒ 结束
+0x006E8488  8D 44 24 38            lea  eax, [esp+0x38]
+0x006E848C  8D 4C 24 10            lea  ecx, [esp+0x10]
+0x006E8490  50                     push eax
+0x006E8491  E8 5A CA DD FF         call 0x004C4EF0        ; 解析成"对"
+0x006E8496  8B 8E 9C 00 00 00      mov  ecx, [esi+0x9C]   ; ★ 当前计数（也是下一个下标）
+0x006E849C  8B 10                  mov  edx, [eax]        ; 对的第 1 个 dword
+0x006E849E  89 94 CE A4 00 00 00   mov  [esi + ecx*8 + 0xA4], edx   ; ★ stride = 8
+0x006E84A5  8B 40 04               mov  eax, [eax+4]      ; 对的第 2 个 dword
+0x006E84A8  89 84 CE A8 00 00 00   mov  [esi + ecx*8 + 0xA8], eax   ; ★ 同一元素的高 4 字节
+0x006E84AF  8B 86 9C 00 00 00      mov  eax, [esi+0x9C]
+0x006E84B5  8B 8C C6 A8 00 00 00   mov  ecx, [esi + eax*8 + 0xA8]   ; 读回刚写的 value
+0x006E84BC  85 C9                  test ecx, ecx
+```
+
+### 14.1 最终布局
+
+| 项 | 值 | 证据 |
+|:---|:---|:---|
+| 元素计数 | `obj + 0x9C`（u32） | 作下标 `ecx`，也作循环上界 |
+| 数组基址 | `obj + 0xA4` | `[esi + ecx*8 + 0xA4]` |
+| **元素 stride** | **8 字节** | `ecx*8` 伸缩，两次写相差 4（`+0xA4` / `+0xA8`） |
+| 元素结构 | `{ dword id_or_index @+0, dword value @+4 }` | 两次连续写同一 `ecx*8` 基址 |
+| `+0xA8` | **不是独立字段**，是 `array[i].value` 的地址 | `[esi+ecx*8+0xA8]` 与基址同 stride |
+
+⇒ 这同时解释了 §6 里"§6 中 `+0xA8` 出现 2 次" —— 它其实**恒与 `+0xA4` 成对出现**，
+是数组元素的第二半，不是独立成员。**L-10 关闭**。
+
+⇒ **L-12 关闭**：`+0xA4` 确为**数组基址**，但只对 `TaskForceClass` 成立；
+§12.1 撤回的只是"`ScriptTypeClass` 也用 `+0xA4`"这个跨类推广，不是它在本类的作用。
+
+### 14.1b `0x004C4EF0` 的作用（部分）
+
+```
+0x004C4EF0  83 EC 40              sub  esp, 0x40
+0x004C4EF3  8B 54 24 44           mov  edx, [esp+0x44]     ; 输入串
+0x004C4F0A  C7 06 00 00 00 00     mov  [esi], 0            ; ★ 清零结果的第 1 dword
+0x004C4F10  C7 46 04 00 00 00 00  mov  [esi+4], 0          ; ★ 清零第 2 dword
+0x004C4F04  68 5C 08 82 00        push 0x0082085C          ; 模板（在 .data）
+```
+
+⇒ 它把输入串解析进一个**两个 dword 的结果结构**，先清零再解析。
+这与 §14 的"元素 = `{dword, dword}`"完全吻合 ⇒ 元素确实是 8 字节二元组。
+
+模板 `0x82085C` 在 **`.data`（可写）**，其文件初始字节为 `%d,%s`，
+**但按本线第 4 条纪律不当作静态格式串**；只记位置，不据其推语义。
+
+### 14.2 与 `ScriptTypeClass` 的差异（不要再混用）
+
+| 项 | TaskForceClass | ScriptTypeClass |
+|:---|:---|:---|
+| 计数 | `+0x9C` ✅ 实证 | `+0xA0` ✅ 实证 |
+| 数组基址 | `+0xA4`，stride 8 ✅ 实证 | **未找到**（解析走 `+0x24` 子对象） |
+| 元素 | `{id, value}` 8 字节 | 未知 |
+
+⇒ **两类的"容器"不是同一套东西**，不得共用伪代码。§12.1 的撤回仍有效。
+
+---
+
+## 15. 下一轮
+
+| # | 悬项 |
+|:--|:---|
+| L-1 | `AbstractClass+0x14..+0x1C` 三个 dword 语义 |
+| L-2 | `+0x10` / `+0x20(bool)` 的业务语义 |
+| L-3 | ✅ `0xB0C110` = 全局字段注册表根 |
+| L-4 | ✅ `TaskForceClass` 计数 @ `+0x9C` |
+| L-5 | 容器统一模型 —— 撤回（§12.1） |
+| L-6 | `TEventClass+0x30` / `+0x54` 接口对象类型 |
+| L-7 | 容器簇统一模型 —— 撤回（§12.1） |
+| L-8 | 补：`TeamTypeClass` 248 异族核验 |
+| L-9 | ✅ **stride = 8**（`{id, value}` 对） |
+| L-10 | ✅ 关闭：`+0xA8` 是元素第二半，非独立字段 |
+| L-11 | `.data` 模板参数的写入点 |
+| L-12 | ✅ `+0xA4` = TaskForce 的数组基址（不推广到 ScriptType） |
+| L-13 | `ScriptTypeClass+0x24` 对象类型 |
+| L-14 | `0x528A10` 第 2/3 实参顺位 |
+| **L-15** | `0x004C4EF0` 的实参语义（已证：清零 `[esi]`/`[esi+4]` 两个 dword，再用 `.data` 模板 `0x82085C` 分派；模板在可写段，故不判内容） |

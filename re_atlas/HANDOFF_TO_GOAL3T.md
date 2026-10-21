@@ -165,35 +165,47 @@ orig = `00 00 10 00` ⇒ `0x00100000`（1,048,576）。
 
 ---
 
-## H-006 · 2026-10-21 · `TaskForceClass` 的成员容器不是标准 `DynamicVectorClass`
+## H-006 · 2026-10-21 · `TaskForceClass` 成员数组 = 8 字节 `{id,value}` 对
 
-**发现**：`TaskForceClass`（212 字节）的成员容器是
-`{ count @ +0x9C, array @ +0xA4 }`，两者相距 8 字节、中间 `+0xA0` 未被单独引用。
-标准 `DynamicVectorClass` 是 `+4=Items, +0x10=Count`，**与此不符**。
+**发现**：`TaskForceClass`（212 字节）的成员容器布局已完全确定：
 
-**证据**：`0x006E8529: lea ebx,[edi+0xA4]`（数组基址）与
-`0x006E853F: mov eax,[edi+0x9C]`（循环上界）在同一循环里配对；
-循环体用 `"%d"`（`0x817F6C`）为每个成员生成 ID 字符串。
+| 项 | 值 |
+|:---|:---|
+| 计数 | `obj + 0x9C`（u32），同时用作下一个写入下标 |
+| 数组基址 | `obj + 0xA4` |
+| **元素 stride** | **8 字节** |
+| 元素结构 | `{ dword @+0, dword @+4 }` |
+
+`+0xA8` **不是独立字段**，它是 `array[i]` 的第二半（地址 `0xA4 + 8i + 4`）。
+
+**证据**（`0x006E8496..0x006E84B5`）：
+
+```
+mov  ecx, [esi+0x9C]                 ; 下标 = 当前计数
+mov  edx, [eax]                      ; 解析结果第 1 个 dword
+mov  [esi + ecx*8 + 0xA4], edx       ; ★ stride = ecx*8
+mov  eax, [eax+4]                    ; 第 2 个 dword
+mov  [esi + ecx*8 + 0xA8], eax       ; ★ 同一元素的 +4
+mov  eax, [esi+0x9C]
+mov  ecx, [esi + eax*8 + 0xA8]       ; 读回
+```
+
+配合 §H-006 早前观察到的循环（`lea ebx,[edi+0xA4]` + `cmp esi,[edi+0x9C]`），
+读写两侧一致。
 
 **可能影响的目标**
-- ③ 安全改动能力：若做任何"遍历 TaskForce 成员"或"按索引取成员"的补丁，
-  按标准向量布局写会**错位 8 字节**，读到相邻字段当指针。
+- ③ 安全改动能力：若做"遍历/裁剪 TaskForce 成员"的补丁，确切公式为
+  `count = *(u32*)(tf+0x9C)`、`item(i) = tf + 0xA4 + 8*i`。
+  按 4 字节步长遍历会读到错位数据；按标准 `DynamicVectorClass`
+  （`+4=Items, +0x10=Count`）更会完全错位。
 - ①② 无直接影响。
 
-**置信度**：**实证**（循环结构 + 字段配对 + 格式串）。
+**置信度**：**实证**（写路径 + 读回 + aid helper `0x4C4EF0` 三重）。
 
 **核验状态**：✅ 字节直证。
 
-
-
-以下**不投**，因为与本线禁区或 GOAL-3T 在飞内容重合，投递只会制造噪声：
-
-- 帧循环 / `CurrentFrame` 相关：GOAL-3T 禁区且已有多轮结论。
-- SBH 分配器：同上。
-- `HouseClass` 单位实例化与判负：同上。
-- `0x0050B6F0`（`IsPlayerControl`）：虽本线做了全函数反汇编，但它是
-  HouseClass 归属闸、与 ② 主崩溃的 `HouseClass` 线相邻。**本线只记录在
-  `CONFLICTS.md` R-2，不主动投递**，避免引导 GOAL-3T 改向。
+**⚠ 不要套用到 `ScriptTypeClass`**：后者计数在 `+0xA0`，解析走 `+0x24` 子对象，
+`+0xA4` 在其方法里根本没出现。本线曾因"两类同一偏移"误推统一模型并已撤回。
 
 ---
 
