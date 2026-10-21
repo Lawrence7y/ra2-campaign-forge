@@ -1,0 +1,56 @@
+镜像基数 0x00400000；.text 线性解码 1394120 条
+
+=== 一、0x724730 的函数形态（this 从 ecx 来，不是全局）===
+  sub esp, 0xc | push ebp | mov ebp, ecx | push esi | mov eax, dword ptr [ebp + 0x250]
+  [PASS] 0x724730 头 `mov ebp, ecx`（__thiscall，ebp=this）
+  [PASS] 崩溃指令是 `mov eax,[ebp+0x250]`（Count 字段）
+  [PASS] 容器 Items 在 this+0x24C、Count 在 this+0x250（§341 已定，此处仅提示）  0x250-0x24C = 4
+
+=== 二、0x724730 是否靠间接分发（复检 §341「三无」）===
+  [PASS] ★ 0x724730 **不在任何虚表槽**（无邻项皆代码的 .rdata 命中）  0 处
+  [PASS] ★ 0x724730 有 ≥30 个**直接 E8 调用者**  实测 30 个
+
+=== 三、crash_site 的「4 级宿主链」实为直接调用者兄弟集 ===
+  30 个调用点分布在 15 个函数里：
+    func 0x004A8960  ×1  0x004A8B75  ★ L3 / slot42 目标
+    func 0x006403A0  ×1  0x00640427  ★ crash_site 称 level1
+    func 0x00654320  ×2  0x00654413, 0x00654469  ★ crash_site 称 level0
+    func 0x006ABD30  ×6  0x006AC00B, 0x006AC03E, 0x006AC0ED, 0x006AC140  ★ crash_site 称 level2
+    func 0x006D053D  ×1  0x006D059B
+    func 0x006D05C3  ×2  0x006D0619, 0x006D0634
+    func 0x006D064D  ×1  0x006D0664
+    func 0x006D0680  ×3  0x006D089D, 0x006D08B3, 0x006D0940
+    func 0x006D09C0  ×1  0x006D09FA
+    func 0x006D1200  ×4  0x006D1293, 0x006D1308, 0x006D137E, 0x006D13F3
+    func 0x006D14F0  ×2  0x006D1541, 0x006D155C
+    func 0x006D1570  ×1  0x006D15CB
+    func 0x006D15F0  ×1  0x006D1605
+    func 0x006D1610  ×1  0x006D1632
+    func 0x006D1660  ×3  0x006D16C2, 0x006D16DD, 0x006D1744
+  [PASS] ★ 宿主 0x004A8960（L3 / slot42 目标）直接 call 0x724730  1 处
+  [PASS] ★ 宿主 0x006403A0（crash_site 称 level1）直接 call 0x724730  1 处
+  [PASS] ★ 宿主 0x00654320（crash_site 称 level0）直接 call 0x724730  2 处
+  [PASS] ★ 宿主 0x006ABD30（crash_site 称 level2）直接 call 0x724730  6 处
+  [PASS] ★ 调用者函数数 > 4（不是单一链条，是 30 站点/15 函数）  15 > 4
+  [PASS] ★ 0x4A8960 函数体内直接 call 0x724730（链是真的，机理不是间接）  0x004A8B75
+
+=== 四、单例 0x887368 读写全账（★ 修正 operands[0].type 误用）===
+  写点 3：
+    0x007777B8  mov dword ptr [0x887368], esi
+    0x007777C3  mov dword ptr [0x887368], ebx
+    0x00777803  mov dword ptr [0x887368], ebx
+  读点 71（只列前 6）
+    0x0048CE4C  mov ecx, dword ptr [0x887368]
+    0x004A8B18  mov ecx, dword ptr [0x887368]
+    0x004A8B7A  mov ecx, dword ptr [0x887368]
+    0x004E1F88  mov esi, dword ptr [0x887368]
+    0x004F4562  mov ecx, dword ptr [0x887368]
+    0x004F4A01  mov ecx, dword ptr [0x887368]
+  [PASS] ★ 0x887368 有写点（★ 首版 operands[0].type==1 当 MEM 用，误报 0）  3 处
+  [PASS] ★ 已知清零点 0x777803 在写点集内（与 §342 交叉验证）  命中
+
+=== 五、30 个调用点里有没有来自 WndProc/鼠标侧 ===
+  与 WndProc/分派目标/消息泵在 64KB 内的调用者：无
+  [PASS] 如实记录（近似邻近不是可达性证明，只作线索）  0 个
+
+★ 结论：0x724730 有 30 个直接 E8 调用者、分布在 15 个函数；crash_site 的 4 宿主全部是它的直接调用者（兄弟集，非调用链）

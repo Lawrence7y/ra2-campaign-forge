@@ -1,0 +1,51 @@
+镜像基数 0x00400000
+
+=== 第一部分：except.txt 现场 ===
+  [PASS] except.txt 存在
+  Access=00000250  Eax=00000000  Ebp=00000000  Ebx=FFFFFD88  Ecx=00000000  Edi=0087F7E8  Edx=00000000  Eip=00724737  Esi=00000278  Esp=00F9A344
+  [PASS] ★ Eip == 0x724737（崩溃点）  0x00724737
+  [PASS] ★ Ebp == 0  0x00000000
+  [PASS] ★ Ecx == 0  0x00000000
+  [PASS] ★ Access address == 0x250（即 [ebp+0x250]，ebp=0 ⇒ 地址=0x250）  0x250
+  [PASS] ★ Edi == 0x87F7E8（单例对象的 this 一路带到崩溃帧）  0x0087F7E8
+
+=== 第二部分：栈返回地址 ⇄ 静态指令逐层对齐 ===
+  [PASS] 栈 @0x00F9A354 == 0x006543B1  实测 0x006543B1  (0x654320 内)
+  [PASS] 栈 @0x00F9A358 == 0x00654418  实测 0x00654418  (0x654320 内 —— 0x654413 call 0x724730 的返回地址)
+  [PASS] 栈 @0x00F9A388 == 0x006403A8  实测 0x006403A8  (0x6403A0 内 —— 0x6403A3 call 0x654320 的返回地址)
+  [PASS] 栈 @0x00F9A3AC == 0x006ABD3E  实测 0x006ABD3E  (0x6ABD30 内 —— 0x6ABD39 call 0x6403A0 的返回地址)
+  [PASS] 栈 @0x00F9A410 == 0x004A88B0  实测 0x004A88B0  (0x4A8850 内 —— 0x4A88AA call [eax+0xA8] 的返回地址)
+  [PASS] 栈 @0x00F9A43C == 0x00652D51  实测 0x00652D51  (0x652CF0 内 —— 0x652D4C call 0x4A8850 的返回地址)
+
+  逐层验证：retaddr-5 处的指令确实 call 下一层
+  [PASS] ★ 0x00654413: call 0x724730（0x654320 返回地址 0x00654418-0）  实测 call 0x724730
+  [PASS] ★ 0x006403A3: call 0x654320（0x6403A0 返回地址 0x006403A8-0）  实测 call 0x654320
+  [PASS] ★ 0x006ABD39: call 0x6403A0（0x6ABD30 返回地址 0x006ABD3E-0）  实测 call 0x6403a0
+  [PASS] ★ 0x004A88AA: call [eax+0xA8]（虚表槽 42）（0x4A8850 (间接) 返回地址 0x004A88B0-0）  实测 call dword ptr [eax + 0xa8]
+  [PASS] ★ 0x00652D4C: call 0x4A8850（0x652CF0 返回地址 0x00652D51-0）  实测 call 0x4a8850
+
+=== 第三部分：守卫位置 ⇄ 危险调用位置 ===
+  func 0x004A8960：call @0x004A8B13  cmp @0x004A8B35  jcc @0x004A8B4E → 0x004A8B9B
+  [PASS] ★ func 0x004A8960 的守卫在危险调用**之后**（差距 +0x22）⇒ 对本路无效  guard@0x004A8B35 > call@0x004A8B13
+  func 0x006403A0：call @0x006403A3  cmp @0x006403B0  jcc @0x006403B2 → 0x0064043D
+  [PASS] ★ func 0x006403A0 的守卫在危险调用**之后**（差距 +0xD）⇒ 对本路无效  guard@0x006403B0 > call@0x006403A3
+  [PASS] ★ 解码连续覆盖到站点 0x00654413（否定式断言的前提）  末条指令止于 0x00654413
+
+  func 0x00654320 头→站点 0x00654413 之间指令 60 条；cmp/test 1 个，其中测 ecx 0 个
+    0x006543C5  test eax, eax
+  [PASS] ★ 0x00654320 从函数头到 call 0x724730 **没有测 ecx 的 cmp/test**（真实无守卫站点）  窗口 0x00654320..0x00654413，60 条指令
+
+=== 第四部分：完整因果链（现场 + 静态双证）===
+  0x652CF0  (window/init 驱动，this=esi)
+    └─E8 0x652D4C──▶ 0x4A8850  (__thiscall 桥，esi=this)
+         └v[42] 0x4A88AA──▶ 0x4A8960  (slot42 目标，vtable 0x7E1964)
+              └E8 0x4A8B13──▶ 0x6ABD30  (守卫在 0x4A8B35，已在调用之后)
+                   └E8 0x6ABD39──▶ 0x6403A0
+                        └E8 0x6403A3──▶ 0x654320  (守卫在 0x6403B0，已在调用之后)
+                             └E8 0x654413──▶ 0x724730  (ecx=[0x887368]=0)
+                                  └──▶ 0x724737  mov eax,[ebp+0x250]  ebp=0  ✘崩溃
+
+  关闭窗口时 0x777803 `mov [0x887368],0` 先执行 ⇒ 单例=0
+  ⇒ 0x654320 在无守卫下把 ecx=0 传进 0x724730 ⇒ ebp=0 ⇒ 读 0x250 ⇒ AV
+
+★ RC-4 因果链定案：现场 6 项 + 静态 5 层对齐，全部成立

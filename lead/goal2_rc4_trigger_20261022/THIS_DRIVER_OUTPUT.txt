@@ -1,0 +1,32 @@
+镜像基数 0x00400000；.text 线性解码 1394120 条
+
+=== §0 结构前提 ===
+  [PASS] ★ 0x87F7E8 在文件里**无内容**（.data 的 BSS 尾：rsize 止于 0x87E000）  va2off=None
+  对 0x87F7E8 的写点 1 处：
+    0x0040D1B2  mov dword ptr [0x87f7e8], 0x7e1964
+  [PASS] ★ 0x87F7E8 的写点存在（BSS 只能由代码初始化）  1 处
+  [PASS] ★ 存在 `mov [0x87F7E8], 0x7E1964`（对象首 dword 由代码钉为 vtable）  0x0040D1B2
+  [PASS] 0x4A8850 是 __thiscall（esi = this = ecx）
+  [PASS] 0x4A8850 内 eax <- [esi]（取 this->vtable）
+  [PASS] 0x4A8850 内 call [eax+0xA8]（即 this->vtable[42]）
+  [PASS] 0x4A88AA 前 mov ecx, esi（this 透传，eax 来自同一 this）
+
+=== §1 谁直接 call 0x4A8850（E8）===
+  直接调用点 1 处：0x00652D4C
+  [PASS] 0x4A8850 有直接 E8 调用者  1 处
+
+=== §1b 每个调用点的 this(ecx) 来源 ===
+  0x00652D4C (func 0x00652CF0)  ecx <- ecx, esi
+  [PASS] ecx 指向单例 0x87F7E8 的调用点数 = 0（如实记录，不作通过条件）
+
+=== §2 0x4A8850 / 0x4A8960 的虚表槽 ===
+  0x4A8850 作为虚表槽：1 处 0x007E6128
+  0x4A8960 作为虚表槽：7 处 0x007E1A0C, 0x007E61BC, 0x007EE05C, 0x007EFFFC, 0x007F03EC, 0x007F113C, 0x007F3100
+  [PASS] 0x4A8960 在虚表里（§345 已定）
+    槽 @0x007E6128 所在表头约 0x007E6114，槽号 5
+
+=== §3 0x4A8960 函数体是否再次 call [reg+0xA8]（递归风险）===
+  0x4A8960 前 80 条内 call [reg+0xA8] 出现 0 次
+  [PASS] 如实记录（0 次 ⇒ 不自我递归；>0 ⇒ 链可再接一层）  实测 0 次
+
+★ this-driven 闭合分析完成

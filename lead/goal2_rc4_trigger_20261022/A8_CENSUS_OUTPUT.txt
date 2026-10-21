@@ -1,0 +1,55 @@
+镜像基数 0x00400000
+.text 线性解码 1394120 条指令
+
+=== 初筛 29 个 call [reg+0xA8] 点（已验指令边界）===
+
+=== 逐个 reg 来源 ===
+  0x00419F59 (func 0x00419F09)  eax : [edi+0x0] [esi+0x5a4] 到函数头未定义（形参）
+  0x0043C91B (func 0x0043C882)  edx : [esi+0x0] 到函数头未定义（形参）
+  0x00443FFD (func 0x00443C60)  edx : [esi+0x0] [ebp+0x0] <- edi [esp+0x144] push edi
+  0x0044403E (func 0x00443C60)  edx : [esi+0x0] [ebp+0x0] <- edi [esp+0x144] push edi
+  0x00447E24 (func 0x00447E00)  edx : [edi+0x0] <- ecx 到函数头未定义（形参）
+  0x00447EB0 (func 0x00447E90)  eax : [ecx+0x0] 到函数头未定义（形参）
+  0x00447EE4 (func 0x00447E90)  edx : [ecx+0x0] 跨 call 且 ecx 易失
+  0x004485F5 (func 0x00448260)  edx : [esi+0x0] <- ecx 到函数头未定义（形参）
+  0x004494A3 (func 0x00449493)  edx : [eax+0x0] 到函数头未定义（形参）
+  0x0044F167 (func 0x0044F13B)  eax : [ebx+0x0] 到函数头未定义（形参）
+  0x004A88AA (func 0x004A8850)  eax : [esi+0x0] <- ecx 到函数头未定义（形参）
+  0x004CF142 (func 0x004CEFB0)  eax : [edi+0x0] <- eax 跨 call 且 eax 易失
+  0x005069F3 (func 0x005062C4)  edx : [ecx+0x0] [ebp+0xc] 到函数头未定义（形参）
+  0x00521161 (func 0x00520EFD)  ecx : [eax+0x0] [ebp+0x674] <- ecx 到函数头未定义（形参）
+  0x0055781F (func 0x00557800)  edi : [esi+0x0] <- ecx 到函数头未定义（形参）
+  0x00557C86 (func 0x00557BE0)  edx : [edi+0x0] lea 非绝对
+  0x005A93B5 (func 0x005A91E0)  edx : [ecx+0x0] 索引寻址 ecx
+  0x0068589C (func 0x00685670)  edx : [ecx+0x0] [0xa8b23c]
+  0x00685FE6 (func 0x00685DC0)  edx : [ecx+0x0] [0xa8b23c]
+  0x006ED6B3 (func 0x006ED4D0)  edi : [ecx+0x0] [eax+0x404] [esi+0x6c4] [ebp+0x54] <- ecx 到函数头未定义（形参）
+  0x0070AD5F (func 0x0070AD50)  eax : [ecx+0x0] 到函数头未定义（形参）
+  0x00738E08 (func 0x00738D53)  eax : [ecx+0x0] [edx+0x404] [esi+0x6c4] 到函数头未定义（形参）
+  0x00739333 (func 0x00738E2C)  edx : [ecx+0x0] [ecx+0x404] [esi+0x6c4] 到函数头未定义（形参）
+  0x007394D2 (func 0x007393C0)  edx : [ecx+0x0] [eax+0x404] [ebp+0x6c4] <- ecx 到函数头未定义（形参）
+  0x0073A3B1 (func 0x0073A31F)  edx : [ecx+0x0] [esp+0x18] push ebp
+  0x0073FF9C (func 0x0073FD7B)  eax : [ecx+0x0] [edx+0x404] [esi+0x6c4] 到函数头未定义（形参）
+  0x0077FF8C (func 0x0077F900)  ecx : [eax+0x0] [0xac116c]
+  0x0078F1CE (func 0x0078F000)  edx : [eax+0x0] [0xac116c]
+  0x007A5830 (func 0x007A5725)  edx : [eax+0x0] [0xac116c]
+
+=== 判定 ===
+  [PASS] 存在 call [reg+0xA8] 站点  29 个
+  切片成功 5 / 29（UNKNOWN 24）
+  [PASS] 崩溃链站点 0x4A88AA 在普查内
+  [PASS] ★ 0x4A88AA 的 eax <- [esi]，而 esi == this（__thiscall），非全局常量  [esi+0x0] <- ecx 到函数头未定义（形参）
+  经全局 [[0x87F7E8]] 直取的站点 = 0 处（预期 0：该单例不按下标取 vtable）
+  [PASS] ★ 无站点以全局 0x87F7E8 首 dword 取 vtable（证实「对象地址 ≠ vtable 地址」）  0 处
+
+=== E8 图断点（用户态边界）===
+  [PASS] 解析到 DispatchMessageA 的 IAT 槽  0x007E14C0
+  [PASS] 消息泵内有 call [DispatchMessageA] 站点  0x00432D1B, 0x0053E8A1, 0x005D4E47, 0x00759248, 0x00759A76
+  [PASS] ★ E8 图上消息泵**到不了** WndProc（上一轮 NOT FOUND 是图的断点，不是不可达）  泵闭包 54 个函数
+  从 消息泵 0x005D4D50 出发：闭包 54 函数，其中含 0 处 +0xA8 站点
+  从 WndProc 0x007775C0 出发：闭包 1 函数，其中含 0 处 +0xA8 站点
+  [PASS] ★ WndProc 的 E8 闭包内 0 处 +0xA8 站点（它走 [0x887628] vtable 转出）  0 处
+  从 分派目标 0x006930A0 出发：闭包 43 函数，其中含 0 处 +0xA8 站点
+  0x4A8960 在哪些根的 E8 闭包内：都不在
+
+★ 普查完成：+0xA8 站点 29 处，其中 0 处经虚表 0x87F7E8 进入
