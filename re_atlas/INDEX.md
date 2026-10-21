@@ -299,6 +299,40 @@ COL.offset 分别 **0/4/8/12**。所有派生类头部都是这个形态。
 含 `ReadString` 头字节正对照）。
 
 ---
+### C.10 键 → 字段映射（R2-2 第四轮，详见 `kb/30_ini_subsystem.md` §11）
+
+`AbstractTypeClass::LoadFromINI`（`0x00410A60`）**只读 2 个键**：
+
+| 键 | 目标字段 | 上限 | 证据 |
+|:---|:---|:---|:---|
+| `Name` | `this+0x64` | `0x31`(49) | `0x00410A91 lea edi,[ebx+0x64]` / `0x00410A94 push 0x31` |
+| `UIName` | `this+0x3D` | `0x20`(32) | `0x00410AEB lea ebp,[ebx+0x3D]` / `0x00410AEE push 0x20` |
+
+**★ `+0x24` 既是 `char ID[0x18]` 又是节名**：
+`0x00410A79 lea ebp,[ebx+0x24]` → `0x00410A7E push ebp` → `0x00410A7F call 0x526810`(GetSection)。
+⇒ 节头字符串与对象 ID 是同一串字节；显示名走 `+0x60` 的 `UIName`（`wchar_t*`）。
+
+**字段边界（含对齐）**：
+
+| 偏移 | 字段 | 尺寸 |
+|:---|:---|---:|
+| `+0x24` | `ID` | `0x18` |
+| `+0x3C` | `zero_3C` | 1 |
+| `+0x3D` | `UINameLabel` | `0x20` |
+| `+0x5D` | **对齐填充** | **3** |
+| `+0x60` | `UIName`(`wchar_t*`) | 4 |
+| `+0x64` | `Name` | `0x31` |
+| `+0x95` | —（本类结束） | |
+
+| VA | 名称 | 作用 | 置信度 |
+|:---|:---|:---|:---|
+| `0x00526B00` | `INIClass::Reset` | 清 `+0x04`/`+0x08` 缓存 | **实证** |
+| `0x00734E60` | `UIName` 解析 | 查 CSF 表；表未初始化时返回 `0x84583C`（非 NULL） | **实证** |
+
+复跑：`python re_atlas/tools/dump_ini_keymap.py`（`evidence/ini_keymap.txt`，
+双正对照 + 算式/字节对齐自检）。
+
+---
 ## D. 数据/字符串锚点（claims PART 2–4 摘要）
 
 完整 323 条见 `docs/re/anchor_claims.txt`；本线已全量复算 **323/323 PASS**

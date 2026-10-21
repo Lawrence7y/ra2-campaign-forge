@@ -1258,3 +1258,58 @@ R2-1（触发器族）该收的字段已收得差不多，按 §3 优先级转�
 - [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
 - [x] 只提交 `re_atlas/`
 - [x] 片段最长 11 条指令
+
+---
+
+## R-018 · 2026-10-21 22:0x–22:2x · R2-2 第四轮：键→字段映射（`AbstractTypeClass::LoadFromINI`）
+
+### 1. 主线结论
+
+**`AbstractTypeClass+0x24` 既是 `char ID[0x18]`，又是 `GetSection` 的节名实参。**
+
+```text
+0x00410A79  lea ebp,[ebx+0x24]    ; ID
+0x00410A7E  push ebp
+0x00410A7F  call 0x526810         ; GetSection(this->ID)
+```
+
+⇒ **节头字符串与对象 ID 是同一串字节**。编译器生成 `[MTNK]` ⇒ 对象 ID 就是 `"MTNK"`。
+显示名走 `+0x60` 的 `UIName`（宽字符指针），由 `UIName` 键经 CSF 解析填入。
+
+**`LoadFromINI` 只读 2 个键：**
+
+| 键 | 目标 | 上限 | 证据 |
+|:---|:---|:---|:---|
+| `Name` | `this+0x64` | `0x31` | `0x00410A91` / `0x00410A94 push 0x31` |
+| `UIName` | `this+0x3D` | `0x20` | `0x00410AEB` / `0x00410AEE push 0x20` |
+
+`UIName` 读完经 `0x734E60` 解析 CSF 后写 `this+0x60`；全局表未初始化时
+返回常量 `0x84583C`（非 NULL，与 §3.3 哨兵风格一致）。
+
+### 2. 本轮自纠（一次）
+
+写工具时按 YRpp 声明顺序朴素相加，算出 `Name@+0x61`；字节实测 `+0x64`。
+差 3 字节 = `wchar_t*` 的 4 字节对齐填充（`+0x5D` → `+0x60`）。
+已把算式改成**带对齐**，并加"算式 vs 字节观测"自检（不一致打印 mismatch）。
+
+`AbstractTypeClass` 实际尾部到 **`+0x95`**（不是 `+0x92`）。
+
+这与 R-012 那条"派生类核基类先减前缀"是同一类问题：**声明顺序 ≠ 字节偏移**。
+记入 CONFLICTS **G-18**。
+
+### 3. 本轮产出
+
+| 件 | 内容 |
+|:---|:---|
+| 新增工具 | `tools/dump_ini_keymap.py`（双正对照 + 对齐自检） |
+| 新增证据 | `evidence/ini_keymap.txt`（两次运行字节相同） |
+| KB | `30_ini_subsystem.md` 新增 §11 |
+| CONFLICTS | **G-18**（声明顺序 ≠ 字节偏移，对齐填充） |
+| 新增纪律 | **#15**：按头文件声明算字段偏移必须逐字段验对齐，并与至少一个字节观测点对照 |
+
+### 4. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未启动 gamemd/ra2loader；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 只提交 `re_atlas/`
+- [x] 片段最长 12 条指令

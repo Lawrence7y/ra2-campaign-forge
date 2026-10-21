@@ -610,3 +610,77 @@ edx = eax+0x10             ; Last
 不成立就直接判"VA 映射错、以上全部作废"。
 `ReadInteger` 的窗口从 `0x527877` 起 —— 那是 `ReadInteger` 体内一个真实跳转目标；
 从 `0x527878` 起会从指令中间反汇编出伪指令 `cli`（本轮实测踩到，已改）。
+
+---
+
+## 11. 键 → 字段映射（R-018）：`AbstractTypeClass::LoadFromINI`
+
+编译器最终要回答的是"**这个键写进去，落在哪个字段**"。本节把
+`AbstractTypeClass::LoadFromINI`（`0x00410A60`）的映射钉到字节。
+
+### 11.1 ⚠ `+0x24` 既是 `ID` 又是**节名**
+
+这是本节最重要的一条，也是"照着 YRpp 写结构体"会踩到的坑：
+
+```text
+0x00410A79  lea ebp, [ebx+0x24]    ; ebp = this->ID
+0x00410A7E  push ebp               ; ★ 节名 = this->ID
+0x00410A7F  call 0x526810          ; GetSection(this->ID)
+```
+
+`+0x24` 是 `char ID[0x18]`（YRpp `AbstractTypeClass.h`），**同时**被当作
+`GetSection` 的节名实参。
+
+⇒ **节头与对象 ID 是同一串字节。** 编译器生成 `[MTNK]` 时，
+实例化出来的对象 `ID` 就是字符串 `"MTNK"`；**不能**让节头写显示名而另存一个 id。
+
+`+0x60` 的 `UIName`（宽字符指针）才是显示名，由 `UIName` 键经 CSF 解析后填入。
+
+### 11.2 两个键的完整映射
+
+`LoadFromINI` 只读 **2 个键**（`ReadString` 只被调两次，`0x410AA0` / `0x410AFB`）：
+
+| 键 | 目标字段 | 上限 | 证据 |
+|:---|:---|:---|:---|
+| `Name` | `this+0x64` | **`0x31`（49）** | `0x00410A91 lea edi,[ebx+0x64]` / `0x00410A94 push 0x31` / `0x00410A98 push "Name"` |
+| `UIName` | `this+0x3D` | **`0x20`（32）** | `0x00410AEB lea ebp,[ebx+0x3D]` / `0x00410AEE push 0x20` / `0x00410AF5 push "UIName"` |
+
+`UIName` 读完后再经 `0x734E60` 解析成宽字符指针，写入 `this+0x60`：
+
+```text
+0x00410B3C  mov al,[ebp]           ; UINameLabel[0] 非空？
+0x00410B42  je 0x410B68            ; 空 -> 跳过
+0x00410B50  mov ecx,ebp
+0x00410B52  call 0x734E60          ; 解析 CSF
+0x00410B58  mov [ebx+0x60],eax     ; ★ UIName = 解析结果
+```
+
+`0x734E60` 在**全局 CSF 表未初始化**时返回常量 `0x84583C`（不是 NULL）——
+与 §3.3 的哨兵风格一致。
+
+### 11.3 字段边界（含对齐）
+
+按 YRpp 声明顺序**朴素相加**会把 `Name` 算到 `+0x61`，但字节实测是 `+0x64`。
+差的 3 字节是 `UINameLabel[0x20]` 结束于 `+0x5D` 之后、`wchar_t*` 的 4 字节对齐填充：
+
+| 偏移 | 字段 | 尺寸 |
+|:---|:---|---:|
+| `+0x24` | `ID` | `0x18` |
+| `+0x3C` | `zero_3C` | 1 |
+| `+0x3D` | `UINameLabel` | `0x20` |
+| `+0x5D` | **（对齐填充）** | **3** |
+| `+0x60` | `UIName`（`wchar_t*`） | 4 |
+| `+0x64` | `Name` | `0x31` |
+| `+0x95` | —（本类结束） | |
+
+⇒ **`AbstractTypeClass` 尾部到 `+0x95`**。工具用"算式 vs 字节观测"对照做校验，
+不一致会直接打印 mismatch。
+
+> 这正是 R-012 纪律 #"派生类核基类先减前缀"的同一类问题：**声明顺序不等于字节偏移**，
+> 编译器插入的对齐填充在头文件里看不见。
+
+### 11.4 复跑
+
+`python re_atlas/tools/dump_ini_keymap.py`（`evidence/ini_keymap.txt`）。
+双正对照：`LoadFromINI@0x00410A60` 头 6 字节 `81 EC 34 04 00 00`，
+以及键字面量 `0x00817854 == "Name"`；任一不成立即判 VA 映射错、结果作废。

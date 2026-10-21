@@ -366,3 +366,34 @@ R-016 初稿按「`YList = GenericList(0x10) + First(0x0C) + Last(0x0C) = 0x28`�
 **教训**：算结构尺寸时，"基类占多少"必须先数**基类自己的虚表指针和成员**，
 不能用"看起来像几个字段"的直觉。这次的错法和 G-16 同源 —— 都是把
 "容器"当成"若干独立子对象"来算。
+
+### G-18 · 本线自纠：按 YRpp 声明顺序朴素相加会算错 `AbstractTypeClass` 尾部偏移
+
+`AbstractTypeClass` 按声明顺序朴素相加：
+
+```text
++0x24 ID[0x18]  -> +0x3C
++0x3C zero_3C   -> +0x3D
++0x3D UINameLabel[0x20] -> +0x5D
++0x5D UIName (wchar_t*, 4) -> +0x61     ← 错
++0x61 Name[0x31]                        ← 错
+```
+
+**字节实测 `Name` 在 `+0x64`**：`0x00410A91 lea edi,[ebx+0x64]`。
+
+差的 3 字节是 `wchar_t*` 的 4 字节对齐填充（`+0x5D` → `+0x60`）。
+正确布局：
+
+```text
++0x5D  填充 3
++0x60  UIName (wchar_t*)   ← 0x00410B58 mov [ebx+0x60],eax
++0x64  Name[0x31]          ← 0x00410A91 lea edi,[ebx+0x64]
++0x95  AbstractTypeClass 结束
+```
+
+**判据**：任何"声明顺序 = 字节偏移"的推算都必须**逐字段验对齐**，
+并在算出结果后与至少一个字节观测点对照。`tools/dump_ini_keymap.py`
+把这条做成了自检：算式与观测不一致就打印 mismatch。
+
+**影响**：算错这 3 字节会让所有 `AbstractTypeClass` 派生类的字段偏移整体偏 3，
+而偏移错 3 在生产/战斗类里通常表现为"读到相邻字段"而非崩溃 —— 静默错误。

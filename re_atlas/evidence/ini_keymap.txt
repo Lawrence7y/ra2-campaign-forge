@@ -1,0 +1,37 @@
+=== AbstractTypeClass::LoadFromINI (0x00410A60) ===
+  calls ReadString  (0x528A10): ['0x410aa0', '0x410afb']
+  calls GetSection  (0x526810): ['0x410a7f']
+  calls Reset       (0x526B00): ['0x410a74']
+
+=== key -> field, derived from the push sequence before each call ===
+  call 0x00410AA0: pushed strings = ['Name']
+  call 0x00410AFB: pushed strings = ['UIName']
+
+=== field offsets touched by LoadFromINI ===
+  0x00410A79  ebp, [ebx + 0x24]
+  0x00410A91  edi, [ebx + 0x64]
+  0x00410AEB  ebp, [ebx + 0x3d]
+  0x00410AF2  eax, [ebx + 0x24]
+  0x00410B58  dword ptr [ebx + 0x60], eax
+
+=== YRpp AbstractTypeClass field bounds, WITH alignment ===
+  +0x24  ID[0x18]
+  +0x3C  zero_3C[0x1]
+  +0x3D  UINameLabel[0x20]
+  +0x60  UIName (wchar_t*)[0x4]
+  +0x64  Name[0x31]
+  +0x5D  <padding> 3 bytes (pointer alignment)
+  => AbstractTypeClass ends at +0x95
+  alignment check vs byte-observed offsets: OK
+
+=== what the byte evidence pins ===
+  section name for GetSection = this pointing at +0x24, i.e. the ID field:
+    'lea ebp,[ebx+0x24]' then 'push ebp' then 'call 0x526810'  (0x00410A79)
+  Name   -> dst this+0x64, cap 0x31 'Name'
+  UIName -> dst this+0x3D, cap 0x20 'UIName', then resolved to wchar_t*
+    and stored at this+0x60
+
+=== positive control ===
+  LoadFromINI @0x00410A60 head=81 ec 34 04 00 00 expected '81 ec 34 04 00 00': True
+  key literal @0x00817854 = 'Name' expected 'Name': True
+  controls OK
