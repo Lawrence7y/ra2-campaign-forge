@@ -49,7 +49,8 @@
 |:---|---:|
 | 触发器族类尺寸实证 | **8 类**（Script 48 / Tag 56 / Trigger 72 / TEvent 88 / TAction 148 / Team 160 / TaskForce 212 / ScriptType 564） |
 | `AbstractClass` 多继承 vptr 数 | **4**（COL.offset 0/4/8/12） |
-| 已确证派生字段 | **10 个**（TEvent +0x2C/+0x30/+0x34/+0x54；TAction +0x90；Team +0x3C；TaskForce +0x9C/+0xA4；Script +0x2C；Abstract +0x10/+0x20） |
+| 已确证派生字段 | **8 个**（TEvent +0x2C/+0x30/+0x34/+0x54；TAction +0x90；Team +0x3C；TaskForce +0x9C(计数)；Script +0x2C） |
+| 已撤回的过度解读 | **2 条**（`.data` 当格式串常量；`+0xA4` 当数组基址） |
 | 已确证基类前缀字段 | 6 个（4 vptr + `+0x10` dword + `+0x20` bool） |
 | 序列化顺序 | **先基类后派生**（`ScriptClass::Save` 实证） |
 | 交接件 | **6 条**（H-001…H-006） |
