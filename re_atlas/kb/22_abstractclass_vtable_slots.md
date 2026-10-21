@@ -250,6 +250,25 @@ TEventClass   [24] 0x0080C638 COLPTR  COL -> .?AVTextButtonClass@@
 
 ---
 
+
+### 4.2 派生类补槽：`AbstractTypeClass` 槽 25 = `LoadFromINI`（R-018 新增）
+
+`AbstractClass` 的表到槽 24（`+0x60`）为止 —— 那是一个 COL 指针，不是函数。
+`AbstractTypeClass` 的表（`0x007E2000`）比父类长，**槽 25（`+0x64`）= `0x00410A60`**：
+
+| 类 | 表基址 | 槽 25 值 | 体 |
+|:---|:---|:---|:---|
+| `AbstractTypeClass` | `0x007E2000` | `0x00410A60` | `AbstractTypeClass::LoadFromINI` |
+| `SideClass` | `0x007F2EC0` | `0x00410A60` | 同上（**继承未覆写**） |
+
+`0x00410A60` 只在 `.rdata` 里被引用两次，就是这两处。
+⇒ 想给**所有**类型注册一个统一的"从 INI 读基础字段"钩子，
+挂 `0x00410A60` 或按槽 25 派发都可行；但注意 `SideClass` 复用同一个函数，
+**按槽 25 挂钩会连带命中 `SideClass`**。
+
+**槽 25 之后的槽号尚未逐一定名**（YRpp 声明了 `LoadTheaterSpecificArt` /
+`SaveToINI`，但本线未验它们的槽号）。
+
 ## 5. 核验状态
 
 | 结论 | 通道 | 状态 |
@@ -261,3 +280,14 @@ TEventClass   [24] 0x0080C638 COLPTR  COL -> .?AVTextButtonClass@@
 | `+0x10` = `UniqueID`、`+0x20` = `Dirty`（bool） | 字节 + YRpp 属性表 | ✅ 双通道 |
 | 槽 11/12 = `WhatAmI`/`Size` | 见 `kb/20_vtable_contract.md`（69 类 + 三方一致） | ✅ 已核验 |
 | 槽 4 在全引擎 77 个类上同址 | `slot[4]` 直方图 | 单通道字节（旁证：基类几乎无人覆写） |
+
+### 4.3 R-018 补充核验状态
+
+| 结论 | 通道 | 状态 |
+|:---|:---|:---|
+| `AbstractTypeClass` 槽 25（`+0x64`）= `0x00410A60` = `LoadFromINI` | 字节（`0x7E2064` 两处引用之一） | 单通道字节 |
+| `SideClass` 表槽 25 同址（继承未覆写） | 字节（`0x7F2F24`） | 单通道字节 |
+| `LoadFromINI` 只读 `Name` / `UIName` 两个键 | 字节（`call 0x528A10` 仅两处 + 前置 push 串） | 单通道字节 |
+| `+0x24` 既是 `ID` 又是节名 | 字节（`lea ebp,[ebx+0x24]` → `push` → `GetSection`） | 单通道字节 |
+| `AbstractTypeClass` 尾部 `+0x95`（含 3 字节对齐填充） | 算式 + 字节观测点自检 | ✅ 双通道 |
+
