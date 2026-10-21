@@ -1,0 +1,75 @@
+镜像基数 0x00400000   .text VA 0x00401000
+
+F1 窗口类注册（0x00777C30 起）
+  RegisterClassA @ 0x00777CA5
+  [PASS] WNDCLASSA.lpfnWndProc == 0x007775C0  @0x00777C79
+  [PASS] lpszClassName == b"Yuri's Revenge"  实读 b"Yuri's Revenge"
+  [PASS] lpszClassName 立即数 0x00849F48 出现在 WNDCLASSA 填充序列
+
+F2 主窗口创建（CreateWindowExA）
+  [PASS] 0x007E14D4 == CreateWindowExA  USER32.dll!CreateWindowExA
+  [PASS] 0x007E14D8 == RegisterClassA  USER32.dll!RegisterClassA
+  [PASS] 0x007E14AC == PostMessageA  USER32.dll!PostMessageA
+  [PASS] CreateWindowExA 返回值写入 [0x00B73550]  @0x00777CD6
+
+F3 WM_DESTROY 块（0x007777F3 起）
+  0x007777F3  mov      ecx, dword ptr [0x887368]
+  0x007777F9  cmp      ecx, ebx
+  0x007777FB  je       0x777809
+  0x007777FD  mov      eax, dword ptr [ecx]
+  0x007777FF  push     1
+  0x00777801  call     dword ptr [eax]
+  0x00777803  mov      dword ptr [0x887368], ebx
+  0x00777809  mov      eax, dword ptr [0xa8edd8]
+  0x0077780E  mov      dword ptr [0xb73550], ebx
+  0x00777814  cmp      eax, ebx
+  0x00777816  je       0x777822
+  0x00777818  mov      dword ptr [0xa8edd8], 2
+  0x00777822  pop      edi
+  [PASS] 单例清零 @0x00777803（mov [0x887368], ebx）
+  [PASS] hwnd 清零 @0x0077780E（mov [0x00B73550], ebx）
+  [PASS] 两者同基本块、相隔 11 B，中间仅 1 条指令  中间: mov eax, dword ptr [0xa8edd8]
+  [PASS] 中间那条读的是退出状态 [0x00A8EDD8]
+
+F4 引擎退出路径（0x006BE0C0 起）
+  0x006BE0C6  call     0x406d40
+  0x006BE0CB  push     ebx
+  0x006BE0CC  push     ebx
+  0x006BE0CD  push     2
+  0x006BE0CF  mov      ecx, dword ptr [0xb73550]
+  0x006BE0D5  push     ecx
+  0x006BE0D6  call     dword ptr [0x7e14ac]
+  0x006BE0DC  call     0x5d4d50
+  0x006BE0E1  cmp      dword ptr [0xa8edd8], edi
+  0x006BE0E7  je       0x6be0dc
+  0x006BE0E9  xor      esi, esi
+  0x006BE0EB  call     0x5d7e50
+  0x006BE0F0  call     0x65fd50
+  0x006BE0F5  mov      ecx, 0x87f7e8
+  0x006BE0FA  call     0x6d0270
+  0x006BE0FF  call     0x626ff0
+  [PASS] PostMessageA 调用 @0x006BE0D6
+  [PASS] Msg 入参 = 2（WM_DESTROY，非 WM_CLOSE=0x10）  @0x006BE0CD
+  [PASS] 目标 hwnd 取自 [0x00B73550]  @0x006BE0CF
+  [PASS] 等待环判据 = cmp [0x00A8EDD8], edi  @0x006BE0E1
+
+F5 消息泵 0x005D4D50 的单例消费点
+  0x005D4DB3  lea      ecx, [esp + 0x10]
+  0x005D4DB7  call     0x49f740
+  0x005D4DBC  mov      ecx, dword ptr [0x887368]
+  0x005D4DC2  test     ecx, ecx
+  0x005D4DC4  je       0x5d4dd0
+  0x005D4DC6  lea      eax, [esp + 0x10]
+  0x005D4DCA  push     eax
+  [PASS] 泵读单例后紧跟 test（带闸消费）  test ecx, ecx
+  [PASS] test 后紧跟 je（判零分支）  je 0x5d4dd0
+
+F6 [0x00B73550] 全段写入点普查
+  解码指令 1394120 条；字节命中 197；去重后归属指令 197
+    0x0077780E  mov  dword ptr [0xb73550], ebx                    89 1d 50 35 b7 00
+    0x00777CD6  mov  dword ptr [0xb73550], eax                    a3 50 35 b7 00
+    0x00777D7E  mov  dword ptr [0xb73550], eax                    a3 50 35 b7 00
+  [PASS] 写入点恰好 3 处（创建×2 + 销毁×1）  实测 3
+  [PASS] 写入点 VA 集合 == {0x00777CD6, 0x00777D7E, 0x0077780E}
+
+★ 五组断言全部成立（F1–F5）
