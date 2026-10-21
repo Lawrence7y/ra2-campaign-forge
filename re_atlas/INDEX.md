@@ -29,6 +29,8 @@ ImageBase `0x00400000`，入口 `0x007CD80F`。
 | `0x008870C0` | `INI_RA2MD` | ra2md.ini 的 `CCINIClass` | YRpp `:295`；`c7 05 c0 70 88 00 f4 1a 7e 00` | 实证（写入点）+ 社区 |
 | `0x00887058` | 未命名 `CCINIClass` | 第 6 个静态实例 | `c7 05 58 70 88 00 f4 1a 7e 00` | 实证（写入点） |
 | `0x0089F518` | 未命名 `CCINIClass` | 第 7 个静态实例 | `c7 05 18 f5 89 00 f4 1a 7e 00` | 实证（写入点） |
+| `0x00B7882C` | INI "未找到"哨兵 | `GetSection`/键查找未命中时返回的共享空对象（**不是 NULL**），19 处 `.text` 引用 | `0x0052690C` / `0x00526A01` / `0x00528B60` / `0x0052B4A8` | **实证** |
+| `0x0081F7B4` | CRC32 表 | 256 项，与 `0xEDB88320` 标准反射多项式生成表**逐项相等** | `tools/dump_ini_nodes.py`（全 256 项比对） | **实证** |
 | `0x00A83D4C` | `HouseClass::Player` | 本地人类玩家阵营指针 | ATLAS §11.1；`0x0050B71A` 读后严格比对 | **实证** |
 | `0x00A80228` | `HouseClass::Array` | 参战阵营动态向量 | ATLAS §11.1 | 社区 |
 | `0x0087E8B8` | `PathFinder` | 寻路工作区（生成戳 +0x28） | ATLAS §11.1 | 社区 |
@@ -234,6 +236,42 @@ COL.offset 分别 **0/4/8/12**。所有派生类头部都是这个形态。
 | `TeamClass` | `+0x3C` | `dword` | 当前脚本步；与入参相同则**早退** | `0x006E9059/5C/5E` |
 
 复跑：`python re_atlas/tools/dump_class_layouts.py`（`evidence/class_layouts.txt`）。
+
+---
+
+### C.8 INI 容器与节点（R2-2 第二轮，详见 `kb/30_ini_subsystem.md`）
+
+| 类 | 虚表 VA | 槽 | 实例尺寸 | 证据 | 置信度 |
+|:---|:---|---:|---:|:---|:---|
+| `INIClass` | `0x007EA5F4` | 1 | **`0x40`** | `[vt-4]`→COL `0x00802510`；`v[0]=0x004F2810` | **实证** |
+| `CCINIClass : INIClass` | `0x007E1AF4` | 1 | ≥`0x55`（语料 `0x58` 未独立复核） | `[vt-4]`→COL `0x007FAC88`；`v[0]=0x0040E4A0` | 实证（结构）/ 推演（尺寸） |
+| `INISection` | `0x007EB73C` | 1 | **`0x44`** | `[vt-4]`→COL `0x00803708`；`0x00525DEA push 0x44` | **实证** |
+| `INIEntry` | `0x007EB734` | 1 | **`0x28`** | `[vt-4]`→COL `0x00803668`；`0x00526039 push 0x28` | **实证** |
+| `List<INISection*>` | `0x007E1AFC` | 1 | **`0x1C`** | `[vt-4]`→COL `0x007FAC20` | **实证** |
+| `List<INIEntry*>` | `0x007EB744` | 1 | **`0x1C`** | `[vt-4]`→COL `0x00803600` | **实证** |
+| `GenericNode` | `0x007E1B0C` | — | `0x0C`（vptr+Next+Prev） | `[vt-4]`→COL `0x007FACD0` | **实证** |
+
+**`INIClass` 字段（`kb/30` §1.2）**：`+0x04`/`+0x08` = GetSection 缓存（哈希/上次命中）、
+`+0x0C` = `List<INISection>`（`0x1C`）、`+0x28` = 哈希排序数组、`+0x2C`/`+0x30` = 数量/容量、
+`+0x34` = dirty、`+0x38` = 二分命中缓存、`+0x40` = `Digested`、`+0x41..+0x54` = `Digest[20]`（推演）。
+
+**关键机制函数**：
+
+| VA | 名称 | 作用 | 证据 |
+|:---|:---|:---|:---|
+| `0x00535AA0` | `CCINIClass::ctor` | 写 `0x7EA5F4`(本类) + `+0x0C` 的 `List` 结构 | 逐指令 |
+| `0x005256F0` | `INIClass` dtor 体 | 清 `+0x0C..+0x3C`，释放 `+0x28` | 逐指令 |
+| `0x00526B00` | `INIClass::Reset` | 清 `+0x04`/`+0x08` 两缓存（**不是**"节名预处理"） | `33 C0 / 89 41 04 / 89 41 08 / C3` |
+| `0x00526810` | `GetSection` | CRC32 → 排序数组二分 → 未命中返 `0xB7882C` | 逐指令 |
+| `0x004A1DE0` | CRC32（分块） | 节名/键名哈希 | 与 `0x4A1FB0` 同多项式 |
+| `0x004A1FB0` | CRC32（单块） | 同上 | 表 `0x81F7B4` 全 256 项比对 |
+| `0x0052B720` | hash 比较器 | **只比首 dword，不复核名字** | `cmp [eax],[ecx]` |
+| `0x0052B750` | 二分 | 8 字节步长，命中返元素地址 | `lea [ecx+eax*8]` |
+| `0x00528A10` | `ReadString` | 节→键→拷贝（`ret 0x14`） | 逐指令 |
+| `0x00526CC0` | `GetKeyName` | `[sec+0x18]` 链表头 / `[sec+0x30]` 键数上界 | 逐指令 |
+
+复跑：`python re_atlas/tools/dump_ini_nodes.py`（`evidence/ini_nodes.txt`；
+含 `AbstractClass` COL 正对照 + CRC 表 256 项全比）。
 
 ---
 

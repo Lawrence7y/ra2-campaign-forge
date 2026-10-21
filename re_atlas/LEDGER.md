@@ -1061,3 +1061,94 @@ R2-1（触发器族）该收的字段已收得差不多，按 §3 优先级转�
 - [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
 - [x] 只提交 `re_atlas/`
 - [x] 片段均 ≤ 10 条指令
+
+---
+
+## R-016 · 2026-10-21 21:0x–21:3x · R2-2 第二轮：`INISection`/`INIEntry` 布局 + 撤回 R-015 两条结构结论
+
+### 1. 心跳与门禁
+
+- `tasklist` 查无 `gamemd` / `ra2loader` ⇒ 可做完整分析（§8.3）。
+- GOAL-3T 台账尾部：正在跑 `goal1_h1decay_20261021` 的 `--probe-frames` 早期帧路线，
+  GLM 5.3 独立核验 `dwfrun-9fb1ccc3` 在飞。**渠道占用中 ⇒ 本轮不派子代理**。
+- 未启动 gamemd/ra2loader；未写 `ra2youli`；未跑 trip；未编译；未改 `lead/`、`docs/re/`、
+  `ra2render/`、`tools/`。
+
+### 2. 本轮主线：`INISection` / `INIEntry` 节点布局（闭 I-4）
+
+| 事实 | 值 | 证据 |
+|:---|:---|:---|
+| `INISection` 尺寸 | **`0x44`** | `0x00525DEA push 0x44` → `call 0x7C8E17` |
+| `INIEntry` 尺寸 | **`0x28`** | `0x00526039 push 0x28` → `call 0x7C8E17` |
+| `List<T>` 尺寸 | **`0x1C`** | `0x52ACE0` ctor + 尺寸复算等于 `0x44` |
+| `INISection+0x0C` | `Name`（堆副本） | `0x00525E22`（`0x7D5408` strdup 返回值） |
+| `INISection+0x10` | `List<INIEntry*>` 成员（`0x1C`） | `0x00525E2D` 写 `0x7EB744` |
+| `INISection+0x2C` | `CheckedEntries`（`0x14`） | `0x0052B080`（ecx=`ebx+0x2C`）逐字段清零 |
+| `INISection+0x40` | `Unknown_40` | `0x00525E44` |
+| `INIEntry+0x0C` / `+0x10` | **`Key` / `Value`**（堆副本） | `0x00526079` / `0x00526087` |
+| `INIEntry+0x14..+0x24` | 5 个 `unknown_*`（`+0x14/+0x18` 是堆指针，其余标量） | ctor 写入 + dtor `0x52AD50` 释放集 |
+
+**与 YRpp 的对照**：`INIEntry` 7 个字段偏移**完全一致**；`INISection` 按
+`Node(0x0C)+Name(4)+List(0x1C)+CheckedEntryList(0x14)+Unknown_40(4)=0x44`
+逐字节吻合 `push 0x44`。
+
+### 3. 本轮主要发现：节查找是 CRC32 排序数组，不是链表
+
+`GetSection`（`0x526810`）查的是 `INIClass+0x28` 处一个 **8 字节元素**的排序数组
+（`{u32 hash, INISection*}`），用 `0x52B750` 二分、`0x52B720` 比较器比。
+哈希是**标准 CRC32**（表 `0x0081F7B4` 全部 256 项与 `0xEDB88320` 反射多项式生成表逐项相等；
+`0x4A1FB0` 是更新步，`0x4A1DE0` 是其分块版本）。
+
+比较器**只比哈希、不复核名字**，命中后也不做字符串复核 ⇒
+**节名/键名大小写敏感**。这对编译器是硬约束：`[InfantryTypes]` ≠ `[infantrytypes]`。
+
+**另一条易错点**：未命中返回 **`0xB7882C`**（BSS 共享空对象，19 处 `.text` 引用），
+**不是 NULL**。任何"判 NULL 即不存在"的写法在本子系统里是错的（纪律 #13）。
+
+### 4. 撤回（两次，均为 R-015 的结论）
+
+**撤回 1：`INIClass : VectorClass<GraphicMenuItem*>`。**
+`0x004F2B60` 是**析构函数**，写 `0x7EA624` 是析构时恢复基类 vptr。
+`INIClass` 自己的表是 `0x7EA5F4`（单槽 = 析构 `0x004F2810`），
+构造函数 `0x535AA0` 的 `0x00535B27` 写的正是它。→ CONFLICTS **G-15**
+
+**撤回 2：`CCINIClass` 三基类多继承。**
+`+0x0C/+0x10/+0x1C` 是**一个** `List<INISection>` 成员（vptr + First 哨兵 + Last 哨兵）。
+→ CONFLICTS **G-16**
+
+**外加一次"差点伪造的冲突"**：写 §9.4 时我把 `List<T>` 尺寸算成 `0x28`，
+据此准备登记"YRpp 结构尺寸错"。复算发现正确值是 `0x1C`，YRpp **是对的**。
+已在 KB §9.4 与 CONFLICTS **G-17** 留痕。
+
+### 5. 新增纪律
+
+- **#11**：`mov [reg], <vtable>` 在构造函数与析构函数里字节相同、语义相反。
+  构造 = 清零串 + **最后**写本类 vptr；析构 = 先释放字段 + 写 vptr 后紧跟
+  `test byte [esp+8],1` / `free(this)` / `ret 4`。
+- **#12**：**"N 个 vptr" ≠ "N 个基类"**。模板容器实例含 1 个容器 vptr + 2 个哨兵 vptr。
+  归属判据 = 找该容器的构造函数，看它对哪块内存做了同一组写。
+- **#13**：本子系统"未找到"返回哨兵 `0xB7882C` 而非 NULL。
+
+### 6. 本轮产出
+
+| 件 | 内容 |
+|:---|:---|
+| 新增工具 | `tools/dump_ini_nodes.py`（正对照 `AbstractClass` 先行 + 256 项 CRC 表全比） |
+| 新增证据 | `evidence/ini_nodes.txt`（133 行，两次运行字节相同） |
+| 改写 KB | `30_ini_subsystem.md` §1/§3/§5/§8 重写 + 新增 §9 |
+| CONFLICTS | **G-15**（撤回继承）、**G-16**（撤回多继承）、**G-17**（撤回"YRpp 尺寸错"） |
+| 关闭悬项 | **I-1 / I-4 / I-5** 闭合，**I-2** 部分闭合 |
+| 新增悬项 | L-24（`+0x3C`）、L-25（`CCINIClass` 尺寸）、L-26（`0x52B390` vs `0x52B430`）、L-27（dirty 语义）、L-28（见下） |
+
+### 7. 悬项（末尾一条占位已在本轮当场修正）
+
+> L-28 原拟为"`GetKeyName` 的 `+0x30` 是 Capacity 还是 Count"。本轮**已当场解掉**：
+> `0x00526D4F mov ecx,[eax+0x30]` 后紧跟 `cmp edx,ecx` / `jge` 早退，
+> `+0x30` 是**键数上界**（即 `Count`），不是容量。占位改记为 **已闭**，不留 L-28。
+
+### 8. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未启动 gamemd/ra2loader；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 只提交 `re_atlas/`
+- [x] 片段均 ≤ 13 条指令（§3.2 最长）

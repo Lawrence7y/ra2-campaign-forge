@@ -1,11 +1,14 @@
 # R2-2：INI 子系统 —— `INIClass` / `CCINIClass` 骨架 [实证]
 
-更新：2026-10-21（RE-ATLAS R-015）
+更新：2026-10-21（RE-ATLAS R-015 初版 / R-016 重写 §1、§5 并新增 §9 `INISection`/`INIEntry`）
 
 R2-2 的第一篇。目标：给 `ra2forge` 战役编译器一条可查询的 INI 读取链骨架。
 
-> **本篇含两次当场自纠**（写完验 COL 才发现），留痕见 §8。
-> 初稿把邻居表当成自己的方法表、把 `RULESMD.INI` 认错，都已撤回重写。
+> **⚠ R-016 撤回 R-015 的两条核心结构结论**（§1 与 §5），留痕见 §8.3、§8.4。
+> R-015 写的「`INIClass : VectorClass<GraphicMenuItem*>`、`CCINIClass` 三基类多继承」
+> **不成立**：那三个 vptr 是**一个 `List<INISection>` 成员**（自带 vptr + 首尾两个哨兵节点）。
+> 根因是同一条纪律反复被违反：**`.rdata` 表首尾相接，地址相邻 ≠ 同类**。
+> 本篇 §1 已按字节重写，旧结论保留在 §8 留痕。
 
 ---
 
@@ -15,103 +18,90 @@ R2-2 的第一篇。目标：给 `ra2forge` 战役编译器一条可查询的 IN
 |:---|:---|:---|
 | `INIClass` RTTI 主虚表 | `0x007EA5F4`（`[vt-4]` → `.?AVINIClass@@`） | COL 反查 |
 | `CCINIClass` RTTI 主虚表 | `0x007E1AF4`（`[vt-4]` → `.?AVCCINIClass@@`） | COL 反查 |
-| **但构造函数不写这两张表** | 见 §2 —— 写的是成员子对象各自的表 | 见 §2 |
+| 两类的 RTTI 表各只有 **1 槽**（都是标量删除析构） | `0x004F2810` / `0x0040E4A0` | 槽值 + 槽体 |
+| `CCINIClass` 构造函数 `0x00535AA0` 写的表 | `+0x00`→`0x7EA5F4`(INIClass)、`+0x0C`→`0x7E1AFC`(`List<INISection*>`) | 逐指令 |
+| `INIClass` 实例尺寸 | **`0x40`** | `+0x28..+0x40` 是最后字段（§2） |
+| `INISection` 实例尺寸 | **`0x44`** | `0x00525DEA push 0x44` |
+| `INIEntry` 实例尺寸 | **`0x28`** | `0x00526039 push 0x28` |
+| 节查找机制 | **排序数组 + CRC32 二分**，不是链表遍历 | §3 |
+| 节名/键名比较 | **大小写敏感**（CRC32 原文，无折大小写） | §3.3 |
 | `CCINIClass` 静态全局实例 | `0x887180`=**`INI_Art`** / `0x887208`=**`INI_UIMD`** / `0x887128`=**`INI_AI`** / `0x8870C0`=**`INI_RA2MD`** / `0x887048`=`INI_Rules`(指针) / `0x887058` 与 `0x89F518` 两个未命名 | 字节 + YRpp `CCINIClass.h` 静态声明 |
 
-**最重要的一条**：`INI_Art` 是 `0x887180`，**不是** `RULESMD.INI`。
-`RULESMD.INI` 走的是 `0x887048`（**指针**，不是对象）。
+**最重要的一条（对编译器）**：`INI_Art` 是 `0x887180`，**不是** `RULESMD.INI`。
+`RULESMD.INI` 走 `0x887048`（**指针**，不是对象）。
+两者**不能混**；直接把 `0x887180` 当 rules 用会改到美术定义。
+
+**第二重要的一条（对编译器）**：节名与键名**大小写敏感**。
+`[InfantryTypes]` 与 `[infantrytypes]` 是两个不同的节，`Name` 与 `name` 是两个不同的键。
+编译器生成 INI 时不能指望引擎做大小写归一。
 
 ---
 
-## 1. `INIClass` 是多继承，不是"扁平类 + 一个析构槽"
+## 1. `INIClass` / `CCINIClass` 的真实结构（R-016 重写，撤回 R-015 §1）
 
-YRpp 把 `INIClass` 写成没有基类的独立类（`CCINIClass.h:13`），
-但**字节证明它有基类**，而且是**多继承**：
+### 1.1 字节
 
-`CCINIClass` 构造函数 `0x00535AA0`（YRpp 记 `THISCALL(0x535AA0)`）逐个写子对象 vptr：
-
-```text
-0x00535AA5  lea ecx, [eax+0x10]        ; 子对象 1 @ +0x10
-0x00535AAC  mov [eax+4],  0            ; +4 清零
-0x00535AAF  mov [eax+8],  0            ; +8 清零
-0x00535AB2  mov [ecx+4],  0            ; +0x14
-0x00535AB5  mov [ecx+8],  0            ; +0x18
-0x00535AB8  mov dword [ecx], 0x7E1B0C  ; ★ +0x10 写 GenericNode 表
-0x00535AA9  lea edx, [eax+0x1C]        ; 子对象 2 @ +0x1C
-0x00535AC4  mov dword [edx], 0x7E1B0C  ; ★ +0x1C 也是 GenericNode 表
-0x00535ACD  mov dword [eax+0xC], 0x7E1B04 ; ★ +0x0C 写 GenericList 表
-```
-
-COL 反查：
+`CCINIClass` 构造函数 `0x00535AA0`（YRpp 记 `THISCALL(0x535AA0)`，确为**构造函数**，
+末尾 `0x00535B27 mov [eax], 0x7EA5F4` 写的是**本类的 RTTI 表**）：
 
 ```text
-0x007E1B04 -> .?AVGenericList@@
-0x007E1B0C -> .?AVGenericNode@@
+0x00535AA6  lea ecx, [eax+0x10]        ; List 的首哨兵节点
+0x00535AAC  mov [eax+4],  0            ; List+4 (GraphicMenu? 见 §1.4)
+0x00535AAF  mov [eax+8],  0            ; List+8
+0x00535AB2  mov [ecx+4],  0            ; 首哨兵.Next
+0x00535AB5  mov [ecx+8],  0            ; 首哨兵.Prev
+0x00535AB8  mov dword [ecx], 0x7E1B0C  ; 首哨兵 vptr = GenericNode
+0x00535AC4  mov dword [edx], 0x7E1B0C  ; 尾哨兵 vptr = GenericNode  (edx=[eax+0x1C])
+0x00535ACD  mov dword [eax+0xC], 0x7E1B04 ; List vptr = GenericList
+0x00535B0C  mov dword [eax+0xC], 0x7E1AFC ; ★ List vptr 改写成 List<INISection*>
+0x00535B27  mov dword [eax],   0x7EA5F4   ; ★ 本类 RTTI 表
 ```
 
-⇒ **`CCINIClass` 有 3 个内嵌子对象**（`+0x0C` 一个 List，`+0x10` 与 `+0x1C` 两个 Node），
-不是"一段扁平字段"。`+0x04`/`+0x08` 是普通 dword（清零）。
+两次写 `+0x0C` 不是笔误：`0x7E1B04`（`GenericList`）是**基类子对象**的表，
+`0x7E1AFC`（`List<INISection*>`，即模板派生）是**完整对象**的表。
+这与 `0x52ACE0` 的 `GenericList` 构造函数一致（它把 `+0`/`+4`/`+0x10` 三处都写 `0x7E1B04`/`0x7E1B0C`）。
 
-`INIClass` 的构造函数 `0x004F2B60` 则写 `0x7EA624`
-（→ `VectorClass<GraphicMenuItem*>`），见 §2.2。
-
----
-
-## 2. ⚠ RTTI 表 vs 构造函数写的表：不是同一张
-
-这是本轮最需要记住的结构。
-
-### 2.1 RTTI 表确实各只有 1 槽
+### 1.2 结构
 
 ```text
-0x007EA5F0  COL -> .?AVINIClass@@            ← vtable[-1]
-0x007EA5F4  [0] 0x004F2810                   ← 唯一槽（析构）
-0x007EA5F8  0x008025C0                       ← 落入 .rdata = 下一张表的 COL
+INIClass            (+0x00 vptr = 0x7EA5F4)
+  +0x04  unknown_4  (DWORD, 上一节的缓存值；见 §3.2)
+  +0x08  unknown_8  (DWORD, 上一节的 INISection* 缓存)
+  +0x0C  List<INISection> Sections        ← 30 字节：vptr + First + Last
+           +0x0C vptr = 0x7E1AFC (List<INISection*>)
+           +0x10 First (GenericNode, 12B)  vptr=0x7E1B0C, Next=+0x14, Prev=+0x18
+           +0x1C Last  (GenericNode, 12B)  vptr=0x7E1B0C, Next=+0x20, Prev=+0x24
+  +0x28  INISection**  SectionsByHash (排序数组)   ← §3
+  +0x2C  int           SectionCount
+  +0x30  int           SectionCapacity
+  +0x34  bool          SectionIndexDirty     (排序失效标志)
+  +0x38  INISection**  SectionIndex          (二分命中缓存)
+  +0x3C  DWORD         (析构清零，语义未定 L-24)
+  +0x40  bool          Digested   ← 见 §1.3
+  +0x41  byte[20]      Digest      ← 见 §1.3
+
+CCINIClass : INIClass     (+0x00 vptr = 0x7E1AF4，单继承，仅覆写表首)
 ```
 
-`0x007E1AF4`（CCINIClass）同样：`[0] = 0x0040E4A0`，`[1] = 0x007FAC20`（`.rdata`）。
+### 1.3 为什么 `Digested` 落在 `+0x40`
 
-⇒ `classes_meta.json` 记 `slots=1` **是对的**，这次不是记账错。
+R-015 按 YRpp 声明顺序算出 `Digested` 在 `+0x40`、`Digest[20]` 在 `+0x41..+0x54`。
+R-016 用两个独立事实复核：
 
-### 2.2 构造函数写的是**成员子对象的表**
+1. `CCINIClass` 的析构 `0x0040E4A0` 调 `0x5256F0`（`INIClass` 析构体），后者清到 `+0x3C` 为止；
+2. YRpp `CCINIClass()` 内联体第二句是 `Digested = false;`，第三句 `*this = 0x7E1AF4`。
 
-| 对象 | 构造点 | 写入的 vtable | COL 名 |
-|:---|:---|:---|:---|
-| `INIClass` | `0x004F2B66` | `0x007EA624` | `VectorClass<GraphicMenuItem*>` |
-| `CCINIClass` | `0x00535ACD` | `0x007E1B04` | `GenericList` |
-| `CCINIClass` | `0x00535AB8` | `0x007E1B0C` | `GenericNode` @ `+0x10` |
-| `CCINIClass` | `0x00535AC4` | `0x007E1B0C` | `GenericNode` @ `+0x1C` |
+⇒ `+0x40 = bool Digested`、`+0x41 = byte[20] Digest` 与声明顺序自洽。
+**但本线未在字节里直接观测到对 `+0x40` 的读写**（构造函数只清到 `+0x3C`，
+说明 `Digested` 的清零发生在外面的内联代码里）。故此条标 **推演**，不是实证。
 
-**注意**：`INIClass` 自己的构造函数把 **`this+0`** 写成 `VectorClass<GraphicMenuItem*>` ——
-也就是说 **`INIClass` 的第一个基类就是 `VectorClass<GraphicMenuItem*>`**，
-而不是"独立类"。YRpp 的写法省略了这一层。
+### 1.4 `+0x04/+0x08` 的语义
 
-⇒ **`INIClass` 的真实继承链**（字节）：
-
-```text
-INIClass : VectorClass<GraphicMenuItem*>          （+0x00 起）
-CCINIClass : INIClass, GenericList(+0x0C),
-             GenericNode(+0x10), GenericNode(+0x1C)
-```
-
-### 2.3 `.rdata` 里这些表是**交错排布**的
-
-`0x7EA5F4` 起的 dword 序列：
-
-```text
-+0x00  0x004F2810  TEXT   ← INIClass 唯一槽
-+0x04  0x008025C0  RDATA  ← GraphicMenu 表的 COL
-+0x08  0x004F2830  TEXT   ← GraphicMenu 的槽
-+0x0C  0x00802578  RDATA  ← DynamicVectorClass<GraphicMenuItem*> 的 COL
-+0x10  0x004F2BB0  TEXT   ← 该表的槽
-...
-```
-
-⇒ **整片区域是 4 张表首尾相接**，每张前面一个 COL：
-`INIClass` / `GraphicMenu` / `DynamicVectorClass<GraphicMenuItem*>` / `VectorClass<GraphicMenuItem*>`。
-
-**判据（纪律 #10）**：任何"这张表属于这个类"的判断，
-**必须先验 `[vt-4]` 的 COL 反查出类名**。地址相邻 ≠ 同类。
+`GetSection` 把它们当**缓存**用（§3.2）：`+0x08` 存上一次命中的 `INISection*`，
+`+0x04` 存上一次查询的哈希。YRpp 命名为 `unknown_4` / `unknown_8`，本线给出用途。
+**注意**：这两个 dword 与 `List` 的 `First`/`Last` **无关** —— R-015 把它们读成
+「`+0x04`/`+0x08` 是普通 dword（清零）」是对的，但把 `+0x0C` 起的三个 vptr
+读成三个独立基类则是错的。
 
 ---
 
@@ -148,8 +138,80 @@ YRpp `CCINIClass.h:288-296` 给出对应关系：
 
 **对编译器的含义**：
 - 想动 **`rulesmd.ini`** ⇒ 用 `0x887048`（**一级解引用**：`*[0x887048]` 才是对象）；
-- 想动 **`artmd.ini`** ⇒ 用 `0x887180`（直接是对象，`&` 即 `this`）；
+- 想动 **`artmd.ini`** ⇒ 用 `0x887180`（直接是对象，`&` 即 this）；
 - 两者**不能混**。直接把 `0x887180` 当 rules 用会改到美术定义。
+
+---
+
+## 3. 节查找：CRC32 排序数组 + 二分（R-016 新增）
+
+`GetSection`（`0x526810`）**不遍历** `Sections` 链表。它查的是一个
+**按哈希排序的 `{u32 hash, INISection*}` 数组**。
+
+### 3.1 结构
+
+```text
+INIClass+0x28  INISection** 或 {hash,ptr} 数组基址
+INIClass+0x2C  int            元素个数
+INIClass+0x30  int            容量
+INIClass+0x34  bool           排序失效（dirty）标志
+INIClass+0x38  缓存指针       上一次命中的元素地址
+```
+
+每个元素 **8 字节**：`+0x00 = u32 sectionHash`、`+0x04 = INISection*`。
+证据：`0x0052B430` 的二分里 `lea edi,[edx+8]` / `lea ecx,[edx+8]`（步长 8），
+命中后 `add eax,4` 再 `mov eax,[eax]`（取 `+0x04` 的指针）。
+
+### 3.2 流程
+
+```text
+0x00526844  call 0x4A1DE0          ; CRC32(节名) -> edi
+0x00526849  mov ecx,[esi+0x2c]     ; count        <- esi = this
+0x0052685a  mov eax,[esi+0x38]     ; 缓存元素
+0x00526861  cmp [eax],edi          ; 缓存命中？
+0x00526865  cmp byte [esi+0x34],bl ; dirty？
+0x00526876  call 0x7C8B48          ; 重新 qsort（比较器 0x52B720）
+0x00526881  mov byte [esi+0x34],1  ; 标 dirty=1（下次仍需排？见 L-27）
+0x00526894  call 0x52B750          ; 二分查找
+0x00526921  mov [esi+0x38],edx     ; 更新缓存
+0x00526927  add esi,4 ; mov eax,[esi]  ; 返回 section 指针
+0x0052690C  mov esi,0xB7882C       ; 未命中的空对象
+```
+
+**未命中时返回 `0xB7882C`**（BSS 里的一个共享空对象），不是 NULL。
+`0xB7882C` 被 19 处 `.text` 引用，是本类族的**通用"空结果"哨兵**。
+⇒ 调用方**不需要判空**，但**需要判"是不是哨兵"**才能区分"节不存在"。
+
+### 3.3 哈希 = 标准 CRC32，**无大小写折叠**
+
+`0x4A1FB0` 是 CRC32 更新步（`not eax` … 查表 … `not eax`），
+索引表在 `0x0081F7B4`。本线逐项比对 **全部 256 项**，与标准反射多项式
+`0xEDB88320` 生成的表**完全一致**。
+
+`0x4A1DE0` 是它的**分块版本**（先按 4 字节尾数处理，再一次 4 字节一组），
+但数学上是同一个 CRC32。
+
+**关键判据**：`0x52B720` 这个比较器**只比首 dword**：
+
+```text
+0x0052B720  mov eax,[esp+4]
+0x0052B724  mov ecx,[esp+8]
+0x0052B728  mov eax,[eax]        ; 元素 A 的 hash
+0x0052B72A  mov ecx,[ecx]        ; 元素 B 的 hash
+0x0052B72C  cmp eax,ecx
+0x0052B72E  jne +3
+0x0052B730  xor eax,eax
+```
+
+它**不比较节名本身**。而 `GetSection` 命中后**也不做字符串复核**
+（`0x00526924` 直接取 `[edi+4]` 返回）。
+
+⇒ **节名比较是大小写敏感的**。`[InfantryTypes]` 与 `[infantrytypes]` 是两个不同的节。
+
+> ⚠ 这是一个**哈希碰撞即误命中**的设计：CRC32 是 32 位，两张不同名字的节
+> 若 CRC32 相同，`GetSection` 会把后者的内容当成前者返回。本线**未观察到**
+> 引擎对名字做二次复核（`ReadString` 的键查找只比哈希，见 §9.3）。
+> 对编译器的意义：**不要依赖碰撞概率**，但也不要假设引擎会帮你消歧。
 
 ---
 
@@ -158,7 +220,8 @@ YRpp `CCINIClass.h:288-296` 给出对应关系：
 ```text
 CCINIClass（单份 INI）
   └─ ReadString(节, 键, buf, def, cap)     ; 0x528A10, ret 0x14
-        └─ 写进 AbstractTypeClass +0x24/+0x3D/+0x64
+        ├─ 0x526810 GetSection(节)          ; CRC32 + 二分
+        └─ 在 section->Entries 里线性找键   ; §9
 ```
 
 `AbstractTypeClass::LoadFromINI`（`0x00410A60`）的 `ecx` 是 **`CCINIClass*`**：
@@ -166,33 +229,58 @@ CCINIClass（单份 INI）
 ```text
 0x00410A69  mov esi, [esp+0x444]   ; 参数 = CCINIClass*
 0x00410A72  mov ecx, esi
-0x00410A74  call 0x526B00          ; 节名预处理
+0x00410A74  call 0x526B00          ; ★ 不是"节名预处理"，是 Reset()（§4.1）
 0x00410A9E  mov ecx, esi
 0x00410AA0  call 0x528A10          ; ReadString
 ```
 
 与 R-012 的 `push 0x31 = Name[0x31]`、`push 0x20 = UINameLabel[0x20]` 接得上。
 
+### 4.1 更正：`0x526B00` 是 `Reset()`，不是"节名预处理"
+
+R-015 把它读成"节名预处理"。字节只有三条指令：
+
+```text
+0x00526B00  33 C0        xor eax, eax
+0x00526B02  89 41 04     mov dword ptr [ecx+4], eax    ; 清 +0x04 缓存
+0x00526B05  89 41 08     mov dword ptr [ecx+8], eax    ; 清 +0x08 缓存
+0x00526B08  C3           ret
+```
+
+YRpp `CCINIClass.h` 记 `Reset() { JMP_THIS(0x526B00); }`。
+它是**清空两个查询缓存**（§1.4 / §3.2），不是处理节名。
+
 ---
 
-## 5. 实测方法体（`INIClass` = `VectorClass<GraphicMenuItem*>` 一族）
+## 5. ⚠ 撤回：`0x7EA624` 不是 `INIClass` 的表（R-016）
 
-`0x007EA624` 的 7 个槽体，**这确实是 `INIClass` 实例实际用的表**（构造函数写的就是它）：
+R-015 把 `0x7EA624`（`VectorClass<GraphicMenuItem*>`）当成 `INIClass` 实例实际使用的表，
+并据此写出 §5 的 7 槽表与「`INIClass : VectorClass<GraphicMenuItem*>`」。
 
-| 槽 | 地址 | 体首 | 判读 |
-|---:|---|---|---|
-| 0 | `0x004F2B60` | 写 vtable、`+4` 判空、`+0xD` 判后释放、清 `+0xD`/`+8` | 析构 / 标量删除 |
-| 1 | `0x004F28E0` | `mov esi,[ecx+8]` 后与 `[edi+8]` 比较 | `operator==` |
-| 2 | `0x004F2920` | 分配路径 | `SetCapacity` |
-| 3 | `0x004F29D0` | `+4` 释放路径 | `Clear` |
-| 4 | `0x004F2A00` | `mov al,[ecx+0xC]` | `IsAllocated` |
-| 5 | `0x004F2A40` | 同上变体 | |
-| 6 | `0x004F28A0` | `mov eax,[ecx+4]; mov eax,[eax+ecx*4]` | `operator[]`，**4 字节步长 ⇒ 元素是指针** |
+**这条不成立。** 逐条否证：
 
-字段偏移（`INIClass` 实例）：`+0x04` Items / `+0x08` Count / `+0x0C` 标志 /
-`+0x0D` 释放标志。
-注意 **`ParticleClass` 等 `AbstractClass` 的 `+0x04` 是 vptr，这里的 `+0x04` 是数据** ——
-`INIClass` 不是 `AbstractClass` 派生，不能套用 `kb/22` 的槽位契约。
+1. `0x7EA624` 的 `[vt-4]` = COL `0x00802638` → TD `0x00824100` →
+   `.?AV?$VectorClass@PAVGraphicMenuItem@@@@`，是**别的类**。
+2. `INIClass` 自己的表 `0x7EA5F4` 的 `[vt-4]` = COL `0x00802510` → `.?AVINIClass@@`，
+   唯一槽是 `0x004F2810`。**构造函数 `0x535AA0` 末尾写的正是 `0x7EA5F4`**。
+3. R-015 引的"构造点 `0x004F2B66`"其实是 **`0x004F2B60` 这个析构函数**
+   在卸载 `+0x0C` 标志、释放 `+0x04` 缓冲**之后**恢复基类 vptr 的那一句 ——
+   这是析构函数的**回退写**，不是构造函数的**建立写**。
+   `0x004F2B60` 的体首就是 `mov eax,[esi+4]` / `test eax,eax` / 按 `+0xD` 标志
+   `call 0x7C8B3D`（free）/ 清 `+0xD`,`+8` / `test byte [esp+8],1` 决定是否 free(this) / `ret 4`
+   —— 标准**标量删除析构**形态。
+4. `INIClass` 的表只有 **1 槽**，`CCINIClass` 的也只有 1 槽。两者都是标量删除析构。
+   `.rdata` 里紧邻的下一张表是 `GraphicMenu`，再下一张是
+   `DynamicVectorClass<GraphicMenuItem*>`，再下一张才是 `VectorClass<GraphicMenuItem*>` ——
+   **4 张表首尾相接**（`0x7EA5F0..0x7EA648`）。
+
+⇒ R-015 §5 的整张表必须作废。**`INIClass` 没有 `VectorClass` 基类**，
+它的方法**不是虚函数**（YRpp 里 `GetSection`/`ReadString` 等全是 `JMP_THIS` 普通成员）。
+
+**判据（纪律 #9 的再次应用）**：看到 `mov [reg], <vtable>` 先判**这是构造函数还是析构函数**。
+构造函数的特征：后面跟着一串字段清零 + 最后写本类 vptr；
+析构函数的特征：前面有字段释放，写 vptr 后紧跟 `test [esp+8],1` / `free(this)`。
+两者写 vptr 的动作**字节相同，语义相反**。
 
 ---
 
@@ -200,11 +288,14 @@ CCINIClass（单份 INI）
 
 | # | 悬项 |
 |:--|:---|
-| I-1 | `0x526B00`（节名预处理）/ `0x526810`（节存在判定）的语义 |
-| I-2 | `INIClass` / `CCINIClass` 的实例尺寸（语料记 `CCINIClass` = `new(0x58)`，本线未独立复核） |
+| I-1 | ✅ **已闭（R-016）**：`0x526B00` = `Reset()`（§4.1）；`0x526810` = `GetSection()`，CRC32+二分（§3） |
+| I-2 | ✅ **部分闭（R-016）**：`INISection` = `0x44`、`INIEntry` = `0x28`（push 立即数实证）；`INIClass` 尾部字段到 `+0x40`；`CCINIClass` 自身**不新增字段** ⇒ 尺寸应 ≥ `0x55`，语料 `0x58` 与之相容但**仍未独立实证**（L-25） |
 | I-3 | `0x0089F518` 这个第 6 个静态 `CCINIClass` 是什么 |
-| I-4 | `INISection` / `INIEntry` 节点布局（`+0x10`/`+0x1C` 两个 Node 挂什么） |
-| I-5 | `GraphicMenu` 基类的作用（`INIClass` 继承它，但 YRpp 未记载） |
+| I-4 | ✅ **已闭（R-016）**：见 §9 —— `+0x10`/`+0x1C` 是 `List<INISection>` 的首尾哨兵，不是独立子对象 |
+| I-5 | ✅ **已闭（R-016）**：`INIClass` **不继承** `GraphicMenu`（§5 撤回）；`GraphicMenu` 的 7 槽表 `0x7EA5FC` 与本类无关 |
+| L-24 | `INIClass+0x3C` 的语义（析构清零，未被本节任何函数读） |
+| L-25 | `CCINIClass` 的**独立**实例尺寸实证（需要找 `new(0x58)` 或栈分配点） |
+| L-26 | `0x528A10` 的键查找为何走 `0x52B390`（而非 `0x52B430`）；两者差异未定 |
 
 ---
 
@@ -213,29 +304,205 @@ CCINIClass（单份 INI）
 | 结论 | 通道 | 状态 |
 |:---|:---|:---|
 | `0x7EA5F4` = `INIClass` / `0x7E1AF4` = `CCINIClass`（COL 反查） | 字节 | 单通道字节 |
-| 两 RTTI 表各 1 槽 | 字节 | 单通道字节 |
-| 构造函数写的是成员子对象表（`3` 个 vptr for `CCINIClass`） | 字节（`0x535AA0` 逐指令） | 单通道字节 |
-| `INIClass : VectorClass<GraphicMenuItem*>` | 字节（ctor 写 `0x7EA624`）+ COL 名 | ✅ 双通道 |
+| 两 RTTI 表各 1 槽（都是标量删除析构） | 字节 | 单通道字节 |
+| `CCINIClass` ctor `0x535AA0` 写 `List<INISection*>` @ `+0x0C` + 两哨兵 | 字节（逐指令）+ COL 名 | ✅ 双通道 |
+| **`INIClass` 不继承 `VectorClass<GraphicMenuItem*>`**（撤回 R-015） | 字节（ctor 写 `0x7EA5F4` + dtor 判据） | ✅ 双通道，**推翻 R-015** |
+| `INISection` = `0x44` / `INIEntry` = `0x28` | 字节（`push 0x44` @`0x525DEA` / `push 0x28` @`0x526039`） | 单通道字节 |
+| 节查找 = CRC32 排序数组 + 二分 | 字节（`0x81F7B4` 256 项全等标准表 + `0x52B750` 二分 + `0x52B720` 只比首 dword） | ✅ 双通道 |
+| 节名/键名**大小写敏感** | 字节（查找路径无折大小写）+ 上一条 | ✅ 双通道 |
 | `0x887180` = `INI_Art`（**不是** rulesmd） | 字节（是 CCINIClass 全局）+ **YRpp `CCINIClass.h:288-296`** | ✅ 双通道，**推翻语料注释** |
 | `0x887048` = `INI_Rules` 且是**指针** | YRpp | 社区源（本线未独立复核解引用层级） |
 
 ---
 
-## 8. 本轮自纠留痕（两次）
+## 8. 自纠留痕
 
-**自纠 1：把邻居表当成自己的方法表。**
+（R-015 两次 / R-016 两次，全部保留）
+
+**自纠 1（R-015）：把邻居表当成自己的方法表。**
 初稿写"`0x7E1B44` 是 `CCINIClass` 的 7 槽方法表"。
 验 `[vt-4]` → COL → `.?AV?$VectorClass@PAVScriptClass@@@@`，与 INI 无关。
 错因：我从 RTTI 表头往后找"第一段连续 ≥4 个 `.text` 指针"的 run，
 那段 run 恰好紧跟其后，我就默认是同类延续。**没验 COL。**
 
-**自纠 2：`0x887180` 是 `INI_Art` 不是 `RULESMD.INI`。**
+**自纠 2（R-015）：`0x887180` 是 `INI_Art` 不是 `RULESMD.INI`。**
 初稿沿用了语料 `vxl_cache_layout.md:102` 的注释。
 YRpp 明确列出 `INI_Art{0x887180}`，`INI_Rules` 是 `0x887048` 且为**指针**。
 语料那行注释是推断且错。
 
-**纪律 #9（新增）**：RTTI 的 `slots` 是记账值，**并且** `.rdata` 里多张表首尾相接。
+**自纠 3（R-016）：撤回「`INIClass : VectorClass<GraphicMenuItem*>`」。**
+这是**同一个错误的第三次** —— R-015 §2.3 自己写了纪律 #9
+（"`.rdata` 表首尾相接，地址相邻 ≠ 同类"），紧接着在 §5 又犯了。
+区别只在于这次错的是**上一张**表（`0x7EA624` 在 `0x7EA5F4` **后面**第三张），
+而自纠 1 错的是**下一张**。判据本身没错，是**没有执行**。
+
+**自纠 4（R-016）：撤回「`CCINIClass` 三基类多继承」。**
+`+0x0C`/`+0x10`/`+0x1C` 不是三个基类子对象，而是**一个 `List<INISection>` 成员**：
+成员自己的 vptr + 首哨兵 + 尾哨兵。判据是 `0x52ACE0`（`GenericList` 构造函数）
+对**同一个 30 字节区域**做了完全相同的三次写。
+⇒ "看到 3 个 vptr" 不等于 "3 个基类"；必须先问**这块内存属于哪个成员**。
+
+**自纠 5（R-016）：`0x526B00` 不是"节名预处理"，是 `Reset()`。**
+R-015 §4 的注释写错了。字节是三条指令（清 `+0x04`/`+0x08`），YRpp 记 `Reset()`。
+
+**纪律 #9**：RTTI 的 `slots` 是记账值，**并且** `.rdata` 里多张表首尾相接。
 按槽号遍历必须配"值落 `.text`"判据，且判断归属必须验 `[vt-4]` 的 COL 名。
 
-**纪律 #10（新增）**：**社区源（YRpp）与语料注释冲突时，先查 YRpp 的静态地址声明**。
-本轮两处地址归属都是 YRpp 对、语料注释错。
+**纪律 #10**：**社区源（YRpp）与语料注释冲突时，先查 YRpp 的静态地址声明**。
+两处地址归属都是 YRpp 对、语料注释错。
+
+**纪律 #11（R-016 新增）**：`mov [reg], <vtable>` 在**构造函数**和**析构函数**里
+字节相同、语义相反。判据：
+- 构造：后面跟一串字段清零，**最后**写本类 vptr；
+- 析构：前面有字段释放，写 vptr 后紧跟 `test byte [esp+8],1` + `free(this)` + `ret 4`。
+不判这一步，就会把析构的"vnptr 回退写"读成"构造的建立写"，
+进而推出一个根本不存在的继承关系。
+
+**纪律 #12（R-016 新增）**：**"N 个 vptr" ≠ "N 个基类"**。
+模板容器（`List<T>`）的实例里就含 1 个容器 vptr + 2 个哨兵节点的 vptr。
+归属判据：找该容器的**构造函数**，看它对哪块内存做了同一组写。
+`GenericList` = `0x52ACE0`，`List<T>` 沿用同一构造。
+
+**纪律 #13（R-016 新增）**：判"节/键是否存在"时，**命中返回值不是 NULL 而是哨兵**
+（`0xB7882C`）。任何"`if (p == NULL)` 判不存在"的写法在本子系统里是**错的**。
+
+---
+
+## 9. `INISection` / `INIEntry` 节点布局（R-016 新增，闭 I-4）
+
+### 9.1 `INISection`（`0x44` = 68 字节）
+
+构造函数在 `0x525DD0`–`0x5261FF` 一带（`0x00525DEA push 0x44` 后 `call 0x7C8E17` 分配）。
+vptr `0x7EB73C`，`[vt-4]` → COL `0x00803708` → `.?AUINISection@INIClass@@`。
+
+```text
+INISection : Node<INISection*>            ; vptr + Next + Prev = 0x0C
+  +0x00  vptr = 0x7EB73C
+  +0x04  Node.Next          (GenericNode*)
+  +0x08  Node.Prev          (GenericNode*)
+  +0x0C  char*              Name           ; 堆副本（0x7D5408 strdup）
+  +0x10  List<INIEntry*>    Entries        ; 0x1C: vptr + First(12) + Last(12)
+    +0x10  vptr = 0x7EB744
+    +0x14  First.vptr = 0x7E1B0C
+    +0x18  First.Next
+    +0x1C  First.Prev
+    +0x20  Last.vptr  = 0x7E1B0C
+    +0x24  Last.Next
+    +0x28  Last.Prev
+  +0x2C  CheckedEntry*      CheckedEntries.Entries   ; 0x14 结构
+  +0x30  int                CheckedEntries.Count
+  +0x34  int                CheckedEntries.Capacity
+  +0x38  byte               CheckedEntries.Unknown_0C
+  +0x3C  u32                CheckedEntries.Unknown_10
+  +0x40  u32                Unknown_40
+  ---   0x44 total
+```
+
+| 偏移 | 类型 | 语义 | 证据 |
+|:---|:---|:---|:---|
+| `+0x00` | vptr | `0x7EB73C` | `0x00525E3E mov [ebx],0x7EB73C` |
+| `+0x04` | `GenericNode*` | 继承的 `Node<INISection*>::Next` | `0x00525E16 mov [ebx+4],edi(0)` |
+| `+0x08` | `GenericNode*` | `Prev` | `0x00525E19` |
+| `+0x0C` | `char*` | `Name`（堆副本，**区分大小写**） | `0x00525E22 mov [ebx+0x0C],eax`，eax=`0x7D5408` 返回 |
+| `+0x10` | vptr | `List<INIEntry*>` 成员 vptr = `0x7EB744` | `0x00525E2D mov [esi],0x7EB744`，esi=`ebx+0x10` |
+| `+0x14` | vptr | `Entries.First` 哨兵 vptr = `0x7E1B0C` | `0x52ACE0` 同构（`[esi]=0x7E1B0C`，esi=基准+4） |
+| `+0x18` | `GenericNode*` | `Entries.First.Next` ← **空表时指向 Last 哨兵** | `0x52ACE0` `[esi+4]=0` |
+| `+0x1C` | `GenericNode*` | `Entries.First.Prev` | `0x52ACE0` `[esi+8]=0` |
+| `+0x20` | vptr | `Entries.Last` 哨兵 vptr = `0x7E1B0C` | `0x52ACE0`（edx=基准+0x10） |
+| `+0x24` | `GenericNode*` | `Entries.Last.Next` | `0x52ACE0` `[edx+4]=0` |
+| `+0x28` | `GenericNode*` | `Entries.Last.Prev` | `0x52ACE0` `[edx+8]=0` |
+| `+0x2C` | `CheckedEntry*` | `CheckedEntries.Entries` | `0x0052B080`（ecx=`ebx+0x2C`）`[0]=0` |
+| `+0x30` | `int` | `CheckedEntries.Count` | `0x0052B080` `[+4]=0`；`GetKeyName` 拿它当上界 |
+| `+0x34` | `int` | `CheckedEntries.Capacity` | `0x0052B080` `[+8]=0` |
+| `+0x38` | `byte` | `CheckedEntries.Unknown_0C` | `0x0052B080` `byte[+0xC]=0` |
+| `+0x3C` | `u32` | `CheckedEntries.Unknown_10` | `0x0052B080` `[+0x10]=0` |
+| `+0x40` | `u32` | `Unknown_40` | `0x00525E44 mov [ebx+0x40],ecx` |
+
+**⚠ 内部结构对齐**：`List<INIEntry>` 成员占 `+0x10..+0x27`（vptr 4 + 首哨兵 12 + 尾哨兵 12
+= 28 字节 → `0x10+0x1C = 0x2C`）。`CheckedEntryList` 因此**从 `+0x2C` 起**，
+与 YRpp 的 `Entries` 后接 `CheckedEntries` 一致。
+
+### 9.2 为什么 `+0x18` 是 `Entries.First.Next`
+
+`GetKeyName`（`0x526CC0`）取键名的路径：
+
+```text
+0x00526D40  call 0x52B430        ; 按 hash 取 section（命中返回 section*+0，未命中哨兵）
+0x00526D45  mov eax,[eax]        ; 取出 section 指针
+0x00526D4F  mov ecx,[eax+0x30]   ; count  = CheckedEntries.Count（键数）
+0x00526D52  cmp edx,ecx          ; if (index >= count) return NULL
+0x00526D56  mov eax,[eax+0x18]   ; ★ 链表头 = Entries.First.Next
+0x00526D5D  mov ecx,[eax+4]      ;   node->Next
+0x00526D64  mov esi,[eax+8]      ;   node->Prev
+0x00526D78  mov eax,[eax+0x0C]   ; ★ 命中项返回 Key（[node+0x0C]）
+```
+
+⇒ **`+0x18` 是 `Entries` 链表的第一个真实节点**（`First.Next`；
+空表时指向 `Last` 哨兵 → 循环立即结束）。
+**`+0x0C` 就是 `INIEntry::Key`**，与 §9.3 的 `+0x0C = Key` 交叉印证。
+
+`+0x30` 被当作**键总数**上界 ⇒ `CheckedEntries.Count` 与 `Entries` 链表长度同义
+（引擎维护两份索引：链表管插入顺序，`CheckedEntries` 管 CRC 校验）。
+
+### 9.3 `INIEntry`（`0x28` = 40 字节）
+
+构造函数在 `0x526039`–`0x5260A8` 一带（`push 0x28` 后 `call 0x7C8E17`）。
+vptr `0x7EB734`，`[vt-4]` → COL `0x00803668` → `.?AUINIEntry@INIClass@@`。
+
+| 偏移 | 类型 | 语义 | 证据 |
+|:---|:---|:---|:---|
+| `+0x00` | vptr | `0x7EB734` | `0x005260A2 mov [esi],0x7EB734` |
+| `+0x04` | `GenericNode*` | **继承的 `Node<INIEntry*>::Next`** | `0x00526090 mov [esi+4],0` |
+| `+0x08` | `GenericNode*` | `Prev` | `0x00526093` |
+| `+0x0C` | `char*` | **`Key`** | `0x00526079 mov [esi+0x0C],eax`，eax=`0x7D5408` 返回 |
+| `+0x10` | `char*` | **`Value`** | `0x00526087 mov [esi+0x10],eax`（第二个 strdup） |
+| `+0x14` | `char*` | `unknown_14` | `0x00526080 mov [esi+0x14],edx` |
+| `+0x18` | `char*` | `unknown_18` | `0x00526096 mov [esi+0x18],eax` |
+| `+0x1C` | `DWORD` | `unknown_1C` | `0x00526099 mov [esi+0x1C],ebx` |
+| `+0x20` | `DWORD` | `unknown_20` | `0x0052609C mov [esi+0x20],edi` |
+| `+0x24` | `DWORD` | `unknown_24` | `0x0052609F mov [esi+0x24],edx` |
+
+YRpp 声明 `Key, Value, unknown_14, unknown_18, unknown_1C, unknown_20, unknown_24` ——
+**偏移完全一致**，且 `+0x28` 恰好是分配尺寸边界（7 个 dword 字段全用满）。
+
+`INIEntry` 析构 `0x52AD50` 释放 `+0x0C`、`+0x10`、`+0x14`（链表式逐节点 `free`）、`+0x18`
+⇒ `+0x0C/+0x10/+0x14/+0x18` **都是堆分配指针**，`+0x1C/+0x20/+0x24` 是标量。
+
+### 9.4 `List<T>` 的尺寸 = `0x1C`，与 YRpp 完全一致（含一次自纠）
+
+**先记一次自纠**：写这一节时我先算错了 `List<T>` 的尺寸（误按 `0x28` 算），
+由此得出"YRpp 与 `push 0x44` 矛盾"的结论。**那个结论是错的**，已撤回。
+实际核算如下。
+
+`GenericNode` 有虚析构 ⇒ 每节点 `vptr(4) + Next(4) + Prev(4)` = **`0x0C`**。
+`GenericList` 有虚析构 + 两个 `GenericNode` 成员 ⇒ `4 + 0x0C + 0x0C` = **`0x1C`**。
+`List<T> : GenericList` **不新增字段** ⇒ 同为 **`0x1C`**。
+
+字节侧完全吻合 `0x52ACE0`（`GenericList` 构造函数）：
+
+```text
+esi = eax+0x04             ; First
+edx = eax+0x10             ; Last
+[esi] = 0x7E1B0C           ; First.vptr
+[esi+4] = [esi+8] = 0      ; First.Next / First.Prev
+[edx] = 0x7E1B0C           ; Last.vptr
+[edx+4] = [edx+8] = 0      ; Last.Next / Last.Prev
+[eax] = 0x7E1B04           ; GenericList.vptr
+```
+
+用 `0x1C` 复算 `INISection`：
+
+| 区段 | 起点 | 长度 | 终点 |
+|:---|---:|---:|---:|
+| `Node<INISection*>` 基类 | `+0x00` | `0x0C` | `+0x0C` |
+| `Name` | `+0x0C` | 4 | `+0x10` |
+| `Entries` (`List<INIEntry*>`) | `+0x10` | `0x1C` | `+0x2C` |
+| `CheckedEntries` | `+0x2C` | `0x14` | `+0x40` |
+| `Unknown_40` | `+0x40` | 4 | `+0x44` |
+
+⇒ **`0x44`，与 `push 0x44` 逐字节一致。YRpp 的 `INISection` 声明是对的。**
+
+> 顺带一条 **YRpp 自身的小不一致**：它写 `List<INISection> Sections`（非指针），
+> 但 RTTI 名字是 `.?AV?$List@PAUINISection@INIClass@@@@`（`PAU` = `INISection*`）。
+> 以 RTTI 名为准，元素是指针。
+

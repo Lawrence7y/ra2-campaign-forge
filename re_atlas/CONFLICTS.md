@@ -309,3 +309,60 @@ G-4/G-5 说"槽 12 可能是访问器"。正确的一般化是：**槽 11 = `Wha
 本线第二稿就这样把 `VectorClass<ScriptClass*>` 的 7 槽认成了 `CCINIClass` 的方法表。
 
 **判据**：判断表的归属，**先读 `[vt-4]` 的 COL 反查类名**；扫槽时遇 `.rdata` 值即停。
+
+### G-15 · 本线自纠：`INIClass` **不继承** `VectorClass<GraphicMenuItem*>`（撤回 R-015 §5）
+
+R-015 曾写「`INIClass` 的第一个基类是 `VectorClass<GraphicMenuItem*>`」，
+依据是 `0x004F2B66 mov [esi], 0x7EA624`。**该结论错，已撤回。**
+
+否证四条：
+
+1. `0x7EA624` 的 `[vt-4]` = COL `0x00802638` → TD `0x00824100`
+   → `.?AV?$VectorClass@PAVGraphicMenuItem@@@@`，**是另一个类**。
+2. `INIClass` 自己的表 `0x7EA5F4` 的 `[vt-4]` = COL `0x00802510` → `.?AVINIClass@@`，
+   唯一槽 `0x004F2810`。**构造函数 `0x535AA0` 末尾 `0x00535B27` 写的正是 `0x7EA5F4`。**
+3. `0x004F2B60` 是**析构函数**（体首 `mov eax,[esi+4]` → `test eax,eax` →
+   按 `[esi+0xD]` 调 `0x7C8B3D` 释放 → 清 `[esi+0xD]`/`[esi+8]` →
+   `test byte [esp+8],1` → 条件 `free(this)` → `ret 4`）。
+   它写 `0x7EA624` 是**析构时恢复基类 vptr**，不是构造时建立。
+4. `INIClass` 的表只有 1 槽，`CCINIClass` 的也只有 1 槽，都是标量删除析构。
+   `0x7EA5F0..0x7EA648` 是 4 张表首尾相接（见 G-14）。
+
+**教训（纪律 #11）**：`mov [reg], <vtable>` 在构造函数和析构函数里**字节相同、语义相反**。
+构造：一串字段清零 + **最后**写本类 vptr；
+析构：前面有字段释放，写 vptr 后紧跟 `test byte [esp+8],1` + `free(this)` + `ret 4`。
+
+### G-16 · 本线自纠：`CCINIClass+0x0C/+0x10/+0x1C` 是**一个 `List` 成员**，不是三个基类
+
+R-015 把这三个 vptr 读成「`GenericList` + 两个 `GenericNode` 基类子对象」。
+**错。** 它们是**一个成员** `List<INISection>` 的内部结构：
+
+```text
++0x0C  List vptr        = 0x7E1AFC  (List<INISection*>)
++0x10  First 哨兵 vptr  = 0x7E1B0C  (GenericNode)
++0x1C  Last  哨兵 vptr  = 0x7E1B0C  (GenericNode)
+```
+
+判据：`0x52ACE0`（`GenericList` 构造函数）对**同一块 0x1C 字节**做了完全相同的
+`[+0]`/`[+4]`/`[+0x10]` 三次 vptr 写。`CCINIClass` ctor 只是在做同一件事。
+
+**纪律 #12**：**"N 个 vptr" ≠ "N 个基类"**。模板容器实例自带 1 个容器 vptr
++ 2 个哨兵节点 vptr。归属判据是找该容器的构造函数。
+
+### G-17 · 本线自纠：写 §9.4 时把 `List<T>` 尺寸算错，差点伪造一条 YRpp 冲突
+
+R-016 初稿按「`YList = GenericList(0x10) + First(0x0C) + Last(0x0C) = 0x28`」算，
+得出 `INISection` 应为 `0x50`，与 `push 0x44` 矛盾，遂准备登记一条"YRpp 结构尺寸错"。
+
+**该结论错，已撤回。** 正确核算：
+
+- `GenericNode`（虚析构）= `vptr(4) + Next(4) + Prev(4)` = **`0x0C`**
+- `GenericList`（虚析构 + 两个 `GenericNode` 成员）= `4 + 0x0C + 0x0C` = **`0x1C`**
+- `List<T> : GenericList` **不新增字段** ⇒ **`0x1C`**
+
+用 `0x1C` 复算 `INISection` = `0x0C(Node) + 4(Name) + 0x1C(Entries) + 0x14(Checked) + 4` = **`0x44`** ✅
+与 `0x00525DEA push 0x44` 逐字节一致。**YRpp 的 `INISection` 声明是对的。**
+
+**教训**：算结构尺寸时，"基类占多少"必须先数**基类自己的虚表指针和成员**，
+不能用"看起来像几个字段"的直觉。这次的错法和 G-16 同源 —— 都是把
+"容器"当成"若干独立子对象"来算。
