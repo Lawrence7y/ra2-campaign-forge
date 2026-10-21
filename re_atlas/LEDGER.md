@@ -1407,3 +1407,956 @@ capstone 从那里反汇编出伪指令（`add byte ptr [edx+0x68], dl` 等）�
 - [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
 - [x] 只提交 `re_atlas/`
 - [x] 片段最长 11 条指令
+
+---
+
+## R-020 · 2026-10-21 22:5x–23:4x · R-016 八条结论的异族复核回填
+
+### 1. 跑次
+
+- 首次：`dwfrun-b287db93`（六通道并发）。跑到 38 分钟时 4 个通道已出结果，
+  但两条 **dfmodel** 通道持续 `rate_limited` / `server_error` 重连。
+- 用户中途反馈"两个 dfmodel 通道一直在重连"⇒ 不继续等，改跑。
+- `AmendWorkflow` 生成 `dwfrun-3a210def`，剔除两条 dfmodel，已完成的 4 个通道
+  结果全部从缓存取回（零 token 重跑）。
+- 最终：**3 个通道按协议给出完整 8 条判定**，1 个（`qoder-global:qfmodel`）解析到 0 条。
+
+### 2. 计票
+
+| 通道 | 家族 | 判定数 |
+|:---|:---|---:|
+| `qoder-cn:qfmodel` | 千问 | 8 |
+| `wb-global:deepseek-v4.1-flash` | DeepSeek | 8 |
+| `wb-cn:deepseek-v4.1-flash` | DeepSeek | 8 |
+| `qoder-global:qfmodel` | 千问 | 0（未按协议） |
+
+**八条结论：确认 3 / 推翻 0 / 无法核 0。零翻案。**
+
+### 3. ⚠ 如实定级：这次核验能证明什么
+
+**能证明**：八条结论引用的字节**确实在那些地址上**，并且三个独立会话
+各自跑 capstone 直读后得出同一判定。确定性闸门（`dump_ini_nodes.py` 退出码 0 +
+`control OK`）是机器判定，不靠模型自述。
+
+**不能证明**（三条限制，已写进 KB §7.2）：
+1. **有效票只来自 2 个模型家族**（千问 ×1、DeepSeek ×2）。同家族通道共享训练分布，
+   **不构成家族间互证**。原先设计的"六模型异族"实际只兑现了两族。
+2. **任务书把预期证据写进去了**（例如直接告知"在 `0x525DD0-0x5261FF` 找 `push 0x44`"）。
+   这是**锚定**：它证的是"字节在那里"，不是"我的解读是唯一合理解读"。
+3. **六条通道里只有三条产出可用票**（一条协议失败、两条剔除）。
+
+⇒ 定级为 **"字节可复现性获异族独立确认"**，**不**定为"解读的穷尽性获独立证明"。
+像 §3.3 哈希碰撞"是否真的会发生"这类"路径之外还有没有别的情况"的问题，本轮**没覆盖**。
+
+### 4. 尚未核验的（本轮之后产出，需补派）
+
+- §10 `ReadBool` / `ReadInteger` 解析规则（R-017）
+- §11 键→字段映射、`+0x24` 兼节名（R-018）
+- §12 全引擎键索引 478 点 / 427 键（R-019）
+
+### 5. 本轮产出
+
+| 件 | 内容 |
+|:---|:---|
+| KB | `30_ini_subsystem.md` §7 重写 + 新增 §7.1（复核记录）/ §7.2（边界） |
+| 表格升级 | 5 行从"单通道/双通道"升为 **✅ 已核验**；新增 3 行已核验结论 |
+| 报告产物 | artifact `verification`《R-016 异族复核报告》964 B |
+
+### 6. 经验（写给下一轮派发）
+
+- **工作流里子代理名字 = 缓存键的一部分。** 删通道时若重排 `复核员N` 编号，
+  `AmendWorkflow` 会把旧名字的结果配给新模型，整张计票表静默错标。
+  本轮保留了 3/4/5/6 的原槽位，只删 1/2。
+- **派"复核"类任务时不要预先把预期证据写进任务书**，否则拿到的是"字节在不在"，
+  不是"解读对不对"。下一轮改法：只给结论陈述 + 二进制路径，让模型自己决定去哪找。
+- **六通道并发在限流下会长期空转**。两条通道连续 38 分钟重连 = 该通道当前不可用，
+  按 §7 应冷却，不要靠等待。
+
+### 7. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未启动 gamemd/ra2loader；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 只提交 `re_atlas/`
+
+### 8. ⚠ 提交被 Mimosa L3 强制拦截（待裁决，非本线缺陷）
+
+R-020 的 `git commit` 被 **Mimosa L3 阻断**，报 **21 处 high + 1 处 low**。
+排查结果：
+
+- **报警点全部不在我的写域**：分布在 `tools/atlas_audit.py` /
+  `atlas_apply_patches.py` / `atlas_toc.py` / `atlas_va_crosscheck.py` /
+  `verify_bss_claims.py` 与 `lead/dropped611/scripts/cont01_scan.py`。
+  按 §8.4 这些文件**我不得修改**。
+- **暂存区是干净的**：`git diff --cached` 只有 `re_atlas/` 下 4 个 markdown，
+  没有 `tools/`、`lead/` 的任何改动。
+- **抽查判据**：`tools/atlas_audit.py:189` 是
+  `with open(args.va_out, "w", ...)` —— 路径来自**该工具自己的 CLI 参数**。
+  开发者跑自己的工具，不构成可利用的越权写。扫描器把"`open()` 的路径是变量"
+  判成路径穿越，属启发式过报。
+
+**处置**：按 §8.5「不得为绕过本地安全钩子而改名/转码/拆分」与 §9，
+**不采用 `--no-verify` 或任何等价手段强推**。R-020 内容已全部落盘在工作区，
+只在公开仓里缺一个 commit。记为**待裁决**：
+
+- 选项 A：由 Lead 在 `tools/` 侧修复这 21 处（不在我的写域）；
+- 选项 B：确认扫描器过报，对 `re_atlas/` 提交放行；
+- 选项 C：R-020 内容留在工作区，等下次一并提交。
+
+下一轮继续做离线分析，不受此阻塞。
+
+---
+
+## R-021 · 2026-10-21 22:3x–23:2x · R2-2 第六轮：`RulesClass` 节表与载入顺序
+
+### 1. 主线成果
+
+**节名指针表 `0x007F0C78`**：31 项 `const char*`，覆盖 `SpecialWeapons` … `ButtonList`。
+
+**函数 → 节名 36/38 恢复**（`evidence/rules_sections.txt`）。
+节名有三种存储形态，必须都认：
+
+| 形态 | 例 | 比例 |
+|:---|:---|:---|
+| `indirect`（指针表） | `mov eax,[0x7F0C94]` | 28 |
+| `direct`（字符串地址直压） | `push 0x83D0DC` | 5 |
+| `table-base`（数组首项） | `mov esi,0x839D68` | 1 |
+
+**载入顺序**由 `RulesClass::Init`（`0x6686C0`）的 32 个内部调用决定：
+`Read_File ×3` 先建列表节，随后 `Read_Colors` … `Read_AdvancedCommandBar`。
+后读覆盖先读。
+
+### 2. 两个结构性未恢复（不是工具缺陷）
+
+- `Read_Difficulty`（`0x66D270`）：节名是**参数**（`edx`），体内无字符串。
+- `Read_Difficulties`（`0x674500`）：无 `GetSection`/`GetKeyCount`，只是把
+  `Easy`/`Normal`/`Hard` 三个键名转发给 `Read_Difficulty`。
+
+### 3. 两条对编译器有用的边界
+
+**① `Read_AdvancedCommandBar` 用 `AdvancedCommandBar`，不是 `MultiplayerAdvancedCommandBar`。**
+指针表两项都在（`0x7F0CE8` / `0x7F0CEC`），后者未被任何 `Read_*` 当首节名。
+⇒ **函数名不能用来猜节名。**
+
+**② `Read_File` 枚举 7 个节，不是 1 个（本轮追加实测）。**
+到第一个 `ret` 为止：`ColorAdd` / `Countries` / `OverlayTypes` / `SuperWeaponTypes` /
+`Warheads` / `SmudgeTypes` / `TerrainTypes`，外加 `Easy`/`Normal`/`Difficult` 三个**键名**。
+而且它的**第一个动作是 `call 0x66D3A0`（`Read_Colors`）**：
+`0x00668BFE` 先转调，`0x00668C03` 才用 `[0x7F0C98]`。
+⇒ §13.2 表里 `Read_File → ColorAdd` 应读作"首个 `GetSection` 用的节"，
+**不是**它的职责范围。
+
+**方法学**：「第一个 X」型判据的翻车点 —— 工具返回的是"体内第一个节名引用"，
+我最初把它当成"这个函数处理哪个节"。前者是实现细节，后者是职责。
+
+### 4. 工具自纠三次（本轮最该记的部分）
+
+
+| 版 | 判据 | 结果 |
+|:--|:---|:---|
+| 1 | `op_str.startswith("dword ptr [")` | **0/37**（capstone 目标操作数在逗号后） |
+| 2 | 首个可打印字符串 | 34/38，3 个是**键名**冒充节名 |
+| 3 | 第 2 版 + 节名表白名单 | **17/38**，且产出更隐蔽的假答案 |
+| 4 | 锚定 `GetSection`/`GetKeyCount` 实参，`min_len=2` | **36/38** |
+
+**第 3 版是重点**：加白名单看似"提高精度"，实际把判据倒过来了 ——
+先固定答案必须属于某集合，再去找，找不到就退而求其次，
+于是 `Read_Animations` 这类"节名不在表里"的函数被砍掉，
+而扫描器还会**回退到相邻的、恰好在表里的字符串**，产出看起来合理的假答案。
+
+**正确顺序**：先用独立判据定位（`GetSection` 的实参），再拿结果去核对集合。
+
+**`min_len=3` 的沉默坑**：`AI`、`IQ` 是两个字符的真实节名，被长度阈值永久滤掉，
+表现为"这两个函数没节名"，无任何报错。
+
+### 5. 本轮产出
+
+| 件 | 内容 |
+|:---|:---|
+| 新增工具 | `tools/dump_rules_sections.py`（四项正对照） |
+| 新增证据 | `evidence/rules_sections.txt`（两次运行字节相同） |
+| KB | `30_ini_subsystem.md` 新增 §13 |
+| CONFLICTS | **G-19**（白名单不能当定位器） |
+| 新增纪律 | **#17** |
+
+### 6. 并行派发
+
+`dwfrun-06749cc2`：五通道（`qoder-cn:qfmodel` / `qoder-global:qfmodel` /
+`wb-global:deepseek` / `wb-cn:deepseek` / `glm-5.3-flash`）复核
+R-017/018/019 的十一条结论。**任务书刻意不含任何候选地址**，修正 R-020 的锚定问题。
+
+### 7. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未启动 gamemd/ra2loader；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 只提交 `re_atlas/`
+
+### 8. ⚠ 提交被 Mimosa L3 阻断（R-020/R-021 两批，23:0x 起）
+
+**现象**：两次 `git commit` 均被强制拦截，报 **21 处 high + 1 处 low**，
+全部指向 `tools/` 与 `lead/dropped611/scripts/`。
+
+**已核实的四点**：
+
+1. **报警点全不在我的写域**，且按 §8.4 我不得修改它们。
+2. **暂存区干净**：`git diff --cached` 只有 `re_atlas/` 下 8 个文件。
+3. **不是内容触发**：同一批 `re_atlas/tools/*.py` 在 `b7f0508`（22:5x）成功提交并推送过。
+4. **报警文件 mtime 是 22:08:48–49**，早于那几次成功提交 ⇒ **文件内容没变**，
+   变的是 Mimosa 侧（扫描策略升到 L3 强制，或扫描缓存失效后重新全仓扫描）。
+
+**抽查判据**：`tools/atlas_audit.py:189` 是
+`with open(args.va_out, "w", ...)` —— 路径来自该工具自己的 CLI 参数。
+开发者跑自己的工具不构成可利用的越权写；扫描器把"`open()` 路径是变量"判成
+路径穿越，属启发式过报。
+
+**处置**：按 §8.5 与 §9，**不用 `--no-verify` 或任何等价手段强推**。
+R-020 与 R-021 的内容已全部落盘在工作区，只在公开仓里缺一个 commit。
+记为**待裁决**：
+
+- **选项 A**：由 Lead 在 `tools/` 侧修复这 21 处（不在我的写域）；
+- **选项 B**：确认扫描器过报，对 `re_atlas/` 放行或加入扫描白名单；
+- **选项 C**：内容留在工作区，等下次一并提交。
+
+**已连续阻断三次**（R-020 首提 / R-020+R-021 / 重提），按 §9 已升级为
+**单发裁决请求**：`re_atlas/ADJUDICATION_REQUEST_20261021.md`
+（标题【RE-ATLAS 裁决请求】，内含三选一 A/B/C 与已核实的四点证据）。
+同时按选项 C 继续推进，不空等，也不再重复发问。
+
+### 9. 追加：`read_va` 越段读缺陷——五个工具同时加固（G-21）
+
+排查 `Read_Colors` 输出里那个 `ostMessageA` 时发现**全线的 VA 映射缺校验**：
+
+- `0x00885780` 是 **BSS**（VA ≥ `0x87E000`，磁盘无字节）；
+- 但 `0x885780 - 0x400000 = 0x485780` **落在文件内**（文件长 `0x49A110`）；
+- 于是 `read_va` 返回 `.detour` 段的真实字节，`cstr` 解出 `'ostMessageA'`
+  —— 其实是 Win32 导入名被当成节名。
+
+**根因**：文件比 `.data` 的 raw backing 长，`VA − 0x400000` 在 `.data` 尾部之后
+仍然"算得出一个文件内偏移"。**"BSS 无字节"这条规则靠减法本身证明不了。**
+
+**加固**：`read_va` 改为逐段边界校验（`.text`/`.rdata`/`.data` 三段，
+`d >= raw_size` 即 BSS 返回 `b""`）。已同步到五个工具：
+`dump_ini_nodes` / `dump_ini_readers` / `dump_ini_keymap` / `dump_ini_keyindex` /
+`dump_rules_sections`。
+
+**影响评估（逐工具实测，不是推断）**：
+
+| 工具 | 加固前后输出 | 结论 |
+|:---|:---|:---|
+| `dump_ini_nodes` | **完全一致** | 从未采信 BSS |
+| `dump_ini_readers` | **完全一致** | 从未采信 BSS |
+| `dump_ini_keymap` | **完全一致** | 从未采信 BSS |
+| `dump_ini_keyindex` | **归一化后一致** | 曾以 `0x885780` 取到假串，但被 `len(s)<2`/可打印过滤挡掉——**是运气，不是判据** |
+| `dump_rules_sections` | 变化：`'�'` 垃圾项与 `ostMessageA` 假节名消失 | 本轮真正的修复 |
+
+⇒ **历史结论未受影响**（四个工具输出不变），但此前"BSS 无字节"这句话
+**一直没有代码保证**。记入 CONFLICTS **G-21**、纪律 **#19**。
+
+五个工具重跑两次输出逐字节相同；`verify_claims` 仍 323/323 PASS。
+
+### 10. 追加二次更正：`Init` / `Read_File` 边界划错（G-22）
+
+查 `Read_File` 到底枚举几个节时，发现**函数边界整个划错了**：
+
+| 函数 | 我原先以为 | 真实（按 `ret` 边界） |
+|:---|:---|:---|
+| `Init` | 内含 32 个调用、直接跑 28 个 loaders | `0x6686C0`–`0x668BE5`（`ret 4`），**只调 `Read_File` ×3** |
+| `Read_File` | 开头几个调用 | `0x668BF0`–`0x668F8D`（`ret 4`），**28 个 loader 的真正容器** |
+
+根因：工具用 `disasm(read_va(INIT, 0x1600), INIT)` —— **窗口 0x1600 是 `Init`
+真实长度 `0x526` 的三倍**，把紧邻的 `Read_File` 整个吞了进来。
+
+**最危险的地方**：产出的"载入顺序"读起来完全合理，且与 YRpp 注释不矛盾，
+**单看输出看不出错**。只有去数 `ret` 才发现。
+
+**修正后的事实**（更简单，也更符合 YRpp）：
+- `Init` = 对三份 INI 各调一次 `Read_File`（第一份 / gamemode / map）；
+- `Read_File` = 那 28 个 loaders 的容器，顺序见 KB §13.5 表；
+- 因此**同一套节会被解析三遍，后一遍覆盖前一遍** ——
+  这条对编译器有实际用处（想覆盖值就放到后面的 INI 里）。
+
+**修法**：`fn_calls(lo, hi)` 改用**显式区间**；新增三条边界正对照：
+`Init` 内 `call Read_File` 恰 3 次、`Init` 不直接调任何 `Read_*`、
+`Read_File` 内 loader 调用恰 28 个。
+
+**顺带修的一处**：`Read_File` 本身在 `READERS` 字典里，导致
+"`Init` 调 3 次 `Read_File`"被算成"`Init` 直接调了 3 个 loader" ——
+新增 `CONTAINERS` 集合把容器函数从叶子 loader 统计里排除。
+
+**纪律 #20（新增）**：**不许用"窗口大小"扫函数体**，必须用由 `ret`/下一函数头
+确定的显式区间；并配一条边界正对照。
+
+---
+
+## R-022 · 2026-10-21 23:2x–23:5x · R2-2 第七轮：逐 loader 键清单
+
+### 1. 主线成果
+
+28 个 loader 各自读哪些键。**306 个字面量键**（`evidence/rules_keys.txt`）。
+
+> **⚠ R-023 更正**：本条的 306 键与"5 个 loader 读固定键"**已作废**。
+> 正确值 **651 键 / 15 个 loader 读固定键**，见 R-023 §9 追加。
+> 历史记录保留不改写，以 R-023 为准。本节其余认知（枚举键名形态、
+> 字典节的键名即数据）不受影响。
+
+**最重要的认知**：**大多数 loader 不读固定键。**
+20 个 loader 是"枚举键名"形态：`GetKeyCount` 数出键数 → `GetKeyName` 逐个取键名 →
+**键名本身当数据**（类型名 / 阵营名 / 动画名）。
+
+⇒ `[VehicleTypes]` / `[BuildingTypes]` / `[Sides]` 这类节的内容**就是名字列表**，
+没有传统意义上的"字段"。对编译器：这些节的键名必须是合法类型/阵营标识，
+值大多被忽略。
+
+只有 5 个 loader 读固定键：
+
+| loader | 节 | 键数 |
+|:---|:---|---:|
+| `Read_MultiplayerDialogSettings` | `MultiplayerDialogSettings` | 27 |
+| `Read_AudioVisual` | `AudioVisual` | 19 |
+| `Read_CrateRules` | `CrateRules` | 14 |
+| `Read_Difficulty` | （参数传入） | 12 |
+| `Read_IQ` | `IQ` | 11 |
+
+**`Read_MultiplayerDialogSettings` 的 27 键**含 `MinUnitCount`/`UnitCount`/`MaxUnitCount`、
+`ShortGame`、`MultiEngineer`、`MCVRedeploys` 等 —— 与 GOAL-3T 真机实验里
+反复用到的键（尤其 `ShortGame`）对上了，读取点是 `0x671EA0`。
+
+### 2. 判据修正（一次）
+
+初版把**节名本身**当成了键：`Read_VoxelAnims` 列出 `VoxelAnims`、
+`Read_Warheads` 列出 `Warheads`。原因：这两个函数把节名以字面量压栈给 `GetKeyCount`。
+已按"字符串 == 本节节名则排除"（全等，不做包含）过滤，键数 311 → **306**。
+
+### 3. 诚实边界
+
+工具**只覆盖字面量键**。键在寄存器里、运行期拼的、从 BSS 取得的都看不到
+（R-019 已知有 5 个这样的读取点）。19 个 loader 无字面量键。
+⇒ 需要"某节完整合法键集"时必须结合社区文档，本表只保证"这些键确实被读"。
+
+### 4. 本轮产出
+
+| 件 | 内容 |
+|:---|:---|
+| 新增工具 | `tools/dump_rules_keys.py`（三项正对照） |
+| 新增证据 | `evidence/rules_keys.txt`（两次运行字节相同） |
+| KB | `30_ini_subsystem.md` 新增 §14 |
+
+### 5. 并行派发状态
+
+`dwfrun-06749cc2`（五通道复核 R-017/018/019 十一条）跑了 16 分钟仍 0 完成，
+全部通道在 `rate_limited` 退避。按 §7 该通道群当前不可用，不空等。
+
+### 6. 裁决请求已发
+
+连续三次提交被 Mimosa L3 阻断 ⇒ 已按 §9 单发
+`re_atlas/ADJUDICATION_REQUEST_20261021.md`（A/B/C 三选一）。
+本轮所有内容已落盘工作区，公开仓停在 `b7f0508`。
+
+### 7. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未启动 gamemd/ra2loader；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+
+### 8. Mimosa L2 命令注入告警：经确定性实验判定为**误报**
+
+L2 复查对本轮工作流脚本报了 2 处 🔴 命令注入：
+`.zcode/workflow-drafts/R-017-019-无锚定复核.dwf.ts` 第 **127** / **142** 行。
+
+**两行都是 JavaScript 正则的 `.exec()`，不是进程执行**：
+
+```ts
+127: const m = /^\s*VERDICT\s*(\d+)...$/i.exec(line);     // 解析模型回复
+142: const counts = /读取点总数:\s*(\d+)/.exec(localRun.stdout);  // 解析工具输出
+```
+
+它们是 `RegExp.prototype.exec(string)` —— 读字符串、返回匹配数组，
+**不产生任何子进程**。与 `child_process.exec` 只是**同名**，扫描器按方法名匹配即命中。
+
+**四条核查（可复跑）**：
+
+1. 两个 draft 里 `.exec(` 的全部出现就是这 3 处，**全部紧跟正则字面量**。
+2. 全目录 `grep child_process|require(|execSync|spawn|shell:` —— **零命中**。
+3. 唯一的子进程调用是 `world.run("python", ["re_atlas/tools/dump_ini_keyindex.py"], …)`，
+   命令名与 argv **都是编译期字面量**，没有任何插值。
+4. **确定性实验**（`EvalWorkflowSnippet`）：
+
+```text
+regex .exec() groups = ["3","CONFIRMED","0x525DEA is 6a 44"]
+argv probe stdout = ['safe; echo SHELL_INJECTION_RAN']
+shell injection observed = false
+```
+
+   即：把 `safe; echo SHELL_INJECTION_RAN` 作为**一个 argv 元素**传给 `world.run`，
+   它原样出现在 `sys.argv[1:]` 里，`echo` **没有被执行**
+   ⇒ `world.run` 走 argv 数组、不经 shell。
+
+**处置**：不修改脚本（改了反而破坏 `AmendWorkflow` 的缓存键：ask 字节必须一致）。
+判定为**误报**，依据如上。若扫描器需要判据，建议区分
+`RegExp.prototype.exec(str)` 与 `child_process.exec(cmd)`。
+
+**遗留**：`R-016-六模型异族复核.dwf.ts:100` 是同一写法，下次 L2 扫到会同样报。
+
+---
+
+## R-023 · 2026-10-22 00:1x–01:0x · R2-2 第八轮：`RulesClass` 字段布局 + 镜像全局
+
+**任务**：把 `[MultiplayerDialogSettings]` 的 27 个键对应到结构体偏移
+（编译器把设置写对位置的最后一环），并顺带回答"写进去之后谁在用"。
+
+### 1. 做了什么
+
+| # | 动作 | 产出 |
+|:--|:---|:---|
+| 1 | 取 `Read_MultiplayerDialogSettings`（`0x671EA0`）完整体 | 27 个键字面量全部解出 |
+| 2 | 新增 `tools/dump_rules_fields.py`：键 → 偏移 + 构造器默认值 | `evidence/rules_fields.txt` |
+| 3 | 构造器 `0x665650` 与实例尺寸 `0x18C0` 交叉核验 | 三重吻合 |
+| 4 | 新增 `tools/dump_rules_consumers.py`：读点 + 镜像全局 | `evidence/rules_consumers.txt` |
+| 5 | **发现并修正 capstone 全段截断** | 新增 `tools/text_sweep.py` |
+| 6 | **全面重算 R-019 键索引** | 478→2,426 调用点；473→2,305 键 |
+
+### 2. 结论（全部字节级实证）
+
+**字段布局**：`+0x1480..+0x14AB` 是 11 个连续 dword（`MinMoney`…`AIPlayers`），
+`+0x14AC..+0x14BB` 是 16 个连续 byte（`BridgeDestruction`…`AllyChangeAllowed`），
+共 **60 字节无空洞**。每个键在读取器里出现两次（默认载入 + 结果存回），
+**27/27 两处偏移相等** —— 这是免费的内部一致性检查，不一致即解析错位。
+
+**实例尺寸 `0x18C0`**：`push 0x18C0`@`0x0052BABE` → `call 0x7C8E17`（`operator new`）
+→ `call 0x665650`（构造器）→ `mov [0x8871E0], eax`。
+构造器最高字段止于 `+0x18BC`，尾隙 4 字节符合 4 字节对齐。
+尺寸、构造器、全局三者互相钉死。
+
+**镜像全局（本轮最重要）**：读取器返回后，同一函数立刻把 **18 个字段**
+用 **18 条 `mov [全局], reg`** 拷贝到独立全局，游戏其余部分**大多读全局**。
+`ShortGame`→`0x00A8B262`（50 处取值引用）、`MCVRedeploys`→`0x00A8B320`（44）、
+`GameSpeed`→`0x00A8B268`（43）等，全表见 KB §15.3。
+**9 个字段不镜像**，只留在 `RulesClass` 里。
+
+**`ShadowGrow`（`+0x14AD`）是 27 键里唯一读点为 0 的**，纯字节扫描复核：
+该 disp32 在 `.text` 只出现 3 次（构造器写 1 + 读取器读/写 2）。
+
+### 3. ★ 本轮最严重错误：capstone 单次 `md.disasm` 静默截断
+
+`md.disasm(整段 .text)` 在 **`0x46F5A0`** 停止（那里是跳转表 `49 00 c5 e4 46 00 …`，
+前面一整片 `04` 字节表），**正常返回、不报错，只覆盖 `.text` 的前 9%**：
+
+| 口径 | 指令数 | 终点 |
+|:---|---:|:---|
+| 单次 `md.disasm` | 155,215 | `0x0046F5A0` |
+| 带审计重同步 | 1,389,579 | `0x007E0FFF` |
+
+**R-019 整节数字因此作废**：478→2,426 调用点、473→2,305 恢复键、427→1,893 不同键。
+`ReadUnicodeString` 从"零调用点"改判为 **5 处**。
+同节"被多处读取的键 10 个"实为 **164 个**。
+
+**最恶劣的一点不是数字，是正对照**：R-019 写的是「`Name`/`UIName` 各恰 1 处」，
+而那个 1 处正是截断后剩下的唯一一处 —— **把 bug 校准成了正确答案**。
+已改判据为：① `E8` 字节扫描与指令扫描**逐址相等**（当前 2426==2426 零差异）；
+② `LoadFromINI` 在册；③ 调用点 ≥2000。
+
+### 4. 自纠 4 条
+
+1. **整节 R-019 作废**（上节）。
+2. **`mov` 双形态**：字段解析器首版 `if/elif` 让"载入"分支独占 `mov`，
+   "存回"分支永不可达，输出 0 行。
+3. **寄存器别名**：bool 存成 `mov byte [esi+off], al`，`al` 来自更早的 `mov eax,1`；
+   按原始寄存器 id 记账 ⇒ 16 个 bool 全 `None`。需规范化 `al/bl/cl/dl`→`eax/ebx/ecx/edx`，
+   且 capstone `reg_name` 返回**小写**，拿大写表匹配会静默全失配。
+4. **`call` 不清被调用者保存寄存器**：MSVC 的 `ebx/esi/edi/ebp` 跨调用存活；
+   首版每次 `call` 全清 ⇒ `ebx`（构造器零常量）变未知。
+
+另外两次**方法论**错误（非代码错）：
+- **`0x52D0B4` 当成函数起点**：实际是 `cmp [esp+0x24],1 / jne 0x52d0c3` 的落点，
+  函数从 `0x0052CD70` 开始，`0x52D032`/`0x52D0B3` 是两个**提前退出路径**。
+  把 `ret` 当函数结尾把镜像块切成两半 ⇒ 得出"18 个字段里 16 个零消费"。
+- **字节位置 vs 指令地址混比**：把 `push 0x822CF4`（取地址）当成"未匹配的引用"，
+  实为口径不同；已改为分开统计「取值 / 取址」，并把 `取值+取址 == 字节扫描次数`
+  作为到账正对照（18/18 相等）。
+
+### 5. 交给 GOAL-3T 的东西
+
+- **H-016**：`ShortGame` 等 18 键**载入后镜像到全局**。若用运行期写内存改设置，
+  **必须改全局**（`ShortGame`→`0x00A8B262`），改 `[RulesClass+0x14B6]` 无效；
+  反之 `Shroud` 等 9 个没有全局，只能改字段。
+- 附告 **G-23 截断陷阱**：若他方工具用单次 `md.disasm` 求"全部引用"，那组数字必须重算。
+
+### 6. 禁区自查
+
+- [x] `tasklist` 查无 `gamemd` / `ra2loader` ⇒ 可按 §8.3 做完整分析
+- [x] 未启动游戏/loader；未写 `ra2youli`；未跑 trip；未编译
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 读 GOAL-3T 台账尾部确认其在飞的是 `units0`/`HouseClass` 衰减线，与本轮零交集
+- [x] 本轮**未派子代理**（R-017/018/019 的异族核验仍在冷却，且截断发现本身需要先落地）
+
+### 7. 未核验（诚实标注）
+
+- 本轮全部结论是**本线字节级复算**，**未过异族复核**。
+- `E8` 字节扫描与指令扫描逐址相等，只证明**两者一致**，不证明**语义正确**；
+  语义正确性依赖 27/27 双向一致 + 18/18 到账 + 尺寸三重吻合这三条内部一致性。
+- `Read_MultiplayerDialogSettings` 的 27 个键字面量已全部读出，但**没有验证
+  `TechLevel` / `GameSpeed` 等键写入后是否真的改变行为**（那需要真机，属禁区）。
+
+### 8. 复跑
+
+```bash
+python re_atlas/tools/text_sweep.py                 # 全段扫描 + 重同步审计
+python re_atlas/tools/dump_ini_keyindex.py          # 键索引（E8 对账）
+python re_atlas/tools/dump_rules_fields.py          # 27 键字段表
+python re_atlas/tools/dump_rules_consumers.py       # 读点 + 镜像全局
+```
+
+四个工具当前全部 EXIT=0，正对照全绿。
+
+### 9. 追加：R-022 的键清单同样被截断 → 306 改 651
+
+写完第 8 节后回查了 **其余工具是否有同一类缺陷**，答案是**有，而且更隐蔽**。
+
+**`dump_rules_keys.py` 的窗口写死 `WINDOW = 0x1000`。** 4 个 loader 的函数体
+远超它，但**没人会发现**，因为工具的行为是"解到 `ret` 就停"，窗口用完就
+静默返回已解出的部分：
+
+| loader | 入口 | 首个 `ret` | 函数体长度 |
+|:---|:---|:---|---:|
+| `Read_AudioVisual` | `0x006691E0` | `0x0066B8EE` | **0x2710 = 10 KB** |
+| `Read_AI` | `0x00672AE0` | `0x00673E69` | 0x1389 |
+| `Read_CombatDamage` | `0x0066BBB0` | `0x0066CBAD` | 0x0FFD |
+| `Read_General` | `0x0066D530` | `0x0066E52F` | 0x0FFF |
+
+窗口已改 `0x8000`，**并加了"每个 loader 必须走到自己的 `ret`"这条正对照** ——
+窗口再次不够时工具会红，而不是悄悄少列键。
+
+**同时发现键提取口径错**：原实现收集函数体内**所有**字面量 `push`，
+不区分是哪次调用的参数，把默认值、节名、委托节名全算成键。已改为
+**每次读调用只取它自己那个键**（`push 默认值; push KEY; push 节; call`）。
+
+| 指标 | 旧 | 新 |
+|:---|---:|---:|
+| 字面量键总计 | 306 | **651** |
+| `Read_General` | 14 | **279** |
+| `Read_AudioVisual` | （腰斩） | **152** |
+
+**最强交叉验证**：`Read_MultiplayerDialogSettings` 用两种完全不同的方法
+各解一遍 —— 「读调用实参」与「结构体存回偏移」（§2 的 27 键字段表）——
+**27 个键名逐名相等**。这条已写成硬正对照。
+
+另修 `Read_File` 的节名误判：`section_used_by` 对它返回 `'ColorAdd'`（它转发的
+最后一个节），而它自己是**多节容器**、不读任何固定键。已改为按
+"`GetSection`/`GetKeyCount` 调用数 > 2 即容器"判定，节名置 `None`；
+它那 4 个"键"（`Warheads`/`Easy`/`Normal`/`Difficult`）全是**节名**，
+已按位置判据剔除（判据不能按名字表做 —— 这几个恰好**不在** 31 项指针表里）。
+
+---
+
+## R-024 · 2026-10-22 01:1x–01:5x · R2-2 第九轮（**进行中**）：`[AudioVisual]` 字段布局
+
+### 1. 本轮完成的部分
+
+**`[AudioVisual]` 是 rulesmd.ini 第二大节（152 键）**，字段布局已解出 **130/152**
+（131 行，`Smoke` 一号两字段）。工具与 R-023 共用 `dump_rules_fields.py`。
+
+| 项 | 值 |
+|:---|---:|
+| 声明键（`dump_rules_keys` 口径） | 152 |
+| 解出字段（本工具） | **130**（131 行） |
+| 未解出 | 22 |
+| 双向一致 | **131/131**（默认载入偏移 == 存回偏移） |
+
+**未解出的 22 个**：`AmbientChangeRate` `AmbientChangeStep` `ConditionRed`
+`ConditionYellow` `DirectRockingCoefficient` `ExtraAircraftLight` `ExtraInfantryLight`
+`ExtraUnitLight` `FallBackCoefficient` `FogRate` `IceGrowthRate` `IdleActionFrequency`
+`MessageDelay` `MovieTime` `OnFire` `SavourDelay` `ScrollMultiplier` `ShroudRate`
+`SpeakDelay` `TimerWarning` `TreeFire` `VeinGrowthRate`。
+
+**已定性一个原因**：`FogRate` 的字符串字面量**不在 `.rdata` 的字符串区**，
+即它不走 `push <imm>` 形态（见 §3 待解）。
+
+### 2. 本轮修掉的三个工具缺陷
+
+1. **`find_ret` 默认窗口 `0xC00`** —— `Read_AudioVisual` 的函数体是 `0x2710`（10 KB），
+   工具直接报"没解到 ret"。已改 `0x8000`，并在文档里写明"窗口只是探查上界，
+   永远不是函数边界"。
+2. **`consumers()` 硬编码 `0x1480 <= d < 0x14BC`** —— MultiplayerDialogSettings 的
+   偏移区间被写死进函数体，导致 AudioVisual 的 20 个字段**全部报 0 消费点**。
+   已改为由传入的 `offsets` 集合派生，并把读取器自身区间作为参数传入
+   （原来只写死了 `0x671EA0..0x672224` 那一个读取器）。
+3. **小偏移不是指纹** —— `[ecx+0]`/`[eax+4]` 命中**每个多态对象的前几个字段**，
+   于是 `DetailMinFrameRateNormal`（`+0x0000`）报出 **56,820** 个"消费点"
+   （真值是个位数）。已加 `SMALL_OFFSET_FLOOR = 0x100`，低于它的偏移报
+   `n/a`（不可测），而不是报一个假数字。
+
+### 3. 待解（下一轮入口）
+
+- **22 个未解出键**：先查 `FogRate` 为何没有 `.rdata` 字面量 —— 可能是
+  `Read*` 的键来自**指针表间接**（`mov eax,[0x7F0C7C]` 之后再 `push` 别的），
+  或该键由 `Read_File` 的枚举循环按变量名读取。
+
+  > **⚠ R-025 更正：这个判断是错的。** `FogRate` 的字面量在 **`.data`
+  > （`0x0083A2EC`）**，不在 `.rdata` —— 我当时只在 `.rdata` 里搜，
+  > 就把"搜的范围内没有"写成了"不存在"。真因是 `ReadDouble` 的**存回不是
+  > `mov`**（`fstp qword` / `fstp dword`）。22 个键已全部解出（现 151/152）。
+  > 见 R-025 §1 与 CONFLICTS G-27。
+- **消费点阈值**：`SMALL_OFFSET_FLOOR = 0x100` 只是止血。`+0x1EC`（`CrateFireSound`）
+  仍报 202 个，说明 0x100 之上还有大量跨对象碰撞。正确做法是**限定上下文**
+  （只认 `mov ecx,[0x8871E0]` 之后的 `[ecx+off]`），而不是调阈值。
+- **`ReadDouble` 未覆盖**：`Read_Double` 的字段是 8 字节，工具目前只认
+  4 字节和 1 字节。
+
+### 4. 禁区自查
+
+- [x] 无游戏进程；未写 `ra2youli`；未编译；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 未派子代理
+
+### 5. 已落 KB §16（修正上一条）
+
+初稿时我写的是"未产出独立 KB 节"，理由是 130/152 不完整。**这个理由不成立**：
+§16 明确标注了"130/152、22 个未解出、已定性一例"，读者拿到的就是
+**标注清楚的部分结果**，比完全不写更有用，也不存在"把不完整当完整"。
+已按此落 KB §16。
+
+### 6. ★ 本轮最重要的方法论更正：消费点不能给单值
+
+R-023 §15.4 给的是单值读点数（"`MaxMoney` 33 点"），**那是假的精度**。
+`[reg+off]` 匹配同时向两个方向错：
+
+| 方向 | 机理 | 实例 |
+|:---|:---|:---|
+| **误计** | 任何对象某字段恰好同偏移就算 | `[ecx+0]` 报 **56,820** 次 |
+| **漏计** | `RulesClass*` 作为**参数**传入，基址在函数外赋值 | `0x0046399A` 的 `mov ecx,[ebp+0x1488]` |
+
+已改为**区间**（下界 = 基址可追溯到 `mov reg,[0x8871E0]`；上界 = 任意 `[reg+off]`）。
+27 键里 **13 个上下界相等**（如 `Money` `[3,3]`、`ShortGame` `[2,2]`）⇒ 归因确证；
+`ShadowGrow` 是 `[0,0]` ⇒ 双向确证零消费。
+
+**对照**：§15.3 的镜像全局计数**仍然可信**，因为全局是**唯一地址**，
+不存在偏移碰撞。两个口径可靠性不同，**不能混用**。
+
+### 7. 禁区自查（R-024）
+
+- [x] 无游戏进程；未写 `ra2youli`；未编译；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 未派子代理
+
+### 8. 复跑
+
+```bash
+python re_atlas/tools/dump_rules_fields.py            # MPD 27 键（回归未变）
+python re_atlas/tools/dump_rules_fields.py 0x006691E0 # AudioVisual 130 键
+```
+
+两个正对照均通过。
+
+---
+
+## R-025 · 2026-10-22 02:0x–03:0x · R2-2 第十轮：`[General]` 268 字段 + `[AudioVisual]` 补全
+
+### 1. `[AudioVisual]` 从 130 补到 151/152
+
+R-024 报告的"22 个键解不出"**根因判错了**。我当时写的是"`FogRate` 的字符串
+不在 `.rdata`" —— 实测它**在 `.data`（`0x0083A2EC`）**，只是不在 `.rdata`。
+字符串一直都在，各出现一次、各被引用一次。
+
+真因是**存回不是 `mov`**。`ReadDouble` 有三种存回形态：
+
+| 形态 | 存回 | 宽 |
+|:---|:---|---:|
+| `ReadDouble` → double | `fstp qword [esi+off]` | 8 |
+| `ReadDouble` → float | `fstp dword [esi+off]` | 4 |
+| `ReadDouble` → int（经 `imul`/`sar`/double→int 换算） | `mov [esi+off], eax` | 4 |
+
+只认 `mov` ⇒ 前两种全漏 ⇒ 22 个键"未映射"。
+
+**结论**：`[AudioVisual]` **151/152 字段解出，双向一致 151/151**。
+唯一未解出的 `OnFire` 是**列表型**（`ReadString` → `strtok` → 追加容器），
+不是标量字段。
+
+### 2. `[General]` 268 字段
+
+`[General]` 279 键，解出 **268 个标量字段**（267 个不同键），
+**零"凭空多出的字段"**，12 个未映射的键**全部是列表型**
+（`DeadBodies`/`BarrelDebris`/`BaseUnit`/… 形态均为
+`ReadString` → `push 0; push 0` → 切分 → 追加）。
+
+### 3. 本轮修掉的 5 个工具缺陷
+
+| # | 缺陷 | 影响 |
+|:--|:---|:---|
+| 1 | `mov` 存回用 reader 宽度，不用存回宽度 | 三个 int 化的 `ReadDouble` 字段报 8 字节，看起来互相重叠 |
+| 2 | 不跟踪 `add esi,0x18B8` | `FallBackCoefficient` 记成 `+0x0000`（真值 `+0x18B8`） |
+| 3 | `fstp [esp]` 当成字段存回 | 4 字节字段记 8 字节宽，虚构重叠 |
+| 4 | `fld dword [esi+off]` 默认值载入没认 | 两个浮点字段报"默认值未知" |
+| 5 | 正对照绑死在 MPD 一个目标上 | 指向 `[AudioVisual]` 时明明每行都对却报"正对照失败" |
+
+第 5 条值得单独说：**正对照的期望值如果只对一个输入成立，它就是硬编码而不是对照。**
+已改为"MPD 专用控制只在 MPD 在目标列表里时校验"，另加三条对任意 loader 成立的控制
+（非空 / 双向一致 / 读者全在登记表内）。
+
+### 4. ★ 边界陷阱再次咬人（G-22 的复现）
+
+我用**手估**的 `0x0066E52F` 当 `Read_General` 的边界，只解出 **33** 个键，
+而正确边界是 `0x00671E8B`（`ret 4`，距入口 **18,782 字节**），解出 **268**。
+
+这是同一个错误的第 N 次：**窗口/手估值不能当函数边界。**
+本轮把它写进了 KB §17.1 与 §17.3，并用"267 个字段全部在声明键集合内、
+零凭空多出"作为额外佐证 —— 边界错了会解出别的函数的字段（凭空多出）或解不全。
+
+### 5. 诚实标注的边界
+
+- `[General]` 有 **7 行偏移错位**（`PrismSupportModifier` `+0x0498→+0x049C` 等）：
+  `ReadDouble` 的 8 字节默认值跨字段。**未修**。使用建议已写进 KB §17.4：
+  以「存回」列为准。
+- 全部结论仍是**本线字节级复算**，未过异族复核。
+- `[General]` 的 268 字段里，消费点只给区间（§15.4 口径）。
+
+### 6. 禁区自查
+
+- [x] 无游戏进程；未写 `ra2youli`；未编译；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 未派子代理
+- [x] 读 GOAL-3T 台账尾部：其在飞 `units0`/`HouseClass` 衰减线，与本轮零交集
+
+### 7. 复跑
+
+```bash
+python re_atlas/tools/dump_rules_fields.py             # MPD 27/27（回归未变）
+python re_atlas/tools/dump_rules_fields.py 0x006691E0  # AudioVisual 151/151
+python re_atlas/tools/dump_rules_fields.py 0x0066D530  # General 268 行
+```
+
+三个正对照均通过。
+
+---
+
+## R-026 · 2026-10-22 03:1x–03:5x · R2-2 第十一轮：`[General]` 跨字段默认值定性
+
+### 1. 结论：R-025 报的 7 处"偏移错位"只有 1 处是引擎设计，其余 6 处是工具漏形态
+
+| 键 | 默认取自 | 存回 | 定性 |
+|:---|:---|:---|:---|
+| `CMislAcceleration` | `+0x04FC`（`DMislAcceleration`） | `+0x0530` | **引擎刻意**：敌方导弹加速沿用己方设定值作默认 |
+| `PrismSupportModifier` 等 5 处 | 本字段 | 本字段 | 工具漏了 **`fild dword [esi+off]`** 默认载入 |
+| `CliffBackImpassability` | 本字段 | 本字段 | 工具漏了 **`movsx`/`movzx`** 默认载入 |
+
+修完后：
+
+| 目标 | 双向一致 |
+|:---|:---|
+| MPD | **27/27** |
+| `[AudioVisual]` | **151/151** |
+| `[General]` | **266/268**（1 处跨字段默认 + 1 处字符串栈缓冲默认） |
+
+### 2. 又两类"默认值载入"形态
+
+字段默认值不只从 `mov reg,[esi+off]` 来，还有：
+
+| 形态 | 指令 | 用途 |
+|:---|:---|:---|
+| 浮点整数载入 | `fild dword [esi+off]` | `ReadDouble` 前把 int 字段转成默认值 |
+| 符号/零扩展载入 | `movsx` / `movzx` | byte/bool 字段传给 `ReadInteger` 前先扩展 |
+| 浮点载入 | `fld dword/qword [esi+off]` | `ReadDouble` 的浮点默认值 |
+
+**只认 `mov` 会同时漏掉这三类**，表现为"默认载入=None"或"默认载入=上一字段的偏移"
+（后者更危险：它看起来像一个结构错位）。
+
+### 3. 区分「工具缺陷」与「引擎行为」的判据
+
+这一轮的核心不是修 bug，而是**不要把引擎的真实行为修成"一致"**：
+
+- `跨字段默认(from +0xXXXX)` —— 引擎刻意用另一字段的值作默认。**保留标注，不修。**
+  为了不被误读成结构错位，正对照**不再**把它算作失败，而是单独计数。
+- `!! 默认载入=None` —— 只对**标量读者**算失败。`ReadString` 的默认值是
+  **栈缓冲地址**（`lea eax,[esp+0x50]`），`doff` 天然为 None，不是缺陷。
+- `.. 构造器未直接写` —— 3 个字段（`AICaptureLowMoneyMark` `+0x0EBC` 等）
+  属内嵌子对象，由子对象构造器初始化；`+0x0EC4` 紧邻是 vptr 可作旁证。
+  **降级为提示，不算失败。**
+
+**如果把这三类都当错误去"修"，结果会是：把引擎语义抹平成 100% 一致，
+而那个 100% 是伪造的。** 这是本轮最重要的一条。
+
+### 4. 禁区自查
+
+- [x] 无游戏进程；未写 `ra2youli`；未编译；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 未派子代理
+
+### 5. 复跑
+
+```bash
+python re_atlas/tools/dump_rules_fields.py             # 27/27
+python re_atlas/tools/dump_rules_fields.py 0x006691E0  # 151/151
+python re_atlas/tools/dump_rules_fields.py 0x0066D530  # 266/268 + 1 跨字段默认
+```
+
+三个正对照均通过。
+
+---
+
+## R-027 · 2026-10-22 04:0x–05:0x · R2-2 第十二轮：其余 10 个小节字段布局
+
+### 1. 成果：10 个小节全部解出，R2-2 的字段面基本清空
+
+| 节 | 读取器 | 键数 |
+|:---|:---|---:|
+| `[CrateRules]` | `0x0066B900` | 10 |
+| `[IQ]` | `0x00674240` | 11 |
+| `[Radiation]` | `0x0066CF70` | 9 |
+| `[SpecialWeapons]` | `0x00668FB0` | 7 |
+| `[JumpjetControls]` | `0x006743D0` | 7 |
+| `[ElevationModel]` | `0x0066D150` | 3 |
+| `[WallModel]` | `0x0066D1F0` | 2 |
+| `[Maximums]` | `0x00672230` | 1 |
+| `[Easy]`/`[Normal]`/`[Difficult]` | `0x0066D270` | 12 |
+| 三难度分派 | `0x00674500` | 0（分派器） |
+| 地形节 | `0x00674000` | 0（写全局表） |
+
+**全部 10 个 EXIT=0，正对照通过。**
+
+### 2. 识别出三种非标准形态
+
+| 形态 | 判据 | 例 |
+|:---|:---|:---|
+| **外部对象** | `mov edi,edx`，字段写 `[edi+off]`，默认值是**立即数** | `Read_Difficulty` |
+| **纯分派器** | 函数体只有三次 `call`，各传不同子对象 | `Read_Difficulties` |
+| **写全局表** | 无对象基址，字段写进常量地址 + `fcomp` 范围钳制 | `Read_LandCharacteristics` |
+
+这三类都让"对象基址是 esi"的假设失效。已把基址识别改为
+`detect_base()`：在前 24 条指令里找 `mov reg,edx`（第二参数，优先）
+或 `mov reg,[esp+N]`（栈参数）落到 `edi`/`ebx`/`esi` 的那个。
+
+**`Read_Difficulty` 的 12 字段是 `0x4B` 字节的独立结构**，每难度一份：
+`FirePower +0x00` / `Groundspeed +0x08` / `Airspeed +0x10` / `Armor +0x18` /
+`ROF +0x20` / `Cost +0x28` / `BuildTime +0x30` / `RepairDelay +0x38` /
+`BuildDelay +0x40` / `BuildSlowdown +0x48` / `DestroyWalls +0x49` /
+`ContentScan +0x4A`。三节结构完全相同。
+
+### 3. 本轮修掉的 4 个工具缺陷
+
+| # | 缺陷 | 影响 |
+|:--|:---|:---|
+| 1 | 对象基址硬编码 `esi` | `Read_Difficulty` / `Read_LandCharacteristics` 全部报"无字段" |
+| 2 | `detect_base` 先选栈参数（`ebx`）而非寄存器参数（`edi`） | 选中了 INIClass 而不是输出对象 |
+| 3 | 外部对象也拿 RulesClass ctor 做宽度校验 | `Difficulty` 报 3 处假宽度冲突（它根本不是 RulesClass） |
+| 4 | 重叠检测用「排序后的跨度列表」配「原始行索引」 | 虚报 4 行跨度重叠（实际完美无重叠） |
+| 5 | 外部目标判定靠字符串匹配小写名 | `0x66D270` 通过、`0x66d270` 失败 —— 同一 loader 两种结果 |
+
+第 5 条特别值得记：**判据依赖调用方输入的写法，就是不可复现的判据。**
+已改为按入口地址查 `EXTERNAL_TARGETS` 表。
+
+### 4. 正对照按目标类型分档（本轮的正面设计）
+
+三类目标不能共用一套判据：
+
+| 目标类型 | 判据 |
+|:---|:---|
+| 普通标量节 | 双向一致（默认载入偏移 == 存回偏移）+ 读者在登记表内 + 无重叠 |
+| 外部对象 | **改用「字段跨度不重叠」**（默认值是立即数，"默认载入 == 存回"不适用） |
+| 分派器 / 写全局 | **空结果不计为失败**（它们本来就没有 `[对象+偏移]` 字段） |
+
+这与 G-29 同一条原则：**判据必须描述被观察对象的真实结构，不能为了全绿而放宽。**
+
+### 5. 禁区自查
+
+- [x] 无游戏进程；未写 `ra2youli`；未编译；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 未派子代理
+
+### 6. 复跑
+
+```bash
+python re_atlas/tools/dump_rules_fields.py 0x0066B900   # 以及其余 9 个入口
+```
+
+证据：`evidence/rules_fields_{cratrules,iq,radiation,specialweapons,
+jumpjetcontrols,elevationmodel,wallmodel,maximums,difficulty,landcharacteristics}.txt`
+
+---
+
+## R-028 · TypeClass 继承链字段布局（R2-2 第十三轮）
+
+日期：2026-10-22 ｜ 工具：`tools/dump_typeclass_fields.py`（新增）
+｜ 证据：`evidence/typeclass_fields.txt`（688 行） ｜ 核验状态：**未核验**（本地字节自洽 + 构造器链交叉）
+
+### 1. 做了什么
+
+从 `RulesClass` 转向**另一棵继承树**，即战役编译器真正要写的那层：
+`[InfantryTypes]` / `[VehicleTypes]` / `[AircraftTypes]` / `[BuildingTypes]`
+里每个名字背后的 `TypeClass` 实例。
+
+1. 用 vtable 的 COL 类名解出完整继承链
+   `AbstractType → ObjectType → TechnoType → {Infantry, Unit, Aircraft, Building}`；
+   每层 `LoadFromINI` = 槽 25，尺寸 = 槽 12（四层抽象层为桩）。
+2. 逐层解出字段：**613 键，0 未定**。
+3. 发现并解决三个结构性难题（都不是 `RulesClass` 那批 loader 里存在的）。
+
+### 2. 量到的结果
+
+| 类 | 键 | rulesmd | artmd | 未定 |
+|:---|---:|---:|---:|---:|
+| AbstractType | 1 | 1 | 0 | 0 |
+| ObjectType | 20 | 15 | 5 | 0 |
+| TechnoType | **252** | **230** | 22 | 0 |
+| InfantryType | 33 | 28 | 5 | 0 |
+| UnitType | 27 | 15 | 12 | 0 |
+| AircraftType | 10 | 6 | 4 | 0 |
+| BuildingType | **270** | 119 | **151** | 0 |
+| 合计 | **613** | 414 | 199 | **0** |
+
+**最要紧的一条**：这些 loader **同时读两个 INI 文件** ——
+`rulesmd`（调用方传入的 INIClass）与 `artmd`（全局 `CCINIClass` `0x887180`，
+由 COL 解出 `.?AVCCINIClass@@` 证实）。`BuildingTypeClass` 有
+**151/270 个键属于 artmd**。写错文件引擎不报错，只是该键永远读默认值。
+
+### 3. 三个新坑（都已固化进 CONFLICTS）
+
+| 编号 | 一句话 |
+|:---|:---|
+| G-32 | `this` 在七个 loader 里是**五种不同寄存器**；R-023 的 `detect_base` 有两处选错，且错得完全自洽 |
+| G-33 | `push eax` 既是"节名缓冲"也是"上一个键的返回值"，只能靠**上一条指令**定夺 |
+| G-34 | "默认值缺失"混了三种成因（立即数 / 跨键 / 拆栈提升），报成同一个 `None` 会掩盖真缺陷 |
+| G-35 | 构造器"覆盖不到"的 132 个偏移是**指针环清零**，按偏移扫永远扫不到 |
+
+纪律 #31–#34 一并新增。
+
+### 4. 独立交叉核对（本轮方法论重点）
+
+字段表来自 loader，构造器是另外七个函数、另外的调用点，两者一致
+**不可能是同一次解析错误的产物**。所以把"构造器是否写过这个偏移"
+当成独立证据线：
+
+- Infantry 33/33、Unit 27/27、Aircraft 10/10 —— **全中**；
+- BuildingType 269/269 —— 其中 **132 个是指针环**（`lea eax,[esi+0xF5C]`
+  `mov ecx,0x15` `add eax,0x44`：21 项 × 0x44 覆盖 1428 字节的动画字段）。
+  还原三元组后"未解"归 0。
+
+这条证据线还顺带证实了"继承字段重读"的存在（`UnitType` 读 `+0x67C` 的
+`SpeedType`），以及 `BuildingType` 在**同一偏移**上复用该槽存 `WaterBound` ——
+`cmp eax,5 / sete / and 6 / dec` ⇒ `yes`→5、`no`→-1。**是真实引擎复用，不是解错。**
+
+### 5. 过程中的自查失败（记下来，不只记事功）
+
+1. **store 后清 `default_off`** ⇒ 干掉 11+8 个默认值。原因：编译器把
+   下一个键的默认载入**提到**上一个键的 store 之上。撤回，改为只在 call 处清。
+2. **`key_sec` 不在非 reader 调用后失效** ⇒ 20 条假"节/INI不符"。
+3. **节/INI 不变量写成双向** ⇒ 同上 20 条。实测是单向：
+   `+0x1F8` 永不配 rulesmd（0 违反），但 `+0x24` 可以配 artrd（3 例）。
+4. **`push 0x889f64` 被当成整数默认** ⇒ 50 行 `imm=8953700`。
+   那是 `ReadString` 的空字符串表指针。
+5. **`push 0x80` 被当成默认** ⇒ `DeploysInto = 128`。那是**缓冲容量**。
+6. **包装器宽度硬编码 4** ⇒ `WaterBound` 报 4 字节而源指令是 `mov byte`。
+7. **`was_reader` 误写成 `prev_returned`**（迭代开头已重置）⇒ 跨键默认整类失效。
+
+第 4、5 两条值得单列：**它们都会在输出里生成"看起来像数据"的列**，
+比缺列危险得多。
+
+### 6. 禁区自查
+
+- [x] `tasklist` 查无 `gamemd` / `ra2loader`
+- [x] 未启动游戏/loader；未写 `ra2youli`；未跑 trip；未编译
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 未派子代理（本轮纯本地）
+- [x] 读 GOAL-3T 台账尾部：其线在 `units0`/HouseClass，与本轮零交集
+
+### 7. 复跑
+
+```bash
+python re_atlas/tools/dump_typeclass_fields.py
+```

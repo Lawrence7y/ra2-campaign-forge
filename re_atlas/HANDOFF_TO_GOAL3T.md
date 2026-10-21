@@ -367,7 +367,7 @@ size    = vtable[12](obj)    # 只有上一步成立，才认它是 GetSize
 做 COL 解码正对照，再对 CRC 表做**全 256 项**比对，两次运行字节相同。
 
 **置信度**：**实证**（字节逐指令 + 256 项表全等）。
-**核验状态**：⏳ 单通道字节，异族核验待派（本轮渠道被 GOAL-3T 占用）。
+**核验状态**：✅ **已异族复核**（R-020，3 通道确认 / 0 推翻；边界见 `kb/30` §7.2）。
 
 **冲突待核**：无。与 GOAL-3T 现有结论无交集。
 
@@ -405,8 +405,7 @@ size    = vtable[12](obj)    # 只有上一步成立，才认它是 GetSize
 头字节 `83 EC 0C` 正对照，两次运行字节相同）。
 
 **置信度**：**实证**（分派表、类表逐项、格式串直读）。
-**核验状态**：⏳ 待六模型复核结果回填（`dwfrun-b287db93` 复核的是 R-016 八条，
-本节的布尔/整数规则**需下一轮补派**）。
+**核验状态**：⏳ 未核验（R-017 结论，本轮复核只覆盖 R-016 八条；需补派）。
 
 **冲突待核**：无。
 
@@ -444,7 +443,7 @@ size    = vtable[12](obj)    # 只有上一步成立，才认它是 GetSize
 （`evidence/ini_keymap.txt`，双正对照 + 算式/字节对齐自检，两次运行字节相同）。
 
 **置信度**：**实证**。
-**核验状态**：⏳ 单通道字节，待异族核验。
+**核验状态**：⏳ 未核验（R-018/R-019 结论，需补派）。
 
 **冲突待核**：无。
 
@@ -482,6 +481,299 @@ size    = vtable[12](obj)    # 只有上一步成立，才认它是 GetSize
 `0x00817854 == "Name"`。
 
 **置信度**：**实证**（线性全扫 + 三重正对照）。
-**核验状态**：⏳ 单通道字节，待异族核验。
+**核验状态**：⏳ 未核验（R-018/R-019 结论，需补派）。
 
 **冲突待核**：无。
+
+---
+
+## H-014 · 2026-10-21 · `rulesmd.ini` 的节由谁读、按什么顺序读
+
+**发现**（`kb/30_ini_subsystem.md` §13，工具 `tools/dump_rules_sections.py`）
+
+节名指针表在 `0x007F0C78`（31 项 `const char*`）。38 个 `RulesClass::Read_*`
+里 **36 个**的节名已从代码读出（不是按函数名猜），载入顺序取自
+`RulesClass::Init`（`0x6686C0`）的 32 个内部调用。
+
+三条容易踩的：
+
+1. **`Read_AdvancedCommandBar` 读的是 `AdvancedCommandBar`，不是同表里紧邻的
+   `MultiplayerAdvancedCommandBar`。** 函数名不能用来推节名。
+2. **`Read_File` 先跑三次**，负责建立 `[VehicleTypes]` 等列表节；它体内第一个节名引用
+   是 `ColorAdd`，但它**不只**读那一节。
+3. **同一套节会被解析三遍**：`Init` 对三份 INI（第一份 / gamemode / map）各调一次
+   `Read_File`，而 28 个 loaders 在 `Read_File` 里 ⇒ **后一遍覆盖前一遍**。
+   想覆盖某值就放到后面的 INI 里。`Read_General` 在 `Read_Difficulty`（调三次）之前。
+
+**可能影响的目标**
+
+- **③ 安全改动能力**：任何"改 rulesmd 某节生效"的补丁——
+  - 若把 `[MultiplayerAdvancedCommandBar]` 当成单机也读的节，改了不生效；
+  - 若依赖"先读的值会保留到后面"，会被后读的节覆盖；
+  - 若想只改某一档难度，必须改对应那一次 `Read_Difficulty` 的键
+    （`Easy`/`Normal`/`Hard`），不是改节名。
+- ①② 无直接关系。
+
+**证据**：`kb/30` §13；`evidence/rules_sections.txt`（两次运行字节相同）。
+四项正对照：`Read_Colors→Colors`、`Read_General→General`、
+`Init` 头 `81 EC D0 00 00 00`、指针表非空项 ≥28。
+
+**置信度**：**实证**（字节 + 四条正对照）。
+**核验状态**：⏳ 未核验（R-021 结论，需补派）。
+
+**冲突待核**：无。与 GOAL-3T 现有结论无交集。
+
+---
+
+## H-015 · 2026-10-21 · `ShortGame` 的读取点已定位；多数字典节是"键名即数据"
+
+**发现**（`kb/30_ini_subsystem.md` §14，工具 `tools/dump_rules_keys.py`）
+
+1. **`ShortGame` 由 `Read_MultiplayerDialogSettings`（`0x00671EA0`）读取**，
+   与它同节（`[MultiplayerDialogSettings]`）的共 27 个键，含
+   `MinUnitCount` / `UnitCount` / `MaxUnitCount` / `MultiEngineer` / `MCVRedeploys` /
+   `FogOfWar` / `BuildOffAlly` / `SuperWeaponsAllowed` 等。
+2. **`[VehicleTypes]` / `[BuildingTypes]` / `[Sides]` 这类节的"键"就是数据本身**：
+   20 个 loader 走 `GetKeyCount` → `GetKeyName`，把键名当类型名/阵营名使用。
+   ⇒ 往这些节里加条目**不需要配字段**，键名必须是合法标识；加了不认识的名字会被静默忽略。
+3. 只有 5 个 loader 读固定键（27/19/14/12/11 个），其余节要么枚举键名，要么按键名注册。
+
+**可能影响的目标**
+
+- **①② 与 ① 的 `ShortGame` 实验**：`ShortGame` 的生效路径是
+  `[MultiplayerDialogSettings]` → `Read_MultiplayerDialogSettings`（`0x671EA0`）。
+  该函数**在 `rulesmd.ini` 解析期**执行（由 `Read_File` 调，见 H-014），
+  不是每帧读 ⇒ 运行期改这个键不会立即影响已开始的局。
+- **③ 安全改动能力**：往 `[VehicleTypes]` 等列表节追加条目不配字段即可；
+  但键名必须是合法类型标识，否则静默无效（不报错）。
+
+**证据**：`kb/30` §14；`evidence/rules_keys.txt`。
+
+> **⚠ 2026-10-21 更正（见 H-017）**：本条引用的「306 键」**已作废**，正确值 **651**。
+> 本节的核心判断（字典节的键名即数据、20 个 loader 枚举键名）不受影响，
+> 但键总数与"读固定键的 loader 数量"全部变化。以 H-017 为准。
+三项正对照：`Read_AI` 含 `BuildConst` / `Read_Sides` 判为枚举形态 / 总键数 ≥100。
+
+**置信度**：**实证**（字面量直读）。
+**核验状态**：⏳ 未核验（R-022 结论，需补派）。
+
+**冲突待核**：无。
+
+---
+
+## H-016 · 2026-10-21 · `ShortGame` 等 18 个设置键**载入后被镜像到独立全局**，游戏读的是全局
+
+**发现**（`kb/30_ini_subsystem.md` §15.3，工具 `tools/dump_rules_consumers.py`）
+
+1. `Read_MultiplayerDialogSettings`（`0x00671EA0`）返回后，调用方
+   （`0x0052CD70` 开头那个规则装载函数）立刻把 **18 个字段拷贝到独立全局变量**。
+   **游戏其余部分大多读全局，不读 `RulesClass` 字段。**
+2. 与你相关的三条：
+
+   | 键 | `RulesClass` 偏移 | 镜像全局 | 取值引用数 |
+   |:---|:---|:---|---:|
+   | **`ShortGame`** | `+0x14B6` | **`0x00A8B262`** | **50** |
+   | `FogOfWar` | `+0x14B7` | `0x00A8B31F` | 22 |
+   | `MCVRedeploys` | `+0x14B8` | `0x00A8B320` | 44 |
+
+3. **9 个字段不镜像**，只留在 `RulesClass` 里（读点直接走 `[RulesClass+off]`）：
+   `MinMoney` `+0x1480`、`MaxMoney` `+0x1488`、`MoneyIncrement` `+0x148C`、
+   `MinUnitCount` `+0x1490`、`MaxUnitCount` `+0x1498`、`ShadowGrow` `+0x14AD`、
+   `Shroud` `+0x14AE`、`TiberiumGrows` `+0x14B0`、`AllyChangeAllowed` `+0x14BB`。
+4. **`ShadowGrow` 是 27 个键里唯一读点为 0 的**（纯字节扫描复核：`+0x14AD` 的
+   disp32 在 `.text` 里只出现 3 次，全是构造器写 + 读取器读+写）。
+   写这个键对引擎行为无影响。
+
+**可能影响的目标**
+
+- **② 主崩溃 / ① `ShortGame` 实验**：如果你的实验改的是 `rulesmd.ini` 里的
+  `ShortGame=`，生效路径是
+  `Read_MultiplayerDialogSettings` → `[RulesClass+0x14B6]` → **拷贝到 `0x00A8B262`**
+  → 全局被 50 处读。**若用运行期写内存的方式改，必须改 `0x00A8B262` 这个全局，
+  改 `[RulesClass+0x14B6]` 不会影响已经镜像完的值。** 反之若要改 `Shroud`，
+  必须改 `[RulesClass+0x14AE]`（没有全局）。
+- **③ 安全改动能力**：给出"改哪个地址才真正生效"的判据。选错侧（字段 vs 全局）
+  会呈现为"改了但没效果"，很容易被误判成机制不生效。
+
+**⚠ 同时报告一个我方错误，供你评估我方数据可靠性**
+
+`kb/30` §12（R-019 的全引擎键索引）旧数字 **478 调用点 / 473 恢复键** 是**错的**，
+已在 §12.0 全面重算为 **2,426 / 2,305**。根因：capstone 的
+`md.disasm(.text 全段)` **在 `0x46F5A0` 静默停止**（那里是一张跳转表），
+一次调用只覆盖 `.text` 的前 9%，却返回成功。
+**若你方任何工具用单次 `md.disasm` 扫 `.text` 求"全部"引用，那组数字必须重算。**
+新工具 `tools/text_sweep.py` 做带审计重同步的全段扫描，并用纯 `E8` 字节扫描
+（不解码）做逐址对账（当前 2426 == 2426 零差异）。
+
+**证据**：`kb/30` §15；`evidence/rules_consumers.txt`；
+`evidence/rules_fields.txt`（27 键 × 默认值 × 消费点）。
+
+**置信度**：**实证**（字节级：18 条 `mov [全局], reg` 拷贝指令逐条列出；
+每个全局的字节扫描出现次数 == 指令扫描 (取值 + 取址) 次数，18/18 相等）。
+
+**核验状态**：⏳ 未核验（需补派异族复核）。
+
+**冲突待核**：无。
+
+---
+
+## H-017 · 2026-10-21 · `[General]` 是 rulesmd.ini 最大的节（279 键），`[AudioVisual]` 次之（152）
+
+**发现**（`kb/30_ini_subsystem.md` §14.2，工具 `tools/dump_rules_keys.py`）
+
+R-022 公布的「306 个字面量键」**作废**，正确值是 **651**。两处系统性低估：
+
+1. **窗口 `0x1000` 太窄**：`Read_AudioVisual`（`0x6691E0`）的函数体到首个 `ret`
+   是 **0x2710 = 10 KB**，`Read_AI`/`Read_CombatDamage`/`Read_General` 也都 4–5 KB。
+   工具"解到 `ret` 就停"，窗口用完照常返回 ⇒ 这 4 个 loader 的键清单被腰斩。
+2. **键提取口径错**：收集函数体内所有字面量 `push`，把默认值、节名、以及容器
+   转发给委托的节名都算成了键。
+
+修正后的分布（15 个 loader 读固定键，合计 651）：
+
+| loader | 键数 | | loader | 键数 |
+|:---|---:|:-:|:---|---:|
+| **`Read_General`** | **279** | | `Read_CrateRules` | 10 |
+| **`Read_AudioVisual`** | **152** | | `Read_Radiation` | 9 |
+| `Read_CombatDamage` | 71 | | `Read_LandCharacteristics` | 8 |
+| `Read_AI` | 52 | | `Read_SpecialWeapons` | 7 |
+| `Read_MultiplayerDialogSettings` | 27 | | `Read_JumpjetControls` | 7 |
+| `Read_Difficulty` | 12 | | `Read_ElevationModel` | 3 |
+| `Read_IQ` | 11 | | `Read_WallModel` | 2 |
+| | | | `Read_Maximums` | 1 |
+
+**`[General]` 与 `[AudioVisual]` 两节占 431/651（66%）。**
+
+**可能影响的目标**
+
+- **③ 安全改动能力 / ra2forge 战役编译器**：如果生成 rulesmd.ini 时只覆盖
+  `Read_MultiplayerDialogSettings` 那类"小节"，**66% 的可调参数没被覆盖**。
+  优先覆盖 `[General]` 与 `[AudioVisual]`。
+- **①②**：R-022 曾说"只有 5 个 loader 读固定键"，据此判断某个键"不被读取"会误判。
+  例如 `[AudioVisual]` 有 152 个键，远不是小配置面。
+
+**⚠ 与 H-016 同源的两个工具陷阱（供你方工具自查）**
+
+- `md.disasm(.text 全段)` 在 `0x46F5A0` **静默停止**（只覆盖 9%），见 H-016。
+- 窗口式取函数体**必须**断言"走到了该函数自己的 `ret`"，否则长函数被腰斩而
+  输出看起来正常。这是"窗口太小"；反过来"窗口太大"会把相邻函数读进来
+  （我已有一条独立纪律记录在案）。
+
+**证据**：`kb/30` §14.0–§14.2；`evidence/rules_keys.txt`。
+四项正对照：`Read_AI` 含 `BuildConst` / `Read_Sides` 判为枚举形态 /
+总键数 ≥100 / **全部 38 个 loader 都走到自己的 `ret`** /
+**`Read_MultiplayerDialogSettings` 的 27 键与 §15 结构体字段表逐名相等**。
+
+**置信度**：**实证**（字面量直读 + 逐调用参数定位）。
+**核验状态**：⏳ 未核验（需补派异族复核）。
+
+**冲突待核**：无。
+
+---
+
+## H-018 · 2026-10-22 · `[General]` 268 个字段已定位；12 个键是列表型不是单值
+
+**发现**（`kb/30_ini_subsystem.md` §17，工具 `tools/dump_rules_fields.py`）
+
+`[General]` 是 rulesmd.ini **最大的节（279 键，占全部字面量键 43%）**，
+读取器 `0x0066D530`，函数体 `[0x0066D530, 0x00671E8E)`。
+
+1. **268 个标量字段的偏移已解出**，双向一致（默认载入 == 存回），
+   **零"凭空多出的字段"**（全部 267 个键名都在声明键集合内）。
+2. **12 个键是列表型**，不是标量：`BarrelDebris` `BaseUnit` `BridgeExplosions`
+   `DamageFireTypes` `DeadBodies` `DropPod` `ExplosiveVoxelDebris`
+   `MetallicDebris` `RepairBay` `Shipyard` `WeatherConBolts` `WeatherConClouds`。
+   形态是 `ReadString` → `push 0; push 0`（空分隔符=默认）→ 切分 → 追加容器。
+   ⇒ **这些键可以写多个逗号分隔的名字**，写单个值不会报错但只生效第一个。
+3. **`[AudioVisual]` 同轮补到 151/152**（其中 `OnFire` 也是列表型）。
+
+**可能影响的目标**
+
+- **③ 安全改动能力 / ra2forge 战役编译器**：`[General]` 有 268 个可写字段，
+  是目前已定位的最大配置面。若生成 rulesmd.ini 时只覆盖小节，
+  **43% 的可调项被漏掉**。
+- **①②**：如果实验里改 `[General]` 的某个键而无效，先确认它是不是
+  上面那 12 个列表型之一 —— 列表型需要 `push 0; push 0` 的解析路径，
+  单值语义与标量键不同。
+
+**⚠ 一个必须提醒你的工具陷阱（我这轮又踩了）**
+
+`Read_General` 的真实首个 `ret` 在 **`0x00671E8B`**，距入口 **18,782 字节**。
+我用**手估**的 `0x0066E52F`（函数体中部）当边界，只解出 **33** 个键；
+换成工具算出的边界后是 **268**。
+
+若你方任何分析用"入口 + 固定偏移"或手估地址当函数边界，长函数会被腰斩
+且**输出看起来完全正常**。判据：**解开的结果里若有任何键名不在该 loader
+的声明键集合内，说明边界跨进了别的函数**；若明显少于声明键数，
+说明边界太短。
+
+**证据**：`kb/30` §17；`evidence/rules_fields_general.txt`（554 行，268 字段 + 消费点区间）；
+`evidence/rules_fields_av.txt`（151 字段）。
+
+**置信度**：**实证**（字节级：每种存回形态逐指令核；268/268 双向一致；
+零凭空多出字段）。
+
+**核验状态**：⏳ 未核验（需补派异族复核）。
+
+**冲突待核**：`[General]` 有 7 行"默认载入偏移 ≠ 存回偏移"
+（`PrismSupportModifier` `+0x0498→+0x049C` 等），成因是 `ReadDouble` 的
+8 字节默认值跨字段。**以「存回」列为准**，「默认载入」列不要用来推字段边界。
+
+---
+
+## H-019 · 2026-10-22 · 单位/建筑的 INI 键分在 **两个文件**里，写错不报错
+
+**日期**：2026-10-22（R-028）
+**影响目标**：②（主崩溃：出图/载入期读到的类型定义）
+**置信度**：**实证**（字节级；vtable COL 解出类名；613 键逐行标注文件归属）
+
+### 发现
+
+`InfantryTypeClass` / `UnitTypeClass` / `AircraftTypeClass` /
+`BuildingTypeClass` 的 `LoadFromINI` **同时读两个 INIClass**：
+
+| INIClass | 地址 | 来源 |
+|:---|:---|:---|
+| `rulesmd.ini` | — | 调用方压栈的参数（`mov ebx,[esp+0x148]` 等） |
+| `artmd.ini` | **`0x00887180`** | 全局 `CCINIClass` 实例 `INI_Art` |
+
+后者的 vtable `0x7E1AF4` 的 COL 解出的类名就是 `.?AVCCINIClass@@`。
+
+**归属比例**（613 键全解）：
+
+| 类 | 总键 | 写 rulesmd | 写 artmd |
+|:---|---:|---:|---:|
+| `BuildingTypeClass` | 270 | 119 | **151** |
+| `InfantryTypeClass` | 33 | 28 | 5 |
+| `UnitTypeClass` | 27 | 15 | 12 |
+| `AircraftTypeClass` | 10 | 6 | 4 |
+| `TechnoTypeClass` | 252 | 230 | 22 |
+| `ObjectTypeClass` | 20 | 15 | 5 |
+
+### 为什么这条对 ② 可能有意义
+
+写错文件时**引擎不报错、不崩溃**，只是那个键永远读到默认值。
+所以"我明明配了 `TurretAnimX` 却没生效"这类现象不需要崩溃也能发生，
+而**反向**——把一个本该在 artmd 的键塞进 rulesmd——会留下一个
+引擎从来不去读的节，同时字段保持默认。
+
+若 `units0` / 出图期读到的某些属性与配置不符，先查**键是不是写错了文件**，
+再怀疑二进制。归属表逐行可查（`evidence/typeclass_fields.txt` 的 `INI` 列）。
+
+### 另一条可能相关的
+
+`WaterBound` 与 `SpeedType` **共用同一个偏移 `+0x67C`**：
+建筑不移动，于是 `TechnoTypeClass::SpeedType` 那个槽在
+`BuildingTypeClass` 里被复用为 `WaterBound`（`cmp eax,5 / sete / and 6 / dec`：
+`yes` → 存 5，`no` → 存 -1）。**同名偏移、不同语义**，
+跨类按偏移做批量改写会打穿这一格。
+
+### 证据
+
+- `kb/30` §19（含继承链、两文件分栏、构造器链交叉核对）
+- `evidence/typeclass_fields.txt`（688 行，613 键，逐行标 INI）
+- `tools/dump_typeclass_fields.py`（EXIT=0，可复跑）
+
+### 未核验
+
+本地字节自洽 + 构造器链交叉，**未做异族复核**。

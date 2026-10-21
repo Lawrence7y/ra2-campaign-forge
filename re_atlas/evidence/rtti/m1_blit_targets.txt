@@ -1,0 +1,121 @@
+# M1 接管点清单：RA2 软件 blit 实现族
+#
+# 来源：gamemd.exe 的 MSVC RTTI（ra2re rtti 解析，非人工标注）
+# Blitter     抽象基类 vtable = 007E5B88，虚函数 5 个，子类 57 个
+# RLEBlitter  抽象基类 vtable = 007E5BA0，虚函数 3 个，子类 51 个
+# 具体实现合计 108 个
+#
+# 为什么重要：每个可见像素都要走一次这些函数，是「多单位卡顿」里 CPU 时间的主要去处
+# （实测确认：轻载场景下忙时 Top 5 热点全是这个族），也是 L1（渲染解耦 + GPU 化）
+# 要拦截或替换的目标。
+#
+# 格式：模板名 <TAB> 位深 <TAB> 语义 <TAB> vtable <TAB> 虚函数地址…
+
+?$BlitPlain@E	8 位调色板	不透明	007F7BDC	007BC640 007BC750 007BC7A0 007BC780 007BC7D0
+?$BlitPlain@G	16 位 RGB	不透明	007F7BC4	007BC660 007BC7F0 007BC840 007BC820 007BC870
+?$BlitPlainXlat@E	8 位调色板	不透明/调色板重映射（阵营颜色）	007E5B70	00499CE0 004913F0 00491460 00491430 00491490
+?$BlitPlainXlat@G	16 位 RGB	不透明/调色板重映射（阵营颜色）	007E5A38	00499F20 004924C0 00492530 00492500 00492560
+?$BlitPlainXlatAlpha@G	16 位 RGB	不透明/调色板重映射（阵营颜色）/alpha 混合	007E57F8	0049A200 00493CC0 00493D90 00493D60 00493DC0
+?$BlitPlainXlatZRead@G	16 位 RGB	不透明/调色板重映射（阵营颜色）/读深度缓冲	007E5990	00499FE0 00492A10 00492AA0 00492A70 00492AD0
+?$BlitPlainXlatZReadWrite@G	16 位 RGB	不透明/调色板重映射（阵营颜色）/读写深度缓冲	007E58A0	0049A120 00493500 004935A0 00493570 004935D0
+?$BlitTrans@E	8 位调色板	透明（跳过色键）	007F7C0C	007BC680 007BC610 007BC6F0 007BC6C0 007BC720
+?$BlitTrans@G	16 位 RGB	透明（跳过色键）	007F7BF4	007BC6A0 007BC890 007BC8F0 007BC8C0 007BC920
+?$BlitTransDarken@G	16 位 RGB	透明（跳过色键）/变暗（阴影）	007E59F0	00499F60 00492670 004926E0 004926B0 00492710
+?$BlitTransDarkenZRead@G	16 位 RGB	透明（跳过色键）/变暗（阴影）/读深度缓冲	007E5948	0049A040 00492D20 00492DB0 00492D80 00492DE0
+?$BlitTransDarkenZReadWrite@G	16 位 RGB	透明（跳过色键）/变暗（阴影）/读写深度缓冲	007E5858	0049A180 00493830 004938D0 004938A0 00493900
+?$BlitTransLucent25@G	16 位 RGB	透明（跳过色键）/25% 半透明	007E59A8	00499FC0 00492920 004929B0 00492980 004929E0
+?$BlitTransLucent25Alpha@G	16 位 RGB	透明（跳过色键）/25% 半透明/alpha 混合	007E5780	0049A340 00494330 00494430 00494400 00494460
+?$BlitTransLucent25AlphaZRead@G	16 位 RGB	透明（跳过色键）/25% 半透明/alpha 混合/读深度缓冲	007E5690	0049A520 00495250 00495390 00495360 004953C0
+?$BlitTransLucent25AlphaZReadWarp@G	16 位 RGB	透明（跳过色键）/25% 半透明/alpha 混合/读深度缓冲/扭曲（超时空效果）	007E5648	0049A5E0 00495730 00495870 00495840 004958A0
+?$BlitTransLucent25AlphaZReadWrite@G	16 位 RGB	透明（跳过色键）/25% 半透明/alpha 混合/读写深度缓冲	007E55D0	0049A720 00495F00 00496040 00496010 00496070
+?$BlitTransLucent25ZRead@G	16 位 RGB	透明（跳过色键）/25% 半透明/读深度缓冲	007E5900	0049A0A0 00493050 00493110 004930E0 00493140
+?$BlitTransLucent25ZReadWarp@G	16 位 RGB	透明（跳过色键）/25% 半透明/读深度缓冲/扭曲（超时空效果）	007E58B8	0049A100 004933D0 004934A0 00493470 004934D0
+?$BlitTransLucent25ZReadWrite@G	16 位 RGB	透明（跳过色键）/25% 半透明/读写深度缓冲	007E5810	0049A1E0 00493B90 00493C60 00493C30 00493C90
+?$BlitTransLucent50@G	16 位 RGB	透明（跳过色键）/50% 半透明	007E59C0	00499FA0 00492830 004928C0 00492890 004928F0
+?$BlitTransLucent50Alpha@G	16 位 RGB	透明（跳过色键）/50% 半透明/alpha 混合	007E5798	0049A300 004941E0 004942D0 004942A0 00494300
+?$BlitTransLucent50AlphaZRead@G	16 位 RGB	透明（跳过色键）/50% 半透明/alpha 混合/读深度缓冲	007E56A8	0049A4E0 004950C0 004951F0 004951C0 00495220
+?$BlitTransLucent50AlphaZReadWarp@G	16 位 RGB	透明（跳过色键）/50% 半透明/alpha 混合/读深度缓冲/扭曲（超时空效果）	007E5660	0049A5A0 00495590 004956D0 004956A0 00495700
+?$BlitTransLucent50AlphaZReadWrite@G	16 位 RGB	透明（跳过色键）/50% 半透明/alpha 混合/读写深度缓冲	007E55E8	0049A6E0 00495D60 00495EA0 00495E70 00495ED0
+?$BlitTransLucent50ZRead@G	16 位 RGB	透明（跳过色键）/50% 半透明/读深度缓冲	007E5918	0049A080 00492F30 00492FF0 00492FC0 00493020
+?$BlitTransLucent50ZReadWarp@G	16 位 RGB	透明（跳过色键）/50% 半透明/读深度缓冲/扭曲（超时空效果）	007E58D0	0049A0E0 004932A0 00493370 00493340 004933A0
+?$BlitTransLucent50ZReadWrite@G	16 位 RGB	透明（跳过色键）/50% 半透明/读写深度缓冲	007E5828	0049A1C0 00493A60 00493B30 00493B00 00493B60
+?$BlitTransLucent75@G	16 位 RGB	透明（跳过色键）/75% 半透明	007E59D8	00499F80 00492740 004927D0 004927A0 00492800
+?$BlitTransLucent75Alpha@G	16 位 RGB	透明（跳过色键）/75% 半透明/alpha 混合	007E57B0	0049A2C0 00494080 00494180 00494150 004941B0
+?$BlitTransLucent75AlphaZRead@G	16 位 RGB	透明（跳过色键）/75% 半透明/alpha 混合/读深度缓冲	007E56C0	0049A4A0 00494F20 00495060 00495030 00495090
+?$BlitTransLucent75AlphaZReadWarp@G	16 位 RGB	透明（跳过色键）/75% 半透明/alpha 混合/读深度缓冲/扭曲（超时空效果）	007E5678	0049A560 004953F0 00495530 00495500 00495560
+?$BlitTransLucent75AlphaZReadWrite@G	16 位 RGB	透明（跳过色键）/75% 半透明/alpha 混合/读写深度缓冲	007E5600	0049A6A0 00495BC0 00495D00 00495CD0 00495D30
+?$BlitTransLucent75ZRead@G	16 位 RGB	透明（跳过色键）/75% 半透明/读深度缓冲	007E5930	0049A060 00492E10 00492ED0 00492EA0 00492F00
+?$BlitTransLucent75ZReadWarp@G	16 位 RGB	透明（跳过色键）/75% 半透明/读深度缓冲/扭曲（超时空效果）	007E58E8	0049A0C0 00493170 00493240 00493210 00493270
+?$BlitTransLucent75ZReadWrite@G	16 位 RGB	透明（跳过色键）/75% 半透明/读写深度缓冲	007E5840	0049A1A0 00493930 00493A00 004939D0 00493A30
+?$BlitTransRemapDest@E	8 位调色板	透明（跳过色键）/重映射/目标混合	007E5B28	00499D40 00491670 004916E0 004916B0 00491710
+?$BlitTransRemapXlat@E	8 位调色板	透明（跳过色键）/重映射/调色板重映射（阵营颜色）	007E5B10	00499D60 00491740 004917C0 00491790 004917F0
+?$BlitTransXlat@E	8 位调色板	透明（跳过色键）/调色板重映射（阵营颜色）	007E5B58	00499D00 004914C0 00491530 00491500 00491560
+?$BlitTransXlat@G	16 位 RGB	透明（跳过色键）/调色板重映射（阵营颜色）	007E5A20	00499CA0 004912B0 00491330 00491300 00491360
+?$BlitTransXlatAlpha@G	16 位 RGB	透明（跳过色键）/调色板重映射（阵营颜色）/alpha 混合	007E57E0	0049A240 00493DF0 00493ED0 00493EA0 00493F00
+?$BlitTransXlatAlphaZRead@G	16 位 RGB	透明（跳过色键）/调色板重映射（阵营颜色）/alpha 混合/读深度缓冲	007E56F0	0049A420 00494B60 00494C40 00494D20 00494D50
+?$BlitTransXlatAlphaZReadWrite@G	16 位 RGB	透明（跳过色键）/调色板重映射（阵营颜色）/alpha 混合/读写深度缓冲	007E5630	0049A620 004958D0 004959F0 004959C0 00495A20
+?$BlitTransXlatMultWriteAlpha@G	16 位 RGB	透明（跳过色键）/调色板重映射（阵营颜色）/乘性写回 alpha	007E5750	0049A3A0 00494590 00494630 00494600 00494660
+?$BlitTransXlatWriteAlpha@G	16 位 RGB	透明（跳过色键）/调色板重映射（阵营颜色）/写回 alpha	007E5768	0049A380 00494490 00494530 00494500 00494560
+?$BlitTransXlatZRead@G	16 位 RGB	透明（跳过色键）/调色板重映射（阵营颜色）/读深度缓冲	007E5978	0049A000 00492B00 00492BA0 00492B70 00492BD0
+?$BlitTransXlatZReadWrite@G	16 位 RGB	透明（跳过色键）/调色板重映射（阵营颜色）/读写深度缓冲	007E5888	0049A140 00493600 004936B0 00493680 004936E0
+?$BlitTransZRemapXlat@E	8 位调色板	透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）	007E5B40	00499D20 00491590 00491610 004915E0 00491640
+?$BlitTransZRemapXlat@G	16 位 RGB	透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）	007E5A08	00499F40 00492590 00492610 004925E0 00492640
+?$BlitTransZRemapXlatAlpha@G	16 位 RGB	透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/alpha 混合	007E57C8	0049A280 00493F30 00494020 00493FF0 00494050
+?$BlitTransZRemapXlatAlphaZRead@G	16 位 RGB	透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/alpha 混合/读深度缓冲	007E56D8	0049A460 00494D90 00494EC0 00494E90 00494EF0
+?$BlitTransZRemapXlatAlphaZReadWrite@G	16 位 RGB	透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/alpha 混合/读写深度缓冲	007E5618	0049A660 00495A50 00495B60 00495B30 00495B90
+?$BlitTransZRemapXlatZRead@G	16 位 RGB	透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/读深度缓冲	007E5960	0049A020 00492C00 00492CC0 00492C90 00492CF0
+?$BlitTransZRemapXlatZReadWrite@G	16 位 RGB	透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/读写深度缓冲	007E5870	0049A160 00493710 004937D0 004937A0 00493800
+?$BlitTranslucent50NonzeroAlpha@G	16 位 RGB	半透明 50%：非零 alpha 写回	007E5720	0049A3E0 00494920 004949E0 004949B0 00494A10
+?$BlitTranslucent50ZeroAlpha@G	16 位 RGB	半透明 50%：零 alpha	007E5708	0049A400 00494A40 00494B00 00494AD0 00494B30
+?$BlitTranslucentWriteAlpha@G	16 位 RGB	半透明：写回 alpha	007E5738	0049A3C0 00494690 004948C0 00494890 004948F0
+?$RLEBlitTransDarken@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/变暗（阴影）	007E55A0	0049A7A0 00496250 004962D0
+?$RLEBlitTransDarkenZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/变暗（阴影）/读深度缓冲	007E5540	0049A860 00496820 004968F0
+?$RLEBlitTransDarkenZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/变暗（阴影）/读写深度缓冲	007E54B0	0049A980 00497390 00497470
+?$RLEBlitTransLucent25@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/25% 半透明	007E5570	0049A800 004964D0 00496570
+?$RLEBlitTransLucent25Alpha@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/25% 半透明/alpha 混合	007E5430	0049AB00 00497E60 00497F90
+?$RLEBlitTransLucent25AlphaZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/25% 半透明/alpha 混合/读深度缓冲	007E53E0	0049AC40 004988C0 00498A80
+?$RLEBlitTransLucent25AlphaZReadWarp@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/25% 半透明/alpha 混合/读深度缓冲/扭曲（超时空效果）	007E53B0	0049AD00 00498ED0 004990A0
+?$RLEBlitTransLucent25AlphaZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/25% 半透明/alpha 混合/读写深度缓冲	007E5360	0049AE40 00499A90 00499C60
+?$RLEBlitTransLucent25ZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/25% 半透明/读深度缓冲	007E5510	0049A8C0 00496BC0 00496CD0
+?$RLEBlitTransLucent25ZReadWarp@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/25% 半透明/读深度缓冲/扭曲（超时空效果）	007E54E0	0049A920 00496FB0 004970C0
+?$RLEBlitTransLucent25ZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/25% 半透明/读写深度缓冲	007E5480	0049A9E0 00497760 00497880
+?$RLEBlitTransLucent50@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/50% 半透明	007E5580	0049A7E0 004963F0 00496490
+?$RLEBlitTransLucent50Alpha@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/50% 半透明/alpha 混合	007E5440	0049AAC0 00497CF0 00497E20
+?$RLEBlitTransLucent50AlphaZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/50% 半透明/alpha 混合/读深度缓冲	007E53F0	0049AC00 004986D0 00498880
+?$RLEBlitTransLucent50AlphaZReadWarp@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/50% 半透明/alpha 混合/读深度缓冲/扭曲（超时空效果）	007E53C0	0049ACC0 00498CD0 00498E90
+?$RLEBlitTransLucent50AlphaZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/50% 半透明/alpha 混合/读写深度缓冲	007E5370	0049AE00 00499860 00499A50
+?$RLEBlitTransLucent50ZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/50% 半透明/读深度缓冲	007E5520	0049A8A0 00496A80 00496B80
+?$RLEBlitTransLucent50ZReadWarp@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/50% 半透明/读深度缓冲/扭曲（超时空效果）	007E54F0	0049A900 00496E60 00496F70
+?$RLEBlitTransLucent50ZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/50% 半透明/读写深度缓冲	007E5490	0049A9C0 00497610 00497720
+?$RLEBlitTransLucent75@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/75% 半透明	007E5590	0049A7C0 00496310 004963B0
+?$RLEBlitTransLucent75Alpha@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/75% 半透明/alpha 混合	007E5450	0049AA80 00497B80 00497CB0
+?$RLEBlitTransLucent75AlphaZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/75% 半透明/alpha 混合/读深度缓冲	007E5400	0049ABC0 004984D0 00498690
+?$RLEBlitTransLucent75AlphaZReadWarp@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/75% 半透明/alpha 混合/读深度缓冲/扭曲（超时空效果）	007E53D0	0049AC80 00498AC0 00498C90
+?$RLEBlitTransLucent75AlphaZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/75% 半透明/alpha 混合/读写深度缓冲	007E5380	0049ADC0 00499650 00499820
+?$RLEBlitTransLucent75ZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/75% 半透明/读深度缓冲	007E5530	0049A880 00496930 00496A40
+?$RLEBlitTransLucent75ZReadWarp@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/75% 半透明/读深度缓冲/扭曲（超时空效果）	007E5500	0049A8E0 00496D10 00496E20
+?$RLEBlitTransLucent75ZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/75% 半透明/读写深度缓冲	007E54A0	0049A9A0 004974B0 004975D0
+?$RLEBlitTransRemapDest@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/重映射/目标混合	007E5AE0	00499DE0 004919B0 00491A30
+?$RLEBlitTransRemapDestZRead@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/重映射/目标混合/读深度缓冲	007E5AA0	00499E60 00491D90 00491E60
+?$RLEBlitTransRemapDestZReadWrite@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/重映射/目标混合/读写深度缓冲	007E5A60	00499EE0 00492250 00492330
+?$RLEBlitTransRemapXlat@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/重映射/调色板重映射（阵营颜色）	007E5AD0	00499E00 00491A70 00491B00
+?$RLEBlitTransRemapXlatZRead@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/重映射/调色板重映射（阵营颜色）/读深度缓冲	007E5A90	00499E80 00491EA0 00491F90
+?$RLEBlitTransRemapXlatZReadWrite@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/重映射/调色板重映射（阵营颜色）/读写深度缓冲	007E5A50	00499F00 00492370 00492480
+?$RLEBlitTransXlat@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/调色板重映射（阵营颜色）	007E5B00	00499D80 00491820 004918A0
+?$RLEBlitTransXlat@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/调色板重映射（阵营颜色）	007E55C0	0049A760 004960A0 00496130
+?$RLEBlitTransXlatAlpha@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/调色板重映射（阵营颜色）/alpha 混合	007E5470	0049AA00 004978C0 004979D0
+?$RLEBlitTransXlatAlphaZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/调色板重映射（阵营颜色）/alpha 混合/读深度缓冲	007E5420	0049AB40 00497FD0 00498150
+?$RLEBlitTransXlatAlphaZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/调色板重映射（阵营颜色）/alpha 混合/读写深度缓冲	007E53A0	0049AD40 004990E0 00499280
+?$RLEBlitTransXlatZRead@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/调色板重映射（阵营颜色）/读深度缓冲	007E5AC0	00499E20 00491B40 00491C10
+?$RLEBlitTransXlatZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/调色板重映射（阵营颜色）/读深度缓冲	007E5560	0049A820 004965B0 00496690
+?$RLEBlitTransXlatZReadWrite@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/调色板重映射（阵营颜色）/读写深度缓冲	007E5A80	00499EA0 00491FD0 004920C0
+?$RLEBlitTransXlatZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/调色板重映射（阵营颜色）/读写深度缓冲	007E54D0	0049A940 00497100 004971F0
+?$RLEBlitTransZRemapXlat@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）	007E5AF0	00499DC0 004918E0 00491970
+?$RLEBlitTransZRemapXlat@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）	007E55B0	0049A780 00496170 00496210
+?$RLEBlitTransZRemapXlatAlpha@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/alpha 混合	007E5460	0049AA40 00497A10 00497B40
+?$RLEBlitTransZRemapXlatAlphaZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/alpha 混合/读深度缓冲	007E5410	0049AB80 004982E0 00498490
+?$RLEBlitTransZRemapXlatAlphaZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/alpha 混合/读写深度缓冲	007E5390	0049AD80 00499430 00499610
+?$RLEBlitTransZRemapXlatZRead@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/读深度缓冲	007E5AB0	00499E40 00491C50 00491D50
+?$RLEBlitTransZRemapXlatZRead@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/读深度缓冲	007E5550	0049A840 004966D0 004967E0
+?$RLEBlitTransZRemapXlatZReadWrite@E	8 位调色板	RLE 压缩路径/透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/读写深度缓冲	007E5A70	00499EC0 00492100 00492210
+?$RLEBlitTransZRemapXlatZReadWrite@G	16 位 RGB	RLE 压缩路径/透明（跳过色键）/深度重映射/调色板重映射（阵营颜色）/读写深度缓冲	007E54C0	0049A960 00497230 00497350

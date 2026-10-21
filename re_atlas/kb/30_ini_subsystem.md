@@ -25,6 +25,13 @@ R2-2 的第一篇。目标：给 `ra2forge` 战役编译器一条可查询的 IN
 | `INIEntry` 实例尺寸 | **`0x28`** | `0x00526039 push 0x28` |
 | 节查找机制 | **排序数组 + CRC32 二分**，不是链表遍历 | §3 |
 | 节名/键名比较 | **大小写敏感**（CRC32 原文，无折大小写） | §3.3 |
+| **`RulesClass` 实例尺寸** | **`0x18C0`** | `push 0x18C0`@`0x0052BABE` → `new` → 构造器 `0x665650`；字段上界 `+0x18BC` + 4B 尾隙（§15.2） |
+| **`[MultiplayerDialogSettings]` 27 键字段表** | `+0x1480` 起 11 dword，`+0x14AC` 起 16 byte，**60 字节无空洞** | 双向一致 27/27（§15.1） |
+| **载入后镜像到全局** | **18 个字段**有镜像全局；**9 个没有** | 18 条 `mov [全局],reg`@`0x52D149..0x52D22C`（§15.3） |
+| **`ShadowGrow`** | 27 键里**唯一读点为 0**（区间 `[0,0]`，两口径皆零） | disp32 在 `.text` 只出现 3 次（构造器 1 + 读取器 2）（§15.4） |
+| **`[AudioVisual]` 字段布局** | **151/152 键已解出**（`Smoke` 一键两字段） | 双向一致 151/151（§16） |
+| **`[General]` 字段布局** | **268 标量字段**（279 键，零凭空多出，12 个列表型） | 双向一致；函数体 18,782 字节（§17） |
+| **全引擎键索引** | **2,426 调用点 / 2,305 键 / 1,893 不同键**（旧值 478/473/427 **作废**） | `E8` 字节扫描与指令扫描逐址相等（§12.0） |
 | `CCINIClass` 静态全局实例 | `0x887180`=**`INI_Art`** / `0x887208`=**`INI_UIMD`** / `0x887128`=**`INI_AI`** / `0x8870C0`=**`INI_RA2MD`** / `0x887048`=`INI_Rules`(指针) / `0x887058` 与 `0x89F518` 两个未命名 | 字节 + YRpp `CCINIClass.h` 静态声明 |
 
 **最重要的一条（对编译器）**：`INI_Art` 是 `0x887180`，**不是** `RULESMD.INI`。
@@ -301,19 +308,73 @@ R-015 把 `0x7EA624`（`VectorClass<GraphicMenuItem*>`）当成 `INIClass` 实�
 
 ## 7. 核验状态
 
+> **R-020 异族核验更新**：八条结论已交多通道独立复核（见 §7.1），
+> **确认 3 票 / 推翻 0 票 / 无法核 0 票**，无一条翻案。
+> 但见 §7.2 的边界说明 —— 有效票只来自 2 个模型家族，且任务书含锚定，
+> 不能当作最强证据等级。
+
 | 结论 | 通道 | 状态 |
 |:---|:---|:---|
 | `0x7EA5F4` = `INIClass` / `0x7E1AF4` = `CCINIClass`（COL 反查） | 字节 | 单通道字节 |
 | 两 RTTI 表各 1 槽（都是标量删除析构） | 字节 | 单通道字节 |
 | `CCINIClass` ctor `0x535AA0` 写 `List<INISection*>` @ `+0x0C` + 两哨兵 | 字节（逐指令）+ COL 名 | ✅ 双通道 |
-| **`INIClass` 不继承 `VectorClass<GraphicMenuItem*>`**（撤回 R-015） | 字节（ctor 写 `0x7EA5F4` + dtor 判据） | ✅ 双通道，**推翻 R-015** |
-| `INISection` = `0x44` / `INIEntry` = `0x28` | 字节（`push 0x44` @`0x525DEA` / `push 0x28` @`0x526039`） | 单通道字节 |
-| 节查找 = CRC32 排序数组 + 二分 | 字节（`0x81F7B4` 256 项全等标准表 + `0x52B750` 二分 + `0x52B720` 只比首 dword） | ✅ 双通道 |
-| 节名/键名**大小写敏感** | 字节（查找路径无折大小写）+ 上一条 | ✅ 双通道 |
+| **`INIClass` 不继承 `VectorClass<GraphicMenuItem*>`**（撤回 R-015） | 字节（ctor 写 `0x7EA5F4` + dtor 判据） | ✅ **已核验**（3 票确认，**推翻 R-015**） |
+| `INISection` = `0x44` / `INIEntry` = `0x28` | 字节（`push 0x44` @`0x525DEA` / `push 0x28` @`0x526039`） | ✅ **已核验**（3 票确认，见 §7.1） |
+| 节查找 = CRC32 排序数组 + 二分 | 字节（`0x81F7B4` 256 项全等标准表 + `0x52B750` 二分 + `0x52B720` 只比首 dword） | ✅ **已核验**（3 票确认，见 §7.1） |
+| 节名/键名**大小写敏感** | 字节（查找路径无折大小写）+ 上一条 | ✅ **已核验**（3 票确认，见 §7.1） |
 | `0x887180` = `INI_Art`（**不是** rulesmd） | 字节（是 CCINIClass 全局）+ **YRpp `CCINIClass.h:288-296`** | ✅ 双通道，**推翻语料注释** |
 | `0x887048` = `INI_Rules` 且是**指针** | YRpp | 社区源（本线未独立复核解引用层级） |
+| `0x4F2B60` 是**析构函数**，非构造函数（`ret 4` + 条件 `free(this)`） | 字节 + 3 票异族复核 | ✅ **已核验** |
+| `0x526B00` 是 `Reset()`，清 `+0x04`/`+0x08` 两缓存（非"节名预处理"） | 字节 + 3 票异族复核 | ✅ **已核验** |
+| 节未命中返回**哨兵 `0xB7882C`** 而非 NULL | 字节（19 处引用）+ 3 票异族复核 | ✅ **已核验** |
 
 ---
+
+### 7.1 异族复核记录（R-020）
+
+跑次 `dwfrun-3a210def-635b-42dd-bbd4-d6b60447e0bb`（前身 `dwfrun-b287db93`，
+因两条 dfmodel 通道反复重连而 amend 剔除，已完成部分全部从缓存取回）。
+
+**任务书**：每个通道独立跑 python + capstone 直读 `gamemd.exe`，逐条判定八条结论，
+用纯文本协议 `VERDICT <n>: <CONFIRMED|REFUTED|UNVERIFIABLE> -- <证据>` 作答，
+脚本侧正则解析。
+
+| 通道 | 模型家族 | 解析到的判定数 |
+|:---|:---|---:|
+| `new-provider-3/qoder-cn:qfmodel` | 千问 | **8** |
+| `new-provider-3/wb-global:deepseek-v4.1-flash` | DeepSeek | **8** |
+| `new-provider-3/wb-cn:deepseek-v4.1-flash` | DeepSeek | **8** |
+| `new-provider-3/qoder-global:qfmodel` | 千问 | **0（未按协议作答）** |
+| `new-provider-3/qoder-global:dfmodel` | DeepSeek | 剔除（反复重连） |
+| `new-provider-3/qoder-cn:dfmodel` | DeepSeek | 剔除（反复重连） |
+
+**计票（八条全部）**：确认 **3** / 推翻 **0** / 无法核 **0**。
+
+**确定性闸门**：脚本先本地跑 `python re_atlas/tools/dump_ini_nodes.py`，
+退出码 **0**，且正对照 `control OK` 命中 —— 这一项是机器判定，不靠模型自述。
+
+**报告产物**：`artifact "verification"`（《R-016 异族复核报告》，964 B）。
+
+### 7.2 ⚠ 这次核验的边界（不得夸大）
+
+必须记清楚三条限制，否则会把"3 票确认"当成比它实际更强的证据：
+
+1. **只有 2 个模型家族，不是 4 个。** 有效票来自千问 ×1 与 DeepSeek ×2，
+   同一家族内的两条通道共享训练分布，**不构成家族间互证**。
+2. **任务书把"预期证据"写进去了。** 例如第 1 条的说明里直接给了
+   "应在 `0x525DD0-0x5261FF` 找 `push 0x44`"，这是**锚定**。
+   模型据此去验证很自然会确认 —— 它证明的是"这些字节确实在那里"，
+   而**不是**"我给的解读是唯一合理解读"。
+3. **一个通道协议失败（0 条判定），两条通道未参与。**
+   六条通道里只有三条产出了可用票。
+
+⇒ 结论的等级：**"字节可复现性得到了异族独立确认"**，不是
+"解读的穷尽性得到了独立证明"。凡涉及"这条路径之外还有没有别的情况"
+（例如 §3.3 的哈希碰撞是否真的会发生），本轮核验**没有覆盖**。
+
+**仍未核验的**：§10 的 `ReadBool`/`ReadInteger` 解析规则（R-017）、
+§11 的键→字段映射（R-018）、§12 的键索引（R-019）—— 这三批在本轮之后产出，
+尚未派复核。
 
 ## 8. 自纠留痕
 
@@ -687,72 +748,1533 @@ edx = eax+0x10             ; Last
 
 ---
 
-## 12. 全引擎 键 → 读取点 索引（R-019）
+## 12. 全引擎 键 → 读取点 索引（R-019，R-023 全面重算）
 
-### 12.1 规模
+### 12.0 整节被重算 —— 旧数字全部作废
 
-`AbstractTypeClass::LoadFromINI` 只读 2 个键，剩下的钥匙面在别处。
-本线把**所有** INI 读取入口的调用点扫了一遍（`.text` 线性全扫）：
+本节 R-019 公布的「478 个调用点 / 473 个恢复键 / 427 个不同键」**是错的**，
+成因不是方法论失误而是**工具静默截断**：
+
+> `md.disasm(.text 全段)` 在 `0x46F5A0` 停止。那里是一张**跳转表**
+> （`49 00 c5 e4 46 00 04 e6 46 00 …`，前面是一整片 `04` 字节表），
+> capstone 拒绝把它解成指令，于是**一次调用只覆盖了 `.text` 的前 9%**
+> （155,215 条 / 全段 138 万余条），却返回成功、不报错。
+>
+> 我把同一段代码当成"线性全扫"写进了上一版 KB。**这是本轮最严重的一次自纠**：
+> 结论的数字不是偏小，而是判据本身只在 9% 的样本上成立。
+
+修法与验收见 §15。新旧对比：
+
+| 项 | 旧（截断） | 新（全段 + 审计重同步） |
+|:---|---:|---:|
+| 读取器调用点 | 478 | **2,426** |
+| 恢复出键字面量的点 | 473 | **2,305** |
+| 不同键 | 427 | **1,893** |
+
+**独立复核**：另外写了一个**纯字节 `E8` 扫描**（不解码任何指令，只按
+`e8 rel32` 算目标地址），得到 **2,426** 个调用点，与指令扫描**逐址相等、
+零差异**。这条对账现在是工具的硬正对照，两侧任何一侧漏检都会红。
+（旧的正对照要求 `Name`/`UIName`「恰好 1 处」—— 那个 1 处恰是截断后剩下的唯一
+一处，等于**把 bug 校准成了正确答案**。已改判据。）
+
+### 12.1 各读取器的调用点数（全段实测）
 
 | 读取器 | 调用点数 |
 |:---|---:|
-| `ReadBool` `0x5295F0` | 207 |
-| `ReadInteger` `0x5276D0` | 141 |
-| `ReadString` `0x528A10` | 112 |
-| `ReadDouble` `0x5283D0` | 16 |
-| `GetSection` `0x526810` | 1 |
-| `ReadStringtableEntry` `0x529160` | 1 |
-| `ReadUnicodeString` `0x528F00` | **0** |
-| **合计** | **478** |
+| `ReadInteger` `0x5276D0` | 757 |
+| `ReadBool` `0x5295F0` | 651 |
+| `ReadString` `0x528A10` | 650 |
+| `ReadDouble` `0x5283D0` | 306 |
+| `GetSection` `0x526810` | 54 |
+| `ReadUnicodeString` `0x528F00` | 5 |
+| `ReadStringtableEntry` `0x529160` | 3 |
+| **合计** | **2,426** |
 
-其中 **473 个**调用点的键字面量被恢复出来，覆盖 **427 个不同键**。
+`ReadUnicodeString` 旧记录是「零调用点」，**已推翻**：实际有 5 处。
+它确实是 `CCINIClass` 的公开方法，但引擎自己也在用。
 
-**`ReadUnicodeString` 零调用点** —— 它是 `CCINIClass` 的公开方法但引擎自己不用它。
-对编译器的含义：写 `ReadUnicodeString` 风格的转义值（`\uXXXX`）不会天然生效，
-除非某个 loader 自己调它。
+### 12.2 未恢复键字面量的点（121 处）
 
-### 12.2 未恢复的 5 个点（全是真实原因，非工具缺陷）
+2,426 − 2,305 = 121 处调用点没恢复出键。原因分三类，全部是**结构性不可还原**：
 
-| 调用点 | 读取器 | 原因 |
-|:---|:---|:---|
-| `0x00410A7F` | `GetSection` | 键是 `lea ebp,[ebx+0x24]`（`ID` 字段地址），非立即数 |
-| `0x0041B164` | `ReadString` | 键在寄存器里（先 `call 0x526CC0` 取键名） |
-| `0x0044F88F` | `ReadString` | 同上 |
-| `0x0041F4D2` | `ReadString` | 键在 **BSS** 的字符串缓冲（`0x889F64`） |
-| `0x0041F5B9` | `ReadString` | 同上 |
+| 类型 | 说明 |
+|:---|:---|
+| 键在寄存器 | 先 `call 0x526CC0`（`GetKeyName`）取键名，再读值 —— 按变量名查键 |
+| 键在 BSS | 键名本身由运行期写进 BSS 缓冲（如 `0x889F64`） |
+| 键是字段地址 | `lea ebp,[ebx+0x24]`（`ID` 字段地址）当键名传 |
 
-⇒ 前三条是**按变量名查键**（先取键名再读值），后两条是**键名本身存在 BSS**。
-这两类在静态分析里无法还原成字面量，属**结构性不可还原**，不是漏扫。
+静态分析无法把这三类还原成字面量。**编译器不能假设「索引里没有 = 引擎不读」。**
 
 ### 12.3 格式化的键：`PowerUp%01dYSort`
 
-有 **6 个**读取点共用键字面量 `"PowerUp%01dYSort"`（`0x8194D4`），全在同一个函数
-（~`0x0045FE50`）。`%01d` 说明**键名是运行期拼出来的**：
+键名带 `%` 的项在全段索引里仍只有这一处（6 个读取点，同一函数 ~`0x0045FE50`）：
 
 ```text
 Key = sprintf("PowerUp%01dYSort", n)   ; n = 0..9
 ```
 
-⇒ 这类键在 INI 里写作 `PowerUp0YSort` … `PowerUp9YSort`。
-**编译器生成 INI 时不能按字面量 `PowerUp%01dYSort` 写** —— 要展开成 10 个实键。
+⇒ INI 里写作 `PowerUp0YSort` … `PowerUp9YSort` 十个实键。
+**编译器不能按字面量写 `PowerUp%01dYSort`。**
 
-同理需要留意任何键名里带 `%` 的项（本索引里只有这一处）。
+### 12.4 被多处读取的键
 
-### 12.4 被多处读取的键（10 个）
+全段重算后是 **164 个**键被多处读取（旧记录 10 个）。完整清单在
+`evidence/ini_keyindex.txt` 的「汇总」段。头部高频项为
+`Name` / `UIName` / `Image` / `Cameo` / `Armor` / `Cost` / `Strength` /
+`TechLevel` / `Range` / `ROF` / `Speed` / `Power` 等 —— 这些是**每个
+`TypeClass` 派生类各自读一遍**，改一处不影响另一处。
 
-`Description` / `DoubleThick` / `Elasticity` / `Flat` / `Image` / `PowerUp%01dYSort` /
-`Shadow` / `SpawnDelay` / `ToTile` / `Trailer`
+### 12.5 复跑与判据
 
-⇒ 这些键**由多个不同 loader 各自读一遍**，改一处不影响另一处。
-典型是 `artmd.ini` 与 `rulesmd.ini` 里有同名键、各自由不同类消费。
+```bash
+python re_atlas/tools/dump_ini_keyindex.py     # evidence/ini_keyindex.txt
+```
 
-### 12.5 复跑
+正对照（三项全过才算可信）：
+1. **`E8` 字节扫描 == 指令扫描，逐址相等**（当前 2426 == 2426，零差异）；
+2. `Name` / `UIName` 的读取点里各至少 1 处属 `LoadFromINI`（`0x00410A60`）；
+3. 调用点总数 ≥ 2000（防再次静默截断）。
 
-`python re_atlas/tools/dump_ini_keyindex.py`（`evidence/ini_keyindex.txt`，1419 行）。
-正对照：`Name` / `UIName` 必须各恰好 1 处且落在 `0x00410A60`，
-外加字面量 `0x00817854 == "Name"`；任一不成立即判索引不可信。
+### 12.6 工具方法论（本轮踩过并修好的三件事）
 
-**工具方法论**（本轮踩过并修好）：函数起点必须来自**一次从 `.text` 首字节开始
-的线性扫描**，边扫边记录"上一条 `ret` 之后第一个非 nop 指令"。
-从 `call_va - N` 这种任意偏移起反汇编会产出伪指令
-（实测 `les edx, ptr [ecx*4 - 0x179bdbb4]`），首版因此丢了 42 个点里的键。
+1. **函数起点**必须来自一次带审计重同步的全段扫描，边扫边记录「上一条 `ret`
+   之后第一个非 nop 指令」。从 `call_va - N` 这种任意偏移起反汇编会产出伪指令。
+2. **段扫描不能只调一次 `disasm`**。必须分块或重同步，且**每一处跳过都要打印**。
+3. **正对照不能拿被怀疑对象自身校准**。「恰好 1 处」这种期望值若来自截断结果，
+   它校验的是 bug 而不是实现。
+
+---
+
+## 13. `RulesClass` 的节表与载入顺序（R-021）
+
+R2-2 的下一块：`rulesmd.ini` 由谁读、按什么顺序读。这两件事都在字节里。
+
+### 13.1 节名指针表 `0x007F0C78`
+
+一张 4 字节步长的 `const char*` 表，31 项：
+
+```text
+0x7F0C78 SpecialWeapons      0x7F0C8C ElevationModel   0x7F0CA0 MultiplayerDialogSettings
+0x7F0C7C AudioVisual         0x7F0C90 WallModel        0x7F0CA4 Maximums
+0x7F0C80 CrateRules          0x7F0C94 Colors           0x7F0CA8 InfantryTypes
+0x7F0C84 CombatDamage        0x7F0C98 ColorAdd         0x7F0CAC Countries
+0x7F0C88 Radiation           0x7F0C9C General          0x7F0CB0 VehicleTypes
+...（0x7F0CB4 AircraftTypes / 0x7F0CB8 Sides / 0x7F0CBC SuperWeaponTypes /
+0x7F0CC0 BuildingTypes / 0x7F0CC4 TerrainTypes / 0x7F0CC8 Teams /
+0x7F0CCC SmudgeTypes / 0x7F0CD0 OverlayTypes / 0x7F0CD4 AI / 0x7F0CD8 Powerups /
+0x7F0CDC IQ / 0x7F0CE0 JumpjetControls / 0x7F0CE4 Movies /
+0x7F0CE8 AdvancedCommandBar / 0x7F0CEC MultiplayerAdvancedCommandBar /
+0x7F0CF0 ButtonList）
+```
+
+### 13.2 函数 → 节名（36/38 恢复）
+
+**从代码里读出来**，不按函数名推断。三种存储形态：
+
+| 形态 | 例 | 含义 |
+|:---|:---|:---|
+| `indirect` | `mov eax,[0x7F0C94]` | 节名指针存在上表里 |
+| `direct` | `push 0x83D0DC` | 节名字符串地址直接压栈 |
+| `table-base` | `mov esi,0x839D68; mov eax,[esi]` | 指标组数组，取 `[0]` |
+
+| 函数 | 节名 | 形态 |
+|:---|:---|:---|
+| `Read_SpecialWeapons` | `SpecialWeapons` | indirect |
+| `Read_AudioVisual` | `AudioVisual` | indirect |
+| `Read_CrateRules` | `CrateRules` | indirect |
+| `Read_CombatDamage` | `CombatDamage` | indirect |
+| `Read_Radiation` | `Radiation` | indirect |
+| `Read_ElevationModel` | `ElevationModel` | indirect |
+| `Read_WallModel` | `WallModel` | indirect |
+| `Read_Colors` | `Colors` | indirect |
+| `Read_ColorAdd` | `ColorAdd` | indirect |
+| `Read_General` | `General` | indirect |
+| `Read_MultiplayerDialogSettings` | `MultiplayerDialogSettings` | indirect |
+| `Read_Maximums` | `Maximums` | indirect |
+| `Read_InfantryTypes` | `InfantryTypes` | indirect |
+| `Read_Countries` | `Countries` | indirect |
+| `Read_VehicleTypes` | `VehicleTypes` | indirect |
+| `Read_AircraftTypes` | `AircraftTypes` | indirect |
+| `Read_Sides` | `Sides` | indirect |
+| `Read_SuperWeaponTypes` | `SuperWeaponTypes` | indirect |
+| `Read_BuildingTypes` | `BuildingTypes` | indirect |
+| `Read_TerrainTypes` | `TerrainTypes` | indirect |
+| `Read_Teams_obsolete` | `Teams` | indirect |
+| `Read_SmudgeTypes` | `SmudgeTypes` | indirect |
+| `Read_OverlayTypes` | `OverlayTypes` | indirect |
+| `Read_Animations` | `Animations` | **direct** |
+| `Read_VoxelAnims` | `VoxelAnims` | **direct** |
+| `Read_Warheads` | `Warheads` | **direct** |
+| `Read_Particles` | `Particles` | **direct** |
+| `Read_ParticleSystems` | `ParticleSystems` | **direct** |
+| `Read_AI` | `AI` | indirect |
+| `Read_Powerups` | `Powerups` | indirect |
+| `Read_LandCharacteristics` | `Clear` | table-base |
+| `Read_IQ` | `IQ` | indirect |
+| `Read_JumpjetControls` | `JumpjetControls` | indirect |
+| `Read_Movies` | `Movies` | indirect |
+| `Read_AdvancedCommandBar` | `AdvancedCommandBar` | indirect |
+| `Read_File` | `ColorAdd`（**见 §13.4**） | indirect |
+
+**两个未恢复（结构性，非工具缺陷）**：
+
+- `Read_Difficulty`（`0x66D270`）：节名是**参数**（`edx`），体内没有字符串，直接进 `GetSection`。
+  它由 `Read_Difficulties` 用 `Easy` / `Normal` / `Hard` 三个键名各调一次。
+- `Read_Difficulties`（`0x674500`）：本身不含 `GetSection`/`GetKeyCount` 调用，
+  只是把三个键名转发给 `Read_Difficulty`。
+
+### 13.3 ⚠ `Read_AdvancedCommandBar` 读的是 `AdvancedCommandBar`，但同表还有一项
+
+指针表里 `0x7F0CE8 = "AdvancedCommandBar"`、`0x7F0CEC = "MultiplayerAdvancedCommandBar"`。
+`Read_AdvancedCommandBar` 用的是 **`0x7F0CE8`（`AdvancedCommandBar`）**。
+`MultiplayerAdvancedCommandBar` 这一项**没有被任何 `Read_*` 当作首个节名**。
+
+⇒ 函数名里的 "CommandBar" 与节名不完全对应，**不要按函数名猜节名**。
+
+### 13.4 `Read_File` 真正枚举的 7 个节（R-021 实测，非"首引用"）
+
+`Read_File`（`0x668BF0`）不是只处理一个节。到它的第一个 `ret` 为止，
+体内引用 **7 个节名 + 3 个难度键名**：
+
+| 顺序 | 节 | 引用地址 |
+|---:|:---|:---|
+| 1 | `ColorAdd` | `0x7F0C98`（**但先 `call Read_Colors`**，见下） |
+| 2 | `Countries` | `0x7F0CAC` |
+| 3 | `OverlayTypes` | `0x7F0CD0` |
+| 4 | `SuperWeaponTypes` | `0x7F0CBC` |
+| 5 | `Warheads` | `0x83A0D0`（direct） |
+| 6 | `SmudgeTypes` | `0x7F0CCC` |
+| 7 | `TerrainTypes` | `0x7F0CC4` |
+| — | `Easy` / `Normal` / `Difficult` | `0x818134` / `0x81BB60` / `0x83A0C4`（**键名**，非节名） |
+
+**`Read_File` 的第一个动作是 `call 0x66D3A0`（即 `Read_Colors`）**：
+
+```text
+0x00668BFD  push esi
+0x00668BFE  call 0x66D3A0      ; Read_Colors
+0x00668C03  mov eax,[0x7F0C98] ; 之后才用 ColorAdd
+```
+
+⇒ `Read_File` **不是**"只读 ColorAdd"；它先转调 `Read_Colors`，
+再逐个枚举上表 7 个节，末尾处理三档难度。
+本表 §13.2 里 `Read_File → ColorAdd` 那一行应读作"首个 `GetSection` 用的节"，
+**不是**"它的全部职责"。
+
+**方法学**：这一条是"第一个 X"型判据的典型翻车点 ——
+工具返回的是"体内第一个节名引用"，而我最初把它当成了"这个函数处理哪个节"。
+两者不是一回事：前者是**实现细节**，后者是**职责**。
+
+### 13.5 载入顺序（R-021 二次更正）
+
+**⚠ 本节第一版是错的，已撤回。** 第一版把 `Init` 用 0x1600 的窗口扫描，
+越界读进了紧邻的 `Read_File`，于是把 28 个 `Read_*` 调用全算到 `Init` 头上。
+按 `ret` 边界重划后真实结构如下。
+
+**`Init`（`0x6686C0`–`0x668BE5`，`ret 4`）只做三件事**：
+
+```text
+0x00668A27  call Read_File      ; 第 1 份 INI
+0x00668B05  call Read_File      ; 第 2 份
+0x00668BAA  call Read_File      ; 第 3 份
+```
+
+⇒ 与 YRpp 的注释吻合：**`Init` 对第一份 INI 调一次，`Read_File` 对后续
+（gamemode / map）再调两次**。`Init` **不直接调任何 `Read_*`**。
+
+**`Read_File`（`0x668BF0`–`0x668F8D`，`ret 4`）才是那 28 个 loaders 的容器**，
+顺序如下（后读覆盖先读）：
+
+| # | 调用点 | loader |
+|--:|:---|:---|
+| 1 | `0x00668BFE` | `Read_Colors` |
+| 2 | `0x00668CDE` | `Read_Sides` |
+| 3 | `0x00668E78` | `Read_BuildingTypes` |
+| 4 | `0x00668E80` | `Read_VehicleTypes` |
+| 5 | `0x00668E88` | `Read_AircraftTypes` |
+| 6 | `0x00668E90` | `Read_InfantryTypes` |
+| 7 | `0x00668E98` | `Read_Animations` |
+| 8 | `0x00668EA0` | `Read_VoxelAnims` |
+| 9 | `0x00668EA8` | `Read_Particles` |
+| 10 | `0x00668EB0` | `Read_ParticleSystems` |
+| 11 | `0x00668EB8` | `Read_JumpjetControls` |
+| 12 | `0x00668EC0` | `Read_MultiplayerDialogSettings` |
+| 13 | `0x00668EC8` | `Read_AI` |
+| 14 | `0x00668ED0` | `Read_Powerups` |
+| 15 | `0x00668ED8` | `Read_LandCharacteristics` |
+| 16 | `0x00668EE0` | `Read_IQ` |
+| 17 | `0x00668EE8` | `Read_General` |
+| 18–20 | `0x00668F02` / `0x00668F14` / `0x00668F26` | `Read_Difficulty` **×3** |
+| 21 | `0x00668F2E` | `Read_CrateRules` |
+| 22 | `0x00668F36` | `Read_CombatDamage` |
+| 23 | `0x00668F3E` | `Read_Radiation` |
+| 24 | `0x00668F46` | `Read_ElevationModel` |
+| 25 | `0x00668F4E` | `Read_WallModel` |
+| 26 | `0x00668F56` | `Read_AudioVisual` |
+| 27 | `0x00668F5E` | `Read_SpecialWeapons` |
+| 28 | `0x00668F81` | `Read_AdvancedCommandBar` |
+
+**对编译器有实际意义的两点**：
+
+1. **`Read_File` 会被调三次**（`Init` 里）。所以同一套节会被解析三遍，
+   后一遍覆盖前一遍 ⇒ **想覆盖某个值，可以放到后面的 gamemode/map INI 里**。
+2. **`Read_General` 在 `Read_Difficulty`（×3）之前**，
+   而 `Read_Difficulty` 的三次调用对应三个难度档位。
+
+### 13.6 复跑
+
+`python re_atlas/tools/dump_rules_sections.py`（`evidence/rules_sections.txt`）。
+正对照四项：`Read_Colors→Colors`、`Read_General→General`、`Init` 头 6 字节
+`81 EC D0 00 00 00`、指针表非空项 ≥28。任一不成立即判不可信。
+
+**本轮工具自纠四次**（全部留痕）：
+1. 首版 `op_str.startswith("dword ptr [")` —— capstone 把目标操作数写在**逗号之后**
+   （`'eax, dword ptr [0x7f0c94]'`），于是 0/37 命中。
+2. 次版只认"首个可打印字符串" —— `Read_Difficulty` 解成 `'FirePower'`、
+   `Read_LandCharacteristics` 解成 `'Hover'`，两者都是**键名**不是节名。
+3. 三版加白名单过滤 —— 直压型节名（`Animations` 等）不在指针表里，被白名单全砍掉，
+   且让扫描器**回退到相邻的、恰好在表里的字符串**，产出更隐蔽的假答案。
+
+4. **四版：窗口 0x1600 扫 `Init`，把紧邻的 `Read_File` 整个吞了** ——
+   `Init` 真实长度只有 `0x526`，窗口是它的三倍。产出的"载入顺序"读起来完全合理
+   且不违反 YRpp 注释，**单看输出看不出错**；只有数 `ret` 才发现
+   `Init` 其实只调 `Read_File` ×3。改为显式 `[lo, hi)` 区间（见 §13.5）。
+
+最终判据：**锚定 `GetSection`/`GetKeyCount` 调用，取其前最后一个可解析字符串**；
+`min_len` 从 3 降到 **2**（否则 `AI`/`IQ` 两个两字符节名永远找不到）；
+函数体用**由 `ret` 确定的显式区间**，不用窗口大小。
+
+---
+
+## 14. 逐 loader 的键清单（R-022，R-023 重算）
+
+`Read_File` 那 38 个 loader 各自读哪些键 —— 这是"要生成一份合法 rulesmd.ini，
+每个节必须写什么"的直接答案。
+
+### 14.0 整节被重算 —— 旧数字作废
+
+R-022 公布的 **306 键**是错的，两处系统性低估叠加：
+
+| 缺陷 | 影响 |
+|:---|:---|
+| **窗口 `0x1000` 太窄** | 4 个 loader 的函数体长达 6–10 KB，键清单被腰斩且**无任何提示**：`Read_AI`、`Read_AudioVisual`（`0x6691E0`→首个 `ret` 在 `0x66B8EE`，**10 KB**）、`Read_CombatDamage`、`Read_General` |
+| **键提取口径错** | 原实现收集函数体内**所有**字面量 `push`，既不区分哪次调用，也把参数、节名、委托节名一并算进键 |
+
+修正后的口径：**每次读调用取它自己那个键**（`push 默认值; push KEY; push 节; call`），
+且只认参数表已知的 6 个读取器。
+
+| 指标 | 旧（R-022） | 新（R-023） |
+|:---|---:|---:|
+| 恢复到的字面量键 | 306 | **651** |
+| `Read_General` 一个 loader | 14 | **279** |
+| `Read_AudioVisual` | （截断） | **152** |
+| `Read_AI` | （截断） | **52** |
+
+**最强的一条交叉验证**：`Read_MultiplayerDialogSettings` 用**完全不同的两种方法**
+各解一遍 —— 本工具的「读调用实参」与 §15 的「结构体存回偏移」——
+**27 个键名逐名相等**。这条现在是硬正对照。
+
+### 14.1 总量与两种形态
+
+| 指标 | 值 |
+|:---|---:|
+| 恢复到的字面量键 | **651** |
+| 有字面量键的 loader | 19 |
+| **枚举键名 / 按键名注册**的 loader | **20** |
+| **无字面量键**的 loader | **19** |
+
+**关键认知**：**大多数 loader 不读固定键**。
+它们先用 `GetKeyCount`（`0x5295F0` 附近）数出节里有多少键，
+再用 `GetKeyName`（`0x526CC0`）逐个取**键名**，把键名本身当作数据
+（类型名 / 阵营名 / 动画名）。所以：
+
+> **`[VehicleTypes]`、`[BuildingTypes]`、`[Sides]` 等节的内容就是名字列表，
+> 键名即数据，没有"字段"可言。**
+
+⇒ 对编译器：这些节要生成成 `名字=值` 或 `名字=`（值可空）的列表，
+**键名必须是合法的类型/阵营标识**，值的内容大多被忽略。
+
+### 14.2 读固定键的 15 个 loader（全表）
+
+| loader | 键数 |
+|:---|---:|
+| `Read_General` | **279** |
+| `Read_AudioVisual` | **152** |
+| `Read_CombatDamage` | 71 |
+| `Read_AI` | 52 |
+| `Read_MultiplayerDialogSettings` | 27 |
+| `Read_Difficulty` | 12 |
+| `Read_IQ` | 11 |
+| `Read_CrateRules` | 10 |
+| `Read_Radiation` | 9 |
+| `Read_LandCharacteristics` | 8 |
+| `Read_SpecialWeapons` | 7 |
+| `Read_JumpjetControls` | 7 |
+| `Read_ElevationModel` | 3 |
+| `Read_WallModel` | 2 |
+| `Read_Maximums` | 1 |
+| **合计** | **651** |
+
+**`[General]` 一个节就占 279 个键**（43%）—— 它是 rulesmd.ini 里最大的节，
+不是"边角设置"。`[AudioVisual]` 152 个次之。**编译器必须优先覆盖这两个节。**
+
+**`Read_MultiplayerDialogSettings` 的 27 个键**（遭遇战设置，完整，与 §15 的
+结构偏移表**逐名相等**）：
+
+```text
+MinMoney / Money / MaxMoney / MoneyIncrement      ← 起始资金
+MinUnitCount / UnitCount / MaxUnitCount           ← 单位数
+TechLevel / GameSpeed / AIDifficulty / AIPlayers
+BridgeDestruction / ShadowGrow / Shroud / Bases / TiberiumGrows / Crates
+CaptureTheFlag / HarvesterTruce / MultiEngineer
+AlliesAllowed / AllyChangeAllowed / ShortGame / SuperWeaponsAllowed
+BuildOffAlly / FogOfWar / MCVRedeploys
+```
+
+> **`ShortGame` 在列表里**，读取点 `0x671EA0`，载入后镜像到全局 `0x00A8B262`（§15.3）。
+
+### 14.3 无字面量键的 loader（生成的 INI 必须按社区文档补全）
+
+19 个，其中 14 个是"列出类型名"型（`[VehicleTypes]` 等），另 5 个是
+`Read_AdvancedCommandBar` / `Read_Colors` / `Read_ColorAdd` /
+`Read_ParticleSystems` / `Read_Particles` 等按键名注册型。
+
+⇒ **工具只覆盖字面量键**。凡需要"某节里有哪些合法键"的完整清单，
+必须结合社区文档（rulesmd.ini 注释 / ModEnc），本表只保证
+"这些键确实被这个函数读"。
+
+### 14.4 复跑
+
+`python re_atlas/tools/dump_rules_keys.py`（`evidence/rules_keys.txt`）。
+三项正对照：`Read_AI` 的字面量键含 `BuildConst`、
+`Read_Sides` 被判为"枚举键名"形态、字面量键总数 ≥100。
+
+**一处判据修正**：初版把**节名本身**也当成了键
+（`Read_VoxelAnims` 列出 `VoxelAnims`、`Read_Warheads` 列出 `Warheads`）——
+因为这两个函数把节名以字面量压栈给 `GetKeyCount`。
+已按"字符串 == 本节节名则排除"过滤（只做全等，不做包含），
+键数 311 → **306**。
+
+---
+
+## 15. `RulesClass` 字段布局与镜像全局（R-023）
+
+这是编译器把 `[MultiplayerDialogSettings]` 写对位置的最后一环。
+
+### 15.1 27 个键 → 结构偏移（双向一致）
+
+每个键在读取器里出现**两次**：一次作为默认值载入（`mov reg,[esi+off]`），
+一次作为结果存回（`mov [esi+off],eax/al`）。两者必须相等 —— 这是**免费的内部
+一致性检查**，不一致就说明解析错位。27/27 全部一致。
+
+| 键 | 偏移 | 读法 | 构造器默认值 |
+|:---|:---|:---|---:|
+| `MinMoney` | `+0x1480` | ReadInteger | `0x9C4` (2500) |
+| `Money` | `+0x1484` | ReadInteger | `0x2710` (10000) |
+| `MaxMoney` | `+0x1488` | ReadInteger | `0x2710` (10000) |
+| `MoneyIncrement` | `+0x148C` | ReadInteger | `0x64` (100) |
+| `MinUnitCount` | `+0x1490` | ReadInteger | `1` |
+| `UnitCount` | `+0x1494` | ReadInteger | `10` |
+| `MaxUnitCount` | `+0x1498` | ReadInteger | `0x14` (20) |
+| `TechLevel` | `+0x149C` | ReadInteger | `10` |
+| `GameSpeed` | `+0x14A0` | ReadInteger | `6` |
+| `AIDifficulty` | `+0x14A4` | ReadInteger | `1` |
+| `AIPlayers` | `+0x14A8` | ReadInteger | `1` |
+| `BridgeDestruction` | `+0x14AC` | ReadBool | `1` |
+| `ShadowGrow` | `+0x14AD` | ReadBool | `0` |
+| `Shroud` | `+0x14AE` | ReadBool | `1` |
+| `Bases` | `+0x14AF` | ReadBool | `1` |
+| `TiberiumGrows` | `+0x14B0` | ReadBool | `1` |
+| `Crates` | `+0x14B1` | ReadBool | `1` |
+| `CaptureTheFlag` | `+0x14B2` | ReadBool | `0` |
+| `HarvesterTruce` | `+0x14B3` | ReadBool | `0` |
+| `MultiEngineer` | `+0x14B4` | ReadBool | `0` |
+| `AlliesAllowed` | `+0x14B5` | ReadBool | `0` |
+| `ShortGame` | `+0x14B6` | ReadBool | `0` |
+| `FogOfWar` | `+0x14B7` | ReadBool | `0` |
+| `MCVRedeploys` | `+0x14B8` | ReadBool | `1` |
+| `SuperWeaponsAllowed` | `+0x14B9` | ReadBool | `1` |
+| `BuildOffAlly` | `+0x14BA` | ReadBool | `1` |
+| `AllyChangeAllowed` | `+0x14BB` | ReadBool | `1` |
+
+**布局**：`+0x1480..+0x14AB` 是连续 11 个 dword（11 keys × 4 = 44 字节），
+`+0x14AC..+0x14BB` 是连续 16 个 byte（16 keys × 1 = 16 字节），
+合计 **60 字节，无空洞**。
+
+**注意 `+0x1494` 与 `+0x1498` 之间不存在「`MaxUnitCount` 是 `+0x1499`」的
+变体** —— 三个 unit 相关键（`MinUnitCount`/`UnitCount`/`MaxUnitCount`）
+是三个独立 dword，不是打包结构。
+
+### 15.2 构造器与实例尺寸
+
+- **构造器**：`0x00665650`，`ret` 在 `0x00667A26`（1,621 条指令、986 个不同偏移）
+- **实例尺寸**：`0x18C0`（6,336 字节）
+  - 分配点在 `0x0052BABE`：`push 0x18C0` → `call 0x7C8E17`（`operator new`）
+    → `call 0x665650`（构造器）→ `mov [0x8871E0], eax`
+  - **构造器最高字段止于 `+0x18BC`**（`+0x18B8` 起 4 字节）；`0x18C0 − 0x18BC = 4`
+    字节尾隙，符合 4 字节对齐
+- **`0x008871E0`** 就是这个 `RulesClass*` 全局（1,423 处引用）
+
+⇒ 尺寸、构造器、全局三者互相钉死，任何一项单独看都可能是巧合。
+
+### 15.3 载入后镜像到全局（★ 编译器必须知道）
+
+`Read_MultiplayerDialogSettings` 返回后，同一个函数立刻把 **18 个字段拷贝到
+独立全局变量**，而游戏其余部分**大多读全局，不读 `RulesClass` 字段**。
+
+> **这组计数为什么可信（与 §15.4 的区别）**：镜像全局是**唯一地址**
+> （如 `0x00A8B25C`），不存在"偏移碰撞"问题 —— 扫到那个地址就是那个变量。
+> §15.4 的字段读点靠 `[reg+off]` 匹配，任何对象撞上同一偏移都会误计，
+> 所以那边只能给区间。**两个口径可靠性不同，不要混用。**
+
+| 键 | 结构偏移 | 镜像全局 | 取值引用 | 取址引用 |
+|:---|:---|:---|---:|---:|
+| `Money` | `+0x1484` | `0x00A8B25C` | 38 | 0 |
+| `UnitCount` | `+0x1494` | `0x00A8B270` | 40 | 0 |
+| `TechLevel` | `+0x149C` | `0x00822CF4` | 20 | 5 |
+| `GameSpeed` | `+0x14A0` | `0x00A8B268` | 43 | 0 |
+| `AIDifficulty` | `+0x14A4` | `0x00A8B278` | 17 | 0 |
+| `AIPlayers` | `+0x14A8` | `0x00A8B274` | 36 | 0 |
+| `BridgeDestruction` | `+0x14AC` | `0x00A8B260` | 27 | 0 |
+| `Bases` | `+0x14AF` | `0x00A8B258` | 39 | 0 |
+| `Crates` | `+0x14B1` | `0x00A8B261` | 41 | 0 |
+| `CaptureTheFlag` | `+0x14B2` | `0x00A8B31E` | 4 | 0 |
+| `HarvesterTruce` | `+0x14B3` | `0x00A8B31D` | 23 | 0 |
+| `MultiEngineer` | `+0x14B4` | `0x00A8B26C` | 21 | 0 |
+| `AlliesAllowed` | `+0x14B5` | `0x00A8B31C` | 12 | 4 |
+| `ShortGame` | `+0x14B6` | `0x00A8B262` | 50 | 0 |
+| `FogOfWar` | `+0x14B7` | `0x00A8B31F` | 22 | 0 |
+| `MCVRedeploys` | `+0x14B8` | `0x00A8B320` | 44 | 0 |
+| `SuperWeaponsAllowed` | `+0x14B9` | `0x00A8B263` | 41 | 0 |
+| `BuildOffAlly` | `+0x14BA` | `0x00A8B264` | 35 | 0 |
+
+**未镜像的 9 个**：`MinMoney` `+0x1480`、`MaxMoney` `+0x1488`、
+`MoneyIncrement` `+0x148C`、`MinUnitCount` `+0x1490`、`MaxUnitCount` `+0x1498`、
+`ShadowGrow` `+0x14AD`、`Shroud` `+0x14AE`、`TiberiumGrows` `+0x14B0`、
+`AllyChangeAllowed` `+0x14BB`。
+
+这些字段**只留存在 `RulesClass` 里**，读取方直接拿 `[RulesClass+off]`。
+不是死配置 —— 只是消费路径不同（见 §15.4 的读点数）。
+
+**镜像块位置**：`0x0052D149`（`call Read_MultiplayerDialogSettings` 之后）
+到 `0x0052D22C`，**恰好 18 条** `mov [全局], reg` 拷贝，一条字段对一条全局，
+无重复、无遗漏。
+
+> ⚠ 这段代码所在的函数**从 `0x0052CD70` 开始**，不是从 `0x0052D0B4` 开始。
+> `0x0052D032` 和 `0x0052D0B3` 是两个**提前退出路径**（`ARTMD.INI` 加载失败的
+> 两个分支），不是函数边界。把任一 `ret` 当函数结尾会把镜像块切成两半 ——
+> 我第一版就是这么错的，得出的结论是"18 个字段里有 16 个零消费"。
+
+### 15.4 读点分布（**区间口径**，不是单值）
+
+⚠ **R-024 更正**：本节原先给的是单一数字（"`MaxMoney` 33 点"等），那是
+**未归因的宽松计数** —— 任何 `[reg+off]` 只要偏移撞上就算，与 `RulesClass`
+无关。已改为**区间**：
+
+| 键 | 区间（下界=可追溯到 `RulesClass` 全局；上界=任意 `[reg+off]`） |
+|:---|:---|
+| `MinMoney` | [4, 10] |
+| `Money` | **[3, 3]** |
+| `MaxMoney` | [4, 33] |
+| `MoneyIncrement` | [2, 5] |
+| `MinUnitCount` | [4, 18] |
+| `UnitCount` | **[3, 3]** |
+| `MaxUnitCount` | [4, 21] |
+| `TechLevel` | [1, 16] |
+| `GameSpeed` | [2, 20] |
+| `AIDifficulty` | [1, 9] |
+| `AIPlayers` | [1, 7] |
+| `BridgeDestruction` | [2, 30] |
+| **`ShadowGrow`** | **[0, 0]** |
+| `Shroud` | **[1, 1]** |
+| `Bases` | **[2, 2]** |
+| `TiberiumGrows` | [0, 18] |
+| `Crates` | **[3, 3]** |
+| `CaptureTheFlag` | **[2, 2]** |
+| `HarvesterTruce` | **[1, 1]** |
+| `MultiEngineer` | [1, 8] |
+| `AlliesAllowed` | **[5, 5]** |
+| `ShortGame` | **[2, 2]** |
+| `FogOfWar` | **[1, 1]** |
+| `MCVRedeploys` | [2, 6] |
+| `SuperWeaponsAllowed` | **[3, 3]** |
+| `BuildOffAlly` | **[3, 3]** |
+| `AllyChangeAllowed` | **[2, 2]** |
+
+**加粗的 13 个上下界相等 ⇒ 归因确证**（宽松计数与根追踪一致，没有模糊空间）。
+
+**为什么不能给单值**：
+- 下界只认「基址寄存器可追溯到 `mov reg,[0x8871E0]`」的读取。但很多函数把
+  `RulesClass*` 当**参数**收下（`mov ecx,[ebp+0x1488]`，`ebp` 由调用方给），
+  这类下界**看不见**。
+- 上界把任何 `[reg+off]` 都算，于是**恰好同偏移的异类对象**会被误计
+  （`[ecx+0]` 这种小偏移曾报出 56,820 点）。
+
+⇒ 真值在区间内。**单看一个数字会同时高估和低估。**
+
+**`ShadowGrow` 是 [0, 0]** —— 上下界都为零，这是**唯一能说"零消费"的键**，
+因为它不是"上界很小时下界为零"，而是**两个口径都找不到任何读取**，
+且纯字节扫描复核：`+0x14AD` 的 disp32 在 `.text` 只出现 3 次
+（构造器写 1 + 读取器读/写 2）。
+
+⇒ **对编译器：`[MultiplayerDialogSettings]` 里写 `ShadowGrow=` 对引擎行为无影响。**
+其余 26 个键都有真实读点。
+
+### 15.5 复跑与判据
+
+```bash
+python re_atlas/tools/dump_rules_fields.py      # evidence/rules_fields.txt
+python re_atlas/tools/dump_rules_consumers.py   # evidence/rules_consumers.txt
+```
+
+`dump_rules_fields.py` 的三重自检：
+1. 每个键的「默认载入偏移」必须等于「存回偏移」（27/27）；
+2. 4 字节字段必须落在 4 字节网格上；
+3. 任意两个键不得共享字节，覆盖区间必须无空洞。
+
+`dump_rules_consumers.py` 的对账正对照：
+每个镜像全局的**字节扫描出现次数**必须等于**指令扫描的 (取值 + 取址) 次数**。
+（`TechLevel` 20 + 5 = 25，`AlliesAllowed` 12 + 4 = 16，其余 16 个全部相等。）
+这条对账能抓到解码器漏扫 —— 只统计"引用数"而不分类，就无法和字节扫描对上。
+
+`dump_rules_fields.py` 的消费点**必须按区间读**（§15.4）。工具同时打印
+`[下界, 上界]`，任何一处把区间当单值引用都会失真。
+
+### 15.6 本轮自纠（4 条）
+
+1. **整节 R-019 数字作废**（§12.0）：`md.disasm` 单次调用在 `0x46F5A0`
+   静默截断，只覆盖 `.text` 前 9%。这是本会话最严重的一次错误 ——
+   错误不在结论，在**样本**。
+2. **`mov` 双形态**：字段解析器首版用 `if/elif`，`mov` 被"载入"分支独占，
+   "存回"分支永远走不到，输出 0 行。两形态必须互斥判断。
+3. **寄存器别名**：构造器把 bool 存成 `mov byte [esi+off], al`，而 `al` 来自
+   很久以前的 `mov eax,1`。跟踪器按原始寄存器 id 记账 ⇒ 16 个 bool 全 `None`。
+   需要把 `al/bl/cl/dl` 规范化到 `eax/ebx/ecx/edx`，且 capstone 的
+   `reg_name` 返回**小写**，拿大写表匹配会静默全部失配。
+4. **寄存器不被 `call` 全清**：MSVC 的被调用者保存集（`ebx/esi/edi/ebp`）
+   跨调用存活。首版每次 `call` 清空全部 ⇒ `ebx`（构造器的零常量）变未知。
+5. **（R-024）单值消费点是假的**：见 §15.4。`[reg+off]` 计数既漏（参数形式的
+   `RulesClass*` 看不见）又误（异类对象同偏移命中）。已改区间。
+6. **（R-024）`consumers()` 里写死了 MPD 的偏移区间**：`0x1480 <= d < 0x14BC`
+   是调用方 A 的区间，被硬编码成函数体内的字面量，于是调用方 B
+   （`[AudioVisual]`）的每个字段都报 0 消费点。已由传入的 `offsets` 集合派生。
+
+---
+
+## 16. `[AudioVisual]` 字段布局（R-024，R-025 补全到 151/152）
+
+`[AudioVisual]` 是 rulesmd.ini **第二大节（152 键）**，仅次于 `[General]`（279）。
+本线已解出 **151 个键的字段偏移**（151 行，一键一字段）。
+
+### 16.1 总量
+
+| 指标 | 值 |
+|:---|---:|
+| 声明键（`dump_rules_keys` 口径） | 152 |
+| **解出字段** | **151**（R-024 首版 130） |
+| 双向一致（默认载入偏移 == 存回偏移） | **151/151** |
+| 未解出 | **1**（`OnFire`，见 §16.6b） |
+
+读取器：`0x006691E0`，函数体 `[0x006691E0, 0x0066B8F1)`，**10,001 字节**
+（全引擎最长的 loader 之一）。
+
+### 16.2 字段表（151 键）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `DetailMinFrameRateNormal` | `+0x0000` | ReadInteger | 4 |
+| `DetailMinFrameRateMovie` | `+0x0004` | ReadInteger | 4 |
+| `DetailBufferZoneWidth` | `+0x0008` | ReadInteger | 4 |
+| `PoseDir` | `+0x0044` | ReadInteger | 4 |
+| `DeployDir` | `+0x0048` | ReadInteger | 4 |
+| `DropPodPuff` | `+0x004C` | ReadString | 4 |
+| `WaypointAnimationSpeed` | `+0x0050` | ReadInteger | 4 |
+| `VeinAttack` | `+0x00E8` | ReadString | 4 |
+| `DigSound` | `+0x0174` | ReadString | 4 |
+| `GUIMainButtonSound` | `+0x0188` | ReadString | 4 |
+| `GUIBuildSound` | `+0x018C` | ReadString | 4 |
+| `GUITabSound` | `+0x0190` | ReadString | 4 |
+| `GUIOpenSound` | `+0x0194` | ReadString | 4 |
+| `GUICloseSound` | `+0x0198` | ReadString | 4 |
+| `GUIMoveOutSound` | `+0x019C` | ReadString | 4 |
+| `GUIMoveInSound` | `+0x01A0` | ReadString | 4 |
+| `GUIComboOpenSound` | `+0x01A4` | ReadString | 4 |
+| `GUIComboCloseSound` | `+0x01A8` | ReadString | 4 |
+| `GUICheckboxSound` | `+0x01AC` | ReadString | 4 |
+| `ScoreAnimSound` | `+0x01B0` | ReadString | 4 |
+| `CheerSound` | `+0x01C8` | ReadString | 4 |
+| `DefaultChronoSound` | `+0x01D0` | ReadString | 4 |
+| `StartPlanningModeSound` | `+0x01D4` | ReadString | 4 |
+| `EndPlanningModeSound` | `+0x01E0` | ReadString | 4 |
+| `CrateMoneySound` | `+0x01E4` | ReadString | 4 |
+| `CrateRevealSound` | `+0x01E8` | ReadString | 4 |
+| `CrateFireSound` | `+0x01EC` | ReadString | 4 |
+| `CrateArmourSound` | `+0x01F0` | ReadString | 4 |
+| `CrateSpeedSound` | `+0x01F4` | ReadString | 4 |
+| `CrateUnitSound` | `+0x01F8` | ReadString | 4 |
+| `CratePromoteSound` | `+0x01FC` | ReadString | 4 |
+| `ImpactWaterSound` | `+0x0200` | ReadString | 4 |
+| `ImpactLandSound` | `+0x0204` | ReadString | 4 |
+| `SinkingSound` | `+0x0208` | ReadString | 4 |
+| `ChronoInSound` | `+0x0218` | ReadString | 4 |
+| `ChronoOutSound` | `+0x021C` | ReadString | 4 |
+| `BombTickingSound` | `+0x020C` | ReadString | 4 |
+| `BombAttachSound` | `+0x0210` | ReadString | 4 |
+| `YuriMindControlSound` | `+0x0214` | ReadString | 4 |
+| `AddPlanningModeCommandSound` | `+0x01D8` | ReadString | 4 |
+| `ExecutePlanSound` | `+0x01DC` | ReadString | 4 |
+| `PlaceBeaconSound` | `+0x01CC` | ReadString | 4 |
+| `BuildingGarrisonedSound` | `+0x01BC` | ReadString | 4 |
+| `BuildingAbandonedSound` | `+0x01C0` | ReadString | 4 |
+| `BuildingRepairedSound` | `+0x01C4` | ReadString | 4 |
+| `BaseUnderAttackSound` | `+0x0184` | ReadString | 4 |
+| `UpgradeVeteranSound` | `+0x0228` | ReadString | 4 |
+| `UpgradeEliteSound` | `+0x022C` | ReadString | 4 |
+| `VoiceIFVRepair` | `+0x0230` | ReadString | 4 |
+| `SlavesFreeSound` | `+0x0234` | ReadString | 4 |
+| `SlaveMinerDeploySound` | `+0x0238` | ReadString | 4 |
+| `SlaveMinerUndeploySound` | `+0x023C` | ReadString | 4 |
+| `BunkerWallsUpSound` | `+0x0240` | ReadString | 4 |
+| `BunkerWallsDownSound` | `+0x0244` | ReadString | 4 |
+| `RepairBridgeSound` | `+0x0248` | ReadString | 4 |
+| `PsychicDominatorActivateSound` | `+0x024C` | ReadString | 4 |
+| `GeneticMutatorActivateSound` | `+0x0250` | ReadString | 4 |
+| `PsychicRevealActivateSound` | `+0x0254` | ReadString | 4 |
+| `MasterMindOverloadDeathSound` | `+0x0258` | ReadString | 4 |
+| `AirstrikeAbortSound` | `+0x025C` | ReadString | 4 |
+| `AirstrikeAttackVoice` | `+0x0260` | ReadString | 4 |
+| `MindClearedSound` | `+0x0264` | ReadString | 4 |
+| `EnterGrinderSound` | `+0x0268` | ReadString | 4 |
+| `LeaveGrinderSound` | `+0x026C` | ReadString | 4 |
+| `EnterBioReactorSound` | `+0x0270` | ReadString | 4 |
+| `LeaveBioReactorSound` | `+0x0274` | ReadString | 4 |
+| `ActivateSound` | `+0x0278` | ReadString | 4 |
+| `DeactivateSound` | `+0x027C` | ReadString | 4 |
+| `SpyPlaneCamera` | `+0x0280` | ReadString | 4 |
+| `LetsDoTheTimeWarpOutAgain` | `+0x0284` | ReadString | 4 |
+| `LetsDoTheTimeWarpInAgain` | `+0x0288` | ReadString | 4 |
+| `DiskLaserChargeUp` | `+0x028C` | ReadString | 4 |
+| `SpyPlaneCameraFrames` | `+0x0290` | ReadInteger | 4 |
+| `CreateUnitSound` | `+0x0178` | ReadString | 4 |
+| `CreateInfantrySound` | `+0x017C` | ReadString | 4 |
+| `CreateAircraftSound` | `+0x0180` | ReadString | 4 |
+| `IFVTransformSound` | `+0x01B4` | ReadString | 4 |
+| `PsychicSensorDetectSound` | `+0x01B8` | ReadString | 4 |
+| `SpySatActivationSound` | `+0x0220` | ReadString | 4 |
+| `SpySatDeactivationSound` | `+0x0224` | ReadString | 4 |
+| `Dig` | `+0x0294` | ReadString | 4 |
+| `AtmosphereEntry` | `+0x0354` | ReadString | 4 |
+| `GateUp` | `+0x0404` | ReadString | 4 |
+| `GateDown` | `+0x0408` | ReadString | 4 |
+| `ShroudGrow` | `+0x17F0` | ReadBool | 1 |
+| `ScrollMultiplier` | `+0x05B8` | ReadDouble | 8 |
+| `ShakeScreen` | `+0x05C8` | ReadInteger | 4 |
+| `CloakSound` | `+0x06A0` | ReadString | 4 |
+| `SellSound` | `+0x06A4` | ReadString | 4 |
+| `GameClosed` | `+0x06A8` | ReadString | 4 |
+| `IncomingMessage` | `+0x06AC` | ReadString | 4 |
+| `MessageCharTyped` | `+0x06C4` | ReadString | 4 |
+| `SystemError` | `+0x06B0` | ReadString | 4 |
+| `OptionsChanged` | `+0x06B4` | ReadString | 4 |
+| `GameForming` | `+0x06B8` | ReadString | 4 |
+| `PlayerLeft` | `+0x06BC` | ReadString | 4 |
+| `PlayerJoined` | `+0x06C0` | ReadString | 4 |
+| `Construction` | `+0x06C8` | ReadString | 4 |
+| `BuildingDieSound` | `+0x06E8` | ReadString | 4 |
+| `BuildingSlam` | `+0x06EC` | ReadString | 4 |
+| `RadarOn` | `+0x06F0` | ReadString | 4 |
+| `RadarOff` | `+0x06F4` | ReadString | 4 |
+| `MovieOn` | `+0x06F8` | ReadString | 4 |
+| `MovieOff` | `+0x06FC` | ReadString | 4 |
+| `ScoldSound` | `+0x0700` | ReadString | 4 |
+| `TeslaCharge` | `+0x0704` | ReadString | 4 |
+| `TeslaZap` | `+0x0708` | ReadString | 4 |
+| `BuildingDamageSound` | `+0x0714` | ReadString | 4 |
+| `ChuteSound` | `+0x071C` | ReadString | 4 |
+| `GenericClick` | `+0x070C` | ReadString | 4 |
+| `GenericBeep` | `+0x0710` | ReadString | 4 |
+| `BuildingDrop` | `+0x07C0` | ReadString | 4 |
+| `StopSound` | `+0x0720` | ReadString | 4 |
+| `GuardSound` | `+0x0724` | ReadString | 4 |
+| `ScatterSound` | `+0x0728` | ReadString | 4 |
+| `StormSound` | `+0x0730` | ReadString | 4 |
+| `ShellButtonSlideSound` | `+0x0750` | ReadString | 4 |
+| `Smoke` | `+0x0BAC` | ReadString | 4 |
+| `Smoke` | `+0x0BB0` | ReadString | 4 |
+| `EliteFlashTimer` | `+0x0BE8` | ReadInteger | 4 |
+| `SmallFire` | `+0x0BDC` | ReadString | 4 |
+| `LargeFire` | `+0x0BE0` | ReadString | 4 |
+| `AllyReveal` | `+0x17E7` | ReadBool | 1 |
+| `ConditionRed` | `+0x1708` | ReadDouble | 8 |
+| `ConditionYellow` | `+0x1700` | ReadDouble | 8 |
+| `EnemyHealth` | `+0x17E6` | ReadBool | 1 |
+| `Gravity` | `+0x16B8` | ReadInteger | 4 |
+| `IdleActionFrequency` | `+0x1710` | ReadDouble | 8 |
+| `MessageDelay` | `+0x14C0` | ReadDouble | 8 |
+| `MovieTime` | `+0x1770` | ReadDouble | 8 |
+| `NamedCivilians` | `+0x17EA` | ReadBool | 1 |
+| `SavourDelay` | `+0x14C8` | ReadDouble | 8 |
+| `ShroudRate` | `+0x1640` | ReadDouble | 8 |
+| `FogRate` | `+0x1648` | ReadDouble | 8 |
+| `VeinGrowthRate` | `+0x1658` | ReadDouble | 8 |
+| `IceGrowthRate` | `+0x1650` | ReadDouble | 8 |
+| `IceSolidifyFrameTime` | `+0x1660` | ReadInteger | 4 |
+| `AmbientChangeRate` | `+0x1668` | ReadDouble | 8 |
+| `AmbientChangeStep` | `+0x1670` | ReadDouble | 8 |
+| `SpeakDelay` | `+0x16A8` | ReadDouble | 8 |
+| `TimerWarning` | `+0x1680` | ReadDouble | 8 |
+| `ExtraUnitLight` | `+0x17D4` | ReadDouble | 4 |
+| `ExtraInfantryLight` | `+0x17D8` | ReadDouble | 4 |
+| `ExtraAircraftLight` | `+0x17DC` | ReadDouble | 4 |
+| `OreTwinkleChance` | `+0x186C` | ReadInteger | 4 |
+| `LaserTargetColor` | `+0x18A4` | ReadInteger | 4 |
+| `IronCurtainColor` | `+0x18A8` | ReadInteger | 4 |
+| `BerserkColor` | `+0x18AC` | ReadInteger | 4 |
+| `ForceShieldColor` | `+0x18B0` | ReadInteger | 4 |
+| `DirectRockingCoefficient` | `+0x18B4` | ReadDouble | 4 |
+| `FallBackCoefficient` | `+0x18B8` | ReadDouble | 4 |
+
+### 16.3 三种存回形态（首版漏掉后两种）
+
+| 读法 | 存回指令 | 宽 | 例 |
+|:---|:---|---:|:---|
+| `ReadInteger`/`ReadBool`/`ReadString` | `mov [esi+off], eax/al` | 4 / 1 / 4 | 绝大多数 |
+| `ReadDouble` → double 字段 | **`fstp qword [esi+off]`** | 8 | `ConditionRed` `+0x1708` |
+| `ReadDouble` → float 字段 | **`fstp dword [esi+off]`** | 4 | `DirectRockingCoefficient` `+0x18B4` |
+| `ReadDouble` → int 字段（经 `imul`/`sar` 换算） | `mov [esi+off], eax` | 4 | `ExtraUnitLight` `+0x17D4` |
+
+**宽度一律取自存回指令，不取自读取器** —— `ReadDouble` 三种宽度都用。
+这是首版 22 个键"解不出"的真正原因：不是键的字面量找不到（它们都在 `.data`，
+各出现一次），而是**存回不是 `mov`**。
+
+### 16.4 三个必须跟踪的隐藏基址
+
+1. **`add esi,0x18B8`** —— 函数尾部改了对象基址，之后 `[esi]` 等价于 `[原基址+0x18B8]`。
+   不跟踪会把 `FallBackCoefficient` 记成 `+0x0000`（真值 `+0x18B8`）。
+2. **`fstp qword [esp]`** 只是把默认值放上栈给调用用，**不是字段存回**。
+   当成存回会给 4 字节字段记 8 字节宽，并让三个相邻字段看起来重叠。
+3. **`fld dword [esi+off]`** 是浮点字段的默认值载入，不是 `mov`。
+   只认 `mov` 会让两个字段报"默认值未知"。
+
+### 16.5 `Smoke` 一键两字段
+
+`Smoke` 出现在 `+0x0BAC` 与 `+0x0BB0`，两处推同一字面量 `0x00836F0C`，
+**不是工具缺陷**：引擎用一个 `Smoke=` 值填两个槽。⇒ 编译器只写一次。
+
+### 16.6 `YuriMindControlSound` `+0x0214` 无构造器默认值
+
+构造器未在该偏移写入（`+0x210` 与 `+0x218` 各写 4 字节，中间空着），
+但读取器确实读它。**这是引擎的真实状态，不是解析错误** ——
+该字段依赖其他初始化路径。对编译器：**必须显式写这个键**，不要依赖默认值。
+
+### 16.6b `OnFire` 不是标量字段（唯一未解出项）
+
+`OnFire` 的读法与其他键相同（`push 键; push 节; call ReadString`），但结果
+**不落到 `[esi+off]`**：它先读进栈缓冲，再经 `0x7C9CC2`（`strtok` 形态，
+分隔符 `0x817F70`）逐段切分，`0x5253B0` 追加进一个栈上的容器对象，
+最后整体交给另一个对象。
+
+⇒ `OnFire` 是**列表型配置**（可写多个动画名），不是单值字段。
+**它不是解析失败，是形态不同**：本线只解 `[this+off]` 标量字段，故计为未解出。
+对编译器：`OnFire=` 可写多个以分隔符隔开的名字，行为与标量键不同。
+
+### 16.7 复跑
+
+```bash
+python re_atlas/tools/dump_rules_fields.py 0x006691E0
+```
+
+自检：151/151 双向一致 / 宽度取自存回指令 / 双精度按相邻双 dword 校验 /
+无偏移重叠 / 构造器逐字段宽度吻合（8 字节字段允许由两条 4 字节 `mov` 组成）。
+**消费点只看区间**（§15.4 与 `CONFLICTS` G-26）。
+
+---
+
+## 17. `[General]` 字段布局（R-025）
+
+`[General]` 是 rulesmd.ini **最大的节（279 键）**，占全部字面量键的 43%。
+
+### 17.1 总量
+
+| 指标 | 值 |
+|:---|---:|
+| 声明键（`dump_rules_keys` 口径） | 279 |
+| **解出标量字段** | **268**（267 个不同键，有一键两槽） |
+| 未映射 | **12**（全部是列表型，见 §17.3） |
+| 凭空多出的字段 | **0** |
+
+读取器：`0x0066D530`，函数体 `[0x0066D530, 0x00671E8E)`，**5,062 条指令**。
+
+> ⚠ **边界陷阱**：`Read_General` 的真实首个 `ret` 在 `0x00671E8B`（`ret 4`），
+> 距离入口 18,782 字节。我用过的 `0x0066E52F` 是**错的**（那是函数体中部），
+> 用它截断只解出 33 个键。**边界必须由工具 `find_ret` 给出，不能手估。**
+
+### 17.2 字段表（268 行，完整）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `OreTwinkle` | `+0x1870` | ReadString | 4 |
+| `BarrelExplode` | `+0x0054` | ReadString | 4 |
+| `BarrelParticle` | `+0x0074` | ReadString | 4 |
+| `NukeTakeOff` | `+0x0098` | ReadString | 4 |
+| `Wake` | `+0x0094` | ReadString | 4 |
+| `IonBlast` | `+0x0298` | ReadString | 4 |
+| `IonBeam` | `+0x029C` | ReadString | 4 |
+| `WeatherConBoltExplosion` | `+0x02F4` | ReadString | 4 |
+| `DominatorWarhead` | `+0x02F8` | ReadString | 4 |
+| `DominatorFirstAnim` | `+0x02FC` | ReadString | 4 |
+| `DominatorSecondAnim` | `+0x0300` | ReadString | 4 |
+| `DominatorFireAtPercentage` | `+0x0304` | ReadInteger | 4 |
+| `DominatorCaptureRange` | `+0x0308` | ReadInteger | 4 |
+| `DominatorDamage` | `+0x030C` | ReadInteger | 4 |
+| `ChronoPlacement` | `+0x0330` | ReadString | 4 |
+| `ChronoBeam` | `+0x0334` | ReadString | 4 |
+| `ChronoBlast` | `+0x0328` | ReadString | 4 |
+| `ChronoBlastDest` | `+0x032C` | ReadString | 4 |
+| `WarpIn` | `+0x0338` | ReadString | 4 |
+| `WarpOut` | `+0x033C` | ReadString | 4 |
+| `WarpAway` | `+0x0340` | ReadString | 4 |
+| `IronCurtainInvokeAnim` | `+0x0348` | ReadString | 4 |
+| `ForceShieldInvokeAnim` | `+0x034C` | ReadString | 4 |
+| `WeaponNullifyAnim` | `+0x0350` | ReadString | 4 |
+| `ChronoSparkle1` | `+0x0344` | ReadString | 4 |
+| `InfantryExplode` | `+0x009C` | ReadString | 4 |
+| `FlamingInfantry` | `+0x00A0` | ReadString | 4 |
+| `InfantryHeadPop` | `+0x00A4` | ReadString | 4 |
+| `InfantryNuked` | `+0x00A8` | ReadString | 4 |
+| `InfantryVirus` | `+0x00AC` | ReadString | 4 |
+| `InfantryBrute` | `+0x00B0` | ReadString | 4 |
+| `InfantryMutate` | `+0x00B4` | ReadString | 4 |
+| `Behind` | `+0x00B8` | ReadString | 4 |
+| `MoveFlash` | `+0x0BB4` | ReadString | 4 |
+| `Parachute` | `+0x0BBC` | ReadString | 4 |
+| `BombParachute` | `+0x0BB8` | ReadString | 4 |
+| `DropZoneAnim` | `+0x147C` | ReadString | 4 |
+| `EMPulseSparkles` | `+0x17F4` | ReadString | 4 |
+| `LargeVisceroid` | `+0x0010` | ReadString | 4 |
+| `SmallVisceroid` | `+0x0014` | ReadString | 4 |
+| `TiberiumHeal` | `+0x0028` | ReadDouble | 8 |
+| `SelfHealInfantryFrames` | `+0x0030` | ReadInteger | 4 |
+| `SelfHealInfantryAmount` | `+0x0034` | ReadInteger | 4 |
+| `SelfHealUnitFrames` | `+0x0038` | ReadInteger | 4 |
+| `SelfHealUnitAmount` | `+0x003C` | ReadInteger | 4 |
+| `ZoomInFactor` | `+0x0550` | ReadDouble | 8 |
+| `RevealByHeight` | `+0x17EE` | ReadBool | 1 |
+| `AllowShroudedSubteranneanMoves` | `+0x17EF` | ReadBool | 1 |
+| `AircraftFogReveal` | `+0x00F4` | ReadInteger | 4 |
+| `MinLowPowerProductionSpeed` | `+0x0570` | ReadDouble | 4 |
+| `MaxLowPowerProductionSpeed` | `+0x0574` | ReadDouble | 4 |
+| `LowPowerPenaltyModifier` | `+0x0578` | ReadDouble | 4 |
+| `MultipleFactory` | `+0x057C` | ReadDouble | 4 |
+| `MaximumCheerRate` | `+0x0580` | ReadInteger | 4 |
+| `TreeFlammability` | `+0x0588` | ReadDouble | 8 |
+| `MissileROTVar` | `+0x0598` | ReadDouble | 8 |
+| `MissileSafetyAltitude` | `+0x05A0` | ReadInteger | 4 |
+| `MissileSpeedVar` | `+0x0590` | ReadDouble | 8 |
+| `DropPodWeapon` | `+0x05A4` | ReadString | 4 |
+| `DropPodHeight` | `+0x05A8` | ReadInteger | 4 |
+| `DropPodSpeed` | `+0x05AC` | ReadInteger | 4 |
+| `DropPodAngle` | `+0x05B0` | ReadDouble | 8 |
+| `CrewEscape` | `+0x05C0` | ReadDouble | 8 |
+| `TunnelSpeed` | `+0x0020` | ReadDouble | 8 |
+| `HoverDampen` | `+0x05F0` | ReadDouble | 8 |
+| `HoverBob` | `+0x05D0` | ReadDouble | 8 |
+| `HoverHeight` | `+0x05CC` | ReadInteger | 4 |
+| `HoverBoost` | `+0x05D8` | ReadDouble | 8 |
+| `HoverAcceleration` | `+0x05E0` | ReadDouble | 8 |
+| `HoverBrake` | `+0x05E8` | ReadDouble | 8 |
+| `VeteranRatio` | `+0x0668` | ReadDouble | 8 |
+| `VeteranCombat` | `+0x0670` | ReadDouble | 8 |
+| `VeteranSpeed` | `+0x0678` | ReadDouble | 8 |
+| `VeteranSight` | `+0x0680` | ReadDouble | 8 |
+| `VeteranArmor` | `+0x0688` | ReadDouble | 8 |
+| `VeteranROF` | `+0x0690` | ReadDouble | 8 |
+| `VeteranCap` | `+0x0698` | ReadDouble | 8 |
+| `BridgeVoxelMax` | `+0x0624` | ReadInteger | 4 |
+| `TireVoxelDebris` | `+0x061C` | ReadString | 4 |
+| `ScrapVoxelDebris` | `+0x0620` | ReadString | 4 |
+| `CloakingStages` | `+0x0628` | ReadInteger | 4 |
+| `ShipSinkingWeight` | `+0x0630` | ReadDouble | 8 |
+| `IceCrackingWeight` | `+0x0638` | ReadDouble | 8 |
+| `IceBreakingWeight` | `+0x0640` | ReadDouble | 8 |
+| `CliffBackImpassability` | `+0x0664` | ReadInteger | 1 |
+| `PlacementDelay` | `+0x05F8` | ReadDouble | 8 |
+| `TrackedUphill` | `+0x0768` | ReadDouble | 8 |
+| `TrackedDownhill` | `+0x0770` | ReadDouble | 8 |
+| `WheeledUphill` | `+0x0778` | ReadDouble | 8 |
+| `WheeledDownhill` | `+0x0780` | ReadDouble | 8 |
+| `WindDirection` | `+0x07AC` | ReadInteger | 4 |
+| `FlightLevel` | `+0x07B4` | ReadInteger | 4 |
+| `ParachuteMaxFallRate` | `+0x07B8` | ReadInteger | 4 |
+| `NoParachuteMaxFallRate` | `+0x07BC` | ReadInteger | 4 |
+| `GDIGateOne` | `+0x086C` | ReadString | 4 |
+| `GDIGateTwo` | `+0x0870` | ReadString | 4 |
+| `NodGateOne` | `+0x0874` | ReadString | 4 |
+| `NodGateTwo` | `+0x0878` | ReadString | 4 |
+| `WallTower` | `+0x087C` | ReadString | 4 |
+| `GDIPowerPlant` | `+0x089C` | ReadString | 4 |
+| `NodRegularPower` | `+0x08A0` | ReadString | 4 |
+| `NodAdvancedPower` | `+0x08A4` | ReadString | 4 |
+| `ThirdPowerPlant` | `+0x08A8` | ReadString | 4 |
+| `PrerequisiteProcAlternate` | `+0x0400` | ReadString | 4 |
+| `HarvesterUnit` | `+0x0BE4` | ReadString | 4 |
+| `ChronoDelay` | `+0x0BEC` | ReadInteger | 4 |
+| `ChronoReinfDelay` | `+0x0BF0` | ReadInteger | 4 |
+| `ChronoDistanceFactor` | `+0x0BF4` | ReadInteger | 4 |
+| `ChronoTrigger` | `+0x0BF8` | ReadBool | 1 |
+| `ChronoMinimumDelay` | `+0x0BFC` | ReadInteger | 4 |
+| `ChronoRangeMinimum` | `+0x0C00` | ReadInteger | 4 |
+| `SpyPowerBlackout` | `+0x0D64` | ReadInteger | 4 |
+| `SpyMoneyStealPercent` | `+0x0D68` | ReadDouble | 4 |
+| `AttackCursorOnDisguise` | `+0x0D6C` | ReadBool | 1 |
+| `PurifierBonus` | `+0x0F3C` | ReadDouble | 4 |
+| `CurleyShuffle` | `+0x17E1` | ReadBool | 1 |
+| `FineDiffControl` | `+0x17E4` | ReadBool | 1 |
+| `AIAlternateProductionCreditCutoff` | `+0x1300` | ReadInteger | 4 |
+| `AIUseTurbineUpgradeProbability` | `+0x13E8` | ReadDouble | 8 |
+| `NodAIBuildsWalls` | `+0x17F1` | ReadBool | 1 |
+| `AIBuildsWalls` | `+0x17F2` | ReadBool | 1 |
+| `UseMinDefenseRule` | `+0x17F3` | ReadBool | 1 |
+| `DissolveUnfilledTeamDelay` | `+0x1190` | ReadInteger | 4 |
+| `AISafeDistance` | `+0x0D74` | ReadInteger | 4 |
+| `AIMinorSuperReadyPercent` | `+0x0D70` | ReadDouble | 4 |
+| `HarvesterTooFarDistance` | `+0x0D78` | ReadInteger | 4 |
+| `ChronoHarvTooFarDistance` | `+0x0D7C` | ReadInteger | 4 |
+| `AIRestrictReplaceTime` | `+0x0DF0` | ReadInteger | 4 |
+| `ThreatPerOccupant` | `+0x0DF4` | ReadInteger | 4 |
+| `ApproachTargetResetMultiplier` | `+0x0DF8` | ReadInteger | 4 |
+| `CampaignMoneyDeltaEasy` | `+0x0DFC` | ReadInteger | 4 |
+| `CampaignMoneyDeltaHard` | `+0x0E00` | ReadInteger | 4 |
+| `GuardAreaTargetingDelay` | `+0x0E04` | ReadInteger | 4 |
+| `NormalTargetingDelay` | `+0x0E08` | ReadInteger | 4 |
+| `AINavalYardAdjacency` | `+0x0E0C` | ReadInteger | 4 |
+| `MaximumBuildingPlacementFailures` | `+0x0E48` | ReadInteger | 4 |
+| `SlaveMinerKickFrameDelay` | `+0x1790` | ReadInteger | 4 |
+| `AISuperDefenseFrames` | `+0x0EE0` | ReadInteger | 4 |
+| `AICaptureLowMoneyMark` | `+0x0EBC` | ReadInteger | 4 |
+| `AICaptureWoundedMark` | `+0x0EC0` | ReadDouble | 4 |
+| `CloakDelay` | `+0x1410` | ReadDouble | 8 |
+| `GameSpeedBias` | `+0x1418` | ReadDouble | 8 |
+| `BaseBias` | `+0x1420` | ReadDouble | 8 |
+| `SeparateAircraft` | `+0x17E8` | ReadBool | 1 |
+| `BaseDefenseDelay` | `+0x14D8` | ReadDouble | 8 |
+| `SuspendPriority` | `+0x14E0` | ReadInteger | 4 |
+| `SuspendDelay` | `+0x14E8` | ReadDouble | 8 |
+| `SurvivorRate` | `+0x14F0` | ReadDouble | 8 |
+| `AlliedSurvivorDivisor` | `+0x14F8` | ReadInteger | 4 |
+| `SovietSurvivorDivisor` | `+0x14FC` | ReadInteger | 4 |
+| `ThirdSurvivorDivisor` | `+0x1500` | ReadInteger | 4 |
+| `ReloadRate` | `+0x1508` | ReadDouble | 8 |
+| `BuildupTime` | `+0x1518` | ReadDouble | 8 |
+| `HarvesterDumpRate` | `+0x1528` | ReadDouble | 8 |
+| `HarvesterLoadRate` | `+0x1520` | ReadInteger | 4 |
+| `BuildSpeed` | `+0x1748` | ReadDouble | 8 |
+| `DamageDelay` | `+0x16B0` | ReadDouble | 8 |
+| `GrowthRate` | `+0x1638` | ReadDouble | 8 |
+| `RefundPercent` | `+0x1738` | ReadDouble | 8 |
+| `RepairPercent` | `+0x16D0` | ReadDouble | 8 |
+| `RepairStep` | `+0x16CC` | ReadInteger | 4 |
+| `IRepairStep` | `+0x16D8` | ReadInteger | 4 |
+| `RepairRate` | `+0x16E0` | ReadDouble | 8 |
+| `URepairRate` | `+0x16E8` | ReadDouble | 8 |
+| `IRepairRate` | `+0x16F0` | ReadDouble | 8 |
+| `BlendedFog` | `+0x17E2` | ReadBool | 1 |
+| `AttackingAircraftSightRange` | `+0x0018` | ReadInteger | 4 |
+| `LeptonsPerSightIncrease` | `+0x16BC` | ReadInteger | 4 |
+| `TiberiumTransmogrify` | `+0x1688` | ReadInteger | 4 |
+| `LightningDeferment` | `+0x1794` | ReadInteger | 4 |
+| `LightningDamage` | `+0x1798` | ReadInteger | 4 |
+| `LightningStormDuration` | `+0x179C` | ReadInteger | 4 |
+| `LightningHitDelay` | `+0x17A0` | ReadInteger | 4 |
+| `LightningScatterDelay` | `+0x17A4` | ReadInteger | 4 |
+| `LightningCellSpread` | `+0x17A8` | ReadInteger | 4 |
+| `LightningSeparation` | `+0x17AC` | ReadInteger | 4 |
+| `LightningPrintText` | `+0x17B0` | ReadBool | 1 |
+| `ForceShieldRadius` | `+0x17B8` | ReadInteger | 4 |
+| `ForceShieldDuration` | `+0x17BC` | ReadInteger | 4 |
+| `ForceShieldBlackoutDuration` | `+0x17C0` | ReadInteger | 4 |
+| `ForceShieldPlayFadeSoundTime` | `+0x17C4` | ReadInteger | 4 |
+| `MutateExplosion` | `+0x17C8` | ReadBool | 1 |
+| `PrismSupportModifier` | `+0x049C` | ReadDouble | 4 |
+| `PrismSupportMax` | `+0x04A0` | ReadInteger | 4 |
+| `PrismSupportDelay` | `+0x04A4` | ReadInteger | 4 |
+| `PrismSupportDuration` | `+0x04A8` | ReadInteger | 4 |
+| `PrismSupportHeight` | `+0x04AC` | ReadInteger | 4 |
+| `V3RocketPauseFrames` | `+0x04B0` | ReadInteger | 4 |
+| `V3RocketTiltFrames` | `+0x04B4` | ReadInteger | 4 |
+| `V3RocketPitchInitial` | `+0x04B8` | ReadDouble | 4 |
+| `V3RocketPitchFinal` | `+0x04BC` | ReadDouble | 4 |
+| `V3RocketTurnRate` | `+0x04C0` | ReadDouble | 4 |
+| `V3RocketRaiseRate` | `+0x04C4` | ReadDouble | 4 |
+| `V3RocketAcceleration` | `+0x04C8` | ReadDouble | 4 |
+| `V3RocketAltitude` | `+0x04CC` | ReadInteger | 4 |
+| `V3RocketDamage` | `+0x04D0` | ReadInteger | 4 |
+| `V3RocketEliteDamage` | `+0x04D4` | ReadInteger | 4 |
+| `V3RocketBodyLength` | `+0x04D8` | ReadInteger | 4 |
+| `V3RocketLazyCurve` | `+0x04DC` | ReadBool | 1 |
+| `DMislPauseFrames` | `+0x04E4` | ReadInteger | 4 |
+| `DMislTiltFrames` | `+0x04E8` | ReadInteger | 4 |
+| `DMislPitchInitial` | `+0x04EC` | ReadDouble | 4 |
+| `DMislPitchFinal` | `+0x04F0` | ReadDouble | 4 |
+| `DMislTurnRate` | `+0x04F4` | ReadDouble | 4 |
+| `DMislRaiseRate` | `+0x04F8` | ReadDouble | 4 |
+| `DMislAcceleration` | `+0x04FC` | ReadDouble | 4 |
+| `DMislAltitude` | `+0x0500` | ReadInteger | 4 |
+| `DMislDamage` | `+0x0504` | ReadInteger | 4 |
+| `DMislEliteDamage` | `+0x0508` | ReadInteger | 4 |
+| `DMislBodyLength` | `+0x050C` | ReadInteger | 4 |
+| `DMislLazyCurve` | `+0x0510` | ReadBool | 1 |
+| `CMislPauseFrames` | `+0x0518` | ReadInteger | 4 |
+| `CMislTiltFrames` | `+0x051C` | ReadInteger | 4 |
+| `CMislPitchInitial` | `+0x0520` | ReadDouble | 4 |
+| `CMislPitchFinal` | `+0x0524` | ReadDouble | 4 |
+| `CMislTurnRate` | `+0x0528` | ReadDouble | 4 |
+| `CMislRaiseRate` | `+0x052C` | ReadDouble | 4 |
+| `CMislAcceleration` | `+0x0530` | ReadDouble | 4 |
+| `CMislAltitude` | `+0x0534` | ReadInteger | 4 |
+| `CMislDamage` | `+0x0538` | ReadInteger | 4 |
+| `CMislEliteDamage` | `+0x053C` | ReadInteger | 4 |
+| `CMislBodyLength` | `+0x0540` | ReadInteger | 4 |
+| `CMislLazyCurve` | `+0x0544` | ReadBool | 1 |
+| `ParadropRadius` | `+0x054C` | ReadInteger | 4 |
+| `SpotlightMovementRadius` | `+0x0788` | ReadInteger | 4 |
+| `SpotlightLocationRadius` | `+0x078C` | ReadInteger | 4 |
+| `SpotlightSpeed` | `+0x0790` | ReadDouble | 8 |
+| `SpotlightAcceleration` | `+0x0798` | ReadDouble | 8 |
+| `SpotlightAngle` | `+0x07A0` | ReadDouble | 8 |
+| `SpotlightRadius` | `+0x07A8` | ReadInteger | 4 |
+| `RevealTriggerRadius` | `+0x062C` | ReadInteger | 4 |
+| `ChargeToDrainRatio` | `+0x0760` | ReadDouble | 8 |
+| `WallBuildSpeedCoefficient` | `+0x0758` | ReadDouble | 8 |
+| `ConditionYellowSparkingProbability` | `+0x0560` | ReadDouble | 8 |
+| `ConditionRedSparkingProbability` | `+0x0558` | ReadDouble | 8 |
+| `AITriggerSuccessWeightDelta` | `+0x00C0` | ReadDouble | 8 |
+| `AITriggerFailureWeightDelta` | `+0x00C8` | ReadDouble | 8 |
+| `AITriggerTrackRecordCoefficient` | `+0x00D0` | ReadDouble | 8 |
+| `WeedCapacity` | `+0x17D0` | ReadInteger | 4 |
+| `FlashFrameTime` | `+0x0088` | ReadInteger | 4 |
+| `RadarCombatFlashTime` | `+0x008C` | ReadInteger | 4 |
+| `RadarEventSpeed` | `+0x0080` | ReadDouble | 4 |
+| `RadarEventRotationSpeed` | `+0x0084` | ReadDouble | 4 |
+| `RadarEventMinRadius` | `+0x007C` | ReadInteger | 4 |
+| `RadarEventColorSpeed` | `+0x0078` | ReadDouble | 4 |
+| `MyEffectivenessCoefficientDefault` | `+0x1040` | ReadDouble | 8 |
+| `TargetEffectivenessCoefficientDefault` | `+0x1048` | ReadDouble | 8 |
+| `TargetSpecialThreatCoefficientDefault` | `+0x1050` | ReadDouble | 8 |
+| `TargetStrengthCoefficientDefault` | `+0x1058` | ReadDouble | 8 |
+| `TargetDistanceCoefficientDefault` | `+0x1060` | ReadDouble | 8 |
+| `DumbMyEffectivenessCoefficient` | `+0x1068` | ReadDouble | 8 |
+| `DumbTargetEffectivenessCoefficient` | `+0x1070` | ReadDouble | 8 |
+| `DumbTargetSpecialThreatCoefficient` | `+0x1078` | ReadDouble | 8 |
+| `DumbTargetStrengthCoefficient` | `+0x1080` | ReadDouble | 8 |
+| `DumbTargetDistanceCoefficient` | `+0x1088` | ReadDouble | 8 |
+| `EnemyHouseThreatBonus` | `+0x1090` | ReadDouble | 8 |
+| `VeinholeMonsterStrength` | `+0x00D8` | ReadInteger | 4 |
+| `MaxVeinholeGrowth` | `+0x00DC` | ReadInteger | 4 |
+| `VeinholeGrowthRate` | `+0x00E0` | ReadInteger | 4 |
+| `VeinholeShrinkRate` | `+0x00E4` | ReadInteger | 4 |
+| `VeinDamage` | `+0x00EC` | ReadInteger | 4 |
+| `InfantryBlinkDisguiseTime` | `+0x1014` | ReadInteger | 4 |
+| `MaximumQueuedObjects` | `+0x00F0` | ReadInteger | 4 |
+| `MaxWaypointPathLength` | `+0x0090` | ReadInteger | 4 |
+| `TreeStrength` | `+0x1144` | ReadInteger | 4 |
+| `EngineerCaptureLevel` | `+0x17F8` | ReadDouble | 4 |
+| `EngineerCaptureLevel` | `+0x17FC` | ReadDouble | 4 |
+| `TalkBubbleTime` | `+0x1800` | ReadDouble | 4 |
+
+### 17.3 未映射的 12 个键 —— 全是列表型
+
+`BarrelDebris` `BaseUnit` `BridgeExplosions` `DamageFireTypes` `DeadBodies`
+`DropPod` `ExplosiveVoxelDebris` `MetallicDebris` `RepairBay` `Shipyard`
+`WeatherConBolts` `WeatherConClouds`
+
+形态完全一致（以 `DeadBodies` @`0x0066D9A2` 为例）：
+
+```text
+push <key>; push <section>; call ReadString
+test eax,eax; je <skip>
+push 0; push 0              ; 两个空参数 -> 默认分隔符
+... -> 切分 -> 逐项追加进容器
+```
+
+⇒ 这些是**列表型配置**（可写多个名字），不是单值字段。本线只解 `[this+off]`
+标量字段，故计为未映射。**这不是解析失败。**
+对编译器：这类键可写多个以逗号分隔的名字，行为与标量键不同。
+
+### 17.4 跨字段默认值（R-026 已定性：是引擎行为，不是解析错误）
+
+R-025 报告的"7 处偏移错位"已降到 **1 处**，且**成因是引擎设计而非工具缺陷**：
+
+| 键 | 默认取自 | 存回 | 说明 |
+|:---|:---|:---|:---|
+| `CMislAcceleration` | `+0x04FC`（`DMislAcceleration`） | `+0x0530` | **引擎用对面阵营的同名值作默认** |
+
+`DMislAcceleration` 在 `+0x4FC`、`CMislAcceleration` 在 `+0x530`，两者都是
+独立字段；引擎在解析 `CMislAcceleration` 时把 `DMislAcceleration` 的**当前值**
+当默认参数传进去。这是刻意的（敌方导弹加速沿用己方设定），不是结构错位。
+
+其余 6 处已由工具修复，成因分别是：
+- **`fild dword [esi+off]`** 默认值载入没识别（`PrismSupportModifier` 等 5 处）；
+- **`movsx`/`movzx`** 默认值载入没识别（`CliffBackImpassability`）。
+
+**对使用者的判据**：行内标注
+- `一致` = 默认载入与存回同一偏移；
+- `跨字段默认(from +0xXXXX)` = 引擎刻意用另一字段作默认值，**以「存回」列为准**；
+- `!! 默认载入=None` = 标量读者却没有默认载入（这才是真缺陷）。
+
+### 17.4b 构造器「未直接写」的 3 个字段
+
+`AICaptureLowMoneyMark` `+0x0EBC`、`AICaptureWoundedMark` `+0x0EC0`、
+`TiberiumTransmogrify` `+0x1688` 在 `RulesClass` 构造器里没有直接写入。
+`+0x0EC4` 紧邻是一个 vtable 指针 ⇒ 这几个字段属**内嵌子对象**，
+由子对象自己的构造器初始化。**不是解析缺陷**；对编译器意味着这些键的默认值
+不该假设为 0，必须显式写。
+
+### 17.5 复跑
+
+```bash
+python re_atlas/tools/dump_rules_fields.py 0x0066D530
+```
+
+证据：`evidence/rules_fields_general.txt`（554 行，含 268 字段 + 消费点区间）。
+
+---
+
+## 18. 其余小节字段布局（R-027）
+
+`Read_File` 会调用的另外 10 个节，本节一次给全。全部 10 个 loader 的正对照
+均通过（见 `evidence/rules_fields_<小写节名>.txt`）。
+
+### 18.1 汇总
+
+| 节 | 读取器 | 键数 | 形态 |
+|:---|:---|---:|:---|
+| `[CrateRules]` | `0x0066B900` | 10 | 标量，`this=esi` |
+| `[IQ]` | `0x00674240` | 11 | 标量，`this=esi` |
+| `[Radiation]` | `0x0066CF70` | 9 | 标量，`this=esi` |
+| `[SpecialWeapons]` | `0x00668FB0` | 7 | 标量，`this=esi` |
+| `[JumpjetControls]` | `0x006743D0` | 7 | 标量，`this=esi` |
+| `[ElevationModel]` | `0x0066D150` | 3 | 标量，`this=esi` |
+| `[WallModel]` | `0x0066D1F0` | 2 | 标量，`this=esi` |
+| `[Maximums]` | `0x00672230` | 1 | 标量，`this=esi` |
+| `[Easy/Normal/Difficult]` | `0x0066D270` | 12 | **外部对象**（`edi` 基址） |
+| （三个难度子对象） | `0x00674500` | 0 | **纯分派器**，调 `Read_Difficulty` ×3 |
+| `[Clear/…]`（地形） | `0x00674000` | 0 | 写入**全局表** `0x89EA44` |
+
+### 18.2 字段表
+
+#### `[CrateRules]` @ `0x0066B900`（10 键）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `FreeMCV` | `+0x0040` | ReadBool | 1 |
+| `WoodCrateImg` | `+0x00F8` | ReadString | 4 |
+| `CrateImg` | `+0x00FC` | ReadString | 4 |
+| `WaterCrateImg` | `+0x0100` | ReadString | 4 |
+| `HealCrateSound` | `+0x0718` | ReadString | 4 |
+| `CrateMinimum` | `+0x1470` | ReadInteger | 4 |
+| `CrateMaximum` | `+0x1474` | ReadInteger | 4 |
+| `CrateRegen` | `+0x1678` | ReadDouble | 8 |
+| `UnitCrateType` | `+0x1148` | ReadString | 4 |
+| `SoloCrateMoney` | `+0x1140` | ReadInteger | 4 |
+
+#### `[IQ]` @ `0x00674240`（11 键）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `MaxIQLevels` | `+0x1434` | ReadInteger | 4 |
+| `SuperWeapons` | `+0x1438` | ReadInteger | 4 |
+| `Production` | `+0x143C` | ReadInteger | 4 |
+| `GuardArea` | `+0x1440` | ReadInteger | 4 |
+| `RepairSell` | `+0x1444` | ReadInteger | 4 |
+| `AutoCrush` | `+0x1448` | ReadInteger | 4 |
+| `Scatter` | `+0x144C` | ReadInteger | 4 |
+| `ContentScan` | `+0x1450` | ReadInteger | 4 |
+| `Aircraft` | `+0x1454` | ReadInteger | 4 |
+| `Harvester` | `+0x1458` | ReadInteger | 4 |
+| `SellBack` | `+0x145C` | ReadInteger | 4 |
+
+#### `[Radiation]` @ `0x0066CF70`（9 键）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `RadDurationMultiple` | `+0x1804` | ReadInteger | 4 |
+| `RadApplicationDelay` | `+0x1808` | ReadInteger | 4 |
+| `RadLevelMax` | `+0x180C` | ReadInteger | 4 |
+| `RadLevelDelay` | `+0x1810` | ReadInteger | 4 |
+| `RadLightDelay` | `+0x1814` | ReadInteger | 4 |
+| `RadLevelFactor` | `+0x1818` | ReadDouble | 8 |
+| `RadLightFactor` | `+0x1820` | ReadDouble | 8 |
+| `RadTintFactor` | `+0x1828` | ReadDouble | 8 |
+| `RadSiteWarhead` | `+0x1834` | ReadString | 4 |
+
+#### `[SpecialWeapons]` @ `0x00668FB0`（7 键）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `NukeWarhead` | `+0x0F8C` | ReadString | 4 |
+| `NukeProjectile` | `+0x0F90` | ReadString | 4 |
+| `NukeDown` | `+0x0F94` | ReadString | 4 |
+| `MutateWarhead` | `+0x0F98` | ReadString | 4 |
+| `MutateExplosionWarhead` | `+0x0F9C` | ReadString | 4 |
+| `EMPulseWarhead` | `+0x0FA0` | ReadString | 4 |
+| `EMPulseProjectile` | `+0x0FA4` | ReadString | 4 |
+
+#### `[JumpjetControls]` @ `0x006743D0`（7 键）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `TurnRate` | `+0x040C` | ReadInteger | 4 |
+| `Speed` | `+0x0410` | ReadInteger | 4 |
+| `Climb` | `+0x0418` | ReadDouble | 8 |
+| `CruiseHeight` | `+0x0420` | ReadInteger | 4 |
+| `Acceleration` | `+0x0428` | ReadDouble | 8 |
+| `WobblesPerSecond` | `+0x0430` | ReadDouble | 8 |
+| `WobbleDeviation` | `+0x0438` | ReadInteger | 4 |
+
+#### `[ElevationModel]` @ `0x0066D150`（3 键）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `ElevationIncrement` | `+0x1838` | ReadInteger | 4 |
+| `ElevationIncrementBonus` | `+0x1840` | ReadDouble | 8 |
+| `ElevationBonusCap` | `+0x1848` | ReadDouble | 8 |
+
+#### `[WallModel]` @ `0x0066D1F0`（2 键）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `AlliedWallTransparency` | `+0x1850` | ReadBool | 1 |
+| `WallPenetratorThreshold` | `+0x1858` | ReadDouble | 8 |
+
+#### `[Maximums]` @ `0x00672230`（1 键）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `Players` | `+0x14D0` | ReadInteger | 4 |
+
+#### `[Difficulty]` @ `0x0066D270`（12 键）
+
+| 键 | 偏移 | 读法 | 宽 |
+|:---|:---|:---|---:|
+| `FirePower` | `+0x0000` | ReadDouble | 8 |
+| `Groundspeed` | `+0x0008` | ReadDouble | 8 |
+| `Airspeed` | `+0x0010` | ReadDouble | 8 |
+| `Armor` | `+0x0018` | ReadDouble | 8 |
+| `ROF` | `+0x0020` | ReadDouble | 8 |
+| `Cost` | `+0x0028` | ReadDouble | 8 |
+| `RepairDelay` | `+0x0038` | ReadDouble | 8 |
+| `BuildDelay` | `+0x0040` | ReadDouble | 8 |
+| `BuildSlowdown` | `+0x0048` | ReadBool | 1 |
+| `BuildTime` | `+0x0030` | ReadDouble | 8 |
+| `DestroyWalls` | `+0x0049` | ReadBool | 1 |
+| `ContentScan` | `+0x004A` | ReadBool | 1 |
+
+### 18.3 三种非标准形态（本轮新识别）
+
+| 形态 | 特征 | 例 |
+|:---|:---|:---|
+| **外部对象** | `mov edi,edx`，字段写在 `[edi+off]`；默认值是**立即数**（`push 0x3FF00000; push 0` = 1.0），不从字段载入 | `Read_Difficulty` |
+| **纯分派器** | 函数体只有三次 `call Read_Difficulty`，各传不同子对象（`lea edx,[esi+0x1538]` / `+0x1588` / `+0x15D8`） | `Read_Difficulties` |
+| **写全局表** | 无对象基址；字段写进常量地址（`mov ebx,0x89EA44` 后 `[ebx+8]`），且带范围钳制（`fcomp` + `fnstsw` + `test ah,1`） | `Read_LandCharacteristics` |
+
+`Read_Difficulty` 的 12 字段布局（`0x4B` 字节结构，每难度一份）：
+
+```text
++0x00 FirePower   +0x08 Groundspeed  +0x10 Airspeed   +0x18 Armor
++0x20 ROF         +0x28 Cost         +0x30 BuildTime  +0x38 RepairDelay
++0x40 BuildDelay  +0x48 BuildSlowdown(bool)  +0x49 DestroyWalls(bool)
++0x4A ContentScan(bool)
+```
+
+⇒ **`[Easy]` / `[Normal]` / `[Difficult]` 三个节结构完全相同**，
+各自由 `Read_Difficulties` 分派给同一段代码，只是目标子对象不同。
+
+### 18.4 复跑
+
+```bash
+python re_atlas/tools/dump_rules_fields.py 0x0066B900   # 以及其余 9 个入口
+```
+
+**正对照按目标类型分档**：
+- 普通节：双向一致 + 读者在登记表内 + 无偏移重叠；
+- 外部对象（`0x0066D270`）：**改用"字段跨度不重叠"**（默认值是立即数，
+  "默认载入 == 存回"这条不适用）；
+- 分派器/写全局（`0x00674500` / `0x00674000`）：**空结果不计为失败**。
+
+
+---
+
+## 19. `TypeClass` 继承链与逐类字段布局（R-028）
+
+> §11–§18 全部是 `RulesClass` 自己的字段。本节换到**另一棵继承树**：
+> `[InfantryTypes]` / `[VehicleTypes]` / `[AircraftTypes]` / `[BuildingTypes]`
+> 里列出的每个名字，各自指向一个 `TypeClass` 实例，那才是 `rulesmd.ini`
+> 和 `artmd.ini` 里 90% 内容的落点。对战役编译器而言，这一层比
+> `RulesClass` 更直接 —— 生成一张新单位/建筑，写的就是这些键。
+
+### 19.1 继承链（按 vtable 的 CompleteObjectLocator 读出类名，非按函数名推测）
+
+| 层 | vtable | COL 类名 | 槽 25（`LoadFromINI`） | 槽 12（`GetSize`） |
+|:---|:---|:---|:---|:---|
+| 1 | `0x007E2000` | `.?AVAbstractTypeClass@@` | `0x00410A60` | 0（桩） |
+| 2 | `0x007EF2D8` | `.?AVObjectTypeClass@@` | `0x005F92D0` | 0（桩） |
+| 3 | `0x007F4ED8` | `.?AVTechnoTypeClass@@` | `0x00712170` | 0（桩） |
+| 4a | `0x007EB610` | `.?AVInfantryTypeClass@@` | `0x005240A0` | **0x0ED0** |
+| 4b | `0x007F6218` | `.?AVUnitTypeClass@@` | `0x00747620` | **0x0E78** |
+| 4c | `0x007E2868` | `.?AVAircraftTypeClass@@` | `0x0041CC20` | **0x0E10** |
+| 4d | `0x007E4570` | `.?AVBuildingTypeClass@@` | `0x0045FE50` | **0x1798** |
+
+**逐层委托是实测的，不是按名字推的**：七层 loader 各自的前 20 条指令里
+都有一个 `call` 指向**上一层**的 `LoadFromINI`：
+
+```
+AbstractType   0x00410A60  （不再下探）
+ObjectType     0x005F92D0  → 0x00410A60
+TechnoType     0x00712170  → 0x005F92D0
+InfantryType   0x005240A0  → 0x00712170
+UnitType       0x00747620  → 0x00712170
+AircraftType   0x0041CC20  → 0x00712170
+BuildingType   0x0045FE50  → 0x00712170
+```
+
+⇒ **一个字段的偏移归属哪一层，由哪一层的 loader 写它决定**，
+而不是由"读这个键的函数属于哪个类"决定。派生类的 loader 会**重复读**
+少量继承字段（见 19.5），那些不是派生类的新字段。
+
+### 19.2 每类字段规模（613 键，0 未定）
+
+| 类 | 键数 | 写 `rulesmd` | 写 `artmd` | 未定 | 最高偏移 | 枚举包装器 |
+|:---|---:|---:|---:|---:|---:|---:|
+| `AbstractTypeClass` | 1 | 1 | 0 | 0 | `+0x0060` | 0 |
+| `ObjectTypeClass` | 20 | 15 | 5 | 0 | `+0x0240` | 1 |
+| `TechnoTypeClass` | **252** | **230** | 22 | 0 | `+0x0DCC` | 13 |
+| `InfantryTypeClass` | 33 | 28 | 5 | 0 | `+0x0ECB` | 2 |
+| `UnitTypeClass` | 27 | 15 | 12 | 0 | `+0x0E5D` | 2 |
+| `AircraftTypeClass` | 10 | 6 | 4 | 0 | `+0x0E0E` | 0 |
+| `BuildingTypeClass` | **270** | 119 | **151** | 0 | `+0x1780` | 7 |
+| **合计** | **613** | **414** | **199** | **0** | | 25 |
+
+七层合计 **613 个键**全部有确定偏移；**"未定"为 0**
+（对比 §17 的 `[General]`：279 键 / 268 字段 / 12 个列表型）。
+
+### 19.3 ★ 同一个 loader 同时读两个 INI 文件
+
+这是对编译器最要紧的一条，也是这批 loader 与 `RulesClass` 自己的
+loader 最大的结构差异。
+
+四个派生类的 `LoadFromINI` **都**在函数体里出现
+`mov ecx, 0x887180` —— `0x887180` 是 **`CCINIClass` 全局实例 `INI_Art`**：
+
+- 依据一（字节）：其 vtable `0x7E1AF4` 的 COL 解出的类名是 `.?AVCCINIClass@@`；
+- 依据二（YRpp）：`CCINIClass.h` 静态成员 `INI_Art{0x887180}`；
+- 依据三（本文 §0）：该结论在 R-015 已双通道核验。
+
+而函数的 `this`（TC）之外的另一个 INIClass 来自**调用方压栈的参数**
+（`mov ebx,[esp+0x148]` 之类），那是 `rulesmd.ini`。
+
+⇒ **同一个 `HTNK` 节，其 `Strength` 必须写进 `rulesmd.ini`，
+其 `TurretAnimX` 必须写进 `artmd.ini`。** 写错文件时引擎**不会报错**，
+只是那个键永远读到默认值。这正是 `BuildingTypeClass` 里
+**151/270 个键属于 artmd** 的原因 —— 建筑的动画/帧偏移几乎全在美术文件里。
+
+工具输出的 `INI` 列即此归属，逐行可查。
+
+### 19.4 两个节名缓冲：`+0x24` 与 `+0x1F8`
+
+派生 loader 的 `section` 实参不总是字面量，而是 `lea reg,[this+0x24]`
+或 `lea reg,[this+0x1F8]` 得到的两个**缓冲区**：
+
+| 偏移 | 内容 | 语义 |
+|:---|:---|:---|
+| `+0x24` | 类型自身名（`HTNK` / `MTNK` …） | 该名字在**两个文件里都可能是节名** |
+| `+0x1F8` | 被 `Image=` 改写后的名字 | **artmd 专用节名** |
+
+据此得到一条**单向不变量**，实测 **613 行里 0 违反**：
+
+> `+0x1F8` 作为 section 的读取，**从不**走 `rulesmd` 的 INIClass。
+
+反向不成立：`+0x24` 既可以配 rulesmd 也可以配 artmd
+（3 个键实测走 artmd），因为类型名在 artmd 里同样是一个节。
+第一版把这条写成双向的，产出 20 条假"节/INI不符"（见 CONFLICTS G-33 的邻条）。
+
+### 19.5 派生类的 loader 会重复读继承字段
+
+`UnitTypeClass` 在 `+0x67C` 读 `SpeedType` —— 那是 `TechnoTypeClass` 的字段。
+这类"继承字段重读"共 1 处（UnitType），不计入派生类自有字段。
+`BuildingTypeClass` 另有 1 处 `+0x67C` 读 **`WaterBound`** ——
+**同名偏移、不同键、不同属性**：建筑不移动，于是基类的 `SpeedType` 槽
+被复用为 `WaterBound`（`WaterBound=yes` → 存 5，`no` → 存 -1，
+见 `0x0045FF85..0x0045FFA9` 的 `cmp eax,5 / sete / and 6 / dec`）。
+这是**真实的引擎复用**，不是解错：`TechnoTypeClass` 的 loader 不写 `+0x67C` 的那个键，
+`BuildingTypeClass` 的 ctor 也不通过 `esi` 直接写它（由 19.7 的指针环覆盖）。
+
+### 19.6 枚举包装器：25 个键不经过裸 `Read*`
+
+`PipScale`、`Armor`、`Foundation`、`SpeedType`、`BuildCat`、`Owner`、
+`GuardRange`、`Category`、`VHPScan`、`MovementRestrictedTo`、`SuperWeapon`…
+这些键走的是一个 **cdecl 小助手**，签名与 `Read*` 相同
+`(section, key, default)`：内部先调真 reader 拿到字符串，再映射成枚举值。
+
+判据是机械的，不是手写清单：
+
+> 函数体里**直接调用**五个 `Read*` 之一，**且**它自己的 `ret` 带
+> ≥ 8 字节的立即数参数（cdecl 由被调方清栈）。
+
+25 个键命中该判据。`0x00428B80`（`char*` → 对象指针）与
+`0x007514D0`（解析器）虽然也出现在这些站点，但因体内不调 reader 而被排除 ——
+它们是**转换步骤**，其后那次 store 属于更早的那个键。
+
+### 19.7 构造器链独立交叉核对（另一条证据线）
+
+字段表和构造器来自完全不同的函数、不同的调用点，
+所以两者一致**不可能是同一次解析错误的产物**。逐类对账：
+
+| 类 | loader 写偏移 | 本类 ctor | 基类 ctor | 指针环清零 | 未解 |
+|:---|---:|---:|---:|---:|---:|
+| `InfantryTypeClass` | 33 | 33 | 0 | 0 | **0** |
+| `UnitTypeClass` | 27 | 26 | 1 | 0 | **0** |
+| `AircraftTypeClass` | 10 | 10 | 0 | 0 | **0** |
+| `BuildingTypeClass` | 269 | 136 | 1 | 132 | **0** |
+
+`BuildingTypeClass` 的 132 个不是漏洞，而是**指针环清零**：
+
+```
+lea  eax, [esi + 0xF5C] ; mov ecx, 0x15 ; mov [eax],edi ; ... ; add eax,0x44
+```
+
+21 项 × 0x44 字节 = 1428 字节，罩住 `+0x0F5C..+0x14DF` 的 132 个动画字段
+（17 组 × 8 个：`ActiveAnimX/Y/ZAdjust/YSort/Powered/…` 到
+`SuperLowPowerPoweredSpecial`）。**按 `[esi+off]` 扫构造器永远扫不到。**
+
+构造器链本身也是实测的：`BuildingType 0x0045DD90` 的首个 `call` 是
+`TechnoType 0x00710AF0`，后者首个 `call` 是 `ObjectType 0x005F7320`，
+再下一个是 `Abstract 0x00410960`。
+
+### 19.8 默认值的三类形态（0 真缺失）
+
+| 形态 | 例 | 标记 |
+|:---|:---|:---|
+| 字段自读（默认 = 该字段当前值） | 绝大多数 | `一致` |
+| 立即数默认 | `Speed` 前有 `push -1` | `立即数默认(-1)` |
+| 跨键默认 | `EliteAirstrikeRechargeTime` 前有 `push eax`（= `EliteAirstrikeTeam` 的新值） | `跨字段(+0x…)` |
+| 栈缓冲默认 | `ReadString` 的默认是 `lea reg,[esp+…]` 缓冲，不是字段 | `栈缓冲默认` |
+
+修完这四类后**"默认缺失"为 0**（第一版报 31 行，全部是上述后三类被误记）。
+
+**`Speed = -1` 是唯一的立即数默认** —— 键缺席时速度取 -1，
+即"无速度类型"，是引擎设计而非缺失。
+
+### 19.9 工具与证据
+
+- 工具：`re_atlas/tools/dump_typeclass_fields.py`（EXIT=0，逐类"全部通过"）
+- 证据：`re_atlas/evidence/typeclass_fields.txt`（688 行，613 键）
+- 复跑：`python re_atlas/tools/dump_typeclass_fields.py`
+- 输出逐字节可复现（仅 CRLF/LF 差异，与 R-027 同）
+
+### 19.10 余项
+
+| 编号 | 内容 |
+|:---|:---|
+| A-40 | `SuperWeaponTypeClass` / `WeaponTypeClass` / `WarheadTypeClass` / `BulletTypeClass` / `AnimTypeClass` / `OverlayTypeClass` / `TerrainTypeClass` / `SmudgeTypeClass` / `VoxelAnimTypeClass` 等**其余 15 个 TypeClass** 尚未接入本工具 |
+| A-41 | `BuildingTypeClass` 的 132 个动画字段已定位到 `+0x44` 步长的结构，但该**子结构的字段名表**未解 |
+| A-42 | 枚举包装器的 25 个键其**枚举值表**（字符串 → 整数）未解，只解出落点偏移 |

@@ -21,7 +21,7 @@ ImageBase `0x00400000`，入口 `0x007CD80F`。
 | `0x00887324` | `TacticalClass*` | 战术主视口单例指针（一级解引用） | ATLAS §11.1 | 社区 |
 | `0x0087F7E8` | `MapClass` 实例 | 全图网格/瓦片/迷雾宿主 | ATLAS §11.1；`0x0072A0AE mov ecx,0x87F7E8` | 实证（旁证） |
 | `0x00A8B230` | `ScenarioClass*` | 局内剧本、航点、触发器、RNG(+0x218) | ATLAS §11.1 | 社区 |
-| `0x008871E0` | `RulesClass*` | rulesmd.ini 全局规则单例（YRpp `RulesClass.h:85`） | ATLAS §11.1；YRpp | 社区 |
+| `0x008871E0` | `RulesClass*` | rulesmd.ini 全局规则单例；**实例尺寸 `0x18C0`**（`push 0x18C0`@`0x0052BABE` → `operator new` `0x7C8E17` → 构造器 `0x665650`）；构造器最高字段止于 `+0x18BC` | YRpp `RulesClass.h:85`；kb/30 §15.2 | **实证**（分配立即数 + 字段上界 + 4 字节尾隙三重吻合） |
 | `0x00887048` | `INI_Rules` | **指针**，指向 rulesmd.ini 的 `CCINIClass` | YRpp `CCINIClass.h:290` | 社区 |
 | `0x00887180` | `INI_Art` | artmd.ini 的 `CCINIClass`（**对象**，非指针） | YRpp `:293`；`c7 05 80 71 88 00 f4 1a 7e 00` | 实证（写入点）+ 社区（命名） |
 | `0x00887128` | `INI_AI` | aimd.ini 的 `CCINIClass` | YRpp `:292`；`c7 05 28 71 88 00 f4 1a 7e 00` | 实证（写入点）+ 社区 |
@@ -38,6 +38,24 @@ ImageBase `0x00400000`，入口 `0x007CD80F`。
 | `0x00A8ED84` | `CurrentFrame` | 全局逻辑帧计数器 | claims `0x0055DE73/79/81` 三处字节断言 | **实证** |
 | `0x008464AC` | `VoicesEnabled` | 音频主开关 | ATLAS §11.1 | 社区 |
 | `0x00A8B238` | 游戏模式标志 | 非 0 ⇒ 联机/多人；0 ⇒ 单人 | 本线 `0x0050B6F0`：`a1 38 b2 a8 00` + `85 c0` + `75 1d` | **实证**（本线新增） |
+| `0x00A8B262` | `ShortGame` 全局镜像 | 载入后从 `RulesClass+0x14B6` 拷贝；**50 处取值引用** | kb/30 §15.3；拷贝 `0x0052D1F5` | **实证** |
+| `0x00A8B25C` | `Money` 全局镜像 | 从 `RulesClass+0x1484` 拷贝；38 处取值引用 | kb/30 §15.3；拷贝 `0x0052D159` | **实证** |
+| `0x00A8B270` | `UnitCount` 全局镜像 | 从 `RulesClass+0x1494` 拷贝；40 处取值引用 | kb/30 §15.3；拷贝 `0x0052D165` | **实证** |
+| `0x00A8B268` | `GameSpeed` 全局镜像 | 从 `RulesClass+0x14A0` 拷贝；43 处取值引用 | kb/30 §15.3；拷贝 `0x0052D17D` | **实证** |
+| `0x00A8B320` | `MCVRedeploys` 全局镜像 | 从 `RulesClass+0x14B8` 拷贝；44 处取值引用 | kb/30 §15.3；拷贝 `0x0052D22C` | **实证** |
+| `0x00A8B31F` | `FogOfWar` 全局镜像 | 从 `RulesClass+0x14B7` 拷贝；22 处取值引用 | kb/30 §15.3；拷贝 `0x0052D219` | **实证** |
+| `0x00A8B260` | `BridgeDestruction` 全局镜像 | 从 `RulesClass+0x14AC` 拷贝；27 处取值引用 | kb/30 §15.3；拷贝 `0x0052D1A1` | **实证** |
+| `0x00A8B258` | `Bases` 全局镜像 | 从 `RulesClass+0x14AF` 拷贝；39 处取值引用 | kb/30 §15.3；拷贝 `0x0052D1AD` | **实证** |
+| `0x00A8B261` | `Crates` 全局镜像 | 从 `RulesClass+0x14B1` 拷贝；41 处取值引用 | kb/30 §15.3；拷贝 `0x0052D1B9` | **实证** |
+| `0x00A8B31E` | `CaptureTheFlag` 全局镜像 | 从 `RulesClass+0x14B2` 拷贝；4 处取值引用 | kb/30 §15.3；拷贝 `0x0052D1C5` | **实证** |
+| `0x00A8B31D` | `HarvesterTruce` 全局镜像 | 从 `RulesClass+0x14B3` 拷贝；23 处取值引用 | kb/30 §15.3；拷贝 `0x0052D1D1` | **实证** |
+| `0x00A8B26C` | `MultiEngineer` 全局镜像 | 从 `RulesClass+0x14B4` 拷贝；21 处取值引用 | kb/30 §15.3；拷贝 `0x0052D1DD` | **实证** |
+| `0x00A8B31C` | `AlliesAllowed` 全局镜像 | 从 `RulesClass+0x14B5` 拷贝；12 处取值 + 4 处取址 | kb/30 §15.3；拷贝 `0x0052D1E9` | **实证** |
+| `0x00A8B263` | `SuperWeaponsAllowed` 全局镜像 | 从 `RulesClass+0x14B9` 拷贝；41 处取值引用 | kb/30 §15.3；拷贝 `0x0052D201` | **实证** |
+| `0x00A8B264` | `BuildOffAlly` 全局镜像 | 从 `RulesClass+0x14BA` 拷贝；35 处取值引用 | kb/30 §15.3；拷贝 `0x0052D20D` | **实证** |
+| `0x00A8B278` | `AIDifficulty` 全局镜像 | 从 `RulesClass+0x14A4` 拷贝；17 处取值引用 | kb/30 §15.3；拷贝 `0x0052D189` | **实证** |
+| `0x00A8B274` | `AIPlayers` 全局镜像 | 从 `RulesClass+0x14A8` 拷贝；36 处取值引用 | kb/30 §15.3；拷贝 `0x0052D195` | **实证** |
+| `0x00822CF4` | `TechLevel` 全局镜像 | 从 `RulesClass+0x149C` 拷贝；20 处取值 + 5 处取址（**非 `.data` 常规区**） | kb/30 §15.3；拷贝 `0x0052D171` | **实证** |
 | `0x00AC51FC` | `CurrentFrameCRC` | 当前帧混合 CRC | ATLAS §11.1 | 社区 |
 | `0x00B04474` | `LatestFramesCRC[256]` | 过去 256 帧 CRC 环 | ATLAS §11.1 | 社区 |
 | `0x008B4204` | `NetworkQueue[16384]` | 网络指令环形队列 | ATLAS §11.1 | 社区 |
@@ -333,28 +351,256 @@ COL.offset 分别 **0/4/8/12**。所有派生类头部都是这个形态。
 双正对照 + 算式/字节对齐自检）。
 
 ---
-### C.11 全引擎 键 → 读取点 索引（R2-2 第五轮，详见 `kb/30_ini_subsystem.md` §12）
+### C.11 全引擎 键 → 读取点 索引（R2-2 第五轮，**R-023 全面重算**，详见 `kb/30_ini_subsystem.md` §12）
 
-**478 个 INI 读取调用点，473 个键字面量恢复，427 个不同键。**
+> ⚠ **旧数字 478 / 473 / 427 作废。** 根因：capstone 单次 `md.disasm(.text)`
+> 在 `0x46F5A0`（跳转表）**静默停止**，只覆盖前 9%，见 `CONFLICTS.md` G-23。
+
+**2,426 个 INI 读取调用点，2,305 个键字面量恢复，1,893 个不同键。**
 
 | 读取器 | 调用点 |
 |:---|---:|
-| `0x005295F0` `ReadBool` | 207 |
-| `0x005276D0` `ReadInteger` | 141 |
-| `0x00528A10` `ReadString` | 112 |
-| `0x005283D0` `ReadDouble` | 16 |
-| `0x00526810` `GetSection` | 1 |
-| `0x00529160` `ReadStringtableEntry` | 1 |
-| `0x00528F00` `ReadUnicodeString` | **0**（引擎自己不用） |
+| `0x005276D0` `ReadInteger` | 757 |
+| `0x005295F0` `ReadBool` | 651 |
+| `0x00528A10` `ReadString` | 650 |
+| `0x005283D0` `ReadDouble` | 306 |
+| `0x00526810` `GetSection` | 54 |
+| `0x00528F00` `ReadUnicodeString` | **5**（旧记录"0 处"已推翻） |
+| `0x00529160` `ReadStringtableEntry` | 3 |
 
-**被多处读取的键（10）**：`Description` / `DoubleThick` / `Elasticity` / `Flat` /
-`Image` / `PowerUp%01dYSort` / `Shadow` / `SpawnDelay` / `ToTile` / `Trailer`
+**被多处读取的键：164 个**（旧记录 10 个）。头部高频项 `Name` / `UIName` /
+`Image` / `Cameo` / `Armor` / `Cost` / `Strength` / `TechLevel` / `Range` /
+`ROF` / `Speed` / `Power` —— 都是各 `TypeClass` 派生类各读一遍。
+
+**未恢复键的 121 处**：键在寄存器（`GetKeyName` 取名）／键在 BSS 缓冲／
+键是字段地址（`lea ebp,[ebx+0x24]`）。**静态不可还原，编译器不能假设"索引里没有 = 引擎不读"。**
 
 **★ 格式化键**：`"PowerUp%01dYSort"`（`0x008194D4`，6 个读取点，全在 ~`0x0045FE50`）
 ⇒ 运行期 `sprintf` 成 `PowerUp0YSort`…`PowerUp9YSort`，INI 里要展开写 10 个实键。
 
-复跑：`python re_atlas/tools/dump_ini_keyindex.py`（`evidence/ini_keyindex.txt`，
-1419 行；正对照 = `Name`/`UIName` 各恰好落在 `0x00410A60`）。
+复跑：`python re_atlas/tools/dump_ini_keyindex.py`（`evidence/ini_keyindex.txt`）。
+**正对照（三项全过才算可信）**：① 纯 `E8` 字节扫描 == 指令扫描，**逐址相等**
+（当前 2426 == 2426 零差异）；② `Name`/`UIName` 各有 ≥1 处属 `LoadFromINI`
+（`0x00410A60`）；③ 调用点总数 ≥2000（防再次静默截断）。
+
+---
+
+### C.12 `RulesClass` 节表与载入顺序（R2-2 第六轮，详见 `kb/30_ini_subsystem.md` §13）
+
+**节名指针表 `0x007F0C78`**：31 项 `const char*`（`SpecialWeapons` … `ButtonList`）。
+
+**函数 → 节名 36/38 恢复**（`tools/dump_rules_sections.py`）。三种形态：
+
+| 形态 | 例 |
+|:---|:---|
+| `indirect`（指针表） | `mov eax,[0x7F0C94]` |
+| `direct`（字符串地址直压） | `push 0x83D0DC` |
+| `table-base`（数组首项） | `mov esi,0x839D68` |
+
+| 函数 | 节名 |
+|:---|:---|
+| `0x0066D3A0` `Read_Colors` | `Colors` |
+| `0x0066D530` `Read_General` | `General` |
+| `0x00672280` `Read_InfantryTypes` | `InfantryTypes` |
+| `0x006728B0` `Read_Animations` | `Animations`（direct） |
+| `0x00672990` `Read_Warheads` | `Warheads`（direct） |
+| `0x00672AE0` `Read_AI` | `AI`（2 字符） |
+| `0x00674240` `Read_IQ` | `IQ`（2 字符） |
+| `0x00674000` `Read_LandCharacteristics` | `Clear`（数组首项） |
+| `0x00674650` `Read_AdvancedCommandBar` | `AdvancedCommandBar`（**非** Multiplayer…） |
+
+**载入顺序**：`Init`(`0x6686C0`) 32 个内部调用，`Read_File ×3` 先建列表节，
+其余按序；**后读覆盖先读**。
+
+**结构性未恢复**：`Read_Difficulty`（节名是参数 `edx`）、`Read_Difficulties`（只转发键名）。
+
+复跑：`python re_atlas/tools/dump_rules_sections.py`（`evidence/rules_sections.txt`，
+四项正对照）。
+
+---
+### C.13 逐 loader 键清单（R2-2 第七轮，详见 `kb/30_ini_subsystem.md` §14）
+
+**651 个字面量键**（R-022 旧值 306 作废：窗口 `0x1000` 腰斩了 4 个 6–10 KB 的 loader，
+且键提取把参数/节名一并算进键；见 `kb/30` §14.0）。关键认知：**20 个 loader 是"枚举键名"形态** ——
+`GetKeyCount` → `GetKeyName`，**键名即数据**；`[VehicleTypes]`/`[Sides]` 等节
+就是名字列表，没有"字段"。
+
+只有 15 个 loader 读固定键（合计 651）：
+
+| loader | 键数 |
+|:---|---:|
+| `0x0066D530` `Read_General` | **279** |
+| `0x006691E0` `Read_AudioVisual` | **152** |
+| `0x0066BBB0` `Read_CombatDamage` | 71 |
+| `0x00672AE0` `Read_AI` | 52 |
+| `0x00671EA0` `Read_MultiplayerDialogSettings` | 27 |
+| `0x0066D270` `Read_Difficulty` | 12 |
+| `0x00674240` `Read_IQ` | 11 |
+| `0x0066B900` `Read_CrateRules` | 10 |
+| `0x0066CF70` `Read_Radiation` | 9 |
+| `0x00674000` `Read_LandCharacteristics` | 8 |
+| `0x00668FB0` `Read_SpecialWeapons` | 7 |
+| `0x006743D0` `Read_JumpjetControls` | 7 |
+| `0x0066D150` `Read_ElevationModel` | 3 |
+| `0x0066D1F0` `Read_WallModel` | 2 |
+| `0x00672230` `Read_Maximums` | 1 |
+
+**`[General]` 与 `[AudioVisual]` 两节就占 431/651（66%）** —— 编译器优先覆盖这两个。
+
+`Read_MultiplayerDialogSettings` 的 27 键含 `MinUnitCount`/`UnitCount`/`MaxUnitCount`、
+`ShortGame`、`MultiEngineer`、`MCVRedeploys` 等。
+
+复跑：`python re_atlas/tools/dump_rules_keys.py`（`evidence/rules_keys.txt`，
+三项正对照）。
+
+---
+### C.14 `RulesClass` 字段布局与镜像全局（R-023，详见 `kb/30_ini_subsystem.md` §15）
+
+**`[MultiplayerDialogSettings]` 27 键 → 结构偏移**（双向一致 27/27）：
+
+| 段 | 偏移 | 键 |
+|:---|:---|:---|
+| 11 × dword | `+0x1480..+0x14AB` | `MinMoney` `Money` `MaxMoney` `MoneyIncrement` `MinUnitCount` `UnitCount` `MaxUnitCount` `TechLevel` `GameSpeed` `AIDifficulty` `AIPlayers` |
+| 16 × byte | `+0x14AC..+0x14BB` | `BridgeDestruction` `ShadowGrow` `Shroud` `Bases` `TiberiumGrows` `Crates` `CaptureTheFlag` `HarvesterTruce` `MultiEngineer` `AlliesAllowed` `ShortGame` `FogOfWar` `MCVRedeploys` `SuperWeaponsAllowed` `BuildOffAlly` `AllyChangeAllowed` |
+
+共 **60 字节无空洞**。读法 `ReadInteger`（dword）/ `ReadBool`（byte）；
+每键在读取器里出现两次（默认载入 + 结果存回），两处偏移必须相等。
+构造器默认值全表见 `evidence/rules_fields.txt`。
+
+**载入后 18 个字段镜像到独立全局**（游戏读全局，不读字段）——
+见 §A 的 `0x00A8B25C`…`0x00A8B320` 各行。核心三条：
+`ShortGame`→`0x00A8B262`（50 处取值）、`MCVRedeploys`→`0x00A8B320`（44）、
+`GameSpeed`→`0x00A8B268`（43）。镜像块 `0x0052D149..0x0052D22C`，恰好 18 条
+`mov [全局], reg`，所在函数从 **`0x0052CD70`** 开始（`0x52D032`/`0x52D0B3` 是提前退出路径，不是函数边界）。
+
+**9 个字段不镜像**，只留在 `RulesClass` 里：`MinMoney` `+0x1480`、
+`MaxMoney` `+0x1488`、`MoneyIncrement` `+0x148C`、`MinUnitCount` `+0x1490`、
+`MaxUnitCount` `+0x1498`、`ShadowGrow` `+0x14AD`、`Shroud` `+0x14AE`、
+`TiberiumGrows` `+0x14B0`、`AllyChangeAllowed` `+0x14BB`。
+
+**`ShadowGrow`（`+0x14AD`）是 27 键里唯一读点为 0 的**（纯字节扫描复核：
+该 disp32 在 `.text` 只出现 3 次 = 构造器写 1 + 读取器读/写 2）。
+
+复跑：`tools/dump_rules_fields.py`（`evidence/rules_fields.txt`）与
+`tools/dump_rules_consumers.py`（`evidence/rules_consumers.txt`）。
+判据：27/27 双向一致 + 4 字节字段对齐 + 无偏移重叠；
+每个镜像全局的**字节扫描次数 == 指令扫描 (取值+取址) 次数**（18/18 相等）。
+
+---
+### C.15 `[AudioVisual]` 字段布局（R-024，详见 `kb/30_ini_subsystem.md` §16）
+
+读取器 `0x006691E0`，函数体 `[0x006691E0, 0x0066B8F1)`，**10,001 字节**。
+**151/152 键已解出字段偏移**（`Smoke` 一键两字段），双向一致 151/151。
+
+**R-025 补全**：首版 130 的 22 个"未解出"**判因错误** —— 字符串一直都在 `.data`，
+真因是 `ReadDouble` 的存回不是 `mov`（`fstp qword` / `fstp dword`）。
+唯一剩余的 `OnFire` 是**列表型**，不是标量字段。
+
+代表项：`DetailMinFrameRateNormal` `+0x0000` / `DetailMinFrameRateMovie` `+0x0004` /
+`DetailBufferZoneWidth` `+0x0008` / `PoseDir` `+0x0044` / `DeployDir` `+0x0048` /
+`DropPodPuff` `+0x004C`(Str) / `Gravity` `+0x16B8` / `EnemyHealth` `+0x17E6`(Bool) /
+`AllyReveal` `+0x17E7`(Bool) / `ShroudGrow` `+0x17F0`(Bool) /
+`LaserTargetColor` `+0x18A4` / `IronCurtainColor` `+0x18A8` /
+`BerserkColor` `+0x18AC` / `ForceShieldColor` `+0x18B0`。
+全表见 `kb/30` §16.2 与 `evidence/rules_fields_av.txt`。
+
+**`Smoke` 是唯一同名两字段的键**（`+0x0BAC` / `+0x0BB0`，同一字面量 `0x00836F0C`）
+⇒ 引擎用**一个** `Smoke=` 值填**两个**槽，编译器只写一次。
+
+**未解出 22 个**（`FogRate` 已定性：字面量不在 `.rdata`，不走 `push <imm>` 形态）。
+
+复跑：`python re_atlas/tools/dump_rules_fields.py 0x006691E0`。
+判据：131/131 双向一致 + 读者全在登记表内 + 4 字节对齐 + 无偏移重叠。
+
+---
+### C.16 `[General]` 字段布局（R-025，详见 `kb/30_ini_subsystem.md` §17）
+
+`[General]` 是 rulesmd.ini **最大节（279 键，占全部字面量键 43%）**。
+读取器 `0x0066D530`，函数体 `[0x0066D530, 0x00671E8E)`，5,062 条指令。
+
+**268 个标量字段已解出**，**0 个凭空多出**，12 个未映射的键全是列表型
+（`DeadBodies` / `BarrelDebris` / `BaseUnit` 等，形态为
+`ReadString` → `push 0; push 0` → 切分 → 追加容器）。
+
+代表项：`PrismSupportModifier` `+0x049C` / `PrismSupportMax` `+0x04A0` /
+`PrismSupportDelay` `+0x04A4` / `PrismSupportDuration` `+0x04A8` /
+`PrismSupportHeight` `+0x04AC` / `AICaptureLowMoneyMark` `+0x0EBC` /
+`TiberiumTransmogrify` `+0x1688`。全表见 `kb/30` §17.2 与
+`evidence/rules_fields_general.txt`。
+
+> ⚠ **边界陷阱**：真实首个 `ret` 在 `0x00671E8B`（距入口 18,782 字节）。
+> 手估的 `0x0066E52F` 是错的（函数体中部），用它只解出 33 个键。
+
+**已知 7 行偏移错位**（`ReadDouble` 8 字节默认值跨字段），以「存回」列为准。
+
+复跑：`python re_atlas/tools/dump_rules_fields.py 0x0066D530`。
+
+---
+### C.17 其余小节字段布局（R-027，详见 `kb/30_ini_subsystem.md` §18）
+
+10 个较小的 rulesmd.ini 节，全部正对照通过：
+
+| 节 | 读取器 | 键数 | 形态 |
+|:---|:---|---:|:---|
+| `[CrateRules]` | `0x0066B900` | 10 | 标量 `this=esi` |
+| `[IQ]` | `0x00674240` | 11 | 标量 `this=esi` |
+| `[Radiation]` | `0x0066CF70` | 9 | 标量 `this=esi` |
+| `[SpecialWeapons]` | `0x00668FB0` | 7 | 标量 `this=esi` |
+| `[JumpjetControls]` | `0x006743D0` | 7 | 标量 `this=esi` |
+| `[ElevationModel]` | `0x0066D150` | 3 | 标量 `this=esi` |
+| `[WallModel]` | `0x0066D1F0` | 2 | 标量 `this=esi` |
+| `[Maximums]` | `0x00672230` | 1 | 标量 `this=esi` |
+| `[Easy]`/`[Normal]`/`[Difficult]` | `0x0066D270` | 12 | **外部对象**（`edi` 基址） |
+| （三难度分派） | `0x00674500` | 0 | **纯分派器** |
+| `[Clear]` 等地形节 | `0x00674000` | 0 | 写**全局表** `0x89EA44` |
+
+**三种非标准形态**（R-027 新识别）：外部对象（默认值是立即数不是字段载入）、
+纯分派器（只调别人的函数）、写全局表（无对象基址 + 范围钳制）。
+
+`[Easy]`/`[Normal]`/`[Difficult]` 三节**结构完全相同**（`0x4B` 字节，
+`FirePower` `+0x00` / `Groundspeed` `+0x08` / … / `ContentScan` `+0x4A`），
+由 `Read_Difficulties` 分派给同一段代码。
+
+复跑：`python re_atlas/tools/dump_rules_fields.py <读取器地址>`。
+**正对照按目标类型分档**（普通 / 外部对象 / 分派器），详见 `kb/30` §18.4。
+
+### C.18 `TypeClass` 继承链与逐类字段（R-028，详见 `kb/30_ini_subsystem.md` §19）
+
+> 这是 `rulesmd.ini` / `artmd.ini` 里 **90% 内容**的落点：
+> `[InfantryTypes]` / `[VehicleTypes]` / `[AircraftTypes]` / `[BuildingTypes]`
+> 里每个名字都指向一个 `TypeClass` 实例。**613 键，0 未定。**
+
+| 层 | 类 | 虚表 | `LoadFromINI`（槽 25） | 尺寸（槽 12） | 键数 | rulesmd | artmd |
+|:---|:---|:---|:---|---:|---:|---:|---:|
+| 1 | `AbstractTypeClass` | `0x007E2000` | `0x00410A60` | 0（桩） | 1 | 1 | 0 |
+| 2 | `ObjectTypeClass` | `0x007EF2D8` | `0x005F92D0` | 0（桩） | 20 | 15 | 5 |
+| 3 | `TechnoTypeClass` | `0x007F4ED8` | `0x00712170` | 0（桩） | **252** | 230 | 22 |
+| 4a | `InfantryTypeClass` | `0x007EB610` | `0x005240A0` | **0x0ED0** | 33 | 28 | 5 |
+| 4b | `UnitTypeClass` | `0x007F6218` | `0x00747620` | **0x0E78** | 27 | 15 | 12 |
+| 4c | `AircraftTypeClass` | `0x007E2868` | `0x0041CC20` | **0x0E10** | 10 | 6 | 4 |
+| 4d | `BuildingTypeClass` | `0x007E4570` | `0x0045FE50` | **0x1798** | **270** | 119 | **151** |
+
+**三条对编译器直接可用的事实**：
+
+1. **逐层委托**：每个派生 loader 的首批指令里都有 `call` 指向上一层 loader
+   （`Building → Techno → Object → Abstract`）。字段偏移的归属由**谁写**决定。
+2. **同一 loader 同时读两个文件**：`rulesmd`（调用方参数）与
+   `artmd`（全局 `CCINIClass` **`0x887180`**，COL = `.?AVCCINIClass@@`）。
+   **写错文件不报错，只是键永远读默认值。** Building 有 151/270 键属 artmd。
+3. **两个节名缓冲**：`+0x24` = 类型自身名（两文件通用）；
+   `+0x1F8` = `Image=` 改写后的美术节名（**artmd 专用**，613 行 0 违反）。
+
+25 个键经 **cdecl 枚举包装器**读取（`PipScale` / `Armor` / `Foundation` /
+`SpeedType` / `BuildCat` / `Owner` …），判据：函数体直接调 `Read*` 且
+`ret N`（N≥8）。构造器链独立核对：四类 **33/33、27/27、10/10**，
+Building **269/269**（含 132 个 `lea eax,[esi+0xF5C] / 0x15 项 / 步长 0x44`
+的指针环清零）。
+
+**`WaterBound` 与 `SpeedType` 共用 `+0x67C`**（建筑不移动，复用该槽；
+`yes`→5、`no`→-1）—— **跨类按偏移批量改写会打穿这一格。**
+
+复跑：`python re_atlas/tools/dump_typeclass_fields.py`；
+证据 `evidence/typeclass_fields.txt`（688 行）。
 
 ---
 ## D. 数据/字符串锚点（claims PART 2–4 摘要）

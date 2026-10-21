@@ -35,12 +35,32 @@ with open(EXE, "rb") as fh:
     BLOB = fh.read()
 
 
+# Backed sections, as (name, rva, vsize, rawptr, rawsize). Only these three map
+# by VA - 0x400000; .rsrc/.detour use a different delta and BSS has no bytes.
+SECTIONS = [
+    (".text", 0x001000, 0x3DF38D, 0x001000, 0x3E0000),
+    (".rdata", 0x3E1000, 0x030074, 0x3E1000, 0x031000),
+    (".data", 0x412000, 0x367BE4, 0x412000, 0x06C000),
+]
+
+
 def read_va(va, n):
-    # .text/.rdata/.data are all VA - 0x400000. BSS has no file backing.
-    fo = va - IMAGE_BASE
-    if fo < 0 or fo >= len(BLOB):
-        return b""
-    return BLOB[fo:fo + n]
+    """Read n bytes at VA, but ONLY when the address is disk-backed.
+
+    A bare `fo = va - 0x400000` is wrong in a way that fails silently: the file
+    is longer than .data's raw backing, so a BSS address such as 0x885780 maps to
+    file offset 0x485780, which is inside the file, and the call returns .detour
+    bytes as if they were data (it produced a fake section name "ostMessageA").
+    Bounds are checked per section; BSS (past raw_size) returns b"".
+    """
+    rva = va - IMAGE_BASE
+    for _name, s_rva, s_vsize, raw_ptr, raw_size in SECTIONS:
+        if s_rva <= rva < s_rva + max(s_vsize, raw_size):
+            d = rva - s_rva
+            if d >= raw_size:
+                return b""
+            return BLOB[raw_ptr + d: raw_ptr + d + n]
+    return b""
 
 
 def u32(va):
