@@ -50,7 +50,9 @@
 | 触发器族类尺寸实证 | **8 类**（Script 48 / Tag 56 / Trigger 72 / TEvent 88 / TAction 148 / Team 160 / TaskForce 212 / ScriptType 564） |
 | `AbstractClass` 多继承 vptr 数 | **4**（COL.offset 0/4/8/12） |
 | 已确证派生字段 | **8 个**（TEvent +0x2C/+0x30/+0x34/+0x54；TAction +0x90；Team +0x3C；TaskForce +0x9C(计数)；Script +0x2C） |
-| 已撤回的过度解读 | **2 条**（`.data` 当格式串常量；`+0xA4` 当数组基址） |
+| 已撤回的过度解读 | **3 条**（`.data` 当格式串常量；`+0xA4` 跨类推广；`0x723CE0` 当条目访问器） |
+| 归属纠正 | **1 条**（`+0x24`/`+0x64` 由 ScriptType → AbstractTypeClass） |
+| 异族核验 | GLM settled（82.5k tok）/ 千问限流未回 ⇒ `TeamTypeClass` 248 仍为**单通道** |
 | 已确证基类前缀字段 | 6 个（4 vptr + `+0x10` dword + `+0x20` bool） |
 | 序列化顺序 | **先基类后派生**（`ScriptClass::Save` 实证） |
 | 交接件 | **6 条**（H-001…H-006） |
