@@ -1,0 +1,55 @@
+镜像基数 0x00400000
+
+站点 VA        宿主函数         宿主首条指令
+------------------------------------------------------------------------
+0x004A8B75   0x004A8960   sub esp, 0x1c ; push ebx
+0x00640427   0x006403A0   sub esp, 0x20 ; call 0x654320
+0x00654413   0x00654320   sub esp, 0x1c ; push ebx
+0x00654469   0x00654320   sub esp, 0x1c ; push ebx
+0x006AC00B   0x006ABD30   sub esp, 0x24 ; push ebx
+0x006AC03E   0x006ABD30   sub esp, 0x24 ; push ebx
+0x006AC0ED   0x006ABD30   sub esp, 0x24 ; push ebx
+0x006AC140   0x006ABD30   sub esp, 0x24 ; push ebx
+0x006AC193   0x006ABD30   sub esp, 0x24 ; push ebx
+0x006AC1E6   0x006ABD30   sub esp, 0x24 ; push ebx
+0x006D059B   0x006D053D   mov edx, dword ptr [esi] ; push 0xb0cc40
+0x006D0619   0x006D05C3   test al, al ; je 0x6d064d
+0x006D0634   0x006D05C3   test al, al ; je 0x6d064d
+0x006D0664   ? (无标准 ret 边界) 
+0x006D089D   ? (无标准 ret 边界) 
+0x006D08B3   0x006D0680   push ebx ; push ebp
+0x006D0940   0x006D0680   push ebx ; push ebp
+0x006D09FA   0x006D09C0   sub esp, 0x1c ; test ecx, ecx
+0x006D1293   0x006D1200   sub esp, 0x1c ; push esi
+0x006D1308   0x006D1200   sub esp, 0x1c ; push esi
+0x006D137E   0x006D1200   sub esp, 0x1c ; push esi
+0x006D13F3   0x006D1200   sub esp, 0x1c ; push esi
+0x006D1541   0x006D14F0   push esi ; push edi
+0x006D155C   0x006D14F0   push esi ; push edi
+0x006D15CB   0x006D1570   mov eax, dword ptr [ecx] ; sub esp, 0x1c
+0x006D1605   0x006D15F0   mov eax, dword ptr [ecx] ; push 0xb0cc40
+0x006D1632   0x006D1610   push esi ; mov esi, ecx
+0x006D16C2   0x006D1660   sub esp, 0x1c ; push edi
+0x006D16DD   0x006D1660   sub esp, 0x1c ; push edi
+0x006D1744   0x006D1660   sub esp, 0x1c ; push edi
+
+=== 宿主函数汇总（三无判定）===
+宿主           站点数      E8调用     立即数      文档       结论
+  ?            2        -        -        -        未判定（边界法失效）
+  0x004A8960   1        2        7        -        
+  0x006403A0   1        1        1        -        
+  0x00654320   2        1        1        2        
+  0x006ABD30   6        3        4        6        
+  0x006D053D   1        0        0        -        ★ 三无 ⇒ 只能间接分发
+  0x006D05C3   2        0        0        -        ★ 三无 ⇒ 只能间接分发
+  0x006D0680   2        1        1        3        
+  0x006D09C0   1        9        0        -        
+  0x006D1200   4        3        0        6        
+  0x006D14F0   2        0        0        -        ★ 三无 ⇒ 只能间接分发
+  0x006D1570   1        0        0        -        ★ 三无 ⇒ 只能间接分发
+  0x006D15F0   1        0        0        -        ★ 三无 ⇒ 只能间接分发
+  0x006D1610   1        1        0        -        
+  0x006D1660   3        1        0        3        
+
+站点总数 = 30，宿主数 = 15
+★ 三无宿主 = 5 个，覆盖站点 7 个（23.3%）
