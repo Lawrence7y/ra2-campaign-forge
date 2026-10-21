@@ -275,7 +275,69 @@ ATLAS §11.2 只列了 `HouseClass`/`CellClass` 等 24 槽类，未涉及本族�
 
 ---
 
-## 6. 下一轮
+## 6. `TaskForceClass` 的结构线索（L-4，部分）
+
+`TaskForceClass` 尺寸 **212 (`0xD4`)**，27 槽。各槽体首：
+
+| 槽 | 地址 | 体首 | 判读 |
+|---:|---|---|:---|
+| 0 | `0x00410260` | `mov eax,[esp+0xC]; push ebx; test eax,eax` | 与 `AbstractClass` slot0 **同址**（继承未覆写） |
+| 1 | `0x00410300` | `mov eax,1; ret 4` | 同父类 |
+| 2 | `0x00410310` | `mov eax,1; ret 4` | 同父类 |
+| 3 | `0x006E8710` | `mov eax,[esp+8]; test eax,eax; jne …; mov eax,0x80004003` | **`GetClassID`**（`E_POINTER` 守卫 + 写 `[0x7E9770]` 起的常量） |
+| 4 | `0x00410450` | `mov dl,[ecx+0x20]` | 读 **`AbstractClass` 的 `+0x20` bool**（见 §0.3） |
+| 5 | `0x006E86A0` | `call 0x410380` + `lea ecx,[esp+0xC]; push ecx` | **`Load` 包装**（`0x410380` 是带 `E_POINTER` 守卫的接口取值助手） |
+| 6 | `0x006E8680` | `push a; push b; push c; call 0x410320; test eax; jl; xor eax` | **`Save` 包装**（`0x410320` 同族助手） |
+
+**关键**：槽 4 读 `AbstractClass+0x20` 的 **bool**，证实 §0.3 推出的 `+0x20 = bool` 是
+**派生类实际使用的字段**，不是我误判的填充。
+
+**`0x410320` / `0x410380` / `0x6CF240` 是同一族"接口取值助手"** [实证]：
+三者都在参数为空时返回 `0x80004003`（`E_POINTER`），非空则读 `[obj]` 取 vtable 后再分派。
+⇒ 这是引擎的**通用 COM 风格包装**，不是各类自己的逻辑。
+`TaskForceClass` 的槽 5/6 只是把 `+0x0C/+0x14` 等字段地址交给它做序列化。
+
+**212 字节的字段图** [实证]（扫全部 27 槽体内 `[reg+disp]`，收 `disp < 0xD4` 者）：
+
+| 偏移 | 出现次数 | 语义 | 证据 |
+|:---|---:|:---|:---|
+| `+0x04` / `+0x08` / `+0x0C` | 多次 | `AbstractClass` 的接口 vptr（继承） | 与 §0.3 一致 |
+| `+0x10` | 2 | `AbstractClass` 的 dword 字段 | 与 §0.3 一致 |
+| `+0x14` | 3 | 运行时态字段 | — |
+| `+0x18` / `+0x1C` | 1 / 1 | 运行时态 | — |
+| `+0x20` | 1 | `AbstractClass` 的 **bool** | 被 slot4 读 |
+| `+0x24` / `+0x28` | 2 / 1 | 未知 | — |
+| `+0x38` | 2 | 未知 | slot25/26 |
+| **`+0x9C`** | **6** | **成员数量（count）** | `0x006E853F: mov eax,[edi+0x9C]` → `cmp esi,eax; jge` 循环上界 |
+| **`+0xA4`** | **2** | **成员数组基址** | `0x006E8529: lea ebx,[edi+0xA4]` → 循环里 `mov ecx,ebx` |
+
+**★ `TaskForceClass` 的成员容器 = `{ count @ +0x9C, array @ +0xA4 }`** [实证]
+
+```
+0x006E8527  33 F6               xor  esi, esi            ; i = 0
+0x006E8529  8D 9F A4 00 00 00   lea  ebx, [edi+0xA4]     ; ★ 数组基址
+0x006E852F  56                  push esi
+0x006E8530  8D 44 24 14         lea  eax, [esp+0x14]
+0x006E8534  68 6C 7F 81 00      push 0x817F6C            ; 格式串/模板
+0x006E8539  50                  push eax
+0x006E853A  E8 B5 09 0E 00      call 0x7C8EF4            ; sprintf 类
+0x006E853F  8B 87 9C 00 00 00   mov  eax, [edi+0x9C]     ; ★ 成员数
+0x006E8545  83 C4 0C            add  esp, 0xC
+0x006E8548  3B F0               cmp  esi, eax
+0x006E854A  7D 1A               jge  0x6E8566            ; i >= count ⇒ 退出
+0x006E854C  8B CB               mov  ecx, ebx            ; 数组基址 → ecx
+```
+
+⇒ **`+0xA4` 与 `+0x9C` 相距 8 字节，中间 `+0xA0` 未被单独引用**，
+说明容器大概率是 `{ ptr @ +0xA0, count @ +0x9C, cap @ +0xA4 }` 或
+`{ count @ +0x9C, ??? @ +0xA0, array @ +0xA4 }` 的**非常规顺序**布局，
+**不是**标准 `DynamicVectorClass`（后者是 `+4=Items, +0x10=Count`）。
+若按标准向量布局解读会错位 —— 这一点必须在编译器侧显式建模。
+
+**`0x7C8EF4`** 是格式化函数（`push 格式串; push 目标缓冲; push 索引` 三参）。
+`0x817F6C` 处的格式串实测为 **`"%d"`** [实证] ⇒
+这段循环在**为每个成员生成十进制 ID 字符串**（成员名 = 索引的数字形式）。
+这解释了 `+0x9C` 为何在循环条件里被反复读：它是"要生成多少个 ID"的上界。
 
 | # | 悬项 |
 |:--|:---|
