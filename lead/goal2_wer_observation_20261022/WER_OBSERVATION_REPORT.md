@@ -333,3 +333,62 @@ PY
 # LocalDumps 现状（只读）
 powershell -NoProfile -Command "Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\gamemd.exe'"
 ```
+
+---
+
+## §8 ★ 第二轮加固：AppCrash 支持与 Sig 索引陷阱
+
+> 追加于 2026-10-22 04:2x。上一版检测器**只能读 AppHang**，而 ② 关心的 RC-4 是 AV（`c0000005`），
+> 走的是 **AppCrash** 记录，签名字段完全不同。本节补上这块并登记一个真实陷阱。
+
+### §8.1 ★★ 陷阱：AppCrash 的 `异常代码/异常偏移` 索引**不固定**
+
+对本机 25 份 AppCrash 记录逐份实测，`Sig[i].Name` 的索引布局有三种：
+
+| 布局 | 份数 | `异常代码` 索引 | `异常偏移` 索引 |
+|:--|--:|--:|--:|
+| 常见 | **17** | `Sig[7]` | `Sig[6]` |
+| 另一变体 | **6** | `Sig[6]` | `Sig[7]` |
+| 无此两项 | **2** | — | —（Windows Installer 的 MSI 型记录） |
+
+⇒ **按索引硬编码必然读错**（17:6 的多数派反而不是全部）。
+必须**按 `.Name=` 配对取值**，不能按 `Sig[N]` 的数字位置取。
+
+**这条的普适意义**：WER 的 `Sig[]` 是"名称/值"的**有序对列表**，
+索引只是排列位置，**语义由名称承载**。任何按索引读 WER 的代码都不可靠——
+包括未来要给 harness 写的 WER 检测（#6）。
+
+### §8.2 检测器已按名配对重写
+
+`parse_report()` 改为：先扫一遍建 `名称 → 值` 映射，再按**名称**取
+`异常代码 / 异常偏移 / 故障模块名称 / 应用程序版本 / 应用程序时间戳`。
+`Hang Signature / Hang Type` 同样按名取，与 AppCrash 字段互不干扰。
+
+**全量回归（36 份记录，4 种 EventType）**：
+
+| EventType | 份数 | 异常代码解析 | 故障模块解析 |
+|:--|--:|:--|:--|
+| `APPCRASH` | 7 | ✅ 全部 `c0000005` / `c000041d` | ✅ `tipskins.dll` / `System.dll` / `StackHash_*` |
+| `BEX64` | 14 | ✅ 全部 `c0000409` / `c0000005` | ✅ `koffi.node` / `bt-battery-bar` / `CrashRpt1500.d` |
+| `AppHangB1` | 1 | —（无此字段，正确留空） | —（正确留空） |
+| `StoreAgentDetected` | 14 | —（无此字段，正确留空） | —（正确留空） |
+
+⇒ **四种类型全部正确分型，无串味**。AppHang 记录**不会**误读成 AppCrash，
+反之亦然。
+
+### §8.3 新增能力：`--app` / `--all`
+
+```
+--app <名字>   # 默认 gamemd；按目录名过滤
+--all          # 扫全部记录（回归用）
+```
+
+### §8.4 一条顺带观察：`StackHash_*` 是"符号不可得"的占位
+
+25 份 AppCrash 里有 4 份故障模块写作 `StackHash_bae8…` / `StackHash_d9df…`。
+这是 WER 在**拿不到有效模块名**时的占位符（栈哈希）。
+⇒ 对我们的意义：**WER 记录里的"故障模块"不一定是真模块名**，
+若未来 gamemd 崩溃落在 `StackHash_*` 上，那这条记录对定模块**零信息量**，
+只能靠 dmp。这是"必须有 dmp"的又一个理由（对应待裁 #5）。
+
+---

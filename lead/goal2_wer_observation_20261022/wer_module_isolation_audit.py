@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""载体隔离检测器：从 WER Report.wer 的模块表判断哪些模块来自载体外。
+"""载体隔离检测器：从 WER Report.wer 判断哪些模块来自载体外。
 
 用途：趟收尾后对 WER 记录做一次只读审计，把「哪些模块来自载体目录外」
 变成可观测事实。零改动、零注入、只读。
@@ -9,9 +9,14 @@
 解析绝对路径。凡走该路径的加载都绕开载体目录，直接取安装目录里的副本。
 2026-10-16 的 QC111 现场已实证 LoadedModule[58] 落在载体外。
 
+★ Sig[] 必须按 .Name= 配对取值，不能按 Sig[N] 的索引硬编码：
+  本机 25 份 AppCrash 里「异常代码/异常偏移」有 [7]/[6]（17 份）、
+  [6]/[7]（6 份）、以及两项都无（2 份）三种布局。
+
 用法：
     python wer_module_isolation_audit.py <Report.wer 路径> --carrier <载体目录>
     python wer_module_isolation_audit.py --scan-archive --carrier <载体目录>
+    python wer_module_isolation_audit.py --scan-archive --all --carrier <载体目录>
 """
 import argparse
 import glob
@@ -25,6 +30,22 @@ SYSTEM_PREFIXES = (
     "c:\\program files (x86)\\",
     "c:\\programdata\\",
 )
+
+# Sig 名称的中英文两套写法
+NAME_EXC_CODE = ("异常代码", "Exception Code")
+NAME_EXC_OFFSET = ("异常偏移", "Fault offset")
+NAME_FAULT_MODULE = ("故障模块名称", "Fault Module Name")
+NAME_APP_VERSION = ("应用程序版本", "Application Version")
+NAME_APP_TIMESTAMP = ("应用程序时间戳", "Application Timestamp")
+NAME_HANG_SIG = ("Hang Signature",)
+NAME_HANG_TYPE = ("Hang Type",)
+
+
+def _first(d, keys):
+    for k in keys:
+        if k in d and d[k]:
+            return d[k]
+    return None
 
 
 def read_wer(path):
@@ -40,7 +61,7 @@ def read_wer(path):
 
 
 def parse_report(text):
-    """抽出事件类型、时间、模块表。"""
+    """抽出事件类型、时间、签名字段、模块表。"""
     info = {
         "event_type": None,
         "event_time_ft": None,
@@ -49,6 +70,12 @@ def parse_report(text):
         "ns_app_name": None,
         "hang_signature": None,
         "hang_type": None,
+        "exception_code": None,
+        "exception_offset": None,
+        "fault_module": None,
+        "app_version": None,
+        "app_timestamp": None,
+        "sig": {},
         "modules": [],
     }
     for line in text.splitlines():
@@ -70,18 +97,27 @@ def parse_report(text):
         elif key.startswith("LoadedModule["):
             idx = int(re.search(r"\[(\d+)\]", key).group(1))
             info["modules"].append((idx, val))
-    # 显式抓 Hang Signature / Hang Type（按 Name 配对，避免误读 AppCrash 的 Sig）
-    cur_name = None
+
+    # 按 Name 配对抓 Sig 值（不按索引，见模块 docstring）
+    sig = {}
+    cur = None
     for line in text.splitlines():
         s = line.strip()
         if s.startswith("Sig[") and ".Name=" in s:
-            cur_name = s.split(".Name=", 1)[1].strip()
-        elif s.startswith("Sig[") and ".Value=" in s and cur_name:
-            if cur_name == "Hang Signature":
-                info["hang_signature"] = s.split(".Value=", 1)[1].strip()
-            elif cur_name == "Hang Type":
-                info["hang_type"] = s.split(".Value=", 1)[1].strip()
-            cur_name = None
+            cur = s.split(".Name=", 1)[1].strip()
+        elif s.startswith("Sig[") and ".Value=" in s:
+            val = s.split(".Value=", 1)[1].strip()
+            if cur and cur not in sig:
+                sig[cur] = val
+            cur = None
+    info["sig"] = sig
+    info["hang_signature"] = _first(sig, NAME_HANG_SIG)
+    info["hang_type"] = _first(sig, NAME_HANG_TYPE)
+    info["exception_code"] = _first(sig, NAME_EXC_CODE)
+    info["exception_offset"] = _first(sig, NAME_EXC_OFFSET)
+    info["fault_module"] = _first(sig, NAME_FAULT_MODULE)
+    info["app_version"] = _first(sig, NAME_APP_VERSION)
+    info["app_timestamp"] = _first(sig, NAME_APP_TIMESTAMP)
     info["modules"].sort()
     return info
 
@@ -120,6 +156,15 @@ def ft_to_local(ft_str):
     return datetime.datetime.fromtimestamp(unix).strftime("%Y-%m-%d %H:%M:%S")
 
 
+def _hex_or_raw(v):
+    if v is None:
+        return None
+    try:
+        return "%s (hex %s)" % (v, hex(int(v)))
+    except (TypeError, ValueError):
+        return v
+
+
 def audit_one(wer_path, carrier_dir, verbose=False):
     text = read_wer(wer_path)
     info = parse_report(text)
@@ -133,11 +178,15 @@ def audit_one(wer_path, carrier_dir, verbose=False):
     print("  IsFatal    : %s" % info["is_fatal"])
     print("  进程路径   : %s" % info["app_path"])
     if info["hang_signature"] is not None:
-        print("  Hang Sig   : %s (hex %s)" % (info["hang_signature"],
-                                              hex(int(info["hang_signature"]))))
+        print("  Hang Sig   : %s" % _hex_or_raw(info["hang_signature"]))
     if info["hang_type"] is not None:
-        print("  Hang Type  : %s (hex %s)" % (info["hang_type"],
-                                              hex(int(info["hang_type"]))))
+        print("  Hang Type  : %s" % _hex_or_raw(info["hang_type"]))
+    if info["exception_code"]:
+        print("  异常代码   : %s" % info["exception_code"])
+    if info["exception_offset"]:
+        print("  异常偏移   : %s" % info["exception_offset"])
+    if info["fault_module"]:
+        print("  故障模块   : %s" % info["fault_module"])
     print("  模块总数   : %d" % len(info["modules"]))
     print("    载体内   : %d" % len(inside))
     print("    系统     : %d" % len(system))
@@ -167,6 +216,9 @@ def audit_one(wer_path, carrier_dir, verbose=False):
         "wer": wer_path,
         "event_type": info["event_type"],
         "event_time": ft_to_local(info["event_time_ft"]),
+        "exception_code": info["exception_code"],
+        "exception_offset": info["exception_offset"],
+        "fault_module": info["fault_module"],
         "n_modules": len(info["modules"]),
         "n_inside": len(inside),
         "n_system": len(system),
@@ -180,7 +232,11 @@ def main():
     ap = argparse.ArgumentParser(description="WER 模块表载体隔离审计（只读）")
     ap.add_argument("wer", nargs="?", help="Report.wer 路径")
     ap.add_argument("--scan-archive", action="store_true",
-                    help="扫描 WER ReportArchive 里全部 *gamemd* 记录")
+                    help="扫描 WER ReportArchive 里全部匹配记录")
+    ap.add_argument("--app", default="gamemd",
+                    help="--scan-archive 时的进程名过滤（默认 gamemd）")
+    ap.add_argument("--all", action="store_true",
+                    help="配合 --scan-archive，扫全部记录不过滤进程名")
     ap.add_argument("--archive-dir",
                     default=r"C:\ProgramData\Microsoft\Windows\WER\ReportArchive")
     ap.add_argument("--carrier", required=True, help="载体目录（隔离基准）")
@@ -193,12 +249,17 @@ def main():
 
     targets = []
     if args.scan_archive:
-        pattern = os.path.join(args.archive_dir, "*gamemd*", "Report.wer")
+        if args.all:
+            pattern = os.path.join(args.archive_dir, "*", "Report.wer")
+            label = "全部"
+        else:
+            pattern = os.path.join(args.archive_dir, "*%s*" % args.app, "Report.wer")
+            label = args.app
         targets = sorted(glob.glob(pattern))
         if not targets:
-            print("ReportArchive 里没有 *gamemd* 记录: %s" % args.archive_dir)
+            print("ReportArchive 里没有 *%s* 记录: %s" % (label, args.archive_dir))
             return 1
-        print("找到 %d 份 gamemd WER 记录" % len(targets))
+        print("找到 %d 份 %s WER 记录" % (len(targets), label))
         print()
     elif args.wer:
         if not os.path.isfile(args.wer):
@@ -217,7 +278,7 @@ def main():
     total_outside = 0
     for r in results:
         flag = "★越界%d" % r["n_outside"] if r["n_outside"] else "OK"
-        print("  %-52s %s" % (r["event_time"] or "?", flag))
+        print("  %-20s %-26s %s" % (r["event_time"] or "?", r["event_type"] or "?", flag))
         total_outside += r["n_outside"]
     print()
     print("  越界模块总数: %d" % total_outside)
