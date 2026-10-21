@@ -82,6 +82,13 @@
 
 ## 禁区遵守记录
 
+**R-028（2026-10-22）**：
+- `tasklist` 查无 `gamemd` / `ra2loader`。
+- 未启动游戏/loader，未写 `ra2youli`，未跑 trip，未编译。
+- 未修改 `lead/`、`docs/re/`、`ra2render/`、`tools/`。
+- 未派子代理（本轮纯本地；异族复核仍欠，见 §核验状态）。
+- 读 GOAL-3T 台账尾部确认其在飞的是 `units0`/HouseClass 线，与本轮零交集。
+
 **R-012（2026-10-21 20:1x–21:0x）**：
 - `tasklist` 查无 `gamemd` / `ra2loader` / `game.exe`。
 - 未启动游戏/loader，未写 `ra2youli`，未跑 trip，未编译。
