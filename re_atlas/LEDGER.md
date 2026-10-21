@@ -979,3 +979,85 @@ COL @0x7FB160  pTypeDescriptor = 0x8177E8
 - [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
 - [x] 只提交 `re_atlas/`
 - [x] 片段均 ≤ 8 条指令
+
+---
+
+## R-015 · 2026-10-21 20:5x — R2-2 开局：INI 子系统类骨架
+
+### 0. 心跳与进程检查
+
+| 项 | 结果 |
+|:---|:---|
+| `tasklist` 查 `gamemd` / `ra2loader` / `game.exe` | **全无** |
+| GOAL-3T 台账尾部 | 已读：仍在 `--probe-frames` / `units0` 线 |
+| 冲突 | 无。本轮只动 `re_atlas/` |
+
+### 1. 本轮做了什么
+
+R2-1（触发器族）该收的字段已收得差不多，按 §3 优先级转入 **R2-2 INI 与规则加载**。
+第一篇只做**类骨架**：`INIClass` / `CCINIClass` 的虚表、继承、静态全局。
+
+### 2. 核心发现：`INIClass` 是多继承，RTTI 表与构造函数写的表不是同一张
+
+- RTTI 表：`INIClass` = `0x7EA5F4`、`CCINIClass` = `0x7E1AF4`，**各 1 槽**（这次 RTTI 记账是对的）。
+- 但**构造函数不写这两张表**：
+  - `INIClass` ctor `0x4F2B66` 写 **`0x7EA624`**（→ `VectorClass<GraphicMenuItem*>`）
+  - `CCINIClass` ctor `0x535AA0` 写 **3 个子对象 vptr**：
+    `+0x0C`→`0x7E1B04`(GenericList)、`+0x10`→`0x7E1B0C`(GenericNode)、`+0x1C`→同上
+- ⇒ `INIClass` 的第一个基类就是 `VectorClass<GraphicMenuItem*>`，YRpp 省略了这层。
+
+### 3. 撤回语料错注：`0x887180` 是 `INI_Art` 不是 `RULESMD.INI`
+
+6 处 `c7 05 <addr> f4 1a 7e 00` 证明 6 个全局被写成 `CCINIClass` 对象。
+按 `YRpp/CCINIClass.h:288-296`：
+
+```text
+0x887048  INI_Rules   CCINIClass*   ← 指针！
+0x887128  INI_AI      CCINIClass
+0x887180  INI_Art     CCINIClass
+0x887208  INI_UIMD    CCINIClass
+0x8870C0  INI_RA2MD   CCINIClass
+```
+
+语料 `vxl_cache_layout.md:102` 把 `0x887180` 注成 `rulesmd.ini` **是错的**。
+`INI_Rules` 是**指针**，要解引用一次；`INI_Art` 是对象，取址即 `this`。**两者不能混。**
+
+**6 个地址全在 BSS**（≥ `0x0087E000`），磁盘无字节 ⇒ 地址→文件名只能以 YRpp 为准，标 `社区`。
+
+### 4. 两次当场自纠
+
+**自纠 1**：初稿写"`0x7E1B44` 是 `CCINIClass` 的 7 槽方法表"。
+验 `[vt-4]` COL → `VectorClass<ScriptClass*>`，**与 INI 完全无关**。
+错因：从 RTTI 表头往后找"连续 ≥4 个 `.text` 指针"的 run，那段恰好紧跟其后，
+就默认是同类延续 —— **没验 COL**。
+
+**自纠 2**：`0x887180` = `RULESMD.INI`（沿用语料注释）→ 实为 `INI_Art`。
+
+两次都是"地址相邻/注释可信"的直觉错误，都已写进纪律。
+教训是**先在 `kb/30` 里写了完整稿，验 COL 时才发现** —— 顺序应该是
+"验 COL → 再写判读"，不是"写完判读 → 再顺手验一下"。
+
+### 5. 新增纪律
+
+- **#9**：RTTI 的 `slots` 是记账值，且 `.rdata` 里多张表首尾相接。
+  按槽号遍历必须配"值落 `.text`"判据；判断归属必须验 `[vt-4]` 的 COL 名。
+- **#10**：社区源（YRpp）与语料注释冲突时，**先查 YRpp 的静态地址声明**。
+  本轮两处地址归属都是 YRpp 对、语料注释错。
+
+### 6. 本轮产出
+
+| 件 | 内容 |
+|:---|:---|
+| 新增 KB | `30_ini_subsystem.md` |
+| CONFLICTS | **G-13**（`0x887180` 错注）、**G-14**（`.rdata` 相邻≠同类） |
+| STATUS | R2-2 从 ⬜ 改为 🟢 类骨架完成 |
+| 撤回 | **2 次当场自纠**（未提交进仓，但留痕在 KB §8 与本台账） |
+| 新增纪律 | **#9 / #10** |
+| 未闭合 | I-1…I-5 |
+
+### 7. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未启动 gamemd/ra2loader
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 只提交 `re_atlas/`
+- [x] 片段均 ≤ 10 条指令

@@ -272,3 +272,40 @@ G-4/G-5 说"槽 12 可能是访问器"。正确的一般化是：**槽 11 = `Wha
 | P-2 | `ScenarioClass*` / `RulesClass*` 同上 | 同上 |
 | P-3 | `SpatialGrid` 桶数组"每桶 24 字节"的实证 | 可在离线字节内做（`+0x2580/+0x2584/+0x2590` 已在 `0x4137A0` 见到），留待空间索引模块 |
 | P-4 | `HouseClass` 尺寸 90,296 与 `+0x1EC/+0x1ED` 字段语义 | 尺寸已实证；字段语义待 `HouseClass` 模块 |
+
+### G-13 · 语料错注：`0x887180` 是 `INI_Art`（artmd.ini），不是 `RULESMD.INI`
+
+`docs/re/vxl_cache_layout.md:102` 写：
+
+```text
+00715962  mov ecx, 0x887180  ; CCINIClass* rulesmd.ini
+```
+
+**该注释错。** 三处独立证据：
+
+1. `YRpp/CCINIClass.h:293` — `static constexpr reference<CCINIClass, 0x887180u> const INI_Art{};`
+2. 同文件 `:290` — `INI_Rules` 是 **`0x00887048`**，且类型为 **`CCINIClass*`（指针）**
+3. 字节侧：`0x0040E031` / `0x0040E0E1` / `0x0040E191` / `0x0040E241` / `0x0040E2F1` /
+   `0x0049B40B` 共 6 处 `c7 05 <addr> f4 1a 7e 00`，把 6 个全局写成 `CCINIClass` 对象
+
+**全部 6 个地址落在 BSS**（≥ `0x0087E000`），磁盘上无字节，
+所以"对象是否已构造"无法从文件复核；地址→文件名映射本轮以 YRpp 为唯一来源。
+
+**影响**：把 `0x887180` 当 rulesmd 用会**改到 artmd 的定义**。
+`INI_Rules` 是**指针**，必须解引用一次（`*[0x887048]`）才是对象 —— 两者形态不同。
+
+### G-14 · 语料/直觉陷阱：`.rdata` 里 vtable 首尾相接，相邻 ≠ 同类
+
+`0x7EA5F0..0x7EA64C` 这一片是 **4 张表**首尾相接：
+
+| 表头 | 前 4 字节（`[vt-4]`）COL → 类名 |
+|:---|:---|
+| `0x007EA5F4` | `INIClass` |
+| `0x007EA5FC` | `GraphicMenu` |
+| `0x007EA604` | `DynamicVectorClass<GraphicMenuItem*>` |
+| `0x007EA624` | `VectorClass<GraphicMenuItem*>` |
+
+从 `0x7EA5F4` 往后按"连续 `.text` 指针"扫，会把 4 张表读成一张。
+本线第二稿就这样把 `VectorClass<ScriptClass*>` 的 7 槽认成了 `CCINIClass` 的方法表。
+
+**判据**：判断表的归属，**先读 `[vt-4]` 的 COL 反查类名**；扫槽时遇 `.rdata` 值即停。

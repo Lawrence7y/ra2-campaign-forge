@@ -21,7 +21,14 @@ ImageBase `0x00400000`，入口 `0x007CD80F`。
 | `0x00887324` | `TacticalClass*` | 战术主视口单例指针（一级解引用） | ATLAS §11.1 | 社区 |
 | `0x0087F7E8` | `MapClass` 实例 | 全图网格/瓦片/迷雾宿主 | ATLAS §11.1；`0x0072A0AE mov ecx,0x87F7E8` | 实证（旁证） |
 | `0x00A8B230` | `ScenarioClass*` | 局内剧本、航点、触发器、RNG(+0x218) | ATLAS §11.1 | 社区 |
-| `0x008871E0` | `RulesClass*` | rulesmd.ini 全局规则单例 | ATLAS §11.1 | 社区 |
+| `0x008871E0` | `RulesClass*` | rulesmd.ini 全局规则单例（YRpp `RulesClass.h:85`） | ATLAS §11.1；YRpp | 社区 |
+| `0x00887048` | `INI_Rules` | **指针**，指向 rulesmd.ini 的 `CCINIClass` | YRpp `CCINIClass.h:290` | 社区 |
+| `0x00887180` | `INI_Art` | artmd.ini 的 `CCINIClass`（**对象**，非指针） | YRpp `:293`；`c7 05 80 71 88 00 f4 1a 7e 00` | 实证（写入点）+ 社区（命名） |
+| `0x00887128` | `INI_AI` | aimd.ini 的 `CCINIClass` | YRpp `:292`；`c7 05 28 71 88 00 f4 1a 7e 00` | 实证（写入点）+ 社区 |
+| `0x00887208` | `INI_UIMD` | uimd.ini 的 `CCINIClass` | YRpp `:294`；`c7 05 08 72 88 00 f4 1a 7e 00` | 实证（写入点）+ 社区 |
+| `0x008870C0` | `INI_RA2MD` | ra2md.ini 的 `CCINIClass` | YRpp `:295`；`c7 05 c0 70 88 00 f4 1a 7e 00` | 实证（写入点）+ 社区 |
+| `0x00887058` | 未命名 `CCINIClass` | 第 6 个静态实例 | `c7 05 58 70 88 00 f4 1a 7e 00` | 实证（写入点） |
+| `0x0089F518` | 未命名 `CCINIClass` | 第 7 个静态实例 | `c7 05 18 f5 89 00 f4 1a 7e 00` | 实证（写入点） |
 | `0x00A83D4C` | `HouseClass::Player` | 本地人类玩家阵营指针 | ATLAS §11.1；`0x0050B71A` 读后严格比对 | **实证** |
 | `0x00A80228` | `HouseClass::Array` | 参战阵营动态向量 | ATLAS §11.1 | 社区 |
 | `0x0087E8B8` | `PathFinder` | 寻路工作区（生成戳 +0x28） | ATLAS §11.1 | 社区 |
