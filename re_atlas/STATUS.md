@@ -1,6 +1,6 @@
 # RE-ATLAS · 进度与覆盖率 (STATUS)
 
-更新：2026-10-21 R-016（R2-2 第二轮：`INISection`/`INIEntry` 布局 + 撤回 R-015 两条结构结论）
+更新：2026-10-21 R-017（R2-2 第三轮：读族逐键解析规则 + 六模型异族复核）
 
 ## 一句话
 
@@ -38,7 +38,7 @@
 | R0 盘点（索引/种子/冲突） | ✅ 完成 | 本轮 |
 | R1 全局骨架（PE/RTTI/虚表/覆盖率） | ✅ 完成 | 本轮 |
 | R2-1 地图 / 触发器 / 脚本 / TaskForce / TeamClass | 🟢 **派发层 + 类尺寸/前缀布局/对象字段完成** | Action 145 / Team 65 / Event 两级 49 槽全解析；触发器族 8 类**ID+尺寸双命中**；`AbstractClass` 多继承 4 vptr；`TEventClass` 三接口字段 + `Save` 四项；`AbstractTypeClass` 字段边界实测。见 `kb/10_map_triggers.md`、`kb/11_class_layouts.md`、`kb/20_vtable_contract.md`、`kb/21_swizzle_and_object_fields.md`。余：`ScriptType` 大块结构、`+0x28`/`+0x30` 接口对象类名（L-21） |
-| R2-2 INI 与规则加载 | 🟡 **容器层完成，键语义未做** | **R-015 + R-016**：`INIClass`/`CCINIClass` 实为**单继承**（R-016 **撤回** R-015 的"多继承 + `VectorClass` 基类"两条）；`INISection`=`0x44` / `INIEntry`=`0x28` / `List<T>`=`0x1C` 全字段表；**节查找 = CRC32 排序数组 + 二分，名称大小写敏感，未命中返哨兵 `0xB7882C` 而非 NULL**；6 个静态全局按 YRpp 对名（`0x887180`=artmd，**不是** rulesmd）。见 `kb/30_ini_subsystem.md`。余：`ReadString` 家族逐键语义、`RulesClass` 字段布局 |
+| R2-2 INI 与规则加载 | 🟡 **容器层 + 读族解析已实证，`RulesClass` 字段未做** | **R-015/016/017**：单继承布局（**撤回** R-015 的"多继承 + `VectorClass` 基类"）；`INISection`=`0x44` / `INIEntry`=`0x28` / `List<T>`=`0x1C`；**节查找 = CRC32 排序数组 + 二分，大小写敏感，未命中返哨兵 `0xB7882C` 非 NULL**；**`ReadBool` 只认首字符（`0/F/N`假、`1/T/Y`真、其余取默认值）**、**`ReadInteger` 尾 `h` 走十六进制**；6 个静态全局（`0x887180`=artmd 非 rulesmd）。见 `kb/30_ini_subsystem.md`。余：`RulesClass` 字段布局 |
 | R2-3 生产与建造 | ⬜ 未开始 | |
 | R2-4 战斗 / 武器 / 弹道 | ⬜ 未开始 | 语料 `weapons_damage_production.md`（449 VA）可作起点 |
 | R2-5 AI 决策 | ⬜ 未开始 | 语料 `house_team_ai_update.md` |

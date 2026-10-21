@@ -1,0 +1,63 @@
+=== read/write family entry points ===
+  0x00528A10  ReadString             返回拷贝长度, ret 0x14                   head=83 ec 0c 33 c0 53 55 57
+  0x00528F00  ReadUnicodeString      先 mov eax,0x5014 建栈帧, ret 0x14     head=b8 14 50 00 00 e8 46 17
+  0x00529160  ReadStringtableEntry   sub esp,0x414 (1KB 缓冲), ret 0x10   head=81 ec 14 04 00 00 8d 44
+  0x005283D0  ReadDouble             浮点, 默认值经 PUSH_VAR64                head=83 ec 0c 33 c0 53 55 8b
+  0x005276D0  ReadInteger            见下: 尾字符 'h' 走十六进制                  head=83 ec 0c 33 c0 53 55 8b
+  0x005295F0  ReadBool               见下: 首字符查表三元分派                      head=83 ec 0c 33 c0 53 55 8b
+  0x00528660  WriteString            sub esp,0x38                       head=83 ec 38 8b 54 24 3c 53
+  0x00529560  WriteBool              写 yes/no 字面量                       head=8a 44 24 0c 84 c0 74 17
+  0x00528E00  WriteUnicodeString     转义 Unicode                         head=51 53 55 56 8b 74 24 1c
+
+=== helper identity (checked by bytes, not by name) ===
+  0x007C97D3  toupper          'a'..'z' (0x61..0x7A) then sub 0x20
+              push ebx / xor ebx, ebx / cmp dword ptr [0xb782a0], ebx
+  0x007CAFF4  tolower          'A'..'Z' (0x41..0x5A) then ADD 0x20
+              push ebx / xor ebx, ebx / cmp dword ptr [0xb782a0], ebx
+  0x007C9BFD  strtol wrapper   push arg; call 0x7C9B72; pop; ret
+              push dword ptr [esp + 4] / call 0x7c9b72 / pop ecx
+  0x007CA530  sscanf           sub esp,0x20; mov [ebp-0x14],0x49
+              push ebp / mov ebp, esp / sub esp, 0x20
+
+=== format / literal strings the readers and writers use ===
+  0x00825BB4  ReadInteger hex format '%xh'
+  0x00825BB8  0x825BB8 (adjacent)    '$%x'
+  0x00825BF4  WriteBool false        'no'
+  0x00825BF8  WriteBool true         'yes'
+  0x00825BFC  0x825BFC (adjacent)    '%f,%f,%f'
+
+=== ReadBool: first-char -> dispatch class table (0x5297B4, 0x2A entries) ===
+  index = toupper(first_byte_of_value) - '0'
+  00  '0'  class=0  FALSE
+  01  '1'  class=1  TRUE
+  16  'F'  class=0  FALSE
+  1E  'N'  class=0  FALSE
+  24  'T'  class=1  TRUE
+  29  'Y'  class=1  TRUE
+  合计: FALSE=3  TRUE=3  DEFAULT=36  (总 42)
+
+=== ReadBool: jump table (0x5297A8) and its three bodies ===
+  class 0 (FALSE                       ) -> 0x0052979A
+  class 1 (TRUE                        ) -> 0x0052978E
+  class 2 (DEFAULT (caller's value)    ) -> 0x0052974B
+    0x0052979A: pop edi / pop esi / pop ebp / xor al, al / pop ebx / add esp, 0xc
+    0x0052978E: pop edi / pop esi / pop ebp / mov al, 1 / pop ebx / add esp, 0xc
+    0x0052974B: mov al, byte ptr [esp + 0x28] / pop edi / pop esi / pop ebp / pop ebx / add esp, 0xc
+
+=== ReadInteger: trailing-byte test (LAST byte, tolower'd, vs 'h' = 0x68) ===
+  00527877  8b fa                 mov edi, edx
+  00527879  83 c9 ff              or ecx, 0xffffffff
+  0052787C  33 c0                 xor eax, eax
+  0052787E  f2 ae                 repne scasb al, byte ptr es:[edi]
+  00527880  f7 d1                 not ecx
+  00527882  49                    dec ecx
+  00527883  0f be 54 11 ff        movsx edx, byte ptr [ecx + edx - 1]
+  00527888  52                    push edx
+  00527889  e8 66 37 2a 00        call 0x7caff4
+  0052788E  83 c4 04              add esp, 4
+  00527891  83 f8 68              cmp eax, 0x68
+  00527894  75 24                 jne 0x5278ba
+
+=== positive control ===
+  ReadString @0x00528A10 head=83 ec 0c expected='83 ec 0c': True
+  control OK

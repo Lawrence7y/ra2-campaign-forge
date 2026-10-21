@@ -1152,3 +1152,109 @@ R2-1（触发器族）该收的字段已收得差不多，按 §3 优先级转�
 - [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
 - [x] 只提交 `re_atlas/`
 - [x] 片段均 ≤ 13 条指令（§3.2 最长）
+
+---
+
+## R-017 · 2026-10-21 21:4x–22:0x · R2-2 第三轮：读族逐键语义 + 六模型异族复核
+
+### 1. 心跳与门禁
+
+- `tasklist` 查无 `gamemd` / `ra2loader` ⇒ 可做完整分析（§8.3）。
+- GOAL-3T 台账尾部：仍在 `--probe-frames` 早期帧路线，GLM 5.3 核验 `dwfrun-9fb1ccc3` 在飞。
+- **用户本轮明确授权使用子代理，并要求用 buddySwitch 的全部模型** ⇒ 首次在信道受限下
+  仍按六通道并发派发（`qwfrun-b287db93`）。
+- 未启动 gamemd/ra2loader；未写 `ra2youli`；未跑 trip；未编译；未改禁区目录。
+
+### 2. 本轮主线：`ReadBool` / `ReadInteger` 的解析规则（编译器最直接要用的部分）
+
+**`ReadBool`（`0x5295F0`）只取首字符，不解析整串：**
+
+```text
+0x0052976B  movsx ecx, byte [esi]      ; Value 的第一个字节
+0x0052976F  call 0x7C97D3              ; toupper
+0x00529774  add eax, -0x30             ; index = ch - '0'
+0x0052977A  cmp eax, 0x29              ; 越界 -> 默认值
+0x00529781  mov dl, byte [eax+0x5297B4]
+0x00529787  jmp dword [edx*4+0x5297A8]
+```
+
+类表 `0x5297B4` 共 **0x2A (42)** 项，只有 **6 项**非"默认"：
+
+| 字符 | 类 | 结果 |
+|:---|:---|:---|
+| `0` / `F` / `N` | 0 | **false** |
+| `1` / `T` / `Y` | 1 | **true** |
+| 其余 36 项 | 2 | **返回调用方默认值** |
+
+⇒ 三条对编译器的硬结论：
+1. `2`、`-1`、`enabled`、空串等**都取默认值，不是 false** —— 不报错、静默回落；
+2. **大小写不敏感**（先 toupper）；
+3. 只读首字节，所以 `YesPlease` 按 `Y` 判 true，`Nonsense` 按 `N` 判 false。
+
+`WriteBool`（`0x529560`）写的是 `"yes"`(`0x825BF8`) / `"no"`(`0x825BF4`) ⇒ **读写词汇表不同**。
+
+**`ReadInteger`（`0x5276D0`）看末字符：**
+
+```text
+0x00527883  movsx edx, byte [ecx+edx-1]  ; 最后一个字节
+0x00527889  call 0x7CAFF4                ; tolower
+0x00527891  cmp eax, 0x68                ; == 'h' ?
+0x0052789E  push 0x825BB4                ; "%xh"
+```
+
+⇒ **`Key=100h` 解析为十六进制 0x100**；`Key=0x100` 同样可被 `%xh` 接受；
+后缀大小写不敏感（`100H` 也生效）。
+
+### 3. 两处当场更正
+
+**更正 1：`0x7CAFF4` 是 `tolower` 不是 `toupper`。**
+首版工具把两个 CRT 辅助都标成 toupper。复核：`0x7C97D3` 是
+`cmp 0x61,0x7A / sub 0x20`（小写→大写），`0x7CAFF4` 是
+`cmp 0x41,0x5A / add 0x20`（大写→小写）。**方向相反**，已在 KB §10 与 INDEX C.9 标注。
+
+**更正 2：`ReadInteger` 的窗口起点落在指令中间。**
+首版从 `0x527878` 起反汇编，输出第一条是 `cli`（`fa`）—— 那是上一条 `mov edi,edx`
+的第二字节。真实跳转目标是 `0x527877`。已改起点并在 KB §10.5 记下这个坑。
+
+> 两条都不是"结论错"，是**取证窗口错**。但窗口错会直接产出伪指令，
+> 与 R-016 那次"把析构当构造"属于同一类错误：**没有先确认锚点是真实指令边界**。
+
+### 4. 六模型异族复核（用户授权后首次全通道派发）
+
+用 `CreateWorkflow` 派发 `dwfrun-b287db93`，六个 buddySwitch 模型各自独立
+运行 python+capstone 直读字节，复核 R-016 的八条结论：
+
+| # | 模型 |
+|--:|:---|
+| 1 | `qoder-global:dfmodel` |
+| 2 | `qoder-cn:dfmodel` |
+| 3 | `qoder-global:qfmodel` |
+| 4 | `qoder-cn:qfmodel` |
+| 5 | `wb-global:deepseek-v4.1-flash` |
+| 6 | `wb-cn:deepseek-v4.1-flash` |
+
+协议用**纯文本八行**（`VERDICT n: CONFIRMED|REFUTED|UNVERIFIABLE -- 证据`），
+脚本正则解析 —— 沿用 R-012 的结论：typed `ask<T>` 这些模型不会主动 `submit_result`。
+
+工作流带一个确定性闸门：先本地跑 `dump_ini_nodes.py`，退出码 ≠ 0 或正对照缺失
+就记录在报告首行。
+
+### 5. 本轮产出
+
+| 件 | 内容 |
+|:---|:---|
+| 新增工具 | `tools/dump_ini_readers.py`（含 `ReadString` 头字节正对照） |
+| 新增证据 | `evidence/ini_readers.txt`（两次运行字节相同） |
+| KB | `30_ini_subsystem.md` 新增 §10（读族逐键语义） |
+| INDEX | 新增 §C.9（12 行地址表） |
+| 工作流 | `dwfrun-b287db93`（六模型并发，结果见 R-018 回填） |
+| 关闭悬项 | 读族解析规则（原属 I-1 的延伸） |
+| 新增纪律 | **#14**：反汇编窗口必须从**真实指令边界**（跳转目标/函数头）起；
+从"看起来像"的地址起会产出伪指令（本轮 `cli` 实例） |
+
+### 6. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未启动 gamemd/ra2loader；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 只提交 `re_atlas/`
+- [x] 片段最长 11 条指令

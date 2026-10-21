@@ -506,3 +506,107 @@ edx = eax+0x10             ; Last
 > 但 RTTI 名字是 `.?AV?$List@PAUINISection@INIClass@@@@`（`PAU` = `INISection*`）。
 > 以 RTTI 名为准，元素是指针。
 
+
+---
+
+## 10. 读族逐键语义（R-017）
+
+编译器的真正问题不是"有哪些函数"，而是"**这个键的值会被解析成什么**"。
+本节把**解析规则**逐条钉到字节。
+
+### 10.1 读/写族入口
+
+| VA | 名称 | 调用约定 | 头两字节 |
+|:---|:---|:---|:---|
+| `0x00528A10` | `ReadString` | `ret 0x14`（5 参） | `83 EC 0C`（`sub esp,0xC`） |
+| `0x00528F00` | `ReadUnicodeString` | `ret 0x14` | `B8 14 50 00 00`（`mov eax,0x5014`，0x14KB 栈帧） |
+| `0x00529160` | `ReadStringtableEntry` | `ret 0x10` | `81 EC 14 04 00 00`（1KB 栈缓冲） |
+| `0x005283D0` | `ReadDouble` | 默认值 8 字节压栈 | `83 EC 0C` |
+| `0x005276D0` | `ReadInteger` | `ret 0xC` | `83 EC 0C` |
+| `0x005295F0` | `ReadBool` | `ret 0xC` | `83 EC 0C` |
+| `0x00528660` | `WriteString` | — | `83 EC 38` |
+| `0x00529560` | `WriteBool` | `ret 0xC` | `8A 44 24 0C`（无栈帧） |
+| `0x00528E00` | `WriteUnicodeString` | — | `51 53 55 56` |
+
+**读族共享同一前段**：先 `cmp` 参数与 `[this+4]`（上次查询的哈希缓存），
+命中就走 `[this+8]` 的缓存节；未命中才 `call 0x4A1DE0` 算哈希再查 `+0x28` 排序数组。
+⇒ `+0x04`/`+0x08` 这对缓存**六个读函数都在用**，不是 `GetSection` 独有。
+
+### 10.2 `ReadBool`：只取**首字符**，查 0x2A 项表，三元分派
+
+这是本轮最实用的结论。`ReadBool` **不解析整个字符串**，它只：
+
+```text
+0x00529764  mov esi,[esi+0x10]     ; INIEntry->Value
+0x0052976B  movsx ecx, byte [esi]  ; ★ 只取第一个字节
+0x0052976F  call 0x7C97D3          ; toupper（'a'..'z' -> 减 0x20）
+0x00529774  add eax, -0x30         ; index = ch - '0'
+0x0052977A  cmp eax, 0x29          ; 越界 -> 返回默认值
+0x00529781  mov dl, byte [eax+0x5297B4]   ; ★ 3 元分派类
+0x00529787  jmp dword [edx*4+0x5297A8]
+```
+
+分派表 `0x5297A8` 三个目标：
+
+| 类 | 目标 | 体 | 语义 |
+|---:|---|---|:---|
+| 0 | `0x0052979A` | `xor al,al` | **false** |
+| 1 | `0x0052978E` | `mov al,1` | **true** |
+| 2 | `0x0052974B` | `mov al,[esp+0x28]` | **返回调用方给的默认值** |
+
+类表 `0x5297B4`（42 项 = `'0'..'9'` 加 32 个字母/符号）中只有 **6 项非默认**：
+
+| 字符 | 类 | 结果 |
+|:---|:---|:---|
+| `0` | 0 | false |
+| `1` | 1 | true |
+| `F` | 0 | false |
+| `N` | 0 | false |
+| `T` | 1 | true |
+| `Y` | 1 | true |
+
+其余 36 项一律返回默认值。
+
+**对编译器的硬结论**：
+- `yes` / `no` / `true` / `false` / `1` / `0` / `Y` / `N` 都能识别（**只认首字母**）；
+- **大小写不敏感**（`0x7C97D3` 是 toupper）；
+- **`2` 及任何其他首字符 = 取默认值，不是 false** —— 写成 `SomeKey=2` 不会报错，
+  会**静默回落到默认值**；
+- `ReadBool` 只读首字节，所以 `YesPlease` / `Nonsense` 也按 `Y`/`N` 判 ——
+  拼错的词不会报错。
+
+`WriteBool`（`0x529560`）写的是字面量 `"yes"`（`0x825BF8`）/ `"no"`（`0x825BF4`）：
+⇒ **读写不同词汇表**。引擎自己写出去的是 `yes`/`no`，但读得懂 `1`/`0`/`T`/`F`。
+
+### 10.3 `ReadInteger`：看**末字符**，`h` 后缀 = 十六进制
+
+```text
+0x00527877  mov edi,edx
+0x00527879  or ecx,-1 / xor eax,eax / repne scasb   ; strlen
+0x00527882  dec ecx
+0x00527883  movsx edx, byte [ecx+edx-1]  ; ★ 取最后一个字节
+0x00527889  call 0x7CAFF4                ; tolower（'A'..'Z' -> 加 0x20）
+0x00527891  cmp eax, 0x68                ; == 'h' ?
+0x00527894  jne 0x5278BA                 ; 否 -> strtol
+0x0052789E  push 0x825BB4 ; "%xh"        ; 是 -> sscanf(value, "%xh", ...)
+0x005278BE  call 0x7C9BFD                ; strtol(Value)
+```
+
+⇒ **`Key=100h` 是十六进制 0x100，不是 100**。`Key=0x100` 也能被 `%xh` 接受。
+后缀判定**大小写不敏感**（tolower 后比 `'h'`），`100H` 同样生效。
+
+### 10.4 `ReadDouble` / Unicodes
+
+- `ReadDouble`（`0x5283D0`）默认值是 8 字节实参，YRpp 用 `PUSH_VAR64` 压栈，返回在 ST0。
+- `ReadUnicodeString`（`0x528F00`）**栈帧 0x5014 字节**（约 20KB），比 `ReadString` 大得多
+  ⇒ 它内部把整个值缓冲下来做转义解码后再写调用方缓冲。
+- `ReadStringtableEntry`（`0x529160`）栈帧 `0x414`（1KB），先读 ANSI 再查
+  CSF 字符串表转成宽字符。
+
+### 10.5 复跑
+
+`python re_atlas/tools/dump_ini_readers.py`（`evidence/ini_readers.txt`）。
+工具含**正对照**：先验 `ReadString@0x00528A10` 头三字节是 `83 EC 0C`，
+不成立就直接判"VA 映射错、以上全部作废"。
+`ReadInteger` 的窗口从 `0x527877` 起 —— 那是 `ReadInteger` 体内一个真实跳转目标；
+从 `0x527878` 起会从指令中间反汇编出伪指令 `cli`（本轮实测踩到，已改）。

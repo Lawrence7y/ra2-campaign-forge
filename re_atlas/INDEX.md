@@ -275,6 +275,30 @@ COL.offset 分别 **0/4/8/12**。所有派生类头部都是这个形态。
 
 ---
 
+### C.9 INI 读族逐键语义（R2-2 第三轮，详见 `kb/30_ini_subsystem.md` §10）
+
+| VA | 名称 | 解析规则（字节实证） | 置信度 |
+|:---|:---|:---|:---|
+| `0x005295F0` | `ReadBool` | **只取首字符** → `toupper` → 查 `0x5297B4`（0x2A 项）→ 三元分派；`0/F/N`=false，`1/T/Y`=true，**其余取默认值** | **实证** |
+| `0x005276D0` | `ReadInteger` | **看末字符** → `tolower` → 等于 `h` 则 `%xh` 十六进制解析，否则 `strtol` | **实证** |
+| `0x00529560` | `WriteBool` | 写字面量 `"yes"`(`0x825BF8`) / `"no"`(`0x825BF4`) | **实证** |
+| `0x00528A10` | `ReadString` | `ret 0x14`；节→键→拷贝 | **实证** |
+| `0x00528F00` | `ReadUnicodeString` | 栈帧 `0x5014`（约 20KB），先缓冲再转义解码 | **实证** |
+| `0x00529160` | `ReadStringtableEntry` | 栈帧 `0x414`（1KB），ANSI→CSF 字符串表→宽字符 | **实证** |
+| `0x005283D0` | `ReadDouble` | 默认值 8 字节实参，返回 ST0 | **实证** |
+| `0x007C97D3` | `toupper` | `'a'..'z'` → 减 `0x20` | **实证** |
+| `0x007CAFF4` | `tolower` | `'A'..'Z'` → **加** `0x20`（注意与上一条方向相反） | **实证** |
+| `0x005297A8` | `ReadBool` 分派表 | 3 项：class0→`0x52979A`(false) / class1→`0x52978E`(true) / class2→`0x52974B`(默认) | **实证** |
+| `0x005297B4` | `ReadBool` 类表 | 0x2A 项，仅 6 项非默认 | **实证** |
+| `0x00825BB4` | 十六进制格式串 | `"%xh"` | **实证** |
+
+**读族共享缓存**：六个读函数都先用 `[this+4]`（上次哈希）/`[this+8]`（上次节）做短路，
+未命中才 `call 0x4A1DE0` 算哈希查 `+0x28` 排序数组。
+
+复跑：`python re_atlas/tools/dump_ini_readers.py`（`evidence/ini_readers.txt`，
+含 `ReadString` 头字节正对照）。
+
+---
 ## D. 数据/字符串锚点（claims PART 2–4 摘要）
 
 完整 323 条见 `docs/re/anchor_claims.txt`；本线已全量复算 **323/323 PASS**
