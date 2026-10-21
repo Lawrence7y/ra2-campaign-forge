@@ -1,0 +1,93 @@
+镜像基数 0x00400000；.text 解码 1394120 条
+
+=== F1 0x652CF0 的唯一入口 ===
+  E8 直接调用者：0 处
+  [PASS] ★ 0x652CF0 无 E8 直接调用者（只能经虚表）  0
+  [PASS] ★ 唯一入口 = vtable 0x7F0344 slot[5] @0x7F0358  实测 0x00652CF0
+
+=== F2 两张 vtable 是否同一基类布局 ===
+  0x7E1964 长度 55 槽；0x7F0344 长度 54 槽
+  [PASS] ★ 两表长度接近（同一基类布局 ±2 槽内）  A=55 B=54
+  [PASS] ★ 两表都长于 43 槽（都覆盖 slot 42）  A=55 B=54
+  [PASS] ★ slot[0] 相同 = 0x4F4240  A=0x4F4240 B=0x4F4240
+  [PASS] ★ slot[42] 同为崩溃链 L3 = 0x4A8960  A=0x4A8960 B=0x4A8960
+  覆盖槽（两表不同）21 个：4, 5, 7, 8, 10, 16, 18, 19, 20, 21, 26, 30, 31, 33, 34, 35, 40, 44, 49, 50, 53
+  [PASS] ★ 存在覆盖槽 ⇒ 是两个派生类，不是同一张表  21 槽不同
+  [PASS] ★ 基类共性槽（0、42）不在覆盖集内（继承关系自洽）  覆盖集 [4, 5, 7, 8, 10, 16, 18, 19, 20, 21, 26, 30, 31, 33, 34, 35, 40, 44, 49, 50, 53]
+
+=== F3 两个派生类的 slot[5] 不同 ===
+  0x7E1964.slot5 = 0x005BDF30 ；0x7F0344.slot5 = 0x00652CF0
+  [PASS] ★ A 的 slot5 是 0x5BDF30（与链起点不同）  实测 0x005BDF30
+  [PASS] ★ 两派生类 slot5 不同 ⇒ 0x652CF0 不跑在 0x87F7E8 上  A=0x5BDF30 B=0x652CF0
+
+=== F4 0x7F0344 的构造点：数据区 vs 真实构造器 ===
+    引用 0x00652B47  指令 0x00652B45  func 0x00652960  调用者 1  形态OK=True  有效
+    引用 0x00652C0E  指令 0x00652C0C  func 0x00652C00  调用者 6  形态OK=True  有效
+    引用 0x006587AE  指令 0x006587AC  func 0x006587A0  调用者 0  形态OK=True  排除
+    引用 0x006A4F7A  指令 0x006A4F78  func 0x006A4F20  调用者 1  形态OK=True  有效
+  有效构造器所在函数：0x00652960, 0x00652C00, 0x006A4F20
+  [PASS] ★ 至少 2 个真实构造器（被调用过 + 指令形态正确）  3 个
+  [PASS] ★ 0x652C00 在有效构造器集内（有 E8 调用者 + 形态正确）
+  [PASS] ★ 0x6587A0 是表 B 的 slot[4]（经虚表调用，故无 E8 调用者）  槽 [4]
+  0x652C00 与 0x6587A0 前 0x60 字节相似度 90.6%
+  [PASS] ★ 两个构造器是同构两版（相似度 > 85%）  90.6%
+
+=== F5/F6 全局初始化 0x40D1B0 设了谁、没设谁 ===
+    0x0040D1B0  56                     push esi
+    0x0040D1B1  57                     push edi
+    0x0040D1B2  c705e8f7870064197e00   mov dword ptr [0x87f7e8], 0x7e1964
+    0x0040D1BC  c705004d88005c197e00   mov dword ptr [0x884d00], 0x7e195c
+    0x0040D1C6  be844b8800             mov esi, 0x884b84
+    0x0040D1CB  bf04000000             mov edi, 4
+    0x0040D1D0  81ee940f0000           sub esi, 0xf94
+    0x0040D1D6  6860d24000             push 0x40d260
+    0x0040D1DB  6a4b                   push 0x4b
+    0x0040D1DD  6a34                   push 0x34
+    0x0040D1DF  8d4650                 lea eax, [esi + 0x50]
+    0x0040D1E2  50                     push eax
+    0x0040D1E3  e8e8ddffff             call 0x40afd0
+    0x0040D1E8  8bce                   mov ecx, esi
+    0x0040D1EA  e811010000             call 0x40d300
+    0x0040D1EF  4f                     dec edi
+    0x0040D1F0  75de                   jne 0x40d1d0
+    0x0040D1F2  b9e8f78700             mov ecx, 0x87f7e8
+    0x0040D1F7  e8045a2400             call 0x652c00
+    0x0040D1FC  5f                     pop edi
+    0x0040D1FD  5e                     pop esi
+    0x0040D1FE  c3                     ret 
+    0x0040D1FF  90                     nop 
+    0x0040D200  6820d24000             push 0x40d220
+    0x0040D205  c705b8f7870000000000   mov dword ptr [0x87f7b8], 0
+  [PASS] ★ 全局初始化里写 0x87F7E8 = 0x7E1964（表 A）
+  [PASS] ★ 全局初始化里**没有** 0x7F0344（表 B 对象不是静态构造）
+  初始化函数内 call 点：0x0040D1E3, 0x0040D1EA, 0x0040D1F7
+  [PASS] ★ 表 B 构造器 0x652C00 在全局初始化的 call 点集内  3 个 call
+  [PASS] ★ 两个对象初始化相距仅 0x45 字节（同一初始化函数内）  0x40D1B2 → 0x40D1F7
+
+=== F7 ★ 决定性：0x87F7E8 被构造两次，运行时 vtable = 表 B ===
+  0x40D1B2  mov [0x87F7E8], 0x7E1964   ← 先设表 A（临时）
+  0x40D1F2  mov ecx, 0x87F7E8          ← this = 0x87F7E8
+  0x40D1F7  call 0x652C00              ← ctor 内 mov [edi],0x7F0344
+  0x652C04  mov edi, ecx               ← edi = ecx = 0x87F7E8
+  0x652C0C  mov [edi], 0x7F0344        ← 改写为表 B
+  [PASS] ★ 0x40D1F2 `mov ecx, 0x87F7E8`（ctor 的 this 就是单例对象）  mov ecx, 0x87f7e8
+  [PASS] ★ 紧接着 0x40D1F7 `call 0x652C00`（表 B 构造器）  call 0x652c00
+  [PASS] ★ ctor 内 `mov edi, ecx`（this 落地到 edi）
+  [PASS] ★ ctor 内 `mov [edi], 0x7F0344`（把 this 的 vtable 改为表 B）
+  ⇒ [0x87F7E8] 运行时 = 0x7F0344（表 B），故 slot5 = 0x652CF0 生效，
+    与 except.txt 的 Edi=0x87F7E8 完全自洽。
+  0x6ABD30 在表 A 的槽：[34]；在表 B 的槽：无
+  [PASS] ★ 0x6ABD30 **不在**表 B（所以 0x4A8B0E 处只能直接 call，不经虚表）  表B 槽 无
+
+=== 结论：0x652CF0 的前置条件 ===
+  1) 目标对象就是全局单例 0x87F7E8，它由全局初始化 0x40D1B0 在启动时构造；
+     构造过程两次写 vtable：先 0x7E1964（表 A），后被 ctor 改写为 0x7F0344（表 B）。
+     ⇒ **运行时它始终是表 B 对象**，因此 slot5 = 0x652CF0 恒成立。
+  2) 进 0x652CF0 的唯一条件是「有人在它身上触发 slot5」；无 E8 直调、无旁路。
+  3) 因为对象是**全局单例且启动即构造**，所以前置条件在整局游戏里恒满足 ——
+     真正决定崩不崩的是「触发 slot5 的时机」与「触发时单例是否已被清零」。
+  ⇒ 复现判据修正：不是「对象是否存活」（它几乎总活着），
+     而是「关窗流程里 0x652CF0 是否在 0x777803 清零之后仍被跑到」。
+     这解释了 18% 非随机性：取决于关窗分支有没有走到这条链。
+
+★ 0x652CF0 前置条件定案：同基类双派生、slot5 分隔、构造点 3 处

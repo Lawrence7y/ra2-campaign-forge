@@ -1,0 +1,65 @@
+镜像基数 0x00400000；.text 解码 1394120 条
+
+=== R1 引用普查（虚表槽 vs 代码立即数）===
+  0x00652CF0（驱动函数）虚表槽 1 处：0x007F0358
+  0x00652CF0（驱动函数）E8 调用者 0 处
+  0x006587A0（推定 ctor）虚表槽 1 处：0x007F0354
+  [PASS] ★ 驱动函数只有 1 个入口：虚表槽 0x007F0358（无其他分发路径）  1 处
+  [PASS] ★ 驱动函数**没有** E8 直接调用者（只能经虚表调）  0 处
+  [PASS] ★ ctor 也只在虚表里出现 1 次（同表相邻槽）  0x007F0354
+
+=== R2 表头定位：构造器写入的立即数 vs 往前扫 ===
+  ctor 头部：
+    0x006587A0  push ebx
+    0x006587A1  push ebp
+    0x006587A2  push esi
+    0x006587A3  push edi
+    0x006587A4  mov edi, ecx
+    0x006587A6  lea ecx, [edi + 0x14c0]
+    0x006587AC  mov dword ptr [edi], 0x7f0344
+    0x006587B2  call 0x405c00
+  [PASS] ★ ctor 内 `mov [edi], 0x7F0344`（this 首 dword = 表头，硬证据）  0x006587AC
+  往前扫求表头 = 0x007F0344（槽号 5）
+  表内非代码常量：
+  [PASS] ★ 表头 0x007F0344 与槽 0x007F0358 对齐（槽号 5）  差值 0x14
+
+=== R3/R4 ctor 体与对象尺寸下界 ===
+  ctor 内 lea ecx,[edi+off]：0x14C0
+  [PASS] ★ ctor 有子对象 lea（给出对象尺寸下界）  最大子对象偏移 0x14C0
+  [PASS] ★ 对象尺寸下界 ≥ 0x14C0（远大于崩溃容器 0x250）  实测最大子对象偏移 0x14C0
+
+=== R5 驱动函数 0x652CF0 体（它就是 §346 链条起点）===
+    0x00652CF0  56                     push esi
+    0x00652CF1  8bf1                   mov esi, ecx
+    0x00652CF3  68dc928300             push 0x8392dc
+    0x00652CF8  e8e33bdbff             call 0x4068e0
+    0x00652CFD  b98c000000             mov ecx, 0x8c
+    0x00652D02  b86c000000             mov eax, 0x6c
+    0x00652D07  898e00120000           mov dword ptr [esi + 0x1200], ecx
+    0x00652D0D  898ef8110000           mov dword ptr [esi + 0x11f8], ecx
+    0x00652D13  83c404                 add esp, 4
+    0x00652D16  8bce                   mov ecx, esi
+    0x00652D18  c786e411000000000000   mov dword ptr [esi + 0x11e4], 0
+    0x00652D22  c786e811000010000000   mov dword ptr [esi + 0x11e8], 0x10
+    0x00652D2C  c786ec11000030000000   mov dword ptr [esi + 0x11ec], 0x30
+    0x00652D36  898604120000           mov dword ptr [esi + 0x1204], eax
+    0x00652D3C  8986fc110000           mov dword ptr [esi + 0x11fc], eax
+    0x00652D42  c786f411000031000000   mov dword ptr [esi + 0x11f4], 0x31
+    0x00652D4C  e8ff5ae5ff             call 0x4a8850
+    0x00652D51  8b86f4110000           mov eax, dword ptr [esi + 0x11f4]
+    0x00652D57  a3204ab000             mov dword ptr [0xb04a20], eax
+    0x00652D5C  8b8e00120000           mov ecx, dword ptr [esi + 0x1200]
+    0x00652D62  890d244ab000           mov dword ptr [0xb04a24], ecx
+    0x00652D68  8b9604120000           mov edx, dword ptr [esi + 0x1204]
+  [PASS] ★ 0x652CF0 是 __thiscall（esi = this = ecx）
+  [PASS] ★ 0x652CF0 内 call 0x4A8850（§346 链的第一跳，直接 E8）
+  对 this 的偏移写入 12 条（ESI+0x11xx 区）
+  [PASS] ★ 驱动函数对 this+0x11xx 初始化（与 ctor 的 0x1500 尺寸相符）  mov dword ptr [esi + 0x1200], ecx
+
+=== 判定：0x652CF0 的前置条件 ===
+  1) 必须先有一个「类 vtable=0x7F0344」的活动对象（由 ctor 0x6587A0 构造）。
+  2) 然后对该对象触发虚表槽 5（0x7F035C 那一格 = 0x652CF0）。
+  3) 该槽只有 1 个入口，无 E8 直调 ⇒ 不存在「别的代码路径绕过前置」的可能。
+  ⇒ 「反复关窗」能否命中，取决于该对象在关窗时是否仍存活、其槽 5 是否被触发。
+
+★ 0x652CF0 前置条件分析完成

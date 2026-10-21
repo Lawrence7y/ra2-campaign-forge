@@ -1,0 +1,16 @@
+N-1 VT_B 改一位               rc=1 FAIL=6 命中目标=True
+    [FAIL] ★ 唯一入口 = vtable 0x7F0348 slot[5] @0x7F035C  实测 0x004F42B0
+    [FAIL] ★ slot[0] 相同 = 0x4F4240  A=0x4F4240 B=0x40D230
+    [FAIL] ★ slot[42] 同为崩溃链 L3 = 0x4A8960  A=0x4A8960 B=0x40D250
+N-2 CTOR_B1 改一位            rc=1 FAIL=1 命中目标=True
+    [FAIL] ★ 0x652C01 在有效构造器集内（有 E8 调用者 + 形态正确）
+N-3 初始化间距挪远                rc=1 FAIL=1 命中目标=True
+    [FAIL] ★ 两个对象初始化相距仅 0x445 字节（同一初始化函数内）  0x40CDB2 → 0x40D1F7
+N-4 SLOT_L3 改成 41          rc=1 FAIL=2 命中目标=True
+    [FAIL] ★ slot[41] @0x007F03E8 == 0x004A8960（崩溃链 L3）  实测 0x004A9840
+    [FAIL] ★ slot[41] 地址 0x007F03E8 落在 §346 记录的七处之内（独立方法互证）  记录 0x7E1A0C, 0x7E61BC, 0x7EE05C …
+N-5 VT_HEAD 改一位            rc=1 FAIL=9 命中目标=True
+    [FAIL] ★ ctor `mov [this], 0x7F0348` 立即数即表头  实测 0x7F0344（mov dword ptr [edi], 0x7f0344）
+    [FAIL] ★ 两法一致：往前扫表头 == 立即数表头 == 0x7F0348  naive=0x7F0344
+    [FAIL] ★ slot[4] @0x007F0358 == 0x006587A0（ctor）  实测 0x00652CF0
+★ 五段负控均按预期转红且命中目标断言
