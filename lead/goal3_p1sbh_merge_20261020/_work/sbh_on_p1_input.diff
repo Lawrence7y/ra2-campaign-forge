@@ -1,0 +1,438 @@
+--- a/ra2render/blitter_hooks.cpp
++++ b/ra2render/blitter_hooks.cpp
+@@ -1,6 +1,11 @@
+ #include "ra2render.h"
+ #include <cstring>
+ #include <cstdlib>
+ #include <bcrypt.h>                 // [VER-GATE V1] SHA-256（Windows CNG；Vista+ 系统自带 bcrypt.dll）
+ #pragma comment(lib, "bcrypt.lib")  // [VER-GATE V1] MSVC 自动链库 ⇒ build.bat 零改动
++// [SBH-GUARD] 版本门 SHA-256 复用 [VER-GATE V1] 的 bcrypt.h / bcrypt.lib（合批去重）
++
++// [SBH-GUARD] 版本门 SHA-256（Windows CNG）
++// [SBH-GUARD] 开关（默认 0 = 不碰 .text）
++bool g_enableSbhGuard = false;
+ 
+@@ -635,6 +640,10 @@
+     g_unlockGameSpeed = (unlockVal != 0);
+ 
+     int lfhVal = GetIniIntEx("System", "EnableLFH", 1, iniPath, &h_lfh);
++    {
++        bool _sbh_hit = false;
++        g_enableSbhGuard = (GetIniIntEx("System", "EnableSbhGuard", 0, iniPath, &_sbh_hit) != 0);
++    }
+     g_enableLFH = (lfhVal != 0);
+ 
+     int timerVal = GetIniIntEx("System", "HighPrecisionTimer", 1, iniPath, &h_timer);
+@@ -3754,6 +3763,395 @@
+ };
+ static TextPatchState s_vxlState;
+ 
++// ============================================================================
++// [SBH-GUARD 20261020] RC-1「SBH freelist 毒值守卫」—— 补丁副本（母本零改动）
++//   规格依据：crashspec_v4/RC_SPEC_V4.md §3.1（v4）
++//   目标：__sbh_alloc_block（0x007CFB13）freelist 摘链点 0x007CFC9B 处插入守卫
++//         ⇒ 毒值（如 0xFE00FFFF）不再被解引用 ⇒ 不 AV ⇒ 分配回落 Win32 HeapAlloc 兜底
++//   默认 0（EnableSbhGuard=0）= 不碰任何字节 = 与原版逐位等价
++//
++//   ★ 三处必须严格对齐规格的实现约束：
++//     1) 只覆写 5B（0x7CFC9B..0x7CFC9F）；0x7CFCA0 的 0A 是死字节，保持原值
++//     2) cave 内**不得覆写 eax**（eax=heap_info 跨守卫点存活到 0x7CFE12）
++//     3) cave 用 esi 作 scratch（0x7CFCA4 处 esi 立即被 8B F1 重定义）
++//     4) cave 在（推定的）CRT 堆锁内执行 ⇒ 禁取锁、禁调 CRT、禁调日志
++// ============================================================================
++
++// ---- 目标字节锚（[实证]，13/13 claims 全 OK 实测）----
++static const uintptr_t kSbhPw1Site = 0x007CFC9B;   // mov edx,[ecx+edi*8+4] 起始（覆写起点）
++static const uintptr_t kSbhPw1Back = 0x007CFCA1;   // sub ecx,[ebp-0x10]（cave 回跳点）
++static const uintptr_t kSbhNullRet = 0x007CFE17;   // pop edi/esi/ebx; leave; ret（NULL 降级路径）
++static const uint32_t kSbhUserCeil = 0xBFFF0000u;  // USER_ADDR_CEIL（LAA 3GB 用户空间上界，64KB 对齐下界）
++
++// 磁盘 6B 窗（0x7CFC9B..0x7CFCA0）：仅用于断言窗口未漂移
++static const uint8_t kSbhWin6[6] = {0x8B, 0x54, 0xF9, 0x04, 0x8B, 0x0A};
++// 覆写 5B（0x7CFC9B..0x7CFC9F）：被 E9 rel32 全部替换
++static const uint8_t kSbhOrig5[5] = {0x8B, 0x54, 0xF9, 0x04, 0x8B};
++// 回跳点 3B（0x7CFCA1..0x7CFCA3）：仅断言
++static const uint8_t kSbhBack3[3] = {0x2B, 0x4D, 0xF0};
++
++// ---- 构建身份（G0.1 / G0.1b）----
++// M-1 用户裁定：首版仅接受 W-A 项目基线（单条目白名单）
++static const char *kSbhShaWhitelist =
++    "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476";
++static const uint32_t kSbhExpectedSize = 4825360;
++
++// ---- 共享状态（§3.1.3a (1) 表）----
++static LONG  s_sbhGuardGate        = 1;  // 1=守卫开启；0=熔断（单向）
++static LONG  s_sbhGuardTrips       = 0;  // trip 计数（lock inc）
++static LONG  s_sbhGuardAlignReject = 0;  // G1 对齐/上界拒绝计数（lock inc）
++static LONG  s_sbhGuardStrictMiss  = 0;  // G2 严格模式拒绝计数（lock inc）
++static bool  s_sbhGuardInstalled   = false;
++static uint8_t s_sbhOrig5[5]       = {0};  // 卸载还原快照
++static void  *s_sbhCave            = nullptr;
++
++// cave 尺寸：复刻 5B + 哨兵 8B + 对齐 4B + 上界 8B + 复刻 mov 2B + jmp 5B + 余量
++//   实际机器码约 40B，取 96B 留裕度（含可能的分支对齐）
++static const size_t kSbhCaveSize = 96;
++
++// ============================================================================
++// SHA-256（Windows CNG；Vista+ 系统自带 bcrypt.dll）
++// ============================================================================
++static bool SbhSha256File(const char *path, char hex[65]) {
++    hex[0] = '\0';
++    BCRYPT_ALG_HANDLE hAlg = nullptr;
++    BCRYPT_HASH_HANDLE hHash = nullptr;
++    DWORD cbData = 0, cbHash = 0, cbHashObj = 0;
++    bool ok = false;
++    PUCHAR hashObj = nullptr;
++    PUCHAR digest = nullptr;
++    FILE *f = nullptr;
++
++    do {
++        if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, nullptr, 0) < 0) break;
++        if (BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&cbHashObj,
++                              sizeof(cbHashObj), &cbData, 0) < 0) break;
++        if (BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PUCHAR)&cbHash,
++                              sizeof(cbHash), &cbData, 0) < 0) break;
++        hashObj = (PUCHAR)HeapAlloc(GetProcessHeap(), 0, cbHashObj);
++        digest  = (PUCHAR)HeapAlloc(GetProcessHeap(), 0, cbHash);
++        if (!hashObj || !digest) break;
++        if (BCryptCreateHash(hAlg, &hHash, hashObj, cbHashObj, nullptr, 0, 0) < 0) break;
++
++        f = fopen(path, "rb");
++        if (!f) break;
++        {
++            unsigned char buf[64 * 1024];
++            size_t n = 0;
++            while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
++                if (BCryptHashData(hHash, buf, (ULONG)n, 0) < 0) { fclose(f); f = nullptr; break; }
++            }
++            if (f) { fclose(f); f = nullptr; }
++            else break;
++        }
++        if (BCryptFinishHash(hHash, digest, cbHash, 0) < 0) break;
++
++        static const char kHex[] = "0123456789abcdef";
++        for (DWORD i = 0; i < cbHash; ++i) {
++            hex[i * 2]     = kHex[(digest[i] >> 4) & 0xF];
++            hex[i * 2 + 1] = kHex[digest[i] & 0xF];
++        }
++        hex[cbHash * 2] = '\0';
++        ok = true;
++    } while (0);
++
++    if (f) fclose(f);
++    if (hHash) BCryptDestroyHash(hHash);
++    if (hashObj) HeapFree(GetProcessHeap(), 0, hashObj);
++    if (digest) HeapFree(GetProcessHeap(), 0, digest);
++    if (hAlg) BCryptCloseAlgorithmProvider(hAlg, 0);
++    return ok;
++}
++
++// ============================================================================
++// G0 门禁：任一失败 ⇒ 拒绝安装、不写任何字节（fail-closed）
++// ============================================================================
++static bool SbhVerifyIdentity() {
++    // G0.1 整文件 SHA-256
++    char exePath[MAX_PATH] = {0};
++    GetModuleFileNameA(nullptr, exePath, MAX_PATH);
++
++    // 文件大小（G0.1 的伴随因子）
++    {
++        FILE *f = fopen(exePath, "rb");
++        if (!f) {
++            LogMessage("[ra2render-sbh] SbhGuard=hash-mismatch（无法打开主模块 \"%s\"）", exePath);
++            return false;
++        }
++        fseek(f, 0, SEEK_END);
++        long sz = ftell(f);
++        fclose(f);
++        if (sz <= 0 || (uint32_t)sz != kSbhExpectedSize) {
++            LogMessage("[ra2render-sbh] SbhGuard=hash-mismatch（size=%ld，期望 %u）", sz, kSbhExpectedSize);
++            return false;
++        }
++    }
++
++    char hex[65] = {0};
++    if (!SbhSha256File(exePath, hex)) {
++        LogMessage("[ra2render-sbh] SbhGuard=hash-mismatch（SHA-256 计算失败）");
++        return false;
++    }
++    // G0.1b 白名单（单条目 W-A；W-B 出厂件命中 ⇒ 拒绝）
++    if (_stricmp(hex, kSbhShaWhitelist) != 0) {
++        LogMessage("[ra2render-sbh] SbhGuard=identity-unknown（sha256=%.16s… 不在生效白名单内）", hex);
++        return false;
++    }
++    LogMessage("[ra2render-sbh] SbhGuard=identity-ok（sha256=%.16s…, size=%u）", hex, kSbhExpectedSize);
++    return true;
++}
++
++static bool SbhVerifyWindows() {
++    // G0.3 字节窗断言：6B 窗 + 回跳点 3B
++    uint8_t cur6[6] = {0};
++    if (IsBadReadPtr(reinterpret_cast<void*>(kSbhPw1Site), 6)) {
++        LogMessage("[ra2render-sbh] SbhGuard=window-mismatch（0x%08X 不可读）",
++                   static_cast<uint32_t>(kSbhPw1Site));
++        return false;
++    }
++    memcpy(cur6, reinterpret_cast<void*>(kSbhPw1Site), 6);
++    if (memcmp(cur6, kSbhWin6, 6) != 0) {
++        LogMessage("[ra2render-sbh] SbhGuard=window-mismatch（PW-1 6B 窗不符："
++                   "%02X %02X %02X %02X %02X %02X）",
++                   cur6[0], cur6[1], cur6[2], cur6[3], cur6[4], cur6[5]);
++        return false;
++    }
++    uint8_t cur3[3] = {0};
++    if (IsBadReadPtr(reinterpret_cast<void*>(kSbhPw1Back), 3)) {
++        LogMessage("[ra2render-sbh] SbhGuard=window-mismatch（回跳点 0x%08X 不可读）",
++                   static_cast<uint32_t>(kSbhPw1Back));
++        return false;
++    }
++    memcpy(cur3, reinterpret_cast<void*>(kSbhPw1Back), 3);
++    if (memcmp(cur3, kSbhBack3, 3) != 0) {
++        LogMessage("[ra2render-sbh] SbhGuard=window-mismatch（回跳点 3B 不符）");
++        return false;
++    }
++    return true;
++}
++
++// ============================================================================
++// Cave 构造
++//   入口现场（§3.1.2）：ecx=freelist_base([ebp-0xC])、edi=class、eax=heap_info、
++//   ebx=region 描述符、[ebp-0x10]=block；栈上三次 push 已完成
++//   退出：健康路径 jmp 0x7CFCA1；trip 路径 xor eax,eax + jmp 0x7CFE17
++// ============================================================================
++struct SbhCaveCtx {
++    LONG  *gate;
++    LONG  *trips;
++    LONG  *alignReject;
++    uint32_t userCeil;
++};
++
++static SbhCaveCtx s_sbhCaveCtx = { nullptr, nullptr, nullptr, 0 };
++
++// 用 mov 构造常量地址（cave 内不能用 C++ 语法，机器码里直接写 imm32）
++static bool SbhBuildCave() {
++    if (s_sbhCave) return true;
++    s_sbhCave = VirtualAlloc(nullptr, kSbhCaveSize,
++                             MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
++    if (!s_sbhCave) {
++        LogMessage("[ra2render-sbh] SbhGuard=cave-alloc-failed（err=%lu）", GetLastError());
++        return false;
++    }
++    s_sbhCaveCtx.gate        = &s_sbhGuardGate;
++    s_sbhCaveCtx.trips       = &s_sbhGuardTrips;
++    s_sbhCaveCtx.alignReject = &s_sbhGuardAlignReject;
++    s_sbhCaveCtx.userCeil    = kSbhUserCeil;
++
++    uint8_t *p = static_cast<uint8_t*>(s_sbhCave);
++    size_t off = 0;
++
++    auto emit = [&](uint8_t b) { p[off++] = b; };
++    auto emit32 = [&](uint32_t v) {
++        memcpy(p + off, &v, 4); off += 4;
++    };
++    auto emitRelTo = [&](uintptr_t dest) {
++        // 当前已写 1 字节 E9，rel32 = dest - (site+5)
++        uintptr_t after = reinterpret_cast<uintptr_t>(p + off + 4);
++        int32_t rel = static_cast<int32_t>(dest - after);
++        emit32(static_cast<uint32_t>(rel));
++    };
++
++    const uintptr_t cave = reinterpret_cast<uintptr_t>(s_sbhCave);
++    // 需要在写 E9 之前记录位置；以下用辅助 lambda 计算 patch 后地址
++    (void)cave;
++
++    // ---- 1) 复刻原指令 1：mov edx,[ecx+edi*8+4]  =>  8B 54 F9 04 ----
++    emit(0x8B); emit(0x54); emit(0xF9); emit(0x04);
++
++    // ---- 2) 哨兵短路：lea esi,[ecx+edi*8]  =>  8D 34 F9 ----
++    emit(0x8D); emit(0x34); emit(0xF9);
++
++    // ---- 3) cmp edx,esi  =>  3B D6 ----
++    emit(0x3B); emit(0xD6);
++
++    // ---- 4) je pass（短跳，稍后回填）----
++    size_t jePos = off;
++    emit(0x74); emit(0x00);
++    size_t jeImmPos = off - 1;
++
++    // ---- 5) test edx,0x0F  =>  F7 C2 0F 00 00 00 ----
++    emit(0xF7); emit(0xC2); emit32(0x0000000F);
++
++    // ---- 6) jnz trip（短跳，稍后回填）----
++    size_t jnzPos = off;
++    emit(0x75); emit(0x00);
++    size_t jnzImmPos = off - 1;
++
++    // ---- 7) cmp edx, USER_ADDR_CEIL  =>  81 FA imm32 ----
++    emit(0x81); emit(0xFA); emit32(kSbhUserCeil);
++
++    // ---- 8) jae trip（短跳）----
++    size_t jaePos = off;
++    emit(0x73); emit(0x00);
++    size_t jaeImmPos = off - 1;
++
++    // ---- 9) pass: mov ecx,[edx]  =>  8B 0A ----
++    size_t passLabel = off;
++    emit(0x8B); emit(0x0A);
++
++    // ---- 10) jmp 0x7CFCA1  =>  E9 rel32 ----
++    size_t passJmpPos = off;
++    emit(0xE9);
++    {
++        uintptr_t after = reinterpret_cast<uintptr_t>(p + off + 4);
++        int32_t rel = static_cast<int32_t>(kSbhPw1Back - after);
++        emit32(static_cast<uint32_t>(rel));
++    }
++    (void)passJmpPos;
++
++    // ---- 11) trip: lock inc [alignReject]  =>  F0 FF 05 imm32 ----
++    size_t tripLabel = off;
++    emit(0xF0); emit(0xFF); emit(0x05);
++    emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&s_sbhGuardAlignReject)));
++
++    // ---- 12) lock inc [trips]  =>  F0 FF 05 imm32 ----
++    emit(0xF0); emit(0xFF); emit(0x05);
++    emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&s_sbhGuardTrips)));
++
++    // ---- 13) xor eax,eax  =>  33 C0 ----
++    emit(0x33); emit(0xC0);
++
++    // ---- 14) jmp 0x7CFE17  =>  E9 rel32 ----
++    emit(0xE9);
++    {
++        uintptr_t after = reinterpret_cast<uintptr_t>(p + off + 4);
++        int32_t rel = static_cast<int32_t>(kSbhNullRet - after);
++        emit32(static_cast<uint32_t>(rel));
++    }
++
++    // ---- 回填短跳 ----
++    {
++        int8_t d = static_cast<int8_t>(static_cast<long>(passLabel) - (long)(jePos + 2));
++        p[jeImmPos] = static_cast<uint8_t>(d);
++    }
++    {
++        int8_t d = static_cast<int8_t>(static_cast<long>(tripLabel) - (long)(jnzPos + 2));
++        p[jnzImmPos] = static_cast<uint8_t>(d);
++    }
++    {
++        int8_t d = static_cast<int8_t>(static_cast<long>(tripLabel) - (long)(jaePos + 2));
++        p[jaeImmPos] = static_cast<uint8_t>(d);
++    }
++
++    FlushInstructionCache(GetCurrentProcess(), s_sbhCave, off);
++    LogMessage("[ra2render-sbh] SbhGuard=cave-built（%u 字节 @0x%08X）",
++               static_cast<uint32_t>(off), static_cast<uint32_t>(cave));
++    return true;
++}
++
++// ============================================================================
++// 安装 / 卸载
++// ============================================================================
++static bool InstallSbhGuardPatch() {
++    // 开关 + 联机门禁（§3.1.4）
++    if (!g_enableSbhGuard) {
++        LogMessage("[ra2render-sbh] SbhGuard=off（EnableSbhGuard 未开；.text 零改动）");
++        return false;
++    }
++    if (MpActive()) {
++        LogMessage("[ra2render-sbh] SbhGuard=forced-off-mp（MpActive=true，联机强制不安装）");
++        return false;
++    }
++    if (s_sbhGuardInstalled) {
++        LogMessage("[ra2render-sbh] SbhGuard=already（幂等）");
++        return true;
++    }
++
++    // G0 门禁（任一失败 ⇒ 一字节不写）
++    if (!SbhVerifyIdentity()) return false;
++    if (!SbhVerifyWindows()) return false;
++
++    // 安装前基线快照（§3.1.4）
++    {
++        char exePath[MAX_PATH] = {0};
++        GetModuleFileNameA(nullptr, exePath, MAX_PATH);
++        char hex[65] = {0};
++        SbhSha256File(exePath, hex);
++        LogMessage("[ra2render-sbh] SbhGuard=baseline-snapshot(sha256=%.16s…)", hex);
++    }
++
++    if (!SbhBuildCave()) return false;
++
++    // 构造 5B 覆写：E9 rel32
++    memcpy(s_sbhOrig5, reinterpret_cast<void*>(kSbhPw1Site), 5);
++
++    uint8_t patch[5];
++    patch[0] = 0xE9;
++    {
++        uintptr_t after = kSbhPw1Site + 5;
++        int32_t rel = static_cast<int32_t>(reinterpret_cast<uintptr_t>(s_sbhCave) - after);
++        memcpy(&patch[1], &rel, 4);
++    }
++
++    DWORD oldProtect = 0;
++    if (!VirtualProtect(reinterpret_cast<void*>(kSbhPw1Site), 5,
++                        PAGE_EXECUTE_READWRITE, &oldProtect)) {
++        LogMessage("[ra2render-sbh] SbhGuard=protect-failed（err=%lu）", GetLastError());
++        return false;
++    }
++    memcpy(reinterpret_cast<void*>(kSbhPw1Site), patch, 5);
++    VirtualProtect(reinterpret_cast<void*>(kSbhPw1Site), 5, oldProtect, &oldProtect);
++    FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(kSbhPw1Site), 5);
++
++    s_sbhGuardInstalled = true;
++    InterlockedExchange(&s_sbhGuardGate, 1);
++    LogMessage("[ra2render-sbh] SbhGuard=install(ok)（PW-1 5B 已覆写；死字节 0x7CFCA0 保持 0A）");
++    return true;
++}
++
++static void RemoveSbhGuardPatch() {
++    if (!s_sbhGuardInstalled) {
++        LogMessage("[ra2render-sbh] SbhGuard=uninstall(skipped-not-installed)");
++        return;
++    }
++    // 单向熔断：先关门，再还原
++    InterlockedExchange(&s_sbhGuardGate, 0);
++
++    DWORD oldProtect = 0;
++    if (VirtualProtect(reinterpret_cast<void*>(kSbhPw1Site), 5,
++                       PAGE_EXECUTE_READWRITE, &oldProtect)) {
++        memcpy(reinterpret_cast<void*>(kSbhPw1Site), s_sbhOrig5, 5);
++        VirtualProtect(reinterpret_cast<void*>(kSbhPw1Site), 5, oldProtect, &oldProtect);
++        FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(kSbhPw1Site), 5);
++    }
++
++    if (s_sbhCave) {
++        VirtualFree(s_sbhCave, 0, MEM_RELEASE);
++        s_sbhCave = nullptr;
++    }
++    s_sbhGuardInstalled = false;
++    LogMessage("[ra2render-sbh] SbhGuard=uninstall(restored)（5B 已还原）");
++}
++
++// 遥测快照（锁外调用）
++static void SbhGuardReportTelemetry() {
++    LogMessage("[ra2render-sbh] SbhGuard=telemetry(trips=%ld, alignReject=%ld, strictMiss=%ld, gate=%ld)",
++               s_sbhGuardTrips, s_sbhGuardAlignReject, s_sbhGuardStrictMiss, s_sbhGuardGate);
++}
++
++
+ static bool InstallVxlCachePrewarmPatch() {
+     bool ok = InstallTextPatch(kVxlPoint, s_vxlState, "VxlCachePrewarm", g_enableVxlCachePrewarm);
+     g_vxlCacheInstalled = s_vxlState.written ? 1 : 0;
+@@ -4207,6 +4605,7 @@
+ 
+     // 19. [SW-CHARGE] HasChargeProgressed 慢路径冗余二次 call 7B→90×7（EnableSWChargeOpt 门控，默认不装）
+     InstallSwChargeOptPatch();
++    InstallSbhGuardPatch(); 
+ 
+     LogMessage("[ra2render] 全部核心虚表、底层迷雾、小地图迷雾与 0x006F8DF0 寻敌 Inline Hook 挂载成功！已启动 60 FPS 满速与星际争霸式战争迷雾系统。");
+     return true;
+@@ -4218,6 +4617,7 @@
+     RemoveRadarFogHooks();
+     // 跨子系统卸载 = 安装序严格逆序（装序 gap→vxl→sw ⇒ 卸序 sw→vxl→gap）；
+     // gap 内部三点逆序 P-2.3→P-2.2→P-2.1（见 RemoveGapProtectionPatch）。
++    RemoveSbhGuardPatch(); 
+     RemoveSwChargeOptPatch();
+     RemoveVxlCachePrewarmPatch();
+     RemoveGapProtectionPatch();
+

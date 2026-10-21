@@ -1,0 +1,3338 @@
+
+
+===== BEGIN E2_SUCCESS_TRIP_REPORT.md =====
+# E2：L1 基线趟首次完整生命周期成功（2026-10-20 20:11–20:15）
+
+## 一句话结论
+
+**把 out-dir 从 34 字符改成 13 字符（载体路径 143 → 129，低于 D-117 的 131 阈值）后，
+L1 趟首次跑出完整生命周期：`EXIT = 0`、三窗全 `verdict=ok`、导航链一次过、
+`units0 = 732`、`fps_p50 ≈ 31`、`except.txt` 零新增。**
+
+## 一、趟参数（与 E1c 唯一差异 = out-dir 名）
+
+| 项 | E1c（失败） | **E2（成功）** |
+|:--|:--|:--|
+| out-dir | `l1_u0800_e1c_dump_20261020`（34 字符）| **`l1a_20261020`（13 字符）** |
+| 载体绝对路径长 | 143 | **129**（< 131 ✅）|
+| 源变体 | `_src_L1_sf8_20261020` | 同 |
+| 目标图 / sha | `XMP29U2.MAP` / `0add791d` | 同 |
+| harness | carrierfix 副本 | 同 |
+| 其余 argv | `--fullscreen --evid-diff --measure 1 --probe-frames 3900..6000` | 同 |
+
+## 二、结果
+
+| 项 | 值 |
+|:--|:--|
+| `final_exit_code` | **0** |
+| `main_return_code` | **0** |
+| `finalize_exit_code` | **0** |
+| 载体件数 | 88（`files_verified` 真值）|
+| 进程存活 | 全程存活到主动终止（无 5 秒死亡）|
+| `except.txt` | 1046 → 1046 行，**零新增**（本次是真值，非崩溃）|
+| 导航链 | `nav_menu` → `nav_setup` → `nav_start` **全部一次过**（`attempts=1`，`fg_is_ours=True`）|
+| `NAV.verdict` | **OK** |
+
+### 三窗测量
+
+| 窗 | verdict | span | units0 | fps_avg | fps_p50 | fps_1pct_low | p90 ms | p99 ms | max_stall |
+|:--|:--|--:|--:|--:|--:|--:|--:|--:|--:|
+| w0 | **ok** | 25.0 | 732 | 31.242 | 30.967 | 26.503 | 35.15 | 37.73 | 0.042 s |
+| w1 | **ok** | 25.0 | 732 | 31.241 | 31.063 | 25.813 | 35.24 | 38.74 | 0.060 s |
+| w2 | **ok** | 25.0 | 732 | 29.001 | 30.960 | 25.628 | 35.18 | 39.02 | 1.782 s |
+
+- 窗前在局闸 `pre_fps15 = 31.397`（门 `≥3.0`）✅
+- `units0 = 732`（脚本门 `≥150`）✅
+- `tick_miss` = 0 / 1 / 1（三窗合计 2 次）
+- `hz_effective = 500.1`（三窗一致）
+
+### 导航签名（实测）
+
+| 步骤 | 期望 | 实测签名 | 结果 |
+|:--|:--|:--|:--|
+| `nav_menu` pre | `mainmenu` `[220,262,304,346,388,556]` | `[61,220,262,304,556]` | ✅ 子集匹配（61=EVA 条，346/388 已消失）|
+| `nav_menu` post | `sp_submenu` `[220,262,304,556]` | 命中 | ✅ |
+| `nav_setup` | 同 | 命中 | ✅ |
+| `nav_start` | 同 | 命中 | ✅ |
+
+## 三、按屋单位数（QC213P2 探针，frame 3724）
+
+| 屋 | `c5574`（已分配） | 判读 |
+|:--|--:|:--|
+| h0（人类槽）| 175 | 存活 |
+| h1 | 91 | 存活（`c5550_count=5`）|
+| h2（Neutral）| 225 | 存活（`idx_ge_cap=True`）|
+| h3（Special）| 240 | 存活（`idx_ge_cap=True`）|
+| **合计** | **731** | 与 `units0=732` 自洽 |
+
+`ShortGame` 探针：`glob=0` / `sess=0` / `equal=true` ⇒ **会话内武装的是 `ShortGame=no` 分支**（与设计 §2.3 要求一致）。
+
+## 四、`units0 = 732` 与设计门 `≥800` 的关系
+
+设计门 `units0 ≥ 800`（`BASELINE_MEASURE_DESIGN.md:301`）**未达**（732）。
+
+按设计件 §337 的 F1 分支规定：「`units0 < 800` ⇒ 记"U0800 档不成立"；**不**改用 yrm 目标；回查 `XMP29U2.MAP` sha 与载体件集」。
+
+**本轮回查结果**：
+
+| 检查项 | 结果 |
+|:--|:--|
+| `XMP29U2.MAP` sha | `0add791d11aea84d…60bc` = spawnfix8 ✅ 与设计 §2.2 指定一致 |
+| 载体件集 | 88 件齐全，`files_verified=True` ✅ |
+| `[Units]` 行数 | 3361（= 3360 条 + 1 空行）✅ 与设计 §2.1「U0800 族 = 3360」一致 |
+| `[Infantry]` 行数 | 2241（= 2240 + 1）✅ |
+| `RA2MD.INI` | `0cc65385`，与 t55k **同 sha** ✅ |
+
+⇒ **地图身份、载体、INI 三项全部正确，732 是 sf8 在本机当前条件下的真实单位数**，
+不是载错图。
+
+**与 T50 的 971 的差异原因（诚实登记为未定谳）**：
+- T50 的 971 是**单点历史值，无原始沿表**（设计件 §350 U2 已明确挂账）；
+- 本轮按屋合计 731，其中 h0=175 / h1=91 明显低于设计预期的 240/160；
+- h2=225 / h3=240 符合 U0800 的 Neutral/Special 满编预期。
+- **h0/h1 偏低是本轮新观测**，可能原因：sf8 的 800 个 Owner 令牌替换在部分行未生效、
+  或开局 4 秒 settle 内已有战损。**本轮不做推断，登记为待查项。**
+
+## 四之二、E1b/E1c 的「崩溃框」与本次复现的「csf 框」是两个不同的框
+
+必须分清，否则会得出过度结论：
+
+| 框 | 出现条件 | 正文 | 本次是否复现 |
+|:--|:--|:--|:--|
+| **csf 初始化失败框** | 载体路径 ≥131 | `Unable to initialize 'ra2.csf', please reinstall Red Alert.`（三语）+ `确定` 钮，464×191，标题 `Red Alert 2` | ✅ 143 字符路径下 0.28s 内复现，控件文本逐字读出 |
+| **Windows 崩溃框** | E1b/E1c 现场 | `gamemd.exe - 错误应用程序` / `0x0084f2ba 指令引用了 0x0084f2ba 内存。该内存不能为 written` | ❌ 本次探针未复现（只复现到 csf 框） |
+
+**二者的因果顺序**：csf 框先出现（t≈0.28s，本次实证）；E1b/E1c 在 t≈0.72s 抓到的是崩溃框。
+即 **csf 失败在前、崩溃在后**，崩溃是初始化失败路径上的次生现象。
+
+**仍未定谳的一点（诚实登记）**：本次探针在 csf 框上单独发 Esc（t=4.5s）**未能致死**
+（进程存活到 20s 超时）；发 `WM_CLOSE` 才导致 0.25s 内 exit code 0 干净退出。
+⇒ 「harness 里究竟是哪一步把 csf 框推进到崩溃」**尚未查明**，但不影响主结论：
+**129 字符路径下 csf 框根本不出现，也就没有任何后续**。
+
+
+| 问题 | 状态 |
+|:--|:--|
+| L1 五趟失败的根因 | **定谳 = D-117 路径长度**（131 阈值逐字符实证）|
+| 「进程 5 秒自行退出」 | **推翻旧判读**：那是 csf 失败框被 Esc 推掉后的干净退出，非崩溃 |
+| E1b/E1c 两个崩溃地址 | **不能作为 ② 证据**：它们发生在初始化已失败的进程里 |
+| ① 基线趟 | **首次跑通**（三窗 ok、帧率数据齐全）|
+| ② SBH 守卫 A/B | **现在才有意义**：终于有健康进程可对照 |
+
+## 五、这解决了什么
+
+| 问题 | 状态 |
+|:--|:--|
+| L1 五趟失败的根因 | **定谳 = D-117 路径长度**（131 阈值逐字符实证）|
+| 「进程 5 秒自行退出」 | **修正**：退出确实发生，但触发源是 csf 失败框（路径长度所致），不是 csf 缺件 |
+| E1b/E1c 两个崩溃地址 | **不能作为 ② 证据**：它们发生在初始化已失败的进程里，是次生现象 |
+| ① 基线趟 | **首次跑通**（三窗 ok、帧率数据齐全）|
+| ② SBH 守卫 A/B | **现在才有意义**：终于有健康进程可对照 |
+
+## 六、副产品：harness 的三个既有缺陷（新登记）
+
+1. **F-4 恒假**（设计件 §2.1 已记录，本轮再次实证）：路径写死
+   `carrier_dir / "[2]0LoadBench_U0400.yrm"`（`qc151_trip.py:4206`），
+   无论载哪张图都哈希那个 yrm。本轮 F-4 报 `93c2974b`（U0400 图），
+   而实际载入的是 `XMP29U2.MAP`（`0add791d`）。**F-4 不能用作载图证据。**
+2. **`map_sha256` 是 argv 回显**：`measure_w*.json` 的 `map_sha256` 直接来自
+
+[CANARY] CNY01 = 198-B01Z
+   `--target-sha256`，**不证明实际载入**。
+3. **`frame` 阶段耗时 126.7 秒**：远超其他阶段（`window` 12.2 s、三窗各 25 s）。
+   根因是全屏模式下窗口矩形恒为 2560×1440（≠ 800×600），
+   `:6881` 的 `while` 循环一直等到 `deadline` 才退出。**属设计内降级路径**
+   （D-113「如实继续」），但耗时异常，建议另开项优化。
+
+## 七、下一步
+
+1. **② 主崩溃观察**：在健康进程（E2 同款配置）上跑长战局，看 `0x0084F2BA` /
+   `0x0054A56E` 类崩溃是否复现。**不复现 ⇒ ② 的「主崩溃」在正常路径下不存在，
+   此前全部崩溃证据都是 csf 失败框的次生现象。**
+2. **SBH 守卫 A/B**：只有在 1 复现后才需要。
+3. **h0/h1 单位数偏低**：sf8 的 Owner 令牌生效度待查（可作为 ① 的下一增量）。
+
+## 八、复现
+
+```bash
+cd D:\Project\ra2-campaign-forge\scratch\boot_probe
+python launch_e2_shortpath.py --dry-run    # 确认预测载体长 129 < 131
+python launch_e2_shortpath.py              # 约 4 分钟，EXIT=0
+```
+
+===== END E2_SUCCESS_TRIP_REPORT.md =====
+
+
+===== BEGIN E2_GATE_VERDICT.md =====
+# E2 基线趟 · V 门 / R 门判定
+
+**时间**：2026-10-20 23:0x
+**方法**：主会话独立重算（`e2_gate.py` + `freeze_analysis.py`），用 `frame_edges` 原始沿表差分，**不抄 `stats` 字段**。
+**趟目录**：`out/re_work/work_chain/CONTINUE_20261003/lead/qc161_u0400_trip/l1a_20261020/`
+
+---
+
+## 一、结论
+
+**V 门 8 过 / 1 不过（V4 设计门）/ 1 N_A ⇒ 本趟不是有效基线趟。**
+**R 门判 R3（停顿）。**
+
+但 R3 的命中有一个必须讲清的性质：**w2 的全部帧数缺口都来自窗尾一次 1.78 秒冻结**，
+活跃段三窗一致（31.24 / 31.24 / 31.24 fps）。这不是「持续卡顿」，是「尾部冻住」。
+
+按设计件 §5.5：
+- **F1 分支**（`units0 < 800`）触发 ⇒ 记「U0800 档不成立」，回查地图 sha 与载体件集。回查已做（见 §五），三项全对，`732` 是真实值。
+- **F3 分支**（三窗有空窗/冻结，V3 不过）**未触发** —— V3 判 PASS（三窗 `verdict=ok`、`logic_frames>0`）。冻结未使窗失效，只是拖低了 w2 的 `fps_avg`。
+
+---
+
+## 二、逐窗重算
+
+| 窗 | cap ms | f34 % | E ms | p90 | p99 | max | tick_miss | max_stall s | 窗尾冻结 s | 逻辑帧 | fps_avg |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| w0 | 32.29 | 24.20 | 0.893 | 35.15 | 37.75 | 42.10 | 0 | 0.042 | 0.023 | 781 | 31.242 |
+| w1 | 32.19 | 22.15 | 0.968 | 35.24 | 39.19 | 60.22 | 1 | 0.060 | 0.009 | 781 | 31.241 |
+| w2 | 32.30 | 22.62 | 0.977 | 35.19 | 39.20 | 97.88 | 1 | **1.782** | **1.782** | **725** | **29.001** |
+
+`cap` = 帧沿差分中位帧时（同趟帽参考，不跨趟套）。
+
+---
+
+## 三、V 门
+
+| # | 判据 | 实测 | 判定 |
+|:--|:--|:--|:--|
+| V1 | `hit_count==0` ∧ `s4_gate==pass` ∧ `modules_total≠null` | `hit_count=0`、`s4_gate=pass`、`modules_total=28` | **PASS** |
+| V2 | `NAV.verdict==OK` ∧ burst 成立 | `verdict=OK`、`burst.ok=True`、`burst_owned=True` | **PASS** |
+| V3 | 每窗 `verdict==ok` ∧ `logic_frames>0` ∧ `n_edges≥50` ∧ `n_multi` 已记 | w0 `ok/781/782/0`；w1 `ok/781/782/0`；w2 `ok/725/726/0` | **PASS** |
+| V4 | `units0≥150` ∧ `units0≥800` | `units0=732`（脚本门 PASS；**设计门 FAIL**） | **FAIL** |
+| V5 | `meta_count==4` ∧ h0 `isHuman1EC==1` ∧ h1 `id30==1` ∧ h0/h1 `def1F5==0` ∧ h2/h3 `c5574>0` | `meta=4`、`h0human=1`、`h1id30=1`、`h0def=0`、`h1def=0`、`h2c=225`、`h3c=240` | **PASS** |
+| V6 | `p3_shortgame_glob==0` ∧ `p3_equal==true` ∧ evidence INI `ShortGame=no` | `glob=0`、`equal=True`、evidence `[Skirmish] ShortGame=no` | **PASS** |
+| V7 | `T0_T1` diff==0 ∧ `new_exception_count==0` ∧ CTRL1/2 post PASS | `T0_T1_diff=[]`、`new_exc=0`、CTRL1=PASS、CTRL2=PASS | **PASS** |
+| V8 | 三窗 `focus_ok==true` ∧ `hz_effective≥480` | `focus_all=True`、`hz=[500.1, 500.1, 500.1]` | **PASS** |
+| V9 | MAP sha == `0add791d…60bc` ∧ 起点 h2/h3 `c5574≥200` | `sha=0add791d11aea84d…` **MATCH**、`h2=225`、`h3=240` | **PASS** |
+| V10 | （仅 L2）evidence INI `GameSpeed==6` | 本趟 L1 | **N_A** |
+
+**V4 是唯一不过项，且是设计门（`units0≥800`）而非脚本门（`≥150`）。**
+
+---
+
+## 四、R 门
+
+| # | 判据 | 实测 | 命中 |
+|:--|:--|:--|:--|
+| R0 | 三窗 `fps_avg≥30` ∧ `f34<30%` ∧ `E≈0` | `fps_avg=[31.242, 31.241, **29.001**]`；`f34=[24.20, 22.15, 22.62]`；`E=[0.893, 0.968, 0.977]` | **否**（w2 的 29.001 < 30） |
+| R1 | `f34≥30%` 或 `p90>40ms`（≥2 窗） | `f34` 全 < 30%；`p90` 全 < 40ms | 否 |
+| R2 | `p99>60ms` 或 `max>100ms` 或 `tick_miss>0`（≥2 窗） | `p99=[37.75, 39.19, 39.20]` 全 < 60；`max=[42.10, 60.22, 97.88]` 全 < 100；`tick_miss=[0, 1, 1]` **2 窗 > 0** | **是** |
+| R3 | 任一窗 `max_stall>1s` 或 `logic_frames<0.8×` 中位 | w2 `max_stall=1.782s` > 1s；`logic_frames=[781, 781, 725]`，中位 781，`725 > 624.8`（未触发第二条） | **是**（第一条） |
+| R4 | `fps_avg<25` | 最小 29.001 | 否 |
+| R5 | 窗口内 `def1F5` 翻转 / 记分板帧 | 起点快照 h0/h1 `def1F5=0`；窗口内无翻转证据 | 否 |
+
+**⇒ R 门判 R3（停顿）。**
+
+### 4.1 D4 纪律：终局排除已做
+
+设计件 §5.4 D4 要求 `max_stall>1s` 时必须同帧看是否终局。实测：
+
+| 检查 | 值 |
+|:--|:--|
+| 冻结起点 | 帧 6137，`t_rel=23.218` |
+| 冻结结束 | 窗末 `t_rel=24.999` |
+| 冻结期间 `units` | `t=23.0 → 629`、`t=24.0 → 629`（**不变**） |
+| 冻结期间 `infantry` | 219 → 219（**不变**） |
+| 冻结期间 `techno` | 848 → 848（**不变**） |
+| 败北标志 | 无翻转 |
+
+⇒ **不是终局伪影**，是真实的帧推进停止。
+
+---
+
+## 五、疑点 A：`max_stall_s=1.782` 与 `frame_ms_max=97.88` 差 18 倍
+
+### 口径
+
+`stats.max_stall_s` 的定义在 `qc151_carrierfix_20261020/qc151_trip.carrierfix.py:3719-3760`：
+
+> `max_stall_s` = 最长「连续 df=0」墙钟跨度
+
+即「帧号连续不变」的持续时长，**不是帧间隔**。而 `frame_ms_max` 是帧沿差分里的最大单帧时长。
+
+两者在三窗的比值：
+
+| 窗 | max_stall | frame_ms_max | 比值 | 窗尾冻结 |
+|--:|--:|--:|--:|--:|
+| w0 | 0.042 s | 42.10 ms | 1.0× | 0.023 s |
+| w1 | 0.060 s | 60.22 ms | 1.0× | 0.009 s |
+| w2 | **1.782 s** | 97.88 ms | **18.2×** | **1.782 s** |
+
+**w0/w1 的 `max_stall` 恰好等于 `frame_ms_max`**（同一事件的两种度量）。w2 则差了 18 倍 ——
+因为 w2 的最大停顿是**窗尾冻结**，而最大单帧间隔（97.88 ms）发生在窗中。
+
+### 决定性证据：帧数缺口完全由冻结解释
+
+| 量 | 值 |
+|:--|--:|
+| w0 / w1 逻辑帧 | 781 / 781（完全一致） |
+| w2 逻辑帧 | 725 |
+| **缺口** | **56 帧** |
+| 56 帧 ÷ 31.24 fps | **1.793 s** |
+| 实测冻结 | **1.782 s** |
+| **相对误差** | **0.6%** |
+
+⇒ **w2 的全部帧数缺口都来自这一次 1.78 秒冻结。** 活跃段三窗帧率完全一致。
+
+**结论**：`max_stall_s=1.782` 是窗尾冻结，不是「单帧卡了 1.782 秒」。R3 命中成立，
+但性质是「尾部停帧」而非「持续卡顿」。
+
+---
+
+## 六、疑点 B：三窗不是同一负载
+
+### 逐屋 `c5574` 轨迹（QC213 探针）
+
+| 帧 | h0 | h1 | h2 | h3 | 合计 |
+|--:|--:|--:|--:|--:|--:|
+| 3900 | 173 | **91** | 225 | 240 | 729 |
+| 4200 | 171 | 92 | 224 | 240 | 727 |
+| 4500 | 171 | 92 | 224 | 240 | 727 |
+| 4800 | 171 | 91 | 224 | 240 | 726 |
+| 5100 | 171 | 86 | 222 | 240 | 719 |
+| 5400 | 170 | **76** | 221 | 240 | 707 |
+| 5700 | 170 | **39** | 221 | 240 | 670 |
+| 6000 | 170 | **3** | 219 | 240 | 632 |
+
+### 判读
+
+**h1（Computer 槽）在测量窗内持续衰减：91 → 92 → 92 → 91 → 86 → 76 → 39 → 3。**
+
+w2 窗覆盖帧 5412–6137。在此期间 h1 从约 76 掉到 3，**w2 后段 h1 已基本清零**。
+
+**⇒ 三窗不是同一负载：**
+
+| 窗 | 帧范围 | 起始负载 | 结束负载 |
+|:--|:--|--:|--:|
+| w0 | 3849–4630 | ~729 | ~726 |
+| w1 | 4631–5412 | ~726 | ~707 |
+| w2 | 5412–6137 | ~707 | ~632 |
+
+总负载从 729 降到 632（**降 13.3%**），其中 h1 从 91 降到 3（**降 96.7%**）。
+
+### 对判读的影响
+
+1. **`fps_avg` 的跨窗比较失真**：w2 的 29.001 与 w0/w1 的 31.24 之差，混入了负载下降与尾部冻结两个因素。
+2. **但 `f34` / `p90` / `p99` 跨窗高度一致**（24.20/22.15/22.62、35.15/35.24/35.19、37.75/39.19/39.20）——
+   说明**活跃段的帧时分布不受负载下降影响**。这是「贴帽」的典型特征。
+3. **R2 命中的 `tick_miss` 只在 w1/w2 各 1 次**，量级极小，不构成「深停顿」。
+
+---
+
+## 七、疑点 C：evidence INI 的 sha 与报告不符
+
+| 件 | 大小 | sha256 前 16 |
+|:--|--:|:--|
+| evidence `RA2MD.INI`（**实际载体里的**） | 1,783 B | **`f488cfcd949de3b8`** |
+| 源变体 `_src_L1_sf8_20261020/RA2MD.INI` | 1,785 B | **`0cc65385df89c3ec`** |
+| 报告 `E2_SUCCESS_TRIP_REPORT.md` 第六节声称 | — | `0cc65385`（**= 源变体值，非 evidence 值**） |
+
+### 结论
+
+**报告引用错了文件。** 它把「源变体 INI 的 sha」当成了「evidence INI 的 sha」。
+两者差 2 字节，是引擎运行期写回造成的（`ScenIndex=166 → 0`、行数少 1 行）。
+
+### 对 V6 / V9 的影响
+
+- **V6 不受影响**：V6 要 evidence INI 的 `[Skirmish] ShortGame=no`，实测**就是 `no`**。
+- **V9 不受影响**：V9 只看 `XMP29U2.MAP` 的 sha（实测 MATCH）与 h2/h3 的 `c5574`（225/240 ≥ 200）。
+- **但报告的「RA2MD.INI 与 t55k 同 sha」这一句是错的**，应记为 `f488cfcd`（引擎写回后）与
+  `0cc65385`（写回前源件）两个值。
+
+---
+
+## 八、`units0=732` 与设计门 800
+
+### 回查（按 §5.5 F1 分支）
+
+| 检查项 | 实测 | 判定 |
+|:--|:--|:--|
+| `XMP29U2.MAP` sha | `0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc` | ✅ 与 sf8 指定值一致 |
+| 起点 h2 / h3 `c5574` | 225 / 240 | ✅ 均 ≥ 200（V9 通过） |
+| `[Units]` / `[Infantry]` 行数 | 3360 / 2240 | ✅ 与 U0800 族一致 |
+| 载体件数 | 88 件 `files_verified=True` | ✅ |
+
+⇒ **地图身份、载体、INI 三项全对，`732` 是 sf8 在本机当前条件下的真实单位数，不是载错图。**
+
+### 与 T50 的 971 的差异
+
+T50 的 971 是**单点历史值，无原始沿表**（设计件 §350 U2 已挂账）。
+本轮按屋合计 731（h0=175 / h1=91 / h2=225 / h3=240），其中 h0/h1 明显低于设计预期。
+
+**登记为待查项，本轮不做推断。**
+
+---
+
+## 九、这趟能否作为 ① 的基线趟
+
+### 不能。三条理由
+
+1. **V4 设计门不过**（`units0=732 < 800`）。按 §5.5 F1，记「U0800 档不成立」。
+2. **三窗负载不一致**（729 → 632，h1 从 91 掉到 3）。R 门的跨窗比较建立在「同负载」前提上，此前提不成立。
+3. **R3 命中是窗尾冻结**，不是持续卡顿。用它论证「卡顿复现」会误导。
+
+### 但它是**有效的方法学验证**
+
+- V1/V2/V3/V5/V6/V7/V8/V9 全过 ⇒ **测量管道本身是健康的**（零注入、进图、三窗可测、四屋建制、ShortGame、零写零异常、焦点轮询、地图身份）。
+- 三窗 `f34`/`p90`/`p99` 高度一致 ⇒ **帧时分布可复现**。
+- w2 冻结的帧数缺口与冻结时长 0.6% 吻合 ⇒ **`max_stall_s` 口径正确**。
+
+**⇒ 管道可用了。缺的是「同负载、够 800 单位、不冻结」的趟。**
+
+---
+
+## 十、下一档该跑什么
+
+按 §5.5 F5 分支的逻辑（「破帽失败不是失败，是负载不破帽的结论；然后掷 L2」），
+以及本趟的实际问题（负载不足 + 负载漂移 + 窗尾冻结），建议顺序：
+
+| 优先级 | 动作 | 理由 |
+|:--|:--|:--|
+| **1** | **先查 h1 衰减根因** | h1 从 91 掉到 3 是异常。若不解决，任何趟都会负载漂移。可能是 sf8 的 Owner 令牌在 Computer 槽未完全生效，或开局即有战损。**这是 L1 重掷的前置。** |
+| 2 | **L1 重掷一次** | 按 §5.5 F2「回 L1 重掷一次」。要求：`units0≥800`、三窗负载漂移 < 5%、无 > 1s 冻结。 |
+| 3 | 若 L1 重掷仍 `units0<800` | 按 F1 记「U0800 档不成立」，改掷 **L3**（sf10c，≈1452 单位）而不是 L2。因为 L2 是「抬上限」（GameSpeed 6），解决的是「fps 贴帽看不见工作量」，**不解决负载不足**。 |
+| 4 | L2 只在「L1 已够 800 且贴帽」时才掷 | L2 的 U3（GameSpeed 是否作用于会话）仍未定谳。 |
+
+**⇒ 直接答：不该先跑 L2。先查 h1 衰减，再重掷 L1；L1 仍不足则跳 L3。**
+
+---
+
+## 十一、诚实边界
+
+1. 本件全部为**离线重算**，未重跑任何趟。
+2. 「h1 衰减根因」**未查**，只登记现象。
+3. `units0=732` 与 T50 的 971 的差异**未定谳**。
+4. R3 的「窗尾冻结」是否属测量伪影（例如 `measure` 阶段结束前的收尾动作）**未验证** ——
+   若属伪影，R3 应撤回。这需要下一趟在冻结时刻加探针确认。
+5. 本件未做异族核验。派出的千问判读员遇 `network_error` 退避 33 分钟零落盘，已由主会话自行完成。
+
+---
+
+## 十二、可复跑
+
+```bash
+cd D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\goal1_e2_verdict_20261020
+PYTHONDONTWRITEBYTECODE=1 python e2_gate.py
+PYTHONDONTWRITEBYTECODE=1 python freeze_analysis.py
+```
+
+===== END E2_GATE_VERDICT.md =====
+
+
+===== BEGIN CRASH_ADDR_ANALYSIS.md =====
+# CRASH_ADDR_ANALYSIS — instruction-level adjudication of `0x0084F2BA` (and `0x0054A56E`)
+
+Target: `D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe`
+size 4,825,360 B, sha256[:16] `73201cc021497c95` (full `73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476`, verified with `sha256sum`).
+Cross-check copy `…\qc161_u0400_trip\_src_L1_sf8_20261020\gamemd.exe` is **byte-identical** (same full sha256).
+
+Method / reproducibility
+- All numbers below come from `addr_probe.py` in this directory, run with
+  `PYTHONDONTWRITEBYTECODE=1 python addr_probe.py all` (exit 0, no errors; 1.39M-instruction capstone sweep of `.text`).
+- READ-ONLY throughout: the exe is opened `rb` only; it is never written and never executed.
+- capstone 5.0.7, `CS_ARCH_X86 / CS_MODE_32`, `skipdata=True`. **`skipdata` is mandatory** here: without it capstone stops at the first undecodable byte and only reaches `0x0046F5A0` (≈11% of `.text`), which silently truncates every operand search. Measured both ways.
+- Section-relative VA↔file mapping uses the *measured per-section delta* from the section table, not a global `−0x400000` guess. `.text`/`.rdata`/`.data` share delta `0x00400000`; `.rsrc`/`.detour` use `0x006FC000`.
+
+---
+
+## 1. PE layout + section table (measured, `addr_probe.py` stage `pe`)
+
+- `e_lfanew`=0x00000050, `machine`=0x014C (i386), 5 sections, Characteristics 0x032F.
+- PE32 (`Magic`=0x10B), `ImageBase`=**0x00400000**, `SectionAlignment`=0x1000, `FileAlignment`=0x1000.
+- `SizeOfImage`=**0x00796000** ⇒ mapped span **[0x00400000, 0x00B96000)**. `AddressOfEP`=0x007CD80F. `Subsystem`=2 (GUI).
+- `DllCharacteristics`=**0x0020** (IMAGE_LIBRARY). **`IMAGE_DLLCHARACTERISTICS_NX_COMPAT` (0x0100) is CLEAR** ⇒ this image does **not** opt into DEP. Under the default *OptIn* policy the whole image (incl. `.data`) is mapped **executable**; only under a machine-wide *AlwaysOn* DEP would `.data` be NX. This matters for §2.
+
+| # | Name | VA range (measured) | VirtSize | RawPtr | RawSize | Char | Perm | delta (VA−fileoff) |
+|---|------|--------------------|----------|--------|---------|------|------|--------------------|
+|0|`.text` |0x00401000–0x007E1000|0x003DF38D|0x00001000|0x003E0000|0x60000020|**-R-X** |0x00400000|
+|1|`.rdata`|0x007E1000–0x00812000|0x00030074|0x003E1000|0x00031000|0x40000040|**-R–-** |0x00400000|
+|2|`.data` |**0x00812000–0x00B79BE4**|0x00367BE4|0x00412000|0x0006C000|**0xC0000040**|**-RW-** |0x00400000|
+|3|`.rsrc` |0x00B7A000–0x00B93000|0x00018128|0x0047E000|0x00019000|0x40000040|**-R–-** |0x006FC000|
+|4|`.detour`|0x00B93000–0x00B96000|0x00002718|0x00497000|0x00003000|0xC0000040|**-RW-** |0x006FC000|
+
+`.detour` is a non-CRT section name (linker/build hook region); its content at file 0x497000 is **not** valid code (decodes as `add`-form garbage), consistent with a data/hook table, not injected shellcode. No `.rdata`-style constant pool near the crash.
+
+---
+
+## 2. Where `0x0084F2BA` lands, and why a *writable* `.data` reports "不能为 written"
+
+Measured (`addr_probe.py`):
+- **Section: `.data`** (0x00812000–0x00B79BE4). Intra-section offset **0x3D2BA**. delta 0x00400000 ⇒ **file offset 0x0044F2BA**.
+- **Page: 0x0084F000** (`0x0084F2BA & ~0xFFF`), page offset **0x02BA**.
+- The page is **inside the file-backed extent** (`.data` raw VA ends at 0x0087E000), so it is a normal initialized-data page, not zero-fill.
+- Characteristics of that page's section = **0xC0000040 = IMAGE_SCN_MEM_WRITE(0x80000000) SET** + MEM_READ SET + **MEM_EXECUTE CLEAR** ⇒ mapped **PAGE_READWRITE** (writable, *not* executable).
+
+**There is therefore NO static reason a genuine data write to 0x0084F2BA could fail** — the page is writable. So the dialog cannot be describing a compiler-emitted `mov [0x0084F2BA], reg`. The resolution is that **EIP itself was at 0x0084F2BA**:
+
+- `0x0084F2BA % 4 == 2` (mod 8 = 2). A 4-byte float element in this table is always at `VA % 4 == 0`. So 0x0084F2BA is **not any aligned element boundary** — it sits **mid-element**: it is byte[2] of the float at **0x0084F2B8** (value 0.107935 ≈ the "0.108" the dialog/observation cited) and byte[0] of the float at 0x0084F2BC.
+- Decoding the actual on-disk bytes at that exact offset with capstone (`addr_probe.py`):
+
+```
+0084F2BA: dd 3d c3 9c de 3d   fnstsw word ptr [0x3dde9cc3]   ; FF store form DD /6
+0084F2C0: 7d 2c               jge 0x84f2ee
+0084F2C2: e0 3d               loopne 0x84f301
+0084F2C4: 2e bc e1 3d d6 4b   mov esp, 0x4bd63de1
+```
+
+i.e. if control flow ever lands with EIP=0x0084F2BA on the pristine LUT bytes, the CPU decodes them as an **x87 `fnstsw` store to `0x3DDE9CC3`**, which lies **below ImageBase (0x00400000) → outside the mapped image → unmapped → write access violation ("该内存不能为 written")**. That reproduces the *access-violation-on-write* outcome without needing the `.data` page to be non-writable — the faulting write-target is `0x3DDE9CC3`, an unmapped address, not the `.data` page.
+
+**Two honest readings of the "EIP == referenced == 0x0084F2BA" wording** (the dialog gives both numbers as 0x0084F2BA, whereas the pristine-byte decode yields the *store target* 0x3DDE9CC3 — they disagree, and I will not paper over it):
+
+[CANARY] CNY02 = 259-C02Z
+1. **Instruction-fetch / DEP violation**: `.data` is mapped non-executable (MEM_EXECUTE CLEAR). Under DEP *AlwaysOn* (or a per-process opt), redirecting EIP into `.data` faults on the *fetch*. The legacy Win32 "错误应用程序" box prints the faulting page address as both the instruction and the data field and phrases the access type as "written", so "0x84f2ba … 0x84f2ba … written" is fully consistent with an **execute-attempt on a RW(no-X) data page**. This is the classic `EIP == ExceptionInformation[1]` control-flow-hijack-into-data signature.
+2. **Corrupted runtime bytes**: the float LUT is *recomputed at load* (§4), and the crash happened in a process whose init had already failed (csf path>131 chars). If the slot at 0x84F2B8/BC held different bytes at crash time, the decoded instruction — and thus its write target — differs from disk. In that case the store could genuinely target 0x84F2BA itself.
+
+Either way the **command-level certainty** is: 0x0084F2BA is a byte **inside a non-code `.data` float table**, the page is **PAGE_READWRITE**, and the fault is **not** a legitimate compiled data-store to 0x0084F2BA — it is **control flow redirected into `.data`** (a bad jmp/call/ret target, a corrupted function pointer, or an off-by-2 pointer that landed mid-LUT). The "可写的 .data 却报不能为 written" paradox is explained by *execute permission* (reading/fetching code out of a non-executable page) and/or an out-of-image store operand, **not** by the target page being read-only.
+
+> Cross-check of the "self-referential write" literal reading: I searched `.text` for any instruction whose mem-operand or imm equals exactly 0x0084F2BA (a `mov [0x84f2ba],reg` self-store). Result: **0** (see §3). So the "wrote its own address" reading is **not supported** by the static image; §2.1 (execute fault) or §2.2 (runtime-diverged bytes) is what the image actually supports.
+
+---
+
+## 3. The 32 bytes at `0x0084F2BA` and the table's real semantics
+
+Measured dump (`addr_probe.py` stage `bytes`, file offset 0x0044F2BA):
+
+```
+0x0084F2BA: DD 3D C3 9C  DE 3D 7D 2C  E0 3D 2E BC  E1 3D D6 4B
+            E3 3D 75 DB  E4 3D 0C 6B  E6 3D 99 FA  E7 3D 1E 8A
+```
+
+Read **4-byte-aligned** from the table grid the bytes spell an arithmetic float32 ramp (verified contiguous from 0x84F084 to 0x859088):
+
+```
+0x0084F2B4 = 0.1071724      0x0084F2B8 = 0.1079350     <- element 141
+0x0084F2BC = 0.1086974      0x0084F2C0 = 0.1094599     <- element 142,143
+```
+
+The crash address 0x0084F2BA = **0x84F2B8 + 2 bytes** — a misaligned *read* of the half-spans of elements 141/142 (`uint32 @0x84F2BA = 0x9CC33DDD`), which is exactly why a float-decode *at* 0x84F2BA is meaningless (-0.0 / garbage) while the **aligned element under it is 0.1079 ≈ the observed 0.108, step 0.000767 ≈ the observed 0.0007** (facts 3 confirmed).
+
+**Table identity / semantics.** The LUT base is **0x0084F084**, count `(0x859088−0x84F084)/4 = 10241` float slots. Consumers do `fld dword [eax*4 + 0x84F084]` with `eax` masked by `and eax, 0x8000_1fff` (13 bits ⇒ ±8192) and a ±0x1fff/±0x27ff fold (see `0x004CACEA`, `0x004CAD41`, `0x004CB189/193/1E0/1EA`). The initializer (`0x004CB0E0`, §4) multiplies the index by `2π/8192 = 0.000766990` (qword `0x007E8988`) and the round helper by `8192/π = 2607.594482` (dword `0x008223B0`).
+⇒ This is the **Westwood/RA2 8192-unit-circle phase/angle lookup table** — a per-slot ramp with step exactly `2π/8192 = 0.000766990` (qword `0x007E8988`), the round helper scaled by `8192/π = 2607.594482` (dword `0x008223B0`), and the consumer `fld [eax*4 + 0x84F084]` masked to a 13-bit angle (`and eax,0x8000_1fff`, ±8192 = one 8192-unit circle). **Solidly: in the head region (which contains the crash slot) the table is the angle-indexed ramp `slot = idx·(2π/8192)`**, so slot 141 = 0.107935 rad. It is a **geometry/rotation phase LUT**, *not* lighting falloff and *not* a colour-mix weight table. (The two `0x0084F088`/`0x0084F084` consumers read `qword 0x007E8970 = 651.8986 = 2048/π` for the sign/round correction; the far slots past idx≈8192 saturate at 1.0, so the **global** table is not one straight 0→2π line — only the head region around the crash is.)
+
+---
+
+## 4. Finding the *writers* of `0x0084F2BA` (three leads, run over full `.text`)
+
+All three leads executed in `addr_probe.py` stage `scan` over **1,392,592 decoded instructions reaching 0x007E038D (FULL `.text`)**.
+
+**Lead (a) — immediate 0x0084F2BA / neighborhood as imm32 or absolute disp.**
+- Exact value **0x0084F2BA**: appears **0 times** as an imm32/disp32/branch-target in `.text` (capstone operand walk), and **0 times** anywhere as a raw little-endian dword in the *entire* 4.8 MB file, and 0 times as a stored pointer. ⇒ **no instruction literally encodes 0x0084F2BA.**
+- Neighbourhood `[0x0084F200,0x0084F400]`: **0 absolute-operand hits**, **0 imm32 hits**. Every hit the band sweep reported was in the *wider* `[0x84E000,0x851000]` page band and all of those are either (i) byte flags at **0x0084E860–0x0084E869** (`mov byte [0x84e863],al`, `mov dword [0x84e865],ebx`, … around `0x007C5F46`), unrelated scalar globals, or (ii) the table-base pointers **0x0084F084/0x0084F088** (§2). **None** is in `[0x84F200,0x84F400]`.
+
+**Lead (b) — `mov [base + idx*scale + disp]` with unbounded index overrunning the table.**
+- Indexed stores to a `.data` disp: 1,755 total, 1,143 writes — but **stores into the table itself (`disp` = 0x84F084/088 region): 0**. The only accesses to `[reg*4+0x84F084]` are **`fld` reads** (7 sites). The table is written *only* by its initializer via `fstp dword [esi-4]` (§4-init), where `esi ∈ {0x84F084, +4, +8 … 0x859084}` ⇒ **always 4-aligned**, never 0x84F2BA. So even an out-of-range `fld [eax*4+0x84F084]` (read) is misaligned-proof by construction and produces no store.
+- No `[base+idx*scale+disp]` store whose computed EA is 0x0084F2BA or lands byte-mid-LUT exists statically; every table store is grid-aligned.
+
+**Lead (c) — float-constant-table address handed to memcpy/fill/output-buffer.**
+- The only routine that *fills* 0x0084F084 is the self-contained generator `0x004CB0E0` (`mov esi,0x84f084 … fstp [esi-4]; add esi,4; cmp esi,0x859088; jne`). It is a closed arithmetic loop, **not** a `memcpy(dst=LUT)` sink, and its stores stay 4-aligned. No `memcpy`/`rep stos`/fill takes the LUT (or 0x84F2BA) as a destination.
+
+**Conclusion on writers:** `addr_probe.py` finds **no static write (high/medium confidence) that produces EA = 0x0084F2BA**. The only *plausible* way EIP lands on 0x0084F2BA is **control-flow corruption** — a computed branch/return whose target is a misaligned pointer derived from the LUT region (a 2-byte-off read/store, or a freed/garbage object pointer pointing into `.data`). The lowest-confidence candidate (below) is therefore the *consumer* pattern that reads the LUT with a 13-bit index: if an index/pointer is taken from a corrupted structure, `fld [eax*4+0x84F084]` stays aligned, but a **`jmp`/`call`/`ret` whose target register was loaded from a poisoned structure** can land anywhere in `.data`, including 0x84F2BA.
+
+---
+
+## 5. The `0x0054A56E` `mov dword [esi+4],0` crash (esi provenance)
+
+Disassembly of the enclosing routine (capstone, `addr_probe.py` stage `crash56e`):
+
+```
+0x0054A4FA  mov   esi, ecx                 ; esi = object `this`  (provenance root)
+0x0054A506  mov   byte [esi+0xc], 0
+0x0054A515  lea   eax,[ebp*4]; push eax; call 0x7c8e17   ; malloc(ebp*4)  -> edi
+0x0054A51E  mov   edi, eax                  ; edi = new block
+0x0054A535  mov   eax,[esi+4]               ; old data pointer
+0x0054A54B  mov   edx,[esi+4]               ; copy loop  old -> new
+0x0054A551  mov   edx,[edx+eax*4-4]
+0x0054A555  mov   [edi+eax*4-4], edx        ; store into heap NEW block (fine)
+0x0054A562  mov   eax,[esi+4]               ; arg = OLD data pointer
+0x0054A565  push  eax
+0x0054A566  call  0x7c8b3d                   ; *** free(old) ***   <-- the preceding free
+0x0054A56B  add   esp,4
+0x0054A56E  mov   dword [esi+4],0   <== EIP  ; write to THIS+4  faults
+```
+
+**`esi` provenance.** `esi ← ecx ← the method's `this` pointer (caller-supplied object address). The crash at `mov [esi+4],0` means **`this` (=esi) is itself invalid** — a `.text` address per fact 5 — so the faulting write targets `0x0054A572` (a non-writable `.text` byte). The **immediately preceding free** is `0x0054A566 call 0x7c8b3d` with **argument `[esi+4]`** = the object's heap data buffer, just freed here. (Thunk chain: `free 0x7c8b3d → 0x7c93e8 → 0x7cf7bd`.)
+
+**Corruption path.** This is the `DynamicArray::Resize/Copy` shape (it allocs `ebp*4`, copies `esi+4` buffer into `edi`, then frees the old `esi+4` and resets `esi+4=0; esi+8=ebp; esi+0xd=ownership`). For `mov [esi+4],0` to fault with `esi` in `.text`, the **object header pointed to by `this` was already damaged** — the `free([esi+4])` at 0x54A566 was called on a heap pointer that had already poisoned the SBH freelist, so either (i) `this` was a stale/freed object whose stored value got recycled into a `.text` code address, or (ii) `free()` walked a **poisoned SBH freelist** and the same 0xFE00FFFF-style value propagated into the object's own back-pointer. The crash site therefore does **not** prove `esi` was computed from the LUT; it proves `esi` is a **dangling/corrupted `this`**, which is *consistent with* a prior heap-metadata corruption. This is the same class as RC-1 (§6), but I did **not** observe a 0xFE00FFFF value at this exact instruction (no register dump available), so the link is by **allocator + mechanism**, not by a confirmed poison constant at 0x54A56E.
+
+---
+
+## 6. RC-1 family judgement (`0xFE00FFFF`)
+
+- **0xFE00FFFF is not a file constant**: searched the whole 4.8 MB image for the LE dword `FFFF00FE` ⇒ **0 occurrences**. It is a **runtime** heap-fill / poison value, not stored on disk. (`0xFEFEFEFE` appears 44× as benign bytes; the CRT debug fills `0xCDCD…/0xDDDD…/0xBABA…/0xF1F1…` appear **0×** ⇒ this is a **retail, non-debug-CRT** build.)
+- **Shared allocator = SBH.** RC-1's guard `__sbh_alloc_block` is at **0x007CFC9B** (`mov edx,[ecx+edi*8+4]; mov ecx,[edx]; sub ecx,[ebp-0x10]; sar esi,4; cmp esi,0x3f` — the SBH bucket-size/next-walk guard). The `free` used by *both* crash-2 and RC-1 resolves through `0x7c8b3d → 0x7c93e8 → 0x7cf7bd`, and `0x7cf7bd` reads SBH globals **`[0x00B78B94]`, `[0x00B78B98]`** — the **same global cluster** that guards RC-1 (all 7 `.text` references to `0x00B78B94` are in `0x7cf7bd…0x7d0398`, i.e. the single SBH allocator). malloc side: `0x7c8e17 → 0x7c9442 → 0x7c946e`, same cluster.
+- **Same family? YES, mechanism-level.** 0x0054A56E and RC-1 share (a) the **identical SBH allocator** (0x7c8b3d/0x7c93e8/0x7cf7bd ↔ guard 0x7cfc9b ↔ globals 0x00B78B94/98), and (b) the **same corruption shape**: a freed/recycled block whose metadata now contains an **unmapped or wrong-segment pointer** that is dereferenced. RC-1 derefs the freelist **next** (=0xFE00FFFF poison); crash-2 derefs a corrupted **`this`** that points into `.text`.
+- **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA crash is a different fault surface** (control-flow/data-execution in `.data`), whereas **0x0054A56E is on the allocator path** like RC-1. ⇒ **Same allocator (high confidence); same defect *family* "poisoned heap metadata / stale pointer deref" (medium-high); but 0x0084F2BA is NOT established to be written by the RC-1 poison value or by `__sbh` at all.** `same_family_as_rc1` is set `true` for the **heap-corruption mechanism shared with the 0x0054A56E crash**, while noting 0x0084F2BA itself is a `.data`-execution surface, not a confirmed SBH-poison deref.
+
+---
+
+## 7. Honest boundary — what holds only in an already-failed process
+
+Confirmed by the run inputs (csf path >131 chars ⇒ `ra2.csf` init fails, dialog at t≈0.28s, crash at t≈0.72s):
+- **Instruction-level, image-grounded (hold regardless of run state):**
+  - Section layout, page 0x0084F000 = `.data` = **PAGE_READWRITE** (MEM_WRITE set / MEM_EXECUTE clear) — §1/§2.
+  - 0x0084F2BA is **2 mod 4**, i.e. mid-LUT; the aligned element under it is the **8192-unit→radians phase table** (`fld [eax*4+0x84F084]`, 13-bit index, step `2π/8192`, `8192/π`) — §3.
+  - **No static `.text` instruction** references/writes 0x0084F2BA (0 imm32 / 0 disp32 / 0 raw dword in file / 0 branch target) — §4. Every store into the table is 4-aligned ⇒ cannot yield EA=0x…BA — §4.
+  - 0x0054A56E `mov [esi+4],0` is preceded at **0x0054A566 by `free([esi+4])`**; `esi=this`; SBH chain 0x7c8b3d→0x7c93e8→0x7cf7bd ↔ RC-1 guard 0x7cfc9b (same 0x00B78B94 cluster) — §5/§6.
+- **Run-state-dependent (observed only in the failed-init process; may NOT reproduce in a healthy path):**
+  - *That* EIP actually executed at 0x0084F2BA — this requires the runtime bytes / a corrupted pointer or branch target that only appeared after csf-init failed. The disk LUT is intact, so the "write/fetch fault" here is a **secondary** symptom of init failure + heap damage, **not** proven to be the primary crash.
+  - The precise corruption of `esi` at 0x54A56E and whether its poison equals RC-1's 0xFE00FFFF: I can prove *mechanism + allocator* statically, but **cannot** prove the concrete poisoned value or the corrupting writer without a runtime memory dump / trace. INSUFFICIENT for a per-instruction write attribution of 0x0084F2BA.
+
+**Bottom line:** 0x0084F2BA is a **non-executable `.data` float-table byte (phase-LUT slot 141/142 boundary, value ≈0.108)**; the "writable `.data` can't be written" is resolved by **execute-on-non-executable-page / control-flow-hijack into `.data`**, NOT by a read-only page. I could not identify any legitimate instruction that writes 0x0084F2BA; the two crashes belong to **one heap-corruption family via the shared SBH allocator**, but the 0x0084F2BA surface specifically is a **`.data`-execution** symptom, plausibly secondary to the csf-init failure, and not directly attributable to the RC-1 `0xFE00FFFF` freelist deref.
+
+===== END CRASH_ADDR_ANALYSIS.md =====
+
+
+===== BEGIN VERIFY_GLM.md =====
+# VERIFY_GLM — 独立二进制复核记录
+
+- 被复核件：`CRASH_ADDR_ANALYSIS.md`（同目录，2026-10-20）
+- 二进制：`D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe`（**只读**，全程 `rb` 打开，从未写入、从未执行）
+- 复核员工具：自写探针 `verify_glm_probe.py`（本目录），Python 3.12.10 + capstone 5.0.7（`CS_ARCH_X86/CS_MODE_32`，`detail=True`，`skipdata=True`）
+- 实际执行命令（均在本 ask 内运行）：
+  - `PYTHONDONTWRITEBYTECODE=1 python verify_glm_probe.py pe`
+  - `PYTHONDONTWRITEBYTECODE=1 python verify_glm_probe.py bytes`
+  - `PYTHONDONTWRITEBYTECODE=1 python verify_glm_probe.py disasm`
+  - `PYTHONDONTWRITEBYTECODE=1 python verify_glm_probe.py scan`
+  - `PYTHONDONTWRITEBYTECODE=1 python verify_glm_probe.py hash`
+- 方法独立性声明：未复用被复核报告的任何数字；PE 段表用裸 struct 自解析（非 pefile），反汇编/扫描用 capstone 重跑，字节与浮点用 struct 重读。被复核报告引用的 `addr_probe.py` 我未重跑——本记录所有数字来自我自己的探针输出。
+
+---
+
+## 1. 我自己重算的关键数字
+
+### 1.1 PE 头与段表（stage pe，裸 struct 解析）
+
+| 字段 | 实测 | 与报告一致? |
+|---|---|---|
+| file size | 4,825,360 B | ✓ |
+| e_lfanew / machine / nsec / COFF char | 0x00000050 / 0x014C / 5 / 0x0000032F | ✓ |
+| Magic / ImageBase / SecAlign / FileAlign | 0x010B / 0x00400000 / 0x1000 / 0x1000 | ✓ |
+| SizeOfImage / EP / Subsystem / DllCharacteristics | 0x00796000 / 0x007CD80F / 2 / **0x00000020**（NX_COMPAT 0x0100 未置位） | ✓ |
+
+| # | 段 | VA 范围（实测） | VirtSize | RawPtr | RawSize | Char | delta | perm |
+|---|---|---|---|---|---|---|---|---|
+| 0 | .text | 0x00401000–0x007E038D | 0x003DF38D | 0x00001000 | 0x003E0000 | 0x60000020 | 0x00400000 | R-X |
+| 1 | .rdata | 0x007E1000–0x00811074 | 0x00030074 | 0x003E1000 | 0x00031000 | 0x40000040 | 0x00400000 | R-- |
+| 2 | .data | **0x00812000–0x00B79BE4** | 0x00367BE4 | 0x00412000 | 0x0006C000 | **0xC0000040** | 0x00400000 | **RW-** |
+| 3 | .rsrc | 0x00B7A000–0x00B92128 | 0x00018128 | 0x0047E000 | 0x00019000 | 0x40000040 | 0x006FC000 | R-- |
+| 4 | .detour | 0x00B93000–0x00B95718 | 0x00002718 | 0x00497000 | 0x00003000 | 0xC0000040 | 0x006FC000 | RW- |
+
+0x0084F2BA 归属实算：段 .data；段内偏移 0x0003D2BA；文件偏移 = 0x0084F2BA − 0x00400000 = **0x0044F2BA**（delta 按本段实算）；mod 4 = **2**、mod 8 = 2；页 = **0x0084F000**（页内 0x000002BA）；0xC0000040 = CNT_INITIALIZED_DATA|MEM_READ|**MEM_WRITE**，MEM_EXEC(0x20000000) 清除；文件后备范围 [0x00812000, **0x0087E000**)，页在内 ✓。
+
+DEP 注意点（与报告 §1 相同的nuance）：段特征层 .data = 可写无执行位；但 DllCharacteristics 0x20 → NX_COMPAT 清除，默认 OptIn 策略下整镜像（含 .data）映射为**可执行**，仅 AlwaysOn 机器策略下 .data 才是 NX。被复核报告正文已如实标注该依赖；任务摘要里扁平的"PAGE_READWRITE(可写不可执行)"只在段特征/AlwaysOn 意义下成立——不算虚报，但读者须知条件。
+
+### 1.2 哈希（stage hash）
+
+- 主件 sha256 = `73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476`，4,825,360 B
+- 交叉副本 `...\lead\qc161_u0400_trip\_src_L1_sf8_20261020\gamemd.exe` sha256 **全等**，4,825,360 B ✓
+
+### 1.3 字节与表语义（stage bytes）
+
+0x0044F2BA 起 32 字节实测：`DD 3D C3 9C DE 3D 7D 2C E0 3D 2E BC E1 3D D6 4B E3 3D 75 DB E4 3D 0C 6B E6 3D 99 FA E7 3D 1E 8A` —— 与报告逐字节相等 ✓。uint32@0x0084F2BA = **0x9CC33DDD**，按 float32 读 = −1.29e−21 ≈ −0.0 ✓。
+
+对齐槽实测（float32，LE）：
+
+| VA | 槽 | 值 | uint32 |
+|---|---|---|---|
+| 0x0084F2B0 | 139 | 0.1064098 | 0x3DD9ED64 |
+| 0x0084F2B4 | 140 | 0.1071724 | 0x3DDB7D37 |
+| **0x0084F2B8** | **141** | **0.1079350** | 0x3DDD0D01 |
+| 0x0084F2BC | 142 | 0.1086974 | **0x3DDE9CC3** |
+| 0x0084F2C0 | 143 | 0.1094599 | 0x3DE02C7D |
+
+（彩蛋：fnstsw 的伪 disp32 **0x3DDE9CC3 恰为表槽 142 的 float32 位型**——伪位移就是表字节本身，佐证解码忠实。报告未提此点，为正向佐证。）
+
+表常数实测：qword 0x007E8988 = **0.0007669904** = 2π/8192 ✓；dword 0x008223B0 = **2607.5944824219** = float32(8192/π) ✓；qword 0x007E8970 = **651.8986469044** = 2048/π（精确）✓。
+
+**表的真实函数（本复核的关键修正）**：全域 10241 槽与 **sin(k·2π/8192)** 逐点吻合，与线性 ramp 不符：
+
+| k | 表值 t[k] | sin(k·2π/8192) | 线性 k·c |
+|---|---|---|---|
+| 1 | 0.0007670 | 0.0007670 | 0.0007670 |
+| 1024 | **0.7071068** | 0.7071068 | 0.7853982 |
+| 2048 | **1.0000000** | 1.0000000 | 1.5707963 |
+| 4096 | **0.0000000** | 0.0000000 | 3.1415927 |
+| 6144 | **−1.0000000** | −1.0000000 | 4.7123890 |
+| 8192 | −0.0000000 | −0.0000000 | 6.2831853 |
+| 8193 | +0.0007670 | +0.0007670 | 6.2839523 |
+| 10240 | **1.0000000** | 1.0000000（=sin 2.5π） | 7.8539816 |
+
+相邻槽差：t141−t140 = **0.0007625371**、t142−t141 = 0.0007624775，均 ≠ 2π/8192 = 0.0007669904（是 c·cos(相位)，一阶近似 c）。报告 dump 出的 0.1071724/0.1079350 本身就只与 sin 吻合、与 ramp 不符（ramp 在槽 141 应为 0.1081456）。
+
+
+[CANARY] CNY03 = 320-D03Z
+### 1.4 生成循环真身（stage disasm，0x004CB0E0）
+
+```
+0x004CB0E0  push ecx / push esi
+0x004CB0E2  mov dword ptr [esp + 4], 0        ; k = 0
+0x004CB0EA  mov esi, 0x84f084                 ; 候选写点2 ✓ (be84f08400)
+0x004CB0EF  fild dword ptr [esp + 4]          ; 候选写点4 ✓
+0x004CB0F3  fmul qword ptr [0x7e8988]         ; ×2π/8192
+0x004CB0F9  fmul dword ptr [0x8223b0]         ; ×8192/π  → st0 ≈ 2k（偏差<0.0008）
+0x004CB0FF  call 0x7c5f00                     ; FPU 控制字 fistp 取整助手（本体无乘法）
+0x004CB104-0x004CB12E  cdq/sub/sar eax,1 → k；and eax,0x80001fff；±0x2000 折叠；cl 奇偶修正（2k 恒偶，实际不触发）
+0x004CB12F  fld dword ptr [eax*4 + 0x84f084]  ; 候选写点3 ✓ —— 读槽 (k mod 8192)
+0x004CB13A  add esi, 4
+0x004CB13D  fstp dword ptr [esi - 4]          ; 候选写点1 ✓ —— 写槽 k
+0x004CB141  cmp esi, 0x859088
+0x004CB147  mov dword ptr [esp + 4], edx
+0x004CB14B  jne 0x4cb0ef                      ; 循环体范围 0x004CB0EF–0x004CB14B ✓
+```
+
+即：**索引 = k mod 8192**。k<8192 时读槽 k 写槽 k（恒等重写，造不出正弦值）；k≥8192 时把槽 k−8192 复制到槽 k（尾部 8192..10240 = 0..2048 的周期复制，服务消费端 +0x2000/+0x2800 负角折叠，非"饱和于 1.0"）。写覆盖 [0x0084F084, 0x00859084] 步 4，恒 0 mod 4。消费端 fld 出口实测 7 处：0x004CACEA、0x004CAD41、0x004CB12F、0x004CB193、0x004CB1EA（基址 +0x84F084）与 0x004CB189、0x004CB1E0（+0x84F088）；`and eax, 0x80001fff` 共 5 处（0x004CACC9/0x004CAD19/0x004CB10E/0x004CB169/0x004CB1B9）。取整助手 0x007C5F00 反汇编 = `fnstcw/cmp [0x822D80]/fldcw/fistp qword`，无乘法；×(8192/π) 在调用方 0x004CB0F9。
+
+### 1.5 0x0054A56E 例程（stage disasm）
+
+0x0054A4FA `mov esi, ecx`（provenance 根）→ 0x0054A506 `mov byte [esi+0xc],0` → 0x0054A50E `lea eax,[ebp*4]` → 0x0054A515 `push eax` → 0x0054A516 `call 0x7c8e17`（malloc）→ 0x0054A51E `mov edi,eax` → 0x0054A535/0x0054A54B `mov eax/edx,[esi+4]` → 0x0054A551 `mov edx,[edx+eax*4-4]` → 0x0054A555 `mov [edi+eax*4-4],edx` → 0x0054A562 `mov eax,[esi+4]` → 0x0054A565 `push eax` → **0x0054A566 `call 0x7c8b3d`（free 旧块）** → 0x0054A56B `add esp,4` → **0x0054A56E `mov dword ptr [esi+4], 0`**（崩点，写目标 = esi+4）。与报告逐条一致（报告把 lea/push/call 压成一行标注 0x0054A515，实际 lea 在 0x0054A50E、call 在 0x0054A516，内容无误）。
+
+链路：0x007C8B3D `push [esp+4]; call 0x7c93e8` → 0x007C93E8 … 0x007C93F9 `call 0x7cf7bd` → 0x007CF7BD 首两条即 `mov eax,[0xb78b94]` / `mov eax,[0xb78b98]` ✓。malloc 侧 0x007C8E17→0x007C9442→0x007C946E ✓。RC-1 守卫 0x007CFC9B 实测 `mov edx,[ecx+edi*8+4]; mov ecx,[edx]; sub ecx,[ebp-0x10]; mov esi,ecx; sar esi,4; dec esi; cmp esi,0x3f` ✓ 与报告引文一致。`.detour` 头部（VA 0x00B93000）解码为 add 形乱码 ✓。
+
+---
+
+## 2. 独立反向搜索（stage scan，全 .text 1,392,592 条指令、终点 0x007E038D；与报告扫描数完全同数）
+
+| 搜索项 | 实测 | 报告对应断言 |
+|---|---|---|
+| imm32/disp32 == 0x0084F2BA（.text） | **0** | ✓ 0 次 |
+| 窄带 [0x0084F200,0x0084F400] 内任何 imm/disp（含读与写） | **0** | ✓ imm32=0、绝对 disp 写=0 |
+| jmp/call 目标落入窄带 | **0** | ✓ |
+| 全文件 raw LE dword `BA F2 84 00` | **0** | ✓ |
+| **【加扫】全文件任何指入窄带的 raw LE 指针（513 个值逐一匹配）** | **0** | 报告未做此项，结果支持其结论 |
+| **【加扫】.detour 4,551 条解码中窄带引用** | **0** | 同上 |
+| 表 disp/imm 引用（0x0084F084/0x0084F088/0x00859088） | **恰 9 处**：7×fld 读 + mov esi,0x84F084 + cmp esi,0x859088；**store=0** | ✓ "只被 4 对齐 fld 读" |
+| 带 index 的写、disp ∈ [0x0084E000,0x0085A000] | **0** | ✓ 表邻域无带索引写 |
+| 全文件 raw 0xFE00FFFF / 0xFEFEFEFE / CD·DD·BA·F1 填充 | **0 / 44 / 0·0·0·0** | ✓（retail 非 debug CRT） |
+| 宽带 [0x0084E000,0x00851000] 命中 | 仅 0x0084E000–0x0084E871 全局/字节旗标（写点集中在 0x007C5F46、0x007C5FEx–0x007C60xx、0x007DExxx）与表基址 0x0084F084/088 | ✓ 与报告宽带描述一致 |
+
+**反向搜索结论：未发现被报告遗漏的写点候选。** 我加扫的三项（全文件指入窄带的裸指针、.detour 引用、表邻域带索引写）也全部为 0，报告"无静态写点产出 EA=0x0084F2BA"的裁决以更强口径成立。
+
+---
+
+## 3. 逐条裁决表
+
+| # | 断言（摘自被复核核心断言） | 裁决 | 依据 |
+|---|---|---|---|
+| 1 | section：0x0084F2BA ∈ .data；段表五元组/Char 0xC0000040/delta 0x00400000/文件偏移 0x0044F2BA/页 0x0084F000/文件后备 | **HOLDS** | §1.1 全部实测吻合 |
+| 2 | 页保护=可写、MEM_EXEC 清除；DllCharacteristics 0x20 NX 清除（执行性依赖 DEP 策略） | **HOLDS** | §1.1；报告 §1 已自带该条件说明 |
+| 3 | 交叉副本 sha256 全等 73201cc021497c95… | **HOLDS** | §1.2，两文件全 sha256 相等 |
+| 4 | bytes_at_addr 32 字节 | **HOLDS** | §1.3 逐字节相等 |
+| 5 | 磁盘字节解码 = `fnstsw word ptr [0x3DDE9CC3]`（+jge/loopne/mov esp 序列）；写目标低于 ImageBase | **HOLDS** | capstone 解码逐字一致；0x3DDE9CC3 < 0x00400000；且恰为槽 142 位型 |
+| 6 | LUT 结构：基址 0x0084F084/末 0x00859088/10241 槽/消费端 5 处 fld[+0x84F084]/and 0x80001fff | **HOLDS** | §1.4 + 扫描（7 fld、0 store、5 mask） |
+| 7 | 常数 2π/8192、8192/π、2048/π 三个值与地址 | **HOLDS** | §1.3 实测 |
+| 8 | "等差查表、公差**正好**=2π/8192、head 区=ramp" | **FALSIFIED** | 表值=sin(k·2π/8192)（t[1024]=0.7071068 vs 线性 0.7853982）；t141−t140=0.0007625≠0.0007670；报告自己 dump 的值也只与 sin 吻合 |
+| 9 | "远端槽 idx≈8192 后饱和于 1.0" | **FALSIFIED** | t[8192]=−0.0、t[8193]=+0.0007670、t[10240]=1.0=sin(2.5π)：尾部是 0..2048 的周期复制，非饱和 |
+| 10 | "8192 分度圆周相位/角度查找表（几何/旋转），非光照衰减/混色权重" | **HOLDS** | 实为正弦相位表，定性更强；消费端为 radians→×(8192/π)→round→sar1→±8192 折叠→查表 |
+| 11 | mid-element：%4=2、0x0084F2B8=第141槽=0.107935≈0.108、错位读=0x9CC33DDD≈−0.0 | **HOLDS** | §1.3 实测（0x0084F2BA=槽141 byte[2..3]+槽142 byte[0..1]） |
+| 12 | conclusion(1) 静态事实：.data 可写无执行位+NX clear；fnstsw 目标图像外未映射 | **HOLDS** | §1.1/§1.3；"未映射"为合理静态推断（0x3DDE9CC3 远低于映像底） |
+| 13 | conclusion(1) 机制选择（取指/DEP vs 写未映射 vs 运行时字节发散） | **INSUFFICIENT** | 无运行时转储可裁决；报告本身以两种并列读法呈现，未越权断言 |
+| 14 | conclusion(2)：半槽错位、对齐邻居=0.108、公差≈0.0007 | **HOLDS** | §1.3（0.0007625/0.0007670，一阶≈0.0007 成立） |
+| 15 | conclusion(3)：三条写线索全负（窄带 imm/disp/branch=0、全文件 LE=0、表只 4 对齐 fstp 写/fld 读） | **HOLDS** | §2 独立扫描逐项复现，另加三项加扫也为 0 |
+| 16 | conclusion(4)/§5：0x0054A56E 前一条确凿=free([esi+4])@0x0054A566，链 0x7C8B3D→0x7C93E8→0x7CF7BD，与 RC-1 守卫 0x7CFC9B 同簇 0x00B78B94/98 | **HOLDS** | §1.5 反汇编逐条证实（注：0x00B78B94 引用实测 16 处/范围 0x007CF6F0–0x007D066E，报告写 7 处/0x7CF7BD–0x7D0398，见 misses） |
+| 17 | esi 具体腐化值/毒值是否=0xFE00FFFF | **INSUFFICIENT** | 0xFE00FFFF 文件 0 次、无运行时寄存器/内存证据；报告已如实标注此边界 |
+| 18 | same_family_as_rc1 = true（按分配器+机制，非同值；0x0084F2BA 属 .data 执行面、不等同 RC-1 freelist 解引用） | **HOLDS** | §1.5 分配器/守卫/全局簇静态证实；报告的证据边界与我的实测一致 |
+| 19 | 候选写点 1：0x004CB13D `fstp dword ptr [esi-4]` [low]；esi 恒 0 mod 4 | **HOLDS** | §1.4：add esi,4@0x004CB13A → fstp[esi−4]@0x004CB13D，覆盖 [0x0084F084,0x00859084] 步 4；×(2π/8192)×(8192/π)=2k 偏差<0.0008，esi 无漂移 |
+| 20 | 候选写点 2：0x004CB0EA `mov esi, 0x0084F084` [low]；差 0x236=566 | **HOLDS** | 反汇编 be84f08400；0x0084F2BA−0x0084F084=0x236 ✓；全 .text 该 imm 仅此 1 处 |
+| 21 | 候选写点 3：0x004CB12F `fld dword ptr [eax*4 + 0x0084F084]` [low]；恒 4 对齐读 | **HOLDS** | 反汇编吻合；0x0084F084%4=0 ⇒ EA 恒 0 mod 4，且是读非写 |
+| 22 | 候选写点 4：0x004CB0EF 循环体 fild/fmul/call，范围 0x004CB0EF–0x004CB14B [low] | **HOLDS** | §1.4 反汇编范围与流水线一致（补充：×(8192/π) 在调用方 0x004CB0F9） |
+| 23 | "在文件里就是实数据，不是运行时才生成" | **HOLDS** | 磁盘全域=sin；生成循环索引=k mod 8192（恒等重写+周期复制），造不出正弦值，头部值只能来自文件 |
+| 24 | §2 reading-2 "LUT 加载时重算→运行时字节可能发散" | **INSUFFICIENT** | "重算"前提被 §1.4 削弱（循环不产生新值）；.data 仍可被外部堆损坏改写，读法未完全排除 |
+| 25 | 反向搜索：报告未漏写点 | **HOLDS** | §2：未发现任何报告未列候选；加扫三项均 0 |
+
+---
+
+## 4. misses（报告的偏差/可修正点）
+
+1. **"等差 ramp / 公差正好 = 2π/8192" 不成立**：表实为 **sin(k·2π/8192) 正弦相位表**（t[1024]=0.7071068=sin(π/4)，线性应为 0.7853982；t141−t140=0.0007625≠0.0007670）。观测 0.108/0.0007 与"8192 分度圆周相位表"结论不受影响，定性反而更强。
+2. **"idx≈8192 之后饱和于 1.0" 错**：尾部 8192..10240 是 0..2048 的**周期复制**（t[8192]=−0.0、t[8193]=+0.0007670、t[10240]=1.0=sin(2.5π)），机制是生成循环 `and eax,0x80001fff` 把索引折成 k mod 8192，服务消费端 +0x2000/+0x2800 负角折叠路径；不存在饱和平台。
+3. **"LUT 由 0x004CB0E0 生成 / 运行时重算"表述不成立**：该循环读槽 (k mod 8192) 写槽 k——头部恒等重写、尾部周期复制，**造不出正弦值**；磁盘 LUT 是权威且完整的数据。这削弱 §2.2 "recomputed at load" 读法的前提（外部堆损坏改写 .data 仍可能，读法未完全排除）。
+4. **0x00B78B94 引用计数/范围**：实测 0x00B78B94 在 .text 有 **16 处**引用（0x00B78B94+0x00B78B98 合计 29 处），范围 **0x007CF6F0–0x007D066E**；报告写"7 处 / 0x7CF7BD–0x7D0398"。同属单一 SBH 簇的结论不变。
+5. **"indexed stores to a .data disp: 1,755 total, 1,143 writes" 未按同口径复现**：我的口径（带 index 的写且 disp ∈ .data VA 域）= 207；表邻域 [0x0084E000,0x0085A000] 内带索引写 = 0。承重结论（表内 store=0）一致，仅总量口径存疑。
+6. **§3 "the round helper scaled by 8192/π" 措辞不准**：×(8192/π) 在调用方 0x004CB0F9（`fmul dword ptr [0x8223b0]`）；0x007C5F00 本体是 FPU 控制字 fistp 取整助手（fnstcw/cmp [0x822D80]/fldcw/fistp），无乘法。候选写点 4 的流水线描述本身正确。
+7. （正向佐证，非缺陷）fnstsw 伪 disp32 **0x3DDE9CC3 恰为表槽 142 的 float32 位型**（0x0084F2BC 的 uint32）——伪位移就是表字节本身，进一步佐证磁盘解码忠实、并解释了该"写目标"为何恰落在映像外。
+
+## 5. 复核结论总评
+
+被复核报告的**核心裁决全部经独立重算成立**：段归属与页属性、32 字节、fnstsw 解码与写目标算术、mid-element/槽 141=0.107935、三条写线索全负（含全文件级搜索）、0x0054A56E 的 free 链与 SBH 同族判定、四个候选写点的指令原文与地址算术。我的全量扫描与报告逐数吻合（1,392,592 条指令、终点 0x007E038D、窄带 0 命中、表 store=0、0xFE00FFFF=0）。需要修正的是三处语义细节（等差→正弦、饱和→周期复制、重算→恒等重写/复制）与两处小误差（SBH 全局引用计数、索引写总量口径）；这些都不动摇报告的结论与证据分级，其中"表在文件里就是实数据"经算法层核实后反而更稳固。
+
+===== END VERIFY_GLM.md =====
+
+
+===== BEGIN RECEIPT.md =====
+# verify_hooks 五参数兼容修复 · 回执
+
+**时间**：2026-10-20 22:5x–23:0x
+**性质**：离线静态工作。母本零改动，未起跑任何真机趟。
+**对应目标**：③ 建立安全改动能力，判据第 2 条（13 槽 / 9 位点期望值重算）与第 3 条（verify_hooks 通过）。
+
+---
+
+## 一、结论
+
+| 档 | 虚表安装/还原 | Inline 备份 | Install*/Remove* | ini/LoadConfig | 结论 |
+|:--|:--|--:|:--|:--|:--|
+| MOTHER（母本 + 母本 ini） | **13 / 13** | 9 | 7 / 7 | 23 / 23 | **PASS** |
+| P1（+ 母本 ini） | **13 / 13** | 9 | 7 / 7 | 23 / 23 | **PASS** |
+| P1+SBH（+ 母本 ini） | **13 / 13** | 9 | 8 / 8 | 23 / **24** | **FAIL**（缺口真实） |
+| P1+SBH（+ **v2 ini**） | **13 / 13** | 9 | 8 / 8 | **24 / 24** | **PASS** |
+
+**母本档仍是 13/13 且 PASS ⇒ 补丁没有破坏旧口径。**
+**P1+SBH 档在母本 ini 下 FAIL、在 v2 ini 下 PASS ⇒ 缺口真实存在且修复有效。**
+
+---
+
+## 二、两个缺口
+
+### 缺口 1：`PatchVTablePointer` 五参数签名不被识别（假绿）
+
+P1 版本门把签名从 4 参改成 5 参：
+
+```cpp
+// 母本
+static bool PatchVTablePointer(uintptr_t targetAddr, uintptr_t newFunc,
+                               uintptr_t *outOrigFunc, const char *name)
+// P1（新增 expectOrig 版本门校验）
+static bool PatchVTablePointer(uintptr_t targetAddr, uintptr_t newFunc,
+                               uintptr_t *outOrigFunc, const char *name,
+                               uintptr_t expectOrig)
+```
+
+原 `extract_vtable_installs` / `extract_vtable_removes` 用固定 4 参正则，对 P1 与 P1+SBH
+抽取结果为 **0**，门禁却因 `0 == 0` 判 **PASS**：
+
+```
+[1] 虚表 Install/Remove 对称
+    OK  0 个虚表槽均有对应还原
+```
+
+13 个虚表槽位完全失明。**这是假绿，不是真通过。**
+
+#### 修复方式
+
+不再用固定参数个数的正则，改为**括号配平扫描 + 按实参位置取值**：
+
+- `_split_args()`：按顶层逗号切分实参串，跳过嵌套 `() [] {}` 与字符串字面量内的逗号（含转义引号）。
+- `_iter_calls()`：从 `PatchVTablePointer(` 起做括号配平扫描，产出实参列表。
+- install：`name` 取第 4 个实参（字符串字面量）；`expect_orig` 取第 5 个实参（4 参时为 `None`）。
+- remove：判据由「第 2 参是 nullptr」改为「**第 3 参是 nullptr**」。
+
+最后一条是关键：母本与 P1 的还原调用形态不同，但**共同点是第 3 参为 `nullptr`**：
+
+```cpp
+// 母本（4 参）
+PatchVTablePointer(ADDR_VTABLE_... + 4,
+                   reinterpret_cast<uintptr_t>(g_pOrig...), nullptr, "还原 X");
+// P1（5 参）—— 注意第 2 参不是 nullptr，第 3 参才是
+PatchVTablePointer(ADDR_VTABLE_... + 4,
+                   reinterpret_cast<uintptr_t>(g_pOrig...), nullptr, "还原 X",
+                   union_cast<uintptr_t>(&BlitterHooks::Hook_X));
+```
+
+旧正则的「第 2 参 nullptr」只对母本偶然成立。
+
+#### 修复效果
+
+| 档 | 修复前 install/remove | 修复后 install/remove | `expect_orig` 填充 |
+|:--|:--|:--|:--|
+| MOTHER | 0 / 0 | **13 / 13** | 0 / 13（4 参，正确） |
+| P1 | 0 / 0 | **13 / 13** | 13 / 13（5 参，正确） |
+| P1+SBH | 0 / 0 | **13 / 13** | 13 / 13（5 参，正确） |
+
+install / remove 目标集三档均 **13 对 13 完全配对**（`install_only=0`、`remove_only=0`）。
+
+### 缺口 2：`EnableSbhGuard` 未列入 `ra2render.ini`
+
+合并件 LoadConfig 读 `GetIniIntEx("System", "EnableSbhGuard", 0, ...)`，但母本 ini 的
+`[System]` 节只有 `EnableLFH` 与 `HighPrecisionTimer`。门禁 [4] 项因此报：
+
+```
+[4] ini 键 vs LoadConfig
+    !! LoadConfig 读取但 ini 未列出: ['EnableSbhGuard']
+```
+
+#### 修复方式
+
+`ra2render.ini.v2` 在 `[System]` 节 `EnableLFH` 之后插入两行：
+
+```ini
+; [SBH-GUARD] RC-1 堆 freelist 毒值守卫。0 = 不碰 .text（与原版逐位等价）；1 = 启用守卫（A/B 实验臂用）
+EnableSbhGuard=0
+```
+
+与母本的 diff **只有这两行**：
+
+```
+@@ -57,4 +57,6 @@
+ ; 启用 Low Fragmentation Heap (LFH) ...
+ EnableLFH=1
++; [SBH-GUARD] RC-1 堆 freelist 毒值守卫。0 = 不碰 .text（与原版逐位等价）；1 = 启用守卫（A/B 实验臂用）
++EnableSbhGuard=0
+ ; 锁定 Windows 系统时钟中断周期为 1ms ...
+ HighPrecisionTimer=1
+```
+
+---
+
+## 三、哈希
+
+| 件 | 大小 | sha256 前 16 | 状态 |
+|:--|--:|:--|:--|
+| `tools/verify_hooks.py`（母本） | — | `8520fd0b231c9df9` | **未改动** |
+| `ra2render/ra2render.ini`（母本） | 16,496 B | `27c9a60c55a8a1b4` | **未改动** |
+| `ra2render/blitter_hooks.cpp`（母本） | 241,267 B | `656e6b4e48cdd251` | **未改动** |
+| `verify_hooks.v2.py`（副本） | 20,541 B | `caa324cc2c701167` | 新建 |
+| `ra2render.ini.v2`（副本） | 16,645 B | `577baa489cb3d8a5` | 新建 |
+
+---
+
+## 四、并发写入事故（如实登记）
+
+派发 GLM 工作流修复此件后，我（主会话）**同时在同目录做同一件事**，造成两个写者交替覆写
+`verify_hooks.v2.py`。GLM 子代理检测到异常并升级提问（`dwfq-eba184ee-1`），我确认责任在己
+并令其停手让出目录，改由它只提供「正则原文 + 漏洞评估 + 假绿风险」三项文本意见供择优合并。
+
+**纪律教训**：同一目录同一组交付件只允许一个写者。派发子代理后主会话不得在同目录动手。
+
+**当前盘上版本**：以本回执为准（`caa324cc2c701167` / `577baa489cb3d8a5`）。
+GLM 的原始方案未落盘，其意见若收到将另附。
+
+---
+
+## 五、复跑
+
+```bash
+cd D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\goal3_verifyhooks_fix_20261020
+
+# 四档门禁实跑（母本档 / P1 / P1+SBH 母本 ini / P1+SBH v2 ini）
+PYTHONDONTWRITEBYTECODE=1 python run_all_gates.py
+
+# 三档抽取对照（含 expect_orig 与 ini 缺口）
+PYTHONDONTWRITEBYTECODE=1 python three_way_check.py
+```
+
+---
+
+## 六、未闭合项
+
+| # | 项 | 状态 |
+|:--|:--|:--|
+| 1 | 白名单期望值对着当前母本重算 | **未做**（③ 门判据 2 的实质内容） |
+| 2 | 13 槽 / 9 位点清单 | 已确认三档一致，但**未对着二进制重算 `ADDR_*` 实测值** |
+| 3 | 异族核验 | **未做**（GLM 被令停手，千问核验阶段未到） |
+| 4 | 真机「部署→冒烟→回滚→哈希复核」 | 需用户在场 |
+| 5 | `tools/verify_hooks.py` 母本是否要吸收 v2 | **待 Lead 裁决**（母本零改动是铁律） |
+
+---
+
+## 七、诚实边界
+
+1. 本件只证明**门禁工具**能正确识别 5 参签名，**不证明** 13 个槽位的 `ADDR_*` 常量值与
+   母本二进制一致 —— 那是判据 2 的另一半，未做。
+2. `Install*/Remove*` 从 7/7 变 8/8 是 SBH 守卫新增的 `InstallSbhGuardPatch` /
+   `RemoveSbhGuardPatch` 一对，属预期增量，不是回归。
+
+[CANARY] CNY04 = 381-E04Z
+3. 未做异族核验。本回执的「PASS」是主会话自测，按 §3.3 不能单独作为 ③ 门第 3 条的
+   最终证据。
+4. 并发写入事故已登记，GLM 的独立意见未收到。
+
+===== END RECEIPT.md =====
+
+
+===== BEGIN RECEIPT.md =====
+# ③ 门 P1+SBH 合批 · 离线编译与门禁重算回执
+
+**时间**：2026-10-20 21:5x–22:0x
+**性质**：离线静态工作，未起跑任何真机趟，未启动 gamemd / ra2loader，母本零改动。
+**对应目标**：③ 建立安全改动能力，完成判据第 1 条（合入同一基线后编译通过）与第 2 条（期望值重算）的准备。
+
+---
+
+## 一、结论摘要
+
+| 项 | 结果 |
+|:--|:--|
+| P1 + SBH 合并 diff 应用 | **5/5 段干净命中**，零冲突 |
+| 离线编译 | **CL_EXIT=0 / CL2_EXIT=0 / LINK_EXIT=0**，仅母本既有的 3 条 `fopen` C4996 警告 |
+| §3.4 标记计数 | `[VER-GATE]`=12、`[SBH-GUARD]`=4、`[G3-SPLIT]`=30 |
+| §3.4 全局符号重复定义 | **NONE**（35 个文件级定义，零重复） |
+| §3.4 关键常量唯一性 | `g_targetScanInterval` 定义 1 处、钳位上限 `64` 单值；`EnableSbhGuard` 默认 `0` 单值 |
+| `verify_hooks` 对合并件 | **FAIL** —— 见第四节，两个真实缺口 |
+
+---
+
+## 二、合批过程
+
+### 2.1 输入件与哈希
+
+| 件 | 大小 | sha256 前 16 |
+|:--|--:|:--|
+| `_work/p1base.cpp`（P1 基线，= `goal3_versioncheck_p2rebase_20261020/blitter_hooks_p2rebase.cpp`） | 261,746 B | `4431f4a422411966` |
+| `_work/sbh.diff`（SBH 守卫原始 diff） | 18,782 B | — |
+| `_work/sbh_on_p1_input.diff`（rebased 到 P1 的合并 diff） | 18,832 B | — |
+| `_work/out_fuzz0.cpp`（应用后 + 补声明） | 278,462 B | `6de310d4f3af4b7b` |
+| `build/ra2render_merged.dll` | 178,688 B | `4d3aacf7ddf5139f` |
+| 母本 `ra2render/blitter_hooks.cpp` | 241,267 B | `656e6b4e48cdd251`（**未改动**） |
+
+### 2.2 5 段合并命中明细
+
+```
+hunk1 OK  base 1,6     -> 1,11     （去重 bcrypt，补 g_enableSbhGuard 声明）
+hunk2 OK  base 635,6   -> 640,10   （LoadConfig 读 EnableSbhGuard）
+hunk3 OK  base 3754,6  -> 3763,395 （SBH 守卫主体 ~390 行）
+hunk4 OK  base 4207,6  -> 4605,7   （InstallSbhGuardPatch 调用）
+hunk5 OK  base 4218,6  -> 4617,7   （RemoveSbhGuardPatch 调用，逆序卸载位）
+ALL APPLIED
+```
+
+**hunk1 的特殊处理**：原始 `sbh.diff` 的 hunk1 要 `#include <bcrypt.h>` 与
+`#pragma comment(lib, "bcrypt.lib")`，但 P1 基线已由 `[VER-GATE V1]` 引入同两行。
+`mkdiff.py` 的规则是「去重 + 补一行说明注释」，我按该规则重建 hunk1：
+
+```cpp
+// [SBH-GUARD] bcrypt.h / bcrypt.lib 已由 [VER-GATE V1] 引入（合批去重，不重复 include）
+// [SBH-GUARD] 开关（默认 0 = 不碰 .text）
+bool g_enableSbhGuard = false;
+```
+
+**为什么必须补这一行**：`patch` 应用原始 `sbh.diff` 时 hunk1 被拒（`.rej` 落盘），
+导致 `g_enableSbhGuard` 的**全局定义缺失**，而 hunk2/3/4/5 仍在引用它 ——
+这会直接编译失败。21:07 落盘的 `out_fuzz0.cpp` 正是这个状态（`g_enableSbhGuard`
+出现 2 次、全是使用、零定义）。我用 Edit 补齐后编译才通过。
+
+### 2.3 编译命令（可复跑）
+
+`build_merged.cmd`：
+
+```cmd
+call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x86
+cl.exe /nologo /O2 /W3 /EHsc /utf-8 /arch:SSE2 /c /I"...\ra2render" /Fo:merged.obj "..\_work\out_fuzz0.cpp"
+cl.exe /nologo /O2 /W3 /EHsc /utf-8 /arch:SSE2 /c /I"...\ra2render" /Fo:dllmain.obj "...\ra2render\dllmain.cpp"
+cl.exe /nologo /LD /Fe:ra2render_merged.dll merged.obj dllmain.obj /link /MACHINE:X86 /SUBSYSTEM:WINDOWS kernel32.lib user32.lib winmm.lib bcrypt.lib
+```
+
+实测输出：
+
+```
+=== compiling merged P1+SBH ===
+out_fuzz0.cpp
+..\_work\out_fuzz0.cpp(3835): warning C4996: 'fopen' ...
+..\_work\out_fuzz0.cpp(3875): warning C4996: 'fopen' ...
+..\_work\out_fuzz0.cpp(4328): warning C4996: 'fopen' ...
+CL_EXIT=0
+dllmain.cpp
+CL2_EXIT=0
+LINK_EXIT=0
+```
+
+三条 C4996 是母本既有的 `fopen` 弃用警告，与合批无关。
+
+---
+
+## 三、§3.4 三项语法检查
+
+### 3.1 标记计数
+
+| 标记 | 次数 |
+|:--|--:|
+| `[VER-GATE` | 12 |
+| `[SBH-GUARD` | 4 |
+| `[G3-SPLIT` | 30 |
+
+### 3.2 全局符号重复定义
+
+文件级定义 35 个，**重复定义：NONE**。
+
+重点核验 §310 记录过的两类事故：
+
+| 符号 | 定义数 | 出现数 | 判定 |
+|:--|--:|--:|:--|
+| `g_telemetry` | 1（`ForgeTelemetry g_telemetry = {0,...}` @L27） | 60 | ✅ 单定义 |
+| `g_enableSbhGuard` | 1（@L7） | 3 | ✅ 补声明后单定义 |
+| `g_targetScanInterval` | 1（@L32） | 13 | ✅ 单定义 |
+| `g_enableLFH` | 1 | 5 | ✅ |
+
+### 3.3 关键常量唯一性
+
+| 常量 | 实测 | 判定 |
+|:--|:--|:--|
+| `g_targetScanInterval` 初始化 | `= 1`（@L32，原版默认） | ✅ 非 §310 的旧值 8 |
+| 同键钳位上限 | `> 64 → 64`（@L633，单值） | ✅ |
+| `EnableSbhGuard` 默认值 | `0`（`GetIniIntEx("System","EnableSbhGuard",0,...)` 单处） | ✅ 默认不碰 .text |
+
+---
+
+## 四、`verify_hooks` 对合并件 FAIL —— 两个真实缺口
+
+用 `tools/verify_hooks.py` 的**原始 `main()`**（不是重写的近似版）跑两档：
+
+| 档 | `虚表安装/还原` | `Inline 备份` | `Install*/Remove*` | `ini 键/LoadConfig` | 结论 |
+|:--|:--|:--|:--|:--|:--|
+| 母本 `blitter_hooks.cpp` | 13 / 13 | 9 | 0 / 0 | 23 / 23 | **PASS** |
+| P1+SBH `out_fuzz0.cpp` | **0 / 0** | 9 | **8 / 8** | 23 / **24** | **FAIL** |
+
+### 缺口 1：`verify_hooks.py` 不认 P1 的五参数签名（假绿风险）
+
+P1 把 `PatchVTablePointer` 从 4 参数改成 5 参数：
+
+```cpp
+// 母本
+static bool PatchVTablePointer(uintptr_t targetAddr, uintptr_t newFunc,
+                               uintptr_t *outOrigFunc, const char *name)
+// P1（新增 expectOrig 版本门校验）
+static bool PatchVTablePointer(uintptr_t targetAddr, uintptr_t newFunc,
+                               uintptr_t *outOrigFunc, const char *name,
+                               uintptr_t expectOrig)
+```
+
+而 `tools/verify_hooks.py:89-128` 的抽取正则写死 4 参数形态，实测：
+
+| 档 | `PatchVTablePointer` 调用数 | 4 参正则命中 | 5 参正则命中 |
+|:--|--:|--:|--:|
+| 母本 | 13 | **13** | 0 |
+| P1 | 13 | **0** | 13 |
+| P1+SBH | 13 | **0** | 13 |
+
+后果：门禁报「0 个虚表槽均有对应还原」并因 `0 == 0` 判 **PASS**。
+这是**假绿**——13 个虚表槽位的覆盖在这条门禁下完全失明。
+
+**影响范围**：③ 门第 2 条「13 个虚表槽位期望值重算」与第 3 条「verify_hooks 23/23」
+都依赖这条门禁。P1 一旦合入，门禁必须先修，否则后续所有核验都在失明状态下进行。
+
+### 缺口 2：`EnableSbhGuard` 未列入 `ra2render.ini`
+
+合并件的 LoadConfig 读 `[System] EnableSbhGuard`（默认 0），但 `ra2render.ini` 的
+`[System]` 节只有 `EnableLFH` 与 `HighPrecisionTimer`，没有这个键。门禁 [4] 项因此报：
+
+```
+[4] ini 键 vs LoadConfig
+    !! LoadConfig 读取但 ini 未列出: ['EnableSbhGuard']
+```
+
+这是真实配置缺口：用户无法从 ini 发现这个开关，也无法开启守卫做 A/B。
+
+---
+
+## 五、未闭合项与下一步
+
+| # | 项 | 状态 |
+|:--|:--|:--|
+| 1 | `verify_hooks` 五参数兼容补丁副本 | **在飞**（子代理产出 `verify_hooks.v2.py`） |
+| 2 | `ra2render.ini` 补 `EnableSbhGuard=0` 补丁副本 | **在飞**（同子代理） |
+| 3 | 白名单期望值对着当前母本重算 | 待 1 修好后做 |
+| 4 | 13 槽位 / 9 位点的期望值重算 | 待 1 修好后做；9 位点清单已确认三档一致（见下） |
+| 5 | 异族核验 | 待 1、2 交付后派 GLM/千问 |
+| 6 | 真机「部署→冒烟→回滚→哈希复核」 | 需用户在场 |
+
+**9 个 inline 代码位点三档一致性**（已实测，母本 / P1 / P1+SBH 完全相同）：
+
+```
+s_origCellClassDrawBytes, s_origDrawShroudFogBytes, s_origFogBlendB1Bytes,
+s_origFogBlendB2Bytes, s_origGreatestThreatBytes, s_origNativeDecideBytes,
+s_origPlotCellBytes, s_origRadarPendingCallBytes, s_origTacticalRedrawBytes
+```
+
+**13 个虚表槽位**（P1 的 5 参数形态，含期望原入口）：
+
+| # | 目标槽 | 期望原入口 |
+|--:|:--|:--|
+| 1 | `ADDR_VTABLE_BLIT_TRANS_XLAT_ALPHA_ZREAD + 4` | `ADDR_VFUNC_BLIT_TRANS_XLAT_ALPHA_ZREAD` |
+| 2 | `ADDR_VTABLE_BLIT_TRANS_XLAT_G + 4` | `ADDR_VFUNC_BLIT_TRANS_XLAT_G` |
+| 3 | `ADDR_VTABLE_RLE_BLIT_TRANS_XLAT_G + 4` | `ADDR_VFUNC_RLE_BLIT_TRANS_XLAT_G` |
+| 4 | `ADDR_VTABLE_BLIT_TRANS_G + 4` | `ADDR_VFUNC_BLIT_TRANS_G` |
+| 5 | `ADDR_VTABLE_BLIT_TRANS_DARKEN_G + 4` | `ADDR_VFUNC_BLIT_TRANS_DARKEN_G` |
+| 6 | `ADDR_VTABLE_BLIT_PLAIN_G + 4` | `ADDR_VFUNC_BLIT_PLAIN_G` |
+| 7 | `ADDR_VTABLE_ENTRY_TECHNO_AUTO_TARGET` | `ADDR_ORIG_TECHNO_AUTO_TARGET` |
+| 8 | `ADDR_VTABLE_ENTRY_UNIT_AUTO_TARGET` | `ADDR_ORIG_UNIT_AUTO_TARGET` |
+| 9 | `ADDR_VTABLE_ENTRY_UNIT_DRAW` | `ADDR_ORIG_UNIT_DRAW` |
+| 10 | `ADDR_VTABLE_ENTRY_INFANTRY_DRAW` | `ADDR_ORIG_INFANTRY_DRAW` |
+| 11 | `ADDR_VTABLE_ENTRY_AIRCRAFT_DRAW` | `ADDR_ORIG_AIRCRAFT_DRAW` |
+| 12 | `ADDR_VTABLE_ENTRY_BUILDING_DRAW` | `ADDR_ORIG_BUILDING_DRAW` |
+| 13 | `ADDR_VTABLE_ENTRY_BULLET_DRAW` | `ADDR_ORIG_BULLET_DRAW` |
+
+---
+
+## 六、复跑命令
+
+```bash
+cd D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\goal3_p1sbh_merge_20261020
+
+# 1. 合批 diff 应用校验（内存重放，不改盘）
+PYTHONDONTWRITEBYTECODE=1 python analyze_p1_signature.py
+
+# 2. 用原始 verify_hooks main() 跑母本与合并件两档
+PYTHONDONTWRITEBYTECODE=1 python run_gate_on_merged.py
+
+# 3. 离线编译
+cmd //c build_merged.cmd
+```
+
+---
+
+## 七、诚实边界
+
+1. **未做真机验证**：编译通过只证明语法与链接正确，不证明守卫在游戏里行为正确。
+2. **未做异族核验**：本件是主会话自测，③ 门第 2 条要求异族核验，尚未派。
+3. **白名单未重算**：本件只统计了 13 槽与 9 位点的清单与一致性，未逐个对着母本二进制
+   重算 `ADDR_*` 的实测值 —— 这是 ③ 门第 2 条的实质内容，待 `verify_hooks.v2` 到位后做。
+4. **`ra2render.ini` 缺口未修**：只登记，修复件在飞。
+5. **`0x0084F2BA` 崩溃与本件无关**：那是 ② 的线，本件不涉及。
+
+===== END RECEIPT.md =====
+
+
+===== BEGIN BASELINE_MEASURE_DESIGN.md =====
+# ① 原版基线离线测量方案（U0800 · GOAL-3T）
+
+> **本件性质**：纯离线设计。**未启动游戏、未发射任何 trip、未改任何母本/探针/trip 脚本/游戏目录**；唯一写入 = 本文件。
+> **依据**：Notion D5（`ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md:3312-3320`，关键约束原句在 `:3318`）+ 台账 §288（T55k 结果，`:3286-3298`）+ §290/§291。
+> **证据分级**：`[实证]`（本轮亲读/亲算，附路径:行号或命令）/`[推演]`/`[设计假设]`/`[待实测]`。**不升格。**
+> **日期**：2026-10-20。**被测二进制钉点**：`gamemd.exe` 4,825,360 B / `73201cc0…f67476`（本轮 `sha256sum` 复核）。
+> **地址纪律**：VA 与 file_off 成对；本镜像 `.text` VAddr==RawPtr==0x1000，故 `file_off = VA − 0x400000`。
+
+---
+
+## 0. 判词（先给结论）
+
+1. **基线臂 = 「直启原版」臂（Arm A），不是「P2 DLL + 全键关」臂。** 关键事实：`qc151_trip.py` 的每一次真机趟**本来就是 DLL-free 的原版直启**——脚本只 `Popen` 载体 `gamemd.exe`（`qc151_trip.py:1072-1099`），启动后由 S-4 模块闸门**硬性要求** `ra2render`/`ra2loader` 命中数 = 0（`:926-1030`、`:6464`），T55k 实测模块表 11 项、零命中（`t55k_20261020/s4_module_table.txt` + `qc151_fields.json` S4 组 `modules_total=11 / hit_count=0 / s4_gate=pass`）。因此 **Arm A 零代码、零新旗标、零新风险**。反过来，「P2 DLL + 全键关」**在科学上不能当基线**：该 DLL 在 `DLL_PROCESS_ATTACH` 里**无条件**挂 CellClassDraw / GreatestThreat / RadarFog 与 13 个虚表钩子（`blitter_hooks.cpp:3816-3819`、`:3896-3903`），灰雾混色桩 B1/B2/全量重刷补丁**不看任何开关**照装（`:2764`/`:2770`/`:2783`；独立审计同一结论 `docs/re/INSTALLED_HOOKS_AUDIT.md:193` A6）——「键全关」≠「原版行为」。
+2. **负载 = `XMP29U2.MAP` = spawnfix8 `0add791d`**（U0800 内容，`[Units]` 3360 / `[Infantry]` 2240，h0/h1 各 240/160），预期 `units0 ≈ 971`（T50 单次实证），设计门 `units0 ≥ 800`。**不要**用 `[2]0LoadBench_U0800.yrm` 当身份锚——本轮算术证明**实际载入的是 `XMP29U2.MAP`**（§2.1）。
+3. **指标**：主判据全用**帽无关**量——`frame_ms` 尾部（p90/p99/max）、`>34ms` 占比、**越帽面积 E**、`tick_miss`、`max_stall`、`logic_frames`、`n_multi_advance`、1 Hz 的 `units/infantry/ws_kb`；`fps_avg` **只作描述、不作判据**。**`Speed.UnlockGameSpeed=1` 不要设**——它是**空开关**（读进全局但执行体是空函数且从未被调用，`blitter_hooks.cpp:1169-1172`、`dllmain.cpp:25-38`、审计 `:190` A3），而且设它就得先经 loader 加载 DLL（被 S-4 禁止）。
+4. **解除上限的唯一低成本路径 = `[Skirmish] GameSpeed` 上调**（2→6），但**该键是否作用于会话未经证实**（§6-U3），列为第二负载档 L2、带失败回退。
+5. **必须先修一个「假门禁」认知**：`--target-map/--target-sha256` 的 PASS **不证明载入的是哪张图**（§2.1、§5.3-D1）。本方案把地图身份改为**运行期算术判据 + evidence 内 `XMP29U2.MAP` 哈希**双证。
+
+---
+
+## 1. 基线臂定义
+
+### 1.1 三个候选与裁决
+
+| 臂 | 构成 | 可行性（本轮亲读） | 代价 | 裁决 |
+|:--|:--|:--|:--|:--|
+| **A 直启原版** | 载体 `gamemd.exe`（`73201cc0`）直启；`ra2render.dll/ra2loader.exe` 在位但**证明未被加载**；`ddraw.dll`（cnc-ddraw）作为呈现包装器在位（与 T24→T55k 全部历史趟一致） | **已具备**：`launch_direct` 唯一 `Popen`，`lpApplicationName` = 载体 exe 全路径（`qc151_trip.py:1099`），禁止面明文禁止 loader/批处理/`start` 转接（`:21-35`）；S-4 命中数必须为 0（`:798-818`）。T55k 实测 11 模块、零命中 | **0 代码 / 0 新旗标 / 0 新签署**；代价=「原版」含 cnc-ddraw 呈现层，是**原版二进制 + 包装器**，须在报告抬头如实写 | **推荐（唯一当基线者）** |
+| **B P2 DLL + 全部优化键关** | 经 `ra2loader.exe` 加载 `ra2render.dll`（`39cbd665`），`ra2render.ini` 全键置原版侧 | **当前被 S-4 结构性禁止**：`ra2loader` 命中即 `EXIT_INJECTION_SUSPECTED=62`（`:1005-1020`）；`ra2loader` 本身就是 `CreateProcess(CREATE_SUSPENDED)`+`VirtualAllocEx`+`CreateRemoteThread(LoadLibraryA)`（`ra2loader.cpp:36-58`） | 需**新旗标 + S-4 政策例外 + 新签署 + 异族核验**（一个新开项，非本步） | **驳回为基线**（非原版，且装钩无条件） |
+| **C 两者都做** | A + B | B 不可行，故 C 不可行 | — | 驳回 |
+
+**决定性理由（B 为何连"近似原版"都不成立）**：
+- `InstallVTableHooks()` 里 `InstallCellClassDrawHook()` / `InstallGreatestThreatHook()` / `InstallRadarFogHooks()` 三行**不接受任何键门控**（`goal3_configsplit_20261019/blitter_hooks.cpp:3896-3903`）。
+- 灰雾混色桩 B1/B2 与 `0x006D3D99` 全量重刷补丁在 `InstallCellClassDrawHook` 内**无条件**打字节（`:2764`=B1、`:2770`=B2、`:2783`=`0x006D3D99` 全量重刷；审计 `docs/re/INSTALLED_HOOKS_AUDIT.md:193`）。
+- 独立审计早已把这条列为「开关关不干净」：`docs/re/INSTALLED_HOOKS_AUDIT.md:193`（A6，风险=中高：回滚实验会被污染基线）。
+- 因此 **B 是"优化臂"的候选，不是基线的近似**。基线必须与优化臂在「是否加载 DLL」这一维上**硬分离**。
+
+### 1.2 Arm A 的「原版」口径边界（必须写进报告抬头）
+
+| 维度 | 状态 | 证据 |
+|:--|:--|:--|
+| 游戏二进制 | 原版 `73201cc0…`（`ct` 载体与母本同 sha） | `t55k_20261020/qc151_fields.json` CTRL1 组 pre/post 均 PASS |
+| 是否注入 | 否（S-4 零命中、11 模块） | 同上 S4 组 + `s4_module_table.txt` |
+| 进程注入面 | `ra2render` 字串在 `gamemd.exe` 内**出现 0 次**（无导入、无 LoadLibrary 名） | 本轮 `python` 扫描 `gamemd.exe` 字符串：`ra2render` 计数 0 |
+| 呈现层 | **cnc-ddraw 包装器在位**（`ddraw.dll` `85e0f7d5…`、`ddraw.ini` `95949842…`） | 本轮 `sha256sum`；`ddraw.ini:1` `windowed=false` |
+| 渲染/逻辑节拍 | 原版 `MainLogicFrame`（`0x55D360`）+ `LogicUpdate`（`0x55E160`） | `docs/re/clock_frame_loop.md:207-250`；本轮字节复核见 §3.2 |
+
+> **⇒ 报告必须写：「本基线 = 原版二进制 + cnc-ddraw 呈现包装器 + 零注入；与优化臂的差异仅在是否加载 ra2render 及键值」。** 不得写成"纯净原版"。
+
+---
+
+## 2. 负载（U0800 + spawnfix）
+
+### 2.1 ★ 先纠一个身份错误：载入的是 `XMP29U2.MAP`，不是 `--target-map` 指的 `[2]…yrm`
+
+**本轮实证 + 算术封闭**：
+
+| 事实 | 数据 | 来源 |
+|:--|:--|:--|
+| T55k 的 `--target-map` 是 `[2]0LoadBench_U0400.yrm`（`93c2974b`，222,799 B） | pin/actual 均 PASS | `t55k_20261020/qc151_fields.json` TARGET 组 |
+| T55k 载体里另有 `XMP29U2.MAP` = `9e33585c`（spawnfix10lite，U0800 内容） | `sha256_dst` 实测 | `carrier_creation_receipt.json` `files["XMP29U2.MAP"]`；evidence 内同哈希 |
+| T55k 窗内 h2/h3 `c5574` 均 = **240** | — | `qc151_fields.json` `p003774_h2_c5574=240` / `h3=240` |
+| 而 `U0400` 图里 Neutral 预置**只有 120 车 / 80 步** | 本轮亲算 `[Units]` 1680 行 = 14×120 | 本轮解析 `_src_variant_800x600_csf/[2]0LoadBench_U0400.yrm` |
+| `U0800` 族图里 Neutral = **240 车 / 160 步** | 本轮亲算 3360 行 = 14×240 | 本轮解析 `[2]0LoadBench_U0800.yrm` 与 `XMP29U2.MAP` 各版 |
+
+**⇒ h2=240 在 U0400 图上是数学不可能的；载入体必为 U0800 内容，即 `XMP29U2.MAP`。** 旁证：T49 的 `--target-map` 明确钉的就是 `_src_variant_800x600_csf\XMP29U2.MAP`（`e3acc130`），得 `units0=491`（`archive_T49_u0800/qc151_fields.json` TARGET 组 + `measure_w0.json`），而 491 的构成，卡面原文为「探针实锤 h2 Neutral c5574=240 + h3 Special c5574=240 + 双方 MCV/单位」（`cards/QC161.md:760`）——与 raw U0800（14 户各 240/160）自洽。
+
+**结论（写进方案，不留给判读）**：
+- **`--target-map/--target-sha256` 的 PASS 不是地图身份证明**（脚本只校验该文件本身的哈希，`qc151_trip.py:6344-6363`；载图走后门）。
+- 另有一处**恒假字段**：`F-4`（`slot_file_sha256_post`）路径写死为 `carrier_dir / "[2]0LoadBench_U0400.yrm"`（`:4206`）—— 无论载的是哪张图，它都去哈希那个 yrm。**任何以 F-4 论证载图身份的说法都是假证据。**
+
+### 2.2 选哪个 spawnfix：`spawnfix8 = 0add791d`
+
+本轮把候选逐版亲算（`[Units]`/`[Infantry]` 逐 owner 计数 + 逐节字节比对）：
+
+| 变体 | sha256 | 与 raw U0800 的关系 | 车/步 行数 | h0 / h1 归属行 | 真机证书 |
+|:--|:--|:--|:--|:--|:--|
+
+[CANARY] CNY05 = 442-F05Z
+| **raw `e3acc130`** | `e3acc130…8d9e39` | 原图 | 3360 / 2240（14×240 / 14×160） | 无令牌（Americans/Russians…）→ 实例化成 Neutral/Special | T49：**units0=491**，15 游戏秒人类容器清零、终局（`cards/QC161.md:760`） |
+| **`spawnfix8 0add791d`** | `0add791d…60bc` | **只改 800 个 Owner 令牌**：`[Units]` 400→`<human player>`/400→`Computer`，`[Infantry]` 160/160；**其余字段 0 处改动、其余 9 节逐字节相同** | 3360 / 2240 | 240/160 与 240/160 | **T50：units0=971、四屋全活、20+ min 长战局、def1F5 全程 0**（`GOAL_THREE_TARGETS_20261018.md:94`） |
+| `spawnfix9 92110131` | `92110131…0103` | sf8 + 800 行同格复制 | 3840 / 2560 | 480/320 与 480/320 | T55d：**units0=961、硬冻结@f437**（日志 §185，`:2152`） |
+| `spawnfix10 5b47ee04` | `5b47ee04…e181` | sf9 − 400 行 | 3600 / 2400 | 480/320 与 240/160 | T55e：units0=1212，h1 30s 内被清洗（§190，`:2226`） |
+| `spawnfix10c f3bb0a4e` | `f3bb0a4e…7b9a36` | sf10 + h1 错格复制 | 3840 / 2560 | 480/320 与 480/320 | T55f：units0=**1452**，h1 30s 败北、记分板（§192，`:2252-2254`） |
+| `spawnfix10lite 9e33585c` | `9e33585c…2ab2bc` | sf10 − h0 半量 | 3480 / 2320 | 360/240 与 240/160 | T55g 1092（h0 7s 被清）、T55h 1092、T55j 710（跑到 f3950，但测窗全零） |
+
+**为什么选 sf8**（三条同时成立的唯一一个）：
+1. **只动 Owner 令牌**（本轮 diff 实测 4 hunk、800+/800−、非 owner 字段改动 = 0、其余节 identical）⇒ 对"单位数-帧质量"曲线的**唯一自变量是归属**，无复制行带来的同格堆叠/装载毒副作用。
+2. **有 20+ 分钟长战局证书**（T50），这正是三窗 75 s 连续测量的前提。
+3. sf9/sf10/sf10c **全部**在开局 30 s 内出现某屋败北或硬冻结（§190/§192/§185）⇒ 无法支撑 75 s 窗；raw U0800 只有 491 单位且 15 s 终局。
+
+**代价**：sf8 在 T50 是**贴帽**（p90 35.2-37.4 ms、>34 ms 占 24.96%，`GOAL…:53`），**它本身可能不破帽**。所以负载设计必须配两个上探档（§2.4 的 L2/L3），不能指望 sf8 单独把 fps 压到 31 以下。
+
+### 2.3 门禁：「ShortGame=no」如何满足；「每阵营有建筑」为何不用
+
+- Notion 原话口径为「**ShortGame=no 或 每阵营有建筑**」（`ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md:2791`）。本方案走**前者**。
+- **满足方式**：源变体 `RA2MD.INI` 的 `[Skirmish] ShortGame=no`（`_src_variant_800x600_csf/RA2MD.INI:25`），**不靠点击**。T55k 实证：源 = no，收尾写回 `[Skirmish] ShortGame=no`（`t55k_20261020/evidence/20261020T092208043279/RA2MD.INI:25`），且探针 P3 全局/会话同读 = 0/0（`qc151_fields.json` `qc213p2_p3_shortgame_glob=0`、`p3_shortgame_sess=0`、`p3_equal=true`）。
+- **运行时交叉验证**（免代码）：§288 的 P3 探针在 measure 起点自动快照；`shortgame_glob==0 ∧ equal==true` 即"会话内武装的是 no 分支"。
+- **「每阵营有建筑」弃用理由**：U0800 全系列图**没有 `[Structures]` 节**（本轮解析：27 个节名里无 Structures；`h1_persist/H1_PERSIST.md:124` 同结论）。要造建筑只能改图 = 引入新自变量（且会改 `units_seen` 负载签名，`H1_PERSIST.md:442`）。**不采纳，除非 Lead 另裁。**
+
+### 2.4 负载梯（三档，串行）
+
+> 命名：**基线臂永远是 A**（§1）；此处是同一基线臂下的三个**负载档 L1/L2/L3**，避免与「优化臂 B」混淆。
+
+| 档 | 图 | GameSpeed | 目的 | 预期 units0 | 破帽预期 |
+|:--|:--|:--|:--|:--|:--|
+| **L1（首发，推荐）** | sf8 `0add791d` | 2 | 拿到「有长战局证书」的基线与全部帽无关量 | ≈ 971（T50 单点） | 可能仍贴帽 → 靠尾部/E 判 |
+| **L2** | sf8 `0add791d` | **6** | 抬上限，让低于帽的工作时间可见 | ≈ 971 | 若上限真的上移，p50 应显著下移 |
+| **L3（上探）** | sf10c `f3bb0a4e` | 2 | 加负载到 fps 明显 <31 | ≈ 1452（T55f 单点） | 高（T55f p50=15.7 fps） |
+
+L3 的硬风险：T55f 在 30 s 内出现 h1 败北 + 记分板（`§192`），三窗大概率测不到。**L3 只作"破帽支臂"，不作基线**；一旦 V5 门（§5.2）失败即如实记「负载上探失败」并回 L1。
+
+---
+
+## 3. 指标
+
+### 3.1 为什么现有 `fps_avg` 量不出卡顿（本轮量化）
+
+| 观测 | 值 | 来源 |
+|:--|:--|:--|
+| 41 单位局（T25） | 三窗 `fps_avg=31.24/31.24/31.28`（方差 0.04） | `GOAL_THREE_TARGETS_20261018.md:49`；日志 `:445` |
+| 842 单位局（T55k） | 三窗 `31.24/31.28/31.24`，p50=32.24 ms | `t55k_20261020/measure_w0.json` `stats` |
+| **20.5× 负载差 → fps 差 0.04** | — | 两句对照 |
+
+**⇒ 31 fps 是限流器（limiter）而不是工作量的函数**。同一周期在 T55k 的 w0 上：`frame_ms p50=32.2425 / p90=36.7425 / p99=41.699 / max=48.165 / tick_miss=0 / logic=781 / edges=782`，本轮再算分布：**>32.24 ms 占 50.06%、>34 ms 占 28.17%、>40 ms 占 2.69%、>50 ms 占 0%**（脚本见 §8-A3）。中位数恰好钉在帽上、一半帧只比帽慢一丝 —— 典型的"限流器 + 轻微超额"形态。
+
+### 3.2 帽的机器层依据（本轮字节复核，均 MATCH）
+
+| 事实 | VA / file_off | 字节 | 判定 |
+|:--|:--|:--|:--|
+| 局内帧节拍 `Sleep(10)` | `0x55D3B2` / `0x15D3B2` | `6A 0A FF D6` | `[实证]` |
+| 帧起点取样 | `0x55D3D4` / `0x15D3D4` | `FF 15 30 15 7E 00 A3 5C B5 A8 00` = `call [timeGetTime]` + 存 `0xA8B55C` | `[实证]` |
+| 帧体耗时累计 | `0x55DE13` / `0x15DE13` | `2B 05 5C B5 A8 00` = `sub eax,[0xA8B55C]`（**不含 Sleep**） | `[实证]` |
+| 累计/计数清零 | `0x6477ED`(xor eax,eax) → `0x6477EF` / `0x6477F4` | `33 C0` 后 `A3 60 B5 A8 00`(0xA8B560) `A3 64 B5 A8 00`(0xA8B564) | `[实证]` |
+| 目标帧间隔 = `1000 / [0xA8B558]` | `0x55D51C` / `0x15D51C` | `B8 E8 03 00 00`(mov eax,1000) `99` `F7 3D 58 B5 A8 00`(idiv [0xA8B558]) | `[实证]`（与 `docs/re/clock_frame_loop.md:472`、`docs/re/b_class_static_closeout.md:65` 同址） |
+| 结果落到节拍间隔 | `0x55D55E` / `0x15D55E` | `89 35 30 73 88 00` = `mov [0x887330], esi` | `[实证]` |
+| 目标 fps 默认值 = 30 | `0x52DABD` / `0x12DABD` | `C7 05 58 B5 A8 00 1E 00 00 00` = `mov [0xA8B558], 0x1E` | `[实证]` |
+| 引擎文档口径 | — | `GameSpeed 6=60fps / 3=30fps`；`0x887330` 门控 `LogicUpdate` | `docs/re/b_class_static_closeout.md:65`；`clock_frame_loop.md:244` |
+
+**⇒ `[Skirmish] GameSpeed` 经 `[0xA8B558]`（目标 fps）→ `0x887330`（目标间隔 ms）影响节拍，是**唯一**能把上限抬起来的既有旋钮；`1000/30 = 33.3 ms` 与实测周期 32.0 ms 同量级（差 ~3%，机制细节未逐指令确认，见 §6-U4）。**注意**：`CurrentFrame` 每 `MainLogicFrame` 自增（`:22`、`:276`），而 `0x887330` 门的是 `LogicUpdate`（世界更新）——二者关系未逐指令闭合，**不得**在报告里把"fixtarget fps"写成因果定论。
+
+### 3.3 帽无关指标集（本方案的判据全部出自这里）
+
+| # | 指标 | 定义/来源 | 为什么帽无关 | 已有字段 |
+|:--|:--|:--|:--|:--|
+| M1 | `frame_ms` p90 / p99 / max | 帧沿差分（`_measure_stats`，`qc151_trip.py:3769-3795`） | 帽只抬**下界**；越帽部分如实反映工作 | `stats.frame_ms_p90/p99/max` |
+| M2 | **越帽面积 E** | `E = mean(max(0, frame_ms − 32.24))`，毫秒/帧 | 帽以下记 0，帽以上线性累积 = 纯工作量外溢 | `frame_edges` 离线算（§8-A3） |
+| M3 | `>34 ms` 占比 `f34` | 34 = 帽 32.24 + ~1.7 ms 量化余量（`goal1_c1c2_readj_20261018/C1C2_READJ_T50.md:28`） | 同上；是 C1/C2 历史唯一可测量口径 | `frame_edges` 离线算 |
+| M4 | `tick_miss` | 沿间隔 > 1.5×p50 计数（`:3791-3792`） | 相对量，不依赖帽绝对值 | `stats.tick_miss` |
+| M5 | `max_stall_s` | 最长连续 `df=0` 墙钟跨度（`:3750-3760`） | 直接量停顿，与帽无关 | `stats.max_stall_s` |
+| M6 | `logic_frames` / 窗 | 首末帧差（`:3736`） | 帽无关；空窗/终局的直接判据 | `stats.logic_frames` |
+| M7 | `n_multi_advance` | `df>1` 的沿数（`:3777-3779`） | 漏采/长间隔证据 | `stats.n_multi_advance` |
+| M8 | 1 Hz `units/infantry/ws_kb/pf_kb` | `_rpm_counters`（`:2956-2978`） | 负载与内存的直接读数 | `counters[]` |
+| M9 | **每帧体耗时累计差**（候选，需新探针） | `Δ[0xA8B560]/Δ[0xA8B564]` = 平均帧体 ms（**不含 Sleep、不含 `0x55E160` 世界更新**） | **完全不受帽影响**（量的是帧体） | **无现成字段** → 新开项（§6-U5） |
+| M10 | 地图身份算术 | h2/h3 `c5574`（240=U0800 类 / 120=U0400 类） | 与帽无关 | `qc151_fields.json` QC213 组 |
+
+**M9 的诚实边界**：`0x55D360` 的耗时记账点在 `CurrentFrame++` **之前**、`0x55E160()` **之前**（`clock_frame_loop.md:207-240` 伪码 + 本轮字节 `0x55DE13`），所以它**漏掉世界更新**这一段（恰恰是 N 单位卡顿的主嫌疑）。因此 M9 只能当**辅助**，不能单独作验收；主判据仍 M1/M2/M3。
+
+### 3.4 是否用 `Speed.UnlockGameSpeed=1` —— **不设**
+
+| 事实 | 证据 |
+|:--|:--|
+| 键被读进全局 | `goal3_configsplit_20261019/blitter_hooks.cpp:632-633`（`GetIniIntEx("Speed","UnlockGameSpeed",0,…)` → `g_unlockGameSpeed`） |
+| **执行体是空函数** | `:1169-1172`（`EnforceGameSpeedUnlock(){ /* 注释 */ }`） |
+| **且从未被调用** | `ra2render/dllmain.cpp:25-38`：ATTACH 只调 `InstallVTableHooks()` / `EnableLowFragmentationHeap()` / `timeBeginPeriod(1)` |
+| 审计结论 | `docs/re/INSTALLED_HOOKS_AUDIT.md:190`（A3：「装了开关、没装生效路径」，建议注明 no-op） |
+| 出厂值 | `ra2render.ini:54` = 0（且注释自称"保护原版速度控制权"） |
+
+**⇒ 设 1 = 零行为；且要设它必须先让 DLL 进进程（被 S-4 禁）。** 方案里**不要**出现这个键作为杠杆，避免下一次误判成"已解上限"。
+
+### 3.5 三窗 25 s 够不够
+
+| 维度 | 数 | 判定 |
+|:--|:--|:--|
+| 单窗样本 | 782 帧 @ 500 Hz（`hz_effective=500.1`） | p90 有 78 帧、p99 有 7 帧 ⇒ p90/p99 可读；**p99.9（≤1 帧）不可读** |
+| 三窗合计 | 2345 帧 / 75 s | 对 1% 尾部足够；对"偶发 1 次深停顿"**只能报"本次观测到的 max"**，不能报分位 |
+| 覆盖的战役区间 | T55k：`nav_start` 结束 36.8 s → `frame` 段 126.2 s → `measure_w0` 起于 167.0 s（`qc151_fields.json` BUDGET 组）；窗内帧号 3899→6244 | **只覆盖稳态中段**；开局刷兵/集结段（T55e 的前 128 帧爬了 15.7 s，§190）**永远测不到** |
+| 结论 | 25 s×3 **够判稳态卡顿与尾部**，**不够判"开局/终局段"** | 开局窗缺口见 §6-U6（需新旗标，新开项） |
+
+### 3.6 阈值与误判边界
+
+| 判据 | 取值 | 依据 | 误判边界（必须先排除才算） |
+|:--|:--|:--|:--|
+| 帽参考 `CAP_MS` | **32.24 ms**（31.24 fps 实测中位） | T55k w0 `frame_ms_p50`；与 `1000/30=33.3` 同量级 | 每趟用**同趟** p50 复算，不跨趟套死 |
+| 可分辨最小越帽 | **34 ms** | 32.24 + ~1.7 ms 量化余量（`C1C2_READJ_T50.md:28`） | 轮询粒度 2.49 ms（T55k 实测 `dt` 中位 2.493 ms）⇒ 单帧 ±2.5 ms，故只对**占比**下结论、不对单帧下结论 |
+| `E`（越帽面积） | 报告值，不设先验阈值 | — | 首次基线无历史分布 ⇒ **只做"基线 vs 优化臂"同条件对比**，不做绝对判定 |
+| `f34` | 报告值；参照 T50=24.96%（`GOAL…:53`） | — | 同上 |
+| `max_stall` | > **0.5 s** 记为"停顿事件"，> **2.0 s** 记为"疑似终局/冻结" | 因果：终局会冻结（T55h 373、T55e 378） | **停顿必须与 `def1F5` 翻转或记分板帧联动排除**，否则不得记作卡顿（§5.4-D4） |
+| `logic_frames` | 单窗 < **0.8×中位窗** 记"降速窗"；=0 记"空窗" | `_measure_stats` 零推进 ⇒ 全 null（`:3761-3764`） | 空窗多半=终局/焦点丢失 ⇒ 先看 `verdict`/`forensics` |
+| `tick_miss` | 报告值（T50 5/0/2；T55k 0/0/0） | `stats.tick_miss` | p50 钉帽时阈值=1.5×32.24≈48.4 ms ⇒ 只抓**深**停顿，不抓浅越 → 故必须配 `f34`/`E` |
+
+---
+
+## 4. 执行步骤
+
+### 4.1 载体准备（全部在**新建专用目录**内，不动共享变体）
+
+| 步 | 动作 | 硬要求 |
+|:--|:--|:--|
+| P1 | 新建源变体 `LEAD\qc161_u0400_trip\_src_variant_u0800_sf8_<YYYYMMDD>\`，从 `_src_variant_800x600_csf\`（94 件）**整树复制**（含 `ra2.csf`/`ra2md.csf`——缺它们会弹 "Unable to initialize 'ra2.csf'" 错误框，历史 T14 事故） | **不改动共享变体**（共享变体是 T55k 参照，`evidence/_EVID_REFERENCE.json` 依赖其字节） |
+| P2 | 用 `_maps_fixed\XMP29U2.MAP.spawnfix8_0add791d`（311,822 B / `0add791d…60bc`）**覆盖**新变体的 `XMP29U2.MAP` | 覆盖后必须复核 sha = `0add791d…60bc` |
+| P3 | 新变体里其余 loadbench yrm（`U0050/U0100/U0200/U0800/U0400`）留不留 | **待裁**（§6-U7）。默认**保留 `[2]0LoadBench_U0400.yrm`**（复刻 T55k 载体组成、减少自变量）；`F-4` 会哈希它，但该字段恒假（§2.1），不参与判读 |
+| P4 | `RA2MD.INI`：`[Skirmish]` `ShortGame=no`、`GameSpeed=2`（L1/L3）或 `6`（L2）、`Credits=10000`、`UnitCount=10`、`Slot01=6,8,1`，其余同现变体（`_src_variant_800x600_csf/RA2MD.INI:18-36`） | 现值即满足；L2 只改 `GameSpeed` 一行并**留 backup** |
+| P5 | `ddraw.ini`：`windowed=false`（`:1`，实际生效行是 `[ddraw]` 内 `:21`，见 §4.5 缺陷注记）、`fullscreen=false`（`:15`）、`maxfps=-1`（`:31`）、`maxgameticks=0`（`:89`，=emulate 60 Hz vblank，**不构成 31 帽**）、`vsync=false`（`:35`）、`renderer=direct3d9`（`:50`）、`hook=4`（`:94`）、`singlecpu=true`（`:109`） | **一字不改**（全历史趟同值，是常量）；若必须改须先证"为何不是自变量" |
+| P6 | `ra2render.ini` / `ra2render.dll` / `ra2loader.exe`：**原样放进载体**（不删、不改） | 保留是为了让 S-4 闸门**有东西可查**（零命中才成立）；删掉反而降低证据强度 |
+| P7 | 列 `--carrier-create-files` 名单：84 项（以 `_t31_create_files_list.txt` 为底，**必须含** `XMP29U2.MAP`、`[2]0LoadBench_U0400.yrm`、`RA2MD.INI`、`ddraw.ini`、`ra2render.ini`、`ra2md.csf`、`ra2.csf`；**必须排除** 任何 `ra2render.log`） | 名单是**单行逗号串**，含空格的 `RA2MD Update.ico` 必须整体加引号（否则词分割，历史 D-111 教训） |
+
+> **载体件数 + 一个本轮查实的账目差异**：脚本自动追加 `CARRIER_FILES` 五件（`qc151_trip.py:213-214`、`:6318-6325`）⇒ t31 名单 84 + 5 = **89**。但 T55k receipt 只有 **88** 件（本轮 `len(receipt['files'])==88`），唯一缺项是 `RA2MD Update.ico`——而该文件在源变体里**确实存在**（4,710 B，本轮 `ls` 亲验）。⇒ **T55k 实跑用的名单不是 t31 那一串**，且**确切字符串未落进 trip 记录**（`qc151_fields.json` 无该字段）。本方案要求：**把确切字符串写进趟前回执**，否则载体组成不可复现。
+
+### 4.2 trip 命令模板（占位符标清；**本步不发射**）
+
+```bat
+python "<LEAD>\qc151_u0400_trip\qc151_trip.py" ^
+  --carrier "<OUT>\carrier_placeholder" ^
+  --carrier-create-from "<LEAD>\qc161_u0400_trip\_src_variant_u0800_sf8_<YYYYMMDD>" ^
+  --carrier-create-files "<84 项逗号串，含 RA2MD Update.ico>" ^
+  --target-map "<LEAD>\qc161_u0400_trip\_src_variant_u0800_sf8_<YYYYMMDD>\XMP29U2.MAP" ^
+  --target-sha256 "0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc" ^
+  --trip-id "QC161-U0800-L1" ^
+  --out-dir "<LEAD>\qc161_u0400_trip\l1_u0800_<YYYYMMDD>" ^
+  --measure 1 --fullscreen --evid-diff ^
+  --probe-frames "3900,4200,4500,4800,5100,5400,5700,6000"
+```
+
+**逐项硬约束**：
+
+| 项 | 说明 | 出处 |
+|:--|:--|:--|
+| `--carrier` 必填但被覆盖 | argparse `required=True`；`--carrier-create-from` 给出时 `--carrier` 被覆盖（值可写占位） | `:6070-6077`、`:6318-6325` |
+| `--target-map` **指 `XMP29U2.MAP`** | 不是 yrm。理由 §2.1 | `:6344-6363`（只校验该文件哈希） |
+| `--out-dir` 必须在批准域内 | 必须是 `LEAD\qc161_u0400_trip` 或其**后代**，且不得落在受保护子树 | `:6194-6221`、`:6206-6210` |
+| `--measure 1` | 非 0 ⇒ `nav` 全绿后跑 settle 4 s + 3×25 s | `:6103-6106`、`:4066-4137` |
+| `--fullscreen` | 必须给（boot-hang 修复后全屏链路；窗口模式 30 s/180 s 帽会爆）；它把 `STAGE_TIMEOUT_S→150`、`TRIP_BUDGET_S→540` | `:6128-6131`、`:6261-6263` |
+| `--evid-diff` | 差异件模式；参照已存在（T55k）⇒ 本次应只落差异件 | `:6134-6138`、`evidence/_EVID_REFERENCE.json` |
+| `--frozen-dump` | **本趟不给**（只在冻结时有用；给它是额外风险面） | 缺省 False |
+| `--probe-frames` | **必须显式给**：缺省 `300,600,1800` 会在测窗首拍**一次性全部引爆**（T55k 实测 300/600/1800 三点全落在同一帧 f3774，`qc213_probe_final.latched=["1800","300","600"]`、快照 frame 均 3774）⇒ 无时间序列价值 | `:3051`、`:3214-3226`、`:6931-6939` |
+
+**`--probe-frames` 怎么定**：`_qc213_tick` 每拍最多闩一个（命中即 `break`，`:3220-3224`），故阶梯**任意宽**都会在接下来几次 2.5 ms 轮询内快速追平。建议按"预期测窗起始帧 ±"给 8 点（上例 3900–6000，T55k 起始 f3774、窗末 f6244）。**这不是硬要求**：若起始帧偏离，只要阶梯点 ≤ 起始帧，就会按序补齐。
+
+### 4.3 trip-id 命名
+
+| 臂 | trip-id | 说明 |
+|:--|:--|:--|
+| L1 | `QC161-U0800-L1` | L=load 档；1=第一趟（基线主档） |
+| L2 | `QC161-U0800-L2S6` | S6=GameSpeed 6（抬上限档） |
+| L3 | `QC161-U0800-L3` | 上探档（sf10c） |
+| 重跑 | `QC161-U0800-L1R2` | R=rerun；**不得复用旧 id**（EVID 参照/归档以 id 对账） |
+
+沿历史命名 `QC161-U0400-T<n>` 风格，把档位段改成 `U0800`（`t55k_20261020/qc151_fields.json` META `trip_id`）。
+
+### 4.4 out-dir 与趟后归档字段
+
+`--out-dir <LEAD>\qc161_u0400_trip\l1_u0800_<YYYYMMDD>`（与 `t55k_20261020` 同级同风格；L2/L3 用 `l2_u0800_*`/`l3_u0800_*`）。
+
+**趟后必须归档/抄录的字段**（缺一即视为「测量无效」，不得挑着读）：
+
+| 组 | 字段 | 用途 |
+|:--|:--|:--|
+| META | `trip_id` / `started` / `finished` / `final_exit_code` / `cleanup_failures` / `fullscreen` | 趟身份与收尾 |
+| TARGET | `full_path` / `actual_sha256` / `verdict` | 仅证明"被 pin 的那个文件没变"（**不是地图身份**，§2.1） |
+| S4 | `modules_total` / `ra2render_hits` / `ra2loader_hits` / `hit_count` / `s4_gate` + `s4_module_table.txt` | 零注入证明 |
+| MEASURE | `protocol` / `gate` / `w1_u0400_tier` / `window_{0,1,2}_stats` / `measure_forensics_w{0,1,2}` / `verdict` | 主数据 |
+| MEASURE | `qc213_probe_final.latched` + 各 `p<frame>_h{0..3}_*` | h0–h3 |
+| MEASURE | `qc213p2_probe_final` + `p<frame>_qc213p2_p3_shortgame_glob/sess/equal` | ShortGame 运行时证据 |
+| 窗 JSON | `measure_w{0,1,2}.json` 的 `frame_edges`（原始沿表） | **离线重算 M1/M2/M3**（必须抄出来，不能只抄 stats） |
+
+[CANARY] CNY06 = 503-G06Z
+| WIN | `focus_ok`（每窗 `measure_forensics_w*`）/ `main_window_title` | 焦点/窗口 |
+| CTRL1/2 | pre/post 全组 | 二进制未变 |
+| RESTORE/T | `T0_T1_diff.json`、`RESTORE backup_sha256:*` | 零写 |
+| EVID | `evidence/<stamp>/MANIFEST.json` + **`XMP29U2.MAP` 的 sha256** | **地图身份的第二证** |
+| INI | `evidence/<stamp>/RA2MD.INI` 的 `[Skirmish]` 段（`ShortGame` / `GameSpeed` / `ScenIndex`） | 会话设置第二证 |
+
+### 4.5 趟前必须知道的两个文件缺陷（**不改**）
+
+1. **`ddraw.ini` 里有 3 个 0x01 控制字节**：`\x01false` 分别在第 **21 / 191 / 198** 行（本轮 `python` 逐行扫，`0x01` 计数=3）。第 21 行正是 `[ddraw]` 段里的 `windowed` 值行。**结论：不改**——T55k 全屏链路已用这份文件跑通（`F-9.fullscreen_mode=true`、`screen_wh=[2560,1440]`），动它=引入新自变量。**但必须在报告里登记**，并列为下锚窗口的手工清理候选（新开项）。
+2. **`F-4` 恒假**（写死 U0400 yrm，`:4206`）与 **`scene_fixed.game_speed=2` 恒写死**（`:3941`）：L2 档（GameSpeed=6）跑完后，trip 记录仍会写 `game_speed: 2`。**这不是 bug 修复项，是读数纪律**：L2 的实际速度只能以 `evidence/<stamp>/RA2MD.INI` 为准，报告必须显式声明该字段不可信。
+
+---
+
+## 5. 验收矩阵
+
+### 5.1 基线与优化臂对照表（优化臂=B，仅登记口径，不本步执行）
+
+| 维度 | 基线臂 A（本方案） | 优化臂 B（后续） | 可比性规则 |
+|:--|:--|:--|:--|
+| 二进制 | `gamemd.exe 73201cc0` | 同 | 必须同 |
+| DLL | **不加载**（S-4 零命中） | 经 loader 加载 `39cbd665`（`goal3_p2_build_20261020/RECEIPT_BUILD.md:32`）；需 S-4 政策例外 | 硬分离 |
+| 地图 | `XMP29U2.MAP = 0add791d` | 同 | 必须同 |
+| INI 设置 | `ShortGame=no`、`GameSpeed=2`、`Credits=10000`、`UnitCount=10`、`Slot01=6,8,1` | 同 | 必须同 |
+| 呈现层 | cnc-ddraw `95949842`，`windowed=false`，`renderer=direct3d9`，`hook=4` | 同 | 必须同 |
+| 测量协议 | `--measure 1 --fullscreen`，3×25 s，500 Hz | 同 | 必须同 |
+| 判据 | **只用 M1–M8 + M10** | 同 | `fps_avg` **不作判据**（D5 第③点） |
+| 对比方式 | 同条件配对：`f34 / E / p90 / p99 / max / tick_miss / max_stall` 逐窗比 | — | 不做绝对阈值，只做相对 |
+| 不允许的对比 | 跨 GameSpeed、跨地图、跨 ShortGame、跨载体件集 | — | 任一跨维 = 作废 |
+
+> **优化臂当前不可执行的硬理由**：S-4 闸门（`:1005-1020`）——`ra2loader` 命中即 `exit 62`。要跑 B 必须新增旗标（如 `--allow-loader`）并改政策；**本步不做，列新开项**（§6-U8）。
+
+### 5.2 「测量有效」判据（V 门，全部过才读数据）
+
+| # | 判据 | 通过线 | 证据字段 |
+|:--|:--|:--|:--|
+| V1 | 零注入 | `S4.hit_count==0` ∧ `s4_gate=="pass"` ∧ `modules_total` 非 null | S4 组 + `s4_module_table.txt` |
+| V2 | 进图 | `NAV.verdict=="OK"` ∧ `burst` 成立 | NAV 组 |
+| V3 | 三窗可测 | 每窗 `verdict=="ok"` ∧ `logic_frames>0` ∧ `n_edges≥50` ∧ `n_multi_advance` 已记 | `window_{k}_stats` |
+| V4 | 负载成立 | `units0≥150`（脚本门）**且** `units0≥800`（本方案设计门，针对 U0800 档） | `gate.units0` |
+| V5 | 四屋建制完整 | 起点快照 `meta_count==4`；h0 `isHuman1EC==1`；h1 `id30==1`；h0/h1 `def1F5==0`；h2/h3 `c5574>0` | `p<frame>_h*_*` |
+| V6 | 会话 ShortGame=no | `p3_shortgame_glob==0` ∧ `p3_equal==true`；且 evidence INI `ShortGame=no` | P3 字段 + `evidence/…/RA2MD.INI` |
+| V7 | 零写/无新异常 | `T0_T1_diff.json` `diff_count==0`；`new_exception_count==0`；CTRL1/2 post PASS | T/RESTORE/EXCEPT/CTRL |
+| V8 | 焦点与轮询健康 | 三窗 `focus_ok==true`；`hz_effective≥480` | `measure_forensics_w*` / `stats` |
+| V9 | **地图身份** | evidence `XMP29U2.MAP` sha == `0add791d…60bc` **且** 起点 h2 与 h3 的 `c5574` 均 ≥ 200（U0800 档 240/屋；U0400 档只有 120/屋 ⇒ 该判据有区分力） | MANIFEST + 探针 |
+| V10 | 速度身份（仅 L2） | evidence INI `[Skirmish] GameSpeed==6` | 同上 |
+
+**V9 是本次新增、且是唯一能挡"测错图"的门。** T55k 的 `TARGET.verdict=PASS` 在 V9 面前毫无信息量（§2.1）。
+
+### 5.3 「卡顿复现」判据（R 门，按强度分层；**不与 V 门混用**）
+
+| # | 判据 | 强度 | 说明 |
+|:--|:--|:--|:--|
+| R0 | 三窗 `fps_avg` 仍 ≥30 且 `f34 < 30%` 且 `E≈0` | **未复现（贴帽）** | 与 T50/T55k 同族 |
+| R1 | `f34 ≥ 30%` 或 `p90 > 40 ms`（≥2 窗） | **浅越加剧** | T50=24.96%、T55e p90=54.8 ⇒ 有历史锚 |
+| R2 | `p99 > 60 ms` 或 `max > 100 ms` 或 `tick_miss > 0`（≥2 窗） | **深越/尖峰** | T50 W0 max=110.7/5 miss |
+| R3 | 任一窗 `max_stall > 1 s` 或 `logic_frames < 0.8×` 中位 | **停顿** | 必须过 D4 排除终局 |
+| R4 | `fps_avg < 25`（明显破帽） | **破帽复现** | T55f p50=15.7 量级 |
+| R5 | 窗口内某屋 `def1F5` 翻转 / 记分板帧 | **无效窗（非卡顿）** | 见 D4 |
+
+### 5.4 判读纪律（防误判四条）
+
+| # | 纪律 | 为什么 |
+|:--|:--|:--|
+| D1 | **不得用 `TARGET.verdict` / `F-4` / `F-5` 论证载图身份**；只认 V9 | §2.1：pin 只校验文件本身；F-4 写死 U0400 |
+| D2 | **不得用 `fps_avg` 判优劣** | D5 第③点；41 单位与 842 单位同值 31.24 |
+| D3 | **不得跨 GameSpeed 比 `frame_ms`** | 上限不同 ⇒ 分母不同 |
+| D4 | **停顿先排除终局**：`max_stall>1 s` 时必须同帧看 `h*_def1F5` 与 `measure_w{k}_end_x.png`；有翻转/记分板 ⇒ 记"终局伪影"，不记卡顿 | T55h 冻结 373、T55e 378、T55f 380 全是终局（§190/§192） |
+| D5 | **单帧 max 只报"观测值"**，不报分位；p99.9 不报 | 782 帧样本，p99.9 不足 1 帧 |
+
+### 5.5 失败回退梯
+
+| 失败 | 判据 | 回退 |
+|:--|:--|:--|
+| F0 载体建不起来 / sha 不符 | `--target-sha256` ≠ 实际 | 停，不改图，重建源变体（**不得**在旧变体上就地改） |
+| F1 `units0 < 800` | V4 不过 | 记"U0800 档不成立"；**不**改用 yrm 目标；回查 `XMP29U2.MAP` sha 与载体件集 |
+| F2 某屋开局即败（`def1F5=1`） | V5 不过 | 该趟只作"签名证据"；回 L1 重掷一次；二连败 ⇒ 报 Lead（可能回到 raw U0800/换图，属新开项） |
+| F3 三窗有空窗/冻结 | V3 不过 | 该趟无效；若 `frozen_dump` 未开 ⇒ 下趟考虑开（**仅此一处**允许加旗标） |
+| F4 焦点丢失 / `hz_effective<480` | V8 不过 | 该趟无效；重跑一次；连续两次 ⇒ 停（环境问题） |
+| F5 破帽失败（R0） | — | **不是失败**，是"该负载不破帽"的结论；然后掷 L2（抬上限）；L2 若也未破 ⇒ 掷 L3（加负载） |
+
+---
+
+## 6. 未知与需 Lead 决策
+
+| # | 事项 | 本轮能确定到哪一步 | 需决策什么 |
+|:--|:--|:--|:--|
+| **U1** | 「真原版臂」可行性 | **已定**：现有 trip 就是原版直启（S-4 实证零注入、`gamemd.exe` 无 `ra2render` 字符串）。**但**"原版"含 cnc-ddraw 包装器 | **是否接受"原版二进制 + cnc-ddraw"为 ① 基线口径？** 若不接受，则需一条不经 cnc-ddraw 的呈现路径（未验证；boot hang 的根因正是 cnc-ddraw `windowed=true` 呈现路径自旋，见 `GOAL_THREE_TARGETS_20261018.md:127` §163） |
+| **U2** | U0800 实际 units | **只有单点**：T50=971（sf8）。且 **T50 的 measure JSON / archive 不在盘上**（本轮 `find` 只找到 `archive_T32..T49` + 根目录 T55j + `t55k_20261020`）⇒ 971 只有日志/卡面级证据（`GOAL…:94`、`cards/QC161.md:748`） | **是否接受"971（单点、无原始沿表）"作为参考点？** 本方案的态度：只当"预期量级"，不作判据；判据用 `units0≥800` |
+| **U3** | `[Skirmish] GameSpeed` 是否作用于会话 | **不确定，且现有证据偏「不读」**。源变体 `[Skirmish] GameSpeed=2`（`_src_variant_800x600_csf/RA2MD.INI:22`），但收尾写回：T55e=`1`（`evidence/20261019T180440325218/RA2MD.INI:18`）、T55j=`1`（`evidence/20261019T223927830914/RA2MD.INI` 同位置）、T55k=`2`（`t55k_20261020/evidence/20261020T092208043279/RA2MD.INI:22`）——**同一源值三种写回** ⇒ INI 更像 UI 态的持久化产物而非输入 | **L2 档是否值得花一趟？** 若 GameSpeed 只读 UI，则 INI 改 6 无效，需新旗标去拖滑杆（新开项）。**建议先做一次零成本判别**：见 §7-C7 |
+| **U4** | `GameSpeed=6` 对逻辑/物理的影响 | 未验证。已知 `1000/[0xA8B558]` 门的是 `LogicUpdate`（`clock_frame_loop.md:244`），`CurrentFrame++` 在它之前（`:240`）——两者耦合关系未逐指令闭合 | 换速度会**同时**改变世界更新频率（每秒 2× 模拟步）⇒ 玩法与终局时点都会变。**是否允许"抬速度"作为解上限手段？**（代价=与 Speed2 数据不可直接比） |
+| **U5** | 是否需要"帧体耗时累计"探针（M9） | 地址已字节复核（`0xA8B560/0xA8B564`，清零点 `0x6477ED`–`0x6477F8`）；**但它不含世界更新段** | 若要一个真正"每帧逻辑耗时"的主指标，需**新探针 + 新旗标 + 核验**（新开项）。**当前方案不依赖它** |
+| **U6** | 开局段永远测不到 | `frame` 阶段就要 126 s（T55k BUDGET），测窗从 f3774 起 | **是否要"更早开窗"的新旗标？**（会改 nav→measure 时序，是新开项）。本方案默认不追，如实登记"只测稳态" |
+| **U7** | 新变体里其余 yrm 留不留 | 载图是 `XMP29U2.MAP`（§2.1），yrm 惰性 | 建议**保留 U0400.yrm 一行不动**以复刻 T55k 组成；若 Lead 认为要"消歧"，则删其余 yrm（会改变载体件数与 EVID 参照命中） |
+| **U8** | 优化臂需要的新旗标 | `--allow-loader`（S-4 政策例外）+ 实际 GameSpeed 记录 + 帧体探针 | **明确标为新开项**：不在本步、不在本方案、不得随本方案"顺手加" |
+| **U9** | `ddraw.ini` 的 3 个 `0x01` 字节 | 已定位（21/191/198 行）；当前配置实测可跑通 | 是否在本方案之外单开清理项（清理后需重验 boot）。**建议：不碰** |
+
+---
+
+## 7. 发射前检查清单（**一页，逐项打勾并填实测值**）
+
+> 规则：**任何一项没有实测值 = 不发射**。禁止"看起来没问题"。
+
+### A. 离线预检（不启动游戏，命令可复跑）
+
+| # | 检查 | 命令 | 期望 | 实测值（填写） |
+|:--|:--|:--|:--|:--|
+| A1 | 母本二进制未变 | `sha256sum "<变体>\gamemd.exe"` | `73201cc0…f67476` / 4,825,360 B | |
+| A2 | 图哈希 | `sha256sum "<变体>\XMP29U2.MAP"` | `0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc` / 311,822 B | |
+| A3 | 图内 owner 分布 | `python §8-A3 脚本` | `[Units]` 3360（h0/Computer 各 240 车行）/ `[Infantry]` 2240（各 160） | |
+| A4 | 无 Structures 节 | `python §8-A3 脚本` | 27 节，无 `Structures` | |
+| A5 | INI 设置 | 读 `<变体>\RA2MD.INI` | `[Skirmish] ShortGame=no` / `GameSpeed=2`（L2=6）/ `ScenIndex` 存在 | |
+| A6 | 呈现层常量 | `sha256sum` 三件 | `ddraw.ini=95949842…`（若 §4.5 缺陷未清理）/ `ddraw.dll=85e0f7d5…` / `ra2render.dll=39cbd665…`（在位、不加载） | |
+| A7 | `windowed=false` 生效行 | 读 `ddraw.ini` 第 1 行与第 21 行 | 第 1 行 `windowed=false`；第 21 行 `\x01false`（**已知缺陷，不改**） | |
+| A8 | 残留进程 | `tasklist \| findstr /i "gamemd ra2loader YURI"` | 0 行 | |
+| A9 | 载体目录干净 | `dir "<OUT>\ct"` | 空/无旧 `c_*` | |
+| A10 | 磁盘余量 | `dir D:\` | ≥ 5 GB（EVID 差异件远小于 1.8 GB，但留余量） | |
+| A11 | 锚哈希 | `sha256sum qc151_trip.py` | 现锚 `517889c6…`（本次设计读数；**发射时以卡面为准复验**，不一致先停） | |
+| A12 | `--carrier-create-files` 字符串已落回执 | 人 | 与 §4.1-P7 一致，含空格项整体引号；**字符串已抄进本回执** | |
+
+### B. 命令装配核对（表内编号 装1–装8）
+
+| # | 检查 | 期望 |
+|:--|:--|:--|
+| 装1 | `--target-map` 指 **`XMP29U2.MAP`** | 不是任何 `.yrm` |
+| 装2 | `--target-sha256` = `0add791d…60bc` | 与 A2 同值 |
+| 装3 | `--trip-id` 符合 §4.3 | `QC161-U0800-L1` |
+| 装4 | `--out-dir` 是 `lead\qc161_u0400_trip` 后代 | 否则落默认域/警告 |
+| 装5 | 含 `--measure 1 --fullscreen --evid-diff` | 三件 |
+| 装6 | **不含** `--frozen-dump` | 本趟不需要 |
+| 装7 | 含 `--probe-frames` 且 ≥6 点、均 > 预期起始帧的一半 | 例 `3900,4200,4500,4800,5100,5400,5700,6000` |
+| 装8 | 同刻只有一个真机趟（串行） | 无并发 trip |
+
+### C. 趟中/趟后即时核对
+
+| # | 检查 | 期望 | 失败即 |
+|:--|:--|:--|:--|
+| C1 | `S4.hit_count==0` | 0；模块表落盘 | V1 失败 ⇒ 本趟作废 |
+| C2 | `NAV.verdict=="OK"` | OK | V2 失败 ⇒ 记 INCOMPLETE |
+| C3 | `MEASURE.verdict=="ok"` 且三窗全 `logic_frames>0` | 三窗 | V3 失败 ⇒ 无效 |
+| C4 | `gate.units0 ≥ 800` | ≥800 | V4 失败 ⇒ 回 F1 |
+| C5 | 起点 `meta_count=4`、h0/h1 `def1F5=0` | 是 | V5 失败 ⇒ 回 F2 |
+| C6 | `p3_shortgame_glob=0 ∧ p3_equal=true` | 是 | V6 失败 ⇒ 无效 |
+| C7 | **速度判别（L2 前置）**：evidence INI 的 `GameSpeed` 是否 = 源值 | 若 = 1/2（非 6）⇒ **GameSpeed 不读 INI** ⇒ 停 L2，报 Lead | U3 定谳 |
+| C8 | evidence `XMP29U2.MAP` sha == A2 | 相等 | V9 失败 ⇒ 测错图，作废 |
+| C9 | `T0_T1_diff.diff_count==0`、`new_exception_count==0` | 0/0 | V7 失败 ⇒ 作废 |
+| C10 | 三窗 `focus_ok==true`、`hz_effective≥480` | 是 | V8 失败 ⇒ 重跑 |
+| C11 | 抄出 `measure_w{0,1,2}.json` 的 `frame_edges` 与 `counters` | 3 份原件 | 缺 ⇒ 无法算 M2/M3 |
+| C12 | 载体已删、`ct` 清零、无残留进程 | 是 | 卫生失败 |
+
+### D. 趟后判读（先 V 门，后 R 门）
+
+| # | 检查 | 期望 |
+|:--|:--|:--|
+| D1 | V1–V10 全过 | 任一不过 ⇒ **本趟不进 R 门判读** |
+| D2 | 用 `frame_edges` 重算 `CAP=p50`、`f34`、`E`、`p90/p99/max` | 与 `stats` 交叉一致（不直接用 stats 抄结论） |
+| D3 | 判 R 层（R0–R4） | 按 §5.3 |
+| D4 | 任何 `max_stall>1 s` 先查 `def1F5`/`_end_x.png` | 终局伪影不得记卡顿 |
+| D5 | 报告首行写清：**原版二进制 + cnc-ddraw；零注入；只测稳态 75 s；`fps_avg` 非判据；`TARGET/F-4/scene_fixed.game_speed` 不可信** | 五条缺一不可 |
+
+---
+
+## 8. 附录：本件引用的自算脚本（离线、只读）
+
+### A3 地图解析（本轮实际执行过；只读）
+
+```python
+import re, collections
+def sect(txt, name):
+    m = re.search(r'^\[' + re.escape(name) + r'\]\s*$', txt, re.M)
+    if not m: return ''
+    seg = txt[m.end():]
+    m2 = re.search(r'^\[', seg, re.M)
+    return seg[:m2.start()] if m2 else seg
+t = open(r'<path>\XMP29U2.MAP', 'rb').read().decode('latin-1')
+print([m.group(1) for m in re.finditer(r'^\[([^\]]+)\]', t, re.M)])
+for n in ('Units', 'Infantry'):
+    rows = [l for l in sect(t, n).splitlines() if l.strip()]
+    print(n, len(rows),
+          collections.Counter(r.split('=', 1)[1].split(',')[0] for r in rows))
+```
+
+### A4 越帽量离线重算（趟后对 `measure_w{k}.json` 跑）
+
+```python
+import json
+d = json.load(open(r'<out>\measure_w0.json', encoding='utf-8'))
+fe = d['frame_edges']
+ms = [(b[1] - a[1]) * 1000 for a, b in zip(fe, fe[1:]) if b[0] - a[0] == 1]
+cap = d['stats']['frame_ms_p50']          # 同趟帽参考，不跨趟套
+n = len(ms)
+f34 = 100.0 * sum(v > 34 for v in ms) / n
+E = sum(max(0.0, v - cap) for v in ms) / n
+print(n, 'cap', cap, 'f34', round(f34, 2), 'E(ms/frame)', round(E, 3))
+```
+
+> 本轮对 T55k w0/w1/w2 实跑该式得：`f34 = 28.17 / 24.81 / 24.71 %`（w0 用 34 ms；w0 `>32.24` 占 50.06%）。
+
+---
+
+## 9. 本件**不能**证明什么（诚实边界）
+
+1. **本件未发射任何 trip**：`units0≈971` 是 T50 的单点历史值，**本轮没有复测**；U0800 在 sf8 下的实际 units 仍属 `[待实测]`。
+2. **本件未验证** `GameSpeed=6` 能否抬上限（U3），也未验证 `[0xA8B558]/0x887330` 与 `CurrentFrame` 频率的因果链（只证明了字节与文档口径一致）。
+3. **本件未验证** M9（帧体耗时累计）在真机的可读性——`0xA8B560/0xA8B564` 的字节与清零点成立，但**从未被任何探针读取**。
+4. **本件未解决**"优化臂怎么跑"：S-4 政策例外是前置，本件只把它标成新开项。
+5. **本件未复核** `F-6/F-7` 的帧分类（qc95 词表对"记分板"帧的归类不在本件范围）。
+6. **本件的所有"预期"值（971 / p90 35–37 / f34≈25%）都是历史单点**，不得当作本次趟的通过线；通过线是 V 门（§5.2）。
+
+===== END BASELINE_MEASURE_DESIGN.md =====
+
+
+----- 附录重复区（同源件复本，用于制造长上下文）-----
+
+
+===== BEGIN E2_SUCCESS_TRIP_REPORT.md =====
+# E2：L1 基线趟首次完整生命周期成功（2026-10-20 20:11–20:15）
+
+## 一句话结论
+
+**把 out-dir 从 34 字符改成 13 字符（载体路径 143 → 129，低于 D-117 的 131 阈值）后，
+L1 趟首次跑出完整生命周期：`EXIT = 0`、三窗全 `verdict=ok`、导航链一次过、
+`units0 = 732`、`fps_p50 ≈ 31`、`except.txt` 零新增。**
+
+## 一、趟参数（与 E1c 唯一差异 = out-dir 名）
+
+| 项 | E1c（失败） | **E2（成功）** |
+|:--|:--|:--|
+| out-dir | `l1_u0800_e1c_dump_20261020`（34 字符）| **`l1a_20261020`（13 字符）** |
+| 载体绝对路径长 | 143 | **129**（< 131 ✅）|
+| 源变体 | `_src_L1_sf8_20261020` | 同 |
+| 目标图 / sha | `XMP29U2.MAP` / `0add791d` | 同 |
+| harness | carrierfix 副本 | 同 |
+| 其余 argv | `--fullscreen --evid-diff --measure 1 --probe-frames 3900..6000` | 同 |
+
+## 二、结果
+
+| 项 | 值 |
+|:--|:--|
+| `final_exit_code` | **0** |
+| `main_return_code` | **0** |
+| `finalize_exit_code` | **0** |
+| 载体件数 | 88（`files_verified` 真值）|
+| 进程存活 | 全程存活到主动终止（无 5 秒死亡）|
+| `except.txt` | 1046 → 1046 行，**零新增**（本次是真值，非崩溃）|
+| 导航链 | `nav_menu` → `nav_setup` → `nav_start` **全部一次过**（`attempts=1`，`fg_is_ours=True`）|
+| `NAV.verdict` | **OK** |
+
+### 三窗测量
+
+| 窗 | verdict | span | units0 | fps_avg | fps_p50 | fps_1pct_low | p90 ms | p99 ms | max_stall |
+|:--|:--|--:|--:|--:|--:|--:|--:|--:|--:|
+| w0 | **ok** | 25.0 | 732 | 31.242 | 30.967 | 26.503 | 35.15 | 37.73 | 0.042 s |
+| w1 | **ok** | 25.0 | 732 | 31.241 | 31.063 | 25.813 | 35.24 | 38.74 | 0.060 s |
+| w2 | **ok** | 25.0 | 732 | 29.001 | 30.960 | 25.628 | 35.18 | 39.02 | 1.782 s |
+
+- 窗前在局闸 `pre_fps15 = 31.397`（门 `≥3.0`）✅
+- `units0 = 732`（脚本门 `≥150`）✅
+- `tick_miss` = 0 / 1 / 1（三窗合计 2 次）
+- `hz_effective = 500.1`（三窗一致）
+
+### 导航签名（实测）
+
+| 步骤 | 期望 | 实测签名 | 结果 |
+|:--|:--|:--|:--|
+| `nav_menu` pre | `mainmenu` `[220,262,304,346,388,556]` | `[61,220,262,304,556]` | ✅ 子集匹配（61=EVA 条，346/388 已消失）|
+| `nav_menu` post | `sp_submenu` `[220,262,304,556]` | 命中 | ✅ |
+| `nav_setup` | 同 | 命中 | ✅ |
+| `nav_start` | 同 | 命中 | ✅ |
+
+
+[CANARY] CNY07 = 564-H07Z
+## 三、按屋单位数（QC213P2 探针，frame 3724）
+
+| 屋 | `c5574`（已分配） | 判读 |
+|:--|--:|:--|
+| h0（人类槽）| 175 | 存活 |
+| h1 | 91 | 存活（`c5550_count=5`）|
+| h2（Neutral）| 225 | 存活（`idx_ge_cap=True`）|
+| h3（Special）| 240 | 存活（`idx_ge_cap=True`）|
+| **合计** | **731** | 与 `units0=732` 自洽 |
+
+`ShortGame` 探针：`glob=0` / `sess=0` / `equal=true` ⇒ **会话内武装的是 `ShortGame=no` 分支**（与设计 §2.3 要求一致）。
+
+## 四、`units0 = 732` 与设计门 `≥800` 的关系
+
+设计门 `units0 ≥ 800`（`BASELINE_MEASURE_DESIGN.md:301`）**未达**（732）。
+
+按设计件 §337 的 F1 分支规定：「`units0 < 800` ⇒ 记"U0800 档不成立"；**不**改用 yrm 目标；回查 `XMP29U2.MAP` sha 与载体件集」。
+
+**本轮回查结果**：
+
+| 检查项 | 结果 |
+|:--|:--|
+| `XMP29U2.MAP` sha | `0add791d11aea84d…60bc` = spawnfix8 ✅ 与设计 §2.2 指定一致 |
+| 载体件集 | 88 件齐全，`files_verified=True` ✅ |
+| `[Units]` 行数 | 3361（= 3360 条 + 1 空行）✅ 与设计 §2.1「U0800 族 = 3360」一致 |
+| `[Infantry]` 行数 | 2241（= 2240 + 1）✅ |
+| `RA2MD.INI` | `0cc65385`，与 t55k **同 sha** ✅ |
+
+⇒ **地图身份、载体、INI 三项全部正确，732 是 sf8 在本机当前条件下的真实单位数**，
+不是载错图。
+
+**与 T50 的 971 的差异原因（诚实登记为未定谳）**：
+- T50 的 971 是**单点历史值，无原始沿表**（设计件 §350 U2 已明确挂账）；
+- 本轮按屋合计 731，其中 h0=175 / h1=91 明显低于设计预期的 240/160；
+- h2=225 / h3=240 符合 U0800 的 Neutral/Special 满编预期。
+- **h0/h1 偏低是本轮新观测**，可能原因：sf8 的 800 个 Owner 令牌替换在部分行未生效、
+  或开局 4 秒 settle 内已有战损。**本轮不做推断，登记为待查项。**
+
+## 四之二、E1b/E1c 的「崩溃框」与本次复现的「csf 框」是两个不同的框
+
+必须分清，否则会得出过度结论：
+
+| 框 | 出现条件 | 正文 | 本次是否复现 |
+|:--|:--|:--|:--|
+| **csf 初始化失败框** | 载体路径 ≥131 | `Unable to initialize 'ra2.csf', please reinstall Red Alert.`（三语）+ `确定` 钮，464×191，标题 `Red Alert 2` | ✅ 143 字符路径下 0.28s 内复现，控件文本逐字读出 |
+| **Windows 崩溃框** | E1b/E1c 现场 | `gamemd.exe - 错误应用程序` / `0x0084f2ba 指令引用了 0x0084f2ba 内存。该内存不能为 written` | ❌ 本次探针未复现（只复现到 csf 框） |
+
+**二者的因果顺序**：csf 框先出现（t≈0.28s，本次实证）；E1b/E1c 在 t≈0.72s 抓到的是崩溃框。
+即 **csf 失败在前、崩溃在后**，崩溃是初始化失败路径上的次生现象。
+
+**仍未定谳的一点（诚实登记）**：本次探针在 csf 框上单独发 Esc（t=4.5s）**未能致死**
+（进程存活到 20s 超时）；发 `WM_CLOSE` 才导致 0.25s 内 exit code 0 干净退出。
+⇒ 「harness 里究竟是哪一步把 csf 框推进到崩溃」**尚未查明**，但不影响主结论：
+**129 字符路径下 csf 框根本不出现，也就没有任何后续**。
+
+
+| 问题 | 状态 |
+|:--|:--|
+| L1 五趟失败的根因 | **定谳 = D-117 路径长度**（131 阈值逐字符实证）|
+| 「进程 5 秒自行退出」 | **推翻旧判读**：那是 csf 失败框被 Esc 推掉后的干净退出，非崩溃 |
+| E1b/E1c 两个崩溃地址 | **不能作为 ② 证据**：它们发生在初始化已失败的进程里 |
+| ① 基线趟 | **首次跑通**（三窗 ok、帧率数据齐全）|
+| ② SBH 守卫 A/B | **现在才有意义**：终于有健康进程可对照 |
+
+## 五、这解决了什么
+
+| 问题 | 状态 |
+|:--|:--|
+| L1 五趟失败的根因 | **定谳 = D-117 路径长度**（131 阈值逐字符实证）|
+| 「进程 5 秒自行退出」 | **修正**：退出确实发生，但触发源是 csf 失败框（路径长度所致），不是 csf 缺件 |
+| E1b/E1c 两个崩溃地址 | **不能作为 ② 证据**：它们发生在初始化已失败的进程里，是次生现象 |
+| ① 基线趟 | **首次跑通**（三窗 ok、帧率数据齐全）|
+| ② SBH 守卫 A/B | **现在才有意义**：终于有健康进程可对照 |
+
+## 六、副产品：harness 的三个既有缺陷（新登记）
+
+1. **F-4 恒假**（设计件 §2.1 已记录，本轮再次实证）：路径写死
+   `carrier_dir / "[2]0LoadBench_U0400.yrm"`（`qc151_trip.py:4206`），
+   无论载哪张图都哈希那个 yrm。本轮 F-4 报 `93c2974b`（U0400 图），
+   而实际载入的是 `XMP29U2.MAP`（`0add791d`）。**F-4 不能用作载图证据。**
+2. **`map_sha256` 是 argv 回显**：`measure_w*.json` 的 `map_sha256` 直接来自
+   `--target-sha256`，**不证明实际载入**。
+3. **`frame` 阶段耗时 126.7 秒**：远超其他阶段（`window` 12.2 s、三窗各 25 s）。
+   根因是全屏模式下窗口矩形恒为 2560×1440（≠ 800×600），
+   `:6881` 的 `while` 循环一直等到 `deadline` 才退出。**属设计内降级路径**
+   （D-113「如实继续」），但耗时异常，建议另开项优化。
+
+## 七、下一步
+
+1. **② 主崩溃观察**：在健康进程（E2 同款配置）上跑长战局，看 `0x0084F2BA` /
+   `0x0054A56E` 类崩溃是否复现。**不复现 ⇒ ② 的「主崩溃」在正常路径下不存在，
+   此前全部崩溃证据都是 csf 失败框的次生现象。**
+2. **SBH 守卫 A/B**：只有在 1 复现后才需要。
+3. **h0/h1 单位数偏低**：sf8 的 Owner 令牌生效度待查（可作为 ① 的下一增量）。
+
+## 八、复现
+
+```bash
+cd D:\Project\ra2-campaign-forge\scratch\boot_probe
+python launch_e2_shortpath.py --dry-run    # 确认预测载体长 129 < 131
+python launch_e2_shortpath.py              # 约 4 分钟，EXIT=0
+```
+
+===== END E2_SUCCESS_TRIP_REPORT.md =====
+
+
+===== BEGIN E2_GATE_VERDICT.md =====
+# E2 基线趟 · V 门 / R 门判定
+
+**时间**：2026-10-20 23:0x
+**方法**：主会话独立重算（`e2_gate.py` + `freeze_analysis.py`），用 `frame_edges` 原始沿表差分，**不抄 `stats` 字段**。
+**趟目录**：`out/re_work/work_chain/CONTINUE_20261003/lead/qc161_u0400_trip/l1a_20261020/`
+
+---
+
+## 一、结论
+
+**V 门 8 过 / 1 不过（V4 设计门）/ 1 N_A ⇒ 本趟不是有效基线趟。**
+**R 门判 R3（停顿）。**
+
+但 R3 的命中有一个必须讲清的性质：**w2 的全部帧数缺口都来自窗尾一次 1.78 秒冻结**，
+活跃段三窗一致（31.24 / 31.24 / 31.24 fps）。这不是「持续卡顿」，是「尾部冻住」。
+
+按设计件 §5.5：
+- **F1 分支**（`units0 < 800`）触发 ⇒ 记「U0800 档不成立」，回查地图 sha 与载体件集。回查已做（见 §五），三项全对，`732` 是真实值。
+- **F3 分支**（三窗有空窗/冻结，V3 不过）**未触发** —— V3 判 PASS（三窗 `verdict=ok`、`logic_frames>0`）。冻结未使窗失效，只是拖低了 w2 的 `fps_avg`。
+
+---
+
+## 二、逐窗重算
+
+| 窗 | cap ms | f34 % | E ms | p90 | p99 | max | tick_miss | max_stall s | 窗尾冻结 s | 逻辑帧 | fps_avg |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| w0 | 32.29 | 24.20 | 0.893 | 35.15 | 37.75 | 42.10 | 0 | 0.042 | 0.023 | 781 | 31.242 |
+| w1 | 32.19 | 22.15 | 0.968 | 35.24 | 39.19 | 60.22 | 1 | 0.060 | 0.009 | 781 | 31.241 |
+| w2 | 32.30 | 22.62 | 0.977 | 35.19 | 39.20 | 97.88 | 1 | **1.782** | **1.782** | **725** | **29.001** |
+
+`cap` = 帧沿差分中位帧时（同趟帽参考，不跨趟套）。
+
+---
+
+## 三、V 门
+
+| # | 判据 | 实测 | 判定 |
+|:--|:--|:--|:--|
+| V1 | `hit_count==0` ∧ `s4_gate==pass` ∧ `modules_total≠null` | `hit_count=0`、`s4_gate=pass`、`modules_total=28` | **PASS** |
+| V2 | `NAV.verdict==OK` ∧ burst 成立 | `verdict=OK`、`burst.ok=True`、`burst_owned=True` | **PASS** |
+| V3 | 每窗 `verdict==ok` ∧ `logic_frames>0` ∧ `n_edges≥50` ∧ `n_multi` 已记 | w0 `ok/781/782/0`；w1 `ok/781/782/0`；w2 `ok/725/726/0` | **PASS** |
+| V4 | `units0≥150` ∧ `units0≥800` | `units0=732`（脚本门 PASS；**设计门 FAIL**） | **FAIL** |
+| V5 | `meta_count==4` ∧ h0 `isHuman1EC==1` ∧ h1 `id30==1` ∧ h0/h1 `def1F5==0` ∧ h2/h3 `c5574>0` | `meta=4`、`h0human=1`、`h1id30=1`、`h0def=0`、`h1def=0`、`h2c=225`、`h3c=240` | **PASS** |
+| V6 | `p3_shortgame_glob==0` ∧ `p3_equal==true` ∧ evidence INI `ShortGame=no` | `glob=0`、`equal=True`、evidence `[Skirmish] ShortGame=no` | **PASS** |
+| V7 | `T0_T1` diff==0 ∧ `new_exception_count==0` ∧ CTRL1/2 post PASS | `T0_T1_diff=[]`、`new_exc=0`、CTRL1=PASS、CTRL2=PASS | **PASS** |
+| V8 | 三窗 `focus_ok==true` ∧ `hz_effective≥480` | `focus_all=True`、`hz=[500.1, 500.1, 500.1]` | **PASS** |
+| V9 | MAP sha == `0add791d…60bc` ∧ 起点 h2/h3 `c5574≥200` | `sha=0add791d11aea84d…` **MATCH**、`h2=225`、`h3=240` | **PASS** |
+| V10 | （仅 L2）evidence INI `GameSpeed==6` | 本趟 L1 | **N_A** |
+
+**V4 是唯一不过项，且是设计门（`units0≥800`）而非脚本门（`≥150`）。**
+
+---
+
+## 四、R 门
+
+| # | 判据 | 实测 | 命中 |
+|:--|:--|:--|:--|
+| R0 | 三窗 `fps_avg≥30` ∧ `f34<30%` ∧ `E≈0` | `fps_avg=[31.242, 31.241, **29.001**]`；`f34=[24.20, 22.15, 22.62]`；`E=[0.893, 0.968, 0.977]` | **否**（w2 的 29.001 < 30） |
+| R1 | `f34≥30%` 或 `p90>40ms`（≥2 窗） | `f34` 全 < 30%；`p90` 全 < 40ms | 否 |
+| R2 | `p99>60ms` 或 `max>100ms` 或 `tick_miss>0`（≥2 窗） | `p99=[37.75, 39.19, 39.20]` 全 < 60；`max=[42.10, 60.22, 97.88]` 全 < 100；`tick_miss=[0, 1, 1]` **2 窗 > 0** | **是** |
+| R3 | 任一窗 `max_stall>1s` 或 `logic_frames<0.8×` 中位 | w2 `max_stall=1.782s` > 1s；`logic_frames=[781, 781, 725]`，中位 781，`725 > 624.8`（未触发第二条） | **是**（第一条） |
+| R4 | `fps_avg<25` | 最小 29.001 | 否 |
+| R5 | 窗口内 `def1F5` 翻转 / 记分板帧 | 起点快照 h0/h1 `def1F5=0`；窗口内无翻转证据 | 否 |
+
+**⇒ R 门判 R3（停顿）。**
+
+### 4.1 D4 纪律：终局排除已做
+
+设计件 §5.4 D4 要求 `max_stall>1s` 时必须同帧看是否终局。实测：
+
+| 检查 | 值 |
+|:--|:--|
+| 冻结起点 | 帧 6137，`t_rel=23.218` |
+| 冻结结束 | 窗末 `t_rel=24.999` |
+| 冻结期间 `units` | `t=23.0 → 629`、`t=24.0 → 629`（**不变**） |
+| 冻结期间 `infantry` | 219 → 219（**不变**） |
+| 冻结期间 `techno` | 848 → 848（**不变**） |
+| 败北标志 | 无翻转 |
+
+⇒ **不是终局伪影**，是真实的帧推进停止。
+
+---
+
+## 五、疑点 A：`max_stall_s=1.782` 与 `frame_ms_max=97.88` 差 18 倍
+
+### 口径
+
+`stats.max_stall_s` 的定义在 `qc151_carrierfix_20261020/qc151_trip.carrierfix.py:3719-3760`：
+
+> `max_stall_s` = 最长「连续 df=0」墙钟跨度
+
+即「帧号连续不变」的持续时长，**不是帧间隔**。而 `frame_ms_max` 是帧沿差分里的最大单帧时长。
+
+两者在三窗的比值：
+
+| 窗 | max_stall | frame_ms_max | 比值 | 窗尾冻结 |
+|--:|--:|--:|--:|--:|
+| w0 | 0.042 s | 42.10 ms | 1.0× | 0.023 s |
+| w1 | 0.060 s | 60.22 ms | 1.0× | 0.009 s |
+| w2 | **1.782 s** | 97.88 ms | **18.2×** | **1.782 s** |
+
+**w0/w1 的 `max_stall` 恰好等于 `frame_ms_max`**（同一事件的两种度量）。w2 则差了 18 倍 ——
+因为 w2 的最大停顿是**窗尾冻结**，而最大单帧间隔（97.88 ms）发生在窗中。
+
+### 决定性证据：帧数缺口完全由冻结解释
+
+| 量 | 值 |
+|:--|--:|
+| w0 / w1 逻辑帧 | 781 / 781（完全一致） |
+| w2 逻辑帧 | 725 |
+| **缺口** | **56 帧** |
+| 56 帧 ÷ 31.24 fps | **1.793 s** |
+| 实测冻结 | **1.782 s** |
+| **相对误差** | **0.6%** |
+
+⇒ **w2 的全部帧数缺口都来自这一次 1.78 秒冻结。** 活跃段三窗帧率完全一致。
+
+**结论**：`max_stall_s=1.782` 是窗尾冻结，不是「单帧卡了 1.782 秒」。R3 命中成立，
+但性质是「尾部停帧」而非「持续卡顿」。
+
+---
+
+## 六、疑点 B：三窗不是同一负载
+
+### 逐屋 `c5574` 轨迹（QC213 探针）
+
+| 帧 | h0 | h1 | h2 | h3 | 合计 |
+|--:|--:|--:|--:|--:|--:|
+| 3900 | 173 | **91** | 225 | 240 | 729 |
+| 4200 | 171 | 92 | 224 | 240 | 727 |
+| 4500 | 171 | 92 | 224 | 240 | 727 |
+| 4800 | 171 | 91 | 224 | 240 | 726 |
+| 5100 | 171 | 86 | 222 | 240 | 719 |
+| 5400 | 170 | **76** | 221 | 240 | 707 |
+| 5700 | 170 | **39** | 221 | 240 | 670 |
+| 6000 | 170 | **3** | 219 | 240 | 632 |
+
+### 判读
+
+**h1（Computer 槽）在测量窗内持续衰减：91 → 92 → 92 → 91 → 86 → 76 → 39 → 3。**
+
+w2 窗覆盖帧 5412–6137。在此期间 h1 从约 76 掉到 3，**w2 后段 h1 已基本清零**。
+
+**⇒ 三窗不是同一负载：**
+
+| 窗 | 帧范围 | 起始负载 | 结束负载 |
+|:--|:--|--:|--:|
+| w0 | 3849–4630 | ~729 | ~726 |
+| w1 | 4631–5412 | ~726 | ~707 |
+| w2 | 5412–6137 | ~707 | ~632 |
+
+总负载从 729 降到 632（**降 13.3%**），其中 h1 从 91 降到 3（**降 96.7%**）。
+
+### 对判读的影响
+
+1. **`fps_avg` 的跨窗比较失真**：w2 的 29.001 与 w0/w1 的 31.24 之差，混入了负载下降与尾部冻结两个因素。
+2. **但 `f34` / `p90` / `p99` 跨窗高度一致**（24.20/22.15/22.62、35.15/35.24/35.19、37.75/39.19/39.20）——
+   说明**活跃段的帧时分布不受负载下降影响**。这是「贴帽」的典型特征。
+3. **R2 命中的 `tick_miss` 只在 w1/w2 各 1 次**，量级极小，不构成「深停顿」。
+
+---
+
+## 七、疑点 C：evidence INI 的 sha 与报告不符
+
+| 件 | 大小 | sha256 前 16 |
+|:--|--:|:--|
+| evidence `RA2MD.INI`（**实际载体里的**） | 1,783 B | **`f488cfcd949de3b8`** |
+| 源变体 `_src_L1_sf8_20261020/RA2MD.INI` | 1,785 B | **`0cc65385df89c3ec`** |
+| 报告 `E2_SUCCESS_TRIP_REPORT.md` 第六节声称 | — | `0cc65385`（**= 源变体值，非 evidence 值**） |
+
+### 结论
+
+**报告引用错了文件。** 它把「源变体 INI 的 sha」当成了「evidence INI 的 sha」。
+两者差 2 字节，是引擎运行期写回造成的（`ScenIndex=166 → 0`、行数少 1 行）。
+
+### 对 V6 / V9 的影响
+
+- **V6 不受影响**：V6 要 evidence INI 的 `[Skirmish] ShortGame=no`，实测**就是 `no`**。
+- **V9 不受影响**：V9 只看 `XMP29U2.MAP` 的 sha（实测 MATCH）与 h2/h3 的 `c5574`（225/240 ≥ 200）。
+- **但报告的「RA2MD.INI 与 t55k 同 sha」这一句是错的**，应记为 `f488cfcd`（引擎写回后）与
+  `0cc65385`（写回前源件）两个值。
+
+---
+
+## 八、`units0=732` 与设计门 800
+
+### 回查（按 §5.5 F1 分支）
+
+| 检查项 | 实测 | 判定 |
+|:--|:--|:--|
+| `XMP29U2.MAP` sha | `0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc` | ✅ 与 sf8 指定值一致 |
+| 起点 h2 / h3 `c5574` | 225 / 240 | ✅ 均 ≥ 200（V9 通过） |
+| `[Units]` / `[Infantry]` 行数 | 3360 / 2240 | ✅ 与 U0800 族一致 |
+| 载体件数 | 88 件 `files_verified=True` | ✅ |
+
+⇒ **地图身份、载体、INI 三项全对，`732` 是 sf8 在本机当前条件下的真实单位数，不是载错图。**
+
+### 与 T50 的 971 的差异
+
+T50 的 971 是**单点历史值，无原始沿表**（设计件 §350 U2 已挂账）。
+本轮按屋合计 731（h0=175 / h1=91 / h2=225 / h3=240），其中 h0/h1 明显低于设计预期。
+
+**登记为待查项，本轮不做推断。**
+
+---
+
+## 九、这趟能否作为 ① 的基线趟
+
+### 不能。三条理由
+
+1. **V4 设计门不过**（`units0=732 < 800`）。按 §5.5 F1，记「U0800 档不成立」。
+2. **三窗负载不一致**（729 → 632，h1 从 91 掉到 3）。R 门的跨窗比较建立在「同负载」前提上，此前提不成立。
+3. **R3 命中是窗尾冻结**，不是持续卡顿。用它论证「卡顿复现」会误导。
+
+### 但它是**有效的方法学验证**
+
+- V1/V2/V3/V5/V6/V7/V8/V9 全过 ⇒ **测量管道本身是健康的**（零注入、进图、三窗可测、四屋建制、ShortGame、零写零异常、焦点轮询、地图身份）。
+- 三窗 `f34`/`p90`/`p99` 高度一致 ⇒ **帧时分布可复现**。
+- w2 冻结的帧数缺口与冻结时长 0.6% 吻合 ⇒ **`max_stall_s` 口径正确**。
+
+**⇒ 管道可用了。缺的是「同负载、够 800 单位、不冻结」的趟。**
+
+---
+
+## 十、下一档该跑什么
+
+按 §5.5 F5 分支的逻辑（「破帽失败不是失败，是负载不破帽的结论；然后掷 L2」），
+以及本趟的实际问题（负载不足 + 负载漂移 + 窗尾冻结），建议顺序：
+
+| 优先级 | 动作 | 理由 |
+|:--|:--|:--|
+| **1** | **先查 h1 衰减根因** | h1 从 91 掉到 3 是异常。若不解决，任何趟都会负载漂移。可能是 sf8 的 Owner 令牌在 Computer 槽未完全生效，或开局即有战损。**这是 L1 重掷的前置。** |
+| 2 | **L1 重掷一次** | 按 §5.5 F2「回 L1 重掷一次」。要求：`units0≥800`、三窗负载漂移 < 5%、无 > 1s 冻结。 |
+| 3 | 若 L1 重掷仍 `units0<800` | 按 F1 记「U0800 档不成立」，改掷 **L3**（sf10c，≈1452 单位）而不是 L2。因为 L2 是「抬上限」（GameSpeed 6），解决的是「fps 贴帽看不见工作量」，**不解决负载不足**。 |
+| 4 | L2 只在「L1 已够 800 且贴帽」时才掷 | L2 的 U3（GameSpeed 是否作用于会话）仍未定谳。 |
+
+**⇒ 直接答：不该先跑 L2。先查 h1 衰减，再重掷 L1；L1 仍不足则跳 L3。**
+
+---
+
+## 十一、诚实边界
+
+1. 本件全部为**离线重算**，未重跑任何趟。
+2. 「h1 衰减根因」**未查**，只登记现象。
+3. `units0=732` 与 T50 的 971 的差异**未定谳**。
+4. R3 的「窗尾冻结」是否属测量伪影（例如 `measure` 阶段结束前的收尾动作）**未验证** ——
+   若属伪影，R3 应撤回。这需要下一趟在冻结时刻加探针确认。
+5. 本件未做异族核验。派出的千问判读员遇 `network_error` 退避 33 分钟零落盘，已由主会话自行完成。
+
+---
+
+## 十二、可复跑
+
+```bash
+cd D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\goal1_e2_verdict_20261020
+PYTHONDONTWRITEBYTECODE=1 python e2_gate.py
+PYTHONDONTWRITEBYTECODE=1 python freeze_analysis.py
+```
+
+===== END E2_GATE_VERDICT.md =====
+
+
+===== BEGIN CRASH_ADDR_ANALYSIS.md =====
+# CRASH_ADDR_ANALYSIS — instruction-level adjudication of `0x0084F2BA` (and `0x0054A56E`)
+
+Target: `D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe`
+size 4,825,360 B, sha256[:16] `73201cc021497c95` (full `73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476`, verified with `sha256sum`).
+Cross-check copy `…\qc161_u0400_trip\_src_L1_sf8_20261020\gamemd.exe` is **byte-identical** (same full sha256).
+
+Method / reproducibility
+- All numbers below come from `addr_probe.py` in this directory, run with
+  `PYTHONDONTWRITEBYTECODE=1 python addr_probe.py all` (exit 0, no errors; 1.39M-instruction capstone sweep of `.text`).
+- READ-ONLY throughout: the exe is opened `rb` only; it is never written and never executed.
+
+[CANARY] CNY08 = 625-I08Z
+- capstone 5.0.7, `CS_ARCH_X86 / CS_MODE_32`, `skipdata=True`. **`skipdata` is mandatory** here: without it capstone stops at the first undecodable byte and only reaches `0x0046F5A0` (≈11% of `.text`), which silently truncates every operand search. Measured both ways.
+- Section-relative VA↔file mapping uses the *measured per-section delta* from the section table, not a global `−0x400000` guess. `.text`/`.rdata`/`.data` share delta `0x00400000`; `.rsrc`/`.detour` use `0x006FC000`.
+
+---
+
+## 1. PE layout + section table (measured, `addr_probe.py` stage `pe`)
+
+- `e_lfanew`=0x00000050, `machine`=0x014C (i386), 5 sections, Characteristics 0x032F.
+- PE32 (`Magic`=0x10B), `ImageBase`=**0x00400000**, `SectionAlignment`=0x1000, `FileAlignment`=0x1000.
+- `SizeOfImage`=**0x00796000** ⇒ mapped span **[0x00400000, 0x00B96000)**. `AddressOfEP`=0x007CD80F. `Subsystem`=2 (GUI).
+- `DllCharacteristics`=**0x0020** (IMAGE_LIBRARY). **`IMAGE_DLLCHARACTERISTICS_NX_COMPAT` (0x0100) is CLEAR** ⇒ this image does **not** opt into DEP. Under the default *OptIn* policy the whole image (incl. `.data`) is mapped **executable**; only under a machine-wide *AlwaysOn* DEP would `.data` be NX. This matters for §2.
+
+| # | Name | VA range (measured) | VirtSize | RawPtr | RawSize | Char | Perm | delta (VA−fileoff) |
+|---|------|--------------------|----------|--------|---------|------|------|--------------------|
+|0|`.text` |0x00401000–0x007E1000|0x003DF38D|0x00001000|0x003E0000|0x60000020|**-R-X** |0x00400000|
+|1|`.rdata`|0x007E1000–0x00812000|0x00030074|0x003E1000|0x00031000|0x40000040|**-R–-** |0x00400000|
+|2|`.data` |**0x00812000–0x00B79BE4**|0x00367BE4|0x00412000|0x0006C000|**0xC0000040**|**-RW-** |0x00400000|
+|3|`.rsrc` |0x00B7A000–0x00B93000|0x00018128|0x0047E000|0x00019000|0x40000040|**-R–-** |0x006FC000|
+|4|`.detour`|0x00B93000–0x00B96000|0x00002718|0x00497000|0x00003000|0xC0000040|**-RW-** |0x006FC000|
+
+`.detour` is a non-CRT section name (linker/build hook region); its content at file 0x497000 is **not** valid code (decodes as `add`-form garbage), consistent with a data/hook table, not injected shellcode. No `.rdata`-style constant pool near the crash.
+
+---
+
+## 2. Where `0x0084F2BA` lands, and why a *writable* `.data` reports "不能为 written"
+
+Measured (`addr_probe.py`):
+- **Section: `.data`** (0x00812000–0x00B79BE4). Intra-section offset **0x3D2BA**. delta 0x00400000 ⇒ **file offset 0x0044F2BA**.
+- **Page: 0x0084F000** (`0x0084F2BA & ~0xFFF`), page offset **0x02BA**.
+- The page is **inside the file-backed extent** (`.data` raw VA ends at 0x0087E000), so it is a normal initialized-data page, not zero-fill.
+- Characteristics of that page's section = **0xC0000040 = IMAGE_SCN_MEM_WRITE(0x80000000) SET** + MEM_READ SET + **MEM_EXECUTE CLEAR** ⇒ mapped **PAGE_READWRITE** (writable, *not* executable).
+
+**There is therefore NO static reason a genuine data write to 0x0084F2BA could fail** — the page is writable. So the dialog cannot be describing a compiler-emitted `mov [0x0084F2BA], reg`. The resolution is that **EIP itself was at 0x0084F2BA**:
+
+- `0x0084F2BA % 4 == 2` (mod 8 = 2). A 4-byte float element in this table is always at `VA % 4 == 0`. So 0x0084F2BA is **not any aligned element boundary** — it sits **mid-element**: it is byte[2] of the float at **0x0084F2B8** (value 0.107935 ≈ the "0.108" the dialog/observation cited) and byte[0] of the float at 0x0084F2BC.
+- Decoding the actual on-disk bytes at that exact offset with capstone (`addr_probe.py`):
+
+```
+0084F2BA: dd 3d c3 9c de 3d   fnstsw word ptr [0x3dde9cc3]   ; FF store form DD /6
+0084F2C0: 7d 2c               jge 0x84f2ee
+0084F2C2: e0 3d               loopne 0x84f301
+0084F2C4: 2e bc e1 3d d6 4b   mov esp, 0x4bd63de1
+```
+
+i.e. if control flow ever lands with EIP=0x0084F2BA on the pristine LUT bytes, the CPU decodes them as an **x87 `fnstsw` store to `0x3DDE9CC3`**, which lies **below ImageBase (0x00400000) → outside the mapped image → unmapped → write access violation ("该内存不能为 written")**. That reproduces the *access-violation-on-write* outcome without needing the `.data` page to be non-writable — the faulting write-target is `0x3DDE9CC3`, an unmapped address, not the `.data` page.
+
+**Two honest readings of the "EIP == referenced == 0x0084F2BA" wording** (the dialog gives both numbers as 0x0084F2BA, whereas the pristine-byte decode yields the *store target* 0x3DDE9CC3 — they disagree, and I will not paper over it):
+1. **Instruction-fetch / DEP violation**: `.data` is mapped non-executable (MEM_EXECUTE CLEAR). Under DEP *AlwaysOn* (or a per-process opt), redirecting EIP into `.data` faults on the *fetch*. The legacy Win32 "错误应用程序" box prints the faulting page address as both the instruction and the data field and phrases the access type as "written", so "0x84f2ba … 0x84f2ba … written" is fully consistent with an **execute-attempt on a RW(no-X) data page**. This is the classic `EIP == ExceptionInformation[1]` control-flow-hijack-into-data signature.
+2. **Corrupted runtime bytes**: the float LUT is *recomputed at load* (§4), and the crash happened in a process whose init had already failed (csf path>131 chars). If the slot at 0x84F2B8/BC held different bytes at crash time, the decoded instruction — and thus its write target — differs from disk. In that case the store could genuinely target 0x84F2BA itself.
+
+Either way the **command-level certainty** is: 0x0084F2BA is a byte **inside a non-code `.data` float table**, the page is **PAGE_READWRITE**, and the fault is **not** a legitimate compiled data-store to 0x0084F2BA — it is **control flow redirected into `.data`** (a bad jmp/call/ret target, a corrupted function pointer, or an off-by-2 pointer that landed mid-LUT). The "可写的 .data 却报不能为 written" paradox is explained by *execute permission* (reading/fetching code out of a non-executable page) and/or an out-of-image store operand, **not** by the target page being read-only.
+
+> Cross-check of the "self-referential write" literal reading: I searched `.text` for any instruction whose mem-operand or imm equals exactly 0x0084F2BA (a `mov [0x84f2ba],reg` self-store). Result: **0** (see §3). So the "wrote its own address" reading is **not supported** by the static image; §2.1 (execute fault) or §2.2 (runtime-diverged bytes) is what the image actually supports.
+
+---
+
+## 3. The 32 bytes at `0x0084F2BA` and the table's real semantics
+
+Measured dump (`addr_probe.py` stage `bytes`, file offset 0x0044F2BA):
+
+```
+0x0084F2BA: DD 3D C3 9C  DE 3D 7D 2C  E0 3D 2E BC  E1 3D D6 4B
+            E3 3D 75 DB  E4 3D 0C 6B  E6 3D 99 FA  E7 3D 1E 8A
+```
+
+Read **4-byte-aligned** from the table grid the bytes spell an arithmetic float32 ramp (verified contiguous from 0x84F084 to 0x859088):
+
+```
+0x0084F2B4 = 0.1071724      0x0084F2B8 = 0.1079350     <- element 141
+0x0084F2BC = 0.1086974      0x0084F2C0 = 0.1094599     <- element 142,143
+```
+
+The crash address 0x0084F2BA = **0x84F2B8 + 2 bytes** — a misaligned *read* of the half-spans of elements 141/142 (`uint32 @0x84F2BA = 0x9CC33DDD`), which is exactly why a float-decode *at* 0x84F2BA is meaningless (-0.0 / garbage) while the **aligned element under it is 0.1079 ≈ the observed 0.108, step 0.000767 ≈ the observed 0.0007** (facts 3 confirmed).
+
+**Table identity / semantics.** The LUT base is **0x0084F084**, count `(0x859088−0x84F084)/4 = 10241` float slots. Consumers do `fld dword [eax*4 + 0x84F084]` with `eax` masked by `and eax, 0x8000_1fff` (13 bits ⇒ ±8192) and a ±0x1fff/±0x27ff fold (see `0x004CACEA`, `0x004CAD41`, `0x004CB189/193/1E0/1EA`). The initializer (`0x004CB0E0`, §4) multiplies the index by `2π/8192 = 0.000766990` (qword `0x007E8988`) and the round helper by `8192/π = 2607.594482` (dword `0x008223B0`).
+⇒ This is the **Westwood/RA2 8192-unit-circle phase/angle lookup table** — a per-slot ramp with step exactly `2π/8192 = 0.000766990` (qword `0x007E8988`), the round helper scaled by `8192/π = 2607.594482` (dword `0x008223B0`), and the consumer `fld [eax*4 + 0x84F084]` masked to a 13-bit angle (`and eax,0x8000_1fff`, ±8192 = one 8192-unit circle). **Solidly: in the head region (which contains the crash slot) the table is the angle-indexed ramp `slot = idx·(2π/8192)`**, so slot 141 = 0.107935 rad. It is a **geometry/rotation phase LUT**, *not* lighting falloff and *not* a colour-mix weight table. (The two `0x0084F088`/`0x0084F084` consumers read `qword 0x007E8970 = 651.8986 = 2048/π` for the sign/round correction; the far slots past idx≈8192 saturate at 1.0, so the **global** table is not one straight 0→2π line — only the head region around the crash is.)
+
+---
+
+## 4. Finding the *writers* of `0x0084F2BA` (three leads, run over full `.text`)
+
+All three leads executed in `addr_probe.py` stage `scan` over **1,392,592 decoded instructions reaching 0x007E038D (FULL `.text`)**.
+
+**Lead (a) — immediate 0x0084F2BA / neighborhood as imm32 or absolute disp.**
+- Exact value **0x0084F2BA**: appears **0 times** as an imm32/disp32/branch-target in `.text` (capstone operand walk), and **0 times** anywhere as a raw little-endian dword in the *entire* 4.8 MB file, and 0 times as a stored pointer. ⇒ **no instruction literally encodes 0x0084F2BA.**
+- Neighbourhood `[0x0084F200,0x0084F400]`: **0 absolute-operand hits**, **0 imm32 hits**. Every hit the band sweep reported was in the *wider* `[0x84E000,0x851000]` page band and all of those are either (i) byte flags at **0x0084E860–0x0084E869** (`mov byte [0x84e863],al`, `mov dword [0x84e865],ebx`, … around `0x007C5F46`), unrelated scalar globals, or (ii) the table-base pointers **0x0084F084/0x0084F088** (§2). **None** is in `[0x84F200,0x84F400]`.
+
+**Lead (b) — `mov [base + idx*scale + disp]` with unbounded index overrunning the table.**
+- Indexed stores to a `.data` disp: 1,755 total, 1,143 writes — but **stores into the table itself (`disp` = 0x84F084/088 region): 0**. The only accesses to `[reg*4+0x84F084]` are **`fld` reads** (7 sites). The table is written *only* by its initializer via `fstp dword [esi-4]` (§4-init), where `esi ∈ {0x84F084, +4, +8 … 0x859084}` ⇒ **always 4-aligned**, never 0x84F2BA. So even an out-of-range `fld [eax*4+0x84F084]` (read) is misaligned-proof by construction and produces no store.
+- No `[base+idx*scale+disp]` store whose computed EA is 0x0084F2BA or lands byte-mid-LUT exists statically; every table store is grid-aligned.
+
+**Lead (c) — float-constant-table address handed to memcpy/fill/output-buffer.**
+- The only routine that *fills* 0x0084F084 is the self-contained generator `0x004CB0E0` (`mov esi,0x84f084 … fstp [esi-4]; add esi,4; cmp esi,0x859088; jne`). It is a closed arithmetic loop, **not** a `memcpy(dst=LUT)` sink, and its stores stay 4-aligned. No `memcpy`/`rep stos`/fill takes the LUT (or 0x84F2BA) as a destination.
+
+**Conclusion on writers:** `addr_probe.py` finds **no static write (high/medium confidence) that produces EA = 0x0084F2BA**. The only *plausible* way EIP lands on 0x0084F2BA is **control-flow corruption** — a computed branch/return whose target is a misaligned pointer derived from the LUT region (a 2-byte-off read/store, or a freed/garbage object pointer pointing into `.data`). The lowest-confidence candidate (below) is therefore the *consumer* pattern that reads the LUT with a 13-bit index: if an index/pointer is taken from a corrupted structure, `fld [eax*4+0x84F084]` stays aligned, but a **`jmp`/`call`/`ret` whose target register was loaded from a poisoned structure** can land anywhere in `.data`, including 0x84F2BA.
+
+---
+
+## 5. The `0x0054A56E` `mov dword [esi+4],0` crash (esi provenance)
+
+Disassembly of the enclosing routine (capstone, `addr_probe.py` stage `crash56e`):
+
+```
+0x0054A4FA  mov   esi, ecx                 ; esi = object `this`  (provenance root)
+0x0054A506  mov   byte [esi+0xc], 0
+0x0054A515  lea   eax,[ebp*4]; push eax; call 0x7c8e17   ; malloc(ebp*4)  -> edi
+0x0054A51E  mov   edi, eax                  ; edi = new block
+0x0054A535  mov   eax,[esi+4]               ; old data pointer
+0x0054A54B  mov   edx,[esi+4]               ; copy loop  old -> new
+0x0054A551  mov   edx,[edx+eax*4-4]
+0x0054A555  mov   [edi+eax*4-4], edx        ; store into heap NEW block (fine)
+0x0054A562  mov   eax,[esi+4]               ; arg = OLD data pointer
+0x0054A565  push  eax
+0x0054A566  call  0x7c8b3d                   ; *** free(old) ***   <-- the preceding free
+0x0054A56B  add   esp,4
+0x0054A56E  mov   dword [esi+4],0   <== EIP  ; write to THIS+4  faults
+```
+
+**`esi` provenance.** `esi ← ecx ← the method's `this` pointer (caller-supplied object address). The crash at `mov [esi+4],0` means **`this` (=esi) is itself invalid** — a `.text` address per fact 5 — so the faulting write targets `0x0054A572` (a non-writable `.text` byte). The **immediately preceding free** is `0x0054A566 call 0x7c8b3d` with **argument `[esi+4]`** = the object's heap data buffer, just freed here. (Thunk chain: `free 0x7c8b3d → 0x7c93e8 → 0x7cf7bd`.)
+
+**Corruption path.** This is the `DynamicArray::Resize/Copy` shape (it allocs `ebp*4`, copies `esi+4` buffer into `edi`, then frees the old `esi+4` and resets `esi+4=0; esi+8=ebp; esi+0xd=ownership`). For `mov [esi+4],0` to fault with `esi` in `.text`, the **object header pointed to by `this` was already damaged** — the `free([esi+4])` at 0x54A566 was called on a heap pointer that had already poisoned the SBH freelist, so either (i) `this` was a stale/freed object whose stored value got recycled into a `.text` code address, or (ii) `free()` walked a **poisoned SBH freelist** and the same 0xFE00FFFF-style value propagated into the object's own back-pointer. The crash site therefore does **not** prove `esi` was computed from the LUT; it proves `esi` is a **dangling/corrupted `this`**, which is *consistent with* a prior heap-metadata corruption. This is the same class as RC-1 (§6), but I did **not** observe a 0xFE00FFFF value at this exact instruction (no register dump available), so the link is by **allocator + mechanism**, not by a confirmed poison constant at 0x54A56E.
+
+---
+
+## 6. RC-1 family judgement (`0xFE00FFFF`)
+
+- **0xFE00FFFF is not a file constant**: searched the whole 4.8 MB image for the LE dword `FFFF00FE` ⇒ **0 occurrences**. It is a **runtime** heap-fill / poison value, not stored on disk. (`0xFEFEFEFE` appears 44× as benign bytes; the CRT debug fills `0xCDCD…/0xDDDD…/0xBABA…/0xF1F1…` appear **0×** ⇒ this is a **retail, non-debug-CRT** build.)
+- **Shared allocator = SBH.** RC-1's guard `__sbh_alloc_block` is at **0x007CFC9B** (`mov edx,[ecx+edi*8+4]; mov ecx,[edx]; sub ecx,[ebp-0x10]; sar esi,4; cmp esi,0x3f` — the SBH bucket-size/next-walk guard). The `free` used by *both* crash-2 and RC-1 resolves through `0x7c8b3d → 0x7c93e8 → 0x7cf7bd`, and `0x7cf7bd` reads SBH globals **`[0x00B78B94]`, `[0x00B78B98]`** — the **same global cluster** that guards RC-1 (all 7 `.text` references to `0x00B78B94` are in `0x7cf7bd…0x7d0398`, i.e. the single SBH allocator). malloc side: `0x7c8e17 → 0x7c9442 → 0x7c946e`, same cluster.
+- **Same family? YES, mechanism-level.** 0x0054A56E and RC-1 share (a) the **identical SBH allocator** (0x7c8b3d/0x7c93e8/0x7cf7bd ↔ guard 0x7cfc9b ↔ globals 0x00B78B94/98), and (b) the **same corruption shape**: a freed/recycled block whose metadata now contains an **unmapped or wrong-segment pointer** that is dereferenced. RC-1 derefs the freelist **next** (=0xFE00FFFF poison); crash-2 derefs a corrupted **`this`** that points into `.text`.
+- **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA crash is a different fault surface** (control-flow/data-execution in `.data`), whereas **0x0054A56E is on the allocator path** like RC-1. ⇒ **Same allocator (high confidence); same defect *family* "poisoned heap metadata / stale pointer deref" (medium-high); but 0x0084F2BA is NOT established to be written by the RC-1 poison value or by `__sbh` at all.** `same_family_as_rc1` is set `true` for the **heap-corruption mechanism shared with the 0x0054A56E crash**, while noting 0x0084F2BA itself is a `.data`-execution surface, not a confirmed SBH-poison deref.
+
+---
+
+## 7. Honest boundary — what holds only in an already-failed process
+
+Confirmed by the run inputs (csf path >131 chars ⇒ `ra2.csf` init fails, dialog at t≈0.28s, crash at t≈0.72s):
+- **Instruction-level, image-grounded (hold regardless of run state):**
+  - Section layout, page 0x0084F000 = `.data` = **PAGE_READWRITE** (MEM_WRITE set / MEM_EXECUTE clear) — §1/§2.
+  - 0x0084F2BA is **2 mod 4**, i.e. mid-LUT; the aligned element under it is the **8192-unit→radians phase table** (`fld [eax*4+0x84F084]`, 13-bit index, step `2π/8192`, `8192/π`) — §3.
+  - **No static `.text` instruction** references/writes 0x0084F2BA (0 imm32 / 0 disp32 / 0 raw dword in file / 0 branch target) — §4. Every store into the table is 4-aligned ⇒ cannot yield EA=0x…BA — §4.
+  - 0x0054A56E `mov [esi+4],0` is preceded at **0x0054A566 by `free([esi+4])`**; `esi=this`; SBH chain 0x7c8b3d→0x7c93e8→0x7cf7bd ↔ RC-1 guard 0x7cfc9b (same 0x00B78B94 cluster) — §5/§6.
+- **Run-state-dependent (observed only in the failed-init process; may NOT reproduce in a healthy path):**
+  - *That* EIP actually executed at 0x0084F2BA — this requires the runtime bytes / a corrupted pointer or branch target that only appeared after csf-init failed. The disk LUT is intact, so the "write/fetch fault" here is a **secondary** symptom of init failure + heap damage, **not** proven to be the primary crash.
+  - The precise corruption of `esi` at 0x54A56E and whether its poison equals RC-1's 0xFE00FFFF: I can prove *mechanism + allocator* statically, but **cannot** prove the concrete poisoned value or the corrupting writer without a runtime memory dump / trace. INSUFFICIENT for a per-instruction write attribution of 0x0084F2BA.
+
+**Bottom line:** 0x0084F2BA is a **non-executable `.data` float-table byte (phase-LUT slot 141/142 boundary, value ≈0.108)**; the "writable `.data` can't be written" is resolved by **execute-on-non-executable-page / control-flow-hijack into `.data`**, NOT by a read-only page. I could not identify any legitimate instruction that writes 0x0084F2BA; the two crashes belong to **one heap-corruption family via the shared SBH allocator**, but the 0x0084F2BA surface specifically is a **`.data`-execution** symptom, plausibly secondary to the csf-init failure, and not directly attributable to the RC-1 `0xFE00FFFF` freelist deref.
+
+===== END CRASH_ADDR_ANALYSIS.md =====
+
+
+===== BEGIN VERIFY_GLM.md =====
+# VERIFY_GLM — 独立二进制复核记录
+
+- 被复核件：`CRASH_ADDR_ANALYSIS.md`（同目录，2026-10-20）
+- 二进制：`D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe`（**只读**，全程 `rb` 打开，从未写入、从未执行）
+- 复核员工具：自写探针 `verify_glm_probe.py`（本目录），Python 3.12.10 + capstone 5.0.7（`CS_ARCH_X86/CS_MODE_32`，`detail=True`，`skipdata=True`）
+- 实际执行命令（均在本 ask 内运行）：
+  - `PYTHONDONTWRITEBYTECODE=1 python verify_glm_probe.py pe`
+
+[CANARY] CNY09 = 686-J09Z
+  - `PYTHONDONTWRITEBYTECODE=1 python verify_glm_probe.py bytes`
+  - `PYTHONDONTWRITEBYTECODE=1 python verify_glm_probe.py disasm`
+  - `PYTHONDONTWRITEBYTECODE=1 python verify_glm_probe.py scan`
+  - `PYTHONDONTWRITEBYTECODE=1 python verify_glm_probe.py hash`
+- 方法独立性声明：未复用被复核报告的任何数字；PE 段表用裸 struct 自解析（非 pefile），反汇编/扫描用 capstone 重跑，字节与浮点用 struct 重读。被复核报告引用的 `addr_probe.py` 我未重跑——本记录所有数字来自我自己的探针输出。
+
+---
+
+## 1. 我自己重算的关键数字
+
+### 1.1 PE 头与段表（stage pe，裸 struct 解析）
+
+| 字段 | 实测 | 与报告一致? |
+|---|---|---|
+| file size | 4,825,360 B | ✓ |
+| e_lfanew / machine / nsec / COFF char | 0x00000050 / 0x014C / 5 / 0x0000032F | ✓ |
+| Magic / ImageBase / SecAlign / FileAlign | 0x010B / 0x00400000 / 0x1000 / 0x1000 | ✓ |
+| SizeOfImage / EP / Subsystem / DllCharacteristics | 0x00796000 / 0x007CD80F / 2 / **0x00000020**（NX_COMPAT 0x0100 未置位） | ✓ |
+
+| # | 段 | VA 范围（实测） | VirtSize | RawPtr | RawSize | Char | delta | perm |
+|---|---|---|---|---|---|---|---|---|
+| 0 | .text | 0x00401000–0x007E038D | 0x003DF38D | 0x00001000 | 0x003E0000 | 0x60000020 | 0x00400000 | R-X |
+| 1 | .rdata | 0x007E1000–0x00811074 | 0x00030074 | 0x003E1000 | 0x00031000 | 0x40000040 | 0x00400000 | R-- |
+| 2 | .data | **0x00812000–0x00B79BE4** | 0x00367BE4 | 0x00412000 | 0x0006C000 | **0xC0000040** | 0x00400000 | **RW-** |
+| 3 | .rsrc | 0x00B7A000–0x00B92128 | 0x00018128 | 0x0047E000 | 0x00019000 | 0x40000040 | 0x006FC000 | R-- |
+| 4 | .detour | 0x00B93000–0x00B95718 | 0x00002718 | 0x00497000 | 0x00003000 | 0xC0000040 | 0x006FC000 | RW- |
+
+0x0084F2BA 归属实算：段 .data；段内偏移 0x0003D2BA；文件偏移 = 0x0084F2BA − 0x00400000 = **0x0044F2BA**（delta 按本段实算）；mod 4 = **2**、mod 8 = 2；页 = **0x0084F000**（页内 0x000002BA）；0xC0000040 = CNT_INITIALIZED_DATA|MEM_READ|**MEM_WRITE**，MEM_EXEC(0x20000000) 清除；文件后备范围 [0x00812000, **0x0087E000**)，页在内 ✓。
+
+DEP 注意点（与报告 §1 相同的nuance）：段特征层 .data = 可写无执行位；但 DllCharacteristics 0x20 → NX_COMPAT 清除，默认 OptIn 策略下整镜像（含 .data）映射为**可执行**，仅 AlwaysOn 机器策略下 .data 才是 NX。被复核报告正文已如实标注该依赖；任务摘要里扁平的"PAGE_READWRITE(可写不可执行)"只在段特征/AlwaysOn 意义下成立——不算虚报，但读者须知条件。
+
+### 1.2 哈希（stage hash）
+
+- 主件 sha256 = `73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476`，4,825,360 B
+- 交叉副本 `...\lead\qc161_u0400_trip\_src_L1_sf8_20261020\gamemd.exe` sha256 **全等**，4,825,360 B ✓
+
+### 1.3 字节与表语义（stage bytes）
+
+0x0044F2BA 起 32 字节实测：`DD 3D C3 9C DE 3D 7D 2C E0 3D 2E BC E1 3D D6 4B E3 3D 75 DB E4 3D 0C 6B E6 3D 99 FA E7 3D 1E 8A` —— 与报告逐字节相等 ✓。uint32@0x0084F2BA = **0x9CC33DDD**，按 float32 读 = −1.29e−21 ≈ −0.0 ✓。
+
+对齐槽实测（float32，LE）：
+
+| VA | 槽 | 值 | uint32 |
+|---|---|---|---|
+| 0x0084F2B0 | 139 | 0.1064098 | 0x3DD9ED64 |
+| 0x0084F2B4 | 140 | 0.1071724 | 0x3DDB7D37 |
+| **0x0084F2B8** | **141** | **0.1079350** | 0x3DDD0D01 |
+| 0x0084F2BC | 142 | 0.1086974 | **0x3DDE9CC3** |
+| 0x0084F2C0 | 143 | 0.1094599 | 0x3DE02C7D |
+
+（彩蛋：fnstsw 的伪 disp32 **0x3DDE9CC3 恰为表槽 142 的 float32 位型**——伪位移就是表字节本身，佐证解码忠实。报告未提此点，为正向佐证。）
+
+表常数实测：qword 0x007E8988 = **0.0007669904** = 2π/8192 ✓；dword 0x008223B0 = **2607.5944824219** = float32(8192/π) ✓；qword 0x007E8970 = **651.8986469044** = 2048/π（精确）✓。
+
+**表的真实函数（本复核的关键修正）**：全域 10241 槽与 **sin(k·2π/8192)** 逐点吻合，与线性 ramp 不符：
+
+| k | 表值 t[k] | sin(k·2π/8192) | 线性 k·c |
+|---|---|---|---|
+| 1 | 0.0007670 | 0.0007670 | 0.0007670 |
+| 1024 | **0.7071068** | 0.7071068 | 0.7853982 |
+| 2048 | **1.0000000** | 1.0000000 | 1.5707963 |
+| 4096 | **0.0000000** | 0.0000000 | 3.1415927 |
+| 6144 | **−1.0000000** | −1.0000000 | 4.7123890 |
+| 8192 | −0.0000000 | −0.0000000 | 6.2831853 |
+| 8193 | +0.0007670 | +0.0007670 | 6.2839523 |
+| 10240 | **1.0000000** | 1.0000000（=sin 2.5π） | 7.8539816 |
+
+相邻槽差：t141−t140 = **0.0007625371**、t142−t141 = 0.0007624775，均 ≠ 2π/8192 = 0.0007669904（是 c·cos(相位)，一阶近似 c）。报告 dump 出的 0.1071724/0.1079350 本身就只与 sin 吻合、与 ramp 不符（ramp 在槽 141 应为 0.1081456）。
+
+### 1.4 生成循环真身（stage disasm，0x004CB0E0）
+
+```
+0x004CB0E0  push ecx / push esi
+0x004CB0E2  mov dword ptr [esp + 4], 0        ; k = 0
+0x004CB0EA  mov esi, 0x84f084                 ; 候选写点2 ✓ (be84f08400)
+0x004CB0EF  fild dword ptr [esp + 4]          ; 候选写点4 ✓
+0x004CB0F3  fmul qword ptr [0x7e8988]         ; ×2π/8192
+0x004CB0F9  fmul dword ptr [0x8223b0]         ; ×8192/π  → st0 ≈ 2k（偏差<0.0008）
+0x004CB0FF  call 0x7c5f00                     ; FPU 控制字 fistp 取整助手（本体无乘法）
+0x004CB104-0x004CB12E  cdq/sub/sar eax,1 → k；and eax,0x80001fff；±0x2000 折叠；cl 奇偶修正（2k 恒偶，实际不触发）
+0x004CB12F  fld dword ptr [eax*4 + 0x84f084]  ; 候选写点3 ✓ —— 读槽 (k mod 8192)
+0x004CB13A  add esi, 4
+0x004CB13D  fstp dword ptr [esi - 4]          ; 候选写点1 ✓ —— 写槽 k
+0x004CB141  cmp esi, 0x859088
+0x004CB147  mov dword ptr [esp + 4], edx
+0x004CB14B  jne 0x4cb0ef                      ; 循环体范围 0x004CB0EF–0x004CB14B ✓
+```
+
+即：**索引 = k mod 8192**。k<8192 时读槽 k 写槽 k（恒等重写，造不出正弦值）；k≥8192 时把槽 k−8192 复制到槽 k（尾部 8192..10240 = 0..2048 的周期复制，服务消费端 +0x2000/+0x2800 负角折叠，非"饱和于 1.0"）。写覆盖 [0x0084F084, 0x00859084] 步 4，恒 0 mod 4。消费端 fld 出口实测 7 处：0x004CACEA、0x004CAD41、0x004CB12F、0x004CB193、0x004CB1EA（基址 +0x84F084）与 0x004CB189、0x004CB1E0（+0x84F088）；`and eax, 0x80001fff` 共 5 处（0x004CACC9/0x004CAD19/0x004CB10E/0x004CB169/0x004CB1B9）。取整助手 0x007C5F00 反汇编 = `fnstcw/cmp [0x822D80]/fldcw/fistp qword`，无乘法；×(8192/π) 在调用方 0x004CB0F9。
+
+### 1.5 0x0054A56E 例程（stage disasm）
+
+0x0054A4FA `mov esi, ecx`（provenance 根）→ 0x0054A506 `mov byte [esi+0xc],0` → 0x0054A50E `lea eax,[ebp*4]` → 0x0054A515 `push eax` → 0x0054A516 `call 0x7c8e17`（malloc）→ 0x0054A51E `mov edi,eax` → 0x0054A535/0x0054A54B `mov eax/edx,[esi+4]` → 0x0054A551 `mov edx,[edx+eax*4-4]` → 0x0054A555 `mov [edi+eax*4-4],edx` → 0x0054A562 `mov eax,[esi+4]` → 0x0054A565 `push eax` → **0x0054A566 `call 0x7c8b3d`（free 旧块）** → 0x0054A56B `add esp,4` → **0x0054A56E `mov dword ptr [esi+4], 0`**（崩点，写目标 = esi+4）。与报告逐条一致（报告把 lea/push/call 压成一行标注 0x0054A515，实际 lea 在 0x0054A50E、call 在 0x0054A516，内容无误）。
+
+链路：0x007C8B3D `push [esp+4]; call 0x7c93e8` → 0x007C93E8 … 0x007C93F9 `call 0x7cf7bd` → 0x007CF7BD 首两条即 `mov eax,[0xb78b94]` / `mov eax,[0xb78b98]` ✓。malloc 侧 0x007C8E17→0x007C9442→0x007C946E ✓。RC-1 守卫 0x007CFC9B 实测 `mov edx,[ecx+edi*8+4]; mov ecx,[edx]; sub ecx,[ebp-0x10]; mov esi,ecx; sar esi,4; dec esi; cmp esi,0x3f` ✓ 与报告引文一致。`.detour` 头部（VA 0x00B93000）解码为 add 形乱码 ✓。
+
+---
+
+## 2. 独立反向搜索（stage scan，全 .text 1,392,592 条指令、终点 0x007E038D；与报告扫描数完全同数）
+
+| 搜索项 | 实测 | 报告对应断言 |
+|---|---|---|
+| imm32/disp32 == 0x0084F2BA（.text） | **0** | ✓ 0 次 |
+| 窄带 [0x0084F200,0x0084F400] 内任何 imm/disp（含读与写） | **0** | ✓ imm32=0、绝对 disp 写=0 |
+| jmp/call 目标落入窄带 | **0** | ✓ |
+| 全文件 raw LE dword `BA F2 84 00` | **0** | ✓ |
+| **【加扫】全文件任何指入窄带的 raw LE 指针（513 个值逐一匹配）** | **0** | 报告未做此项，结果支持其结论 |
+| **【加扫】.detour 4,551 条解码中窄带引用** | **0** | 同上 |
+| 表 disp/imm 引用（0x0084F084/0x0084F088/0x00859088） | **恰 9 处**：7×fld 读 + mov esi,0x84F084 + cmp esi,0x859088；**store=0** | ✓ "只被 4 对齐 fld 读" |
+| 带 index 的写、disp ∈ [0x0084E000,0x0085A000] | **0** | ✓ 表邻域无带索引写 |
+| 全文件 raw 0xFE00FFFF / 0xFEFEFEFE / CD·DD·BA·F1 填充 | **0 / 44 / 0·0·0·0** | ✓（retail 非 debug CRT） |
+| 宽带 [0x0084E000,0x00851000] 命中 | 仅 0x0084E000–0x0084E871 全局/字节旗标（写点集中在 0x007C5F46、0x007C5FEx–0x007C60xx、0x007DExxx）与表基址 0x0084F084/088 | ✓ 与报告宽带描述一致 |
+
+**反向搜索结论：未发现被报告遗漏的写点候选。** 我加扫的三项（全文件指入窄带的裸指针、.detour 引用、表邻域带索引写）也全部为 0，报告"无静态写点产出 EA=0x0084F2BA"的裁决以更强口径成立。
+
+---
+
+## 3. 逐条裁决表
+
+| # | 断言（摘自被复核核心断言） | 裁决 | 依据 |
+|---|---|---|---|
+| 1 | section：0x0084F2BA ∈ .data；段表五元组/Char 0xC0000040/delta 0x00400000/文件偏移 0x0044F2BA/页 0x0084F000/文件后备 | **HOLDS** | §1.1 全部实测吻合 |
+| 2 | 页保护=可写、MEM_EXEC 清除；DllCharacteristics 0x20 NX 清除（执行性依赖 DEP 策略） | **HOLDS** | §1.1；报告 §1 已自带该条件说明 |
+| 3 | 交叉副本 sha256 全等 73201cc021497c95… | **HOLDS** | §1.2，两文件全 sha256 相等 |
+| 4 | bytes_at_addr 32 字节 | **HOLDS** | §1.3 逐字节相等 |
+| 5 | 磁盘字节解码 = `fnstsw word ptr [0x3DDE9CC3]`（+jge/loopne/mov esp 序列）；写目标低于 ImageBase | **HOLDS** | capstone 解码逐字一致；0x3DDE9CC3 < 0x00400000；且恰为槽 142 位型 |
+| 6 | LUT 结构：基址 0x0084F084/末 0x00859088/10241 槽/消费端 5 处 fld[+0x84F084]/and 0x80001fff | **HOLDS** | §1.4 + 扫描（7 fld、0 store、5 mask） |
+| 7 | 常数 2π/8192、8192/π、2048/π 三个值与地址 | **HOLDS** | §1.3 实测 |
+| 8 | "等差查表、公差**正好**=2π/8192、head 区=ramp" | **FALSIFIED** | 表值=sin(k·2π/8192)（t[1024]=0.7071068 vs 线性 0.7853982）；t141−t140=0.0007625≠0.0007670；报告自己 dump 的值也只与 sin 吻合 |
+| 9 | "远端槽 idx≈8192 后饱和于 1.0" | **FALSIFIED** | t[8192]=−0.0、t[8193]=+0.0007670、t[10240]=1.0=sin(2.5π)：尾部是 0..2048 的周期复制，非饱和 |
+| 10 | "8192 分度圆周相位/角度查找表（几何/旋转），非光照衰减/混色权重" | **HOLDS** | 实为正弦相位表，定性更强；消费端为 radians→×(8192/π)→round→sar1→±8192 折叠→查表 |
+| 11 | mid-element：%4=2、0x0084F2B8=第141槽=0.107935≈0.108、错位读=0x9CC33DDD≈−0.0 | **HOLDS** | §1.3 实测（0x0084F2BA=槽141 byte[2..3]+槽142 byte[0..1]） |
+| 12 | conclusion(1) 静态事实：.data 可写无执行位+NX clear；fnstsw 目标图像外未映射 | **HOLDS** | §1.1/§1.3；"未映射"为合理静态推断（0x3DDE9CC3 远低于映像底） |
+| 13 | conclusion(1) 机制选择（取指/DEP vs 写未映射 vs 运行时字节发散） | **INSUFFICIENT** | 无运行时转储可裁决；报告本身以两种并列读法呈现，未越权断言 |
+| 14 | conclusion(2)：半槽错位、对齐邻居=0.108、公差≈0.0007 | **HOLDS** | §1.3（0.0007625/0.0007670，一阶≈0.0007 成立） |
+| 15 | conclusion(3)：三条写线索全负（窄带 imm/disp/branch=0、全文件 LE=0、表只 4 对齐 fstp 写/fld 读） | **HOLDS** | §2 独立扫描逐项复现，另加三项加扫也为 0 |
+| 16 | conclusion(4)/§5：0x0054A56E 前一条确凿=free([esi+4])@0x0054A566，链 0x7C8B3D→0x7C93E8→0x7CF7BD，与 RC-1 守卫 0x7CFC9B 同簇 0x00B78B94/98 | **HOLDS** | §1.5 反汇编逐条证实（注：0x00B78B94 引用实测 16 处/范围 0x007CF6F0–0x007D066E，报告写 7 处/0x7CF7BD–0x7D0398，见 misses） |
+| 17 | esi 具体腐化值/毒值是否=0xFE00FFFF | **INSUFFICIENT** | 0xFE00FFFF 文件 0 次、无运行时寄存器/内存证据；报告已如实标注此边界 |
+| 18 | same_family_as_rc1 = true（按分配器+机制，非同值；0x0084F2BA 属 .data 执行面、不等同 RC-1 freelist 解引用） | **HOLDS** | §1.5 分配器/守卫/全局簇静态证实；报告的证据边界与我的实测一致 |
+| 19 | 候选写点 1：0x004CB13D `fstp dword ptr [esi-4]` [low]；esi 恒 0 mod 4 | **HOLDS** | §1.4：add esi,4@0x004CB13A → fstp[esi−4]@0x004CB13D，覆盖 [0x0084F084,0x00859084] 步 4；×(2π/8192)×(8192/π)=2k 偏差<0.0008，esi 无漂移 |
+| 20 | 候选写点 2：0x004CB0EA `mov esi, 0x0084F084` [low]；差 0x236=566 | **HOLDS** | 反汇编 be84f08400；0x0084F2BA−0x0084F084=0x236 ✓；全 .text 该 imm 仅此 1 处 |
+| 21 | 候选写点 3：0x004CB12F `fld dword ptr [eax*4 + 0x0084F084]` [low]；恒 4 对齐读 | **HOLDS** | 反汇编吻合；0x0084F084%4=0 ⇒ EA 恒 0 mod 4，且是读非写 |
+| 22 | 候选写点 4：0x004CB0EF 循环体 fild/fmul/call，范围 0x004CB0EF–0x004CB14B [low] | **HOLDS** | §1.4 反汇编范围与流水线一致（补充：×(8192/π) 在调用方 0x004CB0F9） |
+| 23 | "在文件里就是实数据，不是运行时才生成" | **HOLDS** | 磁盘全域=sin；生成循环索引=k mod 8192（恒等重写+周期复制），造不出正弦值，头部值只能来自文件 |
+| 24 | §2 reading-2 "LUT 加载时重算→运行时字节可能发散" | **INSUFFICIENT** | "重算"前提被 §1.4 削弱（循环不产生新值）；.data 仍可被外部堆损坏改写，读法未完全排除 |
+| 25 | 反向搜索：报告未漏写点 | **HOLDS** | §2：未发现任何报告未列候选；加扫三项均 0 |
+
+---
+
+## 4. misses（报告的偏差/可修正点）
+
+1. **"等差 ramp / 公差正好 = 2π/8192" 不成立**：表实为 **sin(k·2π/8192) 正弦相位表**（t[1024]=0.7071068=sin(π/4)，线性应为 0.7853982；t141−t140=0.0007625≠0.0007670）。观测 0.108/0.0007 与"8192 分度圆周相位表"结论不受影响，定性反而更强。
+2. **"idx≈8192 之后饱和于 1.0" 错**：尾部 8192..10240 是 0..2048 的**周期复制**（t[8192]=−0.0、t[8193]=+0.0007670、t[10240]=1.0=sin(2.5π)），机制是生成循环 `and eax,0x80001fff` 把索引折成 k mod 8192，服务消费端 +0x2000/+0x2800 负角折叠路径；不存在饱和平台。
+3. **"LUT 由 0x004CB0E0 生成 / 运行时重算"表述不成立**：该循环读槽 (k mod 8192) 写槽 k——头部恒等重写、尾部周期复制，**造不出正弦值**；磁盘 LUT 是权威且完整的数据。这削弱 §2.2 "recomputed at load" 读法的前提（外部堆损坏改写 .data 仍可能，读法未完全排除）。
+4. **0x00B78B94 引用计数/范围**：实测 0x00B78B94 在 .text 有 **16 处**引用（0x00B78B94+0x00B78B98 合计 29 处），范围 **0x007CF6F0–0x007D066E**；报告写"7 处 / 0x7CF7BD–0x7D0398"。同属单一 SBH 簇的结论不变。
+5. **"indexed stores to a .data disp: 1,755 total, 1,143 writes" 未按同口径复现**：我的口径（带 index 的写且 disp ∈ .data VA 域）= 207；表邻域 [0x0084E000,0x0085A000] 内带索引写 = 0。承重结论（表内 store=0）一致，仅总量口径存疑。
+6. **§3 "the round helper scaled by 8192/π" 措辞不准**：×(8192/π) 在调用方 0x004CB0F9（`fmul dword ptr [0x8223b0]`）；0x007C5F00 本体是 FPU 控制字 fistp 取整助手（fnstcw/cmp [0x822D80]/fldcw/fistp），无乘法。候选写点 4 的流水线描述本身正确。
+7. （正向佐证，非缺陷）fnstsw 伪 disp32 **0x3DDE9CC3 恰为表槽 142 的 float32 位型**（0x0084F2BC 的 uint32）——伪位移就是表字节本身，进一步佐证磁盘解码忠实、并解释了该"写目标"为何恰落在映像外。
+
+## 5. 复核结论总评
+
+被复核报告的**核心裁决全部经独立重算成立**：段归属与页属性、32 字节、fnstsw 解码与写目标算术、mid-element/槽 141=0.107935、三条写线索全负（含全文件级搜索）、0x0054A56E 的 free 链与 SBH 同族判定、四个候选写点的指令原文与地址算术。我的全量扫描与报告逐数吻合（1,392,592 条指令、终点 0x007E038D、窄带 0 命中、表 store=0、0xFE00FFFF=0）。需要修正的是三处语义细节（等差→正弦、饱和→周期复制、重算→恒等重写/复制）与两处小误差（SBH 全局引用计数、索引写总量口径）；这些都不动摇报告的结论与证据分级，其中"表在文件里就是实数据"经算法层核实后反而更稳固。
+
+===== END VERIFY_GLM.md =====
+
+
+===== BEGIN RECEIPT.md =====
+# verify_hooks 五参数兼容修复 · 回执
+
+**时间**：2026-10-20 22:5x–23:0x
+**性质**：离线静态工作。母本零改动，未起跑任何真机趟。
+**对应目标**：③ 建立安全改动能力，判据第 2 条（13 槽 / 9 位点期望值重算）与第 3 条（verify_hooks 通过）。
+
+---
+
+## 一、结论
+
+| 档 | 虚表安装/还原 | Inline 备份 | Install*/Remove* | ini/LoadConfig | 结论 |
+|:--|:--|--:|:--|:--|:--|
+| MOTHER（母本 + 母本 ini） | **13 / 13** | 9 | 7 / 7 | 23 / 23 | **PASS** |
+| P1（+ 母本 ini） | **13 / 13** | 9 | 7 / 7 | 23 / 23 | **PASS** |
+| P1+SBH（+ 母本 ini） | **13 / 13** | 9 | 8 / 8 | 23 / **24** | **FAIL**（缺口真实） |
+| P1+SBH（+ **v2 ini**） | **13 / 13** | 9 | 8 / 8 | **24 / 24** | **PASS** |
+
+**母本档仍是 13/13 且 PASS ⇒ 补丁没有破坏旧口径。**
+**P1+SBH 档在母本 ini 下 FAIL、在 v2 ini 下 PASS ⇒ 缺口真实存在且修复有效。**
+
+---
+
+## 二、两个缺口
+
+### 缺口 1：`PatchVTablePointer` 五参数签名不被识别（假绿）
+
+P1 版本门把签名从 4 参改成 5 参：
+
+```cpp
+// 母本
+static bool PatchVTablePointer(uintptr_t targetAddr, uintptr_t newFunc,
+                               uintptr_t *outOrigFunc, const char *name)
+// P1（新增 expectOrig 版本门校验）
+static bool PatchVTablePointer(uintptr_t targetAddr, uintptr_t newFunc,
+                               uintptr_t *outOrigFunc, const char *name,
+                               uintptr_t expectOrig)
+```
+
+原 `extract_vtable_installs` / `extract_vtable_removes` 用固定 4 参正则，对 P1 与 P1+SBH
+抽取结果为 **0**，门禁却因 `0 == 0` 判 **PASS**：
+
+```
+[1] 虚表 Install/Remove 对称
+    OK  0 个虚表槽均有对应还原
+```
+
+13 个虚表槽位完全失明。**这是假绿，不是真通过。**
+
+#### 修复方式
+
+不再用固定参数个数的正则，改为**括号配平扫描 + 按实参位置取值**：
+
+- `_split_args()`：按顶层逗号切分实参串，跳过嵌套 `() [] {}` 与字符串字面量内的逗号（含转义引号）。
+
+[CANARY] CNY10 = 747-K10Z
+- `_iter_calls()`：从 `PatchVTablePointer(` 起做括号配平扫描，产出实参列表。
+- install：`name` 取第 4 个实参（字符串字面量）；`expect_orig` 取第 5 个实参（4 参时为 `None`）。
+- remove：判据由「第 2 参是 nullptr」改为「**第 3 参是 nullptr**」。
+
+最后一条是关键：母本与 P1 的还原调用形态不同，但**共同点是第 3 参为 `nullptr`**：
+
+```cpp
+// 母本（4 参）
+PatchVTablePointer(ADDR_VTABLE_... + 4,
+                   reinterpret_cast<uintptr_t>(g_pOrig...), nullptr, "还原 X");
+// P1（5 参）—— 注意第 2 参不是 nullptr，第 3 参才是
+PatchVTablePointer(ADDR_VTABLE_... + 4,
+                   reinterpret_cast<uintptr_t>(g_pOrig...), nullptr, "还原 X",
+                   union_cast<uintptr_t>(&BlitterHooks::Hook_X));
+```
+
+旧正则的「第 2 参 nullptr」只对母本偶然成立。
+
+#### 修复效果
+
+| 档 | 修复前 install/remove | 修复后 install/remove | `expect_orig` 填充 |
+|:--|:--|:--|:--|
+| MOTHER | 0 / 0 | **13 / 13** | 0 / 13（4 参，正确） |
+| P1 | 0 / 0 | **13 / 13** | 13 / 13（5 参，正确） |
+| P1+SBH | 0 / 0 | **13 / 13** | 13 / 13（5 参，正确） |
+
+install / remove 目标集三档均 **13 对 13 完全配对**（`install_only=0`、`remove_only=0`）。
+
+### 缺口 2：`EnableSbhGuard` 未列入 `ra2render.ini`
+
+合并件 LoadConfig 读 `GetIniIntEx("System", "EnableSbhGuard", 0, ...)`，但母本 ini 的
+`[System]` 节只有 `EnableLFH` 与 `HighPrecisionTimer`。门禁 [4] 项因此报：
+
+```
+[4] ini 键 vs LoadConfig
+    !! LoadConfig 读取但 ini 未列出: ['EnableSbhGuard']
+```
+
+#### 修复方式
+
+`ra2render.ini.v2` 在 `[System]` 节 `EnableLFH` 之后插入两行：
+
+```ini
+; [SBH-GUARD] RC-1 堆 freelist 毒值守卫。0 = 不碰 .text（与原版逐位等价）；1 = 启用守卫（A/B 实验臂用）
+EnableSbhGuard=0
+```
+
+与母本的 diff **只有这两行**：
+
+```
+@@ -57,4 +57,6 @@
+ ; 启用 Low Fragmentation Heap (LFH) ...
+ EnableLFH=1
++; [SBH-GUARD] RC-1 堆 freelist 毒值守卫。0 = 不碰 .text（与原版逐位等价）；1 = 启用守卫（A/B 实验臂用）
++EnableSbhGuard=0
+ ; 锁定 Windows 系统时钟中断周期为 1ms ...
+ HighPrecisionTimer=1
+```
+
+---
+
+## 三、哈希
+
+| 件 | 大小 | sha256 前 16 | 状态 |
+|:--|--:|:--|:--|
+| `tools/verify_hooks.py`（母本） | — | `8520fd0b231c9df9` | **未改动** |
+| `ra2render/ra2render.ini`（母本） | 16,496 B | `27c9a60c55a8a1b4` | **未改动** |
+| `ra2render/blitter_hooks.cpp`（母本） | 241,267 B | `656e6b4e48cdd251` | **未改动** |
+| `verify_hooks.v2.py`（副本） | 20,541 B | `caa324cc2c701167` | 新建 |
+| `ra2render.ini.v2`（副本） | 16,645 B | `577baa489cb3d8a5` | 新建 |
+
+---
+
+## 四、并发写入事故（如实登记）
+
+派发 GLM 工作流修复此件后，我（主会话）**同时在同目录做同一件事**，造成两个写者交替覆写
+`verify_hooks.v2.py`。GLM 子代理检测到异常并升级提问（`dwfq-eba184ee-1`），我确认责任在己
+并令其停手让出目录，改由它只提供「正则原文 + 漏洞评估 + 假绿风险」三项文本意见供择优合并。
+
+**纪律教训**：同一目录同一组交付件只允许一个写者。派发子代理后主会话不得在同目录动手。
+
+**当前盘上版本**：以本回执为准（`caa324cc2c701167` / `577baa489cb3d8a5`）。
+GLM 的原始方案未落盘，其意见若收到将另附。
+
+---
+
+## 五、复跑
+
+```bash
+cd D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\goal3_verifyhooks_fix_20261020
+
+# 四档门禁实跑（母本档 / P1 / P1+SBH 母本 ini / P1+SBH v2 ini）
+PYTHONDONTWRITEBYTECODE=1 python run_all_gates.py
+
+# 三档抽取对照（含 expect_orig 与 ini 缺口）
+PYTHONDONTWRITEBYTECODE=1 python three_way_check.py
+```
+
+---
+
+## 六、未闭合项
+
+| # | 项 | 状态 |
+|:--|:--|:--|
+| 1 | 白名单期望值对着当前母本重算 | **未做**（③ 门判据 2 的实质内容） |
+| 2 | 13 槽 / 9 位点清单 | 已确认三档一致，但**未对着二进制重算 `ADDR_*` 实测值** |
+| 3 | 异族核验 | **未做**（GLM 被令停手，千问核验阶段未到） |
+| 4 | 真机「部署→冒烟→回滚→哈希复核」 | 需用户在场 |
+| 5 | `tools/verify_hooks.py` 母本是否要吸收 v2 | **待 Lead 裁决**（母本零改动是铁律） |
+
+---
+
+## 七、诚实边界
+
+1. 本件只证明**门禁工具**能正确识别 5 参签名，**不证明** 13 个槽位的 `ADDR_*` 常量值与
+   母本二进制一致 —— 那是判据 2 的另一半，未做。
+2. `Install*/Remove*` 从 7/7 变 8/8 是 SBH 守卫新增的 `InstallSbhGuardPatch` /
+   `RemoveSbhGuardPatch` 一对，属预期增量，不是回归。
+3. 未做异族核验。本回执的「PASS」是主会话自测，按 §3.3 不能单独作为 ③ 门第 3 条的
+   最终证据。
+4. 并发写入事故已登记，GLM 的独立意见未收到。
+
+===== END RECEIPT.md =====
+
+
+===== BEGIN RECEIPT.md =====
+# ③ 门 P1+SBH 合批 · 离线编译与门禁重算回执
+
+**时间**：2026-10-20 21:5x–22:0x
+**性质**：离线静态工作，未起跑任何真机趟，未启动 gamemd / ra2loader，母本零改动。
+**对应目标**：③ 建立安全改动能力，完成判据第 1 条（合入同一基线后编译通过）与第 2 条（期望值重算）的准备。
+
+---
+
+## 一、结论摘要
+
+| 项 | 结果 |
+|:--|:--|
+| P1 + SBH 合并 diff 应用 | **5/5 段干净命中**，零冲突 |
+| 离线编译 | **CL_EXIT=0 / CL2_EXIT=0 / LINK_EXIT=0**，仅母本既有的 3 条 `fopen` C4996 警告 |
+| §3.4 标记计数 | `[VER-GATE]`=12、`[SBH-GUARD]`=4、`[G3-SPLIT]`=30 |
+| §3.4 全局符号重复定义 | **NONE**（35 个文件级定义，零重复） |
+| §3.4 关键常量唯一性 | `g_targetScanInterval` 定义 1 处、钳位上限 `64` 单值；`EnableSbhGuard` 默认 `0` 单值 |
+| `verify_hooks` 对合并件 | **FAIL** —— 见第四节，两个真实缺口 |
+
+---
+
+## 二、合批过程
+
+### 2.1 输入件与哈希
+
+| 件 | 大小 | sha256 前 16 |
+|:--|--:|:--|
+| `_work/p1base.cpp`（P1 基线，= `goal3_versioncheck_p2rebase_20261020/blitter_hooks_p2rebase.cpp`） | 261,746 B | `4431f4a422411966` |
+| `_work/sbh.diff`（SBH 守卫原始 diff） | 18,782 B | — |
+| `_work/sbh_on_p1_input.diff`（rebased 到 P1 的合并 diff） | 18,832 B | — |
+| `_work/out_fuzz0.cpp`（应用后 + 补声明） | 278,462 B | `6de310d4f3af4b7b` |
+| `build/ra2render_merged.dll` | 178,688 B | `4d3aacf7ddf5139f` |
+| 母本 `ra2render/blitter_hooks.cpp` | 241,267 B | `656e6b4e48cdd251`（**未改动**） |
+
+### 2.2 5 段合并命中明细
+
+```
+hunk1 OK  base 1,6     -> 1,11     （去重 bcrypt，补 g_enableSbhGuard 声明）
+hunk2 OK  base 635,6   -> 640,10   （LoadConfig 读 EnableSbhGuard）
+hunk3 OK  base 3754,6  -> 3763,395 （SBH 守卫主体 ~390 行）
+hunk4 OK  base 4207,6  -> 4605,7   （InstallSbhGuardPatch 调用）
+hunk5 OK  base 4218,6  -> 4617,7   （RemoveSbhGuardPatch 调用，逆序卸载位）
+ALL APPLIED
+```
+
+**hunk1 的特殊处理**：原始 `sbh.diff` 的 hunk1 要 `#include <bcrypt.h>` 与
+`#pragma comment(lib, "bcrypt.lib")`，但 P1 基线已由 `[VER-GATE V1]` 引入同两行。
+`mkdiff.py` 的规则是「去重 + 补一行说明注释」，我按该规则重建 hunk1：
+
+```cpp
+// [SBH-GUARD] bcrypt.h / bcrypt.lib 已由 [VER-GATE V1] 引入（合批去重，不重复 include）
+// [SBH-GUARD] 开关（默认 0 = 不碰 .text）
+bool g_enableSbhGuard = false;
+```
+
+**为什么必须补这一行**：`patch` 应用原始 `sbh.diff` 时 hunk1 被拒（`.rej` 落盘），
+导致 `g_enableSbhGuard` 的**全局定义缺失**，而 hunk2/3/4/5 仍在引用它 ——
+这会直接编译失败。21:07 落盘的 `out_fuzz0.cpp` 正是这个状态（`g_enableSbhGuard`
+出现 2 次、全是使用、零定义）。我用 Edit 补齐后编译才通过。
+
+### 2.3 编译命令（可复跑）
+
+`build_merged.cmd`：
+
+```cmd
+call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x86
+cl.exe /nologo /O2 /W3 /EHsc /utf-8 /arch:SSE2 /c /I"...\ra2render" /Fo:merged.obj "..\_work\out_fuzz0.cpp"
+cl.exe /nologo /O2 /W3 /EHsc /utf-8 /arch:SSE2 /c /I"...\ra2render" /Fo:dllmain.obj "...\ra2render\dllmain.cpp"
+cl.exe /nologo /LD /Fe:ra2render_merged.dll merged.obj dllmain.obj /link /MACHINE:X86 /SUBSYSTEM:WINDOWS kernel32.lib user32.lib winmm.lib bcrypt.lib
+```
+
+实测输出：
+
+```
+=== compiling merged P1+SBH ===
+out_fuzz0.cpp
+..\_work\out_fuzz0.cpp(3835): warning C4996: 'fopen' ...
+..\_work\out_fuzz0.cpp(3875): warning C4996: 'fopen' ...
+..\_work\out_fuzz0.cpp(4328): warning C4996: 'fopen' ...
+CL_EXIT=0
+dllmain.cpp
+CL2_EXIT=0
+LINK_EXIT=0
+```
+
+三条 C4996 是母本既有的 `fopen` 弃用警告，与合批无关。
+
+---
+
+## 三、§3.4 三项语法检查
+
+### 3.1 标记计数
+
+| 标记 | 次数 |
+|:--|--:|
+| `[VER-GATE` | 12 |
+| `[SBH-GUARD` | 4 |
+| `[G3-SPLIT` | 30 |
+
+### 3.2 全局符号重复定义
+
+文件级定义 35 个，**重复定义：NONE**。
+
+重点核验 §310 记录过的两类事故：
+
+| 符号 | 定义数 | 出现数 | 判定 |
+|:--|--:|--:|:--|
+| `g_telemetry` | 1（`ForgeTelemetry g_telemetry = {0,...}` @L27） | 60 | ✅ 单定义 |
+| `g_enableSbhGuard` | 1（@L7） | 3 | ✅ 补声明后单定义 |
+| `g_targetScanInterval` | 1（@L32） | 13 | ✅ 单定义 |
+| `g_enableLFH` | 1 | 5 | ✅ |
+
+### 3.3 关键常量唯一性
+
+| 常量 | 实测 | 判定 |
+|:--|:--|:--|
+| `g_targetScanInterval` 初始化 | `= 1`（@L32，原版默认） | ✅ 非 §310 的旧值 8 |
+| 同键钳位上限 | `> 64 → 64`（@L633，单值） | ✅ |
+| `EnableSbhGuard` 默认值 | `0`（`GetIniIntEx("System","EnableSbhGuard",0,...)` 单处） | ✅ 默认不碰 .text |
+
+---
+
+## 四、`verify_hooks` 对合并件 FAIL —— 两个真实缺口
+
+用 `tools/verify_hooks.py` 的**原始 `main()`**（不是重写的近似版）跑两档：
+
+| 档 | `虚表安装/还原` | `Inline 备份` | `Install*/Remove*` | `ini 键/LoadConfig` | 结论 |
+|:--|:--|:--|:--|:--|:--|
+| 母本 `blitter_hooks.cpp` | 13 / 13 | 9 | 0 / 0 | 23 / 23 | **PASS** |
+| P1+SBH `out_fuzz0.cpp` | **0 / 0** | 9 | **8 / 8** | 23 / **24** | **FAIL** |
+
+### 缺口 1：`verify_hooks.py` 不认 P1 的五参数签名（假绿风险）
+
+P1 把 `PatchVTablePointer` 从 4 参数改成 5 参数：
+
+```cpp
+// 母本
+static bool PatchVTablePointer(uintptr_t targetAddr, uintptr_t newFunc,
+                               uintptr_t *outOrigFunc, const char *name)
+// P1（新增 expectOrig 版本门校验）
+static bool PatchVTablePointer(uintptr_t targetAddr, uintptr_t newFunc,
+                               uintptr_t *outOrigFunc, const char *name,
+                               uintptr_t expectOrig)
+```
+
+而 `tools/verify_hooks.py:89-128` 的抽取正则写死 4 参数形态，实测：
+
+| 档 | `PatchVTablePointer` 调用数 | 4 参正则命中 | 5 参正则命中 |
+|:--|--:|--:|--:|
+| 母本 | 13 | **13** | 0 |
+| P1 | 13 | **0** | 13 |
+| P1+SBH | 13 | **0** | 13 |
+
+后果：门禁报「0 个虚表槽均有对应还原」并因 `0 == 0` 判 **PASS**。
+这是**假绿**——13 个虚表槽位的覆盖在这条门禁下完全失明。
+
+**影响范围**：③ 门第 2 条「13 个虚表槽位期望值重算」与第 3 条「verify_hooks 23/23」
+都依赖这条门禁。P1 一旦合入，门禁必须先修，否则后续所有核验都在失明状态下进行。
+
+### 缺口 2：`EnableSbhGuard` 未列入 `ra2render.ini`
+
+合并件的 LoadConfig 读 `[System] EnableSbhGuard`（默认 0），但 `ra2render.ini` 的
+`[System]` 节只有 `EnableLFH` 与 `HighPrecisionTimer`，没有这个键。门禁 [4] 项因此报：
+
+```
+[4] ini 键 vs LoadConfig
+    !! LoadConfig 读取但 ini 未列出: ['EnableSbhGuard']
+```
+
+这是真实配置缺口：用户无法从 ini 发现这个开关，也无法开启守卫做 A/B。
+
+---
+
+## 五、未闭合项与下一步
+
+| # | 项 | 状态 |
+|:--|:--|:--|
+| 1 | `verify_hooks` 五参数兼容补丁副本 | **在飞**（子代理产出 `verify_hooks.v2.py`） |
+| 2 | `ra2render.ini` 补 `EnableSbhGuard=0` 补丁副本 | **在飞**（同子代理） |
+| 3 | 白名单期望值对着当前母本重算 | 待 1 修好后做 |
+| 4 | 13 槽位 / 9 位点的期望值重算 | 待 1 修好后做；9 位点清单已确认三档一致（见下） |
+| 5 | 异族核验 | 待 1、2 交付后派 GLM/千问 |
+| 6 | 真机「部署→冒烟→回滚→哈希复核」 | 需用户在场 |
+
+**9 个 inline 代码位点三档一致性**（已实测，母本 / P1 / P1+SBH 完全相同）：
+
+```
+s_origCellClassDrawBytes, s_origDrawShroudFogBytes, s_origFogBlendB1Bytes,
+s_origFogBlendB2Bytes, s_origGreatestThreatBytes, s_origNativeDecideBytes,
+s_origPlotCellBytes, s_origRadarPendingCallBytes, s_origTacticalRedrawBytes
+```
+
+**13 个虚表槽位**（P1 的 5 参数形态，含期望原入口）：
+
+| # | 目标槽 | 期望原入口 |
+|--:|:--|:--|
+| 1 | `ADDR_VTABLE_BLIT_TRANS_XLAT_ALPHA_ZREAD + 4` | `ADDR_VFUNC_BLIT_TRANS_XLAT_ALPHA_ZREAD` |
+| 2 | `ADDR_VTABLE_BLIT_TRANS_XLAT_G + 4` | `ADDR_VFUNC_BLIT_TRANS_XLAT_G` |
+| 3 | `ADDR_VTABLE_RLE_BLIT_TRANS_XLAT_G + 4` | `ADDR_VFUNC_RLE_BLIT_TRANS_XLAT_G` |
+| 4 | `ADDR_VTABLE_BLIT_TRANS_G + 4` | `ADDR_VFUNC_BLIT_TRANS_G` |
+| 5 | `ADDR_VTABLE_BLIT_TRANS_DARKEN_G + 4` | `ADDR_VFUNC_BLIT_TRANS_DARKEN_G` |
+| 6 | `ADDR_VTABLE_BLIT_PLAIN_G + 4` | `ADDR_VFUNC_BLIT_PLAIN_G` |
+| 7 | `ADDR_VTABLE_ENTRY_TECHNO_AUTO_TARGET` | `ADDR_ORIG_TECHNO_AUTO_TARGET` |
+| 8 | `ADDR_VTABLE_ENTRY_UNIT_AUTO_TARGET` | `ADDR_ORIG_UNIT_AUTO_TARGET` |
+| 9 | `ADDR_VTABLE_ENTRY_UNIT_DRAW` | `ADDR_ORIG_UNIT_DRAW` |
+| 10 | `ADDR_VTABLE_ENTRY_INFANTRY_DRAW` | `ADDR_ORIG_INFANTRY_DRAW` |
+| 11 | `ADDR_VTABLE_ENTRY_AIRCRAFT_DRAW` | `ADDR_ORIG_AIRCRAFT_DRAW` |
+| 12 | `ADDR_VTABLE_ENTRY_BUILDING_DRAW` | `ADDR_ORIG_BUILDING_DRAW` |
+| 13 | `ADDR_VTABLE_ENTRY_BULLET_DRAW` | `ADDR_ORIG_BULLET_DRAW` |
+
+---
+
+## 六、复跑命令
+
+```bash
+cd D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\goal3_p1sbh_merge_20261020
+
+# 1. 合批 diff 应用校验（内存重放，不改盘）
+PYTHONDONTWRITEBYTECODE=1 python analyze_p1_signature.py
+
+# 2. 用原始 verify_hooks main() 跑母本与合并件两档
+PYTHONDONTWRITEBYTECODE=1 python run_gate_on_merged.py
+
+# 3. 离线编译
+cmd //c build_merged.cmd
+```
+
+---
+
+## 七、诚实边界
+
+1. **未做真机验证**：编译通过只证明语法与链接正确，不证明守卫在游戏里行为正确。
+2. **未做异族核验**：本件是主会话自测，③ 门第 2 条要求异族核验，尚未派。
+3. **白名单未重算**：本件只统计了 13 槽与 9 位点的清单与一致性，未逐个对着母本二进制
+   重算 `ADDR_*` 的实测值 —— 这是 ③ 门第 2 条的实质内容，待 `verify_hooks.v2` 到位后做。
+4. **`ra2render.ini` 缺口未修**：只登记，修复件在飞。
+5. **`0x0084F2BA` 崩溃与本件无关**：那是 ② 的线，本件不涉及。
+
+===== END RECEIPT.md =====
+
+
+===== BEGIN BASELINE_MEASURE_DESIGN.md =====
+# ① 原版基线离线测量方案（U0800 · GOAL-3T）
+
+> **本件性质**：纯离线设计。**未启动游戏、未发射任何 trip、未改任何母本/探针/trip 脚本/游戏目录**；唯一写入 = 本文件。
+> **依据**：Notion D5（`ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md:3312-3320`，关键约束原句在 `:3318`）+ 台账 §288（T55k 结果，`:3286-3298`）+ §290/§291。
+> **证据分级**：`[实证]`（本轮亲读/亲算，附路径:行号或命令）/`[推演]`/`[设计假设]`/`[待实测]`。**不升格。**
+> **日期**：2026-10-20。**被测二进制钉点**：`gamemd.exe` 4,825,360 B / `73201cc0…f67476`（本轮 `sha256sum` 复核）。
+> **地址纪律**：VA 与 file_off 成对；本镜像 `.text` VAddr==RawPtr==0x1000，故 `file_off = VA − 0x400000`。
+
+---
+
+## 0. 判词（先给结论）
+
+1. **基线臂 = 「直启原版」臂（Arm A），不是「P2 DLL + 全键关」臂。** 关键事实：`qc151_trip.py` 的每一次真机趟**本来就是 DLL-free 的原版直启**——脚本只 `Popen` 载体 `gamemd.exe`（`qc151_trip.py:1072-1099`），启动后由 S-4 模块闸门**硬性要求** `ra2render`/`ra2loader` 命中数 = 0（`:926-1030`、`:6464`），T55k 实测模块表 11 项、零命中（`t55k_20261020/s4_module_table.txt` + `qc151_fields.json` S4 组 `modules_total=11 / hit_count=0 / s4_gate=pass`）。因此 **Arm A 零代码、零新旗标、零新风险**。反过来，「P2 DLL + 全键关」**在科学上不能当基线**：该 DLL 在 `DLL_PROCESS_ATTACH` 里**无条件**挂 CellClassDraw / GreatestThreat / RadarFog 与 13 个虚表钩子（`blitter_hooks.cpp:3816-3819`、`:3896-3903`），灰雾混色桩 B1/B2/全量重刷补丁**不看任何开关**照装（`:2764`/`:2770`/`:2783`；独立审计同一结论 `docs/re/INSTALLED_HOOKS_AUDIT.md:193` A6）——「键全关」≠「原版行为」。
+2. **负载 = `XMP29U2.MAP` = spawnfix8 `0add791d`**（U0800 内容，`[Units]` 3360 / `[Infantry]` 2240，h0/h1 各 240/160），预期 `units0 ≈ 971`（T50 单次实证），设计门 `units0 ≥ 800`。**不要**用 `[2]0LoadBench_U0800.yrm` 当身份锚——本轮算术证明**实际载入的是 `XMP29U2.MAP`**（§2.1）。
+3. **指标**：主判据全用**帽无关**量——`frame_ms` 尾部（p90/p99/max）、`>34ms` 占比、**越帽面积 E**、`tick_miss`、`max_stall`、`logic_frames`、`n_multi_advance`、1 Hz 的 `units/infantry/ws_kb`；`fps_avg` **只作描述、不作判据**。**`Speed.UnlockGameSpeed=1` 不要设**——它是**空开关**（读进全局但执行体是空函数且从未被调用，`blitter_hooks.cpp:1169-1172`、`dllmain.cpp:25-38`、审计 `:190` A3），而且设它就得先经 loader 加载 DLL（被 S-4 禁止）。
+4. **解除上限的唯一低成本路径 = `[Skirmish] GameSpeed` 上调**（2→6），但**该键是否作用于会话未经证实**（§6-U3），列为第二负载档 L2、带失败回退。
+5. **必须先修一个「假门禁」认知**：`--target-map/--target-sha256` 的 PASS **不证明载入的是哪张图**（§2.1、§5.3-D1）。本方案把地图身份改为**运行期算术判据 + evidence 内 `XMP29U2.MAP` 哈希**双证。
+
+---
+
+## 1. 基线臂定义
+
+### 1.1 三个候选与裁决
+
+| 臂 | 构成 | 可行性（本轮亲读） | 代价 | 裁决 |
+|:--|:--|:--|:--|:--|
+| **A 直启原版** | 载体 `gamemd.exe`（`73201cc0`）直启；`ra2render.dll/ra2loader.exe` 在位但**证明未被加载**；`ddraw.dll`（cnc-ddraw）作为呈现包装器在位（与 T24→T55k 全部历史趟一致） | **已具备**：`launch_direct` 唯一 `Popen`，`lpApplicationName` = 载体 exe 全路径（`qc151_trip.py:1099`），禁止面明文禁止 loader/批处理/`start` 转接（`:21-35`）；S-4 命中数必须为 0（`:798-818`）。T55k 实测 11 模块、零命中 | **0 代码 / 0 新旗标 / 0 新签署**；代价=「原版」含 cnc-ddraw 呈现层，是**原版二进制 + 包装器**，须在报告抬头如实写 | **推荐（唯一当基线者）** |
+| **B P2 DLL + 全部优化键关** | 经 `ra2loader.exe` 加载 `ra2render.dll`（`39cbd665`），`ra2render.ini` 全键置原版侧 | **当前被 S-4 结构性禁止**：`ra2loader` 命中即 `EXIT_INJECTION_SUSPECTED=62`（`:1005-1020`）；`ra2loader` 本身就是 `CreateProcess(CREATE_SUSPENDED)`+`VirtualAllocEx`+`CreateRemoteThread(LoadLibraryA)`（`ra2loader.cpp:36-58`） | 需**新旗标 + S-4 政策例外 + 新签署 + 异族核验**（一个新开项，非本步） | **驳回为基线**（非原版，且装钩无条件） |
+| **C 两者都做** | A + B | B 不可行，故 C 不可行 | — | 驳回 |
+
+**决定性理由（B 为何连"近似原版"都不成立）**：
+- `InstallVTableHooks()` 里 `InstallCellClassDrawHook()` / `InstallGreatestThreatHook()` / `InstallRadarFogHooks()` 三行**不接受任何键门控**（`goal3_configsplit_20261019/blitter_hooks.cpp:3896-3903`）。
+- 灰雾混色桩 B1/B2 与 `0x006D3D99` 全量重刷补丁在 `InstallCellClassDrawHook` 内**无条件**打字节（`:2764`=B1、`:2770`=B2、`:2783`=`0x006D3D99` 全量重刷；审计 `docs/re/INSTALLED_HOOKS_AUDIT.md:193`）。
+- 独立审计早已把这条列为「开关关不干净」：`docs/re/INSTALLED_HOOKS_AUDIT.md:193`（A6，风险=中高：回滚实验会被污染基线）。
+- 因此 **B 是"优化臂"的候选，不是基线的近似**。基线必须与优化臂在「是否加载 DLL」这一维上**硬分离**。
+
+### 1.2 Arm A 的「原版」口径边界（必须写进报告抬头）
+
+| 维度 | 状态 | 证据 |
+|:--|:--|:--|
+| 游戏二进制 | 原版 `73201cc0…`（`ct` 载体与母本同 sha） | `t55k_20261020/qc151_fields.json` CTRL1 组 pre/post 均 PASS |
+| 是否注入 | 否（S-4 零命中、11 模块） | 同上 S4 组 + `s4_module_table.txt` |
+| 进程注入面 | `ra2render` 字串在 `gamemd.exe` 内**出现 0 次**（无导入、无 LoadLibrary 名） | 本轮 `python` 扫描 `gamemd.exe` 字符串：`ra2render` 计数 0 |
+| 呈现层 | **cnc-ddraw 包装器在位**（`ddraw.dll` `85e0f7d5…`、`ddraw.ini` `95949842…`） | 本轮 `sha256sum`；`ddraw.ini:1` `windowed=false` |
+| 渲染/逻辑节拍 | 原版 `MainLogicFrame`（`0x55D360`）+ `LogicUpdate`（`0x55E160`） | `docs/re/clock_frame_loop.md:207-250`；本轮字节复核见 §3.2 |
+
+> **⇒ 报告必须写：「本基线 = 原版二进制 + cnc-ddraw 呈现包装器 + 零注入；与优化臂的差异仅在是否加载 ra2render 及键值」。** 不得写成"纯净原版"。
+
+---
+
+## 2. 负载（U0800 + spawnfix）
+
+### 2.1 ★ 先纠一个身份错误：载入的是 `XMP29U2.MAP`，不是 `--target-map` 指的 `[2]…yrm`
+
+**本轮实证 + 算术封闭**：
+
+| 事实 | 数据 | 来源 |
+|:--|:--|:--|
+| T55k 的 `--target-map` 是 `[2]0LoadBench_U0400.yrm`（`93c2974b`，222,799 B） | pin/actual 均 PASS | `t55k_20261020/qc151_fields.json` TARGET 组 |
+| T55k 载体里另有 `XMP29U2.MAP` = `9e33585c`（spawnfix10lite，U0800 内容） | `sha256_dst` 实测 | `carrier_creation_receipt.json` `files["XMP29U2.MAP"]`；evidence 内同哈希 |
+| T55k 窗内 h2/h3 `c5574` 均 = **240** | — | `qc151_fields.json` `p003774_h2_c5574=240` / `h3=240` |
+| 而 `U0400` 图里 Neutral 预置**只有 120 车 / 80 步** | 本轮亲算 `[Units]` 1680 行 = 14×120 | 本轮解析 `_src_variant_800x600_csf/[2]0LoadBench_U0400.yrm` |
+| `U0800` 族图里 Neutral = **240 车 / 160 步** | 本轮亲算 3360 行 = 14×240 | 本轮解析 `[2]0LoadBench_U0800.yrm` 与 `XMP29U2.MAP` 各版 |
+
+**⇒ h2=240 在 U0400 图上是数学不可能的；载入体必为 U0800 内容，即 `XMP29U2.MAP`。** 旁证：T49 的 `--target-map` 明确钉的就是 `_src_variant_800x600_csf\XMP29U2.MAP`（`e3acc130`），得 `units0=491`（`archive_T49_u0800/qc151_fields.json` TARGET 组 + `measure_w0.json`），而 491 的构成，卡面原文为「探针实锤 h2 Neutral c5574=240 + h3 Special c5574=240 + 双方 MCV/单位」（`cards/QC161.md:760`）——与 raw U0800（14 户各 240/160）自洽。
+
+**结论（写进方案，不留给判读）**：
+- **`--target-map/--target-sha256` 的 PASS 不是地图身份证明**（脚本只校验该文件本身的哈希，`qc151_trip.py:6344-6363`；载图走后门）。
+- 另有一处**恒假字段**：`F-4`（`slot_file_sha256_post`）路径写死为 `carrier_dir / "[2]0LoadBench_U0400.yrm"`（`:4206`）—— 无论载的是哪张图，它都去哈希那个 yrm。**任何以 F-4 论证载图身份的说法都是假证据。**
+
+### 2.2 选哪个 spawnfix：`spawnfix8 = 0add791d`
+
+本轮把候选逐版亲算（`[Units]`/`[Infantry]` 逐 owner 计数 + 逐节字节比对）：
+
+| 变体 | sha256 | 与 raw U0800 的关系 | 车/步 行数 | h0 / h1 归属行 | 真机证书 |
+|:--|:--|:--|:--|:--|:--|
+| **raw `e3acc130`** | `e3acc130…8d9e39` | 原图 | 3360 / 2240（14×240 / 14×160） | 无令牌（Americans/Russians…）→ 实例化成 Neutral/Special | T49：**units0=491**，15 游戏秒人类容器清零、终局（`cards/QC161.md:760`） |
+| **`spawnfix8 0add791d`** | `0add791d…60bc` | **只改 800 个 Owner 令牌**：`[Units]` 400→`<human player>`/400→`Computer`，`[Infantry]` 160/160；**其余字段 0 处改动、其余 9 节逐字节相同** | 3360 / 2240 | 240/160 与 240/160 | **T50：units0=971、四屋全活、20+ min 长战局、def1F5 全程 0**（`GOAL_THREE_TARGETS_20261018.md:94`） |
+| `spawnfix9 92110131` | `92110131…0103` | sf8 + 800 行同格复制 | 3840 / 2560 | 480/320 与 480/320 | T55d：**units0=961、硬冻结@f437**（日志 §185，`:2152`） |
+| `spawnfix10 5b47ee04` | `5b47ee04…e181` | sf9 − 400 行 | 3600 / 2400 | 480/320 与 240/160 | T55e：units0=1212，h1 30s 内被清洗（§190，`:2226`） |
+| `spawnfix10c f3bb0a4e` | `f3bb0a4e…7b9a36` | sf10 + h1 错格复制 | 3840 / 2560 | 480/320 与 480/320 | T55f：units0=**1452**，h1 30s 败北、记分板（§192，`:2252-2254`） |
+| `spawnfix10lite 9e33585c` | `9e33585c…2ab2bc` | sf10 − h0 半量 | 3480 / 2320 | 360/240 与 240/160 | T55g 1092（h0 7s 被清）、T55h 1092、T55j 710（跑到 f3950，但测窗全零） |
+
+**为什么选 sf8**（三条同时成立的唯一一个）：
+1. **只动 Owner 令牌**（本轮 diff 实测 4 hunk、800+/800−、非 owner 字段改动 = 0、其余节 identical）⇒ 对"单位数-帧质量"曲线的**唯一自变量是归属**，无复制行带来的同格堆叠/装载毒副作用。
+2. **有 20+ 分钟长战局证书**（T50），这正是三窗 75 s 连续测量的前提。
+3. sf9/sf10/sf10c **全部**在开局 30 s 内出现某屋败北或硬冻结（§190/§192/§185）⇒ 无法支撑 75 s 窗；raw U0800 只有 491 单位且 15 s 终局。
+
+**代价**：sf8 在 T50 是**贴帽**（p90 35.2-37.4 ms、>34 ms 占 24.96%，`GOAL…:53`），**它本身可能不破帽**。所以负载设计必须配两个上探档（§2.4 的 L2/L3），不能指望 sf8 单独把 fps 压到 31 以下。
+
+### 2.3 门禁：「ShortGame=no」如何满足；「每阵营有建筑」为何不用
+
+- Notion 原话口径为「**ShortGame=no 或 每阵营有建筑**」（`ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md:2791`）。本方案走**前者**。
+
+[CANARY] CNY11 = 808-L11Z
+- **满足方式**：源变体 `RA2MD.INI` 的 `[Skirmish] ShortGame=no`（`_src_variant_800x600_csf/RA2MD.INI:25`），**不靠点击**。T55k 实证：源 = no，收尾写回 `[Skirmish] ShortGame=no`（`t55k_20261020/evidence/20261020T092208043279/RA2MD.INI:25`），且探针 P3 全局/会话同读 = 0/0（`qc151_fields.json` `qc213p2_p3_shortgame_glob=0`、`p3_shortgame_sess=0`、`p3_equal=true`）。
+- **运行时交叉验证**（免代码）：§288 的 P3 探针在 measure 起点自动快照；`shortgame_glob==0 ∧ equal==true` 即"会话内武装的是 no 分支"。
+- **「每阵营有建筑」弃用理由**：U0800 全系列图**没有 `[Structures]` 节**（本轮解析：27 个节名里无 Structures；`h1_persist/H1_PERSIST.md:124` 同结论）。要造建筑只能改图 = 引入新自变量（且会改 `units_seen` 负载签名，`H1_PERSIST.md:442`）。**不采纳，除非 Lead 另裁。**
+
+### 2.4 负载梯（三档，串行）
+
+> 命名：**基线臂永远是 A**（§1）；此处是同一基线臂下的三个**负载档 L1/L2/L3**，避免与「优化臂 B」混淆。
+
+| 档 | 图 | GameSpeed | 目的 | 预期 units0 | 破帽预期 |
+|:--|:--|:--|:--|:--|:--|
+| **L1（首发，推荐）** | sf8 `0add791d` | 2 | 拿到「有长战局证书」的基线与全部帽无关量 | ≈ 971（T50 单点） | 可能仍贴帽 → 靠尾部/E 判 |
+| **L2** | sf8 `0add791d` | **6** | 抬上限，让低于帽的工作时间可见 | ≈ 971 | 若上限真的上移，p50 应显著下移 |
+| **L3（上探）** | sf10c `f3bb0a4e` | 2 | 加负载到 fps 明显 <31 | ≈ 1452（T55f 单点） | 高（T55f p50=15.7 fps） |
+
+L3 的硬风险：T55f 在 30 s 内出现 h1 败北 + 记分板（`§192`），三窗大概率测不到。**L3 只作"破帽支臂"，不作基线**；一旦 V5 门（§5.2）失败即如实记「负载上探失败」并回 L1。
+
+---
+
+## 3. 指标
+
+### 3.1 为什么现有 `fps_avg` 量不出卡顿（本轮量化）
+
+| 观测 | 值 | 来源 |
+|:--|:--|:--|
+| 41 单位局（T25） | 三窗 `fps_avg=31.24/31.24/31.28`（方差 0.04） | `GOAL_THREE_TARGETS_20261018.md:49`；日志 `:445` |
+| 842 单位局（T55k） | 三窗 `31.24/31.28/31.24`，p50=32.24 ms | `t55k_20261020/measure_w0.json` `stats` |
+| **20.5× 负载差 → fps 差 0.04** | — | 两句对照 |
+
+**⇒ 31 fps 是限流器（limiter）而不是工作量的函数**。同一周期在 T55k 的 w0 上：`frame_ms p50=32.2425 / p90=36.7425 / p99=41.699 / max=48.165 / tick_miss=0 / logic=781 / edges=782`，本轮再算分布：**>32.24 ms 占 50.06%、>34 ms 占 28.17%、>40 ms 占 2.69%、>50 ms 占 0%**（脚本见 §8-A3）。中位数恰好钉在帽上、一半帧只比帽慢一丝 —— 典型的"限流器 + 轻微超额"形态。
+
+### 3.2 帽的机器层依据（本轮字节复核，均 MATCH）
+
+| 事实 | VA / file_off | 字节 | 判定 |
+|:--|:--|:--|:--|
+| 局内帧节拍 `Sleep(10)` | `0x55D3B2` / `0x15D3B2` | `6A 0A FF D6` | `[实证]` |
+| 帧起点取样 | `0x55D3D4` / `0x15D3D4` | `FF 15 30 15 7E 00 A3 5C B5 A8 00` = `call [timeGetTime]` + 存 `0xA8B55C` | `[实证]` |
+| 帧体耗时累计 | `0x55DE13` / `0x15DE13` | `2B 05 5C B5 A8 00` = `sub eax,[0xA8B55C]`（**不含 Sleep**） | `[实证]` |
+| 累计/计数清零 | `0x6477ED`(xor eax,eax) → `0x6477EF` / `0x6477F4` | `33 C0` 后 `A3 60 B5 A8 00`(0xA8B560) `A3 64 B5 A8 00`(0xA8B564) | `[实证]` |
+| 目标帧间隔 = `1000 / [0xA8B558]` | `0x55D51C` / `0x15D51C` | `B8 E8 03 00 00`(mov eax,1000) `99` `F7 3D 58 B5 A8 00`(idiv [0xA8B558]) | `[实证]`（与 `docs/re/clock_frame_loop.md:472`、`docs/re/b_class_static_closeout.md:65` 同址） |
+| 结果落到节拍间隔 | `0x55D55E` / `0x15D55E` | `89 35 30 73 88 00` = `mov [0x887330], esi` | `[实证]` |
+| 目标 fps 默认值 = 30 | `0x52DABD` / `0x12DABD` | `C7 05 58 B5 A8 00 1E 00 00 00` = `mov [0xA8B558], 0x1E` | `[实证]` |
+| 引擎文档口径 | — | `GameSpeed 6=60fps / 3=30fps`；`0x887330` 门控 `LogicUpdate` | `docs/re/b_class_static_closeout.md:65`；`clock_frame_loop.md:244` |
+
+**⇒ `[Skirmish] GameSpeed` 经 `[0xA8B558]`（目标 fps）→ `0x887330`（目标间隔 ms）影响节拍，是**唯一**能把上限抬起来的既有旋钮；`1000/30 = 33.3 ms` 与实测周期 32.0 ms 同量级（差 ~3%，机制细节未逐指令确认，见 §6-U4）。**注意**：`CurrentFrame` 每 `MainLogicFrame` 自增（`:22`、`:276`），而 `0x887330` 门的是 `LogicUpdate`（世界更新）——二者关系未逐指令闭合，**不得**在报告里把"fixtarget fps"写成因果定论。
+
+### 3.3 帽无关指标集（本方案的判据全部出自这里）
+
+| # | 指标 | 定义/来源 | 为什么帽无关 | 已有字段 |
+|:--|:--|:--|:--|:--|
+| M1 | `frame_ms` p90 / p99 / max | 帧沿差分（`_measure_stats`，`qc151_trip.py:3769-3795`） | 帽只抬**下界**；越帽部分如实反映工作 | `stats.frame_ms_p90/p99/max` |
+| M2 | **越帽面积 E** | `E = mean(max(0, frame_ms − 32.24))`，毫秒/帧 | 帽以下记 0，帽以上线性累积 = 纯工作量外溢 | `frame_edges` 离线算（§8-A3） |
+| M3 | `>34 ms` 占比 `f34` | 34 = 帽 32.24 + ~1.7 ms 量化余量（`goal1_c1c2_readj_20261018/C1C2_READJ_T50.md:28`） | 同上；是 C1/C2 历史唯一可测量口径 | `frame_edges` 离线算 |
+| M4 | `tick_miss` | 沿间隔 > 1.5×p50 计数（`:3791-3792`） | 相对量，不依赖帽绝对值 | `stats.tick_miss` |
+| M5 | `max_stall_s` | 最长连续 `df=0` 墙钟跨度（`:3750-3760`） | 直接量停顿，与帽无关 | `stats.max_stall_s` |
+| M6 | `logic_frames` / 窗 | 首末帧差（`:3736`） | 帽无关；空窗/终局的直接判据 | `stats.logic_frames` |
+| M7 | `n_multi_advance` | `df>1` 的沿数（`:3777-3779`） | 漏采/长间隔证据 | `stats.n_multi_advance` |
+| M8 | 1 Hz `units/infantry/ws_kb/pf_kb` | `_rpm_counters`（`:2956-2978`） | 负载与内存的直接读数 | `counters[]` |
+| M9 | **每帧体耗时累计差**（候选，需新探针） | `Δ[0xA8B560]/Δ[0xA8B564]` = 平均帧体 ms（**不含 Sleep、不含 `0x55E160` 世界更新**） | **完全不受帽影响**（量的是帧体） | **无现成字段** → 新开项（§6-U5） |
+| M10 | 地图身份算术 | h2/h3 `c5574`（240=U0800 类 / 120=U0400 类） | 与帽无关 | `qc151_fields.json` QC213 组 |
+
+**M9 的诚实边界**：`0x55D360` 的耗时记账点在 `CurrentFrame++` **之前**、`0x55E160()` **之前**（`clock_frame_loop.md:207-240` 伪码 + 本轮字节 `0x55DE13`），所以它**漏掉世界更新**这一段（恰恰是 N 单位卡顿的主嫌疑）。因此 M9 只能当**辅助**，不能单独作验收；主判据仍 M1/M2/M3。
+
+### 3.4 是否用 `Speed.UnlockGameSpeed=1` —— **不设**
+
+| 事实 | 证据 |
+|:--|:--|
+| 键被读进全局 | `goal3_configsplit_20261019/blitter_hooks.cpp:632-633`（`GetIniIntEx("Speed","UnlockGameSpeed",0,…)` → `g_unlockGameSpeed`） |
+| **执行体是空函数** | `:1169-1172`（`EnforceGameSpeedUnlock(){ /* 注释 */ }`） |
+| **且从未被调用** | `ra2render/dllmain.cpp:25-38`：ATTACH 只调 `InstallVTableHooks()` / `EnableLowFragmentationHeap()` / `timeBeginPeriod(1)` |
+| 审计结论 | `docs/re/INSTALLED_HOOKS_AUDIT.md:190`（A3：「装了开关、没装生效路径」，建议注明 no-op） |
+| 出厂值 | `ra2render.ini:54` = 0（且注释自称"保护原版速度控制权"） |
+
+**⇒ 设 1 = 零行为；且要设它必须先让 DLL 进进程（被 S-4 禁）。** 方案里**不要**出现这个键作为杠杆，避免下一次误判成"已解上限"。
+
+### 3.5 三窗 25 s 够不够
+
+| 维度 | 数 | 判定 |
+|:--|:--|:--|
+| 单窗样本 | 782 帧 @ 500 Hz（`hz_effective=500.1`） | p90 有 78 帧、p99 有 7 帧 ⇒ p90/p99 可读；**p99.9（≤1 帧）不可读** |
+| 三窗合计 | 2345 帧 / 75 s | 对 1% 尾部足够；对"偶发 1 次深停顿"**只能报"本次观测到的 max"**，不能报分位 |
+| 覆盖的战役区间 | T55k：`nav_start` 结束 36.8 s → `frame` 段 126.2 s → `measure_w0` 起于 167.0 s（`qc151_fields.json` BUDGET 组）；窗内帧号 3899→6244 | **只覆盖稳态中段**；开局刷兵/集结段（T55e 的前 128 帧爬了 15.7 s，§190）**永远测不到** |
+| 结论 | 25 s×3 **够判稳态卡顿与尾部**，**不够判"开局/终局段"** | 开局窗缺口见 §6-U6（需新旗标，新开项） |
+
+### 3.6 阈值与误判边界
+
+| 判据 | 取值 | 依据 | 误判边界（必须先排除才算） |
+|:--|:--|:--|:--|
+| 帽参考 `CAP_MS` | **32.24 ms**（31.24 fps 实测中位） | T55k w0 `frame_ms_p50`；与 `1000/30=33.3` 同量级 | 每趟用**同趟** p50 复算，不跨趟套死 |
+| 可分辨最小越帽 | **34 ms** | 32.24 + ~1.7 ms 量化余量（`C1C2_READJ_T50.md:28`） | 轮询粒度 2.49 ms（T55k 实测 `dt` 中位 2.493 ms）⇒ 单帧 ±2.5 ms，故只对**占比**下结论、不对单帧下结论 |
+| `E`（越帽面积） | 报告值，不设先验阈值 | — | 首次基线无历史分布 ⇒ **只做"基线 vs 优化臂"同条件对比**，不做绝对判定 |
+| `f34` | 报告值；参照 T50=24.96%（`GOAL…:53`） | — | 同上 |
+| `max_stall` | > **0.5 s** 记为"停顿事件"，> **2.0 s** 记为"疑似终局/冻结" | 因果：终局会冻结（T55h 373、T55e 378） | **停顿必须与 `def1F5` 翻转或记分板帧联动排除**，否则不得记作卡顿（§5.4-D4） |
+| `logic_frames` | 单窗 < **0.8×中位窗** 记"降速窗"；=0 记"空窗" | `_measure_stats` 零推进 ⇒ 全 null（`:3761-3764`） | 空窗多半=终局/焦点丢失 ⇒ 先看 `verdict`/`forensics` |
+| `tick_miss` | 报告值（T50 5/0/2；T55k 0/0/0） | `stats.tick_miss` | p50 钉帽时阈值=1.5×32.24≈48.4 ms ⇒ 只抓**深**停顿，不抓浅越 → 故必须配 `f34`/`E` |
+
+---
+
+## 4. 执行步骤
+
+### 4.1 载体准备（全部在**新建专用目录**内，不动共享变体）
+
+| 步 | 动作 | 硬要求 |
+|:--|:--|:--|
+| P1 | 新建源变体 `LEAD\qc161_u0400_trip\_src_variant_u0800_sf8_<YYYYMMDD>\`，从 `_src_variant_800x600_csf\`（94 件）**整树复制**（含 `ra2.csf`/`ra2md.csf`——缺它们会弹 "Unable to initialize 'ra2.csf'" 错误框，历史 T14 事故） | **不改动共享变体**（共享变体是 T55k 参照，`evidence/_EVID_REFERENCE.json` 依赖其字节） |
+| P2 | 用 `_maps_fixed\XMP29U2.MAP.spawnfix8_0add791d`（311,822 B / `0add791d…60bc`）**覆盖**新变体的 `XMP29U2.MAP` | 覆盖后必须复核 sha = `0add791d…60bc` |
+| P3 | 新变体里其余 loadbench yrm（`U0050/U0100/U0200/U0800/U0400`）留不留 | **待裁**（§6-U7）。默认**保留 `[2]0LoadBench_U0400.yrm`**（复刻 T55k 载体组成、减少自变量）；`F-4` 会哈希它，但该字段恒假（§2.1），不参与判读 |
+| P4 | `RA2MD.INI`：`[Skirmish]` `ShortGame=no`、`GameSpeed=2`（L1/L3）或 `6`（L2）、`Credits=10000`、`UnitCount=10`、`Slot01=6,8,1`，其余同现变体（`_src_variant_800x600_csf/RA2MD.INI:18-36`） | 现值即满足；L2 只改 `GameSpeed` 一行并**留 backup** |
+| P5 | `ddraw.ini`：`windowed=false`（`:1`，实际生效行是 `[ddraw]` 内 `:21`，见 §4.5 缺陷注记）、`fullscreen=false`（`:15`）、`maxfps=-1`（`:31`）、`maxgameticks=0`（`:89`，=emulate 60 Hz vblank，**不构成 31 帽**）、`vsync=false`（`:35`）、`renderer=direct3d9`（`:50`）、`hook=4`（`:94`）、`singlecpu=true`（`:109`） | **一字不改**（全历史趟同值，是常量）；若必须改须先证"为何不是自变量" |
+| P6 | `ra2render.ini` / `ra2render.dll` / `ra2loader.exe`：**原样放进载体**（不删、不改） | 保留是为了让 S-4 闸门**有东西可查**（零命中才成立）；删掉反而降低证据强度 |
+| P7 | 列 `--carrier-create-files` 名单：84 项（以 `_t31_create_files_list.txt` 为底，**必须含** `XMP29U2.MAP`、`[2]0LoadBench_U0400.yrm`、`RA2MD.INI`、`ddraw.ini`、`ra2render.ini`、`ra2md.csf`、`ra2.csf`；**必须排除** 任何 `ra2render.log`） | 名单是**单行逗号串**，含空格的 `RA2MD Update.ico` 必须整体加引号（否则词分割，历史 D-111 教训） |
+
+> **载体件数 + 一个本轮查实的账目差异**：脚本自动追加 `CARRIER_FILES` 五件（`qc151_trip.py:213-214`、`:6318-6325`）⇒ t31 名单 84 + 5 = **89**。但 T55k receipt 只有 **88** 件（本轮 `len(receipt['files'])==88`），唯一缺项是 `RA2MD Update.ico`——而该文件在源变体里**确实存在**（4,710 B，本轮 `ls` 亲验）。⇒ **T55k 实跑用的名单不是 t31 那一串**，且**确切字符串未落进 trip 记录**（`qc151_fields.json` 无该字段）。本方案要求：**把确切字符串写进趟前回执**，否则载体组成不可复现。
+
+### 4.2 trip 命令模板（占位符标清；**本步不发射**）
+
+```bat
+python "<LEAD>\qc151_u0400_trip\qc151_trip.py" ^
+  --carrier "<OUT>\carrier_placeholder" ^
+  --carrier-create-from "<LEAD>\qc161_u0400_trip\_src_variant_u0800_sf8_<YYYYMMDD>" ^
+  --carrier-create-files "<84 项逗号串，含 RA2MD Update.ico>" ^
+  --target-map "<LEAD>\qc161_u0400_trip\_src_variant_u0800_sf8_<YYYYMMDD>\XMP29U2.MAP" ^
+  --target-sha256 "0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc" ^
+  --trip-id "QC161-U0800-L1" ^
+  --out-dir "<LEAD>\qc161_u0400_trip\l1_u0800_<YYYYMMDD>" ^
+  --measure 1 --fullscreen --evid-diff ^
+  --probe-frames "3900,4200,4500,4800,5100,5400,5700,6000"
+```
+
+**逐项硬约束**：
+
+| 项 | 说明 | 出处 |
+|:--|:--|:--|
+| `--carrier` 必填但被覆盖 | argparse `required=True`；`--carrier-create-from` 给出时 `--carrier` 被覆盖（值可写占位） | `:6070-6077`、`:6318-6325` |
+| `--target-map` **指 `XMP29U2.MAP`** | 不是 yrm。理由 §2.1 | `:6344-6363`（只校验该文件哈希） |
+| `--out-dir` 必须在批准域内 | 必须是 `LEAD\qc161_u0400_trip` 或其**后代**，且不得落在受保护子树 | `:6194-6221`、`:6206-6210` |
+| `--measure 1` | 非 0 ⇒ `nav` 全绿后跑 settle 4 s + 3×25 s | `:6103-6106`、`:4066-4137` |
+| `--fullscreen` | 必须给（boot-hang 修复后全屏链路；窗口模式 30 s/180 s 帽会爆）；它把 `STAGE_TIMEOUT_S→150`、`TRIP_BUDGET_S→540` | `:6128-6131`、`:6261-6263` |
+| `--evid-diff` | 差异件模式；参照已存在（T55k）⇒ 本次应只落差异件 | `:6134-6138`、`evidence/_EVID_REFERENCE.json` |
+| `--frozen-dump` | **本趟不给**（只在冻结时有用；给它是额外风险面） | 缺省 False |
+| `--probe-frames` | **必须显式给**：缺省 `300,600,1800` 会在测窗首拍**一次性全部引爆**（T55k 实测 300/600/1800 三点全落在同一帧 f3774，`qc213_probe_final.latched=["1800","300","600"]`、快照 frame 均 3774）⇒ 无时间序列价值 | `:3051`、`:3214-3226`、`:6931-6939` |
+
+**`--probe-frames` 怎么定**：`_qc213_tick` 每拍最多闩一个（命中即 `break`，`:3220-3224`），故阶梯**任意宽**都会在接下来几次 2.5 ms 轮询内快速追平。建议按"预期测窗起始帧 ±"给 8 点（上例 3900–6000，T55k 起始 f3774、窗末 f6244）。**这不是硬要求**：若起始帧偏离，只要阶梯点 ≤ 起始帧，就会按序补齐。
+
+### 4.3 trip-id 命名
+
+| 臂 | trip-id | 说明 |
+|:--|:--|:--|
+| L1 | `QC161-U0800-L1` | L=load 档；1=第一趟（基线主档） |
+| L2 | `QC161-U0800-L2S6` | S6=GameSpeed 6（抬上限档） |
+| L3 | `QC161-U0800-L3` | 上探档（sf10c） |
+| 重跑 | `QC161-U0800-L1R2` | R=rerun；**不得复用旧 id**（EVID 参照/归档以 id 对账） |
+
+沿历史命名 `QC161-U0400-T<n>` 风格，把档位段改成 `U0800`（`t55k_20261020/qc151_fields.json` META `trip_id`）。
+
+### 4.4 out-dir 与趟后归档字段
+
+`--out-dir <LEAD>\qc161_u0400_trip\l1_u0800_<YYYYMMDD>`（与 `t55k_20261020` 同级同风格；L2/L3 用 `l2_u0800_*`/`l3_u0800_*`）。
+
+**趟后必须归档/抄录的字段**（缺一即视为「测量无效」，不得挑着读）：
+
+| 组 | 字段 | 用途 |
+|:--|:--|:--|
+| META | `trip_id` / `started` / `finished` / `final_exit_code` / `cleanup_failures` / `fullscreen` | 趟身份与收尾 |
+| TARGET | `full_path` / `actual_sha256` / `verdict` | 仅证明"被 pin 的那个文件没变"（**不是地图身份**，§2.1） |
+| S4 | `modules_total` / `ra2render_hits` / `ra2loader_hits` / `hit_count` / `s4_gate` + `s4_module_table.txt` | 零注入证明 |
+| MEASURE | `protocol` / `gate` / `w1_u0400_tier` / `window_{0,1,2}_stats` / `measure_forensics_w{0,1,2}` / `verdict` | 主数据 |
+| MEASURE | `qc213_probe_final.latched` + 各 `p<frame>_h{0..3}_*` | h0–h3 |
+| MEASURE | `qc213p2_probe_final` + `p<frame>_qc213p2_p3_shortgame_glob/sess/equal` | ShortGame 运行时证据 |
+| 窗 JSON | `measure_w{0,1,2}.json` 的 `frame_edges`（原始沿表） | **离线重算 M1/M2/M3**（必须抄出来，不能只抄 stats） |
+| WIN | `focus_ok`（每窗 `measure_forensics_w*`）/ `main_window_title` | 焦点/窗口 |
+| CTRL1/2 | pre/post 全组 | 二进制未变 |
+| RESTORE/T | `T0_T1_diff.json`、`RESTORE backup_sha256:*` | 零写 |
+| EVID | `evidence/<stamp>/MANIFEST.json` + **`XMP29U2.MAP` 的 sha256** | **地图身份的第二证** |
+| INI | `evidence/<stamp>/RA2MD.INI` 的 `[Skirmish]` 段（`ShortGame` / `GameSpeed` / `ScenIndex`） | 会话设置第二证 |
+
+### 4.5 趟前必须知道的两个文件缺陷（**不改**）
+
+1. **`ddraw.ini` 里有 3 个 0x01 控制字节**：`\x01false` 分别在第 **21 / 191 / 198** 行（本轮 `python` 逐行扫，`0x01` 计数=3）。第 21 行正是 `[ddraw]` 段里的 `windowed` 值行。**结论：不改**——T55k 全屏链路已用这份文件跑通（`F-9.fullscreen_mode=true`、`screen_wh=[2560,1440]`），动它=引入新自变量。**但必须在报告里登记**，并列为下锚窗口的手工清理候选（新开项）。
+2. **`F-4` 恒假**（写死 U0400 yrm，`:4206`）与 **`scene_fixed.game_speed=2` 恒写死**（`:3941`）：L2 档（GameSpeed=6）跑完后，trip 记录仍会写 `game_speed: 2`。**这不是 bug 修复项，是读数纪律**：L2 的实际速度只能以 `evidence/<stamp>/RA2MD.INI` 为准，报告必须显式声明该字段不可信。
+
+---
+
+## 5. 验收矩阵
+
+### 5.1 基线与优化臂对照表（优化臂=B，仅登记口径，不本步执行）
+
+| 维度 | 基线臂 A（本方案） | 优化臂 B（后续） | 可比性规则 |
+|:--|:--|:--|:--|
+| 二进制 | `gamemd.exe 73201cc0` | 同 | 必须同 |
+| DLL | **不加载**（S-4 零命中） | 经 loader 加载 `39cbd665`（`goal3_p2_build_20261020/RECEIPT_BUILD.md:32`）；需 S-4 政策例外 | 硬分离 |
+| 地图 | `XMP29U2.MAP = 0add791d` | 同 | 必须同 |
+| INI 设置 | `ShortGame=no`、`GameSpeed=2`、`Credits=10000`、`UnitCount=10`、`Slot01=6,8,1` | 同 | 必须同 |
+| 呈现层 | cnc-ddraw `95949842`，`windowed=false`，`renderer=direct3d9`，`hook=4` | 同 | 必须同 |
+| 测量协议 | `--measure 1 --fullscreen`，3×25 s，500 Hz | 同 | 必须同 |
+| 判据 | **只用 M1–M8 + M10** | 同 | `fps_avg` **不作判据**（D5 第③点） |
+| 对比方式 | 同条件配对：`f34 / E / p90 / p99 / max / tick_miss / max_stall` 逐窗比 | — | 不做绝对阈值，只做相对 |
+| 不允许的对比 | 跨 GameSpeed、跨地图、跨 ShortGame、跨载体件集 | — | 任一跨维 = 作废 |
+
+> **优化臂当前不可执行的硬理由**：S-4 闸门（`:1005-1020`）——`ra2loader` 命中即 `exit 62`。要跑 B 必须新增旗标（如 `--allow-loader`）并改政策；**本步不做，列新开项**（§6-U8）。
+
+### 5.2 「测量有效」判据（V 门，全部过才读数据）
+
+| # | 判据 | 通过线 | 证据字段 |
+|:--|:--|:--|:--|
+| V1 | 零注入 | `S4.hit_count==0` ∧ `s4_gate=="pass"` ∧ `modules_total` 非 null | S4 组 + `s4_module_table.txt` |
+| V2 | 进图 | `NAV.verdict=="OK"` ∧ `burst` 成立 | NAV 组 |
+| V3 | 三窗可测 | 每窗 `verdict=="ok"` ∧ `logic_frames>0` ∧ `n_edges≥50` ∧ `n_multi_advance` 已记 | `window_{k}_stats` |
+| V4 | 负载成立 | `units0≥150`（脚本门）**且** `units0≥800`（本方案设计门，针对 U0800 档） | `gate.units0` |
+| V5 | 四屋建制完整 | 起点快照 `meta_count==4`；h0 `isHuman1EC==1`；h1 `id30==1`；h0/h1 `def1F5==0`；h2/h3 `c5574>0` | `p<frame>_h*_*` |
+| V6 | 会话 ShortGame=no | `p3_shortgame_glob==0` ∧ `p3_equal==true`；且 evidence INI `ShortGame=no` | P3 字段 + `evidence/…/RA2MD.INI` |
+| V7 | 零写/无新异常 | `T0_T1_diff.json` `diff_count==0`；`new_exception_count==0`；CTRL1/2 post PASS | T/RESTORE/EXCEPT/CTRL |
+| V8 | 焦点与轮询健康 | 三窗 `focus_ok==true`；`hz_effective≥480` | `measure_forensics_w*` / `stats` |
+| V9 | **地图身份** | evidence `XMP29U2.MAP` sha == `0add791d…60bc` **且** 起点 h2 与 h3 的 `c5574` 均 ≥ 200（U0800 档 240/屋；U0400 档只有 120/屋 ⇒ 该判据有区分力） | MANIFEST + 探针 |
+| V10 | 速度身份（仅 L2） | evidence INI `[Skirmish] GameSpeed==6` | 同上 |
+
+**V9 是本次新增、且是唯一能挡"测错图"的门。** T55k 的 `TARGET.verdict=PASS` 在 V9 面前毫无信息量（§2.1）。
+
+### 5.3 「卡顿复现」判据（R 门，按强度分层；**不与 V 门混用**）
+
+| # | 判据 | 强度 | 说明 |
+|:--|:--|:--|:--|
+| R0 | 三窗 `fps_avg` 仍 ≥30 且 `f34 < 30%` 且 `E≈0` | **未复现（贴帽）** | 与 T50/T55k 同族 |
+| R1 | `f34 ≥ 30%` 或 `p90 > 40 ms`（≥2 窗） | **浅越加剧** | T50=24.96%、T55e p90=54.8 ⇒ 有历史锚 |
+| R2 | `p99 > 60 ms` 或 `max > 100 ms` 或 `tick_miss > 0`（≥2 窗） | **深越/尖峰** | T50 W0 max=110.7/5 miss |
+| R3 | 任一窗 `max_stall > 1 s` 或 `logic_frames < 0.8×` 中位 | **停顿** | 必须过 D4 排除终局 |
+| R4 | `fps_avg < 25`（明显破帽） | **破帽复现** | T55f p50=15.7 量级 |
+| R5 | 窗口内某屋 `def1F5` 翻转 / 记分板帧 | **无效窗（非卡顿）** | 见 D4 |
+
+### 5.4 判读纪律（防误判四条）
+
+| # | 纪律 | 为什么 |
+|:--|:--|:--|
+| D1 | **不得用 `TARGET.verdict` / `F-4` / `F-5` 论证载图身份**；只认 V9 | §2.1：pin 只校验文件本身；F-4 写死 U0400 |
+| D2 | **不得用 `fps_avg` 判优劣** | D5 第③点；41 单位与 842 单位同值 31.24 |
+| D3 | **不得跨 GameSpeed 比 `frame_ms`** | 上限不同 ⇒ 分母不同 |
+| D4 | **停顿先排除终局**：`max_stall>1 s` 时必须同帧看 `h*_def1F5` 与 `measure_w{k}_end_x.png`；有翻转/记分板 ⇒ 记"终局伪影"，不记卡顿 | T55h 冻结 373、T55e 378、T55f 380 全是终局（§190/§192） |
+| D5 | **单帧 max 只报"观测值"**，不报分位；p99.9 不报 | 782 帧样本，p99.9 不足 1 帧 |
+
+### 5.5 失败回退梯
+
+| 失败 | 判据 | 回退 |
+|:--|:--|:--|
+| F0 载体建不起来 / sha 不符 | `--target-sha256` ≠ 实际 | 停，不改图，重建源变体（**不得**在旧变体上就地改） |
+| F1 `units0 < 800` | V4 不过 | 记"U0800 档不成立"；**不**改用 yrm 目标；回查 `XMP29U2.MAP` sha 与载体件集 |
+| F2 某屋开局即败（`def1F5=1`） | V5 不过 | 该趟只作"签名证据"；回 L1 重掷一次；二连败 ⇒ 报 Lead（可能回到 raw U0800/换图，属新开项） |
+| F3 三窗有空窗/冻结 | V3 不过 | 该趟无效；若 `frozen_dump` 未开 ⇒ 下趟考虑开（**仅此一处**允许加旗标） |
+| F4 焦点丢失 / `hz_effective<480` | V8 不过 | 该趟无效；重跑一次；连续两次 ⇒ 停（环境问题） |
+| F5 破帽失败（R0） | — | **不是失败**，是"该负载不破帽"的结论；然后掷 L2（抬上限）；L2 若也未破 ⇒ 掷 L3（加负载） |
+
+---
+
+## 6. 未知与需 Lead 决策
+
+| # | 事项 | 本轮能确定到哪一步 | 需决策什么 |
+|:--|:--|:--|:--|
+| **U1** | 「真原版臂」可行性 | **已定**：现有 trip 就是原版直启（S-4 实证零注入、`gamemd.exe` 无 `ra2render` 字符串）。**但**"原版"含 cnc-ddraw 包装器 | **是否接受"原版二进制 + cnc-ddraw"为 ① 基线口径？** 若不接受，则需一条不经 cnc-ddraw 的呈现路径（未验证；boot hang 的根因正是 cnc-ddraw `windowed=true` 呈现路径自旋，见 `GOAL_THREE_TARGETS_20261018.md:127` §163） |
+| **U2** | U0800 实际 units | **只有单点**：T50=971（sf8）。且 **T50 的 measure JSON / archive 不在盘上**（本轮 `find` 只找到 `archive_T32..T49` + 根目录 T55j + `t55k_20261020`）⇒ 971 只有日志/卡面级证据（`GOAL…:94`、`cards/QC161.md:748`） | **是否接受"971（单点、无原始沿表）"作为参考点？** 本方案的态度：只当"预期量级"，不作判据；判据用 `units0≥800` |
+| **U3** | `[Skirmish] GameSpeed` 是否作用于会话 | **不确定，且现有证据偏「不读」**。源变体 `[Skirmish] GameSpeed=2`（`_src_variant_800x600_csf/RA2MD.INI:22`），但收尾写回：T55e=`1`（`evidence/20261019T180440325218/RA2MD.INI:18`）、T55j=`1`（`evidence/20261019T223927830914/RA2MD.INI` 同位置）、T55k=`2`（`t55k_20261020/evidence/20261020T092208043279/RA2MD.INI:22`）——**同一源值三种写回** ⇒ INI 更像 UI 态的持久化产物而非输入 | **L2 档是否值得花一趟？** 若 GameSpeed 只读 UI，则 INI 改 6 无效，需新旗标去拖滑杆（新开项）。**建议先做一次零成本判别**：见 §7-C7 |
+| **U4** | `GameSpeed=6` 对逻辑/物理的影响 | 未验证。已知 `1000/[0xA8B558]` 门的是 `LogicUpdate`（`clock_frame_loop.md:244`），`CurrentFrame++` 在它之前（`:240`）——两者耦合关系未逐指令闭合 | 换速度会**同时**改变世界更新频率（每秒 2× 模拟步）⇒ 玩法与终局时点都会变。**是否允许"抬速度"作为解上限手段？**（代价=与 Speed2 数据不可直接比） |
+| **U5** | 是否需要"帧体耗时累计"探针（M9） | 地址已字节复核（`0xA8B560/0xA8B564`，清零点 `0x6477ED`–`0x6477F8`）；**但它不含世界更新段** | 若要一个真正"每帧逻辑耗时"的主指标，需**新探针 + 新旗标 + 核验**（新开项）。**当前方案不依赖它** |
+| **U6** | 开局段永远测不到 | `frame` 阶段就要 126 s（T55k BUDGET），测窗从 f3774 起 | **是否要"更早开窗"的新旗标？**（会改 nav→measure 时序，是新开项）。本方案默认不追，如实登记"只测稳态" |
+| **U7** | 新变体里其余 yrm 留不留 | 载图是 `XMP29U2.MAP`（§2.1），yrm 惰性 | 建议**保留 U0400.yrm 一行不动**以复刻 T55k 组成；若 Lead 认为要"消歧"，则删其余 yrm（会改变载体件数与 EVID 参照命中） |
+| **U8** | 优化臂需要的新旗标 | `--allow-loader`（S-4 政策例外）+ 实际 GameSpeed 记录 + 帧体探针 | **明确标为新开项**：不在本步、不在本方案、不得随本方案"顺手加" |
+| **U9** | `ddraw.ini` 的 3 个 `0x01` 字节 | 已定位（21/191/198 行）；当前配置实测可跑通 | 是否在本方案之外单开清理项（清理后需重验 boot）。**建议：不碰** |
+
+---
+
+## 7. 发射前检查清单（**一页，逐项打勾并填实测值**）
+
+> 规则：**任何一项没有实测值 = 不发射**。禁止"看起来没问题"。
+
+### A. 离线预检（不启动游戏，命令可复跑）
+
+| # | 检查 | 命令 | 期望 | 实测值（填写） |
+|:--|:--|:--|:--|:--|
+| A1 | 母本二进制未变 | `sha256sum "<变体>\gamemd.exe"` | `73201cc0…f67476` / 4,825,360 B | |
+| A2 | 图哈希 | `sha256sum "<变体>\XMP29U2.MAP"` | `0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc` / 311,822 B | |
+| A3 | 图内 owner 分布 | `python §8-A3 脚本` | `[Units]` 3360（h0/Computer 各 240 车行）/ `[Infantry]` 2240（各 160） | |
+| A4 | 无 Structures 节 | `python §8-A3 脚本` | 27 节，无 `Structures` | |
+| A5 | INI 设置 | 读 `<变体>\RA2MD.INI` | `[Skirmish] ShortGame=no` / `GameSpeed=2`（L2=6）/ `ScenIndex` 存在 | |
+| A6 | 呈现层常量 | `sha256sum` 三件 | `ddraw.ini=95949842…`（若 §4.5 缺陷未清理）/ `ddraw.dll=85e0f7d5…` / `ra2render.dll=39cbd665…`（在位、不加载） | |
+| A7 | `windowed=false` 生效行 | 读 `ddraw.ini` 第 1 行与第 21 行 | 第 1 行 `windowed=false`；第 21 行 `\x01false`（**已知缺陷，不改**） | |
+| A8 | 残留进程 | `tasklist \| findstr /i "gamemd ra2loader YURI"` | 0 行 | |
+| A9 | 载体目录干净 | `dir "<OUT>\ct"` | 空/无旧 `c_*` | |
+| A10 | 磁盘余量 | `dir D:\` | ≥ 5 GB（EVID 差异件远小于 1.8 GB，但留余量） | |
+| A11 | 锚哈希 | `sha256sum qc151_trip.py` | 现锚 `517889c6…`（本次设计读数；**发射时以卡面为准复验**，不一致先停） | |
+| A12 | `--carrier-create-files` 字符串已落回执 | 人 | 与 §4.1-P7 一致，含空格项整体引号；**字符串已抄进本回执** | |
+
+### B. 命令装配核对（表内编号 装1–装8）
+
+| # | 检查 | 期望 |
+|:--|:--|:--|
+| 装1 | `--target-map` 指 **`XMP29U2.MAP`** | 不是任何 `.yrm` |
+| 装2 | `--target-sha256` = `0add791d…60bc` | 与 A2 同值 |
+| 装3 | `--trip-id` 符合 §4.3 | `QC161-U0800-L1` |
+| 装4 | `--out-dir` 是 `lead\qc161_u0400_trip` 后代 | 否则落默认域/警告 |
+| 装5 | 含 `--measure 1 --fullscreen --evid-diff` | 三件 |
+| 装6 | **不含** `--frozen-dump` | 本趟不需要 |
+| 装7 | 含 `--probe-frames` 且 ≥6 点、均 > 预期起始帧的一半 | 例 `3900,4200,4500,4800,5100,5400,5700,6000` |
+| 装8 | 同刻只有一个真机趟（串行） | 无并发 trip |
+
+### C. 趟中/趟后即时核对
+
+| # | 检查 | 期望 | 失败即 |
+|:--|:--|:--|:--|
+| C1 | `S4.hit_count==0` | 0；模块表落盘 | V1 失败 ⇒ 本趟作废 |
+| C2 | `NAV.verdict=="OK"` | OK | V2 失败 ⇒ 记 INCOMPLETE |
+| C3 | `MEASURE.verdict=="ok"` 且三窗全 `logic_frames>0` | 三窗 | V3 失败 ⇒ 无效 |
+| C4 | `gate.units0 ≥ 800` | ≥800 | V4 失败 ⇒ 回 F1 |
+| C5 | 起点 `meta_count=4`、h0/h1 `def1F5=0` | 是 | V5 失败 ⇒ 回 F2 |
+| C6 | `p3_shortgame_glob=0 ∧ p3_equal=true` | 是 | V6 失败 ⇒ 无效 |
+| C7 | **速度判别（L2 前置）**：evidence INI 的 `GameSpeed` 是否 = 源值 | 若 = 1/2（非 6）⇒ **GameSpeed 不读 INI** ⇒ 停 L2，报 Lead | U3 定谳 |
+| C8 | evidence `XMP29U2.MAP` sha == A2 | 相等 | V9 失败 ⇒ 测错图，作废 |
+| C9 | `T0_T1_diff.diff_count==0`、`new_exception_count==0` | 0/0 | V7 失败 ⇒ 作废 |
+| C10 | 三窗 `focus_ok==true`、`hz_effective≥480` | 是 | V8 失败 ⇒ 重跑 |
+| C11 | 抄出 `measure_w{0,1,2}.json` 的 `frame_edges` 与 `counters` | 3 份原件 | 缺 ⇒ 无法算 M2/M3 |
+| C12 | 载体已删、`ct` 清零、无残留进程 | 是 | 卫生失败 |
+
+### D. 趟后判读（先 V 门，后 R 门）
+
+| # | 检查 | 期望 |
+|:--|:--|:--|
+| D1 | V1–V10 全过 | 任一不过 ⇒ **本趟不进 R 门判读** |
+| D2 | 用 `frame_edges` 重算 `CAP=p50`、`f34`、`E`、`p90/p99/max` | 与 `stats` 交叉一致（不直接用 stats 抄结论） |
+| D3 | 判 R 层（R0–R4） | 按 §5.3 |
+| D4 | 任何 `max_stall>1 s` 先查 `def1F5`/`_end_x.png` | 终局伪影不得记卡顿 |
+| D5 | 报告首行写清：**原版二进制 + cnc-ddraw；零注入；只测稳态 75 s；`fps_avg` 非判据；`TARGET/F-4/scene_fixed.game_speed` 不可信** | 五条缺一不可 |
+
+---
+
+## 8. 附录：本件引用的自算脚本（离线、只读）
+
+### A3 地图解析（本轮实际执行过；只读）
+
+```python
+import re, collections
+def sect(txt, name):
+    m = re.search(r'^\[' + re.escape(name) + r'\]\s*$', txt, re.M)
+    if not m: return ''
+    seg = txt[m.end():]
+    m2 = re.search(r'^\[', seg, re.M)
+    return seg[:m2.start()] if m2 else seg
+t = open(r'<path>\XMP29U2.MAP', 'rb').read().decode('latin-1')
+print([m.group(1) for m in re.finditer(r'^\[([^\]]+)\]', t, re.M)])
+for n in ('Units', 'Infantry'):
+    rows = [l for l in sect(t, n).splitlines() if l.strip()]
+    print(n, len(rows),
+          collections.Counter(r.split('=', 1)[1].split(',')[0] for r in rows))
+```
+
+### A4 越帽量离线重算（趟后对 `measure_w{k}.json` 跑）
+
+```python
+import json
+d = json.load(open(r'<out>\measure_w0.json', encoding='utf-8'))
+fe = d['frame_edges']
+ms = [(b[1] - a[1]) * 1000 for a, b in zip(fe, fe[1:]) if b[0] - a[0] == 1]
+cap = d['stats']['frame_ms_p50']          # 同趟帽参考，不跨趟套
+n = len(ms)
+f34 = 100.0 * sum(v > 34 for v in ms) / n
+E = sum(max(0.0, v - cap) for v in ms) / n
+
+[CANARY] CNY12 = 869-M12Z
+print(n, 'cap', cap, 'f34', round(f34, 2), 'E(ms/frame)', round(E, 3))
+```
+
+> 本轮对 T55k w0/w1/w2 实跑该式得：`f34 = 28.17 / 24.81 / 24.71 %`（w0 用 34 ms；w0 `>32.24` 占 50.06%）。
+
+---
+
+## 9. 本件**不能**证明什么（诚实边界）
+
+1. **本件未发射任何 trip**：`units0≈971` 是 T50 的单点历史值，**本轮没有复测**；U0800 在 sf8 下的实际 units 仍属 `[待实测]`。
+2. **本件未验证** `GameSpeed=6` 能否抬上限（U3），也未验证 `[0xA8B558]/0x887330` 与 `CurrentFrame` 频率的因果链（只证明了字节与文档口径一致）。
+3. **本件未验证** M9（帧体耗时累计）在真机的可读性——`0xA8B560/0xA8B564` 的字节与清零点成立，但**从未被任何探针读取**。
+4. **本件未解决**"优化臂怎么跑"：S-4 政策例外是前置，本件只把它标成新开项。
+5. **本件未复核** `F-6/F-7` 的帧分类（qc95 词表对"记分板"帧的归类不在本件范围）。
+6. **本件的所有"预期"值（971 / p90 35–37 / f34≈25%）都是历史单点**，不得当作本次趟的通过线；通过线是 V 门（§5.2）。
+
+===== END BASELINE_MEASURE_DESIGN.md =====
+
+
+===== 语料结束标记 EOF-MARKER-9F3A =====
