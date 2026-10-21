@@ -81,6 +81,40 @@ ImageBase `0x00400000`，入口 `0x007CD80F`。
 
 ## C. 关键函数（按子系统）
 
+### C.0 `AbstractClass` 主虚表槽位契约（`0x007E1F50`，24 槽）
+
+> 全表与逐槽字节见 `kb/22_abstractclass_vtable_slots.md`、`evidence/vtable_slots.txt`
+> （工具 `tools/dump_vtable_slots.py`）。槽 24 不是函数，是下一个表的 COL 指针。
+
+| 槽 | `+0x` | 名称 | 备注 |
+|---:|---:|:---|:---|
+| 0 | `00` | `QueryInterface` | `E_POINTER` 守卫 |
+| 1 | `04` | `AddRef` | 恒 `ret 1` |
+| 2 | `08` | `Release` | 恒 `ret 1` |
+| 3 | `0C` | `GetClassID` | 基类抽象桩；派生类写 CLSID |
+| 4 | `10` | **`IsDirty`** | **返回 `!Dirty`（读 `+0x20`）**，不是 Load |
+| 5 | `14` | `Load` | 派生类覆写，体首调 `0x410380` |
+| 6 | `18` | `Save`（COM） | 派生类覆写，体首调 `0x410320` |
+| 7 | `1C` | `GetSizeMax` | `ret 8` |
+| 8 | `20` | 析构（标量删除） | 写 4 vptr，`test al,1` |
+| 9 | `24` | `Init` | 空 |
+| 10 | `28` | `PointerExpired` | 空，`ret 8` |
+| 11 | `2C` | **`WhatAmI`** | 派生类返 `AbstractType` ID |
+| 12 | `30` | **`Size`** | 派生类返实例尺寸 |
+| 13 | `34` | `AbstractClass::Save`（基类序列化块） | 只写 `+0x10`/`+0x20` |
+| 14 | `38` | （存疑） | `or eax,-1; ret` |
+| 15 | `3C` | （存疑） | `xor eax,eax; ret` |
+| 16 | `40` | `GetOwningHouse` → null | |
+| 17 | `44` | `IsDead` → true | |
+| 18 | `48` | `GetCoords`（默认） | 写 12 B（3 dword） |
+| 19 | `4C` | `GetDestination` | 转发槽 18，`ret 8` |
+| 20 | `50` | `IsOnFloor` → false | |
+| 21 | `54` | `IsInAir` → false | |
+| 22 | `58` | `GetAltCoords` | 转发槽 18，`ret 4` |
+| 23 | `5C` | `Update` | 空 |
+
+**`+0x10` = `UniqueID`、`+0x20` = `Dirty`（bool）** —— 由槽 13 的序列化 + YRpp 属性表双通道确认。
+
 ### C.1 时钟
 
 | VA | 名称 | 作用 | 证据 | 置信度 |

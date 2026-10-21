@@ -280,6 +280,47 @@ size    = vtable[12](obj)    # 只有上一步成立，才认它是 GetSize
 
 ---
 
+## H-009 · 2026-10-21 · `AbstractClass` 24 槽逐槽定名（含三个易错位置）
+
+**发现**：`AbstractClass` 主虚表 `0x007E1F50` 的 24 个槽已逐一定名，
+槽 0–7 是 COM 八槽，顺序与 YRpp 一致：
+
+```text
+[0] QueryInterface  [1] AddRef   [2] Release  [3] GetClassID
+[4] IsDirty         [5] Load     [6] Save     [7] GetSizeMax
+[8] ~AbstractClass  [9] Init     [10] PointerExpired
+[11] WhatAmI        [12] Size    [13] AbstractClass::Save（基类序列化块）
+```
+
+**三个易错位置（对 ③ 有实际影响）**
+
+1. **槽 4 是 `IsDirty`，不是 `Load`。** 全函数体 6 条：
+   `mov ecx,[esp+4]; xor eax,eax; mov dl,[ecx+0x20]; test dl,dl; sete al; ret 4`
+   —— **返回 `!Dirty`**。按"槽 4 = Load"去挂钩或读参数会拿错语义。
+   真正的 `Load` 在**槽 5**（体首 `call 0x410380`，那才是有流参数的包装）。
+2. **槽 13 不是 COM `Save`**，是"基类字段的序列化块"，只写 `+0x10`（`UniqueID`）
+   与 `+0x20`（`Dirty`，bool）。COM `Save` 在槽 6（体首 `call 0x410320`）。
+   两者撞名，引用时写全称。
+3. **槽 24 不是虚函数**，是下一张表的 COL 指针（值在 `.rdata`）。
+   扫虚表遇到 `.rdata` 值就该停 —— 表示"换表了"。
+   附带段边界：`.rdata` 是 `0x7E1000..0x811074`（**不是** `..0x812000`），
+   而 COL 指向的 TypeDescriptor 在 `.data`，查名字两段都要接受。
+
+**可能影响的目标**
+- **③ 安全改动能力**：任何"遍历虚表 / 克隆 / 存档"类补丁都会碰 0–7，
+  槽号错一位就是语义完全不同的函数，上面三处是最容易错的。
+- ② 主崩溃：若崩溃桩在 `Save`/`Load` 路径，`IsDirty` 与 `Load` 混淆会导致
+  "以为在存档、实际在查脏标志"的误判。**仅登记，不主动引导。**
+- ① 无关。
+
+**证据**：`kb/22_abstractclass_vtable_slots.md`、`evidence/vtable_slots.txt`
+（工具 `tools/dump_vtable_slots.py`，两次运行逐字节相同）。
+
+**置信度**：**实证**（逐槽字节 + YRpp 声明顺序）。
+**核验状态**：✅ 槽 0–7 双通道；槽 4 为单通道字节，但函数体仅 6 条、判据唯一。
+
+---
+
 ## 未投递项
 
 以下**不投**，因为与本线禁区或 GOAL-3T 在飞内容重合，投递只会制造噪声：

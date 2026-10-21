@@ -310,6 +310,8 @@ ATLAS §11.2 只列了 `HouseClass`/`CellClass` 等 24 槽类，未涉及本族�
 
 **关键**：槽 4 读 `AbstractClass+0x20` 的 **bool**，证实 §0.3 推出的 `+0x20 = bool` 是
 **派生类实际使用的字段**，不是我误判的填充。
+> **补充（R-014）**：该槽已定名 **`IsDirty`**，返回 `!Dirty`（`sete al`）。
+> 详见 `kb/22_abstractclass_vtable_slots.md` §1。
 
 **`0x410320` / `0x410380` / `0x6CF240` 是同一族"接口取值助手"** [实证]：
 三者都在参数为空时返回 `0x80004003`（`E_POINTER`），非空则读 `[obj]` 取 vtable 后再分派。

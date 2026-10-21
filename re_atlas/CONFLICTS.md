@@ -230,6 +230,38 @@ G-4/G-5 说"槽 12 可能是访问器"。正确的一般化是：**槽 11 = `Wha
 （本次即"69 行且 0 冲突"）。空集与全漏在日志上无法区分。
 已记为纪律 #8，并在 `dump_class_ids.py` 的 docstring 里写明。
 
+### G-11 · 本线自撤回：`vtable[4]` 是 `IsDirty`，不是 `Load`
+
+| 项 | 前轮（错） | 本轮（实证） |
+|:---|:---|:---|
+| 槽 4 | `Load` | **`IsDirty`**，返回 `!Dirty` |
+| 槽 5 | 未定 | `Load`（体首 `call 0x410380`） |
+| 槽 6 | 未定 | COM `Save`（体首 `call 0x410320`） |
+| 槽 13 | 泛称 `Save` | `AbstractClass::Save`（**基类序列化块**，只写 `+0x10`/`+0x20`） |
+
+**错因**：按 YRpp 的声明顺序
+（`GetClassID / IsDirty / Load / Save`）默对应，把"第 2 个"对成了 `Load`，
+**漏掉 `IsDirty` 这一格**。字节只说"读 `+0x20` 返回 bool"，是 `sete al` 定谳它是 `!Dirty`。
+
+**槽 13 与槽 6 撞名**：槽 13 不是 COM `Save`，是"基类字段的序列化块"，
+派生类的槽 6 会调用它。日后引用一律写 `AbstractClass::Save`。
+
+### G-12 · 虚表尾部的 `.rdata` 值不是虚函数，是 COL 指针
+
+扫虚表时若某槽值落在 `.rdata`（`0x7E1000..0x811074`），**它不是代码**，
+而是 MSVC 的 `vtable[-1]` `CompleteObjectLocator` 指针 —— 说明"这里换了一张表"。
+
+`AbstractClass` 的 `[24] = 0x007FB160` 解出 `.?AVINoticeSource@@`，
+`TEventClass` 的 `[24] = 0x0080C638` 解出 `.?AVTextButtonClass@@`（**无关类**）。
+
+⇒ **不能**用"下一个 COL 是哪个类"推断当前类的接口列表 ——
+`.rdata` 里 vtable 的排布不按继承关系相邻。`AbstractClass` 那条对上属巧合。
+判据只用"`.rdata` 值 ⇒ 非函数"这一点。工具 `tools/dump_vtable_slots.py`。
+
+**附带的段边界坑**：`.rdata` 是 `0x7E1000..0x811074`（不是 `..0x812000`），
+而 COL 指向的 TypeDescriptor 在 `.data`（`0x812000..0xB79BE4`）。
+查名字时**两段都要接受**，否则只输出 `?`。
+
 ---
 
 ## 四、待核（本线暂无裁定能力，或需真机）

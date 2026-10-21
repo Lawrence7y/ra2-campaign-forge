@@ -873,3 +873,109 @@ if 0x80000000 <= size <= 0x8000FFFF: skip
 - [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
 - [x] 只提交 `re_atlas/`
 - [x] 无整段反汇编（片段均 ≤10 条指令）
+
+---
+
+## R-014 · 2026-10-21 20:4x — L-19 结清，并撤回"槽 4 = Load"
+
+### 0. 心跳与进程检查
+
+| 项 | 结果 |
+|:---|:---|
+| `tasklist` 查 `gamemd` / `ra2loader` / `game.exe` | **全无** |
+| GOAL-3T 台账尾部 | 已读：在飞 = `--probe-frames` 早起帧 + `units0` 损失曲线 |
+| 冲突 | 无。本轮只动 KB/INDEX/CONFLICTS/`re_atlas/tools` |
+
+### 1. L-19 的答案
+
+槽 3 / 4 / 5 / 6 / 13 **在 11 个触发器族 + `HouseClass` 上全部固定**：
+
+| 槽 | 角色 | 是否被覆写 |
+|---:|:---|:---|
+| 3 | `GetClassID` | 全部覆写（各类写自己的 CLSID） |
+| **4** | **`IsDirty`** | **11/11 全是同一个 `0x00410450`，无人覆写** |
+| 5 | `Load` | 全部覆写 |
+| 6 | COM `Save` | 全部覆写 |
+| 13 | `AbstractClass::Save`（基类块） | 全部覆写 |
+
+槽 4 的全引擎直方图：`0x00410450` 出现 **77 次**，是最高频值。
+⇒ 槽 4 不随类变，因为它读的是基类字段，派生类无需覆写。
+
+### 2. 撤回 7：槽 4 是 `IsDirty`，不是 `Load`
+
+`kb/20_vtable_contract.md` 的未闭合表里我写"`vtable[4]` = `Load`"。**错。**
+
+字节（`0x00410450`，全函数仅 6 条）：
+
+```text
+0x00410450  8B 4C 24 04   mov  ecx,[esp+4]
+0x00410454  33 C0         xor  eax,eax
+0x00410456  8A 51 20      mov  dl,[ecx+0x20]     ; Dirty
+0x00410459  84 D2         test dl,dl
+0x0041045B  0F 94 C0      sete al                ; ★ al = !Dirty
+0x0041045E  C2 04 00      ret  4
+```
+
+**返回 `!Dirty`**，没有任何流参数或写操作 —— 这是 `IsDirty()`，不是 `Load`。
+真正的 `Load` 在槽 5（派生类覆写，体首 `call 0x410380` 那个有流参数的包装）。
+
+**为什么之前会错**：`kb/11_class_layouts.md` §6 的槽位表只写了
+"槽 4 读 `+0x20` bool"，没定名；我在写 L-19 时按 YRpp 的**声明顺序**
+（`GetClassID / IsDirty / Load / Save`）去想，把"第 2 个"对成了 `Load`，
+实际应该是 `IsDirty`。**错误发生在"跳过一个"上**。
+
+### 3. 顺带定名：槽 0–7 是 COM 八槽，顺序与 YRpp 一致
+
+`QueryInterface / AddRef / Release / GetClassID / IsDirty / Load / Save / GetSizeMax`，
+对应 `YRpp/AbstractClass.h:71,72,73,76,79,80,81,83`，逐一吻合。
+
+槽 8 = 标量删除析构：`ret 4` + 返回 `esi`(this) + `test al,1` 决定 `operator delete`
+⇒ YRpp 行 97 的 `~AbstractClass()`。
+
+### 4. 新发现：槽 24 不是槽，是下一张表的 COL 指针
+
+`0x7E1F50 + 0x60 = 0x7E1FB0`，值 `0x007FB160` 落在 `.rdata` ⇒ **不是代码**。
+解出来是 `CompleteObjectLocator`：
+
+```text
+COL @0x7FB160  pTypeDescriptor = 0x8177E8
+  TypeDescriptor @0x8177E8  name = ".?AVINoticeSource@@"
+```
+
+而 `0x7E1FB4`（正是 `+4`）的值是 `0x004C9150` —— 是代码。
+⇒ `INoticeSource` 子表从 `0x7E1FB0`（含 `[-1]` COL）开始。
+
+**判据**：槽值落 `.rdata` ⇒ 它是 COL 指针，表示"这里换表了"；别当虚函数。
+
+`TEventClass` 同一位置的 COL 解出 `.?AVTextButtonClass@@` —— **无关的类**。
+⇒ `.rdata` 里 vtable 的排布**不按继承关系相邻**，不能用"下一个 COL 是谁"推断接口列表。
+`AbstractClass` 那条对上 `INoticeSource` 属巧合，不作证据。
+
+### 5. 工具与证据
+
+- 新增 `tools/dump_vtable_slots.py`：逐槽分类 `TEXT / COLPTR / ZERO`，
+  `COLPTR` 自动解出 COL → TypeDescriptor → 类名。
+- 证据 `evidence/vtable_slots.txt`，两次运行逐字节相同。
+- **工具自身也踩了一次段边界坑**：我先用 `0x812000` 当 `.rdata` 上界，
+  但 `.rdata` 实际是 `0x7E1000..0x811074`；而 COL 指向的 TypeDescriptor 在 `.data`
+  （`0x812000..0xB79BE4`）。查名字时**两段都要接受**，否则只输出 `?`。
+  已修，并在 docstring 写明。
+
+### 6. 本轮产出
+
+| 件 | 内容 |
+|:---|:---|
+| 新增 KB | `22_abstractclass_vtable_slots.md`（26 槽逐一定名 + COL 判据） |
+| 新增工具 | `tools/dump_vtable_slots.py` |
+| 新增证据 | `evidence/vtable_slots.txt` |
+| INDEX | 新增 §C.0 槽位契约表 |
+| 关闭悬项 | **L-19** |
+| 撤回 | **7**（槽 4 = `IsDirty` 非 `Load`） |
+| 新增存疑 | 槽 14/15 未定名（`or eax,-1` / `xor eax,eax`），不强行裁 |
+
+### 7. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未启动 gamemd/ra2loader
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 只提交 `re_atlas/`
+- [x] 片段均 ≤ 8 条指令

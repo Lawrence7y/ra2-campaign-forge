@@ -248,7 +248,7 @@ SideClass              0x1C       0x0B4
 |:--|:---|:---|
 | L-17 | 15 个高频类（`House`/`Unit`/`Building`/`Bullet`/`Anim`/`NavyType`…）的 `WhatAmI` 为何不是单指令 | 需放宽模式：允许 `push`/`mov` 后再 `mov eax,imm`，或用 XRTTI 的 `get_this_locator` 反查 |
 | L-18 | 名字表 `value` 字段在表里是 `u32`，但 `WhatAmI` 返回 `AbstractType`（也是 4 字节）——是否有注释说的小值优化 | YRpp 记 `AbstractType : unsigned int`，一致；无需再查 |
-| L-19 | `vtable[13]` = `Save`、`vtable[4]` = `Load` 的槽号是否也全族固定 | 本轮只验了 11/12；4/13 需另跑一遍 |
+| L-19 | ✅ **已解（R-014）**：槽 3/4/5/6/13 全族固定，但**槽 4 是 `IsDirty` 不是 `Load`**。见 `kb/22_abstractclass_vtable_slots.md` |
 
 ---
 

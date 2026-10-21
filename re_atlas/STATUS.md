@@ -1,6 +1,6 @@
 # RE-ATLAS · 进度与覆盖率 (STATUS)
 
-更新：2026-10-21 R-013（L-17 结清：工具缺陷修复，59 → 69 类）
+更新：2026-10-21 R-014（L-19 结清：`AbstractClass` 24 槽逐槽定名）
 
 ## 一句话
 
@@ -63,9 +63,9 @@
 | 撤回 | **1**（`0xB0C110` 字段注册表 → `SwizzleManagerClass::Instance`，累计 **4**） |
 | **核验升级** | **2**（G-1 `TeamTypeClass`=248 / G-2 `AITriggerTypeClass`=272 → **已核验**） |
 | 异族核验通道 | GLM 5.3 + DeepSeek v4.1-flash，两路 `CONFIRMED` |
-| 交接件 | **8 条**（H-001…H-008；本轮新增 H-007 swizzle 清零、H-008 类型判定法） |
-| KB 正文 | **5 篇**（`00` / `10` / `11` / `20` / `21`） |
-| 可复跑工具 | **7 个**（verify_claims / dump_trigger_tables / xcheck_sizes / dump_class_layouts / dump_class_ids / disas / extract_symbols） |
+| 交接件 | **9 条**（H-001…H-009；R-014 新增 H-009 虚表槽位三易错点） |
+| KB 正文 | **6 篇**（`00` / `10` / `11` / `20` / `21` / `22`） |
+| 可复跑工具 | **9 个**（verify_claims / dump_trigger_tables / xcheck_sizes / dump_class_layouts / dump_class_ids / dump_vtable_slots / disas / extract_symbols / classify_conflicts） |
 
 ### 本轮两次方法教训
 
