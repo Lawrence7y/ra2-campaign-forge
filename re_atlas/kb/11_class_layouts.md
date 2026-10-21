@@ -347,3 +347,63 @@ ATLAS §11.2 只列了 `HouseClass`/`CellClass` 等 24 槽类，未涉及本族�
 | L-4 | `ScriptTypeClass` 564 字节的大块结构 |
 | L-5 | `TagClass` / `TriggerClass` 的字段（本轮只证了尺寸） |
 | L-6 | `TEventClass` 的 Event/Action 参数区（`+0x30` 之后） |
+
+---
+
+## 7. 序列化顺序：先基类、后派生 [实证]
+
+`ScriptClass::Save`（`0x006914E0`）给出本族**统一模式**：
+
+```
+0x006914E0  56                  push esi
+0x006914E1  57                  push edi
+0x006914E2  8B 7C 24 0C         mov  edi, [esp+0xC]      ; 流对象
+0x006914E6  8B F1               mov  esi, ecx            ; this
+0x006914E8  57                  push edi
+0x006914E9  E8 22 EF D7 FF      call 0x00410410          ; ★ 先调 AbstractClass::Save
+0x006914EE  8B 46 2C            mov  eax, [esi+0x2C]     ; ★ 再写自己的 +0x2C
+0x006914F1  8B CF               mov  ecx, edi
+0x006914F3  50                  push eax
+0x006914F4  E8 57 08 E1 FF      call 0x004A1D50          ; 写 dword
+0x006914F9  5F 5E               pop  edi; pop esi
+```
+
+⇒ **派生类的 `Save` 第一件事是调基类 `Save`**，然后追加自己的字段。
+对编译器的含义：存档字节序列是**基类在前、派生在后**的拼接；
+读档顺序必须严格对称，否则后续所有字段错位。
+
+`ScriptClass` 尺寸仅 48 字节，`Save` 只多写**一个** `+0x2C` dword ⇒
+其实例数据极简，主要靠继承来的两字段 + 自身一个 dword。
+
+---
+
+## 8. `ScriptTypeClass` 的容器簇
+
+`ScriptTypeClass` 尺寸 **564 (`0x234`)**，字段热点：
+
+| 偏移 | 次数 | 备注 |
+|:---|---:|:---|
+| `+0x04` / `+0x08` / `+0x0C` | 11 / 12 / 9 | 继承的接口 vptr |
+| `+0x10` / `+0x14` | 5 / 4 | 继承字段 |
+| `+0x18..+0x28` | 少 | 继承尾部 + 自有 |
+| **`+0x98` / `+0x0A0` / `+0x0A4` / `+0x0A8`** | 2 / 9 / 2 / 2 | **容器簇**（与 `TaskForceClass+0x9C/+0xA4` 同族） |
+
+⇒ `+0x98` 一带是本族多处的**统一容器布局**：
+`ScriptTypeClass` 在 `+0xA0` 最热（9 次），`TaskForceClass` 在 `+0x9C`（6 次）。
+两类偏移差 4 字节 ⇒ 可能是**同一模板类在不同基类尺寸下的实例化**，
+或各自带一个额外 dword 前缀。**待下一轮统一建模**（列 L-7）。
+
+---
+
+## 9. 下一轮
+
+| # | 悬项 |
+|:--|:---|
+| L-1 | `AbstractClass+0x14..+0x1C` 三个 dword 语义（不进存档 ⇒ 纯运行时态） |
+| L-2 | `+0x10` / `+0x20(bool)` 的业务语义 |
+| L-3 | ✅ 已解：`0xB0C110` 是全局字段注册表根（489 处引用），非事件专用键 |
+| L-4 | ✅ 已解：`TaskForceClass` 容器 = `{count @+0x9C, array @+0xA4}`，**非标准向量布局** |
+| L-5 | `ScriptTypeClass` 564 字节的容器簇与 `TaskForce` 的统一建模（L-7） |
+| L-6 | `TEventClass+0x30` / `+0x54` 两个接口对象的真实类型 |
+| L-7 | 本族"容器簇"（`+0x98` 一带）的统一布局假设 |
+| L-8 | 冷却结束后补：`TeamTypeClass` 248 的异族核验 |
