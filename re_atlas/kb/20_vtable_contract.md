@@ -8,7 +8,7 @@
    此前 KB 只记了 `vtable[12]`，并且已经发现它**不是全局通用**（`RadarClass`/`WWMouseClass`
    在槽 12 放访问器）。本篇给出正确的一般化：**槽 11 才是身份槽，槽 12 是尺寸槽，两者是一对**。
 2. **`AbstractType` 的 74 项类型 ID 全表**，由引擎自己的名字表 `0x816EE0` 直接读出，
-   并与 59 个类的 `vtable[11]` 逐一对照。
+   并与 69 个类的 `vtable[11]` 逐一对照。
 
 ---
 
@@ -18,10 +18,11 @@
 |:---|:---|:---|
 | 类型 ID 名字表 | `0x00816EE0`，**74 项**，元素 `{char* name, u32 value}` 各 8 字节 | 逐项解引用读出 74 个非空名字 |
 | ID 值域 | `0x00..0x49`（`<none>` .. `DiskLaser`） | 表内 `value` 字段 |
-| `vtable[11]` = `WhatAmI()` | `mov eax, imm8; ret` | 59 个类全部命中，imm 与名字表 `value` 一一对应 |
-| `vtable[12]` = `GetSize()` | `mov eax, imm32; ret` | 59 个类全部命中 |
-| ID 冲突数 | **0**（59 个 ID，59 个不同类） | 见 `evidence/class_ids.txt` |
-| 名称一致率 | 52/59 字面一致，7 条为已知别名 | 见 §3 |
+| `vtable[11]` = `WhatAmI()` | `mov eax, imm; ret` | **69 个类**全部命中，imm 与名字表 `value` 一一对应 |
+| `vtable[12]` = `GetSize()` | `mov eax, imm; ret` | 同上 69 个类 |
+| ID 冲突数 | **0**（69 个 ID，69 个不同类） | 见 `evidence/class_ids.txt` |
+| 名称一致率 | 62/69 字面一致，7 条为已知别名 | 见 §3.1 |
+| 剩余未对应 | 5 项，各有正当原因（抽象桩 / 无此类） | 见 §3.2 |
 
 **载荷**：任何 `AbstractClass*` 都能用 `vtable[11]` 识别真实类型，不需要 RTTI、
 不需要 `dynamic_cast`。这是写"按类型分派"补丁的正确入口。
@@ -70,13 +71,19 @@ vtable[12] @ 0x007F55A8 -> 0x0071FA50
 
 ---
 
-## 3. 59 个类的 ID / 尺寸对照表
+## 3. 69 个类的 ID / 尺寸对照表
 
 完整表见 `re_atlas/evidence/class_ids.txt`（工具 `re_atlas/tools/dump_class_ids.py`）。
 与三条目标相关的行：
 
 | ID | 尺寸 | 类 | 虚表 |
 |---:|---:|:---|:---|
+| `0x01` | 2280 | `UnitClass` | `0x007F5C70` |
+| `0x02` | 1752 | `AircraftClass` | `0x007E22A4` |
+| `0x04` | 456 | `AnimClass` | `0x007E3354` |
+| `0x06` | 1824 | `BuildingClass` | `0x007E3EBC` |
+| `0x08` | 352 | `BulletClass` | `0x007E46E4` |
+| `0x0D` | 90296 | `HouseClass` | `0x007EA8A0` |
 | `0x1A` | 48 | `ScriptClass` | `0x007F0F78` |
 | `0x1B` | 564 | `ScriptTypeClass` | `0x007F1008` |
 | `0x1C` | 180 | `SideClass` | `0x007F2EC0` |
@@ -92,7 +99,11 @@ vtable[12] @ 0x007F55A8 -> 0x0071FA50
 | `0x3B` | **272** | `AITriggerTypeClass` | `0x007E2A50` |
 
 **加粗的两行**正是 ATLAS §11.2 的两条翻案值（ATLAS 记 288 / 256），
-本轮获**两族独立复核**（见 §6）。
+已获**两族独立复核**（见 §6）。
+
+前 5 行（`0x01`–`0x08`）是 R-013 修好工具后才恢复的：它们此前被
+"capstone 把小立即数渲染成十进制"的判据错误整体滤掉（见 §3.3）。
+`HouseClass` 则是被"尺寸上限 `0x4000`"滤掉（它是 90,296 字节）。
 
 ### 3.1 七条名称"不一致"全部是别名，不是错误
 
@@ -109,16 +120,40 @@ vtable[12] @ 0x007F55A8 -> 0x0071FA50
 YRpp 的 `enum class AbstractType`（`YRpp/GeneralDefinitions.h:19`）是第三条独立来源，
 74 项与本节完全一致，且用的正是 `Isotile` / `BuildingLight` / `Super` 这些引擎侧名称。
 
-### 3.2 引擎表里有、但本轮没恢复出类的 15 个 ID
+### 3.2 引擎表里有、但本轮没恢复出类的 5 个 ID
 
-`0x00 <none>`、`0x01 Unit`、`0x02 Aircraft`、`0x03 AircraftType`、`0x04 Anim`、
-`0x05 AnimType`、`0x06 Building`、`0x07 BuildingType`、`0x08 Bullet`、`0x09 BulletType`、
-`0x0D House`、`0x1F Special`、`0x34 Abstract`、`0x3A AITrigger`、`0x40 NavyType`。
+`0x00 <none>`、`0x1F Special`、`0x34 Abstract`、`0x3A AITrigger`、`0x40 NavyType`。
 
-**这是本轮的覆盖缺口，不是矛盾**：`dump_class_ids.py` 只认"`vtable[11]` 是单条
-`mov eax,imm; ret`"这一种形态。这些类要么 `WhatAmI` 体更长（不是单指令），
-要么 RTTI 没找到虚表（954/988 有虚表）。`House`/`Unit`/`Building` 这类高频类
-一定存在，只是没命中本工具的模式。
+这 5 个都**不是本线的漏检**，各有确切原因：
+
+| ID | 名称 | 为什么没有类 |
+|---:|:---|:---|
+| `0x00` | `<none>` | 哨兵值，不对应任何类 |
+| `0x34` | `Abstract` | `AbstractClass` 自己的 `v[11]`/`v[12]` 都指向 `0x004C9150` = `xor eax,eax; ret`（**抽象桩**），不是 `mov eax,imm` |
+| `0x1F` | `Special` | `.rdata` 里搜不到 `SpecialClass` 字符串，RTTI 未生成（无此类） |
+| `0x3A` | `AITrigger` | `.rdata` 里只有 `AITriggerTypeClass`（= `0x3B`），没有 `AITriggerClass` |
+| `0x40` | `NavyType` | `.rdata` 里搜不到 `NavyTypeClass` |
+
+`AITrigger` 很可能是 `AITriggerTypeClass` 的**实例**侧类型，但引擎里没有独立类；
+`NavyType` / `Special` 同理是枚举占位。这三条**不列为待办**，除非后续出现反证。
+
+### 3.3 工具的两个静默空集陷阱（L-17 的真因）
+
+`0x01..0x09` 这 9 个 ID（`Unit`/`Aircraft`/`Anim`/`Building`/`Bullet` 及其 Type 类）
+在上一版工具里全部漏掉，**不是因为形态特殊**，而是两个字符串判断的坑：
+
+1. **capstone 把小于 10 的立即数渲染成十进制**：`mov eax, 1` 而不是 `mov eax, 0x01`。
+   `op_str.startswith("eax,0x")` 因此跳过所有 id `0x00..0x09` 与所有尺寸 < 10。
+2. **逗号后有空格**：`"eax, 0x30"`（已在上一版修过一次）。
+
+两者都表现为**静默返回空集**，不报错。
+修法：读 `insn.operands` 结构（`X86_OP_IMM`），不要比对渲染文本。
+修后从 59 行涨到 **69 行**，且 `ids in engine table but no class recovered`
+从 15 项降到 5 项（其余 5 项见 §3.2，各有正当原因）。
+
+**纪律 #8（新增）**：capstone 的 `op_str` 是**给人看的渲染结果**，
+数值一律从 `operands[i].imm` 取。凡"解析指令取常量"的工具，
+必须同时输出一个**肯定对照**（本次即"69 行且 0 冲突"），否则空集与全漏无法区分。
 
 ---
 
@@ -192,7 +227,7 @@ SideClass              0x1C       0x0B4
 
 | 结论 | 通道 | 状态 |
 |:---|:---|:---|
-| `vtable[12]`=GetSize，59 类，槽 11=WhatAmI | 本线字节直算（`dump_class_ids.py`） | 单通道 |
+| `vtable[12]`=GetSize，69 类，槽 11=WhatAmI | 本线字节直算（`dump_class_ids.py`） | 单通道 |
 | 名字表 74 项、值域 0x00..0x49、空穴 0 | 本线直接解引用 | 单通道 |
 | 74 项与 YRpp `AbstractType` 完全一致 | 社区源（YRpp `GeneralDefinitions.h:19`） | 交叉佐证 |
 | `TeamTypeClass`=248 / `AITriggerTypeClass`=272 | **GLM 5.3 + DeepSeek v4.1-flash 双族独立复算** | ✅ **已核验** |

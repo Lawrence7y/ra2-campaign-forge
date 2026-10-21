@@ -207,7 +207,28 @@
 G-4/G-5 说"槽 12 可能是访问器"。正确的一般化是：**槽 11 = `WhatAmI()`（类型 ID），
 槽 12 = `GetSize()`**，两者成对。判据改为"先取槽 11 验是否是合法 `AbstractType`"，
 而不是"看槽 12 体首是不是 `mov eax,imm`"。
-详见 `kb/20_vtable_contract.md`；59 个类逐一命中，ID 冲突 0。
+详见 `kb/20_vtable_contract.md`；**69 个类**逐一命中，ID 冲突 0。
+
+### G-10 · 本线工具缺陷：两个静默空集陷阱导致 10 个核心类被漏掉
+
+`dump_class_ids.py` 第一版只报出 59 类，把 `Unit`/`Aircraft`/`Anim`/`Building`/`Bullet`
+及其 `TypeClass` 全部漏掉，并把这 15 项记成"待查覆盖缺口"。**实际是工具 bug，不是数据特性**：
+
+| 缺陷 | 表现 | 真因 |
+|:---|:---|:---|
+| 判据 `op_str.startswith("eax,0x")` | id `0x00..0x09` 全漏 | **capstone 把小立即数渲染成十进制**：`mov eax, 1`，没有 `0x` |
+| 尺寸上限 `0 < size < 0x4000` | `HouseClass`（90,296 字节）被滤 | 自以为"类不会那么大" |
+
+修法：用 `insn.operands`（`X86_OP_IMM`）读结构，不比对渲染文本；上界放到 `0x400000`
+并按 HRESULT 形状（`0x8000xxxx`）排除失败返回值而非按大小。
+
+**修后 59 → 69 类**，`ids in engine table but no class recovered` 从 15 项降到 5 项，
+其余 5 项各有正当原因（`<none>` 哨兵 / `AbstractClass` 抽象桩 / `.rdata` 里根本没有
+`SpecialClass`、`AITriggerClass`、`NavyTypeClass` 三个类）。
+
+**教训**：任何"解析指令取常量"的工具，必须同时输出**肯定对照**
+（本次即"69 行且 0 冲突"）。空集与全漏在日志上无法区分。
+已记为纪律 #8，并在 `dump_class_ids.py` 的 docstring 里写明。
 
 ---
 

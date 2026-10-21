@@ -40,43 +40,42 @@ ImageBase `0x00400000`，入口 `0x007CD80F`。
 
 > 虚表地址 **20/20 与 ATLAS 一致、0 不一致**（`evidence/vtable_xcheck.txt`）。
 > **槽位契约（R-012）**：`vtable[11]` = `WhatAmI()`（`AbstractType` 类型 ID），
-> `vtable[12]` = `GetSize()`（实例尺寸），**两者成对**。59 类逐一命中、ID 冲突 0，
+> `vtable[12]` = `GetSize()`（实例尺寸），**两者成对**。**69 类**逐一命中、ID 冲突 0，
 > 与引擎名字表 `0x816EE0`（74 项）及 YRpp `AbstractType` 三方一致。
 > 详见 `kb/20_vtable_contract.md`、完整表 `evidence/class_ids.txt`。
-> **判据**：先验槽 11 是合法类型 ID，成立才认槽 12 是尺寸。
+> **判据**：先验槽 11 是合法类型 ID（`0x00..0x49`），成立才认槽 12 是尺寸。
 
 | 类 | 虚表 VA | 类型 ID | 实例尺寸 | 置信度 | 备注 |
 |:---|:---|---:|---:|:---|:---|
-| `AbstractClass` | `0x007E1F50` | `0x34` Abstract | 待解 | 实证（VT） | 根类，4 主/6 接口 vptr |
-| `ObjectClass` | `0x007EF060` | — | 待解 | 实证（VT） | 槽 11 非单指令形态 |
-| `MissionClass` | `0x007EDCC0` | — | 待解 | 实证（VT） | 同上 |
-| `RadioClass` | `0x007F0508` | — | 待解 | 实证（VT） | 同上 |
-| `TechnoClass` | `0x007F4960` | — | 待解 | 实证（VT） | 同上 |
-| `FootClass` | `0x007E8C94` | — | 待解 | 实证（VT） | 同上 |
+| `AbstractClass` | `0x007E1F50` | `0x34` Abstract | — | 实证（VT） | 抽象桩 `xor eax,eax`，两槽同址 `0x004C9150` |
 | `UnitClass` | `0x007F5C70` | `0x01` Unit | 2280 (`0x8E8`) | **实证** | 双槽命中 |
-| `InfantryClass` | `0x007EB058` | `0x0F` Infantry | 1776 (`0x6F0`) | **实证** | |
 | `AircraftClass` | `0x007E22A4` | `0x02` Aircraft | 1752 (`0x6D8`) | **实证** | |
-| `BuildingClass` | `0x007E3EBC` | `0x06` Building | 1824 (`0x720`) | **实证** | |
-| `BulletClass` | `0x007E46E4` | `0x08` Bullet | 352 (`0x160`) | **实证** | |
+| `AircraftTypeClass` | `0x007E2868` | `0x03` AircraftType | 3600 (`0xE10`) | **实证** | |
 | `AnimClass` | `0x007E3354` | `0x04` Anim | 456 (`0x1C8`) | **实证** | |
+| `AnimTypeClass` | `0x007E3608` | `0x05` AnimType | 888 (`0x378`) | **实证** | |
+| `BuildingClass` | `0x007E3EBC` | `0x06` Building | 1824 (`0x720`) | **实证** | |
+| `BuildingTypeClass` | `0x007E4570` | `0x07` BuildingType | 6040 (`0x1798`) | **实证** | |
+| `BulletClass` | `0x007E46E4` | `0x08` Bullet | 352 (`0x160`) | **实证** | |
+| `BulletTypeClass` | `0x007E4948` | `0x09` BulletType | 760 (`0x2F8`) | **实证** | |
+| `HouseClass` | `0x007EA8A0` | `0x0D` House | 90296 (`0x160B8`) | **实证** | 最大尺寸类 |
+| `CellClass` | `0x007E4EEC` | `0x0B` Cell | 328 (`0x148`) | **实证** | |
+| `InfantryClass` | `0x007EB058` | `0x0F` Infantry | 1776 (`0x6F0`) | **实证** | |
 | `ParticleClass` | `0x007EF954` | `0x16` Particle | 312 (`0x138`) | **实证** | |
 | `ParticleSystemClass` | `0x007EFB9C` | `0x18` ParticleSystem | 256 (`0x100`) | **实证** | |
-| `HouseClass` | `0x007EA8A0` | `0x0D` House | 90296 (`0x160B8`) | **实证** | |
-| `CellClass` | `0x007E4EEC` | `0x0B` Cell | 328 (`0x148`) | **实证** | |
 | `SuperClass` | `0x007F3FE8` | `0x39` SuperWeapon | 128 (`0x80`) | **实证** | |
 | `TeamClass` | `0x007F4730` | `0x22` Team | 160 (`0xA0`) | **实证** | |
 | `TeamTypeClass` | `0x007F47D0` | `0x23` TeamType | **248 (`0xF8`)** | **已核验** | ATLAS 记 288 **错**；异族双通道 |
 | `AITriggerTypeClass` | `0x007E2A50` | `0x3B` AITriggerType | **272 (`0x110`)** | **已核验** | ATLAS 记 256 **错**；异族双通道 |
-| `MapClass` | `0x007ED404` | — | — | 实证（VT） | 继承 `GScreenClass` |
-| `RadarClass` | `0x007F0344` | — | —（`v[12]` 非 GetSize） | 实证（VT） | 见 CONFLICTS G-4/G-9 |
-| `WWMouseClass` | `0x007F7B2C` | — | —（`v[12]` 非 GetSize） | 实证（VT） | 见 CONFLICTS G-5/G-9 |
+| `MapClass` | `0x007ED404` | 未命中 | — | 实证（VT） | 继承 `GScreenClass` |
+| `RadarClass` | `0x007F0344` | 未命中 | —（`v[12]` 非 GetSize） | 实证（VT） | 见 CONFLICTS G-4/G-9 |
+| `WWMouseClass` | `0x007F7B2C` | 未命中 | —（`v[12]` 非 GetSize） | 实证（VT） | 见 CONFLICTS G-5/G-9 |
 
 触发器族 8 类全部双槽命中：`Script` 48 (`0x1A`) / `ScriptType` 564 (`0x1B`) /
 `Tag` 56 (`0x2C`) / `Trigger` 72 (`0x26`) / `TEvent` 88 (`0x30`) /
 `TAction` 148 (`0x2F`) / `TaskForce` 212 (`0x21`) / `Team` 160 (`0x22`)。
 
 完整 988 类清单：`evidence/rtti/hierarchy.txt`（继承链）与 `evidence/rtti/classes_meta.json`（每类 vtable / 槽数 / 基类链）。
-59 类 ID+尺寸双命中表：`evidence/class_ids.txt`（工具 `tools/dump_class_ids.py`）。
+69 类 ID+尺寸双命中表：`evidence/class_ids.txt`（工具 `tools/dump_class_ids.py`）。
 
 ---
 

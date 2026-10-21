@@ -112,7 +112,7 @@
 与 `YRpp/SwizzleManagerClass.h:62-63` 的两个成员
 `DynamicVectorClass<SwizzlePointerClass> Swizzles_Old / Swizzles_New;` 吻合：
 `+0x04` 与 `+0x1C` 各 0x18 字节（`VectorClass` 0x10 + `Count` + `CapInc`），
-实例尺寸 0x34 = 52 ≤ 0x34 槽 12 之外（`SwizzleManagerClass` 不在 59 类表内，无 ID）。
+实例尺寸 0x34 = 52；`SwizzleManagerClass` 不在 69 类 ID 表内（它不是 `AbstractClass` 派生，无 `WhatAmI`）。
 
 ---
 

@@ -755,3 +755,121 @@ Dirty(+0x20) / padding_21[3]` 正好 **0x24** 字节，且与
 - [x] 只提交 `re_atlas/`
 - [x] 未改 `.gitignore`；未改名/转码文件绕过钩子
 - [x] 无整段反汇编上传（片段均 ≤20 条指令）
+
+---
+
+## R-013 · 2026-10-21 20:3x — L-17 结清：不是形态问题，是本线工具的两个静默空集缺陷
+
+### 0. 心跳与进程检查
+
+| 项 | 结果 |
+|:---|:---|
+| `tasklist` 查 `gamemd` / `ra2loader` / `game.exe` | **全无** |
+| GOAL-3T 台账尾部 | 已读：在飞 = `--probe-frames` 早起帧 / `units0` 损失曲线（T55 线） |
+| 冲突 | 无。本轮只动 `re_atlas/tools`、`kb/20`、`INDEX`、`CONFLICTS`，与其禁区零交集 |
+
+### 1. 答案与我的预期相反
+
+R-012 §7 我把 L-17 写成"15 个高频类的 `WhatAmI` 为何不是单指令形态，
+**工具模式太窄**"。**这个前提本身是错的**：它们的 `WhatAmI` 就是标准的
+`B8 imm C3`，一个字节都没特殊。
+
+我先按 R-012 的假设去逐个读那 15 个类的 `v[11]`，结果是：
+
+```text
+HouseClass      v[11]=0x0050E360  B8 0D 00 00 00 C3   mov eax,0xD     ← 标准形态
+UnitClass       v[11]=0x00746E20  B8 01 00 00 00 C3   mov eax,1       ← 标准形态
+AircraftClass   v[11]=0x0041C180  B8 02 00 00 00 C3   mov eax,2       ← 标准形态
+AnimClass       v[11]=0x00426580  B8 04 00 00 00 C3   mov eax,4       ← 标准形态
+BuildingClass   v[11]=0x00459EC0  B8 06 00 00 00 C3   mov eax,6       ← 标准形态
+BulletClass     v[11]=0x0046B550  B8 08 00 00 00 C3   mov eax,8       ← 标准形态
+```
+
+⇒ **全部命中**。所以问题在工具，不在数据。
+
+### 2. 两个静默空集缺陷
+
+**缺陷 1（主因）：capstone 把小立即数渲染成十进制**
+
+```text
+capstone 输出:  mov eax, 1        ← id 0x01，没有 "0x"
+                mov eax, 0xd4     ← size 212，有 "0x"
+```
+
+我的判据 `a.op_str.replace(' ','').startswith('eax,0x')` 因此**跳过所有 id 0x00..0x09
+与所有尺寸 < 10**。受影响的正是 `Unit`/`Aircraft`/`Anim`/`Building`/`Bullet` 及其
+5 个 `TypeClass` —— 引擎最核心的 10 个类。
+
+**缺陷 2（次因）：我自己加的尺寸上限 `0 < size < 0x4000`**
+
+`HouseClass` = `0x160B8` = 90,296 字节，被这个上限滤掉。
+当时写这个上界的理由是"类不会那么大"，属于**凭直觉设的闸**。
+
+修法：
+
+```python
+# 不在渲染文本上做字符串判断，读结构
+insn.operands[1].type == capstone.x86.X86_OP_IMM  ->  insn.operands[1].imm
+# 上界放到 0x400000，并用 HRESULT 形状排除失败返回，而不是用大小排除
+if 0x80000000 <= size <= 0x8000FFFF: skip
+```
+
+### 3. 修后结果
+
+| 指标 | 修前 | 修后 |
+|:---|---:|---:|
+| ID+尺寸双命中类 | 59 | **69** |
+| ID 冲突 | 0 | **0**（不变，仍零冲突） |
+| 名字一致 | 52 | 62 |
+| 引擎表未对应项 | 15 | **5** |
+
+**新恢复的 10 个类**（ID / 尺寸）：
+
+```text
+0x01 Unit          2280    0x06 Building      1824
+0x02 Aircraft      1752    0x07 BuildingType  6040
+0x03 AircraftType  3600    0x08 Bullet         352
+0x04 Anim           456    0x09 BulletType     760
+0x05 AnimType       888    0x0D House        90296
+```
+
+### 4. 剩余 5 项各有正当原因（不是漏检）
+
+| ID | 名称 | 原因 |
+|---:|:---|:---|
+| `0x00` | `<none>` | 哨兵值，无类 |
+| `0x34` | `Abstract` | `AbstractClass` 的两个槽都指向 `0x004C9150` = `xor eax,eax; ret`（抽象桩） |
+| `0x1F` | `Special` | `.rdata` 里搜不到 `SpecialClass` |
+| `0x3A` | `AITrigger` | `.rdata` 里只有 `AITriggerTypeClass`(`0x3B`)，无 `AITriggerClass` |
+| `0x40` | `NavyType` | `.rdata` 里搜不到 `NavyTypeClass` |
+
+⇒ 这三条（`Special`/`AITrigger`/`NavyType`）是**枚举占位，引擎里无对应类**，
+不列为待办。
+
+### 5. 纪律 8（新增）
+
+**capstone 的 `op_str` 是给人看的渲染结果，数值一律从 `operands[i].imm` 取。**
+凡"解析指令取常量"的工具，必须同时输出**肯定对照**——
+否则"合法地一个都没找到"与"判据全错"在日志上完全一样。
+
+本轮就是靠"69 类、0 冲突"这个肯定对照，才确认修对了；
+如果只修个别类看输出，很容易以为"还有 5 个查不到"而继续追错方向。
+
+### 6. 本轮产出
+
+| 件 | 内容 |
+|:---|:---|
+| 工具修复 | `tools/dump_class_ids.py`：结构化解码 + 去掉尺寸上限 + 按 HRESULT 排除 |
+| 证据再生 | `evidence/class_ids.txt`：59 → 69 行 |
+| KB 更新 | `kb/20_vtable_contract.md` §0/§3/§3.2/§3.3（新增工具陷阱一节） |
+| INDEX | §B 表扩到 22 行，补 10 个核心类 |
+| CONFLICTS | 新增 **G-10**（本线工具缺陷，10 类被漏） |
+| 关闭悬项 | **L-17** |
+| 新增纪律 | **#8**（op_str 不可用于取值；空集必须配肯定对照） |
+
+### 7. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未启动 gamemd/ra2loader
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 只提交 `re_atlas/`
+- [x] 无整段反汇编（片段均 ≤10 条指令）

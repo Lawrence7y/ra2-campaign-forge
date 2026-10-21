@@ -275,7 +275,7 @@ size    = vtable[12](obj)    # 只有上一步成立，才认它是 GetSize
 **证据**：`kb/20_vtable_contract.md`、`evidence/class_ids.txt`（`tools/dump_class_ids.py`）。
 三方一致：`vtable[11]` 字节 ↔ 名字表 `0x816EE0` ↔ 社区源 `YRpp/GeneralDefinitions.h:19`。
 
-**置信度**：**实证**（59 类字节 + 74 项名字表直读）。
+**置信度**：**实证**（69 类字节 + 74 项名字表直读）。
 **核验状态**：✅ 字节直证 + 社区源独立佐证。
 
 ---
