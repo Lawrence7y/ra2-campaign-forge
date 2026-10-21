@@ -1,0 +1,39 @@
+镜像基数 0x00400000
+
+H1 [0x87F7E8] 的 vtable 写入点
+  0x0040D1B2: c7 05 e8 f7 87 00 64 19 7e 00
+  [PASS] 指令形态 c7 05（mov dword ptr [imm32], imm32）
+  [PASS] 目标地址 == 0x0087F7E8  实读 0x0087F7E8
+  [PASS] 写入值 == 0x007E1964  实读 0x007E1964
+  扫法交叉核对：含 0x4A8960 的表头约 0x007E1964（立即数法给 0x007E1964）
+  [PASS] 两种方法给出同一个表头
+
+H2 vtable 0x007E1964 的目标槽
+  [PASS] slot[42] == 0x004A8960（L3 宿主）  实读 0x004A8960
+  [PASS] slot[34] == 0x006ABD30（L2 宿主）  实读 0x006ABD30
+  [PASS] slot 索引 ×4 == 0xA8（与 crash_site 的偏移一致）
+    slot[26] = 0x00693060
+    slot[34] = 0x006ABD30
+    slot[42] = 0x004A8960
+    slot[45] = 0x004AC310
+    slot[46] = 0x004AAE90
+    slot[50] = 0x006D0270
+
+H3 桥 0x004A88AA 的寄存器来源
+    0x004A88A1: 8b 06 51 8b ce 89
+    0x004A88A4: 8b ce 89 54 24 14
+    0x004A88AA: ff 90 a8 00 00 00
+  [PASS] 0x004A88A1 = mov eax,[esi]（eax = *this = 虚表指针）
+  [PASS] 0x004A88A4 = mov ecx,esi（ecx = this）
+  [PASS] 0x004A88AA = call [eax+0xa8]
+
+H4 桥函数 0x004A8850 的调用者
+  [PASS] 0x004A8854 = mov esi,ecx（esi = this）
+    0x00652D49: 00 00 00 e8 ff
+  [PASS] 0x00652CF0 = push esi; mov esi,ecx（同样是 this 型函数）
+    0x00652CF0 作为 dword 出现在 0x007F0358，其表头约 0x007F0344
+  [PASS] 0x007F0358 == 0x00652CF0
+  [PASS] 另一张同族表 slot[42] 也是 0x4A8960（槽号复用）  0x004A8960 @0x007F0344 slot[42]
+
+★ H1–H4 全部成立：0xA8 偏移 = slot 42 = L3 宿主 0x4A8960
+  ⇒ §341「宿主无虚表槽」对崩溃链宿主不成立

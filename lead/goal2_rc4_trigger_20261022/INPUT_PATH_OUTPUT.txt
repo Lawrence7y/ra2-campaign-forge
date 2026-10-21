@@ -1,0 +1,41 @@
+镜像基数 0x00400000
+
+G1 窗口过程的消息派发（0x0077763B 起）
+  0x0077763B  b9 e8 f7 87 00         mov ecx, 0x87f7e8
+  0x00777640  e8 5b ba f1 ff         call 0x6930a0
+  0x00777645  a1 50 35 b7 00         mov eax, dword ptr [0xb73550]
+  [PASS] mov ecx, 0x0087F7E8（静态对象）  @0x0077763B
+  [PASS] 随后 call（消息派发入口）  call 0x6930a0
+
+G2 消息泵 0x005D4D50
+  [PASS] 入口第 1 条读 [0xB73550]  @0x005D4D50
+  [PASS] 入口即判 hwnd==0 提前返回  @0x005D4D5E
+  [PASS] ★ 循环体内不再复查 hwnd（全文仅 1 处读）  实测 1 处
+  [PASS] 调用 DispatchMessageA（IAT 0x007E14C0）  @0x005D4E47
+  [PASS] IAT 槽名解析 == DispatchMessageA  USER32.dll!DispatchMessageA
+
+G3 崩溃链宿主 0x004A8960 的 E8 调用点
+  调用点: 0x005610EC, 0x0067E7F9
+  [PASS] 恰好 2 个 E8 调用点  实测 2
+  [PASS] 0x005610EC 前置 mov ecx,0x87F7E8  @0x005610E6
+  [PASS] 0x0067E7F9 前置 mov ecx,0x87F7E8  @0x0067E7F4
+
+G4 0x0054F790 的内部分派表
+    A msg 0x100 -> 0x0054F824
+    A msg 0x101 -> 0x0054F84D
+    A msg 0x102 -> 0x0054F85C
+    A msg 0x103 -> 0x0054FB3D
+    A msg 0x104 -> 0x0054F824
+    A msg 0x105 -> 0x0054F84D
+    B msg 0x202 -> 0x0054F91D
+    B msg 0x203 -> 0x0054F951
+    B msg 0x204 -> 0x0054FAEA
+    B msg 0x205 -> 0x0054FAF0
+    B msg 0x206 -> 0x0054FAF6
+    B msg 0x207 -> 0x0054FA06
+    B msg 0x208 -> 0x0054FAA5
+    B msg 0x209 -> 0x0054FA56
+  [PASS] 全部目标落在 0x54/0x55 段内
+  [PASS] 两张表都不含 WM_CLOSE(0x10)
+
+★ G1–G4 全部成立
