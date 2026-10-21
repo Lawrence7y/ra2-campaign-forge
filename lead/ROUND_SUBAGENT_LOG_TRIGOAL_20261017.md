@@ -5895,3 +5895,68 @@ v1 草稿把「文件复制 mtime」误当「崩溃发生时刻」，据此得�
 **三目标状态**：① ⚠️（阻断变量已重识别为开机会话）；② ⚠️（靶心须改写为 RC-4）；③ ✅（已签，三限定）。
 
 **待 Lead 裁决四项**：① 跑法加"第 0 步确认 31 档"；② 靶心是否改 RC-4；② 收尾是否改 `WM_CLOSE`；③ 签署已落。
+
+---
+
+## §337 2026-10-22 01:3x ★★★ U8 `--allow-loader` 异族核验 CONFIRMED（千问 qfmodel，40 分钟三阶段）
+
+**性质**：离线异族核验（执行者=DeepSeek 主会话实现的补丁；核验者=千问 qfmodel，`dwfrun-56fce513`）。
+**产物**：`qc151_u8_impl_20261021/VERIFY_QF_20261022/` 三报告 + 4 测试脚本 + 1 真值表 JSON。
+
+### 一、总判定：**CONFIRMED**
+
+| 面 | 判定 | 硬条件 |
+|---|---|---|
+| 补丁面 | **CONFIRMED** | C1 反向重建 + C3 禁止面 双 PASS |
+| 行为面 | **CONFIRMED** | B2 八条真值表 8/8 |
+| 交叉裁决 | **CONFIRMED** | 两份报告方法学正交、独立于交付者自测 |
+
+### 二、两阶段各自的独立取证（要点）
+
+**补丁面**（3,141,786 tok）：
+- **C1 反向重建**：`_verify_c1_diff.py` 用 difflib 从磁盘字节重建 231 行 diff，与 `u8.diff` **逐字相等**；`_verify_c1b_hunks.py` 用**自建 hunk 引擎**把 `u8.diff` 的 9 块应用到基线（每块先验上下文逐行相等）⇒ `STRICT applied-bytes == patched-bytes: True`。**双向闭环。**
+- **C2 改动面**：16 个非 equal 块全部归因授权通道及其必要配套；`_u8_authorized` 全文件仅 5 处引用（L6693/6694/6698/6703/6706），无扩散。
+- **C3 禁止面**：基线 L21-35 **逐字未动**（改动面起点 L341）；`ra2loader.exe` 唯一启动路径 = L1229（仅在 `if allow_loader` 内）；全文件唯一 `Popen` = L1255，无 shell/creationflags。
+- **C4 fail-closed**：12 用例实测全 PASS；并**证明**了"结构性 fail-closed"——`main()` L6491-6493 `TRIP_ID = str(args.trip_id).strip() if … else new_trip_id()`，`new_trip_id()` L480-483 含 `os.urandom(8).hex()` ⇒ 随机值不可能等于命令行串。**实际比注释更强。**
+- **C5 S-4 语义**：顺序 `L1064（枚举失败→63）< L1128（命中判定）< L1132（授权旁路）`；`authorized` 一词在 L1035-1101 段内**零出现** ⇒ 授权结构上无法触达枚举失败收口。
+- **C6 时序零改动**：`grep -n 'time\.sleep|…' u8.diff` 无输出；两文件 sleep 12/12、monotonic 41/41、perf_counter 11/11。
+
+**行为面**（1,862,050 tok）：
+- **B1 真导入**（`importlib.util.spec_from_file_location + exec_module`），未降级 ast+exec；基线可导入但 `hasattr(…, 'allow_loader_authorized') = False`。
+- **B2 八条真值表 8/8**，全部 `is_bool`，含 (a) 属性缺失 **不抛 AttributeError**（`getattr` 带缺省）。
+- **B4 AST 只读判定**：`:1228 if allow_loader:` → `:1229 exe = carrier_dir / ALLOW_LOADER_EXE`；`:1233 else` → `:1234 gamemd.exe`；唯一 Popen `:1255`。另用**真实 argparse 复刻** CLI 接线三态验证。
+- **B3 诚实限定**：「基线无此函数」**不能**单独推出「未授权时行为全等」——它只证明通道不存在。核验者另比对三个消费点 False 分支与基线同构，并明确写出该命题边界。
+
+### 三、★ 核验者独立证伪了交付者回执的两处统计
+
+| # | RECEIPT 自述 | 磁盘实测 |
+|--:|---|---|
+| 1 | L18「16 hunk，+136/−16」；L224「12 hunk」 | `u8.diff` = **9 hunk，+138/−18**（两处自述互相矛盾且都不等于磁盘值） |
+| 2 | L130 摘录 `bytes=415282` | 实测 **416425**（陈旧摘录，来自改版前运行） |
+
+两处均为**回执文本问题**，diff 内容经 C1 双向闭环证明无漏报 ⇒ **不影响补丁本体判定**。
+
+### 四、主会话自己补充复核（非核验替身，`MAIN_SESSION_SUPPLEMENT_20261022.md`）
+
+- A1–A7 与异族核验一致（反向重建 16 块、八条真值表 8/8、S-4 顺序、默认/授权路径）。
+- **A8（异族核验未覆盖，我独立发现）：授权趟收尾只终止 loader，不终止 gamemd 子进程。**
+  - `:7323 term_proc = LAUNCH_TOKEN.proc`；授权趟 `LAUNCH_TOKEN.proc` = **loader**（`:1229`）。
+  - U8 真机探针实测 loader 38192 / gamemd 41604 **两个不同 PID**。
+  - harness3 补丁件 `QueryFullProcessImageNameW` 出现 **0 次** ⇒ **无按载体路径清扫机制**。
+  - ⇒ 授权趟收尾后 gamemd 残留、占用载体目录 ⇒ `delete_owned_carrier` 大概率 `EXIT_CARRIER_DELETE_FAILED(27)`，**违反用户硬约束「每趟真机复制的游戏本体都要删掉」**。
+  - 影响范围：仅 `--allow-loader` 授权趟（B0/B1 臂）；基线臂 A 不受影响。**不是安全漏洞，是运维缺陷。**
+  - **未修**：属 harness 改动，须走补丁副本 + diff + 回执 + 异族核验；且会波及所有趟（范围扩张），须 Lead 裁决。
+- A9：未授权时 `via_loader` 由 `None`→`False`（异族核验独立发现，我复核成立）；与 L1047 注释"逐字相同"轻微不符，无控制流影响。
+
+### 五、未覆盖项（两份报告 + 我的补充均如实登记）
+
+- **真机行为全部未测**：loader 启动后 `find_pids('ra2loader.exe')` 能否命中、V1–V5 取证判据、`--frozen-dump` 授权趟 dump 对象为 loader 而非 gamemd。
+- 「整个补丁在未授权时与基线**逐字**同行为」是更强命题，需全量 diff 审计；本次只核了三个直接消费点。
+- `launch_direct` 本体未运行（会真启动游戏）。
+- A8 的"残留导致 27"是静态推断 + 探针旁证，**未在真机验证**。
+
+### 六、结论与下一步
+
+- **U8 补丁本体：CONFIRMED，可用于 B0/B1 臂**（用户裁决 1 的前置条件"须先经异族核验"已满足）。
+- **但 A8 必须先裁**：授权趟会留 gamemd 残留 + 载体删不掉，直接撞用户硬约束。建议先补"按载体路径清扫"再上 B 臂。
+- RECEIPT 两处统计勘误需归档（以磁盘实测值为准）。
