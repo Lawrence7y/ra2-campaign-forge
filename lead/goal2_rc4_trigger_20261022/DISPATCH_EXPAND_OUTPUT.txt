@@ -1,0 +1,106 @@
+镜像基数 0x00400000
+
+D1 分派表展开（0x6930A0）
+  入口算术：add eax,-0x201 ; cmp eax,0x14 ; ja default
+  ⇒ msg 范围 0x201..0x215
+    msg 0x201 -> idx 0 -> 0x00693126  ★ 实质分支
+    msg 0x202 -> idx 1 -> 0x006931F9  ★ 实质分支
+    msg 0x203 -> idx 5 -> 0x00693408
+    msg 0x204 -> idx 2 -> 0x006932A4  ★ 实质分支
+    msg 0x205 -> idx 3 -> 0x00693366  ★ 实质分支
+    msg 0x206 -> idx 5 -> 0x00693408
+    msg 0x207 -> idx 5 -> 0x00693408
+    msg 0x208 -> idx 5 -> 0x00693408
+    msg 0x209 -> idx 5 -> 0x00693408
+    msg 0x20A -> idx 5 -> 0x00693408
+    msg 0x20B -> idx 5 -> 0x00693408
+    msg 0x20C -> idx 5 -> 0x00693408
+    msg 0x20D -> idx 5 -> 0x00693408
+    msg 0x20E -> idx 5 -> 0x00693408
+    msg 0x20F -> idx 5 -> 0x00693408
+    msg 0x210 -> idx 5 -> 0x00693408
+    msg 0x211 -> idx 5 -> 0x00693408
+    msg 0x212 -> idx 5 -> 0x00693408
+    msg 0x213 -> idx 5 -> 0x00693408
+    msg 0x214 -> idx 5 -> 0x00693408
+    msg 0x215 -> idx 4 -> 0x006933E6  ★ 实质分支
+  [PASS] 实质分支恰好 5 个  实测 5
+  [PASS] 五个分支入口与预期一致
+    msg 0x201 -> 0x00693126
+    msg 0x202 -> 0x006931F9
+    msg 0x204 -> 0x006932A4
+    msg 0x205 -> 0x00693366
+    msg 0x215 -> 0x006933E6
+
+D2 各分支与 [esi+0x555A] 的关系
+    msg 0x201: 判 byte ptr; 写 1
+    msg 0x202: 判 byte ptr; 写 bl
+    msg 0x204: 判 byte ptr; 写 1
+    msg 0x205: 判 byte ptr; 写 bl
+    msg 0x215: 判 byte ptr
+
+D3 各分支直接调用（E8 / 间接分开列）
+    msg 0x201  E8: 0x692300, 0x63a5a0, 0x692610, 0x4aae90, 0x4ac310
+                 间接: dword ptr [0x7e13fc]
+    msg 0x202  E8: 0x63a8e0, 0x692300, 0x692610, 0x4ab9b0
+                 间接: dword ptr [0x7e13f8]
+    msg 0x204  E8: 0x63aac0, 0x692300, 0x4aad20
+                 间接: dword ptr [eax + 0x10], dword ptr [0x7e13fc]
+    msg 0x205  E8: 0x63ab00, 0x4aad30, 0x4aead0
+                 间接: dword ptr [edx + 0x48], dword ptr [0x7e13f8]
+    msg 0x215  E8: -
+                 间接: dword ptr [eax + 0x8c]
+
+D4 全 .text 扫 `call [reg+0xA8]`（可能的 slot42 命点）
+    命中 29 处
+      0x00419F59  (宿主 0x00419F09, call ff 90 a8 00 00 00)
+      0x0043C91B  (宿主 0x0043C882, call ff 92 a8 00 00 00)
+      0x00443FFD  (宿主 0x00443C60, call ff 92 a8 00 00 00)
+      0x0044403E  (宿主 0x00443C60, call ff 92 a8 00 00 00)
+      0x00447E24  (宿主 0x00447E00, call ff 92 a8 00 00 00)
+      0x00447EB0  (宿主 0x00447E90, call ff 90 a8 00 00 00)
+      0x00447EE4  (宿主 0x00447E90, call ff 92 a8 00 00 00)
+      0x004485F5  (宿主 0x00448260, call ff 92 a8 00 00 00)
+      0x004494A3  (宿主 0x00449493, call ff 92 a8 00 00 00)
+      0x0044F167  (宿主 0x0044F13B, call ff 90 a8 00 00 00)
+      0x004A88AA  (宿主 0x004A8850, call ff 90 a8 00 00 00)
+      0x004CF142  (宿主 0x004CEFB0, call ff 90 a8 00 00 00)
+      0x005069F3  (宿主 0x005062C4, call ff 92 a8 00 00 00)
+      0x00521161  (宿主 0x00520EFD, call ff 91 a8 00 00 00)
+      0x0055781F  (宿主 0x00557800, call ff 97 a8 00 00 00)
+      0x00557C86  (宿主 0x00557BE0, call ff 92 a8 00 00 00)
+      0x005A93B5  (宿主 0x005A91E0, call ff 92 a8 00 00 00)
+      0x0068589C  (宿主 0x00685670, call ff 92 a8 00 00 00)
+      0x00685FE6  (宿主 0x00685DC0, call ff 92 a8 00 00 00)
+      0x006ED6B3  (宿主 0x006ED4D0, call ff 97 a8 00 00 00)
+      0x0070AD5F  (宿主 0x0070AD50, call ff 90 a8 00 00 00)
+      0x00738E08  (宿主 0x00738D53, call ff 90 a8 00 00 00)
+      0x00739333  (宿主 0x00738E2C, call ff 92 a8 00 00 00)
+      0x007394D2  (宿主 0x007393C0, call ff 92 a8 00 00 00)
+      0x0073A3B1  (宿主 0x0073A31F, call ff 92 a8 00 00 00)
+      0x0073FF9C  (宿主 0x0073FD7B, call ff 90 a8 00 00 00)
+      0x0077FF8C  (宿主 0x0077F900, call ff 91 a8 00 00 00)
+      0x0078F1CE  (宿主 0x0078F000, call ff 92 a8 00 00 00)
+      0x007A5830  (宿主 0x007A5725, call ff 92 a8 00 00 00)
+  [PASS] §344 的桥 0x4A88AA 在命中列表里
+
+D5 各分支 E8-BFS -> 0x4A8960（depth<=6）
+    msg 0x201  E8-BFS 未找到路径
+    msg 0x202  E8-BFS 未找到路径
+    msg 0x204  E8-BFS 未找到路径
+    msg 0x205  E8-BFS 未找到路径
+    msg 0x215  E8-BFS 未找到路径
+
+  实测 0/5 分支经 E8 图可达 v[42]
+  [PASS] ★ 五条分支经 E8 图**都不到** v[42]（如实断言，非缺陷）  实测 0/5
+
+D6 [esi+0x555A] 全文件访问普查
+    置 1: 0x006931EA, 0x00693357
+    清 0/不定: 0x006922B8, 0x00693290, 0x006933D2, 0x006938C8
+    判读: 0x00692B69, 0x00692F85, 0x00693194, 0x00693232, 0x006932D5, 0x0069338F, 0x006933F5
+  [PASS] 至少 2 处置 1
+  [PASS] 至少 2 处清 0
+  [PASS] 至少 3 处判读
+    ★ 无「判定后置位且永不回清」的一次性闩锁形态（每个置 1 都有对应清 0）
+
+★ D1–D5 完成
