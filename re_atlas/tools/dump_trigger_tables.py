@@ -1,12 +1,18 @@
-"""Re-derive the three trigger dispatch tables from gamemd.exe bytes.
+"""Re-derive the trigger dispatch tables from gamemd.exe bytes.
 
-Emits a machine-readable dump plus the two-level event lookup resolved to
-target addresses. Read-only.
+Covers the action table, the team-script table, and the four-level nested
+event dispatch. Read-only.
 
-The point this script exists to encode: the Event dispatch is TWO levels,
-    target = table1[ selector[kind - 0x0D] ]
-not one. Reading 0x71F218 as a flat 49-slot table walks into the selector
-bytes and yields fake dwords such as 0x0B0B0B0B.
+The point this script exists to encode: the Event dispatch is a TREE, not a
+flat array.
+    L1: target = table1[ selector1[kind - 0x0D] ]      49 slots -> 12 targets
+    L2..L4: nested sub-dispatchers reached from inside L1 handlers
+Reading 0x71F218 as a flat 49-slot table walks into the selector bytes and
+yields fake dwords such as 0x0B0B0B0B.
+
+Each selector table's LAST valid value is the class's "no match" fallback
+(L1 uses 0x0B = 12-1, L4 uses 09 = 10-1), so the last table entry is the
+generic handler rather than a per-kind implementation.
 
 Run from the repository root:
     python re_atlas/tools/dump_trigger_tables.py [--json]
@@ -27,10 +33,18 @@ TEXT_LO, TEXT_HI = 0x401000, 0x7E1000
 
 ACTION_TBL, ACTION_N = 0x6DFDEC, 145
 TEAM_TBL, TEAM_N = 0x6E9F74, 65
+
 EVENT_TBL1, EVENT_N1 = 0x71F218, 12
 EVENT_SEL, EVENT_NSEL = 0x71F248, 49
 EVENT_KIND_BASE = 0x0D
 EVENT_FALLBACK_SEL = 0x0B
+
+# Nested sub-dispatchers reached from handlers inside the L1 targets.
+SUB_LEVELS = [
+    ("L2", 0x71F27C, 2, 0x71F284, 12),
+    ("L3", 0x71F2C0, 14, 0x71F2F8, 12),
+    ("L4", 0x71F328, 10, 0x71F350, 10),
+]
 
 BLOB = None
 
@@ -85,6 +99,18 @@ def event_lookup():
         rows.append({"slot": idx, "kind": EVENT_KIND_BASE + idx,
                      "selector": code, "target": tgt,
                      "is_fallback": tgt == fallback})
+
+    subs = []
+    for label, tbl, n, selva, nsel in SUB_LEVELS:
+        tv = [u32(tbl + 4 * i) for i in range(n)]
+        sb = list(raw(selva, nsel))
+        subs.append({
+            "level": label, "table_va": tbl, "entries": n, "targets": tv,
+            "selector_va": selva, "selector_bytes": sb,
+            "selector_max": max(sb) if sb else None,
+            "last_index": n - 1,
+        })
+
     return {
         "table1_va": EVENT_TBL1, "table1": t1,
         "selector_va": EVENT_SEL, "selector_bytes": sel,
@@ -95,6 +121,7 @@ def event_lookup():
         "distinct_targets_all_slots": len({r["target"] for r in rows if r["target"] is not None}),
         "slots_on_fallback": sum(1 for r in rows if r["is_fallback"]),
         "rows": rows,
+        "sublevels": subs,
     }
 
 
@@ -124,15 +151,25 @@ def main():
         print(f'#   shared target 0x{s["target"]:06X} <- actions {s["action_indices"]}')
 
     ev = out["event"]
-    print(f'# event: table1=0x{ev["table1_va"]:06X} ({len(ev["table1"])} dwords) '
+    print(f'# event L1: table=0x{ev["table1_va"]:06X} ({len(ev["table1"])} dwords) '
           f'selector=0x{ev["selector_va"]:06X} ({ev["slots"]} bytes, kind 0x{ev["kind_base"]:02X}..)')
     print(f'#   fallback: selector {ev["fallback_selector"]} -> 0x{ev["fallback_target"]:06X}')
-    print(f'#   distinct targets over all slots = {ev["distinct_targets_all_slots"]}')
-    print(f'#   slots on fallback               = {ev["slots_on_fallback"]}')
+    print(f'#   distinct targets = {ev["distinct_targets_all_slots"]}, '
+          f'slots on fallback = {ev["slots_on_fallback"]}')
     print("#   kind  slot  sel  target")
     for r in ev["rows"]:
         tgt = f'0x{r["target"]:06X}' if r["target"] is not None else "INVALID"
         print(f'#   0x{r["kind"]:02X}  {r["slot"]:4d}  {r["selector"]:3d}  {tgt}')
+
+    print()
+    print("# nested sub-dispatchers (reached from inside L1 handlers, not from L1)")
+    for s in ev["sublevels"]:
+        print(f'# {s["level"]}: table=0x{s["table_va"]:06X} ({s["entries"]} dwords) '
+              f'selector=0x{s["selector_va"]:06X} ({len(s["selector_bytes"])}B) '
+              f'max_sel={s["selector_max"]} last_index={s["last_index"]}')
+        print(f'#      targets: {[hex(x) for x in s["targets"]]}')
+        print(f'#      selector: {s["selector_bytes"]}')
+        print(f'#      fallback-by-last-index: {s["selector_max"] == s["last_index"]}')
 
 
 main()

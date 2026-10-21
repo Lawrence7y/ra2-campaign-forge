@@ -1,0 +1,27 @@
+## 1. instance sizes from vtable[12]
+# class                      vtable slots   size  body
+  ScriptClass            0x007F0F78    24     48  mov eax, 0x30
+  TagClass               0x007F44E0    24     56  mov eax, 0x38
+  TriggerClass           0x007F5858    24     72  mov eax, 0x48
+  TEventClass            0x007F5578    24     88  mov eax, 0x58
+  TActionClass           0x007F443C    24    148  mov eax, 0x94
+  TeamClass              0x007F4730    24    160  mov eax, 0xa0
+  TaskForceClass         0x007F4680    27    212  mov eax, 0xd4
+  ScriptTypeClass        0x007F1008    27    564  mov eax, 0x234
+  AbstractClass          0x007E1F50    24      -  xor eax, eax
+  AbstractTypeClass      0x007E2000    27      -  xor eax, eax
+
+## 2. AbstractClass vtable pointer writes (from the deleting destructor)
+# dtor at 0x4105A0
+#   0x4105A9  dword ptr [esi]          <- 0x7E1F50
+#   0x4105AF  dword ptr [esi + 4]      <- 0x7E1F34
+#   0x4105B6  dword ptr [esi + 8]      <- 0x7E1F2C
+#   0x4105BD  dword ptr [esi + 0xc]    <- 0x7E1F24
+
+## 3. each vtable's CompleteObjectLocator offset (= this-adjustment)
+#     vtable        COL COL.offset  meaning
+#   0x7E1F50 0x007FB118          0  main class
+#   0x7E1F34 0x007FB008          4  interface subobject
+#   0x7E1F2C 0x007FAFF0          8  interface subobject
+#   0x7E1F24 0x007FAFD8         12  interface subobject
+# VERDICT: MULTIPLE INHERITANCE (offsets 0,4,8,12)

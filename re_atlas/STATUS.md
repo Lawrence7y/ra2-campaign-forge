@@ -32,7 +32,7 @@
 |:---|:---|:---|
 | R0 盘点（索引/种子/冲突） | ✅ 完成 | 本轮 |
 | R1 全局骨架（PE/RTTI/虚表/覆盖率） | ✅ 完成 | 本轮 |
-| R2-1 地图 / 触发器 / 脚本 / TaskForce / TeamClass | 🟡 **派发层完成** | Action 145 / Team 65 / Event 两级 49 槽全解析，见 `kb/10_map_triggers.md`；TaskForce/ScriptClass/TagClass 字段布局待做 |
+| R2-1 地图 / 触发器 / 脚本 / TaskForce / TeamClass | 🟢 **派发层 + 类尺寸/前缀布局完成** | Action 145 / Team 65 / Event 两级 49 槽全解析；触发器族 8 类尺寸全实证；`AbstractClass` 多继承 4 vptr 结构实证。见 `kb/10_map_triggers.md`、`kb/11_class_layouts.md`。余：各派生类具体字段（TaskForce 内部结构、ScriptType 大块结构） |
 | R2-2 INI 与规则加载 | ⬜ 未开始 | 种子：`RulesClass*` `0x008871E0`；语料 `config_key_matrix.md`（53KB） |
 | R2-3 生产与建造 | ⬜ 未开始 | |
 | R2-4 战斗 / 武器 / 弹道 | ⬜ 未开始 | 语料 `weapons_damage_production.md`（449 VA）可作起点 |
@@ -43,9 +43,24 @@
 | R2-9 网络与联机同步 | ⬜ 未开始（只读） | 语料 `net_sync_checksum.md`（444 VA） |
 | R3 其余模块 | ⬜ 未开始 | |
 
+## 本轮新增量化（R2-1 第二轮）
+
+| 指标 | 值 |
+|:---|---:|
+| 触发器族类尺寸实证 | **8 类**（Script 48 / Tag 56 / Trigger 72 / TEvent 88 / TAction 148 / Team 160 / TaskForce 212 / ScriptType 564） |
+| `AbstractClass` 多继承 vptr 数 | **4**（COL.offset 0/4/8/12） |
+| 已确证派生字段 | 3 个（`TEventClass+0x2C`、`TActionClass+0x90`、`TeamClass+0x3C`） |
+| 已确证基类前缀字段 | 6 个（4 vptr + `+0x10` dword + `+0x20` bool） |
+
 ## 禁区遵守记录
 
-本轮（2026-10-21 18:4x）：
+**R2-1 第二轮（2026-10-21 19:2x–19:3x）**：
+- `tasklist` 查无 `gamemd` / `ra2loader` ⇒ 可做完整分析。
+- 未启动游戏/loader，未写 `ra2youli`，未跑 trip，未编译。
+- 未修改 `lead/`、`docs/re/`、`ra2render/`、`tools/`。
+- 因异族核验通道仍在冷却（至约 19:41），本轮**未派子代理**，只做本地整理。
+
+**R0/R1 首轮（2026-10-21 18:4x）**：
 - `tasklist` 查无 `gamemd` / `ra2loader` 进程 ⇒ 可按 §8.3 做完整分析。
 - 未启动任何游戏/loader，未写 `ra2youli`，未跑 trip，未编译。
 - 未修改 `lead/`、`docs/re/`、`ra2render/`、`tools/` 下任何文件（只读）。

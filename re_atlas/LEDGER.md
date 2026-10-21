@@ -217,3 +217,66 @@ R2-1 的**触发器派发层**（`TActionClass::Execute` / `TEventClass::HasOccu
 
 **对本台账前文的更正**：R-000 §2 与 R-001 中出现的 `out/xxx` 路径，
 一律读作 **`evidence/xxx`**。历史行不改（前缀校验纪律），以本条为准。
+
+---
+
+## R-004 · 2026-10-21 19:3x — R2-1 第二轮：类尺寸与 AbstractClass 多继承
+
+### 0. 进程与通道
+
+`tasklist` 干净。异族核验两通道仍在冷却（至约 19:41），**本轮未派子代理**，全本地。
+
+### 1. 完成件
+
+`kb/11_class_layouts.md` + `tools/dump_class_layouts.py` + `evidence/class_layouts.txt`；
+`kb/10_map_triggers.md` 补 §3.5（四级表复算）与 §3.6（兜底真实身份）。
+
+### 2. 核心成果
+
+**（A）触发器族 8 类实例尺寸首次实证**（语料此前只有 `TeamTypeClass`/`AITriggerTypeClass` 两条）：
+Script 48 / Tag 56 / Trigger 72 / TEvent 88 / TAction 148 / Team 160 / TaskForce 212 / ScriptType 564。
+
+**（B）★ `AbstractClass` 是多继承，4 个 vtable 指针**
+（`+0x00/+0x04/+0x08/+0x0C`，COL.offset 依次 `0/4/8/12`）。
+证据链：删除析构 `0x004105A0` 连写四次 vptr → 每个 `vtable-4` 的 COL.offset 各不相同 → 接口跳板 `sub [esp+4],4; jmp`。
+**语料完全没有记载这个结构。**
+
+**（C）`AbstractClass::GetSize` 返回 0 是桩**（`33 C0 C3`），不是"尺寸为 0"。
+⇒ 任何"拿基类尺寸算派生类"的写法都会得 0。
+
+**（D）事件派发是四层树，且末项恒为兜底**
+L1 12 项 / L2 2 项 / L3 14 项 / L4 10 项；选择表最大值分别 `11`(=12−1) / `1`(=2−1) / `13`(=14−1) / `9`(=10−1)。
+**四张表的目标集合互不相交** ⇒ 树形嵌套，非扁平多路。
+
+**（E）`0x71EC63` 不是空桩**，是 `cmp ecx,0x13/0x14/0x15/0x16...` 比较链，
+把控制流引向 L2 的 `0x71ECAF`（"扁平比较链"实现）。
+⇒ 37 个未专属实现的 EventKind **仍会被真正求值**，不是恒 false。
+
+### 3. ★ 本轮纠错（前轮误读，已在新文中改正）
+
+**错误**：前轮把 `0x006DD8CB` 的 `mov dl,[ecx+0x90]` 记为"`TActionClass+0x90` 是 byte 标志"。
+
+**真相**：该处 `ecx` 是 `Execute` 的**栈参数对象**（`0x006DD8BD: mov ecx,[esp+0x254]`），
+不是 `this`（`this` 在 `esi`，`0x006DD8BB: mov esi,ecx`）。
+而 `TActionClass` 自己的 `+0x90` 在 `0x006E3ECD` 被当 **dword** 读并写入存档。
+⇒ 两处是**不同对象的同一偏移**，我把它们混为一谈了。
+
+**新纪律**：**凡看到"同一偏移出现在两处"，必须先确认两处的 `ecx`/`esi` 各绑的是谁**，
+再看类型是否一致。寄存器重绑定在长函数里极易被跨读。
+
+### 4. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未跑 trip
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 冷却期内未派子代理
+
+### 5. 留给下一轮
+
+| # | 悬项 |
+|:--|:---|
+| L-1 | `AbstractClass+0x14..+0x1C` 三个 dword 语义（不进存档 ⇒ 纯运行时态） |
+| L-2 | `+0x10` / `+0x20(bool)` 的业务语义 |
+| L-3 | `TEventClass+0x30` / `+0x54` 两个接口对象的真实类型（`0xB0C110` 键是什么） |
+| L-4 | `TaskForceClass` 212 字节内部结构 |
+| L-5 | `ScriptTypeClass` 564 字节内部结构 |
+| L-6 | 冷却结束后补：`TeamTypeClass` 248 的异族核验 |
