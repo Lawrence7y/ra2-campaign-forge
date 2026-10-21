@@ -538,7 +538,7 @@ count                       = *(u32*)(obj + count_off(cls))
 
 | 项 | 状态 |
 |:---|:---|
-| `+0x24` | **一个独立对象**（`lea ebx,[esi+0x24]`），作为 5 参调用的第 1 实参传入 |
+| `+0x24` | **一个独立对象**（`lea ebx,[esi+0x24]`），作为 5 参调用第 1 实参传入。**归属见 §16 更正**：它是 `AbstractTypeClass` 的 INI 槽，不是 `ScriptTypeClass` 私有 |
 | `+0xA0` | **计数器**，循环前清零（`mov [esi+0xA0],edi`），循环条件读它 |
 | `0x528A10` | **`ret 0x14` = 5 个 4 字节实参**（`0x00528BC6`/`0x00528BFA` 两处 ret 均为此值），内含 `cmp [esp+0x2c],2; jl` 的最小实参校验 ⇒ 强烈指向 INI `ReadString`（段/键/默认/缓冲/宽度） |
 | `0x526B00` | `mov [ecx+4],0; mov [ecx+8],0; ret` ⇒ 把对象 `+4/+8` 清零（小结构初始化） |
@@ -677,3 +677,77 @@ count                       = *(u32*)(obj + count_off(cls))
 | L-13 | `ScriptTypeClass+0x24` 对象类型 |
 | L-14 | `0x528A10` 第 2/3 实参顺位 |
 | **L-15** | `0x004C4EF0` 的实参语义（已证：清零 `[esi]`/`[esi+4]` 两个 dword，再用 `.data` 模板 `0x82085C` 分派；模板在可写段，故不判内容） |
+
+---
+
+## 16. ★ L-13 解：`+0x24` / `+0x64` 是 `AbstractTypeClass` 的 INI 槽，不是脚本专用
+
+**关键归属发现** [实证]：`0x00410A60` 并不是 `ScriptTypeClass` 的私有函数 ——
+它在 **`AbstractTypeClass` 的 vtable 里是 slot 25**（`vt=0x007E2000`），
+同时被 `SideClass`（`vt=0x007F2EC0`）继承为同一槽。
+
+⇒ §12 里"`ScriptTypeClass` slot25 是脚本解析"的表述**过窄**：
+它实际是**所有类型类共用的 `ReadINI`**。
+
+### 16.1 两个槽的语义
+
+| 槽（`AbstractTypeClass`） | VA | 体首 | 判读 |
+|---:|---|---|:---|
+| 24 | `0x00410C20` | `ret 4` | 空桩 |
+| **25** | **`0x00410A60`** | `sub esp,0x434` → `lea ebp,[ebx+0x24]` → `call 0x526810` 校验 → `push 0x31` → `call 0x528A10` | **`ReadINI`** |
+| 26 | `0x00410B90` | `push 0; lea edi,[esi+0x24]; call 0x5257C0` → `lea eax,[esi+0x64]` | **`WriteINI`** |
+
+`0x00410B90` 完整前缀：
+```
+0x00410B90  53                  push ebx
+0x00410B91  8B 5C 24 08         mov  ebx, [esp+8]         ; INI 对象
+0x00410B95  56                  push esi
+0x00410B96  8B F1               mov  esi, ecx             ; this
+0x00410B98  57                  push edi
+0x00410B99  6A 00               push 0
+0x00410B9B  8D 7E 24            lea  edi, [esi+0x24]      ; ★ 第一个 INI 槽
+0x00410B9E  8B CB               mov  ecx, ebx
+0x00410BA0  57                  push edi
+0x00410BA1  E8 1A 4C 11 00      call 0x5257C0             ; 写出 +0x24 槽
+0x00410BA6  8D 46 64            lea  eax, [esi+0x64]      ; ★ 第二个 INI 槽
+```
+
+⇒ **`+0x24` 与 `+0x64` 是 `AbstractTypeClass` 前缀里的一对 INI 缓冲**，
+所有派生类型类（`ScriptTypeClass` / `TaskForceClass` / `TeamTypeClass` / …）共享。
+
+### 16.2 对前文的更正
+
+- §12 写的"`+0x24` = 独立子对象（**本族通用**）"—— 方向正确，但**归属写错**：
+  它不是"ScriptType 族的"，而是 **`AbstractTypeClass` 的**。
+- §16 之前把 `ScriptTypeClass+0xA0`（计数）与 `AbstractTypeClass+0x24`（INI 槽）
+  混在同一个解析流程描述里，容易让人以为 `+0xA0` 也属于基类。**`+0xA0` 仍是
+  `ScriptTypeClass` 自有**。
+
+### 16.3 `push 0x31` 的含义（不推测）
+
+`0x00410A94: push 0x31`（=49）出现在 `ReadINI` 里，紧邻 `push <模板>` 与
+`push edi`（`+0x64`）。**本轮只记录该立即数存在**，不推断它是"49 项上限"
+还是"缓冲区长度"——两者都能解释，缺一项证据（见 L-16）。
+
+---
+
+## 17. 下一轮
+
+| # | 悬项 |
+|:--|:---|
+| L-1 | `AbstractClass+0x14..+0x1C` 三个 dword 语义 |
+| L-2 | `+0x10` / `+0x20(bool)` 的业务语义 |
+| L-3 | ✅ `0xB0C110` = 全局字段注册表根 |
+| L-4 | ✅ `TaskForceClass` 计数 @ `+0x9C` |
+| L-5 | 容器统一模型 —— 撤回（§12.1） |
+| L-6 | `TEventClass+0x30` / `+0x54` 接口对象类型 |
+| L-7 | 容器簇统一模型 —— 撤回（§12.1） |
+| L-8 | 补：`TeamTypeClass` 248 异族核验 |
+| L-9 | ✅ stride = 8 |
+| L-10 | ✅ `+0xA8` 是元素第二半 |
+| L-11 | `.data` 模板参数的写入点 |
+| L-12 | ✅ `+0xA4` = TaskForce 数组基址（不推广） |
+| L-13 | ✅ `+0x24`/`+0x64` = `AbstractTypeClass` 的 INI 槽对 |
+| L-14 | `0x528A10` 第 2/3 实参顺位 |
+| L-15 | `0x4C4EF0` 实参语义 |
+| **L-16** | `ReadINI` 里 `push 0x31`(49) 的语义（上限 vs 长度） |
