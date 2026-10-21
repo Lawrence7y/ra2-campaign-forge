@@ -72,4 +72,24 @@ F6 [0x00B73550] 全段写入点普查
   [PASS] 写入点恰好 3 处（创建×2 + 销毁×1）  实测 3
   [PASS] 写入点 VA 集合 == {0x00777CD6, 0x00777D7E, 0x0077780E}
 
-★ 五组断言全部成立（F1–F5）
+F7 窗口过程分派表（两级：byte 索引 + dword 目标）
+    0x0077769A  8d 48 ff               lea ecx, [eax - 1]
+    0x0077769D  83 f9 13               cmp ecx, 0x13
+    0x007776A0  0f 87 13 03 00 00      ja 0x7779b9
+    0x007776A6  33 d2                  xor edx, edx
+    0x007776A8  8a 91 98 7a 77 00      mov dl, byte ptr [ecx + 0x777a98]
+    0x007776AE  ff 24 95 80 7a 77 00   jmp dword ptr [edx*4 + 0x777a80]
+  [PASS] msg 先减 1（lea ecx,[eax-1]）
+  [PASS] 两级表均在文件内
+    msg 0x01 -> idx 0 -> 0x0077778D
+    msg 0x02 -> idx 1 -> 0x007777F3
+    msg 0x0F -> idx 3 -> 0x007776B5
+    msg 0x10 -> idx 5 -> 0x007779B9
+    msg 0x14 -> idx 4 -> 0x00777781
+  [PASS] msg 1..0x14 索引均不越界
+  [PASS] WM_CREATE→0x77778D / WM_DESTROY→0x7777F3 / WM_CLOSE→0x7779B9
+  [PASS] default 出口先调游戏自己的窗口过程 0x0054F790  call 0x54f790
+  [PASS] default 出口段内不直接出现 DefWindowProcA 调用
+  [PASS] 两张内部分派表目标全部落在 0x54/0x55 段内  A=6 项 B=8 项
+
+★ 七组断言全部成立（F1–F7）

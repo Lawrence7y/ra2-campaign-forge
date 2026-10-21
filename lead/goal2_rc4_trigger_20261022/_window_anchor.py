@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""RC-4 尾窗可观测性：主窗口句柄锚点 + 单例清零时序 + 收尾禁令面。
+"""RC-4 尾窗可观测性：主窗口句柄锚点 + 单例清零时序 + 分派表 + 收尾禁令面。
 
 为什么做这件事：上一轮（§341）建议「WM_CLOSE 后轮询 [0x887368]，读到 0 就立刻
 驱动鼠标」。本脚本用磁盘字节检验该建议是否可行，并顺带定出主窗口的**唯一可靠
 句柄来源**（不靠标题猜）。
 
-产出六组硬事实：
+产出七组硬事实：
   F1. 0x007775C0 是窗口类 "Yuri's Revenge" 的 WndProc（RegisterClassA 现场）。
   F2. 该窗口由 CreateWindowExA 创建，hwnd 存全局 [0x00B73550]。
   F3. WM_DESTROY 块内 [0x887368]=0 与 [0xB73550]=0 在**同一个基本块**，
@@ -16,6 +16,10 @@
   F5. 该等待环调用的消息泵 0x005D4D50 里，单例消费点是**带零闸**的
       （mov ecx,[0x887368] / test / je）⇒ 泵本身不会制造空 this 调用。
   F6. [0xB73550] 全段写入点恰好 3 处，全在主窗口创建函数内。
+  F7. 窗口过程是**两级分派**：`mov dl, byte [msg-1 + 0x777A98]` 取索引，
+      再 `jmp dword [edx*4 + 0x777A80]`。WM_CLOSE 走 default 0x7779B9；
+      而 default 出口**先调游戏自己的窗口过程 0x54F790**，返回 0 才下传到
+      DefWindowProcA —— 不是直接调。
 
 只读磁盘，零真机。全部断言失败即非 0 退出。
 """
@@ -175,6 +179,58 @@ def _census_writes(data, img_base, secs):
           "写入点 VA 集合 == {0x00777CD6, 0x00777D7E, 0x0077780E}")
 
 
+def _verify_dispatch(data, secs, pe):
+    """复验窗口过程的两级分派表。
+
+    ★ 坑（本件 §343 踩过）：`jmp dword ptr [edx*4+0x777A80]` 的 edx **不是 msg**，
+      而是 `mov dl, byte [msg-1 + 0x777A98]` 查出来的索引。
+      按 msg 号直接读 dword 表会得到「WM_CREATE 跳进销毁块」这种不可能结果。
+    """
+    IDX, TGT, MAXMSG = 0x00777A98, 0x00777A80, 0x14
+    seq = dis(data, secs, 0x0077769A, 0x20)
+    for ins in seq:
+        print("    0x%08X  %-22s %s %s" % (ins.address, ins.bytes.hex(" "),
+                                            ins.mnemonic, ins.op_str))
+    lea = [i for i in seq if i.mnemonic == "lea"
+           and i.op_str.replace(" ", "") == "ecx,[eax-1]"]
+    check(bool(lea), "msg 先减 1（lea ecx,[eax-1]）")
+    idx_off, tgt_off = va2off(secs, IDX), va2off(secs, TGT)
+    check(idx_off is not None and tgt_off is not None, "两级表均在文件内")
+    if idx_off is None or tgt_off is None:
+        return
+    tgts = [struct.unpack_from("<I", data, tgt_off + i * 4)[0] for i in range(6)]
+    expect = {0x01: 0x0077778D, 0x02: 0x007777F3, 0x10: 0x007779B9}
+    rows = []
+    for m in range(1, MAXMSG + 1):
+        idx = data[idx_off + (m - 1)]
+        rows.append((m, idx, tgts[idx] if idx < 6 else None))
+    for m, idx, t in rows:
+        if m in (0x01, 0x02, 0x0F, 0x10, 0x14):
+            print("    msg 0x%02X -> idx %d -> %s"
+                  % (m, idx, ("0x%08X" % t) if t else "OUT"))
+    check(all(rows) and all(r[1] < 6 for r in rows), "msg 1..0x14 索引均不越界")
+    ok = all(tgts[idx] == expect[m] for m, idx, _ in rows if m in expect)
+    check(ok, "WM_CREATE→0x77778D / WM_DESTROY→0x7777F3 / WM_CLOSE→0x7779B9")
+
+    # default 出口：先调游戏自己的窗口过程 0x54F790，返回 0 才下传到 DefWindowProcA
+    dseq = dis(data, secs, 0x007779B9, 0x30)
+    dfirst = [i for i in dseq if i.mnemonic == "call"]
+    check(bool(dfirst) and "0x54f790" in dfirst[0].op_str,
+          "default 出口先调游戏自己的窗口过程 0x0054F790",
+          ("%s %s" % (dfirst[0].mnemonic, dfirst[0].op_str)) if dfirst else "")
+    late = [i for i in dseq if i.mnemonic == "call" and "0x7e1394" in i.op_str]
+    check(not late, "default 出口段内不直接出现 DefWindowProcA 调用")
+
+    # 0x54F790 的两张内部分派表都不含 WM_CLOSE
+    a_off, b_off = va2off(secs, 0x0054FB4C), va2off(secs, 0x0054FB64)
+    if a_off and b_off:
+        a = [struct.unpack_from("<I", data, a_off + i * 4)[0] for i in range(6)]
+        b = [struct.unpack_from("<I", data, b_off + i * 4)[0] for i in range(8)]
+        check(all(0x00500000 < v < 0x00600000 for v in a + b),
+              "两张内部分派表目标全部落在 0x54/0x55 段内",
+              "A=%d 项 B=%d 项" % (len(a), len(b)))
+
+
 def main():
     data, img_base, secs, pe, opt_size = load()
     print("镜像基数 0x%08X   .text VA 0x%08X" %
@@ -287,10 +343,14 @@ def main():
     _census_writes(data, img_base, secs)
 
     print()
+    print("F7 窗口过程分派表（两级：byte 索引 + dword 目标）")
+    _verify_dispatch(data, secs, pe)
+
+    print()
     if fails:
         print("★ 失败 %d 项：%s" % (len(fails), "; ".join(fails)))
         return 1
-    print("★ 六组断言全部成立（F1–F6）")
+    print("★ 七组断言全部成立（F1–F7）")
     return 0
 
 
