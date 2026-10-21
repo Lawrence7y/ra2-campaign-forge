@@ -43,16 +43,26 @@
 | R2-9 网络与联机同步 | ⬜ 未开始（只读） | 语料 `net_sync_checksum.md`（444 VA） |
 | R3 其余模块 | ⬜ 未开始 | |
 
-## 本轮新增量化（R2-1 第二轮）
+## 本轮新增量化（R2-1 第二/三轮）
 
 | 指标 | 值 |
 |:---|---:|
 | 触发器族类尺寸实证 | **8 类**（Script 48 / Tag 56 / Trigger 72 / TEvent 88 / TAction 148 / Team 160 / TaskForce 212 / ScriptType 564） |
 | `AbstractClass` 多继承 vptr 数 | **4**（COL.offset 0/4/8/12） |
-| 已确证派生字段 | 3 个（`TEventClass+0x2C`、`TActionClass+0x90`、`TeamClass+0x3C`） |
+| 已确证派生字段 | **10 个**（TEvent +0x2C/+0x30/+0x34/+0x54；TAction +0x90；Team +0x3C；TaskForce +0x9C/+0xA4；Script +0x2C；Abstract +0x10/+0x20） |
 | 已确证基类前缀字段 | 6 个（4 vptr + `+0x10` dword + `+0x20` bool） |
+| 序列化顺序 | **先基类后派生**（`ScriptClass::Save` 实证） |
+| 交接件 | **6 条**（H-001…H-006） |
+| KB 正文 | 3 篇（`00_global_skeleton` / `10_map_triggers` / `11_class_layouts`） |
+| 可复跑工具 | 5 个（verify_claims / dump_trigger_tables / xcheck_sizes / dump_class_layouts / disas） |
 
 ## 禁区遵守记录
+
+**R2-1 第三轮（2026-10-21 19:3x–19:4x）**：
+- `tasklist` 干净。
+- 未启动游戏/loader，未写 `ra2youli`，未跑 trip，未编译。
+- 未修改 `lead/`、`docs/re/`、`ra2render/`、`tools/`。
+- 冷却结束后派了 1 个工作流 / 2 个子代理（异族核验 v2，简化任务书），仅只读复算。
 
 **R2-1 第二轮（2026-10-21 19:2x–19:3x）**：
 - `tasklist` 查无 `gamemd` / `ra2loader` ⇒ 可做完整分析。
