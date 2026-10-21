@@ -1,0 +1,88 @@
+# REAL: 5
+# ALIAS: 400
+# NOISE: 14
+
+## REAL DISPUTES (needs adjudication)
+  0x004137A0  SpatialBucket::Next  |  SpatialGrid::NextCandidate
+  0x004680D5  BulletClass::Draw 0x468090  |  BulletClass::Draw（炮弹剔除）
+  0x00656EC0  RadarClass::DrawMap  |  RadarClass::Refresh
+  0x006DA380  TacticalClass::GetObjectAt  |  TacticalClass::ObjectUnderCursor
+  0x0072A090  Tunnel::Can_Enter  |  TunnelLocomotion::Can_Enter_Cell
+
+## ALIAS SETS (same entity, different granularity)
+  0x004068E0  1B C3（fs_mix_deep:184）  |  WWDebug_Printf
+  0x00406F70  AudioFrameUpdate  |  QueryPerformanceCounter
+  0x00406F8C  00 01 00 00 00（原 VA 实测）  |  音频 33ms 硬件差值门
+  0x00409360  Clock  |  Clock::Init
+  0x0040937A  ASM-FIX-20  |  Clock::Init
+  0x004093B0  Clock  |  Clock::Now  |  [实证] OK
+  0x004093C0  Clock  |  Clock::NowQpc
+  0x00409510  ASM-FIX-23  |  DirectSound 线程创建
+  0x00409511  ASM-FIX-23  |  DirectSound 线程创建  |  P2 真 VA 走锚 8 条改锚（字节不变）
+  0x00410320  AbstractClass::Save  |  superweapon
+  0x00412B40  InitQuery  |  SpatialBucket::InitQuery  |  SpatialGrid::InitQuery
+  0x004134A0  AddObject  |  SpatialGrid::AddObject
+  0x004135D0  RemoveObject  |  SpatialGrid::RemoveObject
+  0x004144B0  1.8 Blitter Hook 覆盖率、接管优先级与真机插  |  AircraftClass  |  AircraftClass::Draw  |  Hook_Aircraft_Draw  |  cell
+  0x00414543  AircraftClass 视界检验  |  AircraftClass::Draw 0x4144B0
+  0x00415EE0  AircraftClass  |  Unit / Infantry / Aircraft 的 Fire 薄包装
+  0x004165C0  AircraftClass  |  Building / Foot / Unit / Infantry / Aircraft 的 v[91] 覆写
+  0x004196B0  Aircraft::Can_Enter  |  AircraftClass::Can_Enter_Cell
+  0x0041C090  FootClass::Draw_A_SHP  |  SHP 载具/建筑共用形状绘制（→ 0x705E00）
+  0x0041E720  AITriggerTypeClass::ConditionMet  |  ConditionMet
+  0x0041EC90  AircraftClass  |  CivilianHouseOwns
+  0x0041EE90  OwnerHouseOwns  |  trigger
+  0x0041FD60  AITrigger 权重更新频率？  |  RegisterSuccess  |  RegisterSuccess（权重）
+  0x0041FE20  AITrigger 权重更新频率？  |  RegisterFailure  |  RegisterFailure（权重）
+  0x00420140  Alpha 混合表全局基址加载  |  Alpha 混合表基址  |  uint16_t
+  0x00422CA0  AnimClass  |  AnimClass::Draw  |  AnimClass::Draw（v[69]）  |  EnableBuildingFog  |  IsFogged  |  无 Shroud 硬切；+0x19D / +0x199 门  |  无 Shroud 门
+  0x00423014  AnimClass  |  IsFogged
+  0x004264C0  Techno::Can_Enter_Cell  |  TechnoClass::Can_Enter_Cell
+  0x0042A5B0  GenerationStamp  |  PathFinder reset  |  PathFinder::ResetWorkspace
+  0x0042A5FB  GenerationStamp++  |  H3 GenerationStamp
+  0x0042A690  IsNodeVisited  |  PathFinder::IsNodeVisited
+  0x0042AA90  BacktracePath  |  PathFinder::BacktracePath
+  0x0042CCD0  ExpandNeighbors  |  PathFinder::ExpandNeighbors  |  算子定性更正：官方原版为纯有界 Dijkstra 波前扩散，推翻 A* 术语
+  0x0042CF80  +0xBC…  |  NeighbourGroupWords  |  PathFinder::RelaxNeighbor  |  RelaxNeighbor
+  0x00431F10  RawFileClass::Open  |  最高（同一请求内先于 MIX）
+  0x00437A10  Draw_SHP  |  EncodedLen 调用方反查  |  H-VXL14  |  PATCH-R1-09  |  跨步体素光栅核（ZBuffer 步进）
+  0x0043CEC0  BuildingClass::DrawIfVisible  |  本体 Draw 彻底短路
+  0x0043CFD5  DrawIfVisible 旁路  |  本体 Draw 彻底短路
+  0x0043D290  BuildingClass  |  BuildingClass::Draw  |  BuildingClass::Draw 能否入口短路？  |  Hook_Building_Draw  |  InstallVTableHooks  |  IsFogged  |  IsShrouded  |  ShouldDrawBuilding  |  Type+0x1701  |  x007E3FD0
+  0x0043DBBE  BuildingClass 顶层光源  |  BuildingClass::Draw 0x43D290
+  0x00442230  Building / Foot / Unit / Infantry / Aircraft 的 v[91] 覆写  |  BuildingClass
+  0x00445F00  BuildingClass  |  BuildingClass::Greatest_Threat
+  0x00445F68  BuildingClass  |  x006F8DF0
+  0x00447AC0  BuildingClass::GetCoords  |  GetCoords
+  0x00449440  Building::Can_Enter  |  BuildingClass::Can_Enter_Cell
+  0x004500F0  BuildingClass  |  BuildingClass::FactoryUpdate
+  0x004519B2  AnimClass  |  AnimClass+0x199 IsFogged / +0x19D 写点
+  0x004549B0  BuildingClass::Update  |  BuildingClass::Update（每帧驱动裂缝门控）
+  0x004555D0  BuildingClass::IsGeneratingGap  |  BuildingClass::IsGeneratingGap（v[212]，七级门控）  |  ERR-2
+  0x004566B0  BuildingClass::GetGapRadius  |  BuildingClass::GetGapRadius（半径派发）
+  0x0045E22B  CloakRadiusInCells  |  CloakRadiusInCells 串 / 读取点 / ctor 默认 0x14
+  0x00460C21  CloakRadiusInCells  |  CloakRadiusInCells 串 / 读取点 / ctor 默认 0x14
+  0x00460DF2  BuildingTypeClass+0x1701  |  InvisibleInGame  |  InvisibleInGame 串 / 读取点
+  0x004664C0  BulletClass  |  BulletClass::Construct
+  0x004666E0  BulletClass  |  BulletClass::AI/Update  |  BulletClass::Update
+  0x00468090  BulletClass  |  BulletClass::Draw  |  BulletClass::Draw 能否入口短路？  |  Flags&0x1000  |  Hook_Bullet_Draw  |  InstallVTableHooks  |  ShouldDrawBullet  |  Update / Detonate
+  0x00468D80  BulletClass  |  BulletClass::Fire
+  0x004690B0  BulletClass  |  BulletClass::Detonate  |  Detonate
+  0x00473D10  83EC10  |  CCFileClass  |  CCFileClass::Get_File
+  0x0047E9BF  CellClass::Draw  |  CellClass::Draw 地表贴图
+
+## NOISE-DOMINATED
+  0x00401000  .text  |  .text 代码段首指令
+  0x004047E5  TriggerClass/TagClass 运行时  |  bss_ref 锚点
+  0x004093B9  Clock  |  Clock::Now 间接分发
+  0x0041456A  AircraftClass::Draw 0x4144B0  |  AircraftClass::vfunc[54]
+  0x0043DBD1  BuildingClass::Draw 0x43D290  |  BuildingClass::vfunc[313]
+  0x004CF5DD  Smudge / LaserDraw / Overlay 剔除  |  SmudgeClass::vfunc[69]
+  0x005FF8AB  OverlayClass::vfunc[69]  |  Smudge / LaserDraw / Overlay 剔除
+  0x0062CF58  ParticleClass::Draw  |  ParticleClass::vfunc[69]
+  0x006D458E  .text  |  原记 89 85 B8 00 00 00 89 8D BC 00 00 00 已订正
+  0x006FDEB9  TerrainClass::Draw  |  TerrainClass::vfunc[69]
+  0x0070D37B  VeinholeMonsterClass::Draw  |  VeinholeMonsterClass::vfunc[69]
+  0x0072917B  TubeClass::Draw  |  TubeClass::vfunc[69]
+  0x007559B0  .bss  |  H-VXL11
+  0x0075FA20  WaveClass::vfunc[69]  |  esi

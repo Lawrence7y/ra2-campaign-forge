@@ -1,0 +1,5614 @@
+[
+ {
+  "rel": "docs/re/ARCHITECTURE_ATLAS.md",
+  "bytes": 470294,
+  "lines": 4861,
+  "hex_total": 3987,
+  "hex_distinct": 1972,
+  "h1": [
+   "《红色警戒2：尤里的复仇》（gamemd.exe 1.001）全景架构图谱与系统契约总览",
+   "Yuri's Revenge Engine Architecture Atlas & System Interoperability Contracts"
+  ],
+  "h2_count": 27,
+  "h2": [
+   "目录",
+   "0. 架构综述与方法论准则",
+   "1. §1 软件渲染与 Blitter 微内核族 (Software Rasterization & Blitter Microkernels)",
+   "2. §2 战术主视图渲染与战争迷雾管线 (Tactical Viewport & Fog-of-War Pipeline)",
+   "3. §3 单位机动与寻路系统 (Locomotion & Pathfinding Engine)",
+   "4. §4 索敌与威胁评估系统 (Targeting & Threat Assessment System)",
+   "5. §5 战术 AI 与小队调度 (Tactical AI & Team Scheduling Engine)",
+   "6. §6 音频引擎与 EVA 战术广播 (Audio Engine & EVA Tactical Broadcast)",
+   "7. §7 超级武器状态机与持久化 (Superweapon State Machine & Persistence)",
+   "8. §8 帧时钟循环与 Win32 消息驱动 (Frame Clock Loop & Message Pump)",
+   "9. §9 联机确定性与帧校验同步 (Multiplayer Determinism & Checksum Pipeline)",
+   "10. §10 内存管理与对象生命周期 (Memory Management & Allocator Architecture)",
+   "11. 全局关键单例与类虚表地址速查总表 (Master VTable & Singleton Quick Reference)",
+   "12. 系统间交互与并发/确定性契约总则 (Inter-System Interaction & Concurrency Contract)",
+   "13. §13 验收与闸门状态 (Acceptance Gates & Verification Status)",
+   "14. §14 触发器脚本运行时 (Trigger Script Runtime)",
+   "15. §15 存档块与序列化全景 (Savegame Blocks & Serialization)",
+   "16. §16 武器/弹头/伤害与生产经济 (Weapons, Warheads, Damage & Production Economy)",
+   "17. §17 MIX 虚拟文件系统加载链 (MIX Virtual Filesystem & Load Chain)",
+   "18. §18 VXL 体素渲染与缓存布局 (VXL Voxel Rendering & Cache Layout)",
+   "19. §19 特效与弹丸绘制链归属 (FX & Projectile Draw-Chain Attribution)",
+   "20. §20 裂缝与间谍卫星可见性分裂 (Gap Generator & SpySat Visibility Split)",
+   "21. §21 侧栏/选择 UI 与黑幕点击输入交互 (Sidebar/Selection UI & Shroud Click Input)",
+   "22. §22 CRT 调用图、池风险与内联断言 (CRT Callgraph, Pool Risk & Inline Assertions)",
+   "附录 DA1 · 勘误登记（雷达挂钩地址与 G-10 覆盖，2026-09-27）",
+   "附录 DA1-bis · 跨文档冲突登记与交叉确认（R3 · 2026-09-28）",
+   "附录 DA2 · W3 勘误传播登记（DOC1 批 · 2026-10-02 · 追加式）"
+  ]
+ },
+ {
+  "rel": "docs/re/savegame_block_manifest.md",
+  "bytes": 84807,
+  "lines": 1060,
+  "hex_total": 1287,
+  "hex_distinct": 565,
+  "h1": [
+   "存档/读档序列化块全清单（task-8 / re-saveblocks）",
+   "entries = 35 ; distinct bodies = 1  ==> ALL BYTE-IDENTICAL",
+   "口径B 15 处调用点（目标 ∈ 0x680FF0..0x6812E0）:"
+  ],
+  "h2_count": 13,
+  "h2": [
+   "0. 结论速览",
+   "1. `0x67FDF0..0x680EF0` 到底是什么（核心修正）",
+   "2. Save / Load 外层与流对象（容器）",
+   "3. 逐块清单：35 个块函数 → 实参对象",
+   "4. 内联向量块：28 个 `DynamicVectorClass<T*>` 循环",
+   "5. 存档文件格式（真机档实证）",
+   "6. `CurrentFrame` 与联机一致性",
+   "7. 字节断言审计（验收要求）",
+   "8. 与 `net_sync_checksum.md §4` 的交叉引用与勘误",
+   "9. 未闭环清单（含原因 + 下一步取证法）",
+   "10. 证据产物索引（`out/re_work/save_blocks/**`）",
+   "11. 一句话给下游（Lead / 其它代理）",
+   "12. 【专项核对定谳 · task savegame-block-manifest】MD5 口径 / 读档计数 / U 项再分类 / 兼容性红线"
+  ]
+ },
+ {
+  "rel": "docs/re/superweapon_re.md",
+  "bytes": 70384,
+  "lines": 1064,
+  "hex_total": 900,
+  "hex_distinct": 541,
+  "h1": [
+   "SuperClass 超级武器状态机 / Launch 跳表 / 联机确定性 逆向档案（M-3 收口）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 结论速览",
+   "1. SuperClass 状态机（逐函数地址 + 原始字节实证）",
+   "2. vtable `0x7F3FE8` 槽位表（verify_offsets.py 原样输出）",
+   "3. 字段表（每条带读/写点地址与原始字节）",
+   "4. Launch 跳表 `0x6CDE44` 十二 case（verify_offsets.py 原样输出）",
+   "5. 与 gap / spysat 交叉（PsychicReveal → RevealArea2 → 清 GapsCovering）",
+   "6. 联机确定性（对照 `net_sync_checksum.md` §3 / §10）",
+   "7. 未决问题（不确定标「待实测」）",
+   "8. 关键地址速查",
+   "9. 复现步骤",
+   "10. 冲刺结论（S2 专项深潜 · 7.1–7.8 全闭环）"
+  ]
+ },
+ {
+  "rel": "docs/re/trigger_system_manifest.md",
+  "bytes": 92792,
+  "lines": 1080,
+  "hex_total": 751,
+  "hex_distinct": 515,
+  "h1": [
+   "触发器系统全表（Event / Action）—— 派发表逐项解算"
+  ],
+  "h2_count": 14,
+  "h2": [
+   "0. 结论速览",
+   "1. 系统结构与运行管线（地址级 [实证]）",
+   "2. Action 表（`TActionClass::Execute 0x6DD8B0`，跳表 `0x6DFDEC`，**145 项**）",
+   "3. Event 表（`TEventClass::HasOccured 0x71E940`）",
+   "4. 附录 A：队伍脚本动作表（`TeamClass::AI 0x6E9050`，跳表 `0x6E9F74`，**65 项**）",
+   "5. 附录 B：参数序列化类别（`GetMode 0x6E3B60`）与位域（`GetFlags 0x6E3EE0`）",
+   "6. 名称来源与证据级别（重要口径）",
+   "7. 字节断言复算（`python tools/audit_bytes.py out/re_work/triggers/claims.txt`）",
+   "8. 与 `net_sync_checksum.md` §9 的交叉引用（含勘误）",
+   "9. 联机风险判定规则与清单",
+   "10. 未闭环与下一步取法",
+   "附录 C：代表动作的指令级入口证据（26 项，字节级）",
+   "11. 产物索引（`out/re_work/triggers/**`）",
+   "12. 验收自证"
+  ]
+ },
+ {
+  "rel": "docs/re/net_sync_checksum.md",
+  "bytes": 78061,
+  "lines": 922,
+  "hex_total": 822,
+  "hex_distinct": 444,
+  "h1": [
+   "联机确定性基础设施逆向档案（帧同步 / RNG / Checksum / 命令队列 / 存档）",
+   "时间戳调整（0x64C3A3–0x64C4C6）：",
+   "对 Kind==0x1C/0x13 之外的事件，若 Timestamp 落在 [0xA8B1F8, 0xA8B1DC)"
+  ],
+  "h2_count": 14,
+  "h2": [
+   "0. 结论速览",
+   "1. 同步管线（命令收集 → 排序 → 执行）",
+   "2. RNG（随机数）",
+   "3. Checksum（两套，勿混）",
+   "4. 存档 / 读档",
+   "5. 红线表（地址级）",
+   "6. 空间哈希 / 时间片如何避免改枚举序",
+   "7. 未决问题",
+   "8. 附：关键地址速查",
+   "9. 事件填充序（place / swplace / anim / waypoints / playerbased / sellcell / produce）",
+   "10. 「可安全优化 vs 联机红线」结论表（地址级，扩 §5.1–5.3）",
+   "11. 修复 Hook 点表（desync 早停 / 诊断增强，只写规格）",
+   "12. 交叉引用索引（本章新增）",
+   "13. 冲刺结论（S8 · 联机确定性与门控收口深潜）"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S2_report.md",
+  "bytes": 49145,
+  "lines": 556,
+  "hex_total": 588,
+  "hex_distinct": 423,
+  "h1": [
+   "S2 专项冲刺报告：超级武器逆向专项深潜（7.1–7.8 全闭环）"
+  ],
+  "h2_count": 13,
+  "h2": [
+   "一、冲刺任务概述与执行结论",
+   "二、研究事项一：7.1 RechargeTimer 与 CustomChargeTime 进 Save 流实证",
+   "三、研究事项二：7.2 Launch 各 case 子函数消费 RNG（0x65C780/0x65C7E0）全景调用树",
+   "四、研究事项三：7.3 HasChargeProgressed 与 Grant 的全量调用方与每帧驱动源",
+   "五、研究事项四：7.4 SuperWeaponTypeClass::Range+0xF8 真实读点与 PsychicReveal 勘误定谳",
+   "六、研究事项五：7.5 帧 CRC 尾部簇 0x8A0370/-0xC、0x8A03E8 图层数组与 Anim 采样实证",
+   "七、研究事项六：7.6 v5 Load (0x6CDEF0) 字段集与 0x6CDD20 勘误",
+   "八、研究事项七：7.7 ChargeDrainState (+0x7C) 完整状态转移图",
+   "九、研究事项八：7.8 Set/ResetRechargeTime (0x6CC280/0x6CC290) 与触发器/网络事件化（联机安全）分析",
+   "十、工程应用指南与安全红线",
+   "十一、复现工具脚本清单与说明",
+   "十二、写作用域与纪律合规声明",
+   "十三、向父代理汇报草稿"
+  ]
+ },
+ {
+  "rel": "docs/re/anchor_claims.txt",
+  "bytes": 35514,
+  "lines": 393,
+  "hex_total": 536,
+  "hex_distinct": 421,
+  "h1": [
+   "==============================================================================",
+   "docs/re/anchor_claims.txt —— RA2/YR 二进制全库决定性锚点断言库",
+   "★ 本文件是**唯一事实源（Single Source of Truth）**：全库任何断言回归均以本文件为准。"
+  ],
+  "h2_count": 0,
+  "h2": []
+ },
+ {
+  "rel": "docs/re/atlas_rev/R5_triggers_save.md",
+  "bytes": 95184,
+  "lines": 828,
+  "hex_total": 993,
+  "hex_distinct": 397,
+  "h1": [
+   "R5 交付 · atlas 新章锚定补丁块（§14 触发器脚本运行时 / §15 存档块与序列化全景）"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "一、锚定补丁块（共 3 块）",
+   "14. §14 触发器脚本运行时 (Trigger Script Runtime)",
+   "15. §15 存档块与序列化全景 (Savegame Blocks & Serialization)",
+   "二、十节回执（AGENT_DELIVERY_FORMAT.md 骨架）",
+   "三、覆盖度自证表（来源文档 §小节 → 命中的 PATCH-R5-NN / 或不入 atlas 的理由）"
+  ]
+ },
+ {
+  "rel": "docs/re/atlas_rev/R7_vxl_fx_gap.md",
+  "bytes": 103156,
+  "lines": 1015,
+  "hex_total": 957,
+  "hex_distinct": 395,
+  "h1": [
+   "R7 锚定补丁交付：§18 VXL 体素渲染与缓存 / §19 特效与弹丸绘制链归属 / §20 裂缝与间谍卫星可见性分裂"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "A. 锚点唯一性与实跑证据（补丁块前置条件）",
+   "B. 补丁块",
+   "18. §18 VXL 体素渲染与缓存布局 (VXL Voxel Rendering & Cache Layout)",
+   "19. §19 特效与弹丸绘制链归属 (FX & Projectile Draw-Chain Attribution)",
+   "20. §20 裂缝与间谍卫星可见性分裂 (Gap Generator & SpySat Visibility Split)",
+   "C. 十节回执（AGENT_DELIVERY_FORMAT.md 骨架）",
+   "D. 覆盖度自证表（来源文档 §小节 → 命中补丁块）"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S9_report.md",
+  "bytes": 36175,
+  "lines": 522,
+  "hex_total": 553,
+  "hex_distinct": 393,
+  "h1": [
+   "S9 专项冲刺报告 · 未归因热点命名与归属终局定谳"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 冲刺总览与闭环台账",
+   "1. 核心任务一：0x00531D00 大栈函数终局定谳",
+   "2. 核心任务二：0x00409300 对象工厂簇终局定谳",
+   "3. 核心任务三：0x0048D000 格子/资源查询终局定谳",
+   "4. 核心任务四：0x00623100 数据表与轮询点终局定谳",
+   "5. 核心任务五：0x00437300 与 0x00432E00 图形与绘制管线终局定谳",
+   "6. S9 勘误与新旧对照总表",
+   "7. 对下一步优化路线（P0–P2）的直接指导意义"
+  ]
+ },
+ {
+  "rel": "docs/re/weapons_damage_production.md",
+  "bytes": 95309,
+  "lines": 1130,
+  "hex_total": 915,
+  "hex_distinct": 327,
+  "h1": [
+   "武器 / 弹头伤害 / 工厂生产队列 逆向",
+   "§ 冲刺结论（S24）：武器—伤害—生产管线与 PRNG 消费序取证",
+   "五、冲刺结论（S26）：RNG 实例归属与 ecx 装载严格代数证明 + 生产管线扩域零随机认证"
+  ],
+  "h2_count": 18,
+  "h2": [
+   "0. 结论速览",
+   "1. 开火链：选定目标 → Weapon → Bullet → 飞行 → 爆炸",
+   "2. Warhead 伤害：Verses、CellSpread、复杂度",
+   "3. 工厂生产队列",
+   "4. 热点与可优化点（不改 RNG 序）",
+   "5. Hook / 优化插入点",
+   "6. 函数索引（速查）",
+   "7. 未尽事项",
+   "一、既有档案勘误对照块（保留原文 vs 新文实证）",
+   "二、必答问题逐项结论与系统级论证",
+   "三、决定性证据锚点表（S24 专项断言）",
+   "四、未闭环清单与后续指引",
+   "1. 攻坚背景与 Randomizer thiscall ABI 契约",
+   "2. 全管线 33 处 RNG 实例归属与 ecx 装载严格代数证明总表 `[实证]`",
+   "3. P24 特异性暂存恢复机制与五大装载范式剖析 `[实证]`",
+   "4. 帧同步锁步机制与 PRNG 消费深度耦合证明 `[实证] + [推演]`",
+   "5. 生产管线全域扩展扫描与绝对零随机认证 `[实证]`",
+   "6. S26 专项决定性汇编断言（抽取自 `claims_s26.txt`）"
+  ]
+ },
+ {
+  "rel": "docs/re/trigger_runtime_deep_dive.md",
+  "bytes": 59298,
+  "lines": 635,
+  "hex_total": 606,
+  "hex_distinct": 326,
+  "h1": [
+   "触发器（Trigger / Tag）运行时语义与联机确定性专章深潜"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 结论速览（6 条硬结论）",
+   "1. Q1 触发器求值入口与节拍（每逻辑帧在哪里遍历？）",
+   "2. Q2 求值顺序与锁步确定性",
+   "3. Q3 随机数（PRNG）消费",
+   "4. Q4 Tag/Trigger 生命周期、Destroyed、EVA 与存档",
+   "5. Q5 与 AI 的联动：AITrigger `0x6F0AB0` 与普通触发器的调用关系与差异",
+   "6. 逐条结论表（含证据等级）",
+   "7. 关键证据（原始机器码 + 反汇编）",
+   "8. 未闭环清单（含原因与下一步取证方法）",
+   "9. 改动文件清单 + 门禁命令输出",
+   "附：`claims.txt` 174 条断言的主题分布"
+  ]
+ },
+ {
+  "rel": "docs/re/fs_mix_load_chain.md",
+  "bytes": 39317,
+  "lines": 414,
+  "hex_total": 555,
+  "hex_distinct": 318,
+  "h1": [
+   "RE-C：文件系统与 MIX 加载链（含 expandmd*.mix 加载顺序与 INI 追加语义）",
+   "---- 装载 ----",
+   "---- 表 ----"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 结论速览（四条必答项的答案）",
+   "1. 必答项 1：`CCFileClass` / `MixFileClass` 打开链",
+   "2. 必答项 2：加密 MIX 的解密调用链",
+   "3. 必答项 3：`expandmd*` / `ra2md.mix` / `language.mix` 的加载与覆盖规则",
+   "4. 必答项 4：`*.INI` 追加语义（`BATTLEMD98.INI` vs 官方 `battlemd.ini`）",
+   "5. 关键地址总表（便于工具/补丁引用）",
+   "6. 与 `ra2forge/mixlib.py` 的交叉验证 & 勘误",
+   "7. 对本项目的直接结论（可操作）",
+   "8. 未闭环与下一步取法",
+   "9. 证据文件清单（全部在 `out/re_work/fs_mix/`）",
+   "10. 复算方法"
+  ]
+ },
+ {
+  "rel": "docs/re/rle_blit_family.md",
+  "bytes": 58052,
+  "lines": 880,
+  "hex_total": 412,
+  "hex_distinct": 307,
+  "h1": [
+   "RLE Blit 族逆向档案（gamemd.exe 1.001）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "1. 摘要",
+   "2. 优先级表",
+   "3. 通用约定（全族共享）",
+   "4. 重点函数汇编要点与算法",
+   "5. SSE2 改造建议",
+   "6. 建议 Hook 地址表",
+   "7. 与现有实现的衔接清单",
+   "8. 未决问题",
+   "附录 A：反汇编工作产物",
+   "附录 B：51 个 RLE 实现速查（vtable / Blit / CallBlit0 / dtor）",
+   "9. 冲刺结论（S4）"
+  ]
+ },
+ {
+  "rel": "docs/re/atlas_rev/R6_weapons_mix.md",
+  "bytes": 62732,
+  "lines": 658,
+  "hex_total": 551,
+  "hex_distinct": 297,
+  "h1": [
+   "R6 补写 atlas 新章 §16 + §17 —— 锚定补丁块与交付回执"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 交付概览",
+   "1. 锚点核验（实跑 grep，贴命中行号）",
+   "2. 补丁块",
+   "16. §16 武器/弹头/伤害与生产经济 (Weapons, Warheads, Damage & Production Economy)",
+   "17. §17 MIX 虚拟文件系统加载链 (MIX Virtual Filesystem & Load Chain)",
+   "3. 覆盖度自证表",
+   "4. 十节回执（AGENT_DELIVERY_FORMAT.md v1 骨架）"
+  ]
+ },
+ {
+  "rel": "docs/re/clock_frame_loop.md",
+  "bytes": 42662,
+  "lines": 549,
+  "hex_total": 653,
+  "hex_distinct": 291,
+  "h1": [
+   "时钟 / 帧循环 / 空桩调用簇 逆向档案"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 结论速览",
+   "1. Clock 档案（`0x409360–0x40946A`）",
+   "2. 空桩聚类（`0x4068E0`，1672 直呼）",
+   "3. 帧循环图",
+   "4. `timeBeginPeriod(1)` 与引擎 Sleep/等待",
+   "5. 优化建议",
+   "6. 未决问题",
+   "附录 A：地址速查",
+   "附录 B：与既有结论对照",
+   "7. 冲刺结论（S5）"
+  ]
+ },
+ {
+  "rel": "docs/re/fs_mix_load_chain_deep.md",
+  "bytes": 45897,
+  "lines": 516,
+  "hex_total": 467,
+  "hex_distinct": 285,
+  "h1": [
+   "任务 FSMIX：文件系统与 MIX 加载链专章深潜"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 必答项结论速览",
+   "1. 必答项 1：加载通道与优先级",
+   "2. 必答项 2：BATTLEMD*.INI 通配、回退与合并",
+   "3. 必答项 3（关键问题）：MIX 内部的 INI 是否被读取",
+   "4. 必答项 4：[CD] / CDPath / InstallPath 复核",
+   "5. 必答项 5：文件打开失败的字符串与错误分支",
+   "6. 对 ra2forge 的可操作结论",
+   "7. 与 docs/re/fs_mix_load_chain.md 的差异（勘误登记，不改动原文）",
+   "8. 未闭环清单（附下一步取证方法）",
+   "9. 改动文件与门禁输出"
+  ]
+ },
+ {
+  "rel": "docs/re/fx_draw_chain.md",
+  "bytes": 50575,
+  "lines": 751,
+  "hex_total": 543,
+  "hex_distinct": 252,
+  "h1": [
+   "特效 / 非单位对象绘制链 —— 地址级逆向（Bullet/Anim/Particle/Wave/VoxelAnim/LaserDraw/EBolt/RadBeam）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 结论速览",
+   "1. 虚表槽位与调用约定",
+   "2. 逐类 Draw 门控链（迷雾相关）",
+   "3. 非 Object 系：LaserDraw / EBolt / RadBeam / Spotlight",
+   "4. Update vs Draw 分离；高密度爆炸成本中心",
+   "5. 迷雾剔除策略（谁该藏、谁不该藏）",
+   "6. Hook 点表（地址 / 改动 / 确定性风险）",
+   "7. 未决问题",
+   "8. 取证索引",
+   "9. 与 L3 现有代码衔接（只读建议，不改 ra2render）",
+   "10. 冲刺结论（S3）"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S3_report.md",
+  "bytes": 27278,
+  "lines": 408,
+  "hex_total": 307,
+  "hex_distinct": 246,
+  "h1": [
+   "S3 专项冲刺报告：特效绘制链深潜（Q1–Q7 未决全面闭环）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "一、冲刺任务概述与核心定谳总表",
+   "二、Q1 深潜：`AnimClass+0x184` 语义、类型与生命周期闭环",
+   "三、Q2 深潜：`IsFogged` 写点与迷雾绘制门控闭环",
+   "四、Q3 深潜：列表数据源 `0x8A0394` / `0x8A03A0` 交叉引用分析",
+   "五、Q4 深潜：`0x556D40` 归属实证分析",
+   "六、Q5 深潜：己方激光是否恒画决策分析",
+   "七、Q6 深潜：主视图与局部脏矩形双路径重复绘制计数方案",
+   "八、Q7 深潜：`ParticleSystem SpotlightRadius` 填充率分析",
+   "九、交付物与复算取证索引"
+  ]
+ },
+ {
+  "rel": "docs/re/atlas_rev/R8_ui_crt.md",
+  "bytes": 67022,
+  "lines": 632,
+  "hex_total": 497,
+  "hex_distinct": 222,
+  "h1": [
+   "R8 流交付：ARCHITECTURE_ATLAS 新章 §21/§22 锚定补丁块与逐条复算回执"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "A. 交付结论（一页）",
+   "B. 锚定补丁块",
+   "21. §21 侧栏/选择 UI 与黑幕点击输入交互 (Sidebar/Selection UI & Shroud Click Input)",
+   "22. §22 CRT 调用图、池风险与内联断言 (CRT Callgraph, Pool Risk & Inline Assertions)",
+   "C. 十节回执（docs/re/AGENT_DELIVERY_FORMAT.md §A 骨架）",
+   "D. 覆盖度自证表（每个来源小节 → 命中的 PATCH / 不入 atlas 的理由）"
+  ]
+ },
+ {
+  "rel": "docs/re/audio_input_hotspots.md",
+  "bytes": 41996,
+  "lines": 651,
+  "hex_total": 510,
+  "hex_distinct": 220,
+  "h1": [
+   "音频 / 消息泵 / 输入队列 热点簇归因"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 一页结论",
+   "1. Audio 簇（`0x406000`–`0x407C00`）",
+   "2. 消息 / 输入泵簇（`0x53E300`–`0x53EC00`）",
+   "3. InputManager / 环形事件队列 / Kamikaze / LaserDraw（`0x54E000`–`0x550000`）",
+   "4. 真热点 vs 伪热点",
+   "5. 优化建议（含插入点）",
+   "6. 地址速查表",
+   "7. 未决问题",
+   "8. 与既有结论的对照",
+   "§7 冲刺结论（S14）"
+  ]
+ },
+ {
+  "rel": "docs/re/building_fog_residual_deep_dive.md",
+  "bytes": 61126,
+  "lines": 982,
+  "hex_total": 383,
+  "hex_distinct": 219,
+  "h1": [
+   "《红色警戒2：尤里的复仇》（gamemd.exe 1.001）建筑迷雾可视性门控、多格底座几何与星际争霸式残影机制深度逆向报告"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "1. 架构总览与视觉泄露根因剖析",
+   "2. `BuildingClass::Draw` 指令级全反汇编剖析",
+   "3. 多格底座（Foundation）几何遍历与数据结构深度逆向",
+   "4. 星际争霸式建筑迷雾残影机制架构设计",
+   "5. 生产级 C++ Hook 原型实现",
+   "6. 验证与测试检查清单",
+   "7. 冲刺结论（S12）· 建筑迷雾残影与裂缝/超武雷达并发深度逆向"
+  ]
+ },
+ {
+  "rel": "docs/re/va_claims_p1.md",
+  "bytes": 35340,
+  "lines": 396,
+  "hex_total": 235,
+  "hex_distinct": 218,
+  "h1": [
+   "ARCHITECTURE_ATLAS 悬空 VA 机器断言与缺等级小节标签 · P1 报告"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 交付物清单",
+   "1. 方法（离线静态，可复算）",
+   "2. 覆盖率与审计结果",
+   "3. 46 个缺证据等级小节 · 前置标签建议清单",
+   "4. 关键地址表（补丁落地 / 结构理解决策向）",
+   "5. 抽样独立复算（非 audit_bytes 路径）",
+   "6. §九 台账草稿（供 Lead 合并，勿由本轨直接写顶层台账）",
+   "7. 残留风险与后续建议",
+   "8. 越界与红线自证"
+  ]
+ },
+ {
+  "rel": "docs/re/deep_dive_sweeps_closure.md",
+  "bytes": 53044,
+  "lines": 600,
+  "hex_total": 321,
+  "hex_distinct": 217,
+  "h1": [
+   "五大核心深潜文档遗留未决项终局清零大档案（DEEP_DIVE_SWEEPS_CLOSURE）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 执行摘要与终局清零总账",
+   "1. `pathfinding_deep_dive.md` 终局闭环实证",
+   "2. `targeting_deep_dive.md` 终局闭环实证",
+   "3. `rle_blit_family.md` 终局闭环实证",
+   "4. `MP_SAFETY_REVIEW.md` 终局闭环实证",
+   "5. `nonrle_blit_and_named_hotspots.md` 终局闭环实证",
+   "6. 全库五大深潜文档终局清零台账总表"
+  ]
+ },
+ {
+  "rel": "docs/re/open_items_round2.md",
+  "bytes": 27408,
+  "lines": 375,
+  "hex_total": 312,
+  "hex_distinct": 205,
+  "h1": [
+   "未闭环项续攻（第二轮）：RE-A U-5/U-6/U-7/U-8 + RE-C 四项"
+  ],
+  "h2_count": 12,
+  "h2": [
+   "0. 验收证据（照抄可复算）",
+   "1. `U-6` `push 0x7F7C80` 载体对象 = **`IID_IPersistStream`（16 字节 IID 常量，非对象）** `[实证]`+`[推演]`",
+   "2. `U-7` `Game::Save 0x67D0C0` 的调用者 `[实证]`（结论：**不存在调用者；且该地址不是函数入口**）",
+   "3. `U-8` `0x86563C` 的 `0x2B898` `[实证]`（结论：**不是第二份魔数，是数据表里的一个普通步长值**）",
+   "4. `U-5` 28 个内联向量块中 15 个未定名 `[证据不足]`（判定 + 每条的最小证据链）",
+   "5. RE-C ① `[实证]` `MixFileClass::Cache()` 的真实身份 + `+0x24` 填充点\"负结果\"",
+   "6. RE-C ② `CCFileClass` 字段 / 虚表槽语义 `[实证]`",
+   "7. RE-C ③ `RA2MD.INI [CD]` 进搜索链 —— `[证据不足]`（判定 + 原因）",
+   "8. RE-C ④ 四条装载点 `[实证]`（全部给出新结论）",
+   "9. 逐项状态汇总",
+   "10. 本轮产物索引（全部在 `out/re_work/open_items2/`）",
+   "11. 勘误与工具风险备注（交付后自查，2026-09-26）"
+  ]
+ },
+ {
+  "rel": "docs/re/pathfinding_locomotion.md",
+  "bytes": 35814,
+  "lines": 528,
+  "hex_total": 353,
+  "hex_distinct": 204,
+  "h1": [
+   "单位寻路 / 移动（FootClass / Locomotion / Path）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 结论速览",
+   "1. 调用图",
+   "2. 字段表",
+   "3. 算法描述",
+   "4. 与 CellClass / 障碍的交互",
+   "5. 性能与优化插入点",
+   "6. 地址速查",
+   "7. 未决问题",
+   "附：复现命令",
+   "8. 冲刺结论（S7）"
+  ]
+ },
+ {
+  "rel": "docs/re/unit_visibility_mechanism.md",
+  "bytes": 36916,
+  "lines": 351,
+  "hex_total": 354,
+  "hex_distinct": 197,
+  "h1": [
+   "UNIT-VIS —「关掉灰雾后远处敌人仍『靠近才显现』」机制归属定谳"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 勘误（最小订正清单，交 Lead；本轮未改任何他人文件）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项"
+  ]
+ },
+ {
+  "rel": "docs/re/house_team_ai_update.md",
+  "bytes": 35583,
+  "lines": 495,
+  "hex_total": 366,
+  "hex_distinct": 196,
+  "h1": [
+   "HouseClass / TeamClass / AITrigger 每帧更新循环逆向"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 结论速览",
+   "1. 每帧 AI 调用树",
+   "2. 关键地址与数据结构",
+   "3. 热点函数表",
+   "4. 与 Greatest_Threat 的关系",
+   "5. 优化插入点（2～3 个）",
+   "6. 确定性风险总表",
+   "7. 未决问题",
+   "8. 附：验证脚本",
+   "9. 冲刺结论（S6）"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S12_report.md",
+  "bytes": 28014,
+  "lines": 386,
+  "hex_total": 298,
+  "hex_distinct": 190,
+  "h1": [
+   "S12 专项冲刺报告 · 建筑迷雾残影与裂缝/超武雷达并发深潜"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 冲刺总览与闭环台账",
+   "1. 核心任务一：多格地基 FoundationData 遍历语义（含 0x7FFF 哨兵）",
+   "2. 核心任务二：残影态（Ghost Visual）与 IsFogged 交互及生命周期",
+   "3. 核心任务三：裂缝保护与雷达开窗并发状态机语义与时序实证",
+   "4. 综合实证台账与证据分级矩阵",
+   "5. 交付物与工程约束合规审查"
+  ]
+ },
+ {
+  "rel": "docs/re/visibility_gap_spysat.md",
+  "bytes": 45785,
+  "lines": 525,
+  "hex_total": 393,
+  "hex_distinct": 185,
+  "h1": [
+   "三态迷雾 · 建筑可视性 / 弹道剔除 / 裂缝产生器 / 间谍卫星 —— 地址级逆向储备"
+  ],
+  "h2_count": 12,
+  "h2": [
+   "0. 结论速览",
+   "1. BuildingClass::Draw / BulletClass::Draw 入口短路",
+   "2. 裂缝产生器（GapGenerator）",
+   "3. 间谍卫星 / 超级武器开图",
+   "4. 弹道 / 激光 / 粒子在迷雾中是否应隐藏",
+   "5. Hook 点表（地址 / 建议改动 / 风险）",
+   "6. 与现有 L3 代码衔接建议",
+   "7. 未决问题",
+   "8. 取证索引",
+   "9. 冲刺结论（S1 · 可视性与迷雾残留专项深潜定谳）",
+   "9.3 开图方案 A/B/C 的定谳依据（裂缝产生器保护）",
+   "9.4 11 条未决问题全面闭环"
+  ]
+ },
+ {
+  "rel": "docs/re/cross_doc_consistency_audit.md",
+  "bytes": 40095,
+  "lines": 439,
+  "hex_total": 330,
+  "hex_distinct": 182,
+  "h1": [
+   "全库 30+ 份逆向文档交叉一致性审计与终极裁定大报告 (Cross-Document Consistency Audit & Definitive Adjudication)"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "一、审计背景、执行纪律与技术基线",
+   "二、Lead v25 补给单核心冲突裁定专章 (E 系列与重大结构纠偏)",
+   "三、全库 30+ 份逆向文档系统性冲突深潜审计",
+   "四、全库交叉一致性三维矩阵（文档 A vs 文档 B vs 二进制真理）",
+   "五、全库 30+ 份逆向文档全量勘误清单与权威裁定建议表",
+   "六、结语与工程库未来一致性守护机制"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S4_report.md",
+  "bytes": 23338,
+  "lines": 289,
+  "hex_total": 223,
+  "hex_distinct": 182,
+  "h1": [
+   "S4 专项冲刺报告：RLE / 非 RLE Blit 补全深潜"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "一、冲刺任务概述与执行结论",
+   "二、研究事项一：§8.3 zmap 推进语义三假说澄清与实证",
+   "三、研究事项二：EncodedLen 调用方全链路反查与虚表 0x007F1D00 勘误",
+   "四、研究事项三：剩余 49 个 Blit 实现按“调用数 × 像素”热度排序与 Top10 接管顺序",
+   "五、闭环状态与协同台账",
+   "六、向父代理汇报摘要（草稿）"
+  ]
+ },
+ {
+  "rel": "docs/re/offline_verification_alternatives.md",
+  "bytes": 181976,
+  "lines": 2001,
+  "hex_total": 364,
+  "hex_distinct": 181,
+  "h1": [
+   "92 项 Class B 运行时未决项的离线替代验证方案体系",
+   "Offline Verification Alternatives for 92 Class B Runtime Open Items"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 编制背景、离线论证体系总览与方法学准则",
+   "1. 渲染与微内核族离线替代验证体系（32 项：B-R01 ~ B-R32）",
+   "2. 音频与 DirectSound 离线替代验证体系（14 项：B-A01 ~ B-A14）",
+   "3. 联机网络与确定性离线替代验证体系（18 项：B-N01 ~ B-N18）",
+   "4. 游戏逻辑 / AI / 寻路离线替代验证体系（16 项：B-L01 ~ B-L16）",
+   "5. 内存与 CRT 池化离线替代验证体系（12 项：B-M01 ~ B-M12）",
+   "6. 92 项 Class B 运行时未决项全量替代方案矩阵总表",
+   "Full Master Matrix Table: 92 Items",
+   "7. 离线自动化测试工具链与即插即用验收测试用例预置规范"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S14_report.md",
+  "bytes": 35177,
+  "lines": 495,
+  "hex_total": 311,
+  "hex_distinct": 172,
+  "h1": [
+   "S14 专项逆向工程冲刺报告：输入环、音频混音与帧节拍剩余项深潜"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 执行摘要与重大突破",
+   "1. §7 七大未决问题逐条深度闭环与实证反汇编分析",
+   "2. 输入环与音频的交互拓扑、调度次序与无耦合证明",
+   "3. `0x53E7*` 族与内部输入队列的边界及完整架构",
+   "4. 帧节拍剩余项深潜：时钟变量传递、GameSpeed 映射与 TickMiss 动态补偿",
+   "5. 优化建议与工程落地规范",
+   "6. 附录：可复算硬证据全表"
+  ]
+ },
+ {
+  "rel": "docs/re/trigger_tag_abi_deep_dive.md",
+  "bytes": 17238,
+  "lines": 238,
+  "hex_total": 219,
+  "hex_distinct": 171,
+  "h1": [
+   "Trigger / Tag 生命周期 ABI 补全（R-08）",
+   "合计 55 条：OK=55  MISMATCH/NOREAD=0"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 结论速览",
+   "1. TriggerClass ABI（对照 YRpp）",
+   "2. TagClass ABI（对照 YRpp）",
+   "3. AITriggerTypeClass 关键字段（P2 补全）",
+   "4. PRNG 消费点字节级复核（与 trigger_runtime_deep_dive 对齐）",
+   "5. 未闭环 / 冲突登记",
+   "6. 与 YRpp 对照总表",
+   "7. 产物与复算"
+  ]
+ },
+ {
+  "rel": "docs/re/atlas_rev/R3_ai_hooks.md",
+  "bytes": 71671,
+  "lines": 535,
+  "hex_total": 421,
+  "hex_distinct": 170,
+  "h1": [
+   "R3 · 战术 AI/小队调度/生产招募 与 补丁生命周期 — atlas 锚定补丁块交付"
+  ],
+  "h2_count": 4,
+  "h2": [
+   "1. 锚定补丁块（共 10 块，Lead 可机械套用）",
+   "附录 DA1-bis · 跨文档冲突登记与交叉确认（R3 · 2026-09-28）",
+   "2. 覆盖度自证表（来源文档 §小节 → 命中的 PATCH-R3-NN）",
+   "3. 交付回报（`docs/re/AGENT_DELIVERY_FORMAT.md` §A 十节骨架）"
+  ]
+ },
+ {
+  "rel": "docs/re/audio_engine_deep_dive.md",
+  "bytes": 56461,
+  "lines": 897,
+  "hex_total": 287,
+  "hex_distinct": 169,
+  "h1": [
+   "尤里的复仇音频引擎（Audio / VocClass）深度逆向与音效洪泛控制方案"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 核心结论速览（Executive Summary）",
+   "1. 音频调度核心链路深度反汇编剖析",
+   "2. 声音对象 `VocClass` 完整内部数据结构与字段映射",
+   "3. 根因剖析：重载战斗下的音效洪泛（Combat Sound Flooding）",
+   "4. 生产级智能限频 Hook 方案（Architecture & Code）",
+   "5. 配置规范与实测验证指标",
+   "6. 与既有文档的交叉印证与演进",
+   "7. 冲刺结论（S11）：通道池 300 槽分配语义、EVA 语音抢占流与 CRT 静态频次实证"
+  ]
+ },
+ {
+  "rel": "docs/re/atlas_rev/R2_fog_l4.md",
+  "bytes": 82613,
+  "lines": 666,
+  "hex_total": 381,
+  "hex_distinct": 168,
+  "h1": [
+   "R2 · 迷雾 / 视野 / L4 脏矩形 / 建筑残影 —— atlas 锚定补丁块交付",
+   "附录 P · 锚定补丁块（PATCH-R2-01 ~ PATCH-R2-10）",
+   "附录 V · 覆盖度自证表（来源文档 §小节 → 命中补丁块）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "V.1 `docs/re/l4_dirty_spec_v2.md`（162 行，mtime 2026-09-28 11:05:14）",
+   "V.2 `docs/re/l4_dirty_safety.md`（96 行，mtime 2026-09-28 11:31:17）",
+   "V.3 `docs/re/fog_firststage_rootcause.md`（70 行，mtime 2026-09-28 11:05:59）",
+   "V.4 `docs/re/fog_model_hypothesis.md`（351 行，mtime 2026-09-28 12:45:23）—— **原 atlas 0 命中，整篇缺失**",
+   "V.5 `docs/re/building_fog_residual_deep_dive.md`（978 行，mtime 2026-09-27 22:22:08）",
+   "V.6 `docs/re/visibility_gap_spysat.md`（516 行，mtime 2026-09-27 17:22:00，对照）",
+   "V.7 `docs/re/fog_split_report.md`（549 行，mtime 2026-09-27 17:21:45，对照）"
+  ]
+ },
+ {
+  "rel": "docs/re/radar_minimap_dots.md",
+  "bytes": 28304,
+  "lines": 350,
+  "hex_total": 297,
+  "hex_distinct": 165,
+  "h1": [
+   "雷达小地图「单位点」绘制内层逆向（gamemd.exe 1.001）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "1. 结论（先看这里）",
+   "2. 绘制链（自外向内）",
+   "3. 枚举源与关键数据结构",
+   "4. 敌方单位在「已探索无视野」时的原版行为",
+   "5. 最小侵入 Hook 点表",
+   "6. 与 L3 衔接建议",
+   "7. 未决问题",
+   "8. 附：本轮验证方式",
+   "9. 冲刺结论（S10）"
+  ]
+ },
+ {
+  "rel": "docs/re/sidebar_selection_ui.md",
+  "bytes": 27510,
+  "lines": 447,
+  "hex_total": 324,
+  "hex_distinct": 161,
+  "h1": [
+   "侧边栏 / 鼠标点选 / 命令分发 逆向（gamemd.exe 1.001）",
+   "vtable 归属：out/reverse/symbols.json（SelectClass@StripClass@SidebarClass 等）",
+   "字段位移：raw-byte 扫 0x11CC..0x11E4 得 DraggingRectangle=0x11CF 等 9 处引用"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 一页结论",
+   "1. 类层次与地址总表",
+   "2. 侧边栏结构（Strip / Cameo / Tab）",
+   "3. 每帧绘制链与脏区",
+   "4. 鼠标：WWMouse / MouseClass / 框选",
+   "5. 命令分发（CommandClass / 快捷键 / 右键）",
+   "6. 工具提示与 CanBuild",
+   "7. 与迷雾关系",
+   "8. 性能热点与优化插入点",
+   "9. 关键地址速查",
+   "10. 静态取证方式"
+  ]
+ },
+ {
+  "rel": "docs/re/HOOK_POINT_MATRIX.md",
+  "bytes": 81751,
+  "lines": 667,
+  "hex_total": 436,
+  "hex_distinct": 160,
+  "h1": [
+   "《红色警戒2：尤里的复仇》全项目 Hook 点冲突矩阵与唯一落地顺序表"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "目录",
+   "一、架构总览与方法论",
+   "二、全项目 Hook 点地址聚类总表（带来源与行号）",
+   "三、核心冲突深度裁决详述（Core Conflict Arbitrations）",
+   "四、全项目唯一推荐落地顺序表（Canonical Landing Sequence）",
+   "五、确定性与联机安全红线约束（Multiplayer Synchronization Redlines）",
+   "六、复审小节（2026-09-26 · Hook 冲突矩阵复审与落地缺口总表）",
+   "七、状态注记（追加节 · 2026-10-01 · 工单 `T-W1-Q / PK-1`）"
+  ]
+ },
+ {
+  "rel": "docs/re/shroud_click_interaction.md",
+  "bytes": 35296,
+  "lines": 514,
+  "hex_total": 340,
+  "hex_distinct": 157,
+  "h1": [
+   "《红色警戒2：尤里的复仇》黑幕点击交互 / 战雾遮挡判定与控制权逆向工程专题报告 (gamemd.exe 1.001)"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 一页技术结论 (Executive Summary)",
+   "1. 核心类、虚表与数据结构总表",
+   "2. 0x005865E0 深度剖析与全二进制 25 处 Xref 引用图谱",
+   "3. 鼠标交互与框选过滤全链路逆向",
+   "4. 黑幕 (Shroud) 与 迷雾 (Fog) 判定差异对比",
+   "5. 多人联机同步模型、Desync 风险与防作弊机理",
+   "6. 工程落地方案与分层契约设计",
+   "7. 自动化审计与证据链闭环",
+   "8. 结论与总结"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S10_report.md",
+  "bytes": 27826,
+  "lines": 380,
+  "hex_total": 270,
+  "hex_distinct": 156,
+  "h1": [
+   "S10 专项逆向工程冲刺报告：雷达小地图点绘与侧边栏 UI 深潜"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "1. 执行摘要与结论速览",
+   "2. 课题一：雷达小地图“点绘内层”隔离定位与物理分界",
+   "3. 课题二：Cameo 脏门与 CanBuild (0x004F7870) 频率与性能剖析",
+   "4. 课题三：点击 / 框选与迷雾交互未决",
+   "5. 关键地址与数据结构总账",
+   "6. S10 交付物完整性自查"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S5_report.md",
+  "bytes": 28679,
+  "lines": 414,
+  "hex_total": 284,
+  "hex_distinct": 155,
+  "h1": [
+   "S5 专项逆向工程冲刺报告：帧循环、时钟定时器与音频输入深潜"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 执行摘要与重大突破",
+   "1. §6 十大未决问题逐条闭环详情",
+   "2. 输入环与 `AudioFrameUpdate`（`0x406F70`）33ms 节流深度交互模型",
+   "3. `0x53E7*` 族真实职责边界与体系定位",
+   "4. 优化建议与可实施切入点",
+   "5. 附录：可复算硬证据全表"
+  ]
+ },
+ {
+  "rel": "docs/re/radar_fix2_report.md",
+  "bytes": 49876,
+  "lines": 499,
+  "hex_total": 363,
+  "hex_distinct": 152,
+  "h1": [
+   "RADAR-FIX2 交付报告：改用引擎原生减暗路径（放弃自绘灰化）+ 清 P0 悬项"
+  ],
+  "h2_count": 15,
+  "h2": [
+   "[META]",
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 勘误（对既有文档/结论的更正）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文粘贴）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项",
+   "附录 A：本轮实现细节",
+   "附录 B：ZC-3 真机复验步骤（摘要；完整版见 out/re_work/radar_fix2/zcode_retest_steps.md）",
+   "附录 C：对「0x3598 悬项」在旧产物中的存在性复核（补 [3] 勘误）",
+   "附录 D：遥测计数器地址独立复核与订正（RADAR-ERRATA2 · 2026-09-27）"
+  ]
+ },
+ {
+  "rel": "docs/re/nonrle_blit_and_named_hotspots.md",
+  "bytes": 26382,
+  "lines": 316,
+  "hex_total": 232,
+  "hex_distinct": 142,
+  "h1": [
+   "非 RLE Blit 族优先级 与 未命名热点簇命名档案（gamemd.exe 1.001）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "1. 结论",
+   "2. 非 RLE 优先级表（继 BlitTransXlatAlphaZRead 之后）",
+   "3. 两簇命名档案",
+   "4. 可选核实：`0x5D4B30` 一带",
+   "5. 建议 Hook 表（非 RLE 下一批 5 个）",
+   "6. 未决问题",
+   "附录 A：已反汇编的非 RLE Blit 一览（工作产物摘录）",
+   "附录 B：命名对照速查"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_split_report.md",
+  "bytes": 53518,
+  "lines": 550,
+  "hex_total": 293,
+  "hex_distinct": 137,
+  "h1": [
+   "FOG-SPLIT 交付报告 —— 总闸语义重定义：只去「已探索但离开后」的压暗，保留未探索黑幕 + 保留玩法可见性",
+   "附录 A. 未探索黑幕路径说明（F1 必答：走哪条路径、为何不受影响）",
+   "附录 B. 产物级证据（反汇编原文节选）"
+  ],
+  "h2_count": 24,
+  "h2": [
+   "[META]",
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 勘误（本次新增，逐条给）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文粘贴，不许概述）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项（需人/Lead 决定的分叉，附建议）",
+   "A.1 路径（一条链，无分叉）",
+   "A.2 为何不受总闸影响（三重保证，逐条可验）",
+   "A.3 我方对未探索格的零介入不变量（可被真机反证）",
+   "B.1 Hook_CellClass_Draw：三态判定 + 总闸作用域",
+   "B.2 Hook_DrawShroudFog_Stub：未探索黑幕绘制次数（引擎侧实测）",
+   "B.3 Hook_L4FullRedraw_Stub：已与总闸解耦（(b)）",
+   "B.4 玩法钩子门控（F2）",
+   "B.5 小地图：未探索放行（不写引擎判定位）",
+   "B.6 挂钩点补丁写入点（未变项逐条）",
+   "C.1 场景（关键：必须让「未探索区」在视野内）",
+   "C.2 步骤",
+   "C.3 判据（A 组 = 总闸=0，逐条缺一不可）",
+   "C.4 注意事项"
+  ]
+ },
+ {
+  "rel": "docs/re/va_claims_sample_p2.md",
+  "bytes": 40021,
+  "lines": 283,
+  "hex_total": 219,
+  "hex_distinct": 137,
+  "h1": [
+   "R-VA-CLAIMS · 悬空 VA 抽样 80 条补证报告 · P2",
+   "可选：python tools/audit_bytes.py out/re_work/re_sprint/R_va_claims/claims_va_p2.txt"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 交付物清单",
+   "1. 方法（离线静态，可复算）",
+   "2. 统计",
+   "3. 80 条补证明细表",
+   "4. 冲突表",
+   "5. 关键样本注记",
+   "6. 未闭环与下一步",
+   "7. 复算命令"
+  ]
+ },
+ {
+  "rel": "docs/re/atlas_rev/R1_render_blit.md",
+  "bytes": 68474,
+  "lines": 588,
+  "hex_total": 293,
+  "hex_distinct": 137,
+  "h1": [
+   "R1｜渲染/Blitter 族 09-28 新结论并入 atlas §1 / §2.1（锚定补丁块交付）"
+  ],
+  "h2_count": 13,
+  "h2": [
+   "0. 补丁块总览（9 块）",
+   "PATCH-R1-01  补「微内核族级数量口径 + 两族基类虚表」",
+   "PATCH-R1-02  补「RLE 3 槽 / 非 RLE 5 槽结构 + CallBlit0 转发实证」",
+   "PATCH-R1-03  §1.2 推翻「所有 Blitter 实例固定 12 字节」→ 尺寸矩阵 + `+0x08` 越界红线",
+   "PATCH-R1-04  §1.4 补「Z 测试判定式 + WriteZ 回写值（RLE vs 非 RLE）」",
+   "PATCH-R1-05  §1.5 补「阶段 A 越界补偿（Overshoot）+ zmap 禁改硬约束」",
+   "PATCH-R1-06  §1.6 吞吐口径勘误：撤回「>40%」+ 补遥测口径红线",
+   "PATCH-R1-07  §1.7（新增小节）像素原语正交分解与变体组合矩阵",
+   "PATCH-R1-08  §1.8（新增小节）Hook 覆盖率 6/108、接管优先级与真机插桩规格",
+   "PATCH-R1-09  §2.1 补「单位绘制接口收敛点：Draw_SHP → 虚表槽 1」",
+   "覆盖度自证表（来源文档 §小节 → 命中补丁块）",
+   "十节回执（`docs/re/AGENT_DELIVERY_FORMAT.md` §A 骨架）",
+   "门禁原文（实跑粘贴，未概述）"
+  ]
+ },
+ {
+  "rel": "docs/re/pending_execution_master_table.md",
+  "bytes": 67014,
+  "lines": 693,
+  "hex_total": 303,
+  "hex_distinct": 135,
+  "h1": [
+   "六大落地补丁待执行总台账与工程落地规范",
+   "Pending Execution Master Table & Engineering Landing Specification"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "〇、执行总则与落地前置红线 (Engineering Execution Principles)",
+   "一、六大落地补丁待执行工程总表 (Master Engineering Table)",
+   "二、六大落地补丁包指令级技术落地规范 (Deep-Dive Patch Specifications)",
+   "三、INI 配置项、联机覆盖规则与遥测指标 (Configuration, Rules & Telemetry)",
+   "四、逐字节回滚方案与热卸载规范 (Rollback & Unload Specifications)",
+   "五、静态对拍与验证通断准则 (Static Verification & Pass/Fail Criteria)",
+   "六、落地实施执行次序与依赖流水线 (Implementation Pipeline & Dependencies)",
+   "七、执行结论与工程移交指令 (Handoff Directives)",
+   "八、状态注记（追加节 · 2026-10-01 · 工单 `T-W1-Q / PK-1`）"
+  ]
+ },
+ {
+  "rel": "docs/re/sbh_freelist_deep_dive.md",
+  "bytes": 22107,
+  "lines": 349,
+  "hex_total": 178,
+  "hex_distinct": 130,
+  "h1": [
+   "R-02 专章：西木内嵌 MSVC 6.0 SBH（Small Block Heap）深度取证"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论速览（≤12 行）",
+   "[1] `__sbh_alloc_block` 逐指令语义",
+   "[2] size-class 分桶表（字节级）",
+   "[3] Region 描述符与 heap_info 布局",
+   "[4] `__sbh_find_block` 检索逻辑（堆完整性校验用）",
+   "[5] `__sbh_free_block` 语义（摘要）",
+   "[6] 毒值 `FE00FFFF` 来源分析",
+   "[7] 堆完整性校验钩子规格草案（供 M 轨 harness 门禁）",
+   "[8] 未闭环项与下一步",
+   "[9] 证据锚点"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S11_report.md",
+  "bytes": 29009,
+  "lines": 384,
+  "hex_total": 178,
+  "hex_distinct": 129,
+  "h1": [
+   "S11 专项逆向深潜报告：音频引擎通道池语义、EVA 语音优先级抢占流与内嵌 CRT 内存静态分布"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "1. 核心结论速览（Executive Summary）",
+   "2. 音频通道池 300 槽真实分配/回收语义深潜",
+   "3. EVA 语音优先级路径与通道分流机制",
+   "4. `_new` / `_delete` 全代码段静态自动化扫描与 8 桶 Freelist 校验",
+   "5. 证据台账（Verification Ledger）",
+   "6. 后续演进与工程落地建议"
+  ]
+ },
+ {
+  "rel": "docs/re/warhead_abi_verses_deform_deep_dive.md",
+  "bytes": 19780,
+  "lines": 382,
+  "hex_total": 151,
+  "hex_distinct": 129,
+  "h1": [
+   "WarheadTypeClass Verses / Deform ABI 深挖（R-03）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 结论速览",
+   "1. Deform 偏移定谳（P0）",
+   "2. Verses[11] 偏移复核（P0，继承 R6）",
+   "3. Verses[armor] 施加点（P1，本任务新实证）",
+   "4. WarheadTypeClass +0x00 … +0x130 布局",
+   "5. 勘误建议（E-8 升级；本节为建议，未改源文档）",
+   "6. 排除清单与下一步",
+   "7. 可复算脚本索引",
+   "8. 一句话"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_equivalence_static_proof.md",
+  "bytes": 34316,
+  "lines": 423,
+  "hex_total": 219,
+  "hex_distinct": 128,
+  "h1": [
+   "落地队列静态等效性与回滚论证包（核心风控闸）",
+   "Static Equivalence & Rollback Verification Package for Landing Queue"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 评审总览与风控闸门裁决矩阵 (Executive Verdict Matrix)",
+   "1. 证据标准与评定契约 (Evidence Standard & Grading)",
+   "2. 补丁一：M-8 联机诊断钩 (H-D1, H-D2, H-D5, H-D6, H-D6b)",
+   "3. 补丁二：M-10 裂缝保护与间谍卫星门控 (M-10 Gap & SpySat)",
+   "4. 补丁三：M-9 微粒与粒子系统迷雾剔除 (M-9 Particle & PSys)",
+   "5. 补丁四：CRT 高频小对象池化 (CRT Memory Pool, P-M1…P-M5 加固版)",
+   "6. 补丁五：音频引擎并发削峰与智能限频 (Audio Engine De-flood)",
+   "7. 补丁六：L4 视口局部打脏 (L4 Vision-Dirty)",
+   "8. 终审放行清单与落地准入结论 (Landing Acceptance Sign-off)"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_switch_report.md",
+  "bytes": 49232,
+  "lines": 493,
+  "hex_total": 364,
+  "hex_distinct": 127,
+  "h1": [
+   "FOG-SWITCH 交付报告 —— 把 `EnableStarCraftFog` 做成真正干净的「半透明黑」总闸",
+   "附录 A. F1 路径清单（速查，含 xref 来源）",
+   "附录 B. 真机验收步骤（给 ZCode；A/B 单变量）"
+  ],
+  "h2_count": 21,
+  "h2": [
+   "[META]",
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 勘误（对既有文档/结论的更正）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文粘贴）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项",
+   "B.1 场景（同一局、同一存档、同一镜头）",
+   "B.2 步骤",
+   "B.3 判据（三项，缺一不可）",
+   "B.4 注意事项",
+   "C.1 短路点① + 计数①（Hook_CellClass_Draw）",
+   "C.2 短路点②（B1/B2 混色桩：开闸/关闸两条出口并列）",
+   "C.3 短路点③/④/⑤",
+   "C.4 三个新遥测符号：对象符号表 + 产物地址链",
+   "C.5 挂钩点未变（补丁形状）",
+   "C.6 关闸时「不落回 50%」的完整可达性论证（三条）"
+  ]
+ },
+ {
+  "rel": "docs/re/ui_command_dispatch_deep_dive.md",
+  "bytes": 22791,
+  "lines": 464,
+  "hex_total": 232,
+  "hex_distinct": 127,
+  "h1": [
+   "UI 命令分发深潜（点选 / 框选 / 命令分发 / 确定性 / 优化面）",
+   "vtable：out/reverse/symbols.json",
+   "本包 claims：out/re_work/re_sprint/R_ui_cmd/claims_ui_cmd.txt"
+  ],
+  "h2_count": 12,
+  "h2": [
+   "0. 一页结论",
+   "1. 类层次 · 单例 · WWMouse 身份交叉",
+   "2. 输入环状态机（0x54F050）",
+   "3. 点选 / 框选主状态机（0x4AB9B0）",
+   "4. 命令分发",
+   "5. 确定性：本地输入 vs 同步流（对照 T8）",
+   "6. 每帧成本与可落地 UI 优化",
+   "7. 与 L4 / 侧栏充能钩兼容",
+   "8. 关键 VA 速查",
+   "9. 未决与后续",
+   "10. 静态取证方式（供后续波次）",
+   "11. 工作包索引"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S6_report.md",
+  "bytes": 23827,
+  "lines": 330,
+  "hex_total": 193,
+  "hex_distinct": 124,
+  "h1": [
+   "S6 专项冲刺报告：House/Team AI 机制与寻敌空间哈希等效性深潜"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "1. 执行摘要与证据等级说明",
+   "2. 核心研究一：AITrigger 权重回写时机全链路闭环",
+   "3. 核心研究二：招募三兄弟轮转时序与全生命周期",
+   "4. 核心研究三：空间哈希替换枚举序等效性证明",
+   "5. 证据台账汇总",
+   "6. 后续演进建议"
+  ]
+ },
+ {
+  "rel": "docs/re/asm_fix_report.md",
+  "bytes": 40067,
+  "lines": 347,
+  "hex_total": 212,
+  "hex_distinct": 123,
+  "h1": [
+   "ASM-FIX 收官报告：P1/P2 字节勘误 + N-2 改锚 + P3 定性标注 + 区段配准"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "[0] 结论摘要",
+   "[META]",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块（VA / FileOffset / 原始字节 / Capstone 反汇编 / 来源）",
+   "[3] 勘误（F1–F5 逐项对应；共 **76 条就地编辑 / 20 个文件**）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文粘贴）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项"
+  ]
+ },
+ {
+  "rel": "docs/re/blitter_microkernel_deep_dive.md",
+  "bytes": 66608,
+  "lines": 1209,
+  "hex_total": 226,
+  "hex_distinct": 121,
+  "h1": [
+   "红色警戒2：尤里的复仇 Blitter 渲染微内核深度逆向与 SSE2 向量化设计"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "1. 摘要与虚表拓扑",
+   "2. 核心数据结构与 ABI 取证分析",
+   "3. Top 高频微内核汇编实现深度剖析",
+   "4. 现网代码缺陷诊断与修复方案",
+   "5. SSE2 向量化替代微内核设计",
+   "6. 生产级落地 C++ / SSE2 微内核实现原型",
+   "7. 虚表挂钩安装对照表与验证策略",
+   "8. 总结与下一步建议",
+   "§8 冲刺结论（S13）"
+  ]
+ },
+ {
+  "rel": "docs/re/routeA_implementation_audit.md",
+  "bytes": 23168,
+  "lines": 280,
+  "hex_total": 248,
+  "hex_distinct": 120,
+  "h1": [
+   "路线 A 小地图迷雾下沉挂钩独立静态复核报告 (Implementation Audit)"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "一、复核结论与执行概要 (Executive Summary) [实证]",
+   "二、0x00655D38 处 9 字节补丁二进制复核 [实证]",
+   "三、跳板 (Trampoline) 结构与运行时动态构造指令复核 [运行时动态构造实证 + 静态汇编指令实证]",
+   "四、代理函数 Hook_RadarPlot_Cell_Proxy 完整反汇编复核 [实证]",
+   "五、直通与灰化分支逻辑及红线核查 [实证]",
+   "六、与 A-7 实施规格书逐项差异对比 (Discrepancy Analysis)",
+   "七、综合复核判定"
+  ]
+ },
+ {
+  "rel": "docs/re/sw_charge_state_deep_dive.md",
+  "bytes": 25190,
+  "lines": 482,
+  "hex_total": 200,
+  "hex_distinct": 120,
+  "h1": [
+   "SW 充能状态机深潜 · R-SW-CHARGE（全静态收口）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 结论速览",
+   "1. 充能状态机完整 ABI",
+   "2. `HasChargeProgressed 0x6CBCA0` 每帧语义",
+   "3. 侧栏 Cameo 推进（`GetCameoChargeState 0x6CBEE0`）",
+   "4. AITrigger 蓄能判决（`0x41F0D0` / `0x41F180`）",
+   "5. 确定性与联机安全性",
+   "6. 可落地项（字节规格）",
+   "7. 关键地址速查",
+   "8. 复现步骤",
+   "9. 证据档声明"
+  ]
+ },
+ {
+  "rel": "docs/re/targeting_spatial.md",
+  "bytes": 31726,
+  "lines": 556,
+  "hex_total": 281,
+  "hex_distinct": 120,
+  "h1": [
+   "寻敌 / 威胁评估数据结构与空间哈希插入点"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 结论速览",
+   "1. 调用图与函数身份",
+   "2. `SelectAutoTarget`（0x006FB010）— 限频调度器",
+   "3. `Greatest_Threat`（0x006F8DF0）主循环",
+   "4. 字段对照表",
+   "5. 空间哈希插入点方案对比",
+   "6. 必须保持的行为（风险点）",
+   "7. 与 ra2render 现有 Target Retention 的兼容性",
+   "8. 附：关键地址速查",
+   "9. 遗留待确认"
+  ]
+ },
+ {
+  "rel": "docs/re/dirty_rect_l4.md",
+  "bytes": 29303,
+  "lines": 559,
+  "hex_total": 247,
+  "hex_distinct": 119,
+  "h1": [
+   "L4 脏矩形 / 视口刷新机制逆向与折中方案"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 结论摘要（TL;DR）",
+   "1. `TacticalClass::Render`（`0x006D3D10`）完整逻辑",
+   "2. 脏矩形数据结构与「打 Dirty 标记」写入点",
+   "3. 原版 `jge` 条件到底在判断什么",
+   "4. 折中方案（按推荐度排序）",
+   "5. `+0x3598` 在此机制中的角色",
+   "6. 与现有 `0x6D3D99` 补丁的共存 / 替换矩阵",
+   "7. 附录：地址速查表",
+   "8. 逆向方法备忘"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S8_report.md",
+  "bytes": 19907,
+  "lines": 240,
+  "hex_total": 181,
+  "hex_distinct": 117,
+  "h1": [
+   "S8 专项冲刺报告 · 联机确定性与门控收口深潜"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 冲刺总览与闭环台账",
+   "1. 核心任务一：帧 CRC 尾部簇类型定谳（闭环原 §7.2）",
+   "2. 核心任务二：超武/微粒在校验计算流中的定谳",
+   "3. 核心任务三：G-03 / G-04 / G-06 / G-07 / G-09 缺口实证补强",
+   "4. 产出物清单与复算索引",
+   "5. 台账 §九 草稿（供 Lead 合并）"
+  ]
+ },
+ {
+  "rel": "docs/re/vxl_render_sort.md",
+  "bytes": 26417,
+  "lines": 430,
+  "hex_total": 255,
+  "hex_distinct": 117,
+  "h1": [
+   "VXL 载具体素渲染 / 阴影 / Z 序 —— 地址级逆向"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 结论速览",
+   "1. 数据结构与 ABI",
+   "2. 绘制管线",
+   "3. Voxel 缓存（SomeVoxelCache / HVA 帧）",
+   "4. 阴影绘制路径（Darken Blit）",
+   "5. 绘制排序（Z 序）",
+   "6. 性能与迷雾",
+   "7. Hook 点表",
+   "8. 未决问题",
+   "9. 取证索引",
+   "10. 与既有 Hook 衔接（只读建议）"
+  ]
+ },
+ {
+  "rel": "docs/re/radar_fix_report.md",
+  "bytes": 44663,
+  "lines": 497,
+  "hex_total": 287,
+  "hex_distinct": 115,
+  "h1": [
+   "RADAR-FIX 交付报告（Q3① 小地图灰化护栏 P0 + 重复 [Logic] 节 P1）"
+  ],
+  "h2_count": 13,
+  "h2": [
+   "【勘误块 · RADAR-ERRATA · 2026-09-27】（保留原文，本块为就地订正）",
+   "[META]",
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 勘误（对既有文档/结论的更正；**本批不改他人文档，交 Lead 处置**）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文粘贴）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项（需人/Lead 决定）",
+   "附录 A｜真机验收步骤（交给 ZCode）"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_firststage_site_locate.md",
+  "bytes": 14636,
+  "lines": 245,
+  "hex_total": 182,
+  "hex_distinct": 114,
+  "h1": [
+   "FOG-FIRSTSTAGE-SITE · 定位「第一段 ×0.71875 / LightConvert」代码站点"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "[0] 结论摘要（≤5 行）",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 候选站点汇总表",
+   "[4] 数据流：谁读 FogStrengthPct / 等价全局",
+   "[5] 语义判定：向灰 vs 压暗",
+   "[F5] 未闭环清单与下一步取证",
+   "[6] 与 ra2render 强度桩的覆盖关系",
+   "[7] 写作用域合规声明",
+   "[8] 门禁实跑输出",
+   "[9] 交付物清单"
+  ]
+ },
+ {
+  "rel": "docs/re/vxl_cache_layout.md",
+  "bytes": 23828,
+  "lines": 415,
+  "hex_total": 186,
+  "hex_distinct": 114,
+  "h1": [
+   "VXL 体素渲染与缓存底层架构逆向取证报告（Q1–Q8）"
+  ],
+  "h2_count": 4,
+  "h2": [
+   "一、未决问题（Q1–Q8）结论总表",
+   "二、逐题深度取证与反汇编实证",
+   "三、工程落地与 Hook 建议",
+   "四、取证原始文件索引（out/re_work/vxl_cache/）"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S22_report.md",
+  "bytes": 16853,
+  "lines": 207,
+  "hex_total": 133,
+  "hex_distinct": 112,
+  "h1": [
+   "S22 专项冲刺报告：全库一键回归校验套件落地 (verify_anchors.py, anchor_claims.txt, baseline_integrity_note.md)"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "一、 任务背景与核心目标",
+   "二、 核心成果与交付物矩阵",
+   "三、 关键技术攻坚与深度剖析",
+   "四、 核心锚点断言库构成 (323 条分类审计)",
+   "五、 回归套件运行实测与验证数据",
+   "六、 协同影响与后续衔接",
+   "七、 交付物清单与代码链接"
+  ]
+ },
+ {
+  "rel": "docs/re/sbh_uaf_residual_deep_dive.md",
+  "bytes": 18381,
+  "lines": 277,
+  "hex_total": 156,
+  "hex_distinct": 112,
+  "h1": [
+   "R-SBH-UAF 残差闭环：SBH freelist/UAF 写者 × CRT 池化 L2 × 存档/MP"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "[0] 结论速览（≤12 行）",
+   "[1] R-02 残差逐项复核（U1–U6）",
+   "[2] U4 闭环：`__sbh_resize_block` 与 `memcpy` 语义（`[实证]`）",
+   "[3] U5 闭环：page-group 回收 vs 重建（`[实证]`）",
+   "[4] CRT 池化 L2 × SBH 覆盖交叉（`[实证]`）",
+   "[5] 「写已释放块」站点与可落地防护（`[实证]`+`[推演]`）",
+   "[6] 存档 / MP：堆地址是否进档（对照 T7 OLE）（`[实证]`）",
+   "[7] 残差总表（收口后）",
+   "[8] 证据锚点"
+  ]
+ },
+ {
+  "rel": "docs/re/sbh_uaf_writer_deep_dive.md",
+  "bytes": 13461,
+  "lines": 188,
+  "hex_total": 141,
+  "hex_distinct": 111,
+  "h1": [
+   "R-05 专章：class 4 UAF 写者路径收敛"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "[0] 结论速览（≤12 行）",
+   "[1] class 4 分配点清单",
+   "[2] 毒值 `FE00FFFF` 业务语义反查",
+   "[3] class 4 生命周期热点（U0200 口径）",
+   "[4] UAF 写者候选排序",
+   "[5] 传播路径（收敛版，`[推演]`）",
+   "[6] 下一步（给 M 轨 harness / 后续 R 卡）",
+   "[7] 证据锚点"
+  ]
+ },
+ {
+  "rel": "docs/re/execution_runbook.md",
+  "bytes": 49127,
+  "lines": 646,
+  "hex_total": 201,
+  "hex_distinct": 105,
+  "h1": [
+   "红色警戒2：尤里的复仇 真机恢复执行与应急处置剧本",
+   "Command & Conquer: Yuri's Revenge - Live Machine Thaw Execution & Incident Response Runbook",
+   "1. 切换至项目工作目录"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "目录 (Table of Contents)",
+   "一、执行总则与落地前置红线",
+   "二、补丁落地顺序与分阶段实施规程",
+   "三、逐项验收判据与遥测健康度指标体系",
+   "四、原子回滚剧本与与 `ra2opt restore` 的交互规程",
+   "五、三大灾难性故障应急处置预案 (Disaster Playbooks)",
+   "六、真机恢复后首批闭环项清单 (First-Wave Closure Tasks)",
+   "七、文件系统加载层次与战役注入规程 (FS & Mix Loading SOP)",
+   "八、执行签名与变更控制"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_visibility_mode_report.md",
+  "bytes": 40801,
+  "lines": 385,
+  "hex_total": 206,
+  "hex_distinct": 102,
+  "h1": [
+   "FOG-MODE 交付报告 —— 新增「可见性模式」选择键：原版态 ↔ 现状态（用户裁决）",
+   "附录 A · 两种状态的规范组合（F2）",
+   "附录 B · 产物级证据（F6）"
+  ],
+  "h2_count": 21,
+  "h2": [
+   "[META]",
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 勘误（逐条；**保留原文 + 【原记】**）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文粘贴）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项",
+   "B.1 断言索引表（`claims_dll.txt`，26 条，`0x400000+RVA`）",
+   "B.2 与既有挂钩点的差异面（F6③）",
+   "C.1 【原版档】`EnableStarCraftFog=0` + `VisibilityMode=vanilla`",
+   "C.2 【现状档】`EnableStarCraftFog=1` + `VisibilityMode=starcraft`（默认）",
+   "C.3 两档通用",
+   "D.1 复算口径",
+   "D.2 量化结果",
+   "D.3 顶行 vs 全屏：结论",
+   "D.4 机制候选与判别实验（未定谳，**本轮零行为改动**）",
+   "D.5 与产品的关系"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S1_report.md",
+  "bytes": 24505,
+  "lines": 332,
+  "hex_total": 155,
+  "hex_distinct": 99,
+  "h1": [
+   "S1 专项冲刺报告：可视性与迷雾残留专项深潜（11 条未决终局定谳）"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 冲刺总览与闭环摘要",
+   "1. 逐类定谳 Shroud/Fog 门控",
+   "2. 判定“开图方案 A/B/C”的依据与反汇编实证",
+   "3. 对齐并闭环 11 条未决项（逐条定谳清单）",
+   "4. 交付文件清单与验证索引",
+   "5. 结项声明"
+  ]
+ },
+ {
+  "rel": "docs/re/patch_hex_audit.md",
+  "bytes": 26668,
+  "lines": 314,
+  "hex_total": 263,
+  "hex_distinct": 94,
+  "h1": [
+   "六大落地补丁 18 项机器码 / rel32 / 语义等价独立第三方复算审计报告",
+   "Independent Hex, rel32 & Semantic Equivalence Audit Report for Six Patch Packs (18 Items)"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 勘误",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文粘贴）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_net_fix.md",
+  "bytes": 39532,
+  "lines": 764,
+  "hex_total": 308,
+  "hex_distinct": 93,
+  "h1": [
+   "net_sync 修复 Hook 字节级落地包（H-D1 / H-D2 / H-D5 / H-D6）— M-8"
+  ],
+  "h2_count": 15,
+  "h2": [
+   "0. 一句话使用法",
+   "1. 全局约定（四条 Hook 共用）",
+   "2. H-D1 — desync 预测旁路日志（L0）",
+   "3. H-D2 — desync 现场快照（L1）",
+   "4. H-D5 — 逐帧 CRC 镜像（L0，自包含）",
+   "5. H-D6 — 命令流镜像（L0，主站点）+ H-D6b（可选次站点）",
+   "6. 回滚总表（Install / Remove 对称）",
+   "7. 风险分级与禁止事项",
+   "8. 验收清单（ZCode / 复核方）",
+   "9. 给 ZCode 的执行表",
+   "附录 A · 跳板机器码连写（拷贝即用，T0=0x01B00000）",
+   "附录 B · 内部 rel32 / rel8 清单（重定位用）",
+   "附录 C · T0 ≠ 0x01B00000 时的机械重定位（**离线预备，非运行期回退路径**）",
+   "附录 D · 证据来源",
+   "附录 E · 伪码总装顺序（ZCode）"
+  ]
+ },
+ {
+  "rel": "docs/re/render_second_pass_deep_dive.md",
+  "bytes": 17368,
+  "lines": 264,
+  "hex_total": 165,
+  "hex_distinct": 93,
+  "h1": [
+   "对象二遍（0x6D3870 / 0x6D9920）局部绘制链 —— DEF-FOGPARTIAL 候选定谳"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 必答项结论表",
+   "[2] TacticalClass::Render 调用序与对象二遍边界",
+   "[3] 与「中心格光照 / 多格地基」的关系",
+   "[4] 关键证据块（节选）",
+   "[5] DEF-FOGPARTIAL 候选裁决",
+   "[6] 最小真机断点探针（仅当启用 force-off 或要独立复算时）",
+   "[7] 勘误（交 Lead，本卡不改他人文档）",
+   "[8] 写作用域与只读证明",
+   "[9] 交付物清单"
+  ]
+ },
+ {
+  "rel": "docs/re/gap_psychic_reveal_deep_dive.md",
+  "bytes": 21831,
+  "lines": 346,
+  "hex_total": 158,
+  "hex_distinct": 91,
+  "h1": [
+   "R-GAP-PSY 深潜：裂缝保护 NOP×3 未落地定谳 + PsychicReveal 清 `Cell+0x134` 完整链"
+  ],
+  "h2_count": 13,
+  "h2": [
+   "0. 一句话结论",
+   "1. 证据基线",
+   "2. `CellClass+0x134` 位域语义 [实证]",
+   "3. PsychicReveal → `Cell+0x134` 完整链（文字化链路图）",
+   "4. SpySat / Reshroud 旁路链（另两点） [实证]",
+   "5. 三点落地表（可执行字节级）",
+   "6. 未落地影响范围",
+   "7. Q4 回答：三函数内是否存在第 4 处 `+0x134` 写入",
+   "8. 文档勘误（只记于本文，不改旧文档）",
+   "9. 风险与门控",
+   "10. 建议落地顺序",
+   "11. 证据等级汇总",
+   "12. 附件清单"
+  ]
+ },
+ {
+  "rel": "docs/re/inline_assertion_scan.md",
+  "bytes": 28608,
+  "lines": 293,
+  "hex_total": 123,
+  "hex_distinct": 90,
+  "h1": [
+   "ASM-SCAN —— 全库文档内联断言机械化复扫（VA + 字节串 逐条对二进制复核）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 结论摘要（先读这段）",
+   "1. 方法（可复跑、无人工记忆）",
+   "2. 统计总表（S3）",
+   "3. 最小勘误总表",
+   "4. S4 负向验证（证明判定器没有错杀）",
+   "5. S5 已知专项：N-2 真锚点",
+   "6. S6 误报控制（抽取规则 / 排除规则 / 误报率）",
+   "7. 未闭环清单",
+   "8. 交付物 / 复跑 / 只读声明"
+  ]
+ },
+ {
+  "rel": "docs/re/crt_callgraph.md",
+  "bytes": 19946,
+  "lines": 315,
+  "hex_total": 149,
+  "hex_distinct": 89,
+  "h1": [
+   "gamemd.exe 内嵌 CRT 调用图与池化逆向报告",
+   "1) 解析 PE 节表，取 .text 字节",
+   "2) Capstone 线性反汇编 .text，收集:"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "1. 扫描方法（可复现）",
+   "2. 全局调用量级",
+   "3. Top 调用者（合并 `_new/_delete/malloc/free/sprintf`）",
+   "4. `_new` 尺寸分布（池化优先级）",
+   "5. sprintf / vsprintf format 字符串",
+   "6. 启动/加载 vs 战斗帧内",
+   "7. 池化建议",
+   "8. 与 perf 桶的对应关系",
+   "9. 后续扩展方向",
+   "10. 可复现代码片段（精简）",
+   "11. 结论摘要"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_strength_rootcause.md",
+  "bytes": 15476,
+  "lines": 132,
+  "hex_total": 142,
+  "hex_distinct": 89,
+  "h1": [
+   "FOG-STRENGTH2 · 主视图灰雾「s=256 落成 ≈1/3」根因定谳（只定谳，不做实现）"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "F1 · 数值链路（算式，逐处 ≤3 行 + 锚点）",
+   "F2 · 候选判定",
+   "F3 · 反推校验（判据核心）",
+   "F4 · 校准方案设计（不实现）",
+   "F5 · 真机判别实验（交 ZCode，≤3）"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S23_report.md",
+  "bytes": 15929,
+  "lines": 147,
+  "hex_total": 114,
+  "hex_distinct": 87,
+  "h1": [
+   "S23 专项冲刺报告：真机恢复后的执行剧本 (execution_runbook.md)"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "一、核心工作与研究成果总览",
+   "二、31 项锚点断言复算与审计对拍表",
+   "三、基线纯洁度与口径核实结论",
+   "四、向 Lead 与父代理报告的提炼要点",
+   "【task-11 / `[v1.5.35]` 收尾补录】执行剧本 Phase 0 门禁固化（**不修改本报告原有正文**）"
+  ]
+ },
+ {
+  "rel": "docs/re/vxl_cache_shadow_landing.md",
+  "bytes": 17646,
+  "lines": 308,
+  "hex_total": 137,
+  "hex_distinct": 87,
+  "h1": [
+   "VXL 缓存 / 阴影绘制 —— 可落地规格（R-VXL-CACHE）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 一句话",
+   "1. VXL 缓存结构 ABI（条目 / 失效 / 命中 / VA 锚点）",
+   "2. 阴影绘制链（降采样 / 缓存 / 剔除）",
+   "3. 落地点表（改哪里 / 原字节 / 开关 / 回滚 / 风险）",
+   "4. 预期收益 —— 可测口径（**只给插桩点，不写百分比**）",
+   "5. 安装门禁与回滚",
+   "6. 风险总表（对渲染正确性）",
+   "7. 交付回执（执行方填）",
+   "8. 取证索引"
+  ]
+ },
+ {
+  "rel": "docs/re/dirty_rect_deep_dive.md",
+  "bytes": 28852,
+  "lines": 523,
+  "hex_total": 155,
+  "hex_distinct": 86,
+  "h1": [
+   "《红色警戒2：尤里的复仇》（gamemd.exe 1.001）L4 脏矩形机制深度逆向与迷雾局部刷新终极方案"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "一、 执行摘要与核心突破（Executive Summary & Key Breakthroughs）",
+   "二、 TacticalClass::Render 脏矩形调度与 8 阶段重绘链路深度逆向",
+   "三、 脏矩形与可见格数据结构深度解析",
+   "四、 局部打脏方案攻克与算法推导",
+   "五、 Hook 与代码重构设计方案",
+   "六、 验证准则与性能收益模型",
+   "七、 结论与落地建议"
+  ]
+ },
+ {
+  "rel": "docs/re/open_items_sweep.md",
+  "bytes": 28152,
+  "lines": 265,
+  "hex_total": 123,
+  "hex_distinct": 85,
+  "h1": [
+   "全库未决与待实测标记清零大扫描台账（OPEN_ITEMS_SWEEP）"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "0. 执行摘要与全库三分类台账",
+   "1. A 类台账：本轮 S16 静态实证闭环条目（即刻定谳）",
+   "2. C 类台账：已由前序波次 S1–S15 闭环条目（标明可清理）",
+   "3. B 类台账：无法静态闭环的真机/网络测量项（受控风控台账）",
+   "4. 全库文档标记清理与操作指引（Cleanup Directives）"
+  ]
+ },
+ {
+  "rel": "docs/re/gap_generator_spysat_deep_dive.md",
+  "bytes": 36608,
+  "lines": 692,
+  "hex_total": 162,
+  "hex_distinct": 84,
+  "h1": [
+   "裂缝产生器（Gap Generator）空间遮蔽机制与超武透缝扫描（Psychic Reveal / SpySat）深度逆向报告"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "1. 总体架构与调用拓扑图",
+   "2. 裂缝产生器底层数据结构与覆盖算法深度反汇编",
+   "3. 超武雷达扫描与间谍卫星开启链路深度逆向",
+   "4. 三态迷雾 × 雷达扫图 × 裂缝产生器 底层协调方案",
+   "5. C++ Hook 原型与工程实现",
+   "6. 最终实证结论汇总"
+  ]
+ },
+ {
+  "rel": "docs/re/atlas_rev/R4_acceptance_standard.md",
+  "bytes": 65587,
+  "lines": 465,
+  "hex_total": 162,
+  "hex_distinct": 82,
+  "h1": [
+   "R4 · 验收标准与闸门状态审计（atlas 锚定补丁块 + 十节回执）",
+   "R4 Acceptance-Standard & Gate-Status Audit for ARCHITECTURE_ATLAS.md"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "0. 三条必答项（摘要）",
+   "1. 锚定补丁块（Lead 按此机械套用）",
+   "13. §13 验收与闸门状态 (Acceptance Gates & Verification Status)",
+   "2. 覆盖度自证（来源小节 → 补丁归属）",
+   "3. 十节回执"
+  ]
+ },
+ {
+  "rel": "docs/re/audio_throttle_landing.md",
+  "bytes": 15645,
+  "lines": 270,
+  "hex_total": 120,
+  "hex_distinct": 81,
+  "h1": [
+   "R-AUDIO-LIMIT 音频限频落地规格（Audio Throttle Landing Spec）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 一页结论",
+   "1. 音频播放/调度路径",
+   "2. 高频触发点与重复短路安全性",
+   "3. 落地规格",
+   "4. 风险表",
+   "5. 验收（[待实测]）",
+   "6. 证据索引（工作区 `out/re_work/re_sprint/R_audio_limit/`）",
+   "7. 与既有文档关系"
+  ]
+ },
+ {
+  "rel": "docs/re/targeting_deep_dive.md",
+  "bytes": 33607,
+  "lines": 571,
+  "hex_total": 160,
+  "hex_distinct": 80,
+  "h1": [
+   "尤里的复仇寻敌核心（Greatest_Threat）与空间网格深度逆向工程分析"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "1. 结论速览与架构定位",
+   "2. Greatest_Threat (0x006F8DF0) 深度逆向分析",
+   "3. 全局粗空间网格（0x00887888）逆向分析",
+   "4. 单候选评估打分器（0x006F7CA0）逆向分析",
+   "5. 现网 L2 漏装修复与 Inline Hook 落地方案",
+   "6. 空间哈希替代全图螺旋扫描评估与演进方案",
+   "7. 逆向核心地址速查清单"
+  ]
+ },
+ {
+  "rel": "docs/re/warhead_verses_residual_p2.md",
+  "bytes": 19078,
+  "lines": 329,
+  "hex_total": 149,
+  "hex_distinct": 80,
+  "h1": [
+   "Warhead Verses / 残差 · 第二轮收口（R-WARHEAD P2）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 结论速览",
+   "1. Verses 读取点全表（P0）",
+   "2. 乘算顺序（P0，与百分比算术 / 0.71875 严格切割）",
+   "3. 与 ReceiveDamage `0x701900` / `0x70D4A0` / DamageArea `0x489280` 交叉（P0）",
+   "4. 变形 / 残差逐条收口（P1）",
+   "5. 可落地：限频 / 加固 / 勘误规格",
+   "6. 排除清单",
+   "7. 可复算脚本索引（`out/re_work/re_sprint/R_warhead/`）",
+   "8. 一句话"
+  ]
+ },
+ {
+  "rel": "docs/re/dirty_rect_deep_dive_p2.md",
+  "bytes": 14070,
+  "lines": 269,
+  "hex_total": 139,
+  "hex_distinct": 79,
+  "h1": [
+   "脏矩形深潜 P2（R-RECT-DEEP）：ABI · 并集 · 帧末消费 · L4 交互 · 残留定谳"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 脏矩形 ABI（Register_Dirty_Area `0x006D2790`）",
+   "[2] 帧末消费与 `TacticalClass::Render 0x6D3D10..0x6D4B4B` 关系",
+   "[3] 引擎原生 dirty vs 我方 L4 全量/折中",
+   "[4] 局部重绘残留路径定谳",
+   "[5] 可落地优化点 / 「无额外收益」",
+   "[6] 证据锚点索引",
+   "[7] 写域合规"
+  ]
+ },
+ {
+  "rel": "docs/re/hook_gate_gap_table.md",
+  "bytes": 57598,
+  "lines": 421,
+  "hex_total": 139,
+  "hex_distinct": 79,
+  "h1": [
+   "Hook 门控覆盖缺口表（HOOK_GATE_GAP_TABLE）"
+  ],
+  "h2_count": 13,
+  "h2": [
+   "0. 与旧审计的时点差异（必须先读）",
+   "1. 主缺口表 · 21 个安装路径 + S1–S4",
+   "2. v1.6.0 四键专项核对（强制覆盖）",
+   "3. L2 三处 `>>4` 专项（强制覆盖）",
+   "4. L4 `0x006D3D99` 专项（强制覆盖）",
+   "5. 执行缺口表（给 ZCode，四列）",
+   "6. ini 键全表（当前 14 键，双份一致）",
+   "7. 台账 §九 草稿（供 Lead 合并）",
+   "附录 A · 覆盖率自检",
+   "附录 B · 产出物",
+   "8. 附录 · 勘误标记（收尾-C / task-13，2026-09-26）",
+   "9. 勘误 · MPS 落地后的状态同步（DA1 · DSH 子代理 · 2026-09-27）",
+   "10. 勘误 · FOG-ERRATA 就地订正（E1–E4 · DSH 子代理 · 2026-09-27）"
+  ]
+ },
+ {
+  "rel": "docs/re/mp_autodowngrade_spec.md",
+  "bytes": 35902,
+  "lines": 546,
+  "hex_total": 214,
+  "hex_distinct": 76,
+  "h1": [
+   "联机自动降级门控规格（MP_AUTODOWNGRADE_SPEC）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 结论摘要",
+   "1. 联机检测点（地址级依据）",
+   "2. 降级白名单（联机必须旁路 / SAFE 保留）",
+   "3. 门控语义",
+   "4. 遥测与回滚",
+   "5. 验证方法（对照 net_sync 帧 CRC / Checksum）",
+   "6. 附录"
+  ]
+ },
+ {
+  "rel": "docs/re/particle_fog_owner_evidence.md",
+  "bytes": 25645,
+  "lines": 364,
+  "hex_total": 145,
+  "hex_distinct": 75,
+  "h1": [
+   "微粒系统（ParticleClass / ParticleSystemClass）迷雾剔除与阵营归属深度取证报告（v2 严谨重订版）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "目录",
+   "一、0x0062CF5F 处指令与 ret 8 全函数扫描核实",
+   "二、ParticleClass::Draw (0x0062CEC0) 完整反汇编与前置门控链剖析",
+   "三、ParticleSystemClass::Draw (0x0062E280) 完整反汇编剖析",
+   "四、阵营归属三条核心链（+0x124 / +0xFC / +0xE0）物理读写点实证",
+   "五、粒子迷雾隐形剔除安全规范与联机确定性论证",
+   "六、工程落地规格（C++ Hook 扩展原型）",
+   "七、A-15 最终裁决：三条核心链全指令实证与定谳 (Final Settlement) [实证]"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S7_report.md",
+  "bytes": 18308,
+  "lines": 225,
+  "hex_total": 105,
+  "hex_distinct": 75,
+  "h1": [
+   "S7 专项冲刺结题报告：寻路与路径缓存深潜"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "1. 冲刺目标与完成情况",
+   "2. 核心证据台账（VA / 文件偏移 / 机器码 / 汇编）",
+   "3. PathDirections 生成语义与 8 方向互逆闭环深度逆向",
+   "4. CanEnterCell 族系无副作用（只读纯函数）证明 [实证]",
+   "5. §7 遗留未决问题全面突破与闭环",
+   "6. §7 路径缓存 Oracle 对拍方案",
+   "7. 成果交付与文件变更清单"
+  ]
+ },
+ {
+  "rel": "docs/re/buffera_shade_table_deep_dive.md",
+  "bytes": 19035,
+  "lines": 326,
+  "hex_total": 113,
+  "hex_distinct": 73,
+  "h1": [
+   "ConvertClass BufferA 着色表深潜（R-BUFFERA）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论摘要（≤8 行）",
+   "[1] 逐条必答项结论表",
+   "[2] ConvertClass 完整 ABI",
+   "[3] 消费端合成等效增益",
+   "[4] 等效增益闭式 vs 实测 0.71875 残差",
+   "[5] 可复算 dump 规格（真机，不实测）",
+   "[6] 与前作差异/勘误",
+   "[7] 证据等级分布",
+   "[8] 写作用域合规声明",
+   "[9] 交付物清单"
+  ]
+ },
+ {
+  "rel": "docs/re/LESSONS_20261003_RE_INSTRUMENTS.md",
+  "bytes": 341935,
+  "lines": 1591,
+  "hex_total": 141,
+  "hex_distinct": 72,
+  "h1": [
+   "《逆向工程仪器与验证方法论教训清单》（LESSONS_20261003_RE_INSTRUMENTS）",
+   "① 被引件那一行必须真存在且内容支持\"行号\"解释",
+   "② 该数字在争议行里的每一次出现都要分类，非引文位必须 = 0"
+  ],
+  "h2_count": 13,
+  "h2": [
+   "0. 适用范围与证据口径",
+   "一、仪器陷阱清单（T1–T8）",
+   "二、验证纪律清单（D1–D10）",
+   "三、修订链纪律：为什么「审计 → 合并 → **复核合并者**」三级缺一不可",
+   "四、可直接复用的检查清单（供后续每张逆向卡复制粘贴）",
+   "五、本卡诚实性与边界",
+   "六、ROUND2 追加（2026-10-04 第二批卡自纠沉淀，T9–T18 + 补充表）",
+   "七、ROUND3 追加（2026-10-04 第三批：修复只关点名形态 + 平台语义陷阱，T37–T43）",
+   "八、ROUND4 追加（2026-10-05 第四批：度量口径、门禁判据枚举、外部 harness 的\"绿而不符\"族，T44–T51）",
+   "九、ROUND5 追加（2026-10-06/07 第五批：退出码采集的管道形态、判据命中面过宽三族、\"0 命中\"的合法终点，T52–T54 + 补实例登记）",
+   "十、ROUND6 追加（2026-10-07 第六批：守卫的版本同一性与权威源接线、\"独立/同值\"的三层判据、\"完好\"的两层，T55–T61 + 补实例登记）",
+   "十一、ROUND7 追加（2026-10-07 第七批：覆盖的**支撑集**、命中面的**载体分层**、数字**身份反查**、反盲闸的 **vacuous 态**、证据随仪器**换版**过期，T62–T66 + 补实例登记）",
+   "十二、第八批仪器纪律（2026-10-07 ROUND8 追加 · 含续跑；来源 = `ACC A-194.4` / `A-196.5` / `A-199.1–199.4` / `A-200` / `A-201` / `A-204` / `"
+  ]
+ },
+ {
+  "rel": "docs/re/asm_fix2_report.md",
+  "bytes": 28967,
+  "lines": 342,
+  "hex_total": 142,
+  "hex_distinct": 71,
+  "h1": [
+   "ASM-FIX2 交付报告：帧 CRC 的 RNG 消费点锚点重建（P0）+ 残余定向重锚 + 扫描器豁免规则"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "[META]",
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 勘误（逐条）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文粘贴）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_preflight_audit.md",
+  "bytes": 21352,
+  "lines": 293,
+  "hex_total": 110,
+  "hex_distinct": 71,
+  "h1": [
+   "六大落地补丁包 P-1～P-6 落地前静态一致性复核报告",
+   "Landing Pack Preflight Static Consistency Audit"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "〇、结论（先看这里）",
+   "一、逐项复核表（P-1.1～P-6.2）",
+   "二、文档间冲突表（总表 vs landing_pack vs S23）",
+   "三、落地风险清单",
+   "四、勘误表（原文不删字，此处指出）",
+   "五、已知关键约束收录核对（任务书逐条）",
+   "六、机读产物索引",
+   "七、复现方法",
+   "八、§九台账草稿（给执行台账追加用；**本文不改原总表**）",
+   "九、签署栏"
+  ]
+ },
+ {
+  "rel": "docs/re/pathfinding_deep_dive.md",
+  "bytes": 31641,
+  "lines": 596,
+  "hex_total": 137,
+  "hex_distinct": 71,
+  "h1": [
+   "《红色警戒2：尤里的复仇》（gamemd.exe 1.001）寻路算法与移动阻挡深度逆向报告"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "1. 架构总览与核心结论",
+   "2. 寻路单例（0x0087E8B8）与工作区逆向",
+   "3. Dijkstra 8 邻域搜索与阻挡检查",
+   "4. PathDirections[24] 方向序列生成机制",
+   "5. 阻挡判定与重寻路触发机制（WalkLocomotion）",
+   "6. 跨单位路径复用缓存（Path Cache）与限频方案设计",
+   "7. 重寻路节流与抖动防雪崩限频机制",
+   "8. 核心符号与地址速查"
+  ]
+ },
+ {
+  "rel": "docs/re/cellclass_offsets_evidence.md",
+  "bytes": 15892,
+  "lines": 227,
+  "hex_total": 145,
+  "hex_distinct": 70,
+  "h1": [
+   "CellClass 结构体成员偏移与 InvalidCell 单例实证报告"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "一、结论摘要表",
+   "二、`CellClass.MapCoords` 偏移实证 [实证]",
+   "二之勘误 E1〔RADAR-ERRATA · 2026-09-27〕：挂钩点 `0x00655D38` 处 EAX **不是** `CellClass*`",
+   "三、`InvalidCell` 全局单例 (0x00ABDC50) 静态与实测方案 [实证 + 待实测]",
+   "四、A-7 规格的最终合规裁决"
+  ]
+ },
+ {
+  "rel": "docs/re/building_percell_light_rootcause.md",
+  "bytes": 14792,
+  "lines": 174,
+  "hex_total": 144,
+  "hex_distinct": 69,
+  "h1": [
+   "建筑是否逐格取光照 —— 0x00705E00 逐格性诊断（U3-LIGHTPERCELL）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块（VA / FileOffset / 原始字节 / Capstone / xref）",
+   "[3] 勘误",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_cal3_rootcause.md",
+  "bytes": 24197,
+  "lines": 170,
+  "hex_total": 123,
+  "hex_distinct": 69,
+  "h1": [
+   "FOG-CAL3 · 「数值档 s=156 实测 0.68 ≠ 模型 0.4998」成因定谳（只诊断 + 设计方案，不实现）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "附录 A · F1 读取-写入时序（源→产物逐条对照）",
+   "附录 B · F2 假设检验明细（H1-H4）",
+   "附录 C · F3 定位（唯一候选 + 未闭环原因 + 探针）",
+   "附录 D · F4 修正方案设计（不实现）",
+   "附录 E · F5 真机验证设计（≤3 项，交下一轮 ZC）",
+   "附录 F · 独立复算方法（out/re_work/fog_cal3/analyze_zc67.py）",
+   "【勘误 · MIMO-DOCERRATA / E1】构建位移与等价口径（2026-09-27）"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_strength_calibration.md",
+  "bytes": 28945,
+  "lines": 219,
+  "hex_total": 101,
+  "hex_distinct": 68,
+  "h1": [
+   "FOG-CAL2 · 灰雾净强度校准键 FogStrengthPct（换算订正 + 可达域扩展 + auto 等价性重做）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "§1 换算公式（订正后；含原记与勘误块）",
+   "§2 上限为何取 511（卡面二选一：**取 511**）",
+   "§3 换算表（离线复算脚本 out/re_work/fog_cal2/sim_fogcal2.py；原文见 sim_out.txt [2]）",
+   "§4 可达域（诚实口径）",
+   "§5 日志/遥测字段口径（含字段改名记录）",
+   "§6 既有键回归（F5）",
+   "附录 A · 历史记录（FOG-CAL 原始记录，**原文保留**；⛔ = 本卡订正处）",
+   "附录 B · auto 等价性论证（A/B；本卡重做）",
+   "附录 C · 产物级证据（新旧对照）",
+   "附录 D · 给 ZCode 的真机判据（本卡不跑；交真机执行）",
+   "附录 E · 换算核离线复算（out/re_work/fog_cal2/sim_fogcal2.py，原文见 sim_out.txt）"
+  ]
+ },
+ {
+  "rel": "docs/re/layer_order_fog_vs_objects.md",
+  "bytes": 11718,
+  "lines": 134,
+  "hex_total": 166,
+  "hex_distinct": 68,
+  "h1": [
+   "逐格瓦片层（0x47EFE0 / CellClass::Draw 0x4801F0）相对对象层的绘制次序 —— 定谳"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 勘误（交 Lead；本卡**不**越界修改他人文档）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项"
+  ]
+ },
+ {
+  "rel": "docs/re/mp_landing_consistency.md",
+  "bytes": 55745,
+  "lines": 386,
+  "hex_total": 149,
+  "hex_distinct": 68,
+  "h1": [
+   "联机裁决收敛 + 六大落地包一致性审计（收尾-C）",
+   "→ 断言总数 323 条 | PASS: 323 (100.00%) | FAIL: 0 | NOREAD: 0  [100% ALL PASS]",
+   "→ 合计 323 条：OK=323  MISMATCH/NOREAD=0"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 结论摘要（TL;DR）",
+   "1. 方法与可复算证据",
+   "2. 裁决收敛核对（G-01 … G-10）",
+   "3. 六大落地包 × 5 字段一致性审计",
+   "4. 不一致清单（每条：涉及文档与行号 / 两方证据 / 建议裁定）",
+   "5. 一致项的留证方式（逐类说明比对依据）",
+   "6. 阻塞、风险与建议次序",
+   "附录 A · 写入被审两份文档的「最小勘误标记」",
+   "附录 B · 产物清单",
+   "7. F-01…F-13 处置状态表（修复包 / task-14 · 2026-09-26）"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_crt_audio_particle.md",
+  "bytes": 34447,
+  "lines": 546,
+  "hex_total": 161,
+  "hex_distinct": 67,
+  "h1": [
+   "CRT 池化 + 音频限频 + 微粒迷雾剔除 三合一生产级落地规格书 (Landing Pack)"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "模块一：CRT 高频小对象池化 (Subsystem 1: CRT Memory Pool)",
+   "模块二：音频引擎并发削峰与智能限频 (Subsystem 2: Audio Engine De-flood)",
+   "模块三：微粒与微粒系统迷雾隐形剔除 (Subsystem 3: Particle Fog Culling)",
+   "四、三合一落地集成与验收清单 (Integration & Acceptance)",
+   "五、P-4 / P-5 字节级跳板执行表（F-05 补全 · 2026-09-26 · task-14）[实证]",
+   "六、本包勘误与订正登记（F-01…F-06 相关 · 2026-09-26 · task-14）"
+  ]
+ },
+ {
+  "rel": "docs/re/doc_consistency_fix_list.md",
+  "bytes": 61743,
+  "lines": 436,
+  "hex_total": 159,
+  "hex_distinct": 66,
+  "h1": [
+   "全库文档一致性审计与「过期结论」订正清单（DOCAUDIT）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0.0 双快照声明（必读：审计期间工作树被并行会话改动）",
+   "0. 结论速览",
+   "1. 派工单 5 项逐条复核",
+   "2. 扩大扫描：方法、抽取规则与误报过滤",
+   "3. 新发现的不一致候选（已人工判定，含误报说明）",
+   "4. 最小就地订正清单（Lead 按此执行）",
+   "5. 影响面与「最小性」说明",
+   "6. 未闭环项（无法判定 / 需裁定）",
+   "7. 改动文件 + 门禁输出"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_firststage_candidates_deep_dive.md",
+  "bytes": 12615,
+  "lines": 217,
+  "hex_total": 95,
+  "hex_distinct": 66,
+  "h1": [
+   "FOG-FIRSTSTAGE-R04b · `imul 184` 深挖定谳 + R-04 候选补完"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "[0] `0x45452c` 定谳（P0，首节结论）",
+   "[1] imm=23 的 6 处（P1）：全部假阳性",
+   "[2] AA10D0 / AA10C0 在 DrawTile 族的调用语义（P1）",
+   "[3] 82 个 lerp 簇中是否有地表向灰插值（P2）",
+   "[4] 浮点面复核（覆盖 fmul/fld/fstp/movsd/mulsd 口径）",
+   "[5] 候选清单收口（对照 `fog_firststage_site_locate.md`）",
+   "[6] 交付物清单",
+   "[7] 一句话收口"
+  ]
+ },
+ {
+  "rel": "docs/re/net_sync_fix_spec.md",
+  "bytes": 27620,
+  "lines": 596,
+  "hex_total": 214,
+  "hex_distinct": 66,
+  "h1": [
+   "net_sync 修复 Hook Top3 实施规格（M-5）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. Top3 选取与 ROI",
+   "1. 全局约定（四条 Hook 共用）",
+   "2. Top-1 · H-D1 — desync 预测旁路日志（L0）",
+   "3. Top-2 · H-D2 — desync 现场快照（L1）",
+   "4. Top-3 · H-D5 + H-D6 — 帧 CRC 镜像 + 命令流镜像（对拍套件，L0）",
+   "5. 回滚总表（Install / Remove 对称）",
+   "6. 风险分级与禁止事项（汇总）",
+   "7. 验收清单（给 ZCode / 复核方）",
+   "附录 A · rel32 数值样例（`T0 = 0x01B00000`）",
+   "附录 B · 证据来源",
+   "附录 C · 伪码总装顺序（ZCode）"
+  ]
+ },
+ {
+  "rel": "docs/re/sav_gap_cell_abi_deep_dive.md",
+  "bytes": 19118,
+  "lines": 307,
+  "hex_total": 118,
+  "hex_distinct": 66,
+  "h1": [
+   "R-SAV-GAP 深潜：Cell 块 `.SAV` ABI 与 `GapsCoveringThisCell` 入档/同步/重建"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 结论速览",
+   "1. Cell 块布局（序列化 ABI）",
+   "2. 版本 / 兼容",
+   "3. 同步演进（对照 `net_sync_checksum.md`）",
+   "4. 与既有文档的交叉核对",
+   "5. P-2.1 落地卡门控建议（静态可写部分）",
+   "6. 风险登记",
+   "7. 复算与产物",
+   "8. 证据等级汇总"
+  ]
+ },
+ {
+  "rel": "docs/re/lightconvert_0x420140_deep_dive.md",
+  "bytes": 12040,
+  "lines": 223,
+  "hex_total": 103,
+  "hex_distinct": 65,
+  "h1": [
+   "LightConvert / AlphaLightingRemap `0x420140` 深潜（R-01）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 调用面与缓存",
+   "[2] 逐指令语义（`0x420140–0x420262`）",
+   "[3] 表映射闭式公式",
+   "[4] 「含 / 不含 0.71875」判定",
+   "[5] 与 M1 向灰混合模型定量吻合度",
+   "[6] 未闭环项与下一步",
+   "[7] 交付物与合规"
+  ]
+ },
+ {
+  "rel": "docs/re/telemetry_and_switches_spec.md",
+  "bytes": 51495,
+  "lines": 345,
+  "hex_total": 111,
+  "hex_distinct": 64,
+  "h1": [
+   "遥测与独立开关规格（Telemetry & Switches Spec）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "〇、口径约定（读表前必读）",
+   "一、Hook 总表（已安装 23 项 + 计划 1 项）",
+   "二、ForgeTelemetry 字段与日志格式核对",
+   "三、缺失项清单（18 条，逐条给补齐规格）",
+   "四、不一致点清单（13 条，逐条给证据）",
+   "五、建议的 ini 全量模板",
+   "六、最关键发现摘要（供看板回填）"
+  ]
+ },
+ {
+  "rel": "docs/re/crt_memory_pool_deep_dive.md",
+  "bytes": 47019,
+  "lines": 801,
+  "hex_total": 139,
+  "hex_distinct": 63,
+  "h1": [
+   "《红色警戒2：尤里的复仇》内嵌 CRT 内存分配器与 DynamicVectorClass 深度逆向与池化重构"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "1. 结论速览与核心架构定位",
+   "2. 西木内嵌 CRT 核心函数逆向剖析",
+   "3. 最大 CRT 消费者——动态向量管理体系逆向",
+   "4. 低开销侵入式对象池（Freelist）方案设计",
+   "5. 工程化落地实现代码与 Hook 规范",
+   "6. 预期收益与效能评估",
+   "7. 结语与协同注意事项"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S17_report.md",
+  "bytes": 16512,
+  "lines": 191,
+  "hex_total": 79,
+  "hex_distinct": 62,
+  "h1": [
+   "S17 专项子代理冲刺总结报告：全景架构图谱与系统契约总览"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "1. 冲刺目标与任务执行概况",
+   "2. Lead v20–v22 最新裁决与定谳成果全量吸收",
+   "3. 十大核心子系统全景图谱章节提要",
+   "4. 证据分级与可复算性论证",
+   "5. 遗留问题与后续专项建议",
+   "6. 结论"
+  ]
+ },
+ {
+  "rel": "docs/re/warhead_abi_residuals_deep_dive.md",
+  "bytes": 13050,
+  "lines": 274,
+  "hex_total": 85,
+  "hex_distinct": 60,
+  "h1": [
+   "Warhead ABI 残余与扩展偏移实证（R-06）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 结论速览",
+   "1. [P0] `+0xAC` 宿主类 = `WeaponTypeClass`",
+   "2. [P0] V1 块 `0x4891C6` 属主 = `MapClass::GetTotalDamage`",
+   "3. [P1] `+0x9C` = `Armor` 枚举确认",
+   "4. [P1] YRpp 对照表（扩展类 ABI 偏移独立实证）",
+   "5. 浮点扫描覆盖声明",
+   "6. 排除清单与残余",
+   "7. 可复算脚本索引",
+   "8. 一句话"
+  ]
+ },
+ {
+  "rel": "docs/re/MP_SAFETY_REVIEW.md",
+  "bytes": 51004,
+  "lines": 562,
+  "hex_total": 126,
+  "hex_distinct": 59,
+  "h1": [
+   "联机锁步安全复核（MP_SAFETY_REVIEW）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 结论摘要",
+   "1. 红线基准（摘自 net_sync §5 / §10，判定时逐条对照）",
+   "2. 逐条复核（必覆盖 8 类 + 全量 21 Hook / S1–S4）",
+   "3. 判定推导说明（关键争议点）",
+   "4. 联机构建推荐 ini · 最小安全集",
+   "5. 修复优先级（供 ZCode / 落地轨道）",
+   "6. 遗留与边界",
+   "7. 产出物",
+   "8. 附录 · 勘误标记（收尾-C / task-13，2026-09-26）",
+   "9. 勘误 · MPS 落地后的状态同步（DA1 · DSH 子代理 · 2026-09-27）",
+   "10. 勘误 · FOG-ERRATA E1（B1/B2 原版语义）就地订正（DSH 子代理 · 2026-09-27）"
+  ]
+ },
+ {
+  "rel": "docs/re/house_team_ai_residual_deep_dive.md",
+  "bytes": 10455,
+  "lines": 202,
+  "hex_total": 89,
+  "hex_distinct": 59,
+  "h1": [
+   "House/Team AI 残差深潜（R-TEAM-AI）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 结论速览",
+   "1. 更新循环 ABI",
+   "2. 确定性残差",
+   "3. 限频 / 跳帧安全点",
+   "4. RNG 次数禁区清单",
+   "5. ra2forge 战役 AI 产品建议（只读）",
+   "6. 证据与产物"
+  ]
+ },
+ {
+  "rel": "docs/re/net_sync_desync_map.md",
+  "bytes": 26191,
+  "lines": 285,
+  "hex_total": 115,
+  "hex_distinct": 59,
+  "h1": [
+   "R-NET-SYNC · 同步演进 / Desync 点清单 / 诊断钩落地图（全静态）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 结论速览",
+   "1. 帧 CRC / 同步演进路径（哈希了什么、漏了什么）",
+   "2. H-D1 / H-D2 早退·日志钩语义与风险",
+   "3. Desync 点清单（混端必分叉改集对照表）",
+   "4. 同步演进「可动 / 条件 / 禁止」总表（R-NET-SYNC 裁决）",
+   "5. 可落地顺序（诊断钩优先，不改演进）",
+   "6. 未决 / 待实测",
+   "7. 附：关键地址速查（R-NET-SYNC 增量）"
+  ]
+ },
+ {
+  "rel": "docs/re/bullet_particle_fog_deep_dive.md",
+  "bytes": 37433,
+  "lines": 736,
+  "hex_total": 128,
+  "hex_distinct": 58,
+  "h1": [
+   "《红色警戒2：尤里的复仇》（gamemd.exe 1.001）弹道抛物线与微粒系统迷雾剔除深度逆向报告"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "1. 架构总览与视觉泄露根因剖析",
+   "2. BulletClass::Draw（0x00468090）深度反汇编全剖析",
+   "3. 粒子与微粒系统绘制链路全剖析",
+   "4. 弹道与微粒迷雾隐形剔除 Hook 方案设计",
+   "5. 关键实证地址与数据结构速查表"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_mixing_site_deep_dive.md",
+  "bytes": 14797,
+  "lines": 225,
+  "hex_total": 90,
+  "hex_distinct": 58,
+  "h1": [
+   "FOG-MIXING-SITE · 「灰雾第一段 ×0.71875(23/32)」代码站点深挖定谳"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "[0] 结论摘要（≤5 行）",
+   "[1] 逐条必答项结论表",
+   "[2] 新增证据块（本轮，全部可复算）",
+   "[3] LightConvert `0x420140` 关闭论证（关键未决 → 已决）",
+   "[4] 候选站点总表",
+   "[F5] 最终定谳与最小真机探针",
+   "[6] 写作用域合规声明",
+   "[7] 交付物清单"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_particle.md",
+  "bytes": 34583,
+  "lines": 451,
+  "hex_total": 135,
+  "hex_distinct": 57,
+  "h1": [
+   "落地包 · Particle / ParticleSystem 迷雾绘制剔除（M-9 / landing_pack_particle）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 一句话范围",
+   "1. 字节级实证（槽地址 / 原虚表 DWORD / 新入口 / trampoline）",
+   "1.6 定谳后 5 分钟切换对照表（给 ZCode）",
+   "2. 合并策略（禁止重复安装槽 69）",
+   "3. 开关 `EnableParticleFog`",
+   "4. 遥测计数",
+   "5. 回滚",
+   "6. 只拦绘制、不写逻辑（对照 net_sync SAFE）",
+   "7. 给 ZCode 的执行表",
+   "8. 风险与残留",
+   "9. 取证索引"
+  ]
+ },
+ {
+  "rel": "docs/re/blit_coverage_top10.md",
+  "bytes": 24721,
+  "lines": 370,
+  "hex_total": 96,
+  "hex_distinct": 56,
+  "h1": [
+   "Blit 覆盖面「6/108 → Top10」优先级表与缺口清单",
+   "call+jmp   imm  vtRef  allCJ  HK  name"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "1. 结论摘要",
+   "2. E1 遥测可用性判定",
+   "3. E2 覆盖现状表（已 Hook 6 项）",
+   "4. E3 覆盖缺口清单（108 项全量）",
+   "5. E4 优先级排序（Top10）",
+   "6. E5 前三项落地前提",
+   "7. E6 真机插桩规格（纸面，交代码轨）",
+   "8. 排序依据方法论与局限",
+   "9. 未闭环清单",
+   "10. 附录",
+   "附录 L1 · Lead 保留判定（2026-09-28）"
+  ]
+ },
+ {
+  "rel": "docs/re/radar_crash_static_analysis.md",
+  "bytes": 17908,
+  "lines": 310,
+  "hex_total": 124,
+  "hex_distinct": 55,
+  "h1": [
+   "ra2render.dll 崩溃静态共因分析报告 (EIP 0x5450202F)"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "一、崩溃现场事实记录 [实证]",
+   "二、寄存器推演与数学实证 [实证 + 推演]",
+   "三、根本原因深度剖析：直接触发点 vs 并存逻辑缺陷 [实证]",
+   "四、代理函数全成员读取安全隐患排查表 [实证]",
+   "五、可复现触发条件与测试用例 [推演 + 实证]",
+   "六、交付 ZCode 的修复实施规格 (Fix Specification)",
+   "七、总结与判定结论"
+  ]
+ },
+ {
+  "rel": "docs/re/weapons_damage_landing.md",
+  "bytes": 17263,
+  "lines": 292,
+  "hex_total": 81,
+  "hex_distinct": 55,
+  "h1": [
+   "R-WPN-LAND 伤害生产链落地规格（Weapons Damage Landing Spec）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 一页结论",
+   "1. 伤害生产链落地项（限频 / 加固 / 修复）",
+   "2. 与 gap / 粒子 / 迷雾剔除交叉（ReceiveDamage 谓词）",
+   "3. 确定性红线",
+   "4. 纯收口 + 可测插桩点（不可落地项）",
+   "5. 开关 · 遥测 · 回滚四要素",
+   "6. 验收清单",
+   "7. 与既有落地包的关系",
+   "8. claims 索引"
+  ]
+ },
+ {
+  "rel": "docs/re/path_cache_oracle_spec.md",
+  "bytes": 19267,
+  "lines": 353,
+  "hex_total": 87,
+  "hex_distinct": 54,
+  "h1": [
+   "路径缓存 Oracle 规格（R-PATH-ORACLE）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 任务卡交付对照",
+   "1. 寻路主循环 ABI（原版，无跨单位缓存）",
+   "2. 原版「缓存」实为工作区，无跨单位路径缓存",
+   "3. 拟议跨单位路径缓存 ABI（落地契约）",
+   "4. Oracle 规格（真机探针）",
+   "5. 无 oracle 也可先落地：零行为钩（统计/结构）",
+   "6. 确定性结论",
+   "7. 落地顺序建议",
+   "8. 证据索引"
+  ]
+ },
+ {
+  "rel": "docs/re/trigger_determinism_deep_dive.md",
+  "bytes": 12643,
+  "lines": 170,
+  "hex_total": 78,
+  "hex_distinct": 54,
+  "h1": [
+   "触发器联机确定性深潜（R-TRIG-DET）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 结论速览",
+   "1. 状态机（TriggerClass / TagClass）",
+   "2. 确定性风险点",
+   "3. 与 `0xA8D5F8` NetworkManager 门控交叉",
+   "4. 产品向：ra2forge 地图触发器语义坑",
+   "5. 证据与残差",
+   "6. 只读引用"
+  ]
+ },
+ {
+  "rel": "docs/re/INSTALLED_HOOKS_AUDIT.md",
+  "bytes": 47393,
+  "lines": 432,
+  "hex_total": 92,
+  "hex_distinct": 51,
+  "h1": [
+   "已装 Hook 静态审计（INSTALLED_HOOKS_AUDIT）"
+  ],
+  "h2_count": 14,
+  "h2": [
+   "0. 覆盖率自证摘要（verify_hooks.py 实测）",
+   "1. 安装入口与生命周期",
+   "2. 全量已装 Hook 清单",
+   "3. v1.6.0 四键专项核对（强制覆盖）",
+   "4. 可序列化字段 × 联机影响总表",
+   "5. Install/Remove 不对称 × 「装了但可能没生效」候选",
+   "6. 遥测字段对照（`ForgeTelemetry` × 2s 日志）",
+   "7. ini 键全表（13 键，双份一致）",
+   "8. 还原路径总表（回滚手册）",
+   "9. 结论与给下游的规格建议",
+   "附录 A · 21 个 Hook 实现符号索引",
+   "附录 B · 产出物",
+   "10. 勘误 · MPS 落地后订正（DA1 · DSH 子代理 · 2026-09-27）",
+   "11. 状态注记（追加节 · 2026-10-01 · 工单 `T-W1-Q / PK-1`）"
+  ]
+ },
+ {
+  "rel": "docs/re/zcode_parallel_prompt_v3.md",
+  "bytes": 31513,
+  "lines": 364,
+  "hex_total": 111,
+  "hex_distinct": 51,
+  "h1": [
+   "ZCode 并行总提示词 v3 · R-PROMPT-V3"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 一句话",
+   "1. 并行模型（四轨）",
+   "2. 完整任务队列（10 张新卡 + 编排项）",
+   "3. 红线与勘误锚点",
+   "4. 波次执行卡（可直接派发）",
+   "5. 统一交付回执（每卡一份，按 `AGENT_DELIVERY_FORMAT` §A）",
+   "6. 可直接粘贴的主提示词全文",
+   "7. 不在本票 / 与 v2 的关系"
+  ]
+ },
+ {
+  "rel": "docs/re/except_zc11_forensics.md",
+  "bytes": 24181,
+  "lines": 358,
+  "hex_total": 84,
+  "hex_distinct": 50,
+  "h1": [
+   "ZC-11 `except.txt` 崩溃取证归因报告"
+  ],
+  "h2_count": 12,
+  "h2": [
+   "[0] 结论摘要（≤8 行）",
+   "[1] 异常现场全文解析",
+   "[2] 反汇编：EIP 所属函数",
+   "[3] 时间线：崩溃对到 ZC-11 哪一段",
+   "[4] 归因表",
+   "[5] 根因候选（分级）",
+   "[6] 证据锚点",
+   "[7] 是否勘误 RESULT_ZC11.md [7]",
+   "[8] 复现与验证计划（P0）",
+   "[9] 草稿：待裁决项补丁（供 RESULT_ZC11 / 台账 §九引用）",
+   "附录 A —— 可复算",
+   "附录 B —— 字节级核对（EIP）"
+  ]
+ },
+ {
+  "rel": "docs/re/radar_sweep_sw_deep_dive.md",
+  "bytes": 19096,
+  "lines": 261,
+  "hex_total": 83,
+  "hex_distinct": 50,
+  "h1": [
+   "雷达扫描超武（SpySat / RadarSweep / PsychicReveal）静态深潜 — R-RADAR-SW"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 一句话结论",
+   "1. Launch → 小地图/开图 完整链（四条并行）",
+   "2. 现网钩覆盖矩阵（有什么 / 缺什么）",
+   "3. 落地规格（表现层补全 / 开关）",
+   "4. 确定性裁决（Cell 计数 / gap 交叉 / RNG）",
+   "5. 回滚 / MP / 验收",
+   "6. 未决",
+   "7. 复现"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_weapons_lw.md",
+  "bytes": 19972,
+  "lines": 312,
+  "hex_total": 142,
+  "hex_distinct": 49,
+  "h1": [
+   "ZCode 落地卡 · 伤害生产链 L-W1/L-W2/L-W3（DamageGroup 池化 / 入口遥测 / Verses 乘序审计锁）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 一句话",
+   "1. 执行表（字节级 + 插入方式）",
+   "2. 安装前置（全部 PASS 才允许写）",
+   "3. 开关 · 遥测",
+   "4. 同步 PRNG 零容忍红线（lockstep 安全验收）",
+   "5. 验收 A1–A7（真机；ZCode 填回执）",
+   "6. 回滚 / MP",
+   "7. 风险（执行方必读）",
+   "8. 交付回执（填完交回）",
+   "9. 不在本卡"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S15_report.md",
+  "bytes": 15595,
+  "lines": 193,
+  "hex_total": 70,
+  "hex_distinct": 49,
+  "h1": [
+   "S15 专项冲刺报告 · 落地队列静态等效性与回滚论证包（核心风控闸）"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 冲刺总览与闭环台账 (Executive Ledger)",
+   "1. 核心实证与复算环境基准",
+   "2. 静态审计两大重大风险拦截成果 (Critical Bug Interceptions)",
+   "3. 六大补丁等效性与回滚机制核心论证摘要",
+   "4. 全局回滚与容灾切换操作手册 (Rollback & DR Manual)",
+   "5. 准入放行终审结论"
+  ]
+ },
+ {
+  "rel": "docs/re/claims_cross_validation.md",
+  "bytes": 9365,
+  "lines": 180,
+  "hex_total": 49,
+  "hex_distinct": 48,
+  "h1": [
+   "断言库交叉校验与「唯一事实源」合并（MA1）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "Q1 逐文件解析总表",
+   "Q2 字节冲突检测",
+   "Q3 语义冲突检测",
+   "Q4 去重合并（唯一事实源）",
+   "Q5 门禁实跑",
+   "Q6 抽样独立反证",
+   "交付物索引"
+  ]
+ },
+ {
+  "rel": "docs/re/crt_pool_landing.md",
+  "bytes": 17051,
+  "lines": 240,
+  "hex_total": 69,
+  "hex_distinct": 48,
+  "h1": [
+   "CRT 池化落地规格（R-CRT-POOL）"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 结论速览（Top 3 落地点）",
+   "1. CRT 分配/释放路径 ABI",
+   "2. 池化 / 降频候选",
+   "3. 确定性与 MP 策略",
+   "4. 风险排序 + 推荐首批",
+   "5. 证据索引"
+  ]
+ },
+ {
+  "rel": "docs/re/l4_dirty_spec_v2.md",
+  "bytes": 11611,
+  "lines": 163,
+  "hex_total": 87,
+  "hex_distinct": 47,
+  "h1": [
+   "L4「视口全量刷 → 视野脏区折中」落地规格（静态取证与精确改动点清单）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 必答项结论总表 (E1 ~ E5)",
+   "[2] 关键证据链与字节断言 (audit_bytes 29/29 OK)",
+   "[3] TacticalClass::Render (0x6D3D10..0x6D4B4B) 脏区/重绘构造点清单 (E1)",
+   "[4] 0x6D3D99 jge 比较量与原版控制流语义审计 (E2)",
+   "[5] 迷雾状态迁移格可观测判据与最小侵入方案 (E3)",
+   "[6] L4「视口全量刷 → 视野脏区折中」落地规格 (E4)",
+   "[7] 与「静止视角迷雾零延迟退回」硬约束的相容性论证 (E4)",
+   "[8] 对象二遍裁剪矩形来源与局部绘制判定 (E5)",
+   "[9] 门控裁决、遥测字段与回滚预案"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_sw_charge.md",
+  "bytes": 17446,
+  "lines": 306,
+  "hex_total": 93,
+  "hex_distinct": 47,
+  "h1": [
+   "ZCode 落地卡 · SW 充能冗余二次 call 删除 + Cameo 限频（可选）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 一句话",
+   "1. 主项 L-SW-1 执行表（字节级，等长替换）",
+   "2. 安装前置（全部 PASS 才允许写）",
+   "3. 开关 · 遥测 · 回滚",
+   "4. 真机验收用例（A-系列，最小 5 条）",
+   "5. 禁区（红线 · 执行方必读 · 违者即 DESYNC/坏档）",
+   "6. 附录 L-SW-2 · 侧栏 Cameo 重绘限频（可选 · 须真机确认）",
+   "7. MP / 确定性（充能零 RNG · lockstep 安全）",
+   "8. 风险（执行方必读）",
+   "9. 交付回执（填完交回）",
+   "10. 不在本卡"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S13_report.md",
+  "bytes": 12316,
+  "lines": 187,
+  "hex_total": 54,
+  "hex_distinct": 47,
+  "h1": [
+   "逆向工程冲刺报告：S13 专项（Blitter 微内核剩余未决与非 RLE 接管优先级）"
+  ],
+  "h2_count": 4,
+  "h2": [
+   "1. 冲刺执行概述与成果摘要",
+   "2. 核心取证分析与证据链",
+   "3. 交付物核验清单",
+   "4. 下一步建议（供 S14 及工程落地参考）"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S21_report.md",
+  "bytes": 13094,
+  "lines": 147,
+  "hex_total": 64,
+  "hex_distinct": 47,
+  "h1": [
+   "逆向工程冲刺报告（S21）：全库 30+ 份逆向文档交叉一致性审计与终极裁定"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "一、冲刺目标与任务交割概述",
+   "二、纪律红线与边界执行核查",
+   "三、冲突审计与裁定统计总表",
+   "四、本轮重大技术突破与终局定谳亮点",
+   "五、交付清单与交割说明",
+   "【task-11 / `[v1.5.35]` 收尾补录】S21 遗留\"待注明/待复核\"两项的最终裁定"
+  ]
+ },
+ {
+  "rel": "docs/re/rng_residual_u3_deep_dive.md",
+  "bytes": 6851,
+  "lines": 125,
+  "hex_total": 74,
+  "hex_distinct": 47,
+  "h1": [
+   "RNG 残差 U-3 深潜（R-RNG-U3）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 结论速览",
+   "1. 站点清单与归属",
+   "2. 消费次数与确定性影响",
+   "3. 禁区清单（性能短路优化）",
+   "4. 与 ScenarioRandom / S26 交叉",
+   "5. 证据计数",
+   "6. 只读引用"
+  ]
+ },
+ {
+  "rel": "docs/re/errata_from_rtrack.md",
+  "bytes": 14469,
+  "lines": 160,
+  "hex_total": 52,
+  "hex_distinct": 45,
+  "h1": [
+   "errata_from_rtrack —— R 轨首批成果 × 既有勘误对照与补丁块（M 轨）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 一句话",
+   "1. 一致性表：R 轨结论 vs 既有勘误",
+   "2. 可粘贴补丁块（Lead 解冻后粘贴；原文保留不删字）",
+   "3. 明确不做的动作",
+   "4. except_watch 判据增强提案（机制增量，非勘误；落地归 harness 卡）",
+   "5. §九 草稿（供 Lead 台账合并，两轨只交草稿）",
+   "6. 产物索引"
+  ]
+ },
+ {
+  "rel": "docs/re/particle_fog_owner_landing.md",
+  "bytes": 12265,
+  "lines": 174,
+  "hex_total": 62,
+  "hex_distinct": 44,
+  "h1": [
+   "particle_fog_owner_landing · R-PART-FOG 偏移定谳与落地规格"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 一句话结论",
+   "1. 偏移定谳（构造来源 + 读取点）",
+   "2. 迷雾剔除谓词应读哪个字段",
+   "3. 落地规格（与 Hook_Bullet_Draw 合并）",
+   "4. 与 L4 / 灰雾门控交叉",
+   "5. 与 M-9 执行包的差异/补充（给实施方）",
+   "6. Top 风险",
+   "7. 取证索引"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S16_report.md",
+  "bytes": 11604,
+  "lines": 136,
+  "hex_total": 73,
+  "hex_distinct": 44,
+  "h1": [
+   "逆向工程冲刺报告：S16 专项（全库未闭环与待实测标记清零大扫描）"
+  ],
+  "h2_count": 4,
+  "h2": [
+   "1. 冲刺执行概述与总体战果",
+   "2. 本冲刺（S16）A 类新闭环核心反汇编证据链",
+   "3. 全局冲刺对齐与闭环矩阵 (S1–S16)",
+   "4. 顶层台账建议合入草案（供 Lead 审查参考）"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S19_report.md",
+  "bytes": 14497,
+  "lines": 184,
+  "hex_total": 59,
+  "hex_distinct": 44,
+  "h1": [
+   "S19 专项冲刺报告 · 六大落地补丁待执行总台账与工程落地规范",
+   "Sprint S19 Report: Six Landing Patches Pending Execution Master Table & Engineering Specification"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "〇、冲刺总览与闭环台账 (Executive Ledger)",
+   "一、核心实证与复算环境基准",
+   "二、关键风险拦截与 Lead 裁决全面吸纳成果",
+   "三、核心交付物结构导览：pending_execution_master_table.md",
+   "四、落地实施执行次序图 (Implementation Pipeline)",
+   "五、验收与移交结论 (Acceptance & Sign-off)"
+  ]
+ },
+ {
+  "rel": "docs/re/zcode_master_implementation_ticket_v2.md",
+  "bytes": 29571,
+  "lines": 231,
+  "hex_total": 59,
+  "hex_distinct": 43,
+  "h1": [
+   "ZCode 总实施票 v2 · R-ZC-MASTER"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 一句话",
+   "1. 卡片总清单（本票覆盖面）",
+   "2. 批次拆分与执行卡",
+   "3. 全局红线汇总（所有批次共用，只强不松 · v2 重申）",
+   "4. 批次依赖与放行（v2 文字依赖图）",
+   "5. 统一交付回执（每批一份，附在各卡回执后）",
+   "6. 预计窗口总表 [推演]（v2 含增补与 MERGE 挂载）",
+   "7. 不在本票",
+   "8. v1 → v2 变更摘要"
+  ]
+ },
+ {
+  "rel": "docs/re/mp_gate_residual_deep_dive.md",
+  "bytes": 22694,
+  "lines": 257,
+  "hex_total": 69,
+  "hex_distinct": 41,
+  "h1": [
+   "MP 门控残余深潜（R-MP-GATE）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 结论摘要",
+   "1. G-01…G-10 / M-6 现状 vs 规格缺口清点",
+   "2. MpActive / SessionFlags 门控点全表",
+   "3. 可落地点（禁握手字段 · 仅「启动日志打印 + 强制降级」）",
+   "4. 混端 DESYNC 风险表（gap / particle / vxl / audio 新卡交叉）",
+   "5. 发布门禁读法（不变）",
+   "6. 残余动作清单（按优先级）",
+   "7. 附录：复算命令"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_partial_building_rootcause.md",
+  "bytes": 17083,
+  "lines": 160,
+  "hex_total": 76,
+  "hex_distinct": 40,
+  "h1": [
+   "灰雾/黑区边界建筑\"只画出一半\"根因诊断（BUG-FOGPARTIAL · 只读）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块（VA / FileOffset / 原始字节 / Capstone / xref）",
+   "[3] 勘误（对既有文档/结论的最小订正清单；Lead 处理）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项（需人/Lead 决定）"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_conflict_matrix.md",
+  "bytes": 11586,
+  "lines": 168,
+  "hex_total": 90,
+  "hex_distinct": 40,
+  "h1": [
+   "落地防冲突对照矩阵 · landing_conflict_matrix（R-ANTI-DUP）"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 同面总览（VA 为键）",
+   "1. 历史卡 × 新卡 矩阵（同面才标冲突）",
+   "2. 钩点明细（VA 级）",
+   "3. 安装顺序（推荐）",
+   "4. 装机前门禁（防重复写入检查单）",
+   "5. 结论摘要"
+  ]
+ },
+ {
+  "rel": "docs/re/b_class_static_closeout.md",
+  "bytes": 10278,
+  "lines": 142,
+  "hex_total": 43,
+  "hex_distinct": 37,
+  "h1": [
+   "R-B-STATIC · B 类 STATIC 24 条离线关账"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 总裁定",
+   "1. 复算脚本与结果",
+   "2. 逐条结论（24 条）",
+   "3. 跳板 Rel32 与回滚纯净度",
+   "4. 须真机项",
+   "5. 真机可选烟雾（非强制）",
+   "6. 合规声明"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_gap_merge_checklist.md",
+  "bytes": 21350,
+  "lines": 306,
+  "hex_total": 66,
+  "hex_distinct": 37,
+  "h1": [
+   "R-GAP-MERGE · 裂缝保护三点合并核对单（P-2.1 + P-2.2 + P-2.3）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 一句话",
+   "1. 三点一张表（字节级总表 · 唯一权威合并面）",
+   "2. 同键 `EnableGapProtection`（一键 · 不拆键）",
+   "3. 安装顺序 / 回滚顺序",
+   "4. `installed==3` 存档标记（GapProt Version）",
+   "5. 路径 A 行号合并（ra2render 加载期 · 单挂点统一视图）",
+   "6. 验收总表（合并 A / I / S / R 系列 · 禁止「没崩」当成功）",
+   "7. MP 红线（只强不松）",
+   "8. 禁止项（执行方红线 · 合并后仍有效）",
+   "9. 交付回执（ZCode 填写 · 合并整包）",
+   "10. 不在本单"
+  ]
+ },
+ {
+  "rel": "docs/re/z3_troubleshoot_net_fix_gap.md",
+  "bytes": 15812,
+  "lines": 141,
+  "hex_total": 76,
+  "hex_distinct": 37,
+  "h1": [
+   "Z-3 排查手册：M-8 / M-10 落地自检失败与行为异常"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 速查：装完后应当看到的字节",
+   "T1 · VirtualAlloc 基址冲突（`T0=0x01B00000` 分配失败）",
+   "T2 · H-D2 `pushad` 顺序 / `frame[0]` 低字节 ≠ `slot×37`",
+   "T3 · NOP 等长校验失败（gap 三处 6B、`0x508F8F` 2B）",
+   "T4 · 安装后 5 处 `E9` 自检失败",
+   "T5 · SyncDiag 键开了无日志",
+   "T6 · 裂缝保护不生效 / SpySat 门控误伤单机",
+   "7. 跨包易混点（M-8 vs M-10）",
+   "8. 仍无法定位时"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_audio_throttle.md",
+  "bytes": 17021,
+  "lines": 286,
+  "hex_total": 80,
+  "hex_distinct": 35,
+  "h1": [
+   "ZCode 落地卡 · Audio Throttle（Play* 入口前置限频）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 一句话",
+   "1. 执行表（字节级 + 插入方式）",
+   "2. 参数（INI，宿主 `ra2render.ini` 或 `audio_throttle.ini`）",
+   "3. 确定性门（lockstep 安全验收）",
+   "4. 验收 A1–A5（真机；ZCode 填回执）",
+   "5. 回滚 / MP（对照 R-MP-GATE）",
+   "6. 遥测（只读计数，禁热路径膨胀）",
+   "7. 风险（执行方必读）",
+   "8. 交付回执（填完交回）",
+   "9. 不在本卡"
+  ]
+ },
+ {
+  "rel": "docs/re/l4_vision_dirty_final_spec.md",
+  "bytes": 17643,
+  "lines": 292,
+  "hex_total": 71,
+  "hex_distinct": 34,
+  "h1": [
+   "L4 视口局部打脏 (Vision-Dirty) 生产级实施规格书 (Patch-Level Specification)"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "一、架构背景与设计哲学 (Architecture & Principles)",
+   "二、0x006D3D99 双模切换二进制补丁规范 [实证]",
+   "三、增量视野翻转格外扩打脏算法 (Vision Boundary Tagging) [实证]",
+   "四、生产级 C++ 实施代码 (Copy-Paste Ready)",
+   "五、INI 开关、遥测与热回滚规范",
+   "六、三组验收用例与判定准则 (Acceptance Test Cases)",
+   "七、与 HOOK_POINT_MATRIX.md 阶段对齐与前置依赖"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_net_diag_hd.md",
+  "bytes": 17019,
+  "lines": 280,
+  "hex_total": 69,
+  "hex_distinct": 34,
+  "h1": [
+   "ZCode 落地卡 · net_sync 诊断钩（H-D1 / H-D2）+ 对拍规格（H-D5 / H-D6）"
+  ],
+  "h2_count": 13,
+  "h2": [
+   "0. 一句话",
+   "1. 落地序与本卡边界",
+   "2. 开关矩阵（默认全 0）",
+   "3. W1 执行表（照表写入，不做静态推理）",
+   "4. W2 对拍规格（H-D5 / H-D6）— 只登记红线与验收",
+   "5. 禁改演进（红线 checklist，违反 = L3 / 本卡失败）",
+   "6. 自证门（自证「零语义」可执行证明）",
+   "7. MP 策略（诊断默认关）",
+   "8. 真机验收用例（A1–A8）",
+   "9. 风险（执行方必读）",
+   "10. 交付回执（填完交回，写入 `out/re_work/re_sprint/R_hd_card/`）",
+   "11. 不在本卡",
+   "12. 复现"
+  ]
+ },
+ {
+  "rel": "docs/re/ra2forge_fix_forge2.md",
+  "bytes": 28575,
+  "lines": 271,
+  "hex_total": 79,
+  "hex_distinct": 33,
+  "h1": [
+   "ra2forge FORGE-2 收口报告：R1–R5 内容裁决落地 + 依赖方修复（MCP / ra2opt / DESIGN）",
+   "\"FinalMovie\\0\\0CD\\0\\0Battles\\0\""
+  ],
+  "h2_count": 11,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块",
+   "[3] 勘误",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文粘贴）",
+   "[7] 风险与红线",
+   "[8] 交付物清单",
+   "[9] 待裁决项",
+   "附：迁移规程（纸面，**本次未执行**；已按 R1–R5 裁决修正 FORGE-1 §5）"
+  ]
+ },
+ {
+  "rel": "docs/re/baseline_integrity_note.md",
+  "bytes": 15474,
+  "lines": 221,
+  "hex_total": 54,
+  "hex_distinct": 32,
+  "h1": [
+   "二进制基线完整性备忘录 (Baseline Integrity Note)"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "一、 核心结论总览 (Executive Summary)",
+   "二、 关键深度剖析一：`raw(SizeOfRawData)` vs `vsize(Misc_VirtualSize)` 口径裁定",
+   "三、 关键深度剖析二：PE 头偏移 0xAE/0xB2 处 2 字节差异还原",
+   "四、 关键深度剖析三：`.detour` 段原生自带 `\"Dtr\\0\"` 签名与禁写入红线",
+   "五、 全库回归套件使用与验收",
+   "六、 唯一事实源与门禁固化（task-11 / `[v1.5.35]` 收尾补录）"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_crt_l1.md",
+  "bytes": 16578,
+  "lines": 285,
+  "hex_total": 78,
+  "hex_distinct": 31,
+  "h1": [
+   "ZCode 落地卡 · CRT L1 向量降频（VectorReuse / VectorReserve）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 一句话",
+   "1. 执行表（字节级 + 插入方式）",
+   "2. 安装前置（全部 PASS 才允许写）",
+   "3. 开关 · 遥测",
+   "4. 确定性门（lockstep 安全验收）",
+   "5. 验收 A1–A6（真机；ZCode 填回执）",
+   "6. 回滚 / MP",
+   "7. 风险（执行方必读）",
+   "8. 交付回执（填完交回）",
+   "9. 不在本卡"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_gap_p223.md",
+  "bytes": 16743,
+  "lines": 248,
+  "hex_total": 77,
+  "hex_distinct": 31,
+  "h1": [
+   "ZCode 落地卡 · P-2.2/P-2.3 裂缝保护（RevealArea3 / Reshroud 清 `GapsCoveringThisCell`）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 一句话",
+   "1. 执行表（字节级，等长替换）",
+   "2. 安装前置（全部 PASS 才允许写）",
+   "3. 开关 · 遥测 · 回滚",
+   "4. 真机验收用例（Z- 系列，最小 5 条）",
+   "5. 风险（执行方必读）",
+   "6. 交付回执（填完交回）",
+   "7. 不在本卡",
+   "8. 落地顺序与依赖（与 P21 合并视图）"
+  ]
+ },
+ {
+  "rel": "docs/re/trigger_save_pollution.md",
+  "bytes": 14920,
+  "lines": 255,
+  "hex_total": 44,
+  "hex_distinct": 31,
+  "h1": [
+   "Trigger / Tag 进档污染路径（R-TRG-SAV）",
+   "-> SUMMARY ok=23 fail=0"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 一句话",
+   "1. 结论速览",
+   "2. T28 污染面：Trigger `0x48` / Tag `0x38` 字段级",
+   "3. 入档 / 读档路径（Trigger/Tag 专项）",
+   "4. Tag 序重建缺口（摘要，全文见产物 `tag_rebuild_gaps.md`）",
+   "5. 安装包存档文案建议（成稿，可直接抄）",
+   "6. ra2forge 触发器存读档核对点（摘要，全文见产物 `ra2forge_checkpoints.md`）",
+   "7. 与 T8 确定性的耦合",
+   "8. 风险速查",
+   "9. 证据等级与未闭环",
+   "10. 交付边界"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_stub_probe_report.md",
+  "bytes": 16428,
+  "lines": 139,
+  "hex_total": 40,
+  "hex_distinct": 30,
+  "h1": [
+   "FOG-PROBE · 混色桩「读取值」遥测探针交付报告（只加仪表 / 零行为改动）"
+  ],
+  "h2_count": 3,
+  "h2": [
+   "附录 A · 探针字段口径（防反向歧义；遥测行原文格式）",
+   "附录 B · 零行为改动证明（四路）",
+   "附录 C · 给 ZCode 的真机判据（一轮单局即可定谳）"
+  ]
+ },
+ {
+  "rel": "docs/re/sw_radius_deadkey_fix_spec.md",
+  "bytes": 12710,
+  "lines": 202,
+  "hex_total": 39,
+  "hex_distinct": 29,
+  "h1": [
+   "RadarSweepRadiusCells 死键定谳与产品修复规格"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 结论摘要",
+   "1. 跳表 12 case 定谳：谁读 `SW+0xF8`",
+   "2. 产品修复规格",
+   "3. 死键清单（文档勘误用；design/ini 只读）",
+   "4. 确定性：改半径会否平移 RNG",
+   "5. 验收 / 回归",
+   "6. 风险与禁项",
+   "7. 证据索引"
+  ]
+ },
+ {
+  "rel": "docs/re/crt_l2_class34_fix_spec.md",
+  "bytes": 17557,
+  "lines": 293,
+  "hex_total": 40,
+  "hex_distinct": 27,
+  "h1": [
+   "CRT L2 class3/4 空洞修复落地规格（R-L2-GAP）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "[0] 结论速览（≤12 行）",
+   "[1] 空洞定义与尺寸算术（`[实证]`）",
+   "[2] Layer B：L2 扩桶落地规格（尺寸 / 头 / 毒 / CAS / 回滚）",
+   "[3] Layer A：H2/H6 可见性钩 vs 池化防护 —— 分工",
+   "[4] 与 `MemPoolSmall` / `EnableMemoryPool` / `OnlineSafeMode` 对齐",
+   "[5] 确定性门控（池化不改 RNG/存档 —— 复核 + 门）",
+   "[6] 落地批次与验证门槛",
+   "[7] 证据索引"
+  ]
+ },
+ {
+  "rel": "docs/re/iface_mimo_re.md",
+  "bytes": 21795,
+  "lines": 279,
+  "hex_total": 36,
+  "hex_distinct": 27,
+  "h1": [
+   "双轨接口说明：MiMo（M 轨）↔ 逆向代理（R 轨）",
+   "ZC-RE1 · 首批 R 轨结论真机验证（2026-09-30 · M 轨起草）"
+  ],
+  "h2_count": 15,
+  "h2": [
+   "1. R 轨可直接消费的 M 轨产物",
+   "2. R 轨交付如何被 M 轨消费",
+   "3. 禁止事项（双侧对称）",
+   "4. 升级路径（撞车/矛盾时）",
+   "5. 建议 R 轨首批选题（**只建议、不派工、不排期**）",
+   "6. 一句话",
+   "7. 2026-09-30 再声明（R 轨边界复确认）",
+   "8. 2026-09-30 第二批选题与真机卡（MiMo 追加）",
+   "段 A · Warhead ABI 真机确认（对应 R-03）",
+   "段 B · SBH freelist 只读采样（对应 R-02）",
+   "段 C · LightConvert 表抽样确认（对应 R-01，可选）",
+   "判读约定",
+   "9. 2026-09-30 第三批选题与边界续确认（MiMo 追加）",
+   "段 D · Waypoint UAF 真机判别（对应 R-05/R-07）",
+   "10. ZC-H1RM 后接口（MiMo 追加 · 2026-09-30）"
+  ]
+ },
+ {
+  "rel": "docs/re/v160_static_contract.md",
+  "bytes": 16772,
+  "lines": 232,
+  "hex_total": 62,
+  "hex_distinct": 27,
+  "h1": [
+   "《红色警戒2：尤里的复仇》（gamemd.exe 1.001）v1.6.0 静态契约核验与联机安全报告 [静态核验]"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "一、静态核验结论总览",
+   "二、小地图刷新与覆写汇编契约核实",
+   "三、灰雾 4 帧平滑渐变 RGB565 数学证明",
+   "四、虚表槽 69 门控与生命周期契约",
+   "五、联机锁步（net_sync）红线合规矩阵",
+   "六、静态核验结论与效力范围"
+  ]
+ },
+ {
+  "rel": "docs/re/radar_hook_routeA_spec.md",
+  "bytes": 19844,
+  "lines": 345,
+  "hex_total": 91,
+  "hex_distinct": 26,
+  "h1": [
+   "路线 A 小地图迷雾下沉挂钩实施规格书 (Patch-Level Specification)"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "【最高优先级勘误 · RADAR-ERRATA 2026-09-27】路线 A 的「9 字节补丁点取到 cell 指针」前提**已被证伪**",
+   "一、Hook 目标位置与指令边界编码 [实证]",
+   "二、寄存器与栈契约 (ABI & Stack Contract) [实证]",
+   "三、判定谓词与灰化核心算法 [实证]",
+   "四、生产级 C++ / 内联汇编实施代码 (Copy-Paste Ready)",
+   "五、开关键、遥测与回滚契约 [规范]",
+   "六、三组可复现验收步骤与预期指标 (Acceptance Test Cases)"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S18_report.md",
+  "bytes": 20344,
+  "lines": 164,
+  "hex_total": 30,
+  "hex_distinct": 26,
+  "h1": [
+   "逆向工程冲刺报告：S18 专项（92 项 Class B 运行时未决项离线替代验证方案体系）"
+  ],
+  "h2_count": 4,
+  "h2": [
+   "1. 冲刺执行概述与总体战果",
+   "2. 五大子系统核心技术突破与指令级论证成果",
+   "3. 92 项 Master 矩阵台账分类汇总",
+   "4. 顶层台账建议合入草案（供 Lead 审查参考）"
+  ]
+ },
+ {
+  "rel": "docs/re/ARCHITECTURE_ATLAS_REV.md",
+  "bytes": 26559,
+  "lines": 253,
+  "hex_total": 37,
+  "hex_distinct": 25,
+  "h1": [
+   "ARCHITECTURE_ATLAS_REV.md —— v23 续做交付报告（Lead 主笔）"
+  ],
+  "h2_count": 13,
+  "h2": [
+   "[META]",
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表",
+   "[2] 关键证据块（可复算）",
+   "[3] 勘误总表（Lead 裁定：**既有文档保持冻结**，勘误登记不就地改写）",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出（原文摘录）",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项",
+   "[10] 收尾修复与独立验证记录（套用后，Lead）",
+   "[11] 状态注记（追加节 · 2026-10-01 · 工单 `T-W1-Q / PK-1`）"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_gap_p21_a3.md",
+  "bytes": 19370,
+  "lines": 246,
+  "hex_total": 30,
+  "hex_distinct": 25,
+  "h1": [
+   "ZCode 后续真机验收卡 · P-2.1 A3 行为验收（战役轨 C / 诊断钩 H）+ A4/A5"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 一句话",
+   "1. 背景与阻塞回顾（只引用，不复翻案）",
+   "2. 方案 C-战役（首选：真实体 + 真开图）",
+   "3. 方案 H-诊断钩（备选：受控帧 RevealArea2 A/B；需审批）",
+   "4. A4 存读档 · A5 DestroyGap（同图同局纳入）",
+   "5. 复用 harness：`tools/gap_p21_*.py` 资产清单",
+   "6. 总判据矩阵（A3/A4/A5 × 方案）",
+   "7. 风险（执行方必读）",
+   "8. 交付回执（填完交回）",
+   "9. 不在本卡"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_vxl_prewarm.md",
+  "bytes": 10284,
+  "lines": 183,
+  "hex_total": 53,
+  "hex_distinct": 23,
+  "h1": [
+   "ZCode 落地卡 · VXL 缓存预热扩容（SomeVoxelCache 初始容量 10→64）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 一句话",
+   "1. 执行表（字节级，等长替换）",
+   "2. 安装前置（全部 PASS 才允许写）",
+   "3. 开关 · 遥测 · 回滚",
+   "4. 真机验收用例（Z- 系列，最小 3 条）",
+   "5. MP（联机）裁决",
+   "6. 风险（执行方必读）",
+   "7. 交付回执（填完交回）",
+   "8. 不在本卡（附录预告）"
+  ]
+ },
+ {
+  "rel": "docs/re/zcode_master_implementation_ticket.md",
+  "bytes": 16187,
+  "lines": 173,
+  "hex_total": 29,
+  "hex_distinct": 23,
+  "h1": [
+   "ZCode 总实施票 · R-ZC-MASTER"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 一句话",
+   "1. 卡片总清单（本票覆盖面）",
+   "2. 批次拆分与执行卡",
+   "3. 全局红线汇总（所有批次共用，只强不松）",
+   "4. 批次依赖与放行",
+   "5. 统一交付回执（每批一份，附在各卡回执后）",
+   "6. 预计窗口总表 [推演]",
+   "7. 不在本票"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_gray_mix_offline_verify.md",
+  "bytes": 25229,
+  "lines": 377,
+  "hex_total": 41,
+  "hex_distinct": 22,
+  "h1": [
+   "「向灰混合 vs 纯压暗」离线验证 + 单位可见性交叉核验（FOG-GRAYMIX-OFFLINE）",
+   "采集后把 4 档 ROI 均值填入 measurements.json"
+  ],
+  "h2_count": 12,
+  "h2": [
+   "[0] 结论摘要（≤5 行，可独立读懂）",
+   "[1] 逐条必答项结论表",
+   "[2] 背景与继承口径",
+   "[3] 模型对比与残差表（离线可复算）",
+   "[4] 反汇编核对（只读 gamemd.exe）",
+   "[5] ZC-11 可执行最小判别实验",
+   "[6] DEF-FOGPARTIAL 静态根因候选与验证步骤",
+   "[7] 与单位可见性机制的交叉核验结论",
+   "[8] 未闭环清单",
+   "[9] §九台账草稿（供 Lead 裁决，本卡不改台账）",
+   "[10] 写作用域与红线",
+   "[11] 交付物与复算入口"
+  ]
+ },
+ {
+  "rel": "docs/re/l4_dirty_safety.md",
+  "bytes": 5770,
+  "lines": 97,
+  "hex_total": 42,
+  "hex_distinct": 22,
+  "h1": [
+   "L4「无迷雾迁移交还原生 jge 路径」安全性论证（P0-2 实施前最后一道论证）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 逐条必答项结论表 (E1 ~ E5)",
+   "[2] 关键证据块 (audit_bytes 30/30 OK)",
+   "[3] 勘误",
+   "[4] 未闭环清单",
+   "[5] 写作用域合规声明",
+   "[6] 门禁实跑输出",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_h20c_sweep.md",
+  "bytes": 15074,
+  "lines": 250,
+  "hex_total": 53,
+  "hex_distinct": 22,
+  "h1": [
+   "ZCode 落地卡 · H-20-C 私有扫窗（Private Sweep Window）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 一句话",
+   "1. 执行表",
+   "2. 安装前置（全部 PASS 才允许写）",
+   "3. 死键 R-c · 开关 · 遥测 · 回滚",
+   "4. 确定性红线（0 Cell / 0 RNG / 0 CRC · MP SAFE）",
+   "5. 真机验收用例（A1–A10）",
+   "6. 风险（执行方必读）",
+   "7. 交付回执（填完交回，写入 `out/re_work/re_sprint/R_h20c_card/`）",
+   "8. 不在本卡",
+   "9. 复现"
+  ]
+ },
+ {
+  "rel": "docs/re/va_claims_bss_closeout.md",
+  "bytes": 4744,
+  "lines": 122,
+  "hex_total": 24,
+  "hex_distinct": 22,
+  "h1": [
+   "R-VA-BSS — 64 条无主悬空 BSS 关账报告"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "1. 范围界定",
+   "2. 工厂路径（v2 五补丁全覆盖）",
+   "3. 自检（全绿）",
+   "4. 统计",
+   "5. 产物清单",
+   "6. 关账结论"
+  ]
+ },
+ {
+  "rel": "docs/re/errata_sync_master_table.md",
+  "bytes": 11076,
+  "lines": 100,
+  "hex_total": 36,
+  "hex_distinct": 21,
+  "h1": [
+   "勘误总表 · R-ERRATA-SYNC"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "一、勘误主表",
+   "二、按「是否可加注」分组（给 Lead 的清单）",
+   "三、建议批量执行顺序",
+   "四、与既有补丁包的关系",
+   "五、产物索引"
+  ]
+ },
+ {
+  "rel": "docs/re/h20c_private_sweep_spec.md",
+  "bytes": 18096,
+  "lines": 315,
+  "hex_total": 47,
+  "hex_distinct": 21,
+  "h1": [
+   "H-20-C 私有扫窗可执行规格（Private Sweep Window）"
+  ],
+  "h2_count": 12,
+  "h2": [
+   "0. 一句话结论",
+   "1. 钩点清单（VA + 行号）",
+   "2. 数据与谓词（合流，禁止两套逻辑）",
+   "3. 与路线 A 三钩兼容",
+   "4. 死键修复：`RadarSweepRadiusCells`（二选一，规格同时给出）",
+   "5. ini 键契约",
+   "6. 回滚契约",
+   "7. MP / 确定性",
+   "8. 验收用例",
+   "9. 最小落地顺序（实现者 checklist）",
+   "10. 未决（落地前须闭环）",
+   "11. 复现"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_particle_fog.md",
+  "bytes": 11217,
+  "lines": 183,
+  "hex_total": 39,
+  "hex_distinct": 21,
+  "h1": [
+   "ZCode 落地卡 · 微粒迷雾剔除（Particle/PSys 虚表槽 69 双钩）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 一句话",
+   "1. 执行表（槽 69 DWORD 覆写，与 `Hook_Bullet_Draw` 同批）",
+   "2. 谓词（归属链三级，只读）",
+   "3. 开关 · 遥测 · 回滚",
+   "4. 真机验收用例（A1–A5）",
+   "5. 风险（执行方必读）",
+   "6. MP：表现层 SAFE 可保留",
+   "7. 交付回执（填完交回）",
+   "8. 不在本卡"
+  ]
+ },
+ {
+  "rel": "docs/re/gap_protection_install_spec.md",
+  "bytes": 22864,
+  "lines": 389,
+  "hex_total": 45,
+  "hex_distinct": 20,
+  "h1": [
+   "ZCode 安装规格 · EnableGapProtection 门控 + P-2.1 六字节写入"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 一句话",
+   "1. 写入点（字节级，与落地卡 §1 严格一致）",
+   "2. 路径 A · ra2render.dll 加载期补丁（**首选**）",
+   "3. 路径 B · 外部补丁器（离线回退）",
+   "4. 与既有 Hook 门控矩阵兼容（只读 `ra2render/**` + `HOOK_POINT_MATRIX.md`）",
+   "5. 失败路径 · 回滚 · 「开关重启才生效」",
+   "6. A / B 并列论证与裁决",
+   "7. 真机验收（承接落地卡 A1–A5，补安装路径专条）",
+   "8. 禁止项（执行方红线）",
+   "9. 交付回执（ZCode 填写）"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_inventory.md",
+  "bytes": 4557,
+  "lines": 65,
+  "hex_total": 20,
+  "hex_distinct": 20,
+  "h1": [
+   "Landing Pack 落地卡盘点目录 · R-CARD-INV"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "1. 状态总览",
+   "2. 批次/波次一览（以 v2 B1–B5 / v3 W1–W4 为准）",
+   "3. 历史/审计包（非 v3 十卡队列，防重复装）",
+   "4. 编排件",
+   "5. 硬依赖与红线（盘点口径）"
+  ]
+ },
+ {
+  "rel": "docs/re/savegame_product_checklist.md",
+  "bytes": 14594,
+  "lines": 230,
+  "hex_total": 28,
+  "hex_distinct": 20,
+  "h1": [
+   "存档版本门 · 安装包产品检查清单（R-SAV-PROD / SG-GATE）",
+   "-> out/re_work/re_sprint/R_sav_prod/claims.txt  (OK=90 FAIL=0)"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 一句话",
+   "1. 版本闸事实基线（禁改，安装包不得漂移）",
+   "2. 补丁标记流契约（安装包必须遵守）",
+   "3. ra2forge 地图/触发器：进档污染面（安装包须知）",
+   "4. 安装包出厂检查清单（G0–G6）",
+   "5. 禁止事项（安装包 / 补丁器硬红线）",
+   "6. 风险速查",
+   "7. 证据等级与未闭环"
+  ]
+ },
+ {
+  "rel": "docs/re/GATE_VOCABULARY.md",
+  "bytes": 18237,
+  "lines": 159,
+  "hex_total": 34,
+  "hex_distinct": 19,
+  "h1": [
+   "门禁词汇与档位定义表（GATE_VOCABULARY）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 为什么要新建这份文件（空扫描对照）",
+   "1. 档位定义表",
+   "2. `GATE-REDLINE` 的 `.rsrc` 侧（DOC2 任务② 的成文半区）",
+   "3. `SizeOfHeaders`：回退语义 + 「`00001000h` 只是记录值，不是判据」（DOC2 任务③）",
+   "4. `GATE-LAA` 在 game.exe 侧的准确表述（DOC2 任务①）",
+   "5. `GATE-MAP` 的对齐两档：改挂 `FIELD-REG`（任务① 的词汇半区）",
+   "6. 前件勘误登记（append 方式；原行一字不动）",
+   "7. 未做（如实）与归属",
+   "8. 现读证据与可复跑性",
+   "9. 并发报备（非本包所为）"
+  ]
+ },
+ {
+  "rel": "docs/re/audit_bytes_toolfix.md",
+  "bytes": 10968,
+  "lines": 243,
+  "hex_total": 42,
+  "hex_distinct": 19,
+  "h1": [
+   "audit_bytes 工具链加固报告（PE 头映射 + BSS 断言替代方案）"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "1. 变更说明",
+   "2. 兼容性",
+   "3. 回归命令原文与结果",
+   "4. 产物清单",
+   "5. 残留风险",
+   "6. §九 台账草稿（供 Lead 合并，勿由本轨直接写顶层台账）"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_firststage_rootcause.md",
+  "bytes": 5908,
+  "lines": 71,
+  "hex_total": 39,
+  "hex_distinct": 19,
+  "h1": [
+   "FOG-FIRSTSTAGE-R3 · 定位「地表侧 ×0.71875(23/32)」来源根因定谳报告"
+  ],
+  "h2_count": 0,
+  "h2": []
+ },
+ {
+  "rel": "docs/re/mix_hygiene_product.md",
+  "bytes": 13497,
+  "lines": 203,
+  "hex_total": 30,
+  "hex_distinct": 19,
+  "h1": [
+   "MIX 卫生 · 安装器产品清单（R-MIX-PROD）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "[0] 一页结论",
+   "[1] 混合安装：优先级与冲突面（产品加固）",
+   "[2] 安装包检查（expandmd 槽位 · 哈希 · 残留）",
+   "[3] 引擎战役注册路径再确认（产品影响）",
+   "[4] 安装器「MIX 卫生」清单（可执行）",
+   "[5] 未闭环（不阻塞装机）",
+   "[6] 交叉引用"
+  ]
+ },
+ {
+  "rel": "docs/re/opt1_dualcompute_spec.md",
+  "bytes": 8919,
+  "lines": 145,
+  "hex_total": 36,
+  "hex_distinct": 19,
+  "h1": [
+   "OPT-1 双算消除规格（R-OPT1）— force-full 跳过 Pass2 dirty 瓦片段 + Pass8 stage2"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 背景与双算事实（继承 T26，已复核字节）",
+   "[2] 可执行规格",
+   "[3] 与 ZC-P1（flags）依赖关系",
+   "[4] 风险与像素不变",
+   "[5] 验收像素对拍判据（E5 / R-OPT1-AC）",
+   "[6] 给 ZCode 的行号级清单",
+   "[7] 写域合规"
+  ]
+ },
+ {
+  "rel": "docs/re/a3_campaign_map_spec.md",
+  "bytes": 19128,
+  "lines": 297,
+  "hex_total": 20,
+  "hex_distinct": 18,
+  "h1": [
+   "A3 战役图规格 · GAGAP/CAFARM02 最小图（方案 C）"
+  ],
+  "h2_count": 12,
+  "h2": [
+   "0. 一句话",
+   "1. 目标与非目标",
+   "2. 最小图面（GAGAP 主 / CAFARM02 备）",
+   "3. 触发器（Trigger / Tag / Event / Action）",
+   "4. CellTags（TagClass 实例化前提）",
+   "5. BATTLEMD 散装注册",
+   "6. 判据 C-J1..J5（逻辑计数为主，截图像素为辅）",
+   "7. 同图纳入 A4 / A5（依赖 A3 场景）",
+   "8. harness 映射",
+   "9. 执行步骤（方案 C 全流程）",
+   "10. 风险",
+   "11. 交付回执（填完交回）"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_gap_spysat.md",
+  "bytes": 29896,
+  "lines": 431,
+  "hex_total": 84,
+  "hex_distinct": 18,
+  "h1": [
+   "M-10 落地包：裂缝保护 NOP×3 + SpySat 门控 + G-07 Remove 还原"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 三项总览",
+   "1. P-1 裂缝保护：三处 6 字节 NOP",
+   "2. P-2 SpySat 门控（`0x508F88` 代码级）",
+   "3. P-3 G-07：S1 TYPE 补丁的 Remove 还原",
+   "4. 同步契约对照总表（net_sync）",
+   "5. 建议 ini 增量（供 ZCode 合并进 `ra2render.ini`，两份同步）",
+   "6. 给 ZCode 的执行表",
+   "7. 证据索引"
+  ]
+ },
+ {
+  "rel": "docs/re/preflight_e1_e4_corrections.md",
+  "bytes": 20928,
+  "lines": 367,
+  "hex_total": 24,
+  "hex_distinct": 18,
+  "h1": [
+   "落地前预检订正清单 + 模板 · E-1～E-4",
+   "Preflight E-1..E-4 Corrections · R-PRE-E14"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "〇、总则",
+   "一、订正清单（每条：旧 / 新 / 证据 / 执行步骤）",
+   "二、执行顺序与依赖",
+   "三、模板（可粘贴）",
+   "四、landing_pack 处置裁决（本体不改）",
+   "五、验收总表（执行后勾选）",
+   "六、机读与配套产物",
+   "七、签署"
+  ]
+ },
+ {
+  "rel": "docs/re/re_sprint_S20_report.md",
+  "bytes": 12234,
+  "lines": 138,
+  "hex_total": 18,
+  "hex_distinct": 18,
+  "h1": [
+   "逆向工程冲刺报告（S20）：五大核心深潜文档遗留未决项终局清零"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "一、冲刺目标与任务交割概述",
+   "二、纪律红线与边界执行核查",
+   "三、扫描与清零统计总表",
+   "四、本轮重大技术突破与定谳亮点",
+   "五、交付资产清单",
+   "六、定谳声明"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_crt_l2_class34.md",
+  "bytes": 17193,
+  "lines": 315,
+  "hex_total": 38,
+  "hex_distinct": 17,
+  "h1": [
+   "ZCode 落地卡 · CRT L2 class3/4 扩桶（idx8/idx9 + 侧表 freelist + 毒填）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 一句话",
+   "1. 执行表（尺寸桶 / 头 / freelist / 毒）",
+   "2. 开关 · 二阶键 · OnlineSafeMode",
+   "3. 安装前置（全部 PASS 才允许写）",
+   "4. 确定性门（合入前必须全绿）",
+   "5. 验收 A/B（真机；ZCode 填回执）",
+   "6. 回滚（三级 + 二阶键）",
+   "7. 风险（执行方必读）",
+   "8. 与 ZC-CRT-L1 的批次关系（**明确**）",
+   "9. 交付回执（填完交回）",
+   "10. 不在本卡"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_l4_opt1_checklist.md",
+  "bytes": 16373,
+  "lines": 206,
+  "hex_total": 35,
+  "hex_distinct": 17,
+  "h1": [
+   "L4 + OPT-1 合并落地检查单（R-L4-MERGE）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "[0] 合并依赖序（先读）",
+   "[1] 行号一张表（`blitter_hooks.cpp` + 引擎 VA + ini）",
+   "[2] L4DirtyMode × Opt1DualSkip 开关矩阵",
+   "[3] 验收：E5 / TC-L4-01 / OPT-1 AC（R-L4-MERGE-AC）",
+   "[4] vanilla 禁止当等价档（强制条款）",
+   "[5] 回滚与卸载（合并态必查）",
+   "[6] 写域合规",
+   "[7] 合并门禁总表（签字用）"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_palette_quant_deep_dive.md",
+  "bytes": 11923,
+  "lines": 227,
+  "hex_total": 26,
+  "hex_distinct": 16,
+  "h1": [
+   "调色板量化路径深潜（R-FOG-PAL）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 结论摘要（≤8 行）",
+   "[1] 必答项结论表",
+   "[2] 量化 ABI 与合成顺序",
+   "[3] 暗端抬升 / 桥面更亮",
+   "[4] 残差表",
+   "[5] 最小 dump（真机，不实测）",
+   "[6] 与前作关系（不重复已否定项）",
+   "[7] 证据等级",
+   "[8] 写作用域合规",
+   "[9] 交付物"
+  ]
+ },
+ {
+  "rel": "docs/re/claims_factory_spec.md",
+  "bytes": 12513,
+  "lines": 257,
+  "hex_total": 24,
+  "hex_distinct": 15,
+  "h1": [
+   "Claims Factory Spec — R-CLAIMS-FAC",
+   "raw",
+   "bss 区域"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 背景与 T4 结论（输入约束）",
+   "1. 入口窗宽归一规则（Window Normalization）",
+   "2. BSS / 引用点断言 Schema",
+   "3. 扫描过滤器规格（Scan Filters）",
+   "4. 工厂 Runbook —— 下一波 400 条悬空 VA 批量补证",
+   "5. 禁区与口径"
+  ]
+ },
+ {
+  "rel": "docs/re/errata_w1w2_annotate_pack.md",
+  "bytes": 19192,
+  "lines": 351,
+  "hex_total": 48,
+  "hex_distinct": 15,
+  "h1": [
+   "Lead 批注包 · R-ERR-PACK · W1/W2 就地加注模板",
+   "E01 原文锚点（旧 VA 必须仍可 grep 到）",
+   "E03 原文锚点（旧 5B 必须仍可 grep 到）"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "一、W1 · 机器码类（地址 / 字节序 / 指令长度 / 取模编码）",
+   "二、W2 · 语义不变量 / 红线",
+   "三、执行顺序与范围清单",
+   "四、验收（加注后不得删原文 + diff 自检）",
+   "五、产物索引"
+  ]
+ },
+ {
+  "rel": "docs/re/p223_readiness_check.md",
+  "bytes": 23195,
+  "lines": 279,
+  "hex_total": 47,
+  "hex_distinct": 15,
+  "h1": [
+   "R-P223-READY · P-2.2/P-2.3 实施前就绪检查"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 一句话结论",
+   "1. P-2.2/P-2.3 接入点（对照 ra2render 现码）",
+   "2. 卡片 ↔ 代码行号对齐表（含勘误同步建议）",
+   "3. 就绪门（四门）",
+   "4. ZCode「P223 执行前检查单」",
+   "5. 风险与阻塞（执行方必读）",
+   "6. 就绪结论",
+   "追加节 · 就绪门状态复核（2026-10-01 · 工单 `T-W1-Q / PK-1`）"
+  ]
+ },
+ {
+  "rel": "docs/re/mp_release_safety_checklist.md",
+  "bytes": 18320,
+  "lines": 150,
+  "hex_total": 23,
+  "hex_distinct": 14,
+  "h1": [
+   "联机 (MP) 锁步发布安全核验总清单 (Release Safety Checklist)"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "一、Lead 政策四项硬性裁定落地口径 (Lead Authoritative Rulings)",
+   "二、联机环境判定与白名单自动降级架构 (MP Auto-Downgrade Framework)",
+   "三、发布前必须收口清单（G-01 … G-10 逐条核验表）",
+   "四、联机发布发布门禁决策树 (Release Go/No-Go Decision Tree)",
+   "五、最终交付建议与 ZCode 落地指南",
+   "六、勘误 · MPS 落地后的闭环状态同步（DA1 · DSH 子代理 · 2026-09-27）"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_gap_p21.md",
+  "bytes": 7984,
+  "lines": 157,
+  "hex_total": 34,
+  "hex_distinct": 13,
+  "h1": [
+   "ZCode 落地卡 · P-2.1 裂缝保护（RevealArea2 清 `GapsCoveringThisCell`）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 一句话",
+   "1. 执行表（字节级，等长替换）",
+   "2. 安装前置（全部 PASS 才允许写）",
+   "3. 开关 · 遥测 · 回滚",
+   "4. 真机验收用例（Z- 系列，最小 4 条）",
+   "5. 风险（执行方必读）",
+   "6. 交付回执（填完交回）",
+   "7. 不在本卡"
+  ]
+ },
+ {
+  "rel": "docs/re/errata_patch_blocks_E1E2.md",
+  "bytes": 19652,
+  "lines": 317,
+  "hex_total": 13,
+  "hex_distinct": 12,
+  "h1": [
+   "勘误补丁块总表 E-1～E-9 + T1 标签插入包",
+   "Errata Patch Blocks · Landing Pack Preflight Audit",
+   "锚点自查（确认行号未漂移）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "〇、总览（先看这里）",
+   "一、统一勘误清单",
+   "二、按文件分组的补丁块",
+   "三、影响面统计",
+   "四、与 landing_pack_preflight_audit E-1～E-6 的差异",
+   "五、§九 草稿（给执行台账追加用；本文不改原总表）",
+   "六、复现 / 自查",
+   "七、签署栏"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_inventory_v2.md",
+  "bytes": 7070,
+  "lines": 112,
+  "hex_total": 12,
+  "hex_distinct": 12,
+  "h1": [
+   "Landing Pack 落地卡盘点目录 v2 · R-INV-REFRESH"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. v2 相对 v1 变更",
+   "1. 状态总览（双轨分列）",
+   "2. 批次/波次一览（状态带轨名）",
+   "3. 新卡详注（v2 新增）",
+   "4. 历史/审计包（防重复装）",
+   "5. 硬依赖与红线"
+  ]
+ },
+ {
+  "rel": "docs/re/h1_fanout_mechanism.md",
+  "bytes": 20724,
+  "lines": 294,
+  "hex_total": 24,
+  "hex_distinct": 11,
+  "h1": [
+   "H1 分档负载失效：fanout 触发机制拆解"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 结论摘要",
+   "1. 图内负载结构（三档 INI 统计）",
+   "2. fanout 模型：谁生成单位",
+   "3. 引擎侧交叉（只读）",
+   "4. 修复方向",
+   "5. 可复算脚本与产物",
+   "6. 对既有结论的处置",
+   "7. §九草稿（供下游台账/收口直接粘贴）",
+   "8. 红线与合规",
+   "9. 一句话给下游"
+  ]
+ },
+ {
+  "rel": "docs/re/ra2forge_fix_forge1.md",
+  "bytes": 26685,
+  "lines": 305,
+  "hex_total": 31,
+  "hex_distinct": 11,
+  "h1": [
+   "ra2forge FORGE-1 修复报告：NextScenario 断链（P0）+ 打包方案 B + 文档/注释同步"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 结论摘要",
+   "1. 改动清单",
+   "2. 任务卡背景四条复核（逐条）",
+   "3. 落地实现（方案 B 规格 -> 代码）",
+   "4. 验证证据（F4 四项 + 门禁）",
+   "5. 已安装用户迁移步骤（F5，**纸面步骤，本次未执行**）",
+   "6. 未闭环清单",
+   "7. 风险与红线",
+   "8. 勘误 / 越界登记（**未获授权改写**，仅登记，交 Lead 处理）",
+   "9. 交付物清单",
+   "10. 待裁决项"
+  ]
+ },
+ {
+  "rel": "docs/re/rtrack_bridge_h1rm.md",
+  "bytes": 14137,
+  "lines": 153,
+  "hex_total": 25,
+  "hex_distinct": 10,
+  "h1": [
+   "rtrack_bridge_h1rm —— R 轨 SBH/ABI 结论 × ZC-H1RM 真机复测对接（T23）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "[0] 一句话",
+   "[1] SBH 结论 vs ZC-H1RM 新崩溃码 · 一致性表",
+   "[2] Verses / Deform 与既有 E-2 / E-8",
+   "[3] LightConvert 待办挂接点（R-01 × H1RM）",
+   "[4] H1RM 对 except 门禁 / A/B 协议的强制增量",
+   "[5] 与 H1RM 槽位置换协议的兼容说明",
+   "[6] 跨轨提示（写在本轨，不代改对方文件）",
+   "[7] 产物索引",
+   "[8] 一句话（收口）"
+  ]
+ },
+ {
+  "rel": "docs/re/fog_model_hypothesis.md",
+  "bytes": 15291,
+  "lines": 352,
+  "hex_total": 13,
+  "hex_distinct": 9,
+  "h1": [
+   "FOG.SHP 帧表解析 + 「向灰混合 vs 纯压暗」候选模型与判别设计",
+   "采集后，将 4 档 ROI 均值填入 measurements.json，然后："
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 结论表（一页速览）",
+   "1. 背景",
+   "2. E1 · FOG.SHP 帧表正确解析",
+   "3. E2 · 候选模型拟合（离线，不下结论）",
+   "4. E3 · 判别实验设计（交 ZC-11）",
+   "5. FOG-FIRSTSTAGE-R3 量化断言判定",
+   "6. 红线声明",
+   "7. 未闭环清单",
+   "8. 参考",
+   "9. 待裁决",
+   "10. 附录：数据字节级断言（claims 候选）"
+  ]
+ },
+ {
+  "rel": "docs/re/l4_dirty_residual_check.md",
+  "bytes": 6802,
+  "lines": 85,
+  "hex_total": 10,
+  "hex_distinct": 9,
+  "h1": [
+   "L4DirtyMode 残留复核（R-L4-RESID）"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "[1] 现状复核（三问）",
+   "[2] vision-dirty 最小侵入残留清单（还缺什么才能开）",
+   "[3] vanilla 档与 v1.5.0 即时性相容性 / 漏画风险（对照 E1–E5）",
+   "[4] 给 ZCode 的补丁清单（非本任务实施）",
+   "[5] 写作域合规"
+  ]
+ },
+ {
+  "rel": "docs/re/status_weekly_zcode_pack.md",
+  "bytes": 7365,
+  "lines": 93,
+  "hex_total": 9,
+  "hex_distinct": 9,
+  "h1": [
+   "状态周报 · ZCode Pack（R-WEEKLY）"
+  ],
+  "h2_count": 4,
+  "h2": [
+   "一、本周进度",
+   "二、就绪卡列表（二进制轨「就绪」，可进下一波）",
+   "三、阻塞",
+   "四、下一步"
+  ]
+ },
+ {
+  "rel": "docs/re/EVIDENCE_STANDARD.md",
+  "bytes": 13654,
+  "lines": 149,
+  "hex_total": 9,
+  "hex_distinct": 8,
+  "h1": [
+   "《红色警戒2：尤里的复仇》逆向工程实测证据标准规范 (v3 崩溃与生效性断言版)",
+   "基本用法：校验指定证据目录（自动关联 ra2youli/ra2render.log 与 except.txt）",
+   "完整检验：关联存档目录，输出 JSON 与 Markdown，并强制检测崩溃"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "一、标准演进与背景",
+   "二、实测证据判据总表（v3 实测校准）",
+   "三、可执行校验器（tools/verify_evidence.py）",
+   "四、三批历史证据自动化回跑自证报告",
+   "五、已知局限与人工独立抽验规范",
+   "附 · 口径订正（Lead，2026-09-28；阈值不可达）",
+   "追加 · QC1 W2_20261001 三条机检硬规则（2026-10-01）"
+  ]
+ },
+ {
+  "rel": "docs/re/crt_pool_risk_review.md",
+  "bytes": 15132,
+  "lines": 259,
+  "hex_total": 21,
+  "hex_distinct": 8,
+  "h1": [
+   "CRT 内存池落地前独立风险评审与最小验证方案 (Risk Review & Verification Plan)"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "一、评审结论与裁定 (Executive Verdict)",
+   "二、八大维度深度威胁清单与防护规范 (Threat Matrix)",
+   "三、生产级强化 C++ 实施规格 (Hardened Implementation Spec)",
+   "四、最小验证方案 (Minimum Verification Plan)",
+   "五、必须补齐的交付条目清单（给 ZCode / MiMo）"
+  ]
+ },
+ {
+  "rel": "docs/re/except_ab_protocol.md",
+  "bytes": 17207,
+  "lines": 291,
+  "hex_total": 23,
+  "hex_distinct": 8,
+  "h1": [
+   "except A/B 真机对照协议（ZC-EXCEPT-AB）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 目的与假设",
+   "1. 对照设计",
+   "2. 进图指纹（每局必采，缺一即该局作废）",
+   "3. 样本量与停止规则",
+   "4. 判据表（交付必填）",
+   "5. 高负载加测层（双零时的升级路径，非主协议）",
+   "6. 崩溃留证（强制，禁止伪造）",
+   "7. 写作用域与禁止",
+   "8. 交付与回报",
+   "9. 可粘贴协议卡（交 ZCode 粘贴执行）",
+   "10. 与既有结论的关系"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_sw_radius_ra.md",
+  "bytes": 14668,
+  "lines": 247,
+  "hex_total": 20,
+  "hex_distinct": 8,
+  "h1": [
+   "ZCode 落地卡 · RadarSweepRadiusCells 语义复活（R-a 改 Rules+0xFEC）"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 一句话",
+   "1. 背景定谳（只读引用，本卡不重扫）",
+   "2. 主项 R-a · 数据改源（本卡唯一必做）",
+   "3. 与 R-c / R-a+ 的边界切割",
+   "4. 开关 · 验收 · 回滚 · 确定性",
+   "5. R-b 死键文档化（本卡同批必做）",
+   "6. 禁区（红线）",
+   "7. 交付回执（填完交回）",
+   "8. 不在本卡",
+   "9. 复现 / 证据索引",
+   "附录 A · R-a+ 解夹紧 —— **仅警告，本卡不安装**"
+  ]
+ },
+ {
+  "rel": "docs/re/landing_pack_sw_radius_rc.md",
+  "bytes": 12516,
+  "lines": 221,
+  "hex_total": 12,
+  "hex_distinct": 8,
+  "h1": [
+   "ZCode 落地卡 · RadarSweepRadiusCells 语义复活（R-c 私有半径）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 一句话",
+   "1. 背景定谳（只读引用，本卡不重扫）",
+   "2. 主项 R-c · 私有半径（本卡唯一必做）",
+   "3. 与 RevealArea2 `min(10)` 的关系（边界卡）",
+   "4. 开关 · 验收 · 回滚 · 确定性",
+   "5. R-b 死键文档化（本卡同批必做）",
+   "6. 禁区（红线）",
+   "7. 交付回执（填完交回）",
+   "8. 不在本卡",
+   "9. 复现 / 证据索引"
+  ]
+ },
+ {
+  "rel": "docs/re/mix_hygiene_h5h8_spec.md",
+  "bytes": 22790,
+  "lines": 436,
+  "hex_total": 7,
+  "hex_distinct": 7,
+  "h1": [
+   "MIX 卫生 · H5/H6/H8 安装器补丁规格（R-MIX-H568）",
+   "伪代码；实现落在 preinstall_hygiene(game, package_files)",
+   "EXPANDMD98.MIX / ExpandMd98.mix: Windows 可用，跨平台 WARN"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "[0] 一页结论",
+   "[1] 现网缺口定位（只读交叉）",
+   "[2] H5：expandmd00–97 同 CRC 扫描",
+   "[3] H6：非补零 / 幽灵 `expandmd*.mix`",
+   "[4] H8：残留清扫（含 `expandmd98.mix.old-pre-migrate`）",
+   "[5] 与 `ra2forge_install.json` / 卸载路径集成",
+   "[6] 验收用例（20 条）",
+   "[7] 实现切片（建议 PR 顺序）",
+   "[8] 未闭环",
+   "[9] 交叉引用"
+  ]
+ },
+ {
+  "rel": "docs/re/ra2forge_packaging_audit.md",
+  "bytes": 16563,
+  "lines": 302,
+  "hex_total": 18,
+  "hex_distinct": 7,
+  "h1": [
+   "ra2forge 交付物/安装路径审计 + 散装 BATTLEMD98.INI 改造规格"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 结论摘要",
+   "1. Q1 现状证据复核",
+   "2. Q2 副作用清单（安装 / 卸载）",
+   "3. Q3 改造规格（只写规格，不写代码）",
+   "4. Q4 产物完整性复核（`examples/demo_campaign.json` vs `out/钢铁残响/`）",
+   "5. Q5 结论与裁决项",
+   "6. 未闭环清单",
+   "7. 风险与红线",
+   "8. 证据产物"
+  ]
+ },
+ {
+  "rel": "docs/re/verify_annotate_portable.md",
+  "bytes": 7388,
+  "lines": 130,
+  "hex_total": 8,
+  "hex_distinct": 7,
+  "h1": [
+   "verify_annotate 跨环境补跑方案（PowerShell 5.1 / Python 复刻）",
+   "Step 0 先建 baseline（加注前快照；若已有 baseline 可跳过）",
+   "见 verify_annotate.ps1 注释 / errata_w1w2_annotate_pack.md §4.2 Step 0"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "1. 产物与分工",
+   "2. 检查语义（两轨共用，Step 0–7）",
+   "3. 轨道 A · PowerShell 5.1（原版）",
+   "4. 轨道 B · Python 复刻（推荐，跨平台）",
+   "5. 补跑操作顺序（建议）",
+   "6. 无 shell 权限环境的降级（检索复刻）",
+   "7. 预期结果与已知残留"
+  ]
+ },
+ {
+  "rel": "docs/re/b_class_merge_zc_cards.md",
+  "bytes": 22460,
+  "lines": 327,
+  "hex_total": 8,
+  "hex_distinct": 6,
+  "h1": [
+   "R-B-MERGE · MERGE 50 条挂总实施票批次 · ZCode 可执行子卡"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 总裁定",
+   "1. 批次归属总表（50 条全量）",
+   "2. 子卡全文（14 张）",
+   "3. 执行顺序与并行建议",
+   "4. 窗口预算",
+   "5. 红线与合规",
+   "6. 交付物"
+  ]
+ },
+ {
+  "rel": "docs/re/b_regression_required.md",
+  "bytes": 9786,
+  "lines": 105,
+  "hex_total": 6,
+  "hex_distinct": 6,
+  "h1": [
+   "落地后必须真机回归清单 · R-B-REGRESSION"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 选入原则",
+   "1. 必含四组（点名项）",
+   "2. errata 加注后 · 落地字节/语义必回归",
+   "3. B 类索引 · Top10 真机必回归（解冻后）",
+   "4. 窗口汇总与执行序",
+   "5. 交付物"
+  ]
+ },
+ {
+  "rel": "docs/re/ZCODE_LIVE_ACCEPTANCE_TASK.md",
+  "bytes": 8645,
+  "lines": 108,
+  "hex_total": 5,
+  "hex_distinct": 5,
+  "h1": [
+   "ZCode 真机（游戏内）验收任务卡 · ZC-1",
+   "Live Acceptance Task Card for ZCode"
+  ],
+  "h2_count": 2,
+  "h2": [
+   "Lead 侧备注",
+   "附：Q1 harness 已就位（2026-09-27 更新，执行前必读）"
+  ]
+ },
+ {
+  "rel": "docs/re/b5_mp_card_details.md",
+  "bytes": 18553,
+  "lines": 276,
+  "hex_total": 7,
+  "hex_distinct": 5,
+  "h1": [
+   "R-B5-DETAIL · B5 联机对拍真机卡细化（ZB5-M01..04）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 总裁定",
+   "1. DUAL-LAN 硬前置（全部联机场次的门）",
+   "2. 混联边界：仅 N11（唯一授权探针）",
+   "3. 对拍判据（逐步可判定 · 原样引自索引）",
+   "4. 禁止伪造成实测（证据纪律 · 只强不松）",
+   "5. 与 G-R1 握手待裁边界",
+   "6. 执行顺序与 DUAL-LAN 排期",
+   "7. 交付物",
+   "8. 状态声明"
+  ]
+ },
+ {
+  "rel": "docs/re/claims_factory_spec_v2.md",
+  "bytes": 7407,
+  "lines": 162,
+  "hex_total": 7,
+  "hex_distinct": 5,
+  "h1": [
+   "Claims Factory Spec v2 — R-FAC-FIX"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "1. 修补对照（T33 §5 → v2 规则）",
+   "2. 与 v1 的字段/文本差异",
+   "3. 自检口径（T33 80 条回归）",
+   "4. 出口判据（继承 T17 §4.2，补充 P0/P1 断言）",
+   "5. 禁区与口径"
+  ]
+ },
+ {
+  "rel": "docs/re/dual_track_status_note.md",
+  "bytes": 19754,
+  "lines": 242,
+  "hex_total": 7,
+  "hex_distinct": 5,
+  "h1": [
+   "双轨状态说明 · R-DUALTRACK",
+   "二进制轨收据是否存在",
+   "代码轨是否命中三点 VA（0 命中 = 未落地）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 为什么要有本说明",
+   "1. 两轨定义",
+   "2. 各卡归属",
+   "3. 核验方法",
+   "4. 禁混称模板",
+   "5. 本说明的合规边界",
+   "6. 状态注记（追加节 · 2026-10-01 · 工单 `T-W1-Q / PK-1`）"
+  ]
+ },
+ {
+  "rel": "docs/re/v160_acceptance.md",
+  "bytes": 10054,
+  "lines": 111,
+  "hex_total": 16,
+  "hex_distinct": 5,
+  "h1": [
+   "《红色警戒2：尤里的复仇》（gamemd.exe 1.001）v1.6.0 独立真机验收与综合判定报告 [待判定 / UNVERIFIED]"
+  ],
+  "h2_count": 4,
+  "h2": [
+   "一、Lead 评审核验结论与驳回原因归档",
+   "二、当前状态与工作分工矩阵",
+   "三、独立验收核验准则（依据《实测证据标准》）",
+   "四、综合判定与闸门建议"
+  ]
+ },
+ {
+  "rel": "docs/re/LESSONS_ROUND2_APPENDIX.md",
+  "bytes": 7170,
+  "lines": 83,
+  "hex_total": 4,
+  "hex_distinct": 4,
+  "h1": [
+   "LESSONS_ROUND2_APPENDIX · 2026-10-04 第二批经验沉淀一页式索引"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "归属文档与新增条目一览",
+   "A 项 · 仪器陷阱索引（RE_INSTRUMENTS §六）",
+   "A 项补充 · 一行式登记（RE_INSTRUMENTS §6.1）",
+   "B 项 · 协作纪律索引（AGENTS_AND_HARNESS §6）",
+   "C 项 · 工作链纪律索引（WORK_CHAIN §5.6）",
+   "重复核对声明",
+   "本轮运行命令申报"
+  ]
+ },
+ {
+  "rel": "docs/re/va_claims_batch_run1.md",
+  "bytes": 6746,
+  "lines": 150,
+  "hex_total": 5,
+  "hex_distinct": 4,
+  "h1": [
+   "R-VA-BATCH run1 — 剩余悬空 VA 批量补证试跑"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "1. 范围与选样",
+   "2. 产出格式",
+   "3. 自检结果（全绿）",
+   "4. 统计",
+   "5. 工厂规则修补建议（只记本文档，未改 T17 产物）",
+   "6. 出口判据对照（§4.2）",
+   "7. 产物索引"
+  ]
+ },
+ {
+  "rel": "docs/re/AGENT_TASK_TEMPLATE.md",
+  "bytes": 4852,
+  "lines": 73,
+  "hex_total": 6,
+  "hex_distinct": 3,
+  "h1": [
+   "派工任务卡固定前缀模板（Lead 专用 · 强制附带）",
+   "Mandatory Dispatch Prefix for All Delegated Agents"
+  ],
+  "h2_count": 1,
+  "h2": [
+   "使用注意"
+  ]
+ },
+ {
+  "rel": "docs/re/b_class_live_test_index.md",
+  "bytes": 17393,
+  "lines": 243,
+  "hex_total": 4,
+  "hex_distinct": 3,
+  "h1": [
+   "B 类 92 条真机待测 · 可执行索引（R-B-INDEX）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 怎么用本索引",
+   "1. ID 对照（sweep 样本 ↔ §6 全量）",
+   "2. 三桶总览",
+   "3. 优先级 Top10（发布/闸门）",
+   "4. 可执行索引（92 条）",
+   "5. 依赖与既有卡挂载点",
+   "6. 窗口预算与执行顺序建议",
+   "7. 交付物与合规"
+  ]
+ },
+ {
+  "rel": "docs/re/config_key_matrix.md",
+  "bytes": 52917,
+  "lines": 234,
+  "hex_total": 3,
+  "hex_distinct": 3,
+  "h1": [
+   "配置键名 / 默认值 单一口径对照表（PK-3 · T-W1-Q）",
+   "Config Key Matrix — the single authoritative cross-reference"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "0. 为什么需要这张表",
+   "1. 口径裁决原则（本表用什么判「谁对」）",
+   "2. 代码侧读取器与 MP 判定锚点（实测）",
+   "3. 表 A —— 六包 14 个主键（五列口径，逐格带 `路径:行号`）",
+   "4. 表 B —— 7 个 MP / 裁决键",
+   "5. 表 C —— 口径分歧登记表（改前 / 改后 + 分级）",
+   "6. 表 D —— 仅存在于代码/ini 的键（补全矩阵，非规格驱动）",
+   "7. 「悬空键」判定",
+   "8. 给执行方（ZCode/MiMo）的三条硬结论",
+   "9. 复算方式（本文可机械重放）"
+  ]
+ },
+ {
+  "rel": "docs/re/v160_acceptance_runbook.md",
+  "bytes": 9394,
+  "lines": 117,
+  "hex_total": 3,
+  "hex_distinct": 3,
+  "h1": [
+   "v1.6.0 真机验收操作手册与判定规程 (Acceptance Runbook)"
+  ],
+  "h2_count": 4,
+  "h2": [
+   "一、一键化自动化校验调用规程",
+   "二、实测证据判定准则总表 (Decision Table)",
+   "三、五大常见失败模式与排查决策树 (Failure Mode Triage)",
+   "四、放闸准入硬性条件清单 (Gate Release Checklist)"
+  ]
+ },
+ {
+  "rel": "docs/re/LESSONS_20261003_AGENTS_AND_HARNESS.md",
+  "bytes": 132080,
+  "lines": 679,
+  "hex_total": 3,
+  "hex_distinct": 2,
+  "h1": [
+   "内置子代理与外部 Harness 调用问题总账（2026-10-03 实测）",
+   "用法： pwsh -File tools/harness_launch_cdp.ps1 -App \"Qoder CN\" -Exe \"D:\\Qoder CN\\Qoder CN.exe\" -Port 9344"
+  ],
+  "h2_count": 13,
+  "h2": [
+   "0. 一句话结论",
+   "1. 内置（DSH 内部）子代理调用问题",
+   "2. 外部 Harness 调用问题",
+   "3. 今天跑通的**跨通道纪律**（建议固化为默认做法）",
+   "4. 可复制的配方",
+   "5. 未闭合项",
+   "6. 第二批协作纪律（2026-10-04 ROUND2 追加，来源=9 份执行/审计卡自纠章节）",
+   "7. 第三批协作纪律（2026-10-04 ROUND3 追加，来源=DLC HIGH-2 复核 / legacy 审计 / RC4-BATCH2 复核 / 传播卡 + Lead 台账）",
+   "8. 第四批协作与治理纪律（2026-10-05 ROUND4 追加，来源=写域越界事件 A-86/A-93 / 三通道复核 A-87–A-92 / Lead 台账处置 A-84）",
+   "9. 第五批协作与治理纪律（2026-10-06/07 ROUND5 追加，来源=A-128/A-139/A-145/A-147/A-149/A-151/A-153/A-154/A-155 逐份实读 + 本卡复跑）",
+   "10. 第六批协作与治理纪律（2026-10-07 ROUND6 追加，来源=A-166 / A-173 / A-174 / A-175 / A-177 / A-178 / A-182 / A-183 / A-184 / A-185 逐段实",
+   "11. 第七批协作与治理纪律（2026-10-07 ROUND7 追加，来源= A-191.2 / A-192 / A-193 / A-194 / A-195 + `needle_disambig/NEEDLE_DISAMBIG.md` §",
+   "12. 第八批协作与治理纪律（2026-10-07 ROUND8 追加 · 含续跑；来源 = `ACC A-199.1 / A-199.3 / A-199.6 / A-200 / A-201 / A-203.1 / A-204 / A-20"
+  ]
+ },
+ {
+  "rel": "docs/re/a3_campaign_install_runbook.md",
+  "bytes": 12086,
+  "lines": 200,
+  "hex_total": 2,
+  "hex_distinct": 2,
+  "h1": [
+   "A3 战役验收图安装 Runbook · 装入 `ra2youli`（R-A3-INSTALL）",
+   "装（包目录需含 BATTLEMD98.INI；*.MAP 散装；expandmd98.mix 仅资源）",
+   "卸（按 ra2forge_install.json 还原备份；sha 不匹配的文件默认保留）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "0. 一句话",
+   "1. 前置与产物清单",
+   "2. 装到 ra2youli（BATTLEMD C2-b 优先）",
+   "3. 备份 / 还原",
+   "4. Harness 启动（`gap_p21_a3_campaign.py`）",
+   "5. 验收勾选",
+   "6. 风险与红线"
+  ]
+ },
+ {
+  "rel": "docs/re/bench_map_rework.md",
+  "bytes": 9403,
+  "lines": 179,
+  "hex_total": 3,
+  "hex_distinct": 2,
+  "h1": [
+   "基准图重制：让 U200/U800 在遭遇战下真正承载负载"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 结论摘要",
+   "1. 现状（旧图字段级证据）",
+   "2. 根因（为什么是 21/22）",
+   "3. 三方案对比",
+   "4. 新图产物",
+   "5. 真机验证步骤（交 ZCode，本卡不跑）",
+   "6. 对历史 ROI 估计的处置",
+   "7. 风险与红线",
+   "8. 未闭环清单",
+   "9. 交付物",
+   "10. 一句话给下游"
+  ]
+ },
+ {
+  "rel": "docs/re/errata_result_zc11.md",
+  "bytes": 14029,
+  "lines": 169,
+  "hex_total": 4,
+  "hex_distinct": 2,
+  "h1": [
+   "RESULT_ZC11 [7] 勘误补丁块 —— 「零崩溃」宣称订正"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "〇、总览（先看这里）",
+   "一、统一勘误清单",
+   "二、三处改写建议（forensics §7.2 对照）+ 时间线说明",
+   "三、可选全文横幅",
+   "四、影响面",
+   "五、证据锚点",
+   "六、粘贴流程（Lead 解冻后）",
+   "§九 草稿 —— 供 RESULT_ZC11 §[9] / 台账引用",
+   "附录 A —— 与 forensics §7.2 表的对照"
+  ]
+ },
+ {
+  "rel": "docs/re/h1_remeasure_protocol.md",
+  "bytes": 18031,
+  "lines": 312,
+  "hex_total": 2,
+  "hex_distinct": 2,
+  "h1": [
+   "H1 指纹复测协议 · evidence schema 与离线判分（H1RM）",
+   "判分（JSON 或 CSV）",
+   "离线单测（写假数据并跑通 schema）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 一句话",
+   "1. 期望指纹与标度目标 `[实证]`（`tools/h1_map_fingerprint.py verify`）",
+   "2. 判分总览",
+   "3. evidence schema（`h1_remeasure_evidence_v1`）",
+   "4. 判分算法（与 `tools/h1_remeasure_score.py` 一致）",
+   "5. CLI",
+   "6. 假数据单测约定",
+   "7. 协议卡全文（粘贴给 ZCode；与 `out/re_work/dispatch_v30/prompt_zcode_h1_remeasure.txt` 同文）"
+  ]
+ },
+ {
+  "rel": "docs/re/TRACK_BOUNDARY_MIMO_RE.md",
+  "bytes": 3904,
+  "lines": 56,
+  "hex_total": 2,
+  "hex_distinct": 1,
+  "h1": [
+   "轨道边界：MiMo 本侧 vs 逆向代理（2026-09-30）"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "1. 轨道划分",
+   "2. 共享只读（双方可读、都不可写）",
+   "3. 交叉接口（唯一允许的协作面）",
+   "4. 冲突升级",
+   "5. 本侧（MiMo）当前认领（2026-09-30 波次）"
+  ]
+ },
+ {
+  "rel": "docs/re/b_class_solo_zc_cards.md",
+  "bytes": 20192,
+  "lines": 308,
+  "hex_total": 5,
+  "hex_distinct": 1,
+  "h1": [
+   "R-B-SOLO · SOLO 18 条 ZCode/双机可执行子卡"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 总裁定",
+   "1. 归属总表（18 条全量）",
+   "2. 子卡全文（10 张）",
+   "3. 与 B5 联机卡边界（强制对齐）",
+   "4. 硬件前提总表",
+   "5. 执行顺序与并行建议",
+   "6. 窗口预算",
+   "7. 交付物与合规"
+  ]
+ },
+ {
+  "rel": "docs/re/g_r1_handshake_decision_memo.md",
+  "bytes": 10488,
+  "lines": 142,
+  "hex_total": 1,
+  "hex_distinct": 1,
+  "h1": [
+   "G-R1 决策备忘：MP 握手字段口径（甲 vs 乙）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 红线重申（先于一切分析）",
+   "1. 决策问题",
+   "2. 甲（不加键）",
+   "3. 乙（G4.1 硬握手）",
+   "4. 折中方案",
+   "5. 推荐",
+   "6. 裁决后动作清单（预告，本备忘不执行）",
+   "7. 再次重申（收口）"
+  ]
+ },
+ {
+  "rel": "docs/re/zc11_closeout_report.md",
+  "bytes": 6032,
+  "lines": 101,
+  "hex_total": 1,
+  "hex_distinct": 1,
+  "h1": [
+   "ZC-11 收尾门禁与交付收口报告（CLOSEOUT）"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 收尾门禁（实跑原文摘要）",
+   "[2] 残留清理台账",
+   "[3] ZC-11 各段结论（引用 RESULT，收尾核对）",
+   "[4] 跨会话记忆要点（已写入 MEMORY / session notes）",
+   "[5] 待裁决 / 下一步",
+   "[6] 产物索引"
+  ]
+ },
+ {
+  "rel": "docs/re/zcode_receipt_template_v2.md",
+  "bytes": 12134,
+  "lines": 205,
+  "hex_total": 2,
+  "hex_distinct": 1,
+  "h1": [
+   "ZCode 统一回执模板 v2（R-RECEIPT-V2）",
+   "RESULT_<卡号> —— <一句话标题>"
+  ],
+  "h2_count": 20,
+  "h2": [
+   "0. 一句话",
+   "1. 七轨字段（强制列，缺节即不合格）",
+   "2. 回执骨架（填写顺序固定；§A 十节 + RESULT 紧凑块 + 七轨表）",
+   "双轨状态【T1 轨名】",
+   "[0] 结论摘要（≤7 行，可独立读懂）",
+   "[1] 逐条必答项结论表【T4 验收】",
+   "[2] 关键证据块【T2 字节】",
+   "[3] 勘误（无则显式「无勘误」）",
+   "[4] 未闭环 / 未测【T6】",
+   "[5] 写作用域合规 + 还原对照【T5 + T7】",
+   "[6] 门禁实跑输出（原文粘贴，不许概述）【T3 门】",
+   "[7] 风险与红线提示",
+   "[8] 交付物清单",
+   "[9] 待裁决项",
+   "3. RESULT 紧凑块字段并集（来自 15 份 RESULT_*.md 实况）",
+   "4. 七轨填写示例（对照用，非实测）",
+   "双轨状态【T1】",
+   "5. 硬性纪律（违反即回退重做）",
+   "6. 与既有模板对照",
+   "7. 本任务合规边界"
+  ]
+ },
+ {
+  "rel": "docs/re/AGENT_DELIVERY_FORMAT.md",
+  "bytes": 4594,
+  "lines": 85,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "子代理交付回报格式规范（强制）",
+   "Mandatory Delivery Report Format for All Delegated Agents"
+  ],
+  "h2_count": 4,
+  "h2": [
+   "A. 回执骨架（执行方必须按此顺序输出，缺节即视为交付不合格）",
+   "B. 硬性纪律（违反即回退重做）",
+   "C. 执行方特化附加要求",
+   "D. Lead 侧对应动作（收到回报后）"
+  ]
+ },
+ {
+  "rel": "docs/re/HARNESS_PLUGIN_IMPROVEMENTS.md",
+  "bytes": 13084,
+  "lines": 226,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "harness-pilot 插件改良提案（基于 2026-10-03 实测）"
+  ],
+  "h2_count": 10,
+  "h2": [
+   "P1【阻断级】`harness_open(launch=true)` 无法拉起单实例 Electron 应用",
+   "P2【高】`harness_dispatch` 的传输阶梯**不含窗口通道**，且报错信息量不足",
+   "P3【高】`harness_send` 在 `click` 失败后**仍然插入并提交文本**",
+   "P4【中】同名任务在 sidebar 无法区分，长标题 `click` 不命中",
+   "P5【中】任务回执不含**实际模型身份**",
+   "P6【中】额度/登录类错误缺少**通道级**降级建议",
+   "P7【中】内部子代理（`subagent`）**无状态查询**",
+   "P8【低】`harness_list` 的 probe 输出过长，关键结论被淹没",
+   "P9【高】插件**读不到也设不了** GUI 会话的权限模式",
+   "附：本次已落地的替代物"
+  ]
+ },
+ {
+  "rel": "docs/re/LESSONS_ROUND3_APPENDIX.md",
+  "bytes": 11759,
+  "lines": 85,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "LESSONS_ROUND3_APPENDIX · 2026-10-04 第三批经验沉淀一页式索引"
+  ],
+  "h2_count": 7,
+  "h2": [
+   "归属文档与新增条目一览",
+   "A 项 · 仪器/验证陷阱索引（RE_INSTRUMENTS §七）",
+   "B 项 · 协作纪律索引（AGENTS_AND_HARNESS §7）",
+   "C 项 · 工作链纪律索引（WORK_CHAIN §5.7）",
+   "重复核对声明（与 ROUND2 及本文档既有条目）",
+   "本轮运行命令申报",
+   "交付"
+  ]
+ },
+ {
+  "rel": "docs/re/LESSONS_ROUND5_APPENDIX.md",
+  "bytes": 10531,
+  "lines": 62,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "LESSONS_ROUND5_APPENDIX · 2026-10-06/07 第五批经验沉淀一页式索引"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "归属文档与新增条目一览",
+   "三类计数（卡面 8 条 → 覆盖判定）",
+   "A 项 · 仪器/验证陷阱索引（RE_INSTRUMENTS §九）",
+   "B 项 · 协作与治理纪律索引（AGENTS_AND_HARNESS §9）",
+   "C 项 · 本卡复跑与限度（不得当作闭合面全集，详见仪器篇 §9.4–§9.6）"
+  ]
+ },
+ {
+  "rel": "docs/re/LESSONS_ROUND6_APPENDIX.md",
+  "bytes": 12501,
+  "lines": 67,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "LESSONS_ROUND6_APPENDIX · 2026-10-07 第六批经验沉淀一页式索引"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "归属文档与新增条目一览",
+   "三类计数（卡面 6 组 → 拆成 19 条原子主张 → 覆盖判定）",
+   "A 项 · 仪器/验证陷阱索引（RE_INSTRUMENTS §十）",
+   "B 项 · 协作与治理纪律索引（AGENTS_AND_HARNESS §10）",
+   "C 项 · 本卡复跑与限度（不得当作闭合面全集，详见仪器篇 §10.3–§10.6）"
+  ]
+ },
+ {
+  "rel": "docs/re/LESSONS_ROUND7_APPENDIX.md",
+  "bytes": 12848,
+  "lines": 60,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "LESSONS_ROUND7_APPENDIX · 2026-10-07 第七批经验沉淀一页式索引"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "归属文档与新增条目一览",
+   "三类计数（卡面 3 组 → 拆成 10 条原子主张 → 覆盖判定）",
+   "A 项 · 仪器/验证陷阱索引（RE_INSTRUMENTS §十一）",
+   "B 项 · 协作与治理纪律索引（AGENTS_AND_HARNESS §11）",
+   "C 项 · 本卡复跑与限度（不得当作闭合面全集，详见仪器篇 §11.3–§11.6）"
+  ]
+ },
+ {
+  "rel": "docs/re/LESSONS_ROUND8_APPENDIX.md",
+  "bytes": 12829,
+  "lines": 54,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "LESSONS_ROUND8_APPENDIX · 2026-10-07 第八批经验沉淀一页式索引（**含续跑**）"
+  ],
+  "h2_count": 5,
+  "h2": [
+   "1. 归属文档与新增内容一览",
+   "2. 三类计数（卡面 6 组 I1–I6 → 拆成 21 条原子主张 → 覆盖判定）",
+   "3. 六组纪律一页式一览（详表见仪器篇 §12.1）",
+   "4. 本卡复跑、仪器自纠与不一致清单（不得当作闭合面全集）",
+   "5. 一页式检查方式索引（13 条全 `[已跑]`，全文见仪器篇 §12.2）"
+  ]
+ },
+ {
+  "rel": "docs/re/a3_map_generator_impl.md",
+  "bytes": 9723,
+  "lines": 201,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "A3 地图生成器实现说明 · `a3_map_gen`（R-A3-IMPL）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 一句话",
+   "1. 管线（对照规格 §4.1）",
+   "2. 默认 design 与图面",
+   "3. 产物契约（规格 §3）",
+   "4. 校验器 V01–V15",
+   "5. CLI",
+   "6. 自检证据（run_selftest.py）",
+   "7. 与规格的偏差 / 备忘",
+   "8. 风险对照（规格 §7）"
+  ]
+ },
+ {
+  "rel": "docs/re/a3_map_generator_spec.md",
+  "bytes": 19517,
+  "lines": 403,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "A3 地图生成器规格 · `a3_map_gen`（可实现规格 + 伪代码）",
+   "房屋：player / gap_owner / spy_owner 三家其余默认；allies 必须自含（互敌）",
+   "玩家基地：建造厂+电站+战车厂+步兵/坦克；**无雷达**"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "0. 一句话",
+   "1. 目标与非目标",
+   "2. 输入",
+   "3. 输出产物契约",
+   "4. 生成管线（阶段 + 伪代码）",
+   "5. 校验器（`check_map` / `EmitCheck`）",
+   "6. 与 gap_p21 harness 接口",
+   "7. 风险与红线",
+   "8. 实现清单（给执行方）"
+  ]
+ },
+ {
+  "rel": "docs/re/empty_map_control.md",
+  "bytes": 3381,
+  "lines": 75,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "空图对照件 EMPTY 规格与用法（ZC-H1RM 段 0.4）",
+   "生成 + 自检 + 注册 MANIFEST（幂等）",
+   "只校验现有空图（不写盘）——CI/门禁用"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 一句话",
+   "1. 规格（生成即满足）",
+   "2. 哈希（当前冻结件）",
+   "3. 用法",
+   "4. 在 ZC-H1RM 中的用法（段 0.4 / 段 2）",
+   "5. 自检清单（2026-09-30 实跑）"
+  ]
+ },
+ {
+  "rel": "docs/re/except_gate_harness.md",
+  "bytes": 12106,
+  "lines": 196,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "except_gate_harness —— 对局后 `except.txt` 门禁（崩溃可观测性）",
+   "默认严格：对局/分段收尾主动检查；新生 except ⇒ 退出码 2 + 报告",
+   "宽松：仅记录并标 FAIL_LANE（不得记 PASS；退出码 0）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 变更点（相对 `bench_replay.py.before-except-gate`）",
+   "[2] 新参数 / 新 API 用法",
+   "[3] 回归命令（离线，本卡已跑）",
+   "[4] 写作用域合规",
+   "[5] 已知残留 / 不在本卡",
+   "[6] 产物索引",
+   "§九 草稿 —— 供 RESULT_ZC11 §[9] / 台账引用"
+  ]
+ },
+ {
+  "rel": "docs/re/g_r1_decision_card.md",
+  "bytes": 4805,
+  "lines": 59,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "G-R1 裁决卡：MP 握手字段口径（甲 / 乙 / 折中）"
+  ],
+  "h2_count": 4,
+  "h2": [
+   "1. 决策问题（一句话）",
+   "2. 三选一（**Lead 勾选一项，多勾无效**）",
+   "3. 后果表（勾选后对照执行）",
+   "4. 签字栏（裁决生效条件：勾选 + 签字 + 日期齐全）"
+  ]
+ },
+ {
+  "rel": "docs/re/h1_capacity_gap.md",
+  "bytes": 7628,
+  "lines": 105,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "H1 产能缺口表（H1-CAPGAP）"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "0. 一句话",
+   "1. 产能缺口主表",
+   "2. 缺口归因候选 `[推演]`",
+   "3. 与标度 / ROI 的衔接",
+   "4. 证据索引",
+   "5. §九草稿（供台账/收口直接粘贴，3–5 行）"
+  ]
+ },
+ {
+  "rel": "docs/re/h1_map_fingerprint.md",
+  "bytes": 15675,
+  "lines": 293,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "H1 地图 cell 互斥修复 + 进图指纹规格（H1-MAPFIX）",
+   "even-index houses -> West pool, odd-index -> East pool",
+   "each house takes per_house consecutive row-major cells from its side"
+  ],
+  "h2_count": 11,
+  "h2": [
+   "0. 结论摘要",
+   "1. 问题回顾（H1-FANOUT §1.1 / §4.1 M1+M5）",
+   "2. diff（生成器改动摘要）",
+   "3. 指纹格式（H1FP1）",
+   "4. cell 互斥修复前后对照 `[实证]`",
+   "5. 复测协议建议（真机 / 对拍，P0）",
+   "6. M2 规格：负载挂 Neutral/Special（本次不改图）",
+   "7. 产物清单",
+   "8. §九草稿（供下游台账/收口直接粘贴）",
+   "9. 红线与合规",
+   "10. 一句话给下游"
+  ]
+ },
+ {
+  "rel": "docs/re/harness_closeout_zc11.md",
+  "bytes": 12164,
+  "lines": 210,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "harness_closeout_zc11 —— bench_replay ZC-11 收口变更与回归",
+   "离线 MAD/NCC 自检（segE3 截图，不启动游戏）",
+   "对【已在运行】的游戏窗口做箭头键等时闭环复位（本命令不启动游戏）"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "[0] 结论摘要",
+   "[1] 变更点（相对 `bench_replay.py.before-zc11-closeout`）",
+   "[2] 新参数 / 新 API 用法",
+   "[3] 回归命令（离线，本卡已跑）",
+   "[4] 写作用域合规",
+   "[5] 已知残留 / 不在本卡",
+   "[6] 产物索引",
+   "§九 草稿 —— ZC-11 §[9] 待裁决项的收口答复（供写回 RESULT / 收口报告）",
+   "[7] 变更文件哈希留痕（收口时）"
+  ]
+ },
+ {
+  "rel": "docs/re/m_track_ready_checklist.md",
+  "bytes": 7687,
+  "lines": 132,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "M 轨就绪检查清单（2026-09-30）"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "1. 门禁检查结果表",
+   "2. T15 / MANIFEST 时点记录（G3 过程）",
+   "3. 可交真机包文件列表",
+   "4. 遗留缺口",
+   "5. 检查日志索引",
+   "6. 一句话"
+  ]
+ },
+ {
+  "rel": "docs/re/measurement_record_schema.md",
+  "bytes": 7414,
+  "lines": 171,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "测量记录 Schema 与使用说明",
+   "人类可读输出",
+   "机器可读 JSON 输出"
+  ],
+  "h2_count": 9,
+  "h2": [
+   "1. 记录形态概览",
+   "2. 最小合法记录示例（合成示例，非真机数据）",
+   "3. 顶层字段约束",
+   "4. 每组 `runs[i]` 字段约束",
+   "5. CLI 与退出码",
+   "6. 统计算法（强制，供独立复算）",
+   "7. 限制声明",
+   "8. 与 H1 重测 / 后续真实采样卡的关系",
+   "9. 运行示例"
+  ]
+ },
+ {
+  "rel": "docs/re/package_manifest_schema.md",
+  "bytes": 12383,
+  "lines": 193,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "RA2 DLC / 内容包清单 Schema v1 规范与使用说明"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "1. 规范范围与安全红线声明",
+   "2. 完整合法清单示例（规范格式）",
+   "3. 字段规则与语义约束",
+   "4. 命令行接口与退出码规范",
+   "5. 常见错误代码与排查指引",
+   "6. 工具集成演进记录"
+  ]
+ },
+ {
+  "rel": "docs/re/tools_root_portable.md",
+  "bytes": 2921,
+  "lines": 73,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "M 轨工具 ROOT 便携解析（RA2FORGE_ROOT）",
+   "tools/<any>.py",
+   "临时改根（测试/跨机）"
+  ],
+  "h2_count": 6,
+  "h2": [
+   "1. 问题",
+   "2. 解析顺序（`_ra2_paths.resolve_root(anchor_file)`）",
+   "3. 用法（CLI 不变）",
+   "4. 已接入工具（本波次写域内）",
+   "5. 解析顺序自证（`out/re_work/tools_root/resolve_cases.json`）",
+   "6. 回归（2026-09-30 实跑）"
+  ]
+ },
+ {
+  "rel": "docs/re/u0800_redesign_spec.md",
+  "bytes": 10375,
+  "lines": 155,
+  "hex_total": 0,
+  "hex_distinct": 0,
+  "h1": [
+   "U0800 重设计规格：不可基准化档的三条出路（U0800-RS）"
+  ],
+  "h2_count": 8,
+  "h2": [
+   "0. 一句话",
+   "1. 不可基准化判定（现象清单）`[实证]`",
+   "2. 三方向方案",
+   "3. 方向对比与推荐",
+   "4. 验收门总表（无论走哪条，共用底线）",
+   "5. ROI 冻结衔接（现状与解冻路径）",
+   "6. 证据索引",
+   "7. §九草稿（供台账/收口直接粘贴，3–5 行）"
+  ]
+ }
+]
