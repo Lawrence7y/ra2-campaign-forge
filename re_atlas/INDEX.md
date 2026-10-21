@@ -333,6 +333,30 @@ COL.offset 分别 **0/4/8/12**。所有派生类头部都是这个形态。
 双正对照 + 算式/字节对齐自检）。
 
 ---
+### C.11 全引擎 键 → 读取点 索引（R2-2 第五轮，详见 `kb/30_ini_subsystem.md` §12）
+
+**478 个 INI 读取调用点，473 个键字面量恢复，427 个不同键。**
+
+| 读取器 | 调用点 |
+|:---|---:|
+| `0x005295F0` `ReadBool` | 207 |
+| `0x005276D0` `ReadInteger` | 141 |
+| `0x00528A10` `ReadString` | 112 |
+| `0x005283D0` `ReadDouble` | 16 |
+| `0x00526810` `GetSection` | 1 |
+| `0x00529160` `ReadStringtableEntry` | 1 |
+| `0x00528F00` `ReadUnicodeString` | **0**（引擎自己不用） |
+
+**被多处读取的键（10）**：`Description` / `DoubleThick` / `Elasticity` / `Flat` /
+`Image` / `PowerUp%01dYSort` / `Shadow` / `SpawnDelay` / `ToTile` / `Trailer`
+
+**★ 格式化键**：`"PowerUp%01dYSort"`（`0x008194D4`，6 个读取点，全在 ~`0x0045FE50`）
+⇒ 运行期 `sprintf` 成 `PowerUp0YSort`…`PowerUp9YSort`，INI 里要展开写 10 个实键。
+
+复跑：`python re_atlas/tools/dump_ini_keyindex.py`（`evidence/ini_keyindex.txt`，
+1419 行；正对照 = `Name`/`UIName` 各恰好落在 `0x00410A60`）。
+
+---
 ## D. 数据/字符串锚点（claims PART 2–4 摘要）
 
 完整 323 条见 `docs/re/anchor_claims.txt`；本线已全量复算 **323/323 PASS**

@@ -684,3 +684,75 @@ edx = eax+0x10             ; Last
 `python re_atlas/tools/dump_ini_keymap.py`（`evidence/ini_keymap.txt`）。
 双正对照：`LoadFromINI@0x00410A60` 头 6 字节 `81 EC 34 04 00 00`，
 以及键字面量 `0x00817854 == "Name"`；任一不成立即判 VA 映射错、结果作废。
+
+---
+
+## 12. 全引擎 键 → 读取点 索引（R-019）
+
+### 12.1 规模
+
+`AbstractTypeClass::LoadFromINI` 只读 2 个键，剩下的钥匙面在别处。
+本线把**所有** INI 读取入口的调用点扫了一遍（`.text` 线性全扫）：
+
+| 读取器 | 调用点数 |
+|:---|---:|
+| `ReadBool` `0x5295F0` | 207 |
+| `ReadInteger` `0x5276D0` | 141 |
+| `ReadString` `0x528A10` | 112 |
+| `ReadDouble` `0x5283D0` | 16 |
+| `GetSection` `0x526810` | 1 |
+| `ReadStringtableEntry` `0x529160` | 1 |
+| `ReadUnicodeString` `0x528F00` | **0** |
+| **合计** | **478** |
+
+其中 **473 个**调用点的键字面量被恢复出来，覆盖 **427 个不同键**。
+
+**`ReadUnicodeString` 零调用点** —— 它是 `CCINIClass` 的公开方法但引擎自己不用它。
+对编译器的含义：写 `ReadUnicodeString` 风格的转义值（`\uXXXX`）不会天然生效，
+除非某个 loader 自己调它。
+
+### 12.2 未恢复的 5 个点（全是真实原因，非工具缺陷）
+
+| 调用点 | 读取器 | 原因 |
+|:---|:---|:---|
+| `0x00410A7F` | `GetSection` | 键是 `lea ebp,[ebx+0x24]`（`ID` 字段地址），非立即数 |
+| `0x0041B164` | `ReadString` | 键在寄存器里（先 `call 0x526CC0` 取键名） |
+| `0x0044F88F` | `ReadString` | 同上 |
+| `0x0041F4D2` | `ReadString` | 键在 **BSS** 的字符串缓冲（`0x889F64`） |
+| `0x0041F5B9` | `ReadString` | 同上 |
+
+⇒ 前三条是**按变量名查键**（先取键名再读值），后两条是**键名本身存在 BSS**。
+这两类在静态分析里无法还原成字面量，属**结构性不可还原**，不是漏扫。
+
+### 12.3 格式化的键：`PowerUp%01dYSort`
+
+有 **6 个**读取点共用键字面量 `"PowerUp%01dYSort"`（`0x8194D4`），全在同一个函数
+（~`0x0045FE50`）。`%01d` 说明**键名是运行期拼出来的**：
+
+```text
+Key = sprintf("PowerUp%01dYSort", n)   ; n = 0..9
+```
+
+⇒ 这类键在 INI 里写作 `PowerUp0YSort` … `PowerUp9YSort`。
+**编译器生成 INI 时不能按字面量 `PowerUp%01dYSort` 写** —— 要展开成 10 个实键。
+
+同理需要留意任何键名里带 `%` 的项（本索引里只有这一处）。
+
+### 12.4 被多处读取的键（10 个）
+
+`Description` / `DoubleThick` / `Elasticity` / `Flat` / `Image` / `PowerUp%01dYSort` /
+`Shadow` / `SpawnDelay` / `ToTile` / `Trailer`
+
+⇒ 这些键**由多个不同 loader 各自读一遍**，改一处不影响另一处。
+典型是 `artmd.ini` 与 `rulesmd.ini` 里有同名键、各自由不同类消费。
+
+### 12.5 复跑
+
+`python re_atlas/tools/dump_ini_keyindex.py`（`evidence/ini_keyindex.txt`，1419 行）。
+正对照：`Name` / `UIName` 必须各恰好 1 处且落在 `0x00410A60`，
+外加字面量 `0x00817854 == "Name"`；任一不成立即判索引不可信。
+
+**工具方法论**（本轮踩过并修好）：函数起点必须来自**一次从 `.text` 首字节开始
+的线性扫描**，边扫边记录"上一条 `ret` 之后第一个非 nop 指令"。
+从 `call_va - N` 这种任意偏移起反汇编会产出伪指令
+（实测 `les edx, ptr [ecx*4 - 0x179bdbb4]`），首版因此丢了 42 个点里的键。
