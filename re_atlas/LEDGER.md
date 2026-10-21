@@ -568,3 +568,190 @@ L-14/L-15/L-16 + `TeamTypeClass` 248 异族核验补做。
 - [x] 无游戏进程；无 ra2youli 写入；无编译；未跑 trip
 - [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
 - [x] 只提交 `re_atlas/`
+
+---
+
+## R-012 · 2026-10-21 20:1x–21:0x — 虚表契约 + 撤回 `0xB0C110` 误读 + L-6/L-14/L-16 结清
+
+### 0. 心跳与进程检查（§8.3 / §10.1）
+
+| 项 | 结果 |
+|:---|:---|
+| `tasklist` 查 `gamemd` / `ra2loader` / `game.exe` | **全无** |
+| GOAL-3T 台账尾部 | 已读（`lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md`）：在飞 = HouseClass 计数器 + `units0` 单位损失曲线（T55 线） |
+| 与本轮冲突 | 无。本轮做 `AbstractClass` 虚表契约 / 触发器族对象字段，与其禁区（帧循环、SBH、`HouseClass` 实例化、ra2render、P1/SBH 合批、qc151 trip）零交集 |
+
+### 1. 异族核验终于闭环（承接 R-011 §4）
+
+三轮才成：
+
+| 轮 | run | 结局 | 原因 |
+|:--|:--|:--|:--|
+| 1 | `dwfrun-4cc83e74` | errored | 千问 + GLM 双路限流，零落盘 |
+| 2 | `dwfrun-c318607d` | errored 30m48s | 千问限流卡 13 分钟；GLM settled 但**没调 `submit_result`** ⇒ typed `ask` 无结果 |
+| 3 | `dwfrun-7cee3752` | ✅ completed | 改**纯文本四行协议**（`VERDICT:` / `TEAMTYPE:` / `AITRIGGER:` / `NOTE:`），脚本侧正则解析 |
+
+**根因**：两族模型都不会主动调用 typed `ask` 要求的 `submit_result` 工具。
+这不是限流问题，是**协议假设错误**——第 2 轮明明 GLM settled 了 82.5k token 却没有产出。
+
+**结果**：GLM 5.3 `CONFIRMED(248/272)` + DeepSeek v4.1-flash `CONFIRMED(248/272)`
+⇒ `TeamTypeClass` 248 / `AITriggerTypeClass` 272 升级为**已核验**（G-1/G-2 已改）。
+
+**纪律 6（新增）**：派给非本宿主模型的 `agent().ask`，若要求结构化结果，
+**优先用纯文本约定 + 脚本侧解析**，不依赖 `submit_result`。
+`AmendWorkflow` 的缓存按"名字 + ask 字节相同"匹配，本轮的 v3 脚本换了名字与协议 ⇒
+前两轮的 token 未复用（215,906 + 145,759 沉没），但首次即成功。
+
+### 2. 本轮最大的发现：`vtable[11]` = `WhatAmI()`，`vtable[12]` = `GetSize()`
+
+起点是查 L-6（`TEventClass+0x30`/`+0x54` 是什么），追 vtable 槽表时发现槽 11 全是
+`mov eax, imm8; ret`，且 imm 与类身份一一对应。
+
+| 事实 | 值 | 证据 |
+|:---|:---|:---|
+| 槽 11 = `WhatAmI()` | `AbstractType` 类型 ID | 59 类命中 |
+| 槽 12 = `GetSize()` | 实例尺寸 | 59 类命中 |
+| ID 冲突 | **0** | 59 个 ID，59 个不同类 |
+| 引擎名字表 | `0x816EE0`，**74 项**，`{char* name, u32 value}` | 直读，值域 `0x00..0x49` 无空穴 |
+| 三方一致 | 槽 11 字节 ↔ 名字表 ↔ YRpp `AbstractType` | ✅ |
+
+**这修正了 G-4/G-5 的判据**：前轮只说"槽 12 不一定是 GetSize"，
+正确表述是"槽 11/12 成对，先验槽 11"。已写进 `kb/20_vtable_contract.md`，
+`INDEX.md` §B 表整个重做（新增"类型 ID"列）。
+
+**给 ③ 的价值**：按类型分派不再需要 RTTI/dynamic_cast，一个 `call [vt+0x2C]` 就够。
+
+### 3. 撤回 5：`0xB0C110` 不是"字段注册表"，是 `SwizzleManagerClass::Instance`
+
+前轮（R-006～R-011 期间）据 489 处引用判它是"引擎级字段注册表的根"。
+**本轮三处字节 + 一条社区源全推翻**：
+
+```text
+0x006CF0C8  mov dword ptr [0xB0C110], 0x7F4108   ; 静态初始化器写虚表 ⇒ 它是对象
+0x007F4108  → RTTI = SwizzleManagerClass (ISwizzle, IUnknown), 10 槽
+0x007F4108 slot[4] = 0x006CF240                  ; 489 处调的就是它
+0x006CF2A8  mov dword ptr [edi], 0               ; ★ 登记后把原字段清零
+```
+
+社区源 `YRpp/SwizzleManagerClass.h:26` 独立佐证
+`reference<SwizzleManagerClass, 0xB0C110u> const Instance{};`。
+
+**语义定谳**：`Here_I_Am` 把 `{原指针, 字段地址}` 追加进 swizzle 向量，
+**然后 `*ppField = 0`**，供存档做指针重定位。
+⇒ "读了字段还是有效指针"的假设会错。已转 **H-007** 给 ③。
+
+### 4. L-6 部分闭合：`TEventClass` 是**三个**接口字段，`Save` 是**四项**
+
+前轮记"两个接口字段（`+0x30`/`+0x54`），`Save` 三项"。实测：
+
+```text
+ctor 0x0071F8C0:  swizzle 登记 +0x28 / +0x30 / +0x54   ← 三个
+Save 0x0071F820:  基类 → +0x28 → +0x2C → +0x30 → +0x34  ← 四项
+```
+
+**`+0x28` 完全漏了**。且 `+0x54` 虽被 swizzle 登记但**不在 `Save` 里** —— 新悬项 L-20。
+`+0x28`/`+0x30` 走同一三步（`p=*(obj+off)`；`vt=*(p+4)`；`call [vt+0x10](p+4)`），
+确证是"外部接口对象指针"，但真实类名未定 → L-21。
+
+### 5. L-16 结清：`push 0x31` = `AbstractTypeClass::Name[0x31]` 的容量
+
+前轮追完"49 项上限"与"缓冲长度"两种解释都不成立，如实挂起。**本轮解出第三种**：
+
+```text
+0x00410A91  lea edi, [ebx+0x64]     ; 目标 = Name
+0x00410A94  push 0x31               ; 容量 49
+0x00410A98  push 0x817854           ; "Name"  (.rdata)
+0x00410AA0  call 0x528A10           ; ReadString
+```
+
+社区源 `YRpp/AbstractTypeClass.h:76` `char Name [0x31];` —— **精确相等**。
+
+⇒ 教训：连续两次猜错后不该只记"未判定"，应去**查同一函数的其它调用现场**
+（`0x410AEB` 的 `push 0x20` + `"UIName"` 就是对照组）。
+
+### 6. L-14 推进：`0x528A10` 参数顺序定序
+
+```text
+0x528A10(INI对象, 节名, 键名, 目标缓冲, 默认值, 容量) ; ret 0x14
+```
+依据 `0x410A94..0x410AA0` 的 push 逆序 + 栈帧偏移。
+`cmp arg2, 2` 是"键名长度 ≥2"，不是前轮猜的"条目上限"。
+剩余：节名缓存快速路径未展开 → L-23。
+
+### 7. 本轮新增悬项
+
+| # | 悬项 |
+|:--|:---|
+| L-17 | 15 个高频类（`House`/`Unit`/`Building`/`Bullet`/`Anim`/`NavyType`…）的 `WhatAmI` 为何不是单指令（工具模式太窄） |
+| L-19 | `vtable[4]`=Load / `vtable[13]`=Save 的槽号是否全族固定（本轮只验 11/12） |
+| L-20 | `TEventClass+0x54` 被 swizzle 登记但不在 `Save`，由谁存档 |
+| L-21 | `TEventClass+0x28`/`+0x30` 两个外部接口对象的真实类名 |
+| L-22 | `AbstractTypeClass` 实测字段边界（`+0x24` 节名 24B / `+0x3D` UIName 32B / `+0x64` Name 49B）与 YRpp `UINameLabel[0x20]` 不符 |
+| L-23 | `0x528A10` 节名缓存快速路径 |
+
+**关闭**：L-6（部分：结构已定，类名转 L-21）、**L-14**（主序已定）、
+**L-15**（`0x4C4EF0` 全解）、**L-16**（完全关闭）、**L-22**（见 §7.5）。
+**新开**：L-17、L-19、L-20、L-21、L-23。
+
+### 7.5 撤回 6：L-22 不成立 —— 是**我**误读了 YRpp，不是 YRpp 有错
+
+本轮先写了"YRpp `UINameLabel[0x20]` 与实测 24 B 不符"，随后自查发现：
+我是按"`ID` 从 `+0x00` 起"去套 `AbstractTypeClass` 自己的字段表，
+**忘了那 0x24 字节属于基类 `AbstractClass`**。
+
+按"`ID` 起于 `+0x24`"重排 YRpp 字段：
+
+```text
+ID[0x18] +0x24..+0x3B | zero_3C +0x3C | UINameLabel[0x20] +0x3D..+0x5C
+pad +0x5D..+0x5F | UIName(ptr) +0x60..+0x63 | Name[0x31] +0x64..+0x94
+```
+
+**四个实测偏移全部精确命中**：`+0x24`（`0x410A79`/`0x410AF2`）、
+`+0x3D`（`0x410AEB`）、`+0x60`（`0x410B58`/`0x410B69`）、`+0x64`（`0x410A91`）。
+⇒ YRpp 无误。
+
+**反向校验**：`AbstractClass` 属性表
+`UniqueID(+0x10) / AbstractFlags(+0x14) / unknown_18(+0x18) / RefCount(+0x1C) /
+Dirty(+0x20) / padding_21[3]` 正好 **0x24** 字节，且与
+`AbstractClass::Save` 只写 `+0x10` 与 `+0x20` **完全对上**
+（`Dirty` 是 bool，`0x4A1CA0` 用 `setne` 归一化写）。基类前缀尺寸由此**双向闭合**。
+
+**纪律 7（新增）**：用派生类的字段表核对字段前，先算清基类占了多少字节。
+
+### 7.6 L-15 全解（顺带）
+
+`0x004C4EF0` 只有一个参数（`ret 4`），按 `"%d,%s"`（`0x82085C`，**在 `.data`**）
+解析形如 `"12,GAOREP"` 的标识串，输出 `{ int, 类型对象指针 }` 两个 dword：
+
+- `[esi]` = 解析出的整数（`0x004C4F27`）
+- `[esi+4]` = 查类型表 `0xA8E34C[Items]` 命中的对象指针（`0x004C4F3E`），未找到则保持 0
+
+`0x523C90` 是查表 helper：先短路 `"<none>"` / `"none"` 两个特殊名，
+再线性比 `Items[i] + 0x24`（类型 ID 串）与目标。
+
+**交叉印证**：`+0x24` 既是 INI 节名又是类型 ID 串 —— 同一个字段两种用途。
+这把"`+0x24` 是什么"从观察变成定论。
+
+**不做合并**：`{int, ptr}` 与 `TaskForceClass` 成员 `{id, value}` 同为 8 字节，
+但**没有证据表明是同一类型**（R-007 纪律）。
+
+### 8. 本轮产出
+
+| 件 | 数量 |
+|:---|---:|
+| 新增 KB | 2（`20_vtable_contract.md`、`21_swizzle_and_object_fields.md`） |
+| 新增工具 | 1（`dump_class_ids.py`） |
+| 新增证据 | 1（`evidence/class_ids.txt`） |
+| 新增交接 | 2（H-007 swizzle 清零、H-008 类型判定法） |
+| 关闭悬项 | **5**（L-6 部分 / L-14 / L-15 / L-16 / L-22） |
+| 撤回 | **2**（`0xB0C110` 字段注册表 → `SwizzleManagerClass::Instance`；L-22 是**本线误读**，YRpp 无误） |
+| 核验升级 | 2（G-1、G-2 → 已核验） |
+| 新增纪律 | 2（#6：非本宿主模型用纯文本协议，不依赖 `submit_result`；#7：核对派生类字段前先减基类前缀） |
+
+### 9. 禁区自查
+
+- [x] 无游戏进程；无 ra2youli 写入；无编译；未启动 gamemd/ra2loader
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`
+- [x] 只提交 `re_atlas/`
+- [x] 未改 `.gitignore`；未改名/转码文件绕过钩子
+- [x] 无整段反汇编上传（片段均 ≤20 条指令）

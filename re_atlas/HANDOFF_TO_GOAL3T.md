@@ -41,10 +41,12 @@ ATLAS 对 `AITriggerTypeClass` 给的 `0x420990` 实测是
 `AITriggerTypeClass` 另有语料内既有的 `E-AIT-1`（`docs/re/trigger_tag_abi_deep_dive.md:21,191,211`）
 独立佐证同一数值；`TeamTypeClass` 为本线首报，语料内无第二来源。
 
-**核验状态**：⏳ **待异族模型核验**。
-（2026-10-21 首轮派了千问 + GLM 两路，因环境限流 `rate_limited 10/14` 双双失败、
-零落盘，两通道已冷却 30 分钟。届时重派。**在此之前本条按"单通道字节实证"看待**，
-不要当已核验事实使用。）
+**核验状态**：✅ **已核验（异族双通道，2026-10-21 20:2x）**。
+`dwfrun-7cee3752`：GLM 5.3 与 DeepSeek v4.1-flash 各自独立复算，两路均 `CONFIRMED`，
+均得出 248 / 272。GLM 附注"按段表 VA 换算，两 GetSize 均为 `B8 imm32+C3`"；
+DeepSeek 附注"两处 GetSize 均为 NOP 填充后的函数头"。
+（前两轮 `dwfrun-4cc83e74` / `dwfrun-c318607d` 因限流零落盘；第三轮改用纯文本四行协议，
+因为两模型都不会主动调 typed `ask` 要求的 `submit_result`。）
 
 ---
 
@@ -206,6 +208,75 @@ mov  ecx, [esi + eax*8 + 0xA8]       ; 读回
 
 **⚠ 不要套用到 `ScriptTypeClass`**：后者计数在 `+0xA0`，解析走 `+0x24` 子对象，
 `+0xA4` 在其方法里根本没出现。本线曾因"两类同一偏移"误推统一模型并已撤回。
+
+---
+
+## H-007 · 2026-10-21 · `0xB0C110` 是 `SwizzleManagerClass::Instance`：登记过的指针字段会被**清零**
+
+**发现**：`0xB0C110` 在 `.text` 里有 **489** 处字面量引用，
+其中 **485 处是真的 swizzle 调用**（473 → `0x6CF240`、5 → `0x6CF2C0`、
+4 → `0x6CF230`、1 → `0x6CF430`、2 处有 1–2 条指令插队但最终同样到 `0x6CF240`），
+另有 4 处是假命中（3 处在静态初始化器自身编码里，1 处是索引计算）。
+本线前轮把它误判为"字段注册表根"。**实测它是一个对象**：
+
+- 静态初始化器 `0x006CF0C8: C7 05 10 C1 B0 00 08 41 7F 00` 直接写入虚表 `0x7F4108`；
+- `0x7F4108` 经 RTTI 反查 = **`SwizzleManagerClass`**（基类 `ISwizzle`/`IUnknown`）；
+- `0x6CF240` 是该虚表的**槽 4**（YRpp 命名为 `Here_I_Am`）。
+
+**关键行为**（这条才是要投递的）：
+
+```text
+0x006CF2A8  mov dword ptr [edi], 0    ; ★ 登记之后把原字段清零
+```
+
+`0x6CF240` 把 `{原指针值, 字段地址}` 追加进 swizzle 表，**然后 `*ppField = 0`**。
+之后该字段读出来是 **0**，真实值只能通过 swizzle 表查回。
+`Save` 里就是靠这个机制做存档指针重定位。
+
+**可能影响的目标**
+- **③ 安全改动能力（直接相关）**：若任何补丁/守卫把"可能被 swizzle 登记过"的字段
+  当指针读，读到 0 会走进空指针分支，或把 0 当成合法句柄。
+  典型受害者是各类 `Save`/`Load` 周边字段。写这类补丁前先确认该字段是否被
+  `0x6CF240` 登记过（判据：`lea reg,[obj+off]` 后紧跟 `push reg; push 0xB0C110`）。
+- ② 主崩溃：**间接**。若崩溃点在 `Save`/`Load` 路径、且崩在 `mov [reg], …` 而
+  `reg` 源自被清零字段，这条可以解释"为什么指针是 0"。**仅登记的线索，
+  不主动引导**，是否相关由 GOAL-3T 判断。
+- ① 卡顿：无关。
+
+**复核**：`kb/21_swizzle_and_object_fields.md` §0。
+
+**置信度**：**实证**（静态初始化器 + 虚表 + 槽 4 函数体三处字节）。
+社区源 `YRpp/SwizzleManagerClass.h:26` 独立佐证
+`static constexpr reference<SwizzleManagerClass, 0xB0C110u> const Instance{};`
+
+**核验状态**：✅ 字节直证 + 社区源独立佐证。
+
+---
+
+## H-008 · 2026-10-21 · 类型识别与尺寸的正确取法（`vtable[11]`/`vtable[12]` 成对）
+
+**发现**：`vtable[11]` = `WhatAmI()`，返回 `AbstractType` 类型 ID；
+`vtable[12]` = `GetSize()`。**两者成对**，59 个类逐一命中，ID 冲突 **0**。
+类型 ID 全表可由引擎自己的名字表 `0x816EE0`（74 项）直接读出。
+
+这修正了 H-002 的表述。H-002 只说了"槽 12 不一定是 GetSize"，但没给替代判据。
+本条给出：
+
+```text
+type_id = vtable[11](obj)    # 落在 0x00..0x49 且能对到名字表 ⇒ 这是主虚表
+size    = vtable[12](obj)    # 只有上一步成立，才认它是 GetSize
+```
+
+**可能影响的目标**
+- **③ 安全改动能力**：任何"按类型分派"的补丁（例如只对 `UnitClass` 生效）
+  用 `vtable[11]` 判型，比 `dynamic_cast` 或字符串比较更稳，也**不依赖 RTTI 数据完整**。
+- ①② 无直接影响。
+
+**证据**：`kb/20_vtable_contract.md`、`evidence/class_ids.txt`（`tools/dump_class_ids.py`）。
+三方一致：`vtable[11]` 字节 ↔ 名字表 `0x816EE0` ↔ 社区源 `YRpp/GeneralDefinitions.h:19`。
+
+**置信度**：**实证**（59 类字节 + 74 项名字表直读）。
+**核验状态**：✅ 字节直证 + 社区源独立佐证。
 
 ---
 
