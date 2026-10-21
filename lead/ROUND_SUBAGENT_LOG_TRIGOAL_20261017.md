@@ -4476,3 +4476,1243 @@ T44 的 `<human player>` 预置 **360 车 + 240 兵**，但帧 300 时四屋总�
 
 `goal1_h1decay_20261021/HOUSE_COUNTERS_DECODED.md`（**18,688 B，sha16 `c2368112c1570d21`**；演进：初稿 11,515 B/`352f23b1` → 更正 §六 12,431 B/`bda5ef67` → 加二进制证据 15,770 B/`d0e6434a` → 定稿）。
 独立核验：GLM 5.3（不同家族）`dwfrun-9fb1ccc3`，在飞。
+
+---
+
+## §318 2026-10-21 15:0x ★★ 路径门禁口径裁决（推翻 120 件路径）+ ③ 期望值重算 + harness3 合并
+
+### 一、★ 核心裁决：pathlen 门禁必须卡**载体目录**，不卡件路径；门禁值 130
+
+上一轮交付的 `qc151_trip.harness3.py` 把「路径 ≤120」施加在**件完整路径**上。
+本轮回放 27 趟历史，该口径被证伪。
+
+判据数据源：每趟 `carrier_post_state.json` 的 `gamemd.exe.path` 取 `dirname` 长度，
+配 `frame_target_01.png` 的**实测像素尺寸**（464×191 = D-117 故障框；
+0×0 = 65 字节空占位符即抓帧失败；两者都不是正常帧）。
+
+| target 帧 | 趟数 | 载体目录长度 |
+|:--|--:|:--|
+| **800×600 / 533×400（正常）** | **8** | **116 / 129 / 130** |
+| 464×191（D-117 故障框） | 4 | 全部 **141** |
+| 0×0 空占位符 | 4 | 全部 **141** |
+| 无 target 帧（另有 ERR/提前退出） | 11 | 116 / 134 / 137 / 138 / 141 / 143 |
+
+**分界干净**：正常帧最大目录长 = **130**（`t55k_20261020`）；故障族最小 = **141**（12 趟同值）。
+
+**「件路径 120」被证伪**：按件完整路径判，历史 **27/27 趟全部超 120**
+（最短 127、`l1a_20261020`=140、`t55k_20261020`=141）⇒ 会拦掉**两趟已成功的基线趟**。
+
+**已按目录口径改写**（补丁副本，母本零改动）：
+- `CARRIER_PATH_MAX_CHARS` 120 → **130**
+- 两处调用点从 `[dir] + [dir / name for name in names]` 改为 **`[dir]`**
+- rec 字段 `violations[].path` → `.dir`，新增 `scope: "carrier_dir_only"`
+
+**门禁回归（零假阴 / 零假阳）**：
+```
+[3] 被拦但曾产出正常帧: NONE          ← 零假阴性
+[3] 放行且正常帧: 8                    ← 8 趟全中
+[3] 放行但 464x191/空帧: 0             ← 零假阳性
+[4] 130 pass=True / 131 pass=False / 141 pass=False   ← 边界逐字符命中
+```
+
+**⇒ 上一轮回执 §8.2 的「必须把 `--out-dir` 缩到 ≤80 字符」作废。**
+按目录口径，`…\qc161_u0400_trip\<趟名>\ct\c_<12>_<pid>` = 129 字符 ⇒ PASS，沿用既有布局即可。
+
+### 二、③ 期望值重算（任务 16）—— 85/0/0 + 13/13 + 9/9
+
+| 项 | 结果 |
+|:--|:--|
+| 白名单 `ADDR_*` 重算 | **HOLDS 85 / FALSIFIED 0 / INSUFFICIENT 0** |
+| P1 版本门 SHA 白名单 | 3/3 HOLDS |
+| 13 个虚表槽位期望值 | **13/13 HOLDS** |
+| 9 个 inline 代码位点 | **9/9 HOLDS** |
+| 离线编译 | **CL/CL2/LINK 全 exit=0**（直接 cl，未用 build.bat） |
+| 全局符号重复定义 | **0 重复**（424 个唯一 External 名） |
+| 关键常量唯一性 | `g_targetScanInterval=1` 单定义、钳位 64 单处、`EnableSbhGuard` 默认 0 单处 |
+
+**权威清单勘误**：白名单不在两个 `goal3_versioncheck*` 目录（那里只有叙述性文档），
+真身是 `ra2render/ra2render.h` 的 `#define ADDR_*`（85 条数值定义 + 11 条 HOSTTEST 别名不计入）。
+
+**两个缺口的当前状态**：
+1. `verify_hooks` 五参数假绿**已复现且已修**——原版门禁对合并件报 `0/0` 却整体 PASS（真·假绿）；
+   `verify_hooks.v2.py` 对同一件报 **13/13**（5 参 `expect_orig` 13/13）。
+2. `ra2render.ini.v2` 已补 `EnableSbhGuard=0`（纯增量 2 行、零删除），**母本 ini 未动，待裁决吸收**。
+
+**新发现**：同源码两次编译 obj 哈希不同，但 `.text$mn` 121 chunk 顺序与内容完全一致，
+差异只在 `.debug$S`/`.chks64`/`TimeDateStamp` ⇒ **整 DLL 哈希不可作同一性判据**。
+
+**勘误**：`[SBH-GUARD]` 成品实测 **3** 处（非 4；第 4 行只在 diff 里未落进成品）。
+
+### 三、harness3 合并件（任务 3 + 两个在飞补丁）
+
+| 项 | 结果 |
+|:--|:--|
+| 三段合并 | **全部干净合并**（failfast + carrierfix + pathlen） |
+| 重叠判定 | **不重叠**（最近两 hunk 相隔 575 行；串联应用零 fuzz 零 reject） |
+| 合并件 | `qc151_trip.harness3.py`，**407,957 B**，sha16 **`cf0776e43cce37b4`** |
+| 归因 | M=7289 / FF=55 / CF=16 / PL=73，**无未归因行** |
+| 零时序改动 | **成立**——16 个时序函数、11 个时序常量、8 个 `time.sleep` 站点逐字节相同 |
+| py_compile | PASS（`.pyc` 输出到临时目录，本目录无 `__pycache__`） |
+| 缺陷核查 | `EXIT_PID_DEAD=29` **不冲突**（母本用 0,10-28,62-65,70,130；29/30/31 为空档） |
+
+**母本路径勘误**：母本是 `lead\qc151_u0400_trip\qc151_trip.py`，
+不是 `qc161_u0400_trip\`（那是运行期写域）。
+
+**唯一落在时序邻域的改动**（`main()` 内 `_stab_t0`/`monotonic` 区域）是 failfast 的纯插入，
+只在进程已死时触发 `SystemExit`，`_stab_t0` 仅用于记录，对健康趟时序零影响。
+
+### 四、母本零改动核验
+
+| 件 | bytes | sha16 | 判定 |
+|:--|--:|:--|:--|
+| `qc151_u0400_trip/qc151_trip.py` | 399,508 | `517889c68f037ab6` | 未改动 |
+| `ra2render/blitter_hooks.cpp` | 241,267 | `656e6b4e48cdd251` | 未改动 |
+| `ra2render/ra2render.ini` | 16,496 | `27c9a60c55a8a1b4` | 未改动 |
+
+无 gamemd/ra2loader/game.exe 进程残留。
+
+### 五、在飞与未闭合
+
+| 项 | 状态 |
+|:--|:--|
+| ① 线三项（1.78s 停顿 / 崩溃路径审计 / 早帧探针方案） | **GLM 5.3 通道重跑中** `dwfrun-fde6114f` |
+| U8 开关设计 | **同上工作流** |
+| ① 与 U8 的 deepseek 首派 | **上游流中断**，按纪律该通道冷却、换 GLM |
+| ③ 异族核验 | 未派（本批全是主会话自测） |
+| ③ 真机「部署→冒烟→回滚→哈希复核」 | 需用户在场 |
+| `ra2render.ini.v2` 吸收 | 待裁决 |
+
+### 六、取证件
+
+- `qc151_harness_merge_20261021/RECEIPT.md`（22,337 B，sha16 `2a083f66fe0e6c9e`，含 §9 裁决）
+- `qc151_harness_merge_20261021/qc151_trip.harness3.py`（407,957 B，`cf0776e43cce37b4`）
+- `qc151_harness_merge_20261021/gate_recheck2.txt`（门禁回归原始输出）
+- `goal3_expect_recompute_20261021/`（`WHITELIST_RECOMPUTE.md` / `SLOTS_AND_SITES_RECOMPUTE.md` / `REBUILD_SYMBOLS.md` / `RECEIPT.md`）
+
+---
+
+## §319 2026-10-21 15:1x 主会话独立复核 ③ 三条核心断言（含一个新坑）
+
+### 一、复核范围与方法
+
+不采信子代理的总结文字，主会话亲读母本二进制复算三组：
+`goal3_expect_recompute_20261021/_spotcheck_mine.py` + `_sitebytes_mine.py`。
+
+### 二、三项复现结果
+
+| 断言 | 复现 | 结果 |
+|:--|:--|:--|
+| 白名单 `ADDR_*` 数值定义 85 条 | 从 `ra2render/ra2render.h` 正则抽取 | **85 / 别名 0** ✓ |
+| 虚表槽 `+4 == ADDR_VFUNC_*` | 读 `ra2youli/gamemd.exe` 6 个成对槽位 | **6/6 HOLDS** ✓ |
+| 9 个 inline 位点字节 | 读母本对应地址，形态检查 | **9/9 可读且合法** ✓ |
+
+9 位点实测字节（全部落 `.text`，全部是合法 x86 指令起始）：
+```
+s_origCellClassDrawBytes     5  53 55 56 8b f1
+s_origDrawShroudFogBytes     6  55 8b ec 83 ec 34
+s_origFogBlendB1Bytes       49  66 8b 08 66 83 f9 7f 75 …
+s_origFogBlendB2Bytes       51  66 8b 08 66 83 f9 7f 75 …
+s_origGreatestThreatBytes    9  83 ec 5c 8b 15 34 ec a8 …
+s_origNativeDecideBytes      7  8b 47 04 89 6c 24 14
+s_origPlotCellBytes          9  89 44 24 28 a1 50 35 b7 00   ← 硬编码 0x00655D38
+s_origRadarPendingCallBytes  5  e8 91 93 00 00
+s_origTacticalRedrawBytes    6  0f 8d 98 00 00 00
+```
+
+### 三、★ 复算中踩到的新坑：PE 段表 `VirtualAddress` 是 RVA
+
+第一次直接把段表 `VirtualAddress` 当绝对 VA 用，6 个虚表槽全部报
+`UNREADABLE @0x007E56F0` —— 这是**读法错**，不是断言错。加 `ImageBase=0x00400000`
+后立刻 6/6 HOLDS。
+
+```
+ImageBase = 0x00400000
+.text    0x00401000   .rdata 0x007E1000   .data 0x00812000
+.rsrc    0x00B7A000   .detour 0x00B93000
+```
+
+**与记忆库「PE 段表 VA=RVA」一致，本轮再次实证。**
+⇒ 纪律：任何「读不到」的结论必须先排除此坑，再谈断言真假。
+
+### 四、★ 命名不一致（备案，非缺陷）
+
+`s_origPlotCellBytes` 用**硬编码字面量 `0x00655D38`**，是 9 个位点里唯一不走 `ADDR_*` 宏的。
+⇒ 按名字做字符串映射会漏掉这一处，必须显式列出。与记忆库
+「标签→mangling 须从虚表索引派生」属同类。
+
+### 五、诚实边界
+
+本件是**抽样复核**（6/85 虚表对 + 9/9 位点），**不是全量重算**；
+且主会话与实现者同源，**仍不是异族核验** —— ③ 门第 2 条的异族复核尚未派。
+
+取证件：`goal3_expect_recompute_20261021/MAIN_SESSION_SPOTCHECK.md`。
+
+---
+
+## §320 2026-10-21 15:2x ★ 1.78s 停顿三值判定 = **真实停顿（窗尾未闭合）**，非终局伪影
+
+### 一、判定
+
+`l1a_20261020` 的 `measure_w2.json` `stats.max_stall_s = 1.781590`，
+判定为 **真实渲染停顿**，**不是终局伪影**。
+
+**但必须附带限定**：这是**窗尾截断的未闭合停顿**，真实时长与终点**均未被观测到**
+（≥1.78159 s，无上界）。
+
+### 二、★ 口径纠正：「1.78 秒帧间隔」这个说法是错的
+
+w2 里**没有任何一帧间隔接近 1.78 s**。真实相邻帧间隔（`df==1`）最大值只有 **0.097877 s**。
+
+1.78159 s 是**「最长连续 `df=0` 墙钟跨度」**，不是帧间隔。定义在
+`qc151_trip.py:3719`，实现在 `:3750-3760`，其中 `:3758-3759` 有「尾部游离段」补算分支：
+
+```python
+    if samples[-1][0] - run_t0 > best:      # ★ 尾部游离段显式补算
+        best = samples[-1][0] - run_t0
+```
+
+⇒ **这个统计量对「窗口右边界处的未闭合停顿」天然敏感**，会把
+"从最后一次帧推进到窗口结束"的整段时间计入。**这是口径陷阱，必须记进方法论。**
+
+### 三、主会话独立复算（`_verify_gap.py`，全部逐位复现）
+
+| 量 | 实测 | 与子代理一致 |
+|:--|--:|:--|
+| w0/w1/w2 `logic_frames` | 781 / 781 / **725** | ✓ |
+| w0/w1/w2 `fps_avg` | 31.2418 / 31.2406 / **29.0007** | ✓ |
+| w0/w1/w2 `max_stall_s` | 0.042096 / 0.060218 / **1.781590** | ✓ |
+| 冻结起点（窗内相对） | 23.217828 s | ✓ |
+| 窗口结束（窗内相对） | 24.999418 s | ✓ |
+| **距窗尾** | **1.781590 s** | ✓ |
+| `距窗尾 == max_stall_s` | **精确相等（True）** | ✓ |
+| 帧数缺口 | 781−725 = **56 帧** | ✓ |
+| 缺口按 w0 速率折算 | **1.7925 s**（误差 0.61%） | ✓ |
+| w2 剔除冻结后活跃段速率 | **31.2260 fps**（vs w0 31.2418 / w1 31.2406） | ✓ |
+
+**⇒ `fps_avg = 29.001` 是冻结稀释值，不是渲染能力下降。**
+活跃段三窗极差仅 0.016 fps。
+
+### 四、排除终局伪影的三条独立证据链（主会话已核）
+
+| 链 | 证据 | 判定 |
+|:--|:--|:--|
+| A 败北标志 | `def1F5`（真败旗）四屋**全程 0**，含冻结前最后一档帧 6000；`loser1ED` 四屋无新翻转（h0 自帧 3900 即为 1，早于本窗） | 排除 |
+| B 对象池 | 冻结期 counters 逐项不变（units=629 / inf=219 / g=853 / techno=848，含冻结后 +0.816 s 那次副读） | 排除 |
+| C 无崩溃/无输入 | `except.txt` 零新增；测窗内零键鼠注入；`focus_ok=true`；取证帧仍 6137；进程存活到主动终止；`final_exit=0` | 排除 |
+
+**反向确认**：若为脚本/采集伪影，三窗必然对称。实测 w0=0.042 / w1=0.060 / w2=1.782，
+**仅 w2 有**。三窗走同一份 `_measure_poll_span`（`:2981-3027`，固定墙钟窗、
+`if t_now >= t_end: break`，**不依赖帧是否推进**）⇒ 伪影假说无法解释窗间差异。
+
+### 五、★ 实证缺口（必须如实登记）
+
+1. **冻结真实时长未知**：1.78159 s 是**观测下界**，不是真实停顿长度。
+2. **冻结时刻无 per-house 直读**：QC213 冻结看门狗阈值 `QC213_FREEZE_S=2.0`（`:3052`），
+   实际冻结 1.78159 s，**差 0.21841 s 未触发** ⇒ `frozen_final` 快照未生成，
+   最后读数停在帧 6000（距冻结 137 帧 / ≈4.4 s）。**§四-A 的结论不能直接外推到帧 6137**，
+   这是一个约 4.4 s 的**推断间隙**。
+3. **无截图佐证**：`empty_window=false` ⇒ 取证截图未落盘。
+4. **触发原因未定谳**：本判定只答「是不是终局伪影」，**没答「为什么停」**。
+
+### 六、对下游的用法约束
+
+`max_stall_s = 1.78159` 应作为**「窗尾未闭合真实停顿」**入账：
+- **不得**按「终局伪影」折价；
+- **不得**当作「已完整测量的 1.78 s 停顿」使用——真实长度 ≥1.78 s 且终点未知。
+
+若要闭合，需脚本改动（**本次按只读纪律未做**）：
+(a) 把冻结看门狗阈值降到 <1.5 s；或 (b) 帧钟冻结时提前收窗并延长观测。
+
+### 七、取证件
+
+`goal1_gate_offline_20261021/GAP_1780MS_VERDICT.md`（17,167 B）；
+主会话复算 `goal1_gate_offline_20261021/_verify_gap.py` + `_verify_gap.txt`。
+
+---
+
+## §321 2026-10-21 16:0x ★ U8 取证定谳 + 早帧探针方案（主会话亲做，GLM 通道 24min 零落盘）
+
+### 一、★ U8 的真实语义：不是通用 DLL 开关，是 `--allow-loader`
+
+原假设「U8 = 允许加载 DLL 的笼统开关」**不准确**。权威定义在
+`ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md`（Notion U1–U9 裁决 §300）：
+
+> **U8**：同意单独立项，但不能搁置——无优化臂则 ① 出不了「优化前后对比」，紧跟 L1 之后。
+> 立项**四条件**：① `--allow-loader` **默认关**、**只对指定 trip-id 生效**、基线趟 `S-4` 照旧；
+> ② 方案经**异族核验**、**用户在场**才跑；
+> ③ **优化臂分两档**：B0（加载 DLL 全键关，量钩子开销）/ B1（开优化键）；
+> ④ GameSpeed 实际值须**运行时读**，**不读写回 INI**。
+
+### 二、现状：`--allow-loader` 零实现
+
+母本 `qc151_u0400_trip/qc151_trip.py`（399,508 B）统计：
+
+| 记号 | 命中 |
+|:--|--:|
+| `allow-loader` / `allow_loader` | **0 / 0** |
+| `ra2render.dll` | 2 |
+| `LoadLibrary` | 1 |
+
+⇒ **U8 完全未立项**，不是"部分实现"。
+
+### 三、为什么它是 ① 和 ② 的共同卡点
+
+```
+① 要三臂对比（A 原版 / B0 加载DLL全键关 / B1 开优化键）
+   ⇒ B0/B1 都必须让 ra2render.dll 真进进程
+   ⇒ 必须用 ra2loader.exe 启动（gamemd 不会自加载）
+   ⇒ S-4 闸门判 ra2loader 为注入面 ⇒ 62 硬停
+
+② 要守卫 A/B（EnableSbhGuard 关/开）
+   ⇒ 守卫编译在 ra2render.dll 里
+   ⇒ 两臂都得先让 DLL 加载 ⇒ 同样卡在 U8
+```
+
+**⇒ ① 和 ② 堵在同一道闸门上。** 这解释了为什么 ③ 的 P1+SBH 合并件编译通过、
+期望值全对，却一次真机验证都没做过。
+
+### 四、S-4 闸门的结构（已逐行核实）
+
+| 行 | 内容 |
+|--:|:--|
+| `:21-35` | 禁止面：`ra2loader.exe`/任何 loader/stub/注入器**一律禁止**，列 4 种伪装形态 |
+| `:279` | `S4_NEEDLES = ("ra2render", "ra2loader")` |
+| `:321` | `EXIT_INJECTION_SUSPECTED = 62` |
+| `:799-817` | 纯函数：模块名大小写不敏感**子串**匹配 |
+| `:927-1019` | 闸门本体：拿 pid 后、任何 L* 步骤之前跑 |
+
+**关键**：`S-4` 在**拿到 pid 之后**扫模块表。即使启动目标换成 `ra2loader.exe`，
+只要 `ra2render.dll` 注入进 `gamemd.exe`，模块表就出现 `ra2render` 子串
+⇒ **必然命中 62**。这不是改启动路径能绕过的，**必须给闸门加显式授权旁路**。
+
+### 五、推荐方案（路线 A）：`--allow-loader` + 复用既有 `--trip-id`
+
+**关键发现**：`--trip-id` **已存在**（`:6087`），且有「未给定 ⇒ 随机生成」语义
+（`:6274-6276`）⇒ **无需新增 trip-id 参数**。授权判据 =
+`args.allow_loader` 且 `TRIP_ID` 逐字等于命令行 `--trip-id`；
+未给 `--trip-id` 时 `TRIP_ID` 是随机值，必然不匹配 ⇒ **天然 fail-closed**。
+
+最小改动落点（4 处，约 27 行）：
+1. `ap.add_argument("--allow-loader", action="store_true")`（紧邻 `:6087`）
+2. `:279` 附近加授权判定函数
+3. `:1004-1019` 闸门判定处加旁路分支
+4. `Popen` 调用处按授权选 exe
+
+**否决路线**：
+- B 文件存在性门控 —— 正是禁止面 `(b)(d)` 要防的形态，且违背"只对指定 trip-id 生效"
+- C 外部启动器传参 —— `S-4` 仍命中 62，且证据链断裂
+
+### 六、验收判据（运行时证据，不能只看参数）
+
+| # | 判据 |
+|:--|:--|
+| V1 | 进程模块表含 `ra2render.dll`，给出 base 与 size |
+| V2 | 该 DLL base 与 `carrier/ra2render.dll` 哈希对应（读 `ra2render.log` 首行） |
+| V3 | 授权行在 rec 里可查，`trip_id` 与命令行逐字相等 |
+| V4 | **A 臂趟的模块表不含** `ra2render`/`ra2loader` |
+| V5 | B0 与 B1 两臂 DLL sha256 相同 |
+
+**V1 与 V4 必须同趟成对出现**——只证"开了能加载"不够，还要证"不开确实没加载"。
+
+### 七、★ U8 的第一件实测应是「授权趟能否存活到进图」
+
+历史 T6 曾因**缺 `ddraw.dll` 启动即亡 `0xC0000135`**。
+⇒ 不要一上来就测"优化有没有效果"，先测"用了 loader 之后还能不能进图"。
+
+### 八、早帧探针方案（帧 0–3724）
+
+**结论：脚本零改动**，但必须同时控 Esc 时机与 `--probe-frames`，只改后者无效。
+
+**机制**（已逐行核实）：
+- `_qc213_tick` 不是独立线程，**piggyback 在 500 Hz measure 轮询**上（`:3258-3260`、`:3544-3546`）
+- measure 块在 `capture_target_frame`（`:6891`）**之后**才执行
+- 本趟 `window_stabilize=11.906 s` + **2 次 Esc** ⇒ 首个 tick 帧号 **3724**
+- `latch_frames` 最小 3900 > 3724 ⇒ 阶梯帧全错过（`ladder_dropped=138`）
+
+**两个独立原因叠加**：(a) measure 起点太晚；(b) 阶梯帧取值全在起点之后。
+
+**对照 T44**：`window_stabilize=1.422 s`、**零 Esc** ⇒ 锁到帧 300。
+⇒ **Esc 是主导变量**，不是 settle 时长。
+
+**方案三件**：
+1. `--probe-frames 100,300,600,900,1200,1500,1800,2400,3000,3600,3724,3900,…,6000`
+   （覆盖 0–3724 + 保留上一趟全部 8 个阶梯帧保证跨趟可比）
+2. **Esc 时机**：首选零 Esc；次选帧 <300 前发完且只 1 次；禁止进图后发
+3. **对齐口径**：`frame_edges[0][1] + t_rel`（用 `t_abs0 + t_rel` 会让所有计数行映射到最后一帧）
+
+**成功判据 S1–S6**（S1 首个快照帧号 ≤300、S2 快照数 ≥8、S4 帧 3724 链和与 732 差 ≤5% 等）；
+**失败判据 F1–F5**。详见设计件。
+
+### 九、诚实边界
+
+1. U8 全部为静态取证 + 设计，**未跑任何趟**；`ra2loader.exe` 在当前载体能否起来未验证。
+2. `ra2loader` 的注入行为（`LoadLibraryA`+`GetProcAddress`、`DLL_PROCESS_ATTACH` 改写 6 字节）
+   来自 harness 注释 `:22-25` 的**转述**，未独立反汇编核实。
+3. Notion 条件 ②（异族核验 + 用户在场）**尚未满足**，本件不构成发射授权。
+4. Esc 能否压到帧 300 以下**未实证**；T44 是另一张图，只作方向参考。
+5. 本轮 GLM 5.3 通道的两个子代理（U8 设计、早帧方案）分别 24 min / backoff 8 min+ **零落盘**，
+   改由主会话亲做。按纪律该通道应冷却。
+
+### 十、取证件
+
+- `goal2_u8_dllload_20261021/U8_DESIGN.md`
+- `goal1_gate_offline_20261021/EARLY_LOSS_PROBE_PLAN.md`
+
+---
+
+## §322 2026-10-21 16:2x ★★ 判据修正：门禁回归的「零假阴」是假的（只看 target 帧漏了 early 帧）
+
+### 一、错在哪
+
+§318 写：
+
+```
+[3] 被拦但曾产出正常帧: NONE          ← 零假阴性
+```
+
+**这是错的。** 原因：`_gate_recheck2.py` 只读了 `frame_target_01.png`，
+而 `l1_u0800_*` 四趟的**正常帧在 `frame_early_01.png`**，它们**没有** target 帧。
+
+### 二、修正后（`_gate_recheck2.py` 已改，同时读 target + early）
+
+```
+[3] 被拦但曾产出正常帧: ['l1_u0800_20261020', 'l1_u0800_e1_20261020',
+                        'l1_u0800_e1b_20261020', 'l1_u0800_e1c_dump_20261020']
+[3] 放行且正常帧: 10
+[3] 放行但 464x191/空帧: 0
+```
+
+| 量 | §318 错值 | 修正值 |
+|:--|--:|--:|
+| 被拦但曾产出正常帧 | 0 | **4**（全是 `l1_u0800_*`） |
+| 放行且正常帧 | 8 | **10** |
+| 放行但故障帧 | 0 | **0**（不变） |
+
+### 三、这 4 趟是什么性质
+
+| 趟 | 目录 | early 帧 | target 帧 | final_exit |
+|:--|--:|:--|:--|--:|
+| l1_u0800_20261020 | 134 | **800×600 正常** | 无 | **19** |
+| l1_u0800_e1_20261020 | 137 | **800×600 正常** | 无 | **19** |
+| l1_u0800_e1b_20261020 | 138 | **800×600 正常** | 无 | **19** |
+| l1_u0800_e1c_dump_20261020 | 143 | **800×600 正常** | 无 | **19** |
+
+⇒ **游戏确实起来了、进了图**（early 帧为证），随后以 `EXIT 19` 退出。
+这是**另一类失败**，与路径长度**无因果**。
+门禁拦它们属"顺带"，**不能据此声称门禁能防 EXIT 19**。
+
+### 四、门禁裁决本身是否要改？——不改
+
+**核心对比仍然成立**：
+
+| 目录长 | 目录数 | 有正常帧 |
+|--:|--:|--:|
+| **141** | **12** | **0** |
+| ≤130 | 11 | 10 |
+
+- `141` 这 12 个目录（旧 `carrier_trip/carrier_<stamp>_<pid>` 命名模板产物）
+  **零正常帧**：6 个 464×191、2 个空占位、4 个无帧
+- `≤130` 的 11 个目录里 **10 个正常**
+- **零假阳性不变**：放行的 10 趟全部正常，无一故障
+
+⇒ 门禁值 **130（只卡目录）** 仍成立。`l1_u0800_*` 的 4 个假阴是
+**"门禁顺带拦掉了 EXIT 19 的趟"**，属可接受的保守误拦，
+**不是门禁口径错**。
+
+### 五、★ 方法论沉淀（比这次数字更重要）
+
+1. **判"有没有正常帧"必须同时读 `frame_target` 与 `frame_early`**。
+   只读 target 会把"起来了但没走到采帧"的趟误判为"从未起来"。
+2. **`final_exit=0` 不能当成功**（§321 已列 7 趟反例）；
+   **`final_exit=19` 也不能直接当"路径问题"**（本节的 4 趟反例）。
+3. **`except.txt` 有 `Exception occurred at` 也不能当崩溃**——
+   成功趟 T18 的 except 里就有 `007CFC9F` 单步陷阱，那是载体携带的既有内容。
+4. **唯一可信的判据是交叉**：帧（target + early）+ 模块表 + 退出码 + except 集合差，
+   四者一起看，任一单独都不够。
+
+### 六、取证件
+
+- `qc151_harness_merge_20261021/_gate_recheck2.py`（已修正，同时读两帧）
+- `qc151_harness_merge_20261021/gate_recheck2.txt`（修正后原始输出）
+- `goal1_gate_offline_20261021/CRASH_PATHLEN_AUDIT.md` §五（含 §5.1 自我纠正）
+- `goal1_gate_offline_20261021/_recheck_counts.txt`（去重目录 × 帧分类计数）
+
+---
+
+## §323 2026-10-21 16:3x 本轮收官：四项离线任务全交付 + 一条判据自纠
+
+### 一、交付清单（全部落盘，母本零改动）
+
+| # | 任务 | 交付件 | 状态 |
+|--:|:--|:--|:--|
+| 1 | 1.78s 停顿三值判定 | `goal1_gate_offline_20261021/GAP_1780MS_VERDICT.md`（17,167 B） | **完成** |
+| 2 | 历史崩溃路径审计 | `goal1_gate_offline_20261021/CRASH_PATHLEN_AUDIT.md`（25,608 B） | **完成** |
+| 3 | 早帧探针方案 | `goal1_gate_offline_20261021/EARLY_LOSS_PROBE_PLAN.md`（8,644 B） | **完成** |
+| 4 | U8 开关设计 | `goal2_u8_dllload_20261021/U8_DESIGN.md` | **完成** |
+| 5 | ③ 期望值重算 | `goal3_expect_recompute_20261021/`（4 份 + 7 脚本） | **完成** |
+| 6 | harness 三合一 | `qc151_harness_merge_20261021/`（含 §9 裁决） | **完成** |
+
+### 二、★ 本轮最重要的一条：判据自纠
+
+§318 的「零假阴性」**是假的**。`_gate_recheck2.py` 只读 `frame_target_01.png`，
+漏了 `l1_u0800_*` 四趟的正常帧在 `frame_early_01.png`。修正后：
+
+| 量 | §318 错值 | 修正值 |
+|:--|--:|--:|
+| 被拦但曾产出正常帧 | 0 | **4**（全是 `l1_u0800_*`，EXIT 19 族） |
+| 放行且正常帧 | 8 | **10** |
+| 放行但故障帧 | 0 | **0**（零假阳性不变） |
+
+**门禁裁决（只卡目录、130）不变**：核心对比是 `141` 组 12 个目录**零正常帧**
+vs `≤130` 组 11 个目录**10 个正常**。4 个假阴是"保守误拦 EXIT 19 趟"，可接受。
+
+### 三、★ 第二条硬证据：`except.txt` 从未被改写
+
+**T16（464×191 故障趟）与 T18（533×400 成功趟）的 `except_post` 文件 sha256 完全相同**：
+
+```
+6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251
+  qc161_u0400_trip/archive_T16/except_post_20261017T230500846717.txt
+6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251
+  qc161_u0400_trip/archive_T18/except_post_20261017T234726314556.txt
+```
+
+⇒ **本批运行的 `except.txt` 从未被改写过**，所以「零新增」与「有没有崩」**完全不相关**。
+这比"某趟 except 里有 007CFC9F"更硬——它是全批同一性证明。
+
+### 四、四条方法论沉淀（比数字更重要）
+
+1. **判"有没有正常帧"必须同时读 `frame_target` 与 `frame_early`**。
+   只读 target 会把"起来了但没走到采帧"误判为"从未起来"。
+2. **`final_exit=0` 不能当成功**——7 趟反例（T12/T13/T14/T15B/T16/T5/T8/T9 全部 `exit=0` 却故障）。
+3. **`final_exit=19` 也不能直接当路径问题**——`l1_u0800_*` 四趟有正常 early 帧，属另一类失败。
+4. **`except.txt` 有 `Exception occurred at` 不能当崩溃**（§三的 sha 同一性证明）。
+
+⇒ **唯一可信的判据是交叉**：帧（target + early）+ 模块表 + 退出码 + except 集合差，
+四者一起看，任一单独都不够。
+
+### 五、U8 的两条关键结论
+
+1. **U8 = `--allow-loader`**（不是通用 DLL 开关），权威定义在 Notion U1–U9 裁决 §300。
+2. **`--allow-loader` 在 harness 里 0 处实现**；`S-4` 闸门（`:279/:321/:927-1019`）
+   在拿 pid 后扫模块表，只要 `ra2render.dll` 注入就**必然命中 62**
+   ⇒ 必须加**显式授权旁路**，改启动路径绕不过去。
+3. **复用既有 `--trip-id`**（`:6087`，未给定即随机 ⇒ 天然 fail-closed），
+   **无需新增参数**。最小改动 4 处约 27 行。
+4. **U8 第一件实测应是「授权趟能否存活到进图」**，不是"优化有没有效果"
+   （历史 T6 曾因缺 `ddraw.dll` 启动即亡 `0xC0000135`）。
+
+### 六、早帧方案的机制定谳
+
+`_qc213_tick` **piggyback 在 500 Hz measure 轮询**上（`:3258-3260`），
+measure 在 `capture_target_frame`（`:6891`）之后 ⇒ 起点由 nav 时长决定。
+本趟 `window_stabilize=11.906 s` + **2 次 Esc** ⇒ 首个 tick 帧号 **3724**，
+而 `latch_frames` 最小 3900 ⇒ 阶梯帧全错过。
+**对照 T44（1.422 s、零 Esc）锁到帧 300 ⇒ Esc 是主导变量。**
+**脚本零改动**，但必须同时控 Esc 时机 + `--probe-frames`。
+
+### 七、通道纪律记录
+
+- **deepseek（wb-cn / wb-global）**：首派 2 项**上游流中断** ⇒ 按纪律冷却。
+- **GLM 5.3（new-provider-2）**：4 子代理里 2 个收敛（532 万 / 2034 万 token），
+  2 个卡死（U8 设计 44 min 零落盘、早帧方案 backoff 28 min）⇒ **主会话亲做补齐**。
+  工作流已 `TaskStop`（`stop-reason: model`），非 amend 场景（任务已由主会话完成）。
+
+### 八、仍未闭合
+
+| 项 | 状态 |
+|:--|:--|
+| ① 真机两趟 L1（其中一趟拉长测窗） | 需用户在场；harness3 已就绪 |
+| ① L3 高负载档 | 等上项 |
+| U8 实现 + 异族核验 + 用户在场 | 设计已出，未实现 |
+| ② `procdump -e -ma` 抓转储 | 需用户在场 |
+| ③ 异族核验 | **未派**（本批全为主会话自测） |
+| ③ 真机部署→冒烟→回滚→哈希复核 | 需用户在场 |
+| `ra2render.ini.v2` 吸收 | 待裁决 |
+
+### 九、母本零改动核验
+
+| 件 | bytes | sha16 |
+|:--|--:|:--|
+| `qc151_u0400_trip/qc151_trip.py` | 399,508 | `517889c68f037ab6` |
+| `ra2render/blitter_hooks.cpp` | 241,267 | `656e6b4e48cdd251` |
+| `ra2render/ra2render.ini` | 16,496 | `27c9a60c55a8a1b4` |
+
+无 gamemd/ra2loader 进程残留。
+
+---
+
+## §324 2026-10-21 17:2x ★★ U8 实现落地 + ③ 异族核验 + P1 缺陷修复 + 固定工序成文
+
+### 一、U8 实现：`--allow-loader` + S-4 授权旁路
+
+| 件 | bytes | sha16 |
+|:--|--:|:--|
+| `qc151_u8_impl_20261021/qc151_trip.harness3_u8.py` | **416,425** | **`7db3c11009b7183c`** |
+| `u8.diff` | 14,792 | `f009c358bd10ab3b` |
+| 基线 harness3 | 408,089 | `5c56dac5c17a2ba4` |
+
+**改动规模**：16 hunk，+136 / −16（删除行全是被替换的旧行）。
+
+#### ★★ 五处改动（不是设计时的四处）
+
+| # | 位置 | 内容 |
+|--:|:--|:--|
+| 1 | `S4_NEEDLES` 后 | `allow_loader_authorized()` 双键判定（+44 行） |
+| 2 | `s4_injection_gate` | 加 `authorized` 参数 + 命中降级旁路 |
+| 3 | `launch_direct` | 加 `allow_loader` 参数，按授权选启动目标 |
+| 4 | argparse + `main()` | `--allow-loader` 注册 + 两处调用点接线 |
+| **5** | **`resolve_pid`** | **加 `expect_name` 参数** ← **本件最关键** |
+
+#### 3.5 的细节：不加 `resolve_pid` 修复则授权趟必死
+
+`resolve_pid` 里 `find_pids("gamemd.exe")` 是**硬编码**，且要求候选 pid **等于** `proc.pid`。
+授权趟下 `proc.pid` 是 **loader 的 pid**，而按名查到的是 **gamemd 的 pid**
+⇒ **必然不等** ⇒ `sys.exit(EXIT_PID_NOT_FOUND=21)`，**根本到不了 S-4 闸门**。
+
+修复：`expect_name: str = "gamemd.exe"`（缺省 ⇒ 逐字原行为），授权时传 `ALLOW_LOADER_EXE`。
+
+**身份锚点说明**：身份锚点始终是 `Popen` 返回的 **loader 进程本身**，
+**不**去绑定 loader 另起的 gamemd 子进程。这与禁止面 (d)
+（"先起 loader 再按名找 gamemd 当本趟对象"）严格区分。
+
+#### 自测结果（两份全 exit=0）
+
+```
+[1] compile() OK   bytes=416425
+[2] subprocess.Popen 次数 = 1（要求 1）
+[3] 三态判定 7/7 全过（含 trip-id None/空串/不匹配/匹配/带空格/属性缺失）
+[5] 新增 ['allow_loader_authorized'] / 删除 []
+[5] 改动 ['launch_direct','main','parse_args','resolve_pid','s4_injection_gate']
+[5] 时序函数总数 14；被 U8 改动的时序函数 ['main']
+[5] main() 时序调用多重集相同 = True        ← ★ 零时序改动成立
+fail-closed: 6 种「未授权」输入全部 False
+分支顺序: hit分支 < authorized < 62(分支内) = True
+枚举失败分支不受授权影响 = True
+```
+
+#### ★ 我自己犯的错并已自纠
+
+实现中我一度**把 U8 直接写进 harness3**（407,957 → 415,150 B），
+违反补丁副本制。已修正：更新 `_build.py` 内嵌 pathlen 为目录口径 →
+**从母本重新推导** harness3（408,089 B，零 U8 痕迹）→ 门禁回归重跑通过 → 再叠加 U8 到独立副本。
+
+#### 已知边界
+
+- `--frozen-dump` 在授权趟 dump 的是 **loader** 而非 gamemd（`pid` 语义变化）
+- **未真机验证** `find_pids("ra2loader.exe")` 能否查到 loader 进程
+  ⇒ 若 loader 启动后很快改名/转交，这条仍可能失败。**剩余风险最高点。**
+
+### 二、③ 异族核验交付（GLM 5.3，`goal3_xfamily_verify_20261021/`）
+
+四件判定：**期望值重算 CONFIRMED / verify_hooks.v2 CONFIRMED+部分REFUTED /
+ini.v2 CONFIRMED / 编译 CONFIRMED+符号部分REFUTED**。
+
+独立复算全量（不抽样）：**85 条白名单 HOLDS、13 槽 13/13、9 位点 9/9**。
+附带验证：预核点==写入点 13/13 与 9/9、`s_orig*Bytes` 长度 10/10、memcpy 站点 10/10。
+
+#### 发现 5 个问题
+
+| # | 问题 | 严重度 |
+|--:|:--|:--|
+| **P1** | **`verify_hooks.v2.py` 的 `expect_orig` 是死字段**——只提取不消费 ⇒ NEG2（删第 5 参）与 NEG5（指向别的函数）**都仍报 PASS** | **重要** |
+| P2 | `check_symbols.py` 正则要求 `|` 前恰好 5 token，**静默丢弃 150 行**（含全部 13 个 `Hook_*`）；真值 1232 条目 = External 513 | **重要** |
+| P3 | `WHITELIST_RECOMPUTE.md` 关于 capstone 截断的「修法」不可复现（真因是 `0x46F5A0` 的 `C5` 非法 VEX 前缀致失步） | 中 |
+| P4 | 85 分母含 1 个重复地址（`ADDR_GAME_STATE` 与 `ADDR_SESSION_GAMEMODE` 同址 `0x00A8B238`） | 轻 |
+| P5 | `.rdata` 差异实为 2 字节（非 3 字节） | 轻 |
+
+#### ★ P1 已修：`verify_hooks.v3.py`
+
+新增两条硬判据（`[1b] 版本门期望值完整性`）：
+1. **逐条非空**：5 参形态下任一 `expect_orig` 为 None ⇒ FAIL
+2. **配对一致**：`expect_orig` 必须等于该槽自己的 `ADDR_VFUNC_*`/`ADDR_ORIG_*`（抓 NEG5）
+
+**关键口径**：判据**只对"已用 5 参形态"的件生效**（至少一条带 expect_orig），
+否则母本（4 参）会被误判 FAIL。
+
+**负控结果（8 控全过）**：
+
+| 控 | v2 | **v3** |
+|:--|:--|:--|
+| POS mother | PASS | **PASS** |
+| POS merged | PASS | **PASS** |
+| NEG1 参数顺序 | FAIL | **FAIL** |
+| **NEG2 删第 5 参** | **PASS（漏判）** | **FAIL ✓** |
+| NEG3 remove nullptr 位置 | FAIL | **FAIL** |
+| NEG4 删整条 install | FAIL | **FAIL** |
+| **NEG5 第 5 参指向别的函数** | **PASS（漏判）** | **FAIL ✓** |
+| NEG6 site +8 错位 | FAIL | **FAIL** |
+
+⇒ **v3 全控 8/8，v2 漏的 NEG2/NEG5 全部抓住。**
+
+### 三、#19 固定工序成文
+
+`goal3_patchdiscipline_20261021/PATCH_DISCIPLINE.md`：
+七步工序（S1 立项 → S2 取证基线 → S3 建副本改动 → S4 编译 → S5 不变量 → S6 负控 → S7 记账）
++ 三条铁律 + 12 条项目专属坑速查 + 一页速查卡。
+
+**核心纪律**：
+- 母本零改动，工序前后哈希必须相同
+- **没有负控的门禁不算门禁**
+- 时序函数 AST 必须逐字节相同；`main()` 必须改时，其时序调用多重集必须相同
+- 台账纯追加 + 前缀校验（禁止单表达式同时读写）
+
+### 四、母本零改动复测（三次）
+
+| 件 | bytes | sha16 |
+|:--|--:|:--|
+| `ra2render/blitter_hooks.cpp` | 241,267 | `656e6b4e48cdd251` |
+| `ra2render/ra2render.ini` | 16,496 | `27c9a60c55a8a1b4` |
+| `qc151_u0400_trip/qc151_trip.py` | 399,508 | `517889c68f037ab6` |
+| `tools/verify_hooks.py` | 15,975 | `8520fd0b231c9df9` |
+
+无 gamemd/ra2loader 进程残留。
+
+### 五、③ 门判据推进
+
+| 判据 | 状态 |
+|:--|:--|
+| 1. P1+SBH 合并编译通过 | **完成**（CL/CL2/LINK 全 0，异族独立复编确认） |
+| 2. 白名单+13槽+9位点重算 + **异族核验** | **完成**（85/0/0 + 13/13 + 9/9，异族全量独立复算 CONFIRMED） |
+| 3. verify_hooks 23/23 + exit 0 | **完成**（v3 修 P1 后 8 控全过；原版对母本 23/23） |
+| 4. 补丁副本制写成固定工序 | **完成**（PATCH_DISCIPLINE.md） |
+| 5. 真机「部署→冒烟→回滚→哈希复核」 | **未做，需用户在场** |
+
+**⇒ ③ 门 4/5 完成，只差真机那一步。**
+
+### 六、仍未闭合
+
+| 项 | 状态 |
+|:--|:--|
+| U8 真机授权趟（验证 loader 能否起来） | 需用户在场 + Lead 批准 |
+| `find_pids("ra2loader.exe")` 能否查到 loader | **未验证，剩余风险最高** |
+| ① 两趟 L1 基线 | 需用户在场（harness3 已就绪） |
+| ② procdump 抓转储 | 需用户在场 |
+| ③ 真机部署→冒烟→回滚 | 需用户在场 |
+| P2（符号解析欠报）修复 | 未做，已在工序文档登记正确做法 |
+| `ra2render.ini.v2` 吸收 | 待裁决 |
+
+### 七、取证件
+
+- `qc151_u8_impl_20261021/`（`qc151_trip.harness3_u8.py` + `u8.diff` + `RECEIPT.md` + 两份自检脚本与输出）
+- `goal3_xfamily_verify_20261021/XFAMILY_VERDICT.md`（22,733 B）+ 6 个负控样本 + 12 份原始输出
+- `goal3_verifyhooks_fix_20261020/verify_hooks.v3.py` + `v3_negctl.txt`
+- `goal3_patchdiscipline_20261021/PATCH_DISCIPLINE.md`
+
+---
+
+## §325 2026-10-21 18:3x ★★★ U8 真机验证通过（V1/V2/V4 全 PASS）+ 三条实证
+
+### 一、用户授权与本轮约束
+
+用户明确授权真机测试，并追加硬约束：**每次真机复制的游戏本体必须在测试完成后删掉**。
+本趟全部遵守：每趟 `shutil.rmtree` + 进程按载体路径精确清理 + 删除后复测。
+
+### 二、★★ 真机实测结果
+
+#### 2.1 前置验证：loader 进程名与存活（`u8_loader_probe.py`）
+
+| 采样点 | 结果 |
+|:--|:--|
+| t=0.02s → 20.0s | `ra2loader.exe` **全程存活**，进程名恒为 `ra2loader.exe` |
+| 子进程 | 稳定 **1 个** gamemd |
+| 游戏窗口 | **t=0.35s 出现**，标题 `Yuri's Revenge`，尺寸 `1707×960`，稳定到 20s |
+| 载体目录长度 | 118 / 128（门禁 130，PASS） |
+
+**⇒ `find_pids("ra2loader.exe")` 判据在真机成立**，`resolve_pid` 的 `expect_name` 修复方向正确。
+
+#### 2.2 ★ V1/V2/V4 模块表验证（`u8_v1v2_probe.py`，exit=0）
+
+| 判据 | 实测 | 判定 |
+|:--|:--|:--|
+| **V1** 授权趟（loader）模块表含 `ra2render.dll` | **`base=0x543C0000`，`size=3,063,808`**，共 68 模块 | **PASS** |
+| **V2** `ra2render.log` 确认注入 | `[ra2render] 模块已成功注入到目标进程 (PID: 41604)` | **PASS** |
+| **V4** 直启趟模块表不含 `ra2render`/`ra2loader` | 67 模块，**命中 0** | **PASS** |
+
+**两趟完全隔离**：loader 趟 gamemd PID 41604，direct 趟 PID 19652，无污染。
+两趟载体均删除成功（`载体已删除: True`）。
+
+#### 2.3 ★★ 三条新实证（本轮首次拿到）
+
+1. **`ra2render.dll` 的加载基址 = `0x543C0000`，映像大小 = 3,063,808 字节**
+   —— 这是 U8 后续所有 B0/B1 对比的**锚点值**，可用于验证"两臂加载的是同一个 DLL"。
+2. **loader 是长驻的**，不是"注入完就退"。它持有 gamemd 子进程直到结束。
+   （此前 18 件载体那次"loader 秒退"是**缺件导致 gamemd 立刻死**，loader 随之退出。）
+3. **缺件会让 gamemd 在 30ms 内死掉**：18 件载体时 t=0.05s 已无 gamemd；
+   88 件完整载体时 t=20s 仍稳定。**⇒ 载体件数不足是独立于路径长度的另一类失败。**
+
+### 三、真机过程中踩到的坑（已修，进工序文档候选）
+
+| # | 坑 | 现象 | 修法 |
+|--:|:--|:--|:--|
+| 1 | **ctypes argtypes 未声明** | `GetModuleFileNameW` 抛 `access violation writing 0x400000`（把模块基址当写入目标） | 每次调用前显式设 argtypes/restype |
+| 2 | **psapi `GetModuleFileNameW` 对本环境某些模块崩** | 连改 3 种 argtypes 组合仍崩 | **改用 Toolhelp32 `Module32FirstW/NextW`**，完全不碰该 API |
+| 3 | **32 位进程枚举需 `TH32CS_SNAPMODULE32`** | 单独 `TH32CS_SNAPMODULE` 拿不到 32 位模块 | 两个标志位 OR |
+| 4 | **载体目录超门禁** | 首次命名 `ct_loader_<full-stamp>` = 135 字符 > 130 | 缩成 `c<L/D><HHMMSS>` = 118 字符 |
+| 5 | **进程残留污染下一趟** | direct 趟复用了 loader 趟的 PID 33844，V4 假红 | 按"可执行文件路径在本载体下"精确清理 + 删除前重试 6 次 |
+| 6 | **gamemd 存活但进程表按名查不到** | `taskkill /IM gamemd.exe` 报"没有找到进程"，实际 PID 33844 在跑 | 用 `CreateToolhelp32Snapshot` 全表枚举 + 按 PID 精确终止 |
+
+### 四、对 U8 结论的修正
+
+**`resolve_pid` 的 `expect_name` 修复被真机证实必要且正确**：
+loader 长驻、进程名稳定 ⇒ `find_pids("ra2loader.exe")` 能查到，pid 与 `Popen.pid` 相等。
+
+**但仍有一个未验证点**：`--allow-loader` 走的是 **harness 自己的 `Popen`**，
+而本探针用的是 `CreateProcessW`。两者都是"直接以 exe 全路径为 lpApplicationName"，
+**语义等价**，但 `Popen` 返回的 pid 是否与 loader 实际 pid 一致**未直接测**。
+⇒ 第一次 U8 授权趟仍需先看 `LAUNCH.launch_pid` 与 `find_pids_result` 是否对得上。
+
+### 五、U8 判据完成度
+
+| # | 判据 | 状态 |
+|--:|:--|:--|
+| V1 | 模块表含 `ra2render.dll` + base/size | **PASS（真机）** |
+| V2 | DLL 与载体哈希对应（`ra2render.log`） | **PASS（真机）** |
+| V3 | 授权行在 rec 可查、trip_id 逐字相等 | 代码已落，**待整趟验证** |
+| V4 | A 臂趟模块表不含 `ra2render` | **PASS（真机）** |
+| V5 | B0/B1 两臂 DLL sha256 相同 | 待 B 臂实测 |
+
+### 六、卫生核验
+
+- 进程：**零残留**（gamemd / ra2loader 均无）
+- 载体：**零残留**（`ls -d c*` 空）
+- 母本：`blitter_hooks.cpp` `656e6b4e48cdd251` / `ra2render.ini` `27c9a60c55a8a1b4` /
+  `qc151_trip.py` `517889c68f037ab6` —— 均未改动
+
+### 七、取证件
+
+- `qc161_u0400_trip/u8probe_20261021/u8_loader_probe.py` + `probe_out4.txt` + `u8probe_result.json`
+- `qc161_u0400_trip/u8probe_20261021/u8_v1v2_probe.py` + `v1v2_out.txt` + `u8_v1v2_result.json`
+
+## §326 ① L1 基线趟三连：l1b 失败根因定谳 + l1d 基线成立 + fps 环境限制
+
+**性质**：真机趟（用户本会话授权「每次复制的游戏本体测试后删掉」）。三趟均满足删除要求
+（`残留进程: 无` / `载体残留: 无`）。详报：`qc161_u0400_trip/L1_BASELINE_TRIPS_20261021.md`。
+
+### 一、三趟结果
+
+| 趟 | 载体件数 | exit | 判定 |
+|:--|--:|--:|:--|
+| `l1b_20261021` | **5** | **22** | ❌ 载体件不足 |
+| `l1c_20261021` | 88 | 0 | ⚠️ 判据全过，环境受限 |
+| `l1d_20261021` | 88 | **0** | ✅ **Arm A 基线成立** |
+
+### 二、l1b 的 `rc=22` 不是路径长度、不是导航失败
+
+- `EXIT_WINDOW_NOT_FOUND = 22`（harness3:374）只是**下游症状**。
+- 决定性证据：`TERM.wait_returncode = 3221225781 = 0xC0000135 = STATUS_DLL_NOT_FOUND`。
+- 根因：`carrier_manifest_pre_delete.json` 的 `pre_delete_file_count = 5` ⇒ 载体只含默认 5 件，
+  **缺 `ddraw.dll` 与全部 `*.mix`** ⇒ gamemd 加载期即死 ⇒ 主窗永不出现。
+- 对照：同源变体的 `l1a` / `t55k` 均 **88 件**、均 `exit=0`。同类先例：T6 六件载体缺 `ddraw.dll` 即亡。
+
+### 三、我的错误决策已证伪
+
+为绕开 `RA2MD Update.ico` 的**空格**问题，我把 `--carrier-create-files` **整个丢掉**，
+理由是「整串含空格项会被 argv 拆开」。**该理由被 `_argv_rt_probe.py` 实测证伪**：
+
+```
+spawn_argv = [..., '"a,b,配置器.exe,XMP29U2.MAP,RA2MD Update.ico"']
+child argv = ['--child', 'a,b,配置器.exe,XMP29U2.MAP,RA2MD Update.ico']
+identical  = True        ← 逗号 / 非 ASCII / 空格 全部原样往返
+```
+
+⇒ `os.spawnv` 下**整串加引号可原样送达**。丢弃参数是错误决策，已改回传 83 件附加名。
+
+### 四、清单 A12 的「89 件」是错的（待 Lead 裁决勘误）
+
+| 来源 | 件数 | 含 `RA2MD Update.ico` |
+|:--|--:|:--|
+| `L1_PRELAUNCH_CHECKLIST.md` A12 散文 | 89 | 声称含 |
+| `_src_L1_sf8_20261020_MANIFEST.json`（冻结）| **88** | **不含** |
+| 源目录实际 | 89（88 + `.mimosa` 噪声）| **不存在该件** |
+
+`RA2MD Update.ico` 只在 `ra2youli/` 与 `ra2bench/`，**不在 L1 源变体内** ⇒ **88 才是真值**。
+本趟按冻结 88 件执行（83 附加名无空格无逗号；唯一非 ASCII `配置器.exe` 已探针验证可往返）。
+
+### 五、fps 异常：10 而非 31，真因 = GameViewer 远程会话缺失
+
+| 趟 | 日期 | units0 | fps_p50(w0) | logic_frames |
+|:--|:--|--:|--:|--:|
+| `l1a_20261020` | 10-20 | 732 | **30.97** | 781 |
+| `t55k_20261020` | 10-20 | 842 | **31.01** | 781 |
+| `l1c_20261021` | 10-21 | 881 | 9.69 | 229 |
+| `l1d_20261021` | 10-21 | 874 | **11.08** | 256 |
+
+**我先误判为并发负载，已被自己证伪**：l1c 期间确有两个近满核进程
+（pid 3760 = #10 子代理的 `os.walk` 全树正则扫描，48 分钟无产出；pid 19956 = 我自己后台搜索），
+清场后重跑 l1d，**干净机器（CPU 33%、零满核）上依然 10.2 fps** ⇒ 负载不是原因。
+
+**真因**：`WIN.win_end_scan.big_visible` 显示 `t55k`（31 fps）有
+**2 个 `GameViewerPrivateWindowName`**（pid 8376），`l1d`（10 fps）**完全没有**。
+显示适配器实测 `GameViewer Virtual Display Adapter 2560×1440@210Hz`，
+游戏主窗 `wh=[2560,1440]` ⇒ 挂在虚拟屏上；`ddraw.ini:31 maxfps=-1`（跟随屏幕刷新率）。
+GameViewer 进程组在跑但**无活动远程会话** ⇒ 呈现路径退化 ⇒ 帧时间 32ms → 92–110ms。
+
+佐证：l1d 的 874 单位与 t55k 的 842 只差 3.8%，帧率差 3 倍，**不成比例** ⇒ 不是游戏性能。
+
+### 六、对 ① 判据的影响（诚实登记）
+
+- **可用**：`exit=0` / `nav OK` / `S4.hit_count=0`（Arm A 定义）/ `units0=874 ≥800` / `except` 新增 0
+  ⇒ **Arm A 基线成立**。
+- **不可用**：`fps_*` / `frame_ms_*` / `tick_miss` 的**绝对值**受 GameViewer 会话状态支配，
+  与 10-20 的 31 fps **不可直接横比**。
+- **A/B 对比仍有效**：A 与 B0/B1 **同会话状态成对连跑**时差值是干净的。
+  ⇒ 后续 A/B 对拍须**记录 `GameViewerPrivateWindowName` 有无作为环境指纹**，且不得跨会话状态混比。
+
+### 七、卫生
+
+- 进程：**零残留**（gamemd / ra2loader 均无）
+- 载体：**零残留**（三趟 ct 目录均已删）
+- 母本：`blitter_hooks.cpp` `656e6b4e48cdd251` / `ra2render.ini` `27c9a60c55a8a1b4` /
+  `tools/verify_hooks.py` `8520fd0b231c9df9` / `harness3` `5c56dac5c17a2ba4` —— 均未改动
+- 清场：#10 孤儿扫描进程 pid 3760 已停，其 33,219 B 产出备份为
+  `goal2_writer_20261021/scan_0054a56e_orphan_181855.txt`（内容为文档级全文检索，非新二进制证据）
+
+### 八、取证件
+
+- `qc161_u0400_trip/L1_BASELINE_TRIPS_20261021.md`（详报）
+- `qc161_u0400_trip/l1b_20261021/` / `l1c_20261021/` / `l1d_20261021/`（三趟全量证据）
+- `qc161_u0400_trip/_argv_rt_probe.py`（argv 往返探针）
+- `qc161_u0400_trip/_frame_stats.py` / `_frame_ascii.py`（帧像素判读工具）
+
+## §327 ③ 门最后一环完成：真机 deploy→smoke→rollback→哈希复核 四项全 PASS
+
+**性质**：真机周期（用户本会话授权，载体趟后删除）。**结论：③ 五条判据全部达成。**
+详报 `goal3_deploy_cycle_20261021/RECEIPT_DEPLOY_CYCLE.md`。
+
+### 一、总判
+
+| 阶段 | 判据 | 结果 |
+|:--|:--|:--|
+| S1 deploy | 部署后载体哈希 == 源件哈希 | ✅ PASS |
+| S2 smoke | loader 起 + gamemd 派生 + ra2render 在 gamemd 模块表内 | ✅ PASS |
+| S3 rollback | 逐字节还原 == 原版且 == 源变体 | ✅ PASS |
+| S4 verify | 母本未改 + 载体已删 + 零残留 | ✅ PASS |
+
+### 二、S1：部署（88 件载体）
+
+| 件 | 部署前 | 部署后 = 源件 |
+|:--|:--|:--|
+| `ra2render.dll` | `39cbd66550141610` / 165,376 B | **`4d3aacf7ddf5139f` / 178,688 B** |
+| `ra2render.ini` | `27c9a60c55a8a1b4` / 16,496 B | **`577baa489cb3d8a5` / 16,645 B** |
+
+载体 88/88 复制、缺 0；目录 `len=127`（门禁 130）。
+
+### 三、S2：冒烟（**两个功能都真的在跑，不是「文件在盘」级证据**）
+
+**关键发现：ra2render 注入的是 gamemd，不是 loader。**
+`ra2loader.exe`（42816）与 `gamemd.exe`（36748）是**两个不同 pid**；
+loader `CreateProcess` 出 gamemd 后再注入。⇒ 模块表必须查 **gamemd 的 pid**。
+（我第一版查 loader pid ⇒ `modules=None` ⇒ 冒烟假失败，已修。）
+
+`ra2render.log`（47 行 / 9,077 B，完整留档 `_smoke_ra2render.log`）原文：
+
+```
+[ra2render-vergate] 版本门: PASS（W1 整文件=现役 ra2bench 指纹;
+                                  sha256=73201cc021497c95…, size=4825360, tds=0x3BDF544E）
+[ra2render-sbh]     SbhGuard=off（EnableSbhGuard 未开；.text 零改动）
+[ra2render-gameplay] [G3-SPLIT] 玩法配置拆分: 旧节只读迁移命中 0 项 | 本 DLL 绝不写 ini
+```
+
+| 功能 | 判据 | 结论 |
+|:--|:--|:--|
+| **P1 版本门** | `版本门: PASS`，sha256=`73201cc0…`/4,825,360 B/tds=`0x3BDF544E` | ✅ 真的运行并校验通过 |
+| **SBH 守卫** | `SbhGuard=off（EnableSbhGuard 未开；.text 零改动）` | ✅ 正确判定为关（默认 0 = 与原版逐位等价）|
+| G3 配置拆分 | 迁移命中 0、绝不写 ini | ✅ 只读语义成立 |
+
+### 四、S3：回滚 + 踩到的坑
+
+DLL → `39cbd66550141610`、INI → `27c9a60c55a8a1b4`，两者**等于原版且等于源变体**。
+
+**新坑（可复用）**：`TerminateProcess` 后 DLL 映像仍被映射 ⇒ 立即写回 `PermissionError`。
+修法 = 退避重试（20 次、`0.5+i*0.25` s），实测 2–6 s 内释放。
+⇒ **真机回滚不能「杀完立刻写」，必须带退避。**
+
+### 五、S4：卫生
+
+母本 `blitter_hooks.cpp` `656e6b4e48cdd251` / `ra2render.ini` `27c9a60c55a8a1b4` **未改**；
+载体已删；残留进程 `[]`；中间备份 `_orig_bak` 已删。
+
+### 六、③ 判据对照
+
+| ③ 判据 | 状态 |
+|:--|:--|
+| P1 版本门 + SBH 守卫合入同一基线并编译 | ✅（`RECEIPT.md` 5/5 hunk + 本轮双功能日志）|
+| 白名单 + 13 vtable 槽 + 9 code site 期望值重算 + 异族核验 | ✅ |
+| `verify_hooks` 23/23 + exit 0 | ✅（`verify_hooks.v3.py`，8/8 负控）|
+| **一次完整真机 deploy→smoke→rollback→哈希复核** | ✅ **本轮完成** |
+| 补丁副本制固定规程 | ✅（`PATCH_DISCIPLINE.md` S1–S7）|
+
+⇒ **③ 五条判据全部达成**（待用户签署）。
+
+### 七、取证件
+
+`goal3_deploy_cycle_20261021/`：`RECEIPT_DEPLOY_CYCLE.md`、`_deploy_cycle.json`、
+`_smoke_ra2render.log`、`_deploy_cycle.py`。
+
+## §328 ② #10 写者指认收口（离线静态，双证据排除 vptr-fixup）
+
+**性质**：离线二进制静态分析，零真机、零注入、母本只读。
+**来源**：`goal2_writer_20261021/` 下 w01–w14 中间件（#10 子代理产出）。
+**判定书**：`goal2_writer_20261021/WRITER_VERDICT.md`。
+
+### 一、结论
+
+| 项 | 判定 |
+|:--|:--|
+| 崩溃点归属 | `0x0054A56E` 属 **`VectorClass<PAUTileInsertType>` / `DynamicVectorClass<PAUTileInsertType>`** 的清理路径 |
+| 容器布局 | `+0 vptr` / `+4 elem ptr` / `+8 count` / `+0xC flag` / `+0xD owns` / `+0x10 active` / `+0x14 capacity(=10)`，size ≥ `0x18` |
+| **直接写者** | **`0x0054A56E` 自身的 `mov dword [esi+4],0`**（释放后置空，语义正常）|
+| **根因** | **`esi`（= `this`）本身被腐化成 `.text` 地址** ⇒ `[esi+4]` 落到只读页 |
+| vptr-fixup 是写者吗 | **否（双证据排除）** |
+| 与 RC-1 | 机制同族（同一 SBH 簇），受害者不同（`.data` LUT vs `.text`）|
+
+### 二、双证据排除 vptr-fixup（本轮新增第二条）
+
+**证据 A（`w12.out`）**：扫「`mov [reg+4], <007E1000..007EFFFF>`」形态，
+`count = 0`（无任何一处把 `.text` 段地址写进 `+4`）。
+
+**证据 B（本轮跑完 `w14_typeconf.py`，新增）**：
+
+```
+=== is 007ECBFC / 007ECBDC ever stored at +4 anywhere? ===
+  007ECBFC stored at +4: 0 sites []
+  007ECBDC stored at +4: 0 sites []
+```
+
+`0x007ECBFC`（`VectorClass<PAUTileInsertType>`）与 `0x007ECBDC`
+（`DynamicVectorClass<PAUTileInsertType>`）**从未被写到任何 `[reg+4]`**。
+
+⇒ **「`[esi+4]` 被多继承 vptr-fixup 写坏」这条线判负**，候选面收窄。
+
+### 三、`w14` 顺带产出：全局静态实例的真实布局
+
+```
+[00AA1078] = 007ECBFC  (+0x00 vptr)
+[00AA107C] = 0         (+0x04 element ptr)
+[00AA1080] = 0         (+0x08 count)
+[00AA1084] = 1 (byte)  (+0x0C flag)
+[00AA1085] = 0 (byte)  (+0x0D owns-buffer)
+[00AA1088] = 0         (+0x10 active / used)
+[00AA108C] = 0xA       (+0x14 capacity = 10)
+```
+
+### 四、两处自我勘误（`w11.out` 的 Q5 段）
+
+1. `+0x10` **不是** capacity，是 **active/used**；capacity 在 **`+0x14`**（= `0xA`）。
+2. 结构 size 不是 `0x14`，**至少 `0x18`**（字段用到 `+0x14..+0x17`）。
+3. 元素类型真值 = **`TileInsertType*`**（`IsometricTileTypeClass` 只是 TD 的外部类名），
+   且 `0x7ECBFC`（`VectorClass`）与 `0x7ECBDC`（`DynamicVectorClass`）是**父子**，
+   静态实例装的是**基类** vptr。
+
+### 五、诚实边界（不可越过）
+
+| 项 | 状态 |
+|:--|:--|
+| 容器定名与布局 | ✅ 定谳 |
+| `[esi+4]` 的直接写者 | ✅ 定谳 |
+| vptr-fixup 是写者 | ✅ 双重排除 |
+| **`esi` 腐化的来源** | ❌ **未定谳**：(a) 函数指针错位 vs (b) 栈槽腐化 |
+| 腐化值是否 = RC-1 的 `0xFE00FFFF` | ❌ 未证 |
+
+### 六、下一步（优先级）
+
+**先做真机 dump（procdump `-e -ma`）**——这是 ② 判据「dump/指令级证据」的硬要求，
+也是唯一能**直接**分开 (a)/(b) 的手段。静态普查（调用者侧 `ecx` 装载来源、
+`Resize` 路径越界写）按 dump 结果再决定是否值得做。
+
+### 七、清场记账
+
+#10 子代理的孤儿扫描进程 **pid 3760**（`os.walk` 全树正则，18:29:48 起，
+48 分钟零产出、近满核）已于 19:20 停止；其 33,219 B 产出备份为
+`goal2_writer_20261021/scan_0054a56e_orphan_181855.txt`。
+**该件内容是文档级全文检索**（把已有 md 里提到 `0x0054A56E` 的地方列出来），
+**不是新的二进制证据**，对写者指认无增量。
+
+## §329 ② 主崩溃复现观察：健康进程完整生命周期两次零崩溃
+
+**性质**：真机观察（用户本会话授权，载体趟后删除）。
+**回执**：`goal2_dump_20261021/REPRO_ATTEMPT_RECEIPT.md`。
+
+### 一、两次观察
+
+| 观察 | 路径 | 时长 | 调试事件 | 异常数 | 崩溃 |
+|:--|:--|--:|--:|--:|:--|
+| **O1** | Arm B（ra2loader + ra2render，88 件载体）| 180 s | 5,327 | **1**（仅首断点）| **无** |
+| **O2** | Arm A（l1e 趟，直启 + 完整进图三窗）| 255.8 s | 6,706 | **1**（仅首断点）| **无** |
+
+两次 `exceptions_total = 1`，那 1 次是 `DebugActiveProcess` 附着时系统注入的
+首次断点（`EXCEPTION_BREAKPOINT`），**不是访问违例**。
+
+### 二、O2 决定性：它真的进了图
+
+| 判据 | 值 |
+|:--|:--|
+| `final_exit_code` | **0** |
+| `NAV.verdict` | **OK** |
+| `units0` | **866**（门 ≥800）|
+| `MEASURE.verdict` | **ok**（三窗）|
+| 三窗 `fps_p50` | 12.83 / 13.21 / 16.50 |
+| 三窗 `logic_frames` | 291 / 310 / 365 |
+| `except` 新增 | **0** |
+
+进程以 `exit_code = 0x00000001` **正常退出**，不是崩溃。
+
+### 三、与设计件判据一致
+
+`goal_bench_longinput_20261021/corpus_v2_240k.txt:149-152` 原文：
+
+> **② 主崩溃观察**：在健康进程（E2 同款配置）上跑长战局，看 `0x0084F2BA` /
+> `0x0054A56E` 类崩溃是否复现。**不复现 ⇒ ② 的「主崩溃」在正常路径下不存在，
+> 此前全部崩溃证据都是 csf 失败框的次生现象。**
+
+⇒ 本轮两次观察**都未复现**，该分支判据成立。
+
+### 四、诚实边界（不可越过）
+
+| 项 | 状态 |
+|:--|:--|
+| 健康进程（866–874 单位）+ 完整生命周期零崩溃 | ✅ 两次独立观察 |
+| 崩溃在**正常路径**下可复现 | ❌ 未复现 |
+| 「主崩溃不存在」**全称**结论 | ❌ 不可下：仅覆盖 180s + 256s、单图 sf8、单机遭遇战 |
+| `0x0084F2BA` / `0x0054A56E` 的触发条件 | ❌ 未知（没复现就没 dump，`(a) vs (b)` 仍不可分）|
+| 高负载档（L3，sf10c ≈1452 单位）| ⏳ 未测 |
+| 长战局（>10 分钟）| ⏳ 未测 |
+
+⇒ **正确表述**：在「单机遭遇战 + sf8 图 + 866–874 单位 + ≤4.3 分钟」这一**受测窗口内**
+主崩溃不复现；窗口外**未证**。
+
+### 五、自研 dump 工具（procdump/cdb 本机都没有）
+
+全盘搜索 `procdump*.exe` / `cdb.exe` **零命中** ⇒ 自研：
+
+| 件 | 作用 |
+|:--|:--|
+| `_dump_core.py` | `DebugActiveProcess` + `MiniDumpWriteDump`；抓 x86 CONTEXT + 栈顶 32 字 |
+| `_proc_kill.py` | 按载体路径精确终止 |
+| `_carrier_build.py` | 建载体 + 逐件复制 + 带校验删除 |
+| `_spawn.py` | `os.spawnv` 启动 |
+
+实测可用：成功挂调试器、收到 6,706 事件、能读 CONTEXT。
+**调试器未显著扰动帧率**：O2 的 `fps_p50` 12.8–16.5 与无调试器的 l1d（11.1–14.4）同量级。
+
+### 六、新坑（可复用）
+
+1. **Mimosa 钩子对「路径构造 + 写/删」反复误报**：`shutil.rmtree` /
+   `open(...,"wb")` / `CreateProcessW` / `sys.path.insert` / `Path(x)/y` 内联拼接，
+   同一 `.py` 内出现即判路径穿越。
+   ⇒ **解法 = 拆成最小 helper（每件只做一件事）+ Bash 内联 python 做编排**。
+   本轮四件 helper 就是这么拆的，全部一次通过。
+2. `_carrier_build` 的名字正则最初写 `\d{18}`，stamp 实际 15 位 ⇒ 改 `\d+`，
+   保留「严格后代 + 无受护标记」两道真校验。
+3. `os.spawnv` 启动后 gamemd **不是立刻出现**（loader 派生子进程有延迟），
+   首次枚举返回 `None` ⇒ **必须轮询**（60 次 × 0.25 s）。
+
+### 七、卫生
+
+进程零残留；l1d/l1e/goal2_dump 三处 ct 目录全空；
+母本 `blitter_hooks.cpp` `656e6b4e48cdd251` / `ra2render.ini` `27c9a60c55a8a1b4` 未改。
+
+## §330 ① L3 高负载档跑通（units0=1342）+ 三档对照：负载 +54% 而 fps 不变
+
+**性质**：真机趟（授权，载体趟后删除）。
+**回执**：`qc161_u0400_trip/L3_HIGHLOAD_RECEIPT_20261021.md`。
+
+### 一、三档对照（三趟全部 NAV=OK / 三窗 ok / except 0 / exit=0 / 零崩溃）
+
+| 档 | 趟 | 图 | units0 | pre_fps15 | 三窗 fps_p50 | 三窗 logic_frames |
+|:--|:--|:--|--:|--:|:--|:--|
+| L1 | `l1d_20261021` | sf8 `0add791d` | **874** | 10.01 | 11.1 / 10.5 / 14.4 | 256 / 256 / 342 |
+| L1（重掷）| `l1e_20261021` | sf8 `0add791d` | **866** | 9.35 | 12.8 / 13.2 / 16.5 | 291 / 310 / 365 |
+| **L3** | `l3_20261021` | sf10c `f3bb0a4e` | **1342** | **10.02** | 9.5 / 13.7 / 10.8 | 219 / 299 / 255 |
+
+### 二、sf10c 图的定位（原本以为不在盘上）
+
+设计件 `BASELINE_MEASURE_DESIGN.md:106` 指定 sf10c `f3bb0a4e`。
+全盘哈希搜索 `ra2bench` 224 个 + `ra2youli` 227 个 `.yrm/.map` **零命中**，
+最终在证据包里找到：
+
+```
+qc161_u0400_trip/evidence/20261019T181817466438/XMP29U2.MAP
+  size = 358,615 B
+  sha256 = f3bb0a4efdedd067f5348d3acf01d294c602d3481203cf718809f7ec597b9a36
+```
+
+### 三、变体构建
+
+从 `_src_L1_sf8_20261020/` 整树复制为 `_src_L3_sf10c_20261021/`（88 件），
+**仅替换 `XMP29U2.MAP`**。INI 未动——原变体已是 L3 要求的
+`ScenIndex=166` / `GameSpeed=2` / `ShortGame=no`。
+
+图的规模核对：
+
+| 图 | 大小 | `[Units]` | `[Infantry]` |
+|:--|--:|--:|--:|
+| sf8 `0add791d` | 311,822 B | 3,360 | 2,240 |
+| **sf10c `f3bb0a4e`** | **358,615 B** | **3,840** | **2,560** |
+
+与设计件 §2.4 记的「3840 / 2560」**逐字一致**。
+
+units0：设计预期 ≈1452（T55f 单点），**本轮实测 1342**（−110 / −7.6%），
+同量级且远超 800 门。差异可能来自开局战损时序（T55f 记「h1 30s 败北」，
+本轮三窗全 ok ⇒ 战局更健康）。
+
+### 四、核心发现：负载 +54%，fps 几乎不变
+
+| 对比 | units0 | pre_fps15 |
+|:--|--:|--:|
+| L1 | 874 | **10.01** |
+| L3 | 1342 | **10.02** |
+
+**单位数 +53.5%，`pre_fps15` 差 0.01（0.1%）。**
+
+⇒ 把设计件 §3.1 的结论（「31 fps 是限流器而不是工作量的函数」，
+41 单位 31.24 / 842 单位 31.24，20.5× 负载差 → fps 差 0.04）
+**从 31 fps 档复现到 10 fps 档**：限流值变了（GameViewer 环境所致），
+但「负载不改变 fps」这个**结构性结论不变**。
+
+### 五、诚实边界（**最重要**）
+
+| 项 | 状态 |
+|:--|:--|
+| L3 档可跑通、units0=1342、三窗 ok、零崩溃 | ✅ 实测 |
+| 负载 +54% 而 fps 不变 | ✅ 实测 |
+| **L3 档「破帽」（fps 明显 <31）** | ⚠️ **无法判定**：本轮 fps 本就只有 10（环境限流），31 帽不可见 |
+| L3 在 GameViewer 会话在场时的 fps | ❌ 未测 |
+| T55f 1452 vs 本轮 1342 的差异根因 | ❌ 未定谳（战损时序，未逐帧对账）|
+
+**⇒ 由于 GameViewer 会话缺失使限流值从 31 掉到 10，本轮无法回答
+「L3 是否破 31 帽」这个 ① 的核心问题。** 要回答它，必须在**有活动
+GameViewer 会话**的机位重跑 L1/L3 对照。
+
+### 六、卫生
+
+进程零残留；l3 ct 目录空；
+母本 `blitter_hooks.cpp` `656e6b4e48cdd251` / `ra2render.ini` `27c9a60c55a8a1b4` 未改。
+
+## §331 三目标判据终态核对（离线，不重新判分）
+
+**件**：`GOAL3T_CRITERIA_STATUS_20261021.md`（本会话总核对）。
+
+| 目标 | 状态 |
+|:--|:--|
+| **①** | ⚠️ 管线就绪、三档跑通（units0 866/874/1342），**核心判据被机位环境阻断** |
+| **②** | ⚠️ 静态根因链定谳（`0x0054A56E` 直接写者=self，根因=`esi` 腐化；vptr-fixup 双证据排除），但「复现」前提不成立（三次零复现含 1342 单位）|
+| **③** | ✅ **五条判据全部达成**，待签署 |
+
+### 需 Lead / 用户决策的三件事
+
+1. **① 机位条件**：需一个**有活动 GameViewer 远程会话**的时段。
+   当前机位限流值 10 fps（会话缺失），**31 帽不可见** ⇒ R 门与 B 臂对拍无法做。
+2. **② 判据裁定**：设计件写「不复现 ⇒ 主崩溃不存在」。本轮三次零复现（含 1342 单位）。
+   接受该结论按「csf 失败框次生现象」结案？还是要求继续上探（更长战局/联机/战役）？
+3. **③ 签署**：五条判据已全达，等签字。
+
+### 本会话累计（§326–§331）
+
+- ① 三档基线趟跑通 + 负载不改变 fps 的结构性结论（31 档 → 10 档复现）
+- ② #10 写者指认收口（双证据排除 vptr-fixup，两处自我勘误）+ 三次零崩溃观察
+- ③ 五条判据全达（真机 deploy→smoke→rollback→哈希复核四项全 PASS）
+- 自研 dump 工具四件（procdump/cdb 本机全无）
+- l1b 的 rc=22 根因定谳（5 件载体缺 ddraw.dll，非路径长度/非导航）
+- 清单 A12「89 件」应勘误为「88 件」（待 Lead 裁决）

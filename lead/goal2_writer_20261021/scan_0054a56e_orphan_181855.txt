@@ -1,0 +1,159 @@
+.\GOAL_THREE_TARGETS_20261018.md                                       :259   - 2026-10-20 20:1x **★★★ D-117 路径长度根因定谳 + L1 基线趟首次成功（日志 §313）**：**L1 五趟（含 E1/E1b/E1c）失败的真因 = 载体绝对路径 ≥131 字符**，与崩溃/遮挡/地图/csf 缺件全无关。证据链三重：①**全趟相关性精确**——唯一成功趟 t55k=130 字符，四个
+.\GOAL_THREE_TARGETS_20261018.md                                       :262   - 2026-10-20 23:3x **★★ 本轮后段：三线全部由主会话自行收口（日志 §314 §六–§十一）**：**③ verify_hooks 假绿已修并四档实跑全绿**——MOTHER 13/13 PASS、P1 13/13 PASS、P1+SBH+母本 ini 13/13 但 ini 23/24 **FAIL**（缺口真实）
+.\ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md                               :3745  **前提已变**：现在有健康进程可对照。主崩溃（`0x0084F2BA` / `0x0054A56E` 类）
+.\ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md                               :3849  `0x0054A56E` 的 `esi` 腐化同族。**(a) 函数指针 vs (b) 栈返回地址 未定谳，需真机 dump。**
+.\ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md                               :4026  #### 12.4 `0x0054A56E` 的 esi 溯源
+.\ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md                               :4036  0x0054A56E  mov dword [esi+4],0     ; ← EIP，写 this+4 失败
+.\ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md                               :4051  ⇒ 千问把 `same_family_as_rc1` 设为 `true`，但**在报告里明确限定**为「与 `0x0054A56E` 共享的堆腐化机制」，
+.\ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md                               :4059  | `0x0054A56E` 前一条是 `free([esi+4])`、SBH 链与 RC-1 守卫同簇 | **指令级，与运行状态无关** |
+.\ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md                               :4118  | HOLDS | **19** | 段归属/页保护/哈希/字节/fnstsw 解码/LUT 结构/三个常数/mid-element/写线索全负/`0x54A56E` free 链与 SBH 同簇 |
+.\ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md                               :4129  5. `0x0054A56E` 前一条确凿是 `free([esi+4])@0x0054A566`，与 RC-1 共享 SBH 分配器
+.\goal1_gate_offline_20261021\CRASH_PATHLEN_AUDIT.md                   :112   | `l1_u0800_e1c_dump_20261020` | **`E1C_CRASH_ADDRESS_ANALYSIS.md`**、`E2_D117_PATH_LENGTH_ROOTCAUSE.md`、`frame_early_01.png`(800×600)、`error.txt` | `...\l1_u0800_e1c_dump
+.\goal1_gate_offline_20261021\CRASH_PATHLEN_AUDIT.md                   :185   | 崩溃地址 | `0x0084F2BA` | `0x0054A56E` |
+.\goal1_gate_offline_20261021\CRASH_PATHLEN_AUDIT.md                   :239   | 1 | `0x0084F2BA` / `0x0054A56E` 的**机器可读原始出处** | **未找到** | 两个地址只出现在两份 `.md` 的**叙述文字**里。`grep` 全 lead 树，除这两份 md 外无第二处；`qc151_fields.json` 里**没有** `crash`/`eip`/`fault` 字段
+.\goal1_gate_offline_20261021\CRASH_PATHLEN_AUDIT.md                   :310   | 有趟崩过吗？ | **有，2 趟**（E1b `0x0084F2BA` / E1c `0x0054A56E`） | §4 |
+.\goal1_gate_offline_20261021\CRASH_PATHLEN_AUDIT.md                   :330   | 1 | 全表把 `l1_u0800_e1b` / `e1c` 只记为"800×600 early / exit 19"，**两份都未列崩溃地址** | **补上** `0x0084F2BA` / `0x0054A56E`，并单列 §4 归因 | `E1B_CRASH_DIALOG_IDENTIFIED.md:21,37`；`E1C_C
+.\goal2_crashaddr_20261020\CRASH_ADDR_ANALYSIS.md                      :1     # CRASH_ADDR_ANALYSIS — instruction-level adjudication of `0x0084F2BA` (and `0x0054A56E`)
+.\goal2_crashaddr_20261020\CRASH_ADDR_ANALYSIS.md                      :109   ## 5. The `0x0054A56E` `mov dword [esi+4],0` crash (esi provenance)
+.\goal2_crashaddr_20261020\CRASH_ADDR_ANALYSIS.md                      :126   0x0054A56E  mov   dword [esi+4],0   <== EIP  ; write to THIS+4  faults
+.\goal2_crashaddr_20261020\CRASH_ADDR_ANALYSIS.md                      :131   **Corruption path.** This is the `DynamicArray::Resize/Copy` shape (it allocs `ebp*4`, copies `esi+4` buffer into `edi`, then frees the old `esi+4` and resets `esi+4=0; e
+.\goal2_crashaddr_20261020\CRASH_ADDR_ANALYSIS.md                      :139   - **Same family? YES, mechanism-level.** 0x0054A56E and RC-1 share (a) the **identical SBH allocator** (0x7c8b3d/0x7c93e8/0x7cf7bd ↔ guard 0x7cfc9b ↔ globals 0x00B78B94/9
+.\goal2_crashaddr_20261020\CRASH_ADDR_ANALYSIS.md                      :140   - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal2_crashaddr_20261020\CRASH_ADDR_ANALYSIS.md                      :140   - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal2_crashaddr_20261020\CRASH_ADDR_ANALYSIS.md                      :151   - 0x0054A56E `mov [esi+4],0` is preceded at **0x0054A566 by `free([esi+4])`**; `esi=this`; SBH chain 0x7c8b3d→0x7c93e8→0x7cf7bd ↔ RC-1 guard 0x7cfc9b (same 0x00B78B94 clu
+.\goal2_crashaddr_20261020\CRASH_ADDR_ANALYSIS.md                      :154   - The precise corruption of `esi` at 0x54A56E and whether its poison equals RC-1's 0xFE00FFFF: I can prove *mechanism + allocator* statically, but **cannot** prove the co
+.\goal2_crashaddr_20261020\INDEP_CHECK_MAIN.md                         :111   - **(b) 栈上返回地址被腐化**：`ret` 弹出这个值。这与 §312 另一条 `0x0054A56E` 的
+.\goal2_crashaddr_20261020\VERIFY_GLM.md                               :98    ### 1.5 0x0054A56E 例程（stage disasm）
+.\goal2_crashaddr_20261020\VERIFY_GLM.md                               :100   0x0054A4FA `mov esi, ecx`（provenance 根）→ 0x0054A506 `mov byte [esi+0xc],0` → 0x0054A50E `lea eax,[ebp*4]` → 0x0054A515 `push eax` → 0x0054A516 `call 0x7c8e17`（malloc）→ 0x
+.\goal2_crashaddr_20261020\VERIFY_GLM.md                               :144   | 16 | conclusion(4)/§5：0x0054A56E 前一条确凿=free([esi+4])@0x0054A566，链 0x7C8B3D→0x7C93E8→0x7CF7BD，与 RC-1 守卫 0x7CFC9B 同簇 0x00B78B94/98 | **HOLDS** | §1.5 反汇编逐条证实（注：0x00B78B94
+.\goal2_crashaddr_20261020\VERIFY_GLM.md                               :169   被复核报告的**核心裁决全部经独立重算成立**：段归属与页属性、32 字节、fnstsw 解码与写目标算术、mid-element/槽 141=0.107935、三条写线索全负（含全文件级搜索）、0x0054A56E 的 free 链与 SBH 同族判定、四个候选写点的指令原文与地址算术。我的全量扫描与报告逐数吻合（1,392,592 条
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :150   `0x0054A56E` 类崩溃是否复现。**不复现 ⇒ ② 的「主崩溃」在正常路径下不存在，
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :430   # CRASH_ADDR_ANALYSIS — instruction-level adjudication of `0x0084F2BA` (and `0x0054A56E`)
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :540   ## 5. The `0x0054A56E` `mov dword [esi+4],0` crash (esi provenance)
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :557   0x0054A56E  mov   dword [esi+4],0   <== EIP  ; write to THIS+4  faults
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :562   **Corruption path.** This is the `DynamicArray::Resize/Copy` shape (it allocs `ebp*4`, copies `esi+4` buffer into `edi`, then frees the old `esi+4` and resets `esi+4=0; e
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :570   - **Same family? YES, mechanism-level.** 0x0054A56E and RC-1 share (a) the **identical SBH allocator** (0x7c8b3d/0x7c93e8/0x7cf7bd ↔ guard 0x7cfc9b ↔ globals 0x00B78B94/9
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :571   - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :571   - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :582   - 0x0054A56E `mov [esi+4],0` is preceded at **0x0054A566 by `free([esi+4])`**; `esi=this`; SBH chain 0x7c8b3d→0x7c93e8→0x7cf7bd ↔ RC-1 guard 0x7cfc9b (same 0x00B78B94 clu
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :585   - The precise corruption of `esi` at 0x54A56E and whether its poison equals RC-1's 0xFE00FFFF: I can prove *mechanism + allocator* statically, but **cannot** prove the co
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :692   ### 1.5 0x0054A56E 例程（stage disasm）
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :694   0x0054A4FA `mov esi, ecx`（provenance 根）→ 0x0054A506 `mov byte [esi+0xc],0` → 0x0054A50E `lea eax,[ebp*4]` → 0x0054A515 `push eax` → 0x0054A516 `call 0x7c8e17`（malloc）→ 0x
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :738   | 16 | conclusion(4)/§5：0x0054A56E 前一条确凿=free([esi+4])@0x0054A566，链 0x7C8B3D→0x7C93E8→0x7CF7BD，与 RC-1 守卫 0x7CFC9B 同簇 0x00B78B94/98 | **HOLDS** | §1.5 反汇编逐条证实（注：0x00B78B94
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :763   被复核报告的**核心裁决全部经独立重算成立**：段归属与页属性、32 字节、fnstsw 解码与写目标算术、mid-element/槽 141=0.107935、三条写线索全负（含全文件级搜索）、0x0054A56E 的 free 链与 SBH 同族判定、四个候选写点的指令原文与地址算术。我的全量扫描与报告逐数吻合（1,392,592 条
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :1819  `0x0054A56E` 类崩溃是否复现。**不复现 ⇒ ② 的「主崩溃」在正常路径下不存在，
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2101  # CRASH_ADDR_ANALYSIS — instruction-level adjudication of `0x0084F2BA` (and `0x0054A56E`)
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2209  ## 5. The `0x0054A56E` `mov dword [esi+4],0` crash (esi provenance)
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2226  0x0054A56E  mov   dword [esi+4],0   <== EIP  ; write to THIS+4  faults
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2231  **Corruption path.** This is the `DynamicArray::Resize/Copy` shape (it allocs `ebp*4`, copies `esi+4` buffer into `edi`, then frees the old `esi+4` and resets `esi+4=0; e
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2239  - **Same family? YES, mechanism-level.** 0x0054A56E and RC-1 share (a) the **identical SBH allocator** (0x7c8b3d/0x7c93e8/0x7cf7bd ↔ guard 0x7cfc9b ↔ globals 0x00B78B94/9
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2240  - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2240  - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2253  - 0x0054A56E `mov [esi+4],0` is preceded at **0x0054A566 by `free([esi+4])`**; `esi=this`; SBH chain 0x7c8b3d→0x7c93e8→0x7cf7bd ↔ RC-1 guard 0x7cfc9b (same 0x00B78B94 clu
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2256  - The precise corruption of `esi` at 0x54A56E and whether its poison equals RC-1's 0xFE00FFFF: I can prove *mechanism + allocator* statically, but **cannot** prove the co
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2361  ### 1.5 0x0054A56E 例程（stage disasm）
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2363  0x0054A4FA `mov esi, ecx`（provenance 根）→ 0x0054A506 `mov byte [esi+0xc],0` → 0x0054A50E `lea eax,[ebp*4]` → 0x0054A515 `push eax` → 0x0054A516 `call 0x7c8e17`（malloc）→ 0x
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2407  | 16 | conclusion(4)/§5：0x0054A56E 前一条确凿=free([esi+4])@0x0054A566，链 0x7C8B3D→0x7C93E8→0x7CF7BD，与 RC-1 守卫 0x7CFC9B 同簇 0x00B78B94/98 | **HOLDS** | §1.5 反汇编逐条证实（注：0x00B78B94
+.\goal_bench_longinput_20261021\corpus_v2_240k.txt                     :2434  被复核报告的**核心裁决全部经独立重算成立**：段归属与页属性、32 字节、fnstsw 解码与写目标算术、mid-element/槽 141=0.107935、三条写线索全负（含全文件级搜索）、0x0054A56E 的 free 链与 SBH 同族判定、四个候选写点的指令原文与地址算术。我的全量扫描与报告逐数吻合（1,392,592 条
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :152   `0x0054A56E` 类崩溃是否复现。**不复现 ⇒ ② 的「主崩溃」在正常路径下不存在，
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :438   # CRASH_ADDR_ANALYSIS — instruction-level adjudication of `0x0084F2BA` (and `0x0054A56E`)
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :550   ## 5. The `0x0054A56E` `mov dword [esi+4],0` crash (esi provenance)
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :567   0x0054A56E  mov   dword [esi+4],0   <== EIP  ; write to THIS+4  faults
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :574   **Corruption path.** This is the `DynamicArray::Resize/Copy` shape (it allocs `ebp*4`, copies `esi+4` buffer into `edi`, then frees the old `esi+4` and resets `esi+4=0; e
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :582   - **Same family? YES, mechanism-level.** 0x0054A56E and RC-1 share (a) the **identical SBH allocator** (0x7c8b3d/0x7c93e8/0x7cf7bd ↔ guard 0x7cfc9b ↔ globals 0x00B78B94/9
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :583   - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :583   - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :594   - 0x0054A56E `mov [esi+4],0` is preceded at **0x0054A566 by `free([esi+4])`**; `esi=this`; SBH chain 0x7c8b3d→0x7c93e8→0x7cf7bd ↔ RC-1 guard 0x7cfc9b (same 0x00B78B94 clu
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :597   - The precise corruption of `esi` at 0x54A56E and whether its poison equals RC-1's 0xFE00FFFF: I can prove *mechanism + allocator* statically, but **cannot** prove the co
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :706   ### 1.5 0x0054A56E 例程（stage disasm）
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :708   0x0054A4FA `mov esi, ecx`（provenance 根）→ 0x0054A506 `mov byte [esi+0xc],0` → 0x0054A50E `lea eax,[ebp*4]` → 0x0054A515 `push eax` → 0x0054A516 `call 0x7c8e17`（malloc）→ 0x
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :754   | 16 | conclusion(4)/§5：0x0054A56E 前一条确凿=free([esi+4])@0x0054A566，链 0x7C8B3D→0x7C93E8→0x7CF7BD，与 RC-1 守卫 0x7CFC9B 同簇 0x00B78B94/98 | **HOLDS** | §1.5 反汇编逐条证实（注：0x00B78B94
+.\goal_bench_longinput_20261021\corpus_v2_60k.txt                      :779   被复核报告的**核心裁决全部经独立重算成立**：段归属与页属性、32 字节、fnstsw 解码与写目标算术、mid-element/槽 141=0.107935、三条写线索全负（含全文件级搜索）、0x0054A56E 的 free 链与 SBH 同族判定、四个候选写点的指令原文与地址算术。我的全量扫描与报告逐数吻合（1,392,592 条
+.\goal_bench_longinput_20261021\long_corpus.txt                        :150   `0x0054A56E` 类崩溃是否复现。**不复现 ⇒ ② 的「主崩溃」在正常路径下不存在，
+.\goal_bench_longinput_20261021\long_corpus.txt                        :430   # CRASH_ADDR_ANALYSIS — instruction-level adjudication of `0x0084F2BA` (and `0x0054A56E`)
+.\goal_bench_longinput_20261021\long_corpus.txt                        :540   ## 5. The `0x0054A56E` `mov dword [esi+4],0` crash (esi provenance)
+.\goal_bench_longinput_20261021\long_corpus.txt                        :557   0x0054A56E  mov   dword [esi+4],0   <== EIP  ; write to THIS+4  faults
+.\goal_bench_longinput_20261021\long_corpus.txt                        :562   **Corruption path.** This is the `DynamicArray::Resize/Copy` shape (it allocs `ebp*4`, copies `esi+4` buffer into `edi`, then frees the old `esi+4` and resets `esi+4=0; e
+.\goal_bench_longinput_20261021\long_corpus.txt                        :570   - **Same family? YES, mechanism-level.** 0x0054A56E and RC-1 share (a) the **identical SBH allocator** (0x7c8b3d/0x7c93e8/0x7cf7bd ↔ guard 0x7cfc9b ↔ globals 0x00B78B94/9
+.\goal_bench_longinput_20261021\long_corpus.txt                        :571   - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\long_corpus.txt                        :571   - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\long_corpus.txt                        :582   - 0x0054A56E `mov [esi+4],0` is preceded at **0x0054A566 by `free([esi+4])`**; `esi=this`; SBH chain 0x7c8b3d→0x7c93e8→0x7cf7bd ↔ RC-1 guard 0x7cfc9b (same 0x00B78B94 clu
+.\goal_bench_longinput_20261021\long_corpus.txt                        :585   - The precise corruption of `esi` at 0x54A56E and whether its poison equals RC-1's 0xFE00FFFF: I can prove *mechanism + allocator* statically, but **cannot** prove the co
+.\goal_bench_longinput_20261021\long_corpus.txt                        :692   ### 1.5 0x0054A56E 例程（stage disasm）
+.\goal_bench_longinput_20261021\long_corpus.txt                        :694   0x0054A4FA `mov esi, ecx`（provenance 根）→ 0x0054A506 `mov byte [esi+0xc],0` → 0x0054A50E `lea eax,[ebp*4]` → 0x0054A515 `push eax` → 0x0054A516 `call 0x7c8e17`（malloc）→ 0x
+.\goal_bench_longinput_20261021\long_corpus.txt                        :738   | 16 | conclusion(4)/§5：0x0054A56E 前一条确凿=free([esi+4])@0x0054A566，链 0x7C8B3D→0x7C93E8→0x7CF7BD，与 RC-1 守卫 0x7CFC9B 同簇 0x00B78B94/98 | **HOLDS** | §1.5 反汇编逐条证实（注：0x00B78B94
+.\goal_bench_longinput_20261021\long_corpus.txt                        :763   被复核报告的**核心裁决全部经独立重算成立**：段归属与页属性、32 字节、fnstsw 解码与写目标算术、mid-element/槽 141=0.107935、三条写线索全负（含全文件级搜索）、0x0054A56E 的 free 链与 SBH 同族判定、四个候选写点的指令原文与地址算术。我的全量扫描与报告逐数吻合（1,392,592 条
+.\goal_bench_longinput_20261021\long_corpus.txt                        :1819  `0x0054A56E` 类崩溃是否复现。**不复现 ⇒ ② 的「主崩溃」在正常路径下不存在，
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2099  # CRASH_ADDR_ANALYSIS — instruction-level adjudication of `0x0084F2BA` (and `0x0054A56E`)
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2209  ## 5. The `0x0054A56E` `mov dword [esi+4],0` crash (esi provenance)
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2226  0x0054A56E  mov   dword [esi+4],0   <== EIP  ; write to THIS+4  faults
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2231  **Corruption path.** This is the `DynamicArray::Resize/Copy` shape (it allocs `ebp*4`, copies `esi+4` buffer into `edi`, then frees the old `esi+4` and resets `esi+4=0; e
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2239  - **Same family? YES, mechanism-level.** 0x0054A56E and RC-1 share (a) the **identical SBH allocator** (0x7c8b3d/0x7c93e8/0x7cf7bd ↔ guard 0x7cfc9b ↔ globals 0x00B78B94/9
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2240  - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2240  - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2251  - 0x0054A56E `mov [esi+4],0` is preceded at **0x0054A566 by `free([esi+4])`**; `esi=this`; SBH chain 0x7c8b3d→0x7c93e8→0x7cf7bd ↔ RC-1 guard 0x7cfc9b (same 0x00B78B94 clu
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2254  - The precise corruption of `esi` at 0x54A56E and whether its poison equals RC-1's 0xFE00FFFF: I can prove *mechanism + allocator* statically, but **cannot** prove the co
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2361  ### 1.5 0x0054A56E 例程（stage disasm）
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2363  0x0054A4FA `mov esi, ecx`（provenance 根）→ 0x0054A506 `mov byte [esi+0xc],0` → 0x0054A50E `lea eax,[ebp*4]` → 0x0054A515 `push eax` → 0x0054A516 `call 0x7c8e17`（malloc）→ 0x
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2407  | 16 | conclusion(4)/§5：0x0054A56E 前一条确凿=free([esi+4])@0x0054A566，链 0x7C8B3D→0x7C93E8→0x7CF7BD，与 RC-1 守卫 0x7CFC9B 同簇 0x00B78B94/98 | **HOLDS** | §1.5 反汇编逐条证实（注：0x00B78B94
+.\goal_bench_longinput_20261021\long_corpus.txt                        :2432  被复核报告的**核心裁决全部经独立重算成立**：段归属与页属性、32 字节、fnstsw 解码与写目标算术、mid-element/槽 141=0.107935、三条写线索全负（含全文件级搜索）、0x0054A56E 的 free 链与 SBH 同族判定、四个候选写点的指令原文与地址算术。我的全量扫描与报告逐数吻合（1,392,592 条
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :154   `0x0054A56E` 类崩溃是否复现。**不复现 ⇒ ② 的「主崩溃」在正常路径下不存在，
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :438   # CRASH_ADDR_ANALYSIS — instruction-level adjudication of `0x0084F2BA` (and `0x0054A56E`)
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :554   ## 5. The `0x0054A56E` `mov dword [esi+4],0` crash (esi provenance)
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :571   0x0054A56E  mov   dword [esi+4],0   <== EIP  ; write to THIS+4  faults
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :578   **Corruption path.** This is the `DynamicArray::Resize/Copy` shape (it allocs `ebp*4`, copies `esi+4` buffer into `edi`, then frees the old `esi+4` and resets `esi+4=0; e
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :586   - **Same family? YES, mechanism-level.** 0x0054A56E and RC-1 share (a) the **identical SBH allocator** (0x7c8b3d/0x7c93e8/0x7cf7bd ↔ guard 0x7cfc9b ↔ globals 0x00B78B94/9
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :587   - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :587   - **But NOT same-victim / not the same 0x0084F2BA write.** 0x0084F2BA is in `.data` (the phase LUT), and §4 found **no** SBH write that lands there. So the **0x0084F2BA c
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :598   - 0x0054A56E `mov [esi+4],0` is preceded at **0x0054A566 by `free([esi+4])`**; `esi=this`; SBH chain 0x7c8b3d→0x7c93e8→0x7cf7bd ↔ RC-1 guard 0x7cfc9b (same 0x00B78B94 clu
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :601   - The precise corruption of `esi` at 0x54A56E and whether its poison equals RC-1's 0xFE00FFFF: I can prove *mechanism + allocator* statically, but **cannot** prove the co
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :712   ### 1.5 0x0054A56E 例程（stage disasm）
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :714   0x0054A4FA `mov esi, ecx`（provenance 根）→ 0x0054A506 `mov byte [esi+0xc],0` → 0x0054A50E `lea eax,[ebp*4]` → 0x0054A515 `push eax` → 0x0054A516 `call 0x7c8e17`（malloc）→ 0x
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :760   | 16 | conclusion(4)/§5：0x0054A56E 前一条确凿=free([esi+4])@0x0054A566，链 0x7C8B3D→0x7C93E8→0x7CF7BD，与 RC-1 守卫 0x7CFC9B 同簇 0x00B78B94/98 | **HOLDS** | §1.5 反汇编逐条证实（注：0x00B78B94
+.\goal_bench_longinput_20261021\long_corpus_60k.txt                    :785   被复核报告的**核心裁决全部经独立重算成立**：段归属与页属性、32 字节、fnstsw 解码与写目标算术、mid-element/槽 141=0.107935、三条写线索全负（含全文件级搜索）、0x0054A56E 的 free 链与 SBH 同族判定、四个候选写点的指令原文与地址算术。我的全量扫描与报告逐数吻合（1,392,592 条
+.\qc161_u0400_trip\l1a_20261020\E2_SUCCESS_TRIP_REPORT.md              :145   `0x0054A56E` 类崩溃是否复现。**不复现 ⇒ ② 的「主崩溃」在正常路径下不存在，
+61_u0400_trip\l1_u0800_e1c_dump_20261020\E1C_CRASH_ADDRESS_ANALYSIS.md :18    | **E1c** | `0x0054A56E` | `.text`（`0x00401000`–`0x007E038D`） | `C7 46 04 00 00 00 00` = `mov dword ptr [esi+4], 0` |
+61_u0400_trip\l1_u0800_e1c_dump_20261020\E1C_CRASH_ADDRESS_ANALYSIS.md :29    0x0054A56E  mov  [esi+4], 0          ; <<< 崩溃：写 this->ptr = nullptr
+u0400_trip\l1_u0800_e1c_dump_20261020\E2_D117_PATH_LENGTH_ROOTCAUSE.md :65    而 E1b 抓到的 `0x0084F2BA` 写 `.data` 被拒、E1c 的 `0x0054A56E` 写 `[esi+4]`，
+e_fix\sandbox\drift_case\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+x\sandbox\snap_DELIVERED\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T1\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+\sandbox\snap_T1\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T3\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+\sandbox\snap_T3\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+e_fix\sandbox\drift_case\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ndbox\drift_case\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+rms\f01_paste_prose_only\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+paste_prose_only\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T1\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T3\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+dbox\forms\f02_paste_all\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ms\f02_paste_all\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+s\f03_clean_claim_rename\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ean_claim_rename\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+\f04_evidence_line_wrong\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+dence_line_wrong\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ms\f05_evidence_line_oor\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+vidence_line_oor\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+e_fix\sandbox\drift_case\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T1\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T3\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+x\sandbox\snap_DELIVERED\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+x\snap_DELIVERED\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+e_fix\sandbox\drift_case\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ndbox\drift_case\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+dbox\forms\f02_paste_all\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+x\sandbox\snap_DELIVERED\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T1\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+\sandbox\snap_T1\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T3\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+\sandbox\snap_T3\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T1\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+\sandbox\snap_T1\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+e_fix\sandbox\drift_case\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ndbox\drift_case\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+dbox\forms\f02_paste_all\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+x\sandbox\snap_DELIVERED\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T1\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+\sandbox\snap_T1\lead\scan_recheck_repair\raw\r03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
+ence_fix\sandbox\snap_T3\lead\scan_recheck\raw\03_text_full_disasm.txt :470657 0054A56E  c7460400000000          mov dword ptr [esi + 4], 0
