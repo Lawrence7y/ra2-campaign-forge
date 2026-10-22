@@ -649,6 +649,33 @@ Building **269/269**（含 132 个 `lea eax,[esi+0xF5C] / 0x15 项 / 步长 0x44
 复跑：`tools/census_ebp_this_loaders.py`（6/6）、
 `tools/classify_ebp_this_candidates.py`；证据 `evidence/ebp_this_{census,classify}.txt`。
 
+### C.15c 逐 loader 字面量键 651（R-024 核验口径，2026-10-23）
+
+> **核验门禁 `tools/verify_r024_claims.py` 14/14 PASS，EXIT=0**（两趟逐字节一致）。
+> 记录件 `evidence/r024_rules_keys_fields_verification.md`；正文 `kb/30` §14。
+
+| loader | 键 | loader | 键 |
+|:---|---:|:---|---:|
+| `Read_General` | **279** | `Read_CrateRules` | 10 |
+| `Read_AudioVisual` | **152** | `Read_Radiation` | 9 |
+| `Read_CombatDamage` | 71 | `Read_LandCharacteristics` | 8 |
+| `Read_AI` | 52 | `Read_SpecialWeapons` | 7 |
+| `Read_MultiplayerDialogSettings` | 27 | `Read_JumpjetControls` | 7 |
+| `Read_Difficulty` | 12 | `Read_ElevationModel` | 3 |
+| `Read_IQ` | 11 | `Read_WallModel` | 2 |
+| | | `Read_Maximums` | 1 |
+
+**合计 651，来自 15 个 loader；`[General]`+`[AudioVisual]` = 431/651（66%）。**
+另有 **20 个 loader 走「枚举键名 / 按键名注册」** 形态，其键集合**无法**从静态字面量得出。
+
+**★ 边界测量（R-024 新增，交付件未做）**：38 个 loader 里 **18 个**在首个 `ret` 之后
+仍有可达代码（17 个失败尾声 `pop…; xor al,al; …; ret`，1 个是容器 `Read_File` 的清理路径），
+但**冷块内不含任何键字面量** ⇒ `dump_rules_keys.py` 的「首个 `ret`」边界**没有漏键**。
+**但这不使 `first ret` 成为正确判据**——要分析冷块内容必须用跳转闭包。
+
+**两个必须按偏移而非名字统计的表**：`EngineerCaptureLevel`（`+0x17F8`/`+0x17FC`）、
+`Smoke`（`+0x0BAC`/`+0x0BB0`）各是**两个合法条目**，按名字去重会假性少一个。
+
 ### C.14 全引擎 INI 键索引（R-031 定稿口径）
 
 | 项 | 值 | 口径 |
