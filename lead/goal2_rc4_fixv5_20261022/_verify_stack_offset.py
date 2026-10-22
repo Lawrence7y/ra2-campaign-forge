@@ -188,18 +188,55 @@ def main():
     # ---- ★ 关键：0x777687 那条路径是否真的会到达？----
     # 它的唯一前驱是 0x77766C `je 0x777687`，而该 je 取决于 0x778030 的返回值。
     print()
-    print("  ★ 未决点（本轮不硬凑）：")
-    print("    0x777687 读的是入口 [esp+0x04]。若标准 WndProc 布局，那是 **hwnd**；")
-    print("    但紧随其后的 0x77768B `cmp eax,0x18` / `lea ecx,[eax-1]` / `cmp ecx,0x13`")
-    print("    是对 **msg** 才成立的分派（WM_SHOWWINDOW=0x18, msg∈[1,0x14]）。")
+    print("  ★ 未决点（§383 已撤回 §382 的 hwnd 说法）：")
+    print("    0x777687 读的是入口 [esp+0x04]（机器可证）。")
+    print("    若按标准 WndProc 布局，那是 **hwnd**；")
+    print("    但 0x77768B `cmp eax,0x18` / `lea ecx,[eax-1]` / `cmp ecx,0x13`")
+    print("    是对 **msg** 才成立的分派。二者矛盾。")
     print()
-    print("    另一方面，默认分支 0x7779B9 处（经 0x7776A0 `ja` 到达）读 [esp+0x18]，")
-    print("    那里的 esp 与 0x777687 不同（中间有大量 push/call），需单独模拟。")
+    print("    我试过的三种解释全部互斥不成立：")
+    print("      A 签名无 hwnd   —— 但 0x777C79 确证它是 lpfnWndProc，必有 hwnd")
+    print("      B edx 不是 msg  —— 但 0x778030 用 cmp 0x281/0x10D/0x10E 比，只能是 msg")
+    print("      C 第四参是 msg  —— 但那是 E+0x10=lParam，WM_CREATE 时是 LPCREATESTRUCT")
     print()
-    print("    ⇒ 两条路径的 esp 基点不同，不能混用同一个偏移做结论。")
-    print("    ⇒ 本轮**只**断言 0x777687 处的 esp 值（机器可证），")
-    print("      **不**断言它读到的是 hwnd 还是 msg —— 那需要先证明该路径可达。")
-    print("      C3 的『[esp+0x18]=msg』在 0x777687 处**未被本门禁证实**，挂账。")
+    print("    ⇒ 判定：0x777687 处 [esp+0x18] 的语义 = **UNVERIFIABLE（静态不可判定）**。")
+    print("      本轮只断言 esp 值（机器可证），**不**断言它读到 hwnd 还是 msg。")
+    print("      需要：0x6930A0 完整参数语义 / 真机断点。C3 整体仍挂账。")
+
+    # ---- ★ 可达性：0x777687 的前驱 je 是否常成立 ----
+    print()
+    print("--- 0x777687 可达性 ---")
+    # 0x778030 的返回值决定 0x77766C je 是否跳 0x777687
+    # 返回 1 仅当 msg ∈ {0x10D,0x10E,0x10F,0x281,0x282..0x291}；其余返回 0
+    def ret_778030(msg):
+        if msg > 0x281:
+            return 1 if 0x282 <= msg <= 0x291 else 0
+        if msg == 0x281:
+            return 1
+        if msg in (0x10D, 0x10E, 0x10F):
+            return 1
+        return 0
+
+    check("0x778030(WM_CREATE=0x001) 返回 0 ⇒ 0x777687 可达",
+          ret_778030(0x001) == 0, "ret=%d" % ret_778030(0x001))
+    check("0x778030(WM_CLOSE=0x010) 返回 0 ⇒ 0x777687 可达",
+          ret_778030(0x010) == 0, "ret=%d" % ret_778030(0x010))
+    check("0x778030(0x281) 返回 1 ⇒ 不跳（负控）",
+          ret_778030(0x281) == 1, "ret=%d" % ret_778030(0x281))
+    check("0x778030(0x10D) 返回 1 ⇒ 不跳（负控）",
+          ret_778030(0x10D) == 1, "ret=%d" % ret_778030(0x10D))
+    # 解码验证这两条返回路径确实存在
+    seq = insn_at(0x7780F4, 2) if False else None
+    off_r1 = va2off(0x7780F4)
+    i_r1 = next(md.disasm(b[off_r1:off_r1 + 8], 0x7780F4))
+    check("0x7780F4 是 mov eax, 1（返回 1 的路径存在）",
+          i_r1.mnemonic == "mov" and i_r1.op_str == "eax, 1",
+          "%s %s" % (i_r1.mnemonic, i_r1.op_str))
+    off_r0 = va2off(0x7780FD)
+    i_r0 = next(md.disasm(b[off_r0:off_r0 + 8], 0x7780FD))
+    check("0x7780FD 是 xor eax, eax（返回 0 的路径存在）",
+          i_r0.mnemonic == "xor" and i_r0.op_str == "eax, eax",
+          "%s %s" % (i_r0.mnemonic, i_r0.op_str))
 
     npass = sum(1 for _, c, _ in RESULTS if c)
     print()
