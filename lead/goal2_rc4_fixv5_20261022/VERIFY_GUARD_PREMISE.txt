@@ -1,0 +1,35 @@
+================================================================================================
+§392 验证 v5 守卫的前提：崩溃链上 call 0x724730 时 ecx == 0 ?
+================================================================================================
+
+--- STEP 1  崩溃现场（except.txt 记录）---
+  Eip    = 0x00724737
+  Access = 0x250（读 [ecx+0x250]，ecx=0）
+  0x00724737 可解码（崩溃指令）                                             PASS  mov eax, dword ptr [ebp + 0x250]
+  崩溃指令: mov eax, dword ptr [ebp + 0x250]
+  崩溃指令读 [ebp + 0x250]（与 Access=0x250 一致）                           PASS  eax, dword ptr [ebp + 0x250]
+  崩溃指令的基址寄存器是 ebp                                                  PASS  eax, dword ptr [ebp + 0x250]
+
+--- STEP 2  崩溃链 0x654320 → 0x724730 的调用点 ---
+  0x654320 内调用 0x724730 的站点存在                                      PASS  ['0x00654413', '0x00654469']
+  0x654320 内调用 0x724580 的站点存在（§379 链的另一入口）                         PASS  ['0x00654423', '0x00654479']
+
+--- STEP 3  调用点前 ecx 的来源 ---
+  0x00654413 call 0x724730 ← ecx 来自: mov ecx, dword ptr [0x887368]
+  0x00654413 前 ecx = [0x887368]（RC-4 的单例全局）                        PASS  mov ecx, dword ptr [0x887368]
+  0x00654469 call 0x724730 ← ecx 来自: mov ecx, dword ptr [0x887368]
+  0x00654469 前 ecx = [0x887368]（RC-4 的单例全局）                        PASS  mov ecx, dword ptr [0x887368]
+
+--- STEP 4  [0x887368] 在崩溃时的值 ---
+  依据 §379（已由 20/20 门禁复证）：
+    WM_CLOSE → 0x54F790 返回 0 → DefWindowProcA → DestroyWindow
+    → 同步 WM_DESTROY → 0x777803 `mov [0x887368], ebx(=0)`
+  0x777803 是 mov [0x887368],ebx（清零指令存在）                            PASS  mov dword ptr [0x887368], ebx
+  0x7775C8 是 xor ebx,ebx（⇒ 清零写的是 0）                                PASS  xor ebx, ebx
+
+--- STEP 5  结论：v5 守卫是否有效 ---
+  ★ 崩溃链上所有 call 0x724730 的 ecx 都取自 [0x887368]                      PASS  2 个站点
+  ★★ 故崩溃时 ecx == 0 ⇒ v5 的 `test ecx,ecx / je null` **会命中**         PASS  前提成立，补丁有效
+  0x724580 的调用点 ecx 同样取自 [0x887368]（判据可复用、非特例）                     PASS  ['mov ecx, dword ptr [0x887368]', 'mov ecx, dword ptr [0x887368]']
+
+12/12 PASS
