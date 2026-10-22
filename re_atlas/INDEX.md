@@ -694,8 +694,40 @@ M1 在 **340 个站点**上与键槽不一致：91 个键槽是寄存器、5 个
    ⇒ 改单机命令栏请改 `[AdvancedCommandBar]`。
 3. **第三个难度键是 `Difficult`**；写 `Hard=` 无效（无读取点）。
 
-复跑：`python re_atlas/tools/verify_r021_claims.py`（30/30 PASS, EXIT=0）；
+复跑：`python re_atlas/tools/verify_r021_claims.py`（34/34 PASS, EXIT=0）；
 证据 `evidence/r021_section13_verification.md`；正文 `kb/30` §13 + §13.7。
+
+### C.15b `[MultiplayerDialogSettings]` 字段与镜像全局（R-023 核验口径，2026-10-22）
+
+> **核验门禁 `tools/verify_r023_claims.py` 20/20 PASS，EXIT=0**（两趟逐字节一致）。
+> 记录件 `evidence/r023_rulesclass_mirror_verification.md`；正文 `kb/30` §15.3。
+
+| 项 | 值 |
+|:--|:--|
+| 读取器 | `0x00671EA0`，27 键 |
+| 字段布局 | `+0x1480..+0x14AB` = 11×dword；`+0x14AC..+0x14BB` = 16×byte；**60 字节零空洞** |
+| 载入函数真边界 | **`0x52CD70..0x52D430`**（真尾 `ret` @`0x52D42F`） |
+| 镜像块 | `0x52D149..0x52D22C`，**恰 18 条** `mov [全局], reg` |
+| 镜像 / 不镜像 | **18 / 9** |
+| `ShortGame` / `FogOfWar` / `MCVRedeploys` | `0xA8B262` / `0xA8B31F` / `0xA8B320` |
+| `ShadowGrow +0x14AD` | **零消费**：disp32 在 `.text` 出现 3 次（ctor 写 + reader 读/写） |
+
+**★ 三条编译器必须知道（R-023 核验推翻/新增）**：
+
+1. **载入函数边界比原记长 292 字节**。`0x52D277: jle 0x52d30c` 从函数内部跳过尾部冷块，
+   冷块仍在读 `[0x8871E0]`。判据只能是**从入口做跳转闭包**，不是「找最后一条 `ret`」。
+2. **这些全局不是冻结镜像，是运行期工作变量**。排除载入块与 ModemGst 块后，
+   18 个全局**每一个**仍被别处写入（最少 2 处，合计 **208 处**）。
+   ⇒ **要稳定改，必须改源头（INI / 设置结构）**；只改全局会在下次 UI/会话刷新被写回。
+   「读点在全局上」成立（字节 vs 指令对账 18/18），错的是「改一次就够」。
+3. **存在第二个成批写入点**：`0x5B69E4`（`Decoding game options\n`，`ModemGst.cpp`）
+   写同一组全局中的 **17 个**（缺 `CaptureTheFlag`），源结构 `[ebx+0x7E]..[ebx+0xA3]`。
+   属会话/网络房间设置包，与 `RulesClass` 无关。
+
+**撞库警告**：`0x463Axx` 的 `[ebp+0x1488..]` 写入**不是** `RulesClass.MaxMoney`
+（该区引 `0x887180`=`INI_Art`、不引 `0x8871E0`），是 artmd 侧 TypeClass 字段。
+`0x652Axx` 集群同样不引用 `0x8871E0`。按 disp 数值统计字段读点必然误计 ——
+这就是 §15.4 只能给**区间**的原因。
 
 
 
