@@ -1,0 +1,188 @@
+==============================================================================
+== STEP 0  身份与时点锚
+==============================================================================
+  gamemd.exe sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] gamemd.exe sha256 前 8 位 == 73201cc0  73201cc0
+[PASS] PE32 / ImageBase 0x400000  magic=0x10b ib=0x400000
+[PASS] 节数 == 5  5
+  except.txt sha256 : 584069adfe5b4a5b7587a383620f716edbe79c52cf899b43038d599d4ed52cfa
+  except.txt bytes  : 27631
+  stack entries     : 1024
+[PASS] 栈转储条目 == 1024  1024
+[PASS] 栈转储地址连续（步长 4）  0x00f9a344..0x00f9b340
+  栈范围 : 0x00f9a344 .. 0x00f9b340
+
+==============================================================================
+== STEP 1  崩溃现场
+==============================================================================
+  Eip = 00724737
+  Esp = 00F9A344
+  Ebp = 00000000
+  Eax = 00000000
+  Ebx = FFFFFD88
+  Ecx = 00000000
+  Edx = 00000000
+  Esi = 00000278
+  Edi = 0087F7E8
+  Access address = 0x250
+[PASS] Eip == 0x724737  00724737
+[PASS] Esp == 0x00F9A344  00F9A344
+[PASS] Ecx == 0（this == NULL）  00000000
+[PASS] Ebp == 0  00000000
+[PASS] Access address == 0x250  0x250
+[PASS] Eip 处 6 字节 == 8b 85 50 02 00 00 (mov eax,[ebp+0x250])  8b 85 50 02 00 00
+[PASS] except.txt 字面存在 '00F9A358: 00654418'  found
+
+==============================================================================
+== STEP 2  0x724730 序言与帧内偏移（自算）
+==============================================================================
+  00724730  83ec0c                   sub esp, 0xc
+  00724733  55                       push ebp
+  00724734  8be9                     mov ebp, ecx
+  00724736  56                       push esi
+  00724737  8b8550020000             mov eax, dword ptr [ebp + 0x250]
+[PASS] 0x724730 前 6 字节 == 83 ec 0c 55 8b e9  83 ec 0c 55 8b e9
+[PASS] 0x724736 == 56 (push esi)  56
+[PASS] 序言 4 条指令共 7 字节（0x724730..0x724736）  7 字节, 末地址 0x724737
+[PASS] 序言使 esp 下移 0x14 ⇒ 返回地址在 [esp+0x14]  esp -= 0x14
+[PASS] [ESP+0x14] 槽位地址 == 0x00f9a358  0x00f9a358
+[PASS] [ESP+0x00] == Esi（push esi 保存）  0x00000278 vs Esi=0x00000278
+[PASS] [ESP+0x04] == 0xFFFFFFFF（旧 ebp，已被 mov ebp,ecx 覆盖）  0xffffffff
+[PASS] [ESP+0x14] 落在 .text  0x00654418 in .text
+[PASS] [ESP+0x18] == 0xF2（唯一参数）  0x000000f2
+[PASS] 调用点前确有 push 0xf2  0xf2
+
+==============================================================================
+== STEP 3  主张 1：崩溃入口 = 0x654413
+==============================================================================
+[PASS] 0x654413 处首字节 == 0xE8  0xe8
+[PASS] 0x654413 的 E8 rel32 目标 == 0x724730  0x724730
+  0x654413 字节: e8 18 03 0d 00  (rel32=0xd0318)
+  0x724730 直接 E8 调用者共 30 个：
+    0x4a8b75, 0x640427, 0x654413, 0x654469, 0x6ac00b, 0x6ac03e, 0x6ac0ed, 0x6ac140, 0x6ac193, 0x6ac1e6, 0x6d059b, 0x6d0619, 0x6d0634, 0x6d0664, 0x6d089d, 0x6d08b3, 0x6d0940, 0x6d09fa, 0x6d1293, 0x6d1308, 0x6d137e, 0x6d13f3, 0x6d1541, 0x6d155c, 0x6d15cb, 0x6d1605, 0x6d1632, 0x6d16c2, 0x6d16dd, 0x6d1744
+[PASS] 0x724730 直接 E8 调用者 == 30 个  30
+[PASS] 0x654413 在该调用者名单内  0x654413
+  栈上 0x724730 的返回地址命中：[('0xf9a358', '0x654418')]
+[PASS] 栈上 0x724730 的返回地址唯一命中 1 处  1
+[PASS] 命中槽位 == 0x00f9a358 且值 == 0x00654418  0x00f9a358:0x00654418
+[PASS] 该返回地址 - 5 == 0x654413  0x654413
+[PASS] 0x4A8B75 确实是 E8 且指向 0x724730  0x724730
+[PASS] 0x4A8B75 位于 L3 0x4A8960 内  0x4a8b75
+[PASS] ★ 0x4A8B7A 不在栈上任何位置  present=False
+[PASS] ★ 栈上无任何值 V 使 V-5 == 0x4A8B75  none
+  栈上落在 0x4A8B00..0x4A8BFF 的值：[('0xf9a3d8', '0x4a8b00'), ('0xf9a3e4', '0x4a8b18')]
+
+==============================================================================
+== STEP 4  主张 2：0x724580 兄弟函数与 0x250 偏移
+==============================================================================
+  00724580  53                       push ebx
+  00724581  55                       push ebp
+  00724582  56                       push esi
+  00724583  57                       push edi
+  00724584  8b7c2414                 mov edi, dword ptr [esp + 0x14]
+  00724588  8bd9                     mov ebx, ecx
+  0072458A  8b07                     mov eax, dword ptr [edi]
+  0072458C  8db34c020000             lea esi, [ebx + 0x24c]
+  00724592  89442414                 mov dword ptr [esp + 0x14], eax
+  00724596  8b4604                   mov eax, dword ptr [esi + 4]
+  00724599  85c0                     test eax, eax
+  0072459B  7430                     je 0x7245cd
+[PASS] 0x724580 前 10 字节 == 53 55 56 57 8b 7c 24 14 8b d9  53 55 56 57 8b 7c 24 14 8b d9
+[PASS] 0x72458C == lea esi,[ebx+0x24c]  0072458C  8db34c020000             lea esi, [ebx + 0x24c]
+[PASS] 0x724596 == mov eax,[esi+4]  00724596  8b4604                   mov eax, dword ptr [esi + 4]
+[PASS] 0x24C + 4 == 0x250 == Access address  0x250
+[PASS] 0x72458A == mov eax,[edi]（ecx=0 时先读调用方栈地址，合法）  0072458A  8b07                     mov eax, dword ptr [edi]
+       NOTE: 0x724580 的第一个解引用是 0x72458A 的 [edi]（读调用方压入的栈地址，ecx=0 时仍合法）；首个『随 ecx 变化』的解引用是 0x724596 的 [esi+4] = 0x250。若把 0x724596 表述为『首次解引用』，措辞不精确，但崩溃地址结论成立。
+  0x654320..0x65448b 线性反汇编共 88 条指令
+  mov ecx,[0x887368] 出现于：0x654405, 0x654418, 0x654446, 0x654473
+[PASS] 0x654320 内 mov ecx,[0x887368] 恰 4 处  4
+[PASS] 4 处地址 == 0x654405/0x654418/0x654446/0x654473  0x654405, 0x654418, 0x654446, 0x654473
+  mov → 紧随 call：
+    0x654405 → 0x654413 0x724730  (E8=True)
+    0x654418 → 0x654423 0x724580  (E8=True)
+    0x654446 → 0x654469 0x724730  (E8=True)
+    0x654473 → 0x654479 0x724580  (E8=True)
+[PASS] 4 处紧随的 call 地址 == 0x654413/0x654423/0x654469/0x654479  0x654413, 0x654423, 0x654469, 0x654479
+  4 个 call 的目标：0x724730, 0x724580, 0x724730, 0x724580
+[PASS] 目标序列 == [0x724730, 0x724580, 0x724730, 0x724580]  0x724730, 0x724580, 0x724730, 0x724580
+[PASS] 0x724730 与 0x724580 各被调用 2 次  A=2 B=2
+[PASS] 崩溃入口 0x654413 属于这 4 处之一  0x654413
+  守卫判定（mov 与 call 之间逐条检查 flags 改写）：
+    0x654405..0x654413: 2 条: ['mov dword ptr [esp + 0x18], edx', 'mov dword ptr [esp + 0x1c], eax']
+      flags 改写=[]  jcc=[]
+    0x654418..0x654423: 2 条: ['lea edx, [esp + 0xc]', 'push edx']
+      flags 改写=[]  jcc=[]
+    0x654446..0x654469: 5 条: ['push 0xf3', 'mov dword ptr [esp + 0x10], 0xf3', 'mov dword ptr [esp + 0x24], 0x8393a0', 'mov dword ptr [esp + 0x1c], edx', 'mov dword ptr [esp + 0x20], eax']
+      flags 改写=[]  jcc=[]
+    0x654473..0x654479: 0 条: []
+      flags 改写=[]  jcc=[]
+[PASS] ★ 4 处 mov→call 之间均无改 flags 指令 / 无 jcc ⇒ 全无守卫  unguarded
+[PASS] 4 处之间均无 test / cmp  none
+
+==============================================================================
+== STEP 5  主张 3：.detour cave 落位
+==============================================================================
+  .detour RVA=0x793000 VA=0xb93000 VirtualSize=0x2718 SizeOfRawData=0x3000 PointerToRawData=0x497000
+  Characteristics = 0xc0000040
+[PASS] Characteristics 恰为 0xC0000040  0xc0000040
+    MEM_EXECUTE            0x20000000 = CLEAR
+    MEM_READ               0x40000000 = SET
+    MEM_WRITE              0x80000000 = SET
+    CNT_CODE               0x00000020 = CLEAR
+    CNT_INITIALIZED_DATA   0x00000040 = SET
+[PASS] ★ MEM_EXECUTE(0x20000000) 未置位  CLEAR
+[PASS] MEM_WRITE(0x80000000) 置位  SET
+[PASS] MEM_READ(0x40000000) 置位  SET
+[PASS] CNT_CODE(0x20) 未置位  CLEAR
+       NOTE: ⇒ 0xC0000040 = WRITE|READ|CNT_INITIALIZED_DATA。v1 文档写『R/W/X』是错的：没有 X。
+  VirtualSize 末 = 0xb95718；raw 末 = 0xb96000
+[PASS] VirtualSize == 0x2718  0x2718
+[PASS] 段末 VA == 0xB95718  0xb95718
+[PASS] 0xB95700 + 21 == 0xB95715 仍在 VirtualSize 内（0xB95718）  0xb95715 <= 0xb95718
+[PASS] 0xB95700 之后 VirtualSize 内仅剩 24 字节  0x18
+[PASS] 0xB95700 之后 raw padding 共 2304 字节  2304
+       NOTE: ⇒ 『2304 字节空闲』只在 raw padding 意义上成立（0xB95700..0xB96000）；按 VirtualSize 只有 24 字节。v1 的 21 字节 cave 恰好塞得下，所以 v1 的硬伤不是越界，而是该段没有执行位 + 该区实为 Detours 载荷尾部。
+  末个非零字节 VA = 0xb956fe
+[PASS] 段内最后一个非零字节 VA == 0xB956FE  0xb956fe
+  段首 0x50 字节: 40 00 00 00 44 74 72 00 c0 25 00 00 c0 25 00 00 e0 f0 40 00 40 01 00 00 00 00 00 00 00 00 00 00 00 10 3e 00 08 06 00 00 00 30 79 00 08 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 4d 5a 90 00 03 00 00 00 04 00 00 00 ff ff 00 00
+[PASS] 段首 4 字节 == 40 00 00 00（长度字段 0x40，不是签名）  40 00 00 00
+[PASS] 段内 +4 处 == 'Dtr\0'（Detours 签名在 +4，不在段首）  44 74 72 00
+[PASS] 段内 +0x40 处有 'MZ'（内嵌映像起点）  4d 5a
+  VirtualSize 内 >=64B 全零空洞：[('0xb9375c', 1548)]
+[PASS] VirtualSize 内 >=64B 空洞恰 1 处  1
+[PASS] 该空洞位于 0xB9375C、长 1548 字节  0xb9375c len=1548
+  raw 范围内 >=64B 全零空洞：[('0xb9375c', 1548), ('0xb956ff', 2305)]
+[PASS] raw 范围内 >=64B 空洞 2 处（含 VirtualSize 之外的 padding）  2
+[PASS] 第二处空洞起于 0xB956FF、长 2305 字节（0xB95700 之后的全零 padding）  0xb956ff len=2305
+  SizeOfImage (RVA) = 0x796000；.detour RVA 末 = 0x795718
+[PASS] SizeOfImage 覆盖 .detour  0x795718 <= 0x796000
+[PASS] 映射页上界 VA == 0xB96000（padding 在内存中可见）  0xb96000
+
+==============================================================================
+== STEP 6  交叉信息（不参与三项判定）
+==============================================================================
+  call 0x6403a3 → 0x654320: target=0x654320 ret=0x6403a8 stack[0xf9a388]=0x6403a8 ok=True
+  call 0x6abd39 → 0x6403a0: target=0x6403a0 ret=0x6abd3e stack[0xf9a3ac]=0x6abd3e ok=True
+  call 0x4a8b13 → 0x6abd30: target=0x6abd30 ret=0x4a8b18 stack[0xf9a3e4]=0x4a8b18 ok=True
+  call 0x652d4c → 0x4a8850: target=0x4a8850 ret=0x652d51 stack[0xf9a43c]=0x652d51 ok=True
+[PASS] 上溯帧链 4 帧全部自洽  4/4
+[PASS] 0x4A8B13 落在 L3 函数体（0x4A8960..0x4A8B75）内  0x4a8b13
+[PASS] L3 0x4A8960..0x4A8B75 之间无 ret（证明是同一函数体，无函数边界）  ret 数=0
+[PASS] 0x4A8B00 与 0x4A8B18 两个返回地址都在 L3 函数体内  0x4A8B00, 0x4A8B18
+  栈上 0x724580 的返回地址命中：[]
+[PASS] 0x724580 无栈帧 ⇒ 崩溃发生在第一次调用 0x654413（未走到 0x654423）  0 frames
+       NOTE: 0x4A8B18（= call 0x4A8B13 的返回地址）在栈上，而 0x4A8B13 位于 L3 0x4A8960 函数体内 ⇒ L3 确实在本条崩溃路径上，但它走的是 0x4A8B13 的嵌套调用（→0x6ABD30），不是 0x4A8B75 的直接调用。
+       NOTE: ⇒ 被复核方『本次崩溃不经 L3』的说法过强/错误；正确表述是『不经 L3 在 0x4A8B75 的直接调用』。L3 是祖先帧。
+
+==============================================================================
+== RESULT
+==============================================================================
+checks passed: 71/71
+
+== 分项判定
+  环境/身份              5/5 PASS
+  主张 1 崩溃入口          28/28 PASS
+  主张 2 兄弟函数          13/13 PASS
+  主张 3 v1 cave       20/20 PASS
+  交叉信息               5/5 PASS
+RESULT: ALL PASS

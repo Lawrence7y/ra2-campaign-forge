@@ -1,0 +1,141 @@
+
+==============================================================================
+INPUTS
+==============================================================================
+gamemd.exe : D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+except.txt : D:\Project\ra2-campaign-forge\ra2youli\except.txt
+
+==============================================================================
+STEP 0  PE headers (ImageBase @ e_lfanew+0x18+0x1C)
+==============================================================================
+e_lfanew      = 0x00000050
+opt magic     = 0x010B (PE32)
+ImageBase     = 0x00400000
+EntryPoint VA = 0x007CD80F
+sections      = 5
+  .text    RVA 0x00001000  VSize 0x003DF38D  RawPtr 0x00001000  RawSize 0x003E0000
+  .rdata   RVA 0x003E1000  VSize 0x00030074  RawPtr 0x003E1000  RawSize 0x00031000
+  .data    RVA 0x00412000  VSize 0x00367BE4  RawPtr 0x00412000  RawSize 0x0006C000
+  .rsrc    RVA 0x0077A000  VSize 0x00018128  RawPtr 0x0047E000  RawSize 0x00019000
+  .detour  RVA 0x00793000  VSize 0x00002718  RawPtr 0x00497000  RawSize 0x00003000
+
+==============================================================================
+STEP 1  except.txt -> stack dict
+==============================================================================
+Eip=0x00724737 Esp=0x00F9A344 Ebp=0x00000000 Esi=0x00000278 Edi=0x0087F7E8
+access address = 0x250 (read)
+stack entries  = 1024, range 0x00F9A344..0x00F9B340
+[PASS] S1   stack dict parsed; first slot == Esp                           exp=Esp == min(stack) got=n=1024 min=0x00F9A344 esp=0x00F9A344
+
+==============================================================================
+STEP 2  frame geometry
+==============================================================================
+prologue: sub esp,0xc ; push ebp ; mov ebp,ecx ; push esi
+stack delta at fault = 0xc + 4 + 4 = 0x14
+Esp                = 0x00F9A344
+  [Esp+0x00] saved esi      -> 0x00F9A344
+  [Esp+0x04] saved ebp      -> 0x00F9A348
+  [Esp+0x08..0x10] locals   -> 0x00F9A34C..0x00F9A354
+  [Esp+0x14] return address -> 0x00F9A358
+  [Esp+0x18] argument 1     -> 0x00F9A35C
+
+==============================================================================
+STEP 3  required check 2: return-address slot
+==============================================================================
+[PASS] C2   stack[0x00F9A358] == 0x00654418 (return addr)                  exp=0x00654418 got=0x00654418
+
+==============================================================================
+STEP 4  required check 3: 0x654413 is an E8 rel32 -> 0x724730
+==============================================================================
+call site      = 0x00654413  (return 0x00654418 - 5)
+bytes          = E8 18 03 0D 00
+opcode         = 0xE8
+rel32          = 0xD0318 (852760)
+target         = 0x00724730
+section        = .text
+[PASS] C3a  byte at 0x00654413 == 0xE8 (call rel32)                        exp=0xE8 got=0xE8
+[PASS] C3b  E8 target == 0x00724730                                        exp=0x00724730 got=0x00724730
+
+==============================================================================
+STEP 5  required check 4: full .text E8 rel32 sweep for 0x724730
+==============================================================================
+callers found = 30
+  [ 1] 0x004A8B75  E8 B6 BB 27 00
+  [ 2] 0x00640427  E8 04 43 0E 00
+  [ 3] 0x00654413  E8 18 03 0D 00
+  [ 4] 0x00654469  E8 C2 02 0D 00
+  [ 5] 0x006AC00B  E8 20 87 07 00
+  [ 6] 0x006AC03E  E8 ED 86 07 00
+  [ 7] 0x006AC0ED  E8 3E 86 07 00
+  [ 8] 0x006AC140  E8 EB 85 07 00
+  [ 9] 0x006AC193  E8 98 85 07 00
+  [10] 0x006AC1E6  E8 45 85 07 00
+  [11] 0x006D059B  E8 90 41 05 00
+  [12] 0x006D0619  E8 12 41 05 00
+  [13] 0x006D0634  E8 F7 40 05 00
+  [14] 0x006D0664  E8 C7 40 05 00
+  [15] 0x006D089D  E8 8E 3E 05 00
+  [16] 0x006D08B3  E8 78 3E 05 00
+  [17] 0x006D0940  E8 EB 3D 05 00
+  [18] 0x006D09FA  E8 31 3D 05 00
+  [19] 0x006D1293  E8 98 34 05 00
+  [20] 0x006D1308  E8 23 34 05 00
+  [21] 0x006D137E  E8 AD 33 05 00
+  [22] 0x006D13F3  E8 38 33 05 00
+  [23] 0x006D1541  E8 EA 31 05 00
+  [24] 0x006D155C  E8 CF 31 05 00
+  [25] 0x006D15CB  E8 60 31 05 00
+  [26] 0x006D1605  E8 26 31 05 00
+  [27] 0x006D1632  E8 F9 30 05 00
+  [28] 0x006D16C2  E8 69 30 05 00
+  [29] 0x006D16DD  E8 4E 30 05 00
+  [30] 0x006D1744  E8 E7 2F 05 00
+[PASS] C4   0x00654413 is among the direct E8 callers of 0x00724730        exp=present got=present
+
+==============================================================================
+STEP 6  required check 5: the rival return address is NOT on the stack
+==============================================================================
+rival site  = 0x004A8B75
+rival ret   = 0x004A8B7A
+rival bytes = E8 B6 BB 27 00  -> target 0x00724730 (a genuine caller)
+0x004A8B7A in stack values : False
+0x004A8B7A in except.txt   : False
+stack slots holding it : none
+slots with value-5 == 0x004A8B75 : none
+[PASS] C5   0x004A8B7A absent from the stack dump                          exp=absent got=absent
+
+==============================================================================
+STEP 7  required check 6: saved Esi == 0x278
+==============================================================================
+[PASS] C6   stack[0x00F9A344] == Esi == 0x278 (push esi)                   exp=0x278 got=0x00000278
+
+==============================================================================
+STEP 8  required check 7: single argument == 0xF2
+==============================================================================
+[PASS] C7   stack[0x00F9A35C] == 0xF2 (pushed argument)                    exp=0x000000F2 got=0x000000F2
+
+==============================================================================
+STEP 9  corroboration (extra, not from the briefing)
+==============================================================================
+[PASS] E1   direct E8 caller count of 0x00724730 in .text                  exp=30 got=30
+[PASS] E2   0x004A8B75 is itself a genuine E8 -> 0x00724730                exp=0x00724730 got=0x00724730
+nearest push imm32 before 0x00654413 : 0x006543FC push 0xF2
+nearest push imm32 before 0x004A8B75 : 0x004A8B50 push 0x1F4
+stack argument slot holds 0xF2
+[PASS] E3   arg slot matches 0x00654413's push 0xF2, not 0x004A8B75's      exp=0xF2 got=site=0xF2 rival=0x1F4
+Eip 0x00724737 bytes live=8B 85 50 02 00 00 8D B5 4C 02 00 00 85 C0 0F 84 5E 01 00 00 8B 46 10 85 C0 74 0A 8B 00 8B 4C 24  dump=8B 85 50 02 00 00 8D B5 4C 02 00 00 85 C0 0F 84 5E 01 00 00 8B 46 10 85 C0 74 0A 8B 00 8B 4C 24  match=True
+[PASS] E4   bytes at Eip match except.txt (faulting instruction is in the image) exp=identical got=identical
+instruction at Eip = mov eax,[ebp+0x250]; ebp=0x0 -> read 0x250
+[PASS] E5   faulting access [ebp+disp] reproduces Access address 0x250     exp=0x250 got=0x250
+[Esp+0x10] = 0x006543B1 (0x6543B1 is the return of call 0x6543AC -> 0x4E1A20, stored as a local inside the 0xc-byte local area)
+[PASS] E6   slot below the return address is inside the local area, not a call frame exp=local slot got=0x006543B1 @ local area
+
+==============================================================================
+SUMMARY
+==============================================================================
+
+conclusion: crash entered 0x00724730 from call site 0x00654413
+            (return address 0x00654418 at stack slot 0x00F9A358)
+
+checks passed: 13/13
+RESULT: ALL PASS

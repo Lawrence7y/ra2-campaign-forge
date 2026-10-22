@@ -1,0 +1,271 @@
+==============================================================================
+== STEP 0  identity
+==============================================================================
+  gamemd.exe : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] binary identity  73201cc0
+  except.txt : 584069adfe5b4a5b7587a383620f716edbe79c52cf899b43038d599d4ed52cfa
+  stack      : 1024 entries
+  Access     : 0x250
+[PASS] Access == 0x250  0x250
+
+==============================================================================
+== STEP A  现场栈帧链逐帧核对（不依赖序言算术）
+==============================================================================
+  方法：遍历栈转储每个 4 字节值 V，若 V-5 处是 E8 rel32 且目标等于已知函数，
+        则 V 是该函数帧的返回地址。对全转储通用，可被反证。
+  FN_A 0x724730 ← 崩溃函数本身
+      call 0x654413 -> 0x724730 ; 期望 retaddr 0x00654418, 栈上 0x00f9a358 = 0x00654418
+[PASS] 链 0x724730 的返回地址帧  0x00654418
+  OWNER 0x654320
+      call 0x6403a3 -> 0x654320 ; 期望 retaddr 0x006403a8, 栈上 0x00f9a388 = 0x006403a8
+[PASS] 链 0x654320 的返回地址帧  0x006403a8
+  0x6403A0
+      call 0x6abd39 -> 0x6403a0 ; 期望 retaddr 0x006abd3e, 栈上 0x00f9a3ac = 0x006abd3e
+[PASS] 链 0x6403a0 的返回地址帧  0x006abd3e
+  0x6ABD30（L3 0x4A8960 内嵌套调用）
+      call 0x4a8b13 -> 0x6abd30 ; 期望 retaddr 0x004a8b18, 栈上 0x00f9a3e4 = 0x004a8b18
+[PASS] 链 0x6abd30 的返回地址帧  0x004a8b18
+  0x4A8850
+      call 0x652d4c -> 0x4a8850 ; 期望 retaddr 0x00652d51, 栈上 0x00f9a43c = 0x00652d51
+[PASS] 链 0x4a8850 的返回地址帧  0x00652d51
+
+==============================================================================
+== STEP B  0x654320 内 4 处以 [0x887368] 为 this 的 deref 调用
+==============================================================================
+    00654405  8b0d68738800         mov ecx, dword ptr [0x887368]
+    00654418  8b0d68738800         mov ecx, dword ptr [0x887368]
+    00654446  8b0d68738800         mov ecx, dword ptr [0x887368]
+    00654473  8b0d68738800         mov ecx, dword ptr [0x887368]
+[PASS] 0x654320 内 4 次读 [0x887368]  4
+
+  每个 load 之后的首个 call：
+    load 0x654405 -> call 0x654413 0x724730     守卫=★无
+    load 0x654418 -> call 0x654423 0x724580     守卫=★无
+    load 0x654446 -> call 0x654469 0x724730     守卫=★无
+    load 0x654473 -> call 0x654479 0x724580     守卫=★无
+[PASS] 4 处全部无守卫  unguarded=4/4
+[PASS] 被调函数恰为 {0x724730, 0x724580}  ['0x724580', '0x724730']
+[PASS] 崩溃入口 0x654413 在清单内  0x654413
+
+==============================================================================
+== STEP C  ★ 0x724580 在 ecx=0 时的首次解引用也是 0x250
+==============================================================================
+    00724580  53                   push ebx
+    00724581  55                   push ebp
+    00724582  56                   push esi
+    00724583  57                   push edi
+    00724584  8b7c2414             mov edi, dword ptr [esp + 0x14]
+    00724588  8bd9                 mov ebx, ecx
+    0072458A  8b07                 mov eax, dword ptr [edi]
+    0072458C  8db34c020000         lea esi, [ebx + 0x24c]
+    00724592  89442414             mov dword ptr [esp + 0x14], eax
+    00724596  8b4604               mov eax, dword ptr [esi + 4]
+
+  推演（ecx=0）：
+    push ebx/ebp/esi/edi   esp -= 0x10
+    mov  edi,[esp+0x14]    edi = 调用方压入的栈地址（有效）
+    mov  ebx,ecx           ebx = 0
+    mov  eax,[edi]         读栈，有效
+    lea  esi,[ebx+0x24c]   ★ esi = 0x24C
+    mov  eax,[esi+4]       ★★ 读 0x250 ⇒ AV
+[PASS] 0x72458C == lea esi,[ebx+0x24c]  0072458C  8db34c020000         lea esi, [ebx + 0x24c]
+[PASS] 0x724596 == mov eax,[esi+4]  00724596  8b4604               mov eax, dword ptr [esi + 4]
+[PASS] ★ 0x24C+4 == Access(0x250)  0x250
+[PASS] ⇒ v1 单点守 0x724730 不充分  结构性结论
+
+==============================================================================
+== STEP D  ★ 推翻 v1 的 cave 落位（.detour）
+==============================================================================
+  .detour  va=00B93000 vsize=00002718 rawsize=00003000 characteristics=C0000040
+    MEM_EXECUTE            = CLEAR
+    MEM_READ               = SET
+    MEM_WRITE              = SET
+    CNT_CODE               = CLEAR
+    CNT_INITIALIZED_DATA   = SET
+[PASS] ★ .detour 无 MEM_EXECUTE（v1 写 R/W/X 是错的）  ch=C0000040
+
+  末个非零字节 VA = 0xb956fe（vsize 末 = 0xb95718）
+  段首 12 字节: 40 00 00 00 44 74 72 00 c0 25 00 00
+    +0x00: 40 00 00 00  = 长度字段
+    +0x04: 44 74 72 00  = 'Dtr\0'（Detours 签名）
+[PASS] ★ 段首 +4 是 Detours 'Dtr' 签名 ⇒ 是载荷区不是空白  44 74 72 00
+[PASS] ★ v1 选的 0xB95700 之后段内仅剩 24 字节  24
+[PASS] ★ 故 v1 的「2304 字节空闲」不成立  0xb956fe
+
+  .detour 内真实空洞（vsize 内，>=64B）：1 处
+    0x00b9375c len=1548
+[PASS] vsize 内确有 1548 字节空洞（若坚持用 .detour 唯一选择）  [1548]
+  ⇒ 但该段无执行位 ⇒ **不能用**。改用 DLL 内 trampoline（项目既有范式）。
+
+==============================================================================
+== STEP E  两个函数头的覆盖边界
+==============================================================================
+  FN_A 0x724730 前 6 字节: 83 ec 0c 55 8b e9
+  FN_B 0x724580 前 8 字节: 53 55 56 57 8b 7c 24 14
+[PASS] FN_A 前 6B == sub esp,0xc; push ebp; mov ebp,ecx  83 ec 0c 55 8b e9
+[PASS] FN_A 第 7 字节是 push esi（0x724736）  56
+[PASS] FN_A hook 后首条原指令 = 0x724736 push esi  0x724737
+[PASS] FN_B 前 8B == push ebx/ebp/esi/edi; mov edi,[esp+0x14]  53 55 56 57 8b 7c 24 14
+[PASS] FN_B hook 后首条原指令 = 0x724588 mov ebx,ecx  8bd9
+[PASS] FN_B 覆盖边界落在指令边界上  0x724588
+
+==============================================================================
+== STEP F  DLL 侧 trampoline 字节（位置在 DLL，不占 gamemd 空间）
+==============================================================================
+  cave A 逻辑布局（21 字节，位置由 DLL 分配）：
+    85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 00 00 00 00 31 c0 c2 04 00
+    je rel8 = 12  → .null @ +16
+    jmp rel32 = RESUME_A - (cave+16) = 0x724737 - (cave+16)
+[PASS] cave A je rel8 可表示  12
+[PASS] cave A 长 21  21
+
+  cave B 逻辑布局（22 字节）：
+    85 c9 74 0d 53 55 56 57 8b 7c 24 14 e9 00 00 00 00 31 c0 c2 04 00
+    je rel8 = 13  → .null @ +17
+[PASS] cave B je rel8 可表示  13
+[PASS] cave B 长 22  22
+
+  capstone 复核 cave A（假想基址 0x10000000）：
+    10000000  85c9                 test ecx, ecx
+    10000002  740c                 je 0x10000010
+    10000004  83ec0c               sub esp, 0xc
+    10000007  55                   push ebp
+    10000008  8be9                 mov ebp, ecx
+    1000000A  56                   push esi
+    1000000B  e9274772f0           jmp 0x724737
+    10000010  31c0                 xor eax, eax
+    10000012  c20400               ret 4
+[PASS] cave A 首条 test ecx,ecx  10000000  85c9                 test ecx, ecx
+[PASS] cave A 次条 je  10000002  740c                 je 0x10000010
+[PASS] cave A 重放 6B 原指令  83 ec 0c 55 8b e9
+[PASS] cave A 重放 push esi  0x56
+[PASS] cave A jmp 目标 == 0x724737  0x724737
+[PASS] cave A 末条 ret 4  10000012  c20400               ret 4
+
+  capstone 复核 cave B（假想基址 0x10000100）：
+    10000100  85c9                 test ecx, ecx
+    10000102  740d                 je 0x10000111
+    10000104  53                   push ebx
+    10000105  55                   push ebp
+    10000106  56                   push esi
+    10000107  57                   push edi
+    10000108  8b7c2414             mov edi, dword ptr [esp + 0x14]
+    1000010C  e9774472f0           jmp 0x724588
+    10000111  31c0                 xor eax, eax
+    10000113  c20400               ret 4
+[PASS] cave B 首条 test ecx,ecx  10000100  85c9                 test ecx, ecx
+[PASS] cave B 次条 je  10000102  740d                 je 0x10000111
+[PASS] cave B 重放 8B 原指令  53 55 56 57 8b 7c 24 14
+[PASS] cave B jmp 目标 == 0x724588  0x724588
+[PASS] cave B 末条 ret 4  10000113  c20400               ret 4
+
+==============================================================================
+== STEP G  栈平衡（含调用方 push arg + ret 4）
+==============================================================================
+  原 FN_A：
+    push arg                           esp=0xffffc
+    call (retaddr)                     esp=0xffff8
+    sub esp,0xc                        esp=0xfffec
+    push ebp                           esp=0xfffe8
+    push esi                           esp=0xfffe4
+    ... body ...                       esp=0xfffe4
+    pop esi                            esp=0xfffe8
+    pop ebp                            esp=0xfffec
+    add esp,0xc                        esp=0xffff8
+    ret 4 (retaddr+arg)                esp=0x100000
+[PASS] FN_A 原路径 esp 回基线  0x100000
+  patched FN_A 非零：
+    push arg                           esp=0xffffc
+    call (retaddr)                     esp=0xffff8
+    jmp; test; je 不跳                   esp=0xffff8
+    sub esp,0xc                        esp=0xfffec
+    push ebp                           esp=0xfffe8
+    mov ebp,ecx                        esp=0xfffe8
+    push esi                           esp=0xfffe4
+    jmp 0x724737; ... body ...         esp=0xfffe4
+    pop esi                            esp=0xfffe8
+    pop ebp                            esp=0xfffec
+    add esp,0xc                        esp=0xffff8
+    ret 4                              esp=0x100000
+[PASS] FN_A 非零 esp 回基线  0x100000
+  patched FN_A 零值：
+    push arg                           esp=0xffffc
+    call (retaddr)                     esp=0xffff8
+    jmp; test; je 跳                    esp=0xffff8
+    xor eax,eax                        esp=0xffff8
+    ret 4                              esp=0x100000
+[PASS] FN_A 零值 esp 回基线  0x100000
+  原 FN_B：
+    push arg                           esp=0xffffc
+    call (retaddr)                     esp=0xffff8
+    push ebx                           esp=0xffff4
+    push ebp                           esp=0xffff0
+    push esi                           esp=0xfffec
+    push edi                           esp=0xfffe8
+    ... body ...                       esp=0xfffe8
+    pop edi                            esp=0xfffec
+    pop esi                            esp=0xffff0
+    pop ebp                            esp=0xffff4
+    pop ebx                            esp=0xffff8
+    ret 4                              esp=0x100000
+[PASS] FN_B 原路径 esp 回基线  0x100000
+  patched FN_B 非零：
+    push arg                           esp=0xffffc
+    call (retaddr)                     esp=0xffff8
+    jmp; test; je 不跳                   esp=0xffff8
+    push ebx                           esp=0xffff4
+    push ebp                           esp=0xffff0
+    push esi                           esp=0xfffec
+    push edi                           esp=0xfffe8
+    mov edi,[esp+0x14]                 esp=0xfffe8
+    jmp 0x724588; ... body ...         esp=0xfffe8
+    pop edi                            esp=0xfffec
+    pop esi                            esp=0xffff0
+    pop ebp                            esp=0xffff4
+    pop ebx                            esp=0xffff8
+    ret 4                              esp=0x100000
+[PASS] FN_B 非零 esp 回基线  0x100000
+  patched FN_B 零值：
+    push arg                           esp=0xffffc
+    call (retaddr)                     esp=0xffff8
+    jmp; test; je 跳                    esp=0xffff8
+    xor eax,eax                        esp=0xffff8
+    ret 4                              esp=0x100000
+[PASS] FN_B 零值 esp 回基线  0x100000
+
+  ★ cave B 里 mov edi,[esp+0x14] 的 esp 基准与原函数一致：
+     原：入口 esp=E-8，push×4 → E-24，[esp+0x14] → E-0x10
+     cave：同样在 4 个 push 之后 ⇒ 取同一槽
+[PASS] cave B 的 mov edi,[esp+0x14] 取到同一槽  E-0x10
+
+==============================================================================
+== STEP H  被守函数的调用者是否读返回值（决定 ret 4 的 eax 是否可为 0）
+==============================================================================
+
+  0x724730：30 个直接 E8 调用者
+    覆盖 eax 2 / 读 eax 0 / 不碰 28
+[PASS] 0x724730 的调用者全不读返回值  read=0
+
+  0x724580：18 个直接 E8 调用者
+    覆盖 eax 7 / 读 eax 0 / 不碰 11
+[PASS] 0x724580 的调用者全不读返回值  read=0
+
+==============================================================================
+== STEP I  v2 草案汇总（离线，未部署）
+==============================================================================
+  ── gamemd 侧（两处函数头，各 1 次 VirtualProtect 写入）──
+    0x724730 : 83 ec 0c 55 8b e9  ->  E9 <rel32 → DLL caveA>  + 1×90
+    0x724580 : 53 55 56 57 8b 7c 24 14  ->  E9 <rel32 → DLL caveB>  + 3×90
+  ── DLL 侧（静态数组 + PAGE_EXECUTE_READWRITE）──
+    caveA (21B) : test ecx,ecx / je .null / 83 ec 0c 55 8b e9 / 56 / jmp 0x724737
+                        .null: xor eax,eax / ret 4
+    caveB (22B) : test ecx,ecx / je .null / 53 55 56 57 8b 7c 24 14 / jmp 0x724588
+                        .null: xor eax,eax / ret 4
+
+  ★ 本脚本不写任何二进制文件。
+
+==============================================================================
+== RESULT
+==============================================================================
+checks passed: 50/50
+RESULT: ALL PASS
