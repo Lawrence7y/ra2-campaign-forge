@@ -1,0 +1,61 @@
+====================================================================================
+== RC-4 守卫期望字节门禁
+====================================================================================
+  gamemd.exe      : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+  ra2rc4guard.dll : 0e2a9995ad71184c7582238d87855b9817b542b6ee5095f978e47070337959b9
+[PASS] gamemd 身份  73201cc021497c95
+
+-- 原映像字节（期望表核心）--
+[PASS] [0] 0x007241A0 原字节 == 期望  got=8a44240456 want=8a44240456
+[PASS] [0] 0x007241A0 期望字节长度 == replay_len  5 vs 5
+[PASS] [1] 0x00724200 原字节 == 期望  got=5355568bf1 want=5355568bf1
+[PASS] [1] 0x00724200 期望字节长度 == replay_len  5 vs 5
+[PASS] [2] 0x00724520 原字节 == 期望  got=8b442404898128020000 want=8b442404898128020000
+[PASS] [2] 0x00724520 期望字节长度 == replay_len  10 vs 10
+[PASS] [3] 0x00724530 原字节 == 期望  got=8b8128020000 want=8b8128020000
+[PASS] [3] 0x00724530 期望字节长度 == replay_len  6 vs 6
+[PASS] [4] 0x00724540 原字节 == 期望  got=8b812c020000 want=8b812c020000
+[PASS] [4] 0x00724540 期望字节长度 == replay_len  6 vs 6
+[PASS] [5] 0x00724580 原字节 == 期望  got=535556578b7c2414 want=535556578b7c2414
+[PASS] [5] 0x00724580 期望字节长度 == replay_len  8 vs 8
+[PASS] [6] 0x00724730 原字节 == 期望  got=83ec0c558be956 want=83ec0c558be956
+[PASS] [6] 0x00724730 期望字节长度 == replay_len  7 vs 7
+[PASS] [7] 0x00724C00 原字节 == 期望  got=8b510433c0 want=8b510433c0
+[PASS] [7] 0x00724C00 期望字节长度 == replay_len  5 vs 5
+
+-- 编译产物 k_sites 表 --
+[PASS] DLL 中找到 k_sites[0].orig  0x13387
+[PASS] [0] DLL k_sites == 期望（va/hook/replay/ret/原字节）  va=007241A0 hook=5 replay=5 ret=4
+[PASS] [1] DLL k_sites == 期望（va/hook/replay/ret/原字节）  va=00724200 hook=5 replay=5 ret=4
+[PASS] [2] DLL k_sites == 期望（va/hook/replay/ret/原字节）  va=00724520 hook=10 replay=10 ret=4
+[PASS] [3] DLL k_sites == 期望（va/hook/replay/ret/原字节）  va=00724530 hook=6 replay=6 ret=0
+[PASS] [4] DLL k_sites == 期望（va/hook/replay/ret/原字节）  va=00724540 hook=6 replay=6 ret=0
+[PASS] [5] DLL k_sites == 期望（va/hook/replay/ret/原字节）  va=00724580 hook=8 replay=8 ret=4
+[PASS] [6] DLL k_sites == 期望（va/hook/replay/ret/原字节）  va=00724730 hook=6 replay=7 ret=4
+[PASS] [7] DLL k_sites == 期望（va/hook/replay/ret/原字节）  va=00724C00 hook=5 replay=5 ret=0
+
+-- PATCH_SPEC_V5.md 一致性 --
+[PASS] [0] 规格件含 0x7241A0  v8=False v6=True
+[PASS] [1] 规格件含 0x724200  v8=False v6=True
+[PASS] [2] 规格件含 0x724520  v8=False v6=True
+[PASS] [3] 规格件含 0x724530  v8=False v6=True
+[PASS] [4] 规格件含 0x724540  v8=False v6=True
+[PASS] [5] 规格件含 0x724580  v8=False v6=True
+[PASS] [6] 规格件含 0x724730  v8=False v6=True
+[PASS] [7] 规格件含 0x724C00  v8=False v6=True
+[PASS] 0x724530 规格件标 ret 0  | 0x724530 | 0 (`c3` @ 0x72453C) | 4 | 错 | | 3 | 0x724530 | 0x100000C0 | 18 | 0 | `85 c9 74 0b 8b 81 28 02 00 
+[PASS] 0x724540 规格件标 ret 0  | 0x724540 | 0 (`c3` @ 0x72454C) | 4 | 错 | | 4 | 0x724540 | 0x10000100 | 18 | 0 | `85 c9 74 0b 8b 81 2c 02 00 
+[PASS] 0x724C00 规格件标 ret 0  | 0x724C00 | 0 (`c3` @ 0x724C0A) | 4 | 错 | | 7 | 0x724C00 | 0x100001C0 | 17 | 0 | `85 c9 74 0a 8b 51 04 33 c0 
+
+-- 负控（必须全红）--
+[PASS] NC1 fn_ret 0→4 被识别为不同  ok
+[PASS] NC2 原字节改 1 字节被识别为不同  ok
+[PASS] NC3 replay_len 改 1 被识别为不同  ok
+
+====================================================================================
+== RESULT
+====================================================================================
+  checks passed: 40/40
+  negative controls red: YES
+  RESULT: ALL PASS
+EXIT=0
