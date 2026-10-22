@@ -1,0 +1,152 @@
+==============================================================================
+== STEP 0  identity
+==============================================================================
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256[:8] == 73201cc0  73201cc0
+
+==============================================================================
+== STEP 1  instruction stream 0x4A8B10 .. 0x4A8BA8
+==============================================================================
+  004A8B10  f78700e8183220008b0d   test dword ptr [edi + 0x3218e800], 0xd8b0020
+  004A8B1A  687388008b             push 0x8b008873
+  004A8B1F  15a06f8800             adc eax, 0x886fa0
+  004A8B24  a1a46f8800             mov eax, dword ptr [0x886fa4]
+  004A8B29  8b35a86f8800           mov esi, dword ptr [0x886fa8]
+  004A8B2F  8b3dac6f8800           mov edi, dword ptr [0x886fac]
+  004A8B35  3bcb                   cmp ecx, ebx  <<< the cmp
+  004A8B37  891504078a00           mov dword ptr [0x8a0704], edx
+  004A8B3D  a308078a00             mov dword ptr [0x8a0708], eax
+  004A8B42  89350c078a00           mov dword ptr [0x8a070c], esi
+  004A8B48  893d10078a00           mov dword ptr [0x8a0710], edi
+  004A8B4E  744b                   je 0x4a8b9b
+  004A8B50  68f4010000             push 0x1f4
+  004A8B55  885c2428               mov byte ptr [esp + 0x28], bl
+  004A8B59  c7442410f4010000       mov dword ptr [esp + 0x10], 0x1f4
+  004A8B61  895c2424               mov dword ptr [esp + 0x24], ebx
+  004A8B65  89542414               mov dword ptr [esp + 0x14], edx
+  004A8B69  89442418               mov dword ptr [esp + 0x18], eax
+  004A8B6D  8974241c               mov dword ptr [esp + 0x1c], esi
+  004A8B71  897c2420               mov dword ptr [esp + 0x20], edi
+  004A8B75  e8b6bb2700             call 0x724730  <<< call 0x724730 (crash point)
+  004A8B7A  8b0d68738800           mov ecx, dword ptr [0x887368]  [G_CRASH]
+  004A8B80  8d44240c               lea eax, [esp + 0xc]
+  004A8B84  50                     push eax
+  004A8B85  e8f6b92700             call 0x724580
+  004A8B8A  a1a46f8800             mov eax, dword ptr [0x886fa4]
+  004A8B8F  8b15a06f8800           mov edx, dword ptr [0x886fa0]
+  004A8B95  8b35a86f8800           mov esi, dword ptr [0x886fa8]
+  004A8B9B  83c6fa                 add esi, -6  <<< je target
+  004A8B9E  83c203                 add edx, 3
+  004A8BA1  56                     push esi
+  004A8BA2  6a62                   push 0x62
+  004A8BA4  6a14                   push 0x14
+  004A8BA6  53                     push ebx
+
+==============================================================================
+== STEP 2  does anything between cmp and je modify flags or ecx?
+==============================================================================
+  instructions between cmp(0x4A8B35) and je(0x4A8B4E): 4
+  flag-modifying instructions in between: none
+  ecx-modifying instructions in between: none
+[PASS] cmp and je are adjacent in terms of flags (no flag writer between)  []
+[PASS] ecx is not modified between cmp and the guarded call  []
+
+==============================================================================
+== STEP 3  is ebx really 0 here?
+==============================================================================
+  ebx writes in L3 up to cmp: 2
+    0x004A8963  push ebx
+    0x004A8985  xor ebx, ebx
+[PASS] ebx is zeroed inside L3 before the cmp  ['0x004A8985']
+
+==============================================================================
+== STEP 4  je target: does it skip the crash call?
+==============================================================================
+  je target 0x4A8B9B  vs crash call 0x4A8B75
+[PASS] je target is AFTER the crash call (i.e. it skips it)  target 0x4A8B9B > call 0x4A8B75
+
+  path after je target 0x4A8B9B:
+    004A8B9B  83c6fa               add esi, -6
+    004A8B9E  83c203               add edx, 3
+    004A8BA1  56                   push esi
+    004A8BA2  6a62                 push 0x62
+    004A8BA4  6a14                 push 0x14
+    004A8BA6  53                   push ebx
+    004A8BA7  6aff                 push -1
+    004A8BA9  6aff                 push -1
+    004A8BAB  6a0e                 push 0xe
+    004A8BAD  6a62                 push 0x62
+    004A8BAF  6a06                 push 6
+    004A8BB1  50                   push eax
+    004A8BB2  52                   push edx
+    004A8BB3  b960bca800           mov ecx, 0xa8bc60
+    004A8BB8  e8a3ae1200           call 0x5d3a60
+    004A8BBD  8b0da86f8800         mov ecx, dword ptr [0x886fa8]
+    004A8BC3  51                   push ecx
+    004A8BC4  b960bca800           mov ecx, 0xa8bc60
+    004A8BC9  e802bf1200           call 0x5d4ad0
+    004A8BCE  688c008200           push 0x82008c
+    004A8BD3  e808ddf5ff           call 0x4068e0
+    004A8BD8  83c404               add esp, 4
+    004A8BDB  5f                   pop edi
+    004A8BDC  5e                   pop esi
+    004A8BDD  5b                   pop ebx
+    004A8BDE  83c41c               add esp, 0x1c
+    004A8BE1  c20400               ret 4
+
+==============================================================================
+== STEP 5  all callers of 0x724730 (are any unguarded?)
+==============================================================================
+decoded 1394120
+[PASS] decoded > 500000  1394120
+  callers of 0x724730: 30
+  guarded (cmp/test + skip): 6
+  unguarded: 24
+    0x00640427
+    0x00654413
+    0x00654469
+    0x006AC00B
+    0x006AC03E
+    0x006AC0ED
+    0x006AC140
+    0x006AC193
+    0x006AC1E6
+    0x006D059B
+    0x006D0634
+    0x006D0664
+    0x006D08B3
+    0x006D0940
+    0x006D09FA
+    0x006D1293
+    0x006D1308
+    0x006D137E
+    0x006D13F3
+    0x006D155C
+
+==============================================================================
+== STEP 6  verdict
+==============================================================================
+  [已证] 0x4A8B35 的 `cmp ecx,ebx` 是**有效守卫**（不是假守卫）：
+         - cmp 与 je 之间只有 `mov [abs],reg`（不改 flags / 不改 ecx）
+         - je 目标 0x4A8B9B 在 call 0x724730 之后 ⇒ 确实跳过
+  [推翻 §352] 「0x4A8B35 / 0x6403B0 是假守卫」对 0x4A8B35 **不成立**。
+  [重要推论] L3 内部**已经**保护了 0x724730 ⇒ 崩溃时 ecx 必 ≠ 0
+             ⇒ 崩溃点的 this **不是** [0x887368]=0
+             ⇒ 「崩溃时 ecx=[0x887368]=0」的既有定案需重新审视
+
+  unguarded callers of 0x724730: 24
+  ⇒ 崩溃更可能来自这些无守卫入口：
+       0x00640427
+       0x00654413
+       0x00654469
+       0x006AC00B
+       0x006AC03E
+       0x006AC0ED
+       0x006AC140
+       0x006AC193
+       0x006AC1E6
+       0x006D059B
+
+checks passed: 6/6
+verdict: CMP_IS_A_REAL_GUARD
+RESULT: ALL PASS
