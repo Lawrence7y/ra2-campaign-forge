@@ -1,0 +1,86 @@
+==============================================================================
+== STEP 0  identity
+==============================================================================
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256[:8] == 73201cc0  73201cc0
+
+==============================================================================
+== STEP 1  RTTI hierarchy of both vtables
+==============================================================================
+
+  TABLE_A 0x007E1964
+    COL=0x007FAB38  name='.?AVMouseClass@@'
+    CHD=0x007FAB28  numBaseClasses=12
+      base[0] mdisp=0  None
+      base[1] mdisp=0  None
+      base[2] mdisp=0  None
+      base[3] mdisp=0  None
+      base[4] mdisp=0  None
+      base[5] mdisp=0  None
+      base[6] mdisp=0  None
+      base[7] mdisp=0  None
+      base[8] mdisp=0  None
+      base[9] mdisp=0  None
+      base[10] mdisp=0  None
+      base[11] mdisp=21784  None
+
+  TABLE_B 0x007F0344
+    COL=0x008083C0  name='.?AVRadarClass@@'
+    CHD=0x008083B0  numBaseClasses=6
+      base[0] mdisp=0  None
+      base[1] mdisp=0  None
+      base[2] mdisp=0  None
+      base[3] mdisp=0  None
+      base[4] mdisp=0  None
+      base[5] mdisp=0  None
+
+  TABLE_A base chain: [None, None, None, None, None, None, None, None, None, None, None, None]
+  TABLE_B base chain: [None, None, None, None, None, None]
+  MouseClass is a base of RadarClass : False
+  RadarClass is a base of MouseClass : False
+[PASS] RTTI chain parsed for both vtables  .?AVMouseClass@@ / .?AVRadarClass@@
+[FAIL] a definite inheritance relation exists (one is base of the other)  a_in_b=False b_in_a=False
+
+==============================================================================
+== STEP 2  0x652C00: destructor or re-initializer?
+==============================================================================
+  body: 59 insns
+  calls to 0x7C8B3D (operator delete): 3 ['0x00652C41', '0x00652C72', '0x00652CA9']
+  stores from ebx (ebx is xor'd to 0 earlier): 6
+    0x00652C49  dword ptr [esi + 4], ebx
+    0x00652C50  dword ptr [esi + 8], ebx
+    0x00652C7A  dword ptr [edi + 0x1260], ebx
+    0x00652C86  dword ptr [edi + 0x1264], ebx
+    0x00652CB1  dword ptr [edi + 0x1228], ebx
+    0x00652CBF  dword ptr [edi + 0x122c], ebx
+[PASS] 0x652C00 frees memory (destructor signature)  3 free calls
+
+==============================================================================
+== STEP 3  the 5 hosts: scalar deleting destructor signature?
+==============================================================================
+  0x0040D2D4: test[esp]=True free=True ret=['4']
+[PASS] 0x0040D2D4 is a scalar deleting destructor (test flags + free + ret imm)  test=True free=True
+  0x005BEA0A: test[esp]=True free=True ret=['4']
+[PASS] 0x005BEA0A is a scalar deleting destructor (test flags + free + ret imm)  test=True free=True
+  0x006404B3: test[esp]=True free=True ret=['4']
+[PASS] 0x006404B3 is a scalar deleting destructor (test flags + free + ret imm)  test=True free=True
+  0x0069391A: test[esp]=True free=True ret=['4']
+[PASS] 0x0069391A is a scalar deleting destructor (test flags + free + ret imm)  test=True free=True
+  0x006AC81A: test[esp]=True free=True ret=['4']
+[PASS] 0x006AC81A is a scalar deleting destructor (test flags + free + ret imm)  test=True free=True
+
+==============================================================================
+== STEP 4  verdict
+==============================================================================
+  [未定] RTTI 链未能给出直接继承关系（可能多继承或链解析不全）。
+
+  [已证] 5 个宿主都是**标量删除析构函数**（test flags + free + ret imm）。
+  [已证] 0x652C00 体内含 operator delete 调用 ⇒ 它有析构语义。
+  [更正 §352] 「表B 由 5 个**运行期**站点装到别的对象上」应改为：
+             这 5 个站点在**析构**路径上，不是构造路径。
+  [对分岔的影响] 若 One_Time 只在析构期被调，则崩溃发生在**退出/销毁**阶段，
+                 这与『WM_DESTROY 后崩溃』的现场特征一致 ⇒ 分岔 A' 增强。
+
+checks passed: 8/9
+verdict: INHERITANCE_UNDETERMINED
+RESULT: FAIL

@@ -1,0 +1,92 @@
+--- qc151_trip.harness4.py
++++ qc151_trip.harness5.py
+@@ -1476,6 +1476,43 @@
+         return False
+ 
+ 
++def _a8_enum_probe(rec: Recorder, where: str) -> dict:
++    """★★ [A8-b] 枚举器正控探针：确认 `find_pids` 本身能工作。
++
++    ★ 为什么需要：`find_pids` 在 `CreateToolhelp32Snapshot` 失败时返回**空 list**，
++      与「确实没有该进程」**不可区分**。A8 的 `remaining` 断言会把前者当成后者
++      ⇒ 枚举失败被误判为「零残留」⇒ false-PASS 通道（异族核验 C6）。
++    ★ 做法：查**本进程自己的 exe 名**。本进程必然在进程表里 ⇒ 查不到就是枚举器坏了。
++    ★ 不改 `find_pids`（母本函数，多处在用）；探针只在 A8 层做。
++    ★ 返回 {"ok": bool, "self_name": str, "self_pid": int, "found": [...]}。
++    """
++    self_pid = os.getpid()
++    self_name = ""
++    try:
++        self_name = Path(sys.executable).name
++    except Exception:
++        self_name = "python.exe"
++    found = []
++    err = None
++    try:
++        found = find_pids(self_name)
++    except Exception as e:
++        err = repr(e)
++    ok = (self_pid in found)
++    rec.add("A8", "a8_enum_probe_where", where, "script:_a8_enum_probe")
++    rec.add("A8", "a8_enum_probe_self_name", self_name,
++            "script:_a8_enum_probe",
++            note="★ 用本进程自己的 exe 名做正控（必然存在）")
++    rec.add("A8", "a8_enum_probe_self_pid", self_pid, "script:_a8_enum_probe")
++    rec.add("A8", "a8_enum_probe_found", found, "script:_a8_enum_probe")
++    rec.add("A8", "a8_enum_probe_ok", ok, "script:_a8_enum_probe",
++            note="★★ False ⇒ 枚举器失效 ⇒ 后续 remaining 断言不可信")
++    if err is not None:
++        rec.add("A8", "a8_enum_probe_error", err, "script:_a8_enum_probe")
++    return {"ok": ok, "self_name": self_name, "self_pid": self_pid,
++            "found": found, "error": err}
++
++
+ def a8_sweep_carrier_processes(rec: Recorder, carrier_dir: Path,
+                                own_pid: int | None) -> dict:
+     """★★ [A8] 按载体目录精确清扫 gamemd / ra2loader 残留（★ 不做按名全杀）。
+@@ -1488,6 +1525,18 @@
+     TARGETS = ("gamemd.exe", "ra2loader.exe")
+     swept = []
+     rounds = 0
++
++    # ★★ [A8-b] 清扫前先证枚举器能工作。查不到本进程自己 ⇒ 枚举器坏了
++    #   ⇒ 后续 remaining 断言不可信 ⇒ 直接返回哨兵，让调用方走 V-fail。
++    probe_before = _a8_enum_probe(rec, "before_sweep")
++    if not probe_before["ok"]:
++        rec.add("A8", "a8_enum_verdict", "FAIL", "script:a8_sweep_carrier_processes",
++                note="★★ 清扫前枚举器自检失败 ⇒ 无法判断残留 ⇒ 判 V-fail"
++                     "（★ 不把「查不到」当「零残留」）")
++        return {"swept": [], "remaining": [{"pid": None,
++                                            "image": "<ENUM_FAILED_BEFORE_SWEEP>"}],
++                "rounds": 0, "enum_probe_ok": False}
++
+     for _round in range(3):
+         rounds = _round + 1
+         killed = 0
+@@ -1522,6 +1571,16 @@
+             break
+         time.sleep(0.8)
+ 
++    # ★★ [A8-b] 收尾前再验一次枚举器（中途坏掉同样不可信）。
++    probe_after = _a8_enum_probe(rec, "before_remaining")
++    if not probe_after["ok"]:
++        rec.add("A8", "a8_enum_verdict", "FAIL", "script:a8_sweep_carrier_processes",
++                note="★★ 收尾断言前枚举器自检失败 ⇒ 残留不可判定 ⇒ 判 V-fail")
++        return {"swept": swept,
++                "remaining": [{"pid": None,
++                               "image": "<ENUM_FAILED_BEFORE_REMAINING>"}],
++                "rounds": rounds, "enum_probe_ok": False}
++
+     # ★ 收尾断言：再枚举一次，看还有没有落在我载体目录下的
+     remaining = []
+     for pid in find_pids("gamemd.exe") + find_pids("ra2loader.exe"):
+@@ -1544,6 +1603,9 @@
+     rec.add("A8", "a8_remaining_detail", remaining,
+             "script:a8_sweep_carrier_processes")
+     rec.add("A8", "a8_rounds", rounds, "script:a8_sweep_carrier_processes")
++    rec.add("A8", "a8_enum_verdict", "PASS", "script:a8_sweep_carrier_processes",
++            note="★ 枚举器两次自检均通过 ⇒ remaining 断言可信")
++    rec.add("A8", "a8_enum_probe_ok", True, "script:a8_sweep_carrier_processes")
+     return {"swept": swept, "remaining": remaining, "rounds": rounds}
+ 
+ 

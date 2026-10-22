@@ -1,0 +1,44 @@
+============================================================================
+== load harness5
+============================================================================
+loaded OK
+[PASS] _a8_enum_probe exists in harness5  found
+
+============================================================================
+== 1. positive control: probe finds THIS process
+============================================================================
+  self_name = 'python.exe'
+  self_pid  = 27760
+  found     = [47892, 48216, 27216, 4840, 27760]
+  ok        = True
+[PASS] probe finds own pid (ok=True)  True
+[PASS] probe recorded a8_enum_probe_ok  ['a8_enum_probe_where', 'a8_enum_probe_self_name', 'a8_enum_probe_self_pid', 'a8_enum_probe_found', 'a8_enum_probe_ok']
+[PASS] probe a8_enum_probe_ok value is True  [True]
+
+============================================================================
+== 2. negative control: find_pids returns [] (simulated snapshot failure)
+============================================================================
+  probe ok = False  (expect False)
+[PASS] NEG: probe reports ok=False when enumerator returns empty  False
+  sweep remaining = [{'pid': None, 'image': '<ENUM_FAILED_BEFORE_SWEEP>'}]
+  sweep rounds    = 0
+[PASS] NEG: sweep returns NON-EMPTY remaining when enumerator is dead  1
+[PASS] NEG: sentinel marks enum failure  [{'pid': None, 'image': '<ENUM_FAILED_BEFORE_SWEEP>'}]
+[PASS] NEG: sweep did NOT attempt any kill  []
+[PASS] NEG: a8_enum_verdict recorded FAIL  ['a8_enum_probe_where', 'a8_enum_probe_self_name', 'a8_enum_probe_self_pid', 'a8_enum_probe_found', 'a8_enum_probe_ok', 'a8_enum_verdict']
+[PASS] NEG: a8_enum_verdict value == 'FAIL'  ['FAIL']
+
+============================================================================
+== 3. mother function find_pids is byte-identical to harness4
+============================================================================
+[PASS] find_pids source identical between harness4 and harness5  len 2265 vs 2265
+
+============================================================================
+== 4. positive path: sweep with working enumerator, empty carrier dir
+============================================================================
+  remaining = []  rounds = 1
+[PASS] POS: real enumerator => zero remaining (no stray processes in fake dir)  0
+[PASS] POS: nothing was killed  []
+
+checks passed: 13/13
+RESULT: ALL PASS

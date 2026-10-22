@@ -1,0 +1,118 @@
+==============================================================================
+== STEP 0  identity + decode
+==============================================================================
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256[:8] == 73201cc0  73201cc0
+decoded 1394120
+[PASS] decoded > 500000  1394120
+
+==============================================================================
+== STEP 1  per-host upward closure + timing tags
+==============================================================================
+
+--------------------------------------------------------------------------
+-- caller_40D2D4  site 0x0040D2D4
+   host head 0x0040D287
+   upward E8 closure: 400 functions
+   in pump 0x5D4D50 closure : False
+   in WndProc dispatch closure: False
+   timing tags: ['初始化', '地图', '开局', '显示模式', '载入']
+      0x006980BE  'GameMode'
+      0x006980BE  'ModemName'
+      0x006980BE  'InitStringIndex'
+      0x006980BE  'InitStrings'
+      0x006980BE  'InitStrings'
+      0x006980BE  'InitStrings'
+      0x005F2132  'Modem detected OK\n'
+      0x005F2132  "Modem failed to respond to 'AT' command\n"
+
+--------------------------------------------------------------------------
+-- caller_5BEA0A  site 0x005BEA0A
+   host head 0x005BE9DD
+   upward E8 closure: 400 functions
+   in pump 0x5D4D50 closure : False
+   in WndProc dispatch closure: False
+   timing tags: ['初始化', '地图', '开局', '显示模式', '载入']
+      0x006980BE  'GameMode'
+      0x006980BE  'ModemName'
+      0x006980BE  'InitStringIndex'
+      0x006980BE  'InitStrings'
+      0x006980BE  'InitStrings'
+      0x006980BE  'InitStrings'
+      0x005F2132  'Modem detected OK\n'
+      0x005F2132  "Modem failed to respond to 'AT' command\n"
+
+--------------------------------------------------------------------------
+-- caller_6404B3  site 0x006404B3
+   host head 0x006404A3
+   upward E8 closure: 400 functions
+   in pump 0x5D4D50 closure : False
+   in WndProc dispatch closure: False
+   timing tags: ['初始化', '地图', '开局', '显示模式', '载入']
+      0x006980BE  'GameMode'
+      0x006980BE  'ModemName'
+      0x006980BE  'InitStringIndex'
+      0x006980BE  'InitStrings'
+      0x006980BE  'InitStrings'
+      0x006980BE  'InitStrings'
+      0x005F2132  'Modem detected OK\n'
+      0x005F2132  "Modem failed to respond to 'AT' command\n"
+
+--------------------------------------------------------------------------
+-- caller_69391A  site 0x0069391A
+   host head 0x006938E7
+   upward E8 closure: 400 functions
+   in pump 0x5D4D50 closure : False
+   in WndProc dispatch closure: False
+   timing tags: ['初始化', '地图', '开局', '显示模式', '载入']
+      0x006980BE  'GameMode'
+      0x006980BE  'ModemName'
+      0x006980BE  'InitStringIndex'
+      0x006980BE  'InitStrings'
+      0x006980BE  'InitStrings'
+      0x006980BE  'InitStrings'
+      0x005F2132  'Modem detected OK\n'
+      0x005F2132  "Modem failed to respond to 'AT' command\n"
+
+--------------------------------------------------------------------------
+-- caller_6AC81A  site 0x006AC81A
+   host head 0x006AC7E1
+   upward E8 closure: 400 functions
+   in pump 0x5D4D50 closure : False
+   in WndProc dispatch closure: False
+   timing tags: ['初始化', '地图', '开局', '显示模式', '载入']
+      0x006980BE  'GameMode'
+      0x006980BE  'ModemName'
+      0x006980BE  'InitStringIndex'
+      0x006980BE  'InitStrings'
+      0x006980BE  'InitStrings'
+      0x006980BE  'InitStrings'
+      0x005F2132  'Modem detected OK\n'
+      0x005F2132  "Modem failed to respond to 'AT' command\n"
+
+==============================================================================
+== STEP 2  verdict per host
+==============================================================================
+  0x0040D2D4 (caller_40D2D4     ) closure=400 pump=False wnd=False => B（换图/载入路径）强候选
+  0x005BEA0A (caller_5BEA0A     ) closure=400 pump=False wnd=False => B（换图/载入路径）强候选
+  0x006404B3 (caller_6404B3     ) closure=400 pump=False wnd=False => B（换图/载入路径）强候选
+  0x0069391A (caller_69391A     ) closure=400 pump=False wnd=False => B（换图/载入路径）强候选
+  0x006AC81A (caller_6AC81A     ) closure=400 pump=False wnd=False => B（换图/载入路径）强候选
+
+==============================================================================
+== STEP 3  aggregate judgement on branch A/B/A'
+==============================================================================
+  B-supporting hosts (load/map/scenario strings): 5
+     0x0040D2D4  tags=['初始化', '地图', '开局', '显示模式', '载入']
+     0x005BEA0A  tags=['初始化', '地图', '开局', '显示模式', '载入']
+     0x006404B3  tags=['初始化', '地图', '开局', '显示模式', '载入']
+     0x0069391A  tags=['初始化', '地图', '开局', '显示模式', '载入']
+     0x006AC81A  tags=['初始化', '地图', '开局', '显示模式', '载入']
+  A'-supporting hosts (in pump/WndProc closure): 0
+  [强推断] 分岔 B：RadarClass 在载图/换图路径上构造 ⇒ One_Time 每次载图重跑
+[PASS] closure computation produced >=1 host  5
+[PASS] every host has a resolved function head  5
+
+checks passed: 4/4
+verdict: B_SUPPORTED
+RESULT: ALL PASS

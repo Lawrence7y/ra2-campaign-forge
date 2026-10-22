@@ -1,0 +1,107 @@
+==============================================================================
+A8-b 独立核验（枚举器正控探针）
+目录: D:\Project\ra2-campaign-forge\lead\goal1_a8_fix_20261022
+python: 3.12.10  exe=C:\Users\Administrator\AppData\Local\Programs\Python\Python312\python.exe
+==============================================================================
+
+--- 1. 基线零改动 ---
+             harness4 bytes=424078  LF16=cd9bbc87e46054af  CRLF16=896f45f1dcb474f5
+[CONFIRMED] 1  harness4 的 LF sha256 前16 == cd9bbc87e46054af
+             actual=cd9bbc87e46054af expect=cd9bbc87e46054af
+
+--- 2. 副本哈希自证 ---
+             harness5 bytes=427456  LF16=f1e5bc7b0ff30c9c  CRLF16=3b10dae011d08c4b  实际CRLF字节对=NO  实际裸CR字节=NO
+[CONFIRMED] 2a  harness5 LF16 == f1e5bc7b0ff30c9c
+             actual=f1e5bc7b0ff30c9c
+[CONFIRMED] 2b  harness5 CRLF16 == 3b10dae011d08c4b
+             actual=3b10dae011d08c4b
+[CONFIRMED] 2c  harness5 字节数 == 427456
+             actual=427456
+
+--- 3. 反向重建（生成器常量 + diff 两条独立路径）---
+             生成器常量重建: bytes=427456 LF16=f1e5bc7b0ff30c9c 逐字节相等=True
+[CONFIRMED] 3a  用 _gen_harness5.py 的 ANCHOR/PATCH 常量可逐字节重建 harness5
+             a8b.diff 重建: bytes=427456 LF16=f1e5bc7b0ff30c9c 逐字节相等=True
+[CONFIRMED] 3b  用 a8b.diff 可逐字节重建 harness5
+
+--- 4. AST 零改动面（按函数名分组比对 ast.dump）---
+             h4 函数/类=173  h5 函数/类=174
+             新增=['def:_a8_enum_probe']
+             删除=[]
+             变更=['def:a8_sweep_carrier_processes']
+[CONFIRMED] 4a  新增符号只有 _a8_enum_probe
+             ['def:_a8_enum_probe']
+[CONFIRMED] 4b  无任何函数/类被删除
+             []
+[CONFIRMED] 4c  变更面仅 a8_sweep_carrier_processes
+             ['def:a8_sweep_carrier_processes']
+             find_pids 源码段 sha16=61626b4b252d0260 len=2264
+[CONFIRMED] 4d  find_pids 逐字节相同（实现者声称不改本体）
+
+--- 5. 不新增退出码 ---
+             h4 EXIT_*=27  h5 EXIT_*=27
+             新增=[]  删除=[]
+[CONFIRMED] 5  EXIT_* 定义集合与取值完全一致
+             added=[] removed=[]
+
+--- 6. 禁止面（只看新增行）---
+             新增行数=62
+             新增行内禁用词命中=none
+[CONFIRMED] 6a  新增行不含任何禁用 API / taskkill / 注册表写
+             {}
+             全量计数（h4→h5）={'taskkill': 2, 'SendMessage': 0, 'PostMessage': 0, 'SendInput': 11, 'WriteProcessMemory': 3, 'CreateRemoteThread': 1, 'RegSetValue': 0, 'RegCreateKey': 0, 'RegDeleteKey': 0, 'RegOpenKey': 0, 'winreg': 0, 'QueueUserAPC': 1, 'SetWindowsHookEx': 1, 'DebugActiveProcess': 1}
+[CONFIRMED] 6b  任何禁用词的全量出现次数都未上升
+             {}
+             taskkill token 归类(h5)=[('STRING', 3), ('STRING', 1343)]
+             taskkill token 归类(h4)=[('STRING', 3), ('STRING', 1343)]
+[CONFIRMED] 6c  taskkill 只出现在 STRING/COMMENT token 内（无按名全杀调用）
+             []
+
+--- 9. 零删除行（Counter 多重集）---
+             行数 h4=7720 h5=7782
+             缺失行数=0
+[CONFIRMED] 9  harness4 的每一行在 harness5 中仍存在（零删除行）
+             []
+
+--- 10. 合成冒烟（ast.parse，不执行主流程）---
+[CONFIRMED] 10  harness5 通过 ast.parse
+
+--- 7. 探针逻辑正确性（实际 import 并调用）---
+[CONFIRMED] 7a  harness5 可安全 import 且含 _a8_enum_probe
+             self_name='python.exe' self_pid=35412 found=[47892, 48216, 27216, 4840, 41224, 43848, 29784, 32548, 51732, 35412] ok=True
+[CONFIRMED] 7b  正控：正常环境 ok=True 且 self_pid 在 found 中
+             ok=True
+[CONFIRMED] 7c  探针留痕 a8_enum_probe_ok=True
+             ['a8_enum_probe_where', 'a8_enum_probe_self_name', 'a8_enum_probe_self_pid', 'a8_enum_probe_found', 'a8_enum_probe_ok']
+             负控 probe: found=[] ok=False
+[CONFIRMED] 7d  负控：find_pids 恒空 ⇒ 探针 ok=False
+             ok=False
+             载体目录存在=False  path=D:\Project\ra2-campaign-forge\lead\goal1_a8_fix_20261022\_a8b_never_created_dir
+             sweep 返回: swept=[] remaining=[{'pid': None, 'image': '<ENUM_FAILED_BEFORE_SWEEP>'}] rounds=0 enum_probe_ok=False
+[CONFIRMED] 7e  负控：清扫返回 remaining 非空
+             [{'pid': None, 'image': '<ENUM_FAILED_BEFORE_SWEEP>'}]
+[CONFIRMED] 7f  负控：remaining 含 ENUM_FAILED 哨兵
+[CONFIRMED] 7g  负控：swept 为空（没有误杀）
+             []
+[CONFIRMED] 7h  负控：a8_enum_verdict 记录 FAIL
+             ['FAIL']
+             中途坏掉: find_pids 调用 4 次；remaining=[{'pid': None, 'image': '<ENUM_FAILED_BEFORE_REMAINING>'}] swept=[]
+[CONFIRMED] 7i  收尾探针失败 ⇒ 返回 <ENUM_FAILED_BEFORE_REMAINING> 且未误杀
+             正控 sweep: remaining=[] swept=[] rounds=1
+[CONFIRMED] 7j  正控：真实枚举器 + 空载体目录 ⇒ remaining 为空且 swept 为空
+             remaining=[]
+             抛异常时: ok=False error=OSError('simulated CreateToolhelp32Snapshot failure')
+[CONFIRMED] 7k  负控：find_pids 抛异常 ⇒ 探针 ok=False（异常不逃逸）
+             ok=False
+
+--- 8. 探针顺序（静态定位）---
+             before_sweep@64800 < sweep_loop@65252 < before_remaining@66706 < remaining_enum@67171 < return@68458
+[CONFIRMED] 8a  顺序正确：清扫前探针 → 清扫循环 → 收尾探针 → remaining 枚举 → 返回
+[CONFIRMED] 8b  两次探针调用都在 a8_sweep_carrier_processes 函数体内
+[CONFIRMED] 8c  调用方以 remaining 非空 ⇒ note_cleanup_failure（V-fail 路径存在）
+
+==============================================================================
+总计 30 项：CONFIRMED=30  REFUTED=0
+LF16(h4)=cd9bbc87e46054af  LF16(h5)=f1e5bc7b0ff30c9c  CRLF16(h5)=3b10dae011d08c4b  bytes(h5)=427456
+RESULT: ALL CONFIRMED
+==============================================================================

@@ -1,0 +1,75 @@
+==============================================================================
+== STEP 0  identity
+==============================================================================
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256[:8] == 73201cc0  73201cc0
+
+==============================================================================
+== STEP 1  RTTI chains
+==============================================================================
+  TABLE_A .?AVMouseClass@@  (12 bases)
+    [0] mdisp=0x0  .?AVMouseClass@@
+    [1] mdisp=0x0  .?AVScrollClass@@
+    [2] mdisp=0x0  .?AVTabClass@@
+    [3] mdisp=0x0  .?AVSidebarClass@@
+    [4] mdisp=0x0  .?AVPowerClass@@
+    [5] mdisp=0x0  .?AVRadarClass@@
+    [6] mdisp=0x0  .?AVDisplayClass@@
+    [7] mdisp=0x0  .?AVMapClass@@
+    [8] mdisp=0x0  .?AVGScreenClass@@
+    [9] mdisp=0x0  .?AUIGameMap@@
+    [10] mdisp=0x0  .?AUIUnknown@@
+    [11] mdisp=0x5518  .?AVINoticeSink@@
+  TABLE_B .?AVRadarClass@@  (6 bases)
+    [0] mdisp=0x0  .?AVRadarClass@@
+    [1] mdisp=0x0  .?AVDisplayClass@@
+    [2] mdisp=0x0  .?AVMapClass@@
+    [3] mdisp=0x0  .?AVGScreenClass@@
+    [4] mdisp=0x0  .?AUIGameMap@@
+    [5] mdisp=0x0  .?AUIUnknown@@
+[PASS] TABLE_A is MouseClass  .?AVMouseClass@@
+[PASS] TABLE_B is RadarClass  .?AVRadarClass@@
+[PASS] RadarClass appears in MouseClass's base chain  ['.?AVMouseClass@@', '.?AVScrollClass@@', '.?AVTabClass@@', '.?AVSidebarClass@@', '.?AVPowerClass@@', '.?AVRadarClass@@', '.?AVDisplayClass@@', '.?AVMapClass@@', '.?AVGScreenClass@@', '.?AUIGameMap@@', '.?AUIUnknown@@', '.?AVINoticeSink@@']
+[PASS] RadarClass subobject is at offset 0 of MouseClass (mdisp==0)  mdisp=0
+[PASS] RadarClass's base set is a subset of MouseClass's base set  B=6 A=12
+
+==============================================================================
+== STEP 2  constructor relation: MouseClass ctor vs RadarClass ctor
+==============================================================================
+  0x5BDA40 (MouseClass ctor) calls: ['0x692290']
+  0x652960 (RadarClass ctor) calls: ['0x4A8730']
+[PASS] MouseClass ctor does NOT call RadarClass ctor directly (0x692290 is the real base ctor)  ['0x692290']
+
+==============================================================================
+== STEP 3  slot5 semantics of the two tables
+==============================================================================
+  TABLE_A slot5 = 0x5BDF30  (MouseClass override)
+  TABLE_B slot5 = 0x652CF0  (RadarClass::One_Time)
+
+  0x5BDF30 body:
+    005BDF30  e82b231100           call 0x6d0260
+    005BDF35  badcf2ab00           mov edx, 0xabf2dc
+    005BDF3A  b94c608200           mov ecx, 0x82604c
+    005BDF3F  e88c59eeff           call 0x4a38d0
+    005BDF44  a394f2ab00           mov dword ptr [0xabf294], eax
+    005BDF49  c3                   ret 
+
+==============================================================================
+== STEP 4  verdict
+==============================================================================
+  [已证] RadarClass 是 MouseClass 的**基类**（mdisp=0，子对象在偏移 0）。
+  [已证] 所以 0x87F7E8 这个对象**同时**是 MouseClass 和 RadarClass 的实例
+         （多继承下的同一地址）。
+  [更正 §352] 「0x87F7E8 是 MouseClass，**不是** RadarClass」这句话的
+             「不是」应删除：它是 MouseClass，而 MouseClass **继承** RadarClass。
+  [核心机制] 同一地址 `[0x87F7E8]` 只能存一个 vtable 指针：
+             - 装表 A(0x7E1964) ⇒ slot5 = 0x5BDF30（MouseClass 覆盖版）
+             - 装表 B(0x7F0344) ⇒ slot5 = 0x652CF0（RadarClass::One_Time）
+             ⇒ **谁最后装，谁生效**。§347 观察到「两次构造」的方向是对的，
+                错在把退出期 atexit 回调当成了运行期。
+  [对 RC-4 的意义] 崩溃时若 [0x87F7E8] 已被清零，则无论装哪张表都读到 0
+             ⇒ 与『崩溃 ecx=[0x887368]=0』的机制**同构**（都是全局被清零后使用）。
+  [待定] One_Time 的运行期调用时机：需确认运行期 [0x87F7E8] 装的是表 A 还是表 B。
+
+checks passed: 7/7
+RESULT: ALL PASS
