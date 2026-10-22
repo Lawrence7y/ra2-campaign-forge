@@ -1,0 +1,75 @@
+镜像基数 0x00400000；.text 解码 1394120 条
+
+=== B1/B2 两个全局的语义区分 ===
+  0x0087F7E8 雷达对象本体           在文件内=False
+  0x00A8B23C 当前活动对象指针         在文件内=False
+  [PASS] ★ 0x87F7E8 在文件内无内容（.data BSS ⇒ 对象本体，运行时才写 vtable）
+  [PASS] ★ 0xA8B23C 在文件内无内容（.data BSS ⇒ 指针变量，运行时赋值）
+  [PASS] ★ 两者是**不同的**全局（一个对象本体、一个指针变量）  0x87F7E8 vs 0xA8B23C
+
+=== B2 [0xA8B23C] 的写点是否有 0x87F7E8 ===
+  写点 10 处：
+    0x005E5451  dword ptr [0xa8b23c], ebp
+    0x005E7219  dword ptr [0xa8b23c], esi
+    0x005E7291  dword ptr [0xa8b23c], ecx
+    0x005E7367  dword ptr [0xa8b23c], esi
+    0x005ED6EB  dword ptr [0xa8b23c], edi
+    0x006AEBDD  dword ptr [0xa8b23c], esi
+    0x006AEC6E  dword ptr [0xa8b23c], esi
+    0x00789E77  dword ptr [0xa8b23c], eax
+    0x00791285  dword ptr [0xa8b23c], ebx
+    0x007A6088  dword ptr [0xa8b23c], eax
+  [PASS] ★ **没有**任何一处把 0x87F7E8 写进 [0xA8B23C] ⇒ 它不是雷达  0 处命中
+
+=== 29 处 call [reg+0xA8] 的对象来源分档 ===
+  站点 29 处
+  [PASS] ★ 站点数 == 29（与 §346 一致）  29
+    0x00419F59  eax : UNKNOWN(objptr)
+    0x0043C91B  edx : UNKNOWN(vtable)
+    0x00443FFD  edx : UNKNOWN(vtable)
+    0x0044403E  edx : UNKNOWN(vtable)
+    0x00447E24  edx : UNKNOWN(vtable)
+    0x00447EB0  eax : UNKNOWN(vtable)
+    0x00447EE4  edx : UNKNOWN(vtable)
+    0x004485F5  edx : UNKNOWN(vtable)
+    0x004494A3  edx : UNKNOWN(vtable)
+    0x0044F167  eax : UNKNOWN(vtable)
+    0x004A88AA  eax : UNKNOWN(vtable)
+    0x004CF142  eax : UNKNOWN(vtable)
+    0x005069F3  edx : UNKNOWN(objptr)
+    0x00521161  ecx : UNKNOWN(objptr)
+    0x0055781F  edi : UNKNOWN(vtable)
+    0x00557C86  edx : UNKNOWN(vtable)
+    0x005A93B5  edx : UNKNOWN(vtable)
+    0x0068589C  edx : GLOBAL-ONLY [0xA8B23C]
+    0x00685FE6  edx : GLOBAL-ONLY [0xA8B23C]
+    0x006ED6B3  edi : UNKNOWN(objptr)
+    0x0070AD5F  eax : UNKNOWN(vtable)
+    0x00738E08  eax : UNKNOWN(objptr)
+    0x00739333  edx : UNKNOWN(objptr)
+    0x007394D2  edx : UNKNOWN(objptr)
+    0x0073A3B1  edx : UNKNOWN(objptr)
+    0x0073FF9C  eax : UNKNOWN(objptr)
+    0x0077FF8C  ecx : GLOBAL-ONLY [0xAC116C]
+    0x0078F1CE  edx : GLOBAL-ONLY [0xAC116C]
+    0x007A5830  edx : GLOBAL-ONLY [0xAC116C]
+
+  分档统计：MATCH=0  GLOBAL-ONLY=5  UNKNOWN=24
+  [PASS] ★ 三档计数守恒  29
+  [PASS] ★ UNKNOWN 不再是 29（切片器已能追 vtable 一层）  UNKNOWN=24
+
+=== 结论 ===
+  MATCH（reg 基址 = 雷达本体 0x87F7E8）= 0 处：无
+  ⇒ 若 MATCH 为 0，说明**没有**任何一处 static 上直接把雷达本体当 reg。
+    这与 §349 相符：One_Time 是 slot5，不是 slot42；
+    它调 v[42] 是**在它自己内部**用 `mov ecx,esi` 的 this 透传（§346 已证），
+    所以那 29 处 +0xA8 站点与 One_Time 无关。
+
+  GLOBAL-ONLY 里的 [0xA8B23C] 两处（0x68589C / 0x685FE6）:
+    形态是「取当前活动对象 → cmp 判空 → call slot42」，
+    在 Scenario.CPP 里，靠近 'Toggle display mode back to shell res'。
+    ⇒ 这是**显示模式切换**时对当前场景对象调 slot42，
+      而 slot42 = 0x4A8960 = 视口尺寸变更 + 缓冲重建。
+    ⇒ **这才是 §349 要找的『别的时机』**，且它有 cmp 判空守卫。
+
+★ 对象来源分档完成：MATCH=0 GLOBAL-ONLY=5 UNKNOWN=24
