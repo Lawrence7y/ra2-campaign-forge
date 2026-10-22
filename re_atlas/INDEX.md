@@ -689,7 +689,7 @@ Building **269/269**（含 132 个 `lea eax,[esi+0xF5C] / 0x15 项 / 步长 0x44
 
 ### C.15d 字典节的四条机器判据（R-032 核验，2026-10-23）
 
-> 门禁 `tools/verify_r032_claims.py` **13/13 PASS，EXIT=0**（sha16 `6b7622c3209f0444`）；
+> 门禁 `tools/verify_r032_claims.py` **13/13 PASS，EXIT=0**（sha16 `84b3f0b8ded6391f`）；
 > 证据 `evidence/r032_h015_dictionary_sections_verification.md`；正文 `kb/30` §14.5。
 
 C.15c 里"20 个 loader 枚举键名"这句话，本轮拆成四条**可执行**判据：

@@ -665,7 +665,7 @@ size    = vtable[12](obj)    # 只有上一步成立，才认它是 GetSize
 ### 核验回填（H-015）· 2026-10-23
 
 **门禁**：`tools/verify_r032_claims.py` → **13/13 PASS，EXIT=0**（`evidence/r032_verify.txt`，
-两次复跑逐字相同；工具 sha16 `6b7622c3209f0444`）。
+两次复跑逐字相同；工具 sha16 `84b3f0b8ded6391f`）。
 **证据件**：`evidence/r032_h015_dictionary_sections_verification.md`。
 
 **判定**：机制判断 **半数推翻**（「键名即数据」只对 3/20 成立，17/20 注册的是**值**）；

@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
-"""R-032: independent machine gate for H-015 (dictionary sections: key name IS the data).
+"""R-032: independent machine gate for H-015 (dictionary sections).
 
 H-015 makes three claims. Point 1 (ShortGame through 0x671EA0) is already gated
 by verify_r023_claims.py. Points 2 and 3 are checked here from bytes alone:
 
   2. 20 loaders use GetKeyCount -> GetKeyName and treat the KEY NAME as data.
-  3. "only 5 loaders read fixed keys (27/19/14/12/11 keys)"     <-- the claim
-     that has to be re-measured; section 14.2 now says 15 loaders / 651 keys.
+     >>> MEASURED RESULT: only 3 of the 20 do. In the other 17 the key name is a
+     >>> LOOKUP key and the VALUE returned by ReadString is what gets registered.
+     >>> So this gate's job on point 2 is to FALSIFY it for family A, not confirm.
+  3. "only 5 loaders read fixed keys (27/19/14/12/11 keys)"     <-- FALSIFIED:
+     measured 15 loaders / 660 sites / 651 keys.
 
 The measurement trap this gate exists to avoid: the push-count in front of a
 `call` is NOT the callee's argument count on this image. MSVC stages the NEXT
@@ -16,10 +19,19 @@ three leftovers become part of the five `ReadString` consumes. Counting pushes
 naively reports "GetKeyName takes 5 args" and "ReadString takes 2", both wrong.
 The callee's own `ret imm16` is the authority.
 
+Lineage of corrections in this file (each was a real wrong answer of mine):
+  * P3 v1 asserted "the key slot holds eax" and concluded "key name is the data".
+    That proves only WHERE the key comes from, not what it is used FOR. Caught by
+    the blind verifier; rewritten to test the registrar's `this`. See G-53.
+  * P3 v0 (before that) asserted esp-depth equality across the two calls on the
+    theory that argument staging is an invariant. It is not -- Read_Teams_obsolete
+    pushes all five ReadString arguments fresh. See G-52.
+
 Run: python re_atlas/tools/verify_r032_claims.py
 """
 
 import hashlib
+import os
 import sys
 
 import capstone
@@ -28,6 +40,22 @@ EXE = r"D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe"
 IMAGE_BASE = 0x400000
 SHA256 = "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
 
+# Mutation hooks, so `--mutate ADDR=BYTE` can flip one byte in memory and prove an
+# assertion actually reads the quantity it names. Without this the gate only shows
+# "13 things printed PASS", which GOAL-3T's S388 lesson says is not evidence:
+# "N/N PASS 本身没有意义，必须问这 N 条里有多少条真的把被测物放进了等式".
+MUTATIONS = {}
+
+
+def _parse_mutations(items):
+    """VA=BYTE (hex or dec) pairs; applied to the in-memory image only."""
+    for arg in items:
+        if "=" not in arg:
+            continue
+        k, v = arg.split("=", 1)
+        MUTATIONS[int(k, 0)] = int(v, 0) & 0xFF
+
+
 SECTIONS = [
     (0x001000, 0x3DF38D, 0x001000, 0x3E0000),
     (0x3E1000, 0x030074, 0x3E1000, 0x031000),
@@ -35,7 +63,27 @@ SECTIONS = [
 ]
 
 with open(EXE, "rb") as fh:
-    _RAW = fh.read()
+    _RAW = bytearray(fh.read())
+
+_parse_mutations(os.environ.get("R032_MUTATE", "").split(","))
+
+
+def _va_to_fileoff(va):
+    """File offset of a disk-backed VA, or None for BSS / unmapped."""
+    rva = va - IMAGE_BASE
+    for s_rva, _vs, rp, rs in SECTIONS:
+        if s_rva <= rva < s_rva + rs:
+            return rp + (rva - s_rva)
+    return None
+
+
+for _va, _byte in MUTATIONS.items():
+    _fo = _va_to_fileoff(_va)
+    if _fo is None:
+        raise SystemExit(f"mutation target 0x{_va:08X} is not disk-backed")
+    _RAW[_fo] = _byte
+
+_RAW = bytes(_RAW)
 
 
 def read_va(va, n):
@@ -301,7 +349,7 @@ for fn_va, name in sorted(LOADERS.items()):
         if not (this_src and "esp" in this_src):
             stage_bad.append(
                 f"{name}: 注册 ecx = {this_src}，不是 ReadString 的落盘缓冲（[esp+..]）")
-check("P3", not stage_bad and len(STAGE_SITES) >= 15,
+check("P3", not stage_bad and len(STAGE_SITES) == 16,
       f"族 A 注册的是 **ReadString 写入的落盘缓冲（=值）**，不是键名 —— "
       f"{len(STAGE_SITES)} 个站点全对 ⇒ 「键名即数据」对族 A **不成立**，键名只是查表的键",
       "\n".join(stage_bad) or
@@ -376,10 +424,14 @@ for fn_va, name in LOADERS.items():
         FIXED[name] = ks
 n_fixed = len(FIXED)
 n_keys = sum(len(v) for v in FIXED.values())
-check("P5", n_fixed != 5,
+# ASSERT THE MEASURED VALUE, not "!= 5". `n_fixed != 5` also passes when the
+# measurement collapses to 0 (a broken extractor would sail through), which is
+# exactly the decorative-assertion shape S388 warns about. The gate must name the
+# number it expects AND the per-loader distribution's sum.
+check("P5", n_fixed == 15 and n_keys == 660,
       f"H-015 第 3 点「只有 5 个 loader 读固定键」被证伪：实测 **{n_fixed}** 个 loader "
-      f"压入字面量键（H-015 的 27/19/14/12/11 是 R-022「306 键」时代的旧值）",
-      f"n_fixed={n_fixed} n_literal_key_sites={n_keys}")
+      f"压入字面量键、**{n_keys}** 个站点（H-015 的 27/19/14/12/11 是 R-022 旧值）",
+      f"n_fixed={n_fixed} n_keys={n_keys} loaders={sorted(FIXED)}")
 
 # ---------------------------------------------------------------- P6
 # Family split inside the 20: A = enumerate name -> ReadString -> conditionally
@@ -400,9 +452,11 @@ for name in sorted(ENUM):
     else:
         FAMILY[name] = "C"
 counts = {f: sorted(n for n in FAMILY if FAMILY[n] == f) for f in "ABC"}
-check("P6", len(counts["A"]) + len(counts["B"]) == 20,
-      f"20 个枚举 loader 分成两族：A 枚举键名+读值 {len(counts['A'])} 个 / "
-      f"B 仅按键名注册 {len(counts['B'])} 个 / C {len(counts['C'])} 个",
+# A+B == 20 alone would pass if every loader fell into one bucket (20+0), which
+# destroys the very distinction the assertion is named after. Pin the split.
+check("P6", len(counts["A"]) == 17 and len(counts["B"]) == 3 and not counts["C"],
+      f"20 个枚举 loader 分成两族：A 枚举键名+读值 **{len(counts['A'])}** 个 / "
+      f"B 仅按键名注册 **{len(counts['B'])}** 个 / C {len(counts['C'])} 个",
       counts)
 
 # ---------------------------------------------------------------- P7
