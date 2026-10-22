@@ -1,0 +1,301 @@
+======================================================================
+high 代码注入 (CWE-95)
+lead\goal1_a8_fix_20261022\VERIFY_A8.py:510
+  msg: 外部数据进入 exec 被当代码执行，可执行任意 Python
+       507|     ev.append(f"uses resolve     : {'resolve' in calls}")
+       508|     # 实跑：把**副本里的原文**放进受控命名空间执行
+       509|     ns = {"Path": Path}
+  >>   510|     exec(compile(fn_src, "<_a8_path_under_carrier from harness4>", "exec"), ns)
+       511|     fn = ns["_a8_path_under_carrier"]
+       512|     P = ns["Path"]
+       513| 
+======================================================================
+high 代码注入 (CWE-95)
+lead\goal1_a8_fix_20261022\VERIFY_A8.py:687
+  msg: 外部数据进入 exec 被当代码执行，可执行任意 Python
+       684|     # 路径三用例复跑（与 K7 同源，确保冒烟独立成立）
+       685|     src = extract_func_src(tree, copy_text, "_a8_path_under_carrier")
+       686|     ns = {"Path": Path}
+  >>   687|     exec(compile(src, "<a8>", "exec"), ns)
+       688|     fn, P = ns["_a8_path_under_carrier"], ns["Path"]
+       689|     r1 = fn(r"D:\qa\abc\gamemd.exe", P(r"D:\qa\abc"))
+       690|     r2 = fn(r"D:\qa\abcd\x.exe", P(r"D:\qa\abc"))
+======================================================================
+low 不安全的随机数 (CWE-330)
+ra2forge\maplib.py:161
+  msg: 随机性不足。
+       158|                       density: float = 0.08, seed: int = 0):
+       159|         """Scatter forest terrain objects over a rect (skips water cells)."""
+       160|         import random
+  >>   161|         rng = random.Random(seed or (row0 * 7919 + col0 * 31 + self.w))
+       162|         types = ["TREE21", "TREE31", "TREE22", "TREE04", "TREE13",
+       163|                  "TREE02", "TREE08", "TREE09", "TREE03", "TREE10"]
+       164|         for r in range(row0, row1 + 1):
+======================================================================
+high 路径穿越 (CWE-22)
+lead\dropped611\scripts\cont01_scan.py:410
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       407|     _chk('E22_events.tsv')
+       408|     json.dump({'funcs': {k: {kk: vv for kk, vv in v.items() if kk not in ('trace',)}
+       409|                          for k, v in res.items()}, 'site_0x70E8C4_ctx': []},
+  >>   410|               open('D:/Project/ra2-campaign-forge/lead/dropped611/raw/cont01/E22_scan.json', 'w', encoding='utf-8'), indent=0)
+       411|     n_ev = sum(1 for k, v in res.items() if v['events'])
+       412|     print('funcs scanned=%d with_events=%d' % (len(res), n_ev))
+       413|     FIXED6 = ['004F9A50', '004F9A90', '0054F450', '005ADD10', '00694760', '007B1DE0']
+======================================================================
+high 路径穿越 (CWE-22)
+lead\dropped611\scripts\cont01_scan.py:441
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       438|             res.get('%08X' % int(k, 16), {}).get('n_reach'),
+       439|             res.get('%08X' % int(k, 16), {}).get('n_blocks')))
+       440|     # full event dump for callees
+  >>   441|     with open('D:/Project/ra2-campaign-forge/lead/dropped611/raw/cont01/E22_events.tsv', 'w', encoding='utf-8', newline='\n') as fh:
+       442|         fh.write('callee\teva\tinsn\tbase\tkind\toff\txc\trw\textent_end\tn_reach\n')
+       443|         for k in sorted(targets):
+       444|             v = res[k]
+======================================================================
+high 路径穿越 (CWE-22)
+lead\goal1_a8_fix_20261022\qc151_trip.harness4.py:768
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       765|     dst = carrier_dir / "except.txt"
+       766|     with open(EXCEPT_MASTER, "rb") as fsrc:      # ★ 只读
+       767|         blob = fsrc.read()
+  >>   768|     with open(dst, "wb") as fdst:                 # ★ 只写**载体副本**
+       769|         fdst.write(blob)
+       770| 
+       771|     # --- 步 3：★ 复制后复读载体并复核 ---
+======================================================================
+high 路径穿越 (CWE-22)
+lead\goal1_a8_fix_20261022\qc151_trip.harness5.py:768
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       765|     dst = carrier_dir / "except.txt"
+       766|     with open(EXCEPT_MASTER, "rb") as fsrc:      # ★ 只读
+       767|         blob = fsrc.read()
+  >>   768|     with open(dst, "wb") as fdst:                 # ★ 只写**载体副本**
+       769|         fdst.write(blob)
+       770| 
+       771|     # --- 步 3：★ 复制后复读载体并复核 ---
+======================================================================
+high 路径穿越 (CWE-22)
+lead\goal1_boot_fingerprint_20261022\boot_session_fingerprint.py:1568
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+      1565|     name = "boot_fingerprint_%s_%s.json" % (stamp, doc["fingerprint_id"])
+      1566|     path = os.path.join(out_dir, name)
+      1567|     text = json.dumps(doc, ensure_ascii=False, indent=2, default=str)
+  >>  1568|     with open(path, "w", encoding="utf-8", newline="\n") as handle:
+      1569|         handle.write(text)
+      1570|         handle.write("\n")
+      1571|     return os.path.abspath(path)
+======================================================================
+high 路径穿越 (CWE-22)
+lead\goal3_p1sbh_merge_20261020\_work\mkdiff.py:88
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+        85|     out.extend(h['body'])
+        86| 
+        87| data = '\r\n'.join(out) + '\r\n'
+  >>    88| open('sbh_on_p1_input.diff', 'wb').write(data.encode('utf-8'))
+        89| print()
+        90| print('wrote sbh_on_p1_input.diff bytes=%d' % len(data.encode('utf-8')))
+======================================================================
+high 路径穿越 (CWE-22)
+ra2forge\builder.py:570
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       567|     # the game reads INI-style files as ANSI in the system code page;
+       568|     # Chinese installs expect GBK (cp936), a strict superset of ASCII
+       569|     data = text.encode("gbk", errors="replace")
+  >>   570|     with open(path, "wb") as f:
+       571|         f.write(data)
+       572| 
+       573| 
+======================================================================
+high 路径穿越 (CWE-22)
+re_atlas\evidence\_xv_engine.py:234
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+  <read fail [Errno 2] No such file or directory: 're_atlas\\evidence\\_xv_engine.py'>
+======================================================================
+high 路径穿越 (CWE-22)
+tools\atlas_apply_patches.py:211
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       208|         ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+       209|         bak = os.path.join(args.backup_dir, "atlas_backup_preapply_%s.md" % ts)
+       210|         shutil.copyfile(args.atlas, bak)
+  >>   211|         with open(args.atlas, "w", encoding="utf-8", newline="\n") as fh:
+       212|             fh.write("\n".join(lines) + "\n")
+       213|         print("BACKUP: %s" % bak)
+       214| 
+======================================================================
+high 路径穿越 (CWE-22)
+tools\atlas_apply_patches.py:228
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       225|     d = os.path.dirname(args.ledger)
+       226|     if d:
+       227|         os.makedirs(d, exist_ok=True)
+  >>   228|     with open(args.ledger, "w", encoding="utf-8") as fh:
+       229|         json.dump({"atlas_before_lines": len(pristine), "atlas_after_lines": len(lines),
+       230|                    "applied": applied, "ops": ops, "blocked": unresolved}, fh, ensure_ascii=False, indent=2)
+       231|     print("ledger: %s" % os.path.abspath(args.ledger))
+======================================================================
+high 路径穿越 (CWE-22)
+tools\atlas_audit.py:189
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       186|         d = os.path.dirname(path)
+       187|         if d:
+       188|             os.makedirs(d, exist_ok=True)
+  >>   189|     with open(args.va_out, "w", encoding="utf-8") as fh:
+       190|         fh.write("va,line,section,subsection,snippet\n")
+       191|         for r in va_rows:
+       192|             fh.write('%s,%d,"%s","%s","%s"\n' % (r["va"], r["line"], r["section"].replace('"', "'"), r["subsection"].replace('"', "'"), r["snippet"].replace('"', "'")))
+======================================================================
+high 路径穿越 (CWE-22)
+tools\atlas_audit.py:193
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       190|         fh.write("va,line,section,subsection,snippet\n")
+       191|         for r in va_rows:
+       192|             fh.write('%s,%d,"%s","%s","%s"\n' % (r["va"], r["line"], r["section"].replace('"', "'"), r["subsection"].replace('"', "'"), r["snippet"].replace('"', "'")))
+  >>   193|     with open(args.json_out, "w", encoding="utf-8") as fh:
+       194|         json.dump(summary, fh, ensure_ascii=False, indent=2)
+       195| 
+       196|     md = []
+======================================================================
+high 路径穿越 (CWE-22)
+tools\atlas_audit.py:230
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       227|         md.append("")
+       228|         for r in thr["hits"]:
+       229|             md.append("- L%d [%s] corrected_nearby=%s: %s" % (r["line"], r["why"], r["corrected_nearby"], r["text"]))
+  >>   230|     with open(args.md_out, "w", encoding="utf-8") as fh:
+       231|         fh.write("\n".join(md) + "\n")
+       232| 
+       233|     print("\n".join(md[:36]))
+======================================================================
+high 路径穿越 (CWE-22)
+tools\atlas_toc.py:137
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       134|     d = os.path.dirname(args.report)
+       135|     if d:
+       136|         os.makedirs(d, exist_ok=True)
+  >>   137|     with open(args.report, "w", encoding="utf-8") as fh:
+       138|         fh.write("\n".join(md) + "\n")
+       139|     print("\n".join(md))
+       140| 
+======================================================================
+high 路径穿越 (CWE-22)
+tools\atlas_toc.py:144
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       141|     drift = bool(bad_slug or missing or stale or not identical)
+       142|     if args.write:
+       143|         out = lines[:start] + new + lines[end:]
+  >>   144|         with open(args.atlas, "w", encoding="utf-8", newline="\n") as fh:
+       145|             fh.write("\n".join(out) + "\n")
+       146|         print("WROTE %s: 目录 %d 行 -> %d 行" % (args.atlas, len(old), len(new)))
+       147|         return 0
+======================================================================
+high 路径穿越 (CWE-22)
+tools\atlas_va_crosscheck.py:153
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       150|         d = os.path.dirname(p)
+       151|         if d:
+       152|             os.makedirs(d, exist_ok=True)
+  >>   153|     with open(args.json_out, "w", encoding="utf-8") as fh:
+       154|         json.dump({"summary": summary, "dangling": dangling, "conflicts": conflicts, "variants": variants_report, "covered_sample": covered[:200]}, fh, ensure_ascii=False, indent=2)
+       155| 
+       156|     md = []
+======================================================================
+high 路径穿越 (CWE-22)
+tools\atlas_va_crosscheck.py:191
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       188|         for c in conflicts:
+       189|             v = " vs ".join("`%s`(%s)" % (x["bytes"], "/".join(x["libs"])) for x in c["variants"])
+       190|             md.append("| %s | %s | %s |" % (c["va"], ",".join(str(x) for x in c["atlas_lines"]), v))
+  >>   191|     with open(args.md_out, "w", encoding="utf-8") as fh:
+       192|         fh.write("\n".join(md) + "\n")
+       193| 
+       194|     print("\n".join(md[:30]))
+======================================================================
+high 路径穿越 (CWE-22)
+tools\audit_bytes.py:638
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       635|         out_dir = os.path.dirname(a.json_out)
+       636|         if out_dir:
+       637|             os.makedirs(out_dir, exist_ok=True)
+  >>   638|         with open(a.json_out, 'w', encoding='utf-8') as f:
+       639|             json.dump(dict(ok=ok, bad=bad, errors=len(errors), rows=rows,
+       640|                            segment_gate=seg_rep if a.segments else None,
+       641|                            segment_exit_code=seg_code), f, ensure_ascii=False, indent=2)
+======================================================================
+high 路径穿越 (CWE-22)
+tools\bench_map_install.py:149
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       146|         "after": after,
+       147|         "extra": extra or {},
+       148|     }
+  >>   149|     with open(path, "w", encoding="utf-8") as f:
+       150|         json.dump(payload, f, ensure_ascii=False, indent=2)
+       151|     return path
+       152| 
+======================================================================
+high 路径穿越 (CWE-22)
+tools\extract_hook_tables.py:390
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       387|         "hooks": deduped
+       388|     }
+       389| 
+  >>   390|     with open(out_file, "w", encoding="utf-8") as f:
+       391|         json.dump(payload, f, ensure_ascii=False, indent=2)
+       392| 
+       393|     sys.stdout.reconfigure(encoding='utf-8')
+======================================================================
+high 路径穿越 (CWE-22)
+tools\validate_package_manifest.py:422
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       419| 
+       420|     if args.out:
+       421|         try:
+  >>   422|             with open(args.out, "w", encoding="utf-8") as out_f:
+       423|                 out_f.write(formatted_json + "\n")
+       424|         except Exception as exc:
+       425|             sys.stderr.write(f"IO error (exit code 3): Failed to write normalized manifest to '{args.out}': {exc}\n")
+======================================================================
+high 路径穿越 (CWE-22)
+tools\verify_anchors.py:1073
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+      1070|         out_dir = os.path.dirname(os.path.abspath(args.json_out))
+      1071|         if out_dir:
+      1072|             os.makedirs(out_dir, exist_ok=True)
+  >>  1073|         with open(args.json_out, 'w', encoding='utf-8') as f:
+      1074|             json.dump(report, f, ensure_ascii=False, indent=2)
+      1075|         print(f"[JSON] 详细测试报告已导出至: {args.json_out}")
+      1076| 
+======================================================================
+high 路径穿越 (CWE-22)
+tools\verify_bss_claims.py:311
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       308|     # 写 claims 文件
+       309|     if emit_claims:
+       310|         os.makedirs(os.path.dirname(emit_claims) or ".", exist_ok=True)
+  >>   311|         with open(emit_claims, "w", encoding="utf-8") as f:
+       312|             f.write("# claims_bss_p1.txt —— .data BSS 悬空 VA 断言替代方案（verify_bss_claims.py 生成）\n")
+       313|             f.write("# 基线: ra2youli/gamemd.exe (YR 1.001) MD5 4f37486e5b0dbe2ae5f45aeee0f98367\n")
+       314|             f.write("# 断言类型:\n")
+======================================================================
+high 路径穿越 (CWE-22)
+tools\verify_bss_claims.py:333
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+       330|         os.makedirs(os.path.dirname(json_out) or ".", exist_ok=True)
+       331|         json.dump(
+       332|             dict(summary=summary, results=results),
+  >>   333|             open(json_out, "w", encoding="utf-8"),
+       334|             ensure_ascii=False,
+       335|             indent=2,
+       336|         )
+======================================================================
+high 路径穿越 (CWE-22)
+tools\verify_kit\_vk_io.py:23
+  msg: 未校验的路径含 ../ 可访问预期之外的文件
+        20| def write_bytes(path, data):
+        21|     """Write bytes to path (normalized). Parent dir must already exist."""
+        22|     p = resolve_writable_path(path)
+  >>    23|     with open(p, "wb") as f:
+        24|         f.write(data)
+        25|         f.flush()
+        26|         os.fsync(f.fileno())
