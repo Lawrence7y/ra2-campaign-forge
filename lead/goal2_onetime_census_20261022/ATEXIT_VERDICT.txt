@@ -1,0 +1,95 @@
+==============================================================================
+== STEP 0  identity
+==============================================================================
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256[:8] == 73201cc0  73201cc0
+
+==============================================================================
+== STEP 1  0x7C970C — is it a registration routine (stores fn ptr)?
+==============================================================================
+  0x7C970C body: 37 insns
+    007C970C  56                     push esi
+    007C970D  e8af270000             call 0x7cbec1
+    007C9712  ff35c08bb700           push dword ptr [0xb78bc0]
+    007C9718  e860790000             call 0x7d107d
+    007C971D  8b15c08bb700           mov edx, dword ptr [0xb78bc0]
+    007C9723  59                     pop ecx
+    007C9724  8b0dbc8bb700           mov ecx, dword ptr [0xb78bbc]
+    007C972A  8bf1                   mov esi, ecx
+    007C972C  2bf2                   sub esi, edx
+    007C972E  83c604                 add esi, 4
+    007C9731  3bc6                   cmp eax, esi
+    007C9733  733d                   jae 0x7c9772
+    007C9735  52                     push edx
+    007C9736  e842790000             call 0x7d107d
+    007C973B  83c010                 add eax, 0x10
+    007C973E  50                     push eax
+    007C973F  ff35c08bb700           push dword ptr [0xb78bc0]
+    007C9745  e8fb770000             call 0x7d0f45
+    007C974A  83c40c                 add esp, 0xc
+    007C974D  85c0                   test eax, eax
+    007C974F  7504                   jne 0x7c9755
+    007C9751  33f6                   xor esi, esi
+    007C9753  eb2c                   jmp 0x7c9781
+    007C9755  8b0dbc8bb700           mov ecx, dword ptr [0xb78bbc]
+    007C975B  2b0dc08bb700           sub ecx, dword ptr [0xb78bc0]
+    007C9761  a3c08bb700             mov dword ptr [0xb78bc0], eax
+    007C9766  c1f902                 sar ecx, 2
+    007C9769  8d0c88                 lea ecx, [eax + ecx*4]
+    007C976C  890dbc8bb700           mov dword ptr [0xb78bbc], ecx
+    007C9772  8b442408               mov eax, dword ptr [esp + 8]
+    007C9776  8901                   mov dword ptr [ecx], eax
+    007C9778  8305bc8bb70004         add dword ptr [0xb78bbc], 4
+    007C977F  8bf0                   mov esi, eax
+    007C9781  e844270000             call 0x7cbeca
+    007C9786  8bc6                   mov eax, esi
+    007C9788  5e                     pop esi
+    007C9789  c3                     ret 
+  absolute globals referenced: ['0x00B78BBC', '0x00B78BC0']
+  has store through [base+index*4]: False
+[PASS] 0x7C970C touches a global table (registration routine shape)  ['0x00B78BBC', '0x00B78BC0']
+
+==============================================================================
+== STEP 2  does any .data init table hold 0x40D1B0 or 0x40D190?
+==============================================================================
+  INIT 0x40D190: 1 .data dword match(es) ['0x0081216C']
+  EXIT_CB 0x40D1B0: 0 .data dword match(es) []
+[PASS] 0x40D190 (static ctor) IS in a .data pointer table  1 hit(s)
+[PASS] 0x40D1B0 (suspect dtor) is NOT in any .data pointer table  0 hit(s)
+
+==============================================================================
+== STEP 3  is 0x40D1B0 reachable ONLY via the registration call?
+==============================================================================
+decoded 1394120
+[PASS] decoded > 500000  1394120
+  push 0x40D1B0 : ['0x0040D19A']
+  call 0x40D1B0 : []
+  jmp  0x40D1B0 : []
+[PASS] 0x40D1B0 is never directly called or jumped to  call=0 jmp=0
+[PASS] 0x40D1B0 is pushed exactly once (registration only)  ['0x0040D19A']
+
+==============================================================================
+== STEP 4  also: is 0x652CF0 reachable at all outside table B?
+==============================================================================
+  E8 callers of One_Time 0x652CF0: 0 []
+  .rdata dwords == 0x652CF0: ['0x007F0358']
+[PASS] One_Time appears exactly once in .rdata (table B slot5)  ['0x007F0358']
+[PASS] One_Time has zero direct E8 callers  0
+
+==============================================================================
+== STEP 5  verdict
+==============================================================================
+  [已证] 0x40D190 在 .data 指针表内 ⇒ 是**启动期**静态构造。
+  [已证] 0x40D1B0 不在任何 .data 表内，且**从不**被 call/jmp，
+         唯一引用是 0x40D19A 的 `push 0x40D1B0; call 0x7C978A`。
+  [已证] 0x7C978A 以 0/1 语义包装 0x7C970C（注册例程）⇒ atexit 形态。
+  ⇒ **0x40D1B0 是退出期析构回调**，其内的「写表A→改表B」只在进程退出时执行。
+  ⇒ 运行期 0x87F7E8 的 vtable = 表A(MouseClass)，slot5 = 0x5BDF30。
+  ⇒ One_Time(0x652CF0) 仅经表B slot5 可达，而表B 只在 5 个运行期站点
+     装到**别的对象**上（0x40D2D4/0x5BEA0A/0x6404B3/0x69391A/0x6AC81A）。
+  [更正] 台账 §347「运行时是表B ⇒ slot5 = One_Time（在 0x87F7E8 上）」
+         **不成立**：那两行写表发生在退出期。
+
+checks passed: 9/9
+verdict: EXIT_CALLBACK_CONFIRMED_SINGLETON_STAYS_TABLE_A
+RESULT: ALL PASS

@@ -1,0 +1,119 @@
+==============================================================================
+== STEP 0  identity + linear decode
+==============================================================================
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256[:8] == 73201cc0  73201cc0
+decoded 1394120
+[PASS] decoded > 500000  1394120
+
+==============================================================================
+== STEP 1  context of each 0x652C00 caller
+==============================================================================
+
+-- caller 0x0040D1F7  (host func head 0x0040D1A6)
+     0040D1DF  8d4650               lea eax, [esi + 0x50]
+     0040D1E2  50                   push eax
+     0040D1E3  e8e8ddffff           call 0x40afd0
+     0040D1E8  8bce                 mov ecx, esi
+     0040D1EA  e811010000           call 0x40d300
+     0040D1EF  4f                   dec edi
+     0040D1F0  75de                 jne 0x40d1d0
+     0040D1F2  b9e8f78700           mov ecx, 0x87f7e8  <== SINGLETON
+     0040D1F7  e8045a2400           call 0x652c00
+     ecx <- unknown
+     host strings (timing-relevant): []
+
+-- caller 0x0040D2D4  (host func head 0x0040D287)
+     0040D2BF  8d4650               lea eax, [esi + 0x50]
+     0040D2C2  50                   push eax
+     0040D2C3  e808ddffff           call 0x40afd0
+     0040D2C8  8bce                 mov ecx, esi
+     0040D2CA  e831000000           call 0x40d300
+     0040D2CF  4f                   dec edi
+     0040D2D0  75de                 jne 0x40d2b0
+     0040D2D2  8bcb                 mov ecx, ebx
+     0040D2D4  e827592400           call 0x652c00
+     ecx <- unknown
+     host strings (timing-relevant): []
+
+-- caller 0x005BEA0A  (host func head 0x005BE9DD)
+     005BE9F5  81ee940f0000         sub esi, 0xf94
+     005BE9FB  6a4b                 push 0x4b
+     005BE9FD  6a34                 push 0x34
+     005BE9FF  56                   push esi
+     005BEA00  e8cbc5e4ff           call 0x40afd0
+     005BEA05  4f                   dec edi
+     005BEA06  75e8                 jne 0x5be9f0
+     005BEA08  8bcb                 mov ecx, ebx
+     005BEA0A  e8f1410900           call 0x652c00
+     ecx <- unknown
+     host strings (timing-relevant): []
+
+-- caller 0x006404B3  (host func head 0x006404A3)
+     006404AA  90                   nop 
+     006404AB  90                   nop 
+     006404AC  90                   nop 
+     006404AD  90                   nop 
+     006404AE  90                   nop 
+     006404AF  90                   nop 
+     006404B0  56                   push esi
+     006404B1  8bf1                 mov esi, ecx
+     006404B3  e848270100           call 0x652c00
+     ecx <- unknown
+     host strings (timing-relevant): []
+
+-- caller 0x0069391A  (host func head 0x006938E7)
+     00693905  81ee940f0000         sub esi, 0xf94
+     0069390B  6a4b                 push 0x4b
+     0069390D  6a34                 push 0x34
+     0069390F  56                   push esi
+     00693910  e8bb76d7ff           call 0x40afd0
+     00693915  4f                   dec edi
+     00693916  75e8                 jne 0x693900
+     00693918  8bcb                 mov ecx, ebx
+     0069391A  e8e1f2fbff           call 0x652c00
+     ecx <- unknown
+     host strings (timing-relevant): []
+
+-- caller 0x006AC81A  (host func head 0x006AC7E1)
+     006AC805  81ee940f0000         sub esi, 0xf94
+     006AC80B  6a4b                 push 0x4b
+     006AC80D  6a34                 push 0x34
+     006AC80F  56                   push esi
+     006AC810  e8bbe7d5ff           call 0x40afd0
+     006AC815  4f                   dec edi
+     006AC816  75e8                 jne 0x6ac800
+     006AC818  8bcb                 mov ecx, ebx
+     006AC81A  e8e163faff           call 0x652c00
+     ecx <- unknown
+     host strings (timing-relevant): ['RandMap.img', 'RandMap.img']
+
+==============================================================================
+== STEP 2  which callers act on the SINGLETON?
+==============================================================================
+  callers with ecx == SINGLETON 0x87F7E8 : 0
+  callers with ecx != SINGLETON : 6
+     0x0040D1F7  host 0x0040D1A6  ecx unknown
+        strings: []
+     0x0040D2D4  host 0x0040D287  ecx unknown
+        strings: []
+     0x005BEA0A  host 0x005BE9DD  ecx unknown
+        strings: []
+     0x006404B3  host 0x006404A3  ecx unknown
+        strings: []
+     0x0069391A  host 0x006938E7  ecx unknown
+        strings: []
+     0x006AC81A  host 0x006AC7E1  ecx unknown
+        strings: ['RandMap.img', 'RandMap.img']
+[FAIL] 0x40D1F7 acts on the singleton (ecx == 0x87F7E8)  no
+
+==============================================================================
+== STEP 3  verdict
+==============================================================================
+  [已证] 6 处 0x652C00 调用**没有一处**以单例为 ecx ⇒ 表B 只用于别的对象。
+  ⇒ 单例运行期恒为表A ⇒ slot5 = 0x5BDF30（非 One_Time）。
+  ⇒ 但崩溃栈 0x652D51 证明 One_Time 跑过 ⇒ 需另找调用路径。
+
+checks passed: 2/3
+verdict: SINGLETON_STAYS_TABLE_A
+RESULT: FAIL

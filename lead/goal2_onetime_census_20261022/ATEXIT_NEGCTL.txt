@@ -1,0 +1,44 @@
+[PASS] sha256[:8] == 73201cc0  73201cc0
+
+==============================================================================
+== N-1  INIT 0x40D190 -> 0x40D191  (expect RED)
+==============================================================================
+  hits for 0x40D191: 0
+[PASS] N-1 RED: mutated INIT is absent from .data table  0 hits
+
+==============================================================================
+== N-2  EXIT_CB 0x40D1B0 -> 0x40D1B1  (expect still GREEN = no power)
+==============================================================================
+  hits for 0x40D1B1: 0
+  [NOTE] 此段**不变红**是预期的 —— 改位后仍不在表内，
+         说明「不在表内」这条断言本身无法被这种改法检验 ⇒ 换 N-3。
+[PASS] N-2 recorded as powerless (documented, not counted as failure)  0 hits
+
+==============================================================================
+== N-3  EXIT_CB := 0x40D190 (a fn that IS in .data) (expect RED)
+==============================================================================
+  hits for 0x40D190: 1 ['0x0081216C']
+[PASS] N-3 RED: substituting a table member breaks the 'not in table' claim  1 hits
+
+==============================================================================
+== N-4  ONE_TIME 0x652CF0 -> 0x652CF1 (expect RED)
+==============================================================================
+  .rdata hits for 0x652CF1: 0
+[PASS] N-4 RED: mutated One_Time is absent from .rdata  0 hits
+[PASS] N-4 baseline: real One_Time has exactly 1 .rdata hit  1 hits
+
+==============================================================================
+== N-5  registration routine's global table identity (expect RED)
+==============================================================================
+  actual globals : ['0x00B78BBC', '0x00B78BC0']
+  expected table : ['0x00B78BBC', '0x00B78BC0']
+[PASS] baseline: 0x7C970C references exactly the two table globals  ['0x00B78BBC', '0x00B78BC0']
+  mutated expect : ['0x00B78BBD', '0x00B78BC0']
+[PASS] N-5 RED: mutating one table global by 1 bit breaks the equality  sets differ
+
+==============================================================================
+== summary
+==============================================================================
+  negative-control RED segments: 4/4 (N-2 documented as powerless)
+checks passed: 8/8
+RESULT: ALL PASS

@@ -1,0 +1,62 @@
+==============================================================================
+== STEP 0  identity + decode
+==============================================================================
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256[:8] == 73201cc0  73201cc0
+decoded 1394120 instructions, 66 undecodable stops
+[PASS] decoded > 500000  1394120
+
+==============================================================================
+== STEP 1  multi-level trace of all call [reg+0x14] sites
+==============================================================================
+total sites: 273
+
+  top trace shapes:
+      77  mem[ecx+0x0] -> abs
+      44  mem[eax+0x0] -> clobber
+      12  mem[ecx+0x0] -> other
+      12  mem[ecx+0x0] -> mem[esi+0x14] -> reg(ecx) -> undef
+      11  mem[eax+0x0] -> other
+      10  mem[eax+0x0] -> abs
+       8  mem[esi+0x0] -> reg(ecx) -> undef
+       6  mem[ecx+0x0] -> mem[esi+0x38] -> undef
+       4  mem[ecx+0x0] -> mem[ecx+0x14] -> undef
+       4  mem[esi+0x0] -> undef
+       4  mem[ecx+0x0] -> undef
+       4  mem[esi+0x0] -> abs
+
+  sites whose chain reaches SINGLETON 0x87F7E8 : 0
+[PASS] no slot5 site is reached from the singleton literal  0
+
+==============================================================================
+== STEP 2  0x5BDF30 real function head (prior decode gave only 6 insns)
+==============================================================================
+  bytes before 0x5BDF30:
+    005BDEF0  00 00 8b 0d 40 76 88 00 89 5c 24 14 8b 5c 24 10
+    005BDF00  03 c3 89 7c 24 18 8b 11 50 8d 44 24 18 55 50 ff
+    005BDF10  52 04 5d 8b 4c 24 24 8b 54 24 20 51 52 8b ce e8
+    005BDF20  bc 43 0d 00 5f 5e 5b 83 c4 10 c2 08 00 90 90 90
+  linear-decode boundary at 0x5BDF30: call 0x6d0260
+[PASS] 0x5BDF30 IS an instruction boundary  call
+  0x5BDF30 body: 6 insns
+    005BDF30  e82b231100           call 0x6d0260
+    005BDF35  badcf2ab00           mov edx, 0xabf2dc
+    005BDF3A  b94c608200           mov ecx, 0x82604c
+    005BDF3F  e88c59eeff           call 0x4a38d0
+    005BDF44  a394f2ab00           mov dword ptr [0xabf294], eax
+    005BDF49  c3                   ret 
+[FAIL] 0x5BDF30 body is longer than 6 insns (prior 6 was a bad boundary)  6 insns
+
+==============================================================================
+== STEP 3  verdict
+==============================================================================
+  [已证] 273 处 call [reg+0x14] 中，**0 处**的对象可静态追到雷达单例。
+         ⇒ One_Time 不被任何『直接拿单例调 slot5』的站点调用。
+         ⇒ 它只可能经『遍历对象集合、对每个对象调 slot5』被调用；
+           但 slot5 在表A 上是 0x5BDF30（非 One_Time）⇒ 该类槽语义随类变，
+           通用遍历调 slot5 时，雷达对象是否被遍历到**无法静态确定**。
+  [结论] 分岔 A/B **不能**由静态普查定案。需要真机断点 0x652CF0。
+
+checks passed: 4/5
+verdict: A_B_UNDETERMINED_NEEDS_RUNTIME_BP
+RESULT: FAIL

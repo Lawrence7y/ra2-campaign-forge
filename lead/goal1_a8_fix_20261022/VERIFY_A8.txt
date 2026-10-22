@@ -1,0 +1,224 @@
+A8 independent verification
+python : 3.12.10 (C:\Users\Administrator\AppData\Local\Programs\Python\Python312\python.exe)
+master : D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\qc151_u8_impl_20261021\qc151_trip.harness3_u8.py
+copy   : D:\Project\ra2-campaign-forge\lead\goal1_a8_fix_20261022\qc151_trip.harness4.py
+diff   : D:\Project\ra2-campaign-forge\lead\goal1_a8_fix_20261022\a8.diff
+gen    : D:\Project\ra2-campaign-forge\lead\goal1_a8_fix_20261022\_gen_harness4.py
+negctl : D:\Project\ra2-campaign-forge\lead\goal1_a8_fix_20261022\_a8_negctl.py
+
+==============================================================================
+[K1] 母本零改动（LF sha256 前16）
+==============================================================================
+RESULT: CONFIRMED
+  path   : D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\qc151_u8_impl_20261021\qc151_trip.harness3_u8.py
+  bytes  : 416425
+  LF sha256: 7db3c11009b7183c337ea53b0265140624675cba64703ee0a6c7751d9ea8192c
+  LF16   : 7db3c11009b7183c
+  expect : 7db3c11009b7183c
+  CRLF count in mother: 0 (must be 0)
+
+==============================================================================
+[K2] 副本哈希自证（LF/CRLF 双哈希 + 字节数）
+==============================================================================
+RESULT: CONFIRMED
+  path    : D:\Project\ra2-campaign-forge\lead\goal1_a8_fix_20261022\qc151_trip.harness4.py
+  bytes   : 424078
+  LF16    : cd9bbc87e46054af
+  LF sha256 : cd9bbc87e46054afd7fd591b59bb8c3a12574bed192833d0e41681dfc1492794
+  CRLF16  : 896f45f1dcb474f5
+  CRLF sha256: 896f45f1dcb474f5811c1f1bc462e2e8e2ed3be15b57bfaef69e6d52a9a62749
+  CRLF pairs in file: 1
+  lone LF    : 25
+  BOM        : False
+  ends with newline: True
+  utf-8 decodable : True
+  lines mother=26 copy=26 delta=0
+  bytes delta = 7653
+
+==============================================================================
+[K3] 反向重建（a8.diff 逐字节 / 生成器锚点复算）
+==============================================================================
+RESULT: CONFIRMED
+  diff bytes=9330 hunks=4
+  hunk headers: @484,6, @1417,6, @6691,6, @7348,6
+  rebuilt bytes=424078 sha256=cd9bbc87e46054afd7fd591b59bb8c3a12574bed192833d0e41681dfc1492794
+  copy    bytes=424078 sha256=cd9bbc87e46054afd7fd591b59bb8c3a12574bed192833d0e41681dfc1492794
+  generator string consts found: ['ANCHOR_1', 'ANCHOR_2A', 'ANCHOR_3', 'ANCHOR_4', 'PATCH_1', 'PATCH_2A', 'PATCH_3', 'PATCH_4', 'SRC_SHA16']
+    ANCHOR_1 occurrences in current text: 1 (must be 1)
+    ANCHOR_2A occurrences in current text: 1 (must be 1)
+    ANCHOR_3 occurrences in current text: 1 (must be 1)
+    ANCHOR_4 occurrences in current text: 1 (must be 1)
+  generator-replay bytes=424078 sha256=cd9bbc87e46054afd7fd591b59bb8c3a12574bed192833d0e41681dfc1492794
+  diff rebuild == copy : True
+  generator replay == copy : True
+
+==============================================================================
+[K4] AST 零改动面（按函数名分组比对）
+==============================================================================
+RESULT: CONFIRMED
+  mother funcs=131 copy funcs=134
+  new funcs in copy : ['_a8_path_under_carrier', '_a8_query_image_path', 'a8_sweep_carrier_processes']
+  missing funcs     : []
+  changed bodies    : ['main']
+  unexpected new    : [] (allowed: ['_a8_path_under_carrier', '_a8_query_image_path', 'a8_sweep_carrier_processes'])
+  unexpected changed: [] (allowed: ['main'])
+  main.try.body  stmts 158 -> 159 (added 1)
+  main.finally   stmts 11 -> 12 (added 1)
+  try.body append-only   : True
+  finally  append-only   : True
+  module stmts (funcs excluded) 333 -> 334 (added 1)
+  module append-only (excluding main) : True
+
+==============================================================================
+[K5] 禁止面（按名全杀 / 注入类 API / winreg 写 / 既有语义）
+==============================================================================
+RESULT: CONFIRMED
+  taskkill+/IM string constants : [] (must be empty)
+  any taskkill mention (lineno) : [3, 1343]
+    -> mother mentions: [3, 1336]
+  banned-call delta vs mother : {} (must be empty)
+    counts mother: {'CreateRemoteThread': 0, 'PostMessage': 0, 'SendInput': 2, 'SendMessage': 0, 'WriteProcessMemory': 0}
+    counts copy  : {'CreateRemoteThread': 0, 'PostMessage': 0, 'SendInput': 2, 'SendMessage': 0, 'WriteProcessMemory': 0}
+  winreg Name refs=[] imports=[] (both must be empty)
+  registry write calls : [] (must be empty)
+  terminate_owned_process ast.dump identical : True
+    dump sha16 = 4c9ae655585fbab4
+
+==============================================================================
+[K6] 作用域正确性（finally 内 / 模块级容器 / 早于 launch）
+==============================================================================
+RESULT: CONFIRMED
+  module-level Assign(A8_ALLOW_LOADER) count=1 lineno=[493]
+  module-level AnnAssign count=0 (must be 0)
+  initial value = [False] : List(elts=[Constant(value=False)], ctx=Load())
+  main() Try-with-finalbody count = 1 (must be 1)
+  A8 guard found in finally : True (finalbody index 6)
+  guard test dump = Subscript(value=Name(id='A8_ALLOW_LOADER', ctx=Load()), slice=Constant(value=0), ctx=Load())
+  guard body calls sweep : True
+  guard body checks remaining : True
+  guard body records note_cleanup_failure : True
+  guard body uses EXIT_TERMINATE_FAILED : True
+  guard body sets a8_verdict : True
+  index: termination_verdict=5 A8=6 fin_carrier=7
+  order termination -> A8 -> fin_carrier : True
+  guard reads try-local `_u8_authorized` : False (must be False)
+  A8_ALLOW_LOADER[0] assign lineno=6823, launch_direct() call lineno=6827
+  assign before launch : True
+  guard is `if A8_ALLOW_LOADER[0]:` -> falsy default skips sweep: True
+
+==============================================================================
+[K7] 路径归属判定（relative_to + 三用例实跑）
+==============================================================================
+RESULT: CONFIRMED
+  calls inside function : ['relative_to', 'resolve']
+  uses relative_to : True
+  uses startswith  : False (must be False)
+  uses resolve     : True
+  (a) carrier ...\abc  vs  ...\abc\gamemd.exe  -> True: got=True expect=True -> OK
+  (b) carrier ...\abc  vs  ...\abcd\x.exe     -> False: got=False expect=False -> OK
+  (c) carrier ...\abc  vs  C:\Windows\system32\x.exe -> False: got=False expect=False -> OK
+  counter-proof: startswith would say (b) = True (shows the test has discriminating power)
+  extra carrier=D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\qc161_u0400_trip\c_20261022_120000_1234 image='D:\\Project\\ra2-campaign-forge\\out\\re_work\\work_chain\\CONTINUE_20261003\\lead\\qc161_u0400_trip\\c_20261022_120000_1234\\ra2loader.exe' -> got=True expect=True OK
+  extra carrier=D:\qa\carrier\abc image='D:\\qa\\carrier\\abc' -> got=True expect=True OK
+  extra carrier=D:\qa\carrier\abc image='' -> got=False expect=False OK
+
+==============================================================================
+[K8] 负控有效性（重跑 + 独立判断覆盖性）
+==============================================================================
+RESULT: CONFIRMED
+  rerun exit code = 0 (expect 0)
+    | mother sha16: 7db3c11009b7183c (expect 7db3c11009b7183c)
+    | == N-1  mother hash mutated by 1 bit (expect RED)
+    | [PASS] N-1 RED: appended space changes mother hash  df354bc6ed7c337c != 7db3c11009b7183c
+    | == N-2  guard replaced with try-local `allow_loader_flag` (expect RED)
+    | [PASS] N-2 RED: scope self-check fails  guard=False no_try_local=False
+    | == N-3  container declaration deleted (expect RED)
+    | [PASS] N-3 RED: container ordering self-check fails  order=False
+    | == N-4  one mother line removed from the patch (expect RED)
+    | [PASS] N-4 RED: zero-removed-lines self-check fails  no_removed_lines=False
+    | == N-5  A8 sweep function definition removed (expect RED)
+    | [PASS] N-5 RED: symbol self-check fails  symbols=False
+    | == N-6  try-local guard injected into the A8 block (expect RED)
+    | [PASS] N-6 RED: no-try-local self-check fails  no_try_local=False
+    | negative-control RED segments: 6/6
+    | checks passed: 13/13
+    | RESULT: ALL PASS
+  6/6 RED=True 13/13 PASS=True RESULT ALL PASS=True
+  independent judgement of the 6 segments:
+    N-1 hash sensitivity: True
+    N-2 guard literal check flips: True
+    N-3 decl ordering flips: True
+    N-4 victim line in mother: True
+    N-4 victim line in copy: True
+    N-4 counter detects loss: True
+    N-5 symbol check flips: True
+    N-6 no_try_local flips: True
+  segment coverage (as designed):
+    N-1: covers mother-hash gate
+    N-2: covers guard-is-module-level (literal)
+    N-3: covers decl<assign<guard ordering
+    N-4: covers append-only (zero removed lines) on a REAL mother line
+    N-5: covers A8 symbol presence
+    N-6: covers no try-local name in A8 tail
+  NOTE: N-1..N-6 exercise the GENERATOR's self-checks, not the runtime process-tree behaviour; runtime kill path is UNVERIFIABLE without launching the game.
+
+==============================================================================
+[K9] 合成冒烟（ast.parse + 符号 + 路径三用例）
+==============================================================================
+RESULT: CONFIRMED
+  ast.parse(copy): OK
+  module-level def a8_sweep_carrier_processes: True
+  module-level def _a8_query_image_path: True
+  module-level def _a8_path_under_carrier: True
+  module-level def terminate_owned_process: True
+  module-level def find_pids: True
+  module-level def note_cleanup_failure: True
+  module-level def main: True
+  module-level A8_ALLOW_LOADER const: True
+  dependency ctypes imported: True
+  dependency time imported: True
+  dependency Path imported: True
+  no subprocess/Popen of game binaries performed by this verifier: True
+  __future__ imports: ['annotations']
+  annotation Recorder defined@552 < A8 def@1479 : True
+  annotation TripBudget defined@573 < A8 def@1479 : True
+  from __future__ import annotations (deferred eval) : True
+  path smoke: (a)=True (b)=False (c)=False expect True/False/False
+
+==============================================================================
+[K10] 附加风险审查（传导链 / 顺序 / 已知弱点 / 不可核验边界）
+==============================================================================
+RESULT: CONFIRMED
+  note_cleanup_failure appends CLEANUP_FAILURES : True
+  merge_cleanup_code reads CLEANUP_FAILURES  : True
+  merge_cleanup_code takes min by _rank      : True
+  EXIT_TERMINATE_FAILED in CLEANUP_CODE_PRIORITY : True
+  _main_wrapper merges main() return + cleanup : True
+  CLEANUP_FAILURES.clear() present : True
+  finalbody order: A8 idx=6 carrier-delete idx=7 -> A8 first = True
+  --- documented static caveats ---
+  C1 dead local TARGETS assigned but never used : True
+  C2 if OpenProcess/QueryFullProcessImageNameW fails, the pid is silently skipped in BOTH kill loop and remaining assertion => an unqueryable process under the carrier dir could yield a false PASS (mitigated: same-user processes are queryable with PROCESS_QUERY_LIMITED_INFORMATION)
+  C3 `remaining` excludes own_pid (loader pid) => a surviving loader is not counted by A8, but its survival is already recorded by the TERM item as EXIT_TERMINATE_FAILED(24) => V-fail still triggered
+  C4 process name matching uses find_pids('gamemd.exe'/'ra2loader.exe') by basename, but path ownership is verified afterwards => not a by-name mass kill
+  C5 A8 only runs when A8_ALLOW_LOADER[0] is True => non-authorized trips keep byte-identical behaviour (default False)
+  --- UNVERIFIABLE boundary ---
+  R1 actual process-tree kill on a real ra2loader.exe -> gamemd.exe spawn: NOT executed (rule: no game launch). Static AST shows TerminateProcess per verified carrier path; runtime efficacy remains UNVERIFIABLE in this harness.
+  R2 zero-residue assertion on a real trip: UNVERIFIABLE without launching the game.
+
+==============================================================================
+SUMMARY
+==============================================================================
+K1   CONFIRMED     母本零改动（LF sha256 前16）
+K2   CONFIRMED     副本哈希自证（LF/CRLF 双哈希 + 字节数）
+K3   CONFIRMED     反向重建（a8.diff 逐字节 / 生成器锚点复算）
+K4   CONFIRMED     AST 零改动面（按函数名分组比对）
+K5   CONFIRMED     禁止面（按名全杀 / 注入类 API / winreg 写 / 既有语义）
+K6   CONFIRMED     作用域正确性（finally 内 / 模块级容器 / 早于 launch）
+K7   CONFIRMED     路径归属判定（relative_to + 三用例实跑）
+K8   CONFIRMED     负控有效性（重跑 + 独立判断覆盖性）
+K9   CONFIRMED     合成冒烟（ast.parse + 符号 + 路径三用例）
+K10  CONFIRMED     附加风险审查（传导链 / 顺序 / 已知弱点 / 不可核验边界）
+
+REFUTED count = 0
+overall = CONFIRMED

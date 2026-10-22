@@ -1,0 +1,293 @@
+tools/ findings: 17
+==============================================================================
+
+[1] tools/atlas_apply_patches.py:211   (路径穿越)
+       205:         if d:
+       206:             os.makedirs(d, exist_ok=True)
+       207:         os.makedirs(args.backup_dir, exist_ok=True)
+       208:         ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+       209:         bak = os.path.join(args.backup_dir, "atlas_backup_preapply_%s.md" % ts)
+       210:         shutil.copyfile(args.atlas, bak)
+  >>   211:         with open(args.atlas, "w", encoding="utf-8", newline="\n") as fh:
+       212:             fh.write("\n".join(lines) + "\n")
+       213:         print("BACKUP: %s" % bak)
+       214: 
+       215:     print("=== atlas_apply_patches v2 (%s) ===" % ("APPLIED" if args.apply else "DRY-RUN"))
+       216:     print("notes: %d | parsed: %d | ready: %d | blocked: %d | applied: %d" % (
+       217:         len(files), len(ops) + len(unresolved), len(ops), len(unresolved), applied))
+
+[2] tools/atlas_apply_patches.py:228   (路径穿越)
+       222:         print("-- blocked --")
+       223:         for e in unresolved:
+       224:             print("  %-16s %-15s target=%-6s %-26s %s" % (e["patch"], e["action"] or "?", e["target"], e["skip_reason"], e["source"]))
+       225:     d = os.path.dirname(args.ledger)
+       226:     if d:
+       227:         os.makedirs(d, exist_ok=True)
+  >>   228:     with open(args.ledger, "w", encoding="utf-8") as fh:
+       229:         json.dump({"atlas_before_lines": len(pristine), "atlas_after_lines": len(lines),
+       230:                    "applied": applied, "ops": ops, "blocked": unresolved}, fh, ensure_ascii=False, indent=2)
+       231:     print("ledger: %s" % os.path.abspath(args.ledger))
+       232:     return 0 if not unresolved else 2
+       233: 
+       234: 
+
+[3] tools/atlas_audit.py:189   (路径穿越)
+       183:     }
+       184: 
+       185:     for path in (args.md_out, args.json_out, args.va_out):
+       186:         d = os.path.dirname(path)
+       187:         if d:
+       188:             os.makedirs(d, exist_ok=True)
+  >>   189:     with open(args.va_out, "w", encoding="utf-8") as fh:
+       190:         fh.write("va,line,section,subsection,snippet\n")
+       191:         for r in va_rows:
+       192:             fh.write('%s,%d,"%s","%s","%s"\n' % (r["va"], r["line"], r["section"].replace('"', "'"), r["subsection"].replace('"', "'"), r["snippet"].r
+       193:     with open(args.json_out, "w", encoding="utf-8") as fh:
+       194:         json.dump(summary, fh, ensure_ascii=False, indent=2)
+       195: 
+
+[4] tools/atlas_audit.py:193   (路径穿越)
+       187:         if d:
+       188:             os.makedirs(d, exist_ok=True)
+       189:     with open(args.va_out, "w", encoding="utf-8") as fh:
+       190:         fh.write("va,line,section,subsection,snippet\n")
+       191:         for r in va_rows:
+       192:             fh.write('%s,%d,"%s","%s","%s"\n' % (r["va"], r["line"], r["section"].replace('"', "'"), r["subsection"].replace('"', "'"), r["snippet"].r
+  >>   193:     with open(args.json_out, "w", encoding="utf-8") as fh:
+       194:         json.dump(summary, fh, ensure_ascii=False, indent=2)
+       195: 
+       196:     md = []
+       197:     md.append("# ATLAS 结构与合规审计报告 (tools/atlas_audit.py)")
+       198:     md.append("")
+       199:     md.append("- atlas: %s" % summary["atlas"])
+
+[5] tools/atlas_audit.py:230   (路径穿越)
+       224:     if thr["hits"]:
+       225:         md.append("")
+       226:         md.append("## 作废阈值命中明细")
+       227:         md.append("")
+       228:         for r in thr["hits"]:
+       229:             md.append("- L%d [%s] corrected_nearby=%s: %s" % (r["line"], r["why"], r["corrected_nearby"], r["text"]))
+  >>   230:     with open(args.md_out, "w", encoding="utf-8") as fh:
+       231:         fh.write("\n".join(md) + "\n")
+       232: 
+       233:     print("\n".join(md[:36]))
+       234:     print("")
+       235:     print("JSON: %s" % os.path.abspath(args.json_out))
+       236:     print("VA  : %s" % os.path.abspath(args.va_out))
+
+[6] tools/atlas_toc.py:137   (路径穿越)
+       131:         for e in bad_slug[:20]:
+       132:             md.append("| %s | %s | %s |" % (e["text"], e["anchor"], slug(e["text"])))
+       133:         md.append("")
+       134:     d = os.path.dirname(args.report)
+       135:     if d:
+       136:         os.makedirs(d, exist_ok=True)
+  >>   137:     with open(args.report, "w", encoding="utf-8") as fh:
+       138:         fh.write("\n".join(md) + "\n")
+       139:     print("\n".join(md))
+       140: 
+       141:     drift = bool(bad_slug or missing or stale or not identical)
+       142:     if args.write:
+       143:         out = lines[:start] + new + lines[end:]
+
+[7] tools/atlas_toc.py:144   (路径穿越)
+       138:         fh.write("\n".join(md) + "\n")
+       139:     print("\n".join(md))
+       140: 
+       141:     drift = bool(bad_slug or missing or stale or not identical)
+       142:     if args.write:
+       143:         out = lines[:start] + new + lines[end:]
+  >>   144:         with open(args.atlas, "w", encoding="utf-8", newline="\n") as fh:
+       145:             fh.write("\n".join(out) + "\n")
+       146:         print("WROTE %s: 目录 %d 行 -> %d 行" % (args.atlas, len(old), len(new)))
+       147:         return 0
+       148:     print("DRIFT" if drift else "IN SYNC")
+       149:     return 1 if drift else 0
+       150: 
+
+[8] tools/atlas_va_crosscheck.py:153   (路径穿越)
+       147:     }
+       148: 
+       149:     for p in (args.md_out, args.json_out):
+       150:         d = os.path.dirname(p)
+       151:         if d:
+       152:             os.makedirs(d, exist_ok=True)
+  >>   153:     with open(args.json_out, "w", encoding="utf-8") as fh:
+       154:         json.dump({"summary": summary, "dangling": dangling, "conflicts": conflicts, "variants": variants_report, "covered_sample": covered[:200]}, fh
+       155: 
+       156:     md = []
+       157:     md.append("# ATLAS VA 证据交叉核验 (tools/atlas_va_crosscheck.py)")
+       158:     md.append("")
+       159:     md.append("- atlas: %s (mtime %s)" % (summary["atlas"], summary["atlas_mtime"]))
+
+[9] tools/atlas_va_crosscheck.py:191   (路径穿越)
+       185:     else:
+       186:         md.append("| VA | atlas 行 | 变体 |")
+       187:         md.append("|---|---|---|")
+       188:         for c in conflicts:
+       189:             v = " vs ".join("`%s`(%s)" % (x["bytes"], "/".join(x["libs"])) for x in c["variants"])
+       190:             md.append("| %s | %s | %s |" % (c["va"], ",".join(str(x) for x in c["atlas_lines"]), v))
+  >>   191:     with open(args.md_out, "w", encoding="utf-8") as fh:
+       192:         fh.write("\n".join(md) + "\n")
+       193: 
+       194:     print("\n".join(md[:30]))
+       195:     print("")
+       196:     print("MD  : %s" % os.path.abspath(args.md_out))
+       197:     print("JSON: %s" % os.path.abspath(args.json_out))
+
+[10] tools/audit_bytes.py:638   (路径穿越)
+       632:     print('-' * 110)
+       633:     print('合计 %d 条：OK=%d  MISMATCH/NOREAD/BSS-FAIL=%d  格式错误=%d' % (len(claims), ok, bad, len(errors)))
+       634:     if a.json_out:
+       635:         out_dir = os.path.dirname(a.json_out)
+       636:         if out_dir:
+       637:             os.makedirs(out_dir, exist_ok=True)
+  >>   638:         with open(a.json_out, 'w', encoding='utf-8') as f:
+       639:             json.dump(dict(ok=ok, bad=bad, errors=len(errors), rows=rows,
+       640:                            segment_gate=seg_rep if a.segments else None,
+       641:                            segment_exit_code=seg_code), f, ensure_ascii=False, indent=2)
+       642:         print('JSON →', a.json_out)
+       643: 
+       644:     all_ok = (bad == 0 and len(errors) == 0 and ok > 0 and seg_code == 0)
+
+[11] tools/bench_map_install.py:149   (路径穿越)
+       143:         "action": action,
+       144:         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+       145:         "before": before,
+       146:         "after": after,
+       147:         "extra": extra or {},
+       148:     }
+  >>   149:     with open(path, "w", encoding="utf-8") as f:
+       150:         json.dump(payload, f, ensure_ascii=False, indent=2)
+       151:     return path
+       152: 
+       153: 
+       154: def snapshot_game_dir() -> dict:
+       155:     """Return {basename: {exists, size, sha256, mtime}} for all bench-related files."""
+
+[12] tools/extract_hook_tables.py:390   (路径穿越)
+       384:             "status_distribution": status_counts,
+       385:             "conflict_group_distribution": conflict_counts,
+       386:         },
+       387:         "hooks": deduped
+       388:     }
+       389: 
+  >>   390:     with open(out_file, "w", encoding="utf-8") as f:
+       391:         json.dump(payload, f, ensure_ascii=False, indent=2)
+       392: 
+       393:     sys.stdout.reconfigure(encoding='utf-8')
+       394:     print("Hook 提取完成！")
+       395:     print(f"有效扫描文档数: 24")
+       396:     print(f"提取 Hook 建议总数: {len(deduped)}")
+
+[13] tools/validate_package_manifest.py:422   (路径穿越)
+       416: 
+       417:     # Validation succeeded (exit code 0)
+       418:     formatted_json = json.dumps(normalized_manifest, indent=2, ensure_ascii=False)
+       419: 
+       420:     if args.out:
+       421:         try:
+  >>   422:             with open(args.out, "w", encoding="utf-8") as out_f:
+       423:                 out_f.write(formatted_json + "\n")
+       424:         except Exception as exc:
+       425:             sys.stderr.write(f"IO error (exit code 3): Failed to write normalized manifest to '{args.out}': {exc}\n")
+       426:             return 3
+       427: 
+       428:     if not args.quiet:
+
+[14] tools/verify_anchors.py:1073   (路径穿越)
+      1067:           f"—— 该值只决定裁决措辞强度，不是门禁下限；下限须由 --min-claims 显式声明")
+      1068: 
+      1069:     if args.json_out:
+      1070:         out_dir = os.path.dirname(os.path.abspath(args.json_out))
+      1071:         if out_dir:
+      1072:             os.makedirs(out_dir, exist_ok=True)
+  >>  1073:         with open(args.json_out, 'w', encoding='utf-8') as f:
+      1074:             json.dump(report, f, ensure_ascii=False, indent=2)
+      1075:         print(f"[JSON] 详细测试报告已导出至: {args.json_out}")
+      1076: 
+      1077:     # 退出码：既有判据不变（全部断言通过、无格式错误、非空、满足 min_claims、.text 校验通过 -> 0）；
+      1078:     # 叠加段级基线：基线不可用/不适用=2（最高优先级），段级内容不符=1（与回归同级）
+      1079:     text_ok = report['integrity'].get('text_check', {}).get('status') == 'PASS'
+
+[15] tools/verify_bss_claims.py:311   (路径穿越)
+       305:         print(f"  区域或 xref 至少一项     : {n_covered}/{n}  ({summary['coverage_any_pct']}%)")
+       306:         print(f"  生成 xref 指令字节断言   : {total_xref_claims} 条")
+       307: 
+       308:     # 写 claims 文件
+       309:     if emit_claims:
+       310:         os.makedirs(os.path.dirname(emit_claims) or ".", exist_ok=True)
+  >>   311:         with open(emit_claims, "w", encoding="utf-8") as f:
+       312:             f.write("# claims_bss_p1.txt —— .data BSS 悬空 VA 断言替代方案（verify_bss_claims.py 生成）\n")
+       313:             f.write("# 基线: ra2youli/gamemd.exe (YR 1.001) MD5 4f37486e5b0dbe2ae5f45aeee0f98367\n")
+       314:             f.write("# 断言类型:\n")
+       315:             f.write("#   bss 0xVA = virtual          —— 区域断言（虚拟存在但无 raw，从节表推导）\n")
+       316:             f.write("#   0xTEXTVA = HEX…             —— .text 引用点指令字节（写点/读点降级锚定）\n")
+       317:             f.write(f"# 覆盖: region {n_region}/{n}  xref {n_xref}/{n}  write {n_write}/{n}\n")
+
+[16] tools/verify_bss_claims.py:333   (路径穿越)
+       327:         print(f"\nclaims -> {emit_claims}")
+       328: 
+       329:     if json_out:
+       330:         os.makedirs(os.path.dirname(json_out) or ".", exist_ok=True)
+       331:         json.dump(
+       332:             dict(summary=summary, results=results),
+  >>   333:             open(json_out, "w", encoding="utf-8"),
+       334:             ensure_ascii=False,
+       335:             indent=2,
+       336:         )
+       337:         print(f"json   -> {json_out}")
+       338: 
+       339:     return 0
+
+[17] tools/verify_kit/_vk_io.py:23   (路径穿越)
+        17:     return p
+        18: 
+        19: 
+        20: def write_bytes(path, data):
+        21:     """Write bytes to path (normalized). Parent dir must already exist."""
+        22:     p = resolve_writable_path(path)
+  >>    23:     with open(p, "wb") as f:
+        24:         f.write(data)
+        25:         f.flush()
+        26:         os.fsync(f.fileno())
+        27:     return p
+        28: 
+        29: 
+
+==============================================================================
+=== auto-classification (heuristic, for human review) ===
+==============================================================================
+  tools/atlas_apply_patches.py:211    args-derived,write
+  tools/atlas_apply_patches.py:228    args-derived,write
+  tools/atlas_audit.py:189    args-derived,write
+  tools/atlas_audit.py:193    args-derived,write
+  tools/atlas_audit.py:230    args-derived,write
+  tools/atlas_toc.py:137    args-derived,write
+  tools/atlas_toc.py:144    args-derived,write
+  tools/atlas_va_crosscheck.py:153    args-derived,write
+  tools/atlas_va_crosscheck.py:191    args-derived,write
+  tools/audit_bytes.py:638    write
+  tools/bench_map_install.py:149    write
+  tools/extract_hook_tables.py:390    write
+  tools/validate_package_manifest.py:422    args-derived,write
+  tools/verify_anchors.py:1073   args-derived,write
+  tools/verify_bss_claims.py:311    write
+  tools/verify_bss_claims.py:333    write
+  tools/verify_kit/_vk_io.py:23     write
+
+=== per-file count ===
+   3  tools/atlas_audit.py
+   2  tools/atlas_apply_patches.py
+   2  tools/atlas_toc.py
+   2  tools/atlas_va_crosscheck.py
+   2  tools/verify_bss_claims.py
+   1  tools/audit_bytes.py
+   1  tools/bench_map_install.py
+   1  tools/extract_hook_tables.py
+   1  tools/validate_package_manifest.py
+   1  tools/verify_anchors.py
+   1  tools/verify_kit/_vk_io.py
+
+total tools/ findings: 17

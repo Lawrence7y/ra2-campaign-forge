@@ -1,0 +1,97 @@
+==============================================================================
+== STEP 0  identity
+==============================================================================
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256[:8] == 73201cc0  73201cc0
+
+==============================================================================
+== STEP 1  what is 0x7C978A ?  (called with push 0x40D1B0 before it)
+==============================================================================
+  0x7C978A body: 8 insns
+    007C978A  ff742404               push dword ptr [esp + 4]
+    007C978E  e879ffffff             call 0x7c970c
+    007C9793  f7d8                   neg eax
+    007C9795  1bc0                   sbb eax, eax
+    007C9797  59                     pop ecx
+    007C9798  f7d8                   neg eax
+    007C979A  48                     dec eax
+    007C979B  c3                     ret 
+  absolute refs inside 0x7C978A: []
+  has interlocked-ish op: False
+  writes through a table pointer at: none
+
+==============================================================================
+== STEP 2  who else calls 0x7C978A (is it the atexit family?)
+==============================================================================
+  callers of 0x7C978A: 336
+    0x0040AD6F
+    0x0040AFAF
+    0x0040B5AB
+    0x0040BD90
+    0x0040BE06
+    0x0040C1E6
+    0x0040C7D6
+    0x0040CBB6
+    0x0040D19F
+    0x0040D20F
+    0x0040D31F
+    0x0040D376
+    0x0040D3F6
+    0x0040D476
+    0x0040D4F6
+    0x0040E03B
+    0x0040E0EB
+    0x0040E19B
+    0x0040E24B
+    0x0040E2FB
+  of which preceded by 'push imm': 68/336
+[FAIL] 0x7C978A is called as 'push fn; call' (atexit registration shape)  68/336
+
+==============================================================================
+== STEP 3  singleton constructor 0x5BDA40 — which vtable does it install?
+==============================================================================
+  0x5BDA40 body: 13 insns
+  installs TABLE_A 0x7E1964 at: ['0x005BDA4A']
+  installs TABLE_B 0x7F0344 at: []
+    005BDA40  56                     push esi
+    005BDA41  8bf1                   mov esi, ecx
+    005BDA43  e848480d00             call 0x692290
+    005BDA48  33c0                   xor eax, eax
+    005BDA4A  c70664197e00           mov dword ptr [esi], 0x7e1964  <== VTABLE
+    005BDA50  88865c550000           mov byte ptr [esi + 0x555c], al
+    005BDA56  898660550000           mov dword ptr [esi + 0x5560], eax
+    005BDA5C  898664550000           mov dword ptr [esi + 0x5564], eax
+    005BDA62  898668550000           mov dword ptr [esi + 0x5568], eax
+    005BDA68  c786185500005c197e00   mov dword ptr [esi + 0x5518], 0x7e195c
+    005BDA72  8bc6                   mov eax, esi
+    005BDA74  5e                     pop esi
+    005BDA75  c3                     ret 
+[PASS] constructor 0x5BDA40 installs TABLE_A  1 site(s)
+[PASS] constructor 0x5BDA40 does NOT install TABLE_B  0 site(s)
+
+==============================================================================
+== STEP 4  all callers of 0x652C00 (the table-B installer)
+==============================================================================
+  callers of 0x652C00: 6
+    0x0040D1F7
+    0x0040D2D4
+    0x005BEA0A
+    0x006404B3
+    0x0069391A
+    0x006AC81A
+[FAIL] 0x652C00 has exactly 1 caller and it is 0x40D1F7  ['0x0040D1F7', '0x0040D2D4', '0x005BEA0A', '0x006404B3', '0x0069391A', '0x006AC81A']
+
+==============================================================================
+== STEP 5  all callers of 0x40D1B0 (the exit callback)
+==============================================================================
+  push 0x40D1B0 sites: ['0x0040D19A']
+[PASS] 0x40D1B0 is only referenced as an atexit argument  ['0x0040D19A']
+
+==============================================================================
+== STEP 6  verdict: runtime vtable of the singleton
+==============================================================================
+  [未定] 构造/写入格局与预期不符，见上文各步实测。
+
+checks passed: 4/6
+verdict: UNDETERMINED
+RESULT: FAIL

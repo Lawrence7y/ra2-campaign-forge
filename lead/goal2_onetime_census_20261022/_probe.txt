@@ -1,0 +1,275 @@
+
+==============================================================================
+== STEP 0  binary identity
+==============================================================================
+path   : D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+size   : 4825360 bytes
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[ASSERT] sha256[:8] == 73201cc0                                           PASS  73201cc0
+
+==============================================================================
+== STEP 1  PE32 parse (RVA vs VA)
+==============================================================================
+imagebase  : 0x400000
+entry RVA  : 0x3CD80F -> VA 0x7CD80F
+SizeOfImage: 0x796000
+  .text    RVA=00001000 VA=00401000 vsize=003DF38D rawsize=003E0000 file=00001000
+  .rdata   RVA=003E1000 VA=007E1000 vsize=00030074 rawsize=00031000 file=003E1000
+  .data    RVA=00412000 VA=00812000 vsize=00367BE4 rawsize=0006C000 file=00412000
+  .rsrc    RVA=0077A000 VA=00B7A000 vsize=00018128 rawsize=00019000 file=0047E000
+  .detour  RVA=00793000 VA=00B93000 vsize=00002718 rawsize=00003000 file=00497000
+[ASSERT] imagebase == 0x400000                                            PASS  0x400000
+ImportDirectoryRVA = 0x7955C0 (RVA) -> VA 0xB955C0 -> section .detour
+[ASSERT] import directory RVA maps into a parsed section                  PASS  .detour
+  trap check: treating the RVA as a VA would give 0x7955C0 (outside all sections? False)
+[ASSERT] .text present                                                    PASS  
+[ASSERT] .rdata present                                                   PASS  
+.text  : RVA 0x1000 -> VA 0x401000, file 0x1000, size 0x3E0000
+.rdata : RVA 0x3E1000 -> VA 0x7E1000, file 0x3E1000, size 0x31000
+[ASSERT] One_Time lies inside .text                                       PASS  
+[ASSERT] vtable lies inside .rdata                                        PASS  
+
+==============================================================================
+== STEP 2  full .text linear sweep (boundary authority)
+==============================================================================
+decoded instructions : 1394120
+undecodable stops    : 66
+sweep span           : 0x401000 .. 0x7E0FFF
+stop bytes           : 0x46F5A0, 0x48DB25, 0x48DD18, 0x4C8114, 0x4D926D, 0x5001E4, 0x51C889, 0x51C88D, 0x51C891, 0x51F1FC, 0x520EFC, 0x58BDA4
+[ASSERT] decoded instruction count > 500000                               PASS  1394120
+
+==============================================================================
+== STEP 3  One_Time prologue
+==============================================================================
+  first insn : 00652CF0  56               push esi
+  before it  : 00652CEF  90               nop 
+  body (29 insns):
+    00652CF0  56               push esi
+    00652CF1  8bf1             mov esi, ecx
+    00652CF3  68dc928300       push 0x8392dc
+    00652CF8  e8e33bdbff       call 0x4068e0
+    00652CFD  b98c000000       mov ecx, 0x8c
+    00652D02  b86c000000       mov eax, 0x6c
+    00652D07  898e00120000     mov dword ptr [esi + 0x1200], ecx
+    00652D0D  898ef8110000     mov dword ptr [esi + 0x11f8], ecx
+    00652D13  83c404           add esp, 4
+    00652D16  8bce             mov ecx, esi
+    00652D18  c786e411000000000000 mov dword ptr [esi + 0x11e4], 0
+    00652D22  c786e811000010000000 mov dword ptr [esi + 0x11e8], 0x10
+    00652D2C  c786ec11000030000000 mov dword ptr [esi + 0x11ec], 0x30
+    00652D36  898604120000     mov dword ptr [esi + 0x1204], eax
+    00652D3C  8986fc110000     mov dword ptr [esi + 0x11fc], eax
+    00652D42  c786f411000031000000 mov dword ptr [esi + 0x11f4], 0x31
+    00652D4C  e8ff5ae5ff       call 0x4a8850
+    00652D51  8b86f4110000     mov eax, dword ptr [esi + 0x11f4]
+    00652D57  a3204ab000       mov dword ptr [0xb04a20], eax
+    00652D5C  8b8e00120000     mov ecx, dword ptr [esi + 0x1200]
+    00652D62  890d244ab000     mov dword ptr [0xb04a24], ecx
+    00652D68  8b9604120000     mov edx, dword ptr [esi + 0x1204]
+    00652D6E  b9c0928300       mov ecx, 0x8392c0
+    00652D73  8915284ab000     mov dword ptr [0xb04a28], edx
+    00652D79  c705304ab000df000000 mov dword ptr [0xb04a30], 0xdf
+    00652D83  e8c8041000       call 0x753250
+    00652D88  8986d4140000     mov dword ptr [esi + 0x14d4], eax
+    00652D8E  5e               pop esi
+    00652D8F  c3               ret 
+
+==============================================================================
+== STEP 4  direct E8 callers of One_Time
+==============================================================================
+boundary-validated : 0
+raw-byte matches   : 0
+false positives killed by boundary filter : 0
+=> One_Time is a pure virtual slot; see STEP 5/6 for reachability.
+
+==============================================================================
+== STEP 5  call [reg+disp8 0x14] census
+==============================================================================
+total sites : 273
+  0x4012EF  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x40180F  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x40262C  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x402B1F  mod=1 base=ebx  dword ptr [ebx + 0x14]
+  0x406C5B  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x407BD7  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x407C1E  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x410D7B  mod=1 base=eax  dword ptr [eax + 0x14]
+  0x410F7F  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x410FA9  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x410FDA  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x411014  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x41103E  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x41106F  mod=1 base=eax  dword ptr [eax + 0x14]
+  0x4112AF  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x411300  mod=1 base=eax  dword ptr [eax + 0x14]
+  0x411325  mod=1 base=eax  dword ptr [eax + 0x14]
+  0x42E2D9  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x42E32A  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x42E3E9  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x4304D6  mod=1 base=eax  dword ptr [eax + 0x14]
+  0x431BEF  mod=1 base=eax  dword ptr [eax + 0x14]
+  0x4327CD  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x4333CF  mod=1 base=eax  dword ptr [eax + 0x14]
+  0x4339C6  mod=1 base=eax  dword ptr [eax + 0x14]
+  0x43A91B  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x445278  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x445437  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x445503  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x478FDE  mod=1 base=eax  dword ptr [eax + 0x14]
+  0x479530  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x4795FF  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x48818E  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x4881EA  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x488615  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x488CF3  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x488DC0  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x488EAD  mod=1 base=edx  dword ptr [edx + 0x14]
+  0x48BB4F  mod=1 base=eax  dword ptr [eax + 0x14]
+  0x48BC13  mod=1 base=edx  dword ptr [edx + 0x14]
+  ... 233 more
+hosts that also touch [0x87F7E8] : 0
+
+==============================================================================
+== STEP 6  One_Time as vtable slot
+==============================================================================
+dwords == 0x652CF0 in .rdata : 1
+  0x7F0358 aligned4=True
+vtable 0x7F0344 (RTTI .?AVRadarClass@@) window:
+  [0x7F0340] slot-1 = 0x8083C0
+  [0x7F0344] slot0  = 0x4F4240
+  [0x7F0348] slot1  = 0x40D230
+  [0x7F034C] slot2  = 0x40D240
+  [0x7F0350] slot3  = 0x5656D0
+  [0x7F0354] slot4  = 0x6587A0
+  [0x7F0358] slot5  = 0x652CF0  <== slot5
+  [0x7F035C] slot6  = 0x4F42B0
+  [0x7F0360] slot7  = 0x652DE0
+  [0x7F0364] slot8  = 0x653010
+
+==============================================================================
+== STEP 7  read points and their hosts
+==============================================================================
+read_a 0x429331
+  insn      : 00429331  8b15e8f78700     mov edx, dword ptr [0x87f7e8]
+  host      : 0x429331
+  host E8 callers : none
+  host strings:
+read_b 0x6933A4
+  insn      : 006933A4  8b15e8f78700     mov edx, dword ptr [0x87f7e8]
+  host      : 0x693366
+  host E8 callers : none
+  host strings:
+  msg-handler check: head=006930A0  a078e3a800       mov al, byte ptr [0xa8e378] cmp[msg],0x215=True range0x14=True
+  read_a -> dispatch dword ptr [edx] at 0x42933E
+  read_b -> dispatch dword ptr [edx + 0x48] at 0x6933B1
+  read_b -> dispatch dword ptr [0x7e13f8] at 0x6933D8
+
+==============================================================================
+== STEP 8  singleton object graph (who owns 0x87F7E8)
+==============================================================================
+absolute refs to [0x87F7E8] in .text : 3
+  0x40D1B2       write dword ptr [0x87f7e8], 0x7e1964
+  0x429331 read        edx, dword ptr [0x87f7e8]
+  0x6933A4 read        edx, dword ptr [0x87f7e8]
+singleton runtime vtable = 0x7E1964 (.?AVMouseClass@@)
+  its slot+0x14 = 0x5BDF30 (MouseClass override), not 0x652CF0
+static init table entry for 0x40D190 : 0x81216C
+vtable 0x7F0344 install sites : 0x652B45, 0x652C0C, 0x6587AC, 0x6A4F78
+RadarClass ctor 0x652960 callers : 0x63F6B4
+construction chain (innermost -> outermost):
+  0x652960
+  0x63F6AA
+
+==============================================================================
+== STEP 9  One_Time body facts
+==============================================================================
+calls inside body :
+  0x652CF8 -> 0x4068E0
+  0x652D4C -> 0x4A8850
+  0x652D83 -> 0x753250
+strings pushed     :
+  0x652CF3 0x8392DC 'RadarClass::One_Time()\n'
+globals written    :
+  0x652D57 -> [0xB04A20]
+  0x652D62 -> [0xB04A24]
+  0x652D73 -> [0xB04A28]
+  0x652D79 -> [0xB04A30]
+conditional global gates : 0
+
+==============================================================================
+== STEP 10  L3 (0x4A8960) callers and their strings
+==============================================================================
+  0x5610EC
+  0x67E7F9
+site 0x5610EC  host 0x560DCF
+    0x560DCF 0x82A450 'Mode apparently set OK\n'
+    0x560DDD 0x82A4EC 'VisibleRect: %dx%d\n'
+    0x560E09 0x827CF8 'Deleting AlternateSurface\n'
+    0x560E34 0x827CE0 'Deleting HiddenSurface\n'
+    0x560E5F 0x827CAC 'Deleting TileSurface\n'
+    0x560E8A 0x827C90 'Deleting SidebarSurface\n'
+    0x560EB5 0x827CC4 'Deleting CompositeSurface\n'
+    0x560EE1 0x82A42C 'Setting new window size to %dx%d\n'
+    0x560F04 0x82A410 'Creating primary surface\n'
+    0x561019 0x82A3F4 'Recalc color remap tables\n'
+    0x561163 0x82A3DC 'Mode change complete.\n'
+site 0x67E7F9  host 0x67E772
+
+==============================================================================
+== STEP 11  clear site 0x777803 reality check
+==============================================================================
+  insn   : 00777803  891d68738800     mov dword ptr [0x887368], ebx
+  target : 0x887368
+  ledger said [0x87F7E8]; actual target differs -> see report.
+
+==============================================================================
+== STEP 12  branch verdict
+==============================================================================
+evidence:
+  direct E8 callers              : 0
+  vtable slot5 identity          : True
+  singleton slot5 override       : True
+  One_Time calls L3              : False
+  per-frame host touching single : False
+branch vector: A+A'
+
+==============================================================================
+== FINAL ASSERTIONS
+==============================================================================
+[PASS] 0x652CF0 decodes at an instruction boundary  00652CF0  56               push esi
+[PASS] 0x652CF0 has a function-head boundary before it  00652CEF  90               nop 
+[PASS] body of 0x652CF0 terminates within .text  29 insns, last=ret
+[PASS] E8 caller scan executed  0 boundary-validated, 0 raw-byte
+[PASS] 0x652CF0 appears as an aligned dword in .rdata  0x7F0358
+[PASS] vtable[0x7F0344].slot+0x14 == 0x652CF0  0x652CF0
+[PASS] vtable 0x7F0344 RTTI resolves to RadarClass  .?AVRadarClass@@ (COL 0x8083C0)
+[PASS] call [reg+0x14] sites encoded as disp8 exist  273 total, 273 disp8
+[PASS] exactly 2 reads of [0x87F7E8] in .text  0x429331, 0x6933A4
+[PASS] reads are at 0x429331 and 0x6933A4  0x429331, 0x6933A4
+[PASS] exactly 1 write of [0x87F7E8] in .text  0x40D1B2
+[PASS] 0x429331 is 'mov edx,[0x87F7E8]' (8b15e8f78700)  00429331  8b15e8f78700     mov edx, dword ptr [0x87f7e8]
+[PASS] 0x6933A4 is 'mov edx,[0x87F7E8]' (8b15e8f78700)  006933A4  8b15e8f78700     mov edx, dword ptr [0x87f7e8]
+[PASS] host of 0x429331 is a real function head  0x429331
+[PASS] host of 0x6933A4 is a real function head  0x693366
+[PASS] 0x6930A0 is a window-message handler (cmp msg,0x215 + range 0x14)  cmp215=True range=True callers=0x777640
+[PASS] vtable 0x7F0344 is installed from >=1 .text site  0x652B45, 0x652C0C, 0x6587AC, 0x6A4F78
+[PASS] RadarClass ctor 0x652960 has >=1 direct caller  0x63F6B4
+[PASS] ctor chain reaches a static-init entry (depth 1)  0x652960 -> 0x63F6AA
+[PASS] 0x40D190 is an entry in a .data init table  0x81216C
+[PASS] One_Time calls 0x4A8850 (L3 sibling) from inside its body  0x652D4C
+[PASS] One_Time does NOT call 0x4A8960 (L3)  absent
+[PASS] One_Time captures its 'this' from ecx (thiscall)  00652CF1  8bf1             mov esi, ecx
+[PASS] One_Time body has no 'cmp/test [global]' one-time gate  none
+[PASS] One_Time writes global state (init side effects)  4 globals
+[PASS] One_Time pushes a decodable identity string  0x652CF3 'RadarClass::One_Time()\n'
+[PASS] L3 0x4A8960 has exactly 2 direct callers  0x5610EC, 0x67E7F9
+[PASS] singleton's runtime vtable is readable  0x7E1964 (.?AVMouseClass@@)
+[PASS] singleton runtime vtable slot+0x14 != 0x652CF0 (override exists)  0x5BDF30
+[PASS] 0x777803 is a boundary and writes an absolute global  00777803  891d68738800     mov dword ptr [0x887368], ebx
+[PASS] 0x777803 does NOT write [0x87F7E8]  target 0x887368
+[PASS] no call [reg+0x14] host touches [0x87F7E8]  none
+
+checks passed: 32/32
+direct E8 callers of One_Time: 0
+branch: A+A'
+RESULT: ALL PASS
