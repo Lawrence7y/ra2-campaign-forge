@@ -623,10 +623,17 @@ def one_trip(idx: int, arm: str, dll_name, hold_s: float,
         {"ok": bool((dump_rec or {}).get("ok")), "suppressed": True})
 
     # 关窗后 ≤20 s 正常退出：用「进程已退出」+ 时延判，不看 except.txt
-    exited = exit_seen or (proc.poll() is not None)
-    if not exited:
-        # loader 派生的情况下 proc 是 loader；直接查 gamemd 是否还在
+    # ★★ B 臂的 proc 是 **loader**，不是 gamemd。`proc.poll()` 只能说明 loader 退没退。
+    #   若 loader 因自身异常先退（CreateRemoteThread 失败、WaitForSingleObject 被
+    #   外部杀掉等），而 gamemd 仍在跑，用 proc.poll() 会**误判 clean_exit=True**
+    #   ⇒ 假绿通道。故：B 臂一律只以 gamemd 的 pid 存活为准，不采信 proc.poll()。
+    if arm == "A":
+        exited = exit_seen or (proc.poll() is not None)
+    else:
+        # ★ 只认 gamemd（pid）已从进程表消失；loader 死活不参与判定
         exited = not any(p == pid for p in list_procs())
+    rec["exit_judged_by"] = "exit_event|proc.poll" if arm == "A" else "gamemd_pid_only"
+    rec["loader_alive_at_judge"] = (proc.poll() is None) if arm == "B" else None
     rec["clean_exit"] = bool(exited and closed_at is not None
                              and (t_end - t_close) <= CLOSE_WAIT_S)
     rec["exit_after_close_s"] = (round(t_end - t_close, 2) if t_close else None)

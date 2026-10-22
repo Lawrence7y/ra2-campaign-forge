@@ -1,0 +1,67 @@
+========================================================================================
+== 0  identity
+========================================================================================
+  _rc4_ab_probe.py                    32117 B  sha16=f994e2a2a66e59ef
+  qc151_trip.harness6.py             461535 B  sha16=a67cc05edd5034f8
+  qc151_trip.harness5.py             427456 B  sha16=f1e5bc7b0ff30c9c
+
+========================================================================================
+== A 组  _rc4_ab_probe.py
+========================================================================================
+[PASS] A1 存在 args.live 门禁  gates=['not args.live']
+[PASS] A1 存在 `if not args.live` 早退  line=756
+    真机动作首次出现行号: {'TerminateProcess(': 323, 'shutil.rmtree(': 455, 'subprocess.Popen': 519, 'DebugActiveProcess(': 552}
+    one_trip 调用行号: [769]
+[PASS] A1 one_trip 只在 live 门禁之后被调用  guard@756, calls=[769]
+[PASS] A2 取到 B 臂（arm==A 的 else）分支体  803 chars
+[PASS] A2 B 臂按载体目录匹配 gamemd 取 pid  under_carrier + gamemd.exe 同现
+[PASS] A2 B 臂不存在 `pid = proc.pid` 兜底  已确认无兜底
+[PASS] A2 B 臂找不到 gamemd 时 abort（不兜底）  
+    startswith 出现行号（排除注释）: [241, 740]
+[PASS] A3 无 startswith 用于路径归属  suspects=[]
+[PASS] A3 under_carrier 用 relative_to  ok
+[PASS] A3 under_carrier 捕获 ValueError  ok
+[PASS] A4 a8_sweep 有清扫前正控  
+[PASS] A4 a8_sweep 有收尾前正控  
+[PASS] A4 正控失败返回 ENUM_FAILED 哨兵（非空 list）  
+[PASS] A4 正控失败时 remaining 非空  哨兵形态
+[PASS] A5 定位到 clean_exit 赋值  line_in_func=162
+[PASS] A5 clean_exit 判据窗口（剔注释、不含其后字段）不含 except 变量  clean
+[PASS] A5 clean_exit 用 CLOSE_WAIT_S 时限  
+[PASS] A5b clean_exit 按臂分流  ok
+[PASS] A5b B 臂判据语句不含 proc.poll()  ok
+[PASS] A5b B 臂只按 gamemd pid 判退出  judge=exited = not any(p == pid for p in list_procs())
+[PASS] A6 safe_name 拒绝 ..  
+[PASS] A6 safe_name 拒绝 / 与 \\  
+[PASS] A6 B 臂强制要求 --dll  
+[PASS] A7 预检检查载体目录长度  
+[PASS] A7 one_trip 内检查 carrier_len  
+[PASS] A7 门禁对象是目录字符串  
+[PASS] A8 Stop 先于 sweep  stop@118 sweep@402
+[PASS] A8 sweep 先于删载体  sweep@402 rm@439
+[PASS] A8 own_pid 用 os.getpid()  
+
+========================================================================================
+== B 组  qc151_trip.harness6.py
+========================================================================================
+[PASS] B1 母本 sha16 == f1e5bc7b0ff30c9c  f1e5bc7b0ff30c9c
+[PASS] B1 母本字节数 == 427456  427456
+[PASS] B2 零删除行（多重集）  removed=0, mother=7781, copy=8451
+[PASS] B3 存在按 .Name 读 Sig 的代码  lines=[1684, 1704]
+[PASS] B3 不存在按固定索引读 Sig  none
+[PASS] B4 carrier_isolation_count 存在  5795 chars
+[PASS] B4 枚举失败时计数为 None 而非 0  ok
+[PASS] B5 存在 near limit 130 WARN  
+[PASS] B5 >=131 硬停逻辑仍在  
+[PASS] B6 close-mode 默认 terminate  
+[PASS] B6 记录 close_fallback_terminate  
+[PASS] B7 terminate_owned_process 函数体逐字节相同  h5=3494 chars, h6=3494 chars
+
+========================================================================================
+== RESULT
+========================================================================================
+  A 组（探针）  : 29/29
+  B 组（harness6）: 12/12
+  checks passed : 41/41
+  RESULT: ALL PASS
+EXIT=0
