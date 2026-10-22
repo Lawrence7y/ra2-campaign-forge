@@ -1,0 +1,35 @@
+==============================================================================
+待办 7 · 历史 RC-4 现场时间线复盘
+==============================================================================
+清单 131 条
+RC-4 文件 4 条，按 sha 去重后 2 个独立现场
+
+  [PASS] C1 RC-4 独立现场数 == 2（按 sha 去重）                             2 个: ['584069adfe5b4a5b', '4af10077f9dcc74e']
+
+RC-4 独立现场明细：
+  sha=584069adfe5b4a5b  (3 份拷贝)
+      mtime=2026-10-08T21:59:33  esi=00000278 edi=0087F7E8
+      证据 0 份: []
+      ★ 档位 = UNKNOWN（无同趟证据文件）
+
+  sha=4af10077f9dcc74e  (1 份拷贝)
+      mtime=2026-10-03T19:33:11  esi=00000278 edi=0087F7E8
+      证据 3 份: ['round_P0_probe.json', 'round_R0_nav_probe.json', 'round_P2_menu_bld_check.json']
+      round=P0_probe         arm=patch_off labels=['menu_state', 'final_state'] frames=[0, 0] max_count=0
+      round=R0_nav_probe     arm=patch_off labels=['menu_state', 'tick_300', 'tick_600', 'final_state'] frames=[0, 318, 633, 635] max_count=402
+      round=P2_menu_bld_check arm=patch_off labels=['menu_state', 'dwell_01', 'dwell_02', 'dwell_03', 'dwell_04', 'dwell_05', 'dwell_06', 'dwell_07', 'dwell_08', 'dwell_09', 'final_state'] frames=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] max_count=402
+      ★ 档位 = MENU（round=P0_probe Δ=201.6s labels=['menu_state', 'final_state'] frames=[0, 0] max_count=0（主菜单、帧钟未走、对象数组全空））
+
+  [PASS] C2 至少一个 RC-4 现场档位已判定                                     已判定=['MENU']  未判定=1 个
+  [PASS] C2b 已判定现场的档位一致                                           distinct=['MENU']
+
+与 §370 机制结论的相容性：
+  UNKNOWN   → 证据不足
+  MENU      → 菜单/战局中关窗后，退出序列里崩
+  [PASS] C4 档位与 §370「退出序列 0x52C920 分支」机制相容                        机制不限定起始档位；档位只回答『从哪进退出流程』
+  [PASS] C5 非 RC-4 现场已正确排除                                        127 条非 RC-4
+  [PASS] C7 用 generation_table 原始生成时间对齐到归属趟                       [{'sha': '584069adfe5b4a5b', 'gen_time': '2026-10-08T21:59:33', 'file_mtime': '2026-10-08T21:59:33', 'owning_round': None, 'delta_s': None}, {'sha': '4af10077f9dcc74e', 'gen_time': '2026-10-03T19:30:05', 'file_mtime': '2026-10-03T19:33:11', 'owning_round': 'P0_probe', 'delta_s': 15.0}]
+
+------------------------------------------------------------------------------
+结果：6/6 PASS
+明细: D:\Project\ra2-campaign-forge\lead\goal2_rc4_trigger_20261022\RC4_TIMELINE_REVIEW.json
