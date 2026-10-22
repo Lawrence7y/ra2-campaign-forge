@@ -3174,3 +3174,37 @@ N3（窗口截到 `0x52D1FE` 只得 14 条 ⇒ 边界确实决定结论）。
 `0x6AD75A mov [0xa8b25c],eax`（`call esi` 返回值直接写，独立第三类写者）；
 `0x79727E..0x7972FD` 连续 19 条几乎刷全部 18 个全局（形态像初始化/复位）。
 盲验自陈边界：**208 是「绝对地址直写」的下界**，基址+偏移聚合写与整块 `memcpy` 扫不到。
+
+### 十、盲验轮提交与审计（§7.4）
+
+提交 `fd4f067`（10 文件，全部 `re_atlas/`；用 `git commit -- re_atlas/` 限定路径，
+避开多会话共享索引里的 5 个他线文件）。钩子报 `scanner_enobufs`，按 §7.4 同轮补跑完整审计：
+
+| 项 | 值 |
+|:---|:---|
+| scanId | `scan-2026-10-22T17-08-06.313Z-0e3c4fdc6daf` |
+| seal | `sha256:34f520c3035983bd017bb9574919f3afd0864e95f574124c6440e9a7afd58c40` |
+| findings | **28**（`tools/` 17 / `lead/` 9 / `ra2forge/` 2） |
+| **`re_atlas/` 命中** | **0** |
+| 依赖风险 | 0 个受影响包（`completion=partial`） |
+
+**诚实边界**：`normal` 档 + `dependencyRisk completion=partial`
+⇒ 只能证明本轮新文件未引入可静态发现的问题，**不能宣称项目安全**。
+28 条全在本线写域之外，本线零改动、零处置权，仅记录。与上一轮同值，增量 0。
+
+### 十一、本轮自己的操作事故（CRLF 整文件重写，已回退）
+
+用 `python - <<EOF` + `Path.write_text()` 批量替换文档措辞时，**换行符被整体从 LF 转成 CRLF**，
+导致一次提交出现 `8385 insertions / 8322 deletions` 的假巨变更（实际只改了十几处）。
+**处置**：`git reset --soft HEAD~1` 回退该提交，`git restore` 复原文件，
+改用 **Edit 工具**逐处修改（Edit 保留原换行符），重做后 diff 为 `277 insertions / 44 deletions`。
+
+**判据（可复用）**：
+
+1. 提交前看 `git diff --stat`。**行数量级与改动意图不匹配就是出事了** —— 改几行却动了几千行，
+   必然是行尾或编码被整体改写。
+2. **散文/文档类文件的批量文本替换不要用 `write_text()`**（Windows 上默认做换行转换）；
+   用 Edit，或显式 `open(..., newline="")`。
+3. 回退**只**用 `--soft` + `restore`，不要 `--hard`（会连带清掉同轮其他未提交改动）。
+4. 本项目已有前科：`crlf-diff-roundtrip-traps` 记过文本模式折叠 CRLF、
+   `difflib` 混行尾、patch 默认 strip CR 三个坑。**这是同一家族的第四次踩踏。**
