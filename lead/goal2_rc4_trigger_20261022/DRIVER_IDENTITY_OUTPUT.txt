@@ -1,0 +1,64 @@
+镜像基数 0x00400000；.text 解码 1394120 条
+
+=== R1 函数自报的名字 ===
+  函数内 push 的可打印常量字符串：
+    0x00652CF3  push 0x008392DC  b'RadarClass::One_Time()\n'
+  [PASS] ★ 函数自报名为 'RadarClass::One_Time()'（调试字符串是身份的直接证据）  实测 b'RadarClass::One_Time()\n'
+  [PASS] ★ 0x008392DC 处字符串以 'RadarClass::One_Time()' 开头  实测 b'RadarClass::One_Time()\n'
+
+=== R2 该字符串是否只被此处引用 ===
+  .text 内立即数引用 1 处：0x00652CF4
+  [PASS] ★ 名字字符串在 .text 内只被 1 处引用（身份无歧义）  1 处
+
+=== R3 写入的 this 偏移常量 ===
+    this+0x11E4 <- 0x0
+    this+0x11E8 <- 0x10
+    this+0x11EC <- 0x30
+    this+0x11F4 <- (寄存器)
+    this+0x11F8 <- (寄存器)
+    this+0x11FC <- (寄存器)
+    this+0x1200 <- (寄存器)
+    this+0x1204 <- (寄存器)
+    this+0x14D4 <- (寄存器)
+  [PASS] ★ 8 个 this 偏移全部被写（雷达面板几何参数）  缺 无
+
+=== R4 call 0x4A8850 的位置 ===
+  [PASS] ★ 函数内恰 1 次 call 0x4A8850（§346 链第一跳）  0x00652D4C
+  [PASS] ★ 最后一次 this 常量写入（0x652D42）在 call 之前 ⇒ 先设参数再重设视口  call @0x00652D4C
+
+=== R5 全局常量写入（视口尺寸的全局副本）===
+    0x00652D57  [0x00B04A20] <- (寄存器)
+    0x00652D62  [0x00B04A24] <- (寄存器)
+    0x00652D73  [0x00B04A28] <- (寄存器)
+    0x00652D79  [0x00B04A30] <- 0xDF
+  [PASS] ★ 4 个全局全部被写  4 个
+
+=== R6 末尾 call 0x753250 与结果存储 ===
+  [PASS] ★ 末尾恰 1 次 call 0x753250  0x652D83
+  结果存储：['0x00652D88 dword ptr [esi + 0x14d4], eax']
+  [PASS] ★ 查表结果存入 this+0x14D4
+  0x753250 形态：索引数组遍历 + 比较 = True
+  [PASS] ★ 0x753250 是字符串表线性查找（遍历 + 比较，返回索引）
+
+=== R7/R8 One_Time 语义与复现推论 ===
+  [PASS] ★ 名字含 One_Time ⇒ 语义上是「一次性初始化」
+  ⇒ 与 §347「对象整局存活」一致：One_Time 只跑一次，之后 this 字段常驻。
+  ⇒ 因此「关窗时跑进这条链」**不可能**是 One_Time 本身被重跑。
+     必然是 §346 链的下游（0x4A8960 及其后）在**别的时机**被调到。
+     而 0x4A8960 是视口矩形重设函数（§345 已定，全文件仅 2 个写 [0x886FA0] 的点）
+     ⇒ 崩溃发生时机 = 某次视口重设/尺寸变更，且此时单例已清零。
+  [PASS] 如实记录：One_Time 语义 ⇒ 崩溃时机在下游重设，不在初始化本身
+
+=== R9 v[42] 目标 0x4A8960 的语义（同法取证） ===
+    0x004A8979  b'Set_View_Dimensions(%d,%d,%d,%d)\n'
+    0x004A89D5  b'Deleting ZBuffer\n'
+    0x004A8A5C  b'Allocating ZBuffer (%dx%d)\n'
+    0x004A8A72  b'Deleting ABuffer\n'
+    0x004A8AF6  b'Allocating ABuffer (%dx%d)\n'
+    0x004A8BCE  b'Set_View_Dimensions(exit)\n'
+  [PASS] ★ v[42] 目标打印 Set_View_Dimensions（视口尺寸设置）
+  [PASS] ★ 同函数内 Deleting/Allocating A|ZBuffer（渲染缓冲重建）
+  ⇒ 0x4A8960 = 视口尺寸变更 + 渲染缓冲重建（比 §345 的「矩形重设」更精确）
+  ⇒ RadarClass::One_Time 调它，是因为雷达初始化要按新视口重建缓冲区。
+
+★ 0x652CF0 身份定案：RadarClass::One_Time()（雷达一次性初始化）
