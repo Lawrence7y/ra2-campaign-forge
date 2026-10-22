@@ -626,6 +626,31 @@ M1 在 **340 个站点**上与键槽不一致：91 个键槽是寄存器、5 个
 复跑：`python re_atlas/tools/r031_authoritative_numbers.py`（17/17 PASS, EXIT=0）；
 证据 `evidence/r031_section12_restatement.md`；正文 `kb/30` §12.7。
 
+### C.15 `RulesClass` 载入顺序（R-021 核验口径）
+
+| 项 | 值 |
+|:--|:--|
+| 节名指针表 | `0x007F0C78`，31 项非空（共 32 槽） |
+| `Init` `0x6686C0` | 只做一件事：`Read_File` **×3**（第一份 / gamemode / map） |
+| `Read_File` `0x668BF0` | 真范围 **`0x668BF0–0x668FA3`**（有分离冷块，非首 `ret` 的 `0x668F8D`） |
+| loader 调用 | **29 次 / 26 个不同 loader**（`Read_Difficulty` ×3、`Read_AdvancedCommandBar` ×2） |
+| 难度键 | `Easy` `0x818134` / `Normal` `0x81BB60` / **`Difficult` `0x83A0C4`**（不是 `Hard`） |
+
+**三条对编译器可用的结论**：
+
+1. **同一套节被解析三遍**（`Read_File`×3）⇒ 后一遍覆盖前一遍；
+   想覆盖某值就放到后面的 gamemode / map INI 里。
+2. **`[AdvancedCommandBar]` 是单机读的节，`[MultiplayerAdvancedCommandBar]` 是联机读的。**
+   `Read_AdvancedCommandBar` 按布尔参数选节（`1`→MP，`0`→`Advanced`），
+   参数由 `[0xA8B238]`(`GameMode`) 决定：`0/5`（战役/遭遇战）→ 参数 `0`
+   → **`AdvancedCommandBar`**；`3/4`（LAN/Internet）→ 参数 `1` → MP 节。
+   ⇒ 改单机命令栏请改 `[AdvancedCommandBar]`。
+3. **第三个难度键是 `Difficult`**；写 `Hard=` 无效（无读取点）。
+
+复跑：`python re_atlas/tools/verify_r021_claims.py`（30/30 PASS, EXIT=0）；
+证据 `evidence/r021_section13_verification.md`；正文 `kb/30` §13 + §13.7。
+
+
 
 ---
 ## D. 数据/字符串锚点（claims PART 2–4 摘要）

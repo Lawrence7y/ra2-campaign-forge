@@ -565,7 +565,64 @@ size    = vtable[12](obj)    # 只有上一步成立，才认它是 GetSize
 `Init` 头 `81 EC D0 00 00 00`、指针表非空项 ≥28。
 
 **置信度**：**实证**（字节 + 四条正对照）。
-**核验状态**：⏳ 未核验（R-021 结论，需补派）。
+**核验状态**：✅ **已核验（R-021 机器门禁，2026-10-22）** ——
+`tools/verify_r021_claims.py` **30/30 PASS，EXIT=0**。主体成立（指针表 31 项、
+28 调用序列逐位、`Init` 只调 `Read_File`×3、`Read_General` 在三个
+`Read_Difficulty` 之前、`Read_File` 首动作是 `call Read_Colors`）。
+**但本条正文有三处必须按下面追记读，否则会写错 INI。**
+
+> **★ R-021 核验追记（2026-10-22）—— 本条的 3 处错误**
+>
+> **错误 1（会写错键）**：正文写 `Read_Difficulties` 用
+> `Easy` / `Normal` / **`Hard`** 三个键名。**字节事实：第三个是 `Difficult`。**
+> ```text
+> 0x818134 'Easy'   0x81BB60 'Normal'   0x83A0C4 'Difficult'
+> ```
+> ⇒ 写 `Hard=` 写进一个**没有任何读取点**的键，静默无效。KB §13.4 原本是对的，
+> 是本条抄错了。
+>
+> **错误 2（已撤回的旧结论仍在正文）**：正文说「载入顺序取自 `RulesClass::Init`
+> （`0x6686C0`）的 **32 个内部调用**」。这是 R-021 **已撤回**的第一版结论
+> （0x1600 窗口越界读进了紧邻的 `Read_File`）。事实：`Init` 只调
+> **`Read_File` ×3**，自己**不直接调任何按节的 loader**。KB §13.5 已改，
+> 本条未同步。
+>
+> **错误 3（范围与调用数）**：正文「28 个 loaders 在 `Read_File` 里」需改为
+> **29 次调用 / 28 个不同 loader**：`Read_File` 有**分离冷块**
+> （`0x668F71`/`0x668F76` 两条 `je` 跳到 `0x668F90`），真范围是
+> `0x668BF0–0x668FA3`，冷块里还有第 29 次调用
+> `0x00668F96 Read_AdvancedCommandBar(参数 0)`。
+>
+> **★ 对目标 ③ 的实质影响（比上面三条更重要）**：
+> `Read_AdvancedCommandBar` 用**布尔参数**在两个节之间选：
+> 参数 `1` → `MultiplayerAdvancedCommandBar`（`0x668F81`），
+> 参数 `0` → `AdvancedCommandBar`（`0x668F96`）；而分支条件
+> （`0x668F6A`）是 `[0xA8B238]` = `SessionClass::Instance.GameMode`。
+> 把两段串起来（**这一步别省**）：
+>
+> | GameMode | 含义 | 参数 | 读的节 |
+> |--:|:--|--:|:--|
+> | 0 | Campaign | 0 | **`AdvancedCommandBar`** |
+> | 3 / 4 | LAN / Internet | 1 | `MultiplayerAdvancedCommandBar` |
+> | 5 | Skirmish | 0 | **`AdvancedCommandBar`** |
+>
+> ⇒ **单机（战役 / 遭遇战）读 `AdvancedCommandBar`；联机才读 MP 节。**
+> 即「MP 节是联机专用」的经验直觉**成立** —— 但依据是这两段字节，
+> 不是节名。⇒ **单机改 `[MultiplayerAdvancedCommandBar]` 不生效；
+> 要改单机命令栏请改 `[AdvancedCommandBar]`。** 这也意味着 §13.3 原文
+> 「MP 节没人用」不成立（它被读，只是不在单机路径），但推翻它**并不**
+> 带来"单机读 MP 节"的反向结论。
+> （边界：只证"读了"，未证读入值是否在单机被应用。）
+>
+> **本追记自身的更正**：第一版追记把方向写反了（写成"单机读 MP 节"）。
+> 原因：只看到两条 `je` 跳向同一处就下结论，**没把目标处的参数
+> （`xor eax,eax`→`push 0`）与 F3 的判据（非 0 才用 MP 节）串起来**。
+> 由异族盲验（`evidence/r021_crosscheck_blind.md`）抓出；本地门禁当时
+> 只断言"存在门控"，太弱。现已按 GameMode 逐个断言。
+>
+> 证据：`evidence/r021_section13_verification.md`、`evidence/r021_crosscheck_blind.md`；
+> KB §13.3 / §13.5 核验框 / §13.7。
+> 核验者：R-021 机器门禁 34/34 + 异族盲验（独立复现 C3/C4/C5/C6 四条推翻）。
 
 **冲突待核**：无。与 GOAL-3T 现有结论无交集。
 

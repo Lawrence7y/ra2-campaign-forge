@@ -1149,9 +1149,46 @@ R2-2 的下一块：`rulesmd.ini` 由谁读、按什么顺序读。这两件事�
 
 ### 13.3 ⚠ `Read_AdvancedCommandBar` 读的是 `AdvancedCommandBar`，但同表还有一项
 
+> **★★ R-021 核验（2026-10-22）：本小节结论被推翻一半，且更重要的那半是反的。**
+> 字节事实：`0x7F0CEC` 在全镜像里**恰有 1 处引用**，
+> `0x0067465E mov edi,[0x7f0cec]` —— 就在 `Read_AdvancedCommandBar`（`0x674650`）体内，
+> 与 `0x00674666 mov edi,[0x7f0ce8]` 成对，由**一个布尔参数**选择：
+>
+> | 参数 | 用哪个节 | 调用点 |
+> |--:|:--|:--|
+> | `1` | `MultiplayerAdvancedCommandBar` | `0x00668F81` |
+> | `0` | `AdvancedCommandBar` | `0x00668F96` |
+>
+> ⇒ ❶ 「MP 那项没被任何 `Read_*` 当**首节名**」这个**字面**说法成立；
+> ❷ 但「它因此没被用」**不成立** —— 它是该 reader 的**第二个**节，靠参数选。
+> ❸ **分支条件与结果**（`0x668F6A` 起，`[0xA8B238]` = `GameMode`）：
+>
+> | `GameMode` | 含义 | 参数 | 读的节 |
+> |--:|:--|--:|:--|
+> | 0 | Campaign | 0 | **`AdvancedCommandBar`** |
+> | 3 | LAN | 1 | `MultiplayerAdvancedCommandBar` |
+> | 4 | Internet | 1 | `MultiplayerAdvancedCommandBar` |
+> | 5 | Skirmish | 0 | **`AdvancedCommandBar`** |
+>
+> ⇒ **单机（战役 / 遭遇战）读的是 `AdvancedCommandBar`；联机（LAN/Internet）
+> 才读 `MultiplayerAdvancedCommandBar`。**
+> 即「MP 节是联机专用」这个直觉**成立** —— 但它是**字节推出来的**，
+> 不是靠"函数名/节名"猜的；而且 §13.3 原文把它说成"没人用"是错的
+> （它被读，只是不在单机路径上）。
+>
+> **本条自纠**：本节首次追记时我把方向写反了（说"战役/遭遇战读 MP 节"）。
+> 错误来源：只看两条 `je` 都跳向 `0x668F90` 就下了结论，**没有把
+> `0x668F90` 那条路径的参数（`xor eax,eax` → `push 0`）与 F3 的判据
+> （`test al,al / jne` → **参数非 0 才用 MP 节**）串起来**。
+> 是异族盲验抓到的，本地门禁当时只断言"存在门控"（断言太弱）。
+> 现 `verify_r021_claims.py` 按 GameMode 逐个断言映射，防止回潮。
+>
+> 边界：本节只证「**读**了」，未证读入的值**是否在单机被应用**。
+
 指针表里 `0x7F0CE8 = "AdvancedCommandBar"`、`0x7F0CEC = "MultiplayerAdvancedCommandBar"`。
-`Read_AdvancedCommandBar` 用的是 **`0x7F0CE8`（`AdvancedCommandBar`）**。
-`MultiplayerAdvancedCommandBar` 这一项**没有被任何 `Read_*` 当作首个节名**。
+`Read_AdvancedCommandBar` 的首节用的是 **`0x7F0CE8`（`AdvancedCommandBar`）**。
+`MultiplayerAdvancedCommandBar` 这一项**没有被任何 `Read_*` 当作首个节名** ——
+但它不是没人用：见上面的核验框，它由参数选为第二个节（联机路径）。
 
 ⇒ 函数名里的 "CommandBar" 与节名不完全对应，**不要按函数名猜节名**。
 
@@ -1208,6 +1245,16 @@ R2-2 的下一块：`rulesmd.ini` 由谁读、按什么顺序读。这两件事�
 **`Read_File`（`0x668BF0`–`0x668F8D`，`ret 4`）才是那 28 个 loaders 的容器**，
 顺序如下（后读覆盖先读）：
 
+> **★★ R-021 核验（2026-10-22）：上句的范围与「28」都要改。**
+> `Read_File` 有**分离冷块**：体内两条 `je` 跳出首 `ret` 的边界 ——
+> `0x00668F71 je 0x668F90`、`0x00668F76 je 0x668F90`；冷块从 `0x668F90` 起，
+> 到 `0x00668FA2 c2 04 00`（`ret 4`）结束，紧接 `Read_SpecialWeapons`（`0x668FB0`）。
+> ⇒ **真范围 `0x668BF0–0x668FA3`**，不是到 `0x668F8D`。
+> ⇒ 下表「28 个 loader 调用」里第 28 项 `Read_AdvancedCommandBar`（`0x668F81`）
+> 是**主路径**那次；冷块里还有**第 29 次调用**（`0x00668F96`，参数 `0`）。
+> 即 **29 次调用 / 28 个不同 loader**（`Read_AdvancedCommandBar` 调两次）。
+> 方法学教训见 §13.7 第 5 条：**函数范围不能用「首个 `ret`」定**。
+
 | # | 调用点 | loader |
 |--:|:---|:---|
 | 1 | `0x00668BFE` | `Read_Colors` |
@@ -1235,7 +1282,8 @@ R2-2 的下一块：`rulesmd.ini` 由谁读、按什么顺序读。这两件事�
 | 25 | `0x00668F4E` | `Read_WallModel` |
 | 26 | `0x00668F56` | `Read_AudioVisual` |
 | 27 | `0x00668F5E` | `Read_SpecialWeapons` |
-| 28 | `0x00668F81` | `Read_AdvancedCommandBar` |
+| 28 | `0x00668F81` | `Read_AdvancedCommandBar`（参数 `1` → MP 节，**联机** GameMode 3/4）|
+| 29 | `0x00668F96` | `Read_AdvancedCommandBar`（参数 `0` → `AdvancedCommandBar`，**冷块内**，单机 GameMode 0/5）|
 
 **对编译器有实际意义的两点**：
 
@@ -1266,6 +1314,32 @@ R2-2 的下一块：`rulesmd.ini` 由谁读、按什么顺序读。这两件事�
 最终判据：**锚定 `GetSection`/`GetKeyCount` 调用，取其前最后一个可解析字符串**；
 `min_len` 从 3 降到 **2**（否则 `AI`/`IQ` 两个两字符节名永远找不到）；
 函数体用**由 `ret` 确定的显式区间**，不用窗口大小。
+
+### 13.7 R-021 机器核验（2026-10-22）：30/30 PASS，推翻 2 条 + 纠正 1 条
+
+`python re_atlas/tools/verify_r021_claims.py`（EXIT=0）。
+确认 12 条、推翻 2 条、纠 1 条交接件错误；证据
+`evidence/r021_section13_verification.md`。要点：
+
+1. **确认面**：指针表 31 项、28 调用序列逐位、`Init` 只调 `Read_File`×3、
+   `Read_File` 首动作是 `call Read_Colors`、`Read_General` 在三个
+   `Read_Difficulty` 之前、两处结构性未恢复、`Warheads` 直压 —— 全成立。
+2. **推翻「`Read_File` 到 `0x668F8D`」**：有分离冷块，真范围到 `0x668FA3`（§13.5 框）。
+3. **推翻「MP 节没人用」**：`0x7F0CEC` 有 1 处引用，且由
+   `GameMode∈{0,5}` 门控 —— **单机/遭遇战读的就是它**（§13.3 框）。
+4. **纠正交接件 H-014**：第三个难度键是 **`Difficult`**（`0x83A0C4`），不是 `Hard`。
+   H-014 还留着已撤回的「`Init` 的 32 个内部调用」。**两处都已就地追记。**
+5. **方法学教训（本线第 39 条坑）**：
+   - **函数范围不能用「首个 `ret`」定** —— 分离冷块会让首 `ret` 提前收边界；
+     必须**把体内所有跳出边界的跳转都列出来**，再据跳转目标补解。
+   - **补解冷块时不能从「首 `ret` 的下一字节」起**：`0x668F8D` 处解码会把
+     `c2 04 00` 当成冷块的 `ret`，于是**正好复现旧错误边界**。
+     必须**从跳转目标（`0x668F90`）起**解。这一坑让首版核验器自证"通过"。
+   - **「没有被当作首节名」≠「没有被用」**。首节名是一个位置，职责是另一个
+     问题 —— 与 §13.4 记的"第一个 X"是同一类错误，这次栽在"唯一一个"上。
+   - **全段 `md.disasm` 的截断坑在本节又犯了一次**：核验器里对全 `.text`
+     查 `0x7F0CEC` 引用，用单次 `disasm` 只解 155,215 条 ⇒ 假报 0 引用。
+     修法：跨度 > 0x10000 一律走 `text_sweep.sweep()`。
 
 ---
 

@@ -2685,3 +2685,111 @@ P0 清欠第一项：把 §12 的「键」列定稿 —— 统一 ReadDouble 的
 `scanner_enobufs` 后按兼容策略放行 —— 那是钩子自身的缓冲问题，
 不是我绕过它。第一次的 `core.hooksPath` 覆盖是**我的违规**（§9），
 两次性质不同，不应合并叙述。
+
+---
+
+## R-021 核验（2026-10-22 19:xx–20:xx）· §13 推翻 2 条 + 纠 1 条交接件错误
+
+### 1. 本轮任务
+
+P0 清欠第二项：R-021（§13 `RulesClass` 节表与载入顺序，H-014）。
+做法不是"读一遍确认"，而是**为 §13 的每条断言写机器门禁**
+（`tools/verify_r021_claims.py`，32 条断言）。
+
+### 2. 结论：确认 12 条，推翻 2 条，另纠出 1 条交接件错误
+
+**确认面**（主体成立，§13 大体可靠）：指针表 31 项非空、函数→节名 36/38、
+`Init` 只调 `Read_File`×3 且不直接调按节 loader、28 调用序列逐位一致、
+`Read_General` 在三个 `Read_Difficulty` 之前、`Read_File` 首动作是
+`call Read_Colors`、两处结构性未恢复、`Warheads` 直压 `0x83A0D0`、
+**§13.4 的 7 个内联节严格单调有序**。
+
+**推翻 1 · `Read_File` 有分离冷块**
+§13.5 定范围 `0x668BF0–0x668F8D`（首个 `ret`）。体内两条 `je`
+（`0x668F71`/`0x668F76`）跳出该边界到 `0x668F90`，冷块以
+`0x668FA2 c2 04 00` 结束 ⇒ **真范围到 `0x668FA3`**。
+且冷块里有**第 29 次** loader 调用（`0x668F96 Read_AdvancedCommandBar(0)`）
+⇒ 「28 个 loader」应改为 **29 次调用 / 28 个不同 loader**。
+
+**推翻 2 · MP 节不是没人用（且方向是反的）**
+§13.3 由「`MultiplayerAdvancedCommandBar` 没被当**首节名**」推出它没用。
+字节：`0x7F0CEC` 全镜像**恰 1 处**引用 `0x67465E`，在
+`Read_AdvancedCommandBar` 体内，与 `0x674666` 成对，由**布尔参数**选节：
+参数 `1`→MP 节（`0x668F81`）、参数 `0`→`AdvancedCommandBar`（`0x668F96`）。
+分支条件 `0x668F6A` 读 `[0xA8B238]`=`SessionClass::Instance.GameMode`，
+`==0 或 ==5` 走 MP 支 ⇒ **`GameMode∈{0,5}` = 战役/遭遇战读的是 MP 节**，
+LAN/Internet 才读 `AdvancedCommandBar`。
+⇒ 「MP 节是联机专用」**是反的**；单机改 `[MultiplayerAdvancedCommandBar]`
+会生效，改 `[AdvancedCommandBar]` 在单机反而可能不生效。
+
+**纠 1 · 交接件 H-014 的难度键名错**
+H-014 写 `Easy`/`Normal`/`Hard`。字节：`0x83A0C4` = **`Difficult`**。
+写 `Hard=` 写进无读取点的键，静默无效。KB §13.4 本来是对的，是 H-014 抄错。
+H-014 还留着已撤回的「`Init` 的 32 个内部调用」—— 两处都已就地追记。
+
+### 3. 本轮工具自纠三次（全部留痕）
+
+1. **`Init` 断言把 `Read_File` 算成"按节 loader"** ⇒ 断言红。事实层面
+   KB 说的是"不调任何 `Read_*`"，`Read_File` 名字恰好也是 `Read_*`；
+   已把断言改成"不调任何**按节** loader"（这才是要测的命题）。
+2. **负控起点选错**：用 `0x6686C5`（Init 内 +5B）当"错误起点"，它当然共享
+   同一个 `ret` ⇒ **负控恒真、等于没测**。改成用**另一个函数**的头部，
+   并把"Init 内起点的负控是空的"这一事实单独立一条断言留痕。
+3. **冷块补解从 `0x668F8D` 起** ⇒ 把 `c2 04 00` 解成冷块的 `ret`，
+   **正好复现旧错误边界**，首版核验器因此自证"通过"。必须**从跳转目标
+   `0x668F90` 起**解。
+4. **全段引用普查用单次 `md.disasm`** ⇒ 只解 155,215 条（11%），
+   **假报 `0x7F0CEC` 零引用**。差点把 GameMode 门控这条实质发现漏掉。
+   已改：跨度 > `0x10000` 一律走 `text_sweep.sweep()`。
+
+### 4. 落盘
+
+- `kb/30` §13.3 加核验框（含参数选节表 + GameMode 门控）、§13.5 加范围/调用数
+  更正框并把调用表补到 29 行、新增 **§13.7**（核验结论 + 四条方法学教训）。
+- `evidence/r021_section13_verification.md`：全文（8 节，含负控表）。
+- `HANDOFF_TO_GOAL3T.md` H-014：核验状态改 ✅ + 三处错误追记 +
+  对目标 ③ 的实质影响（MP 节方向反转）。
+- `CONFLICTS.md`：新增 **G-39** + 纪律 #41。
+- `INDEX.md`：新增 C.15。
+
+### 5. 对目标 ③ 的净影响
+
+- **新增（重要）**：**单机（战役/遭遇战，`GameMode` 0/5）读 `[AdvancedCommandBar]`**；
+  联机（LAN/Internet，3/4）才读 `[MultiplayerAdvancedCommandBar]`。
+  ⇒ 改单机命令栏请改 `[AdvancedCommandBar]`；改 MP 节在单机不生效。
+- **新增**：`Read_AdvancedCommandBar` 在 `Read_File` 里有 **2 个调用点**，
+  但每趟只走**其中一支**（按 `GameMode`）；`Read_File` 跑 3 趟
+  ⇒ 同一节每次载入被解析 **3 次**（不是 1 次，也不是 6 次）。
+  假定"只解析一次"的补丁会错。
+- **纠正**：第三个难度键是 `Difficult`；写 `Hard=` 无效。
+- 不变：三趟覆盖（后 INI 赢）规则成立。
+
+### 5b. ★ 本轮结论自身被异族抓出一处方向反转（如实记录）
+
+**我第一版追记把 GameMode→节的映射写反了**：写成「战役/遭遇战读 MP 节」。
+实为 **`GameMode∈{0,5}` → 参数 0 → `AdvancedCommandBar`**。
+
+**错误怎么产生的**：看到 `0x668F71 je 0x668F90` 与 `0x668F76 je 0x668F90`
+两条都跳同一处，就认定"跳过去的那支=MP 节"。但**目标处的参数是
+`xor eax,eax` → `push 0`**，而 F3 的判据是 `test al,al / jne`：
+**参数非 0 才保留 MP 节**（`0x67465E` 先装 MP，`jne` 跳过；`arg==0` 时
+才落到 `0x674666` 改读 `AdvancedCommandBar`）。
+⇒ 我把"跳转"和"装载顺序"两个层面混在一起，**没把目标处参数与判据串起来**。
+
+**为什么本地门禁没拦住**：我当时只断言「`cmp eax,5` 存在」＝
+"有个门控"，**断言太弱**，对方向完全不敏感。已改为按 GameMode 逐个断言
+映射结果（34/34），反向错误现在会红。
+
+**是异族盲验抓到的**（`evidence/r021_crosscheck_blind.md`，独立复现）。
+⇒ 这也是本轮方法学的正面样本：**门禁断言"存在性"不够，要断言"取值"**。
+
+### 6. 禁区自查
+
+- [x] `tasklist` 查无 `gamemd` / `ra2loader` / `game.exe`
+- [x] 读 GOAL-3T 台账尾部（§370 RC4_RECONCILE）+ 确认无未闭合真机时段
+- [x] 未派子代理（本轮为机器门禁自证，异族复核仍欠，已在 STATUS 登记）
+- [x] 本地只读 exe；未启动游戏/loader、未写 `ra2youli`、未跑 trip、未编译
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、根 `tools/`、`.gitignore`
+- [x] 新增件全在 `re_atlas/`（1 工具 + 1 evidence）
+- [x] **`0xA8B238` 只作 `GameMode` 普通全局引用**（禁区内的是 `0xA8B23C`，
+      两者相邻但不同址）；未写任何 RC-4 因果/触发/修复意见
