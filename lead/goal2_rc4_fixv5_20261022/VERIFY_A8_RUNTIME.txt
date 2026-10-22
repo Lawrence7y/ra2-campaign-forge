@@ -1,14 +1,25 @@
-==========================================================================================
-A8 运行级验证：异常路径上 finally 是否真的清扫
-==========================================================================================
-  C1 create_carrier 抛异常 ⇒ 不崩到调用方                 PASS  
-  C1 abort 记录了 carrier_create_failed             PASS  carrier_create_failed: OSError('stub: create_carrier boom')
-  C1 没有启动任何真实进程                                  PASS  launched=0
-  C2 attach 失败 ⇒ abort=DebugActiveProcess_failed PASS  DebugActiveProcess_failed
-  C2 _cleanup 被调用恰好一次                            PASS  cleanup=1
-  C3 正常路径 _cleanup 恰好一次                          PASS  cleanup=1
-  C3 正常路径无 abort                                 PASS  
-  C4 _cleanup 有幂等短路                              PASS  
+============================================================================================
+A8 运行级验证 v2（v1 对目标缺陷零敏感度，本版把异常注入到主体内部）
+============================================================================================
 
-8/8 PASS
+--- 正控：启动后、主体内部抛异常 ---
+  P1 进程确实启动了（证明异常在启动之后）                              PASS  launched=1
+  P1 异常未逃出 one_trip（外壳兜住）                            PASS  
+  P1 abort 记录了 unhandled_exception                   PASS  unhandled_exception: RuntimeError('stub: boom after launch')
+  P1 _cleanup 被调用恰好一次（finally 生效）                    PASS  cleanup=1
+
+--- 负控：把 one_trip 的 try/finally 整个去掉 ---
+  N1 无 finally 时异常逃出 one_trip                        PASS  RuntimeError('stub: boom after launch')
+  N1 无 finally 时 _cleanup 未被调用（证明断言有敏感度）             PASS  cleanup=0
+  N1 门禁对 finally 有敏感度（1 vs 0）                        PASS  有 finally=1 / 无 finally=0
+
+--- 正常路径 ---
+  P2 正常路径 _cleanup 恰好一次                              PASS  cleanup=1
+  P2 正常路径无 abort                                     PASS  
+
+--- 幂等（AST）---
+  P3 _cleanup 有幂等短路（函数体内）                            PASS  
+  P3 幂等标记在清扫动作之前                                     PASS  标记位置 < a8_sweep 位置
+
+11/11 PASS
 EXIT=0

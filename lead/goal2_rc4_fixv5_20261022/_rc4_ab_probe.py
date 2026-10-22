@@ -500,7 +500,7 @@ def one_trip(idx: int, arm: str, dll_name, hold_s: float,
     读 except.txt、copy2 日志）都会**跳过清扫**，留下活的 gamemd。
     现在主体挪进 `_one_trip_body`，清扫放进 finally，且 `_cleanup` 内部幂等。
     """
-    state = {"proc": None, "carrier": None, "rec": None, "cleaned": False}
+    state = {"proc": None, "carrier": None, "rec": None}
     try:
         return _one_trip_body(idx, arm, dll_name, hold_s, debug_timeout,
                               keep_dump, state)
@@ -510,7 +510,7 @@ def one_trip(idx: int, arm: str, dll_name, hold_s: float,
         return rec
     finally:
         rec = state["rec"]
-        if rec is not None and not state["cleaned"]:
+        if rec is not None:
             try:
                 _cleanup(state["proc"], state["carrier"], rec,
                          attached=bool(rec.get("debugger_attached")))
@@ -593,6 +593,8 @@ def _one_trip_body(idx: int, arm: str, dll_name, hold_s: float,
                 break
         if pid is None:
             rec["abort"] = "gamemd_not_found_under_carrier"
+            # ★ loader 句柄必须登记，否则 finally 拿 None 就杀不掉它
+            state["proc"] = proc
             return rec          # 清扫交给外壳 finally
         rec["loader_pid"] = proc.pid
 
@@ -747,6 +749,17 @@ def _cleanup(proc, carrier: Path, rec: dict, attached: bool) -> None:
             rec["pid_kill_winerr"] = ctypes.get_last_error()
 
     own = os.getpid()
+    # ★ carrier 为 None = 建载体之前就早退了，没有目录可扫也没有残留进程；
+    #   此时调 a8_sweep(None) / rm_carrier(None) 会抛 AttributeError，
+    #   被外壳兜住后误报 V_FAIL_CLEANUP_EXCEPTION，把"什么都没发生"记成"清扫失败"。
+    if carrier is None:
+        rec["a8_verdict"] = "PASS"
+        rec["a8_enum_ok"] = None
+        rec["a8_skipped"] = "no_carrier"
+        rec["cleanup_ok"] = True
+        rec["carrier_deleted"] = None
+        rec["leftover_procs"] = game_procs()
+        return
     a8 = a8_sweep(carrier, own)
     rec["a8"] = a8
     # ★★ A4：A8 的 verdict 必须**驱动控制流**，不能只落诊断字段。

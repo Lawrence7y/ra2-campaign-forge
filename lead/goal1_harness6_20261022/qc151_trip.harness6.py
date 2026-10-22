@@ -1694,27 +1694,59 @@ def _h6_wer_parse(text: str) -> dict:
     top: dict = {}
     pairs: list = []
     sig: dict = {}
-    cur = None
+    # ★★ 用「索引 → 名称」两张表，而不是单个 `cur` 游标。
+    #   交错布局 `Sig[0].Name / Sig[1].Name / Sig[0].Value / Sig[1].Value` 下，
+    #   单游标会在第二个 `.Value` 到来时把 cur 覆盖成 None，导致该值被静默丢弃
+    #   （异族核验实测：得 {'B':'1'}，丢掉了 Sig[1] 的值）。
+    #   按索引配对后，名称与值的先后顺序无关。
+    # ★★ 用「索引 → 名称/值」两张表做**两遍**配对，而不是单遍游标。
+    #   单游标在两种布局下都出错（异族核验实测）：
+    #     交错布局 `Sig[0].Name / Sig[1].Name / Sig[0].Value / Sig[1].Value`
+    #       ⇒ 第二个 Value 到来时 cur 已被覆盖成 None，该值被静默丢弃；
+    #      更糟的是错配：实测得 {'Exception Offset': 'c0000005'} ——
+    #      把异常**代码**塞进了偏移字段，比丢值更危险（读数看似有效但是错的）。
+    #     Value 先于 Name ⇒ 单游标完全读不到。
+    #   两遍扫描：第一遍收全部 .Name，第二遍收全部 .Value 再按索引配对，
+    #   与名称/值在文件中的先后顺序完全无关。
+    name_by_idx: dict = {}
+    val_by_idx: dict = {}
     for line in text.splitlines():
         s = line.strip()
         if not s or "=" not in s:
             continue
         key, _, val = s.partition("=")
         key, val = key.strip(), val.strip()
-        if key.startswith("Sig[") and key.endswith(".Name"):
-            cur = val
+        idx = _sig_index(key, ".Name")
+        if idx is not None:
+            name_by_idx[idx] = val
             continue
-        if key.startswith("Sig[") and key.endswith(".Value"):
-            pairs.append((cur, val))
-            if cur is not None and cur not in sig:
-                sig[cur] = val
-            cur = None
+        idx = _sig_index(key, ".Value")
+        if idx is not None:
+            val_by_idx[idx] = val
             continue
         if key.startswith("Sig[") or key.startswith("DynamicSig["):
             continue
         if key not in top:
             top[key] = val
+
+    for idx in sorted(val_by_idx):
+        nm = name_by_idx.get(idx)
+        v = val_by_idx[idx]
+        pairs.append((nm, v))
+        if nm is not None and nm not in sig:
+            sig[nm] = v
     return {"top": top, "sig_pairs": pairs, "sig": sig}
+
+
+def _sig_index(key: str, suffix: str):
+    """`Sig[7].Value` + ".Value" -> 7；不匹配返回 None。"""
+    if not key.startswith("Sig[") or not key.endswith(suffix):
+        return None
+    inner = key[4:len(key) - len(suffix)]
+    if not inner.endswith("]"):
+        return None
+    num = inner[:-1]
+    return int(num) if num.isdigit() else None
 
 
 def _h6_sig_first(sig: dict, names) -> str:

@@ -1,42 +1,45 @@
-==========================================================================================
-异族核验 A4/A7/A8 修复门禁
-==========================================================================================
+============================================================================================
+A4 / A7 / A8 修复门禁 v2（v1 曾因记账断裂假绿，本版强制全量记账）
+============================================================================================
 
 --- A7 ---
-  safe_name 显式拒冒号                    PASS
-  safe_dll_name 存在                   PASS
-  safe_dll_name 要求 .dll              PASS
-  main 用 safe_dll_name               PASS
-  main 不再裸调 safe_name(args.dll)      PASS
+  A7 safe_name 拒冒号（函数体内）                         PASS  safe_name 函数体内有 `if ":" in name:`
+  A7 冒号检查早于 Path(name).name                      PASS  冒号 if L203 < Path if L205
+  A7 safe_dll_name 存在                            PASS  
+  A7 safe_dll_name 要求 .dll                       PASS  
+  A7 main 调 safe_dll_name（非裸 safe_name）          PASS  
 
 --- A4 ---
-  rec 提升 a8_verdict                  PASS
-  rec 提升 cleanup_ok                  PASS
-  main 读 a8_verdict                  PASS
-  main 非 PASS 时置 aborted             PASS
-  main 非 PASS 时 return 3             PASS
-  汇总行含 A8 计数                         PASS
-  退出码依赖 a8                           PASS
+  A4 _cleanup 提升 a8_verdict                      PASS  
+  A4 _cleanup 提升 cleanup_ok                      PASS  
+  A4 main 读 a8_verdict                           PASS  
+  A4 main 置 results_aborted                      PASS  
+  A4 main 有可达 return 3                           PASS  return 3 位于 if 分支内
+  A4 退出码条件用上 a8                                  PASS  
 
 --- A8 ---
-  one_trip 有 finally                 PASS
-  主体已拆到 _one_trip_body               PASS
-  state 登记 rec                       PASS
-  state 登记 proc                      PASS
-  state 登记 carrier                   PASS
-  _cleanup 幂等                        PASS
-  pid 定向击杀存在                         PASS
-  主体内无显式 _cleanup                    PASS
+  A8 one_trip 存在                                 PASS  
+  A8 one_trip 有 finally 块                        PASS  
+  A8 finally 内调 _cleanup                         PASS  
+  A8 主体内无显式 _cleanup                             PASS  
+  A8 主体已拆到 _one_trip_body                        PASS  
+  A8 _cleanup 幂等短路                               PASS  
+  A8 pid 定向击杀存在                                  PASS  
+  A8 carrier 为 None 时不扫（防 AttributeError）        PASS  
+  A8 gamemd_not_found 早退登记 proc                  PASS  
+  自校验：断言全量进 results                              PASS  20 记账 / 20 断言
 
-==========================================================================================
-负控：把修复点改回旧写法，断言必须转红
-==========================================================================================
-  A7 去掉冒号检查                              PASS（转红 1/5）
-  A7 main 退回裸 safe_name                  PASS（转红 2/5）
-  A4 去掉退出码依赖                             PASS（转红 1/7）
-  A4 去掉 aborted 置位                       PASS（转红 1/7）
-  A8 去掉 finally                          PASS（转红 1/8）
-  A8 主体内塞回显式 _cleanup                    PASS（转红 1/8）
+============================================================================================
+负控：改回旧写法后，断言必须转红（负控失效也算 FAIL）
+============================================================================================
+  负控 A7 删掉冒号检查                                   PASS  转红 2/5
+  负控 A7 main 退回裸 safe_name                       PASS  转红 1/5
+  负控 A4 return 3 改成 return 0                     PASS  转红 1/6
+  负控 A4 去掉 results_aborted 置位                    PASS  转红 1/6
+  负控 A4 把 return 3 挪进死函数                         PASS  转红 1/6
+  负控 A8 去掉 finally                               PASS  转红 2/9
+  负控 A8 主体内塞回显式 _cleanup                         PASS  转红 1/9
+  负控 A8 去掉 carrier None 守卫                       PASS  转红 1/9
 
-6/6 PASS
+29/29 PASS
 EXIT=0
