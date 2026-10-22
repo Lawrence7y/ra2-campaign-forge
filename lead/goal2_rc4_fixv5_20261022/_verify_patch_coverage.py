@@ -297,10 +297,12 @@ def main():
     print("    已实测抓不住的变异：P23 / P23b / P27（装载换全局、拆守卫）")
     print("    抓得住的：P24（改 call 目标，调用点数分布变化）")
     print("    ⇒ 本门禁定位为**结构性普查**，不作取值证明。")
-    print("    真正的取值证明需数据流分析（寄存器活跃性 + 分支目标解析），")
-    print("    当前实现未做到。这一条挂账。")
+    print("    ★ 取值证明已由 §394 _verify_ecx_dataflow.py 完成（35/35，")
+    print("      字节级负控 P23/P23b 使 67→66 翻红）。本门禁与其并存不冲突：")
+    print("      本节管「站点分布与形态」，§394 管「ecx 的实际取值来源」。")
+    print("    P27（拆守卫）归 §392 _verify_guard_premise.py。")
     RESULTS.append(("自评 本门禁为结构性普查，非取值证明", True,
-                    "P23/P23b/P27 抓不住，已登记"))
+                    "P23/P23b/P27 抓不住，已登记；取值证明见 §394"))
 
     npass = sum(1 for _, c, _ in RESULTS if c)
     print()
