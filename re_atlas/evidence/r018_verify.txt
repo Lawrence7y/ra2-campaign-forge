@@ -1,0 +1,25 @@
+# R-018 (§11) machine-gate evidence (R-031, 2026-10-22)
+# exe sha256 gate enforced; re-run: python re_atlas/tools/verify_r018_claims.py
+
+R-018 gate: 21/21 PASS
+PASS	G0 sha256	73201cc021497c95
+PASS	S1 prologue 81EC34040000	81 ec 34 04 00 00
+PASS	S2 exactly two ReadString calls	[4262560, 4262651]
+PASS	S3 one GetSection call	
+PASS	S4 one Reset call (0x526B00) first	
+PASS	S5 ID(+0x24) is the GetSection arg	('lea', 'ebp, [ebx + 0x24]') / ('push', 'ebp')
+PASS	S6 this=obj via mov ebx,ecx before any call	
+PASS	S7 Name: lea edi,[ebx+0x64] + push 0x31 + push 0x817854	
+PASS	S8 literal 0x817854 == 'Name'	'Name'
+PASS	S9 Name call arg order (5 pushes before 0x410AA0)	[('push', '0x31'), ('push', 'eax'), ('push', 'edi'), ('push', '0x817854'), ('push', 'ebp')]
+PASS	S10 UIName: lea ebp,[ebx+0x3d] + push 0x20 + push 0x81784c	
+PASS	S11 literal 0x81784c == 'UIName'	'UIName'
+PASS	S12 empty-guard then parse: cmp al,[ebp]; call 0x734E60; mov [ebx+0x60],eax	
+PASS	S13 0x734E60: [0xB1CF74]==0 -> return 0x84583C (sentinel, not NULL)	[(7556704, 'push', 'ebx'), (7556705, 'push', 'esi'), (7556706, 'mov', 'esi, edx'), (7556708, 'mov', 'ebx, ecx'), (755671
+PASS	S14 boundary: Name 0x64+0x31 == 0x95; gap 0x5D..0x60 == 3 (padding)	
+PASS	S15 no field access beyond +0x94 in this function	distinct offsets: ['0x24', '0x3d', '0x60', '0x64']
+PASS	NEG dst-offset-flip(+0x64->+0x68) caught	
+PASS	NEG cap-flip(0x31->0x32) caught	
+PASS	NEG key-literal-redirect(0x817854->UIName) caught	
+PASS	NEG unrelated-site rejects (S10 claim vs first-key bytes)	
+PASS	NEG sha-gate live (orig differs)	
