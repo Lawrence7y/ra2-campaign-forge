@@ -1,0 +1,72 @@
+==============================================================================
+== STEP 0  identity
+==============================================================================
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256[:8] == 73201cc0  73201cc0
+
+==============================================================================
+== STEP 1  original bytes at hook point
+==============================================================================
+  original 6 bytes at 0x724730: 83 ec 0c 55 8b e9
+[PASS] original bytes == 83 ec 0c 55 8b e9 (sub esp,0xc; push ebp; mov ebp,ecx)  83 ec 0c 55 8b e9
+
+==============================================================================
+== STEP 2  cave region is all zero
+==============================================================================
+  cave VA 0xB95700 -> file offset 0x499700
+  first 32 bytes: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+[PASS] cave region is all zero (64 bytes)  zero
+[PASS] .detour section exists  .detour
+[PASS] cave VA lies inside .detour  0xB95700
+
+==============================================================================
+== STEP 3  build cave bytes
+==============================================================================
+  cave length: 21 bytes
+  cave bytes : 85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 27 f0 b8 ff 31 c0 c2 04 00
+  jz rel8 = 12 (0x0C)
+  jmp rel32 = 0xFFB8F027
+  .null at cave+16 = 0xB95710
+[PASS] cave fits in available space (< 2304 bytes)  21
+[PASS] jz rel8 in range  12
+
+==============================================================================
+== STEP 4  build hook bytes (jmp cave)
+==============================================================================
+  jmp rel32 = 0x00470FCB  (target 0xB95700 - (0x724730+5))
+  hook bytes: e9 cb 0f 47 00 90  (6 bytes)
+[PASS] hook length == HOOK_LEN  6
+
+==============================================================================
+== STEP 5  semantic verification via capstone
+==============================================================================
+  disassemble cave:
+    00B95700  85c9                   test ecx, ecx
+    00B95702  740c                   je 0xb95710
+    00B95704  83ec0c                 sub esp, 0xc
+    00B95707  55                     push ebp
+    00B95708  8be9                   mov ebp, ecx
+    00B9570A  56                     push esi
+    00B9570B  e927f0b8ff             jmp 0x724737
+    00B95710  31c0                   xor eax, eax
+    00B95712  c20400                 ret 4
+  disassemble hook:
+    00724730  e9cb0f4700             jmp 0xb95700
+    00724735  90                     nop 
+[PASS] cave[0] is test ecx,ecx  test ecx, ecx
+[PASS] cave[1] is jz/jz short  je 0xb95710
+[PASS] jz target == .null address  0xB95710
+[PASS] last cave insn is ret 4  ret 4
+[PASS] cave has exactly 1 jmp  1
+[PASS] jmp target == RESUME 0x724737  0x724737
+
+==============================================================================
+== STEP 6  patch summary (NOT APPLIED)
+==============================================================================
+  hook  : 0x724730  83 ec 0c 55 8b e9  ->  e9 cb 0f 47 00 90
+  cave  : 0xB95700  85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 27 f0 b8 ff 31 c0 c2 04 00
+  cave len = 21 bytes; .detour has 2304 free bytes at this address
+  ★ 本脚本**不写任何文件**，只生成并校验字节。
+
+checks passed: 14/14
+RESULT: ALL PASS

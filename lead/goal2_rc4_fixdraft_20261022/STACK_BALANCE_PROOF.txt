@@ -1,0 +1,95 @@
+==============================================================================
+== STEP 0  byte sanity
+==============================================================================
+  cave bytes (21): 85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 27 f0 b8 ff 31 c0 c2 04 00
+  hook bytes (6): e9 cb 0f 47 00 90
+[PASS] cave is 21 bytes  21
+[PASS] hook is 6 bytes  6
+
+==============================================================================
+== STEP 1  baseline: ORIGINAL function (no patch)
+==============================================================================
+    push arg            esp=0xFFFFC
+    call 0x724730       esp=0xFFFF8
+    sub esp,0xc         esp=0xFFFEC
+    push ebp            esp=0xFFFE8
+    push esi            esp=0xFFFE4
+    pop esi             esp=0xFFFE8
+    pop ebp             esp=0xFFFEC
+    add esp,0xc         esp=0xFFFF8
+    ret 4 (retaddr)     esp=0xFFFFC
+    ret 4 (arg)         esp=0x100000
+[PASS] baseline returns esp to CALLER_ESP  0x100000 vs 0x100000
+
+==============================================================================
+== STEP 2  patched path A: ecx != 0 (normal)
+==============================================================================
+    push arg            esp=0xFFFFC
+    call 0x724730       esp=0xFFFF8  (retaddr pushed)
+    jmp 0xB95700          esp=0xFFFF8
+    test ecx,ecx (ecx=8910824)
+    je (not taken)
+    sub esp,0xc         esp=0xFFFEC
+    push ebp            esp=0xFFFE8
+    mov ebp,ecx
+    push esi            esp=0xFFFE4
+    jmp 0x724737        esp=0xFFFE4
+    pop esi             esp=0xFFFE8
+    pop ebp             esp=0xFFFEC
+    add esp,0xc         esp=0xFFFF8
+    ret 4 (pop retaddr) esp=0xFFFFC
+    ret 4 (pop arg)     esp=0x100000
+[PASS] path A returns esp to CALLER_ESP  0x100000
+[PASS] path A esp == baseline esp  0x100000 vs 0x100000
+
+==============================================================================
+== STEP 3  patched path B: ecx == 0 (guarded)
+==============================================================================
+    push arg            esp=0xFFFFC
+    call 0x724730       esp=0xFFFF8  (retaddr pushed)
+    jmp 0xB95700          esp=0xFFFF8
+    test ecx,ecx (ecx=0)
+    je 0xB95710       (taken)
+    xor eax,eax
+    ret 4 (pop retaddr) esp=0xFFFFC
+    ret 4 (pop arg)     esp=0x100000
+[PASS] path B returns esp to CALLER_ESP  0x100000
+[PASS] path B esp == baseline esp  0x100000 vs 0x100000
+
+==============================================================================
+== STEP 4  verify cave byte-level semantics with capstone
+==============================================================================
+[PASS] cave decodes to exactly 9 instructions  9
+    [0] 00B95700  test   ecx, ecx             OK
+[PASS] cave[0] == test ecx  test ecx, ecx
+    [1] 00B95702  je     0xb95710             OK
+[PASS] cave[1] == je   je 0xb95710
+    [2] 00B95704  sub    esp, 0xc             OK
+[PASS] cave[2] == sub esp  sub esp, 0xc
+    [3] 00B95707  push   ebp                  OK
+[PASS] cave[3] == push ebp  push ebp
+    [4] 00B95708  mov    ebp, ecx             OK
+[PASS] cave[4] == mov ebp  mov ebp, ecx
+    [5] 00B9570A  push   esi                  OK
+[PASS] cave[5] == push esi  push esi
+    [6] 00B9570B  jmp    0x724737             OK
+[PASS] cave[6] == jmp   jmp 0x724737
+    [7] 00B95710  xor    eax, eax             OK
+[PASS] cave[7] == xor eax  xor eax, eax
+    [8] 00B95712  ret    4                    OK
+[PASS] cave[8] == ret 4  ret 4
+[PASS] last insn is 'ret 4' (not bare ret)  ret 4
+
+==============================================================================
+== STEP 5  verdict
+==============================================================================
+  [已证] 补丁的两条路径栈都平衡：
+         - ecx != 0：cave 执行原 4 条指令后 jmp 回 0x724737，
+                     走原函数同一出口（pop esi/pop ebp/add esp,0xc/ret 4）
+         - ecx == 0：cave 直接 xor eax,eax; ret 4，
+                     因为未执行 sub/push，故不需 pop/add
+         ⇒ 两条路径最终 esp 都 == 调用方 push arg 之前的值
+  [已证] cave 字节语义与设计一致（capstone 逐条核对 9/9）
+
+checks passed: 18/18
+RESULT: ALL PASS

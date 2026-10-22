@@ -1,0 +1,46 @@
+==============================================================================
+== STEP 0  identity + decode
+==============================================================================
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256[:8] == 73201cc0  73201cc0
+decoded 1394120
+[PASS] decoded > 500000  1394120
+
+==============================================================================
+== STEP 1  callee return convention
+==============================================================================
+  0x724730 body 142 insns, ends: ret 4
+[PASS] callee uses a ret-with-immediate (stdcall-ish)  ret 4
+
+==============================================================================
+== STEP 2  every call site: does it consume eax afterwards?
+==============================================================================
+  total call sites: 30
+[PASS] call site count == 30  30
+
+  sites that **read** the return value: 0
+
+  sites that merely **overwrite** eax (return value unused): 9
+    call 0x004A8B75  -> 0x004A8B80 lea eax, [esp + 0xc]
+    call 0x006AC03E  -> 0x006AC049 mov eax, dword ptr [esp + 0x14]
+    call 0x006AC193  -> 0x006AC19E lea eax, [esp + 0x18]
+    call 0x006D059B  -> 0x006D05A6 lea eax, [esp + 8]
+    call 0x006D0634  -> 0x006D0639 mov eax, dword ptr [esi]
+    call 0x006D0664  -> 0x006D0669 mov eax, dword ptr [esi]
+    call 0x006D1308  -> 0x006D1313 lea eax, [esp + 8]
+    call 0x006D13F3  -> 0x006D13FE lea eax, [esp + 8]
+    call 0x006D1744  -> 0x006D174F lea eax, [esp + 4]
+
+  sites that do not touch eax at all: 21
+
+==============================================================================
+== STEP 3  verdict for the guard proposal
+==============================================================================
+  [已证] **全部 30 个调用点都不读取返回值**
+         （9 处是 `lea eax,...` / `mov eax,...` 直接覆盖，21 处根本不碰 eax）
+         ⇒ 在 0x724730 函数头加守卫并提前返回任意值都安全
+         ⇒ 修复方案 A 可行；建议提前返回 eax=0 并 `ret 4`
+
+checks passed: 4/4
+verdict: SAFE_TO_EARLY_RETURN_ANY
+RESULT: ALL PASS
