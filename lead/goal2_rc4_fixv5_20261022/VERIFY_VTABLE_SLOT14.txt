@@ -1,0 +1,38 @@
+================================================================================================
+§389 符号解析：`0x7775D4 call [eax+0x38]` 的 ret 尺寸
+================================================================================================
+
+--- STEP 1  0x7775C1 `mov ecx,[0x887628]` ---
+  0x7775C1 是 mov ecx,[0x887628]                                  PASS  mov ecx, dword ptr [0x887628]
+
+--- STEP 2  0x7775D0 `mov eax,[ecx]` ⇒ eax = vtable ---
+  0x7775D0 是 mov eax,[ecx]（取对象首字段 = vtable）                      PASS  mov eax, dword ptr [ecx]
+  0x7775D4 是 call [eax+0x38]（slot 14）                            PASS  call dword ptr [eax + 0x38]
+
+--- STEP 3  找 [0x887628] 的写入点（对象构造处）---
+  非零写入点 22 处: ['0x0052DC7C', '0x0052E2A8', '0x0052E30F', '0x0052E331', '0x0052E392', '0x0052E3FC', '0x0052E440', '0x0052E84C']
+  找到 [0x887628] 的非零写入点                                           PASS  22 处
+
+--- STEP 4  写入点上游的构造调用 ⇒ vtable ---
+  0x56053E 是 mov [0x887628],eax（已识别的写入点）                         PASS  writes 含 0x0056053E: True
+  0x560533 是 call 0x7b0d90（构造器）                                  PASS  call 0x7b0d90
+  0x7B0D90 内找到 mov [esi],<vtable>（写虚表）                           PASS  0x007B0DA4 -> 0x007F794C
+  ⇒ 运行时 vtable = 0x007F794C
+
+--- STEP 5  vtable[14]（偏移 0x38）---
+  vtable[14] 落在 .text 内（是合法函数指针）                                 PASS  0x007B1780
+
+--- STEP 6  slot 14 目标的 ret 尺寸（实测）---
+  ★ slot 14 目标 = 0x7B1780                                        PASS  0x007B1780
+  ★★ slot 14 的 ret 尺寸 = 4（实测，非假设）                                PASS  ret 4
+  负控 ret 0 假设下 esp = -0x14 ≠ -0x10（本条断言有区分力）                     PASS  ret4 ⇒ -0x10；ret0 ⇒ -0x14
+  slot14 函数体: mov eax, 0x473 | ret 4 | nop 
+
+--- 语义交叉验证：该函数返回 0x473 = WM_IME_NOTIFY ---
+  slot14 函数返回常量 0x473（WM_IME_NOTIFY）                             PASS  0x473
+  0x7775DB 是 cmp edx,eax（拿 msg 与该返回值比较 ⇒ 语义自洽）                   PASS  cmp edx, eax
+
+--- 结论 ---
+  ★★★ 闭合：`call [eax+0x38]` ret=4 ⇒ §388 第七节风险消除                  PASS  vtable=0x007F794C slot14=0x007B1780 ret=4
+
+14/14 PASS

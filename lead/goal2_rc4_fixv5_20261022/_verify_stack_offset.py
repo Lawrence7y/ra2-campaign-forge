@@ -376,9 +376,50 @@ def main():
           "%s %s" % (i_d2.mnemonic, i_d2.op_str))
     off_d4b = va2off(0x7775D4)
     i_d4 = next(md.disasm(b[off_d4b:off_d4b + 8], 0x7775D4))
-    check("0x7775D4 是 call [eax+0x38]（间接虚调用，ret 尺寸静态未知）",
+    check("0x7775D4 是 call [eax+0x38]（间接虚调用，slot 14）",
           i_d4.mnemonic == "call" and "[eax + 0x38]" in i_d4.op_str,
           "%s %s" % (i_d4.mnemonic, i_d4.op_str))
+
+    # ---- ★★★ §389：把「ret 尺寸静态未知」变成**实测值** ----
+    # §388 第七节把「call [eax+0x38] 是 ret 4」列为唯一剩余风险（未测量）。
+    # 现在符号解析出来：ecx=[0x887628] → eax=[ecx]=vtable → slot14。
+    # 写 [0x887628] 的是 0x56053E，其构造器 0x7B0D90 写 vtable=0x7F794C。
+    print()
+    print("--- ★ §389 符号解析 slot 14（闭合 §388 第七节风险）---")
+    GLOBAL_OBJ = 0x887628
+    vt_holder = None
+    o_ctor = va2off(0x7B0D90)
+    for i in md.disasm(b[o_ctor:o_ctor + 0x60], 0x7B0D90):
+        if i.mnemonic == "mov" and i.op_str.startswith("dword ptr [esi],"):
+            vt_holder = int(i.op_str.split(",")[1].strip(), 16)
+            break
+    check("构造器 0x7B0D90 写入 vtable = 0x7F794C",
+          vt_holder == 0x7F794C,
+          "0x%08X" % vt_holder if vt_holder else "未找到")
+    slot_fn = None
+    if vt_holder is not None:
+        o_vt = va2off(vt_holder + 14 * 4)
+        slot_fn = struct.unpack_from("<I", b, o_vt)[0]
+    check("vtable[14] = 0x7B1780", slot_fn == 0x7B1780,
+          "0x%08X" % slot_fn if slot_fn else "N/A")
+    rs_slot = ret_size(slot_fn) if slot_fn else None
+    check("★★ vtable[14] 的 ret 尺寸 = 4（**实测**，不是假设）",
+          rs_slot == 4, "ret %s" % rs_slot)
+    # 语义：该函数返回 0x473 = WM_IME_NOTIFY，而 0x7775DB 正是 cmp msg, eax
+    ret_const = None
+    if slot_fn:
+        o_s = va2off(slot_fn)
+        for i in md.disasm(b[o_s:o_s + 0x10], slot_fn):
+            if i.mnemonic == "mov" and i.op_str.startswith("eax,"):
+                ret_const = int(i.op_str.split(",")[1].strip(), 16)
+                break
+    check("★ vtable[14] 返回常量 0x473（WM_IME_NOTIFY）⇒ 语义自洽",
+          ret_const == 0x473, "0x%X" % ret_const if ret_const is not None else "N/A")
+    i_cmp = next(md.disasm(b[va2off(0x7775DB):][:8], 0x7775DB))
+    check("0x7775DB 是 cmp edx,eax（拿 msg 与该返回值比 ⇒ 证明 eax 是消息号）",
+          i_cmp.mnemonic == "cmp" and i_cmp.op_str == "edx, eax",
+          "%s %s" % (i_cmp.mnemonic, i_cmp.op_str))
+
 
     # ---- ★★ 0x7779B9 栈布局（§385/§386）：前驱 esp 一致，读到 msg ----
     print()
