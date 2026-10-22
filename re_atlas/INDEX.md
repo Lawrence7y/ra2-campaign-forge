@@ -564,31 +564,47 @@ COL.offset 分别 **0/4/8/12**。所有派生类头部都是这个形态。
 复跑：`python re_atlas/tools/dump_rules_fields.py <读取器地址>`。
 **正对照按目标类型分档**（普通 / 外部对象 / 分派器），详见 `kb/30` §18.4。
 
-### C.18 `TypeClass` 继承链与逐类字段（R-028，详见 `kb/30_ini_subsystem.md` §19）
+### C.18 `TypeClass` 继承链与逐类字段（R-028，**R-028 核验后为 644 键**，详见 `kb/30_ini_subsystem.md` §19 / §19.11）
 
 > 这是 `rulesmd.ini` / `artmd.ini` 里 **90% 内容**的落点：
 > `[InfantryTypes]` / `[VehicleTypes]` / `[AircraftTypes]` / `[BuildingTypes]`
-> 里每个名字都指向一个 `TypeClass` 实例。**613 键，0 未定。**
+> 里每个名字都指向一个 `TypeClass` 实例。**644 键（rules 446 / art 198），0 未定。**
+>
+> **⚠ 原报 613 键已作废**：工具把 `fstp [ebp+off]` 当"栈暂存"跳过，而
+> `TechnoTypeClass`(0x712180) / `BuildingTypeClass`(0x45FE5F) 的 `this` 就是 EBP
+> ⇒ 两类的全部 `ReadDouble` 字段丢失（24+7=31）。三条独立证据见 §19.11。
 
 | 层 | 类 | 虚表 | `LoadFromINI`（槽 25） | 尺寸（槽 12） | 键数 | rulesmd | artmd |
 |:---|:---|:---|:---|---:|---:|---:|---:|
 | 1 | `AbstractTypeClass` | `0x007E2000` | `0x00410A60` | 0（桩） | 1 | 1 | 0 |
 | 2 | `ObjectTypeClass` | `0x007EF2D8` | `0x005F92D0` | 0（桩） | 20 | 15 | 5 |
-| 3 | `TechnoTypeClass` | `0x007F4ED8` | `0x00712170` | 0（桩） | **252** | 230 | 22 |
+| 3 | `TechnoTypeClass` | `0x007F4ED8` | `0x00712170` | 0（桩） | **276** | **255** | **21** |
 | 4a | `InfantryTypeClass` | `0x007EB610` | `0x005240A0` | **0x0ED0** | 33 | 28 | 5 |
 | 4b | `UnitTypeClass` | `0x007F6218` | `0x00747620` | **0x0E78** | 27 | 15 | 12 |
 | 4c | `AircraftTypeClass` | `0x007E2868` | `0x0041CC20` | **0x0E10** | 10 | 6 | 4 |
-| 4d | `BuildingTypeClass` | `0x007E4570` | `0x0045FE50` | **0x1798** | **270** | 119 | **151** |
+| 4d | `BuildingTypeClass` | `0x007E4570` | `0x0045FE50` | **0x1798** | **277** | **126** | **151** |
 
-**三条对编译器直接可用的事实**：
+**四条对编译器直接可用的事实**：
 
-1. **逐层委托**：每个派生 loader 的首批指令里都有 `call` 指向上一层 loader
-   （`Building → Techno → Object → Abstract`）。字段偏移的归属由**谁写**决定。
+1. **逐层委托**：每个派生 loader 的前 20 条指令内都有 `call` 指向上一层 loader
+   （实测是第 9–12 条，不是第 1 条——第 1 条是 `0x526B00` 的字段复位小助手）。
+   字段偏移的归属由**谁写**决定。
 2. **同一 loader 同时读两个文件**：`rulesmd`（调用方参数）与
-   `artmd`（全局 `CCINIClass` **`0x887180`**，COL = `.?AVCCINIClass@@`）。
-   **写错文件不报错，只是键永远读默认值。** Building 有 151/270 键属 artmd。
+   `artmd`（全局 `CCINIClass` **`0x887180`**）。**写错文件不报错，只是键永远读默认值。**
+   Building 有 151/277 键属 artmd。
+   - `0x887180` 在 **BSS**，静态读不到 vptr；身份由唯一写入点
+     `0x40E031: mov dword ptr [0x887180], 0x7E1AF4` 证实，
+     `0x7E1AF4` 的 COL = `.?AVCCINIClass@@`。
 3. **两个节名缓冲**：`+0x24` = 类型自身名（两文件通用）；
-   `+0x1F8` = `Image=` 改写后的美术节名（**artmd 专用**，613 行 0 违反）。
+   `+0x1F8` = `Image=` 改写后的美术节名（**artmd 专用**，
+   238 个字面量站点 0 违反；另 1 个站点 INIClass 来自栈参数、不可静态判）。
+4. **★ `ReadDouble` 会静默吃掉 `%`**：`0x5283D0` 命中 `%%` 后
+   `fmul [0x7E3808]`(=**0.01**)。`50%` → `0.5`，不报错、不留痕。
+   已知走 `ReadDouble` 的键 **35 个**。**写 INI 必读。**
+
+**一处归属更正**：`MovementZone`（`+0x05B4`）属 **rulesmd**，非 artmd。
+它的 `ecx` 来自 `[esp+0x388]`，与序言 `mov esi,[esp+0x37C]`（唯一 INIClass 形参）
+**同一栈槽** ⇒ 调用方传入的 rulesmd。
 
 25 个键经 **cdecl 枚举包装器**读取（`PipScale` / `Armor` / `Foundation` /
 `SpeedType` / `BuildCat` / `Owner` …），判据：函数体直接调 `Read*` 且
@@ -599,8 +615,15 @@ Building **269/269**（含 132 个 `lea eax,[esi+0xF5C] / 0x15 项 / 步长 0x44
 **`WaterBound` 与 `SpeedType` 共用 `+0x67C`**（建筑不移动，复用该槽；
 `yes`→5、`no`→-1）—— **跨类按偏移批量改写会打穿这一格。**
 
-复跑：`python re_atlas/tools/dump_typeclass_fields.py`；
-证据 `evidence/typeclass_fields.txt`（688 行）。
+**口径边界（重要）**：**644 不是键总数，是"标量字段"数**。另有 **153 个**键
+读进**内联 `char[]` 缓冲区**（`read → lea reg,[this+off] → rep movsd`），
+如 `TurretAnim`/`TurretAnimDamaged`/`TurretAnimGarrisoned` 落在
+`+0x11B0..+0x11DF`。两张表都未列它们。
+
+复跑：`python re_atlas/tools/dump_typeclass_fields.py`（644 键）；
+独立门禁 `python re_atlas/tools/verify_r028_claims.py`（**49/49，EXIT=0**）；
+证据 `evidence/typeclass_fields_v2.txt`（644 行，**现行**；
+`typeclass_fields.txt` 为旧版已作废）。
 
 ### C.14 全引擎 INI 键索引（R-031 定稿口径）
 

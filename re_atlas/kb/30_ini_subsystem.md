@@ -2439,21 +2439,36 @@ BuildingType   0x0045FE50  → 0x00712170
 而不是由"读这个键的函数属于哪个类"决定。派生类的 loader 会**重复读**
 少量继承字段（见 19.5），那些不是派生类的新字段。
 
-### 19.2 每类字段规模（613 键，0 未定）
+### 19.2 每类字段规模 → **644 键（核验更正，原 613 作废）**
 
-| 类 | 键数 | 写 `rulesmd` | 写 `artmd` | 未定 | 最高偏移 | 枚举包装器 |
+> **⚠ 2026-10-22 核验更正（R-028 核验）**：本条原报 **613 键 / 270+119** 等数字
+> **已作废**。真值 **644 键（rules 446 / art 198）**。根因：工具把
+> `fstp [ebp+off]` 当成「栈暂存默认值」而跳过，但 `TechnoTypeClass` 与
+> `BuildingTypeClass` 的 `this` 恰好是 **EBP** ⇒ 这两个类的全部 `ReadDouble`
+> 字段被静默丢弃（TechnoType 缺 **24**、BuildingType 缺 **7**，共 **31**）。
+> 判据见 §19.11。正文保留旧值以供追溯，**引用请用"真值"列**。
+
+| 类 | 旧键数 | **真值** | 旧 rules | **真 rules** | 旧 art | **真 art** |
 |:---|---:|---:|---:|---:|---:|---:|
-| `AbstractTypeClass` | 1 | 1 | 0 | 0 | `+0x0060` | 0 |
-| `ObjectTypeClass` | 20 | 15 | 5 | 0 | `+0x0240` | 1 |
-| `TechnoTypeClass` | **252** | **230** | 22 | 0 | `+0x0DCC` | 13 |
-| `InfantryTypeClass` | 33 | 28 | 5 | 0 | `+0x0ECB` | 2 |
-| `UnitTypeClass` | 27 | 15 | 12 | 0 | `+0x0E5D` | 2 |
-| `AircraftTypeClass` | 10 | 6 | 4 | 0 | `+0x0E0E` | 0 |
-| `BuildingTypeClass` | **270** | 119 | **151** | 0 | `+0x1780` | 7 |
-| **合计** | **613** | **414** | **199** | **0** | | 25 |
+| `AbstractTypeClass` | 1 | **1** | 1 | **1** | 0 | **0** |
+| `ObjectTypeClass` | 20 | **20** | 15 | **15** | 5 | **5** |
+| `TechnoTypeClass` | 252 | **276** | 230 | **255** | 22 | **21** |
+| `InfantryTypeClass` | 33 | **33** | 28 | **28** | 5 | **5** |
+| `UnitTypeClass` | 27 | **27** | 15 | **15** | 12 | **12** |
+| `AircraftTypeClass` | 10 | **10** | 6 | **6** | 4 | **4** |
+| `BuildingTypeClass` | 270 | **277** | 119 | **126** | 151 | **151** |
+| **合计** | **613** | **644** | **414** | **446** | **199** | **198** |
 
-七层合计 **613 个键**全部有确定偏移；**"未定"为 0**
-（对比 §17 的 `[General]`：279 键 / 268 字段 / 12 个列表型）。
+最高偏移与枚举包装器数不变（`+0x0DCC` / `+0x1780`；25 个）。
+
+两处 rules/art 变化同源，都落在 `MovementZone`（`+0x05B4`）：
+旧表标 **artmd**，真值 **rulesmd**。它的 `ecx` 从 `[esp+0x388]` 装载，
+该栈槽与序言 `mov esi,[esp+0x37C]`（唯一的 INIClass 形参）是**同一槽**
+⇒ 调用方传入的 `rulesmd`。旧表误标源于 `cur_ini` 只写不复位，继承了
+前一条 `mov ecx,0x887180`（`0x716044`）的 ART。见 §19.11。
+
+**31 个新增键里 0 个"未定"**：全部有偏移、宽度、读取器，且每个偏移都被
+**本类构造器**在同一偏移写过默认值（24/24、7/7，见 §19.11 P12）。
 
 ### 19.3 ★ 同一个 loader 同时读两个 INI 文件
 
@@ -2463,17 +2478,22 @@ loader 最大的结构差异。
 四个派生类的 `LoadFromINI` **都**在函数体里出现
 `mov ecx, 0x887180` —— `0x887180` 是 **`CCINIClass` 全局实例 `INI_Art`**：
 
-- 依据一（字节）：其 vtable `0x7E1AF4` 的 COL 解出的类名是 `.?AVCCINIClass@@`；
+- 依据一（字节，**2026-10-22 核验后修正**）：`0x887180` 落在 `.data` 的
+  **BSS 尾部**（`.data` raw 只覆盖 VA `0x812000..0x87E000`），**静态读 4 字节得空**，
+  所以"直读它的 vptr"这条证据**不成立**。真正成立的是**写入点**：
+  `0x0040E031` 处 `mov dword ptr [0x887180], 0x7E1AF4`（全 `.text` 唯一一处），
+  而 `0x7E1AF4` 的 COL 解出的类名是 `.?AVCCINIClass@@`；
 - 依据二（YRpp）：`CCINIClass.h` 静态成员 `INI_Art{0x887180}`；
 - 依据三（本文 §0）：该结论在 R-015 已双通道核验。
 
 而函数的 `this`（TC）之外的另一个 INIClass 来自**调用方压栈的参数**
-（`mov ebx,[esp+0x148]` 之类），那是 `rulesmd.ini`。
+（`mov esi,[esp+0x37C]` 之类），那是 `rulesmd.ini`。
 
 ⇒ **同一个 `HTNK` 节，其 `Strength` 必须写进 `rulesmd.ini`，
 其 `TurretAnimX` 必须写进 `artmd.ini`。** 写错文件时引擎**不会报错**，
 只是那个键永远读到默认值。这正是 `BuildingTypeClass` 里
 **151/270 个键属于 artmd** 的原因 —— 建筑的动画/帧偏移几乎全在美术文件里。
+（核验后分母为 **277**，artmd 侧仍为 **151**，见 §19.2。）
 
 工具输出的 `INI` 列即此归属，逐行可查。
 
@@ -2576,6 +2596,119 @@ lea  eax, [esi + 0xF5C] ; mov ecx, 0x15 ; mov [eax],edi ; ... ; add eax,0x44
 | A-40 | `SuperWeaponTypeClass` / `WeaponTypeClass` / `WarheadTypeClass` / `BulletTypeClass` / `AnimTypeClass` / `OverlayTypeClass` / `TerrainTypeClass` / `SmudgeTypeClass` / `VoxelAnimTypeClass` 等**其余 15 个 TypeClass** 尚未接入本工具 |
 | A-41 | `BuildingTypeClass` 的 132 个动画字段已定位到 `+0x44` 步长的结构，但该**子结构的字段名表**未解 |
 | A-42 | 枚举包装器的 25 个键其**枚举值表**（字符串 → 整数）未解，只解出落点偏移 |
+
+### 19.11 R-028 核验（2026-10-22）—— 三条推翻 + 一条新增事实
+
+核验方式：**另写一个解析器**（`tools/verify_r028_claims.py`，锚定"读者调用点"，
+不复用原工具的 `pending` 状态机），两边逐行对账；再以异族盲验独立复核。
+门禁 **49/49 PASS、EXIT=0、两次运行逐字节相同**。
+
+#### (a) 推翻：这两个类的 `ReadDouble` 字段整批丢失（31 条）
+
+原工具 `dump_typeclass_fields.py` 的 `fstp` 分支有这条规则：
+
+```python
+if op2.mem.base in (X86_REG_ESP, X86_REG_EBP):
+    continue          # staging the default argument, not a field
+```
+
+把 **EBP** 和 ESP 一起当成"栈暂存"。但 `this_register()` 对这两个类解出的
+对象寄存器**就是 EBP**：
+
+| 类 | `this` | `mov <reg>,ecx` 地址 |
+|:---|:---|:---|
+| `TechnoTypeClass` | **ebp** | `0x712180` |
+| `BuildingTypeClass` | **ebp** | `0x45FE5F` |
+
+⇒ 两个类里所有 `fstp [ebp+off]` 字段写全部被丢弃。
+
+| 类 | 旧 | 真 | 丢失 |
+|:---|---:|---:|---:|
+| `TechnoTypeClass` | 252 | **276** | **24** |
+| `BuildingTypeClass` | 270 | **277** | **7** |
+
+**三条独立证据**：
+
+1. **对账**：两个实现之间 `missing=0`（旧表有的新表全有），
+   `extra=31`，且 **31/31 全是 `ReadDouble`**（P11a/P11b）。
+2. **构造器交叉**：这 31 个偏移，**每一个**都被本类构造器在同一偏移写过
+   默认值（TechnoType 24/24、BuildingType 7/7，P12）。构造器与 loader 是
+   不同函数、不同调用点，一致不可能是同一次解析错误。
+3. **机制复现**：模拟"跳过 `fstp [ebp+off]`"后，本门禁的计数**精确落回
+   252 / 270**（N4）。这是把缺陷归因到原因，而不是猜。
+
+**边界**：`TechnoTypeClass` 另有两处 `fstp [ebp+off]`（`+0x360` `0x7160F6`、
+`+0x368` `0x71611D`）是 `fild/fmul/fadd` 的**派生计算值**，不是 INI 键，不计入 31。
+
+#### (b) 推翻：`MovementZone` 属 **rulesmd**，不是 artmd
+
+`+0x05B4`，唯一调用点 `0x716079`，`ecx` 从 `[esp+0x388]` 装载。
+该栈槽与序言 `mov esi,[esp+0x37C]`（唯一 INIClass 形参）**是同一槽**：
+
+```
+0x712179  mov esi,[esp+0x37C]   ; esp=E-888 -> E+4 = arg0  (rulesmd)
+0x716071  mov ecx,[esp+0x388]   ; esp=E-900 -> E+4 = arg0  (同一个)
+0x716079  call 0x474E40         ; WRAP，枚举映射
+```
+
+旧表标 artmd，是 `cur_ini` **只写不复位**：它继承了 12 条指令前
+`0x716044 mov ecx,0x887180`（ART）的状态。修正后 `cur_ini` 遇
+`mov ecx,[mem]` / `mov ecx,<其它立即数>` 一律复位为 RULES。
+
+#### (c) 推翻：`0x887180` 的"直读 vptr"证据不成立（结论不变）
+
+`0x887180` 在 BSS，静态读 4 字节得空。成立的证据是**唯一写入点**
+`0x40E031: mov dword ptr [0x887180], 0x7E1AF4`，以及 `0x7E1AF4` 的 COL 类名
+`.?AVCCINIClass@@`。⇒ `INI_Art` 结论保留，**依据改写**。
+
+#### (d) 新增事实：`ReadDouble` 会静默吃掉 `%`（★ 写 INI 必读）
+
+`ReadDouble`（`0x5283D0`）读完字符串后会：
+
+```
+0x528564  push 0x2525             ; "%%"
+0x52856E  call 0x7CAF30           ; strstr
+0x528578  je   0x528588           ; 没找到 % -> 原值
+0x52857E  fmul qword ptr [0x7E3808]   ; = 0.01
+```
+
+`0x7E3808` 的 8 字节是 `7b14ae47e17a843f` = **0.01**（已实测解出）。
+
+⇒ **任何走 `ReadDouble` 的键，写成 `50%` 会被静默读成 `0.5`。**
+这不是格式错误、不报错、不留痕。对 ③ 的意义：战役编译器生成 rulesmd 时
+若沿用人写的百分比写法，一整类数值键会**悄悄差 100 倍**。
+
+已知走 `ReadDouble` 的键共 **35 个**（31 个本轮新增 + 4 个旧表已有的
+`LightIntensity` / `LightRedTint` / `LightGreenTint` / `LightBlueTint`），
+完整清单见 `evidence/typeclass_fields_v2.txt` 的 `读者` 列（`ReadDouble`）。
+
+#### (e) 广度和诚实边界
+
+- 644 行两实现**逐行一致**（键名 / 偏移 / 宽度 / INI 归属四列全等），
+  唯一差异是旧表的上述两处，修正后归零。
+- `+0x1F8` 单向不变量复核：**238 个字面量 INIClass 站点 0 违反**；
+  另有 **1 个**站点的 INIClass 来自栈参数、静态不可判（`TurretAnimGarrisoned`
+  `0x464553`），已如实标注为 unresolved 而不计入断言。
+- **口径边界**：两张表都只收"键 → 标量字段"。另有 **153 个**键读进
+  **内联 `char[]` 缓冲区**（`read -> lea reg,[this+off] -> rep movsd`），
+  如 `TurretAnim` / `TurretAnimDamaged` / `TurretAnimGarrisoned`
+  落在 `+0x11B0..+0x11DF`。这些是**真键真偏移**，但不在"标量字段"口径内，
+  两张表都未列 ⇒ **644 不是键总数，是标量字段数**（P11d）。
+- `SuperWeapon`（`+0x16F0`）仍显示"默认缺失"：它的默认值取自字段自身
+  （`mov edx,[ebp+0x16F0]` 紧邻 `push`），是工具的位置式取默认值口径所致，
+  不是新事实。
+
+#### (f) 工具与证据
+
+| 件 | sha256（前 16） |
+|:---|:---|
+| `tools/verify_r028_claims.py` | `5fd1d9e1d0d9c377` |
+| `tools/dump_typeclass_fields.py`（已修） | `03135c34a02d40af` |
+| `evidence/typeclass_fields_v2.txt`（644 行） | `065ef20c1f458a79` |
+
+复跑：`python re_atlas/tools/verify_r028_claims.py`（EXIT=0，49/49）
+`python re_atlas/tools/dump_typeclass_fields.py`（EXIT=0，`小结` 七行全"全部通过"，
+仅 BuildingType 的 `SuperWeapon` 一行按上述口径标"默认缺失"）
 
 ---
 
@@ -2682,11 +2815,12 @@ G-1（`TeamTypeClass` 288→**248**）、G-2（`AITriggerTypeClass` 256→**272*
 | R-018 / R-019 | 键→字段、全引擎键索引 | 🟡 **进行中（R-031）**：§11 机器门禁 21/21；GLM 异族盲验在飞；§12.3「% 键只有一处」已本地推翻（见 §12.2/12.3 补注、G-37） |
 | R-021 / R-022 / R-023 | RulesClass 节表、651 键清单、字段布局+镜像全局 | ⏳ **未核验**（H-014/015/016） |
 | R-024…R-027 | [AV]、[General] 268、其余 10 小节 | ⏳ **未核验**（H-017/018） |
-| R-028 | TypeClass 613 键 + 两文件归属 | ⏳ **未核验**（H-019；本地字节 + 构造器链双证据线自洽，未送异族） |
+| R-028 | TypeClass 613 键 + 两文件归属 | ✅ **已核验（R-028 核验）**：独立解析器门禁 **49/49**、EXIT=0；**推翻 3 条**（613→**644** 键、`MovementZone`→rulesmd、`INI_Art` 依据改写入点）+ 新增 `%` 语义。见 §19.2 / §19.11 |
 
-⇒ **核验欠账 = R-018…R-028 共 10 个结论轮 / 8 条 HANDOFF**（H-012…H-019；
-R-017 已于 R-030 闭，R-020 是核验轮无新结论）。
-DeepSeek 通道冷却时改千问/GLM（§3 P0）。这是本支柱**唯一系统性缺口**。
+⇒ **核验欠账 = R-018 部分 + R-021…R-027**（H-014/015/016/017/018）。
+R-017 于 R-030 闭，**R-028 于本轮闭**（H-019），R-020 是核验轮无新结论。
+DeepSeek/千问两个既定通道本轮均报 `provider-not-found`，
+异族复核改走可用代理完成（覆盖继承链/`INI_Art`/对象寄存器/7 个键偏移/构造器对比）。
 
 ### 20.4 证据与工具清点
 

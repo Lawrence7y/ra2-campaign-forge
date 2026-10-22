@@ -397,13 +397,24 @@ def recover(entry, hi):
                     continue
             # `mov ecx, imm` selecting the INIClass -- ART when the immediate is
             # the global object address. `mov ecx, <reg>` propagates RULES/ART
-            # from that register.
+            # from that register. A `mov ecx, [esp/ebp+...]` is the CALLER'S
+            # INIClass (rulesmd), and it must RESET the state: leaving the
+            # previous `cur_ini` standing made MovementZone inherit "ART" from
+            # the unrelated `mov ecx,0x887180` at 0x716044, when its actual
+            # INIClass is loaded from [esp+0x388] -- the same stack slot as the
+            # prologue's `mov esi,[esp+0x37c]`, i.e. arg0, the rules file.
             if d.type == capstone.x86.X86_OP_REG and insn.reg_name(d.reg) == "ecx":
                 if s.type == capstone.x86.X86_OP_IMM and (s.imm & 0xFFFFFFFF) == INI_ART:
                     cur_ini = "ART"
                     continue
                 if s.type == capstone.x86.X86_OP_REG and s.reg in ini_regs:
                     cur_ini = ini_regs[s.reg]
+                    continue
+                if s.type == capstone.x86.X86_OP_MEM:
+                    cur_ini = "RULES"
+                    continue
+                if s.type == capstone.x86.X86_OP_IMM:
+                    cur_ini = "RULES"     # some other immediate object
                     continue
             continue
 
@@ -524,7 +535,15 @@ def recover(entry, hi):
             for op2 in insn.operands:
                 if op2.type != capstone.x86.X86_OP_MEM:
                     continue
-                if op2.mem.base in (capstone.x86.X86_REG_ESP, capstone.x86.X86_REG_EBP):
+                # `fstp [esp+N]` stages the default argument for the next call.
+                # EBP is NOT in this exclusion: TechnoTypeClass and
+                # BuildingTypeClass keep `this` in EBP, so `fstp [ebp+off]` IS
+                # the field store and skipping it silently dropped 24 + 7
+                # ReadDouble fields (verified: every one of them is written by
+                # its own class ctor at the same offset). ESP can never be the
+                # object register here -- none of the seven loaders does
+                # `mov esp, ecx`.
+                if op2.mem.base == capstone.x86.X86_REG_ESP:
                     continue          # staging the default argument, not a field
                 if op2.mem.base == this and op2.mem.index == 0 \
                         and op2.mem.disp not in SECNAME_OFF:

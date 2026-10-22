@@ -873,13 +873,102 @@ R-022 公布的「306 个字面量键」**作废**，正确值是 **651**。两�
 
 ### 证据
 
-- `kb/30` §19（含继承链、两文件分栏、构造器链交叉核对）
-- `evidence/typeclass_fields.txt`（688 行，613 键，逐行标 INI）
+- `kb/30` §19（含继承链、两文件分栏、构造器链交叉核对）与 §19.11（核验）
+- `evidence/typeclass_fields.txt`（**旧版，已被 v2 取代**）
+- `evidence/typeclass_fields_v2.txt`（**现行**，644 行，逐行标 INI）
 - `tools/dump_typeclass_fields.py`（EXIT=0，可复跑）
+- `tools/verify_r028_claims.py`（独立门禁，49/49，EXIT=0）
+
+---
+
+## H-019 核验回填 · 2026-10-22 · **三条推翻（两条 ★ 写 INI 必读）+ 一条新增事实**
+
+**核验方式**：另写独立解析器（锚定读者调用点，不复用原工具的 `pending`
+状态机）逐行对账 → 49/49 门禁 → 异族盲验独立复核（盲验对 Q4 四个键的
+偏移与"存储指令是 `fstp` 不是 `mov`"与本线完全一致）。
+
+### ★ 数字全面更正（**引用请改用这一组**）
+
+| 类 | 旧 | **真** |
+|:---|---:|---:|
+| `TechnoTypeClass` | 252 | **276** |
+| `BuildingTypeClass` | 270 | **277** |
+| **七层合计** | 613（rules 414 / art 199） | **644（rules 446 / art 198）** |
+
+**根因**：工具把 `fstp [ebp+off]` 当作"栈暂存默认值"跳过，而
+`TechnoTypeClass`（`mov ebp,ecx` @`0x712180`）与 `BuildingTypeClass`
+（@`0x45FE5F`）的 `this` **恰好就是 EBP** ⇒ 这两个类全部 `ReadDouble`
+字段被静默丢弃（24 + 7 = **31**）。
+
+三条独立证据：① 两实现 `missing=0 / extra=31`，且 **31/31 全是 ReadDouble**；
+② 这 31 个偏移**每一个**都被本类构造器在同一偏移写过默认值（24/24、7/7）；
+③ 模拟"跳过 `fstp [ebp+off]`"后计数**精确落回 252 / 270**。
+
+**31 个新增键对 ③ 直接可用**（完整见 v2 的 `ReadDouble` 行）：
+`Weight +0x370`、`PhysicalSize +0x378`、`Size +0x380`、`SizeLimit +0x388`、
+`DeployTime +0x3C8`、`PitchAngle +0x3B0`、`RollAngle +0x3A0`、
+`InfantryCostBonus +0x16D0` … `DefensesCostBonus +0x16E0`（五个连续 dword）、
+`ChargedAnimTime +0x16E8`、`GateCloseDelay +0xE28`。
+
+### ★ 推翻 2：`MovementZone` 属 **rulesmd**，不是 artmd
+
+`+0x05B4`，唯一调用点 `0x716079`。它的 `ecx` 来自 `[esp+0x388]`，
+该栈槽与序言 `mov esi,[esp+0x37C]`（唯一 INIClass 形参）**是同一槽**
+（两者在不同 esp 基线下都指向 `entry+4`）⇒ 调用方传入的 `rulesmd`。
+旧表误标 artmd 源于 `cur_ini` 只写不复位，继承了 12 条指令前
+`0x716044 mov ecx,0x887180` 的状态。
+⇒ **写在 artmd 里的 `MovementZone=` 引擎不读，写了也不报错。**
+
+### ★ 推翻 3：`0x887180` 的"直读 vptr"证据不成立（结论不变）
+
+它在 **BSS**（`.data` raw 只到 VA `0x87E000`），静态读 4 字节得空。
+成立的证据是**唯一写入点** `0x40E031: mov dword ptr [0x887180], 0x7E1AF4`，
+及 `0x7E1AF4` 的 COL 类名 `.?AVCCINIClass@@`。`INI_Art` 结论保留、依据改写。
+
+### ★★ 新增事实（★ 写 INI 必读）：`ReadDouble` 静默吃掉 `%`
+
+`ReadDouble`（`0x5283D0`）读完值后：`push 0x2525`（`"%%"`）→
+`call 0x7CAF30`（strstr）→ 命中则 `fmul qword ptr [0x7E3808]`。
+`0x7E3808` 实测 8 字节 `7b14ae47e17a843f` = **0.01**（已解出）。
+
+⇒ **走 `ReadDouble` 的键写成 `50%` 会被静默读成 `0.5`，不报错、不留痕。**
+已知走 `ReadDouble` 的键 **35 个**（31 新增 + `LightIntensity` /
+`LightRedTint` / `LightGreenTint` / `LightBlueTint`）。
+战役编译器若沿用人写的百分比写法，**一整类数值键会悄悄差 100 倍**。
+建议进 `INI_WRITE_RULES`。
+
+### 影响目标
+
+- **③（安全改动能力 / 战役编译器）**：31 个新增可用字段 + `MovementZone`
+  归属纠正 + `%` 语义警告 —— 本条最直接的价值。
+- **②**：`Weight` / `Size` / `SizeLimit` / `DeployTime` 等此前不在旧表里的键，
+  若你方曾按旧表判定"这个键引擎不读"，需按 v2 重判。
+
+### 诚实边界（**请看**）
+
+- **644 不是键总数，是"标量字段"数**。另有 **153 个**键读进**内联
+  `char[]` 缓冲区**（`read → lea reg,[this+off] → rep movsd`），如
+  `TurretAnim` / `TurretAnimDamaged` / `TurretAnimGarrisoned`
+  落在 `+0x11B0..+0x11DF`。两张表都未列它们。
+- `+0x1F8` 单向不变量：**238 个字面量站点 0 违反**；另 **1 个**站点
+  （`TurretAnimGarrisoned` `0x464553`）INIClass 来自栈参数、静态不可判，
+  已如实标 unresolved，不计入断言。
+- `SuperWeapon +0x16F0` 的"默认缺失"是工具取默认值的口径所致，非新事实。
+- 异族盲验覆盖：继承链 / `INI_Art` / 对象寄存器 / 4+3 个键的偏移 /
+  构造器对比；**未**逐条复核全部 644 行。
+
+### 核验状态
+
+**已核验**（本线独立解析器 49/49、EXIT=0、两次运行逐字节相同；
+异族盲验关键点独立一致）。
+件 sha256 前 16：`verify_r028_claims.py` `5fd1d9e1d0d9c377` /
+`dump_typeclass_fields.py` `03135c34a02d40af` /
+`typeclass_fields_v2.txt` `065ef20c1f458a79`。
 
 ### 未核验
 
-本地字节自洽 + 构造器链交叉，**未做异族复核**。
+`%` 语义：本线已独立实测常量与指令序列，但**未纳入机器门禁**
+（门禁不覆盖运行期语义），异族也未专门复核这一条。
 
 ---
 
