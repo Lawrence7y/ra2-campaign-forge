@@ -32,4 +32,13 @@
   ★★ 故崩溃时 ecx == 0 ⇒ v5 的 `test ecx,ecx / je null` **会命中**         PASS  前提成立，补丁有效
   0x724580 的调用点 ecx 同样取自 [0x887368]（判据可复用、非特例）                     PASS  ['mov ecx, dword ptr [0x887368]', 'mov ecx, dword ptr [0x887368]']
 
-12/12 PASS
+--- STEP 6  0x724730 全部 30 个调用者的 ecx 定性 ---
+  0x724730 的调用者总数为 30                                              PASS  30 处
+  ★ 所有 30 个调用点前都能找到 mov ecx,[0x887368]                             PASS  30/30
+    0x004A8B75（属 0x4A8840）: load=True cmp=True je=True
+    0x00640427（属 0x6403A0）: load=True cmp=True je=True
+  ★ 0x4A8B75 前有 ecx=[0x887368] + cmp + je（函数自带守卫）                  PASS  (True, True, True)
+  ★ 0x640427 前有 ecx=[0x887368] + cmp + je（函数自带守卫）                  PASS  (True, True, True)
+  ★★ 故 30 个调用路径在 ecx==0 时**全部**被守卫拦截 ⇒ 补丁覆盖完整                      PASS  28 直接 + 2 前置守卫
+
+17/17 PASS

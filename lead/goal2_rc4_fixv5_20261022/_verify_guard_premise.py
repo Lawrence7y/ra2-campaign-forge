@@ -171,6 +171,91 @@ def main():
           ok_580, "%s" % [("%s %s" % (s.mnemonic, s.op_str)) if s else "None"
                           for s in src_580])
 
+    # ---------- STEP 6: 全量 30 个调用者普查（§393）----------
+    # ★ 上面只看了崩溃链所在的 0x654320。但 0x724730 全二进制有 30 个调用者，
+    #   若其中有站点的 ecx 非 0，v5 守卫在该路径上就不命中 —— 补丁覆盖不全。
+    #   本节把 30 个站点全部定性。
+    print()
+    print("--- STEP 6  0x724730 全部 30 个调用者的 ecx 定性 ---")
+    text_va = min(v for v, vs_, ra_, rs_ in secs) + ib
+    text_end = text_va + 0x3E0000
+    all_callers = []
+    pc3 = text_va
+    while pc3 < text_end:
+        o3 = va2off(pc3)
+        if o3 is None:
+            break
+        ch3 = min(0x1000, text_end - pc3)
+        try:
+            ins3 = list(md.disasm(b[o3:o3 + ch3], pc3))
+        except Exception:
+            pc3 += 1
+            continue
+        if not ins3:
+            pc3 += 1
+            continue
+        for i in ins3:
+            if i.mnemonic == "call" and i.op_str == "0x724730":
+                all_callers.append(i.address)
+        pc3 = ins3[-1].address + ins3[-1].size
+
+    def has_zero_guard(call_va, back=0xA0):
+        """调用点前是否有 `mov ecx,[0x887368]` 的装载形态。
+
+        ★★★ 回溯起点必须是**指令边界**。第一版直接写 `lo = call_va - back`，
+          结果 0x6D1541-0xA0 = 0x6D14A1 落在指令中段，capstone 解码出 **0 条**，
+          于是误报「该站点没有装载」。这是 §381/§382 同类错误（把地址偏移
+          当成解码起点）的复发。修法：从 `back` 起**逐步扩大**，
+          取第一个能解出 ≥1 条指令的起点。
+        """
+        for b2 in range(back, back + 0x60):
+            lo = call_va - b2
+            o4 = va2off(lo)
+            if o4 is None:
+                continue
+            seq = [i for i in md.disasm(b[o4:o4 + b2 + 8], lo)
+                   if i.address < call_va]
+            if not seq:
+                continue
+            # ★ 判据不是「解码出 ≥3 条」，而是**解码必须连续走到调用点**。
+            #   第一版用 `len(seq) < 3` 当阈值 ⇒ back=161 时解出 3 条就提前返回，
+            #   而那 3 条远在 0x6D14A0，根本没覆盖到 0x6D153A 的装载。
+            #   正确判据：末条指令的下一条地址 == call_va（说明一路解到调用点）。
+            if seq[-1].address + seq[-1].size != call_va:
+                continue
+            has_load = any(i.mnemonic == "mov" and i.op_str.startswith("ecx,")
+                           and "[0x887368]" in i.op_str for i in seq)
+            has_cmp = any(i.mnemonic == "cmp" and i.op_str.startswith("ecx,")
+                          for i in seq)
+            has_je = any(i.mnemonic == "je" and i.op_str.startswith("0x")
+                         for i in seq)
+            return has_load, has_cmp, has_je
+        return False, False, False
+
+    check("0x724730 的调用者总数为 30", len(all_callers) == 30,
+          "%d 处" % len(all_callers))
+    no_load = []
+    for s in all_callers:
+        ld, cmp_, je_ = has_zero_guard(s)
+        if not ld:
+            no_load.append(s)
+    check("★ 所有 30 个调用点前都能找到 mov ecx,[0x887368]",
+          len(no_load) == 0,
+          "缺 %s" % ["0x%08X" % a for a in no_load] if no_load else "30/30")
+    # 那 2 个「窗口内无装载」的站点，其所在函数自带前置守卫
+    for s, fname in ((0x4A8B75, "0x4A8840"), (0x640427, "0x6403A0")):
+        ld, cmp_, je_ = has_zero_guard(s, back=0xA0)
+        print("    0x%08X（属 %s）: load=%s cmp=%s je=%s" % (s, fname, ld, cmp_, je_))
+    check("★ 0x4A8B75 前有 ecx=[0x887368] + cmp + je（函数自带守卫）",
+          all(has_zero_guard(0x4A8B75)), "%s" % (has_zero_guard(0x4A8B75),))
+    check("★ 0x640427 前有 ecx=[0x887368] + cmp + je（函数自带守卫）",
+          all(has_zero_guard(0x640427)), "%s" % (has_zero_guard(0x640427),))
+    check("★★ 故 30 个调用路径在 ecx==0 时**全部**被守卫拦截 ⇒ 补丁覆盖完整",
+          len(no_load) == 0 and all(has_zero_guard(0x4A8B75))
+          and all(has_zero_guard(0x640427)),
+          "28 直接 + 2 前置守卫")
+
+
     npass = sum(1 for _, c, _ in RESULTS if c)
     print()
     print("%d/%d PASS" % (npass, len(RESULTS)))
