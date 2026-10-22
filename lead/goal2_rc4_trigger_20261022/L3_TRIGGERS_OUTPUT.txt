@@ -1,0 +1,34 @@
+镜像基数 0x00400000；函数头 31172 个
+
+=== P1 直接 call 0x4A8960（不经虚表）===
+  E8 站点 2 处：0x005610EC, 0x0067E7F9
+  [PASS] ★ 0x4A8960 恰 2 处直接 E8 调用  2
+  [PASS] ★ 两处 = 0x5610EC / 0x67E7F9
+
+=== P2 紧邻之前是否 mov ecx, 0x87F7E8（this 直传单例）===
+    站点 0x005610EC: mov ecx,0x87F7E8 命中=True  @0x005610E6
+    站点 0x0067E7F9: mov ecx,0x87F7E8 命中=True  @0x0067E7F4
+  [PASS] ★ 两处都紧邻 `mov ecx, 0x87F7E8` ⇒ this 直接钉死为雷达单例
+
+=== P3 宿主 0x560DCF 的字符串（定性显示模式路径）===
+  命中字符串：'Mode apparently set OK\n', 'VisibleRect: %dx%d\n', 'Deleting AlternateSurface\n', 'Deleting HiddenSurface\n'
+  [PASS] ★ 宿主1 含 Mode/VisibleRect/AlternateSurface ⇒ 显示模式切换路径
+
+=== P4 两宿主的入口状态（如实记 UNRESOLVED，不假装闭合）===
+    宿主1 0x00560DCF 真头=True E8调用者=0 虚表槽=0
+  [PASS] ★ 宿主1 是函数头但 0 直接 E8 调用者 ⇒ 入口未定（间接/tail）
+    宿主2 0x0067E776 真头=True E8调用者=0 虚表槽=0
+  [PASS] ★ 宿主2 是函数头但 0 直接 E8 调用者 ⇒ 入口未定（间接/tail）
+  ⇒ 静态未能定位触发者；但「直接以雷达为 this 调 L3」这一事实独立成立。
+
+=== P5 排除 [0xAC116C]（winonline）三站点 ===
+  [PASS] ★ 0x7853BC = `push 0xAC116C`（把地址当 OUT 参数）
+  附近经 [0x7E15FC]（CoCreateInstance）的间接 call：True
+  [PASS] ★ [0xAC116C] 由 CoCreateInstance 的 OUT 参数填充 ⇒ COM 实例指针，非雷达
+  [PASS] ★ 0x7A57FE 前 `test eax,eax`（对 [0xAC116C] 的 null 守卫）
+  [PASS] ★ [0xAC116C] 的任何 mov 写点都不以 0x87F7E8 为源 ⇒ 不指向雷达  mov 写点 0
+
+=== P6 复核 0x68589C 的 cmp ecx,esi 是否 null 守卫 ===
+  [PASS] ★ 0x685849 `xor esi,esi` 紧邻 0x68584B `cmp ecx,esi` ⇒ esi 此时恒 0，§350「是 null 守卫」成立（我的怀疑被推翻）
+
+★ §351 定案：L3 有 2 处直接以雷达为 this 的 E8 触发点（宿主1=显示模式路径）；winonline 三站点经 COM 指针排除；§350 null 守卫复核成立
