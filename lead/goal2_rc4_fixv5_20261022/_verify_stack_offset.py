@@ -396,6 +396,30 @@ def main():
     check("构造器 0x7B0D90 写入 vtable = 0x7F794C",
           vt_holder == 0x7F794C,
           "0x%08X" % vt_holder if vt_holder else "未找到")
+    # ★★ §390 自审：原断言只验证了「构造器写这个 vtable」，没验证「它是唯一构造器」。
+    #   [0x887628] 有 25 处写入点 ⇒ 必须证明构造入口唯一，否则「运行时 vtable」
+    #   这个说法过强（可能还有第二种对象类型）。
+    n_ctor_calls = 0
+    _pc, _end = 0x401000, 0x401000 + 0x3E0000
+    while _pc < _end:
+        _o = va2off(_pc)
+        if _o is None:
+            break
+        _ch = min(0x1000, _end - _pc)
+        try:
+            _ins = list(md.disasm(b[_o:_o + _ch], _pc))
+        except Exception:
+            _pc += 1
+            continue
+        if not _ins:
+            _pc += 1
+            continue
+        for _i in _ins:
+            if _i.mnemonic == "call" and _i.op_str == "0x7b0d90":
+                n_ctor_calls += 1
+        _pc = _ins[-1].address + _ins[-1].size
+    check("★ 构造入口 0x7B0D90 只有 5 个调用站点（无第二种对象类型）",
+          n_ctor_calls == 5, "%d 处" % n_ctor_calls)
     slot_fn = None
     if vt_holder is not None:
         o_vt = va2off(vt_holder + 14 * 4)

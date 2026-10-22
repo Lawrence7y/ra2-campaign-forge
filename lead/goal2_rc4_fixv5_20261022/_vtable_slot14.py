@@ -167,6 +167,47 @@ def main():
     VT = vt_write[1] if vt_write else None
     print("  ⇒ 运行时 vtable = 0x%08X" % VT if VT else "  ⇒ vtable 未解出")
 
+    # ---------- STEP 4b: 唯一性普查（§390 自审补强）----------
+    # ★ 原先 STEP 4 只验证了 0x56053E 这一条链，就断言「运行时 vtable = 0x7F794C」。
+    #   这是「存在 ⇒ 唯一」的跳跃：[0x887628] 有 25 处写入点（22 非零 + 3 清零）。
+    #   若存在另一个构造器写不同 vtable，结论就过强。
+    #   本节把唯一性变成断言：构造入口只有 1 个函数，且它只写 1 个 vtable。
+    print()
+    print("--- STEP 4b 唯一性普查（[0x887628] 是否只有一种对象类型）---")
+    ctor_calls = []
+    pc2, end2 = text_va, text_va + text_sz
+    while pc2 < end2:
+        o2 = va2off(pc2)
+        if o2 is None:
+            break
+        chunk = min(0x1000, end2 - pc2)
+        try:
+            ins2 = list(md.disasm(b[o2:o2 + chunk], pc2))
+        except Exception:
+            pc2 += 1
+            continue
+        if not ins2:
+            pc2 += 1
+            continue
+        for i in ins2:
+            if i.mnemonic == "call" and i.op_str == "0x7b0d90":
+                ctor_calls.append(i.address)
+        pc2 = ins2[-1].address + ins2[-1].size
+    check("调用构造器 0x7B0D90 的站点只有 5 处（无第二种构造入口）",
+          len(ctor_calls) == 5,
+          "%d 处: %s" % (len(ctor_calls), ["0x%08X" % a for a in ctor_calls]))
+    # 构造器内部写 vtable 的指令必须唯一，且值 = 0x7F794C
+    vt_writes = []
+    o_c2 = va2off(0x7B0D90)
+    for i in md.disasm(b[o_c2:o_c2 + 0x40], 0x7B0D90):
+        if i.mnemonic == "mov" and i.op_str.startswith("dword ptr [esi],"):
+            vt_writes.append(int(i.op_str.split(",")[1].strip(), 16))
+    check("构造器 0x7B0D90 内只有 1 条写 vtable 的指令，值 = 0x7F794C",
+          vt_writes == [0x7F794C], "%s" % ["0x%08X" % v for v in vt_writes])
+    check("★ 故 [0x887628] 的对象类型唯一 ⇒ vtable 恒为 0x7F794C",
+          len(ctor_calls) == 5 and vt_writes == [0x7F794C],
+          "5 个构造点 × 1 个 vtable")
+
     # ---------- STEP 5: vtable[14] ----------
     print()
     print("--- STEP 5  vtable[14]（偏移 0x38）---")
