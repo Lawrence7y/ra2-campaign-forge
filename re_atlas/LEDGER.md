@@ -3108,3 +3108,21 @@ N3（窗口截到 `0x52D1FE` 只得 14 条 ⇒ 边界确实决定结论）。
 - `HANDOFF` H-016 核验回填（含 5 小节）
 - `INDEX` **C.15b**
 - `STATUS` 头部 + 子系统行
+
+### 七、钩子与审计入账（§7.4）
+
+提交 `ca2164e`（9 文件，全部 `re_atlas/`）。钩子报 `scanner_enobufs`（兼容策略放行），
+按 §7.4 **同轮补跑完整审计**：
+
+| 项 | 值 |
+|:---|:---|
+| scanId | `scan-2026-10-22T15-41-50.592Z-9a15511d4b2d` |
+| seal | `sha256:de1e52f3426acf40fe09ecec10a19465d2d57e4f774d00cd6216cc8a35a43234` |
+| findings | **28**（`tools/` 17 / `lead/` 9 / `ra2forge/` 2） |
+| **`re_atlas/` 命中** | **0** |
+| 依赖风险 | 0 个受影响包（`completion=partial`） |
+
+**诚实边界**：`normal` 档 + `dependencyRisk completion=partial`
+⇒ 只能证明"本轮新文件未引入可静态发现的问题"，**不能宣称项目安全**。
+28 条全部落在本线写域之外（`tools/` / `lead/` / `ra2forge/` 均为他线文件），本线零改动、
+零处置权，仅记录。与上一轮（同为 28 条）相比增量 0。
