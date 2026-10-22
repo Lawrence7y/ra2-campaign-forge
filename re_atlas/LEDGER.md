@@ -2396,7 +2396,15 @@ python re_atlas/tools/dump_typeclass_fields.py
 - [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`（§3 事件仅登记不处置）
 - [x] 读 GOAL-3T 台账尾部（§351）：其线在 RC-4 触发点普查（禁区），与本轮零交集；本轮未写任何 RC-4 因果/触发/修复内容
 
-### 5. 下一轮候选
+### 5. 收尾扫描告警处置（§8.5 转发件）
+
+收尾时 Mimosa L2 报 `lead/goal1_boot_fingerprint_20261022/boot_session_fingerprint.py:1568`
+路径穿越。该文件在禁写区且非本线所改（`??` 未跟踪，先于本轮存在）；
+只读复核判**过报**（`fingerprint_id`=sha256 前 16 位十六进制，`name` 全程受约束，
+唯一可变分量是操作者自定的 `--out-dir`）。已按裁决 A+C 写 H-020 转发 GOAL-3T，
+含消警建议。本线 `re_atlas/` 三件 markdown 零告警，commit 623cc24 推送状态不受影响。
+
+### 6. 下一轮候选
 
 P0 核验清欠首批（R-017/R-018 读族+键映射批次，送千问或 GLM 异族复核）；
 或 P1 R1-3 调试字符串命名普查（视通道可用性）。
