@@ -651,7 +651,7 @@ Building **269/269**（含 132 个 `lea eax,[esi+0xF5C] / 0x15 项 / 步长 0x44
 
 ### C.15c 逐 loader 字面量键 651（R-024 核验口径，2026-10-23）
 
-> **核验门禁 `tools/verify_r024_claims.py` 14/14 PASS，EXIT=0**（两趟逐字节一致）。
+> **核验门禁 `tools/verify_r024_claims.py` 15/15 PASS，EXIT=0** + 异族盲验（279/152 独立一致）。
 > 记录件 `evidence/r024_rules_keys_fields_verification.md`；正文 `kb/30` §14。
 
 | loader | 键 | loader | 键 |

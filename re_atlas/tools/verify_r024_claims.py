@@ -277,6 +277,42 @@ def main():
           f"且不含任何键字面量 ⇒ 首个 ret 在这里不会漏键",
           "\n".join(leaked_keys + [f"{n} 无收尾特征" for n in no_shape]))
 
+    # ---- P3b: last-key sensitivity (direct rebuttal of a wrong claim) ----
+    # An independent verifier asserted that stopping at the first ret would lose
+    # the LAST key read of each of these two loaders
+    # (`TalkBubbleTime` / `FallBackCoefficient`). Measured: both keys are read
+    # BEFORE the first ret, and there are ZERO key reads at/after it. So the
+    # claim is wrong and the first-ret bound loses neither. Pinning this here
+    # means a future window/boundary change that really does drop the tail shows
+    # up as a red assertion instead of as a quietly shorter list.
+    last_reads = {}
+    for name, key_want in (("Read_General", "TalkBubbleTime"),
+                           ("Read_AudioVisual", "FallBackCoefficient")):
+        fr = first_rets[name]
+        body = bodies[name]
+        reads = []
+        for idx, addr in enumerate(sorted(body)):
+            insn = body[addr]
+            if insn.mnemonic != "call" or not insn.operands:
+                continue
+            op = insn.operands[0]
+            if op.type != capstone.x86.X86_OP_IMM or (op.imm & 0xFFFFFFFF) not in READER_KEYS:
+                continue
+            s, _va = key_of_call(md, [body[a] for a in sorted(body)], idx,
+                                 READER_KEYS[op.imm & 0xFFFFFFFF], None)
+            if s:
+                reads.append((addr, s))
+        before = [r for r in reads if r[0] < fr]
+        after = [r for r in reads if r[0] >= fr]
+        hit = [a for a, s in before if s == key_want]
+        last_reads[name] = (len(before), len(after), hit)
+    ok3b = (all(v[1] == 0 and v[2] for v in last_reads.values()))
+    check("P3b", ok3b,
+          "★ 实测反驳：`TalkBubbleTime`(0x671E71) 与 `FallBackCoefficient`(0x66B8DB) "
+          "都在**首个 ret 之前**读，首个 ret 之后键读取次数为 0 ⇒ 截断不会漏最后一个键",
+          "\n".join(f"{n}: before={v[0]} at_or_after={v[1]} hit={['0x%X' % a for a in v[2]]}"
+                    for n, v in last_reads.items()))
+
     # ---- P4: total key count == 651, per-loader distribution matches -----
     per, sites = {}, {}
     for entry, name in loaders:
