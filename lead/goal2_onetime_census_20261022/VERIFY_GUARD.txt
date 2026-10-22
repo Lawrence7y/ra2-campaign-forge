@@ -1,0 +1,305 @@
+
+==============================================================================
+0. BINARY IDENTITY
+==============================================================================
+path   : D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+size   : 4825360
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+sha8   : 73201cc0
+[CONFIRMED  ] HASH :: sha256[:8]=73201cc0 (expect 73201cc0)
+
+==============================================================================
+1. PE PARSE
+==============================================================================
+e_lfanew: 0x50 (b'PE\x00\x00')  sections=5  optsz=0xE0  imagebase=0x400000
+  .text    VA=0x00001000 VSize=0x03DF38D RawPtr=0x00001000 RawSize=0x03E0000
+  .rdata   VA=0x003E1000 VSize=0x0030074 RawPtr=0x003E1000 RawSize=0x0031000
+  .data    VA=0x00412000 VSize=0x0367BE4 RawPtr=0x00412000 RawSize=0x006C000
+  .rsrc    VA=0x0077A000 VSize=0x0018128 RawPtr=0x0047E000 RawSize=0x0019000
+  .detour  VA=0x00793000 VSize=0x0002718 RawPtr=0x00497000 RawSize=0x0003000
+asserted .text geometry: OK
+
+function 0x4A8960..0x4A8BE4: 176 instructions
+
+==============================================================================
+2. E1  0x4A8B18 = mov ecx, dword ptr [0x887368]
+==============================================================================
+bytes : 8b 0d 68 73 88 00
+insn  : mov ecx, dword ptr [0x887368]
+[CONFIRMED  ] E1 :: absolute load of ecx from [0x887368]
+
+==============================================================================
+3. E2  0x4A8B35 = cmp ecx, ebx
+==============================================================================
+bytes : 3b cb
+insn  : cmp ecx, ebx
+[CONFIRMED  ] E2 :: cmp ecx, ebx (3B CB)
+
+==============================================================================
+4. E3  0x4A8B35..0x4A8B4E: exactly 4 abs-movs, no flag writer
+==============================================================================
+  004A8B37 891504078a00     mov dword ptr [0x8a0704], edx
+  004A8B3D a308078a00       mov dword ptr [0x8a0708], eax
+  004A8B42 89350c078a00     mov dword ptr [0x8a070c], esi
+  004A8B48 893d10078a00     mov dword ptr [0x8a0710], edi
+  -> store to [0x8A0704] <- edx
+  -> store to [0x8A0708] <- eax
+  -> store to [0x8A070C] <- esi
+  -> store to [0x8A0710] <- edi
+flag writers / branches in window: 0
+[CONFIRMED  ] E3 :: 4 insn, all `mov dword ptr [abs], reg`, 0 flag writers, window ends exactly at 0x4A8B4E
+
+==============================================================================
+5. E4  ebx == 0 at 0x4A8B35
+==============================================================================
+all writes to ebx in the function:
+  004A8985 33db             xor ebx, ebx
+  004A8BDD 5b               pop ebx
+xor ebx,ebx at: 0x4A8985
+ebx writes strictly between 0x4A8985 and 0x4A8B35: 0
+branches before 0x4A8985 (would allow skipping the xor): 0 []
+uses of ebx as the zero constant between xor and guard: 10
+  004A89B0 3bcb             cmp ecx, ebx
+  004A89CD 391d44768800     cmp dword ptr [0x887644], ebx
+  004A89E8 3bf3             cmp esi, ebx
+  004A89FC 891d44768800     mov dword ptr [0x887644], ebx
+  004A8A0C 3bc3             cmp eax, ebx
+  004A8A6E 3bc3             cmp eax, ebx
+[CONFIRMED  ] E4 :: xor ebx,ebx at 0x4A8985 on every path (no branch before it), no other ebx write before the guard, and ebx is reused as the 0 constant 10 times in between -> ebx==0 at 0x4A8B35
+
+==============================================================================
+6. E5  je at 0x4A8B4E targets 0x4A8B9B, past the call at 0x4A8B75
+==============================================================================
+bytes @0x4A8B4E : 74 4b
+insn  : je 0x4a8b9b
+bytes @0x4A8B75 : e8 b6 bb 27 00
+insn  : call 0x724730
+je rel8 = +75 -> target 0x4A8B9B (op_str says 0x4a8b9b)
+call imm = 0x724730
+call end = 0x4A8B7A ; target 0x4A8B9B is beyond it: True
+also skipped: call 0x724580 at 0x4A8B85 -> True
+[CONFIRMED  ] E5 :: je short rel8=+75 lands on 0x4A8B9B, past `call 0x724730`@0x4A8B75 and past `call 0x724580`@0x4A8B85
+
+==============================================================================
+7. E6  0x4A8B30 = `cmp eax, 0x886fac` dead code
+==============================================================================
+instruction covering 0x4A8B30:
+  004A8B2F 8b3dac6f8800     mov edi, dword ptr [0x886fac]  (size 6)
+0x4A8B30 is an instruction boundary: False
+raw bytes at 0x4A8B30 : 3d ac 6f 88 00
+equals `cmp eax,imm32` pattern: True
+`cmp eax,0x886fac` at a real instruction boundary: none
+every cmp in the function (8):
+  004A89B0 3bcb             cmp ecx, ebx
+  004A89CD 391d44768800     cmp dword ptr [0x887644], ebx
+  004A89E8 3bf3             cmp esi, ebx
+  004A8A0C 3bc3             cmp eax, ebx
+  004A8A6E 3bc3             cmp eax, ebx
+  004A8A85 3bf3             cmp esi, ebx
+  004A8AA9 3bc3             cmp eax, ebx
+  004A8B35 3bcb             cmp ecx, ebx
+edi loaded at 0x4A8B2F is live in:
+  004A8B48 893d10078a00     mov dword ptr [0x8a0710], edi
+  004A8B71 897c2420         mov dword ptr [esp + 0x20], edi
+[REFUTED    ] E6 :: 0x4A8B30 is NOT an instruction boundary: bytes 3D AC 6F 88 00 are the ModRM+disp32 tail of `mov edi,[0x886fac]` at 0x4A8B2F. No `cmp eax,0x886fac` exists at any real boundary in L3, and edi is live (stored to 0x8A0710 at 0x4A8B48, pushed at 0x4A8B71). The asserted instruction does not exist, so its 'deadness' is moot.
+
+==============================================================================
+8. CRASH POINT 0x724734 / 0x724737
+==============================================================================
+  00724730 83ec0c           sub esp, 0xc
+  00724734 8be9             mov ebp, ecx
+  00724737 8b8550020000     mov eax, dword ptr [ebp + 0x250]
+[CONFIRMED  ] CRASH :: 0x724734 `mov ebp,ecx`; 0x724737 `mov eax,[ebp+0x250]`; with ecx=0 the faulting address is 0x00000250, and there is no ecx check before it
+
+==============================================================================
+9. CALLER CENSUS for 0x724730
+==============================================================================
+caller = a direct `call rel32` anywhere in .text whose target is exactly 0x724730. Indirect `call [mem]` cannot be resolved statically and is not counted (noted separately).
+
+direct callers: 30
+indirect `call [mem]` instructions in .text (targets unresolvable): 4778
+  -> none of them can be shown to target 0x724730; excluded from the count rather than guessed.
+
+--- LENIENT GUARDED (7) ---
+  call@004A8B75  skipped by je @004A8B4E (flags from `cmp ecx, ebx` @004A8B35)
+  call@006D0619  skipped by je @006D060D (flags from `test eax, eax` @006D060B)
+  call@006D089D  skipped by je @006D0891 (flags from `test eax, eax` @006D088F)
+  call@006D0940  skipped by jne @006D0927 (flags from `test al, al` @006D0925)
+  call@006D1541  skipped by je @006D1535 (flags from `test eax, eax` @006D1533)
+  call@006D1632  skipped by jne @006D161B (flags from `test al, al` @006D1619)
+  call@006D16C2  skipped by je @006D16B6 (flags from `test eax, eax` @006D16B4)
+
+--- LENIENT UNGUARDED (23) ---
+  call@00640427   prev: mov dword ptr [esp + 0x14], edx ; mov dword ptr [esp + 0x18], 8 ; mov dword ptr [esp + 0x1c], eax
+  call@00654413   prev: mov ecx, dword ptr [0x887368] ; mov dword ptr [esp + 0x18], edx ; mov dword ptr [esp + 0x1c], eax
+  call@00654469   prev: mov dword ptr [esp + 0x24], 0x8393a0 ; mov dword ptr [esp + 0x1c], edx ; mov dword ptr [esp + 0x20], eax
+  call@006AC00B   prev: mov dword ptr [esp + 0x30], ebx ; mov dword ptr [esp + 0x28], edx ; mov dword ptr [esp + 0x2c], eax
+  call@006AC03E   prev: mov ecx, dword ptr [0x887368] ; lea eax, [esi + 0x3e8] ; push eax
+  call@006AC0ED   prev: mov dword ptr [esp + 0x30], 0x8275c0 ; mov dword ptr [esp + 0x24], edx ; mov dword ptr [esp + 0x28], eax
+  call@006AC140   prev: mov dword ptr [esp + 0x30], 0x82758c ; mov dword ptr [esp + 0x28], edx ; mov dword ptr [esp + 0x2c], eax
+  call@006AC193   prev: mov dword ptr [esp + 0x30], ebx ; mov dword ptr [esp + 0x24], eax ; mov dword ptr [esp + 0x2c], edx
+  call@006AC1E6   prev: mov dword ptr [esp + 0x30], ebx ; mov dword ptr [esp + 0x24], edx ; mov dword ptr [esp + 0x28], eax
+  call@006D059B   prev: mov dword ptr [esp + 0xc], eax ; mov dword ptr [esp + 0x20], 0x842838 ; mov dword ptr [esp + 0x1c], edx
+  call@006D0634   prev: jl 0x6d05f5 ; mov ecx, dword ptr [0x887368] ; push 0xf0
+  call@006D0664   prev: call dword ptr [edx + 0x34] ; mov ecx, dword ptr [0x887368] ; push 0xf1
+  call@006D08B3   prev: jl 0x6d0888 ; mov ecx, dword ptr [0x887368] ; push 0xf0
+  call@006D09FA   prev: mov ecx, dword ptr [0x887368] ; mov dword ptr [esp + 4], eax ; mov dword ptr [esp + 0x10], edx
+  call@006D1293   prev: mov dword ptr [esp + 0xc], eax ; mov dword ptr [esp + 0x20], 0x8428dc ; mov dword ptr [esp + 0x18], edx
+  call@006D1308   prev: mov dword ptr [esp + 0xc], eax ; mov dword ptr [esp + 0x20], 0x8428d0 ; mov dword ptr [esp + 0x1c], edx
+  call@006D137E   prev: mov dword ptr [esp + 0xc], eax ; mov dword ptr [esp + 0x20], 0x8428c4 ; mov dword ptr [esp + 0x18], edx
+  call@006D13F3   prev: mov dword ptr [esp + 0xc], eax ; mov dword ptr [esp + 0x20], 0x8428b8 ; mov dword ptr [esp + 0x1c], edx
+  call@006D155C   prev: jl 0x6d151d ; mov ecx, dword ptr [0x887368] ; push 0xf0
+  call@006D15CB   prev: mov dword ptr [esp + 4], eax ; mov dword ptr [esp + 0x18], 0x842838 ; mov dword ptr [esp + 0x10], edx
+  call@006D1605   prev: call dword ptr [eax + 0x34] ; mov ecx, dword ptr [0x887368] ; push 0xf1
+  call@006D16DD   prev: jl 0x6d169e ; mov ecx, dword ptr [0x887368] ; push 0xf0
+  call@006D1744   prev: mov dword ptr [esp + 8], eax ; mov dword ptr [esp + 0x1c], 0x842838 ; mov dword ptr [esp + 0x18], edx
+
+--- WINDOW UNRESOLVED (0) ---
+
+--- SENSITIVITY of the 'unguarded' count ---
+  depth  lenient   strict(ecx)  adjacent(cmp/test directly before jcc)
+  6      26          30            30
+  8      24          30            30
+  10     24          30            30
+  12     24          30            30
+  14     23          29            30
+  16     19          27            30
+  20     14          27            30
+  30     13          27            30
+
+NOTE on the claimed '24 unguarded':
+  depth 8..12 (lenient) and depth 14 (adjacent) both give 24. The
+  adjacent reading is the only one that reaches 24 at depth 14, but it
+  is unsound here: it rejects L3 itself (its `cmp ecx,ebx` at 0x4A8B35
+  is separated from `je` at 0x4A8B4E by the four argument stores),
+  i.e. it counts the one genuine guard as unguarded. The 24 is
+  therefore a window artifact, not a property of the call graph.
+
+STRICT guarded (the cmp/test actually tests ecx): 1 ['0x4a8b75']
+STRICT unguarded: 29
+
+what each lenient 'guard' really tests (ecx is the `this`):
+  call@004A8B75  guard `cmp ecx, ebx` @004A8B35  tests ecx: True
+  call@006D0619  guard `test eax, eax` @006D060B  tests ecx: False
+  call@006D089D  guard `test eax, eax` @006D088F  tests ecx: False
+  call@006D0940  guard `test al, al` @006D0925  tests ecx: False
+  call@006D1541  guard `test eax, eax` @006D1533  tests ecx: False
+  call@006D1632  guard `test al, al` @006D1619  tests ecx: False
+  call@006D16C2  guard `test eax, eax` @006D16B4  tests ecx: False
+[CONFIRMED  ] CALLERS :: direct `call rel32` callers of 0x724730 in .text = 30
+[REFUTED    ] UNGUARDED :: '24 unguarded' is reproducible ONLY as a window artifact: it holds at depth 8..12 (lenient) and at depth 14 if the cmp/test is additionally required to sit immediately before the jcc. That adjacent variant is unsound: it rejects L3 itself, whose `cmp ecx,ebx`@0x4A8B35 is separated from `je`@0x4A8B4E by the four argument stores, so it counts the one real guard as unguarded. Under the stated 14-instruction criterion the lenient count is 23. Robust invariant: only 1 of 30 callers test ECX (the register that becomes `this`); 29 do not, so L3 is the only caller that null-guards the singleton.
+
+==============================================================================
+10. REACHABILITY / REBUTTAL SCAN
+==============================================================================
+10a. recursive descent from the function entry 0x4A8960
+  reached 176 instructions (linear listing has 176)
+    004A89B2 je    -> 0x4A8B0E
+    004A89D3 je    -> 0x4A8A02
+    004A89EA je    -> 0x4A89FC
+    004A8A0E je    -> 0x4A8A41
+    004A8A3F jmp   -> 0x4A8A43
+    004A8A70 je    -> 0x4A8A9F
+    004A8A87 je    -> 0x4A8A99
+    004A8AAB je    -> 0x4A8AE3
+    004A8AE1 jmp   -> 0x4A8AE9
+    004A8B4E je    -> 0x4A8B9B
+  reached: 0x4A8B35=True 0x4A8B4E=True 0x4A8B9B=True 0x4A8B75=True
+  edges landing inside the guard block [0x4A8B18,0x4A8B4E): []
+  edges landing exactly on 0x4A8B9B: [(4885326, 'je', 4885403)]
+  ...excluding the guard's own je at 0x4A8B4E: 0
+
+10b. byte-level branch scan of the WHOLE .text (cannot miss a branch)
+     every byte offset whose value is a jcc/jmp opcode is decoded
+     arithmetically; false hits inside immediates are expected and are
+     reported with their bytes so they can be told apart.
+  branch-shaped byte sequences scanned: 224769
+  -> guard block [0x4A8B18,0x4A8B4E) : 0
+  -> guard 0x4A8B35 : 0
+  -> call site 0x4A8B75 : 0
+  -> je target 0x4A8B9B : 1
+     src 0x4A8B4E `je` bytes=74 4b 68 f4 boundary=True
+  -> je itself 0x4A8B4E : 0
+
+0x4A8B9B block: 27 instructions, last is 0x4A8BE1 `ret 4`
+branches inside 0x4A8B9B..0x4A8BE4: 0
+
+instructions 0x4A8B0E..0x4A8B35 (7):
+  004A8B0E b9e8f78700       mov ecx, 0x87f7e8
+  004A8B13 e818322000       call 0x6abd30
+  004A8B18 8b0d68738800     mov ecx, dword ptr [0x887368]
+  004A8B1E 8b15a06f8800     mov edx, dword ptr [0x886fa0]
+  004A8B24 a1a46f8800       mov eax, dword ptr [0x886fa4]
+  004A8B29 8b35a86f8800     mov esi, dword ptr [0x886fa8]
+  004A8B2F 8b3dac6f8800     mov edi, dword ptr [0x886fac]
+writes to ecx strictly after the 0x4A8B18 load and before 0x4A8B35: 0 []
+(the two ecx writes at 0x4A8B0E and 0x4A8B18 are the intended setup: 0x4A8B0E is the `this` for the 0x6ABD30 call, 0x4A8B18 reloads the singleton pointer the guard tests)
+unconditional jmp/ret between 0x4A8B0E and 0x4A8B35: 0
+writes to ecx between 0x4A8B50 and the call: 0
+[CONFIRMED  ] REACH :: 0x4A8B35 is reachable by fallthrough from 0x4A8B0E (target of je 0x4A89B2), recursive descent reaches all 176 instructions with no edge into the guard block; no byte in .text branches to the guard block, the guard, or the call site; 0x4A8B9B has no branch and falls through to `ret 4`; ecx is reloaded only at 0x4A8B18 and not touched again before the call
+
+==============================================================================
+11. REBUTTAL CHECK: could the guard still be ineffective?
+==============================================================================
+R1. is the je encoding a short/conditional jump that can be flipped?
+    bytes at 0x4A8B4E = 74 4b -> `je rel8`. rel8 is +0x4B, target 0x4A8B9B.
+    No short/near mismatch; the encoding is exactly what capstone and
+    the manual arithmetic both decode.
+R2. does the 0x4A8B9B block ever jump back into the call?
+    instructions in 0x4A8B9B..0x4A8BE4: 27, branches: 0
+R3. could ecx be modified on some other path into the guard block?
+    the only entry is fallthrough from 0x4A8B0E (or je 0x4A89B2 ->
+    0x4A8B0E). In 0x4A8B0E..0x4A8B35 the ecx writes are:
+      0x4A8B0E mov ecx, 0x87f7e8
+      0x4A8B18 mov ecx, dword ptr [0x887368]
+    -> 0x4A8B18 is the last ecx write before the guard; nothing else
+       can reach 0x4A8B35 without executing it.
+R4. is 0x4A8B35 on a dead/unreachable block?
+    recursive descent from 0x4A8960 reaches it: True; no branch in the whole .text targets it: True
+R5. does the je path leave the stack unbalanced (so 'skipping' would
+    crash differently)? The four stores at 0x4A8B37..0x4A8B48 are
+    absolute stores (no push); the pushes start at 0x4A8B50, inside
+    the skipped range, and `ret 4` at 0x4A8BE1 is reached on both
+    paths with esp restored by `add esp,0x1c`.
+R6. COULD THE GUARD BE HARMLESS IN PRACTICE?
+    The guard only matters if [0x887368] can be null. Writers of
+    0x887368 found in .text:
+      007777B8 89 35 68 73 88 00 mov dword ptr [0x887368], esi
+      007777C3 89 1d 68 73 88 00 mov dword ptr [0x887368], ebx
+      00777803 89 1d 68 73 88 00 mov dword ptr [0x887368], ebx
+    Two of them store ebx (the zero register) into 0x887368, i.e. the
+    pointer is genuinely zeroed on teardown. So the guard is not
+    vacuous: it fires in a real state, and the crash therefore cannot
+    come from L3.
+[CONFIRMED  ] REBUTTAL :: no rebuttal found: je encoding is a plain short je to 0x4A8B9B, the target block has no branch and returns, the guard block has a single fallthrough entry, 0x4A8B35 is reached by recursive descent, the stack is balanced on both paths, and 0x887368 really is zeroed (two writers store ebx) so the guard is non-vacuous
+
+==============================================================================
+12. INFERENCE
+==============================================================================
+E1..E5 all CONFIRMED: True
+0x724730 reads ecx as `this` at its first instruction (0x724734 mov
+ebp,ecx) and dereferences [ebp+0x250]. L3 guards exactly that ecx
+against 0 and jumps over the call, so ecx==0 cannot reach 0x724734
+through L3.
+Callers that null-guard ecx themselves: 1 (['0x4a8b75'])
+=> the 0x250 access violation must originate in one of the 29 callers that do not test ecx.
+[CONFIRMED  ] INFERENCE :: L3 is a real, reachable guard on the exact ecx consumed by 0x724730; the RC-4 crash cannot arrive via L3
+
+==============================================================================
+SUMMARY
+==============================================================================
+HASH        CONFIRMED   sha256[:8]=73201cc0 (expect 73201cc0)
+E1          CONFIRMED   absolute load of ecx from [0x887368]
+E2          CONFIRMED   cmp ecx, ebx (3B CB)
+E3          CONFIRMED   4 insn, all `mov dword ptr [abs], reg`, 0 flag writers, window ends exactly at 0x4A8B4E
+E4          CONFIRMED   xor ebx,ebx at 0x4A8985 on every path (no branch before it), no other ebx write before the guard, and ebx is reused as the 0 constant 10 times in between -> ebx==0 at 0x4A8B35
+E5          CONFIRMED   je short rel8=+75 lands on 0x4A8B9B, past `call 0x724730`@0x4A8B75 and past `call 0x724580`@0x4A8B85
+E6          REFUTED     0x4A8B30 is NOT an instruction boundary: bytes 3D AC 6F 88 00 are the ModRM+disp32 tail of `mov edi,[0x886fac]` at 0x4A8B2F. No `cmp eax,0x886fac` exists at any real boundary in L3, and edi is live (stored to 0x8A0710 at 0x4A8B48, pushed at 0x4A8B71). The asserted instruction does not exist, so its 'deadness' is moot.
+CRASH       CONFIRMED   0x724734 `mov ebp,ecx`; 0x724737 `mov eax,[ebp+0x250]`; with ecx=0 the faulting address is 0x00000250, and there is no ecx check before it
+CALLERS     CONFIRMED   direct `call rel32` callers of 0x724730 in .text = 30
+UNGUARDED   REFUTED     '24 unguarded' is reproducible ONLY as a window artifact: it holds at depth 8..12 (lenient) and at depth 14 if the cmp/test is additionally required to sit immediately before the jcc. That adjacent variant is unsound: it rejects L3 itself, whose `cmp ecx,ebx`@0x4A8B35 is separated from `je`@0x4A8B4E by the four argument stores, so it counts the one real guard as unguarded. Under the stated 14-instruction criterion the lenient count is 23. Robust invariant: only 1 of 30 callers test ECX (the register that becomes `this`); 29 do not, so L3 is the only caller that null-guards the singleton.
+REACH       CONFIRMED   0x4A8B35 is reachable by fallthrough from 0x4A8B0E (target of je 0x4A89B2), recursive descent reaches all 176 instructions with no edge into the guard block; no byte in .text branches to the guard block, the guard, or the call site; 0x4A8B9B has no branch and falls through to `ret 4`; ecx is reloaded only at 0x4A8B18 and not touched again before the call
+REBUTTAL    CONFIRMED   no rebuttal found: je encoding is a plain short je to 0x4A8B9B, the target block has no branch and returns, the guard block has a single fallthrough entry, 0x4A8B35 is reached by recursive descent, the stack is balanced on both paths, and 0x887368 really is zeroed (two writers store ebx) so the guard is non-vacuous
+INFERENCE   CONFIRMED   L3 is a real, reachable guard on the exact ecx consumed by 0x724730; the RC-4 crash cannot arrive via L3
+
+CONFIRMED=11 REFUTED=2
