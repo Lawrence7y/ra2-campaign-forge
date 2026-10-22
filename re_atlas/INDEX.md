@@ -602,6 +602,31 @@ Building **269/269**（含 132 个 `lea eax,[esi+0xF5C] / 0x15 项 / 步长 0x44
 复跑：`python re_atlas/tools/dump_typeclass_fields.py`；
 证据 `evidence/typeclass_fields.txt`（688 行）。
 
+### C.14 全引擎 INI 键索引（R-031 定稿口径）
+
+| 项 | 值 | 口径 |
+|:--|--:|:--|
+| 读取器调用点 | **2,426** | `E8` 字节扫描 == 指令扫描，逐址零差异 |
+| 键是字面量 | **2,209 站点 / 2,023 键** | ABI 键槽（6 读取器取倒数第 2 push，`GetSection` 取最后 1 push） |
+| 键非字面量 | **217** | 寄存器/缓冲 210 + 空槽 7 |
+| 多读键（≥2 站点） | **137** | |
+| **含 `%` 的字面量键** | **0** | 21 个 `%` 串全是**运行期拼键模板**，不是键 |
+
+**两条编译器规则**：
+
+1. **任何含 `%` 的串都不能当键写进 INI。** 它们是模板
+   （`PowerUp%01dYSort` → 真键 `PowerUp0YSort`…`PowerUp9YSort`）。
+2. **同一个键名可能被多个 loader 各读一遍**（137 个实证多读键），
+   改一处不保证全局生效。
+
+**M1 旧口径（2,305/1,893/164/121）只作"范围内存在字面量 push 的站点数"**，
+M1 在 **340 个站点**上与键槽不一致：91 个键槽是寄存器、5 个空槽、
+**244 个是抓到了节名**（`General` 57 / `Basic` 38 / `MultiPlayer` 21 …）。
+
+复跑：`python re_atlas/tools/r031_authoritative_numbers.py`（17/17 PASS, EXIT=0）；
+证据 `evidence/r031_section12_restatement.md`；正文 `kb/30` §12.7。
+
+
 ---
 ## D. 数据/字符串锚点（claims PART 2–4 摘要）
 

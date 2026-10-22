@@ -1,6 +1,6 @@
 # RE-ATLAS · 进度与覆盖率 (STATUS)
 
-更新：2026-10-22 R-031（P0 清欠第二批在飞：§11 机器门禁 21/21；§12.3 自查翻案——模板键两类定性，GLM 异族盲验运行中）
+更新：2026-10-22 R-031 定稿（§12 键列换成 ABI 键槽口径：2,209 站点/2,023 键/217 非字面量/137 多读；★ **全引擎含 `%` 的字面量键 = 0**，21 个 `%` 串全是模板；撤回 LEDGER §4b 的 ReadDouble「1 vs 68」，那是同报告内规则 A/B 之差）
 
 ## 一句话
 
@@ -39,9 +39,10 @@
 | R0 盘点（索引/种子/冲突） | ✅ 完成 | 本轮 |
 | R1 全局骨架（PE/RTTI/虚表/覆盖率） | ✅ 完成 | 本轮 |
 | R2-1 地图 / 触发器 / 脚本 / TaskForce / TeamClass | 🟢 **派发层 + 类尺寸/前缀布局/对象字段完成** | Action 145 / Team 65 / Event 两级 49 槽全解析；触发器族 8 类**ID+尺寸双命中**；`AbstractClass` 多继承 4 vptr；`TEventClass` 三接口字段 + `Save` 四项；`AbstractTypeClass` 字段边界实测。见 `kb/10_map_triggers.md`、`kb/11_class_layouts.md`、`kb/20_vtable_contract.md`、`kb/21_swizzle_and_object_fields.md`。余：`ScriptType` 大块结构、`+0x28`/`+0x30` 接口对象类名（L-21） |
-| R2-2 INI 与规则加载 | ✅ **结题（R-029）**：核心闭环 + 类型层已解 + §20 总览 | **R-015…028**：单继承布局（**撤回** R-015 的"多继承 + `VectorClass` 基类"）；`INISection`=`0x44`/`INIEntry`=`0x28`/`List<T>`=`0x1C`；**节查找 = CRC32 排序数组+二分，大小写敏感，未命中返哨兵 `0xB7882C`**；**`ReadBool` 只认首字符、`ReadInteger` 尾 `h` 走十六进制**；**`RulesClass` 尺寸 `0x18C0`**（分配点+字段上界+对齐三重吻合），构造器 `0x665650`；**`[MultiplayerDialogSettings]` 27 键字段表**；**载入后 18 字段镜像到独立全局**（`ShortGame`→`0x00A8B262` 50 处）；**全引擎键索引重算 2,426 调用点 / 2,305 键 / 1,893 不同键**（R-019 旧值 478/473/427 **作废**，根因=capstone 单次 `md.disasm` 静默截断，见 G-23）；**`RulesClass` 节表** 31 项 + 载入顺序；**`[General]` 268 标量字段**（279 键，12 个列表型）；**`[AudioVisual]` 151/152**；**其余 10 个小节字段全解**；**逐 loader 键清单 651 键**（R-022 旧值 306 **作废**）；**R-028 新增：`TypeClass` 继承链 7 层、613 键全解、0 未定** —— `AbstractType(1) → ObjectType(20) → TechnoType(252) → {Infantry(33), Unit(27), Aircraft(10), Building(270)}`，尺寸 0xED0/0xE78/0xE10/0x1798；**四个派生 loader 同时读 rulesmd 与 artmd**（`INI_Art`=`0x887180`，COL 解出 `.?AVCCINIClass@@`），Building 有 **151/270 键属 artmd**；25 键走 cdecl 枚举包装器；构造器链独立核对 **269/269 全归因**（含 132 个指针环清零）。见 `kb/30_ini_subsystem.md` §0–§19；**§20 结题总览 + G 系坑点汇总（R-029）**。余（转按需补充，不排新轮）：其余 15 个 TypeClass（A-40）、动画子结构字段名（A-41）、枚举值表（A-42）；**核验欠账 R-018…R-028 共 8 条 HANDOFF 仍属 P0**（§20.3；R-017 已 R-030 闭：
+| R2-2 INI 与规则加载 | ✅ **结题（R-029）**：核心闭环 + 类型层已解 + §20 总览 + **§12.7 键索引定稿（R-031）** | **R-015…028**：单继承布局（**撤回** R-015 的"多继承 + `VectorClass` 基类"）；`INISection`=`0x44`/`INIEntry`=`0x28`/`List<T>`=`0x1C`；**节查找 = CRC32 排序数组+二分，大小写敏感，未命中返哨兵 `0xB7882C`**；**`ReadBool` 只认首字符、`ReadInteger` 尾 `h` 走十六进制**；**`RulesClass` 尺寸 `0x18C0`**（分配点+字段上界+对齐三重吻合），构造器 `0x665650`；**`[MultiplayerDialogSettings]` 27 键字段表**；**载入后 18 字段镜像到独立全局**（`ShortGame`→`0x00A8B262` 50 处）；**全引擎键索引 2,426 调用点**（R-019 旧值 478/473/427 **作废**，根因=capstone 单次 `md.disasm` 静默截断，见 G-23；**键列口径已由 R-031 换成 ABI 键槽：2,209 站点/2,023 键/217 非字面量/137 多读**，M1 旧值 2,305/1,893/164/121 只作"范围内有字面量"计数，见 §12.7）；**★ 含 `%` 的字面量键 = 0**（21 个 `%` 串全是运行期拼键模板，被 M1 误记为键）；**`RulesClass` 节表** 31 项 + 载入顺序；**`[General]` 268 标量字段**（279 键，12 个列表型）；**`[AudioVisual]` 151/152**；**其余 10 个小节字段全解**；**逐 loader 键清单 651 键**（R-022 旧值 306 **作废**）；**R-028 新增：`TypeClass` 继承链 7 层、613 键全解、0 未定** —— `AbstractType(1) → ObjectType(20) → TechnoType(252) → {Infantry(33), Unit(27), Aircraft(10), Building(270)}`，尺寸 0xED0/0xE78/0xE10/0x1798；**四个派生 loader 同时读 rulesmd 与 artmd**（`INI_Art`=`0x887180`，COL 解出 `.?AVCCINIClass@@`），Building 有 **151/270 键属 artmd**；25 键走 cdecl 枚举包装器；构造器链独立核对 **269/269 全归因**（含 132 个指针环清零）。见 `kb/30_ini_subsystem.md` §0–§20；**§20 结题总览 + G 系坑点汇总（R-029）**。余（转按需补充，不排新轮）：其余 15 个 TypeClass（A-40）、动画子结构字段名（A-41）、枚举值表（A-42）；**核验欠账 R-018…R-028 共 8 条 HANDOFF 仍属 P0**（§20.3；R-017 已 R-030 闭：
 异族盲验 18C/0R/1U + 机器门禁 `verify_r017_claims.py` 53/53，
-推翻 `0x100` 子句 ⇒ `Key=0x100` 实为 0，`$100`/`100h` 才是 256） |
+推翻 `0x100` 子句 ⇒ `Key=0x100` 实为 0，`$100`/`100h` 才是 256；**R-018/R-019 已 R-031 闭**：
+异族 GLM 盲验 21C/9R/2U + 键槽双算 17/17，H-013 原地追加已核验） |
 | R2-4 战斗 / 武器 / 弹道 | ⬜ 未开始 | 语料 `weapons_damage_production.md`（449 VA）可作起点 |
 | R2-5 AI 决策 | ⬜ 未开始 | 语料 `house_team_ai_update.md` |
 | R2-6 超级武器 | ⬜ 未开始 | 语料 `superweapon_re.md`（520 VA） |
@@ -91,6 +92,18 @@
 - 未修改 `lead/`、`docs/re/`、`ra2render/`、根 `tools/`。
 - GOAL-3T 台账尾部（§356 RC-4 触发路径定案）：禁区内容，仅做冲突排查读取，零交集。
 - 本轮发现全在 §12 通用索引内，**不涉 RC-4 地址/对象**。
+
+**R-031 定稿（2026-10-22 18:xx–19:xx）**：
+- `tasklist` 查无 `gamemd` / `ra2loader` / `game.exe` ⇒ 可做完整离线分析。
+- 读 GOAL-3T 台账尾部（§368 Mimosa deep 档）+ 三目标台账尾部（L3 高负载），
+  两条线均与本轮零交集；无「真机时段开始」未闭合标记。
+- 未派子代理：异族 GLM 盲验报告已在盘，本地键槽双算即可闭环，
+  不重复占用通道。
+- 本地只读 exe；未启动游戏/loader、未写 `ra2youli`、未跑 trip、未编译、未改注册表。
+- 未修改 `lead/`、`docs/re/`、`ra2render/`、根 `tools/`、`.gitignore`。
+- 新增 6 个工具 + 1 份 evidence，全部在 `re_atlas/`。
+- 未触碰 §3 禁区任何函数/全局；未写 RC-4 因果、触发、修复意见。
+- `dump_typeclass_family.py` 待归属改动仍未触碰（见 R-029 记录）。
 
 **R-030（2026-10-22）**：
 - `tasklist` 查无 `gamemd` / `ra2loader`。
