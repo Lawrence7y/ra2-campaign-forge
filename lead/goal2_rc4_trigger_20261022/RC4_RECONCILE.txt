@@ -1,0 +1,53 @@
+==============================================================================
+待办 6 · RC4_RECONCILE v2：完整栈 + One_Time 调用拓扑
+==============================================================================
+sections: .text@00401000(3DF38D), .rdata@007E1000(30074), .data@00812000(367BE4), .rsrc@00B7A000(18128), .detour@00B93000(2718)
+
+--- 静态：One_Time 的入口拓扑 ---
+  [PASS] R6 One_Time 本体无 E8 调用者（只能经 vtable slot5）                 callers=[]
+      0x63F7B0（jmp One_Time）的 E8 调用者: ['0x6a5001']
+      vtable 0x7F0344: ['0x4f4240', '0x40d230', '0x40d240', '0x5656d0', '0x6587a0', '0x652cf0', '0x4f42b0', '0x652de0']
+      vtable 0x7F3058: ['0x4f4240', '0x40d230', '0x40d240', '0x5656d0', '0x6ac7f0', '0x6a5000', '0x4f42b0', '0x6a5030']
+  [PASS] R7 两张 vtable 的 slot5 都最终落到 One_Time                      0x7F0344.slot5=0x652cf0 -> One_Time=True ; 0x7F3058.slot5=0x6a5000 -> One_Time=True
+
+--- 静态：两张 vtable 的引用点 ---
+      表B(RadarClass) 007F0344 引用: {'.text': ['0x652b47', '0x652c0e', '0x6587ae', '0x6a4f7a']}
+      表C(0x6A4F20) 007F3058 引用: {'.text': ['0x6a4ee1', '0x6a4fe3']}
+      前 4 槽相同（同基类证据）: True
+
+--- 静态：0x6A4F20 的 vtable 写入序列 ---
+      006A4F78  mov [edi], 007F0344
+      006A4F9A  mov [edi], 007EFF54
+      006A4FE1  mov [edi], 007F3058
+
+--- dump 侧：3 份 ---
+  [PASS] R1 rc4dbg_20261022T183405_t1.dmp 崩溃栈已定位（0x920300 在 dump 内且为栈保留区形态） range=[0x8b3000,+0x1bf000) head_zero=True
+  [PASS] R2 rc4dbg_20261022T183405_t1.dmp 五环全中                    
+      走查起点 rsp=0x920300（崩溃栈顶，由五环锚点确定）
+  [PASS] R3 rc4dbg_20261022T183405_t1.dmp 五环之上至少 1 个祖先帧           13 帧（总 21）
+  [PASS] R4 rc4dbg_20261022T183405_t1.dmp 祖先帧含 WndProc            WndProc=False
+  [PASS] R5 rc4dbg_20261022T183405_t1.dmp 崩溃瞬间 [0x887368]==0      got 0x0
+  [PASS] R8 rc4dbg_20261022T183405_t1.dmp 栈上有 One_Time 返回址 0x652D51 
+      R9 rc4dbg_20261022T183405_t1.dmp 栈上有第二入口返回址 0x6A5006: True
+
+  [PASS] R1 rc4dbg_20261022T184212_t1.dmp 崩溃栈已定位（0x920300 在 dump 内且为栈保留区形态） range=[0x8b3000,+0x1bf000) head_zero=True
+  [PASS] R2 rc4dbg_20261022T184212_t1.dmp 五环全中                    
+      走查起点 rsp=0x920300（崩溃栈顶，由五环锚点确定）
+  [PASS] R3 rc4dbg_20261022T184212_t1.dmp 五环之上至少 1 个祖先帧           13 帧（总 21）
+  [PASS] R4 rc4dbg_20261022T184212_t1.dmp 祖先帧含 WndProc            WndProc=False
+  [PASS] R5 rc4dbg_20261022T184212_t1.dmp 崩溃瞬间 [0x887368]==0      got 0x0
+  [PASS] R8 rc4dbg_20261022T184212_t1.dmp 栈上有 One_Time 返回址 0x652D51 
+      R9 rc4dbg_20261022T184212_t1.dmp 栈上有第二入口返回址 0x6A5006: True
+
+  [PASS] R1 rc4dbg_20261022T184235_t2.dmp 崩溃栈已定位（0x920300 在 dump 内且为栈保留区形态） range=[0x8b3000,+0x1bf000) head_zero=True
+  [PASS] R2 rc4dbg_20261022T184235_t2.dmp 五环全中                    
+      走查起点 rsp=0x920300（崩溃栈顶，由五环锚点确定）
+  [PASS] R3 rc4dbg_20261022T184235_t2.dmp 五环之上至少 1 个祖先帧           13 帧（总 21）
+  [PASS] R4 rc4dbg_20261022T184235_t2.dmp 祖先帧含 WndProc            WndProc=False
+  [PASS] R5 rc4dbg_20261022T184235_t2.dmp 崩溃瞬间 [0x887368]==0      got 0x0
+  [PASS] R8 rc4dbg_20261022T184235_t2.dmp 栈上有 One_Time 返回址 0x652D51 
+      R9 rc4dbg_20261022T184235_t2.dmp 栈上有第二入口返回址 0x6A5006: True
+
+------------------------------------------------------------------------------
+结果：20/20 PASS
+明细: D:\Project\ra2-campaign-forge\lead\goal2_rc4_trigger_20261022\RC4_RECONCILE_V2.json
