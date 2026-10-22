@@ -1,0 +1,15 @@
+PASS	P1	sha256 与交付锚一致	73201cc021497c95
+PASS	P2	8 个读取器/访问器参数个数由各自 ret imm16 独立确定，互不矛盾	{'0x526810': 1, '0x526960': 1, '0x526cc0': 2, '0x528a10': 5, '0x5283d0': 4, '0x5276d0': 3, '0x5295f0': 3, '0x529160': 4}
+PASS	P3	族 A 注册的是 **ReadString 写入的落盘缓冲（=值）**，不是键名 —— 16 个站点全对 ⇒ 「键名即数据」对族 A **不成立**，键名只是查表的键	e.g. Read_InfantryTypes: Registrar@0x00524CB0 ecx=ecx, [esp + 0xc]
+PASS	P4	枚举键名 / 按键名注册的 loader = 20 个，且与交付表逐名相等	only_mine=[] only_delivered=[]
+PASS	P5	H-015 第 3 点「只有 5 个 loader 读固定键」被证伪：实测 **15** 个 loader 压入字面量键（H-015 的 27/19/14/12/11 是 R-022「306 键」时代的旧值）	n_fixed=15 n_literal_key_sites=660
+PASS	P6	20 个枚举 loader 分成两族：A 枚举键名+读值 17 个 / B 仅按键名注册 3 个 / C 0 个	{'A': ['Read_AircraftTypes', 'Read_Animations', 'Read_BuildingTypes', 'Read_Countries', 'Read_File', 'Read_InfantryTypes', 'Read_Movies', 'Read_OverlayTypes', 'Read_ParticleSystems', 'Read_Particles', 'Read_SmudgeTypes', 'Read_SuperWeaponTypes', 'Read_Teams_obsolete', 'Read_TerrainTypes', 'Read_VehicleTypes', 'Read_VoxelAnims', 'Read_Warheads'], 'B': ['Read_ColorAdd', 'Read_Colors', 'Read_Sides'], 'C': []}
+PASS	P7	族 A 的注册被 ReadString 返回值门控（test eax,eax; je 跳过注册） ⇒ **值可以为空则整条不注册**（17/17 全部成立）	['Read_AircraftTypes', 'Read_Animations', 'Read_BuildingTypes', 'Read_Countries', 'Read_File', 'Read_InfantryTypes', 'Read_Movies', 'Read_OverlayTypes', 'Read_ParticleSystems', 'Read_Particles', 'Read_SmudgeTypes', 'Read_SuperWeaponTypes', 'Read_Teams_obsolete', 'Read_TerrainTypes', 'Read_VehicleTypes', 'Read_VoxelAnims', 'Read_Warheads']
+PASS	P8	注册端两个占位名 {8483956: '<none>', 8484500: 'none'} 均 `je 0x74814E`，而 0x74814E = `pop edi; xor eax,eax; pop esi; ret`（返回 0、不建条目） ⇒ 写成这两个名的条目**被跳过**；注册 callee 共 20 个	je_targets=['0x748142', '0x74814e'] skip_shape=['pop', 'xor'] | {'0x41cef0': ['Read_AircraftTypes'], '0x428b80': ['Read_Animations'], '0x4653c0': ['Read_BuildingTypes'], '0x512680': ['Read_Countries'], '0x4355b0': ['Read_File'], '0x524cb0': ['Read_InfantryTypes'], '0x48df30': ['Read_Movies'], '0x5fec70': ['Read_OverlayTypes'], '0x644890': ['Read_ParticleSystems'], '0x645820': ['Read_Particles'], '0x6b5910': ['Read_SmudgeTypes'], '0x6ceef0': ['Read_SuperWeaponTypes'], '0x6f1920': ['Read_Teams_obsolete'], '0x71e2a0': ['Read_TerrainTypes'], '0x7480d0': ['Read_VehicleTypes'], '0x74b960': ['Read_VoxelAnims'], '0x75e3b0': ['Read_Warheads'], '0x474b50': ['Read_ColorAdd'], '0x474c70': ['Read_Colors'], '0x6a46d0': ['Read_Sides']}
+PASS	P9	0x00889F64 是 BSS（盘上无字节），在族 A 里作为 ReadString 的 default 参数 / 落盘缓冲被压栈 —— 不是键，也不是字符串	read_va -> b''
+PASS	P10	660 个键站点 − 9 个 loader 内重复 = **651 键**，逐 loader 与交付表相等；重复只出现在 ['Read_AudioVisual', 'Read_General', 'Read_LandCharacteristics']	sites=660 distinct=651 dup={'Read_AudioVisual': 1, 'Read_General': 1, 'Read_LandCharacteristics': 7}
+PASS	N1	[负控1] Read_MultiplayerDialogSettings（读 27 个固定键）不在枚举集合内
+PASS	N2	[负控2] 参数个数判定不是常数：ReadString=5 / GetKeyName=2 判决不同	5 vs 2
+PASS	N3	[负控3] 停在首个 ret 会截断函数体：线性 5062 条 vs 分支闭包 5069 条 ⇒ 本门禁必须用闭包	lost=7
+
+RESULT: 13/13 PASS

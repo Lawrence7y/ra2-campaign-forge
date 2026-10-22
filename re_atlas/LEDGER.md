@@ -3347,3 +3347,161 @@ P8 268 字段（按偏移去重）/ P9 偏移全在 `0x18C0` 内 / P10 12 列表
 **诚实边界**：`normal` 档 + `dependencyRisk completion=partial`
 ⇒ 只能证明本轮新文件未引入可静态发现的问题，**不能宣称项目安全**。
 28 条全在本线写域之外，本线零改动、零处置权，仅记录。本轮三轮审计同为 28，增量 0。
+
+---
+
+## R-032 核验（2026-10-23）· P0 清欠最后一项：H-015「键名即数据」
+
+### 1. 本轮任务
+
+§2 P0 清欠的最后一项 —— R-018 的残留部分 H-015。
+上轮结尾写的是「核验欠账 = R-018 部分（H-015）」，本轮把它清掉。
+
+H-015 有三条判断：① `ShortGame` 由 `0x671EA0` 读（已由 R-023 门禁 P5/P6 独立覆盖）；
+② 字典节的**键名即数据**，20 个 loader 走 `GetKeyCount`→`GetKeyName`；
+③ 「只有 5 个 loader 读固定键（27/19/14/12/11 个）」。
+
+### 2. 结果
+
+| 判断 | 结论 |
+|:--|:--|
+| ① `ShortGame` 路径 | ✅ HOLDS（R-023 已覆盖，本轮不重做）|
+| ② 键名即数据 / 20 个枚举 loader | ⚠️ **半条推翻**：「20 个走 `GetKeyCount`→`GetKeyName`」HOLDS；但**「键名即数据」只对 3/20 成立**，族 A 的 17 个注册的是**值** |
+| ③ 只有 5 个 loader 读固定键 | ❌ **FALSIFIED** → 实测 **15 个 / 660 站点 / 651 键** |
+
+门禁 `tools/verify_r032_claims.py` → **13/13 PASS，EXIT=0**（两次复跑逐字相同，
+sha16 `6b7622c3209f0444`）。证据 `evidence/r032_verify.txt`。
+
+### 3. ★ 核心判断推翻一半：注册的是「值」不是「键名」
+
+H-015 说「字典节的键名就是数据」。实测：**只有 3/20 成立**。
+
+族 A（17/20）的真实形状：
+
+```text
+call 0x526960              ; n = CountKeys(section)  ← 上界来自 INI
+call 0x526CC0              ; key = GetKeyName(section, i) -> eax
+push eax / push section
+call 0x528A10              ; ReadString(section, key, "", &buf, size)   ← buf 得到「值」
+test eax,eax / je skip     ; 值取不到 → 不注册
+lea ecx,[esp+0xc]
+call 0x7480D0              ; Registrar(buf)  ← 注册的是 buf（值）
+```
+
+**键名是查表的键，值是数据。** 16 个站点全部满足"注册 callee 的 `this` 来自 `[esp+..]`"。
+
+族 B（3/20）才是「键名即数据」：`Read_Sides` 把键名交给 `0x6A46D0` 线性查 Side 表
+（比 `[obj+0x24]`），未命中则 `0x6A4550` 构造并追加；`Read_Colors` 交给 `0x626AB0`。
+
+**编译器写对的一处**：
+
+```ini
+[VehicleTypes]
+0=HTNK     ; ✅ 键随意，值 = 类型名
+HTNK=1     ; ❌ HTNK 被当"键"查值，查到的 "1" 被当类型名注册（不报错，静默垃圾条目）
+```
+
+### 4. 其余四条成立
+
+- **值取不到就不注册**（P7，17/17）：`test eax,eax / je` ⇒ `Key=` ≡ 不写。
+- **`<none>` / `none` 是保留字**（P8，方向已断言）：两个 `je` 都跳 `0x74814E`，
+  该处 `pop edi; xor eax,eax; pop esi; ret` ⇒ 零返回、不建条目。
+- **未知名字会新建、不报错**：`new 0xE78` → `0x7470D0` 构造 → 写 `[0xA83CE4+ecx*4]` /
+  `inc [0xA83CF0]`，全程无报错调用。
+- **20 个枚举 loader 恰 20 个**，与交付表逐名相等（P4）。
+
+### 4. `660 → 651` 的对账
+
+P5 数出 660 个键站点，交付是 651 键。差 9 全部是 loader 内同键双读：
+`Read_General` 1（`EngineerCaptureLevel`）、`Read_AudioVisual` 1（`Smoke`）、
+`Read_LandCharacteristics` 7（七种移动类别各读两次）。
+
+| 数 | 量纲 |
+|--:|:--|
+| 660 | 读取**站点** |
+| 651 | **loader 内**去重（交付口径）|
+| 650 | **跨 loader** 去重（`ContentScan` 在两个 loader 各读一次）|
+
+### 5. 顺带更正 `READER_KEYS` 三个 arity
+
+用 `ret imm16` 独立判定参数个数，发现 `dump_rules_keys.py:48` /
+`verify_r024_claims.py:73` 的表有三处错：
+
+| 函数 | 表内 | `ret imm16` | 实测 |
+|:--|--:|--:|--:|
+| `0x00528A10` ReadString | 4 | `ret 0x14` | **5** |
+| `0x00528F00` ReadUnicodeString | 4 | `ret 0x14` | **5** |
+| `0x00529160` | 3 | `ret 0x10` | **4** |
+| `0x005283D0` / `0x005276D0` / `0x005295F0` | 4 / 3 / 3 | `ret 0x10` / `0xC` / `0xC` | 4 / 3 / 3 ✅ |
+
+**但 R-024 的键清单不受影响**：`want` 只作"向后走几步的上限"，键永远是倒数第二个 push。
+本轮 P10 用独立路径重算，**逐 loader 与交付表逐项相等** ⇒ 结论成立，错的是注释。
+
+### 6. 我自己踩的坑（五处，全部被门禁或盲验抓出）
+
+**(1) 把编译器的"预置实参"当成规则 —— 连错两次。**
+`0x526CC0`（`GetKeyName`，`ret 8`，2 参）前面有 **5 条**连续 push；
+`0x528A10`（`ReadString`，`ret 0x14`，5 参）前面只有 **2 条**。
+成因：MSVC 把下一次调用的 3 个实参提前压在本次调用下面，`GetKeyName` 的 `ret 8`
+返回时正好把它们顶上来。我先后写下"`ReadString` 吃 2 个参数"和
+"`esp@GetKeyName == esp@ReadString`"两个错误结论。
+
+**判死它的是 `Read_Teams_obsolete`**：`0x67276F` esp=−148、`0x67278C` esp=−160，
+差 12 字节 —— 它在 `GetKeyName` 返回后才现推 5 个参数。
+**18/22 站点有这个优化，4 个没有，而 22 个站点语义完全相同。**
+
+**(2) 向后走 push 时撞上 `mov ecx,<this>` 就停**：22 个 `GetKeyName` 站点全报 0 条 push。
+
+**(3) 用 push 条数当参数个数**：会吞掉夹在中间的 callee-saved `push esi`
+（`Read_Movies` `0x67458E`），报"余 4 + 再 push 2 = 6 ≠ 5"。
+
+**(4) P8 只断言"比对了两个串"，没断言方向**（G-42 的老毛病）。
+已改为断言 `je → 0x74814E` 且该处是 `xor eax,eax`。
+
+**(5) ★ 把"键名从哪来"当成"键名是数据"** —— 本轮最严重的一处，
+由异族盲验抓出。原 P3 断言"`ReadString` 键槽里是 `eax`"并据此写下
+"这就是『键名即数据』的机器判据"。这条只证明**供给方**，没证明**消费方**。
+已改写为"注册 callee 的 `this` 是 `ReadString` 的落盘缓冲"，并**推翻 H-015 半条判断**。
+新 **G-53** + 纪律 #43：结论指向"某物是数据"时必须追到它被消费的那条指令。
+
+### 7. 禁区自查
+
+- [x] `tasklist` 查无 `gamemd` / `ra2loader` / `game.exe`
+- [x] 读 GOAL-3T 台账尾部（S382，`0x7775C0` WndProc）—— §3 禁区内容，
+      仅做冲突排查读取，未写任何 RC-4 因果/触发/修复意见，零交集
+- [x] **派 1 个子代理**做异族盲验（`ra2-re-analyst` 绑 Step 已禁用，
+      首次派发 `provider-not-found`，改用 general-purpose）
+- [x] 本地只读 exe；未启动游戏/loader、未写 `ra2youli`、未跑 trip、未编译、未挂调试器
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、根 `tools/`、`.gitignore`
+- [x] 新增/修改文件全部在 `re_atlas/`
+- [x] 未触碰 §3 禁区任何函数/全局（本轮对象全在 `0x66xxxx`/`0x52xxxx`）
+- [x] 临时探针 `tmp_qwen_grade/p*_*.py` 全部删除，未入账
+
+### 8. 已落盘
+
+- `tools/verify_r032_claims.py`（新建，13 断言 + 3 负控；P3 在盲验后改写）
+- `evidence/r032_verify.txt`（门禁原文）
+- `evidence/r032_h015_dictionary_sections_verification.md`（证据件，含 §七 盲验对账）
+- `evidence/r032_crosscheck_blind.md`（异族盲验，**推翻我方 P3**）
+- `kb/30_ini_subsystem.md`：新增 **§14.5**（注册值是数据 + 五条机制 + 660/651/650 量纲
+  + arity 更正表）；§20.3 台账 R-018 行改 ✅，欠账行改「**= 0，P0 清欠完成**」
+- `HANDOFF_TO_GOAL3T.md` H-015：核验状态改 ✅ + 五段回填（含 §2 的写法更正）
+- `INDEX.md`：C.15c 补 660/651/650 量纲表；新增 **C.15d**（四条判据）
+- `STATUS.md`：头部 + 禁区遵守记录
+- `CONFLICTS.md`：新增 **G-52**（编译器调度优化不能当判据）
+  + **G-53**（"X 被用作 Y 的输入" ≠ "X 是 Y"）+ 纪律 #43
+
+### 9. 盲验对账（本轮最有价值的部分）
+
+盲验 `evidence/r032_crosscheck_blind.md`（general-purpose 通道，
+`ra2-re-analyst` 绑 Step 已禁用）。
+
+- **Q1 全部一致**：`0x528A10` = `ret 0x14` = 5 参；7 个函数 arity 8/8 逐个一致；
+  「5 条 push 只吃 2 个」的成因（预置实参，多出的 3 个成为 `ReadString` 的
+  default/buf/size）一致；`0x889F64` 是 BSS 空串一致。
+- **Q2 推翻我方**：盲验直接问「那么这个值最后去哪了」，答"注册的是值不是键名"，
+  并在 `0x6723AC lea ecx,[esp+0xc]` 给出判据。我方独立复核后**采纳**。
+- **Q3 一致**：`<none>`/`none` 返回 NULL、未知名字会新建不报错。
+
+**这是盲验第二次推翻我方**（第一次见 G-51）。两次都不是算错，
+而是**把一个必要条件当成了充分条件**。
