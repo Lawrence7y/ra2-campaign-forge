@@ -175,13 +175,63 @@ def main():
 
     print()
     print("  --- 断言 ---")
+    # ★★★ §388（异族核验 D/P4 推翻）：原版这里只有「可达」「唯一」两条断言，
+    #   全是结构性断言、**没有一条断言取值**。实测把二进制 0x7775C0 的
+    #   `push ecx` 改成 `nop`，本工具打印 esp=-12 ⇒ [esp+0x18]=wParam，
+    #   仍然 6/6 PASS、exit 0。⇒ 原版是**打印机不是门禁**。
+    #   现在把「算出来的值」本身写成断言，并加起点边界自检。
+    EXPECTED_ESP = -0x10          # §386/§387 定谳值
+    EXPECTED_ARG = 0x08           # E+0x08 = msg
     for t in TARGETS:
         s = reached[t]
         check("0x%08X 可达" % t, bool(s), "%d 种 esp" % len(s))
         if s:
-            single = len(s) == 1
-            check("0x%08X 的 esp 唯一（无分支分歧）" % t, single,
+            check("0x%08X 的 esp 唯一（无分支分歧）" % t, len(s) == 1,
                   "%s" % sorted(s))
+            # ★ 取值断言：esp 必须**恰好**等于期望值
+            got = sorted(s)[0] if len(s) == 1 else None
+            check("0x%08X 的 esp 取值 = %+d（实算，非结构性）"
+                  % (t, EXPECTED_ESP), got == EXPECTED_ESP,
+                  "实算 %s" % (got if got is not None else sorted(s)))
+            check("⇒ 0x%08X 的 [esp+0x18] = E+0x%02X = msg" % (t, EXPECTED_ARG),
+                  got is not None and got + 0x18 == EXPECTED_ARG,
+                  "E%+d" % (got + 0x18) if got is not None else "N/A")
+        else:
+            check("0x%08X 的 esp 取值 = %+d（实算，非结构性）"
+                  % (t, EXPECTED_ESP), False, "未到达")
+
+    # ---- ★ 起点边界自检（异族 B2：起点错位会静默给出错值）----
+    print()
+    print("  --- ★ 起点边界自检（§388 补，异族 B2 指出原版缺失）---")
+    off_fn = va2off(FN)
+    bounds = {i.address for i in md.disasm(b[off_fn - 16:off_fn + 16], FN - 16)}
+    check("起点 0x%08X 是已知指令边界" % FN, FN in bounds,
+          "in %d boundaries" % len(bounds))
+    # ★ 负控要选**落在指令中段**的地址。0x7775C1 恰好是下一条指令的边界
+    #   （push ecx 是 1 字节），不是好样例；改用 0x7775C3（在
+    #   `8b 0d 28 76 88 00` 的立即数内部，§381 已实证）。
+    WRONG = 0x7775C3
+    check("负控 0x%08X（指令中段）不是边界" % WRONG, WRONG not in bounds,
+          "已确认错位起点会被抓到")
+
+    # ---- ★★ 目标指令本体自检（异族 P2：本工具只按地址算 esp，从不读目标指令）----
+    #   实测：把 0x777687 的 `[esp+0x18]` 改成 `[esp+0x1c]`，本工具仍 12/12 PASS
+    #   —— 因为它只算「到达该地址时 esp 是多少」，不问「那条指令读哪个槽」。
+    #   两者必须同时成立才有意义，所以这里把目标指令的**解码结果**也断言。
+    print()
+    print("  --- ★ 目标指令本体自检（§388 补，异族 P2 指出）---")
+    TARGET_DISP = {0x777687: (0x777687, 0x18), 0x7779B9: (0x7779B5, 0x18)}
+    for t, (ins_va, want_disp) in TARGET_DISP.items():
+        o = va2off(ins_va)
+        try:
+            ins = next(md.disasm(b[o:o + 8], ins_va))
+        except StopIteration:
+            check("0x%08X 可解码" % ins_va, False, "解码失败")
+            continue
+        want = "[esp + 0x%x]" % want_disp
+        check("0x%08X 的目标指令读 %s（实读二进制）" % (ins_va, want),
+              ins.mnemonic == "mov" and want in ins.op_str,
+              "%s %s" % (ins.mnemonic, ins.op_str))
 
     # ---- 解读 ----
     print()
@@ -192,6 +242,23 @@ def main():
             nm = {0: "retaddr", 4: "hwnd", 8: "msg",
                   12: "wParam", 16: "lParam"}.get(eo, "E%+d" % eo)
             print("    0x%08X esp=%+d => [esp+0x18] = %s" % (t, e, nm))
+
+    # ---- ★★ §387：如实登记本工具的**覆盖边界** ----
+    # 本工具在间接调用处终止路径（不猜 ret 尺寸）。0x77764F `call [0x7e1404]`
+    # （GetMenu）正是这样的间接调用 ⇒ 经过 GetMenu 的那条分支到不了 0x777687。
+    # 因此「esp 唯一」只覆盖**不经 GetMenu** 的分支。
+    # 另一条分支由 _verify_stack_offset.py 的 hand_esp() 独立手算补齐
+    # （两条分支同为 -0x10），本工具不重复验证。
+    print()
+    print("  --- ★ 覆盖边界（§387 如实登记）---")
+    ind = sorted(indirect_calls)
+    print("    间接调用点 %d 处，路径在此终止：%s"
+          % (len(ind), ["0x%08X" % a for a, _ in ind][:6]))
+    check("★ 本工具结果只覆盖「不经间接调用」的分支（已登记局限）",
+          len(ind) > 0, "%d 处间接调用 ⇒ 另一分支由 hand_esp() 补" % len(ind))
+    has_getmenu = any(a == 0x77764F for a, _ in ind)
+    check("★ 0x77764F(GetMenu) 确实在终止点内 ⇒ 本工具不含该分支",
+          has_getmenu, "0x77764F" if has_getmenu else "未命中")
 
     npass = sum(1 for _, c, _ in RESULTS if c)
     print()

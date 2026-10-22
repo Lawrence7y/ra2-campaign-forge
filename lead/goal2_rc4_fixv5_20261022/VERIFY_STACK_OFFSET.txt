@@ -5,38 +5,45 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   0x778030 的 ret 尺寸 = 0x8（实测）                                PASS  ret 0x8
   IAT 0x7E1404 = USER32!GetMenu                              PASS  GetMenu
   自检 路径端点 path1.lo=0x007775C0 是指令边界                          PASS  in 36 boundaries
+  自检 路径端点 path2a.lo=0x00777627 是指令边界                         PASS  in 35 boundaries
+  自检 路径端点 path2b.lo=0x0077764E 是指令边界                         PASS  in 36 boundaries
+  自检 路径端点 path3.lo=0x00777655 是指令边界                          PASS  in 34 boundaries
   自检 路径端点 path1.hi=0x007775CE 是指令边界                          PASS  in 37 boundaries
-  自检 路径端点 path2.lo=0x00777627 是指令边界                          PASS  in 35 boundaries
-  自检 路径端点 path2.hi=0x0077766E 是指令边界                          PASS  in 32 boundaries
+  自检 路径端点 path2a.hi=0x00777655 是指令边界                         PASS  in 34 boundaries
+  自检 路径端点 path2b.hi=0x00777655 是指令边界                         PASS  in 34 boundaries
+  自检 路径端点 path3.hi=0x0077766E 是指令边界                          PASS  in 32 boundaries
   自检 path1 区间内无跳出型无条件 jmp                                    PASS  []
-  自检 path2 区间内无跳出型无条件 jmp                                    PASS  []
+  自检 path2a 区间内无跳出型无条件 jmp                                   PASS  []
+  自检 path2b 区间内无跳出型无条件 jmp                                   PASS  []
+  自检 path3 区间内无跳出型无条件 jmp                                    PASS  []
   自检 path1 各 jcc 两分支 esp 净变化一致                               PASS  []
-  自检 path2 检出分支分歧（已分开建模）                                     INFO  [('0x77764c', -4, 0)]
-    ★ 该区间**不是单一路径** —— esp 结论不可靠。
-      分歧点：[('0x77764c', -4, 0)]
-      ⇒ 本门禁的 esp 结论只对「顺序落入」那条分支成立，
-        另一条分支的偏移全部差 4 字节。必须分开模拟。
+  自检 path2a 各 jcc 两分支 esp 净变化一致                              PASS  []
+  自检 path2b 各 jcc 两分支 esp 净变化一致                              PASS  []
+  自检 path3 各 jcc 两分支 esp 净变化一致                               PASS  []
 
-  esp 轨迹（相对入口，负数=已下压）：
+  esp 轨迹（相对入口，负数=已下压）—— 分支 B（走 GetMenu）：
     0x007775C0  push   ecx                        esp:   +0 ->   -4  
     0x007775C7  push   ebx                        esp:   -4 ->   -8  
     0x007775CA  push   esi                        esp:   -8 ->  -12  
     0x007775CD  push   edi                        esp:  -12 ->  -16  
-    0x00777633  push   ecx                        esp:  -16 ->  -20  
-    0x00777638  push   edx                        esp:  -20 ->  -24  
-    0x00777639  push   eax                        esp:  -24 ->  -28  
-    0x0077763A  push   edi                        esp:  -28 ->  -32  
-    0x00777640  call   0x6930a0                   esp:  -32 ->  -16  
     0x0077764E  push   eax                        esp:  -16 ->  -20  
-    0x0077764F  call   dword ptr [0x7e1404]       esp:  -20 ->  -20  
-    0x0077765D  push   ecx                        esp:  -20 ->  -24  
-    0x0077765E  push   edx                        esp:  -24 ->  -28  
-    0x00777665  call   0x778030                   esp:  -28 ->  -20  
+    0x0077764F  call   dword ptr [0x7e1404]       esp:  -20 ->  -16  import argc=1
+    0x0077764F  call   dword ptr [0x7e1404]       esp:  -20 ->  -16  
+    0x0077765D  push   ecx                        esp:  -16 ->  -20  
+    0x0077765E  push   edx                        esp:  -20 ->  -24  
+    0x00777665  call   0x778030                   esp:  -24 ->  -16  
 
---- ★ 0x777687 处 esp（§386 定谳，BFS 唯一值）---
-  0x777687 处 esp = -0x10（唯一，无分支分歧）                           PASS  esp=-16
+  分支 A（跳过 GetMenu）到 0x777687 时 esp = -0x10                   PASS  esp=-16
+  分支 B（走 GetMenu）到 0x777687 时 esp = -0x10                    PASS  esp=-16
+  ★ 两分支 esp 相同 ⇒ 与分支无关（这才是「唯一值」的实证）                          PASS  -16 vs -16
+
+--- ★ 0x777687 处 esp（§386 定谳 / §387 改断言实算值）---
+  自检 trace 非空（esp 由 walk 过程产生，非直接赋值）                         PASS  19 条轨迹
+  自检 trace 中 esp 出现多个取值（确实在累加）                               PASS  6 种取值
+  自检 trace 末值 = esp_at_687_final（同源）                         PASS  末值=-16
+  0x777687 处 esp = -0x10（walk() 实算，非硬编码）                     PASS  esp=-16（实算）
   ⇒ [esp+0x18] = 入口 E+0x08 = **msg**（异族 C3 正确）               PASS  E+8
-  负控 旧 bug（间接调用按 ret 0）会错算成 -0x14                            PASS  ret0 假设下 esp=-0x14 ⇒ E+0x04（错误）
+  ★ 负控 若 GetMenu 按净 0 处理则分支 B 会得 -0x14（E+0x04=hwnd，错）        PASS  净0假设下 -20 ⇒ E+0x04
   0x7775D2 是 push -1（证明虚调用带 1 个参数）                           PASS  push -1
   0x7775D4 是 call [eax+0x38]（间接虚调用，ret 尺寸静态未知）               PASS  call dword ptr [eax + 0x38]
 
@@ -46,23 +53,24 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   前驱 0x00777865 确实跳到 0x7779B9                                PASS  jne 0x7779b9
   前驱 0x00777958 确实跳到 0x7779B9                                PASS  jmp 0x7779b9
   前驱 0x00777967 确实跳到 0x7779B9                                PASS  jne 0x7779b9
-  0x7779B9 处 esp = -0x10（与 0x777687 同基点）                     PASS  esp=-16
+  0x777687..0x7776A0 段内无 push/pop/call（esp 不变）               PASS  delta=0（6 条指令）
+  0x7779B9 处 esp = -0x10（由 0x777687 实算值派生）                   PASS  esp=-16
   0x7779B9 的 [esp+0x18] = E+0x08 = msg                       PASS  E+8
   0x7779B9 的 [esp+0x1c] = E+0x0C = wParam                    PASS  E+12
   0x7779B9 的 [esp+0x20] = E+0x10 = lParam                    PASS  E+16
     ⇒ 0x54F790(hwnd, msg, wParam) —— 标准 WndProc 布局，§379 链参数层自洽
 
 --- WNDCLASSA 槽位核算（确证 0x7775C0 = lpfnWndProc）---
-  0x00777C71 写 wc+0x00 (style)                               PASS  算得 wc+0x00
-  0x00777C79 写 wc+0x04 (lpfnWndProc)                         PASS  算得 wc+0x04
-  0x00777C81 写 wc+0x08 (cbClsExtra)                          PASS  算得 wc+0x08
-  0x00777C85 写 wc+0x0C (cbWndExtra)                          PASS  算得 wc+0x0C
-  0x00777C89 写 wc+0x10 (hInstance)                           PASS  算得 wc+0x10
-  0x00777C8D 写 wc+0x14 (hIcon)                               PASS  算得 wc+0x14
-  0x00777C91 写 wc+0x18 (hCursor)                             PASS  算得 wc+0x18
-  0x00777C95 写 wc+0x1C (hbrBackground)                       PASS  算得 wc+0x1C
-  0x00777C99 写 wc+0x20 (lpszMenuName)                        PASS  算得 wc+0x20
-  0x00777C9D 写 wc+0x24 (lpszClassName)                       PASS  算得 wc+0x24
+  0x00777C71 写 wc+0x00 (style)                               PASS  mov dword ptr [esp + 0x24], 3 ⇒ wc+0x00
+  0x00777C79 写 wc+0x04 (lpfnWndProc)                         PASS  mov dword ptr [esp + 0x28], 0x7775c0 ⇒ wc+0x04
+  0x00777C81 写 wc+0x08 (cbClsExtra)                          PASS  mov dword ptr [esp + 0x2c], ebx ⇒ wc+0x08
+  0x00777C85 写 wc+0x0C (cbWndExtra)                          PASS  mov dword ptr [esp + 0x30], ebx ⇒ wc+0x0C
+  0x00777C89 写 wc+0x10 (hInstance)                           PASS  mov dword ptr [esp + 0x34], esi ⇒ wc+0x10
+  0x00777C8D 写 wc+0x14 (hIcon)                               PASS  mov dword ptr [esp + 0x38], ecx ⇒ wc+0x14
+  0x00777C91 写 wc+0x18 (hCursor)                             PASS  mov dword ptr [esp + 0x3c], eax ⇒ wc+0x18
+  0x00777C95 写 wc+0x1C (hbrBackground)                       PASS  mov dword ptr [esp + 0x40], ebx ⇒ wc+0x1C
+  0x00777C99 写 wc+0x20 (lpszMenuName)                        PASS  mov dword ptr [esp + 0x44], ebx ⇒ wc+0x20
+  0x00777C9D 写 wc+0x24 (lpszClassName)                       PASS  mov dword ptr [esp + 0x48], 0x849f48 ⇒ wc+0x24
   0x777C79 写入的值是 0x7775c0                                    PASS  mov dword ptr [esp + 0x28], 0x7775c0
 
   0x777687 是 mov eax, dword ptr [esp + 0x18]                 PASS  mov eax, dword ptr [esp + 0x18]
@@ -80,6 +88,21 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
     ⇒ 教训：工具自身的缺陷会伪装成被测对象的性质。
       我列了四条「解释」却从未质疑工具 —— 这是第五次同类错误的根源。
 
+--- ★ §387 语义级独立证据（不依赖 esp 模拟）---
+  0x77768B 是 cmp eax, 0x18（msg 上界判据）                         PASS  cmp eax, 0x18
+  0x77769A 是 lea ecx,[eax-1]（msg 下移成 0 基索引）                  PASS  lea ecx, [eax - 1]
+  0x77769D 是 cmp ecx, 0x13（索引上界 = 0x18-1）                    PASS  cmp ecx, 0x13
+  0x7776AE 是 jmp [edx*4+0x777a80]（两级表跳转）                     PASS  jmp dword ptr [edx*4 + 0x777a80]
+  字节索引表 max = 5，恰好覆盖 6 项 dword 表（无越界）                        PASS  max=5, n_tab=6
+  dword 表 6 项**全部**落在 .text（无一落入数据/越界）                       PASS  6/6
+  0x7779E1 是 cmp eax, 0x286（WM_IME_CHAR）                     PASS  cmp eax, 0x286
+  WM_IME_CHAR 分支内出现 shr 8（取后继字节）                             PASS  
+  WM_IME_CHAR 分支内出现 byte ptr 存储（拆字节落栈）                       PASS  
+  0x54F7F9 是 cmp eax, 0x201（WM_LBUTTONDOWN）                  PASS  0x54F7F9
+  0x54F80F 是 add eax, 0xffffff00（WM_ 区间下移，§379 环节2）          PASS  0x54F80F
+  0x778031 是 cmp edx, 0x281（IME 消息号）                         PASS  0x778031
+  0x778041 是 sub edx, 0x10d（继续按消息号区间判定）                      PASS  0x778041
+
 --- 0x777687 可达性 ---
   0x778030(WM_CREATE=0x001) 返回 0 ⇒ 0x777687 可达               PASS  ret=0
   0x778030(WM_CLOSE=0x010) 返回 0 ⇒ 0x777687 可达                PASS  ret=0
@@ -88,5 +111,4 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   0x7780F4 是 mov eax, 1（返回 1 的路径存在）                          PASS  mov eax, 1
   0x7780FD 是 xor eax, eax（返回 0 的路径存在）                        PASS  xor eax, eax
 
-43/43 PASS
-EXIT=0
+71/71 PASS
