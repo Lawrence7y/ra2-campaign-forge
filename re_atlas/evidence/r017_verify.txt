@@ -1,0 +1,55 @@
+# R-017 machine-verifier evidence (R-030, 2026-10-22)
+# exe sha256: 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 (gate G0 enforced by tool)
+# re-run: python re_atlas/tools/verify_r017_claims.py
+
+R-017 verifier: 49/49 PASS
+PASS	G0	sha256 match, size=4825360
+PASS	A:ReadString prologue	83EC0C @0x00528A10 = 83 ec 0c
+PASS	A:ReadUniStr prologue	B814500000 @0x00528F00 = b8 14 50 00 00
+PASS	A:ReadStrTab prologue	81EC14040000 @0x00529160 = 81 ec 14 04 00 00
+PASS	A:ReadDouble prologue	83EC0C @0x005283D0 = 83 ec 0c
+PASS	A:ReadInteger prologue	83EC0C @0x005276D0 = 83 ec 0c
+PASS	A:ReadBool prologue	83EC0C @0x005295F0 = 83 ec 0c
+PASS	A:WriteString prologue	83EC38 @0x00528660 = 83 ec 38
+PASS	A:WriteBool prologue	8A44240C @0x00529560 = 8a 44 24 0c
+PASS	A:WriteUniStr prologue	51535556 @0x00528E00 = 51 53 55 56
+PASS	A:ReadString cache[+4,+8]	+4:True +8:True
+PASS	A:ReadUniStr cache[+4,+8]	+4:True +8:True
+PASS	A:ReadStrTab cache[+4,+8]	+4:True +8:True
+PASS	A:ReadDouble cache[+4,+8]	+4:True +8:True
+PASS	A:ReadInteger cache[+4,+8]	+4:True +8:True
+PASS	A:ReadBool cache[+4,+8]	+4:True +8:True
+PASS	A:ReadString ret 0x14	rets=['0x14', '0x14']
+PASS	A:ReadUniStr ret 0x14	rets=['0x14', '0x14']
+PASS	A:ReadStrTab ret 0x10	rets=['0x10']
+PASS	A:ReadInteger ret 0xC	rets=['0xc', '0xc', '0xc', '0xc']
+PASS	A:ReadBool ret 0xC	rets=['0xc', '0xc', '0xc', '0xc']
+PASS	B1 movsx first byte @0x52976B	0f be 0e
+PASS	B2 call toupper-callee @0x52976F	e8 5f 00 2a 00
+PASS	B3 0x7C97D3 IS toupper ('a'..'z' -0x20)	push ebx xor ebx, ebx cmp dword ptr [0xb782a0], ebx jne 0x7c97f1 mov eax, dword ptr [esp + 8] cmp eax, 0x61 jl
+PASS	B4 add eax,-0x30 @0x529774	83 c0 d0
+PASS	B5 cmp eax,0x29 + ja->default @0x52977A	83 f8 29 77 cc 33
+PASS	B6 mov dl,[eax+0x5297B4] @0x529781	8a 90 b4 97 52 00
+PASS	B7 jmp [edx*4+0x5297A8] @0x529787	ff 24 95 a8 97 52
+PASS	B8 jmp table == (false,true,default)	['0x52979a', '0x52978e', '0x52974b']
+PASS	B9 class bodies (mov al,1 / xor al,al / mov al,[esp+0x28])	
+PASS	B10 class table semantics	0 1 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 0 2 2 2 2 2 2 2 0 2 2 2 2 2 1 2 2 2 2 1
+PASS	C1 literals yes/no	'yes' / 'no'
+PASS	C2 WriteBool pushes both literals	
+PASS	D1 strlen + last-byte fetch @0x527877	8b fa 83 c9 ff 33 c0 f2 ae f7 d1 49
+PASS	D1b movsx edx,[ecx+edx-1]	0f be 54 11
+PASS	D2 call 0x7CAFF4 @0x527889	e8 66 37 2a 00
+PASS	D3 0x7CAFF4 IS tolower (ERRATUM: old docstring said toupper)	push ebx xor ebx, ebx cmp dword ptr [0xb782a0], ebx jne 0x7cb012 mov eax, dword ptr [esp + 8] cmp eax, 0x41 jl
+PASS	D4 cmp 'h' + jne->strtol @0x527891	83 f8 68 75 24 8b
+PASS	D5 format string %xh	%xh
+PASS	D6 hex path call sscanf(0x7CA530) @0x5278A4	e8 87 2c 2a 00
+PASS	D7 dec path call 0x7C9BFD @0x5278BE	e8 3a 23 2a 00
+PASS	D8 0x7C9BFD is a 1-arg wrapper (push;call;pop;ret)	push call pop ret
+PASS	E1 ReadBool miss calls 0x4A1DE0	
+PASS	E2 ReadString references 0x4A1DE0 too	
+PASS	NEG class-table-flip(T) caught	claim stayed green -> control useless
+PASS	NEG jmp-redirect caught	claim stayed green -> control useless
+PASS	NEG3 prefix-8 matches BOTH (claim too short is real)	
+PASS	NEG3 prefix-12 discriminates ReadBool vs ReadInteger	
+PASS	NEG sha-gate active (orig differs, would ABORT)	orig=db264305c8a6
+ALL ASSERTIONS PASS (incl. negative controls catching)

@@ -16,8 +16,12 @@ What is actually decided by bytes here:
 - WriteBool writes the literal "yes" (0x825BF8) or "no" (0x825BF4), so the
   reader and writer agree on only "y"/"n" and the numeric forms.
 - ReadInteger (0x5276D0) checks the LAST byte of the value (0x7CAFF4 is
-  toupper, compared against 'h' = 0x68). Trailing 'h' -> sscanf with "%xh"
-  (0x825BB4, hex); otherwise strtol (0x7C9BFD). So "100h" is hex 0x100.
+  tolower -- erratum R-030, this docstring used to say toupper; the kb body was
+  always correct -- compared against 'h' = 0x68). Trailing 'h' -> sscanf with
+  "%xh" (0x825BB4, hex); otherwise a 1-arg forwarder at 0x7C9BFD into
+  0x7C9B72 = base-10 atoi (no endptr, no base, no 0x handling). A leading '$'
+  is tested FIRST (0x527851) -> sscanf "$%x" (0x825BB8). So "100h"/"$100" are
+  hex; "Key=0x100" parses as 0 (atoi stops at 'x') -- correcting R-017's claim.
 
 Both are byte-level facts, and both are the kind of thing a compiler gets wrong
 because YRpp's headers say only `ReadBool` / `ReadInteger` with no parsing rule.
