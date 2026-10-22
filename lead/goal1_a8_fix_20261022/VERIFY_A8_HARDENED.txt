@@ -1,0 +1,149 @@
+A8 independent verification  [HARDENED: VERIFY_A8_HARDENED]
+python : 3.12.10 (C:\Users\Administrator\AppData\Local\Programs\Python\Python312\python.exe)
+master : D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\qc151_u8_impl_20261021\qc151_trip.harness3_u8.py
+copy   : D:\Project\ra2-campaign-forge\lead\goal1_a8_fix_20261022\qc151_trip.harness4.py
+★ 副本 pin     : cd9bbc87e46054af
+★ 母验证器 pin : 179f3af88fac3804
+★ 执行方式     : importlib 导入副本模块（无动态执行）
+
+------------------------------------------------------------------------------
+[K1] 母本零改动（LF sha256 前16）  ==> CONFIRMED
+    path   : D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\qc151_u8_impl_20261021\qc151_trip.harness3_u8.py
+    bytes  : 416425
+    LF16   : 7db3c11009b7183c
+    expect : 7db3c11009b7183c
+    CRLF count in mother: 0 (must be 0)
+
+------------------------------------------------------------------------------
+[K2] 副本哈希自证（LF/CRLF 双哈希 + 字节数 + ★pin）  ==> CONFIRMED
+    path    : D:\Project\ra2-campaign-forge\lead\goal1_a8_fix_20261022\qc151_trip.harness4.py
+    bytes   : 424078
+    LF16    : cd9bbc87e46054af
+    LF sha256 : cd9bbc87e46054afd7fd591b59bb8c3a12574bed192833d0e41681dfc1492794
+    CRLF16  : 896f45f1dcb474f5
+    CRLF sha256: 896f45f1dcb474f5811c1f1bc462e2e8e2ed3be15b57bfaef69e6d52a9a62749
+    CRLF pairs: 1
+    lone LF   : 25
+    BOM       : False
+    ends with newline: True
+    utf-8 decodable : True
+    lines mother=26 copy=26 delta=0
+    bytes delta = 7653
+    ★ 副本哈希 pin : cd9bbc87e46054af vs cd9bbc87e46054af -> MATCH
+
+------------------------------------------------------------------------------
+[K3] 反向重建（a8.diff 逐行在副本中 + 生成器复跑 EXIT=0）  ==> CONFIRMED
+    diff '+' lines : 160
+    missing in copy: 0
+    generator EXIT : 0
+    generator tail : RESULT: OK
+
+------------------------------------------------------------------------------
+[K4] AST 零改动面（按函数名分组比对；main 属预期改动）  ==> CONFIRMED
+    mother funcs : 131
+    copy funcs   : 134
+    changed      : ['main']
+    added        : ['_a8_path_under_carrier', '_a8_query_image_path', 'a8_sweep_carrier_processes']
+    removed      : [] (must be [])
+    预期改动面   : ['_a8_path_under_carrier', '_a8_query_image_path', 'a8_sweep_carrier_processes', 'main']
+    超出预期     : [] (must be [])
+
+------------------------------------------------------------------------------
+[K5] 禁止面（按名全杀 / 注入类 API / 写权限 / winreg 写）  ==> CONFIRMED
+    taskkill /IM by-name hits : 0 (must be 0)
+    注入类 API : [] (must be [])
+    OpenProcess 出现 : True
+    写/改类权限掩码 : [] (must be [])
+    只读权限掩码     : ['PROCESS_QUERY_LIMITED_INFORMATION', 'PROCESS_VM_READ', 'PROCESS_QUERY_INFORMATION']
+    winreg writes : [] (must be [])
+
+------------------------------------------------------------------------------
+[K6] 作用域正确性（finally 内 / 模块级容器 / 早于 launch）  ==> CONFIRMED
+    module-level A8_ALLOW_LOADER = [False] : True
+    A8_ALLOW_LOADER[0] 赋值处数 : 1
+      = bool(_u8_authorized)
+    首次赋值位置 299190 > try 位置 38279 : True
+    finally 块数 : 17
+    某个 finally 内引用 A8_ALLOW_LOADER[0] : True
+
+------------------------------------------------------------------------------
+[K11] ★ 模块级副作用登记（importlib 加载安全的前提）  ==> CONFIRMED
+    模块级语句总数 : 338
+    非白名单语句   : [] (must be [])
+    模块级裸调用   : [(182, 'SetProcessDPIAware')]
+      L182: SetProcessDPIAware  已登记
+    未登记调用     : [] (must be [])
+    
+    说明：SetProcessDPIAware 是 QC197/P1 的**刻意设计**（模块导入即生效），
+          只影响本进程的 DPI 虚拟化，不触碰其它进程 ⇒ 不判为副作用缺陷。
+
+------------------------------------------------------------------------------
+[K7] 路径归属判定（relative_to + 三用例实跑 + ★哈希门禁 + 无动态执行）  ==> CONFIRMED
+    ★ 调用前副本哈希门禁 : cd9bbc87e46054af vs cd9bbc87e46054af -> PASS
+    calls inside function : ['relative_to', 'resolve']
+    uses relative_to : True
+    uses startswith  : False (must be False)
+    ★ 调用方式 : importlib 导入副本模块后 getattr（无动态执行）
+    (a) carrier ...\abc vs ...\abc\gamemd.exe -> True  got=True  OK
+    (b) carrier ...\abc vs ...\abcd\x.exe -> False  got=False  OK
+    (c) carrier ...\abc vs C:\Windows\system32\x.exe -> False  got=False  OK
+
+------------------------------------------------------------------------------
+[K8] 负控有效性（重跑 + 独立判断覆盖性）  ==> CONFIRMED
+    EXIT=0
+    6/6 RED=True  13/13 PASS=True  RESULT ALL PASS=True
+
+------------------------------------------------------------------------------
+[K9] 合成冒烟（ast.parse + 符号 + 路径三用例 + ★哈希门禁）  ==> CONFIRMED
+    ★ 调用前副本哈希门禁 : cd9bbc87e46054af vs cd9bbc87e46054af -> PASS
+    ast.parse(copy): OK
+    module-level def a8_sweep_carrier_processes: True
+    module-level def _a8_query_image_path: True
+    module-level def _a8_path_under_carrier: True
+    module-level def terminate_owned_process: True
+    module-level def find_pids: True
+    module-level def note_cleanup_failure: True
+    module-level def main: True
+    module-level A8_ALLOW_LOADER const: True
+    ★ 调用方式 : importlib 导入副本模块后 getattr（无动态执行）
+    path smoke: (a)=True (b)=False (c)=False expect True/False/False
+
+------------------------------------------------------------------------------
+[K10] 附加风险审查（母验证器未改动 / 无动态执行 / 门禁覆盖）  ==> CONFIRMED
+    VERIFY_A8.py sha16 : 179f3af88fac3804 vs 179f3af88fac3804 -> MATCH
+    本文件动态执行原语出现次数 : 0 (must be 0)
+    本文件 copy_gate(...) 调用数 : 5
+    ★ 本文件无动态执行原语 : True
+    ★ 门禁覆盖 : 5 处 >= 2（K7/K9 各一次）: True
+    
+    已知弱点（诚实登记）：
+      1. 哈希门禁只保证「跑的是 pin 过的副本」，不保证副本本身安全
+         （副本由生成器产出，生成器已 assert 母本哈希）。
+      2. importlib 会执行整个模块 —— 前提是模块级无副作用，
+         这一点由 K11 断言，不是靠假设。
+      3. 本文件与 VERIFY_A8.py 是两份独立实现，长期存在漂移风险；
+         漂移检测靠本项对母验证器 sha16 的 pin。
+
+==============================================================================
+EXEC GATE SUMMARY
+==============================================================================
+  K7   副本 cd9bbc87e46054af  PASS
+  K9   副本 cd9bbc87e46054af  PASS
+
+==============================================================================
+SUMMARY
+==============================================================================
+K1   CONFIRMED     母本零改动（LF sha256 前16）
+K2   CONFIRMED     副本哈希自证（LF/CRLF 双哈希 + 字节数 + ★pin）
+K3   CONFIRMED     反向重建（a8.diff 逐行在副本中 + 生成器复跑 EXIT=0）
+K4   CONFIRMED     AST 零改动面（按函数名分组比对；main 属预期改动）
+K5   CONFIRMED     禁止面（按名全杀 / 注入类 API / 写权限 / winreg 写）
+K6   CONFIRMED     作用域正确性（finally 内 / 模块级容器 / 早于 launch）
+K11  CONFIRMED     ★ 模块级副作用登记（importlib 加载安全的前提）
+K7   CONFIRMED     路径归属判定（relative_to + 三用例实跑 + ★哈希门禁 + 无动态执行）
+K8   CONFIRMED     负控有效性（重跑 + 独立判断覆盖性）
+K9   CONFIRMED     合成冒烟（ast.parse + 符号 + 路径三用例 + ★哈希门禁）
+K10  CONFIRMED     附加风险审查（母验证器未改动 / 无动态执行 / 门禁覆盖）
+
+REFUTED count = 0
+overall = CONFIRMED
