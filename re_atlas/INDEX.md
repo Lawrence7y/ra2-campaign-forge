@@ -625,6 +625,30 @@ Building **269/269**（含 132 个 `lea eax,[esi+0xF5C] / 0x15 项 / 步长 0x44
 证据 `evidence/typeclass_fields_v2.txt`（644 行，**现行**；
 `typeclass_fields.txt` 为旧版已作废）。
 
+### C.18b EBP-this INI loader 普查（G-41 爆炸半径，2026-10-22）
+
+> 回答"`fstp [ebp+off]` 被误排除"这个缺陷**还波及哪些表**。
+> 根集合 = `.text` 内 rel32 `E8/E9` 目标 + `.rdata` 成组 `.text` 指针（虚表槽），
+> 原始字节取根（一次 `md.disasm` 扫全段会在 `0x46F5A0` 静默停）。
+
+| 项 | 数 |
+|:---|---:|
+| 根 / 去重 span / 解析出 `this` | 15,751 / 13,193 / 4,339 |
+| **`this`=EBP 且调 `Read*`** | **13**（已覆盖 2，未覆盖 11） |
+| 定性后 `KEY_FIELD` | **2** |
+
+- **RulesClass 树安全**：`Read_General`(`0x66D530`) / `Read_AudioVisual`(`0x6691E0`)
+  的 `this` 是 **ESI**（`0x66D547` / `0x6691F6 mov esi,ecx`）
+  ⇒ **H-016/H-017/H-018 的 268/279/151 不受影响**（实测）。
+- `0x6686C0` = `RulesClass::Init`（派发层，1 键）。
+- `0x6980C0` = **联机会话/序列号 loader**（新发现，15 键，
+  `RA2MD.INI` 的 `[MultiPlayer]`/`[SerialDefaults]`；调用方传 `GameMode`）
+  ⇒ R2-9 只读，不进 ③ 配置面。
+
+⇒ **③ 无第二个同类漏收。**
+复跑：`tools/census_ebp_this_loaders.py`（6/6）、
+`tools/classify_ebp_this_candidates.py`；证据 `evidence/ebp_this_{census,classify}.txt`。
+
 ### C.14 全引擎 INI 键索引（R-031 定稿口径）
 
 | 项 | 值 | 口径 |

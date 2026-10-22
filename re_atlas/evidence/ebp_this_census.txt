@@ -1,0 +1,36 @@
+=== EBP-this INI loader census (G-41 blast radius) ===
+  exe sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+  roots: 15751 rel32 E8/E9 targets in .text
+  distinct function spans: 13193 (15751 roots scanned, 2525 already covered)
+
+--- loaders whose `this` is EBP and which call a Read* ---
+  entry      end        mov ecx   reads stores  covered by
+  0x0041B110 0x0041B242 0x0041B117     1       0 *** NOT COVERED ***
+  0x0041F580 0x0041F6D7 0x0041F590     1       5 *** NOT COVERED ***
+  0x0045FE50 0x00460470 0x0045FE5F    34      36 BuildingTypeClass::LoadFromINI (dump_typeclass_fields, fixed)
+  0x004ACE70 0x004AD04F 0x004ACE81     2       0 *** NOT COVERED ***
+  0x005009B0 0x00500A39 0x005009B7     1       0 *** NOT COVERED ***
+  0x0051FB00 0x0051FC27 0x0051FB07     1       0 *** NOT COVERED ***
+  0x006686C0 0x00668AFC 0x006686CD     1       1 *** NOT COVERED ***
+  0x006980C0 0x006984DA 0x006980CC    19      17 *** NOT COVERED ***
+  0x006B4C80 0x006B4DC2 0x006B4C87     1       0 *** NOT COVERED ***
+  0x006CEA20 0x006CEA84 0x006CEA2F     1       0 *** NOT COVERED ***
+  0x006E6080 0x006E60F9 0x006E608F     1       1 *** NOT COVERED ***
+  0x00712170 0x0071230F 0x00712180    11      12 TechnoTypeClass::LoadFromINI (dump_typeclass_fields, fixed)
+  0x00727240 0x007272AE 0x0072724F     1       0 *** NOT COVERED ***
+
+  EBP-this INI-shaped loaders found : 13
+  of those, not covered by any tool : 11
+
+--- P1 positive control (the two known-bad classes) ---
+  [PASS] P1/TechnoTypeClass           this=ebp @0x00712180 (exp ebp @0x00712180)
+  [PASS] P1/BuildingTypeClass         this=ebp @0x0045FE5F (exp ebp @0x0045FE5F)
+  [PASS] P2/nonempty                  census contains both known-bad entries: True (total 13)
+
+--- P3 contrast control (non-EBP loaders must be absent) ---
+  [PASS] P3/Read_General              this=esi, in EBP set=False
+  [PASS] P3/ObjectType                this=ebx, in EBP set=False
+  [PASS] P4/denominator               functions examined with a resolved this-register = 4339
+
+=== verdict: 6/6 PASS ===
+ALL CHECKS PASS

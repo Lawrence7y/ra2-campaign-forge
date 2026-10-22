@@ -2596,6 +2596,7 @@ lea  eax, [esi + 0xF5C] ; mov ecx, 0x15 ; mov [eax],edi ; ... ; add eax,0x44
 | A-40 | `SuperWeaponTypeClass` / `WeaponTypeClass` / `WarheadTypeClass` / `BulletTypeClass` / `AnimTypeClass` / `OverlayTypeClass` / `TerrainTypeClass` / `SmudgeTypeClass` / `VoxelAnimTypeClass` 等**其余 15 个 TypeClass** 尚未接入本工具 |
 | A-41 | `BuildingTypeClass` 的 132 个动画字段已定位到 `+0x44` 步长的结构，但该**子结构的字段名表**未解 |
 | A-42 | 枚举包装器的 25 个键其**枚举值表**（字符串 → 整数）未解，只解出落点偏移 |
+| A-43 | 联机会话 loader `0x6980C0`（15 键，`RA2MD.INI` 的 `[MultiPlayer]`/`[SerialDefaults]`）已由爆炸半径普查发现，**未接入任何工具**；属 R2-9 只读范围。见 §19.11(g) |
 
 ### 19.11 R-028 核验（2026-10-22）—— 三条推翻 + 一条新增事实
 
@@ -2709,6 +2710,39 @@ if op2.mem.base in (X86_REG_ESP, X86_REG_EBP):
 复跑：`python re_atlas/tools/verify_r028_claims.py`（EXIT=0，49/49）
 `python re_atlas/tools/dump_typeclass_fields.py`（EXIT=0，`小结` 七行全"全部通过"，
 仅 BuildingType 的 `SuperWeapon` 一行按上述口径标"默认缺失"）
+
+#### (g) 爆炸半径普查（同轮追加）：这个缺陷还有没有别处？
+
+修好两个类之后必须回答"同一假设还在哪被用过"。
+`tools/census_ebp_this_loaders.py`（EXIT=0，6/6，见 `evidence/ebp_this_census.txt`）
+
+| 项 | 数 |
+|:---|---:|
+| 根（`.text` 内 rel32 E8/E9 + `.rdata` 成组 `.text` 指针） | 15,751 |
+| 去重后函数 span / 已覆盖跳过 | 13,193 / 2,525 |
+| 解析出 `this` 的函数 | 4,339 |
+| **`this`=EBP 且调 `Read*`** | **13** |
+| 已覆盖 / **未覆盖** | 2 / **11** |
+
+`tools/classify_ebp_this_candidates.py`（EXIT=0）把 11 个逐个定性：
+**`KEY_FIELD` 仅 2 个**，其余是派发器（5）或无紧邻字面量键（4）。
+
+1. `0x6686C0` = **`RulesClass::Init`**（R-021 的 31 节载入顺序），`this` 在 EBP
+   （`0x6686CD`），仅 1 键 `Players`→`+0x14D0`。**派发层，不是字段表。**
+2. `0x6980C0` = **联机会话/序列号设置 loader**（新，15 键）：
+   `PortBase` / `PortPool` / `SendDelay` / `PortNumberOverride` / `PhoneIndex` /
+   `CheckHeap` / `WOLLimitResolution` / `LastNickSlot` / `Color` / `ColorEx` /
+   `Side` / `SideEx` / `WOLTaunts` / `LANTaunts` / `WOLScrollText` /
+   `LANScrollText`；节 = `RA2MD.INI` 的 `[MultiPlayer]` / `[SerialDefaults]`。
+   调用方 `0x52E119 mov ecx,0xA8B238`（`GameMode` 全局）⇒ 联机路径。
+
+⇒ **RulesClass 那棵树不在半径内**：`Read_General`(`0x66D530`) 与
+`Read_AudioVisual`(`0x6691E0`) 的 `this` 都是 **ESI**（`0x66D547 mov esi,ecx`），
+普查 P3 反面对照 PASS。因此 **H-016/H-017/H-018 的 268/279/151 等数字不受
+G-41 影响**（已实测，非推断）。
+
+⇒ **③ 的受影响面到此为止**：除已修的 31 条，没有第二个同类漏收；
+新增的 `0x6980C0` 属 R2-9 联机（只读），不进 ③ 的配置面。
 
 ---
 

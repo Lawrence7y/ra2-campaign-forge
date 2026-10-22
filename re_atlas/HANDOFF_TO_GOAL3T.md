@@ -993,3 +993,80 @@ R-022 公布的「306 个字面量键」**作废**，正确值是 **651**。两�
 **若你方仍想消警**：`:1566` 处可加一行
 `os.path.abspath(out_dir)` 前置规范化 + `os.path.commonpath` 校验，或按本仓既有
 误报标注流程处置。**核验状态**：本线判过报（字节/数据流只读复核），你方工具是否接受此判归你方。
+
+---
+
+## H-021 · 2026-10-22 · 修完 G-41 后的爆炸半径普查：**RulesClass 那棵树安全，③ 无第二个同类漏收**
+
+**日期**：2026-10-22（R-028 核验同轮追加）
+**影响目标**：②③（**以"排除风险"为主**，不是新增可用面）
+**置信度**：**实证**（字节级普查 + 逐项定性 + 正反双向对照）
+**核验状态**：本线机器门禁 6/6 + 分类器正反对照通过；**未送异族**
+
+### 为什么这条值得单独写
+
+H-019 核验修掉了 `fstp [ebp+off]` 被误当"栈暂存"而跳过的缺陷，收回 31 个
+`ReadDouble` 字段。但你方真正需要知道的是**"我还能不能信其它已交付的表"**。
+一个只修两个类的补丁回答不了这个问题，所以做了全段普查。
+
+### 结论一：RulesClass 那棵树**不在**爆炸半径内
+
+`Read_General`（`0x66D530`）与 `Read_AudioVisual`（`0x6691E0`）的
+`this` 都是 **ESI**（`0x66D547 mov esi,ecx` / `0x6691F6 mov esi,ecx`）。
+EBP 排除规则在这棵树上**没有把字段当栈扔掉的机会**。
+
+⇒ **H-016 / H-017 / H-018 的 `[General]` 268 字段 / 279 键 /
+`[AudioVisual]` 151/152，不受 G-41 影响。** 这是我实测的
+（普查对这两个入口判 `this=esi`，且 P3 反面对照 PASS），不是推断。
+
+⇒ 同一轮里 `Read_MultiplayerDialogSettings`（`0x671EA0`）的
+**27 个键全部自洽**（默认载入 == 存回），H-015 的数字也站得住。
+
+### 结论二：③ 的受影响面**到此为止**
+
+全 `.text` 里 `this`=EBP 且调用 `Read*` 的函数共 **13** 个
+（根 15,751 → 去重 span 13,193 → 解析出 `this` 的 4,339 个）。
+其中已被修复后工具覆盖 2 个（就是那两个类），未覆盖 **11** 个。
+
+11 个**逐个定性**后，只有 **2 个**是 `KEY_FIELD` 形态（有"字面量键 →
+`[this+disp]` 存储"，即唯一可能被同类漏收的形状）：
+
+| 入口 | 定性 | 对 ③ 的意义 |
+|:---|:---|:---|
+| `0x6686C0` | `RulesClass::Init`（R-021 的 31 节载入顺序），1 键 `Players`→`+0x14D0` | **派发层，不是字段表** |
+| `0x6980C0` | **联机会话/序列号 loader**（15 键，`RA2MD.INI` 的 `[MultiPlayer]`/`[SerialDefaults]`）；调用方 `0x52E119 mov ecx,0xA8B238`（`GameMode` 全局） | **R2-9 联机（只读），不进战役配置面** |
+
+⇒ **除已修的 31 条，没有第二个同类漏收。** 你方按 v2 表生成的
+rulesmd 不需要因为这条普查再改任何东西。
+
+### 顺带：一个新发现的 loader（记录但不建议现在用）
+
+`0x6980C0` 此前不在任何表里，本次普查发现它有 15 个「键 → 字段」：
+`PortBase` / `PortPool` / `SendDelay` / `PortNumberOverride` / `PhoneIndex` /
+`CheckHeap` / `WOLLimitResolution` / `LastNickSlot` / `Color` / `ColorEx` /
+`Side` / `SideEx` / `WOLTaunts` / `LANTaunts` / `WOLScrollText` /
+`LANScrollText`。
+
+对 ② 可能有一条间接线索：`RA2MD.INI` 的 `[MultiPlayer]` 里
+**`PortBase` / `PortPool` / `SendDelay`** 是联机端口与发送延迟。
+若你方在排查"进图慢/卡"且涉及联机初始化路径，这几个键是候选观测点。
+**但这属于 R2-9 只读范围，本线不做分析，也不建议在没有目标时去动它们。**
+
+### 诚实边界
+
+- 普查根集合 = `.text` 内 rel32 `E8/E9` 目标 + `.rdata` 中成组的 `.text`
+  指针。**不是**完整 CFG：只经 `call [reg+disp]` 且该槽不在 `.rdata` 的入口
+  可能不在根里。已知虚表槽覆盖了这类的主干，但**不能宣称"穷尽"**。
+- `0x6980C0` 的类名是**本线命名**（`SessionSettings::LoadFromINI`），
+  **置信度中**：依据是它读的节名与键名、以及调用方传入 `GameMode` 全局；
+  未从 RTTI 或 vtable 确认类身份。
+- 11 个未覆盖项的定性依据是"字面量键紧邻 reader + 随后 `[this+disp]` 存储"
+  这一形态判据；形态判据不是语义判据，个别项可能被归类误差影响。
+- 未送异族复核。
+
+### 证据
+
+- `tools/census_ebp_this_loaders.py`（EXIT=0，6/6）→ `evidence/ebp_this_census.txt`
+- `tools/classify_ebp_this_candidates.py`（EXIT=0，正反对照通过）
+  → `evidence/ebp_this_classify.txt`
+- `kb/30` §19.11(g)
