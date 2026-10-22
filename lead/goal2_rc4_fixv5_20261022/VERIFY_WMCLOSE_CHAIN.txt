@@ -1,0 +1,40 @@
+================================================================================================
+§379 全链门禁：WM_CLOSE ⇒ DefWindowProcA ⇒ WM_DESTROY ⇒ 清零 [0x887368]
+================================================================================================
+
+--- 环节 1：派发到 0x54F790 ---
+  0x7779CB 是 call 0x54F790                                 PASS  call 0x54f790
+  0x7779D2 是 je（返回 0 才继续）                                  PASS  0x7779dd
+
+--- 环节 2：0x54F790 对 msg 的分支 ---
+  0x54F80F 是 add eax, 0xffffff00                           PASS  add eax, 0xffffff00
+  0x54F814 是 cmp eax, 5                                    PASS  cmp eax, 5
+  0x54F817 是 ja 0x54fb3d                                   PASS  ja 0x54fb3d
+  算术：WM_CLOSE(0x10)-0x100 = 0xFFFFFF10 > 5 ⇒ 跳 0x54FB3D    PASS  eax=0xFFFFFF10
+
+--- 环节 3：0x54FB3D 返回 0 ---
+  0x54FB3D 段内有 xor eax, eax（返回 0）                          PASS  0x54FB40 xor eax, eax
+  该段以 ret 0x10 结束                                          PASS  0x54FB46 ret 0x10
+
+--- 环节 4：msg≠0x286 走默认处理 ---
+  0x7779E1 是 cmp eax, 0x286                                PASS  cmp eax, 0x286
+  0x7779E6 是 jne 0x777a64                                  PASS  jne 0x777a64
+  WM_CLOSE(0x10) ≠ 0x286 ⇒ jne 成立                          PASS  
+
+--- 环节 5：0x777A70 调 USER32!DefWindowProcA ---
+  0x777A70 是 call dword ptr [0x7e1394]                     PASS  call dword ptr [0x7e1394]
+  IAT 0x7E1394 解析为 USER32!DefWindowProcA                   PASS  ('USER32.dll', 'DefWindowProcA')
+
+--- 环节 6：0x777803 清零（有守卫）---
+  0x7777F9 段内有 cmp ecx, ebx                                PASS  0x7777F9 cmp ecx, ebx
+  该段内有 je（槽为 0 时跳过写）                                       PASS  0x7777FB je 0x777809
+  该段内有 mov [0x887368], ebx（清零）                             PASS  0x777803 mov dword ptr [0x887368], ebx
+  清零指令地址确为 0x777803                                        PASS  0x777803
+  0x77780E 是 mov [0xb73550], ebx（hwnd 同块清零）                PASS  mov dword ptr [0xb73550], ebx
+
+--- 负控：0x7775F0 不是指令边界 ---
+  负控 0x7775F0 落在 0x7775EB 指令内部（起点错位）                       PASS  0x7775EB size=6 ⇒ 覆盖 [0x7775EB,0x7775F1)
+  负控 真函数头是 0x7775C0（前有 90 填充）                              PASS  0x7775C0=51 0x7775BC=90
+
+20/20 PASS
+EXIT=0
