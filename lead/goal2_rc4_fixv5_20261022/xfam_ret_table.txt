@@ -1,0 +1,633 @@
+xfam_ret_table.txt  —  X-family independent ret audit
+generator: capstone 5.0.7 / CS_ARCH_X86 / CS_MODE_32, linear decode at instruction boundaries
+binary   : D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+sha256   : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+
+--- PE section table as read from the file (not taken on trust) ---
+name               VA      VSize     RawOff    RawSize
+.text      0x00001000 0x003df38d 0x00001000 0x003e0000
+.rdata     0x003e1000 0x00030074 0x003e1000 0x00031000
+.data      0x00412000 0x00367be4 0x00412000 0x0006c000
+.rsrc      0x0077a000 0x00018128 0x0047e000 0x00019000
+.detour    0x00793000 0x00002718 0x00497000 0x00003000
+
+va2off(0x401000) = 0x1000
+va2off(0x7241A0) = 0x3241a0
+=> "off = 0x1000 + (va - 0x401000)" holds for .text: True
+
+================================================================================================
+FUNCTION 0x007241a0   extent = [0x7241a0, 0x7241f7)   len=87
+  boundary evidence: terminating ret at 0x7241F4 followed by 90 x9; next function head 0x724200
+  first 8 bytes AFTER extent: 90 90 90 90 90 90 90 90
+  -- full linear disassembly at instruction boundaries --
+    007241A0  8a 44 24 04                  mov al, byte ptr [esp + 4]
+    007241A4  56                           push esi
+    007241A5  8b f1                        mov esi, ecx
+    007241A7  38 46 0c                     cmp byte ptr [esi + 0xc], al
+    007241AA  74 47                        je 0x7241f3
+    007241AC  84 c0                        test al, al
+    007241AE  88 46 0c                     mov byte ptr [esi + 0xc], al
+    007241B1  75 21                        jne 0x7241d4
+    007241B3  8b 46 08                     mov eax, dword ptr [esi + 8]
+    007241B6  68 50 49 54 54               push 0x54544950
+    007241BB  50                           push eax
+    007241BC  ff 15 8c 14 7e 00            call dword ptr [0x7e148c]
+    007241C2  8b 46 04                     mov eax, dword ptr [esi + 4]
+    007241C5  85 c0                        test eax, eax
+    007241C7  74 0b                        je 0x7241d4
+    007241C9  8b 16                        mov edx, dword ptr [esi]
+    007241CB  8d 46 18                     lea eax, [esi + 0x18]
+    007241CE  50                           push eax
+    007241CF  8b ce                        mov ecx, esi
+    007241D1  ff 52 08                     call dword ptr [edx + 8]
+    007241D4  8a 46 0c                     mov al, byte ptr [esi + 0xc]
+    007241D7  3c 01                        cmp al, 1
+    007241D9  b8 e8 94 83 00               mov eax, 0x8394e8
+    007241DE  74 05                        je 0x7241e5
+    007241E0  b8 e4 94 83 00               mov eax, 0x8394e4
+    007241E5  50                           push eax
+    007241E6  68 b8 49 84 00               push 0x8449b8
+    007241EB  e8 f0 26 ce ff               call 0x4068e0
+    007241F0  83 c4 08                     add esp, 8
+    007241F3  5e                           pop esi
+    007241F4  c2 04 00                     ret 4   <== RET
+  -- ALL ret instructions (instruction-boundary decoded, NOT byte-searched) --
+     count = 1
+     0x007241f4  bytes=c2 04 00   op=4      imm=4
+  -- MAIN / TERMINATING ret = 0x7241f4  bytes=c2 04 00  width=4
+  -- ret widths present in this function: [4]  (uniform = True)
+
+================================================================================================
+FUNCTION 0x00724200   extent = [0x724200, 0x724404)   len=516
+  boundary evidence: jump table at 0x724404 (4 dwords) + byte table at 0x724414; 0x7243F4..0x724403 is a jle target inside the function
+  first 8 bytes AFTER extent: 32 43 72 00 47 42 72 00
+  -- full linear disassembly at instruction boundaries --
+    00724200  53                           push ebx
+    00724201  55                           push ebp
+    00724202  56                           push esi
+    00724203  8b f1                        mov esi, ecx
+    00724205  57                           push edi
+    00724206  80 7e 0c 01                  cmp byte ptr [esi + 0xc], 1
+    0072420A  0f 85 dd 01 00 00            jne 0x7243ed
+    00724210  8b 4c 24 14                  mov ecx, dword ptr [esp + 0x14]
+    00724214  8b 41 04                     mov eax, dword ptr [ecx + 4]
+    00724217  05 ed fe ff ff               add eax, 0xfffffeed
+    0072421C  3d f5 00 00 00               cmp eax, 0xf5
+    00724221  0f 87 c6 01 00 00            ja 0x7243ed
+    00724227  33 d2                        xor edx, edx
+    00724229  8a 90 14 44 72 00            mov dl, byte ptr [eax + 0x724414]
+    0072422F  ff 24 95 04 44 72 00         jmp dword ptr [edx*4 + 0x724404]
+    00724236  8b 46 08                     mov eax, dword ptr [esi + 8]
+    00724239  68 50 49 54 54               push 0x54544950
+    0072423E  50                           push eax
+    0072423F  ff 15 8c 14 7e 00            call dword ptr [0x7e148c]
+    00724245  eb 3a                        jmp 0x724281
+    00724247  8b 86 28 02 00 00            mov eax, dword ptr [esi + 0x228]
+    0072424D  85 c0                        test eax, eax
+    0072424F  74 4d                        je 0x72429e
+    00724251  a0 d8 f7 a8 00               mov al, byte ptr [0xa8f7d8]
+    00724256  84 c0                        test al, al
+    00724258  75 44                        jne 0x72429e
+    0072425A  8b 4e 08                     mov ecx, dword ptr [esi + 8]
+    0072425D  68 50 49 54 54               push 0x54544950
+    00724262  51                           push ecx
+    00724263  ff 15 8c 14 7e 00            call dword ptr [0x7e148c]
+    00724269  8b 96 28 02 00 00            mov edx, dword ptr [esi + 0x228]
+    0072426F  8b 46 08                     mov eax, dword ptr [esi + 8]
+    00724272  6a 00                        push 0
+    00724274  52                           push edx
+    00724275  68 50 49 54 54               push 0x54544950
+    0072427A  50                           push eax
+    0072427B  ff 15 94 14 7e 00            call dword ptr [0x7e1494]
+    00724281  8b 46 04                     mov eax, dword ptr [esi + 4]
+    00724284  85 c0                        test eax, eax
+    00724286  0f 84 61 01 00 00            je 0x7243ed
+    0072428C  8b 16                        mov edx, dword ptr [esi]
+    0072428E  8d 46 18                     lea eax, [esi + 0x18]
+    00724291  50                           push eax
+    00724292  8b ce                        mov ecx, esi
+    00724294  ff 52 08                     call dword ptr [edx + 8]
+    00724297  5f                           pop edi
+    00724298  5e                           pop esi
+    00724299  5d                           pop ebp
+    0072429A  5b                           pop ebx
+    0072429B  c2 04 00                     ret 4   <== RET
+    0072429E  8d 5e 10                     lea ebx, [esi + 0x10]
+    007242A1  53                           push ebx
+    007242A2  ff 15 c0 13 7e 00            call dword ptr [0x7e13c0]
+    007242A8  8b 4e 08                     mov ecx, dword ptr [esi + 8]
+    007242AB  53                           push ebx
+    007242AC  51                           push ecx
+    007242AD  ff 15 58 14 7e 00            call dword ptr [0x7e1458]
+    007242B3  8b 86 44 02 00 00            mov eax, dword ptr [esi + 0x244]
+    007242B9  c7 44 24 14 00 00 00 00      mov dword ptr [esp + 0x14], 0
+    007242C1  85 c0                        test eax, eax
+    007242C3  7e 45                        jle 0x72430a
+    007242C5  8b be 38 02 00 00            mov edi, dword ptr [esi + 0x238]
+    007242CB  8b 2b                        mov ebp, dword ptr [ebx]
+    007242CD  8b 07                        mov eax, dword ptr [edi]
+    007242CF  83 c0 04                     add eax, 4
+    007242D2  8b 08                        mov ecx, dword ptr [eax]
+    007242D4  3b e9                        cmp ebp, ecx
+    007242D6  7c 1c                        jl 0x7242f4
+    007242D8  8b 50 08                     mov edx, dword ptr [eax + 8]
+    007242DB  03 d1                        add edx, ecx
+    007242DD  3b ea                        cmp ebp, edx
+    007242DF  7f 13                        jg 0x7242f4
+    007242E1  8b 4b 04                     mov ecx, dword ptr [ebx + 4]
+    007242E4  8b 50 04                     mov edx, dword ptr [eax + 4]
+    007242E7  3b ca                        cmp ecx, edx
+    007242E9  7c 09                        jl 0x7242f4
+    007242EB  8b 40 0c                     mov eax, dword ptr [eax + 0xc]
+    007242EE  03 c2                        add eax, edx
+    007242F0  3b c8                        cmp ecx, eax
+    007242F2  7e 2f                        jle 0x724323
+    007242F4  8b 44 24 14                  mov eax, dword ptr [esp + 0x14]
+    007242F8  8b 8e 44 02 00 00            mov ecx, dword ptr [esi + 0x244]
+    007242FE  40                           inc eax
+    007242FF  83 c7 04                     add edi, 4
+    00724302  3b c1                        cmp eax, ecx
+    00724304  89 44 24 14                  mov dword ptr [esp + 0x14], eax
+    00724308  7c c3                        jl 0x7242cd
+    0072430A  33 c0                        xor eax, eax
+    0072430C  8b ce                        mov ecx, esi
+    0072430E  89 46 04                     mov dword ptr [esi + 4], eax
+    00724311  e8 ba 07 00 00               call 0x724ad0
+    00724316  84 c0                        test al, al
+    00724318  0f 84 cf 00 00 00            je 0x7243ed
+    0072431E  e9 b2 00 00 00               jmp 0x7243d5
+    00724323  8b 86 38 02 00 00            mov eax, dword ptr [esi + 0x238]
+    00724329  8b 4c 24 14                  mov ecx, dword ptr [esp + 0x14]
+    0072432D  8b 04 88                     mov eax, dword ptr [eax + ecx*4]
+    00724330  eb da                        jmp 0x72430c
+    00724332  81 79 08 50 49 54 54         cmp dword ptr [ecx + 8], 0x54544950
+    00724339  0f 85 ae 00 00 00            jne 0x7243ed
+    0072433F  8b 4e 08                     mov ecx, dword ptr [esi + 8]
+    00724342  68 50 49 54 54               push 0x54544950
+    00724347  51                           push ecx
+    00724348  ff 15 8c 14 7e 00            call dword ptr [0x7e148c]
+    0072434E  8b 46 04                     mov eax, dword ptr [esi + 4]
+    00724351  85 c0                        test eax, eax
+    00724353  0f 85 33 ff ff ff            jne 0x72428c
+    00724359  8d 5e 10                     lea ebx, [esi + 0x10]
+    0072435C  53                           push ebx
+    0072435D  ff 15 c0 13 7e 00            call dword ptr [0x7e13c0]
+    00724363  8b 4e 08                     mov ecx, dword ptr [esi + 8]
+    00724366  53                           push ebx
+    00724367  51                           push ecx
+    00724368  ff 15 58 14 7e 00            call dword ptr [0x7e1458]
+    0072436E  8b 86 44 02 00 00            mov eax, dword ptr [esi + 0x244]
+    00724374  c7 44 24 14 00 00 00 00      mov dword ptr [esp + 0x14], 0
+    0072437C  85 c0                        test eax, eax
+    0072437E  7e 45                        jle 0x7243c5
+    00724380  8b be 38 02 00 00            mov edi, dword ptr [esi + 0x238]
+    00724386  8b 2b                        mov ebp, dword ptr [ebx]
+    00724388  8b 07                        mov eax, dword ptr [edi]
+    0072438A  83 c0 04                     add eax, 4
+    0072438D  8b 08                        mov ecx, dword ptr [eax]
+    0072438F  3b e9                        cmp ebp, ecx
+    00724391  7c 1c                        jl 0x7243af
+    00724393  8b 50 08                     mov edx, dword ptr [eax + 8]
+    00724396  03 d1                        add edx, ecx
+    00724398  3b ea                        cmp ebp, edx
+    0072439A  7f 13                        jg 0x7243af
+    0072439C  8b 4b 04                     mov ecx, dword ptr [ebx + 4]
+    0072439F  8b 50 04                     mov edx, dword ptr [eax + 4]
+    007243A2  3b ca                        cmp ecx, edx
+    007243A4  7c 09                        jl 0x7243af
+    007243A6  8b 40 0c                     mov eax, dword ptr [eax + 0xc]
+    007243A9  03 c2                        add eax, edx
+    007243AB  3b c8                        cmp ecx, eax
+    007243AD  7e 45                        jle 0x7243f4
+    007243AF  8b 44 24 14                  mov eax, dword ptr [esp + 0x14]
+    007243B3  8b 8e 44 02 00 00            mov ecx, dword ptr [esi + 0x244]
+    007243B9  40                           inc eax
+    007243BA  83 c7 04                     add edi, 4
+    007243BD  3b c1                        cmp eax, ecx
+    007243BF  89 44 24 14                  mov dword ptr [esp + 0x14], eax
+    007243C3  7c c3                        jl 0x724388
+    007243C5  33 c0                        xor eax, eax
+    007243C7  8b ce                        mov ecx, esi
+    007243C9  89 46 04                     mov dword ptr [esi + 4], eax
+    007243CC  e8 ff 06 00 00               call 0x724ad0
+    007243D1  84 c0                        test al, al
+    007243D3  74 18                        je 0x7243ed
+    007243D5  8b 96 30 02 00 00            mov edx, dword ptr [esi + 0x230]
+    007243DB  8b 46 08                     mov eax, dword ptr [esi + 8]
+    007243DE  6a 00                        push 0
+    007243E0  52                           push edx
+    007243E1  68 50 49 54 54               push 0x54544950
+    007243E6  50                           push eax
+    007243E7  ff 15 94 14 7e 00            call dword ptr [0x7e1494]
+    007243ED  5f                           pop edi
+    007243EE  5e                           pop esi
+    007243EF  5d                           pop ebp
+    007243F0  5b                           pop ebx
+    007243F1  c2 04 00                     ret 4   <== RET
+    007243F4  8b 86 38 02 00 00            mov eax, dword ptr [esi + 0x238]
+    007243FA  8b 4c 24 14                  mov ecx, dword ptr [esp + 0x14]
+    007243FE  8b 04 88                     mov eax, dword ptr [eax + ecx*4]
+    00724401  eb c4                        jmp 0x7243c7
+    00724403  90                           nop 
+  -- ALL ret instructions (instruction-boundary decoded, NOT byte-searched) --
+     count = 2
+     0x0072429b  bytes=c2 04 00   op=4      imm=4
+     0x007243f1  bytes=c2 04 00   op=4      imm=4
+  -- MAIN / TERMINATING ret = 0x7243f1  bytes=c2 04 00  width=4
+  -- ret widths present in this function: [4]  (uniform = True)
+
+================================================================================================
+FUNCTION 0x00724520   extent = [0x724520, 0x72452d)   len=13
+  boundary evidence: terminating ret at 0x72452A followed by 90 90 90
+  first 8 bytes AFTER extent: 90 90 90 8b 81 28 02 00
+  -- full linear disassembly at instruction boundaries --
+    00724520  8b 44 24 04                  mov eax, dword ptr [esp + 4]
+    00724524  89 81 28 02 00 00            mov dword ptr [ecx + 0x228], eax
+    0072452A  c2 04 00                     ret 4   <== RET
+  -- ALL ret instructions (instruction-boundary decoded, NOT byte-searched) --
+     count = 1
+     0x0072452a  bytes=c2 04 00   op=4      imm=4
+  -- MAIN / TERMINATING ret = 0x72452a  bytes=c2 04 00  width=4
+  -- ret widths present in this function: [4]  (uniform = True)
+
+================================================================================================
+FUNCTION 0x00724530   extent = [0x724530, 0x72453d)   len=13
+  boundary evidence: terminating ret at 0x72453C followed by 90 90 90
+  first 8 bytes AFTER extent: 90 90 90 8b 81 2c 02 00
+  -- full linear disassembly at instruction boundaries --
+    00724530  8b 81 28 02 00 00            mov eax, dword ptr [ecx + 0x228]
+    00724536  89 81 2c 02 00 00            mov dword ptr [ecx + 0x22c], eax
+    0072453C  c3                           ret    <== RET
+  -- ALL ret instructions (instruction-boundary decoded, NOT byte-searched) --
+     count = 1
+     0x0072453c  bytes=c3         op=(none) imm=0
+  -- MAIN / TERMINATING ret = 0x72453c  bytes=c3  width=0
+  -- ret widths present in this function: [0]  (uniform = True)
+
+================================================================================================
+FUNCTION 0x00724540   extent = [0x724540, 0x72454d)   len=13
+  boundary evidence: terminating ret at 0x72454C followed by 90 90 90
+  first 8 bytes AFTER extent: 90 90 90 8b 81 30 02 00
+  -- full linear disassembly at instruction boundaries --
+    00724540  8b 81 2c 02 00 00            mov eax, dword ptr [ecx + 0x22c]
+    00724546  89 81 28 02 00 00            mov dword ptr [ecx + 0x228], eax
+    0072454C  c3                           ret    <== RET
+  -- ALL ret instructions (instruction-boundary decoded, NOT byte-searched) --
+     count = 1
+     0x0072454c  bytes=c3         op=(none) imm=0
+  -- MAIN / TERMINATING ret = 0x72454c  bytes=c3  width=0
+  -- ret widths present in this function: [0]  (uniform = True)
+
+================================================================================================
+FUNCTION 0x00724580   extent = [0x724580, 0x72472e)   len=430
+  boundary evidence: terminating ret at 0x72472B followed by 90 90
+  first 8 bytes AFTER extent: 90 90 83 ec 0c 55 8b e9
+  -- full linear disassembly at instruction boundaries --
+    00724580  53                           push ebx
+    00724581  55                           push ebp
+    00724582  56                           push esi
+    00724583  57                           push edi
+    00724584  8b 7c 24 14                  mov edi, dword ptr [esp + 0x14]
+    00724588  8b d9                        mov ebx, ecx
+    0072458A  8b 07                        mov eax, dword ptr [edi]
+    0072458C  8d b3 4c 02 00 00            lea esi, [ebx + 0x24c]
+    00724592  89 44 24 14                  mov dword ptr [esp + 0x14], eax
+    00724596  8b 46 04                     mov eax, dword ptr [esi + 4]
+    00724599  85 c0                        test eax, eax
+    0072459B  74 30                        je 0x7245cd
+    0072459D  8d 4c 24 14                  lea ecx, [esp + 0x14]
+    007245A1  51                           push ecx
+    007245A2  8b ce                        mov ecx, esi
+    007245A4  e8 f7 09 00 00               call 0x724fa0
+    007245A9  84 c0                        test al, al
+    007245AB  0f 85 74 01 00 00            jne 0x724725
+    007245B1  8d 54 24 14                  lea edx, [esp + 0x14]
+    007245B5  8b ce                        mov ecx, esi
+    007245B7  52                           push edx
+    007245B8  e8 03 0a 00 00               call 0x724fc0
+    007245BD  85 c0                        test eax, eax
+    007245BF  74 0c                        je 0x7245cd
+    007245C1  89 46 10                     mov dword ptr [esi + 0x10], eax
+    007245C4  5f                           pop edi
+    007245C5  5e                           pop esi
+    007245C6  5d                           pop ebp
+    007245C7  32 c0                        xor al, al
+    007245C9  5b                           pop ebx
+    007245CA  c2 04 00                     ret 4   <== RET
+    007245CD  6a 1c                        push 0x1c
+    007245CF  e8 43 48 0a 00               call 0x7c8e17
+    007245D4  8b e8                        mov ebp, eax
+    007245D6  83 c4 04                     add esp, 4
+    007245D9  85 ed                        test ebp, ebp
+    007245DB  0f 84 44 01 00 00            je 0x724725
+    007245E1  8b 07                        mov eax, dword ptr [edi]
+    007245E3  8d 4f 04                     lea ecx, [edi + 4]
+    007245E6  89 45 00                     mov dword ptr [ebp], eax
+    007245E9  8d 55 04                     lea edx, [ebp + 4]
+    007245EC  8b 01                        mov eax, dword ptr [ecx]
+    007245EE  89 02                        mov dword ptr [edx], eax
+    007245F0  8b 41 04                     mov eax, dword ptr [ecx + 4]
+    007245F3  89 42 04                     mov dword ptr [edx + 4], eax
+    007245F6  8b 41 08                     mov eax, dword ptr [ecx + 8]
+    007245F9  89 42 08                     mov dword ptr [edx + 8], eax
+    007245FC  8b 49 0c                     mov ecx, dword ptr [ecx + 0xc]
+    007245FF  89 4a 0c                     mov dword ptr [edx + 0xc], ecx
+    00724602  8b 57 14                     mov edx, dword ptr [edi + 0x14]
+    00724605  89 55 14                     mov dword ptr [ebp + 0x14], edx
+    00724608  8a 47 18                     mov al, byte ptr [edi + 0x18]
+    0072460B  8d bb 34 02 00 00            lea edi, [ebx + 0x234]
+    00724611  88 45 18                     mov byte ptr [ebp + 0x18], al
+    00724614  8b 47 08                     mov eax, dword ptr [edi + 8]
+    00724617  8b 4f 10                     mov ecx, dword ptr [edi + 0x10]
+    0072461A  3b c8                        cmp ecx, eax
+    0072461C  7c 2e                        jl 0x72464c
+    0072461E  8a 4f 0d                     mov cl, byte ptr [edi + 0xd]
+    00724621  84 c9                        test cl, cl
+    00724623  75 08                        jne 0x72462d
+    00724625  85 c0                        test eax, eax
+    00724627  0f 85 ef 00 00 00            jne 0x72471c
+    0072462D  8b 4f 14                     mov ecx, dword ptr [edi + 0x14]
+    00724630  85 c9                        test ecx, ecx
+    00724632  0f 8e e4 00 00 00            jle 0x72471c
+    00724638  8b 17                        mov edx, dword ptr [edi]
+    0072463A  03 c8                        add ecx, eax
+    0072463C  6a 00                        push 0
+    0072463E  51                           push ecx
+    0072463F  8b cf                        mov ecx, edi
+    00724641  ff 52 08                     call dword ptr [edx + 8]
+    00724644  84 c0                        test al, al
+    00724646  0f 84 d0 00 00 00            je 0x72471c
+    0072464C  8b 47 10                     mov eax, dword ptr [edi + 0x10]
+    0072464F  8b 57 04                     mov edx, dword ptr [edi + 4]
+    00724652  8d 48 01                     lea ecx, [eax + 1]
+    00724655  89 4f 10                     mov dword ptr [edi + 0x10], ecx
+    00724658  89 2c 82                     mov dword ptr [edx + eax*4], ebp
+    0072465B  8b 4e 04                     mov ecx, dword ptr [esi + 4]
+    0072465E  8b 46 08                     mov eax, dword ptr [esi + 8]
+    00724661  41                           inc ecx
+    00724662  3b c8                        cmp ecx, eax
+    00724664  0f 8e 8a 00 00 00            jle 0x7246f4
+    0072466A  85 c0                        test eax, eax
+    0072466C  75 0a                        jne 0x724678
+    0072466E  c7 44 24 14 0a 00 00 00      mov dword ptr [esp + 0x14], 0xa
+    00724676  eb 0e                        jmp 0x724686
+    00724678  8b c8                        mov ecx, eax
+    0072467A  85 c9                        test ecx, ecx
+    0072467C  89 4c 24 14                  mov dword ptr [esp + 0x14], ecx
+    00724680  0f 8c 8d 00 00 00            jl 0x724713
+    00724686  8b 54 24 14                  mov edx, dword ptr [esp + 0x14]
+    0072468A  8d 1c 10                     lea ebx, [eax + edx]
+    0072468D  8d 04 dd 00 00 00 00         lea eax, [ebx*8]
+    00724694  50                           push eax
+    00724695  e8 7d 47 0a 00               call 0x7c8e17
+    0072469A  8b f8                        mov edi, eax
+    0072469C  83 c4 04                     add esp, 4
+    0072469F  85 ff                        test edi, edi
+    007246A1  74 70                        je 0x724713
+    007246A3  68 90 4f 72 00               push 0x724f90
+    007246A8  53                           push ebx
+    007246A9  6a 08                        push 8
+    007246AB  57                           push edi
+    007246AC  e8 3f 22 ce ff               call 0x4068f0
+    007246B1  8b 4e 04                     mov ecx, dword ptr [esi + 4]
+    007246B4  33 c0                        xor eax, eax
+    007246B6  85 c9                        test ecx, ecx
+    007246B8  7e 1a                        jle 0x7246d4
+    007246BA  8b 0e                        mov ecx, dword ptr [esi]
+    007246BC  40                           inc eax
+    007246BD  8b 54 c1 f8                  mov edx, dword ptr [ecx + eax*8 - 8]
+    007246C1  89 54 c7 f8                  mov dword ptr [edi + eax*8 - 8], edx
+    007246C5  8b 4c c1 fc                  mov ecx, dword ptr [ecx + eax*8 - 4]
+    007246C9  89 4c c7 fc                  mov dword ptr [edi + eax*8 - 4], ecx
+    007246CD  8b 4e 04                     mov ecx, dword ptr [esi + 4]
+    007246D0  3b c1                        cmp eax, ecx
+    007246D2  7c e6                        jl 0x7246ba
+    007246D4  8b 16                        mov edx, dword ptr [esi]
+    007246D6  52                           push edx
+    007246D7  e8 61 44 0a 00               call 0x7c8b3d
+    007246DC  8b 44 24 18                  mov eax, dword ptr [esp + 0x18]
+    007246E0  8b 4e 08                     mov ecx, dword ptr [esi + 8]
+    007246E3  83 c4 04                     add esp, 4
+    007246E6  03 c8                        add ecx, eax
+    007246E8  89 3e                        mov dword ptr [esi], edi
+    007246EA  89 4e 08                     mov dword ptr [esi + 8], ecx
+    007246ED  c7 46 10 00 00 00 00         mov dword ptr [esi + 0x10], 0
+    007246F4  8b 4e 04                     mov ecx, dword ptr [esi + 4]
+    007246F7  8b 16                        mov edx, dword ptr [esi]
+    007246F9  8b 45 00                     mov eax, dword ptr [ebp]
+    007246FC  89 04 ca                     mov dword ptr [edx + ecx*8], eax
+    007246FF  8b 4e 04                     mov ecx, dword ptr [esi + 4]
+    00724702  8b 16                        mov edx, dword ptr [esi]
+    00724704  89 6c ca 04                  mov dword ptr [edx + ecx*8 + 4], ebp
+    00724708  8b 46 04                     mov eax, dword ptr [esi + 4]
+    0072470B  40                           inc eax
+    0072470C  c6 46 0c 00                  mov byte ptr [esi + 0xc], 0
+    00724710  89 46 04                     mov dword ptr [esi + 4], eax
+    00724713  5f                           pop edi
+    00724714  5e                           pop esi
+    00724715  5d                           pop ebp
+    00724716  b0 01                        mov al, 1
+    00724718  5b                           pop ebx
+    00724719  c2 04 00                     ret 4   <== RET
+    0072471C  55                           push ebp
+    0072471D  e8 1b 44 0a 00               call 0x7c8b3d
+    00724722  83 c4 04                     add esp, 4
+    00724725  5f                           pop edi
+    00724726  5e                           pop esi
+    00724727  5d                           pop ebp
+    00724728  32 c0                        xor al, al
+    0072472A  5b                           pop ebx
+    0072472B  c2 04 00                     ret 4   <== RET
+  -- ALL ret instructions (instruction-boundary decoded, NOT byte-searched) --
+     count = 3
+     0x007245ca  bytes=c2 04 00   op=4      imm=4
+     0x00724719  bytes=c2 04 00   op=4      imm=4
+     0x0072472b  bytes=c2 04 00   op=4      imm=4
+  -- MAIN / TERMINATING ret = 0x72472b  bytes=c2 04 00  width=4
+  -- ret widths present in this function: [4]  (uniform = True)
+
+================================================================================================
+FUNCTION 0x00724730   extent = [0x724730, 0x7248b1)   len=385
+  boundary evidence: terminating ret at 0x7248AE followed by 90 90 90 90
+  first 8 bytes AFTER extent: 90 90 90 90 90 90 90 90
+  -- full linear disassembly at instruction boundaries --
+    00724730  83 ec 0c                     sub esp, 0xc
+    00724733  55                           push ebp
+    00724734  8b e9                        mov ebp, ecx
+    00724736  56                           push esi
+    00724737  8b 85 50 02 00 00            mov eax, dword ptr [ebp + 0x250]
+    0072473D  8d b5 4c 02 00 00            lea esi, [ebp + 0x24c]
+    00724743  85 c0                        test eax, eax
+    00724745  0f 84 5e 01 00 00            je 0x7248a9
+    0072474B  8b 46 10                     mov eax, dword ptr [esi + 0x10]
+    0072474E  85 c0                        test eax, eax
+    00724750  74 0a                        je 0x72475c
+    00724752  8b 00                        mov eax, dword ptr [eax]
+    00724754  8b 4c 24 18                  mov ecx, dword ptr [esp + 0x18]
+    00724758  3b c1                        cmp eax, ecx
+    0072475A  74 17                        je 0x724773
+    0072475C  8d 4c 24 18                  lea ecx, [esp + 0x18]
+    00724760  51                           push ecx
+    00724761  8b ce                        mov ecx, esi
+    00724763  e8 58 08 00 00               call 0x724fc0
+    00724768  85 c0                        test eax, eax
+    0072476A  0f 84 39 01 00 00            je 0x7248a9
+    00724770  89 46 10                     mov dword ptr [esi + 0x10], eax
+    00724773  8b 46 04                     mov eax, dword ptr [esi + 4]
+    00724776  85 c0                        test eax, eax
+    00724778  74 2c                        je 0x7247a6
+    0072477A  8b 46 10                     mov eax, dword ptr [esi + 0x10]
+    0072477D  85 c0                        test eax, eax
+    0072477F  74 0a                        je 0x72478b
+    00724781  8b 54 24 18                  mov edx, dword ptr [esp + 0x18]
+    00724785  8b 08                        mov ecx, dword ptr [eax]
+    00724787  3b ca                        cmp ecx, edx
+    00724789  74 13                        je 0x72479e
+    0072478B  8d 44 24 18                  lea eax, [esp + 0x18]
+    0072478F  8b ce                        mov ecx, esi
+    00724791  50                           push eax
+    00724792  e8 29 08 00 00               call 0x724fc0
+    00724797  85 c0                        test eax, eax
+    00724799  74 0b                        je 0x7247a6
+    0072479B  89 46 10                     mov dword ptr [esi + 0x10], eax
+    0072479E  8b 46 10                     mov eax, dword ptr [esi + 0x10]
+    007247A1  83 c0 04                     add eax, 4
+    007247A4  eb 05                        jmp 0x7247ab
+    007247A6  b8 20 88 b7 00               mov eax, 0xb78820
+    007247AB  8b 00                        mov eax, dword ptr [eax]
+    007247AD  8b 4d 04                     mov ecx, dword ptr [ebp + 4]
+    007247B0  3b c8                        cmp ecx, eax
+    007247B2  89 44 24 08                  mov dword ptr [esp + 8], eax
+    007247B6  75 14                        jne 0x7247cc
+    007247B8  85 c9                        test ecx, ecx
+    007247BA  74 10                        je 0x7247cc
+    007247BC  8b 55 00                     mov edx, dword ptr [ebp]
+    007247BF  8d 45 18                     lea eax, [ebp + 0x18]
+    007247C2  50                           push eax
+    007247C3  8b cd                        mov ecx, ebp
+    007247C5  ff 52 08                     call dword ptr [edx + 8]
+    007247C8  8b 44 24 08                  mov eax, dword ptr [esp + 8]
+    007247CC  57                           push edi
+    007247CD  8b f8                        mov edi, eax
+    007247CF  8b 46 04                     mov eax, dword ptr [esi + 4]
+    007247D2  85 c0                        test eax, eax
+    007247D4  0f 84 81 00 00 00            je 0x72485b
+    007247DA  8a 4e 0c                     mov cl, byte ptr [esi + 0xc]
+    007247DD  84 c9                        test cl, cl
+    007247DF  75 1e                        jne 0x7247ff
+    007247E1  8b 0e                        mov ecx, dword ptr [esi]
+    007247E3  68 40 50 72 00               push 0x725040
+    007247E8  6a 08                        push 8
+    007247EA  50                           push eax
+    007247EB  51                           push ecx
+    007247EC  e8 57 43 0a 00               call 0x7c8b48
+    007247F1  83 c4 10                     add esp, 0x10
+    007247F4  c7 46 10 00 00 00 00         mov dword ptr [esi + 0x10], 0
+    007247FB  c6 46 0c 01                  mov byte ptr [esi + 0xc], 1
+    007247FF  8b 17                        mov edx, dword ptr [edi]
+    00724801  8b 0e                        mov ecx, dword ptr [esi]
+    00724803  8d 44 24 10                  lea eax, [esp + 0x10]
+    00724807  89 54 24 10                  mov dword ptr [esp + 0x10], edx
+    0072480B  8b 56 04                     mov edx, dword ptr [esi + 4]
+    0072480E  50                           push eax
+    0072480F  e8 5c 08 00 00               call 0x725070
+    00724814  85 c0                        test eax, eax
+    00724816  74 43                        je 0x72485b
+    00724818  2b 06                        sub eax, dword ptr [esi]
+    0072481A  c1 f8 03                     sar eax, 3
+    0072481D  83 f8 ff                     cmp eax, -1
+    00724820  74 39                        je 0x72485b
+    00724822  8d 48 01                     lea ecx, [eax + 1]
+    00724825  8b 46 04                     mov eax, dword ptr [esi + 4]
+    00724828  3b c8                        cmp ecx, eax
+    0072482A  7d 18                        jge 0x724844
+    0072482C  8b 16                        mov edx, dword ptr [esi]
+    0072482E  8d 04 ca                     lea eax, [edx + ecx*8]
+    00724831  41                           inc ecx
+    00724832  8b 10                        mov edx, dword ptr [eax]
+    00724834  89 50 f8                     mov dword ptr [eax - 8], edx
+    00724837  8b 50 04                     mov edx, dword ptr [eax + 4]
+    0072483A  89 50 fc                     mov dword ptr [eax - 4], edx
+    0072483D  8b 46 04                     mov eax, dword ptr [esi + 4]
+    00724840  3b c8                        cmp ecx, eax
+    00724842  7c e8                        jl 0x72482c
+    00724844  8b 46 04                     mov eax, dword ptr [esi + 4]
+    00724847  8b 3e                        mov edi, dword ptr [esi]
+    00724849  48                           dec eax
+    0072484A  33 c9                        xor ecx, ecx
+    0072484C  89 46 04                     mov dword ptr [esi + 4], eax
+    0072484F  33 d2                        xor edx, edx
+    00724851  89 0c c7                     mov dword ptr [edi + eax*8], ecx
+    00724854  89 54 c7 04                  mov dword ptr [edi + eax*8 + 4], edx
+    00724858  89 56 10                     mov dword ptr [esi + 0x10], edx
+    0072485B  8b 85 34 02 00 00            mov eax, dword ptr [ebp + 0x234]
+    00724861  8d b5 34 02 00 00            lea esi, [ebp + 0x234]
+    00724867  8d 4c 24 0c                  lea ecx, [esp + 0xc]
+    0072486B  51                           push ecx
+    0072486C  8b ce                        mov ecx, esi
+    0072486E  ff 50 10                     call dword ptr [eax + 0x10]
+    00724871  83 f8 ff                     cmp eax, -1
+    00724874  5f                           pop edi
+    00724875  74 21                        je 0x724898
+    00724877  8b 4e 10                     mov ecx, dword ptr [esi + 0x10]
+    0072487A  3b c1                        cmp eax, ecx
+    0072487C  7d 1a                        jge 0x724898
+    0072487E  49                           dec ecx
+    0072487F  3b c1                        cmp eax, ecx
+    00724881  89 4e 10                     mov dword ptr [esi + 0x10], ecx
+    00724884  7d 12                        jge 0x724898
+    00724886  8b 4e 04                     mov ecx, dword ptr [esi + 4]
+    00724889  40                           inc eax
+    0072488A  8b 14 81                     mov edx, dword ptr [ecx + eax*4]
+    0072488D  89 54 81 fc                  mov dword ptr [ecx + eax*4 - 4], edx
+    00724891  8b 4e 10                     mov ecx, dword ptr [esi + 0x10]
+    00724894  3b c1                        cmp eax, ecx
+    00724896  7c ee                        jl 0x724886
+    00724898  8b 44 24 08                  mov eax, dword ptr [esp + 8]
+    0072489C  85 c0                        test eax, eax
+    0072489E  74 09                        je 0x7248a9
+    007248A0  50                           push eax
+    007248A1  e8 97 42 0a 00               call 0x7c8b3d
+    007248A6  83 c4 04                     add esp, 4
+    007248A9  5e                           pop esi
+    007248AA  5d                           pop ebp
+    007248AB  83 c4 0c                     add esp, 0xc
+    007248AE  c2 04 00                     ret 4   <== RET
+  -- ALL ret instructions (instruction-boundary decoded, NOT byte-searched) --
+     count = 1
+     0x007248ae  bytes=c2 04 00   op=4      imm=4
+  -- MAIN / TERMINATING ret = 0x7248ae  bytes=c2 04 00  width=4
+  -- ret widths present in this function: [4]  (uniform = True)
+
+================================================================================================
+FUNCTION 0x00724c00   extent = [0x724c00, 0x724c0b)   len=11
+  boundary evidence: terminating ret at 0x724C0A followed by 90 90 90 90
+  first 8 bytes AFTER extent: 90 90 90 90 90 56 8b f1
+  -- full linear disassembly at instruction boundaries --
+    00724C00  8b 51 04                     mov edx, dword ptr [ecx + 4]
+    00724C03  33 c0                        xor eax, eax
+    00724C05  85 d2                        test edx, edx
+    00724C07  0f 95 c0                     setne al
+    00724C0A  c3                           ret    <== RET
+  -- ALL ret instructions (instruction-boundary decoded, NOT byte-searched) --
+     count = 1
+     0x00724c0a  bytes=c3         op=(none) imm=0
+  -- MAIN / TERMINATING ret = 0x724c0a  bytes=c3  width=0
+  -- ret widths present in this function: [0]  (uniform = True)
+
+================================================================================================
+SUMMARY TABLE  (my own computation)
+    function  n_rets  main_ret_addr  main_ret_bytes  MAIN_WIDTH
+0x00007241a0       1 0x0000007241f4        c2 04 00           4
+0x0000724200       2 0x0000007243f1        c2 04 00           4
+0x0000724520       1 0x00000072452a        c2 04 00           4
+0x0000724530       1 0x00000072453c              c3           0
+0x0000724540       1 0x00000072454c              c3           0
+0x0000724580       3 0x00000072472b        c2 04 00           4
+0x0000724730       1 0x0000007248ae        c2 04 00           4
+0x0000724c00       1 0x000000724c0a              c3           0
+
+Byte-search trap check: a naive 0xC3/0xC2 byte scan would also match bytes inside immediates.
+Example: 0x724C00 body has "mov edx,[ecx+4]" (8b 51 04) - no C3; but 0x724200 body contains
+0xE8 xx xx xx xx call immediates and a 0x724404 jump table whose bytes include 0x72 0x00 patterns.
+All rets above were produced by linear decode, so they are genuine instruction boundaries.

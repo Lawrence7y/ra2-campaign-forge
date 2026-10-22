@@ -1,0 +1,220 @@
+xfam_cave_v5.txt  —  independently recomputed cave byte table + per-item assertions
+sha256 : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+ret widths used below come from xfam_ret_table.txt (my own linear decode), not from the draft.
+
+====================================================================================================
+PART 1  corrected cave bytes (only the terminating ret operand changed vs the draft)
+====================================================================================================
+
+0x7241a0   hook=5  resume=0x7241a5  replay_len=5  ret_width=4  cave_len=19  cave_va=0x10000000
+  bytes : 85 c9 74 0a 8a 44 24 04 56 e9 97 41 72 f0 31 c0 c2 04 00
+  draft : 85 c9 74 0a 8a 44 24 04 56 e9 97 41 72 f0 31 c0 c2 04 00
+  draft==mine : True
+
+0x724200   hook=5  resume=0x724205  replay_len=5  ret_width=4  cave_len=19  cave_va=0x10000040
+  bytes : 85 c9 74 0a 53 55 56 8b f1 e9 b7 41 72 f0 31 c0 c2 04 00
+  draft : 85 c9 74 0a 53 55 56 8b f1 e9 b7 41 72 f0 31 c0 c2 04 00
+  draft==mine : True
+
+0x724520   hook=10  resume=0x72452a  replay_len=10  ret_width=4  cave_len=24  cave_va=0x10000080
+  bytes : 85 c9 74 0f 8b 44 24 04 89 81 28 02 00 00 e9 97 44 72 f0 31 c0 c2 04 00
+  draft : 85 c9 74 0f 8b 44 24 04 89 81 28 02 00 00 e9 97 44 72 f0 31 c0 c2 04 00
+  draft==mine : True
+
+0x724530   hook=6  resume=0x724536  replay_len=6  ret_width=0  cave_len=18  cave_va=0x100000c0
+  bytes : 85 c9 74 0b 8b 81 28 02 00 00 e9 67 44 72 f0 31 c0 c3
+  draft : 85 c9 74 0b 8b 81 28 02 00 00 e9 67 44 72 f0 31 c0 c2 04 00
+  draft==mine : False
+
+0x724540   hook=6  resume=0x724546  replay_len=6  ret_width=0  cave_len=18  cave_va=0x10000100
+  bytes : 85 c9 74 0b 8b 81 2c 02 00 00 e9 37 44 72 f0 31 c0 c3
+  draft : 85 c9 74 0b 8b 81 2c 02 00 00 e9 37 44 72 f0 31 c0 c2 04 00
+  draft==mine : False
+
+0x724580   hook=8  resume=0x724588  replay_len=8  ret_width=4  cave_len=22  cave_va=0x10000140
+  bytes : 85 c9 74 0d 53 55 56 57 8b 7c 24 14 e9 37 44 72 f0 31 c0 c2 04 00
+  draft : 85 c9 74 0d 53 55 56 57 8b 7c 24 14 e9 37 44 72 f0 31 c0 c2 04 00
+  draft==mine : True
+
+0x724730   hook=6  resume=0x724737  replay_len=7  ret_width=4  cave_len=21  cave_va=0x10000180
+  bytes : 85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 a7 45 72 f0 31 c0 c2 04 00
+  draft : 85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 a7 45 72 f0 31 c0 c2 04 00
+  draft==mine : True
+
+0x724c00   hook=5  resume=0x724c05  replay_len=5  ret_width=0  cave_len=17  cave_va=0x100001c0
+  bytes : 85 c9 74 0a 8b 51 04 33 c0 e9 37 4a 72 f0 31 c0 c3
+  draft : 85 c9 74 0a 8b 51 04 33 c0 e9 37 4a 72 f0 31 c0 c2 04 00
+  draft==mine : False
+
+====================================================================================================
+PART 2  capstone disassembly + assertions (cave placed at its hypothetical base)
+====================================================================================================
+
+--- 0x7241a0  cave@0x10000000  len=19
+    10000000  85 c9                        test ecx, ecx
+    10000002  74 0a                        je 0x1000000e
+    10000004  8a 44 24 04                  mov al, byte ptr [esp + 4]
+    10000008  56                           push esi
+    10000009  e9 97 41 72 f0               jmp 0x7241a5
+    1000000E  31 c0                        xor eax, eax
+    10000010  c2 04 00                     ret 4
+    [PASS] 0x7241a0  insn[0] == test ecx,ecx  test ecx, ecx / 85 c9
+    [PASS] 0x7241a0  insn[1] == je  je 0x1000000e
+    [PASS] 0x7241a0  je target == null block start  0x1000000e vs 0x1000000e
+    [PASS] 0x7241a0  je rel8 within [-128,127]  10
+    [PASS] 0x7241a0  exactly one jmp  count=1
+    [PASS] 0x7241a0  jmp target == resume  0x7241a5 vs 0x7241a5
+    [PASS] 0x7241a0  replay bytes == original image bytes  8a 44 24 04 56 vs 8a 44 24 04 56
+    [PASS] 0x7241a0  last insn is ret  ret 4
+    [PASS] 0x7241a0  ret width == function main ret width  cave=4 real=4
+    [PASS] 0x7241a0  ret is the final bytes of the cave  0x10000013 vs 0x10000013
+    [PASS] 0x7241a0  cave length <= 32 (fits 0x40 slot)  19B
+
+--- 0x724200  cave@0x10000040  len=19
+    10000040  85 c9                        test ecx, ecx
+    10000042  74 0a                        je 0x1000004e
+    10000044  53                           push ebx
+    10000045  55                           push ebp
+    10000046  56                           push esi
+    10000047  8b f1                        mov esi, ecx
+    10000049  e9 b7 41 72 f0               jmp 0x724205
+    1000004E  31 c0                        xor eax, eax
+    10000050  c2 04 00                     ret 4
+    [PASS] 0x724200  insn[0] == test ecx,ecx  test ecx, ecx / 85 c9
+    [PASS] 0x724200  insn[1] == je  je 0x1000004e
+    [PASS] 0x724200  je target == null block start  0x1000004e vs 0x1000004e
+    [PASS] 0x724200  je rel8 within [-128,127]  10
+    [PASS] 0x724200  exactly one jmp  count=1
+    [PASS] 0x724200  jmp target == resume  0x724205 vs 0x724205
+    [PASS] 0x724200  replay bytes == original image bytes  53 55 56 8b f1 vs 53 55 56 8b f1
+    [PASS] 0x724200  last insn is ret  ret 4
+    [PASS] 0x724200  ret width == function main ret width  cave=4 real=4
+    [PASS] 0x724200  ret is the final bytes of the cave  0x10000053 vs 0x10000053
+    [PASS] 0x724200  cave length <= 32 (fits 0x40 slot)  19B
+
+--- 0x724520  cave@0x10000080  len=24
+    10000080  85 c9                        test ecx, ecx
+    10000082  74 0f                        je 0x10000093
+    10000084  8b 44 24 04                  mov eax, dword ptr [esp + 4]
+    10000088  89 81 28 02 00 00            mov dword ptr [ecx + 0x228], eax
+    1000008E  e9 97 44 72 f0               jmp 0x72452a
+    10000093  31 c0                        xor eax, eax
+    10000095  c2 04 00                     ret 4
+    [PASS] 0x724520  insn[0] == test ecx,ecx  test ecx, ecx / 85 c9
+    [PASS] 0x724520  insn[1] == je  je 0x10000093
+    [PASS] 0x724520  je target == null block start  0x10000093 vs 0x10000093
+    [PASS] 0x724520  je rel8 within [-128,127]  15
+    [PASS] 0x724520  exactly one jmp  count=1
+    [PASS] 0x724520  jmp target == resume  0x72452a vs 0x72452a
+    [PASS] 0x724520  replay bytes == original image bytes  8b 44 24 04 89 81 28 02 00 00 vs 8b 44 24 04 89 81 28 02 00 00
+    [PASS] 0x724520  last insn is ret  ret 4
+    [PASS] 0x724520  ret width == function main ret width  cave=4 real=4
+    [PASS] 0x724520  ret is the final bytes of the cave  0x10000098 vs 0x10000098
+    [PASS] 0x724520  cave length <= 32 (fits 0x40 slot)  24B
+
+--- 0x724530  cave@0x100000c0  len=18
+    100000C0  85 c9                        test ecx, ecx
+    100000C2  74 0b                        je 0x100000cf
+    100000C4  8b 81 28 02 00 00            mov eax, dword ptr [ecx + 0x228]
+    100000CA  e9 67 44 72 f0               jmp 0x724536
+    100000CF  31 c0                        xor eax, eax
+    100000D1  c3                           ret 
+    [PASS] 0x724530  insn[0] == test ecx,ecx  test ecx, ecx / 85 c9
+    [PASS] 0x724530  insn[1] == je  je 0x100000cf
+    [PASS] 0x724530  je target == null block start  0x100000cf vs 0x100000cf
+    [PASS] 0x724530  je rel8 within [-128,127]  11
+    [PASS] 0x724530  exactly one jmp  count=1
+    [PASS] 0x724530  jmp target == resume  0x724536 vs 0x724536
+    [PASS] 0x724530  replay bytes == original image bytes  8b 81 28 02 00 00 vs 8b 81 28 02 00 00
+    [PASS] 0x724530  last insn is ret  ret 
+    [PASS] 0x724530  ret width == function main ret width  cave=0 real=0
+    [PASS] 0x724530  ret is the final bytes of the cave  0x100000d2 vs 0x100000d2
+    [PASS] 0x724530  cave length <= 32 (fits 0x40 slot)  18B
+
+--- 0x724540  cave@0x10000100  len=18
+    10000100  85 c9                        test ecx, ecx
+    10000102  74 0b                        je 0x1000010f
+    10000104  8b 81 2c 02 00 00            mov eax, dword ptr [ecx + 0x22c]
+    1000010A  e9 37 44 72 f0               jmp 0x724546
+    1000010F  31 c0                        xor eax, eax
+    10000111  c3                           ret 
+    [PASS] 0x724540  insn[0] == test ecx,ecx  test ecx, ecx / 85 c9
+    [PASS] 0x724540  insn[1] == je  je 0x1000010f
+    [PASS] 0x724540  je target == null block start  0x1000010f vs 0x1000010f
+    [PASS] 0x724540  je rel8 within [-128,127]  11
+    [PASS] 0x724540  exactly one jmp  count=1
+    [PASS] 0x724540  jmp target == resume  0x724546 vs 0x724546
+    [PASS] 0x724540  replay bytes == original image bytes  8b 81 2c 02 00 00 vs 8b 81 2c 02 00 00
+    [PASS] 0x724540  last insn is ret  ret 
+    [PASS] 0x724540  ret width == function main ret width  cave=0 real=0
+    [PASS] 0x724540  ret is the final bytes of the cave  0x10000112 vs 0x10000112
+    [PASS] 0x724540  cave length <= 32 (fits 0x40 slot)  18B
+
+--- 0x724580  cave@0x10000140  len=22
+    10000140  85 c9                        test ecx, ecx
+    10000142  74 0d                        je 0x10000151
+    10000144  53                           push ebx
+    10000145  55                           push ebp
+    10000146  56                           push esi
+    10000147  57                           push edi
+    10000148  8b 7c 24 14                  mov edi, dword ptr [esp + 0x14]
+    1000014C  e9 37 44 72 f0               jmp 0x724588
+    10000151  31 c0                        xor eax, eax
+    10000153  c2 04 00                     ret 4
+    [PASS] 0x724580  insn[0] == test ecx,ecx  test ecx, ecx / 85 c9
+    [PASS] 0x724580  insn[1] == je  je 0x10000151
+    [PASS] 0x724580  je target == null block start  0x10000151 vs 0x10000151
+    [PASS] 0x724580  je rel8 within [-128,127]  13
+    [PASS] 0x724580  exactly one jmp  count=1
+    [PASS] 0x724580  jmp target == resume  0x724588 vs 0x724588
+    [PASS] 0x724580  replay bytes == original image bytes  53 55 56 57 8b 7c 24 14 vs 53 55 56 57 8b 7c 24 14
+    [PASS] 0x724580  last insn is ret  ret 4
+    [PASS] 0x724580  ret width == function main ret width  cave=4 real=4
+    [PASS] 0x724580  ret is the final bytes of the cave  0x10000156 vs 0x10000156
+    [PASS] 0x724580  cave length <= 32 (fits 0x40 slot)  22B
+
+--- 0x724730  cave@0x10000180  len=21
+    10000180  85 c9                        test ecx, ecx
+    10000182  74 0c                        je 0x10000190
+    10000184  83 ec 0c                     sub esp, 0xc
+    10000187  55                           push ebp
+    10000188  8b e9                        mov ebp, ecx
+    1000018A  56                           push esi
+    1000018B  e9 a7 45 72 f0               jmp 0x724737
+    10000190  31 c0                        xor eax, eax
+    10000192  c2 04 00                     ret 4
+    [PASS] 0x724730  insn[0] == test ecx,ecx  test ecx, ecx / 85 c9
+    [PASS] 0x724730  insn[1] == je  je 0x10000190
+    [PASS] 0x724730  je target == null block start  0x10000190 vs 0x10000190
+    [PASS] 0x724730  je rel8 within [-128,127]  12
+    [PASS] 0x724730  exactly one jmp  count=1
+    [PASS] 0x724730  jmp target == resume  0x724737 vs 0x724737
+    [PASS] 0x724730  replay bytes == original image bytes  83 ec 0c 55 8b e9 56 vs 83 ec 0c 55 8b e9 56
+    [PASS] 0x724730  last insn is ret  ret 4
+    [PASS] 0x724730  ret width == function main ret width  cave=4 real=4
+    [PASS] 0x724730  ret is the final bytes of the cave  0x10000195 vs 0x10000195
+    [PASS] 0x724730  cave length <= 32 (fits 0x40 slot)  21B
+
+--- 0x724c00  cave@0x100001c0  len=17
+    100001C0  85 c9                        test ecx, ecx
+    100001C2  74 0a                        je 0x100001ce
+    100001C4  8b 51 04                     mov edx, dword ptr [ecx + 4]
+    100001C7  33 c0                        xor eax, eax
+    100001C9  e9 37 4a 72 f0               jmp 0x724c05
+    100001CE  31 c0                        xor eax, eax
+    100001D0  c3                           ret 
+    [PASS] 0x724c00  insn[0] == test ecx,ecx  test ecx, ecx / 85 c9
+    [PASS] 0x724c00  insn[1] == je  je 0x100001ce
+    [PASS] 0x724c00  je target == null block start  0x100001ce vs 0x100001ce
+    [PASS] 0x724c00  je rel8 within [-128,127]  10
+    [PASS] 0x724c00  exactly one jmp  count=1
+    [PASS] 0x724c00  jmp target == resume  0x724c05 vs 0x724c05
+    [PASS] 0x724c00  replay bytes == original image bytes  8b 51 04 33 c0 vs 8b 51 04 33 c0
+    [PASS] 0x724c00  last insn is ret  ret 
+    [PASS] 0x724c00  ret width == function main ret width  cave=0 real=0
+    [PASS] 0x724c00  ret is the final bytes of the cave  0x100001d1 vs 0x100001d1
+    [PASS] 0x724c00  cave length <= 32 (fits 0x40 slot)  17B
+
+====================================================================================================
+RESULT: assertions passed=88  failed=0
+====================================================================================================

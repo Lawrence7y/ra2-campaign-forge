@@ -1,0 +1,632 @@
+====================================================================================================
+== STEP 0  身份 / PE 节表 / va2off 校验
+====================================================================================================
+  file     : D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+  size     : 0x49a110
+  sha256   : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+  MZ/PE    : b'MZ' / b'PE\x00\x00'
+  magic    : 0x10b (PE32=0x10b)   image_base=0x400000
+  align    : section=0x1000 file=0x1000
+  entry    : 0x400000 + RVA 0x3cd80f = 0x7cd80f  (.text)
+  sections : 5
+    .text    va=0x00401000 vsize=0x03df38d rawptr=0x0001000 rawsize=0x03e0000 chars=0x60000020
+    .rdata   va=0x007e1000 vsize=0x0030074 rawptr=0x03e1000 rawsize=0x0031000 chars=0x40000040
+    .data    va=0x00812000 vsize=0x0367be4 rawptr=0x0412000 rawsize=0x006c000 chars=0xc0000040
+    .rsrc    va=0x00b7a000 vsize=0x0018128 rawptr=0x047e000 rawsize=0x0019000 chars=0x40000040
+    .detour  va=0x00b93000 vsize=0x0002718 rawptr=0x0497000 rawsize=0x0003000 chars=0xc0000040
+[PASS] G0   PE32 magic  0x10b
+[PASS] G0   image_base == 0x400000  0x400000
+[PASS] G0   SectionAlignment == 0x1000 且 FileAlignment 为 2 的幂且 ∈ [0x200,0x1000]  section=0x1000 file=0x1000
+[PASS] G0   节表项数与遍历一致  5
+[PASS] G0   节 VA 4K 对齐  
+[PASS] G0   节 rawptr 文件对齐且不越界  
+[PASS] G0   节 VA 区间不重叠  
+[PASS] G0   va2off(节首) == rawptr（节表→文件偏移自洽）  
+  .text    : va=0x401000 .. 0x7e038d  raw=0x1000 .. 0x3e1000
+[PASS] G0   8 个 VA 全部落在 .text  
+[PASS] G0   8 个 VA 的 [va,resume) 均有文件支撑  
+[PASS] G0   8 个 VA 互不相同  
+[PASS] G0   sha256 前缀 == 73201cc0  73201cc0
+
+====================================================================================================
+== STEP A  hook 段：指令边界 / resume 边界
+====================================================================================================
+
+  ── 0x7241A0  hook=5  resume=0x7241a5 ──
+    007241A0  8a 44 24 04                mov al, byte ptr [esp + 4]
+    007241A4  56                         push esi
+    覆盖 5B / hook 5B   resume-va=5B   extra(重放但保留在映像里的整指令)=0B
+[PASS] 0x7241A0 hook 段恰由整指令拼成（累计 == hook）  5 vs 5
+[PASS] 0x7241A0 hook 段字节 == 覆盖指令拼接  8a 44 24 04 56
+[PASS] 0x7241A0 hook >= 5（放得下 E9 rel32）  5
+[PASS] 0x7241A0 resume >= va+hook（跳板不被截断）  0x7241a5 >= 0x7241a5
+[PASS] 0x7241A0 resume 是线性解码的指令起点  0x7241a5
+    resume 起解码: 007241A5  8b f1                      mov esi, ecx
+[PASS] 0x7241A0 resume 处 capstone 解码成功且 address == resume  0x7241a5
+[PASS] 0x7241A0 resume-va == hook + extra（extra 为完整指令）  5 == 5 + 0
+
+  ── 0x724200  hook=5  resume=0x724205 ──
+    00724200  53                         push ebx
+    00724201  55                         push ebp
+    00724202  56                         push esi
+    00724203  8b f1                      mov esi, ecx
+    覆盖 5B / hook 5B   resume-va=5B   extra(重放但保留在映像里的整指令)=0B
+[PASS] 0x724200 hook 段恰由整指令拼成（累计 == hook）  5 vs 5
+[PASS] 0x724200 hook 段字节 == 覆盖指令拼接  53 55 56 8b f1
+[PASS] 0x724200 hook >= 5（放得下 E9 rel32）  5
+[PASS] 0x724200 resume >= va+hook（跳板不被截断）  0x724205 >= 0x724205
+[PASS] 0x724200 resume 是线性解码的指令起点  0x724205
+    resume 起解码: 00724205  57                         push edi
+[PASS] 0x724200 resume 处 capstone 解码成功且 address == resume  0x724205
+[PASS] 0x724200 resume-va == hook + extra（extra 为完整指令）  5 == 5 + 0
+
+  ── 0x724520  hook=10  resume=0x72452a ──
+    00724520  8b 44 24 04                mov eax, dword ptr [esp + 4]
+    00724524  89 81 28 02 00 00          mov dword ptr [ecx + 0x228], eax
+    覆盖 10B / hook 10B   resume-va=10B   extra(重放但保留在映像里的整指令)=0B
+[PASS] 0x724520 hook 段恰由整指令拼成（累计 == hook）  10 vs 10
+[PASS] 0x724520 hook 段字节 == 覆盖指令拼接  8b 44 24 04 89 81 28 02 00 00
+[PASS] 0x724520 hook >= 5（放得下 E9 rel32）  10
+[PASS] 0x724520 resume >= va+hook（跳板不被截断）  0x72452a >= 0x72452a
+[PASS] 0x724520 resume 是线性解码的指令起点  0x72452a
+    resume 起解码: 0072452A  c2 04 00                   ret 4
+[PASS] 0x724520 resume 处 capstone 解码成功且 address == resume  0x72452a
+[PASS] 0x724520 resume-va == hook + extra（extra 为完整指令）  10 == 10 + 0
+
+  ── 0x724530  hook=6  resume=0x724536 ──
+    00724530  8b 81 28 02 00 00          mov eax, dword ptr [ecx + 0x228]
+    覆盖 6B / hook 6B   resume-va=6B   extra(重放但保留在映像里的整指令)=0B
+[PASS] 0x724530 hook 段恰由整指令拼成（累计 == hook）  6 vs 6
+[PASS] 0x724530 hook 段字节 == 覆盖指令拼接  8b 81 28 02 00 00
+[PASS] 0x724530 hook >= 5（放得下 E9 rel32）  6
+[PASS] 0x724530 resume >= va+hook（跳板不被截断）  0x724536 >= 0x724536
+[PASS] 0x724530 resume 是线性解码的指令起点  0x724536
+    resume 起解码: 00724536  89 81 2c 02 00 00          mov dword ptr [ecx + 0x22c], eax
+[PASS] 0x724530 resume 处 capstone 解码成功且 address == resume  0x724536
+[PASS] 0x724530 resume-va == hook + extra（extra 为完整指令）  6 == 6 + 0
+
+  ── 0x724540  hook=6  resume=0x724546 ──
+    00724540  8b 81 2c 02 00 00          mov eax, dword ptr [ecx + 0x22c]
+    覆盖 6B / hook 6B   resume-va=6B   extra(重放但保留在映像里的整指令)=0B
+[PASS] 0x724540 hook 段恰由整指令拼成（累计 == hook）  6 vs 6
+[PASS] 0x724540 hook 段字节 == 覆盖指令拼接  8b 81 2c 02 00 00
+[PASS] 0x724540 hook >= 5（放得下 E9 rel32）  6
+[PASS] 0x724540 resume >= va+hook（跳板不被截断）  0x724546 >= 0x724546
+[PASS] 0x724540 resume 是线性解码的指令起点  0x724546
+    resume 起解码: 00724546  89 81 28 02 00 00          mov dword ptr [ecx + 0x228], eax
+[PASS] 0x724540 resume 处 capstone 解码成功且 address == resume  0x724546
+[PASS] 0x724540 resume-va == hook + extra（extra 为完整指令）  6 == 6 + 0
+
+  ── 0x724580  hook=8  resume=0x724588 ──
+    00724580  53                         push ebx
+    00724581  55                         push ebp
+    00724582  56                         push esi
+    00724583  57                         push edi
+    00724584  8b 7c 24 14                mov edi, dword ptr [esp + 0x14]
+    覆盖 8B / hook 8B   resume-va=8B   extra(重放但保留在映像里的整指令)=0B
+[PASS] 0x724580 hook 段恰由整指令拼成（累计 == hook）  8 vs 8
+[PASS] 0x724580 hook 段字节 == 覆盖指令拼接  53 55 56 57 8b 7c 24 14
+[PASS] 0x724580 hook >= 5（放得下 E9 rel32）  8
+[PASS] 0x724580 resume >= va+hook（跳板不被截断）  0x724588 >= 0x724588
+[PASS] 0x724580 resume 是线性解码的指令起点  0x724588
+    resume 起解码: 00724588  8b d9                      mov ebx, ecx
+[PASS] 0x724580 resume 处 capstone 解码成功且 address == resume  0x724588
+[PASS] 0x724580 resume-va == hook + extra（extra 为完整指令）  8 == 8 + 0
+
+  ── 0x724730  hook=6  resume=0x724737 ──
+    00724730  83 ec 0c                   sub esp, 0xc
+    00724733  55                         push ebp
+    00724734  8b e9                      mov ebp, ecx
+    覆盖 6B / hook 6B   resume-va=7B   extra(重放但保留在映像里的整指令)=1B
+[PASS] 0x724730 hook 段恰由整指令拼成（累计 == hook）  6 vs 6
+[PASS] 0x724730 hook 段字节 == 覆盖指令拼接  83 ec 0c 55 8b e9
+[PASS] 0x724730 hook >= 5（放得下 E9 rel32）  6
+[PASS] 0x724730 resume >= va+hook（跳板不被截断）  0x724737 >= 0x724736
+[PASS] 0x724730 resume 是线性解码的指令起点  0x724737
+    resume 起解码: 00724737  8b 85 50 02 00 00          mov eax, dword ptr [ebp + 0x250]
+[PASS] 0x724730 resume 处 capstone 解码成功且 address == resume  0x724737
+    extra 段: push esi
+[INFO] 0x724730 表值 hook=6，但 resume-va=7 ⇒ 多 1B 在 cave 里重放，映像中该字节保留为死字节
+[PASS] 0x724730 resume-va == hook + extra（extra 为完整指令）  7 == 6 + 1
+
+  ── 0x724C00  hook=5  resume=0x724c05 ──
+    00724C00  8b 51 04                   mov edx, dword ptr [ecx + 4]
+    00724C03  33 c0                      xor eax, eax
+    覆盖 5B / hook 5B   resume-va=5B   extra(重放但保留在映像里的整指令)=0B
+[PASS] 0x724C00 hook 段恰由整指令拼成（累计 == hook）  5 vs 5
+[PASS] 0x724C00 hook 段字节 == 覆盖指令拼接  8b 51 04 33 c0
+[PASS] 0x724C00 hook >= 5（放得下 E9 rel32）  5
+[PASS] 0x724C00 resume >= va+hook（跳板不被截断）  0x724c05 >= 0x724c05
+[PASS] 0x724C00 resume 是线性解码的指令起点  0x724c05
+    resume 起解码: 00724C05  85 d2                      test edx, edx
+[PASS] 0x724C00 resume 处 capstone 解码成功且 address == resume  0x724c05
+[PASS] 0x724C00 resume-va == hook + extra（extra 为完整指令）  5 == 5 + 0
+
+  resume == va + hook 的函数: 7/8
+  ★ 例外 0x724730: resume-va=7B, hook=6B, 多 1B = 56 (push esi)
+[PASS] RESUME resume != va+hook 的函数恰为 1 个且是 0x724730（已显式建模）  0x724730
+[PASS] RESUME 该例外的 extra 字节是完整指令且长度 == extra  extra=1B
+
+====================================================================================================
+== STEP B  函数自身 ret（原映像实测）
+====================================================================================================
+
+  0x7241A0: 首条 ret @ 0x7241f4  bytes=c2 04 00  op_str='4'  ⇒ fn_ret = 4
+    [va, 0x724200) 内 ret 1 条，立即数分布 {4: 1}（守卫用函数头所在路径的首条 ret）
+[PASS] 0x7241A0 找到主终止 ret  0x7241f4
+[PASS] 0x7241A0 ret 编码合法（c3 或 c2 imm16）  c2 04 00
+
+  0x724200: 首条 ret @ 0x72429b  bytes=c2 04 00  op_str='4'  ⇒ fn_ret = 4
+    [va, 0x724520) 内 ret 3 条，立即数分布 {0: 1, 4: 2}（守卫用函数头所在路径的首条 ret）
+[PASS] 0x724200 找到主终止 ret  0x72429b
+[PASS] 0x724200 ret 编码合法（c3 或 c2 imm16）  c2 04 00
+
+  0x724520: 首条 ret @ 0x72452a  bytes=c2 04 00  op_str='4'  ⇒ fn_ret = 4
+    [va, 0x724530) 内 ret 1 条，立即数分布 {4: 1}（守卫用函数头所在路径的首条 ret）
+[PASS] 0x724520 找到主终止 ret  0x72452a
+[PASS] 0x724520 ret 编码合法（c3 或 c2 imm16）  c2 04 00
+
+  0x724530: 首条 ret @ 0x72453c  bytes=c3  op_str=''  ⇒ fn_ret = 0
+    [va, 0x724540) 内 ret 1 条，立即数分布 {0: 1}（守卫用函数头所在路径的首条 ret）
+[PASS] 0x724530 找到主终止 ret  0x72453c
+[PASS] 0x724530 ret 编码合法（c3 或 c2 imm16）  c3
+
+  0x724540: 首条 ret @ 0x72454c  bytes=c3  op_str=''  ⇒ fn_ret = 0
+    [va, 0x724580) 内 ret 4 条，立即数分布 {0: 3, 4: 1}（守卫用函数头所在路径的首条 ret）
+[PASS] 0x724540 找到主终止 ret  0x72454c
+[PASS] 0x724540 ret 编码合法（c3 或 c2 imm16）  c3
+
+  0x724580: 首条 ret @ 0x7245ca  bytes=c2 04 00  op_str='4'  ⇒ fn_ret = 4
+    [va, 0x724730) 内 ret 3 条，立即数分布 {4: 3}（守卫用函数头所在路径的首条 ret）
+[PASS] 0x724580 找到主终止 ret  0x7245ca
+[PASS] 0x724580 ret 编码合法（c3 或 c2 imm16）  c2 04 00
+
+  0x724730: 首条 ret @ 0x7248ae  bytes=c2 04 00  op_str='4'  ⇒ fn_ret = 4
+    [va, 0x724c00) 内 ret 13 条，立即数分布 {0: 3, 4: 8, 8: 2}（守卫用函数头所在路径的首条 ret）
+[PASS] 0x724730 找到主终止 ret  0x7248ae
+[PASS] 0x724730 ret 编码合法（c3 或 c2 imm16）  c2 04 00
+
+  0x724C00: 首条 ret @ 0x724c0a  bytes=c3  op_str=''  ⇒ fn_ret = 0
+    [va, 0x725400) 内 ret 49 条，立即数分布 {0: 24, 4: 20, 8: 5}（守卫用函数头所在路径的首条 ret）
+[PASS] 0x724C00 找到主终止 ret  0x724c0a
+[PASS] 0x724C00 ret 编码合法（c3 或 c2 imm16）  c3
+
+====================================================================================================
+== STEP C  cave 构造 + 从实际字节读 ret（核心断言）
+====================================================================================================
+
+  ── 0x7241A0  cave 19B @ 0x10000000  (fn_ret=4) ──
+    85 c9 74 0a 8a 44 24 04 56 e9 97 41 72 f0 31 c0 c2 04 00
+      10000000  85 c9                      test ecx, ecx
+      10000002  74 0a                      je 0x1000000e
+      10000004  8a 44 24 04                mov al, byte ptr [esp + 4]
+      10000008  56                         push esi
+      10000009  e9 97 41 72 f0             jmp 0x7241a5
+      1000000E  31 c0                      xor eax, eax
+      10000010  c2 04 00                   ret 4
+[PASS] 0x7241A0 sha256 前缀 == 73201cc0  73201cc0
+[PASS] 0x7241A0 cave 可完整反汇编（无尾字节）  19
+[PASS] 0x7241A0 cave 头部第 1 条 == test ecx,ecx  10000000  85 c9                      test ecx, ecx
+[PASS] 0x7241A0 cave 第 2 条 == je 且目标 == null 块起点  je→0x1000000e  null@0x1000000e
+[PASS] 0x7241A0 je rel8 ∈ [-128,127]  rel8=10 目标=0x1000000e
+[PASS] 0x7241A0 null 块首条 == xor eax,eax  
+[PASS] 0x7241A0 ★ cave_ret(实测) == fn_ret  cave_ret=4  fn_ret=4
+[PASS] 0x7241A0 cave 恰 1 条 jmp 且目标 == resume  jmp→0x7241a5  resume=0x7241a5
+[PASS] 0x7241A0 重放段 == 原映像 [va,resume)  cave[4:9] = 8a 44 24 04 56
+[PASS] 0x7241A0 cave 长度 <= 32B  19B
+[PASS] 0x7241A0 cave 长度 <= 0x40 槽位  19B
+
+  ── 0x724200  cave 19B @ 0x10000040  (fn_ret=4) ──
+    85 c9 74 0a 53 55 56 8b f1 e9 b7 41 72 f0 31 c0 c2 04 00
+      10000040  85 c9                      test ecx, ecx
+      10000042  74 0a                      je 0x1000004e
+      10000044  53                         push ebx
+      10000045  55                         push ebp
+      10000046  56                         push esi
+      10000047  8b f1                      mov esi, ecx
+      10000049  e9 b7 41 72 f0             jmp 0x724205
+      1000004E  31 c0                      xor eax, eax
+      10000050  c2 04 00                   ret 4
+[PASS] 0x724200 sha256 前缀 == 73201cc0  73201cc0
+[PASS] 0x724200 cave 可完整反汇编（无尾字节）  19
+[PASS] 0x724200 cave 头部第 1 条 == test ecx,ecx  10000040  85 c9                      test ecx, ecx
+[PASS] 0x724200 cave 第 2 条 == je 且目标 == null 块起点  je→0x1000004e  null@0x1000004e
+[PASS] 0x724200 je rel8 ∈ [-128,127]  rel8=10 目标=0x1000004e
+[PASS] 0x724200 null 块首条 == xor eax,eax  
+[PASS] 0x724200 ★ cave_ret(实测) == fn_ret  cave_ret=4  fn_ret=4
+[PASS] 0x724200 cave 恰 1 条 jmp 且目标 == resume  jmp→0x724205  resume=0x724205
+[PASS] 0x724200 重放段 == 原映像 [va,resume)  cave[4:9] = 53 55 56 8b f1
+[PASS] 0x724200 cave 长度 <= 32B  19B
+[PASS] 0x724200 cave 长度 <= 0x40 槽位  19B
+
+  ── 0x724520  cave 24B @ 0x10000080  (fn_ret=4) ──
+    85 c9 74 0f 8b 44 24 04 89 81 28 02 00 00 e9 97 44 72 f0 31 c0 c2 04 00
+      10000080  85 c9                      test ecx, ecx
+      10000082  74 0f                      je 0x10000093
+      10000084  8b 44 24 04                mov eax, dword ptr [esp + 4]
+      10000088  89 81 28 02 00 00          mov dword ptr [ecx + 0x228], eax
+      1000008E  e9 97 44 72 f0             jmp 0x72452a
+      10000093  31 c0                      xor eax, eax
+      10000095  c2 04 00                   ret 4
+[PASS] 0x724520 sha256 前缀 == 73201cc0  73201cc0
+[PASS] 0x724520 cave 可完整反汇编（无尾字节）  24
+[PASS] 0x724520 cave 头部第 1 条 == test ecx,ecx  10000080  85 c9                      test ecx, ecx
+[PASS] 0x724520 cave 第 2 条 == je 且目标 == null 块起点  je→0x10000093  null@0x10000093
+[PASS] 0x724520 je rel8 ∈ [-128,127]  rel8=15 目标=0x10000093
+[PASS] 0x724520 null 块首条 == xor eax,eax  
+[PASS] 0x724520 ★ cave_ret(实测) == fn_ret  cave_ret=4  fn_ret=4
+[PASS] 0x724520 cave 恰 1 条 jmp 且目标 == resume  jmp→0x72452a  resume=0x72452a
+[PASS] 0x724520 重放段 == 原映像 [va,resume)  cave[4:14] = 8b 44 24 04 89 81 28 02 00 00
+[PASS] 0x724520 cave 长度 <= 32B  24B
+[PASS] 0x724520 cave 长度 <= 0x40 槽位  24B
+
+  ── 0x724530  cave 18B @ 0x100000c0  (fn_ret=0) ──
+    85 c9 74 0b 8b 81 28 02 00 00 e9 67 44 72 f0 31 c0 c3
+      100000C0  85 c9                      test ecx, ecx
+      100000C2  74 0b                      je 0x100000cf
+      100000C4  8b 81 28 02 00 00          mov eax, dword ptr [ecx + 0x228]
+      100000CA  e9 67 44 72 f0             jmp 0x724536
+      100000CF  31 c0                      xor eax, eax
+      100000D1  c3                         ret 
+[PASS] 0x724530 sha256 前缀 == 73201cc0  73201cc0
+[PASS] 0x724530 cave 可完整反汇编（无尾字节）  18
+[PASS] 0x724530 cave 头部第 1 条 == test ecx,ecx  100000C0  85 c9                      test ecx, ecx
+[PASS] 0x724530 cave 第 2 条 == je 且目标 == null 块起点  je→0x100000cf  null@0x100000cf
+[PASS] 0x724530 je rel8 ∈ [-128,127]  rel8=11 目标=0x100000cf
+[PASS] 0x724530 null 块首条 == xor eax,eax  
+[PASS] 0x724530 ★ cave_ret(实测) == fn_ret  cave_ret=0  fn_ret=0
+[PASS] 0x724530 cave 恰 1 条 jmp 且目标 == resume  jmp→0x724536  resume=0x724536
+[PASS] 0x724530 重放段 == 原映像 [va,resume)  cave[4:10] = 8b 81 28 02 00 00
+[PASS] 0x724530 cave 长度 <= 32B  18B
+[PASS] 0x724530 cave 长度 <= 0x40 槽位  18B
+
+  ── 0x724540  cave 18B @ 0x10000100  (fn_ret=0) ──
+    85 c9 74 0b 8b 81 2c 02 00 00 e9 37 44 72 f0 31 c0 c3
+      10000100  85 c9                      test ecx, ecx
+      10000102  74 0b                      je 0x1000010f
+      10000104  8b 81 2c 02 00 00          mov eax, dword ptr [ecx + 0x22c]
+      1000010A  e9 37 44 72 f0             jmp 0x724546
+      1000010F  31 c0                      xor eax, eax
+      10000111  c3                         ret 
+[PASS] 0x724540 sha256 前缀 == 73201cc0  73201cc0
+[PASS] 0x724540 cave 可完整反汇编（无尾字节）  18
+[PASS] 0x724540 cave 头部第 1 条 == test ecx,ecx  10000100  85 c9                      test ecx, ecx
+[PASS] 0x724540 cave 第 2 条 == je 且目标 == null 块起点  je→0x1000010f  null@0x1000010f
+[PASS] 0x724540 je rel8 ∈ [-128,127]  rel8=11 目标=0x1000010f
+[PASS] 0x724540 null 块首条 == xor eax,eax  
+[PASS] 0x724540 ★ cave_ret(实测) == fn_ret  cave_ret=0  fn_ret=0
+[PASS] 0x724540 cave 恰 1 条 jmp 且目标 == resume  jmp→0x724546  resume=0x724546
+[PASS] 0x724540 重放段 == 原映像 [va,resume)  cave[4:10] = 8b 81 2c 02 00 00
+[PASS] 0x724540 cave 长度 <= 32B  18B
+[PASS] 0x724540 cave 长度 <= 0x40 槽位  18B
+
+  ── 0x724580  cave 22B @ 0x10000140  (fn_ret=4) ──
+    85 c9 74 0d 53 55 56 57 8b 7c 24 14 e9 37 44 72 f0 31 c0 c2 04 00
+      10000140  85 c9                      test ecx, ecx
+      10000142  74 0d                      je 0x10000151
+      10000144  53                         push ebx
+      10000145  55                         push ebp
+      10000146  56                         push esi
+      10000147  57                         push edi
+      10000148  8b 7c 24 14                mov edi, dword ptr [esp + 0x14]
+      1000014C  e9 37 44 72 f0             jmp 0x724588
+      10000151  31 c0                      xor eax, eax
+      10000153  c2 04 00                   ret 4
+[PASS] 0x724580 sha256 前缀 == 73201cc0  73201cc0
+[PASS] 0x724580 cave 可完整反汇编（无尾字节）  22
+[PASS] 0x724580 cave 头部第 1 条 == test ecx,ecx  10000140  85 c9                      test ecx, ecx
+[PASS] 0x724580 cave 第 2 条 == je 且目标 == null 块起点  je→0x10000151  null@0x10000151
+[PASS] 0x724580 je rel8 ∈ [-128,127]  rel8=13 目标=0x10000151
+[PASS] 0x724580 null 块首条 == xor eax,eax  
+[PASS] 0x724580 ★ cave_ret(实测) == fn_ret  cave_ret=4  fn_ret=4
+[PASS] 0x724580 cave 恰 1 条 jmp 且目标 == resume  jmp→0x724588  resume=0x724588
+[PASS] 0x724580 重放段 == 原映像 [va,resume)  cave[4:12] = 53 55 56 57 8b 7c 24 14
+[PASS] 0x724580 cave 长度 <= 32B  22B
+[PASS] 0x724580 cave 长度 <= 0x40 槽位  22B
+
+  ── 0x724730  cave 21B @ 0x10000180  (fn_ret=4) ──
+    85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 a7 45 72 f0 31 c0 c2 04 00
+      10000180  85 c9                      test ecx, ecx
+      10000182  74 0c                      je 0x10000190
+      10000184  83 ec 0c                   sub esp, 0xc
+      10000187  55                         push ebp
+      10000188  8b e9                      mov ebp, ecx
+      1000018A  56                         push esi
+      1000018B  e9 a7 45 72 f0             jmp 0x724737
+      10000190  31 c0                      xor eax, eax
+      10000192  c2 04 00                   ret 4
+[PASS] 0x724730 sha256 前缀 == 73201cc0  73201cc0
+[PASS] 0x724730 cave 可完整反汇编（无尾字节）  21
+[PASS] 0x724730 cave 头部第 1 条 == test ecx,ecx  10000180  85 c9                      test ecx, ecx
+[PASS] 0x724730 cave 第 2 条 == je 且目标 == null 块起点  je→0x10000190  null@0x10000190
+[PASS] 0x724730 je rel8 ∈ [-128,127]  rel8=12 目标=0x10000190
+[PASS] 0x724730 null 块首条 == xor eax,eax  
+[PASS] 0x724730 ★ cave_ret(实测) == fn_ret  cave_ret=4  fn_ret=4
+[PASS] 0x724730 cave 恰 1 条 jmp 且目标 == resume  jmp→0x724737  resume=0x724737
+[PASS] 0x724730 重放段 == 原映像 [va,resume)  cave[4:11] = 83 ec 0c 55 8b e9 56
+[PASS] 0x724730 cave 长度 <= 32B  21B
+[PASS] 0x724730 cave 长度 <= 0x40 槽位  21B
+
+  ── 0x724C00  cave 17B @ 0x100001c0  (fn_ret=0) ──
+    85 c9 74 0a 8b 51 04 33 c0 e9 37 4a 72 f0 31 c0 c3
+      100001C0  85 c9                      test ecx, ecx
+      100001C2  74 0a                      je 0x100001ce
+      100001C4  8b 51 04                   mov edx, dword ptr [ecx + 4]
+      100001C7  33 c0                      xor eax, eax
+      100001C9  e9 37 4a 72 f0             jmp 0x724c05
+      100001CE  31 c0                      xor eax, eax
+      100001D0  c3                         ret 
+[PASS] 0x724C00 sha256 前缀 == 73201cc0  73201cc0
+[PASS] 0x724C00 cave 可完整反汇编（无尾字节）  17
+[PASS] 0x724C00 cave 头部第 1 条 == test ecx,ecx  100001C0  85 c9                      test ecx, ecx
+[PASS] 0x724C00 cave 第 2 条 == je 且目标 == null 块起点  je→0x100001ce  null@0x100001ce
+[PASS] 0x724C00 je rel8 ∈ [-128,127]  rel8=10 目标=0x100001ce
+[PASS] 0x724C00 null 块首条 == xor eax,eax  
+[PASS] 0x724C00 ★ cave_ret(实测) == fn_ret  cave_ret=0  fn_ret=0
+[PASS] 0x724C00 cave 恰 1 条 jmp 且目标 == resume  jmp→0x724c05  resume=0x724c05
+[PASS] 0x724C00 重放段 == 原映像 [va,resume)  cave[4:9] = 8b 51 04 33 c0
+[PASS] 0x724C00 cave 长度 <= 32B  17B
+[PASS] 0x724C00 cave 长度 <= 0x40 槽位  17B
+[PASS] SLOT 8 个 cave 槽位互不重叠  最大长度 24B vs 槽距 0x40B
+
+====================================================================================================
+== STEP D  栈平衡（实测数字，非恒真式）
+====================================================================================================
+  零值路径: 净 = -fn_ret(调用者已压的参数) - 4(call 压返回地址)
+                  + 4(ret 弹返回地址) + cave_ret(ret 弹参数)
+            = cave_ret - fn_ret   ⇒ 必须 == 0
+  注：任务书里写的 '+fn_ret - 4' 只是 fn_ret==4 时的巧合形式；
+      对 c3（fn_ret=0）函数它给出 -4，会误判。故本脚本用一般式并从字节实测 cave_ret。
+  非零路径: cave 段 esp 变化 与 原映像 [va,resume) 段 esp 变化 必须逐值相等
+
+  0x7241A0  fn_ret=4  cave_ret=4
+    零值(一般式): -4(参数) - 4(call) + 4(ret 弹返回地址) + 4(ret 弹参数) = 0
+    零值(任务书字面式 +fn_ret-4) = 0   [与一般式一致]
+    非零: cave 段 = -4   原映像段 = -4   相对净变化 = 0
+[PASS] 0x7241A0 零值路径净变化 == 0（实测 cave_ret 参与）  0
+[PASS] 0x7241A0 非零路径净变化 == 0（cave 段 vs 原映像段）  -4 - -4 = 0
+[PASS] 0x7241A0 字面式 +fn_ret-4 与一般式一致 ⟺ fn_ret==4  literal=0 general=0 fn_ret=4
+  0x724200  fn_ret=4  cave_ret=4
+    零值(一般式): -4(参数) - 4(call) + 4(ret 弹返回地址) + 4(ret 弹参数) = 0
+    零值(任务书字面式 +fn_ret-4) = 0   [与一般式一致]
+    非零: cave 段 = -12   原映像段 = -12   相对净变化 = 0
+[PASS] 0x724200 零值路径净变化 == 0（实测 cave_ret 参与）  0
+[PASS] 0x724200 非零路径净变化 == 0（cave 段 vs 原映像段）  -12 - -12 = 0
+[PASS] 0x724200 字面式 +fn_ret-4 与一般式一致 ⟺ fn_ret==4  literal=0 general=0 fn_ret=4
+  0x724520  fn_ret=4  cave_ret=4
+    零值(一般式): -4(参数) - 4(call) + 4(ret 弹返回地址) + 4(ret 弹参数) = 0
+    零值(任务书字面式 +fn_ret-4) = 0   [与一般式一致]
+    非零: cave 段 = 0   原映像段 = 0   相对净变化 = 0
+[PASS] 0x724520 零值路径净变化 == 0（实测 cave_ret 参与）  0
+[PASS] 0x724520 非零路径净变化 == 0（cave 段 vs 原映像段）  0 - 0 = 0
+[PASS] 0x724520 字面式 +fn_ret-4 与一般式一致 ⟺ fn_ret==4  literal=0 general=0 fn_ret=4
+  0x724530  fn_ret=0  cave_ret=0
+    零值(一般式): -0(参数) - 4(call) + 4(ret 弹返回地址) + 0(ret 弹参数) = 0
+    零值(任务书字面式 +fn_ret-4) = -4   [★与一般式不一致：字面式仅在 fn_ret==4 时成立]
+    非零: cave 段 = 0   原映像段 = 0   相对净变化 = 0
+[PASS] 0x724530 零值路径净变化 == 0（实测 cave_ret 参与）  0
+[PASS] 0x724530 非零路径净变化 == 0（cave 段 vs 原映像段）  0 - 0 = 0
+[PASS] 0x724530 字面式 +fn_ret-4 与一般式一致 ⟺ fn_ret==4  literal=-4 general=0 fn_ret=0
+  0x724540  fn_ret=0  cave_ret=0
+    零值(一般式): -0(参数) - 4(call) + 4(ret 弹返回地址) + 0(ret 弹参数) = 0
+    零值(任务书字面式 +fn_ret-4) = -4   [★与一般式不一致：字面式仅在 fn_ret==4 时成立]
+    非零: cave 段 = 0   原映像段 = 0   相对净变化 = 0
+[PASS] 0x724540 零值路径净变化 == 0（实测 cave_ret 参与）  0
+[PASS] 0x724540 非零路径净变化 == 0（cave 段 vs 原映像段）  0 - 0 = 0
+[PASS] 0x724540 字面式 +fn_ret-4 与一般式一致 ⟺ fn_ret==4  literal=-4 general=0 fn_ret=0
+  0x724580  fn_ret=4  cave_ret=4
+    零值(一般式): -4(参数) - 4(call) + 4(ret 弹返回地址) + 4(ret 弹参数) = 0
+    零值(任务书字面式 +fn_ret-4) = 0   [与一般式一致]
+    非零: cave 段 = -16   原映像段 = -16   相对净变化 = 0
+[PASS] 0x724580 零值路径净变化 == 0（实测 cave_ret 参与）  0
+[PASS] 0x724580 非零路径净变化 == 0（cave 段 vs 原映像段）  -16 - -16 = 0
+[PASS] 0x724580 字面式 +fn_ret-4 与一般式一致 ⟺ fn_ret==4  literal=0 general=0 fn_ret=4
+  0x724730  fn_ret=4  cave_ret=4
+    零值(一般式): -4(参数) - 4(call) + 4(ret 弹返回地址) + 4(ret 弹参数) = 0
+    零值(任务书字面式 +fn_ret-4) = 0   [与一般式一致]
+    非零: cave 段 = -20   原映像段 = -20   相对净变化 = 0
+[PASS] 0x724730 零值路径净变化 == 0（实测 cave_ret 参与）  0
+[PASS] 0x724730 非零路径净变化 == 0（cave 段 vs 原映像段）  -20 - -20 = 0
+[PASS] 0x724730 字面式 +fn_ret-4 与一般式一致 ⟺ fn_ret==4  literal=0 general=0 fn_ret=4
+  0x724C00  fn_ret=0  cave_ret=0
+    零值(一般式): -0(参数) - 4(call) + 4(ret 弹返回地址) + 0(ret 弹参数) = 0
+    零值(任务书字面式 +fn_ret-4) = -4   [★与一般式不一致：字面式仅在 fn_ret==4 时成立]
+    非零: cave 段 = 0   原映像段 = 0   相对净变化 = 0
+[PASS] 0x724C00 零值路径净变化 == 0（实测 cave_ret 参与）  0
+[PASS] 0x724C00 非零路径净变化 == 0（cave 段 vs 原映像段）  0 - 0 = 0
+[PASS] 0x724C00 字面式 +fn_ret-4 与一般式一致 ⟺ fn_ret==4  literal=-4 general=0 fn_ret=0
+
+====================================================================================================
+== STEP E  负控（门禁必须变红，否则门禁失效）
+====================================================================================================
+
+  NC1a 0x7241A0: ret 操作数 4 -> 8
+    85 c9 74 0a 8a 44 24 04 56 e9 97 41 72 f0 31 c0 c2 08 00
+    cave_ret 实测 = 8   c7=FAIL   零值净变化 = 4
+[PASS] NC1a 改坏 ret 后 ★核心断言必须 FAIL  cave_ret=8 vs fn_ret=4
+[PASS] NC1a 改坏 ret 后栈平衡也必须 FAIL  net=4
+
+  NC1b 0x724530: c3(ret 0) -> c2 04 00(ret 4)  ← v4 草案的真实错误
+    85 c9 74 0b 8b 81 28 02 00 00 e9 67 44 72 f0 31 c0 c2 04 00
+    cave_ret 实测 = 4   c7=FAIL   零值净变化 = 4
+[PASS] NC1b c3→ret4 后 ★核心断言必须 FAIL  cave_ret=4 vs fn_ret=0
+[PASS] NC1b c3→ret4 后栈平衡也必须 FAIL  net=4
+
+  NC1c 0x7241A0: c2 04 00(ret 4) -> c3(ret 0)  ← 反向
+    85 c9 74 0a 8a 44 24 04 56 e9 97 41 72 f0 31 c0 c3
+    cave_ret 实测 = 0   c7=FAIL   零值净变化 = -4
+[PASS] NC1c ret4→c3 后 ★核心断言必须 FAIL  cave_ret=0 vs fn_ret=4
+
+  NC2 0x724200: jmp 目标 0x724205 -> 0x724206
+    85 c9 74 0a 53 55 56 8b f1 e9 b8 41 72 f0 31 c0 c2 04 00
+    jmp 实测目标 = 0x724206   c9=FAIL
+[PASS] NC2  改偏 jmp 目标后第 9 条必须 FAIL  jmp→0x724206
+
+  NC3 0x724580: replay 末字节 0x14 -> 0x15
+    85 c9 74 0d 53 55 56 57 8b 7c 24 15 e9 37 44 72 f0 31 c0 c2 04 00
+    重放段 = 53 55 56 57 8b 7c 24 15   原映像 = 53 55 56 57 8b 7c 24 14
+    c10=FAIL  （jmp_off 仍为 12，结构未破坏）
+[PASS] NC3  改坏 replay 后第 10 条必须 FAIL  replay != image
+[PASS] NC3  负控 3 未破坏 cave 结构（jmp 仍被唯一识别）  12
+
+  NC4  v4 草案原样注入：用 build_v4_style 重建 3 条 c3 函数的 cave（尾部 ret 4）
+    0x724530: v4 cave 85 c9 74 0b 8b 81 28 02 00 00 e9 67 44 72 f0 31 c0 c2 04 00
+      cave_ret 实测=4  fn_ret=0  c7=FAIL  零值净=4
+    0x724540: v4 cave 85 c9 74 0b 8b 81 2c 02 00 00 e9 37 44 72 f0 31 c0 c2 04 00
+      cave_ret 实测=4  fn_ret=0  c7=FAIL  零值净=4
+    0x724C00: v4 cave 85 c9 74 0a 8b 51 04 33 c0 e9 37 4a 72 f0 31 c0 c2 04 00
+      cave_ret 实测=4  fn_ret=0  c7=FAIL  零值净=4
+[PASS] NC4  v4 草案的 3 处 ret 错误在 v5 判据下全部被抓住  3/3
+
+  负控 NC1a: RED（门禁有效）
+  负控 NC1b: RED（门禁有效）
+  负控 NC1c: RED（门禁有效）
+  负控 NC2: RED（门禁有效）
+  负控 NC3: RED（门禁有效）
+  负控 NC4: RED（门禁有效）
+[PASS] NC*  全部负控都变红（门禁非恒真）  6/6 红
+
+====================================================================================================
+== STEP F  主表
+====================================================================================================
+  VA         hook replay fn_ret cave_ret  verdict  len  cave hex
+  0x7241A0      5      5      4        4  PASS      19  85 c9 74 0a 8a 44 24 04 56 e9 97 41 72 f0 31 c0 c2 04 00
+  0x724200      5      5      4        4  PASS      19  85 c9 74 0a 53 55 56 8b f1 e9 b7 41 72 f0 31 c0 c2 04 00
+  0x724520     10     10      4        4  PASS      24  85 c9 74 0f 8b 44 24 04 89 81 28 02 00 00 e9 97 44 72 f0 31 c0 c2 04 00
+  0x724530      6      6      0        0  PASS      18  85 c9 74 0b 8b 81 28 02 00 00 e9 67 44 72 f0 31 c0 c3
+  0x724540      6      6      0        0  PASS      18  85 c9 74 0b 8b 81 2c 02 00 00 e9 37 44 72 f0 31 c0 c3
+  0x724580      8      8      4        4  PASS      22  85 c9 74 0d 53 55 56 57 8b 7c 24 14 e9 37 44 72 f0 31 c0 c2 04 00
+  0x724730      6      7      4        4  PASS      21  85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 a7 45 72 f0 31 c0 c2 04 00
+  0x724C00      5      5      0        0  PASS      17  85 c9 74 0a 8b 51 04 33 c0 e9 37 4a 72 f0 31 c0 c3
+
+====================================================================================================
+== STEP G  交付素材（hook 字节 / cave 反汇编）
+====================================================================================================
+
+  0x7241A0  fn_ret=4  cave_va=0x10000000  cave_len=19
+    hook(5B) : e9 5b be 8d 0f
+    cave(19B) : 85 c9 74 0a 8a 44 24 04 56 e9 97 41 72 f0 31 c0 c2 04 00
+      10000000  85 c9                      test ecx, ecx
+      10000002  74 0a                      je 0x1000000e
+      10000004  8a 44 24 04                mov al, byte ptr [esp + 4]
+      10000008  56                         push esi
+      10000009  e9 97 41 72 f0             jmp 0x7241a5
+      1000000E  31 c0                      xor eax, eax
+      10000010  c2 04 00                   ret 4
+
+  0x724200  fn_ret=4  cave_va=0x10000040  cave_len=19
+    hook(5B) : e9 3b be 8d 0f
+    cave(19B) : 85 c9 74 0a 53 55 56 8b f1 e9 b7 41 72 f0 31 c0 c2 04 00
+      10000040  85 c9                      test ecx, ecx
+      10000042  74 0a                      je 0x1000004e
+      10000044  53                         push ebx
+      10000045  55                         push ebp
+      10000046  56                         push esi
+      10000047  8b f1                      mov esi, ecx
+      10000049  e9 b7 41 72 f0             jmp 0x724205
+      1000004E  31 c0                      xor eax, eax
+      10000050  c2 04 00                   ret 4
+
+  0x724520  fn_ret=4  cave_va=0x10000080  cave_len=24
+    hook(10B) : e9 5b bb 8d 0f 90 90 90 90 90
+    cave(24B) : 85 c9 74 0f 8b 44 24 04 89 81 28 02 00 00 e9 97 44 72 f0 31 c0 c2 04 00
+      10000080  85 c9                      test ecx, ecx
+      10000082  74 0f                      je 0x10000093
+      10000084  8b 44 24 04                mov eax, dword ptr [esp + 4]
+      10000088  89 81 28 02 00 00          mov dword ptr [ecx + 0x228], eax
+      1000008E  e9 97 44 72 f0             jmp 0x72452a
+      10000093  31 c0                      xor eax, eax
+      10000095  c2 04 00                   ret 4
+
+  0x724530  fn_ret=0  cave_va=0x100000c0  cave_len=18
+    hook(6B) : e9 8b bb 8d 0f 90
+    cave(18B) : 85 c9 74 0b 8b 81 28 02 00 00 e9 67 44 72 f0 31 c0 c3
+      100000C0  85 c9                      test ecx, ecx
+      100000C2  74 0b                      je 0x100000cf
+      100000C4  8b 81 28 02 00 00          mov eax, dword ptr [ecx + 0x228]
+      100000CA  e9 67 44 72 f0             jmp 0x724536
+      100000CF  31 c0                      xor eax, eax
+      100000D1  c3                         ret 
+
+  0x724540  fn_ret=0  cave_va=0x10000100  cave_len=18
+    hook(6B) : e9 bb bb 8d 0f 90
+    cave(18B) : 85 c9 74 0b 8b 81 2c 02 00 00 e9 37 44 72 f0 31 c0 c3
+      10000100  85 c9                      test ecx, ecx
+      10000102  74 0b                      je 0x1000010f
+      10000104  8b 81 2c 02 00 00          mov eax, dword ptr [ecx + 0x22c]
+      1000010A  e9 37 44 72 f0             jmp 0x724546
+      1000010F  31 c0                      xor eax, eax
+      10000111  c3                         ret 
+
+  0x724580  fn_ret=4  cave_va=0x10000140  cave_len=22
+    hook(8B) : e9 bb bb 8d 0f 90 90 90
+    cave(22B) : 85 c9 74 0d 53 55 56 57 8b 7c 24 14 e9 37 44 72 f0 31 c0 c2 04 00
+      10000140  85 c9                      test ecx, ecx
+      10000142  74 0d                      je 0x10000151
+      10000144  53                         push ebx
+      10000145  55                         push ebp
+      10000146  56                         push esi
+      10000147  57                         push edi
+      10000148  8b 7c 24 14                mov edi, dword ptr [esp + 0x14]
+      1000014C  e9 37 44 72 f0             jmp 0x724588
+      10000151  31 c0                      xor eax, eax
+      10000153  c2 04 00                   ret 4
+
+  0x724730  fn_ret=4  cave_va=0x10000180  cave_len=21
+    hook(6B) : e9 4b ba 8d 0f 90
+    cave(21B) : 85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 a7 45 72 f0 31 c0 c2 04 00
+      10000180  85 c9                      test ecx, ecx
+      10000182  74 0c                      je 0x10000190
+      10000184  83 ec 0c                   sub esp, 0xc
+      10000187  55                         push ebp
+      10000188  8b e9                      mov ebp, ecx
+      1000018A  56                         push esi
+      1000018B  e9 a7 45 72 f0             jmp 0x724737
+      10000190  31 c0                      xor eax, eax
+      10000192  c2 04 00                   ret 4
+    note: 映像 0x724736 起的 1B (56) 被 jmp 跳过，cave 内重放
+
+  0x724C00  fn_ret=0  cave_va=0x100001c0  cave_len=17
+    hook(5B) : e9 bb b5 8d 0f
+    cave(17B) : 85 c9 74 0a 8b 51 04 33 c0 e9 37 4a 72 f0 31 c0 c3
+      100001C0  85 c9                      test ecx, ecx
+      100001C2  74 0a                      je 0x100001ce
+      100001C4  8b 51 04                   mov edx, dword ptr [ecx + 4]
+      100001C7  33 c0                      xor eax, eax
+      100001C9  e9 37 4a 72 f0             jmp 0x724c05
+      100001CE  31 c0                      xor eax, eax
+      100001D0  c3                         ret 
+
+  ── hook 跳板自检（从 hook 字节本身解码，不信构造公式）──
+    0x7241A0: jmp 0x10000000   → 0x10000000
+[PASS] 0x7241A0 hook 解码为 jmp→本 cave + 纯 nop 填充  0x10000000 vs 0x10000000
+[PASS] 0x7241A0 hook 长度 == 表中 hook  5 vs 5
+    0x724200: jmp 0x10000040   → 0x10000040
+[PASS] 0x724200 hook 解码为 jmp→本 cave + 纯 nop 填充  0x10000040 vs 0x10000040
+[PASS] 0x724200 hook 长度 == 表中 hook  5 vs 5
+    0x724520: jmp 0x10000080 ; nop  ; nop  ; nop  ; nop  ; nop    → 0x10000080
+[PASS] 0x724520 hook 解码为 jmp→本 cave + 纯 nop 填充  0x10000080 vs 0x10000080
+[PASS] 0x724520 hook 长度 == 表中 hook  10 vs 10
+    0x724530: jmp 0x100000c0 ; nop    → 0x100000c0
+[PASS] 0x724530 hook 解码为 jmp→本 cave + 纯 nop 填充  0x100000c0 vs 0x100000c0
+[PASS] 0x724530 hook 长度 == 表中 hook  6 vs 6
+    0x724540: jmp 0x10000100 ; nop    → 0x10000100
+[PASS] 0x724540 hook 解码为 jmp→本 cave + 纯 nop 填充  0x10000100 vs 0x10000100
+[PASS] 0x724540 hook 长度 == 表中 hook  6 vs 6
+    0x724580: jmp 0x10000140 ; nop  ; nop  ; nop    → 0x10000140
+[PASS] 0x724580 hook 解码为 jmp→本 cave + 纯 nop 填充  0x10000140 vs 0x10000140
+[PASS] 0x724580 hook 长度 == 表中 hook  8 vs 8
+    0x724730: jmp 0x10000180 ; nop    → 0x10000180
+[PASS] 0x724730 hook 解码为 jmp→本 cave + 纯 nop 填充  0x10000180 vs 0x10000180
+[PASS] 0x724730 hook 长度 == 表中 hook  6 vs 6
+    0x724C00: jmp 0x100001c0   → 0x100001c0
+[PASS] 0x724C00 hook 解码为 jmp→本 cave + 纯 nop 填充  0x100001c0 vs 0x100001c0
+[PASS] 0x724C00 hook 长度 == 表中 hook  5 vs 5
+
+====================================================================================================
+== RESULT
+====================================================================================================
+checks passed: 225/225
+negative controls red: 6/6  (NC1a, NC1b, NC1c, NC2, NC3, NC4)
+RESULT: ALL PASS
+EXIT=0
