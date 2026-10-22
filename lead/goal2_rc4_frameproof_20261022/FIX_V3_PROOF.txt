@@ -1,0 +1,226 @@
+==============================================================================
+== STEP 0  identity
+==============================================================================
+  gamemd.exe : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] binary identity  73201cc0
+
+==============================================================================
+== STEP A  hook 边界（必须整条指令覆盖）
+==============================================================================
+
+  FN_A 0x724730  hook_len=6
+    00724730  83ec0c               sub esp, 0xc
+    00724733  55                   push ebp
+    00724734  8be9                 mov ebp, ecx
+[PASS] FN_A 0x724730 hook_len == 序言整条累计字节  6 vs 6
+[PASS] FN_A 0x724730 resume 处是新指令起点  0x724737
+[PASS] FN_A 0x724730 hook_len >= 5（放得下 E9 rel32）  6
+[PASS] FN_A 0x724730 原字节 = 覆盖指令字节拼接  83 ec 0c 55 8b e9
+    额外重放 1 字节 @ 0x724736: 56
+[PASS] FN_A 0x724730 额外重放字节 == 映像原文  56
+      00724736  56                   push esi
+[PASS] FN_A 0x724730 额外重放整条覆盖（不截断指令）  1 vs 1
+    合计重放 7 字节；resume = 0x724737，应 == 0x724737
+[PASS] FN_A 0x724730 resume == va + hook_len + extra  0x724737 vs 0x724737
+
+  FN_B 0x724580  hook_len=8
+    00724580  53                   push ebx
+    00724581  55                   push ebp
+    00724582  56                   push esi
+    00724583  57                   push edi
+    00724584  8b7c2414             mov edi, dword ptr [esp + 0x14]
+[PASS] FN_B 0x724580 hook_len == 序言整条累计字节  8 vs 8
+[PASS] FN_B 0x724580 resume 处是新指令起点  0x724588
+[PASS] FN_B 0x724580 hook_len >= 5（放得下 E9 rel32）  8
+[PASS] FN_B 0x724580 原字节 = 覆盖指令字节拼接  53 55 56 57 8b 7c 24 14
+    额外重放 0 字节 @ 0x724588: 
+    合计重放 8 字节；resume = 0x724588，应 == 0x724588
+[PASS] FN_B 0x724580 resume == va + hook_len + extra  0x724588 vs 0x724588
+
+  FN_C 0x724530  hook_len=6
+    00724530  8b8128020000         mov eax, dword ptr [ecx + 0x228]
+[PASS] FN_C 0x724530 hook_len == 序言整条累计字节  6 vs 6
+[PASS] FN_C 0x724530 resume 处是新指令起点  0x724536
+[PASS] FN_C 0x724530 hook_len >= 5（放得下 E9 rel32）  6
+[PASS] FN_C 0x724530 原字节 = 覆盖指令字节拼接  8b 81 28 02 00 00
+    额外重放 0 字节 @ 0x724536: 
+    合计重放 6 字节；resume = 0x724536，应 == 0x724536
+[PASS] FN_C 0x724530 resume == va + hook_len + extra  0x724536 vs 0x724536
+
+  FN_D 0x724540  hook_len=6
+    00724540  8b812c020000         mov eax, dword ptr [ecx + 0x22c]
+[PASS] FN_D 0x724540 hook_len == 序言整条累计字节  6 vs 6
+[PASS] FN_D 0x724540 resume 处是新指令起点  0x724546
+[PASS] FN_D 0x724540 hook_len >= 5（放得下 E9 rel32）  6
+[PASS] FN_D 0x724540 原字节 = 覆盖指令字节拼接  8b 81 2c 02 00 00
+    额外重放 0 字节 @ 0x724546: 
+    合计重放 6 字节；resume = 0x724546，应 == 0x724546
+[PASS] FN_D 0x724540 resume == va + hook_len + extra  0x724546 vs 0x724546
+
+==============================================================================
+== STEP B  四个 cave 的字节与语义
+==============================================================================
+
+  FN_A 0x724730  cave (21 字节) @ 0x10000000
+    85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 27 47 72 f0 31 c0 c2 04 00
+    je rel8=12 → .null @ +16；jmp rel32 → 0x724737
+    10000000  85c9                 test ecx, ecx
+    10000002  740c                 je 0x10000010
+    10000004  83ec0c               sub esp, 0xc
+    10000007  55                   push ebp
+    10000008  8be9                 mov ebp, ecx
+    1000000A  56                   push esi
+    1000000B  e9274772f0           jmp 0x724737
+    10000010  31c0                 xor eax, eax
+    10000012  c20400               ret 4
+[PASS] FN_A 0x724730 cave[0]=test ecx,ecx  10000000  85c9                 test ecx, ecx
+[PASS] FN_A 0x724730 cave[1]=je  10000002  740c                 je 0x10000010
+[PASS] FN_A 0x724730 je 目标 == .null  0x10000010
+[PASS] FN_A 0x724730 je rel8 在范围  12
+[PASS] FN_A 0x724730 重放原指令字节一致  83 ec 0c 55 8b e9
+[PASS] FN_A 0x724730 额外重放字节一致  56
+[PASS] FN_A 0x724730 恰 1 条 jmp 且目标 == resume  0x724737
+[PASS] FN_A 0x724730 末条 ret 4  10000012  c20400               ret 4
+
+  FN_B 0x724580  cave (22 字节) @ 0x10000040
+    85 c9 74 0d 53 55 56 57 8b 7c 24 14 e9 37 45 72 f0 31 c0 c2 04 00
+    je rel8=13 → .null @ +17；jmp rel32 → 0x724588
+    10000040  85c9                 test ecx, ecx
+    10000042  740d                 je 0x10000051
+    10000044  53                   push ebx
+    10000045  55                   push ebp
+    10000046  56                   push esi
+    10000047  57                   push edi
+    10000048  8b7c2414             mov edi, dword ptr [esp + 0x14]
+    1000004C  e9374572f0           jmp 0x724588
+    10000051  31c0                 xor eax, eax
+    10000053  c20400               ret 4
+[PASS] FN_B 0x724580 cave[0]=test ecx,ecx  10000040  85c9                 test ecx, ecx
+[PASS] FN_B 0x724580 cave[1]=je  10000042  740d                 je 0x10000051
+[PASS] FN_B 0x724580 je 目标 == .null  0x10000051
+[PASS] FN_B 0x724580 je rel8 在范围  13
+[PASS] FN_B 0x724580 重放原指令字节一致  53 55 56 57 8b 7c 24 14
+[PASS] FN_B 0x724580 恰 1 条 jmp 且目标 == resume  0x724588
+[PASS] FN_B 0x724580 末条 ret 4  10000053  c20400               ret 4
+
+  FN_C 0x724530  cave (20 字节) @ 0x10000080
+    85 c9 74 0b 8b 81 28 02 00 00 e9 a7 44 72 f0 31 c0 c2 04 00
+    je rel8=11 → .null @ +15；jmp rel32 → 0x724536
+    10000080  85c9                 test ecx, ecx
+    10000082  740b                 je 0x1000008f
+    10000084  8b8128020000         mov eax, dword ptr [ecx + 0x228]
+    1000008A  e9a74472f0           jmp 0x724536
+    1000008F  31c0                 xor eax, eax
+    10000091  c20400               ret 4
+[PASS] FN_C 0x724530 cave[0]=test ecx,ecx  10000080  85c9                 test ecx, ecx
+[PASS] FN_C 0x724530 cave[1]=je  10000082  740b                 je 0x1000008f
+[PASS] FN_C 0x724530 je 目标 == .null  0x1000008f
+[PASS] FN_C 0x724530 je rel8 在范围  11
+[PASS] FN_C 0x724530 重放原指令字节一致  8b 81 28 02 00 00
+[PASS] FN_C 0x724530 恰 1 条 jmp 且目标 == resume  0x724536
+[PASS] FN_C 0x724530 末条 ret 4  10000091  c20400               ret 4
+
+  FN_D 0x724540  cave (20 字节) @ 0x100000c0
+    85 c9 74 0b 8b 81 2c 02 00 00 e9 77 44 72 f0 31 c0 c2 04 00
+    je rel8=11 → .null @ +15；jmp rel32 → 0x724546
+    100000C0  85c9                 test ecx, ecx
+    100000C2  740b                 je 0x100000cf
+    100000C4  8b812c020000         mov eax, dword ptr [ecx + 0x22c]
+    100000CA  e9774472f0           jmp 0x724546
+    100000CF  31c0                 xor eax, eax
+    100000D1  c20400               ret 4
+[PASS] FN_D 0x724540 cave[0]=test ecx,ecx  100000C0  85c9                 test ecx, ecx
+[PASS] FN_D 0x724540 cave[1]=je  100000C2  740b                 je 0x100000cf
+[PASS] FN_D 0x724540 je 目标 == .null  0x100000cf
+[PASS] FN_D 0x724540 je rel8 在范围  11
+[PASS] FN_D 0x724540 重放原指令字节一致  8b 81 2c 02 00 00
+[PASS] FN_D 0x724540 恰 1 条 jmp 且目标 == resume  0x724546
+[PASS] FN_D 0x724540 末条 ret 4  100000D1  c20400               ret 4
+
+==============================================================================
+== STEP C  栈平衡（16 条路径）
+==============================================================================
+  主论证（结构性，不依赖解析尾声）：
+    cave 在 [va, resume) 区间重放了**完全相同**的原指令字节，
+    然后 jmp 到 resume。⇒ 从 resume 起的执行流与原函数逐字节相同，
+    因此『非零路径』的 esp 变化与原函数**恒等**，无需另行推演。
+    『零值路径』未执行任何 sub/push，只 call(-4)+ret N(+4+N) ⇒ 净 0。
+
+
+  FN_A 0x724730  ret 4
+    重放段: sub esp,0xc + 2 个 push = esp 下移 0x14（cave 内原样执行）
+[PASS] FN_A 0x724730 重放段字节 == 映像原文 [va,resume)  83 ec 0c 55 8b e9 56
+[PASS] FN_A 0x724730 resume == va + hook + extra  0x724737
+    零值路径: push 1 arg(-4) + call(-4) + ret 4(+8) = +0
+[PASS] FN_A 0x724730 零值路径栈自平衡（ret 4 与 1 个参数匹配）  +0
+    尾声(可解析): 2 个 pop + add esp,0x10
+[PASS] FN_A 0x724730 尾声 pop 数 == 重放段 push 数  2 vs 2
+
+  FN_B 0x724580  ret 4
+    重放段: sub esp,0x0 + 4 个 push = esp 下移 0x10（cave 内原样执行）
+[PASS] FN_B 0x724580 重放段字节 == 映像原文 [va,resume)  53 55 56 57 8b 7c 24 14
+[PASS] FN_B 0x724580 resume == va + hook + extra  0x724588
+    零值路径: push 1 arg(-4) + call(-4) + ret 4(+8) = +0
+[PASS] FN_B 0x724580 零值路径栈自平衡（ret 4 与 1 个参数匹配）  +0
+    尾声(可解析): 4 个 pop + add esp,0x0
+[PASS] FN_B 0x724580 尾声 pop 数 == 重放段 push 数  4 vs 4
+
+  FN_C 0x724530  ret 0
+    重放段: sub esp,0x0 + 0 个 push = esp 下移 0x0（cave 内原样执行）
+[PASS] FN_C 0x724530 重放段字节 == 映像原文 [va,resume)  8b 81 28 02 00 00
+[PASS] FN_C 0x724530 resume == va + hook + extra  0x724536
+    零值路径: push 0 arg(-0) + call(-4) + ret 0(+4) = +0
+[PASS] FN_C 0x724530 零值路径栈自平衡（ret 0 与 0 个参数匹配）  +0
+    尾声(可解析): 0 个 pop + add esp,0x0
+[PASS] FN_C 0x724530 小函数无 push/pop（纯访问器）  push=0 pop=0
+
+  FN_D 0x724540  ret 0
+    重放段: sub esp,0x0 + 0 个 push = esp 下移 0x0（cave 内原样执行）
+[PASS] FN_D 0x724540 重放段字节 == 映像原文 [va,resume)  8b 81 2c 02 00 00
+[PASS] FN_D 0x724540 resume == va + hook + extra  0x724546
+    零值路径: push 0 arg(-0) + call(-4) + ret 0(+4) = +0
+[PASS] FN_D 0x724540 零值路径栈自平衡（ret 0 与 0 个参数匹配）  +0
+    尾声(可解析): 0 个 pop + add esp,0x0
+[PASS] FN_D 0x724540 小函数无 push/pop（纯访问器）  push=0 pop=0
+
+==============================================================================
+== STEP D  四函数的调用者是否读返回值
+==============================================================================
+
+  FN_A 0x724730：30 个直接 E8 调用者 （覆盖 eax 2 / 读 eax 0 / 不碰 28）
+    调用点: 0x4a8b75, 0x640427, 0x654413, 0x654469, 0x6ac00b, 0x6ac03e, 0x6ac0ed, 0x6ac140, 0x6ac193, 0x6ac1e6, 0x6d059b, 0x6d0619, 0x6d0634, 0x6d0664, 0x6d089d, 0x6d08b3, 0x6d0940, 0x6d09fa, 0x6d1293, 0x6d1308, 0x6d137e, 0x6d13f3, 0x6d1541, 0x6d155c, 0x6d15cb, 0x6d1605, 0x6d1632, 0x6d16c2, 0x6d16dd, 0x6d1744
+[PASS] FN_A 0x724730 的调用者全不读返回值  read=0
+
+  FN_B 0x724580：18 个直接 E8 调用者 （覆盖 eax 7 / 读 eax 0 / 不碰 11）
+    调用点: 0x4a8b85, 0x640437, 0x654423, 0x654479, 0x6ac01b, 0x6ac096, 0x6ac0fd, 0x6ac150, 0x6ac1a3, 0x6ac1f6, 0x6d05ab, 0x6d0a0a, 0x6d12a3, 0x6d1318, 0x6d138e, 0x6d1403, 0x6d15db, 0x6d1754
+[PASS] FN_B 0x724580 的调用者全不读返回值  read=0
+
+  FN_C 0x724530：1 个直接 E8 调用者 （覆盖 eax 0 / 读 eax 0 / 不碰 1）
+    调用点: 0x6ab99a
+[PASS] FN_C 0x724530 的调用者全不读返回值  read=0
+
+  FN_D 0x724540：1 个直接 E8 调用者 （覆盖 eax 1 / 读 eax 0 / 不碰 0）
+    调用点: 0x6ab9e9
+[PASS] FN_D 0x724540 的调用者全不读返回值  read=0
+
+==============================================================================
+== STEP E  v3 草案汇总（离线，未部署）
+==============================================================================
+  ── gamemd 侧（4 处函数头）──
+    0x724730 : 83 ec 0c 55 8b e9  ->  E9 <rel32→DLL cave>  + 1×90
+    0x724580 : 53 55 56 57 8b 7c 24 14  ->  E9 <rel32→DLL cave>  + 3×90
+    0x724530 : 8b 81 28 02 00 00  ->  E9 <rel32→DLL cave>  + 1×90
+    0x724540 : 8b 81 2c 02 00 00  ->  E9 <rel32→DLL cave>  + 1×90
+  ── DLL 侧（4 个静态数组 + PAGE_EXECUTE_READWRITE）──
+    cave[FN_A 0x724730] (21B) : 85 c9 74 0c 83 ec 0c 55 8b e9 56 e9 27 47 72 f0 31 c0 c2 04 00
+    cave[FN_B 0x724580] (22B) : 85 c9 74 0d 53 55 56 57 8b 7c 24 14 e9 37 45 72 f0 31 c0 c2 04 00
+    cave[FN_C 0x724530] (20B) : 85 c9 74 0b 8b 81 28 02 00 00 e9 a7 44 72 f0 31 c0 c2 04 00
+    cave[FN_D 0x724540] (20B) : 85 c9 74 0b 8b 81 2c 02 00 00 e9 77 44 72 f0 31 c0 c2 04 00
+
+  ★ 本脚本不写任何二进制文件。
+
+==============================================================================
+== RESULT
+==============================================================================
+checks passed: 72/72
+RESULT: ALL PASS

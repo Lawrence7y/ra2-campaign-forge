@@ -1,0 +1,212 @@
+==============================================================================
+== STEP 0  identity
+==============================================================================
+  gamemd.exe : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] binary identity  73201cc0
+
+==============================================================================
+== STEP A  [0x887368] 字节级引用普查
+==============================================================================
+  .text 内出现 0x887368 这个 4 字节值的次数：74
+  经反汇编确认的**指令级**站点：74
+[PASS] 指令级站点数 <= 字节命中数  74 <= 74
+
+  ── 分类 ──
+    mov reg,[G] 后**不是** call（自己处理）  : 67
+    mov ecx,[G] 后 **直接** call             : 7
+    mov ecx,[G] 后 **间接** call             : 0
+    其它                                     : 0
+[PASS] 分类总数 == 指令级站点数  74
+
+==============================================================================
+== STEP B  直接 call 的目标函数 → 首个 this 解引用偏移
+==============================================================================
+  直接 call 的**不同目标函数**：4 个
+
+  0x00724530  站点  1  首个 this 解引用偏移    0x228
+  0x00724540  站点  1  首个 this 解引用偏移    0x22C
+  0x00724580  站点  4  首个 this 解引用偏移    0x24C  ★ 已被 v2 守卫
+  0x00724730  站点  1  首个 this 解引用偏移    0x250  ★ 已被 v2 守卫
+
+  ⇒ 按首个解引用偏移分组：
+    0x228        函数  1 个 / 站点  1 / 其中已守 0 个函数
+    0x22C        函数  1 个 / 站点  1 / 其中已守 0 个函数
+    0x24C        函数  1 个 / 站点  4 / 其中已守 1 个函数
+    0x250        函数  1 个 / 站点  1 / 其中已守 1 个函数
+
+  ★ 首个解引用落在 0x228/0x22C/0x24C/0x250 这一族（同一对象头部区）的函数：4 个
+      0x00724530  站点 1  偏移 0x228  ★★ 未被 v2 守卫
+      0x00724540  站点 1  偏移 0x22C  ★★ 未被 v2 守卫
+      0x00724580  站点 4  偏移 0x24C  ← 已被 v2 守卫
+      0x00724730  站点 1  偏移 0x250  ← 已被 v2 守卫
+[PASS] ★ 0x22x/0x25x 族共有 4 个函数（不止 v2 守的 2 个）  ['0x724530', '0x724540', '0x724580', '0x724730']
+[PASS] ★★ 其中 2 个（0x724530/0x724540）v2 **未覆盖**  ['0x724530', '0x724540']
+
+==============================================================================
+== STEP C  自己处理 [G] 的站点有无 null 守卫（全量 67 处）
+==============================================================================
+  0x0048ce4c  mov ecx, dword ptr [0x887368]      → cmp ecx, ebx               有守卫
+            守卫: 0048CE52  3bcb                 cmp ecx, ebx
+  0x004a8b18  mov ecx, dword ptr [0x887368]      → mov edx, dword ptr [0x886fa0] 有守卫
+            守卫: 004A8B35  3bcb                 cmp ecx, ebx
+  0x004a8b7a  mov ecx, dword ptr [0x887368]      → lea eax, [esp + 0xc]       ★无守卫
+  0x004e1f88  mov esi, dword ptr [0x887368]      → cmp eax, 1                 有守卫
+            守卫: 004E1F8E  83f801               cmp eax, 1
+  0x004f4562  mov ecx, dword ptr [0x887368]      → test ecx, ecx               有守卫
+            守卫: 004F4568  85c9                 test ecx, ecx
+  0x004f4a01  mov ecx, dword ptr [0x887368]      → test ecx, ecx               有守卫
+            守卫: 004F4A07  85c9                 test ecx, ecx
+  0x0052daf9  mov ecx, dword ptr [0x887368]      → cmp ecx, ebx               有守卫
+            守卫: 0052DAFF  3bcb                 cmp ecx, ebx
+  0x0055d0a0  mov ecx, dword ptr [0x887368]      → cmp ecx, ebx               有守卫
+            守卫: 0055D0A6  3bcb                 cmp ecx, ebx
+  0x0055d159  mov ecx, dword ptr [0x887368]      → mov byte ptr [0xabcd58], bl 有守卫
+            守卫: 0055D165  3bcb                 cmp ecx, ebx
+  0x0055d1e7  mov ecx, dword ptr [0x887368]      → mov byte ptr [0xabcd58], bl 有守卫
+            守卫: 0055D1F3  3bcb                 cmp ecx, ebx
+  0x005c4bb8  mov ecx, dword ptr [0x887368]      → push ebx                    ★无守卫
+  0x005d4dbc  mov ecx, dword ptr [0x887368]      → test ecx, ecx               有守卫
+            守卫: 005D4DC2  85c9                 test ecx, ecx
+  0x006403a8  mov ecx, dword ptr [0x887368]      → xor eax, eax               有守卫
+            守卫: 006403B0  3bc8                 cmp ecx, eax
+  0x00654405  mov ecx, dword ptr [0x887368]      → mov dword ptr [esp + 0x18], edx ★无守卫
+  0x00654418  mov ecx, dword ptr [0x887368]      → lea edx, [esp + 0xc]       ★无守卫
+  0x00654446  mov ecx, dword ptr [0x887368]      → push 0xf3                   ★无守卫
+  0x00683f54  mov ecx, dword ptr [0x887368]      → test ecx, ecx               有守卫
+            守卫: 00683F5A  85c9                 test ecx, ecx
+  0x00684010  mov ecx, dword ptr [0x887368]      → add esp, 8                 有守卫
+            守卫: 00684019  85c9                 test ecx, ecx
+  0x00685d7f  mov ecx, dword ptr [0x887368]      → test ecx, ecx               有守卫
+            守卫: 00685D85  85c9                 test ecx, ecx
+  0x0068639f  mov ecx, dword ptr [0x887368]      → cmp ecx, esi               有守卫
+            守卫: 006863A5  3bce                 cmp ecx, esi
+  0x00686424  mov ecx, dword ptr [0x887368]      → mov byte ptr [0xa8ed5c], 0 有守卫
+            守卫: 00686431  85c9                 test ecx, ecx
+  0x00686541  mov ecx, dword ptr [0x887368]      → test ecx, ecx               有守卫
+            守卫: 00686547  85c9                 test ecx, ecx
+  0x0069bb9c  mov ecx, dword ptr [0x887368]      → test ecx, ecx               有守卫
+            守卫: 0069BBA2  85c9                 test ecx, ecx
+  0x006a707f  mov ecx, dword ptr [0x887368]      → cmp ecx, ebx               有守卫
+            守卫: 006A7085  3bcb                 cmp ecx, ebx
+  0x006ab99f  mov ecx, dword ptr [0x887368]      → push 0                      ★无守卫
+  0x006abfc4  mov eax, dword ptr [0x887368]      → xor ebx, ebx               有守卫
+            守卫: 006ABFCB  3bc3                 cmp eax, ebx
+  0x006abff4  mov ecx, dword ptr [0x887368]      → push edi                    ★无守卫
+  0x006ac031  mov ecx, dword ptr [0x887368]      → lea eax, [esi + 0x3e8]     ★无守卫
+  0x006ac07f  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006ac0ca  mov ecx, dword ptr [0x887368]      → mov byte ptr [esp + 0x34], 0 ★无守卫
+  0x006ac0f2  mov ecx, dword ptr [0x887368]      → lea edx, [esp + 0x18]      ★无守卫
+  0x006ac120  mov ecx, dword ptr [0x887368]      → push 0x65                   ★无守卫
+  0x006ac174  mov ecx, dword ptr [0x887368]      → push 0xc8                   ★无守卫
+  0x006ac198  mov ecx, dword ptr [0x887368]      → lea eax, [esp + 0x18]      ★无守卫
+  0x006ac1cc  mov ecx, dword ptr [0x887368]      → mov dword ptr [esp + 0x1c], 0xc9 ★无守卫
+  0x006ac1eb  mov ecx, dword ptr [0x887368]      → lea edx, [esp + 0x18]      ★无守卫
+  0x006d057f  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006d05a0  mov ecx, dword ptr [0x887368]      → lea eax, [esp + 8]         ★无守卫
+  0x006d0629  mov ecx, dword ptr [0x887368]      → push 0xf0                   ★无守卫
+  0x006d0659  mov ecx, dword ptr [0x887368]      → push 0xf1                   ★无守卫
+  0x006d0896  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006d08a8  mov ecx, dword ptr [0x887368]      → push 0xf0                   ★无守卫
+  0x006d0935  mov ecx, dword ptr [0x887368]      → push 0xf1                   ★无守卫
+  0x006d09ec  mov ecx, dword ptr [0x887368]      → mov dword ptr [esp + 4], eax ★无守卫
+  0x006d09ff  mov ecx, dword ptr [0x887368]      → lea edx, [esp]             ★无守卫
+  0x006d127c  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006d1298  mov ecx, dword ptr [0x887368]      → lea edx, [esp + 8]         ★无守卫
+  0x006d12f1  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006d130d  mov ecx, dword ptr [0x887368]      → lea eax, [esp + 8]         ★无守卫
+  0x006d1367  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006d1383  mov ecx, dword ptr [0x887368]      → lea edx, [esp + 8]         ★无守卫
+  0x006d13dc  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006d13f8  mov ecx, dword ptr [0x887368]      → lea eax, [esp + 8]         ★无守卫
+  0x006d153a  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006d1551  mov ecx, dword ptr [0x887368]      → push 0xf0                   ★无守卫
+  0x006d15af  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006d15d0  mov ecx, dword ptr [0x887368]      → lea edx, [esp]             ★无守卫
+  0x006d15fa  mov ecx, dword ptr [0x887368]      → push 0xf1                   ★无守卫
+  0x006d1627  mov ecx, dword ptr [0x887368]      → push 0xf1                   ★无守卫
+  0x006d16bb  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006d16d2  mov ecx, dword ptr [0x887368]      → push 0xf0                   ★无守卫
+  0x006d1728  mov ecx, dword ptr [0x887368]      → push eax                    ★无守卫
+  0x006d1749  mov ecx, dword ptr [0x887368]      → lea eax, [esp + 4]         ★无守卫
+  0x007777b8  mov dword ptr [0x887368], esi      → jmp 0x7779b5               ★无守卫
+  0x007777c3  mov dword ptr [0x887368], ebx      → jmp 0x7779b5               ★无守卫
+  0x007777f3  mov ecx, dword ptr [0x887368]      → cmp ecx, ebx               有守卫
+            守卫: 007777F9  3bcb                 cmp ecx, ebx
+  0x00777803  mov dword ptr [0x887368], ebx      → mov eax, dword ptr [0xa8edd8] 有守卫
+            守卫: 00777814  3bc3                 cmp eax, ebx
+
+  统计：有守卫 22 / 无守卫 45（共 67）
+[PASS] 自己处理 [G] 的站点全部列出  22+45=67
+
+  ── 无守卫站点清单（这些是「读出指针后不判空就使用」）──
+    0x004a8b7a
+    0x005c4bb8
+    0x00654405
+    0x00654418
+    0x00654446
+    0x006ab99f
+    0x006abff4
+    0x006ac031
+    0x006ac07f
+    0x006ac0ca
+    0x006ac0f2
+    0x006ac120
+    0x006ac174
+    0x006ac198
+    0x006ac1cc
+    0x006ac1eb
+    0x006d057f
+    0x006d05a0
+    0x006d0629
+    0x006d0659
+    0x006d0896
+    0x006d08a8
+    0x006d0935
+    0x006d09ec
+    0x006d09ff
+    0x006d127c
+    0x006d1298
+    0x006d12f1
+    0x006d130d
+    0x006d1367
+    0x006d1383
+    0x006d13dc
+    0x006d13f8
+    0x006d153a
+    0x006d1551
+    0x006d15af
+    0x006d15d0
+    0x006d15fa
+    0x006d1627
+    0x006d16bb
+    0x006d16d2
+    0x006d1728
+    0x006d1749
+    0x007777b8
+    0x007777c3
+  共 45 处。
+
+  ★ 但「无守卫」≠「会崩溃」。要真的崩，还须满足两条：
+     (1) 该处读出的值随后被**解引用**（而不是仅比较/存储/传参）
+     (2) 崩溃那一刻 [G] 确实是 0
+  ⇒ 本脚本只做第 (1) 步的粗筛；逐站定案需看每条后续指令，超出本轮范围。
+
+==============================================================================
+== STEP D  间接 call 站点
+==============================================================================
+
+  共 0 处。
+[PASS] ★ 以 [G] 为 ecx 的调用**全是直接 E8**（无间接）  0
+
+  ⇒ 好消息：不存在「以 [G] 为 this 的间接调用」这类静态不可解析路径。
+    账本里『4778 处 call [mem] 不可静态解析』的风险，在**这一条线**上不成立。
+
+  ⇒ 但 v2 的**真实残余风险**不是间接调用，而是 §STEP B 查出的：
+    同族函数 `0x724530` / `0x724540` 也在 `ecx=0` 时解引用 this
+    （偏移 0x228 / 0x22C），而 v2 只守了 `0x724730` / `0x724580`。
+
+==============================================================================
+== RESULT
+==============================================================================
+checks passed: 7/7
+RESULT: ALL PASS

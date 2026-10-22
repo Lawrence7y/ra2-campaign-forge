@@ -1,0 +1,185 @@
+[INFO] binary  ::  D:/Project/ra2-campaign-forge/ra2youli/gamemd.exe  size=4825360 (0x49a110)
+[INFO] sha256  ::  73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[PASS] sha256 prefix == 73201cc0  ::  prefix=73201cc0
+[INFO] PE  ::  e_lfanew=0x50 ImageBase=0x400000 SizeOfImage=0x796000 nsec=5
+[PASS] ImageBase == 0x400000  ::  ImageBase=0x400000
+[INFO] section .text     ::  RVA=0x1000 VS=0x3df38d RAW=0x1000 RS=0x3e0000
+[INFO] section .rdata    ::  RVA=0x3e1000 VS=0x30074 RAW=0x3e1000 RS=0x31000
+[INFO] section .data     ::  RVA=0x412000 VS=0x367be4 RAW=0x412000 RS=0x6c000
+[INFO] section .rsrc     ::  RVA=0x77a000 VS=0x18128 RAW=0x47e000 RS=0x19000
+[INFO] section .detour   ::  RVA=0x793000 VS=0x2718 RAW=0x497000 RS=0x3000
+[INFO] .text  ::  VA 0x401000 .. 0x7e038d (4060045 bytes)
+[INFO] disasm  ::  instructions=1392592 (skipdata) last=0x7e038c
+[PASS] .text fully covered by skipdata disasm  ::  covered=4060045 / 4060045
+[INFO] disasm plain(no skipdata)  ::  stops at 0x46f59d after 155215 insns -> would MISS every hit above that
+[INFO] raw byte hits of '8b 0d 68 73 88 00'  ::  69
+[PASS] every raw hit is an instruction start  ::  not-start=0
+[INFO] mov-sites  ::  total=69  call-follows=50  (adjacent=7, non-adjacent=43)  no-call=19
+[PASS] claim1: adjacent-site count == 7  ::  measured=7
+[PASS] claim1: adjacent target set == {0x724730,0x724580,0x724530,0x724540}  ::  measured=['0x724530', '0x724540', '0x724580', '0x724730']
+[PASS] claim1: per-target counts 1/4/1/1  ::  measured=0x724730:1 0x724580:4 0x724530:1 0x724540:1
+[INFO] claim1: the 7 adjacent sites  ::  
+          site 0x6d0613  mov ecx,[0x887368]  call 0x724730
+          site 0x640431  mov ecx,[0x887368]  call 0x724580
+          site 0x654473  mov ecx,[0x887368]  call 0x724580
+          site 0x6ac015  mov ecx,[0x887368]  call 0x724580
+          site 0x6ac14a  mov ecx,[0x887368]  call 0x724580
+          site 0x6ab994  mov ecx,[0x887368]  call 0x724530
+          site 0x6ab9e3  mov ecx,[0x887368]  call 0x724540
+[PASS] claim1: no indirect call directly after the load  ::  indirect=0
+[PASS] claim1: no test/cmp guard at site 0x640431  ::  flags-modifying insns between load and call=0 (gap insns=0)
+[PASS] claim1: no test/cmp guard at site 0x654473  ::  flags-modifying insns between load and call=0 (gap insns=0)
+[PASS] claim1: no test/cmp guard at site 0x6ab994  ::  flags-modifying insns between load and call=0 (gap insns=0)
+[PASS] claim1: no test/cmp guard at site 0x6ab9e3  ::  flags-modifying insns between load and call=0 (gap insns=0)
+[PASS] claim1: no test/cmp guard at site 0x6ac015  ::  flags-modifying insns between load and call=0 (gap insns=0)
+[PASS] claim1: no test/cmp guard at site 0x6ac14a  ::  flags-modifying insns between load and call=0 (gap insns=0)
+[PASS] claim1: no test/cmp guard at site 0x6d0613  ::  flags-modifying insns between load and call=0 (gap insns=0)
+[INFO] context before site 0x6d0613  ::  0x6d060d:je 0x6d061e | 0x6d060f:mov ecx, dword ptr [eax + 0x24] | 0x6d0612:push ecx
+[INFO] context before site 0x640431  ::  0x640427:call 0x724730 | 0x64042c:lea ecx, [esp + 8] | 0x640430:push ecx
+[INFO] context before site 0x654473  ::  0x654469:call 0x724730 | 0x65446e:lea ecx, [esp + 0xc] | 0x654472:push ecx
+[INFO] context before site 0x6ac015  ::  0x6ac00b:call 0x724730 | 0x6ac010:lea ecx, [esp + 0x18] | 0x6ac014:push ecx
+[INFO] context before site 0x6ac14a  ::  0x6ac140:call 0x724730 | 0x6ac145:lea ecx, [esp + 0x18] | 0x6ac149:push ecx
+[INFO] context before site 0x6ab994  ::  0x6ab990:push ebx | 0x6ab991:push esi | 0x6ab992:mov esi, ecx
+[INFO] context before site 0x6ab9e3  ::  0x6ab9df:nop  | 0x6ab9e0:push esi | 0x6ab9e1:mov esi, ecx
+[PASS] claim1: no 'mov ecx,[0x887368]' in .detour  ::  measured=0
+[PASS] claim1: no call to the 4 targets from .detour  ::  measured=0
+[INFO] claim1 NOTE: under the literal wording (only 'no other mov ecx in between')  ::  sites=50 targets=['0x7241a0', '0x724520', '0x724530', '0x724540', '0x724580', '0x724730']
+[INFO] claim1 NOTE: extra target reachable only under the loose reading  ::  0x7241a0 called from 0x5c4bb8
+[INFO] claim1 NOTE: extra target reachable only under the loose reading  ::  0x724520 called from 0x6ab99f
+[INFO] claim1 NOTE: no-call hits  ::  19, all guarded before any call: True
+
+[INFO] claim2: alias tracking begins  ::  ecx=this; mov reg,ecx and lea reg,[this+x] propagate
+[INFO] fn 0x724730 prologue  ::  sub esp, 0xc | push ebp | mov ebp, ecx | push esi | mov eax, dword ptr [ebp + 0x250] | lea esi, [ebp + 0x24c]
+[INFO] fn 0x724730 first this-relative address  ::  0x724737: mov eax, dword ptr [ebp + 0x250] -> +0x250 (read)
+[INFO] fn 0x724730 first this MEMORY access  ::  0x724737: mov eax, dword ptr [ebp + 0x250] -> +0x250 (read)
+[INFO] fn 0x724730 guards on this before first touch  ::  none
+[INFO] fn 0x724730 all this-relative offsets (first 6)  ::  +0x250@0x724737(read)
+[INFO] fn 0x724580 prologue  ::  push ebx | push ebp | push esi | push edi | mov edi, dword ptr [esp + 0x14] | mov ebx, ecx
+[INFO] fn 0x724580 first this-relative address  ::  0x72458c: lea esi, [ebx + 0x24c] -> +0x24C (lea)
+[INFO] fn 0x724580 first this MEMORY access  ::  0x724596: mov eax, dword ptr [esi + 4] -> +0x250 (read)
+[INFO] fn 0x724580 guards on this before first touch  ::  none
+[INFO] fn 0x724580 all this-relative offsets (first 6)  ::  +0x24C@0x72458c(lea), +0x250@0x724596(read)
+[INFO] fn 0x724530 prologue  ::  mov eax, dword ptr [ecx + 0x228] | mov dword ptr [ecx + 0x22c], eax | ret  | nop  | nop  | nop 
+[INFO] fn 0x724530 first this-relative address  ::  0x724530: mov eax, dword ptr [ecx + 0x228] -> +0x228 (read)
+[INFO] fn 0x724530 first this MEMORY access  ::  0x724530: mov eax, dword ptr [ecx + 0x228] -> +0x228 (read)
+[INFO] fn 0x724530 guards on this before first touch  ::  none
+[INFO] fn 0x724530 all this-relative offsets (first 6)  ::  +0x228@0x724530(read)
+[INFO] fn 0x724540 prologue  ::  mov eax, dword ptr [ecx + 0x22c] | mov dword ptr [ecx + 0x228], eax | ret  | nop  | nop  | nop 
+[INFO] fn 0x724540 first this-relative address  ::  0x724540: mov eax, dword ptr [ecx + 0x22c] -> +0x22C (read)
+[INFO] fn 0x724540 first this MEMORY access  ::  0x724540: mov eax, dword ptr [ecx + 0x22c] -> +0x22C (read)
+[INFO] fn 0x724540 guards on this before first touch  ::  none
+[INFO] fn 0x724540 all this-relative offsets (first 6)  ::  +0x22C@0x724540(read)
+[PASS] claim2: fn 0x724730 first this-relative offset == 0x250  ::  measured=0x250 (at 0x724737, read)
+[PASS] claim2: fn 0x724580 first this-relative offset == 0x24C  ::  measured=0x24C (at 0x72458c, lea)
+[PASS] claim2: fn 0x724530 first this-relative offset == 0x228  ::  measured=0x228 (at 0x724530, read)
+[PASS] claim2: fn 0x724540 first this-relative offset == 0x22C  ::  measured=0x22C (at 0x724540, read)
+[INFO] claim1/2 NOTE: extra loose-reading target 0x7241a0 first this-relative offset  ::  +0xC at 0x7241a7 (cmp byte ptr [esi + 0xc], al, read)
+[INFO] claim1/2 NOTE: extra loose-reading target 0x724520 first this-relative offset  ::  +0x228 at 0x724524 (mov dword ptr [ecx + 0x228], eax, write)
+[INFO] claim2 NOTE: fn 0x724580 expected 0x24C is formed by lea, not by a memory access  ::  first real dereference = +0x250 at 0x724596 (read)
+
+[PASS] claim3: caller list (disasm) == caller list (raw E8) for 0x724730  ::  disasm=30 rawE8=30
+[PASS] claim3: fn 0x724730 has no absolute dword reference in the file  ::  occurrences=0
+[INFO] claim3 NOTE: fn 0x724730 last al/eax writer before each ret  ::  ret@0x7248ae <- 0x724898 mov eax, dword ptr [esp + 8]
+[PASS] claim3: caller list (disasm) == caller list (raw E8) for 0x724580  ::  disasm=18 rawE8=18
+[PASS] claim3: fn 0x724580 has no absolute dword reference in the file  ::  occurrences=0
+[INFO] claim3 NOTE: fn 0x724580 last al/eax writer before each ret  ::  ret@0x7245ca <- 0x7245c7 xor al, al, ret@0x724719 <- 0x724716 mov al, 1, ret@0x72472b <- 0x724728 xor al, al
+[PASS] claim3: caller list (disasm) == caller list (raw E8) for 0x724530  ::  disasm=1 rawE8=1
+[PASS] claim3: fn 0x724530 has no absolute dword reference in the file  ::  occurrences=0
+[INFO] claim3 NOTE: fn 0x724530 last al/eax writer before each ret  ::  ret@0x72453c <- 0x724530 mov eax, dword ptr [ecx + 0x228]
+[PASS] claim3: caller list (disasm) == caller list (raw E8) for 0x724540  ::  disasm=1 rawE8=1
+[PASS] claim3: fn 0x724540 has no absolute dword reference in the file  ::  occurrences=0
+[INFO] claim3 NOTE: fn 0x724540 last al/eax writer before each ret  ::  ret@0x72454c <- 0x724540 mov eax, dword ptr [ecx + 0x22c]
+  --- callers of 0x724730 (30) ---
+      0x4a8b75 call 0x724730 -> next 0x4a8b7a mov      ecx, dword ptr [0x887368]    eax:unused
+      0x640427 call 0x724730 -> next 0x64042c lea      ecx, [esp + 8]               eax:unused
+      0x654413 call 0x724730 -> next 0x654418 mov      ecx, dword ptr [0x887368]    eax:unused
+      0x654469 call 0x724730 -> next 0x65446e lea      ecx, [esp + 0xc]             eax:unused
+      0x6ac00b call 0x724730 -> next 0x6ac010 lea      ecx, [esp + 0x18]            eax:unused
+      0x6ac03e call 0x724730 -> next 0x6ac043 inc      esi                          eax:unused
+      0x6ac0ed call 0x724730 -> next 0x6ac0f2 mov      ecx, dword ptr [0x887368]    eax:unused
+      0x6ac140 call 0x724730 -> next 0x6ac145 lea      ecx, [esp + 0x18]            eax:unused
+      0x6ac193 call 0x724730 -> next 0x6ac198 mov      ecx, dword ptr [0x887368]    eax:unused
+      0x6ac1e6 call 0x724730 -> next 0x6ac1eb mov      ecx, dword ptr [0x887368]    eax:unused
+      0x6d059b call 0x724730 -> next 0x6d05a0 mov      ecx, dword ptr [0x887368]    eax:unused
+      0x6d0619 call 0x724730 -> next 0x6d061e add      edi, 4                       eax:unused
+      0x6d0634 call 0x724730 -> next 0x6d0639 mov      eax, dword ptr [esi]         eax:overwrite
+      0x6d0664 call 0x724730 -> next 0x6d0669 mov      eax, dword ptr [esi]         eax:overwrite
+      0x6d089d call 0x724730 -> next 0x6d08a2 inc      edi                          eax:unused
+      0x6d08b3 call 0x724730 -> next 0x6d08b8 mov      edx, dword ptr [esi]         eax:unused
+      0x6d0940 call 0x724730 -> next 0x6d0945 mov      ecx, esi                     eax:unused
+      0x6d09fa call 0x724730 -> next 0x6d09ff mov      ecx, dword ptr [0x887368]    eax:unused
+      0x6d1293 call 0x724730 -> next 0x6d1298 mov      ecx, dword ptr [0x887368]    eax:unused
+      0x6d1308 call 0x724730 -> next 0x6d130d mov      ecx, dword ptr [0x887368]    eax:unused
+      0x6d137e call 0x724730 -> next 0x6d1383 mov      ecx, dword ptr [0x887368]    eax:unused
+      0x6d13f3 call 0x724730 -> next 0x6d13f8 mov      ecx, dword ptr [0x887368]    eax:unused
+      0x6d1541 call 0x724730 -> next 0x6d1546 add      esi, 4                       eax:unused
+      0x6d155c call 0x724730 -> next 0x6d1561 pop      edi                          eax:unused
+      0x6d15cb call 0x724730 -> next 0x6d15d0 mov      ecx, dword ptr [0x887368]    eax:unused
+      0x6d1605 call 0x724730 -> next 0x6d160a ret                                   eax:unused
+      0x6d1632 call 0x724730 -> next 0x6d1637 mov      ecx, esi                     eax:unused
+      0x6d16c2 call 0x724730 -> next 0x6d16c7 add      esi, 4                       eax:unused
+      0x6d16dd call 0x724730 -> next 0x6d16e2 mov      edx, dword ptr [edi]         eax:unused
+      0x6d1744 call 0x724730 -> next 0x6d1749 mov      ecx, dword ptr [0x887368]    eax:unused
+[PASS] claim3: fn 0x724730 immediate-next eax true reads == 0  ::  measured=0 / 30 callers
+[PASS] claim3: fn 0x724730 forward-window eax true reads == 0  ::  measured=0 / 30 callers
+  --- callers of 0x724580 (18) ---
+      0x4a8b85 call 0x724580 -> next 0x4a8b8a mov      eax, dword ptr [0x886fa4]    eax:overwrite
+      0x640437 call 0x724580 -> next 0x64043c pop      esi                          eax:unused
+      0x654423 call 0x724580 -> next 0x654428 mov      eax, dword ptr [0xb0491c]    eax:overwrite
+      0x654479 call 0x724580 -> next 0x65447e mov      byte ptr [edi + 0x14da], 1   eax:unused
+      0x6ac01b call 0x724580 -> next 0x6ac020 inc      edi                          eax:unused
+      0x6ac096 call 0x724580 -> next 0x6ac09b mov      eax, dword ptr [esp + 0x14]  eax:overwrite
+      0x6ac0fd call 0x724580 -> next 0x6ac102 mov      eax, dword ptr [0xb0b3ac]    eax:overwrite
+      0x6ac150 call 0x724580 -> next 0x6ac155 mov      edx, dword ptr [0xb0b414]    eax:unused
+      0x6ac1a3 call 0x724580 -> next 0x6ac1a8 mov      ecx, dword ptr [0xb0b334]    eax:unused
+      0x6ac1f6 call 0x724580 -> next 0x6ac1fb pop      edi                          eax:unused
+      0x6d05ab call 0x724580 -> next 0x6d05b0 mov      eax, dword ptr [esi]         eax:overwrite
+      0x6d0a0a call 0x724580 -> next 0x6d0a0f add      esp, 0x1c                    eax:unused
+      0x6d12a3 call 0x724580 -> next 0x6d12a8 mov      eax, dword ptr [0xb0cb3c]    eax:overwrite
+      0x6d1318 call 0x724580 -> next 0x6d131d mov      ecx, dword ptr [0xb0c1b8]    eax:unused
+      0x6d138e call 0x724580 -> next 0x6d1393 mov      eax, dword ptr [0xb0cb20]    eax:overwrite
+      0x6d1403 call 0x724580 -> next 0x6d1408 mov      ecx, dword ptr [0xb0cb68]    eax:unused
+      0x6d15db call 0x724580 -> next 0x6d15e0 add      esp, 0x1c                    eax:unused
+      0x6d1754 call 0x724580 -> next 0x6d1759 mov      edx, dword ptr [edi]         eax:unused
+[PASS] claim3: fn 0x724580 immediate-next eax true reads == 0  ::  measured=0 / 18 callers
+[PASS] claim3: fn 0x724580 forward-window eax true reads == 0  ::  measured=0 / 18 callers
+  --- callers of 0x724530 (1) ---
+      0x6ab99a call 0x724530 -> next 0x6ab99f mov      ecx, dword ptr [0x887368]    eax:unused
+[PASS] claim3: fn 0x724530 immediate-next eax true reads == 0  ::  measured=0 / 1 callers
+[PASS] claim3: fn 0x724530 forward-window eax true reads == 0  ::  measured=0 / 1 callers
+  --- callers of 0x724540 (1) ---
+      0x6ab9e9 call 0x724540 -> next 0x6ab9ee mov      eax, dword ptr [esi + 0x2c]  eax:overwrite
+[PASS] claim3: fn 0x724540 immediate-next eax true reads == 0  ::  measured=0 / 1 callers
+[PASS] claim3: fn 0x724540 forward-window eax true reads == 0  ::  measured=0 / 1 callers
+
+[PASS] claim4: fn 0x724730 first 6 prologue bytes  ::  measured=83 ec 0c 55 8b e9 expected=83 ec 0c 55 8b e9 (first8=83 ec 0c 55 8b e9 56 8b)
+      0x724730 83 ec 0c 55 8b e9 56 8b  sub esp, 0xc ; push ebp ; mov ebp, ecx ; push esi
+[PASS] claim4: fn 0x724730 first ret operand  ::  measured=ret 4 at 0x7248ae (bytes c2 04 00) expected=ret 4
+[INFO] fn 0x724730 all ret sites  ::  1 -> 0x7248ae ret 4
+[PASS] claim4: fn 0x724580 first 8 prologue bytes  ::  measured=53 55 56 57 8b 7c 24 14 expected=53 55 56 57 8b 7c 24 14 (first8=53 55 56 57 8b 7c 24 14)
+      0x724580 53 55 56 57 8b 7c 24 14  push ebx ; push ebp ; push esi ; push edi
+[PASS] claim4: fn 0x724580 first ret operand  ::  measured=ret 4 at 0x7245ca (bytes c2 04 00) expected=ret 4
+[INFO] fn 0x724580 all ret sites  ::  3 -> 0x7245ca ret 4, 0x724719 ret 4, 0x72472b ret 4
+[PASS] claim4: fn 0x724530 first 6 prologue bytes  ::  measured=8b 81 28 02 00 00 expected=8b 81 28 02 00 00 (first8=8b 81 28 02 00 00 89 81)
+      0x724530 8b 81 28 02 00 00 89 81  mov eax, dword ptr [ecx + 0x228] ; mov dword ptr [ecx + 0x22c], eax ; ret  ; nop 
+[PASS] claim4: fn 0x724530 first ret operand  ::  measured=ret at 0x72453c (bytes c3) expected=ret
+[INFO] fn 0x724530 all ret sites  ::  1 -> 0x72453c ret 
+[PASS] claim4: fn 0x724540 first 6 prologue bytes  ::  measured=8b 81 2c 02 00 00 expected=8b 81 2c 02 00 00 (first8=8b 81 2c 02 00 00 89 81)
+      0x724540 8b 81 2c 02 00 00 89 81  mov eax, dword ptr [ecx + 0x22c] ; mov dword ptr [ecx + 0x228], eax ; ret  ; nop 
+[PASS] claim4: fn 0x724540 first ret operand  ::  measured=ret at 0x72454c (bytes c3) expected=ret
+[INFO] fn 0x724540 all ret sites  ::  1 -> 0x72454c ret 
+
+[INFO] background: refs to [0x887368] in .text  ::  74
+[INFO] background: writes to [0x887368]  ::  0x7777b8 mov dword ptr [0x887368], esi, 0x7777c3 mov dword ptr [0x887368], ebx, 0x777803 mov dword ptr [0x887368], ebx
+[PASS] background: the global does get written (zeroing is possible)  ::  writers=3
+
+[PASS] crash site 0x724737 bytes == mov eax,[ebp+0x250]  ::  measured=8b 85 50 02 00 00 expected=8b 85 50 02 00 00
+[PASS] crash instruction is the first this deref of 0x724730  ::  first deref=0x724737 +0x250
+[PASS] 0x724730 aliases this into ebp (mov ebp,ecx) before deref  ::  insn@0x724734 = mov ebp, ecx
+[PASS] crash return address 0x654418 - 5 is a call to 0x724730  ::  call site=0x654413
+[PASS] that call site is fed by 'mov ecx,[0x887368]' with no intervening ecx-clobber and no flag guard  ::  load site=0x654405, bucket=non-adjacent, gap=2 insns
+[INFO] crash frame  ::  0x654405: mov ecx,[0x887368] ; mov dword ptr [esp + 0x18], edx ; mov dword ptr [esp + 0x1c], eax ; 0x654413: call 0x724730 ; 0x654418: <return>
+[INFO] crash frame NOTE  ::  this call site is NOT one of the 7 strictly-adjacent sites; the load and the call are separated by 2 register-spill instruction(s)
+
+checks passed: 51/51
+RESULT: ALL PASS
