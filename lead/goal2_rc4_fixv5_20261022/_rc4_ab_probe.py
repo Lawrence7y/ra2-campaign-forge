@@ -190,13 +190,32 @@ def sha256_file(p: Path) -> str:
 
 
 def safe_name(name: str) -> str:
-    """落盘名必须是单层、无分隔符、无 `..`。"""
+    """落盘名必须是单层、无分隔符、无 `..`、无盘符冒号。
+
+    ★ 必须显式拒 `:`：Windows 下 `foo:bar.dll` 的 `Path(name).name` 仍是整串，
+      靠 `name != Path(name).name` 挡不住；而它会被当成 NTFS 备用数据流（ADS）
+      写到 `foo` 上，落盘位置不受控。
+    """
     if not name or name in (".", ".."):
         raise ValueError("illegal name: %r" % (name,))
     if "/" in name or "\\" in name:
         raise ValueError("name contains separator: %r" % (name,))
+    if ":" in name:
+        raise ValueError("name contains drive/ADS colon: %r" % (name,))
     if Path(name).name != name:
         raise ValueError("name not single-level: %r" % (name,))
+    return name
+
+
+def safe_dll_name(name: str) -> str:
+    """`--dll` 专用：在 safe_name 之上再要求 `.dll` 结尾。
+
+    载体里只放 DLL；允许传 .exe 或裸名等于把「加载什么」这个面敞开，
+    也让 B 臂「注入了什么」无法从记录里反查。
+    """
+    name = safe_name(name)
+    if not name.lower().endswith(".dll"):
+        raise ValueError("not a .dll: %r" % (name,))
     return name
 
 
@@ -474,6 +493,35 @@ def _exc_fields(de: DEBUG_EVENT) -> dict:
 
 def one_trip(idx: int, arm: str, dll_name, hold_s: float,
              debug_timeout: float, keep_dump: bool) -> dict:
+    """单趟外壳：**保证**无论主体怎么退出（含异常）都执行一次清扫。
+
+    ★★ A8：原先启动后的主体（建载体→启动→附加→等待→抓异常→收尾）完全没有
+    try/finally，`_cleanup` 只在 4 个显式点被调用。任一处抛异常（写 dump、
+    读 except.txt、copy2 日志）都会**跳过清扫**，留下活的 gamemd。
+    现在主体挪进 `_one_trip_body`，清扫放进 finally，且 `_cleanup` 内部幂等。
+    """
+    state = {"proc": None, "carrier": None, "rec": None, "cleaned": False}
+    try:
+        return _one_trip_body(idx, arm, dll_name, hold_s, debug_timeout,
+                              keep_dump, state)
+    except BaseException as e:                      # noqa: BLE001
+        rec = state["rec"] or {"trip": idx, "arm": arm, "dll": dll_name}
+        rec["abort"] = "unhandled_exception: %r" % (e,)
+        return rec
+    finally:
+        rec = state["rec"]
+        if rec is not None and not state["cleaned"]:
+            try:
+                _cleanup(state["proc"], state["carrier"], rec,
+                         attached=bool(rec.get("debugger_attached")))
+            except BaseException as e:              # noqa: BLE001
+                rec["cleanup_exception"] = repr(e)
+                rec["a8_verdict"] = "V_FAIL_CLEANUP_EXCEPTION"
+                rec["cleanup_ok"] = False
+
+
+def _one_trip_body(idx: int, arm: str, dll_name, hold_s: float,
+                   debug_timeout: float, keep_dump: bool, state: dict) -> dict:
     stamp = time.strftime("%Y%m%dT%H%M%S")
     out_dir = CARD / ("ab_%s_%s_t%d" % (stamp, arm, idx))
     # ★ 载体目录名尽量短：门禁卡的是**目录**长度（≥131 触发次生崩溃）
@@ -482,6 +530,9 @@ def one_trip(idx: int, arm: str, dll_name, hold_s: float,
     rec = {"trip": idx, "arm": arm, "dll": dll_name,
            "carrier": str(carrier), "carrier_len": len(str(carrier)),
            "out_dir": str(out_dir)}
+    # ★ 尽早登记 rec，让外壳的 finally 能捕获异常；carrier 待建成后再登记，
+    #   避免对不存在的目录做 8 轮 rmtree 重试。
+    state["rec"] = rec
     if rec["carrier_len"] > CARRIER_PATH_MAX:
         rec["abort"] = "carrier_path_too_long"
         return rec
@@ -499,12 +550,12 @@ def one_trip(idx: int, arm: str, dll_name, hold_s: float,
     except Exception as e:      # noqa: BLE001
         rec["abort"] = "carrier_create_failed: %r" % (e,)
         return rec
+    state["carrier"] = carrier
 
     rec["carrier_files"] = len(files)
     rec["gamemd_sha16"] = sha256_file(carrier / "gamemd.exe")[:16]
     if rec["gamemd_sha16"] != GAMEMD_SHA16:
         rec["abort"] = "gamemd_sha_mismatch"
-        _cleanup(None, carrier, rec, attached=False)
         return rec
 
     ex_path = carrier / "except.txt"
@@ -542,18 +593,17 @@ def one_trip(idx: int, arm: str, dll_name, hold_s: float,
                 break
         if pid is None:
             rec["abort"] = "gamemd_not_found_under_carrier"
-            _cleanup(proc, carrier, rec, attached=False)
-            return rec
+            return rec          # 清扫交给外壳 finally
         rec["loader_pid"] = proc.pid
 
     rec["pid"] = pid
+    state["proc"] = proc
     rec["launch_s"] = round(time.time() - t_launch, 2)
 
     if not k32.DebugActiveProcess(pid):
         rec["abort"] = "DebugActiveProcess_failed"
         rec["winerr"] = ctypes.get_last_error()
-        _cleanup(proc, carrier, rec, attached=False)
-        return rec
+        return rec              # 清扫交给外壳 finally
     rec["debugger_attached"] = True
     t_attach = time.time()
 
@@ -658,11 +708,14 @@ def one_trip(idx: int, arm: str, dll_name, hold_s: float,
     if (carrier / "ra2render.log").exists():
         shutil.copy2(carrier / "ra2render.log", out_dir / "ra2render.log")
 
-    _cleanup(proc, carrier, rec, attached=True)
-    return rec
+    return rec              # 清扫交给外壳 finally（唯一出口）
 
 
 def _cleanup(proc, carrier: Path, rec: dict, attached: bool) -> None:
+    """幂等清扫：外壳 finally 是唯一调用点，重复进入不应有副作用。"""
+    if rec.get("_cleaned"):
+        return
+    rec["_cleaned"] = True
     if attached and rec.get("pid"):
         k32.DebugActiveProcessStop(rec["pid"])
     if proc is not None and proc.poll() is None:
@@ -671,8 +724,40 @@ def _cleanup(proc, carrier: Path, rec: dict, attached: bool) -> None:
             proc.wait(timeout=10)
         except Exception as e:      # noqa: BLE001
             rec["kill_error"] = repr(e)
+
+    # ★★ A8：先按**已知 pid** 定向击杀 gamemd。
+    #   a8_sweep 依赖枚举器找目标；枚举器坏掉时它直接返回 V_FAIL_ENUM，
+    #   一个进程都不会被杀。手里明明有 pid，就不该把清扫完全押在枚举上。
+    #   这里先做一次 pid 定向击杀，枚举只是补充（抓载体目录下的其他残留）。
+    if rec.get("pid"):
+        hk = k32.OpenProcess(0x0001 | 0x00100000, False, rec["pid"])
+        if hk:
+            try:
+                if k32.TerminateProcess(hk, 1):
+                    k32.WaitForSingleObject(hk, 5000)
+                    rec["pid_killed"] = True
+                else:
+                    rec["pid_killed"] = False
+                    rec["pid_kill_winerr"] = ctypes.get_last_error()
+            finally:
+                k32.CloseHandle(hk)
+        else:
+            # 打不开通常是已退出；记录原因但不当失败
+            rec["pid_killed"] = None
+            rec["pid_kill_winerr"] = ctypes.get_last_error()
+
     own = os.getpid()
-    rec["a8"] = a8_sweep(carrier, own)
+    a8 = a8_sweep(carrier, own)
+    rec["a8"] = a8
+    # ★★ A4：A8 的 verdict 必须**驱动控制流**，不能只落诊断字段。
+    #   枚举器坏掉时 a8_sweep 返回 V_FAIL_ENUM 且 remaining 里塞的是 sentinel
+    #   （pid=None），此时「零残留」与「根本没看见」在数据上无法区分。
+    #   若只把它塞进 rec["a8"]，最终报告会把枚举失败读成"清扫干净"——假绿。
+    #   故这里提升成一个顶层可判定字段，并由 main() 据此中止整批。
+    rec["a8_verdict"] = a8.get("verdict")
+    rec["a8_enum_ok"] = bool((a8.get("enum_probe_before") or {}).get("ok")
+                             and (a8.get("enum_probe_after") or {}).get("ok"))
+    rec["cleanup_ok"] = (rec["a8_verdict"] == "PASS")
     ok, err = rm_carrier(carrier)
     rec["carrier_deleted"] = ok
     if not ok:
@@ -732,7 +817,7 @@ def main(argv=None) -> int:
             print("!! B 臂必须给 --dll")
             return 2
         try:
-            safe_name(args.dll)
+            safe_dll_name(args.dll)
         except ValueError as e:
             print("!! --dll 非法:", e)
             return 2
@@ -771,6 +856,7 @@ def main(argv=None) -> int:
         return 0
 
     results = []
+    results_aborted = False
     for i in range(1, args.trips + 1):
         print()
         print("-" * 78)
@@ -788,6 +874,14 @@ def main(argv=None) -> int:
                  r.get("clean_exit"), g.get("hits_total")))
         if r.get("abort"):
             print("  ABORT:", r["abort"])
+        # ★★ A4：A8 清扫 verdict 必须可见且能中止整批
+        av = r.get("a8_verdict")
+        if av != "PASS":
+            print("  !! A8 清扫未 PASS：verdict=%s enum_ok=%s remaining=%s"
+                  % (av, r.get("a8_enum_ok"),
+                     ((r.get("a8") or {}).get("remaining") or [])[:4]))
+            print("     ⇒ 此时「零残留」与「没看见残留」不可区分，本批结果不可用。")
+            results_aborted = True
         if i < args.trips:
             time.sleep(2.0)
 
@@ -801,10 +895,15 @@ def main(argv=None) -> int:
     n_clean = sum(1 for r in results if r.get("clean_exit"))
     n_guard = sum(1 for r in results
                   if (r.get("guard") or {}).get("hits_total"))
+    n_a8_ok = sum(1 for r in results if r.get("a8_verdict") == "PASS")
     print()
     print("[结果]", out)
-    print("[汇总] %d 趟：命中 RC-4 %d，正常退出 %d，守卫有计数 %d"
-          % (len(results), n_hit, n_clean, n_guard))
+    print("[汇总] %d 趟：命中 RC-4 %d，正常退出 %d，守卫有计数 %d，A8 清扫 PASS %d"
+          % (len(results), n_hit, n_clean, n_guard, n_a8_ok))
+    if results_aborted or n_a8_ok != len(results):
+        print("!! 本批 A8 清扫未全 PASS（%d/%d）⇒ 结果不可用于判据。"
+              % (n_a8_ok, len(results)))
+        return 3
     return 0
 
 

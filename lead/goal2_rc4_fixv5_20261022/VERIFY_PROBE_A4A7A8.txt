@@ -1,0 +1,42 @@
+==========================================================================================
+异族核验 A4/A7/A8 修复门禁
+==========================================================================================
+
+--- A7 ---
+  safe_name 显式拒冒号                    PASS
+  safe_dll_name 存在                   PASS
+  safe_dll_name 要求 .dll              PASS
+  main 用 safe_dll_name               PASS
+  main 不再裸调 safe_name(args.dll)      PASS
+
+--- A4 ---
+  rec 提升 a8_verdict                  PASS
+  rec 提升 cleanup_ok                  PASS
+  main 读 a8_verdict                  PASS
+  main 非 PASS 时置 aborted             PASS
+  main 非 PASS 时 return 3             PASS
+  汇总行含 A8 计数                         PASS
+  退出码依赖 a8                           PASS
+
+--- A8 ---
+  one_trip 有 finally                 PASS
+  主体已拆到 _one_trip_body               PASS
+  state 登记 rec                       PASS
+  state 登记 proc                      PASS
+  state 登记 carrier                   PASS
+  _cleanup 幂等                        PASS
+  pid 定向击杀存在                         PASS
+  主体内无显式 _cleanup                    PASS
+
+==========================================================================================
+负控：把修复点改回旧写法，断言必须转红
+==========================================================================================
+  A7 去掉冒号检查                              PASS（转红 1/5）
+  A7 main 退回裸 safe_name                  PASS（转红 2/5）
+  A4 去掉退出码依赖                             PASS（转红 1/7）
+  A4 去掉 aborted 置位                       PASS（转红 1/7）
+  A8 去掉 finally                          PASS（转红 1/8）
+  A8 主体内塞回显式 _cleanup                    PASS（转红 1/8）
+
+6/6 PASS
+EXIT=0
