@@ -1,0 +1,34 @@
+==============================================================================
+RC-4 活体 minidump 现场验证
+==============================================================================
+dump  : D:\ra2dumps\rc4dbg_20261022T183405_t1.dmp
+except: D:\Project\ra2-campaign-forge\lead\goal2_rc4_trigger_20261022\dbg_20261022T183405_t1\except_after.txt
+
+dump size = 381007524 B (363.4 MB)
+dump sha256 = f6a943ab7dcee33a9bae11a8ca802f112c3b99f80c91d8ccbaabaadb9ce659a4
+
+  [PASS] C1 dump 头 signature == MDMP                              got 504D444D
+  [PASS] C2a 含 Memory64List(9) 流                                  streams=[3, 4, 7, 9, 13, 15, 21, 22]
+  [PASS] C2b 含 ModuleList(4) 流                                    
+  [PASS] C2c 含 ThreadList(3) 流                                    
+  Memory64List: 688 ranges, base RVA=116A4
+  [PASS] C2d 真实栈区间 0x920300 被 Memory64List 覆盖                     first16=1216410050c11d0daca3f90078020000
+  [PASS] C3a 0x724730 ← 0x654413（retaddr 0x654418）                got 00654418 want 00654418
+  [PASS] C3b 0x654320 ← 0x6403A3（retaddr 0x6403A8）                got 006403A8 want 006403A8
+  [PASS] C3c 0x6403A0 ← 0x6ABD39（retaddr 0x6ABD3E）                got 006ABD3E want 006ABD3E
+  [PASS] C3d 0x6ABD30 ← 0x4A8B13（retaddr 0x4A8B18）                got 004A8B18 want 004A8B18
+  [PASS] C3e 0x4A8850 ← 0x652D4C（retaddr 0x652D51）                got 00652D51 want 00652D51
+  [PASS] C12a 真实栈 [0x920384] == 0x00F9A300（引擎存的栈基址）               got 00F9A300
+  [PASS] C12b 偏移 == 0x67A000（页对齐常量）                               got 0067A000
+  [PASS] C12c except.txt 报的 Esp 0xF9A344 对应真实 0x920344            skew=0067A000
+  except 源: D:\Project\ra2-campaign-forge\ra2youli\except.txt
+  [PASS] C9a except.txt 的 Eip == 00724737                         
+  [PASS] C9b module 列表含 gamemd.exe 且基址唯一                          2 records, bases=['0x400000']
+  [PASS] C9c gamemd ImageBase == 0x00400000                       got 00400000
+  [PASS] C9d 崩溃 Eip 落在 gamemd 区间内                                 base=00400000 size=00796000 end=00B96000
+  [PASS] C10 反证：栈上不含 0x4A8B7A（L3 的 0x4A8B75 未返回）                  found=False
+  [PASS] C11 新现场与历史现场关键三元组一致                                      
+
+------------------------------------------------------------------------------
+结果：19/19 PASS
+判定：CONFIRMED —— 该 minidump 的栈内存与 except.txt 描述的是同一现场
