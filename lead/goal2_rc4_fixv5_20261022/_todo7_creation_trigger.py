@@ -29,7 +29,13 @@ IMG_BASE = 0x400000
 WANT_SHA16 = "73201cc021497c95"
 
 # 已定位的锚点（本脚本会重新验证，不盲信）
-WNDPROC_HINT = 0x7775F0      # 函数头候选（由 prologue 回溯得出）
+# ★★ 0x7775F0 **不是指令边界**（异族核验 C1 实测）：
+#     0x7775EB  8b0d28768800   mov ecx,[0x887628]   ← 6 字节，止于 0x7775F1
+#   0x7775F0 落在该指令的立即数内部（第 6 个字节位）。
+#   真函数头是 0x7775C0（`51` = push ecx），前面 0x7775BC 是 90 填充。
+#   本项目铁律：反汇编起点必须先确认是指令边界。
+WNDPROC_HINT = 0x7775C0
+WNDPROC_HINT_WRONG = 0x7775F0   # 保留旧值仅用于负控断言
 SINGLETON = 0x00887368
 WRITE_CREATE = 0x7777B8      # mov [0x887368], esi
 WRITE_NULL_ON_ALLOCFAIL = 0x7777C3   # mov [0x887368], ebx (ebx=0)
@@ -81,6 +87,25 @@ def main() -> int:
         print(f"  0x{va:08X}  {ins.bytes.hex():<20} {ins.mnemonic} {ins.op_str}   ← {label}")
         chk(f"0x{va:08X} 是写 {SINGLETON:#x}", str(SINGLETON) in ins.op_str or
             f"0x{SINGLETON:x}" in ins.op_str, ins.op_str)
+
+    # ---------------------------------------------------------------
+    print()
+    print("=" * 84)
+    print("== STEP 1b  ★ 反汇编起点边界自检（铁律）")
+    print("=" * 84)
+    # ★ 从 WNDPROC_HINT 之前一小段起解码，确认 WNDPROC_HINT 落在某条指令的
+    #   起始位置。若它落在另一条指令内部，后续所有线性解码全盘错位。
+    probe_start = WNDPROC_HINT - 16
+    boundaries = set()
+    for i in dis(probe_start, 0x40):
+        boundaries.add(i.address)
+    chk("WNDPROC_HINT 是已知指令边界",
+        WNDPROC_HINT in boundaries,
+        f"0x{WNDPROC_HINT:08X} in {len(boundaries)} boundaries")
+    # 负控：旧值必须**不是**边界，否则说明自检没抓到真问题
+    chk("负控 旧值 0x%08X 不是边界" % WNDPROC_HINT_WRONG,
+        WNDPROC_HINT_WRONG not in boundaries,
+        f"0x{WNDPROC_HINT_WRONG:08X} not in boundaries")
 
     # ---------------------------------------------------------------
     print()
@@ -172,9 +197,13 @@ def main() -> int:
     chk("★ WM_DESTROY(0x002) 走销毁分支（不是创建）",
         msg_map.get(0x002) == DESTROY_BRANCH,
         f"WM_DESTROY -> 0x{msg_map.get(0x002):08X}" if msg_map.get(0x002) else "none")
-    chk("★ WM_CLOSE(0x010) 不创建也不销毁（走默认 0x7779B9）",
+    # ★★ 措辞修正（§379）：WM_CLOSE 在**本 WndProc 内**确实不直接创建/销毁，
+    #   但它的默认处理 DefWindowProcA 会 DestroyWindow ⇒ 同步发 WM_DESTROY
+    #   ⇒ 经 0x777803 **间接清零**单例。所以不能说"不销毁"。
+    chk("★ WM_CLOSE(0x010) 本函数内不直接创建/销毁（但默认处理会间接清零）",
         msg_map.get(0x010) not in (CREATE_BRANCH, DESTROY_BRANCH),
-        f"WM_CLOSE -> 0x{msg_map.get(0x010):08X}" if msg_map.get(0x010) else "none")
+        f"WM_CLOSE -> 0x{msg_map.get(0x010):08X}（默认分支 ⇒ DefWindowProcA）"
+        if msg_map.get(0x010) else "none")
     # 除了 WM_CREATE，还有没有别的入口写 CREATE_BRANCH？
     creators = [m for m, t in msg_map.items() if t == CREATE_BRANCH]
     chk("★ 创建入口唯一（只有 WM_CREATE）", creators == [0x001], f"creators={[hex(x) for x in creators]}")
@@ -214,13 +243,27 @@ def main() -> int:
     (ii)  主菜单点「退出」按钮
     (iii) 局内菜单退出到主菜单再退出
 
-  由 STEP 5：
-    WM_CLOSE(0x010) 本身 **不创建也不销毁** 单例（走默认分支 0x7779B9）。
-    ⇒ 三种退出方式都**不会**通过 WM_CLOSE 触发创建。
-    ⇒ 若主窗从未收到 WM_CREATE，则单例始终为 0 ⇒ 任何退出路径都会崩。
-    ⇒ 若主窗收到过 WM_CREATE 且分配成功，单例非 0 ⇒ 崩溃链的 ecx≠0 ⇒ 不崩。
+  ★★ §379 已推翻本段旧结论，以下为修正版 ★★
 
-  ★ 因此待办 6 的判据应改为：**记录 WM_CREATE 是否到达**，而不只是记录退出方式。
+  旧结论（作废）："WM_CLOSE 本身不创建也不销毁单例（走默认分支 0x7779B9）"。
+  错在把"走默认分支"读成"什么都不做"。默认分支恰恰是问题所在：
+
+    WM_CLOSE → 0x54F790 返回 0 → 0x777A64 call [0x7E1394]
+             = USER32!DefWindowProcA
+             → DefWindowProcA 对 WM_CLOSE 默认 DestroyWindow
+             → 同步发 WM_DESTROY → 0x777803 mov [0x887368], 0
+
+  ⇒ **WM_CLOSE 必然清零单例**，不是"不改变"。
+  ⇒ "退出方式"与"单例态"**不正交**：任何关窗路径都会把它清零。
+  ⇒ 因此**不能用"关窗前的单例读数"做归因**（那值在崩溃瞬间必然已是 0）。
+
+  正确的判据分两个时点，各答各的问题：
+    ① 关窗前读数 singleton_before_close —— 只答「单例是否**创建过**」
+       （即 WM_CREATE 到没到；这正是本脚本 STEP 4/5 的结论）
+    ② 崩溃瞬间读数 singleton_at_hit —— 才是**归因**依据
+       （崩溃链要求 ecx = [0x887368] = 0，只有瞬间读数能验证）
+
+  实现见 _todo6_verdict.py v2（§380）与 _verify_wmclose_chain.py（§379，20/20）。
 """)
 
     # ---------------------------------------------------------------
