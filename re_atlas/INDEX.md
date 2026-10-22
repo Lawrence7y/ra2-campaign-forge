@@ -699,7 +699,7 @@ M1 在 **340 个站点**上与键槽不一致：91 个键槽是寄存器、5 个
 
 ### C.15b `[MultiplayerDialogSettings]` 字段与镜像全局（R-023 核验口径，2026-10-22）
 
-> **核验门禁 `tools/verify_r023_claims.py` 20/20 PASS，EXIT=0**（两趟逐字节一致）。
+> **核验门禁 `tools/verify_r023_claims.py` 22/22 PASS，EXIT=0**（含 P3c / P13b）+ 异族盲验。
 > 记录件 `evidence/r023_rulesclass_mirror_verification.md`；正文 `kb/30` §15.3。
 
 | 项 | 值 |
@@ -722,9 +722,10 @@ M1 在 **340 个站点**上与键槽不一致：91 个键槽是寄存器、5 个
    （`ModemHst.cpp` / `netdlg2.cpp` / `WDTSel.cpp` / `wonline.cpp` / `Skirmish.cpp`）。
    ⇒ **要稳定改，必须改源头（INI / 设置结构）**；只改全局会在下次 UI/会话刷新被写回。
    「读点在全局上」成立（字节 vs 指令对账 18/18），错的是「改一次就够」。
-3. **存在第二个成批写入点**：`0x5B69E4`（`Decoding game options\n`，`ModemGst.cpp`）
-   写同一组全局中的 **17 个**（缺 `CaptureTheFlag`），源结构 `[ebx+0x7E]..[ebx+0xA3]`。
-   属会话/网络房间设置包，与 `RulesClass` 无关。
+3. **存在第二个成批写入点**：`ModemGst.cpp` 的函数 `0x5B67F0`（块在 `0x5B69E4`，
+   `Decoding game options\n`）写同一组全局中的 **17 个**（缺 `CaptureTheFlag`），
+   源结构 `[ebx+0x7E]..[ebx+0xA3]`。属会话/网络房间设置包，与 `RulesClass` 无关。
+   （起点曾误报 `0x5B6011`，异族盲验纠正；错因是「`ret` 后须有填充」的回退跨过了提前退出。）
 
 **撞库警告**：`0x463Axx` 的 `[ebp+0x1488..]` 写入**不是** `RulesClass.MaxMoney`
 （该区引 `0x887180`=`INI_Art`、不引 `0x8871E0`），是 artmd 侧 TypeClass 字段。

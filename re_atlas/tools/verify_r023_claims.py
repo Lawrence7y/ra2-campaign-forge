@@ -99,11 +99,22 @@ MIRRORED = {
 UNMIRRORED = sorted(set(FIELDS) - set(MIRRORED))
 
 # The second, undocumented write-back block: ModemGst session packet decoder.
-# H-016 never mentions it; assertion 11 measures it.
-MODEM_FN = 0x005B6011
+# H-016 never mentions it; assertion P13 measures it.
+#
+# MODEM_FN was FIRST reported as 0x5B6011 and that was WRONG -- a walk-back that
+# requires padding after a `ret` skips past an early-exit `ret` with code after
+# it (0x5B69E1 `ret 4`, immediately followed by the push at 0x5B69E4), and lands
+# on the previous function's int3 padding. Branch closure from 0x5B67F0 reaches
+# both 0x5B69E4 and 0x5B6B3B and has exactly two exits, so 0x5B67F0 is the
+# function. P13b asserts this so the mistake cannot come back.
+MODEM_FN = 0x005B67F0
+MODEM_FN_END = 0x005B6CC6          # after `ret 4` at 0x5B6CC0; 0x90 padding follows
+MODEM_EARLY_RET = 0x005B69E1
 MODEM_BLOCK = (0x005B69E4, 0x005B6B50)
 MODEM_STRING_VA = 0x0082C7A4
 MODEM_STRING = "Decoding game options\n"
+MODEM_STRING2_VA = 0x0082C78C
+MODEM_STRING2 = "Scenario has changed\n"
 
 RULES_GLOBAL = 0x008871E0
 ART_INI = 0x00887180
@@ -305,6 +316,31 @@ def main():
           f"（差 {true_end - LOADER_DOC_END} 字节）",
           f"cold_edges={[('0x%X' % a, '0x%X' % v) for a, v in cold_edges]}\n"
           f"true_end=0x{true_end:08X}")
+
+    # P3c: the truncation is SEMANTIC, not cosmetic. Of the four exits, only the
+    # one past the delivered bound returns true. Cutting at 0x52D30C would make
+    # the function look like it never succeeds.
+    exits = {}
+    ordered = [clo[a] for a in sorted(clo)]
+    for k, i in enumerate(ordered):
+        if not i.mnemonic.startswith("ret"):
+            continue
+        ret_al = None
+        for j in range(k - 1, max(k - 6, -1), -1):
+            prev = ordered[j]
+            if prev.mnemonic == "xor" and prev.op_str.replace(" ", "") == "al,al":
+                ret_al = 0
+                break
+            if prev.mnemonic == "mov" and prev.op_str.replace(" ", "") == "al,1":
+                ret_al = 1
+                break
+        exits[i.address] = ret_al
+    true_exits = [a for a, v in exits.items() if v == 1]
+    check("P3c", len(true_exits) == 1 and true_exits[0] > LOADER_DOC_END,
+          f"★ 唯一的 `return true` 出口在 0x{true_exits[0]:08X}，"
+          f"位于交付边界之外 ⇒ 原边界把成功路径整段切掉"
+          if true_exits else "★ 未找到 return true 出口",
+          "\n".join(f"ret 0x{a:08X} -> al={v}" for a, v in sorted(exits.items())))
 
     # ---- P4 discover the mirror block ------------------------------------
     block = [i for i in loader_insns if BLOCK_LO <= i.address < BLOCK_HI]
@@ -521,6 +557,24 @@ def main():
           f"globals_written={sorted('0x%08X' % g for g in modem_hits)}\n"
           f"missing={sorted(FIELDS[o][0] for o, g in MIRRORED.items() if g not in modem_hits)}\n"
           f"src_offs={['0x%X' % o for o in src_offs]}")
+
+    # ---- P13b: the function identity of that block (corrects my own error) --
+    # A "ret must be followed by padding" walk-back gives 0x5B6011. That is
+    # wrong: 0x5B69E1 `ret 4` is an early exit with code right after it, so the
+    # walk-back sails past it to the previous function's int3 run.
+    modem_clo = closure(md, MODEM_FN, MODEM_FN_END + 0x40)
+    modem_rets = sorted(a for a, i in modem_clo.items() if i.mnemonic.startswith("ret"))
+    modem_end = max(modem_clo) + modem_clo[max(modem_clo)].size
+    pad = D.read_va(modem_end, 4)
+    check("P13b",
+          (0x005B69E4 in modem_clo and 0x005B6B3B in modem_clo
+           and modem_rets == [MODEM_EARLY_RET, 0x005B6CC0]
+           and pad[:2] == b"\x90\x90"),
+          f"★ 块所属函数 = 0x{MODEM_FN:08X}（不是 0x5B6011）：闭包可达 0x5B69E4，"
+          f"恰 2 条出口 ret，止于 0x{modem_end:08X} 且其后是 0x90 填充",
+          f"rets={['0x%X' % r for r in modem_rets]}\n"
+          f"end=0x{modem_end:08X} pad={pad.hex()}\n"
+          f"reaches_69E4={0x005B69E4 in modem_clo} reaches_6B3B={0x005B6B3B in modem_clo}")
 
     # ---- P14 ADDITION: offset collisions are not RulesClass -------------
     coll = []
