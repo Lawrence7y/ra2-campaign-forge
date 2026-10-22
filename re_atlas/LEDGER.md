@@ -3609,3 +3609,20 @@ GOAL-3T 台账 S388 的教训直接打在我上一轮交付的 **13/13 PASS** �
 - [x] 未改 `lead/`、`docs/re/`、`ra2render/`、根 `tools/`、`.gitignore`
 - [x] 本轮未派子代理（自审是本地活）
 - [x] 新增/修改全部在 `re_atlas/`
+
+### 9. 审计入账（本轮）
+
+提交 `782289a`（11 件，487 insertions / 18 deletions）时 Mimosa 钩子再次报
+`scanner_enobufs`，按兼容策略放行 ⇒ 补跑完整审计：
+
+- **scanId** `scan-2026-10-22T22-41-44.693Z-4e78e3d1bea6`
+- **seal** `sha256:7b7a669943fadb6736f655de9c197d1c309742c2f3aa18b843b0ce761bbe9d0a`
+- **findings 34**（`tools/` 17 / `lead/` 15 / `ra2forge/` 2），severity 33 high + 1 low
+- **`re_atlas/` 命中 0**
+- 依赖风险 0（`completion=partial`）
+
+与上一轮（同为 34）**增量 0**，本线写域零新增。
+
+**诚实边界**：34 条全在本线写域之外，本线零改动、零处置权，仅记录。
+deep 档 + 依赖分析 `completion=partial` ⇒ 只能证明本轮新文件未引入可静态发现的问题，
+**不能宣称项目安全**。
