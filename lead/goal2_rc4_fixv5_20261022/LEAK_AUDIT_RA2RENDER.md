@@ -1,9 +1,35 @@
 # 公开仓泄漏核查：`ra2render/` 源码与编译产物
 
-**核查时间**：2026-10-23 01:20
-**仓库**：`https://github.com/Lawrence7y/ra2-campaign-forge.git`（`gh repo view` 实测 `visibility=PUBLIC`, `isPrivate=false`）
+**核查时间**：2026-10-23 01:20（初版）／**2026-10-23 复核更新**
+**仓库**：`https://github.com/Lawrence7y/ra2-campaign-forge.git`
+**公开性复核**：`curl https://api.github.com/repos/Lawrence7y/ra2-campaign-forge`
+匿名访问返回 **HTTP 200** ⇒ **确认公开**（未登录即可读）
 **核查人**：Lead（DeepSeek 族）
 **性质**：**铁律 2 违反**，需用户裁决处置方式。本件只陈述事实，不擅自处置。
+
+---
+
+## 零、复核新增的关键事实（2026-10-23）
+
+> **`b7f0508` 是仓库的\*\*根提交\*\*（root commit，无父提交）。**
+
+```
+$ git rev-list --max-parents=0 HEAD
+b7f0508a4e8cfe24157ec21f860bf7b6ea9507cc
+```
+
+这一条显著加重了问题，也改变了方案 B 的代价估计：
+
+| 项 | 初版记录 | **复核实测** |
+|:--|:--|:--|
+| `b7f0508` 在历史中的位置 | 未记录 | **第 1 个提交（根）** |
+| 其后提交数 | 62（估） | **82** |
+| 全仓提交数 | 83 | 83 |
+| 泄漏文件出现过的提交数 | 未记录 | **10 个文件各只出现 1 次**（都在 `b7f0508`） |
+| 当前 HEAD 是否仍含 | 是 | **是，10 个全在** |
+
+⇒ 因为它在**根提交**，**每一个**后续提交的树里都带着这 10 个文件。
+「只删当前树」（方案 A）之后，`git checkout b7f0508` 或任何旧 commit 仍能取到它们。
 
 ---
 
@@ -82,10 +108,28 @@ git rm --cached ra2render/*.cpp ra2render/*.h ra2render/*.obj ra2render/*.dll \
 - **适用**：判定"内容敏感度不高，只是纪律问题"
 
 ### 方案 B：A + 改写历史（`filter-repo` / `filter-branch`）
-- **代价**：全部 62 个后续提交的 SHA 改变；需 `push --force`
-- **残留**：无（但 GitHub 可能保留旧对象一段时间，需联系支持彻底清除）
+- **代价**：**全部 82 个后续提交的 SHA 改变**（`b7f0508` 是根，无法只改它之后）
+- **代价（复核补）**：根提交改写 ⇒ 整棵树重建 ⇒ **推送体积接近全仓重传**，
+  且 GitHub 侧旧对象需联系支持清除
+- **残留**：无（GitHub 可能保留旧对象一段时间）
 - **风险**：`--force` 推公开仓是不可逆动作；若他人已 clone 会全部冲突
 - **适用**：判定"内容确实不能公开"
+
+### 方案 B′（复核新增）：`git filter-repo --path ... --invert-paths` 局部剔除
+- 与 B 的区别：只从**所有历史**里剔除这 10 个路径，其余文件内容不变
+- **代价**：SHA 仍全变（根提交被重写），但**改动面最小、最不容易出错**
+- **命令草案（未执行）**：
+  ```
+  git filter-repo --invert-paths \
+    --path ra2render/blitter_hooks.cpp --path ra2render/blitter_hooks.obj \
+    --path ra2render/dllmain.cpp      --path ra2render/dllmain.obj \
+    --path ra2render/ra2loader.cpp    --path ra2render/ra2loader.obj \
+    --path ra2render/ra2render.h      --path ra2render/ra2render.dll \
+    --path lead/goal3_p1sbh_merge_20261020/_work/p1base.cpp \
+    --path lead/goal3_p1sbh_merge_20261020/_work/out_fuzz0.cpp
+  git remote add origin <url> && git push --force --all
+  ```
+- **适用**：判定"这些内容不该公开，但仓库其余历史要保留"
 
 ### 方案 C：维持现状，只补纪律
 - **代价**：零
@@ -103,7 +147,14 @@ git rm --cached ra2render/*.cpp ra2render/*.h ra2render/*.obj ra2render/*.dll \
 3. 但 **`.obj` 与 `.dll` 几乎不可能是有意的**：编译产物进版本库没有任何合理理由。
 
 ⇒ 我的建议：**先做方案 A 处理 `.obj`/`.dll`（这三件无争议），
-cpp/h 是否删除请用户明确表态。** 历史改写（方案 B）只在用户确认"内容不可公开"后再做。
+cpp/h 是否删除请用户明确表态。** 历史改写（方案 B / B′）只在用户确认"内容不可公开"后再做。
+
+**复核后补充建议**：因为 `b7f0508` 是**根提交**，方案 A 的实际保护力比初版估计的更低
+—— 任何一次 `git checkout <旧commit>` 都能取回全部 10 件。
+若用户判定这些内容**确实不该公开**，则**只有 B′ 能真正解决**，A 只是"当前树看起来干净"。
+
+若用户判定"内容可公开、只是纪律问题"，则 A 即可，并把本次事件登记为
+"索引抢占导致误提交"的教训（已有记忆条目，无需新增）。
 
 ---
 
