@@ -1,0 +1,153 @@
+==============================================================================
+xfam_h6_independent_diff.txt
+异族（非 DeepSeek）独立核验 — B2 多重集比较 + B7 函数体逐字节 diff
+生成方式：python 只读脚本，未运行 harness 主体、未执行任何 exe
+==============================================================================
+
+[文件事实]
+parent  D:/Project/ra2-campaign-forge/lead/goal1_a8_fix_20261022/qc151_trip.harness5.py
+        bytes=427456 sha256=f1e5bc7b0ff30c9c05624dcfd91ced41658b8f649d65e9fa1e3f851600509331
+child   D:/Project/ra2-campaign-forge/lead/goal1_harness6_20261022/qc151_trip.harness6.py
+        bytes=461535 sha256=a67cc05edd5034f81b7d44302c9efb3a025a3b2b30a232f3d3849a1952ebee94
+parent lines=7781  child lines=8451
+换行符：parent CR=0 LF=7781 ; child CR=0 LF=8451 （均纯 LF，无 CR/VT/FF/NEL）
+
+==============================================================================
+B2 — 行多重集比较（collections.Counter，逐行含行尾）
+判据：对母本每一行 L，child[L] >= parent[L]；差值 = parent[L] - child[L]
+==============================================================================
+parent distinct lines = 6290
+child  distinct lines = 6789
+deficit lines (child < parent) = 0
+total missing occurrences = 0
+
+--- 差值明细（母本每行 期望次数 / 派生件次数 / 缺失数）---
+（空）无任何母本行在派生件中减少出现次数 ⇒ 零删除行
+
+--- 反向参照：派生件新增（仅列出计数，不构成判定）---
+lines appearing more often in child = 545  (总增量 670)
+
+--- difflib.SequenceMatcher 交叉验证（不作为判据，仅交叉核对）---
+opcodes=17  parent-lines-deleted-or-replaced=0  child-lines-added-or-replaced=670
+opcode 列表（tag, parent[a:b], child[c:d]）：
+  equal    parent[0:236] child[0:236]
+  insert   parent[236:236] child[236:242]
+  equal    parent[236:258] child[242:264]
+  insert   parent[258:258] child[264:286]
+  equal    parent[258:1609] child[286:1637]
+  insert   parent[1609:1609] child[1637:2190]
+  equal    parent[1609:6588] child[2190:7169]
+  insert   parent[6588:6588] child[7169:7184]
+  equal    parent[6588:6643] child[7184:7239]
+  insert   parent[6643:6643] child[7239:7246]
+  equal    parent[6643:7521] child[7246:8124]
+  insert   parent[7521:7521] child[8124:8144]
+  equal    parent[7521:7524] child[8144:8147]
+  insert   parent[7524:7524] child[8147:8179]
+  equal    parent[7524:7571] child[8179:8226]
+  insert   parent[7571:7571] child[8226:8241]
+  equal    parent[7571:7781] child[8241:8451]
+
+B2 结论：deficit=0 ⇒ PASS（母本 7781 行全部在派生件中原样保留）
+
+==============================================================================
+B7 — terminate_owned_process 函数体逐字节比较（AST 抽段，非整文件）
+==============================================================================
+parent def  lineno=1341..1426  col=0  body_bytes=4299  body_sha256=220084465b33c637e50119507188d1ec6fca40763d7f4fadbc317a36efe020c5
+child  def  lineno=1369..1454  col=0  body_bytes=4299  body_sha256=220084465b33c637e50119507188d1ec6fca40763d7f4fadbc317a36efe020c5
+
+逐字节相等：True
+
+--- 统一 diff（parent 函数体 vs child 函数体；无输出=完全一致）---
+（无差异行 — unified_diff 输出为空）
+
+--- 函数体原文（child，供比对）---
+ 1369 | def terminate_owned_process(rec: Recorder, proc,
+ 1370 |                             expected_pid: int, expected_ct: int | None) -> bool:
+ 1371 |     """★★ 受控终止：以本趟 Popen 身份及创建时间核验为前置，再发终止。
+ 1372 | 
+ 1373 |     ★ 出处：外部裁定 §2.3 / §3.3 / §4.4。
+ 1374 |     ★★ 步骤：
+ 1375 |       1. 核验当前 pid 仍等于 expected_pid 且创建时间仍匹配；
+ 1376 |       2. 调用 `proc.terminate()`（或 taskkill）并记录返回；
+ 1377 |       3. 等待退出并复核（poll / wait）；
+ 1378 |       4. 无法证明目标退出时 ⇒ 返回 False，不继续删载体。
+ 1379 |     ★ 不等时 ⇒ 不杀身份不明/复用的 pid。
+ 1380 |     ★★ `QC169` 收紧（`EXTERNAL_RULING_PI_FIX_AUTH_3.md` §4.2）：
+ 1381 |       ★ 旧实现接受 `expected_ct is None 且 current_ct is None` 的
+ 1382 |         `None == None`（旧 :894）⇒ ★ 现**显式拒绝双 None**。
+ 1383 |       ★ 基线缺失时：★ **不按 PID 发终止**；★ 只经**本趟自己持有的
+ 1384 |         `Popen` 句柄**终止并等待（★ 句柄身份 ≠ PID 猜测），
+ 1385 |         ★ 同时以 `EXIT_PID_IDENTITY_UNVERIFIED`(28) 记账为**收尾失败**
+ 1386 |         （★ fail-closed：★ 不因"句柄终止成功"就宣称 PID 身份已核验）。
+ 1387 |     ★★ 返回值 = **进程退出是否已由本趟句柄确认**（★ 不是"是否已发送"）。
+ 1388 |     """
+ 1389 |     rec.add("TERM", "term_requested", True, "script:terminate_owned_process")
+ 1390 |     rec.add("TERM", "expected_pid", expected_pid,
+ 1391 |             "script:terminate_owned_process")
+ 1392 |     rec.add("TERM", "expected_creation_time", expected_ct,
+ 1393 |             "script:terminate_owned_process")
+ 1394 | 
+ 1395 |     # --- 步 1：身份复核（★ 拒绝双 None） ---
+ 1396 |     pid_identity_ok = True
+ 1397 |     if expected_ct is None:
+ 1398 |         pid_identity_ok = False
+ 1399 |         rec.add("TERM", "identity_pid_verified", False,
+ 1400 |                 "script:terminate_owned_process",
+ 1401 |                 note="★★ 基线缺失 ⇒ PID 身份不可核验（★ 拒绝 None==None）"
+ 1402 |                      "⇒ ★ 只经本趟 Popen 句柄终止，★ 并记为收尾失败")
+ 1403 |         note_cleanup_failure(
+ 1404 |             EXIT_PID_IDENTITY_UNVERIFIED, "script:terminate_owned_process",
+ 1405 |             "★ 启动基线创建时间缺失 ⇒ PID 身份不可核验（fail-closed）", rec)
+ 1406 |         current_ct = None
+ 1407 |     else:
+ 1408 |         current_ct = get_process_creation_time(expected_pid)
+ 1409 |     rec.add("TERM", "current_creation_time", current_ct,
+ 1410 |             "script:get_process_creation_time")
+ 1411 |     if pid_identity_ok and current_ct != expected_ct:
+ 1412 |         pid_identity_ok = False
+ 1413 |         rec.add("TERM", "identity_mismatch", True,
+ 1414 |                 "script:terminate_owned_process",
+ 1415 |                 note="★★ 创建时间不匹配 ⇒ pid 可能已复用 ⇒ 不终止")
+ 1416 |         return False
+ 1417 |     rec.add("TERM", "identity_pid_verified", pid_identity_ok,
+ 1418 |             "script:terminate_owned_process")
+ 1419 | 
+ 1420 |     # --- 步 2：发终止（★ `proc` = 本趟 Popen 句柄；★ 从不按 PID 猜杀） ---
+ 1421 |     try:
+ 1422 |         proc.terminate()
+ 1423 |         rec.add("TERM", "terminate_sent", True, "subprocess.Popen:terminate")
+ 1424 |     except Exception as e:
+ 1425 |         rec.add("TERM", "terminate_sent", False,
+ 1426 |                 "subprocess.Popen:terminate",
+ 1427 |                 note=f"★ 终止失败：{e!r}")
+ 1428 |         return False
+ 1429 | 
+ 1430 |     # --- 步 3：等待退出并复核 ---
+ 1431 |     try:
+ 1432 |         returncode = proc.wait(timeout=10)
+ 1433 |         rec.add("TERM", "wait_returncode", returncode,
+ 1434 |                 "subprocess.Popen:wait",
+ 1435 |                 note="★ 进程已退出")
+ 1436 |         return True
+ 1437 |     except subprocess.TimeoutExpired:
+ 1438 |         rec.add("TERM", "wait_timeout", True, "subprocess.Popen:wait",
+ 1439 |                 note="★★ 10 秒内未退出 ⇒ 尝试 kill")
+ 1440 |         try:
+ 1441 |             proc.kill()
+ 1442 |             returncode = proc.wait(timeout=5)
+ 1443 |             rec.add("TERM", "kill_returncode", returncode,
+ 1444 |                     "subprocess.Popen:kill",
+ 1445 |                     note="★ kill 后已退出")
+ 1446 |             return True
+ 1447 |         except Exception as e:
+ 1448 |             rec.add("TERM", "kill_failed", repr(e),
+ 1449 |                     "subprocess.Popen:kill",
+ 1450 |                     note="★★ 无法证明目标已退出")
+ 1451 |             return False
+ 1452 |     except Exception as e:
+ 1453 |         rec.add("TERM", "wait_error", repr(e), "subprocess.Popen:wait")
+ 1454 |         return False
+
+B7 结论：函数体逐字节一致 ⇒ PASS
+
