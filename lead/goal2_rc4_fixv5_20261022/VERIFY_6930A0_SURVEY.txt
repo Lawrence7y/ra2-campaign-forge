@@ -1,0 +1,46 @@
+================================================================================================
+0x6930A0 参数语义普查（E = 函数入口 esp）
+================================================================================================
+  E+0x00=retaddr  E+0x04=arg1  E+0x08=arg2  E+0x0C=arg3  E+0x10=arg4
+
+  --- 所有 [esp+NN] 访问，折算成 E-relative ---
+    0x006930F5  eax, dword ptr [esp +  => E+08  arg2  read
+    0x00693126  edx, dword ptr [esp +  => E+16  arg4  read
+    0x00693138  dword ptr [esp + 0x34] => E+16  arg4  WRITE
+    0x00693141  ecx, word ptr [esp + 0 => E+18  其他(E+18)  read
+    0x00693148  dword ptr [esp + 0x10] => E-20  局部(栈帧内)  WRITE
+    0x0069314C  edx, [esp + 0xc]       => E-24  局部(栈帧内)  read
+    0x00693150  dword ptr [esp + 0x14] => E-16  局部(栈帧内)  WRITE
+    0x00693154  eax, [esp + 0x34]      => E+16  arg4  read
+    0x00693159  ecx, [esp + 0x30]      => E+08  arg2  read
+    0x0069315E  edx, [esp + 0x20]      => E-12  局部(栈帧内)  read
+    0x00693163  eax, [esp + 0x14]      => E-28  局部(栈帧内)  read
+    0x00693168  ecx, [esp + 0x20]      => E-20  局部(栈帧内)  read
+    0x0069317D  edx, dword ptr [esp +  => E-16  局部(栈帧内)  read
+    0x00693181  eax, dword ptr [esp +  => E-20  局部(栈帧内)  read
+    0x006931A0  ecx, dword ptr [esp +  => E+08  arg2  read
+    0x006931A7  edx, [esp + 0x10]      => E-28  局部(栈帧内)  read
+    0x006931B4  ecx, dword ptr [esp +  => E-24  局部(栈帧内)  read
+    0x006931B9  eax, dword ptr [esp +  => E+08  arg2  read
+    0x006931BD  edx, [esp + 0x10]      => E-28  局部(栈帧内)  read
+    0x006931CE  eax, [esp + 0x10]      => E-20  局部(栈帧内)  read
+
+  --- 一层解引用（reg 从参数槽加载后又被 [reg] 读）---
+
+  --- 参数槽使用统计 ---
+    arg1 (E+0x04): 读 0 次, 写 0 次, 解引用 0 次
+    arg2 (E+0x08): 读 4 次, 写 0 次, 解引用 0 次
+        读 @0x006930F5  eax, dword ptr [esp + 0x2c]
+        读 @0x00693159  ecx, [esp + 0x30]
+        读 @0x006931A0  ecx, dword ptr [esp + 0x2c]
+        读 @0x006931B9  eax, dword ptr [esp + 0x34]
+    arg3 (E+0x0C): 读 0 次, 写 0 次, 解引用 0 次
+    arg4 (E+0x10): 读 2 次, 写 1 次, 解引用 0 次
+        读 @0x00693126  edx, dword ptr [esp + 0x34]
+        读 @0x00693154  eax, [esp + 0x34]
+
+  至少有一个参数槽被访问（证明参数映射成立）                                    PASS  7 次访问
+  arg2 (E+0x08) 是否被解引用                                     PASS  否
+
+2/2 PASS
+EXIT=0

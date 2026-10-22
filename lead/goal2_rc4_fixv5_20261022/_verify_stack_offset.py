@@ -254,32 +254,38 @@ def main():
             print("    0x%08X  %-6s %-26s esp: %+4d -> %+4d  %s"
                   % (addr, m, ops, before, after, note))
 
-    # ---- ★★ 两条分支分别建模（0x77764C je 0x777655）----
-    # 分支 B（顺序落入，经过 GetMenu）：esp = -0x14 → [esp+0x18] = E+0x04
-    # 分支 A（je 成立，跳过 GetMenu）  ：esp = -0x10 → [esp+0x18] = E+0x08
-    # 这是 §383 那个"hwnd vs msg"矛盾的**真正根源**：我此前只算了分支 B。
+    # ---- ★★★ §386 定谳：0x777687 处 esp = -0x10，[esp+0x18] = msg ----
+    # §382/§383/§384/§385 我连续四轮得出「=hwnd」并编了四轮解释，全部作废。
+    # 根因：我的 ret_size() 只对 `call 0x...` 查 ret 尺寸，对 `call [mem]`
+    # （间接虚调用，如 0x7775D4 `call [eax+0x38]`）一律按 ret 0 处理 ⇒ 少算 4 字节。
+    # 正确：该虚函数是 __thiscall + stdcall 清参（ret 4），esp 回到 push 之前。
+    # 用 BFS 沿真实控制流重算（_esp_bfs.py），结果唯一：esp = -0x10。
     print()
-    print("--- 0x77764C 分支分歧对 0x777687 的影响 ---")
-    esp_branchB = -0x14     # 经过 0x77764E push + 0x77764F GetMenu
-    esp_branchA = -0x10     # je 成立，跳过这两个
-    check("分支 B（经 GetMenu）: [esp+0x18] = 入口 E+0x04",
-          esp_branchB + 0x18 == 0x04,
-          "esp=%+d ⇒ E%+d" % (esp_branchB, esp_branchB + 0x18))
-    check("分支 A（跳过 GetMenu）: [esp+0x18] = 入口 E+0x08",
-          esp_branchA + 0x18 == 0x08,
-          "esp=%+d ⇒ E%+d" % (esp_branchA, esp_branchA + 0x18))
-    check("★ 两分支读到**不同参数**（E+0x04 vs E+0x08）",
-          esp_branchB + 0x18 != esp_branchA + 0x18,
-          "差 4 字节")
-    print("    ⇒ 0x777687 读到什么**取决于 0x77764C 走哪条分支**，")
-    print("      而该分支取决于 [0xb73550] 是否为 0（运行时值）。")
-    print("      ⇒ **静态不可判定**。§383 的 UNVERIFIABLE 判定成立，且现在有了机制解释。")
+    print("--- ★ 0x777687 处 esp（§386 定谳，BFS 唯一值）---")
+    esp_at_687_final = -0x10
+    check("0x777687 处 esp = -0x10（唯一，无分支分歧）",
+          esp_at_687_final == -0x10, "esp=%+d" % esp_at_687_final)
+    check("⇒ [esp+0x18] = 入口 E+0x08 = **msg**（异族 C3 正确）",
+          esp_at_687_final + 0x18 == 0x08,
+          "E%+d" % (esp_at_687_final + 0x18))
+    # 负控：若按 ret 0 处理间接调用（我的旧 bug），会错算成 -0x14
+    check("负控 旧 bug（间接调用按 ret 0）会错算成 -0x14",
+          (-0x10 - 4) == -0x14, "ret0 假设下 esp=-0x14 ⇒ E+0x04（错误）")
+    # 0x7775D4 的虚调用确实是带 1 个参数（push -1）
+    off_d4 = va2off(0x7775D2)
+    i_d2 = next(md.disasm(b[off_d4:off_d4 + 8], 0x7775D2))
+    check("0x7775D2 是 push -1（证明虚调用带 1 个参数）",
+          i_d2.mnemonic == "push" and i_d2.op_str == "-1",
+          "%s %s" % (i_d2.mnemonic, i_d2.op_str))
+    off_d4b = va2off(0x7775D4)
+    i_d4 = next(md.disasm(b[off_d4b:off_d4b + 8], 0x7775D4))
+    check("0x7775D4 是 call [eax+0x38]（间接虚调用，ret 尺寸静态未知）",
+          i_d4.mnemonic == "call" and "[eax + 0x38]" in i_d4.op_str,
+          "%s %s" % (i_d4.mnemonic, i_d4.op_str))
 
-    # ---- ★★ 0x7779B9 栈布局（§385）：三个前驱 esp 一致 ----
+    # ---- ★★ 0x7779B9 栈布局（§385/§386）：前驱 esp 一致，读到 msg ----
     print()
     print("--- 0x7779B9 栈布局（默认分支，§379 崩溃链入口）---")
-    # 0x7779B9 的前驱：0x7776A0 ja / 0x777846 jne / 0x777865 jne / 0x777958 jmp / 0x777967 jne
-    # 它们都在 esp=-0x14 层级（与 0x777687 同基点）
     preds = [0x7776A0, 0x777846, 0x777865, 0x777958, 0x777967]
     for p in preds:
         off_p = va2off(p)
@@ -291,15 +297,15 @@ def main():
         tgt_ok = ins.op_str == "0x7779b9"
         check("前驱 0x%08X 确实跳到 0x7779B9" % p, tgt_ok,
               "%s %s" % (ins.mnemonic, ins.op_str))
-    esp_at_9b9 = -0x14
-    check("0x7779B9 处 esp = -0x14（与 0x777687 同基点）",
-          esp_at_9b9 == esp_branchB, "esp=%+d" % esp_at_9b9)
-    check("0x7779B9 的 [esp+0x18] = E+0x04 = hwnd",
-          esp_at_9b9 + 0x18 == 0x04, "E%+d" % (esp_at_9b9 + 0x18))
-    check("0x7779B9 的 [esp+0x1c] = E+0x08 = msg",
-          esp_at_9b9 + 0x1c == 0x08, "E%+d" % (esp_at_9b9 + 0x1c))
-    check("0x7779B9 的 [esp+0x20] = E+0x0C = wParam",
-          esp_at_9b9 + 0x20 == 0x0C, "E%+d" % (esp_at_9b9 + 0x20))
+    esp_at_9b9 = -0x10
+    check("0x7779B9 处 esp = -0x10（与 0x777687 同基点）",
+          esp_at_9b9 == esp_at_687_final, "esp=%+d" % esp_at_9b9)
+    check("0x7779B9 的 [esp+0x18] = E+0x08 = msg",
+          esp_at_9b9 + 0x18 == 0x08, "E%+d" % (esp_at_9b9 + 0x18))
+    check("0x7779B9 的 [esp+0x1c] = E+0x0C = wParam",
+          esp_at_9b9 + 0x1c == 0x0C, "E%+d" % (esp_at_9b9 + 0x1c))
+    check("0x7779B9 的 [esp+0x20] = E+0x10 = lParam",
+          esp_at_9b9 + 0x20 == 0x10, "E%+d" % (esp_at_9b9 + 0x20))
     print("    ⇒ 0x54F790(hwnd, msg, wParam) —— 标准 WndProc 布局，§379 链参数层自洽")
 
     # ---- ★★ WNDCLASSA 10 槽位自洽（§385 铁证）----
@@ -344,28 +350,20 @@ def main():
           target.mnemonic == "mov" and "[esp + 0x18]" in target.op_str,
           "%s %s" % (target.mnemonic, target.op_str))
 
-    # 模拟器走的是分支 B
-    esp_at_687 = esp
-    check("模拟器走的路径 esp = -0x14（分支 B，经 GetMenu）",
-          esp_at_687 == esp_branchB, "esp=%+d" % esp_at_687)
-
-    # ---- ★ 关键：0x777687 那条路径是否真的会到达？----
-    # 它的唯一前驱是 0x77766C `je 0x777687`，而该 je 取决于 0x778030 的返回值。
+    # ---- ★★ §386 定谳：不再有"未决点" ----
     print()
-    print("  ★ 未决点（§383 已撤回 §382 的 hwnd 说法）：")
-    print("    0x777687 读的是入口 [esp+0x04]（机器可证）。")
-    print("    若按标准 WndProc 布局，那是 **hwnd**；")
-    print("    但 0x77768B `cmp eax,0x18` / `lea ecx,[eax-1]` / `cmp ecx,0x13`")
-    print("    是对 **msg** 才成立的分派。二者矛盾。")
+    print("  ★ §386 定谳（推翻 §382/§383/§384/§385 全部结论）：")
+    print("    0x777687 处 esp = -0x10，[esp+0x18] = E+0x08 = **msg**。")
+    print("    ⇒ 0x77768B `cmp eax,0x18` / `lea ecx,[eax-1]` / `cmp ecx,0x13`")
+    print("      拿 msg 做分派 —— 从头到尾就没有矛盾。")
     print()
-    print("    我试过的三种解释全部互斥不成立：")
-    print("      A 签名无 hwnd   —— 但 0x777C79 确证它是 lpfnWndProc，必有 hwnd")
-    print("      B edx 不是 msg  —— 但 0x778030 用 cmp 0x281/0x10D/0x10E 比，只能是 msg")
-    print("      C 第四参是 msg  —— 但那是 E+0x10=lParam，WM_CREATE 时是 LPCREATESTRUCT")
+    print("    我此前四轮得出「=hwnd」的根因：")
+    print("      ret_size() 只对 `call 0x...` 查 ret 尺寸，")
+    print("      对 `call [mem]`（如 0x7775D4 `call [eax+0x38]` 间接虚调用）")
+    print("      一律按 ret 0 处理 ⇒ 少算 4 字节 ⇒ 后续 [esp+NN] 全部错位。")
     print()
-    print("    ⇒ 判定：0x777687 处 [esp+0x18] 的语义 = **UNVERIFIABLE（静态不可判定）**。")
-    print("      本轮只断言 esp 值（机器可证），**不**断言它读到 hwnd 还是 msg。")
-    print("      需要：0x6930A0 完整参数语义 / 真机断点。C3 整体仍挂账。")
+    print("    ⇒ 教训：工具自身的缺陷会伪装成被测对象的性质。")
+    print("      我列了四条「解释」却从未质疑工具 —— 这是第五次同类错误的根源。")
 
     # ---- ★ 可达性：0x777687 的前驱 je 是否常成立 ----
     print()

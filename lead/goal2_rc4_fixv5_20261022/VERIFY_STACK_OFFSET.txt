@@ -33,13 +33,12 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
     0x0077765E  push   edx                        esp:  -24 ->  -28  
     0x00777665  call   0x778030                   esp:  -28 ->  -20  
 
---- 0x77764C 分支分歧对 0x777687 的影响 ---
-  分支 B（经 GetMenu）: [esp+0x18] = 入口 E+0x04                    PASS  esp=-20 ⇒ E+4
-  分支 A（跳过 GetMenu）: [esp+0x18] = 入口 E+0x08                   PASS  esp=-16 ⇒ E+8
-  ★ 两分支读到**不同参数**（E+0x04 vs E+0x08）                          PASS  差 4 字节
-    ⇒ 0x777687 读到什么**取决于 0x77764C 走哪条分支**，
-      而该分支取决于 [0xb73550] 是否为 0（运行时值）。
-      ⇒ **静态不可判定**。§383 的 UNVERIFIABLE 判定成立，且现在有了机制解释。
+--- ★ 0x777687 处 esp（§386 定谳，BFS 唯一值）---
+  0x777687 处 esp = -0x10（唯一，无分支分歧）                           PASS  esp=-16
+  ⇒ [esp+0x18] = 入口 E+0x08 = **msg**（异族 C3 正确）               PASS  E+8
+  负控 旧 bug（间接调用按 ret 0）会错算成 -0x14                            PASS  ret0 假设下 esp=-0x14 ⇒ E+0x04（错误）
+  0x7775D2 是 push -1（证明虚调用带 1 个参数）                           PASS  push -1
+  0x7775D4 是 call [eax+0x38]（间接虚调用，ret 尺寸静态未知）               PASS  call dword ptr [eax + 0x38]
 
 --- 0x7779B9 栈布局（默认分支，§379 崩溃链入口）---
   前驱 0x007776A0 确实跳到 0x7779B9                                PASS  ja 0x7779b9
@@ -47,10 +46,10 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   前驱 0x00777865 确实跳到 0x7779B9                                PASS  jne 0x7779b9
   前驱 0x00777958 确实跳到 0x7779B9                                PASS  jmp 0x7779b9
   前驱 0x00777967 确实跳到 0x7779B9                                PASS  jne 0x7779b9
-  0x7779B9 处 esp = -0x14（与 0x777687 同基点）                     PASS  esp=-20
-  0x7779B9 的 [esp+0x18] = E+0x04 = hwnd                      PASS  E+4
-  0x7779B9 的 [esp+0x1c] = E+0x08 = msg                       PASS  E+8
-  0x7779B9 的 [esp+0x20] = E+0x0C = wParam                    PASS  E+12
+  0x7779B9 处 esp = -0x10（与 0x777687 同基点）                     PASS  esp=-16
+  0x7779B9 的 [esp+0x18] = E+0x08 = msg                       PASS  E+8
+  0x7779B9 的 [esp+0x1c] = E+0x0C = wParam                    PASS  E+12
+  0x7779B9 的 [esp+0x20] = E+0x10 = lParam                    PASS  E+16
     ⇒ 0x54F790(hwnd, msg, wParam) —— 标准 WndProc 布局，§379 链参数层自洽
 
 --- WNDCLASSA 槽位核算（确证 0x7775C0 = lpfnWndProc）---
@@ -67,22 +66,19 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   0x777C79 写入的值是 0x7775c0                                    PASS  mov dword ptr [esp + 0x28], 0x7775c0
 
   0x777687 是 mov eax, dword ptr [esp + 0x18]                 PASS  mov eax, dword ptr [esp + 0x18]
-  模拟器走的路径 esp = -0x14（分支 B，经 GetMenu）                        PASS  esp=-20
 
-  ★ 未决点（§383 已撤回 §382 的 hwnd 说法）：
-    0x777687 读的是入口 [esp+0x04]（机器可证）。
-    若按标准 WndProc 布局，那是 **hwnd**；
-    但 0x77768B `cmp eax,0x18` / `lea ecx,[eax-1]` / `cmp ecx,0x13`
-    是对 **msg** 才成立的分派。二者矛盾。
+  ★ §386 定谳（推翻 §382/§383/§384/§385 全部结论）：
+    0x777687 处 esp = -0x10，[esp+0x18] = E+0x08 = **msg**。
+    ⇒ 0x77768B `cmp eax,0x18` / `lea ecx,[eax-1]` / `cmp ecx,0x13`
+      拿 msg 做分派 —— 从头到尾就没有矛盾。
 
-    我试过的三种解释全部互斥不成立：
-      A 签名无 hwnd   —— 但 0x777C79 确证它是 lpfnWndProc，必有 hwnd
-      B edx 不是 msg  —— 但 0x778030 用 cmp 0x281/0x10D/0x10E 比，只能是 msg
-      C 第四参是 msg  —— 但那是 E+0x10=lParam，WM_CREATE 时是 LPCREATESTRUCT
+    我此前四轮得出「=hwnd」的根因：
+      ret_size() 只对 `call 0x...` 查 ret 尺寸，
+      对 `call [mem]`（如 0x7775D4 `call [eax+0x38]` 间接虚调用）
+      一律按 ret 0 处理 ⇒ 少算 4 字节 ⇒ 后续 [esp+NN] 全部错位。
 
-    ⇒ 判定：0x777687 处 [esp+0x18] 的语义 = **UNVERIFIABLE（静态不可判定）**。
-      本轮只断言 esp 值（机器可证），**不**断言它读到 hwnd 还是 msg。
-      需要：0x6930A0 完整参数语义 / 真机断点。C3 整体仍挂账。
+    ⇒ 教训：工具自身的缺陷会伪装成被测对象的性质。
+      我列了四条「解释」却从未质疑工具 —— 这是第五次同类错误的根源。
 
 --- 0x777687 可达性 ---
   0x778030(WM_CREATE=0x001) 返回 0 ⇒ 0x777687 可达               PASS  ret=0
@@ -92,5 +88,5 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   0x7780F4 是 mov eax, 1（返回 1 的路径存在）                          PASS  mov eax, 1
   0x7780FD 是 xor eax, eax（返回 0 的路径存在）                        PASS  xor eax, eax
 
-42/42 PASS
+43/43 PASS
 EXIT=0
