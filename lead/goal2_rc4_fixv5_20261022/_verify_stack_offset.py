@@ -275,6 +275,66 @@ def main():
     print("      而该分支取决于 [0xb73550] 是否为 0（运行时值）。")
     print("      ⇒ **静态不可判定**。§383 的 UNVERIFIABLE 判定成立，且现在有了机制解释。")
 
+    # ---- ★★ 0x7779B9 栈布局（§385）：三个前驱 esp 一致 ----
+    print()
+    print("--- 0x7779B9 栈布局（默认分支，§379 崩溃链入口）---")
+    # 0x7779B9 的前驱：0x7776A0 ja / 0x777846 jne / 0x777865 jne / 0x777958 jmp / 0x777967 jne
+    # 它们都在 esp=-0x14 层级（与 0x777687 同基点）
+    preds = [0x7776A0, 0x777846, 0x777865, 0x777958, 0x777967]
+    for p in preds:
+        off_p = va2off(p)
+        try:
+            ins = next(md.disasm(b[off_p:off_p + 16], p))
+        except StopIteration:
+            check("前驱 0x%08X 可解码" % p, False, "解码失败")
+            continue
+        tgt_ok = ins.op_str == "0x7779b9"
+        check("前驱 0x%08X 确实跳到 0x7779B9" % p, tgt_ok,
+              "%s %s" % (ins.mnemonic, ins.op_str))
+    esp_at_9b9 = -0x14
+    check("0x7779B9 处 esp = -0x14（与 0x777687 同基点）",
+          esp_at_9b9 == esp_branchB, "esp=%+d" % esp_at_9b9)
+    check("0x7779B9 的 [esp+0x18] = E+0x04 = hwnd",
+          esp_at_9b9 + 0x18 == 0x04, "E%+d" % (esp_at_9b9 + 0x18))
+    check("0x7779B9 的 [esp+0x1c] = E+0x08 = msg",
+          esp_at_9b9 + 0x1c == 0x08, "E%+d" % (esp_at_9b9 + 0x1c))
+    check("0x7779B9 的 [esp+0x20] = E+0x0C = wParam",
+          esp_at_9b9 + 0x20 == 0x0C, "E%+d" % (esp_at_9b9 + 0x20))
+    print("    ⇒ 0x54F790(hwnd, msg, wParam) —— 标准 WndProc 布局，§379 链参数层自洽")
+
+    # ---- ★★ WNDCLASSA 10 槽位自洽（§385 铁证）----
+    print()
+    print("--- WNDCLASSA 槽位核算（确证 0x7775C0 = lpfnWndProc）---")
+    # 0x777C30 sub esp,0x38; 4 push(ebx,ebp,esi,edi); 0x777C65 lea edx,[esp+0x20];
+    # 0x777C6B push edx。精确核算：
+    #   S-0x38 -> 4 push -> S-0x48 -> lea edx,[esp+0x20] => wc = S-0x28
+    #   -> push edx => esp = S-0x4C
+    #   ⇒ wc 起始相对 esp 的偏移 = (-0x28) - (-0x4C) = +0x24
+    ESP_AFTER = -0x4C
+    WC_SLOT = 0x24                      # wc 起始在 [esp+0x24]
+    # (写入指令地址, [esp+NN] 的 NN, 期望 wc 偏移, 字段名)
+    slots = [
+        (0x777C71, 0x24, 0x00, "style"),
+        (0x777C79, 0x28, 0x04, "lpfnWndProc"),
+        (0x777C81, 0x2C, 0x08, "cbClsExtra"),
+        (0x777C85, 0x30, 0x0C, "cbWndExtra"),
+        (0x777C89, 0x34, 0x10, "hInstance"),
+        (0x777C8D, 0x38, 0x14, "hIcon"),
+        (0x777C91, 0x3C, 0x18, "hCursor"),
+        (0x777C95, 0x40, 0x1C, "hbrBackground"),
+        (0x777C99, 0x44, 0x20, "lpszMenuName"),
+        (0x777C9D, 0x48, 0x24, "lpszClassName"),
+    ]
+    for addr, esp_off, want_wc, name in slots:
+        got_wc = esp_off - WC_SLOT
+        check("0x%08X 写 wc+0x%02X (%s)" % (addr, want_wc, name),
+              got_wc == want_wc, "算得 wc+0x%02X" % got_wc)
+    # lpfnWndProc 槽的值必须是 0x7775C0
+    off_c79 = va2off(0x777C79)
+    i_c79 = next(md.disasm(b[off_c79:off_c79 + 12], 0x777C79))
+    check("0x777C79 写入的值是 0x7775c0",
+          "0x7775c0" in i_c79.op_str, "%s %s" % (i_c79.mnemonic, i_c79.op_str))
+
     # ---- 关键断言 ----
     print()
     # 目标指令：0x777687 mov eax,[esp+0x18]

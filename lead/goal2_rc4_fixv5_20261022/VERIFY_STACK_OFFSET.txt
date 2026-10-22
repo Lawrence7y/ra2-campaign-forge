@@ -41,6 +41,31 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
       而该分支取决于 [0xb73550] 是否为 0（运行时值）。
       ⇒ **静态不可判定**。§383 的 UNVERIFIABLE 判定成立，且现在有了机制解释。
 
+--- 0x7779B9 栈布局（默认分支，§379 崩溃链入口）---
+  前驱 0x007776A0 确实跳到 0x7779B9                                PASS  ja 0x7779b9
+  前驱 0x00777846 确实跳到 0x7779B9                                PASS  jne 0x7779b9
+  前驱 0x00777865 确实跳到 0x7779B9                                PASS  jne 0x7779b9
+  前驱 0x00777958 确实跳到 0x7779B9                                PASS  jmp 0x7779b9
+  前驱 0x00777967 确实跳到 0x7779B9                                PASS  jne 0x7779b9
+  0x7779B9 处 esp = -0x14（与 0x777687 同基点）                     PASS  esp=-20
+  0x7779B9 的 [esp+0x18] = E+0x04 = hwnd                      PASS  E+4
+  0x7779B9 的 [esp+0x1c] = E+0x08 = msg                       PASS  E+8
+  0x7779B9 的 [esp+0x20] = E+0x0C = wParam                    PASS  E+12
+    ⇒ 0x54F790(hwnd, msg, wParam) —— 标准 WndProc 布局，§379 链参数层自洽
+
+--- WNDCLASSA 槽位核算（确证 0x7775C0 = lpfnWndProc）---
+  0x00777C71 写 wc+0x00 (style)                               PASS  算得 wc+0x00
+  0x00777C79 写 wc+0x04 (lpfnWndProc)                         PASS  算得 wc+0x04
+  0x00777C81 写 wc+0x08 (cbClsExtra)                          PASS  算得 wc+0x08
+  0x00777C85 写 wc+0x0C (cbWndExtra)                          PASS  算得 wc+0x0C
+  0x00777C89 写 wc+0x10 (hInstance)                           PASS  算得 wc+0x10
+  0x00777C8D 写 wc+0x14 (hIcon)                               PASS  算得 wc+0x14
+  0x00777C91 写 wc+0x18 (hCursor)                             PASS  算得 wc+0x18
+  0x00777C95 写 wc+0x1C (hbrBackground)                       PASS  算得 wc+0x1C
+  0x00777C99 写 wc+0x20 (lpszMenuName)                        PASS  算得 wc+0x20
+  0x00777C9D 写 wc+0x24 (lpszClassName)                       PASS  算得 wc+0x24
+  0x777C79 写入的值是 0x7775c0                                    PASS  mov dword ptr [esp + 0x28], 0x7775c0
+
   0x777687 是 mov eax, dword ptr [esp + 0x18]                 PASS  mov eax, dword ptr [esp + 0x18]
   模拟器走的路径 esp = -0x14（分支 B，经 GetMenu）                        PASS  esp=-20
 
@@ -67,5 +92,5 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   0x7780F4 是 mov eax, 1（返回 1 的路径存在）                          PASS  mov eax, 1
   0x7780FD 是 xor eax, eax（返回 0 的路径存在）                        PASS  xor eax, eax
 
-22/22 PASS
+42/42 PASS
 EXIT=0
