@@ -2360,3 +2360,43 @@ jumpjetcontrols,elevationmodel,wallmodel,maximums,difficulty,landcharacteristics
 ```bash
 python re_atlas/tools/dump_typeclass_fields.py
 ```
+
+---
+
+## R-029 · 2026-10-22 · R2-2 结题轮：§20 总览 + G 系坑点汇总
+
+### 1. 本轮所领
+
+§3 P0「R2-2 收口」：写 `kb/30` §20 结题总览，STATUS 标 ✅，此后 INI 支柱只按需补充。
+纯本地文档轮，无子代理、无计算。
+
+### 2. 交付
+
+| 件 | 内容 |
+|:---|:---|
+| `kb/30` §20.1 | INI 读取栈一图总览（`CCINIClass`→`GetSection`/`ReadString` 地址链、`RulesClass` 31 节/`[General]` 268、TypeClass 613 键两文件分栏、镜像全局 18 条） |
+| `kb/30` §20.2 | **G-1…G-35 坑点汇总**，按危害分六类（静默失效 / 判据错置 / 过度解读 / 可复现性 / 自纠留痕 / 上游翻案）。G-3 编号跳空已如实登记 |
+| `kb/30` §20.3 | 核验台账：R-016 八条 ✅（含 §7.2 边界不夸大）；**R-017…R-028 共 12 轮 ⏳ 未核验**，列为结题后唯一系统性缺口，仍属 P0 |
+| `kb/30` §20.4/20.5 | 工具 11 个、证据与交接清点；结题边界（A-40/41/42、I-3、L-24/25/26 挂起不排新轮） |
+| `STATUS.md` | R2-2 行升「✅ 结题（R-029）」；「下一步」节换成 R-029 后的优先级序；新增本轮禁区遵守记录 |
+
+### 3. 发现的一个非本线事件（登记）
+
+工作区 `re_atlas/tools/dump_typeclass_family.py` 存在**非本会话所做**的未提交改动：
+撤销 HEAD `2ad293d` 的 `ctor_base_reg`（G-32 修复：`this` 按首条 `mov reg,ecx` 定位），
+改回硬编码 `X86_REG_ESI`、并把早窗 24→40。按 G-32 本线结论，**该改动方向是退化**
+（WarheadType ctor 用 EBP，硬编码 ESI 会重现"54 字段全报未写"）。
+本轮处置：**不触碰、不提交、不回滚**（可能是其他在飞会话的工作），在 STATUS
+标"待归属"。本线权威版本 = HEAD。
+
+### 4. 禁区自查
+
+- [x] `tasklist` 查无 `gamemd` / `ra2loader`
+- [x] 未启动游戏/loader；未写 `ra2youli`；未跑 trip；未编译；未派子代理
+- [x] 未改 `lead/`、`docs/re/`、`ra2render/`、`tools/`（§3 事件仅登记不处置）
+- [x] 读 GOAL-3T 台账尾部（§351）：其线在 RC-4 触发点普查（禁区），与本轮零交集；本轮未写任何 RC-4 因果/触发/修复内容
+
+### 5. 下一轮候选
+
+P0 核验清欠首批（R-017/R-018 读族+键映射批次，送千问或 GLM 异族复核）；
+或 P1 R1-3 调试字符串命名普查（视通道可用性）。

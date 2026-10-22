@@ -1,6 +1,6 @@
 # RE-ATLAS · 进度与覆盖率 (STATUS)
 
-更新：2026-10-22 R-028（R2-2 第十三轮：TypeClass 继承链 613 键全解，含 rulesmd/artmd 双文件归属）
+更新：2026-10-22 R-029（R2-2 结题：§20 总览落地，G 系坑点汇总归档，核验欠账如实登记）
 
 ## 一句话
 
@@ -39,7 +39,7 @@
 | R0 盘点（索引/种子/冲突） | ✅ 完成 | 本轮 |
 | R1 全局骨架（PE/RTTI/虚表/覆盖率） | ✅ 完成 | 本轮 |
 | R2-1 地图 / 触发器 / 脚本 / TaskForce / TeamClass | 🟢 **派发层 + 类尺寸/前缀布局/对象字段完成** | Action 145 / Team 65 / Event 两级 49 槽全解析；触发器族 8 类**ID+尺寸双命中**；`AbstractClass` 多继承 4 vptr；`TEventClass` 三接口字段 + `Save` 四项；`AbstractTypeClass` 字段边界实测。见 `kb/10_map_triggers.md`、`kb/11_class_layouts.md`、`kb/20_vtable_contract.md`、`kb/21_swizzle_and_object_fields.md`。余：`ScriptType` 大块结构、`+0x28`/`+0x30` 接口对象类名（L-21） |
-| R2-2 INI 与规则加载 | ✅ **核心闭环 + 类型层已解** | **R-015…028**：单继承布局（**撤回** R-015 的"多继承 + `VectorClass` 基类"）；`INISection`=`0x44`/`INIEntry`=`0x28`/`List<T>`=`0x1C`；**节查找 = CRC32 排序数组+二分，大小写敏感，未命中返哨兵 `0xB7882C`**；**`ReadBool` 只认首字符、`ReadInteger` 尾 `h` 走十六进制**；**`RulesClass` 尺寸 `0x18C0`**（分配点+字段上界+对齐三重吻合），构造器 `0x665650`；**`[MultiplayerDialogSettings]` 27 键字段表**；**载入后 18 字段镜像到独立全局**（`ShortGame`→`0x00A8B262` 50 处）；**全引擎键索引重算 2,426 调用点 / 2,305 键 / 1,893 不同键**（R-019 旧值 478/473/427 **作废**，根因=capstone 单次 `md.disasm` 静默截断，见 G-23）；**`RulesClass` 节表** 31 项 + 载入顺序；**`[General]` 268 标量字段**（279 键，12 个列表型）；**`[AudioVisual]` 151/152**；**其余 10 个小节字段全解**；**逐 loader 键清单 651 键**（R-022 旧值 306 **作废**）；**R-028 新增：`TypeClass` 继承链 7 层、613 键全解、0 未定** —— `AbstractType(1) → ObjectType(20) → TechnoType(252) → {Infantry(33), Unit(27), Aircraft(10), Building(270)}`，尺寸 0xED0/0xE78/0xE10/0x1798；**四个派生 loader 同时读 rulesmd 与 artmd**（`INI_Art`=`0x887180`，COL 解出 `.?AVCCINIClass@@`），Building 有 **151/270 键属 artmd**；25 键走 cdecl 枚举包装器；构造器链独立核对 **269/269 全归因**（含 132 个指针环清零）。见 `kb/30_ini_subsystem.md` §0–§19。余：其余 15 个 TypeClass（A-40）、动画子结构字段名（A-41）、枚举值表（A-42） |
+| R2-2 INI 与规则加载 | ✅ **结题（R-029）**：核心闭环 + 类型层已解 + §20 总览 | **R-015…028**：单继承布局（**撤回** R-015 的"多继承 + `VectorClass` 基类"）；`INISection`=`0x44`/`INIEntry`=`0x28`/`List<T>`=`0x1C`；**节查找 = CRC32 排序数组+二分，大小写敏感，未命中返哨兵 `0xB7882C`**；**`ReadBool` 只认首字符、`ReadInteger` 尾 `h` 走十六进制**；**`RulesClass` 尺寸 `0x18C0`**（分配点+字段上界+对齐三重吻合），构造器 `0x665650`；**`[MultiplayerDialogSettings]` 27 键字段表**；**载入后 18 字段镜像到独立全局**（`ShortGame`→`0x00A8B262` 50 处）；**全引擎键索引重算 2,426 调用点 / 2,305 键 / 1,893 不同键**（R-019 旧值 478/473/427 **作废**，根因=capstone 单次 `md.disasm` 静默截断，见 G-23）；**`RulesClass` 节表** 31 项 + 载入顺序；**`[General]` 268 标量字段**（279 键，12 个列表型）；**`[AudioVisual]` 151/152**；**其余 10 个小节字段全解**；**逐 loader 键清单 651 键**（R-022 旧值 306 **作废**）；**R-028 新增：`TypeClass` 继承链 7 层、613 键全解、0 未定** —— `AbstractType(1) → ObjectType(20) → TechnoType(252) → {Infantry(33), Unit(27), Aircraft(10), Building(270)}`，尺寸 0xED0/0xE78/0xE10/0x1798；**四个派生 loader 同时读 rulesmd 与 artmd**（`INI_Art`=`0x887180`，COL 解出 `.?AVCCINIClass@@`），Building 有 **151/270 键属 artmd**；25 键走 cdecl 枚举包装器；构造器链独立核对 **269/269 全归因**（含 132 个指针环清零）。见 `kb/30_ini_subsystem.md` §0–§19；**§20 结题总览 + G 系坑点汇总（R-029）**。余（转按需补充，不排新轮）：其余 15 个 TypeClass（A-40）、动画子结构字段名（A-41）、枚举值表（A-42）；**核验欠账 R-017…R-028 共 12 轮仍属 P0**（§20.3） |
 | R2-4 战斗 / 武器 / 弹道 | ⬜ 未开始 | 语料 `weapons_damage_production.md`（449 VA）可作起点 |
 | R2-5 AI 决策 | ⬜ 未开始 | 语料 `house_team_ai_update.md` |
 | R2-6 超级武器 | ⬜ 未开始 | 语料 `superweapon_re.md`（520 VA） |
@@ -82,6 +82,13 @@
 
 ## 禁区遵守记录
 
+**R-029（2026-10-22）**：
+- `tasklist` 查无 `gamemd` / `ra2loader`。
+- 纯文档轮：未启动游戏/loader，未写 `ra2youli`，未跑 trip，未编译，未派子代理。
+- 未修改 `lead/`、`docs/re/`、`ra2render/`、`tools/`。
+- 读 GOAL-3T 台账尾部（§351 L3 直接触发点普查）与本篇零交集；该线全部在 §4 禁区内，仅做禁读遵守，未写任何因果/触发/修复意见。
+- **待归属告警**：工作区 `re_atlas/tools/dump_typeclass_family.py` 有一处**非本会话所做**的未提交改动（撤销了 HEAD 2ad293d 中的 G-32 修复、把 `this` 寄存器重新硬编码为 ESI）。本轮未触碰、未提交；若属其他会话所改请其自行处理，本线以 HEAD 版本为权威（G-32 修复正确）。
+
 **R-028（2026-10-22）**：
 - `tasklist` 查无 `gamemd` / `ra2loader`。
 - 未启动游戏/loader，未写 `ra2youli`，未跑 trip，未编译。
@@ -116,10 +123,12 @@
 - 未修改 `lead/`、`docs/re/`、`ra2render/`、`tools/` 下任何文件（只读）。
 - 只使用 `.ra2opt/orig` 与生产件的**只读字节**，未写回。
 
-## 下一步（R2-1 优先）
+## 下一步（R-029 起）
 
-1. 吸收 `trigger_system_manifest.md` 的 515 个 VA，按"TagClass→TriggerClass→
-   TEventClass/TActionClass"链分组，逐组做入口确认（用 `fn_walk` 的入口集做门禁）。
-2. TaskForce / TeamClass / TeamTypeClass 的字段布局：以本线已实证的
-   `TeamTypeClass` 尺寸 248 为地基，逐字段反推。
-3. 每完成一组就更新 `kb/10_map_triggers.md` 与 INDEX §C。
+1. **P0 核验清欠**：R-017…R-028 的 12 轮异族复核欠账（§20.3），每轮至多 1 批；
+   DeepSeek 冷却改千问/GLM。
+2. **P1 R1-3 调试字符串命名普查**（目标：3.62% 覆盖率显著提升）。
+3. P1 R1-4 全局交叉引用索引 → R1-5 虚表槽间接调用索引。
+4. R2-1 余项（`ScriptType` 大块、`+0x28`/`+0x30` 类名 L-21）按需推进；
+   R2-2 已结题，只按需补充。
+5. 每完成一组就更新 kb / INDEX / STATUS / LEDGER。
