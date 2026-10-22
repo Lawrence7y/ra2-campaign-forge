@@ -40,4 +40,13 @@
 --- 结论 ---
   ★★★ 闭合：`call [eax+0x38]` ret=4 ⇒ §388 第七节风险消除                  PASS  vtable=0x007F794C slot14=0x007B1780 ret=4
 
-17/17 PASS
+--- ★ §391 自纠：IME 段与 0x777687 互斥的**真实机制** ---
+  IME 段有 2 条出口：je 0x777A5B 与 ret 0x10                            PASS  [('je->0x777a5b', 7828996), ('ret', 7829028)]
+  0x777A5B 处开始是 epilogue（pop edi）                                PASS  pop edi
+  0x777A5B 序列以 ret 0x10 结束（⇒ IME 段整体返回）                          PASS  ret 0x10
+  ★★ IME 段出口 0x777A5B 沿控制流**到不了** 0x777687                       PASS  BFS 未命中
+  ★★ IME 段出口 0x777624 之后（ret）到不了 0x777687                        PASS  0x777624 是 ret ⇒ 直接终止
+  正控 主线 0x777627 沿控制流**能**到 0x777687（reaches 有区分力）               PASS  BFS 命中
+  ★★ 故 0x7775D0 分支与 0x777687 互斥（IME 段自己返回，不回落主线）                 PASS  机制 = IME 段返回，不是 msg 值不同
+
+24/24 PASS

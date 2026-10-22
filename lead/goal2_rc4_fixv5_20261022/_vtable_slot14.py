@@ -260,6 +260,85 @@ def main():
           ok, "vtable=0x%08X slot14=0x%08X ret=%s"
           % (VT or 0, slot_fn or 0, rs))
 
+    # ---------- ★★★ §391 自纠：互斥的**真实机制** ----------
+    # §389 我写「IME 段只在 msg∈{0x473,0x475} 时执行 ⇒ 与 0x777687 互斥」。
+    # 结论对，**理由错**：不是「msg 不同所以互斥」，而是 **IME 段自己就返回了**。
+    # 实测 IME 段（0x7775E7 起）的两条出口：
+    #   0x777604  je 0x777a5b   → 0x777A5B: pop/pop/xor/pop/pop/ret 0x10
+    #   0x777624  ret 0x10
+    # 两条都是**函数返回**，都不流向 0x777687。这才是互斥的机制。
+    print()
+    print("--- ★ §391 自纠：IME 段与 0x777687 互斥的**真实机制** ---")
+    exits = []
+    o_ime = va2off(0x7775E7)
+    for i in md.disasm(b[o_ime:o_ime + 0x50], 0x7775E7):
+        if i.address > 0x77762A:
+            break
+        if i.mnemonic == "ret":
+            exits.append(("ret", i.address))
+        elif i.mnemonic.startswith("j") and i.op_str == "0x777a5b":
+            exits.append(("je->0x777a5b", i.address))
+    check("IME 段有 2 条出口：je 0x777A5B 与 ret 0x10",
+          len(exits) == 2, "%s" % exits)
+    # 0x777A5B 也是 ret
+    i_a5b = insn(0x777A5B)
+    check("0x777A5B 处开始是 epilogue（pop edi）", 
+          i_a5b is not None and i_a5b.mnemonic == "pop" and i_a5b.op_str == "edi",
+          "%s %s" % (i_a5b.mnemonic, i_a5b.op_str) if i_a5b else "N/A")
+    a5b_ret = None
+    o_a5b = va2off(0x777A5B)
+    for i in md.disasm(b[o_a5b:o_a5b + 0x10], 0x777A5B):
+        if i.mnemonic == "ret":
+            a5b_ret = i.op_str or "0"
+            break
+    check("0x777A5B 序列以 ret 0x10 结束（⇒ IME 段整体返回）",
+          a5b_ret == "0x10", "ret %s" % a5b_ret)
+    # 关键：IME 段的出口必须**不流向** 0x777687。
+    # ★ 不能用「0x777A5B > 0x777687」这种地址大小比较 —— 那是弱断言，
+    #   地址大小与路径关系无关。改为**从出口沿控制流走**，看是否到达 0x777687。
+    def reaches(start, target, limit=64):
+        """从 start 沿控制流（不跨 ret）走，是否到达 target。"""
+        seen, work = set(), [start]
+        n = 0
+        while work and n < limit:
+            pc = work.pop()
+            if pc in seen:
+                continue
+            seen.add(pc)
+            if pc == target:
+                return True
+            o2 = va2off(pc)
+            if o2 is None:
+                continue
+            try:
+                ins2 = next(md.disasm(b[o2:o2 + 16], pc))
+            except StopIteration:
+                continue
+            n += 1
+            if ins2.mnemonic == "ret":
+                continue                      # 返回 ⇒ 该路径终止
+            if ins2.mnemonic == "jmp" and ins2.op_str.startswith("0x"):
+                work.append(int(ins2.op_str, 16))
+                continue
+            if ins2.mnemonic.startswith("j") and ins2.op_str.startswith("0x"):
+                work.append(int(ins2.op_str, 16))          # taken
+                work.append(ins2.address + ins2.size)      # fallthrough
+                continue
+            work.append(ins2.address + ins2.size)
+        return False
+
+    check("★★ IME 段出口 0x777A5B 沿控制流**到不了** 0x777687",
+          not reaches(0x777A5B, 0x777687), "BFS 未命中")
+    check("★★ IME 段出口 0x777624 之后（ret）到不了 0x777687",
+          not reaches(0x777624, 0x777687), "0x777624 是 ret ⇒ 直接终止")
+    # 正控：主路径 0x777627 必须能到 0x777687（证明 reaches 不是恒 false）
+    check("正控 主线 0x777627 沿控制流**能**到 0x777687（reaches 有区分力）",
+          reaches(0x777627, 0x777687), "BFS 命中")
+    check("★★ 故 0x7775D0 分支与 0x777687 互斥（IME 段自己返回，不回落主线）",
+          not reaches(0x777A5B, 0x777687) and reaches(0x777627, 0x777687),
+          "机制 = IME 段返回，不是 msg 值不同")
+
+
     npass = sum(1 for _, c, _ in RESULTS if c)
     print()
     print("%d/%d PASS" % (npass, len(RESULTS)))
