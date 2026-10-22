@@ -2924,3 +2924,21 @@ if op2.mem.base in (X86_REG_ESP, X86_REG_EBP):
 - [x] 新增件全在 `re_atlas/`
 - [x] 本轮**零** `core.hooksPath`、零 `--no-verify`
 - [x] 未触碰 RC-4 全链任何地址；`0x87E000`-`0x887BE4` 只作 BSS 边界引用
+
+### 8. 补跑审计（钩子点名要求，同一轮内完成）
+
+commit 后钩子报 `scanner_enobufs`（未得完整扫描结论）。已按 §7.4 补跑完整审计：
+
+| 项 | 值 |
+|:--|:--|
+| scanId | `scan-2026-10-22T13-18-20.290Z-087ea4abb0ec` |
+| seal | `sha256:ede175fb459f7a3cbd4aeaf64b603cedb1ac96f0175a5af09ebfbf5c418bd9c7` |
+| findingCount | **27**（与上轮同集） |
+| 命中 `r028` / `verify_r028` / `typeclass_fields_v2` | **0** |
+| 命中面 | `tools/atlas_*.py`、`lead/` 下 harness/A8/boot_fingerprint、`ra2forge/{builder,maplib}.py` —— **全为既有项** |
+
+⇒ 本轮新增面（1 个只读门禁 + 1 个修正工具 + 1 份 evidence + 5 份文档）
+**零发现**。
+
+**诚实边界**：`normal` 档、`dependencyRisk completion=partial` ⇒ 只能证明
+"本轮新文件未引入可静态发现的问题"，**不能宣称项目安全**。
