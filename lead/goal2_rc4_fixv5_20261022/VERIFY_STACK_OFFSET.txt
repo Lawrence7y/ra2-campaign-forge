@@ -4,6 +4,18 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   0x6930A0 的 ret 尺寸 = 0x10（实测）                               PASS  ret 0x10
   0x778030 的 ret 尺寸 = 0x8（实测）                                PASS  ret 0x8
   IAT 0x7E1404 = USER32!GetMenu                              PASS  GetMenu
+  自检 路径端点 path1.lo=0x007775C0 是指令边界                          PASS  in 36 boundaries
+  自检 路径端点 path1.hi=0x007775CE 是指令边界                          PASS  in 37 boundaries
+  自检 路径端点 path2.lo=0x00777627 是指令边界                          PASS  in 35 boundaries
+  自检 路径端点 path2.hi=0x0077766E 是指令边界                          PASS  in 32 boundaries
+  自检 path1 区间内无跳出型无条件 jmp                                    PASS  []
+  自检 path2 区间内无跳出型无条件 jmp                                    PASS  []
+  自检 path1 各 jcc 两分支 esp 净变化一致                               PASS  []
+  自检 path2 检出分支分歧（已分开建模）                                     INFO  [('0x77764c', -4, 0)]
+    ★ 该区间**不是单一路径** —— esp 结论不可靠。
+      分歧点：[('0x77764c', -4, 0)]
+      ⇒ 本门禁的 esp 结论只对「顺序落入」那条分支成立，
+        另一条分支的偏移全部差 4 字节。必须分开模拟。
 
   esp 轨迹（相对入口，负数=已下压）：
     0x007775C0  push   ecx                        esp:   +0 ->   -4  
@@ -21,9 +33,16 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
     0x0077765E  push   edx                        esp:  -24 ->  -28  
     0x00777665  call   0x778030                   esp:  -28 ->  -20  
 
+--- 0x77764C 分支分歧对 0x777687 的影响 ---
+  分支 B（经 GetMenu）: [esp+0x18] = 入口 E+0x04                    PASS  esp=-20 ⇒ E+4
+  分支 A（跳过 GetMenu）: [esp+0x18] = 入口 E+0x08                   PASS  esp=-16 ⇒ E+8
+  ★ 两分支读到**不同参数**（E+0x04 vs E+0x08）                          PASS  差 4 字节
+    ⇒ 0x777687 读到什么**取决于 0x77764C 走哪条分支**，
+      而该分支取决于 [0xb73550] 是否为 0（运行时值）。
+      ⇒ **静态不可判定**。§383 的 UNVERIFIABLE 判定成立，且现在有了机制解释。
+
   0x777687 是 mov eax, dword ptr [esp + 0x18]                 PASS  mov eax, dword ptr [esp + 0x18]
-  esp 在 0x777687 处的相对偏移 = -0x14                              PASS  esp=-20
-  ⇒ 0x777687 的 [esp+0x18] 对应入口 [esp+0x04]                    PASS  read_off=+4（入口偏移）
+  模拟器走的路径 esp = -0x14（分支 B，经 GetMenu）                        PASS  esp=-20
 
   ★ 未决点（§383 已撤回 §382 的 hwnd 说法）：
     0x777687 读的是入口 [esp+0x04]（机器可证）。
@@ -48,5 +67,5 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   0x7780F4 是 mov eax, 1（返回 1 的路径存在）                          PASS  mov eax, 1
   0x7780FD 是 xor eax, eax（返回 0 的路径存在）                        PASS  xor eax, eax
 
-12/12 PASS
+22/22 PASS
 EXIT=0

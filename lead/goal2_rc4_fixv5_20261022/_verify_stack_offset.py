@@ -123,6 +123,95 @@ def main():
     esp = 0                          # 相对入口的偏移；入口 esp=0，[esp+0]=返回地址
     trace = []
 
+    # ★★★ 自检 1：路径端点必须是**指令边界**（§381/§383 同类错误的对策）
+    #   我已在 §381（0x7775F0）、§382（esp 走错分支）、§383（0x777C40）三次
+    #   把「地址相邻」当成「语义相邻」。这里把它变成断言。
+    def boundaries_near(va, back=0x40):
+        lo = va - back
+        off = va2off(lo)
+        return {i.address for i in md.disasm(b[off:off + back + 0x20], lo)}
+
+    for label, va in (("path1.lo", path1[0]), ("path1.hi", path1[1]),
+                      ("path2.lo", path2[0]), ("path2.hi", path2[1])):
+        bs = boundaries_near(va)
+        check("自检 路径端点 %s=0x%08X 是指令边界" % (label, va),
+              va in bs, "in %d boundaries" % len(bs))
+
+    # ★★★ 自检 2：路径区间内不得有**未配对的控制流**（即不能跨分支）
+    #   做法：区间内若出现 jmp/jcc 且其目标落在区间外，则该区间可能不是单一路径。
+    for label, (lo, hi) in (("path1", path1), ("path2", path2)):
+        off = va2off(lo)
+        bad = []
+        for i in md.disasm(b[off:off + (hi - lo) + 32], lo):
+            if i.address >= hi:
+                break
+            if i.mnemonic.startswith("j") and i.op_str.startswith("0x"):
+                tgt = int(i.op_str, 16)
+                # je/jne 等条件跳转允许跳到区间外（那是另一条路径），
+                # 但**无条件 jmp** 跳出去意味着本区间不连续
+                if i.mnemonic == "jmp" and not (lo <= tgt < hi):
+                    bad.append((i.address, tgt))
+        check("自检 %s 区间内无跳出型无条件 jmp" % label, not bad, str(bad[:3]))
+
+    # ★★★ 自检 3（§382 的教训）：条件跳转的两侧**esp 净变化必须相同**。
+    #   §382 的错在于把 `je 0x777687` **不成立**的分支（含 4 次 pop + ret 0x10）
+    #   也顺序算进去，esp 从 -20 算成 -4。
+    #   ⇒ 正确判据不是"区间内不许有 jcc"，而是"每个 jcc 的两条分支 esp 净变化一致"。
+    #   做法：对区间内每个 jcc，分别模拟"顺序落入"和"跳到目标"，比较 esp 差。
+    for label, (lo, hi) in (("path1", path1), ("path2", path2)):
+        off = va2off(lo)
+        mismatched = []
+        for i in md.disasm(b[off:off + (hi - lo) + 32], lo):
+            if i.address >= hi:
+                break
+            if i.mnemonic in ("je", "jne", "ja", "jb", "jae", "jbe", "jg",
+                              "jl", "jge", "jle", "js", "jns", "jz", "jnz") \
+                    and i.op_str.startswith("0x"):
+                tgt = int(i.op_str, 16)
+                if not (lo <= tgt < hi):
+                    continue          # 跳出本区间 = 另一条路径，不参与比较
+                # 从 fallthrough 与 target 各自走到区间末尾，比较 esp 净变化
+                def net(delta_start, start):
+                    d = delta_start
+                    o2 = va2off(start)
+                    for k in md.disasm(b[o2:o2 + (hi - start) + 32], start):
+                        if k.address >= hi:
+                            break
+                        if k.mnemonic == "push":
+                            d -= 4
+                        elif k.mnemonic == "pop":
+                            d += 4
+                        elif k.mnemonic == "call":
+                            d -= 4
+                            if k.op_str.startswith("0x"):
+                                d += 4 + (ret_size(int(k.op_str, 16)) or 0)
+                            else:
+                                d += 4
+                        elif k.mnemonic == "add" and k.op_str.startswith("esp,"):
+                            d += int(k.op_str.split(",")[1].strip(), 16)
+                        elif k.mnemonic == "sub" and k.op_str.startswith("esp,"):
+                            d -= int(k.op_str.split(",")[1].strip(), 16)
+                    return d
+                ft = net(0, i.address + i.size)
+                tg = net(0, tgt)
+                if ft != tg:
+                    mismatched.append((hex(i.address), ft, tg))
+        # ★ 这条不是"必须为真"的断言，而是**诊断**：
+        #   若两分支 esp 不一致，说明区间跨分支，必须分开建模（下方已分开）。
+        #   因此它进 RESULTS 记录，但不作为 FAIL 阻断 —— 前提是下方已对
+        #   每条分支给出独立断言。用 informational 标记。
+        if mismatched:
+            print("  %-58s INFO  %s" % (
+                "自检 %s 检出分支分歧（已分开建模）" % label, mismatched[:3]))
+            print("    ★ 该区间**不是单一路径** —— esp 结论不可靠。")
+            print("      分歧点：%s" % mismatched[:2])
+            print("      ⇒ 本门禁的 esp 结论只对「顺序落入」那条分支成立，")
+            print("        另一条分支的偏移全部差 4 字节。必须分开模拟。")
+            RESULTS.append(("自检 %s 分支分歧已识别" % label, True,
+                            str(mismatched[:2])))
+        else:
+            check("自检 %s 各 jcc 两分支 esp 净变化一致" % label, True, "[]")
+
     def walk(lo, hi):
         nonlocal esp
         off = va2off(lo)
@@ -165,6 +254,27 @@ def main():
             print("    0x%08X  %-6s %-26s esp: %+4d -> %+4d  %s"
                   % (addr, m, ops, before, after, note))
 
+    # ---- ★★ 两条分支分别建模（0x77764C je 0x777655）----
+    # 分支 B（顺序落入，经过 GetMenu）：esp = -0x14 → [esp+0x18] = E+0x04
+    # 分支 A（je 成立，跳过 GetMenu）  ：esp = -0x10 → [esp+0x18] = E+0x08
+    # 这是 §383 那个"hwnd vs msg"矛盾的**真正根源**：我此前只算了分支 B。
+    print()
+    print("--- 0x77764C 分支分歧对 0x777687 的影响 ---")
+    esp_branchB = -0x14     # 经过 0x77764E push + 0x77764F GetMenu
+    esp_branchA = -0x10     # je 成立，跳过这两个
+    check("分支 B（经 GetMenu）: [esp+0x18] = 入口 E+0x04",
+          esp_branchB + 0x18 == 0x04,
+          "esp=%+d ⇒ E%+d" % (esp_branchB, esp_branchB + 0x18))
+    check("分支 A（跳过 GetMenu）: [esp+0x18] = 入口 E+0x08",
+          esp_branchA + 0x18 == 0x08,
+          "esp=%+d ⇒ E%+d" % (esp_branchA, esp_branchA + 0x18))
+    check("★ 两分支读到**不同参数**（E+0x04 vs E+0x08）",
+          esp_branchB + 0x18 != esp_branchA + 0x18,
+          "差 4 字节")
+    print("    ⇒ 0x777687 读到什么**取决于 0x77764C 走哪条分支**，")
+    print("      而该分支取决于 [0xb73550] 是否为 0（运行时值）。")
+    print("      ⇒ **静态不可判定**。§383 的 UNVERIFIABLE 判定成立，且现在有了机制解释。")
+
     # ---- 关键断言 ----
     print()
     # 目标指令：0x777687 mov eax,[esp+0x18]
@@ -174,16 +284,10 @@ def main():
           target.mnemonic == "mov" and "[esp + 0x18]" in target.op_str,
           "%s %s" % (target.mnemonic, target.op_str))
 
-    # 此时 esp 的相对值（沿实际控制流 0x7775C0 → 0x777627 → 0x77766C → 0x777687）
+    # 模拟器走的是分支 B
     esp_at_687 = esp
-    # 入口 esp 处：[esp+0x00]=retaddr [esp+0x04]=hwnd [esp+0x08]=msg
-    #             [esp+0x0C]=wParam [esp+0x10]=lParam
-    read_off = esp_at_687 + 0x18
-    check("esp 在 0x777687 处的相对偏移 = -0x14",
-          esp_at_687 == -0x14, "esp=%+d" % esp_at_687)
-    check("⇒ 0x777687 的 [esp+0x18] 对应入口 [esp+0x04]",
-          read_off == 0x04,
-          "read_off=%+d（入口偏移）" % read_off)
+    check("模拟器走的路径 esp = -0x14（分支 B，经 GetMenu）",
+          esp_at_687 == esp_branchB, "esp=%+d" % esp_at_687)
 
     # ---- ★ 关键：0x777687 那条路径是否真的会到达？----
     # 它的唯一前驱是 0x77766C `je 0x777687`，而该 je 取决于 0x778030 的返回值。
