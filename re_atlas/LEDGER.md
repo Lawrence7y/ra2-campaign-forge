@@ -3717,3 +3717,20 @@ T3 不作为断言：只被 `call reg` 调用的函数按定义没有数据段�
 - [x] 未改 `lead/`、`docs/re/`、`ra2render/`、根 `tools/`、`.gitignore`
 - [x] 本轮未派子代理
 - [x] 本轮对象是 `.text` 入口分布，**不涉 RC-4 任何函数/全局**
+
+### 9. 审计入账（本轮）
+
+提交 `R-034`（8 件，619 insertions / 2 deletions）时 Mimosa 钩子报 `scanner_enobufs`，
+按兼容策略放行 ⇒ 补跑 deep 档完整审计：
+
+- **scanId** `scan-2026-10-22T23-22-07.225Z-879e42719b31`
+- **seal** `sha256:5cbdbb43ef5852a6429aea7da605073e44696e1bed07d5772751bb145d7b26af`
+- **findings 34**（`tools/` 17 / `lead/` 15 / `ra2forge/` 2）
+- **`re_atlas/` 命中 0**
+- 依赖风险 0（`completion=partial`）
+
+与前两轮同为 34，本线写域增量 0。
+
+**诚实边界**：34 条全在本线写域之外，零处置权，仅记录。
+`completion=partial` ⇒ 只能证明本轮新文件未引入可静态发现的问题，
+**不能宣称项目安全**。
