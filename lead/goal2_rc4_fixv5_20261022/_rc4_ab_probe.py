@@ -569,6 +569,15 @@ def one_trip(idx: int, arm: str, dll_name, hold_s: float,
                 if closed_at is None and (time.time() - t_attach) >= hold_s:
                     hwnd = find_main_window(pid)
                     if hwnd:
+                        # ★★ §374 待办 7 定谳：单例创建的唯一入口是 WM_CREATE，
+                        #   而 WM_CLOSE 本身不创建也不销毁单例 ⇒ 命中与否取决于
+                        #   「关窗**之前**单例是否已创建」。故关窗前必须先读一次，
+                        #   否则三种退出方式很可能给出同一个答案、无法解释。
+                        hp0 = k32.OpenProcess(0x0400 | 0x0010, False, pid)
+                        if hp0:
+                            rec["singleton_before_close"] = rpm_u32(hp0, G_SINGLETON)
+                            rec["hwnd_before_close"] = rpm_u32(hp0, G_HWND)
+                            k32.CloseHandle(hp0)
                         u32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
                         t_close = time.time()
                         closed_at = round(time.time() - t_attach, 3)

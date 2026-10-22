@@ -233,6 +233,18 @@ def main() -> int:
     chk("A8 sweep 先于删载体", 0 <= i_sweep < i_rm, f"sweep@{i_sweep} rm@{i_rm}")
     chk("A8 own_pid 用 os.getpid()", "os.getpid()" in cl, "")
 
+    # ---- A9 §374：关窗前必须读单例 -------------------------------------
+    # ★ 待办 7 定谳「单例创建的唯一入口是 WM_CREATE，WM_CLOSE 不创建不销毁」
+    #   ⇒ 若不在关窗前读一次 [0x887368]，三种退出方式的数据无法解释。
+    chk("A9 关窗前读 singleton_before_close",
+        "singleton_before_close" in ptxt, "")
+    # 读必须在 PostMessageW 之前（按行号）
+    i_read = ptxt.find("singleton_before_close")
+    i_post = ptxt.find("u32.PostMessageW(hwnd, WM_CLOSE, 0, 0)")
+    chk("A9 读取发生在投 WM_CLOSE 之前",
+        0 <= i_read < i_post, f"read@{i_read} post@{i_post}")
+    chk("A9 记录 hwnd_before_close", "hwnd_before_close" in ptxt, "")
+
     # ===================================================================
     print()
     print("=" * 88)
