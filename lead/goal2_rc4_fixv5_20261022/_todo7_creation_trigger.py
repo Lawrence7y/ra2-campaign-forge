@@ -184,7 +184,10 @@ def main() -> int:
         print(f"  0x{msg:03X}  {name:<14} {e:>4}  0x{tgt:08X}  {verdict}" if tgt else
               f"  0x{msg:03X}  {name:<14} {e:>4}  {'--':<12}")
     print(f"  0x015..0x017  （越表）        --   0x007779B9  默认分支")
-    print(f"  0x{MSG_MAX:03X}  (WM_SETFONT)  --   0x00777A5B  单独接走（不进表）")
+    # ★ 勘误修正（§404，2026-10-24）：原文把 0x18 标成 WM_SETFONT —— 错。
+    #   WM_SETFONT = 0x30，**WM_SHOWWINDOW = 0x18**。已用 capstone 按地址
+    #   0x777A5B 解码复核（见 §404 §二）。
+    print(f"  0x{MSG_MAX:03X}  (WM_SHOWWINDOW)  --   0x00777A5B  单独接走（不进表）")
 
     # ---------------------------------------------------------------
     print()
@@ -194,9 +197,15 @@ def main() -> int:
     chk("★ 单例创建只由 WM_CREATE(0x001) 触发",
         msg_map.get(0x001) == CREATE_BRANCH,
         f"WM_CREATE -> 0x{msg_map.get(0x001):08X}" if msg_map.get(0x001) else "none")
-    chk("★ WM_DESTROY(0x002) 走销毁分支（不是创建）",
+    # ★ 勘误修正（§404，2026-10-24）：原文只说「走销毁分支」，没写前置守卫。
+    #   实测 0x7777F9 `cmp ecx,ebx / 0x7777FB je 0x777809` ⇒ **[0x887368] 为 0
+    #   时跳过 0x777803 的清零写**。即「进销毁分支」≠「必然清零」。
+    #   已用 capstone 从 0x7777F3 对齐解码复核（见 §404 §二）。
+    chk("★ WM_DESTROY(0x002) 走销毁分支（不是创建）"
+        "；★ 但 0x7777F9 有守卫：槽为 0 时跳过 0x777803 清零",
         msg_map.get(0x002) == DESTROY_BRANCH,
-        f"WM_DESTROY -> 0x{msg_map.get(0x002):08X}" if msg_map.get(0x002) else "none")
+        f"WM_DESTROY -> 0x{msg_map.get(0x002):08X}"
+        if msg_map.get(0x002) else "none")
     # ★★ 措辞修正（§379）：WM_CLOSE 在**本 WndProc 内**确实不直接创建/销毁，
     #   但它的默认处理 DefWindowProcA 会 DestroyWindow ⇒ 同步发 WM_DESTROY
     #   ⇒ 经 0x777803 **间接清零**单例。所以不能说"不销毁"。
