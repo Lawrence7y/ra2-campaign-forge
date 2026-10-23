@@ -4004,3 +4004,22 @@ HEAD 仍追踪 **3 个源码文件 + 3 个 `.obj` + 1 个 `.dll`**；引入提�
 - seal `sha256:8a54bf983d11421767ed2aaf7b43216fa4b850e8629188730e5e976f403cfe09`
 - findings 34（`tools/` 17 / `lead/` 15 / `ra2forge/` 2），**新文件 `PENDING_DECISIONS.md` 命中 0**
 - 依赖风险 0（`completion=partial`）；与前三轮增量 0
+
+### 推送轮审计入账（2026-10-23）
+
+- 推送 `b8505c9..196760b` 到 `origin/main`（4 个提交），本地与远端同步。
+- scanId `scan-2026-10-23T02-51-08.379Z-222a07e727da`
+- seal `sha256:0896c735ea70e3012963daa780673cc2a7c61438a07ee36c5c818564f5686a44`
+- findings 34（`tools/` 17 / `lead/` 15 / `ra2forge/` 2），依赖风险 0（`completion=partial`）
+
+**推送前核查**（对外可见动作的例行前置）：
+1. 本次 4 个提交只含 `re_atlas/*.md`、`re_atlas/*.txt`、`re_atlas/tools/*.py`、
+   `lead/PENDING_DECISIONS.md` —— **零二进制、零 `cpp/h`**（`git diff --name-only` 过滤确认）。
+2. diff 内**无本机路径、无身份信息**（`grep C:\|D:\|Administrator|Users\` 零命中）。
+3. D-01 记录的泄漏提交 `b7f0508` **已在 `origin/main` 历史中**
+   （`git merge-base --is-ancestor` 确认）⇒ 本次推送**不新增暴露面**；
+   该处置仍挂 D-01 待用户裁决。
+
+**诚实边界**：34 条全在本线写域之外，本线零处置权，仅记录。
+deep 档 + `completion=partial` ⇒ 不能宣称项目安全。
+钩子在 commit/push 阶段均报 `scanner_enobufs`，按铁律 4 兼容放行并同轮补跑，即本条。
