@@ -1,10 +1,18 @@
 # R-036：R1-3 交付件（D-03 裁决 A）—— 17 个函数名 / 69 个源文件 / 2,589 站点
 
-**日期**：2026-10-23
+**日期**：2026-10-23（R-039 同日追加 §4b）
 **性质**：离线，零真机。只读 `ra2youli/gamemd.exe`（sha256 `73201cc0…f67476`，未改动）。
-**门禁**：`tools/r036_r13_deliverable.py` → **7/7 PASS, EXIT=0**（`evidence/r036_verify.txt`）
-**变异**：`tools/mutate_r036_gate.py` → **6/6 killed（精确集合判定）, EXIT=0**（`evidence/r036_mutation.txt`）
+**门禁**：`tools/r036_r13_deliverable.py` → **8/8 PASS, EXIT=0**（R-039 后；`evidence/r036_verify.txt`）
+**变异**：`tools/mutate_r036_gate.py` → **7/7 killed（精确集合判定）, EXIT=0**（`evidence/r036_mutation.txt`）
 **产出**：`evidence/r036_r13_deliverable.txt`（含逐站点明细，可复核任意一行）
+
+> **R-039 追加**：本件的站点总体建立在 `re.finditer(rb"\x68")` 字节扫描上。
+> 对齐解码复核发现 **1 个幻影站点** `0x005BA0CE`（`cmp eax,0x68` 的 imm8 字节，
+> 后 4 字节拼出合法字符串指针），落在 text 类 ⇒ 站点普查数 6,277→**6,276**、
+> 2,589→**2,588**、text 939→**938**（对齐口径，门禁 P3b 钉死）。
+> **17 个函数与 69 个可归属源文件两个交付数字不变**（幻影不归属任何函数）。
+> 复算：`tools/r039_push_aligned.py` → `evidence/r039_push_aligned.txt`。
+
 
 ---
 
@@ -154,7 +162,7 @@ R-035 §2 引「426,741 个地址、40% 重叠」。本轮实测：
 
 ---
 
-## 四、变异测试：6/6 精确杀死
+## 四、变异测试：7/7 精确杀死（R-039 后）
 
 判定用**精确集合相等**（`red == expect`），不是「命中一条就算」。理由：若用后者，
 任何触发 P1（全镜像哈希）的变异都会「杀死」所有断言 —— 这正是台账里
@@ -163,20 +171,27 @@ G-57「计数虚高：N/N PASS 本身无意义」的形态。
 | 变异 | 预期红 | 实际红 | 判定 |
 |:--|:--|:--|:--|
 | 破坏 T2 锚点 `0x403A80` 序言 | P1,P2 | P1,P2 | ✅ KILLED |
-| `__FILE__` push `0x410994` 不再 0x68 | P1,P3,P7 | P1,P3,P7 | ✅ KILLED |
-| ident push `0x410A98` 不再 0x68 | P1,P3 | P1,P3 | ✅ KILLED |
+| `__FILE__` push `0x410994` 不再 0x68 | P1,P3,P3b,P7 | P1,P3,P3b,P7 | ✅ KILLED |
+| ident push `0x410A98` 不再 0x68 | P1,P3,P3b | P1,P3,P3b | ✅ KILLED |
 | 纯名 `0x81C6D8` 的 `::` 破坏 | P1,P4 | P1,P4 | ✅ KILLED |
 | 名字 push `0x652CF3` 不再 0x68 | P1,P4,P5 | P1,P4,P5 | ✅ KILLED |
-| 单站点文件 `ToolTip.cpp` 唯一 push 移除 | P1,P3,P6,P7 | P1,P3,P6,P7 | ✅ KILLED |
+| 单站点文件 `ToolTip.cpp` 唯一 push 移除 | P1,P3,P3b,P6,P7 | P1,P3,P3b,P6,P7 | ✅ KILLED |
+| **幻影字符串 `0x84840F` 改不可打印**（R-039） | P1,P3,P3b,P7 | P1,P3,P3b,P7 | ✅ KILLED |
 
 **第 3 条是关键**：ident 类**不属于** debug 合计（path+format+text），
-所以 P7 必须保持绿。实测确实只有 P1/P3 红 —— 这条验证了「四分类是分开数的」，
+所以 P7 必须保持绿。实测确实只有 P1/P3/P3b 红 —— 这条验证了「四分类是分开数的」，
 而不是「四个数一起动」。
 
 **第 6 条也是关键**：`ToolTip.cpp` 只有 1 个站点（`0x724AFA`）。移除它，
 该文件从「可归属」变「零归属」，69 → 68，而 basename 普查仍是 74。
 这是唯一能杀死 P6 的变异；先前用 `AbsType.cpp`（2 站点）时 P6 不红，
 因为还剩一个站点撑着 —— 与 R-035 变异测试里「P11 选错目标」同型（G-55）。
+
+**第 7 条（R-039 补）证明 P3b 不是复述 P3**：把幻影字符串改到不可打印后，
+P3b 的**对齐计数子句全部保持真**（text 938、合计 6,276 没动——幻影从来不是
+对齐 push），但 P3b 仍然变红，红只可能来自 `nonaligned_sites == [幻影址]`
+这一子句 ⇒ P3b 独立枚举了幻影本身，而不是 P3 数字的镜像。
+
 
 ---
 

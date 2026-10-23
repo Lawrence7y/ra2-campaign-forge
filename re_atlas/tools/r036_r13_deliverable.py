@@ -112,6 +112,16 @@ EXP_TEXT_SITES = 939
 EXP_IDENT_SITES = 3688
 EXP_ALL_SITES = 6277
 EXP_DEBUG_SITES = 2589
+# R-039: aligned-decode re-verification of the 0x68 push sites. The byte scan
+# (re.finditer(rb"\x68")) counts every 0x68 BYTE, including operand bytes of
+# other instructions. Exactly ONE such site exists in the text class:
+# 0x005BA0CE is the imm8 operand of `cmp ...,0x68` at 0x005BA0CC, and the four
+# following bytes spell a pointer to an (unrelated) string, so it passes the
+# printable-string filter. path/format/ident/name have zero such phantoms.
+EXP_TEXT_ALIGNED = 938
+EXP_ALL_ALIGNED = 6276
+EXP_DEBUG_ALIGNED = 2588
+
 EXP_FILES_ALL = 74
 EXP_FILES_ATTR = 69
 EXP_T2 = 886
@@ -303,11 +313,70 @@ check("P3", len(by_kind["path"]) == EXP_PATH_SITES
       and len(by_kind["text"]) == EXP_TEXT_SITES
       and len(by_kind["ident"]) == EXP_IDENT_SITES
       and len(str_sites) == EXP_ALL_SITES,
-      f"字符串站点四分类复现：path **{len(by_kind['path']):,}** / "
+      f"字符串站点四分类复现（**字节扫描口径**，R-039 对齐复核见 P3b）："
+      f"path **{len(by_kind['path']):,}** / "
       f"format **{len(by_kind['format'])}** / text **{len(by_kind['text'])}** / "
       f"ident **{len(by_kind['ident']):,}** = 合计 **{len(str_sites):,}**",
       f"path={len(by_kind['path'])} fmt={len(by_kind['format'])} "
       f"text={len(by_kind['text'])} ident={len(by_kind['ident'])}")
+
+# ---------------------------------------------------------------- P3b (R-039)
+# R-038's lesson applied to THIS gate: `re.finditer(rb"\x68")` counts every
+# 0x68 BYTE. A site is real only if the byte starts a `push imm32` whose
+# immediate equals the scanned one. Linear decode with +1 resync (same method
+# as verify_r035_claims.py P2b / r039_push_aligned.py).
+_pushstart = {}
+_cur = TLO
+while _cur < THI:
+    _r = dec1(_cur)
+    if _r is None:
+        _cur += 1
+        continue
+    _pushstart[_cur] = (_r[0], _r[3])
+    _cur += _r[2]
+
+
+def is_aligned_push(va):
+    d = _pushstart.get(va)
+    if not d or d[0] != "push" or not d[1] or d[1][0][0] != "imm":
+        return False
+    return d[1][0][1] == struct.unpack_from("<I", TEXT, va - TLO + 1)[0]
+
+
+aligned_by_kind = {k: 0 for k in KIND_ORDER}
+nonaligned_sites = []
+for va, t, k in str_sites:
+    if is_aligned_push(va):
+        aligned_by_kind[k] += 1
+    else:
+        nonaligned_sites.append(va)
+aligned_all = sum(aligned_by_kind.values())
+
+# the single known phantom: 0x5BA0CE is the imm8 byte of `cmp eax,0x68`
+# (83 F8 68) at 0x5BA0CC; its next four bytes spell a pointer into .data, so
+# the printable-string filter accepts it. Confirm the covering instruction.
+_phantom = 0x005BA0CE
+_cov = dec1(_phantom - 2)
+cov_is_cmp = (_cov is not None and _cov[0] == "cmp" and _cov[2] == 3)
+
+check("P3b", aligned_all == EXP_ALL_ALIGNED
+      and aligned_by_kind["text"] == EXP_TEXT_ALIGNED
+      and aligned_by_kind["path"] == EXP_PATH_SITES
+      and aligned_by_kind["format"] == EXP_FMT_SITES
+      and aligned_by_kind["ident"] == EXP_IDENT_SITES
+      and nonaligned_sites == [_phantom] and cov_is_cmp,
+      f"**对齐复核**：四分类里只有 **{len(nonaligned_sites)}** 个字节扫描幻影，"
+      f"落在 text 类：`0x{_phantom:08X}` 是 `0x{_phantom-2:08X}` 处 "
+      f"`cmp eax,0x68`（83 F8 68）的 imm8 字节，其后四字节恰好拼出一个"
+      f"合法字符串指针 ⇒ 通过可打印过滤。对齐口径 "
+      f"path {aligned_by_kind['path']:,} / format {aligned_by_kind['format']} / "
+      f"text **{aligned_by_kind['text']:,}**（字节扫描 939） / "
+      f"ident {aligned_by_kind['ident']:,} = **{aligned_all:,}**"
+      f"（字节扫描 {len(str_sites):,}）⇒ **交付数字差 1 个站点**，"
+      f"debug 合计对齐口径 **{aligned_by_kind['path']+aligned_by_kind['format']+aligned_by_kind['text']:,}**（字节扫描 2,589）",
+      f"aligned={aligned_all} phantoms={[hex(v) for v in nonaligned_sites]} "
+      f"cov_is_cmp={cov_is_cmp}")
+
 
 # ---------------------------------------------------------------- A: 17 functions
 # The name literals end in a newline, so the strict printable filter that builds
@@ -490,7 +559,9 @@ for k in KIND_ORDER:
 P(f"| **debug 合计** | **{debug_sites:,}** | "
   f"{sum(unattributed[k] for k in ('path','format','text'))} | **{len(debug_funcs)}** |")
 P("")
-P(f"站点合计 {len(str_sites):,}。")
+P(f"站点合计 {len(str_sites):,}（字节扫描口径；对齐口径 **{aligned_all:,}**，"
+  f"差 1 = `0x005BA0CE` 幻影，见 P3b 与 LEDGER R-039）。")
+
 P("")
 P("### C-注 · R-035 §六 的 761 不可复现")
 P("")

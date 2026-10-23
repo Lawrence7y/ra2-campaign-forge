@@ -32,14 +32,16 @@ CASES = [
     # red set should be exactly {P1, P2}.
     ("T2 anchor 0x403A80 prologue broken", "0x403A80=0x00", {"P1", "P2"}),
 
-    # P3 + P7: the `push imm32` opcode of a __FILE__ site stops being 0x68, so
-    # that site leaves the path class.  Path count drops, and because the same
-    # site is also a debug site the debug total drops too.
-    ("__FILE__ push 0x410994 no longer 0x68", "0x410994=0x90", {"P1", "P3", "P7"}),
+    # P3 + P3b + P7: the `push imm32` opcode of a __FILE__ site stops being
+    # 0x68, so that site leaves the path class.  Path count drops in BOTH the
+    # byte-scan count (P3) and the aligned count (P3b: its path conjunct), and
+    # because the same site is also a debug site the debug total drops too.
+    ("__FILE__ push 0x410994 no longer 0x68", "0x410994=0x90",
+     {"P1", "P3", "P3b", "P7"}),
 
-    # P3: an ident-class push site.  ident is NOT part of the debug sum, so P7
-    # must stay green -- that separation is what this case checks.
-    ("ident push 0x410A98 no longer 0x68", "0x410A98=0x90", {"P1", "P3"}),
+    # P3 + P3b: an ident-class push site.  ident is NOT part of the debug sum,
+    # so P7 must stay green -- that separation is what this case checks.
+    ("ident push 0x410A98 no longer 0x68", "0x410A98=0x90", {"P1", "P3", "P3b"}),
 
     # P4: blank one ':' in a pure name literal so it stops matching PURE and
     # PREFIX -- literal count, method set and site count all shrink.
@@ -52,8 +54,22 @@ CASES = [
     # P6: `ToolTip.cpp` has exactly ONE push site (0x724AFA).  Removing it
     # takes the file from "attributed" to "unattributed", so 69 -> 68 while the
     # raw basename census stays at 74.  This is the case that actually kills P6.
+    # It also drops the path count (both byte-scan and aligned), so P3 and P3b
+    # and the debug total P7 must go red too -- the red set is P3,P3b,P6,P7.
     ("single-site file ToolTip.cpp loses its only push",
-     "0x724AFA=0x90", {"P1", "P3", "P6", "P7"}),
+     "0x724AFA=0x90", {"P1", "P3", "P3b", "P6", "P7"}),
+
+    # P3b (R-039): the byte-scan text class carries exactly ONE phantom site,
+    # 0x5BA0CE (the imm8 byte of `cmp eax,0x68` at 0x5BA0CC; the four bytes
+    # after it spell the pointer 0x0084840F -> "@E@WorldDominationTour@@@@").
+    # Making that string non-printable removes the phantom from the byte scan:
+    # P3 drops (6,277 -> 6,276), P7 drops (debug 2,589 -> 2,588) and P3b must
+    # go red because its conjunct `nonaligned_sites == [phantom]` no longer
+    # holds (the aligned counts themselves are unchanged -- the phantom was
+    # never aligned).  This proves P3b actually enumerates the phantom rather
+    # than being a restatement of P3.
+    ("phantom string 0x84840F made non-printable",
+     "0x84840F=0x01", {"P1", "P3", "P3b", "P7"}),
 ]
 
 FAILS = []
