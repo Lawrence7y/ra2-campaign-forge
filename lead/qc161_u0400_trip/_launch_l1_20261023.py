@@ -27,9 +27,21 @@ TRIP = LEAD / "qc161_u0400_trip"
 SRC = TRIP / "_src_L1_sf8_20261020"
 MANIFEST = TRIP / "_src_L1_sf8_20261020_MANIFEST.json"
 HARNESS = ROOT / "lead/goal1_harness6_20261022/qc151_trip.harness6.py"
-
-OUT_NAME = "l1_20261023"
-TRIP_ID = "QC161-U0800-L1-20261023"
+# ★★ H-2 扩散修复（2026-10-23）：原本 `HARNESS` 与 `HARNESS_SHA16` 双双焊死为
+#   harness6，于是「用 harness7 跑真机冒烟」这件事**连预检都过不去**（A11 报
+#   MISMATCH ⇒ `return 2`），而预检文案看起来像是「母本被改坏了」。
+#   改成 harness 可选：`--harness` 指定路径 / `--harness-sha16` 指定期望哈希，
+#   哈希必须落在 KNOWN_HARNESS 内。
+#   ★ 这不是放宽门禁：仍是**取值比对**，只是把「唯一合法值」换成
+#   「显式枚举的合法集合」，集合外一律硬停。
+KNOWN_HARNESS = {
+    "ff8245d27b3db22a": "harness6（母本，463,219 B / 8,483 行）",
+    "d019e8beecfb5fd8": "harness7（D-05 补丁副本，472,020 B / +124−0）",
+}
+HARNESS_BY_SHA16 = {
+    "ff8245d27b3db22a": ROOT / "lead/goal1_harness6_20261022/qc151_trip.harness6.py",
+    "d019e8beecfb5fd8": ROOT / "lead/goal1_harness7_20261023/qc151_trip.harness7.py",
+}
 
 # ★ 变体表：L1 = 标准基线（sf8 / 872 单位）；L3 = 高负载（sf10c / 1452 单位）。
 #   两者的 measure 协议常量相同，V11-a 只判「档位」不判负载 ⇒ 都可用作
@@ -54,7 +66,7 @@ MAP = SRC / "XMP29U2.MAP"
 MAP_SHA = "0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc"
 PROBE_FRAMES = "3900,4200,4500,4800,5100,5400,5700,6000"
 
-HARNESS_SHA16 = "ff8245d27b3db22a"
+HARNESS_SHA16 = "ff8245d27b3db22a"   # 缺省仍是 harness6，既有趟不受影响
 GAMEMD_SHA16 = "73201cc021497c95"
 
 k32 = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -137,7 +149,7 @@ def rm_carrier(cdir):
 
 
 def main():
-    global OUT_DIR, TRIP_ID, SRC, MANIFEST, MAP, MAP_SHA
+    global OUT_DIR, TRIP_ID, SRC, MANIFEST, MAP, MAP_SHA, HARNESS, HARNESS_SHA16
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--suffix", default="",
@@ -146,7 +158,16 @@ def main():
                     help="★ 载体变体（缺省 L1）")
     ap.add_argument("--probe-frames", default=PROBE_FRAMES,
                     help="★ 探针锁存帧阶梯（缺省 %s）" % PROBE_FRAMES)
+    # ★ H-2 扩散修复：harness 可选（缺省 harness6，与既有趟一致）
+    ap.add_argument("--harness-sha16", default=HARNESS_SHA16,
+                    choices=sorted(KNOWN_HARNESS),
+                    help="★ 目标 harness（用哈希选，避免传任意路径）")
+    ap.add_argument("--extra-argv", default="",
+                    help="★ 透传给 harness 的附加参数（空格分隔，如 "
+                         "--h7-keep-rect-wait）")
     _a = ap.parse_args()
+    HARNESS = HARNESS_BY_SHA16[_a.harness_sha16]
+    HARNESS_SHA16 = _a.harness_sha16
     _v = VARIANTS[_a.variant]
     SRC = TRIP / _v["src"]
     MANIFEST = TRIP / (_v["src"] + "_MANIFEST.json")
@@ -155,9 +176,12 @@ def main():
     OUT_DIR = TRIP / ("l%s_20261023%s" % (_a.variant[1:].lower(), _a.suffix))
     TRIP_ID = _v["trip_prefix"] + "-20261023" + _a.suffix.upper()
     probe_frames = _a.probe_frames
+    extra_argv = [x for x in _a.extra_argv.split() if x]
 
     print("=" * 78)
     print("变体 = %s   载体源 = %s" % (_a.variant, SRC.name))
+    print("harness = %s（%s）"
+          % (HARNESS.name, KNOWN_HARNESS[HARNESS_SHA16]))
     print("L1 基线趟 · 2026-10-23 开机会话（Arm A：原版直启 + 零注入）")
     print("=" * 78)
 
@@ -165,7 +189,7 @@ def main():
         ("A1 gamemd sha", hashlib.sha256((SRC / "gamemd.exe").read_bytes()).hexdigest()[:16],
          GAMEMD_SHA16),
         ("A2 map sha", hashlib.sha256(MAP.read_bytes()).hexdigest()[:16], MAP_SHA[:16]),
-        ("A11 harness6 sha", hashlib.sha256(HARNESS.read_bytes()).hexdigest()[:16],
+        ("A11 harness sha16", hashlib.sha256(HARNESS.read_bytes()).hexdigest()[:16],
          HARNESS_SHA16),
         ("A8 游戏进程数", str(len(game_procs())), "0"),
     ]
@@ -177,6 +201,10 @@ def main():
               % (name, got, want, "OK" if good else "MISMATCH"))
     if not ok_all:
         print("!! 预检不过，不发射")
+        if checks[2][1] != checks[2][2]:
+            print("   ★ A11 失败：目标 harness 实测 sha16=%s ≠ 期望 %s"
+                  "（%s）" % (checks[2][1], checks[2][2],
+                              KNOWN_HARNESS.get(checks[2][2], "未知期望值")))
         return 2
 
     planned = OUT_DIR / "ct" / ("c_" + "0" * 12 + "_12345")
@@ -217,6 +245,8 @@ def main():
         "--evid-diff",
         "--probe-frames", probe_frames,
     ]
+    # ★ H-2 扩散修复：附加参数（如 harness7 对照臂的 --h7-keep-rect-wait）
+    argv.extend(extra_argv)
 
     spawn_argv = [sys.executable]
     for a in argv:
