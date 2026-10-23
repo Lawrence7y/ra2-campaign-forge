@@ -180,6 +180,88 @@ def main():
     rec("F2 缺省 HARNESS 路径指向 harness6 母本",
         "harness6" in mod.HARNESS.name, mod.HARNESS.name)
 
+    # ---- G 组：★ §408 H-2f —— argv 拼装（--fullscreen 可关，缺省不变）----
+    print("\nG 组：argv 拼装（D-05 第 1 趟要求「不传 --fullscreen」，原发射器发不出来）")
+    kw = dict(harness=mod.HARNESS,
+              map_path=mod.MAP, map_sha=mod.MAP_SHA,
+              out_dir=mod.TRIP / "l1_x", src=mod.SRC,
+              extra=["a.exe", "b.dll"], trip_id="T-1",
+              probe_frames="1,2,3")
+    argv_fs = mod.build_harness_argv(fullscreen=True, extra_argv=[], **kw)
+    argv_win = mod.build_harness_argv(fullscreen=False, extra_argv=[], **kw)
+
+    # ★ G1：缺省（fullscreen=True）必须与改前**硬编码版本**逐元素相同。
+    #   改前 argv 是手工列的 13 项；这里逐字重建再比对，不靠「看起来差不多」。
+    want_default = [
+        str(mod.HARNESS),
+        "--target-map", str(mod.MAP),
+        "--target-sha256", mod.MAP_SHA,
+        "--carrier", str(mod.TRIP / "l1_x" / "ct"),
+        "--carrier-create-from", str(mod.SRC),
+        "--carrier-create-files", "a.exe,b.dll",
+        "--trip-id", "T-1",
+        "--out-dir", str(mod.TRIP / "l1_x"),
+        "--measure", "1",
+        "--fullscreen",
+        "--evid-diff",
+        "--probe-frames", "1,2,3",
+    ]
+    rec("G1 缺省 argv 与改前硬编码版本逐元素相同", argv_fs == want_default,
+        ("差异=%s" % [(i, a, b) for i, (a, b) in
+                      enumerate(zip(argv_fs, want_default)) if a != b][:3])
+        if argv_fs != want_default else "无")
+
+    # ★ G2：窗口模式确实不带 --fullscreen（第 1 趟能不能发的关键）
+    rec("G2 fullscreen=False ⇒ argv 不含 --fullscreen",
+        "--fullscreen" not in argv_win, str(argv_win))
+    # ★ G3：关掉只差这一项，别的一字不动
+    rec("G3 两种模式仅差 --fullscreen 一项",
+        [x for x in argv_fs if x != "--fullscreen"] == argv_win, "")
+    # ★ G4：位置必须在 --evid-diff 之前（与改前顺序一致）
+    try:
+        rec("G4 --fullscreen 仍位于 --evid-diff 之前",
+            argv_fs.index("--fullscreen") < argv_fs.index("--evid-diff"), "")
+    except ValueError:
+        rec("G4 --fullscreen 仍位于 --evid-diff 之前", False, "缺项")
+
+    # ★ G5：extra_argv 透传（对照臂 --h7-keep-rect-wait 的唯一通道）
+    argv_keep = mod.build_harness_argv(
+        fullscreen=True, extra_argv=["--h7-keep-rect-wait"], **kw)
+    rec("G5 extra_argv 追加在末尾（对照臂通道）",
+        argv_keep[-1] == "--h7-keep-rect-wait" and argv_keep[:-1] == argv_fs,
+        "%s" % (argv_keep[-2:],))
+
+    # ---- G 组变异：证明 G1/G2 承重 ----
+    print("\nG 组变异：")
+    _orig = mod.build_harness_argv
+
+    def _always_fs(**kwargs):
+        kwargs["fullscreen"] = True
+        return _orig(**kwargs)
+
+    mod.build_harness_argv = _always_fs
+    try:
+        mut_win = mod.build_harness_argv(fullscreen=False, extra_argv=[], **kw)
+        rec("MG1 变异「忽略 fullscreen 开关」⇒ G2 判据变红",
+            "--fullscreen" in mut_win, "变异后仍含 --fullscreen")
+    finally:
+        mod.build_harness_argv = _orig
+
+    def _moved(**kwargs):
+        a = _orig(**kwargs)
+        if "--fullscreen" in a:
+            a.remove("--fullscreen")
+            a.insert(a.index("--evid-diff") + 1, "--fullscreen")
+        return a
+
+    mod.build_harness_argv = _moved
+    try:
+        mut_moved = mod.build_harness_argv(fullscreen=True, extra_argv=[], **kw)
+        rec("MG2 变异「--fullscreen 挪位」⇒ G1 逐元素比对变红",
+            mut_moved != want_default, "")
+    finally:
+        mod.build_harness_argv = _orig
+
     # ---- 汇总 ----
     print("\n" + "=" * 78)
     npass = sum(1 for _n, ok in RESULTS if ok)

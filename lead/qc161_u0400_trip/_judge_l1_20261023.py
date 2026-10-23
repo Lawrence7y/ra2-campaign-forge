@@ -64,8 +64,12 @@ HARNESS7_SHA16 = "d019e8beecfb5fd8"
 #   ⇒ 本区只在**该趟确实由 harness7 跑出**时生效，harness6 趟不受影响。
 #   ★ 判据取值来自 S399 §九 的设计预期，**不是**从产物反推的：
 H7_SMOKE = {
-    # 窗口模式：短路不该出现；polls 与 harness6 同量级（历史窗口趟实测 0）
-    "windowed": {"skipped": False, "polls_max": 5, "frame_s_max": None},
+    # ★★ §408：`windowed` **不设 `skipped` 键** —— 窗口模式本来就**不写**那一行
+    #   （harness7 `:7364` 把整块包在 `if args.fullscreen:` 里）。
+    #   写个 `"skipped": False/None` 进去会是**永不生效的死数据**
+    #   （§407 初版就是那样，被变异自检 M2 抓出来：改那个键不改变任何断言结果）。
+    #   窗口模式的真实判据是「skipped 不在场」+「polls 小」，见判据本体。
+    "windowed": {"polls_max": 5, "frame_s_max": None},
     # 全屏短路：polls 必须归零，frame 段必须从 ~125 s 掉到 <2 s
     "fullscreen_short": {"skipped": True, "polls_max": 0, "frame_s_max": 2.0},
     # 对照臂：polls 必须回到 244–253，frame 段回到 ~125 s
@@ -151,10 +155,18 @@ def h7_smoke_section(lr, check, out_dir):
     sk = rec_get(recs7, "FRAME", "h7_fs_rect_wait_skipped")
     polls = rec_get(recs7, "FRAME", "pre_capture_wait_polls")
     n2m = rec_get(recs7, "MEASURE", "h7_nav_to_measure")
+    # ★★ §408：`META.fullscreen` 是**区分窗口模式 vs 全屏**的唯一硬依据。
+    #   实测 harness7 `:7364` 把 `h7_fs_rect_wait_skipped` 整块包在
+    #   `if args.fullscreen:` 里 ⇒ **窗口模式根本不写 `skipped` 行**；
+    #   而 `pre_capture_wait_polls`（`:8109`）是**无条件写**的。
+    #   ⇒ 若只看「skipped 缺失 ⇒ 不是冒烟样本」，**第 1 趟（窗口模式）永远读不出来**，
+    #     而那正是 D-05 冒烟要验的三种形态之一。
+    fs_flag = rec_get(recs7, "META", "fullscreen")
     skipped = sk.get("skipped") if isinstance(sk, dict) else (
         None if sk is None else bool(sk))
     frame_s = rec_get(recs7, "BUDGET", "stage_seconds:frame")
 
+    print("      META.fullscreen          = %s" % (fs_flag,))
     print("      h7_fs_rect_wait_skipped = %s" % (skipped,))
     print("      pre_capture_wait_polls   = %s" % (polls,))
     print("      stage_seconds:frame      = %s" % (frame_s,))
@@ -163,37 +175,54 @@ def h7_smoke_section(lr, check, out_dir):
 
     # ★ 是否是 **有效** harness7 冒烟趟：需要**同时**满足两条
     #   ① 趟由 harness7 跑出（哈希对得上，或产物里有 h7_* 记录）
-    #   ② 冒烟判据**所需的字段确实在场**（skipped 与 polls）
+    #   ② 冒烟判据**所需的字段确实在场**
     #   ★★ 只判①会出岔子（§407 回归实测 B2 变红）：harness7 的趟若在 window 阶段
     #     就失败，`h7_fs_rect_wait_skipped` 根本不会被写 —— 那种趟**不是**冒烟样本，
     #     用冒烟判据要求它「skipped == False」是拿设计预期去判一个没跑到那里的趟。
-    #   ⇒ 缺字段时**明确报「不是冒烟样本」**，不产生断言（既不算通过也不算失败）。
+    #   ★★ 但「skipped 缺失 ⇒ 一律不是冒烟样本」也是错的（§408 发现）：
+    #     **窗口模式本来就不写 skipped**，而 `polls` 无条件写。
+    #     ⇒ 判据改为「`polls` 在场」+「(全屏标志在场 **或** skipped 在场)」。
+    #     `polls` 在 + 无全屏标志 ⇒ 窗口模式，照样能判（polls 小、skipped 应为 None）。
     is_h7_run = (lr.get("harness_sha16") == HARNESS7_SHA16) or (sk is not None) or (n2m is not None)
     if not is_h7_run:
         print("      [跳过] 本趟不是 harness7（harness_sha16=%s，无 h7_* 记录）"
               " ⇒ 冒烟判据不适用，**不是通过**" % lr.get("harness_sha16"))
         return
-    if sk is None or polls is None:
-        print("      [跳过] 本趟虽由 harness7 跑出，但冒烟字段缺失"
-              "（h7_fs_rect_wait_skipped=%s / pre_capture_wait_polls=%s）"
-              " ⇒ **不是冒烟样本**（多半在 window 阶段就失败了），"
-              "不产生冒烟断言" % (sk, polls))
+    if polls is None:
+        print("      [跳过] 本趟虽由 harness7 跑出，但 `pre_capture_wait_polls` 缺失"
+              " ⇒ **不是冒烟样本**（多半在采帧阶段之前就失败了），不产生冒烟断言")
         return
 
-    check("★ 本趟确为 harness7 冒烟样本 ⇒ 判据适用", True, "h7 记录齐全")
+    check("★ 本趟确为 harness7 冒烟样本 ⇒ 判据适用", True,
+          "polls 在场（全屏标志=%s / skipped=%s）" % (fs_flag, skipped))
 
+    # ★★ §408：形态识别有三条硬依据，优先级从强到弱
+    #   ① `skipped is True`            ⇒ 全屏短路臂（harness7 只在全屏分支写它）
+    #   ② `META.fullscreen` 在场且 polls ≥200 ⇒ 对照臂（全屏 + keep-rect-wait）
+    #   ③ 其余                          ⇒ 窗口模式（本来就不写 skipped）
+    #   ★ 不用 `fflag is None ⇒ windowed` 单独判：老趟可能没这个字段，
+    #     但那种趟连 polls 都没有，前面已 return 了。
     if skipped is True:
         form = "fullscreen_short"
-    elif polls is not None and polls >= 200:
+    elif polls >= 200:
         form = "fullscreen_keep"
     else:
         form = "windowed"
     print("      ⇒ 形态（由产物判定）: %s" % form)
     exp = H7_SMOKE[form]
 
-    check("★ h7_fs_rect_wait_skipped == %s（%s 臂的设计预期）"
-          % (exp["skipped"], form),
-          skipped is exp["skipped"], "实测 %s" % (skipped,))
+    # ★★ 窗口模式**不该有** `h7_fs_rect_wait_skipped` 这一行（harness7 只在全屏写）。
+    #   ⇒ 判据是「skipped 为 None」，而不是「skipped == False」——后者在窗口模式
+    #     是**永远不可能的值**，写成 `== False` 会把正确趟判红。
+    if form == "windowed":
+        check("★★ 窗口模式不写 h7_fs_rect_wait_skipped（harness7 只在全屏分支写）",
+              skipped is None, "实测 %s" % (skipped,))
+        check("★ 窗口模式 META.fullscreen 不在场",
+              fs_flag is None, "实测 %s" % (fs_flag,))
+    else:
+        check("★ h7_fs_rect_wait_skipped == %s（%s 臂的设计预期）"
+              % (exp["skipped"], form),
+              skipped is exp["skipped"], "实测 %s" % (skipped,))
     if "polls_max" in exp:
         check("★ pre_capture_wait_polls ≤ %d（%s 臂）" % (exp["polls_max"], form),
               polls is not None and polls <= exp["polls_max"], "实测 %s" % (polls,))

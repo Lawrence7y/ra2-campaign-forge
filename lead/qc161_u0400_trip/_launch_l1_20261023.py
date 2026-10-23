@@ -148,6 +148,38 @@ def rm_carrier(cdir):
     return False, last
 
 
+def build_harness_argv(*, harness, map_path, map_sha, out_dir, src, extra,
+                       trip_id, probe_frames, fullscreen, extra_argv):
+    """拼装传给 harness 的 argv。★ 抽成纯函数，便于离线实测「缺省行为未变」。
+
+    ★ §408：`--fullscreen` 原先焊死在列表里，导致 D-05 冒烟第 1 趟
+      （窗口模式，**不传** `--fullscreen`）在本发射器下根本发不出来。
+      ⇒ 改为由 `fullscreen` 开关控制；缺省 True，与既有 10-23 四趟逐字一致。
+
+    ★ 位置固定在 `--evid-diff` 之前：不传 `--no-fullscreen` 时，
+      返回的列表与改前的硬编码版本**逐元素相同**（由发射器验证器 G 组断言）。
+    """
+    argv = [
+        str(harness),
+        "--target-map", str(map_path),
+        "--target-sha256", map_sha,
+        # --carrier 只作所有权判定基准；实际载体由 create_isolated_carrier
+        # 新建到 WORKDIR/ct/
+        "--carrier", str(Path(out_dir) / "ct"),
+        "--carrier-create-from", str(src),
+        "--carrier-create-files", ",".join(extra),
+        "--trip-id", trip_id,
+        "--out-dir", str(out_dir),
+        "--measure", "1",
+    ]
+    if fullscreen:
+        argv.append("--fullscreen")
+    argv += ["--evid-diff", "--probe-frames", probe_frames]
+    # ★ H-2 扩散修复：附加参数（如 harness7 对照臂的 --h7-keep-rect-wait）
+    argv.extend(x for x in (extra_argv or []) if x)
+    return argv
+
+
 def main():
     global OUT_DIR, TRIP_ID, SRC, MANIFEST, MAP, MAP_SHA, HARNESS, HARNESS_SHA16
     import argparse
@@ -165,6 +197,14 @@ def main():
     ap.add_argument("--extra-argv", default="",
                     help="★ 透传给 harness 的附加参数（空格分隔，如 "
                          "--h7-keep-rect-wait）")
+    # ★★ §408 H-2f：`--fullscreen` 原先**焊死**在 argv 里（原 `:244`）。
+    #   D-05 冒烟第 1 趟要求「不传 --fullscreen ⇒ 窗口模式」，而本发射器
+    #   没有关掉它的开关 ⇒ **第 1 趟在本工具下根本发不出来**。
+    #   ⇒ 改成默认仍发 fullscreen（与既有 10-23 四趟逐字一致），
+    #     用 `--no-fullscreen` 显式关闭。
+    #   ★ 缺省行为一字未变：不传该开关时 argv 与改前完全相同。
+    ap.add_argument("--no-fullscreen", action="store_true", default=False,
+                    help="★ 发窗口模式趟（缺省仍是 --fullscreen，与既有趟一致）")
     _a = ap.parse_args()
     HARNESS = HARNESS_BY_SHA16[_a.harness_sha16]
     HARNESS_SHA16 = _a.harness_sha16
@@ -229,24 +269,12 @@ def main():
     for _n in EXTRA:
         assert "," not in _n, "件名含逗号会破坏整串切分: %r" % _n
 
-    argv = [
-        str(HARNESS),
-        "--target-map", str(MAP),
-        "--target-sha256", MAP_SHA,
-        # --carrier 只作所有权判定基准；实际载体由 create_isolated_carrier
-        # 新建到 WORKDIR/ct/
-        "--carrier", str(OUT_DIR / "ct"),
-        "--carrier-create-from", str(SRC),
-        "--carrier-create-files", ",".join(EXTRA),
-        "--trip-id", TRIP_ID,
-        "--out-dir", str(OUT_DIR),
-        "--measure", "1",
-        "--fullscreen",
-        "--evid-diff",
-        "--probe-frames", probe_frames,
-    ]
+    argv = build_harness_argv(
+        harness=HARNESS, map_path=MAP, map_sha=MAP_SHA, out_dir=OUT_DIR,
+        src=SRC, extra=EXTRA, trip_id=TRIP_ID, probe_frames=probe_frames,
+        fullscreen=not _a.no_fullscreen, extra_argv=extra_argv)
     # ★ H-2 扩散修复：附加参数（如 harness7 对照臂的 --h7-keep-rect-wait）
-    argv.extend(extra_argv)
+    #   ★ §408：`extra_argv` 已并入 build_harness_argv，此处不再二次 extend。
 
     spawn_argv = [sys.executable]
     for a in argv:

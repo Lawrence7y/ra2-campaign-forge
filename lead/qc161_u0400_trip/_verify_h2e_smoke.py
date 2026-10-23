@@ -45,8 +45,14 @@ def chk(tag, cond, detail=""):
 
 
 def mk_trip(root: Path, name: str, *, sha: str, skipped, polls, frame_s,
-            n2m=None, verdict="ok", units0=900, make_w12=True):
-    """构造一个最小可用趟目录。"""
+            n2m=None, verdict="ok", units0=900, make_w12=True,
+            fullscreen_meta=None):
+    """构造一个最小可用趟目录。
+
+    ★ §408：`skipped=None` 表示「该行不写」—— 这是**窗口模式的真实形态**
+      （harness7 把 skipped 那一行整块包在 `if args.fullscreen:` 里）。
+      `fullscreen_meta=True` 模拟 `META.fullscreen` 行在场（全屏趟才有）。
+    """
     d = root / name
     d.mkdir(parents=True, exist_ok=True)
     # _launch_result.json
@@ -89,6 +95,9 @@ def mk_trip(root: Path, name: str, *, sha: str, skipped, polls, frame_s,
         recs.append({"group": "FRAME", "key": "h7_fs_rect_wait_skipped",
                      "value": {"skipped": skipped}, "source": "s",
                      "note": "", "ts": ""})
+    if fullscreen_meta is True:
+        recs.append({"group": "META", "key": "fullscreen", "value": True,
+                     "source": "argv:--fullscreen", "note": "", "ts": ""})
     if n2m is not None:
         recs.append({"group": "MEASURE", "key": "h7_nav_to_measure",
                      "value": n2m, "source": "s", "note": "", "ts": ""})
@@ -124,26 +133,33 @@ def main() -> int:
         s1 = mk_trip(root, "S1_fullscreen_short", sha=H7, skipped=True,
                      polls=0, frame_s=1.4, verdict="late_start",
                      n2m={"nav_to_measure_s": 95.2, "late_start": True},
-                     make_w12=False)
-        s2 = mk_trip(root, "S2_windowed", sha=H7, skipped=False, polls=0,
+                     make_w12=False, fullscreen_meta=True)
+        # ★ S2 = **窗口模式**的真实形态：`h7_fs_rect_wait_skipped` **整行不写**
+        #   （harness7 `:7364` 把它包在 `if args.fullscreen:` 里），
+        #   而 `pre_capture_wait_polls` 无条件写（`:8109`）⇒ polls=0、无 META.fullscreen
+        s2 = mk_trip(root, "S2_windowed", sha=H7, skipped=None, polls=0,
                      frame_s=3.1)
         s3 = mk_trip(root, "S3_keep_rect_wait", sha=H7, skipped=False,
-                     polls=253, frame_s=126.6)
+                     polls=253, frame_s=126.6, fullscreen_meta=True)
         s4 = mk_trip(root, "S4_h6_no_h7keys", sha=H6, skipped=None,
                      polls=251, frame_s=125.7)
         s5 = mk_trip(root, "S5_keep_but_late", sha=H7, skipped=False,
                      polls=253, frame_s=126.6, verdict="late_start",
                      n2m={"nav_to_measure_s": 120.0, "late_start": True},
-                     make_w12=False)
+                     make_w12=False, fullscreen_meta=True)
         s6 = mk_trip(root, "S6_short_bad_frame", sha=H7, skipped=True,
                      polls=0, frame_s=90.0, verdict="late_start",
                      n2m={"nav_to_measure_s": 95.2, "late_start": True},
-                     make_w12=False)
+                     make_w12=False, fullscreen_meta=True)
         # ★ S7 专为 M3 而设：短路臂但 polls=5（原阈值 0 ⇒ 必须变红）
         s7 = mk_trip(root, "S7_short_bad_polls", sha=H7, skipped=True,
                      polls=5, frame_s=1.4, verdict="late_start",
                      n2m={"nav_to_measure_s": 95.2, "late_start": True},
-                     make_w12=False)
+                     make_w12=False, fullscreen_meta=True)
+        # ★ S9：**窗口模式但 polls 偏大**（应 red）—— 证明窗口模式也被真判，
+        #   不是「判不出来就放过」
+        s9 = mk_trip(root, "S9_windowed_bad_polls", sha=H7, skipped=None,
+                     polls=40, frame_s=3.0)
 
         print()
         print("--- A. 六趟合成产物的判读 ---")
@@ -200,6 +216,11 @@ def main() -> int:
         chk("S8 不产生冒烟 FAIL（没跑到那里 ⇒ 既不算通过也不算失败）",
             "FAIL" not in sec, "rc=%d" % rc)
 
+        rc, out = run(JUDGE, s9)
+        sec = section(out)
+        chk("S9 窗口模式但 polls=40 ⇒ 必须变红（窗口模式也被真判）",
+            "FAIL" in sec, "rc=%d" % rc)
+
         # ---- B. 变异 ----
         print()
         print("--- B. 变异（每条都必须被指定断言抓到）---")
@@ -211,10 +232,12 @@ def main() -> int:
              "        return EXIT_SHORT_CIRCUIT",
              s1, "4b"),
 
-            ("M2 skipped 期望值反转（windowed 也要求 True）",
-             '"windowed": {"skipped": False,',
-             '"windowed": {"skipped": True,',
-             s2, "h7_fs_rect_wait_skipped"),
+            ("M2「窗口模式不写 skipped」判据失效（改成「skipped 必须在场」）",
+             "        check(\"★★ 窗口模式不写 h7_fs_rect_wait_skipped（harness7 只在全屏分支写）\",\n"
+             "              skipped is None, \"实测 %s\" % (skipped,))",
+             "        check(\"★★ 窗口模式不写 h7_fs_rect_wait_skipped（harness7 只在全屏分支写）\",\n"
+             "              skipped is not None, \"实测 %s\" % (skipped,))",
+             s2, "窗口模式不写"),
 
             ("M3 短路臂 polls_max 放宽到 999",
              '"fullscreen_short": {"skipped": True, "polls_max": 0,',
