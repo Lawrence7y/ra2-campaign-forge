@@ -417,17 +417,22 @@ check("P7", debug_sites == EXP_DEBUG_SITES,
       f"debug 类站点合计（path+format+text）= **{debug_sites:,}**",
       f"debug_sites={debug_sites}")
 
-# The R-035 §六 figure is REGISTERED, not asserted.  Twelve rule/set
-# combinations bracket it 730..838 and none lands on it, so there is no byte
-# whose change would make a "reproduces 761" assertion flip -- writing one would
-# be a tautology in the other direction.  Per §7 this is a structural census,
-# kept out of the PASS count.
+# The R-035 §六 figure is REGISTERED, not asserted.  Twelve closure-based
+# rule/set combinations bracket it 730..838 and none lands on it; a 13th family
+# (address-order rules, R-036b) does hit the TOTAL 761 but not the four columns.
+# Either way there is no byte whose change would flip a "reproduces 761"
+# assertion in a way that also pins the columns, so writing one would be a
+# tautology.  Per §7 this is a structural census, kept out of the PASS count.
 r035_gap = len(debug_funcs) - R035_DEBUG_FUNCS
-print(f"REGISTER\tN1\tR-035 §六 报 debug 归属 **{R035_DEBUG_FUNCS}** 个函数；"
-      f"本轮「最早入口优先」得 **{len(debug_funcs)}**（差 {r035_gap:+d}）。"
-      f"十二种(入口集,规则)组合落在 730…838，无一命中 ⇒ **该数字本轮不可复现，"
-      f"登记为欠账，不随 R-036 交付**（结构性普查，不计入 PASS 数）",
+print(f"REGISTER\tN1\tR-035 §六 报 debug 归属 **{R035_DEBUG_FUNCS}** 个函数"
+      f"（path 425 / fmt 147 / text 289 / ident 277）。本轮闭包类 12 种口径落在 "
+      f"730…838，无一命中；本轮「最早入口优先」得 **{len(debug_funcs)}**"
+      f"（差 {r035_gap:+d}）。R-036b 的地址类规则（入口集 `roots_call|T2`=14,238 "
+      f"+「最近前驱且闭包包含」）**命中合计 761，但四列为 418/149/290/289**，"
+      f"与 425/147/289/277 不符 ⇒ **合计可复现、分列不可复现**，"
+      f"该表不随 R-036 交付（结构性普查，不计入 PASS 数）",
       file=sys.stderr)
+
 
 
 # ---------------------------------------------------------------- output
