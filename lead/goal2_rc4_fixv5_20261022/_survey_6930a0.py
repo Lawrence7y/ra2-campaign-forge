@@ -56,11 +56,43 @@ def main():
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
 
     def ret_size(va):
+        """返回函数入口 va 的**可达** ret 尺寸（§396b）。
+
+        ★ 本脚本调查的正是 0x6930A0 —— 它窗口内有 4 种 ret 尺寸
+          （`0x10`×5 / `4`×9 / `0`×16 / `8`×3）。「扫到第一条」纯属运气。
+          改为按 CFG 求可达集；可达集内尺寸不唯一 ⇒ None（不猜）。
+        """
         off = va2off(va)
-        for i in md.disasm(b[off:off + 0x800], va):
-            if i.mnemonic == "ret":
-                return int(i.op_str, 16) if i.op_str else 0
-        return None
+        if off is None:
+            return None
+        code = {}
+        for i in md.disasm(b[off:off + 0x2000], va):
+            code[i.address] = i
+        reach = set()
+        work = [va]
+        while work:
+            a = work.pop()
+            if a in reach:
+                continue
+            reach.add(a)
+            i = code.get(a)
+            if i is None or i.mnemonic == "ret":
+                continue
+            nxt = a + i.size
+            if i.mnemonic == "jmp":
+                if i.op_str.startswith("0x"):
+                    work.append(int(i.op_str, 16))
+                continue
+            if i.mnemonic.startswith("j") and i.op_str.startswith("0x"):
+                work.append(int(i.op_str, 16))
+                work.append(nxt)
+                continue
+            work.append(nxt)
+        sizes = set()
+        for a in reach:
+            if code[a].mnemonic == "ret":
+                sizes.add(int(code[a].op_str, 16) if code[a].op_str else 0)
+        return sizes.pop() if len(sizes) == 1 else None
 
     print("=" * 96)
     print("0x6930A0 参数语义普查（E = 函数入口 esp）")

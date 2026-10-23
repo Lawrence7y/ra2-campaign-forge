@@ -37,6 +37,15 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   分支 B（走 GetMenu）到 0x777687 时 esp = -0x10                    PASS  esp=-16
   ★ 两分支 esp 相同 ⇒ 与分支无关（这才是「唯一值」的实证）                          PASS  -16 vs -16
 
+  --- ★ 路径覆盖边界（§396 登记，不假装全覆盖）---
+    本脚本覆盖 2 条：
+      path1→path2a→path3   0x7775CE je 成立，跳过 slot14/slot16 段
+      path1→path2b→path3   0x7775CE je 成立 + 0x77764C je 不成立
+    未覆盖 2 条：0x7775CE je **不成立** 的分支
+      （经 0x7775D4 call [eax+0x38] / 0x7775FF call [eax+0x40]）
+    ⇒ 那两条由 _esp_fullpath.py（§396）覆盖，结论同为 -0x10
+  ★ 缺口段 0x7775D0..0x777627 确实含 call [eax+0x38]（缺口是真的）        PASS  0x7775D4
+
 --- ★ 0x777687 处 esp（§386 定谳 / §387 改断言实算值）---
   自检 trace 非空（esp 由 walk 过程产生，非直接赋值）                         PASS  19 条轨迹
   自检 trace 中 esp 出现多个取值（确实在累加）                               PASS  6 种取值
@@ -125,4 +134,4 @@ C3 补证：模拟 esp，证明 0x777687 读的是 msg
   0x7780F4 是 mov eax, 1（返回 1 的路径存在）                          PASS  mov eax, 1
   0x7780FD 是 xor eax, eax（返回 0 的路径存在）                        PASS  xor eax, eax
 
-81/81 PASS
+82/82 PASS

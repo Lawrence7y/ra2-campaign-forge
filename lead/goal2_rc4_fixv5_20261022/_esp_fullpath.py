@@ -92,6 +92,7 @@ class Bin(object):
             vs, va, rs, ra = struct.unpack_from("<IIII", self.b, o + 8)
             self.secs.append((nm, va, vs, ra, rs))
         self.md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+        self._ret_cache = {}
         self._parse_imports(opt)
 
     def va2off(self, va):
@@ -147,13 +148,88 @@ class Bin(object):
             return None
 
     def ret_size(self, va):
+        """返回函数入口 va 的 **可达** ret 尺寸。
+
+        ★★★ §396 关键修正：原实现取「第一条 ret」，这是错的。
+          实测 `0x6930A0` 在 0x2000 窗口内有 30 个 ret、4 种尺寸
+          （`0x10`×5 / `4`×9 / `0`×16 / `8`×3）—— 取第一条纯属运气。
+
+          正确做法：**从入口按 CFG 求可达集**，再看可达集里的 ret 尺寸。
+          若可达集内出现多个不同尺寸，说明该函数**真的**会按分支返回不同
+          参数量（x86 里极少但存在），此时返回 None —— 不猜。
+        """
+        cache = self._ret_cache
+        if va in cache:
+            return cache[va]
+        # 先局部解码一个窗口，再按 CFG 求可达集
         o = self.va2off(va)
         if o is None:
+            cache[va] = None
             return None
-        for i in self.md.disasm(self.b[o:o + 0x800], va):
-            if i.mnemonic == "ret":
-                return int(i.op_str, 16) if i.op_str else 0
-        return None
+        code = {}
+        for i in self.md.disasm(self.b[o:o + 0x2000], va):
+            code[i.address] = i
+        reach = set()
+        work = [va]
+        while work:
+            a = work.pop()
+            if a in reach:
+                continue
+            reach.add(a)
+            i = code.get(a)
+            if i is None or i.mnemonic == "ret":
+                continue
+            nxt = a + i.size
+            if i.mnemonic == "jmp":
+                if i.op_str.startswith("0x"):
+                    work.append(int(i.op_str, 16))
+                continue
+            if i.mnemonic.startswith("j") and i.op_str.startswith("0x"):
+                work.append(int(i.op_str, 16))
+                work.append(nxt)
+                continue
+            work.append(nxt)
+        sizes = set()
+        for a in reach:
+            if code[a].mnemonic == "ret":
+                sizes.add(int(code[a].op_str, 16) if code[a].op_str else 0)
+        val = sizes.pop() if len(sizes) == 1 else None
+        cache[va] = val
+        return val
+
+    def reachable_ret_sizes(self, va):
+        """诊断用：返回 (可达 ret 尺寸集合, 可达指令数)。"""
+        o = self.va2off(va)
+        if o is None:
+            return set(), 0
+        code = {}
+        for i in self.md.disasm(self.b[o:o + 0x2000], va):
+            code[i.address] = i
+        reach = set()
+        work = [va]
+        while work:
+            a = work.pop()
+            if a in reach:
+                continue
+            reach.add(a)
+            i = code.get(a)
+            if i is None or i.mnemonic == "ret":
+                continue
+            nxt = a + i.size
+            if i.mnemonic == "jmp":
+                if i.op_str.startswith("0x"):
+                    work.append(int(i.op_str, 16))
+                continue
+            if i.mnemonic.startswith("j") and i.op_str.startswith("0x"):
+                work.append(int(i.op_str, 16))
+                work.append(nxt)
+                continue
+            work.append(nxt)
+        sizes = set()
+        for a in reach:
+            if code[a].mnemonic == "ret":
+                sizes.add(int(code[a].op_str, 16) if code[a].op_str else 0)
+        return sizes, len(reach)
 
     def read_dw(self, va):
         o = self.va2off(va)
@@ -182,6 +258,37 @@ def main():
     # ---------- 1. 三个 vtable 槽的 ret 尺寸 ----------
     print()
     print("--- 1. 间接调用目标解析：vtable 槽 ---")
+
+    # ★★★ §396b：`ret_size` 必须基于**可达集**，不能取「第一条 ret」。
+    #   实测 0x6930A0 在 0x2000 窗口内 30 个 ret / 4 种尺寸（0x10×5 / 4×9 /
+    #   0×16 / 8×3）—— 取第一条纯属运气。这里对每个被调函数断言「可达 ret 唯一」。
+    print()
+    print("--- 1b. ★★★ 被调函数的可达 ret 尺寸必须唯一（否则 esp 不可定）---")
+    CALLEES = [0x6930A0, 0x778030, 0x724730, 0x7241A0, 0x724580,
+               0x7B1780, 0x7B4100, 0x7B13D0, 0x7B3AA0]
+    for fn in CALLEES:
+        sizes, nreach = bn.reachable_ret_sizes(fn)
+        print("    0x%08X  可达 %4d 条指令，ret 尺寸集合 %s"
+              % (fn, nreach, sorted(sizes) if sizes else "∅"))
+        check("★★ 0x%08X 的可达 ret 尺寸唯一" % fn, len(sizes) == 1,
+              "%s" % (sorted(sizes) if sizes else "无 ret"))
+    # 负控：「窗口内第一条 ret」与「可达唯一 ret」是两个不同的量
+    o_6930 = bn.va2off(0x6930A0)
+    first_ret = None
+    all_rets = set()
+    for i in bn.md.disasm(bn.b[o_6930:o_6930 + 0x2000], 0x6930A0):
+        if i.mnemonic == "ret":
+            if first_ret is None:
+                first_ret = int(i.op_str, 16) if i.op_str else 0
+            all_rets.add(int(i.op_str, 16) if i.op_str else 0)
+    check("★★ 负控 0x6930A0：窗口内 ret 尺寸不唯一 %s ⇒ 取第一条是错的"
+          % sorted(all_rets),
+          len(all_rets) > 1 and first_ret == 0x10,
+          "第一条=%d，全部=%s" % (first_ret, sorted(all_rets)))
+    check("★★ 但**可达**尺寸唯一 ⇒ 取可达集才对",
+          len(bn.reachable_ret_sizes(0x6930A0)[0]) == 1,
+          "%s" % sorted(bn.reachable_ret_sizes(0x6930A0)[0]))
+
     # 0x7775D4 前有 mov eax,[ecx] / ecx=[0x887628]；0x7778FA 同函数
     # 直接对两种 vtable 都算一遍，要求一致
     slot_results = {}

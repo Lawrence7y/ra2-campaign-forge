@@ -91,13 +91,53 @@ def main():
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
     md.detail = False
 
+    _ret_cache = {}
+
     def ret_size(fn_va):
-        """实测被调函数的 ret 尺寸（扫描到第一条 ret）。"""
+        """返回函数入口 fn_va 的**可达** ret 尺寸。
+
+        ★★★ §396b：原实现「扫描到第一条 ret」是错的。
+          实测 `0x6930A0` 在 0x2000 窗口内 30 个 ret / 4 种尺寸
+          （`0x10`×5 / `4`×9 / `0`×16 / `8`×3）；取第一条纯属运气。
+          正确做法：从入口按 CFG 求**可达集**，再看可达集内的 ret 尺寸。
+          可达集内尺寸不唯一 ⇒ None（不猜）。
+        """
+        if fn_va in _ret_cache:
+            return _ret_cache[fn_va]
         off = va2off(fn_va)
-        for i in md.disasm(b[off:off + 0x800], fn_va):
-            if i.mnemonic == "ret":
-                return int(i.op_str, 16) if i.op_str else 0
-        return None
+        if off is None:
+            _ret_cache[fn_va] = None
+            return None
+        code = {}
+        for i in md.disasm(b[off:off + 0x2000], fn_va):
+            code[i.address] = i
+        reach = set()
+        work = [fn_va]
+        while work:
+            a = work.pop()
+            if a in reach:
+                continue
+            reach.add(a)
+            i = code.get(a)
+            if i is None or i.mnemonic == "ret":
+                continue
+            nxt = a + i.size
+            if i.mnemonic == "jmp":
+                if i.op_str.startswith("0x"):
+                    work.append(int(i.op_str, 16))
+                continue
+            if i.mnemonic.startswith("j") and i.op_str.startswith("0x"):
+                work.append(int(i.op_str, 16))
+                work.append(nxt)
+                continue
+            work.append(nxt)
+        sizes = set()
+        for a in reach:
+            if code[a].mnemonic == "ret":
+                sizes.add(int(code[a].op_str, 16) if code[a].op_str else 0)
+        rs = sizes.pop() if len(sizes) == 1 else None
+        _ret_cache[fn_va] = rs
+        return rs
 
     # ★★★ §387：`call [mem]` 的 stdcall 弹参**必须按实参个数算**。
     #   §386 修了「间接虚调用不能按 ret 0」，但门禁的 walk() 仍把
@@ -319,6 +359,37 @@ def main():
           esp_B == -0x10, "esp=%s" % esp_B)
     check("★ 两分支 esp 相同 ⇒ 与分支无关（这才是「唯一值」的实证）",
           esp_A == esp_B and esp_A is not None, "%s vs %s" % (esp_A, esp_B))
+
+    # ---------- ★★★ §396 覆盖边界登记 ----------
+    #   本脚本只走 path1/path2a/path2b/path3 四段，覆盖**两条**路径：
+    #     path1 → path2a → path3   （0x7775CE je 成立，跳过 slot14/slot16 段）
+    #     path1 → path2b → path3   （0x7775CE je 成立 + 0x77764C je 不成立）
+    #   实测从 0x7775C0 到 0x777687 共有 **4 条**路径，另两条经过
+    #   0x7775CE je **不成立** 的分支（含 `call [eax+0x38]` slot14 与
+    #   `call [eax+0x40]` slot16），本脚本**不覆盖**它们。
+    #
+    #   那两条由 §396 的 `_esp_fullpath.py` 覆盖（它解析间接调用、不截断），
+    #   结论同为 -0x10。这里把边界**显式登记**，不假装全覆盖。
+    print()
+    print("  --- ★ 路径覆盖边界（§396 登记，不假装全覆盖）---")
+    print("    本脚本覆盖 2 条：")
+    print("      path1→path2a→path3   0x7775CE je 成立，跳过 slot14/slot16 段")
+    print("      path1→path2b→path3   0x7775CE je 成立 + 0x77764C je 不成立")
+    print("    未覆盖 2 条：0x7775CE je **不成立** 的分支")
+    print("      （经 0x7775D4 call [eax+0x38] / 0x7775FF call [eax+0x40]）")
+    print("    ⇒ 那两条由 _esp_fullpath.py（§396）覆盖，结论同为 -0x10")
+    # 真断言：确认那个缺口是**真实存在**的（不是空话）
+    gap_has_slot14 = False
+    o_gap = va2off(0x7775D0)
+    for i in md.disasm(b[o_gap:o_gap + 0x60], 0x7775D0):
+        if i.address >= 0x777627:
+            break
+        if i.mnemonic == "call" and "[eax + 0x38]" in i.op_str:
+            gap_has_slot14 = True
+            break
+    check("★ 缺口段 0x7775D0..0x777627 确实含 call [eax+0x38]（缺口是真的）",
+          gap_has_slot14, "0x7775D4")
+
     esp = esp_B                 # 后续断言用分支 B（含 GetMenu，是更复杂那条）
 
     # ---- ★★★ §386 定谳：0x777687 处 esp = -0x10，[esp+0x18] = msg ----

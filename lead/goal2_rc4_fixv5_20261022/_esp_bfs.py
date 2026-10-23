@@ -60,19 +60,50 @@ def main():
     _ret_cache = {}
 
     def ret_size(va):
+        """返回函数入口 va 的**可达** ret 尺寸。
+
+        ★★★ §396b：原实现扫到「第一条 ret」就返回，这是错的。
+          实测 `0x6930A0` 在 0x2000 窗口内 30 个 ret / 4 种尺寸
+          （`0x10`×5 / `4`×9 / `0`×16 / `8`×3）；取第一条纯属运气。
+          正确做法：从入口按 CFG 求**可达集**，再看可达集内的 ret 尺寸。
+          可达集内尺寸不唯一 ⇒ 返回 None（不猜）。
+        """
         if va in _ret_cache:
             return _ret_cache[va]
         off = va2off(va)
         if off is None:
             _ret_cache[va] = None
             return None
-        for i in md.disasm(b[off:off + 0x800], va):
-            if i.mnemonic == "ret":
-                rs = int(i.op_str, 16) if i.op_str else 0
-                _ret_cache[va] = rs
-                return rs
-        _ret_cache[va] = None
-        return None
+        code = {}
+        for i in md.disasm(b[off:off + 0x2000], va):
+            code[i.address] = i
+        reach = set()
+        work = [va]
+        while work:
+            a = work.pop()
+            if a in reach:
+                continue
+            reach.add(a)
+            i = code.get(a)
+            if i is None or i.mnemonic == "ret":
+                continue
+            nxt = a + i.size
+            if i.mnemonic == "jmp":
+                if i.op_str.startswith("0x"):
+                    work.append(int(i.op_str, 16))
+                continue
+            if i.mnemonic.startswith("j") and i.op_str.startswith("0x"):
+                work.append(int(i.op_str, 16))
+                work.append(nxt)
+                continue
+            work.append(nxt)
+        sizes = set()
+        for a in reach:
+            if code[a].mnemonic == "ret":
+                sizes.add(int(code[a].op_str, 16) if code[a].op_str else 0)
+        rs = sizes.pop() if len(sizes) == 1 else None
+        _ret_cache[va] = rs
+        return rs
 
     # ---- 基本块 BFS ----
     # state: (va, esp) -> 已访问

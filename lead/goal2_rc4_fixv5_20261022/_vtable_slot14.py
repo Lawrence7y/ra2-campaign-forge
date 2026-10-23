@@ -76,14 +76,44 @@ def main():
         except StopIteration:
             return None
 
-    def ret_size(fn_va, limit=0x1000):
+    def ret_size(fn_va, limit=0x2000):
+        """返回函数入口 fn_va 的**可达** ret 尺寸（§396b）。
+
+        原实现扫到「第一条 ret」就返回。实测 `0x6930A0` 窗口内有 4 种
+        ret 尺寸（`0x10`/`4`/`0`/`8`），取第一条纯属运气。
+        改为从入口按 CFG 求可达集；可达集内尺寸不唯一 ⇒ None（不猜）。
+        """
         o = va2off(fn_va)
         if o is None:
             return None
+        code = {}
         for i in md.disasm(b[o:o + limit], fn_va):
-            if i.mnemonic == "ret":
-                return int(i.op_str, 16) if i.op_str else 0
-        return None
+            code[i.address] = i
+        reach = set()
+        work = [fn_va]
+        while work:
+            a = work.pop()
+            if a in reach:
+                continue
+            reach.add(a)
+            i = code.get(a)
+            if i is None or i.mnemonic == "ret":
+                continue
+            nxt = a + i.size
+            if i.mnemonic == "jmp":
+                if i.op_str.startswith("0x"):
+                    work.append(int(i.op_str, 16))
+                continue
+            if i.mnemonic.startswith("j") and i.op_str.startswith("0x"):
+                work.append(int(i.op_str, 16))
+                work.append(nxt)
+                continue
+            work.append(nxt)
+        sizes = set()
+        for a in reach:
+            if code[a].mnemonic == "ret":
+                sizes.add(int(code[a].op_str, 16) if code[a].op_str else 0)
+        return sizes.pop() if len(sizes) == 1 else None
 
     def read_dw(va):
         o = va2off(va)
