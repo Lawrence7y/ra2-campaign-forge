@@ -159,6 +159,26 @@ late-start 是**主动拒采**，语义完全不同。初版直接复用它、�
 
 原始输出：`verify_h7_output.txt`；生成器 14 项自检输出：`gen_h7_selfcheck.txt`。
 
+### 5.1 第二实现交叉核验（18/18 PASS）
+
+主验证器用 **AST 取值 + 模型求值**。为防「验证器与产物共享同一盲区」，
+另写 `_crosscheck_h7_bytes.py`（6,142 B / LF16 `40044b350ed05e31`），
+改用**逐行文本扫描 + difflib 真实 opcodes + def 边界切片**，两条路不共享代码。
+
+| 组 | 项 | 结果 |
+|:--|:--|:--|
+| R1 | 母本 while 行逐字节存在且唯一（从母本里**实际取**该行，不另抄） | PASS |
+| R2 | `deadline` 在副本该行之后可执行行零引用 | PASS（0） |
+| R3 | 副本相对母本**无 delete/replace 块**；新增行数 == 行数差 | PASS（122 / 122） |
+| R4 | 两文件 `EXIT_` 常量集合完全相同（27 / 27） | PASS |
+| R5 | 6 个内核函数体逐字节原样保留 | 6/6 PASS |
+| R6 | late_start 三处字面量同处一分支（branch 1,166 B） | PASS |
+
+★ **R3 是这条核验里最有价值的一项**：主验证器自检 #9 用的是「行多重集 ⊆」，
+它抓不到「某行被移到别处但总数不变」；difflib 的 opcodes 能抓到。
+两套都过 ⇒ 零删除行这个结论有两个独立来源。
+原始输出：`crosscheck_h7_output.txt`。
+
 ---
 
 ## 六、诚实边界（六条，全部未闭合项）
@@ -243,9 +263,11 @@ muze GLM 上，按后一次指示**立即 amend 到 buddy switch 千问族**并�
 | `qc151_trip.harness7.py` | 471,799 | `e747f37dc34b29b0` | 候选件（+8,580） |
 | `_gen_harness7.py` | 23,968 | `1731c48121e29f4e` | 生成器（14 项自检） |
 | `_verify_h7_behavior.py` | 15,827 | `3e113a5ee51bc020` | 离线验证（22 断言 / 5 变异） |
+| `_crosscheck_h7_bytes.py` | 6,142 | `40044b350ed05e31` | 第二实现交叉核验（18 断言） |
 | `h7.diff` | 11,279 | `08fcd286fe554393` | +122 / −0 |
 | `HARNESS7_REPORT.md` | — | — | 交付报告 |
 | `verify_h7_output.txt` | — | — | 验证原始输出（22/22） |
+| `crosscheck_h7_output.txt` | — | — | 交叉核验原始输出（18/18） |
 | `gen_h7_selfcheck.txt` | — | — | 生成器自检输出（14/14） |
 
 母本 `qc151_trip.harness6.py` = 463,219 B / LF16 `ff8245d27b3db22a`，**零改动**。
