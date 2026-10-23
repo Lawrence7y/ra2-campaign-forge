@@ -93,35 +93,98 @@ def main() -> int:
     print("=" * 84)
     print("== STEP 1b  ★ 反汇编起点边界自检（铁律）")
     print("=" * 84)
-    # ★ 从 WNDPROC_HINT 之前一小段起解码，确认 WNDPROC_HINT 落在某条指令的
-    #   起始位置。若它落在另一条指令内部，后续所有线性解码全盘错位。
-    probe_start = WNDPROC_HINT - 16
-    boundaries = set()
-    for i in dis(probe_start, 0x40):
-        boundaries.add(i.address)
-    chk("WNDPROC_HINT 是已知指令边界",
+    # ★★ §405：原实现 `probe_start = WNDPROC_HINT - 16` —— 起点跟着入口一起移动，
+    #   「入口在边界集合里」于是成了自指判据：入口错移 1 字节后，新起点解出来的
+    #   指令边界集合里**照样**含有新入口（0x7775C1 本身就是一条指令起点）
+    #   ⇒ 变异存活。改为：
+    #     ① 解码起点用**固定常量** PROBE_ANCHOR，不随 WNDPROC_HINT 移动；
+    #     ② 追加独立判据「入口前 3 字节全是填充」，这条与解码起点无关。
+    PROBE_ANCHOR = 0x7775B0
+    boundaries = {i.address for i in dis(PROBE_ANCHOR, 0x40)}
+    chk("WNDPROC_HINT 是已知指令边界（从固定锚点 0x%08X 起解码）" % PROBE_ANCHOR,
         WNDPROC_HINT in boundaries,
         f"0x{WNDPROC_HINT:08X} in {len(boundaries)} boundaries")
+    # 独立判据二：函数头之前必须是填充字节（对齐填充），与解码起点无关。
+    _lead = data[off(WNDPROC_HINT) - 3:off(WNDPROC_HINT)]
+    chk("★★ 入口前 3 字节全是填充（独立判据，不依赖解码起点）",
+        len(_lead) == 3 and all(x in (0x90, 0xCC, 0x00) for x in _lead),
+        _lead.hex())
     # 负控：旧值必须**不是**边界，否则说明自检没抓到真问题
     chk("负控 旧值 0x%08X 不是边界" % WNDPROC_HINT_WRONG,
         WNDPROC_HINT_WRONG not in boundaries,
         f"0x{WNDPROC_HINT_WRONG:08X} not in boundaries")
+    # 负控二：入口错移 1 字节必须被上面任一条判据抓住（否则自检形同虚设）
+    _shifted = WNDPROC_HINT + 1
+    _shift_lead = data[off(_shifted) - 3:off(_shifted)]
+    chk("★ 负控 入口错移 1 字节 ⇒ 填充判据必须失败",
+        not all(x in (0x90, 0xCC, 0x00) for x in _shift_lead),
+        f"0x{_shifted:08X} 前 3 字节 {_shift_lead.hex()}")
 
     # ---------------------------------------------------------------
     print()
     print("=" * 84)
     print("== STEP 2  WndProc 身份（ret 0x10 ⇒ 四参数）")
     print("=" * 84)
-    # 扫描 WNDPROC_HINT 附近，找到第一条 ret 0x10
-    found_ret = None
-    for i in dis(WNDPROC_HINT, 0x400):
-        if i.mnemonic == "ret" and i.op_str.strip() == "0x10":
-            found_ret = i
-            break
-    chk("函数内有 ret 0x10", found_ret is not None,
-        f"0x{found_ret.address:08X}" if found_ret else "none")
-    if found_ret:
-        print(f"  首个 ret 0x10 @ 0x{found_ret.address:08X}")
+    # ★★★ §405 H-4 修复：窗口边界不再手选，改为**从本脚本自己的常量推出**。
+    #   · 上界 = 分派表起点 `JT_DWORDS`：那是数据表，不可能落在函数体内
+    #   · 下界 = `WNDPROC_HINT`：STEP 1b 已断言它是已知指令边界
+    #   原实现用固定 `0x400` 窗口，只覆盖 8/11 个 ret；且「窗口里有 ret 0x10」
+    #   这条既没证明唯一、也没证明窗口选对 —— 窗口一放宽就变。
+    #   实测：0x400 → {0x10}；0x4C0（到表起点）→ {0x10}×11；0x500 → {0, 0x10}。
+    BODY_END = JT_DWORDS
+    body = dis(WNDPROC_HINT, BODY_END - WNDPROC_HINT)
+    body_rets = [i for i in body if i.mnemonic == "ret"]
+    body_sizes = {int(i.op_str, 16) if i.op_str else 0 for i in body_rets}
+    print(f"  函数体 [0x{WNDPROC_HINT:08X}, 0x{BODY_END:08X})："
+          f"指令 {len(body)} 条，ret {len(body_rets)} 个")
+    for i in body_rets:
+        print(f"    0x{i.address:08X}  ret {i.op_str or '0'}")
+
+    chk("★ 函数体内全部 ret 尺寸唯一 = 0x10（0x10 ⇒ 清 4 个参数）",
+        body_sizes == {0x10},
+        f"sizes={sorted(body_sizes)} n={len(body_rets)}")
+    chk("★ 函数体内 ret 数 = 11（多出口，但同尺寸）",
+        len(body_rets) == 11, str(len(body_rets)))
+
+    last_ret = body_rets[-1] if body_rets else None
+    chk("★ 末 ret = ret 0x10 @ 0x00777A7A",
+        last_ret is not None and last_ret.address == 0x777A7A
+        and last_ret.op_str.strip() == "0x10",
+        f"0x{last_ret.address:08X} ret {last_ret.op_str}" if last_ret else "none")
+
+    # 帧对称：`ret 0x10`（callee 清 4 参数）与序言 push ecx/ebx/esi/edi 必须配平，
+    # 否则「ret 0x10」可能只是数据被误解码成指令。
+    tail_pops = []
+    if last_ret is not None:
+        idx_last = body.index(last_ret)
+        tail_pops = [f"{i.mnemonic} {i.op_str}" for i in body[idx_last - 4:idx_last]]
+    chk("★ 末 ret 前 4 条 = pop edi/esi/ebx/ecx（与序言 push 配平）",
+        tail_pops == ["pop edi", "pop esi", "pop ebx", "pop ecx"], str(tail_pops))
+
+    # 边界不是切在指令中间：末 ret 之后到表起点只有填充，且无分支落入。
+    pad_start = last_ret.address + last_ret.size if last_ret else BODY_END
+    pad = data[off(pad_start):off(BODY_END)]
+    branch_tgts = {int(i.op_str, 16) for i in body
+                   if (i.mnemonic.startswith("j") or i.mnemonic == "call")
+                   and i.op_str.startswith("0x")}
+    chk("★ 末 ret 到表起点之间是填充且无分支落入（边界不切指令）",
+        pad_start <= BODY_END and not (branch_tgts & set(range(pad_start, BODY_END))),
+        f"0x{pad_start:08X}..0x{BODY_END:08X} = {pad.hex()}")
+
+    # ★★ 负控：证明**边界是承重的**，不是装饰。
+    #    窗口只要越过函数体 0x80 字节，就会捡到下一个函数的 `ret 0`
+    #    ⇒ 上面那条「唯一 = 0x10」立刻变多值。换句话说，谁把窗口改回
+    #    固定值（无论 0x400 还是 0x500）都会在这条负控上暴露。
+    beyond = dis(WNDPROC_HINT, (BODY_END - WNDPROC_HINT) + 0x80)
+    beyond_sizes = {int(i.op_str, 16) if i.op_str else 0
+                    for i in beyond if i.mnemonic == "ret"}
+    chk("★★ 负控 窗口越过函数体 0x80 字节 ⇒ 尺寸集合变多值",
+        len(beyond_sizes) > 1,
+        f"sizes={sorted(beyond_sizes)}")
+
+    if last_ret:
+        print(f"  末 ret @ 0x{last_ret.address:08X}；"
+              f"填充 {pad.hex()} 后紧接分派表 0x{JT_DWORDS:08X}")
 
     # ---------------------------------------------------------------
     print()
@@ -138,6 +201,25 @@ def main() -> int:
         f"{jt_ins.mnemonic} {jt_ins.op_str} @ 0x{jt_ins.address:08X}" if jt_ins else "none")
     if jt_ins:
         print(f"  {jt_ins.address:08X}  {jt_ins.bytes.hex():<20} {jt_ins.mnemonic} {jt_ins.op_str}")
+
+    # ★★★ §405：这条断言是 STEP 2 的**依据**。
+    #   STEP 2 把函数体上界定在 `JT_DWORDS`（分派表是数据，不可能在函数体内）。
+    #   但「JT_DWORDS 真是分派表」此前从未被断言过 —— 常量写错就整段错。
+    #   这里从**指令操作数**读出基址，与本脚本常量比对。
+    if jt_ins:
+        _ops = jt_ins.op_str.replace(" ", "")
+        _base = _ops.split("+")[-1].rstrip("]") if "+" in _ops else ""
+        chk("★★ 间接跳转的基址 = JT_DWORDS（⇒ STEP 2 的函数体上界有实测依据）",
+            _base.startswith("0x") and int(_base, 16) == JT_DWORDS,
+            f"操作数基址 {_base or '?'} vs 常量 0x{JT_DWORDS:08X}")
+    # 字节索引表同理：`mov dl, byte ptr [ecx + JT_BYTES]` 的基址要能对上常量。
+    # 不猜地址，在**函数体内**找（实测 @0x7776A8，紧接在间接跳转前）。
+    _idx_src = [i for i in body
+                if "byte ptr" in i.op_str and f"0x{JT_BYTES:x}" in i.op_str.replace(" ", "")]
+    chk("★★ 字节索引表基址 = JT_BYTES（表解法的另一半个依据）",
+        len(_idx_src) == 1 and _idx_src[0].address == jt_ins.address - 6,
+        f"{_idx_src[0].mnemonic} {_idx_src[0].op_str} @0x{_idx_src[0].address:08X}"
+        if _idx_src else "none")
 
     idx_tbl = list(data[off(JT_BYTES):off(JT_BYTES) + 20])
     dword_tbl = [struct.unpack_from("<I", data, off(JT_DWORDS) + 4 * i)[0]
