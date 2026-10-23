@@ -26,6 +26,7 @@
 """
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -125,8 +126,13 @@ def main():
     _is_default_trip = _a.trip_dir is None
     if not _is_default_trip:
         OUT_DIR = Path(_a.trip_dir)
-        # 开机指纹目录按同日命名约定取同级 dir（boot_fp_<date>）
-        BOOT_FP_DIR = OUT_DIR.parent / ("boot_fp_" + OUT_DIR.name.split("_")[-1])
+        # 开机指纹目录按同日命名约定取同级 dir（boot_fp_<YYYYMMDD>）。
+        # ★ 不能取目录名的最后一段：趟目录形如 l1_20261023c，末段是
+        #   `20261023c`（带字母后缀）⇒ 会推成 boot_fp_20261023c（不存在）。
+        #   故用正则取 8 位日期。
+        _m = re.search(r"(\d{8})", OUT_DIR.name)
+        if _m:
+            BOOT_FP_DIR = OUT_DIR.parent / ("boot_fp_" + _m.group(1))
         print("★ 趟目录（CLI 覆盖）: %s" % OUT_DIR)
         print("★ 开机指纹目录      : %s" % BOOT_FP_DIR)
 
@@ -151,19 +157,44 @@ def main():
     # ---- 0. 趟级产物存在性 ----
     print("\n[0] 趟产物")
     lr_path = OUT_DIR / "_launch_result.json"
-    check("_launch_result.json 存在", lr_path.is_file(), str(lr_path.name))
-    if not lr_path.is_file():
-        print("\n!! 无 _launch_result.json，趟未完成")
+    # ★★ H-2d（2026-10-24 发现）：**并非所有发射器都写 `_launch_result.json`**。
+    #   `_launch_monitored_20261023.py` 只写 `_v11a_concurrent_clock.json`
+    #   （含 `harness_rc` / `duration_s` / `gemamd_pid`），是设计如此，不是趟未完成。
+    #   原文一遇缺文件就 `return 2「趟未完成」` ⇒ C 趟（l1_20261023c）被判成
+    #   「趟未完成」，而它其实**跑完了**（harness_rc=0、181 s、旁路 14215 样本）。
+    #   ⇒ 改为「找得到**任一**趟级收官产物即可继续」，并如实标注来源。
+    _side = OUT_DIR / "_v11a_concurrent_clock.json"
+    if not lr_path.is_file() and not _side.is_file():
+        print("!! 既无 _launch_result.json 也无 _v11a_concurrent_clock.json")
+        print("★ 判定：趟未完成 / 产物全缺（EXIT=%d）" % EXIT_UNDECIDABLE)
         return EXIT_UNDECIDABLE
-    lr = load(lr_path)
+    if lr_path.is_file():
+        lr = load(lr_path)
+        _lr_src = "_launch_result.json"
+    else:
+        _s = load(_side)
+        lr = {"rc": _s.get("harness_rc"),
+              "duration_s": _s.get("duration_s"),
+              "trip_id": _s.get("trip_id"),
+              "harness_sha16": _s.get("harness_sha16"),
+              "leftover_procs": None,
+              "carriers_deleted": None,
+              "_side_only": True}
+        _lr_src = "_v11a_concurrent_clock.json（旁路发射器不写 launch_result）"
+        print("★ 趟级产物来源: %s" % _lr_src)
     print("      rc=%s  duration_s=%s  carriers_deleted=%s  leftover=%s"
           % (lr.get("rc"), lr.get("duration_s"),
              lr.get("carriers_deleted"), lr.get("leftover_procs")))
     print("      harness_sha16=%s  trip_id=%s"
           % (lr.get("harness_sha16"), lr.get("trip_id")))
     check("趟 exit code == 0", lr.get("rc") == 0, "rc=%s" % lr.get("rc"))
-    check("载体已删除", lr.get("carriers_deleted") is True, "")
-    check("残留进程为空", lr.get("leftover_procs") == [], "%s" % lr.get("leftover_procs"))
+    if lr.get("_side_only"):
+        print("  [局限] 旁路发射器不记 carriers_deleted / leftover_procs"
+              " ⇒ 这两项不作断言（不是通过，是没数据）")
+    else:
+        check("载体已删除", lr.get("carriers_deleted") is True, "")
+        check("残留进程为空", lr.get("leftover_procs") == [],
+              "%s" % lr.get("leftover_procs"))
     # ★ H-2：由「== ff8245d2」改为「落在已知清单内」。
     #   ★ 判据仍带取值比较（不是只判非空），且清单本身是显式枚举 ——
     #   把一个未知哈希塞进来必 FAIL，可被变异杀掉。
@@ -174,9 +205,11 @@ def main():
     check("harness 在已知清单内（harness6/harness7）",
           _h in KNOWN_HARNESS,
           ("%s = %s" % (_h, KNOWN_HARNESS[_h])) if _h in KNOWN_HARNESS
-          else ("★ 该趟产物未记录 harness_sha16（早于该字段引入）"
-                if _h is None
-                else "%s = ★ 未知版本（不在清单内）" % _h))
+          else ("★ 旁路发射器不记 harness_sha16（该字段只在主发射器产物里）"
+                if lr.get("_side_only")
+                else ("★ 该趟产物未记录 harness_sha16（早于该字段引入）"
+                      if _h is None
+                      else "%s = ★ 未知版本（不在清单内）" % _h)))
 
     # ---- 1. ★★ H-2：先读 w0 verdict 再决定「缺窗」是设计内还是产物异常 ----
     print("\n[1] measure 三窗")

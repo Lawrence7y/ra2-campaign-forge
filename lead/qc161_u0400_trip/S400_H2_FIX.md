@@ -150,8 +150,25 @@ argparse `choices` 真拦截、缺省未被改动，3 条变异（含「即便�
 | `l1_20261023` | EXIT=2 三窗不全 | **EXIT=3** `units0=672` 帧冻结 | 死法读出来了 |
 | `l1_20261023b` | EXIT=2 | **EXIT=3** `units0=648` | 同上 |
 | `l3_20261023` | EXIT=2 | **EXIT=3** `units0=None` 进程可能已死 | 与上两类分开 |
-| `l1_20261023c` | EXIT=2 | EXIT=2（无 `_launch_result.json` = 趟未完成） | 仍不可判定，**判据正确** |
+| `l1_20261023c` | EXIT=2 | EXIT=2（无 `_launch_result.json`） | ★ **见下方更正** |
 | `l1c/l1d/l1e/l3_20261021` | EXIT=1（5 项 FAIL） | EXIT=1（3 项 FAIL） | NAV/S4 由「永远红」转 PASS |
+
+### ★ 更正（2026-10-24 发现，本报告 §400 原文在此处写错）
+
+原文把 `l1_20261023c` 的 EXIT=2 定性为「趟未完成 → **判据正确**」。**这是错的。**
+
+`_launch_monitored_20261023.py` **根本不写 `_launch_result.json`**
+（`grep -c _launch_result` = 0）。它写的是 `_v11a_concurrent_clock.json`
+（含 `harness_rc=0` / `duration_s=181.0` / `gamemd_pid=35200`）。
+所以 C 趟**跑完了**，缺那个文件是设计如此，不是没跑完。
+
+⇒ 判档器一遇缺文件就 `return 2「趟未完成」`，是一次**误判**
+（与 H-2 同型的第 4 处：工具间对"趟级产物"的契约假设不一致）。
+已在 `_judge_l1_20261023.py` 修掉：找得到**任一**趟级收官产物即可继续，
+并如实标注来源与「旁路发射器不记 carriers_deleted / leftover_procs」。
+
+修后 C 趟给出 **EXIT=3** 并点名「`units0` 为 None ⇒ 进程可能已死」。
+详见 §401。
 
 10-21 四趟的三窗**本来就齐全**，修复前也能跑到档位判定（EXIT=1）。
 改动对它们的净效果是 **5 项 FAIL → 3 项 FAIL**：`NAV.verdict` 与
