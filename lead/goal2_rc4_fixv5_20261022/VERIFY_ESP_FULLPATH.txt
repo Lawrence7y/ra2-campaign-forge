@@ -1,0 +1,74 @@
+====================================================================================================
+§396 全路径 esp 模拟：把 5 处间接调用**解析出来**，不再截断
+====================================================================================================
+
+--- 0. 导入表解析自检 ---
+  IAT 条目数 > 300（导入表真的解析出来了）                                                PASS  339 条
+  IAT 0x007E1404 = USER32.dll!GetMenu                                      PASS  实测 USER32.dll!GetMenu
+  IAT 0x007E11C4 = KERNEL32.dll!MultiByteToWideChar                        PASS  实测 KERNEL32.dll!MultiByteToWideChar
+  IAT 0x007E1394 = USER32.dll!DefWindowProcA                               PASS  实测 USER32.dll!DefWindowProcA
+
+--- 1. 间接调用目标解析：vtable 槽 ---
+    类型A vtable 0x007F794C slot 0x38 -> fn 0x007B1780  ret 4
+    类型A vtable 0x007F794C slot 0x1C -> fn 0x007B1BC0  ret 0
+    类型B vtable 0x007F7A6C slot 0x38 -> fn 0x007B4100  ret 4
+    类型B vtable 0x007F7A6C slot 0x1C -> fn 0x007B3890  ret 0
+  ★ slot 0x38 在两种 vtable 下 ret 一致（4 vs 4）                                  PASS  ret 4
+  ★ slot 0x1C 在两种 vtable 下 ret 一致（0 vs 0）                                  PASS  ret 0
+  ★ slot 0x38（0x7775D4）ret = 4                                             PASS  4
+
+--- 2. 间接调用目标解析：IAT 导入 ---
+    0x0077764F call [0x007E1404] = USER32.dll!GetMenu                 argc=1
+    0x00777A38 call [0x007E11C4] = KERNEL32.dll!MultiByteToWideChar   argc=6
+    0x00777A70 call [0x007E1394] = USER32.dll!DefWindowProcA          argc=4
+  ★★ 三个 IAT 间接调用的 argc 全部已知（不猜 ret 0）                                      PASS  3/3
+
+--- 3. 全路径 esp 模拟（间接调用按解析出的 ret 展开）---
+    类型A（vtable 0x007F794C）: 访问 54 个状态，未解析间接调用 0 处
+      5 处间接调用执行次数: {'0x007775D4': 1, '0x0077764F': 1, '0x007778FA': 1, '0x00777A38': 2, '0x00777A70': 1}
+      目标 0x00777687 esp 集合: [-16]
+      目标 0x007779B9 esp 集合: [-16]
+      目标 0x007779B5 esp 集合: [-16]
+  ★★ 类型A 路径下无未解析的间接调用                                                      PASS  0 处 []
+  ★★★ 类型A：5 处间接调用**全部被实际执行**（不是绕开）                                         PASS  5/5 均执行过
+  ★★ 类型A：0x00777687 的 esp 唯一且 = -16                                        PASS  [-16]
+  ⇒ 类型A：0x00777687 的 [esp+0x18] = E+0x08 = msg                             PASS  E+8
+  ★★ 类型A：0x007779B9 的 esp 唯一且 = -16                                        PASS  [-16]
+  ⇒ 类型A：0x007779B9 的 [esp+0x18] = E+0x08 = msg                             PASS  E+8
+  ★★ 类型A：0x007779B5 的 esp 唯一且 = -16                                        PASS  [-16]
+  ⇒ 类型A：0x007779B5 的 [esp+0x18] = E+0x08 = msg                             PASS  E+8
+    类型B（vtable 0x007F7A6C）: 访问 54 个状态，未解析间接调用 0 处
+      5 处间接调用执行次数: {'0x007775D4': 1, '0x0077764F': 1, '0x007778FA': 1, '0x00777A38': 2, '0x00777A70': 1}
+      目标 0x00777687 esp 集合: [-16]
+      目标 0x007779B9 esp 集合: [-16]
+      目标 0x007779B5 esp 集合: [-16]
+  ★★ 类型B 路径下无未解析的间接调用                                                      PASS  0 处 []
+  ★★★ 类型B：5 处间接调用**全部被实际执行**（不是绕开）                                         PASS  5/5 均执行过
+  ★★ 类型B：0x00777687 的 esp 唯一且 = -16                                        PASS  [-16]
+  ⇒ 类型B：0x00777687 的 [esp+0x18] = E+0x08 = msg                             PASS  E+8
+  ★★ 类型B：0x007779B9 的 esp 唯一且 = -16                                        PASS  [-16]
+  ⇒ 类型B：0x007779B9 的 [esp+0x18] = E+0x08 = msg                             PASS  E+8
+  ★★ 类型B：0x007779B5 的 esp 唯一且 = -16                                        PASS  [-16]
+  ⇒ 类型B：0x007779B5 的 [esp+0x18] = E+0x08 = msg                             PASS  E+8
+
+--- 4. ★ 两种 vtable 的结论必须一致（否则 esp 依赖运行时类型）---
+  ★★★ 类型 A 与类型 B 的 esp 集合完全相同（结论与类型无关）                                     PASS  {'0x00777687': ([-16], [-16]), '0x007779B9': ([-16], [-16]), '0x007779B5': ([-16], [-16])}
+
+--- 5. ★ 负控：解析器不能瞎猜 ---
+  ★★ 负控：vtable 未知时 resolve_indirect 返回 None（不猜 ret 0）                      PASS  vtable 未知
+  ★ 正控：vtable 已知时能解析出 ret 4                                                PASS  vtable 0x007F794C slot 0x38 -> 0x007B1780 ret 4
+  ★★ 负控：IAT 未命中时返回 None（不猜 ret 0）                                          PASS  IAT 未解析 0x007EFFFF
+
+--- 5b. ★★★ 取值负控：改 argc / ret，esp 集合必须翻 ---
+  基线：0x777687 的 esp 集合 = [-16]                                             PASS  [-16]
+  ★★★ M1 GetMenu argc 1→2 ⇒ 0x777687 的 esp 不再唯一（翻红）                        PASS  [-16, -12]
+  ★★★ M2 slot14 ret 4→0 ⇒ 0x777687 的 esp 不再唯一（翻红）                          PASS  [-20, -16]
+  ★ M3 DefWindowProcA argc 4→3 ⇒ 结果**不变**（该路径 ret 0x10 终局，不在通往目标的路上）       PASS  [-16]（与基线一致 ⇒ 变异选点无效，不是漏检）
+  ★★ DefWindowProcA 调用之后第一条 ret 是 ret 0x10（证实它是终局路径）                       PASS  0x00777A7A ret 0x10
+
+--- 6. 交叉：与 _esp_bfs.py（截断版）的结论一致 ---
+    _esp_bfs.py 结论：0x777687 / 0x7779B9 / 0x7779B5 均为 esp=-0x10（13/13）
+    本脚本结论：同上，且**覆盖了经间接调用的分支**
+  ★★ 两条独立实现的 esp 结论一致（都是 -0x10）                                            PASS  截断版 13/13 + 全路径版本文
+
+34/34 PASS
