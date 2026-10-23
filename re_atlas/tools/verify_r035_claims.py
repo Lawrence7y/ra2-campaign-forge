@@ -123,6 +123,11 @@ EXP_ROOTS = 13352
 EXP_COVERED = 992227
 EXP_HEADS = 890
 EXP_E9_INTRA = 1445
+# R-038 / V-001 §3.1: aligned-decode reading of the E8 side.
+EXP_E8_ALIGNED = 6719
+EXP_PHANTOM_SITES = 563
+EXP_ONLY_PHANTOM = 560
+EXP_ROOTS_ALIGNED = 12792
 EXP_E9_ONLY = 1872
 EXP_NAMED_LOWER = 547
 EXP_NAMED_UPPER = 557
@@ -153,12 +158,29 @@ def check(tag, ok, msg, extra=""):
 
 
 # ---------------------------------------------------------------- P1
+# P1 hashes the whole image, so it is TRUE for any unmodified copy and FALSE for
+# every mutation.  That makes it a constant, not a measurement -- it is listed
+# separately and EXCLUDED from the PASS count (V-001 §四.1).
 h = hashlib.sha256(RAW).hexdigest()
-check("P1", h == SHA256, "sha256 与交付锚一致", h[:16])
+ANCHOR_OK = (h == SHA256)
+print(("PASS\t" if ANCHOR_OK else "FAIL\t") + "P1\t[恒真项，不计入 PASS 数] "
+      "sha256 与交付锚一致\t" + h[:16])
+if not ANCHOR_OK:
+    FAILS.append("P1")
 
 # ---------------------------------------------------------------- P2
 # E8 and E9 targets counted SEPARATELY. This separation is the whole finding:
 # merging them is what turns intra-function jumps into phantom functions.
+#
+# R-038 / V-001 §3.1: the BYTE SCAN is not safe for E8 either.  `re.finditer(
+# b"\xe8")` matches 0xE8 bytes that are operands of other instructions, and each
+# such byte yields a bogus "call target".  Measured: 68,807 E8 bytes, of which
+# 563 are not a real `call` start; they contribute 560 targets that NO real call
+# reaches.  So the byte-scan set is an UPPER bound on E8 targets, and the aligned
+# set (only 0xE8 bytes that capstone says begin `call rel32`) is the honest one.
+#
+# Both are reported.  `e8_t` stays the byte-scan set so the historical numbers
+# remain reproducible; `e8_aligned` is the corrected reading and drives LOWER2.
 e8_t, e9_t = set(), set()
 for op, bucket in ((b"\xe8", e8_t), (b"\xe9", e9_t)):
     for m in re.finditer(op, TEXT):
@@ -171,10 +193,101 @@ for op, bucket in ((b"\xe8", e8_t), (b"\xe9", e9_t)):
             bucket.add(t)
 check("P2", len(e8_t) == EXP_E8 and len(e9_t) == EXP_E9
       and len(e8_t & e9_t) == EXP_OVL,
-      f"E8（调用）目标 = **{len(e8_t):,}**，E9（跳转）目标 = **{len(e9_t):,}**，"
-      f"两者重叠 = {len(e8_t & e9_t)}；"
+      f"E8（调用）目标 = **{len(e8_t):,}**（**字节扫描口径**，见 P2b），"
+      f"E9（跳转）目标 = **{len(e9_t):,}**，两者重叠 = {len(e8_t & e9_t)}；"
       f"`fn_walk` 把这两个集合并成一个根集，是分母混口径的根源",
       f"E8={len(e8_t)} E9={len(e9_t)} ovl={len(e8_t & e9_t)}")
+
+# ---------------------------------------------------------------- P2b (R-038)
+# Aligned decode: only 0xE8 bytes that begin a real `call rel32` instruction.
+# Linear sweep with per-address resync (+1 on failure), because .text contains
+# embedded data and a pure linear sweep desyncs (fn_walk.py's own docstring).
+insn_start = set()
+call_starts = set()
+e8_aligned = set()
+_cur = TLO
+_desync = 0
+while _cur < THI:
+    _off = _cur - TLO
+    _got = None
+    for _insn in MD.disasm(TEXT[_off:_off + 16], _cur):
+        _got = _insn
+        break
+    if _got is None:
+        _desync += 1
+        _cur += 1
+        continue
+    insn_start.add(_got.address)
+    if (_got.mnemonic == "call" and _got.operands
+            and _got.operands[0].type == XS.X86_OP_IMM):
+        call_starts.add(_got.address)
+        _t = _got.operands[0].imm
+        if TLO <= _t < THI:
+            e8_aligned.add(_t)
+    _cur += _got.size
+
+# Phantom sources: 0xE8 bytes that the byte scan treats as a call but that are
+# not instruction starts.  Verify each really sits INSIDE another instruction.
+_e8_sites = set()
+for m in re.finditer(b"\xe8", TEXT):
+    i = m.start()
+    if i + 5 > NT:
+        continue
+    d = struct.unpack_from("<i", TEXT, i + 1)[0]
+    if TLO <= TLO + i + 5 + d < THI:
+        _e8_sites.add(TLO + i)
+phantom_sites = _e8_sites - call_starts
+inside_other = 0
+for _va in phantom_sites:
+    for _back in range(1, 16):
+        _s = _va - _back
+        if _s not in insn_start:
+            continue
+        _g = None
+        for _insn in MD.disasm(read_va(_s, 16), _s):
+            _g = _insn
+            break
+        if _g is not None and _s + _g.size > _va:
+            inside_other += 1
+            break
+
+# Targets reached ONLY by phantom sources (these are the ones that vanish).
+phantom_targets = set()
+for _va in phantom_sites:
+    _i = _va - TLO
+    _d = struct.unpack_from("<i", TEXT, _i + 1)[0]
+    _t = _va + 5 + _d
+    if TLO <= _t < THI:
+        phantom_targets.add(_t)
+only_phantom = phantom_targets - e8_aligned
+
+check("P2b", len(e8_aligned) == EXP_E8_ALIGNED
+      and inside_other == len(phantom_sites)
+      and len(only_phantom) == EXP_ONLY_PHANTOM,
+      f"**对齐解码**：只有真正 `call rel32` 起点的 0xE8 才算 ⇒ E8 目标 "
+      f"**{len(e8_aligned):,}**（字节扫描 {len(e8_t):,}，差 "
+      f"{len(e8_t)-len(e8_aligned)}）。幻影源 **{len(phantom_sites)}** 个，"
+      f"**{inside_other}/{len(phantom_sites)} 逐址复核确认 0xE8 落在别的指令体内**；"
+      f"其中只被幻影源指向的目标 **{len(only_phantom)}** 个 ⇒ 字节扫描是"
+      f"**上界**，不是下界",
+      f"aligned={len(e8_aligned)} phantom_sites={len(phantom_sites)} "
+      f"inside_other={inside_other} only_phantom={len(only_phantom)}")
+
+# ---------------------------------------------------------------- P2c (R-038)
+# The DISCRIMINATING assertion.  P2b still reads `phantom_sites`, which is a
+# byte-scan product, so a mutation that edits a phantom's displacement moves
+# P2b as well and the two readings are not separated.
+#
+# P2c asserts ONLY aligned-side quantities, so a byte-scan-only defect leaves it
+# green.  Paired with P2b's `len(e8_t)` term, the pair can tell the two readings
+# apart -- which is what V-001 §七.5 asked for.
+check("P2c", len(e8_aligned) == EXP_E8_ALIGNED,
+      f"**纯对齐口径**（不含任何字节扫描量）：真 `call rel32` 目标 = "
+      f"**{len(e8_aligned):,}**，独立于 `re.finditer(b\"\\xe8\")` 的结果。"
+      f"幻影位移被改动时本断言必须保持绿，而 P2/P3 变红 ⇒ 两种读法可区分",
+      f"aligned_only={len(e8_aligned)}")
+
+
 
 # ---------------------------------------------------------------- P3
 vt = set()
@@ -189,8 +302,21 @@ for _k, c in json.load(open(RTTI, encoding="utf-8"))["classes"].items():
 roots_call = e8_t | vt | {PE_ENTRY}
 check("P3", len(roots_call) == EXP_ROOTS and len(vt) == EXP_VT,
       f"只取调用类根集（E8 ∪ 虚表 ∪ PE 入口）= **{len(roots_call):,}**"
-      f"（虚表槽 {len(vt):,}）；E9 一律当跳转，不当入口",
+      f"（虚表槽 {len(vt):,}）；E9 一律当跳转，不当入口。"
+      f"**注意：这是字节扫描口径，是上界**（见 P3b）",
       f"roots={len(roots_call)} vt={len(vt)}")
+
+# ---------------------------------------------------------------- P3b (R-038)
+# The aligned-decode LOWER: same construction with the corrected E8 side.
+roots_aligned = e8_aligned | vt | {PE_ENTRY}
+check("P3b", len(roots_aligned) == EXP_ROOTS_ALIGNED,
+      f"**对齐口径的 LOWER** = 对齐 call 目标 ∪ 虚表 ∪ PE 入口 = "
+      f"**{len(roots_aligned):,}**（字节扫描 {len(roots_call):,}，差 "
+      f"{len(roots_call)-len(roots_aligned)} = 那 560 个只被幻影源指向的目标）"
+      f"⇒ **字节扫描 13,352 是上界；12,792 是更紧的口径**（注意：两者都是"
+      f"「根集大小」，均不是函数数的严格证明 —— R-035 §八.1 的边界同样适用）",
+      f"roots_aligned={len(roots_aligned)} "
+      f"delta={len(roots_call)-len(roots_aligned)}")
 
 # ---------------------------------------------------------------- CFG traversal
 _DC = {}
@@ -313,6 +439,52 @@ check("P5", len(heads) == EXP_HEADS and ANCHOR in heads
       f"heads={len(heads)} anchor_in={ANCHOR in heads} "
       f"anchor_root={ANCHOR in roots_call}")
 
+# ---------------------------------------------------------------- P5b (R-038)
+# V-001 §3.2: UPPER is sensitive to the prologue criterion by roughly 2x.  The
+# honest thing is to measure that sensitivity INSIDE the gate instead of only
+# mentioning it in prose.  Two independent variations, each keeping the same
+# shape rule:
+#   (i)  narrow window (8 B -> 6 B) when matching the prologue
+#   (ii) drop the `\xc2` (ret imm16) branch
+# Report the spread.  This is a SENSITIVITY measurement, not a pass/fail on a
+# value -- it is registered, not counted as a killed assertion.
+PROLOGUE_NARROW = re.compile(rb"^(?:\x55\x8b\xec|\x83\xec|\x81\xec|\x53|\x56|\x57|\x8b\xff|\x6a)")
+
+
+def collect_heads(pats, prologue_re, window):
+    out = []
+    for pat, skip in pats:
+        for m in re.finditer(pat, TEXT):
+            i = m.start()
+            j = i + skip
+            npad = 0
+            while j < NT and TEXT[j] in (0x90, 0xCC):
+                npad += 1
+                j += 1
+            if npad < 2:
+                continue
+            a = TLO + j
+            if a in covered:
+                continue
+            if not prologue_re.match(read_va(a, window)):
+                continue
+            n, ok = insns_to_ret(a)
+            if ok and n >= 3:
+                out.append(a)
+    return sorted(set(out))
+
+
+heads_ret_only = collect_heads(((rb"\xc3", 1),), PROLOGUE, 8)
+heads_win6 = collect_heads(((rb"\xc3", 1), (rb"\xc2", 3)), PROLOGUE, 6)
+spread = (min(len(heads_ret_only), len(heads_win6)),
+          max(len(heads_ret_only), len(heads_win6)))
+ratio = (max(spread) / max(1, min(spread)))
+print(f"REGISTER\tP5b\tUPPER 序言敏感度：基准 **{len(heads)}**；"
+      f"只保留 `\\xc3` 分支 → **{len(heads_ret_only)}**；序言窗口 8→6 B → "
+      f"**{len(heads_win6)}**。极差 {spread[0]}…{spread[1]}（≈{ratio:.1f}×）⇒ "
+      f"**UPPER 不可单值冻结**，引用须带敏感度区间（结构性普查，不计入 PASS 数）")
+
+
 # ---------------------------------------------------------------- P6
 e9_intra = len((e9_t - e8_t - vt) & covered)
 check("P6", e9_intra == EXP_E9_INTRA,
@@ -332,6 +504,27 @@ check("P7", n_lo == EXP_NAMED_LOWER and n_up == EXP_NAMED_UPPER,
       f"（LOWER {lo_den:,}）… {100.0*n_up/up_den:.2f}%（UPPER {up_den:,}）**，"
       f"**高于**公布的 3.62%（551/15,224）—— 与 R-034 的方向相反",
       f"n_lo={n_lo} n_up={n_up} lo_den={lo_den} up_den={up_den}")
+
+# ---------------------------------------------------------------- P7b (R-038)
+# The aligned-decode coverage, i.e. the D-06/D-02 three-tier figure.  The
+# aligned root set is smaller (12,792) so the same named points give a HIGHER
+# percentage.  UPPER2 = aligned LOWER + the same 890 heads (the heads come from
+# `covered`, which was built from the byte-scan roots -- so UPPER2 is an upper
+# bound too, which is the honest way to state it).
+lo2_den = len(roots_aligned)
+up2_den = len(roots_aligned) + len(heads)
+n_lo2 = len(named & roots_aligned)
+n_up2 = len(named & (roots_aligned | set(heads)))
+print(f"REGISTER\tP7b\t**三档双报**：\n"
+      f"  · 上界族（字节扫描 E8）：LOWER **13,352** → "
+      f"{100.0*n_lo/lo_den:.2f}%；UPPER **14,242** → {100.0*n_up/up_den:.2f}%\n"
+      f"  · 对齐族（真 call 起点）：LOWER **{lo2_den:,}** → "
+      f"{100.0*n_lo2/lo2_den:.2f}%；UPPER **{up2_den:,}** → "
+      f"{100.0*n_up2/up2_den:.2f}%\n"
+      f"  命名点 {n_lo2}（对齐 LOWER）/ {n_up2}（对齐 UPPER）\n"
+      f"  ⇒ 对齐族是本轮推荐引用口径（剔除 560 个可证伪幻影根），"
+      f"但 UPPER 序言敏感度见 P5b（结构性普查，不计入 PASS 数）")
+
 
 # ---------------------------------------------------------------- P8
 # The R1-3 premise: are there function-name strings to harvest?

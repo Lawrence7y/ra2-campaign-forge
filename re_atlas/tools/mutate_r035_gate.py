@@ -79,6 +79,22 @@ CASES = [
     # one E9 referrer into an E8 (`E9` -> `E8` keeps the 5-byte shape) promotes
     # its target from E9-only to an E8 root, so e9_only shrinks by one.
     ("N4 one E9 promoted to E8 at 0x404457", (0x00404457, 0xE8), {"N4"}),
+
+    # ---- R-038 (V-001 §七.5): a mutation that DISTINGUISHES the byte-scan E8
+    # count from the aligned E8 count.
+    #
+    # Every earlier case moved both counts together, because both were computed
+    # from the same byte scan -- a gate built on one reading cannot reject a
+    # defect in that reading (V-001 §四: "门禁抓不到与自己同构的错误").
+    #
+    # 0x004011DB is one of the 563 phantom sites: its 0xE8 is an operand byte of
+    # another instruction, and it is the ONLY source that reaches 0x405B99.
+    # Rewriting its rel32 to 0x7FFFFFFF pushes that target out of .text for the
+    # BYTE SCAN, while the ALIGNED decode never counted this site at all.
+    # Expected: P2 and P3 red (byte-scan quantities), P2c GREEN (aligned-only).
+    ("phantom E8 at 0x4011DB displaced out of .text",
+     (0x004011DC, 0xFF, 0x004011DD, 0xFF, 0x004011DE, 0xFF, 0x004011DF, 0x7F),
+     {"P2", "P3"}),
 ]
 
 

@@ -1,0 +1,24 @@
+sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+anchor = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+match  = True
+
+byte-scan: 0xE8 bytes with in-range target = 68,807
+byte-scan: distinct E8 targets            = 7,279   [R-035 reports 7,279]
+
+linear decode from .text start: desync points = 66
+  instruction starts recorded = 1,394,120
+  real `call rel32` sites     = 68,253
+  distinct call targets       = 6,719   [V-001 reports 6,719]
+
+byte-scan 0xE8 sites that ARE a real call start : 68,244
+byte-scan 0xE8 sites that are NOT               : 563   [V-001 reports 560]
+  ...of those, 0xE8 falls INSIDE another instruction : 563
+  ...not attributable to any instruction            : 0
+
+LOWER (byte-scan E8)  = 13,352   [R-035: 13,352]
+LOWER (aligned call)  = 12,792   [V-001: 12,792]
+difference            = 560
+
+phantom sources point at 563 distinct targets
+  of which ONLY phantom sources reach them: 560
+  of which a real call also reaches them  : 3
