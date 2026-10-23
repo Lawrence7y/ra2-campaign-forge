@@ -123,6 +123,7 @@ EXP_ROOTS = 13352
 EXP_COVERED = 992227
 EXP_HEADS = 890
 EXP_E9_INTRA = 1445
+EXP_E9_ONLY = 1872
 EXP_NAMED_LOWER = 547
 EXP_NAMED_UPPER = 557
 EXP_PURE_NAME_LIT = 5
@@ -446,16 +447,39 @@ check("P11", len(ident_sites) == EXP_IDENT_SITES and n_ini == EXP_IDENT_INI,
       f"ident={len(ident_sites)} ini_arg={n_ini}")
 
 # ---------------------------------------------------------------- N1
-check("N1", INTERIOR not in visited and INTERIOR not in heads,
-      f"[负控1] 已知函数 0x4039C0 的中段 0x{INTERIOR:08X} 既不是 LOWER 入口、"
-      f"也不在 UPPER 补集里",
-      f"in_lower={INTERIOR in visited} in_heads={INTERIOR in heads}")
+# HONEST FORM. The first draft asserted only `INTERIOR not in visited and not in
+# heads`, which is a TAUTOLOGY: `visited == roots_call` by construction (the CFG
+# adds no new entries), and INTERIOR is not an E8/vtable target, so the first
+# conjunct is fixed TRUE; `heads` skips any address in `covered`, and INTERIOR is
+# covered, so the second conjunct is fixed TRUE too. Neither can ever go red.
+#
+# The load-bearing fact is the POSITIVE one: INTERIOR lies inside a function body
+# that the traversal actually reached. That conjunct IS killable -- destroy both
+# E8 referrers of the host function 0x4039C0 (at 0x403ACD and 0x403AFF) and the
+# host becomes unreachable, INTERIOR stops being covered, and N1 goes red.
+# See mutate_r035_gate.py case "N1 host function orphaned".
+check("N1", INTERIOR in covered and INTERIOR not in visited,
+      f"[负控1] 已知函数 0x4039C0 的中段 0x{INTERIOR:08X} **被覆盖**"
+      f"（= 遍历真的走进了这个函数体）但**不是**入口 ⇒ "
+      f"「中段地址不会被当成函数」这条成立；"
+      f"注意 `not in heads` 由 `in covered` 蕴含，是装饰性的，已从断言里删掉",
+      f"covered={INTERIOR in covered} entry={INTERIOR in visited}")
 
 # ---------------------------------------------------------------- N2
-check("N2", E9_INTRA_SAMPLE not in visited and E9_INTRA_SAMPLE not in heads,
-      f"[负控2] 0x{E9_INTRA_SAMPLE:08X} 是 E9 目标、落在 0x4041D0 函数体内，"
-      f"在新口径下**不是**入口（旧口径会把它算成函数）",
-      f"in_lower={E9_INTRA_SAMPLE in visited}")
+# Same treatment. `E9_INTRA_SAMPLE not in visited` alone is a tautology (it is
+# E9-only, and E9 is never a root). The real claim is two-sided and BOTH sides
+# are killable:
+#   (a) it IS an E9 target      -- destroy the two `jmp` at 0x404457/0x40446F
+#   (b) it IS covered           -- same mutation
+#   (c) it is NOT a root        -- structural, that is the whole point
+check("N2", E9_INTRA_SAMPLE in e9_t and E9_INTRA_SAMPLE in covered
+      and E9_INTRA_SAMPLE not in roots_call,
+      f"[负控2] 0x{E9_INTRA_SAMPLE:08X} 是 **E9 目标**、**被覆盖**"
+      f"（落在 0x4041D0 函数体内）、但**不是**调用类根集成员 ⇒ "
+      f"新口径把它排除、旧口径（E8∪E9 扁平根集）会把它算成函数",
+      f"in_e9={E9_INTRA_SAMPLE in e9_t} "
+      f"covered={E9_INTRA_SAMPLE in covered} "
+      f"root={E9_INTRA_SAMPLE in roots_call}")
 
 # ---------------------------------------------------------------- N3
 # Original form of this control claimed 0x652CF0 is reached ONLY via `call reg`.
@@ -482,6 +506,22 @@ check("N3", ANCHOR not in e8_t and ANCHOR not in e9_t
       f"任何「根集 + CFG」方法都到不了它，盲区是结构性的",
       f"e8={ANCHOR in e8_t} e9={ANCHOR in e9_t} vt={ANCHOR in vt} "
       f"data={data_ptrs}")
+
+# ---------------------------------------------------------------- N4
+# The mechanism itself, stated as a count rather than an anecdote.
+# Every E9-only target (an E9 target that is neither an E8 target nor a vtable
+# slot) is excluded from the root set by construction. This is what makes the
+# new denominator smaller than the published one, and it is killable: promoting
+# ANY of these addresses into the root set (e.g. by turning its `jmp` referrer
+# into a `call`) makes the excluded count drop.
+e9_only = e9_t - e8_t - vt
+n_e9_only_in_roots = len(e9_only & roots_call)
+check("N4", len(e9_only) == EXP_E9_ONLY and n_e9_only_in_roots == 0,
+      f"**E9-only 目标**（E9 目标 ∧ ¬E8 目标 ∧ ¬虚表槽）= **{len(e9_only):,}** 个，"
+      f"其中进入调用类根集的 = **{n_e9_only_in_roots}** ⇒ "
+      f"「E9 只当跳转不当入口」这条规则被机械地执行了；"
+      f"旧口径把这 {len(e9_only):,} 个里的函数内跳转也算成函数",
+      f"e9_only={len(e9_only)} in_roots={n_e9_only_in_roots}")
 
 print()
 if FAILS:

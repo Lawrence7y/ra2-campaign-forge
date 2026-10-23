@@ -9,8 +9,9 @@ PASS	P8	全镜像**纯函数名字面量只有 5 个**；带 `Class::Method` 前
 PASS	P9	push 这些函数名字面量的站点 = **35** 个 ⇒ 即使全部正确归属，也只覆盖 21 个函数 / 14,242 = 0.15%	sites=35
 PASS	P10	`__FILE__` 字面量站点 = **1299** 个，其中 1190 个（91.6%）跟的是 `call 0x734E60`（`ret 8` 的字符串驻留表查找，**不是 assert**）⇒ 这条路给的是**源文件名**，不是函数名	path_sites=1299 callee734e60=1190
 PASS	P11	裸标识符类字符串站点 = **3,688** 个，其中 **2,291** 个（62.1%）是 8 个 INI reader 的实参 ⇒ 这一类是 **INI 键名**，不能算调试命名（否则会把 INI 普查重复计入）	ident=3688 ini_arg=2291
-PASS	N1	[负控1] 已知函数 0x4039C0 的中段 0x004039C9 既不是 LOWER 入口、也不在 UPPER 补集里	in_lower=False in_heads=False
-PASS	N2	[负控2] 0x00404555 是 E9 目标、落在 0x4041D0 函数体内，在新口径下**不是**入口（旧口径会把它算成函数）	in_lower=False
+PASS	N1	[负控1] 已知函数 0x4039C0 的中段 0x004039C9 **被覆盖**（= 遍历真的走进了这个函数体）但**不是**入口 ⇒ 「中段地址不会被当成函数」这条成立；注意 `not in heads` 由 `in covered` 蕴含，是装饰性的，已从断言里删掉	covered=True entry=False
+PASS	N2	[负控2] 0x00404555 是 **E9 目标**、**被覆盖**（落在 0x4041D0 函数体内）、但**不是**调用类根集成员 ⇒ 新口径把它排除、旧口径（E8∪E9 扁平根集）会把它算成函数	in_e9=True covered=True root=False
 PASS	N3	[负控3] 锚点 0x00403A80 在**四种**引用方式下全为零：E8 目标=False、E9 目标=False、虚表槽=False、.rdata/.data dword 指针=0 ⇒ 任何「根集 + CFG」方法都到不了它，盲区是结构性的	e8=False e9=False vt=False data=0
+PASS	N4	**E9-only 目标**（E9 目标 ∧ ¬E8 目标 ∧ ¬虚表槽）= **1,872** 个，其中进入调用类根集的 = **0** ⇒ 「E9 只当跳转不当入口」这条规则被机械地执行了；旧口径把这 1,872 个里的函数内跳转也算成函数	e9_only=1872 in_roots=0
 
-RESULT: 14/14 PASS
+RESULT: 15/15 PASS

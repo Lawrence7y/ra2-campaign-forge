@@ -56,6 +56,29 @@ CASES = [
     # reader call following the `push 'Name'` at 0x410A98, verified by scanning
     # all 2,376 single-call ident sites.
     ("INI reader call after push 'Name' destroyed", (0x00410AA0, 0x90), {"P11"}),
+
+    # ---- controls, now rewritten to be killable (v5 §7) -------------------
+    # N1 asserts INTERIOR IS covered. Its host function 0x4039C0 has exactly two
+    # E8 referrers (0x403ACD, 0x403AFF); destroying both orphans it, the body
+    # stops being covered, and N1 goes red.
+    ("N1 host function 0x4039C0 orphaned",
+     (0x00403ACD, 0x90, 0x00403AFF, 0x90), {"N1"}),
+
+    # N2 asserts E9_INTRA_SAMPLE is an E9 target AND covered. Destroying both
+    # `jmp` referrers (0x404457, 0x40446F) breaks both conjuncts.
+    ("N2 both E9 referrers of 0x404555 corrupted",
+     (0x00404457, 0x90, 0x0040446F, 0x90), {"N2"}),
+
+    # N3 asserts four zero referrers. Planting a dword pointer to 0x403A80 in a
+    # zero-filled .data run (0x81B21A) makes the 4th conjunct nonzero.
+    ("N3 dword pointer to 0x403A80 planted",
+     (0x0081B21A, 0x80, 0x0081B21B, 0x3A, 0x0081B21C, 0x40, 0x0081B21D, 0x00),
+     {"N3"}),
+
+    # N4 asserts the E9-only set size AND that none of them are roots. Turning
+    # one E9 referrer into an E8 (`E9` -> `E8` keeps the 5-byte shape) promotes
+    # its target from E9-only to an E8 root, so e9_only shrinks by one.
+    ("N4 one E9 promoted to E8 at 0x404457", (0x00404457, 0xE8), {"N4"}),
 ]
 
 
