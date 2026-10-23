@@ -122,8 +122,10 @@ PATCH_C = ANCHOR_C + '''        # >>> H7-BEGIN rect-wait-skip（★ 缺省 off �
         #   ★ 修法=把 `deadline` 局部重绑为 0.0，令母本 while 谓词立即短路；
         #     **母本 while 行一字未改**（零删除行纪律）。
         #   ★ 安全性：`deadline` 在本点之后**零引用**（生成器自检 #8 实测）；
-        #     它此前唯一用途是「等主窗出现」（`:7553`）与 window 稳定循环
-        #     （`:7607` 起改用 `_stab_deadline`），两者都已走完。
+        #     它此前唯一用途是「等主窗出现」（副本 `:7641`）与 window 稳定循环
+        #     （副本 `:7695` 起改用 `_stab_deadline`），两者都已走完。
+        #     ★ 行号按**本文件**标注（母本对应 `:7553` / `:7607`，因 H7 在其前
+        #       插入了 88 行而整体后移）；引用行号一律指向读者正在看的这一份。
         if _H7_STATE["fs_rect_wait_skipped"]:
             _h7_deadline_orig = deadline
             deadline = 0.0

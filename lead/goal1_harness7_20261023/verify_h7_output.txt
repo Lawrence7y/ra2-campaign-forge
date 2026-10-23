@@ -6,12 +6,16 @@ E0 结构取值（先证明模型不是虚构）
 [PASS] E0d late 闸比较存在  op=Gt
 [PASS] E0e late 闸启用条件含 nav_end_t 判定  guard=True
 [PASS] E0f late 闸启用条件含 fs_rect_wait_skipped 前置  guard=True
+[PASS] E0g 闸极性正确（nav_end 是 `is not None`、skip 不在 not 里、用 and 连接）  {"nav_end_ok": true, "skip_ok": true, "conjunction": true}
+[PASS] E0h ★顺序：短路块在母本 while 之前，且 deadline=0.0 夹在两者之间  {"skip": 8084, "while": 8103, "deadline": 8086}
+[PASS] E0i ★武装极性：`--h7-keep-rect-wait` 是 opt-out（not getattr）  arming=not_getattr
 ========================================================================
 E1 全屏 + 短路 on ⇒ 轮数 0
 [PASS] E1 短路生效（轮数 0）  polls=0
 ========================================================================
 E2 全屏 + 短路 off ⇒ 跑满 deadline（母本语义）
-[PASS] E2 关闭短路跑满 deadline  polls=250 expect=250
+[PASS] E2 关闭短路跑满 deadline（余量=产物常量−真机实测偏移）  polls=250 expect=250（STAGE_TIMEOUT_S=150.0 取自产物；frame 起点偏移=24.657 s 取自真机）
+[PASS] E2b 模型与真机实测 251 轮同量级（±5%）  polls=250 实测=251 ratio=0.9960
 ========================================================================
 E3 窗口模式（矩形已到 800×600）⇒ 轮数 0
 [PASS] E3 窗口模式零等待  polls=0
@@ -39,6 +43,16 @@ M3 变异：`>` → `>=`，喂等值 ⇒ 边界判据可杀
 E5 late_start 落盘与记账一致
 [PASS] E5a payload verdict 被改写为 late_start  读到即证明存在该赋值
 [PASS] E5b rec 行记 late_start  rec 与 JSON 两处都是 late_start
-[PASS] E5c 变异：删掉改写行后判据必红  缺失即 E5a 失败，两处 verdict 会不一致
+[PASS] E5c 原产物两处 verdict 一致  payload=late_start rec=late_start
+[PASS] E5d 变异后两处 verdict 必不一致（真重算，非恒真）  payload=error rec=late_start
 ========================================================================
-TOTAL 22/22 PASS
+M4 变异：把 rect-wait-skip 块整块搬到 while 之后（顺序搬移）
+[PASS] M4 变异后 E0h 必红（短路块已搬到 while 之后）  {"skip": 8093, "while": 8076, "deadline": 8095}
+========================================================================
+M5 变异：武装极性反转（if not getattr → if getattr）
+[PASS] M5 变异后 E0i 必红（武装方向反转）  arming=getattr
+========================================================================
+M6 变异：闸极性反转（skip 前置包进 not）
+[PASS] M6 变异后 E0g 必红（skip 在 not 里）  {"nav_end_ok": true, "skip_ok": false, "conjunction": true}
+========================================================================
+TOTAL 30/30 PASS
