@@ -1,0 +1,26 @@
+X1 PASS: slot10 @0x71F800: 命中则 [this+0x28] <- [[this+0x28]+0x28]（同类链：字段读自同字段偏移）
+X2 PASS: Save @0x71F82E/@0x71F852: 两字段同一形态 `mov [esi+off]; test; mov ecx,[eax+4]; add eax,4`（+4 子对象、slot4）
+X3 PASS: parse fn @0x71F595: call 0x006F0FC0（=0x6F0FC0 resolver）；紧接 `mov [esi+0x30],eax` —— TEvent 函数簇内唯一「产生值」的 +0x30 写入点（其余站点只清零；簇外 0x30 是他类字段，不作宣称）
+X4 PASS: resolver @0x6F0FC0: [0xA8ECB0] count + [0xA8ECA4] vector, item 匹配 `[item+0x24]`（Name 槽）
+X5 PASS: registry ctor @0x6F080A 写 vtable 0x7F47AC/0x7F47A4；TeamTypes reader @0x6F1976 miss 即 new 0xF8（TeamTypeClass::GetSize）
+X5c PASS: 串常量 %d,%d,%s / <none> / none / TeamTypes / ',' 全部 .data/.rdata 直读吻合
+X6 PASS: 【结构性·不计数】RTTI 交叉：TeamTypeClass.vfuncs 含 0x6F1030（facet 槽10 读 [obj+0xD0]）且主 vtable=0x7F47D0 ⇒ 向量持有物类名定谳 TeamTypeClass
+X7 PASS: slot10 @0x71F80B.. 后半：清链路径 `[this+0x28] <- [prev+0x28]` + `cmp [ecx+0x30],edx`（+0x28/+0x30 都在同一 setter 里处理，字段成对出现）
+X8 PASS: GetSize@0x71FA50=0x58 / WhatAmI@0x71FA60=0x30 字节吻合，且 trigger-list loader @0x7274E2 push 0x58 后 new（Parse 工厂对象确为 TEventClass）
+X9 PASS: loader @0x7274FD: `call 0x0071F4E0`（=0x71F4E0 parse fn）紧接 `mov [esi+0x28],[ebp+0xac]` —— +0x28 写入点=前一个事件（同类回链）
+X10 PASS: census 收口（5 存储站点字节钉牢）：+0x30 取值写入簇内仅 parse@0x71F59A；+0x28 在 TEvent 新对象（[esi]+0x28）上仅 unlink@0x71F80E+loader@0x72750B；清零 ctor@0x71E6B2/0x71E6B8。（同函数 loader@0x72759D 的 `[edi+0x28]` 属 TActionClass 链：new 0x94/ctor@0x6DD000/主 vtable 0x7F443C，非本类——census 无漏报）
+
+== R-041 10/10 字节断言 PASS（X0 指纹 + X6 结构性不计入分母，但 X6 红仍非零退出）==
+baseline: rc=0 red=-
+KILLED	slot10 head [ecx+0x28] displaced	expect=['X1'] red=['X1']
+KILLED	Save [esi+0x28] disp displaced	expect=['X2'] red=['X2']
+KILLED	resolver call rel32 LSB	expect=['X3'] red=['X3']
+KILLED	resolver Name-disp 0x24->0x25	expect=['X4'] red=['X4']
+KILLED	registry vtable imm corrupted	expect=['X5'] red=['X5']
+KILLED	debug format string corrupted	expect=['X5c'] red=['X5c']
+KILLED	slot10 tail [ecx+0x30] disp (X7-only)	expect=['X7'] red=['X7']
+KILLED	GetSize immediate 0x58->0x50	expect=['X8'] red=['X8']
+KILLED	write-site [esi+0x28] disp displaced	expect=['X10', 'X9'] red=['X10', 'X9']
+KILLED	ctor zero-store [esi+0x28] disp displaced	expect=['X10'] red=['X10']
+
+10/10 killed (exact-set scoring)

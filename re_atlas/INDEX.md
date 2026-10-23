@@ -894,6 +894,28 @@ M1 在 **340 个站点**上与键槽不一致：91 个键槽是寄存器、5 个
 复跑：`python re_atlas/tools/r031_authoritative_numbers.py`（17/17 PASS, EXIT=0）；
 证据 `evidence/r031_section12_restatement.md`；正文 `kb/30` §12.7。
 
+### C.16e L-21 定谳：`TEventClass+0x28`=前驱事件（同类回链）、`+0x30`=`TeamTypeClass*`（R-041，2026-10-24）
+
+> 门禁 `tools/r041_l21_eventteam.py` **10/10 字节断言 PASS**（X0 指纹恒真、
+> X6 结构性具名，均不入分母）；变异 `tools/mutate_r041_gate.py`
+> **10/10 killed（精确集合）**；证据 `evidence/r041_l21_eventteam.md`。
+
+**结论**：`+0x28` 由事件列表 loader（`0x7274FD` `new 0x58→call 0x71E6A0`、
+`call 0x71F4E0; mov [esi+0x28],[ebp+0xAC]`）逐条回链，槽10（`0x71F800`）
+按同类同偏移再读=摘链 ⇒ **前一个 `TEventClass`**。`+0x30` 唯一取值写入在
+parse fn `0x71F4E0`（`call 0x6F0FC0; mov [esi+0x30],eax`）；resolver 扫全局
+注册表向量 `[0xA8ECA4]/[0xA8ECB0]` 比对 `[item+0x24]` Name/`[item+0x64]`，
+注册表持有物 facet `0x7F47AC/0x7F47A4`（主表 `0x7F47D0`−0x24/−0x2C 间距）+
+`TeamTypeClass.vfuncs ∋ 0x6F1030` 双证 ⇒ **`TeamTypeClass*`**；
+`"TeamTypes"` reader 未命中即 `new 0xF8`（248=G-1）。
+
+**抓到两件事**（详见 LEDGER R-041 §3）：
+1. **G-60**：census 假阴性（`endswith` 用错操作数侧）产出的「0 处」差点写进交付件——
+   否定式断言必须自带阳性对照；纠正后真实簇站点表钉进 X10。
+2. **悬项编号先查再发**：首稿新开 L-24，但台账 max=L-28 ⇒ 改 **L-29**（+0x54 归属）。
+
+**作用域**：类名定谳，不宣称任何地址可改写。真机/异族核验欠账同 R-035…R-041。
+
 ### C.15 `RulesClass` 载入顺序（R-021 核验口径）
 
 | 项 | 值 |

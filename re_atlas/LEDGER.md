@@ -4615,3 +4615,79 @@ C4 初版照抄 kb/20「`value` 严格递增」，**首跑变红**。实测名�
 **与前三轮（34→34→34→37→37）对比**：增量 0（上轮 +3 为 GOAL-3T 的 harness7）。
 **诚实边界**：37 条全在本线写域之外，本线零处置权，仅记录；
 deep 档 + `completion=partial` ⇒ 不能宣称项目安全。
+
+## R-041（2026-10-24）· L-21 定谳：`TEventClass+0x28`=前一个 `TEventClass`（回链）、`+0x30`=`TeamTypeClass*`（全局类型注册表按名解析）
+
+章程 §3 队列「R2-1 余项（L-21）」。SYNCPOINT `86dfb3e` 后无待推
+（`rev-list --left-right` 一度 1/0，系 GOAL-3T §403 刚落即被其自推，复核 0/0）。
+
+### 1. 两条链（全部从字节重读，线性对齐 1,394,120 条）
+
+**+0x28（同类回链）**：loader `0x7274FD` 在 `new 0x58 → call 0x71E6A0(ctor)`
+产出的对象上做 `call 0x71F4E0; mov edx,[ebp+0xAC]; mov [esi+0x28],edx; mov
+[ebp+0xAC],esi` —— 事件列表逐条解析，前驱回填。槽10 `0x71F800` 命中即
+`mov eax,[eax+0x28]; mov [ecx+0x28],eax`（同类同偏移再读=链摘除）。
+**+0x30（TeamTypeClass*）**：parse fn `0x71F4E0` @`0x71F595` `call 0x6F0FC0;
+mov [esi+0x30],eax`；resolver 扫全局向量 `[0xA8ECA4]`/计数 `[0xA8ECB0]`，逐项比
+`[item+0x24]` Name 槽 + `[item+0x64]`；注册表持有物双证：facet 间距（主表
+`0x7F47D0`−0x24/−0x2C=`0x7F47AC/0x7F47A4`，AbstractClass 多 vptr 形态）+
+`TeamTypeClass.vfuncs ∋ 0x6F1030`（facet 槽10 读 `[obj+0xD0]`=该向量字段）。
+`"TeamTypes"`@`0x8430FC` reader 未命中即 `new 0xF8`（=248=G-1 双证尺寸）。
+转储 `0x71F3FE` push `[对象+0x24]` 进 `"%d,%d,%s"` —— 第 3 参=类型名缓冲，独立指向类型类。
+
+### 2. 门禁 `tools/r041_l21_eventteam.py` 10/10；变异 `tools/mutate_r041_gate.py` 10/10
+
+X0 指纹恒真不计；X6 结构性（RTTI 交叉）具名标注、红仍非零退出。
+字节钉死 X1-X5c/X7-X10 十条，各有专属杀手、红集互不相同（精确集合）。
+
+### 3. 抓到两件事
+
+**（3.1）G-55 同型错误第三次：census 假阴性**
+首版「全镜像 `[reg+0x28]/[reg+0x30]` 直写站点 0 处」的断言写进了交付件——
+普查脚本把 `endswith('…+ 0x28]')` 作用在 `ops` **完整双操作数串**上（结尾是源操作数，恒假），**664 行存储清单被过滤成 0 行**；（首稿自诊成「漏 `0x` 前缀」——也是错的，机制以重跑为准。）
+若未复核「唯一写入点」这句话就 commit，交付件里将留着一条**永远绿且方向错误**的
+否定式断言。纠正后真实簇站点表：+0x28={ctor 0x71E6B2(0), unlink 0x71F80E,
+loader 0x72750B}；+0x30={ctor 0x71E6B8(0), parse 0x71F59A, 0x71F816(0)}，
+另 `0x72759D [edi+0x28]` 归属 **TActionClass** 兄弟链（new 0x94/ctor 0x6DD000/
+主 vtable 0x7F443C），排除且记入 X10。**「唯一」限定到簇内并给出 census 收口。**
+（同轮探查窗口寻址还错过一次：`CODE[s-TEXT_VA+TEXT_OFF:]` 双加段基址，
+5 处「命中」全是幻影——第一次 dump 的函数体整页错误，对齐后才对上
+vtable 写入字节。两个坑同属「匹配/寻址口径」家族，G-60 记。）
+
+**（3.2）计数与标签再次打架（G-55 家族第 4 次）**
+初版把 X6 标了「结构性·不计数」，分母却仍算它（9/9）。修：`UNCOUNTED={"X0","X6"}`
+显式集合，X6 变红走 `all_green` 非零退出，标签与计数从此同源。
+
+### 4. 交付与登记
+
+- kb/21 §1.3 加 L-21 定谳横幅（含旧措辞「外部接口对象」的修正）。
+- 证据 `evidence/r041_l21_eventteam.md` + `r041_l21_eventteam.txt`（两套件完整输出）。
+- STATUS 悬项表：关闭 +1（累计 4→5），新开不变（6→…L-21 关）。
+- 新开悬项 **L-29**：`+0x54` 的归属链（L-20 同源）。census 实测簇内 `[reg+0x54]`
+  存储 3 站：ctor `0x71E6BE`(0 清零) + 取值 2 处 `0x71F209`/`0x71FA44`，归属未追
+  （登记于实测之上）。注：首稿误写 **L-24**——`L-24` 已被占（`+0x3C`，本轮 grep
+  台账 max=L-28 才发现），悬项编号须先查再发，同「重复标题」陷阱家族。
+
+### 5. 诚实边界
+
+1. 未做异族盲验（本线 R-035…R-041 全部待 C 会话队列）。
+2. 名字表/全局在 `.data` 可写段；结论描述镜像静态形态。
+3. resolver 未命中返回 `vector[count]` 哨兵槽位（0x6F1015），与 reader 的
+   `<none>`/`none` 守卫是否同一路径未追到底——登记，不影响 X3/X4 字节事实。
+4. 本结论是类名定谳，**不宣称任何地址可改写**。
+
+### 6. sync_check.py 仍缺
+
+本 clone 无 `tools/sync_check.py`（他线工具，不代建）；等效核查 = `git fetch` +
+`git rev-list --left-right --count`（本轮 0/0）。
+
+### R-041 轮审计入账（2026-10-24）
+
+- scanId `scan-2026-10-23T17-42-38.765Z-3b55fd47b185`
+- seal `sha256:ab0d3fb2a1013213a0759aa12527e0846b5a016af93dd83def11ddab6b15284d`
+- **findings 37**（`tools/` 17 / `lead/` 18（GOAL-3T 在飞 +1）/ `ra2forge/` 2）
+- **`re_atlas/` 命中 0**（本轮新增 r041 两件工具 + evidence 两件 + kb/STATUS/LEDGER 改动零命中）
+- 依赖风险 0（`completion=partial`）；本轮模型 `new-provider-3/qfmodel`
+- 与上两轮 37→37 持平；**诚实边界**：37 条全在本线写域外，仅记录；
+  deep+partial ⇒ 不宣称项目安全。push 时钩子再次提示 scanner_enobufs，
+  同轮已补跑完整深度扫描（即本条）。

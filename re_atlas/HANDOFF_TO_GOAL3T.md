@@ -1523,3 +1523,30 @@ json，不必再解析散文；引用尺寸时用 `size` 字段（单位字节�
 你方门禁若引用过本线文档里的形状措辞，值得照此复查一遍。
 
 **置信度**：实测（门禁首跑 FAIL → 逐址查明 1 处非递增 → 判据改集合相等）。
+
+---
+
+## H-029 · 2026-10-24 · L-21 定谳：`TEventClass+0x28`/`+0x30` 的真实类型（静态双证）
+
+**发现**：`TEventClass` 两个悬了 3 轮的接口字段（`kb/21` §1.3 曾标「外部接口对象、
+类名未定」）已定谳——**不是 COM 接口对象，是引擎对象指针**：
+
+| 字段 | 类型 | 一句话机制 |
+|:--|:--|:--|
+| `+0x28` | **`TEventClass*`** | 事件列表回链：loader `0x7274FD` 逐条 `new 0x58`→parse `0x71F4E0`→`mov [esi+0x28],[ebp+0xAC]` 前驱回填；槽10 `0x71F800` 同类同偏移再读=摘链 |
+| `+0x30` | **`TeamTypeClass*`** | parse fn `0x71F595` `call 0x6F0FC0; mov [esi+0x30],eax`——按名在全局类型注册表 `[0xA8ECA4]` 解析（比对 Name 槽 `[item+0x24]`+`[item+0x64]`） |
+
+**证据**：`evidence/r041_l21_eventteam.md` + 门禁 `tools/r041_l21_eventteam.py`
+（**10/10 字节断言**，X0/X6 具名不计数）+ 变异 `tools/mutate_r041_gate.py`
+（**10/10 killed 精确集合**）。注册表归属双证：facet 间距（`TeamTypeClass` 主表
+`0x7F47D0`−0x24/−0x2C=`0x7F47AC/0x7F47A4`）+ `TeamTypeClass.vfuncs ∋ 0x6F1030`
+（该 facet 函数读 `[obj+0xD0]`=向量字段）；TeamTypes reader 未命中即 `new 0xF8`
+（248=G-1 双证尺寸，与 `class_contract.json` 的 `TeamTypeClass.size=0xF8` 独立吻合）。
+
+**可能影响哪个目标**：③ P1/战役轨的触发器语义——「事件所属团队」可直接读
+`event+0x30 → TeamTypeClass+0x24 名字缓冲`（不再需要猜接口对象）；
+`+0x28` 回链=同触发器的前置事件序列。
+
+**置信度**：静态字节双证（高）。**未做异族盲验、未真机**；本线不宣称可改写点。
+**旁注**：同 loader 函数 `0x72759D` 的 `[edi+0x28]` 是 `TActionClass` 兄弟链
+（new 0x94/ctor `0x6DD000`/主 vtable `0x7F443C`），字段同名不同类，读码时别混。
