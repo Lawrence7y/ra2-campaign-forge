@@ -1,0 +1,368 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""H7 行为验证（离线、零真机、零动态执行）。
+
+★ 纪律：**不 import / 不 exec / 不 compile 动态源码**。
+  只 `ast.parse` 读 harness7 的真实结构，把**取值**（常量、赋值右值、
+  比较运算符）从真实文件里取出来，再用普通 Python 算术求值。
+  ⇒ 变异发生在**真实产物**上，判据也读**真实产物**，两者不是同一份手抄。
+
+四项实验
+--------
+E1  全屏 + 短路 on  ⇒ 采帧前等待轮数 = 0
+E2  全屏 + 短路 off（--h7-keep-rect-wait）⇒ 跑满 deadline（母本语义）
+E3  窗口模式（矩形已 800×600）⇒ 轮数 0（与短路无关）
+E4  late-start 闸：nav→measure 超限 ⇒ late_start=True；正常值 ⇒ False
+
+变异测试（★ 每条取值证明必须能被"改坏被测物"杀掉）
+M1  `deadline = 0.0` → `deadline = deadline`（短路失效）⇒ E1 必红
+M2  闸值 90.0 → 1e9（闸失效）⇒ E4-late 必红
+M3  `>` → `>=` 并喂等值 ⇒ 边界判据可杀
+"""
+import ast
+import shutil
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+H7 = ROOT / "lead/goal1_harness7_20261023/qc151_trip.harness7.py"
+
+FRAME_W, FRAME_H = 800, 600
+DEADLINE_ORIG = 125.0      # 实测 stage_seconds:frame 量级（母本 deadline 余量）
+POLL_S = 0.5
+
+results = []
+
+
+def check(name, cond, detail=""):
+    results.append((name, bool(cond), detail))
+    print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  {detail}" if detail else ""))
+
+
+# ---------------------------------------------------------------------------
+# AST 取值层
+# ---------------------------------------------------------------------------
+def parse(src):
+    return ast.parse(src)
+
+
+def const_assign(tree, name):
+    """取模块级 `name = <literal>` 的右值；取不到 ⇒ None。"""
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for tgt in node.targets:
+                if isinstance(tgt, ast.Name) and tgt.id == name:
+                    try:
+                        return ast.literal_eval(node.value)
+                    except Exception:
+                        return None
+    return None
+
+
+def _is_state_subscript(node, key):
+    """`_H7_STATE["<key>"]` 形态。"""
+    return (isinstance(node, ast.Subscript)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "_H7_STATE"
+            and isinstance(node.slice, ast.Constant)
+            and node.slice.value == key)
+
+
+def find_if_by_state(tree, key):
+    """找 `if _H7_STATE["<key>"]:` 的 If 节点。"""
+    for node in ast.walk(tree):
+        if isinstance(node, ast.If) and _is_state_subscript(node.test, key):
+            return node
+    return None
+
+
+def deadline_assigned_value(tree):
+    """在 `if _H7_STATE["fs_rect_wait_skipped"]:` 体内找 `deadline = <expr>`。
+
+    ★ 返回：
+      - `("const", 0.0)` —— 右值是字面量（正常产物）
+      - `("alias", None)` —— 右值是 `deadline` 自身（M1 变异形态）
+      - `("missing", None)` —— 没有该赋值（短路块被删）
+    """
+    ifn = find_if_by_state(tree, "fs_rect_wait_skipped")
+    if ifn is None:
+        return ("missing", None)
+    for node in ast.walk(ifn):
+        if isinstance(node, ast.Assign):
+            for tgt in node.targets:
+                if isinstance(tgt, ast.Name) and tgt.id == "deadline":
+                    v = node.value
+                    if isinstance(v, ast.Name) and v.id == "deadline":
+                        return ("alias", None)
+                    try:
+                        return ("const", ast.literal_eval(v))
+                    except Exception:
+                        return ("expr", None)
+    return ("missing", None)
+
+
+def find_while_rect_wait(tree):
+    """找采帧前那个 while：`(...) != (FRAME_W, FRAME_H) and time.monotonic() < deadline`。"""
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.While):
+            continue
+        t = node.test
+        if not isinstance(t, ast.BoolOp) or not isinstance(t.op, ast.And):
+            continue
+        if len(t.values) != 2:
+            continue
+        left, right = t.values
+        # 左：Tuple != Tuple
+        if not (isinstance(left, ast.Compare) and len(left.ops) == 1
+                and isinstance(left.ops[0], ast.NotEq)):
+            continue
+        if not (isinstance(left.left, ast.Tuple)
+                and isinstance(left.comparators[0], ast.Tuple)):
+            continue
+        # 右：time.monotonic() < deadline
+        if not (isinstance(right, ast.Compare) and len(right.ops) == 1
+                and isinstance(right.ops[0], ast.Lt)):
+            continue
+        if not (isinstance(right.comparators[0], ast.Name)
+                and right.comparators[0].id == "deadline"):
+            continue
+        return node
+    return None
+
+
+def late_gate_compare(tree):
+    """找 late-start 闸的比较 `_h7_n2m <op> H7_MEASURE_MAX_NAV_TO_W0_S`。
+
+    ★ 返回 (op_name, limit_from_const_ref)；op_name ∈ {"Gt","GtE","Lt","LtE"}。
+    """
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Compare) or len(node.ops) != 1:
+            continue
+        left = node.left
+        right = node.comparators[0]
+        if not (isinstance(left, ast.Name) and left.id == "_h7_n2m"):
+            continue
+        if not (isinstance(right, ast.Name)
+                and right.id == "H7_MEASURE_MAX_NAV_TO_W0_S"):
+            continue
+        return (type(node.ops[0]).__name__, True)
+    return (None, False)
+
+
+def late_gate_guard(tree):
+    """取 late-start 闸的**启用条件**：`if <A> and <B>:` 的两个合取项文本。
+
+    ★ 返回 (has_nav_end_check, has_skip_check)：
+      - has_nav_end_check：条件里出现 `_H7_STATE.get("nav_end_t")` 非空判定
+      - has_skip_check ：条件里出现 `_H7_STATE["fs_rect_wait_skipped"]`
+    ★ 两者缺一即为设计缺陷（后者缺失正是 2026-10-23 自查抓到的那条：
+      无条件施加会把 10-21 四趟成功趟一律误判）。
+    """
+    # 找 `if _h7_nav_end is not None and _H7_STATE["fs_rect_wait_skipped"]:` 形态
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.If):
+            continue
+        src = ast.dump(node.test)
+        if "_h7_nav_end" in src:
+            return ("_h7_nav_end" in src, "fs_rect_wait_skipped" in src)
+    return (False, False)
+
+
+# ---------------------------------------------------------------------------
+# 模型求值层（普通算术；参数全部来自 AST）
+# ---------------------------------------------------------------------------
+def model_rect_wait(deadline_kind, deadline_val, skip_on, rect_wh,
+                    deadline_orig=DEADLINE_ORIG):
+    """复算采帧前等待的**轮数**。
+
+    ★ 谓词 = `rect != (800,600) AND monotonic < deadline`
+      （AST 已断言结构确为这两个合取项，见 E0）。
+    ★ 母本 `deadline = time.monotonic() + STAGE_TIMEOUT_S`（`:7553`）⇒ 它是
+      **绝对时刻**，不是余量；此处同构：`t0 = 1000.0`，`deadline_abs = t0 + 余量`。
+    ★ 每轮 +0.5（与母本 `time.sleep(0.5)` 同）。
+    """
+    t0 = 1000.0
+    t = t0
+    if skip_on:
+        if deadline_kind == "const":
+            deadline = deadline_val           # 正常产物：字面量 0.0（绝对 0 ⇒ 立即短路）
+        elif deadline_kind == "alias":
+            deadline = t0 + deadline_orig     # M1：自己赋自己 ⇒ 原值不变
+        elif deadline_kind == "missing":
+            deadline = t0 + deadline_orig     # 短路块不存在 ⇒ 原值
+        else:
+            deadline = t0 + deadline_orig
+    else:
+        deadline = t0 + deadline_orig
+
+    polls = 0
+    # 与母本循环同序：先判谓词，再 sleep+读矩形+计数
+    while (rect_wh != (FRAME_W, FRAME_H)) and (t < deadline):
+        t += POLL_S
+        polls += 1
+        if polls > 100000:
+            break
+    return polls
+
+
+def model_late(nav_to_measure_s, limit, op, guard_nav_end=True, guard_skip=True):
+    """复算 late-start 闸的判定结果（含启用条件）。
+
+    ★ 启用条件 = guard_nav_end ∧ guard_skip（AST 已断言结构，见 E0e）。
+      ★ guard_skip=False（对照臂 --h7-keep-rect-wait）⇒ 闸**不判定**，一律 False。
+    """
+    if not (guard_nav_end and guard_skip):
+        return False
+    if op == "Gt":
+        return nav_to_measure_s > limit
+    if op == "GtE":
+        return nav_to_measure_s >= limit
+    if op == "Lt":
+        return nav_to_measure_s < limit
+    if op == "LtE":
+        return nav_to_measure_s <= limit
+    raise ValueError(f"unsupported op {op}")
+
+
+# ---------------------------------------------------------------------------
+def main():
+    if not H7.exists():
+        print("ABORT: harness7 not generated")
+        return 1
+    src = H7.read_text(encoding="utf-8")
+    tree = parse(src)
+
+    limit = const_assign(tree, "H7_MEASURE_MAX_NAV_TO_W0_S")
+    dl_kind, dl_val = deadline_assigned_value(tree)
+    while_node = find_while_rect_wait(tree)
+    op, op_ok = late_gate_compare(tree)
+    g_nav_end, g_skip = late_gate_guard(tree)
+
+    print("=" * 72)
+    print("E0 结构取值（先证明模型不是虚构）")
+    check("E0a 闸常量可取到", limit is not None, f"H7_MEASURE_MAX_NAV_TO_W0_S={limit}")
+    check("E0b 短路赋值存在且为字面量", dl_kind == "const", f"kind={dl_kind} val={dl_val}")
+    check("E0c 采帧前 while 结构匹配（Tuple!=Tuple AND monotonic<deadline）",
+          while_node is not None, f"node={'found' if while_node else 'MISSING'}")
+    check("E0d late 闸比较存在", op_ok, f"op={op}")
+    check("E0e late 闸启用条件含 nav_end_t 判定", g_nav_end, f"guard={g_nav_end}")
+    check("E0f late 闸启用条件含 fs_rect_wait_skipped 前置", g_skip, f"guard={g_skip}")
+    if not (limit is not None and dl_kind == "const"
+            and while_node is not None and op_ok and g_nav_end and g_skip):
+        print("ABORT: 结构取值失败，后续模型无意义")
+        return 1
+
+    print("=" * 72)
+    print("E1 全屏 + 短路 on ⇒ 轮数 0")
+    p1 = model_rect_wait(dl_kind, dl_val, True, (2560, 1440))
+    check("E1 短路生效（轮数 0）", p1 == 0, f"polls={p1}")
+
+    print("=" * 72)
+    print("E2 全屏 + 短路 off ⇒ 跑满 deadline（母本语义）")
+    p2 = model_rect_wait(dl_kind, dl_val, False, (2560, 1440))
+    check("E2 关闭短路跑满 deadline", p2 == int(DEADLINE_ORIG / POLL_S),
+          f"polls={p2} expect={int(DEADLINE_ORIG / POLL_S)}")
+
+    print("=" * 72)
+    print("E3 窗口模式（矩形已到 800×600）⇒ 轮数 0")
+    p3 = model_rect_wait(dl_kind, dl_val, False, (800, 600))
+    check("E3 窗口模式零等待", p3 == 0, f"polls={p3}")
+
+    print("=" * 72)
+    print("E4 late-start 闸")
+    check("E4a 短路生效 + 正常值 0.3 s 不触发",
+          model_late(0.3, limit, op, g_nav_end, g_skip) is False,
+          f"0.3 {op} {limit} => {model_late(0.3, limit, op, g_nav_end, g_skip)}")
+    check("E4b 短路生效 + 超限 130 s 触发",
+          model_late(130.0, limit, op, g_nav_end, g_skip) is True,
+          f"130 {op} {limit} => {model_late(130.0, limit, op, g_nav_end, g_skip)}")
+    # ★★ E4c/E4d：对照臂（--h7-keep-rect-wait，短路未生效）—— 用 10-21 四趟的
+    #    实测 nav→w0（126.187 / 127.704 / 130.688 / 130.704 s）逐一验：闸必须不判定。
+    check("E4c 对照臂不判定（10-21 l1e 126.187 s）",
+          model_late(126.187, limit, op, g_nav_end, guard_skip=False) is False,
+          "短路未生效 ⇒ 闸不启用")
+    check("E4d 对照臂不判定（10-21 l1a 130.688 s）",
+          model_late(130.688, limit, op, g_nav_end, guard_skip=False) is False,
+          "短路未生效 ⇒ 闸不启用")
+    check("E4e 若闸被无条件施加，10-21 l1a 会被误判（反证 E4c/E4d 的必要性）",
+          model_late(130.688, limit, op, g_nav_end, guard_skip=True) is True,
+          "同一数值在短路生效时会触发 ⇒ 前置条件是必需的")
+
+    print("=" * 72)
+    print("M1 变异：`deadline = 0.0` → `deadline = deadline`（短路失效）")
+    m1 = src.replace("            _h7_deadline_orig = deadline\n            deadline = 0.0",
+                     "            _h7_deadline_orig = deadline\n            deadline = deadline")
+    if m1 == src:
+        check("M1 变异点可定位", False, "替换未命中")
+    else:
+        k1, v1 = deadline_assigned_value(parse(m1))
+        pm1 = model_rect_wait(k1, v1, True, (2560, 1440))
+        check("M1 变异后 E1 必红（轮数 > 0）", pm1 > 0,
+              f"kind={k1} polls={pm1}")
+
+    print("=" * 72)
+    print("M2 变异：闸常量 90.0 → 1e9（闸失效）")
+    m2 = src.replace("H7_MEASURE_MAX_NAV_TO_W0_S = 90.0",
+                     "H7_MEASURE_MAX_NAV_TO_W0_S = 1e9")
+    if m2 == src:
+        check("M2 变异点可定位", False, "替换未命中")
+    else:
+        lim2 = const_assign(parse(m2), "H7_MEASURE_MAX_NAV_TO_W0_S")
+        check("M2 变异后 E4b 必红（不触发）",
+              model_late(130.0, lim2, op, g_nav_end, g_skip) is False,
+              f"limit={lim2} => {model_late(130.0, lim2, op, g_nav_end, g_skip)}")
+
+    print("=" * 72)
+    print("M2b 变异：删掉启用条件里的 fs_rect_wait_skipped 前置")
+    m2b = src.replace(
+        'if _h7_nav_end is not None and _H7_STATE["fs_rect_wait_skipped"]:',
+        "if _h7_nav_end is not None:")
+    if m2b == src:
+        check("M2b 变异点可定位", False, "替换未命中")
+    else:
+        gn2, gs2 = late_gate_guard(parse(m2b))
+        check("M2b 变异后 E4c 必红（对照臂被误判）",
+              model_late(126.187, limit, op, gn2, guard_skip=False) is True
+              or not gs2,
+              f"guard_skip={gs2}（原为 True）")
+
+    print("=" * 72)
+    print("M3 变异：`>` → `>=`，喂等值 ⇒ 边界判据可杀")
+    m3 = src.replace("_h7_late = bool(_h7_n2m > H7_MEASURE_MAX_NAV_TO_W0_S)",
+                     "_h7_late = bool(_h7_n2m >= H7_MEASURE_MAX_NAV_TO_W0_S)")
+    if m3 == src:
+        check("M3 变异点可定位", False, "替换未命中")
+    else:
+        op3, ok3 = late_gate_compare(parse(m3))
+        check("M3 变异后边界必红（等值变触发）",
+              ok3 and model_late(limit, limit, op3, g_nav_end, g_skip) is True,
+              f"op={op3} {limit} {op3} {limit} => "
+              f"{model_late(limit, limit, op3, g_nav_end, g_skip) if ok3 else 'n/a'}")
+        # ★ 原产物在等值处必须**不**触发（与 M3 形成对照）
+        check("M3 对照：原产物等值不触发",
+              model_late(limit, limit, op, g_nav_end, g_skip) is False,
+              f"{limit} {op} {limit} => {model_late(limit, limit, op, g_nav_end, g_skip)}")
+
+    print("=" * 72)
+    print("E5 late_start 落盘与记账一致")
+    _verdict_line = '_h7_payload["verdict"] = "late_start"'
+    _rec_line = ('rec.add("MEASURE", "verdict", "late_start", '
+                 '"script:_measure_run"')
+    check("E5a payload verdict 被改写为 late_start", _verdict_line in src,
+          "读到即证明存在该赋值")
+    check("E5b rec 行记 late_start", _rec_line in src,
+          "rec 与 JSON 两处都是 late_start")
+    # ★ 变异：删掉改写行 ⇒ JSON 会写 "error" 而 rec 写 "late_start"（两处矛盾）
+    m5 = src.replace(_verdict_line + "\n", "")
+    check("E5c 变异：删掉改写行后判据必红", _verdict_line not in m5,
+          "缺失即 E5a 失败，两处 verdict 会不一致")
+
+    print("=" * 72)
+    npass = sum(1 for _, ok, _ in results if ok)
+    print(f"TOTAL {npass}/{len(results)} PASS")
+    return 0 if npass == len(results) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

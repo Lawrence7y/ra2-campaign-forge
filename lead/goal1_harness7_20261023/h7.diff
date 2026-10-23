@@ -1,0 +1,165 @@
+--- harness6.py
++++ harness7.py
+@@ -3849,6 +3849,27 @@
+ MEASURE_W1_UNITS0_MIN = 150          # W1 裁决门：首窗 units0 ≥150（§4.3）
+ MEASURE_TICK_MISS_FACTOR = 1.5       # tick_miss：间隔 >1.5×p50（bench 同口径）
+ 
++# >>> H7-BEGIN const（★ 缺省 off ⇒ 锚路径零行为差；删本块即还原 harness6 语义）
++# ★★ [H7-②] measure 起始硬约束：nav 收口 → measure 入口的允许最大间隔（秒）。
++#   ★★ 该闸**只在 `fs_rect_wait_skipped` 生效时才判定**（见补丁 D 的条件）——
++#      理由与标定如下：
++#   - 实测（2026-10-21 四趟，`nav_end=stage_begin:frame`，`w0=stage_begin:measure_w0`）：
++#     nav→w0 = **130.688 / 127.704 / 130.704 / 126.187 s**，全部 >120 s，
++#     但这四趟 `verdict=ok`（测到了 9–15 fps）。⇒ **长间隔本身不是失败判据**，
++#     它只是「矩形死等仍在」的必然结果。
++#   - 所以：`--h7-keep-rect-wait`（A/B 对照臂）下**不得**启用本闸，
++#     否则对照臂会被一律判 late_start，A/B 拿不到任何数据。
++#   - 短路生效时（`--fullscreen` 缺省），nav→w0 应降到 ~5 s 量级
++#     （frame 段只剩采帧本身 ≈0.1 s + nav 收尾），取 90 s 留足一个数量级余量。
++#   - 窗口模式（无 `--fullscreen`）本闸恒不启用，行为与 harness6 逐字节一致。
++H7_MEASURE_MAX_NAV_TO_W0_S = 90.0
++# ★★ [H7-①] 全屏矩形等待跳过开关容器（模块级；main 装载）。
++#   ★ 仅当 `--fullscreen` 且未显式 `--h7-keep-rect-wait` 时为 True。
++_H7_STATE = {"fs_rect_wait_skipped": False,
++             "nav_end_t": None,
++             "nav_to_measure_s": None,
++             "late_start": None}
++# <<< H7-END const
+ 
+ def _rpm_open(pid: int):
+     """★ RPM 只读句柄：`OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION|PROCESS_VM_READ)`。
+@@ -4935,6 +4956,53 @@
+                 "MEASURE_DESIGN_v1.md:§4.3")
+         return
+     try:
++        # >>> H7-BEGIN late-start-gate（★ 缺省：短路未生效 ⇒ 整块零行为）
++        # ★★ [H7-②] measure 起始硬约束：窗口必须落在**开局**，不得落在战斗后。
++        #   ★★ 触发条件 = **短路生效** ∧ nav 收口戳存在 ∧ 间隔 > 阈值。
++        #      短路未生效（`--h7-keep-rect-wait` 对照臂 / 窗口模式）⇒ 本闸**不判定**：
++        #      实测 10-21 四趟的 nav→w0 本来就是 126–131 s 且 verdict=ok，
++        #      对它们施加本闸会把成功趟一律误判（见常量注释的标定）。
++        #   ★ 分子 = nav 收口 → 本函数入口（settle 之前）的 monotonic 间隔。
++        #   ★ 超限 ⇒ 记 `late_start=true` 并**直接返回**（不 settle、不采窗），
++        #     写 w0 JSON 记 `verdict="late_start"` —— 宁可如实报「窗太晚」，
++        #     也不产出一个看起来正常的战斗后 fps。
++        #   ★ 不新增退出码；不改进图闸语义（§5.2）。
++        _h7_nav_end = _H7_STATE.get("nav_end_t")
++        if _h7_nav_end is not None and _H7_STATE["fs_rect_wait_skipped"]:
++            _h7_n2m = time.monotonic() - _h7_nav_end
++            _H7_STATE["nav_to_measure_s"] = round(_h7_n2m, 3)
++            _h7_late = bool(_h7_n2m > H7_MEASURE_MAX_NAV_TO_W0_S)
++            _H7_STATE["late_start"] = _h7_late
++            rec.add("MEASURE", "h7_nav_to_measure", {
++                "nav_to_measure_s": round(_h7_n2m, 3),
++                "limit_s": H7_MEASURE_MAX_NAV_TO_W0_S,
++                "late_start": _h7_late,
++                "fs_rect_wait_skipped": _H7_STATE["fs_rect_wait_skipped"],
++            }, "script:_measure_run",
++                note="★ H7-②：nav 收口 → measure 入口间隔（硬约束 "
++                     f"{H7_MEASURE_MAX_NAV_TO_W0_S} s）；超限 ⇒ verdict=late_start"
++                     "、不采三窗")
++            if _h7_late:
++                _h7_payload = _measure_error_payload(
++                    0, TRIP_ID, map_sha256,
++                    f"late_start: nav→measure {_h7_n2m:.3f}s > "
++                    f"{H7_MEASURE_MAX_NAV_TO_W0_S}s（窗口已不在开局）")
++                # ★★ 落盘 verdict 必须与 rec 行一致：`_measure_error_payload`
++                #   默认写 "error"（那是「整窗不可测」的语义）。本支是**主动拒采**，
++                #   语义不同 ⇒ 必须改写，否则 JSON 与 rec 两处互相矛盾。
++                _h7_payload["verdict"] = "late_start"
++                _h7_payload["h7"] = {"nav_to_measure_s": round(_h7_n2m, 3),
++                                     "limit_s": H7_MEASURE_MAX_NAV_TO_W0_S,
++                                     "late_start": True}
++                _h7_p = _measure_write_json(out_dir, 0, _h7_payload)
++                rec.add("MEASURE", "window_0_stats", _h7_payload["stats"],
++                        "script:_measure_stats",
++                        note=f"★ H7-②：verdict=late_start；JSON={_h7_p.name}")
++                rec.add("MEASURE", "verdict", "late_start", "script:_measure_run",
++                        note="★ H7-②：窗口偏晚（nav→measure 超限）⇒ 不采三窗；"
++                             "不硬停趟、不加退出码（§5.2/§5.4）")
++                return
++        # <<< H7-END late-start-gate
+         # ---- settle 4 s（窗 0 前置，§3.3；同时供窗前在局闸取数）----
+         _settle_wall0 = time.time()
+         t0s, s_samples, s_counters, s_err = _measure_poll_span(
+@@ -7148,6 +7216,11 @@
+     ap.add_argument("--fullscreen", action="store_true", default=False,
+                     help="★ QC151FS：全屏模式适配（缺省 off=行为与改前逐字节"
+                          "一致；T55 显式给 on）")
++    # >>> H7-BEGIN argparse（缺省 False ⇒ 行为与 harness6 逐字节一致）
++    ap.add_argument("--h7-keep-rect-wait", action="store_true", default=False,
++                    help="★ H7-①：显式保持 harness6 原语义（全屏矩形等待不短路；"
++                         "供 A/B 对照复现 122–127 s 死等；缺省 off=短路）")
++    # <<< H7-END argparse
+     # <<< QC151FS-END argparse
+     # >>> EVIDDIFF-BEGIN argparse（--evid-diff 单开关；缺省 off=现行全量拷贝
+     #   行为逐字节不变；on=差异件模式，语义见 EVIDDIFF helpers 块头注）
+@@ -7291,6 +7364,21 @@
+     #   （off ⇒ 连 False 行都不写，同 QC210 main-gate 纪律）。
+     if getattr(args, "fullscreen", False):
+         _QC151FS["on"] = True
++        # >>> H7-BEGIN main-arm（★ 仅 --fullscreen 且未 opt-out 才置位）
++        # ★★ [H7-①] 全屏 ⇒ 短路采帧前矩形等待（见补丁 C）。
++        #   ★ `--h7-keep-rect-wait` 显式给出 ⇒ 保持 harness6 原语义
++        #     （供 A/B 对照：同一趟可复现 122–127 s 死等）。
++        if not getattr(args, "h7_keep_rect_wait", False):
++            _H7_STATE["fs_rect_wait_skipped"] = True
++            rec.add("META", "h7_fs_rect_wait_skipped", True,
++                    "argv:--fullscreen",
++                    note="★ H7-①：全屏矩形等待短路已武装（对照开关 "
++                         "--h7-keep-rect-wait 可恢复 harness6 原语义）")
++        else:
++            rec.add("META", "h7_fs_rect_wait_skipped", False,
++                    "argv:--h7-keep-rect-wait",
++                    note="★ H7-①：显式保持 harness6 原语义（矩形等待不短路）")
++        # <<< H7-END main-arm
+         rec.add("META", "fullscreen", True, "argv:--fullscreen",
+                 note="★ QC151FS：全屏模式（cnc-ddraw windowed=false）⇒ 抓帧="
+                      "桌面拷贝（抓前 SetForegroundWindow）、到达=主菜单签名"
+@@ -7965,12 +8053,46 @@
+                 note="★ QC197/P7：INCOMPLETE ⇒ 帧阶段照采、F-6 如实记（不 sys.exit）")
+         if _nav_failed_at:
+             rec.add("NAV", "failed_at", _nav_failed_at, "script:nav")
++        # >>> H7-BEGIN nav-end（★ 只打戳，不改任何既有语义）
++        # ★★ [H7-②] nav 收口时刻（monotonic；与 `budget.stage_t0` 同钟源）。
++        #   ★ 仅作 measure 起始硬约束的分子，不参与导航判定。
++        _H7_STATE["nav_end_t"] = time.monotonic()
++        rec.add("NAV", "h7_nav_end_t", round(_H7_STATE["nav_end_t"], 6),
++                "time.monotonic",
++                note="★ H7-②：nav 收口时刻（monotonic 原始值；供 "
++                     "nav_to_measure_s 计算，不参与导航判定）")
++        # <<< H7-END nav-end
+ 
+         # ---- ⑦ 采帧（★ 只采目标图帧；`QC157:1`） ----
+         budget.begin_stage("frame")
+         # ★★ QC187/T7 补丁：采帧前二次稳定确认（连续 2 次矩形不变 ≈1s；上限=window deadline 余量）。
+         _cap_rect = rect_of(hwnd)
+         _cap_wait = 0
++        # >>> H7-BEGIN rect-wait-skip（★ 缺省 off ⇒ `deadline` 原值，逐字节同锚）
++        # ★★ [H7-①] 全屏下「窗口矩形 == 800×600」**永不成立**（实测恒
++        #   `[0,0,2560,1440]`）⇒ 下面母本 while 必然跑满 `deadline`（实测
++        #   251/251/244/253 轮 × 0.5 s ≈ 122–127 s）。
++        #   ★ 但全屏抓帧走 `capture_frame_desktop`，其 `w, h = FRAME_W, FRAME_H`
++        #     **按构造**固定 800×600，与窗口矩形无关 ⇒ 该等待是纯死等。
++        #   ★ 修法=把 `deadline` 局部重绑为 0.0，令母本 while 谓词立即短路；
++        #     **母本 while 行一字未改**（零删除行纪律）。
++        #   ★ 安全性：`deadline` 在本点之后**零引用**（生成器自检 #8 实测）；
++        #     它此前唯一用途是「等主窗出现」（`:7553`）与 window 稳定循环
++        #     （`:7607` 起改用 `_stab_deadline`），两者都已走完。
++        if _H7_STATE["fs_rect_wait_skipped"]:
++            _h7_deadline_orig = deadline
++            deadline = 0.0
++            rec.add("FRAME", "h7_fs_rect_wait_skipped", {
++                "skipped": True,
++                "deadline_orig_was_set": bool(_h7_deadline_orig),
++                "rect_at_skip": list(_cap_rect),
++                "capture_fixed_wh": [FRAME_W, FRAME_H],
++                "reason": "全屏窗口矩形恒为整屏 ≠ 800×600；全屏抓帧按构造固定 "
++                          "800×600 ⇒ 原等待是纯死等（实测 122–127 s）",
++            }, "argv:--fullscreen",
++                note="★ H7-①：全屏矩形等待已短路（母本 while 行未改；"
++                     "`deadline` 局部重绑 0.0，此后零引用）")
++        # <<< H7-END rect-wait-skip
+         # ★★ QC188/T10：采帧前须达采帧口径矩形；到期未达 ⇒ 按实测采帧（帧检查如实记录）。
+         # ★★ D-113：此处**刻意沿用**原 `deadline`（不换成 `_stab_deadline`）——
+         #   本循环在 `begin_stage("frame")` 之后，阶段计时已重置，不受 window 阶段
