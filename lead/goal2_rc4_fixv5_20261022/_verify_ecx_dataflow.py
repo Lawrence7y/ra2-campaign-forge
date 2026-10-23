@@ -25,6 +25,7 @@
   若负控不红，本门禁同样作废 —— 判据是「它能拒绝什么」。
 """
 import collections
+import re as _re
 import struct
 import sys
 from pathlib import Path
@@ -53,6 +54,32 @@ WRITE_MNEM = {
 }
 
 GPR = {"eax", "ebx", "ecx", "edx", "esi", "edi", "ebp", "esp"}
+
+# 部分寄存器：写 cx/cl/ch 等于改写 ecx 的低位 ⇒ 追踪 ecx 时必须判 UNKNOWN
+PARTIAL = {
+    "ax": "eax", "al": "eax", "ah": "eax",
+    "bx": "ebx", "bl": "ebx", "bh": "ebx",
+    "cx": "ecx", "cl": "ecx", "ch": "ecx",
+    "dx": "edx", "dl": "edx", "dh": "edx",
+    "si": "esi", "di": "edi", "bp": "ebp", "sp": "esp",
+}
+
+# ★ 这些指令会写寄存器，但**写的不是第一个操作数**（或写的范围不确定）。
+#   漏掉它们会让「该寄存器未被改写」的推断变假 —— 属于变种 G-2 的潜在口子。
+#   实测 67 条链上命中 0 次（295 条不同指令），但保留判定以防将来改动。
+CLOBBER_MULTI = {
+    "mul": {"eax", "edx"}, "imul1": {"eax", "edx"},
+    "div": {"eax", "edx"}, "idiv": {"eax", "edx"},
+    "cwd": {"edx"}, "cdq": {"edx"},
+    "cpuid": {"eax", "ebx", "ecx", "edx"},
+    "rdtsc": {"eax", "edx"},
+    "popa": GPR, "popad": GPR,
+    "enter": {"esp", "ebp"}, "leave": {"esp", "ebp"},
+    "xlat": {"eax"},
+}
+
+# 写第一个操作数、但不在 WRITE_MNEM 里的指令（补全）
+EXTRA_WRITE = {"shld", "shrd", "bts", "btr", "btc", "bswap", "cmpxchg"}
 
 
 def check(tag, cond, ev=""):
@@ -146,46 +173,93 @@ class Bin(object):
 
 
 def operand_write(ins):
-    """返回 (写入的寄存器名 or None, 源操作数字符串 or None)。"""
-    m = ins.mnemonic
-    if m not in WRITE_MNEM:
+    """返回 (写入的寄存器名 or None, 源操作数字符串 or None)。
+
+    ★ 覆盖三类写入，缺一类就会把「未改写」判错：
+      1. WRITE_MNEM ∪ EXTRA_WRITE：写第一个操作数
+      2. PARTIAL：写 8/16 位子寄存器 —— 归到**宿主** 32 位寄存器
+         （`mov cl,1` 改写 ecx；`mov dl,1` 只改写 edx，与 ecx 无关）
+      3. CLOBBER_MULTI / 字符串指令：隐含写，写的不只第一个操作数
+         ⇒ 返回 ("__IMPLICIT__", 原因)，由调用方判 UNKNOWN
+    """
+    if not ins.mnemonic:
+        return None, None
+    # rep/repne 前缀：字符串指令隐含读写 ecx（计数）与 esi/edi
+    if ins.mnemonic.startswith("rep"):
+        return "__IMPLICIT__", "string-op"
+    if ins.mnemonic in ("movsd", "stosd", "lodsd", "scasd", "cmpsd",
+                        "movsb", "stosb", "lodsb", "scasb", "cmpsb",
+                        "movsw", "stosw", "lodsw", "scasw", "cmpsw"):
+        return "__IMPLICIT__", "string-op"
+    if ins.mnemonic in CLOBBER_MULTI:
+        return "__IMPLICIT__", ins.mnemonic
+    if ins.mnemonic not in WRITE_MNEM and ins.mnemonic not in EXTRA_WRITE:
         return None, None
     parts = [p.strip() for p in ins.op_str.split(",")]
     if not parts:
         return None, None
     dst = parts[0]
+    src = parts[1] if len(parts) > 1 else None
+    if dst in PARTIAL:
+        # 子寄存器 ⇒ 归到宿主。是否影响被追踪寄存器由调用方按名字比对决定。
+        return PARTIAL[dst], ("__PARTIAL__" + (src or ""))
     if dst not in GPR:
         return None, None
-    src = parts[1] if len(parts) > 1 else None
     return dst, src
+
+
+def _is_full_width_load(s):
+    """判断操作数是否是 [0x887368] 的 **32 位整字** 装载。
+
+    ★ 「dword ptr」包含子串「word ptr」，用 `in` 判断会把 dword 误判成 16 位。
+      用 `\\bword ptr` 避开（dword 是一个词，\\b 不在其中间匹配）。
+    """
+    low = s.lower()
+    if "[0x%x]" % SINGLETON not in low and "[0x%08x]" % SINGLETON not in low:
+        return False
+    if "dword ptr" in low:
+        return True
+    if "byte ptr" in low or _re.search(r"\bword ptr", low):
+        return False
+    return True   # 裸 [0x887368]，capstone 对 32 位 mov 默认整字
 
 
 def classify_source(ins, src):
     """把一次写入的源定性。返回 ('GLOBAL',None) / ('ZERO',None) /
-    ('REG',reg) / ('UNKNOWN',reason)。"""
-    m = ins.mnemonic
+    ('REG',reg) / ('UNKNOWN',reason)。
+
+    ★★★ 核心约束：**只有 `mov` 是纯赋值**。
+      其它任何写 ecx 的指令都不是「把源值原样搬进 ecx」：
+
+        and  ecx,[0x887368]   → ecx = 旧ecx & [..]   ≠ [..]
+        add  ecx,[0x887368]   → ecx = 旧ecx + [..]   ≠ [..]
+        shld ecx,esi,cl       → ecx 是拼接结果      ≠ esi
+        bts  ecx,eax          → 只置一位            ≠ eax
+        xadd ecx,esi          → 交换后相加          ≠ esi
+        movzx ecx,word ptr[…] → 只取低 16 位，高位清零 ≠ [..] 的 32 位值
+
+      早期版本只要操作数字符串里出现 `[0x887368]` 就判 GLOBAL，
+      于是上面第一、二、六行全部被判成「ecx == [0x887368]」—— 假绿。
+      （由异族探针 probe_c 发现，我自己复现确认。）
+    """
+    if src is not None and src.startswith("__PARTIAL__"):
+        return "UNKNOWN", "partial-write"
     if src is None:
-        # pop / inc / dec / neg 之类：读旧值
         return "UNKNOWN", "read-modify-write"
     s = src.strip()
-    # ★ 条件写（cmov）：条件不成立时 ecx 保留旧值 ⇒ 不能当作无条件赋值，
-    #   必须回到更上游继续追。判 GLOBAL 会让「ecx==[0x887368]」变成错误命题。
-    if m.startswith("cmov"):
-        return "UNKNOWN", "conditional-write"
-    if m in ("xor", "sub") and s == ins.op_str.split(",")[0].strip():
+    dst = ins.op_str.split(",")[0].strip()
+    if ins.mnemonic in ("xor", "sub") and s == dst:
         return "ZERO", None
-    if m == "and" and s == "0":
-        return "ZERO", None
-    if m == "mov" and s in GPR:
-        return "REG", s
-    # ★ lea 取的是**地址**不是内容 —— `lea ecx,[0x887368]` 得到的是非零地址，
-    #   绝不能算作 GLOBAL（算作 GLOBAL 会让「ecx==0 时守卫命中」的推论失效）。
-    if m == "lea":
+    if ins.mnemonic == "lea":
         return "UNKNOWN", "lea-address-not-load"
-    if "[0x%x]" % SINGLETON in s.lower() or "[0x%08x]" % SINGLETON in s.lower():
-        return "GLOBAL", None
+    if ins.mnemonic.startswith("cmov"):
+        return "UNKNOWN", "conditional-write"
+    if ins.mnemonic != "mov":
+        return "UNKNOWN", "not-pure-assignment(%s)" % ins.mnemonic
     if s in GPR:
         return "REG", s
+    if _is_full_width_load(s):
+        return "GLOBAL", None
     return "UNKNOWN", s
 
 
@@ -239,16 +313,22 @@ def backward_sources(bin_, call_va, max_nodes=40000, override=None):
                 continue
             progressed = True
             m = pi.mnemonic
-            # 字符串指令隐含读写 ecx（rep 前缀的计数寄存器）
-            if m.split()[0] in ("rep", "repe", "repne") or \
-               m in ("movs", "stos", "lods", "scas", "cmps") or \
-               m.split(" ")[0] in ("movsd", "stosd", "lodsd", "scasd", "cmpsd"):
+            dst, src = operand_write(pi)
+            # ★ 隐含写：字符串指令/部分寄存器/mul-div-cpuid 等
+            #   它们改写 ecx（或无法确定改写哪个），一律判 UNKNOWN，绝不猜。
+            if dst == "__IMPLICIT__":
                 ends["strop"] += 1
-                sources.add(("UNKNOWN", "string-op-clobbers-ecx@0x%X" % p))
+                sources.add(("UNKNOWN", "implicit-write:%s@0x%X" % (src, p)))
                 seen.add((p, reg))
                 continue
-            dst, src = operand_write(pi)
             if dst == reg:
+                # ★ 部分写（mov cl,1 / add cx,eax）：只改低位，ecx 高位保留旧值
+                #   ⇒ 无法断言「ecx == [0x887368]」，必须判 UNKNOWN。
+                if src is not None and src.startswith("__PARTIAL__"):
+                    ends["strop"] += 1
+                    sources.add(("UNKNOWN", "partial-write@0x%X" % p))
+                    seen.add((p, reg))
+                    continue
                 eff_src = override.get(p, src)
                 kind, val = classify_source(pi, eff_src)
                 ends["writer"] += 1
@@ -555,6 +635,86 @@ def main():
     srcs_r2, _ = backward_sources(bn, 0x6D05AB)
     check("★ 确定性：同一站点两次分析结果一致（无遍历顺序依赖）",
           srcs_r1 == srcs_r2, "%s == %s" % (sorted(srcs_r1), sorted(srcs_r2)))
+
+    # ---------- 4g. ★ 写入分类覆盖自检（防止将来漏类）----------
+    #   这些指令都会写 ecx（或其宿主），但写的不是「第一个操作数」的常规形态。
+    #   实测 67 条链上命中 0 次，所以下面用合成指令验证判定逻辑本身在工作。
+    print()
+    print("--- 4g. ★ 写入分类覆盖自检（合成指令，非二进制）---")
+
+    class _FakeIns(object):
+        def __init__(self, mn, ops):
+            self.mnemonic = mn
+            self.op_str = ops
+
+    cases = [
+        ("mov", "ecx, dword ptr [0x887368]", "ecx", "GLOBAL-eligible"),
+        ("mov", "cl, 1", "ecx", "partial→UNKNOWN"),
+        ("mov", "dl, 1", "edx", "partial 归宿主 edx，与 ecx 无关"),
+        ("add", "cx, ax", "ecx", "partial→UNKNOWN"),
+        ("shld", "ecx, edx, 4", "ecx", "EXTRA_WRITE 覆盖"),
+        ("bts", "ecx, 3", "ecx", "EXTRA_WRITE 覆盖"),
+        ("mul", "ecx", "__IMPLICIT__", "隐含写 eax/edx"),
+        ("cdq", "", "__IMPLICIT__", "隐含写 edx"),
+        ("cpuid", "", "__IMPLICIT__", "隐含写全部"),
+        ("rep movsd", "dword ptr es:[edi], dword ptr [esi]", "__IMPLICIT__",
+         "字符串指令隐含写 ecx"),
+        ("cmp", "ecx, 0", None, "cmp 不写"),
+        ("test", "ecx, ecx", None, "test 不写"),
+    ]
+    for mn, ops, want, why in cases:
+        got, _ = operand_write(_FakeIns(mn, ops))
+        check("  写入分类 %-10s %-38s → %s（%s）"
+              % (mn, ops[:38], got, why), got == want, "实测 %s" % got)
+
+    # 关键：partial 写**不**应把无关寄存器的站点判红（这正是我第一版犯的错）
+    check("★ 回归：mov dl,1 不得导致 ecx 被判定为 partial 写",
+          operand_write(_FakeIns("mov", "dl, 1"))[0] == "edx",
+          "第一版误判成 __IMPLICIT__ ⇒ 7 个站点假红")
+
+    # ---------- 4h. ★★★ classify_source 的假绿形态（异族 probe_c 发现）----------
+    #   旧版判据：只要源操作数字符串里出现 `[0x887368]` 就判 GLOBAL。
+    #   于是下面这些**根本不是纯赋值**的指令全被判成「ecx == [0x887368]」。
+    #   我用真实的 capstone 解码这些字节，再走一遍 classify_source。
+    print()
+    print("--- 4h. ★★★ classify_source 假绿形态（真实字节解码）---")
+    FAKE_GREEN = [
+        ("23 0d 68 73 88 00", "and", "ecx = 旧ecx & [..] ≠ [..]"),
+        ("0b 0d 68 73 88 00", "or", "ecx = 旧ecx | [..] ≠ [..]"),
+        ("03 0d 68 73 88 00", "add", "ecx = 旧ecx + [..] ≠ [..]"),
+        ("2b 0d 68 73 88 00", "sub", "ecx = 旧ecx - [..] ≠ [..]"),
+        ("0f af 0d 68 73 88 00", "imul", "ecx = 旧ecx × [..] ≠ [..]"),
+        ("0f a5 f1", "shld", "ecx 是拼接结果 ≠ esi"),
+        ("0f ab c1", "bts", "只置一位 ≠ eax"),
+        ("0f c1 f1", "xadd", "交换后相加 ≠ esi"),
+        ("0f b7 0d 68 73 88 00", "movzx", "只取低 16 位 ≠ [..] 的 32 位值"),
+        ("66 0f b6 0d 68 73 88 00", "movzx", "只取低 8 位 ≠ [..]"),
+        ("66 0f be 0d 68 73 88 00", "movsx", "符号扩展 16 位 ≠ [..]"),
+    ]
+    leaked = []
+    for hexb, want_mn, why in FAKE_GREEN:
+        raw = bytes.fromhex(hexb)
+        ins = next(bn.md.disasm(raw, 0x1000), None)
+        if ins is None or ins.mnemonic != want_mn:
+            check("  解码 %-22s → %s" % (hexb, want_mn), False,
+                  "实际解码 %s" % (ins.mnemonic if ins else "失败"))
+            continue
+        d, s = operand_write(ins)
+        kind, val = classify_source(ins, s) if d == "ecx" else (None, None)
+        if kind == "GLOBAL":
+            leaked.append((ins.mnemonic, ins.op_str, why))
+        print("    %-8s %-32s → %-18s %s"
+              % (ins.mnemonic, ins.op_str, "%s/%s" % (kind, val), why))
+    check("★★★ 上述 11 种非纯赋值指令**无一**被判为 GLOBAL（否则假绿）",
+          len(leaked) == 0,
+          "%d 处泄漏 %s" % (len(leaked), leaked[:3]) if leaked else "全部正确拒绝")
+
+    # 正控：真正的纯赋值必须判 GLOBAL（证明上面不是「一律拒绝」的恒真）
+    real_ins = next(bn.md.disasm(bytes.fromhex("8b 0d 68 73 88 00"), 0x1000), None)
+    d0, s0 = operand_write(real_ins)
+    k0, _ = classify_source(real_ins, s0)
+    check("★ 正控：mov ecx,[0x887368] 仍判 GLOBAL（拒绝不是恒真）",
+          k0 == "GLOBAL", "判为 %s" % k0)
 
     # ---------- 5. 结论 ----------
     print()

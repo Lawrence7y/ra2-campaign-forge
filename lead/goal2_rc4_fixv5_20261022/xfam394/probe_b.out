@@ -1,0 +1,127 @@
+==========================================================================================
+B1. 0x4E1FA9 站点完整上下文（前后 0x60 字节窗口）
+==========================================================================================
+  0x4E1F60  <not decoded>
+  0x004E1F61  83 f8 01                 cmp       eax, 1
+  0x004E1F64  0f 94 c2                 sete      dl
+  0x004E1F67  88 15 7f eb a8 00        mov       byte ptr [0xa8eb7f], dl
+  0x004E1F6D  8b 45 00                 mov       eax, dword ptr [ebp]
+  0x004E1F70  68 02 06 00 00           push      0x602
+  0x004E1F75  50                       push      eax
+  0x004E1F76  ff d7                    call      edi
+  0x004E1F78  85 c0                    test      eax, eax
+  0x004E1F7A  74 32                    je        0x4e1fae
+  0x004E1F7C  6a 00                    push      0
+  0x004E1F7E  6a 00                    push      0
+  0x004E1F80  68 f0 00 00 00           push      0xf0
+  0x004E1F85  50                       push      eax
+  0x004E1F86  ff d3                    call      ebx
+  0x004E1F88  8b 35 68 73 88 00        mov       esi, dword ptr [0x887368]  <<<
+  0x004E1F8E  83 f8 01                 cmp       eax, 1
+  0x004E1F91  0f 94 c0                 sete      al
+  0x004E1F94  85 f6                    test      esi, esi
+  0x004E1F96  a2 80 eb a8 00           mov       byte ptr [0xa8eb80], al
+  0x004E1F9B  74 11                    je        0x4e1fae
+  0x004E1F9D  80 3d a0 e9 a8 00 01     cmp       byte ptr [0xa8e9a0], 1
+  0x004E1FA4  75 08                    jne       0x4e1fae
+  0x004E1FA6  50                       push      eax
+  0x004E1FA7  8b ce                    mov       ecx, esi  <<<
+  0x004E1FA9  e8 f2 21 24 00           call      0x7241a0  <<<
+  0x004E1FAE  a0 a0 e9 a8 00           mov       al, byte ptr [0xa8e9a0]
+  0x004E1FB3  84 c0                    test      al, al
+  0x004E1FB5  75 20                    jne       0x4e1fd7
+  0x004E1FB7  8b 4d 00                 mov       ecx, dword ptr [ebp]
+
+  call 站点 0x4E1FA9 解码：call 0x7241a0
+  前驱集合: ['0x4E1FA7']
+
+  --- esi 存活检查 [0x4E1F88, 0x4E1FA9) ---
+    esi/隐式写点: 无
+
+  --- ecx 存活检查 [0x4E1FA7, 0x4E1FA9) ---
+    ecx/隐式写点: 无
+
+  --- 原始助记符清单 [0x4E1F88, 0x4E1FA9) ---
+    0x004E1F88  mov       esi, dword ptr [0x887368]
+    0x004E1F8E  cmp       eax, 1
+    0x004E1F91  sete      al
+    0x004E1F94  test      esi, esi
+    0x004E1F96  mov       byte ptr [0xa8eb80], al
+    0x004E1F9B  je        0x4e1fae
+    0x004E1F9D  cmp       byte ptr [0xa8e9a0], 1
+    0x004E1FA4  jne       0x4e1fae
+    0x004E1FA6  push      eax
+    0x004E1FA7  mov       ecx, esi
+
+==========================================================================================
+B2. 线性反证：图 writer vs 线性最近 writer（验证 S394 §二 的「16 个分支站点」）
+==========================================================================================
+  0x0048CE5D  graph=['0x48CE4C']  linear_nearest=0x48CE4C mov ecx, dword ptr [0x887368]
+  0x004A8B75  graph=['0x4A8B18']  linear_nearest=0x4A8B18 mov ecx, dword ptr [0x887368]
+  0x004A8B85  graph=['0x4A8B7A']  linear_nearest=0x4A8B7A mov ecx, dword ptr [0x887368]
+  0x004E1FA9  graph=['0x4E1F88', '0x4E1FA7']  linear_nearest=0x4E1FA7 mov ecx, esi
+  0x004F4A0B  graph=['0x4F4A01']  linear_nearest=0x4F4A01 mov ecx, dword ptr [0x887368]
+  0x0052DB04  graph=['0x52DAF9']  linear_nearest=0x52DAF9 mov ecx, dword ptr [0x887368]
+  0x0055D0AB  graph=['0x55D0A0']  linear_nearest=0x55D0A0 mov ecx, dword ptr [0x887368]
+  0x0055D173  graph=['0x55D159']  linear_nearest=0x55D159 mov ecx, dword ptr [0x887368]
+  0x0055D202  graph=['0x55D1E7']  linear_nearest=0x55D1E7 mov ecx, dword ptr [0x887368]
+  0x005C4BE3  graph=['0x5C4BB8']  linear_nearest=0x5C4BB8 mov ecx, dword ptr [0x887368]
+  0x005D4DCB  graph=['0x5D4DBC']  linear_nearest=0x5D4DBC mov ecx, dword ptr [0x887368]
+  0x00640427  graph=['0x6403A8']  linear_nearest=0x6403A8 mov ecx, dword ptr [0x887368]
+  0x00640437  graph=['0x640431']  linear_nearest=0x640431 mov ecx, dword ptr [0x887368]
+  0x00654413  graph=['0x654405']  linear_nearest=0x654405 mov ecx, dword ptr [0x887368]
+  0x00654423  graph=['0x654418']  linear_nearest=0x654418 mov ecx, dword ptr [0x887368]
+  0x00654469  graph=['0x654446']  linear_nearest=0x654446 mov ecx, dword ptr [0x887368]
+  0x00654479  graph=['0x654473']  linear_nearest=0x654473 mov ecx, dword ptr [0x887368]
+  0x00683F61  graph=['0x683F54']  linear_nearest=0x683F54 mov ecx, dword ptr [0x887368]
+  0x00684026  graph=['0x684010']  linear_nearest=0x684010 mov ecx, dword ptr [0x887368]
+  0x00685D90  graph=['0x685D7F']  linear_nearest=0x685D7F mov ecx, dword ptr [0x887368]
+  0x006863AF  graph=['0x68639F']  linear_nearest=0x68639F mov ecx, dword ptr [0x887368]
+  0x0068643E  graph=['0x686424']  linear_nearest=0x686424 mov ecx, dword ptr [0x887368]
+  0x00686553  graph=['0x686541']  linear_nearest=0x686541 mov ecx, dword ptr [0x887368]
+  0x0069BBA8  graph=['0x69BB9C']  linear_nearest=0x69BB9C mov ecx, dword ptr [0x887368]
+  0x006AB99A  graph=['0x6AB994']  linear_nearest=0x6AB994 mov ecx, dword ptr [0x887368]
+  0x006AB9A7  graph=['0x6AB99F']  linear_nearest=0x6AB99F mov ecx, dword ptr [0x887368]
+  0x006AB9E9  graph=['0x6AB9E3']  linear_nearest=0x6AB9E3 mov ecx, dword ptr [0x887368]
+  0x006AC00B  graph=['0x6ABFF4']  linear_nearest=0x6ABFF4 mov ecx, dword ptr [0x887368]
+  0x006AC01B  graph=['0x6AC015']  linear_nearest=0x6AC015 mov ecx, dword ptr [0x887368]
+  0x006AC03E  graph=['0x6AC031']  linear_nearest=0x6AC031 mov ecx, dword ptr [0x887368]
+  0x006AC096  graph=['0x6AC07F']  linear_nearest=0x6AC07F mov ecx, dword ptr [0x887368]
+  0x006AC0ED  graph=['0x6AC0CA']  linear_nearest=0x6AC0CA mov ecx, dword ptr [0x887368]
+  0x006AC0FD  graph=['0x6AC0F2']  linear_nearest=0x6AC0F2 mov ecx, dword ptr [0x887368]
+  0x006AC140  graph=['0x6AC120']  linear_nearest=0x6AC120 mov ecx, dword ptr [0x887368]
+  0x006AC150  graph=['0x6AC14A']  linear_nearest=0x6AC14A mov ecx, dword ptr [0x887368]
+  0x006AC193  graph=['0x6AC174']  linear_nearest=0x6AC174 mov ecx, dword ptr [0x887368]
+  0x006AC1A3  graph=['0x6AC198']  linear_nearest=0x6AC198 mov ecx, dword ptr [0x887368]
+  0x006AC1E6  graph=['0x6AC1CC']  linear_nearest=0x6AC1CC mov ecx, dword ptr [0x887368]
+  0x006AC1F6  graph=['0x6AC1EB']  linear_nearest=0x6AC1EB mov ecx, dword ptr [0x887368]
+  0x006D059B  graph=['0x6D057F']  linear_nearest=0x6D057F mov ecx, dword ptr [0x887368]
+  0x006D05AB  graph=['0x6D05A0']  linear_nearest=0x6D05A0 mov ecx, dword ptr [0x887368]
+  0x006D0619  graph=['0x6D0613']  linear_nearest=0x6D0613 mov ecx, dword ptr [0x887368]
+  0x006D0634  graph=['0x6D0629']  linear_nearest=0x6D0629 mov ecx, dword ptr [0x887368]
+  0x006D0664  graph=['0x6D0659']  linear_nearest=0x6D0659 mov ecx, dword ptr [0x887368]
+  0x006D089D  graph=['0x6D0896']  linear_nearest=0x6D0896 mov ecx, dword ptr [0x887368]
+  0x006D08B3  graph=['0x6D08A8']  linear_nearest=0x6D08A8 mov ecx, dword ptr [0x887368]
+  0x006D0940  graph=['0x6D0935']  linear_nearest=0x6D0935 mov ecx, dword ptr [0x887368]
+  0x006D09FA  graph=['0x6D09EC']  linear_nearest=0x6D09EC mov ecx, dword ptr [0x887368]
+  0x006D0A0A  graph=['0x6D09FF']  linear_nearest=0x6D09FF mov ecx, dword ptr [0x887368]
+  0x006D1293  graph=['0x6D127C']  linear_nearest=0x6D127C mov ecx, dword ptr [0x887368]
+  0x006D12A3  graph=['0x6D1298']  linear_nearest=0x6D1298 mov ecx, dword ptr [0x887368]
+  0x006D1308  graph=['0x6D12F1']  linear_nearest=0x6D12F1 mov ecx, dword ptr [0x887368]
+  0x006D1318  graph=['0x6D130D']  linear_nearest=0x6D130D mov ecx, dword ptr [0x887368]
+  0x006D137E  graph=['0x6D1367']  linear_nearest=0x6D1367 mov ecx, dword ptr [0x887368]
+  0x006D138E  graph=['0x6D1383']  linear_nearest=0x6D1383 mov ecx, dword ptr [0x887368]
+  0x006D13F3  graph=['0x6D13DC']  linear_nearest=0x6D13DC mov ecx, dword ptr [0x887368]
+  0x006D1403  graph=['0x6D13F8']  linear_nearest=0x6D13F8 mov ecx, dword ptr [0x887368]
+  0x006D1541  graph=['0x6D153A']  linear_nearest=0x6D153A mov ecx, dword ptr [0x887368]
+  0x006D155C  graph=['0x6D1551']  linear_nearest=0x6D1551 mov ecx, dword ptr [0x887368]
+  0x006D15CB  graph=['0x6D15AF']  linear_nearest=0x6D15AF mov ecx, dword ptr [0x887368]
+  0x006D15DB  graph=['0x6D15D0']  linear_nearest=0x6D15D0 mov ecx, dword ptr [0x887368]
+  0x006D1605  graph=['0x6D15FA']  linear_nearest=0x6D15FA mov ecx, dword ptr [0x887368]
+  0x006D1632  graph=['0x6D1627']  linear_nearest=0x6D1627 mov ecx, dword ptr [0x887368]
+  0x006D16C2  graph=['0x6D16BB']  linear_nearest=0x6D16BB mov ecx, dword ptr [0x887368]
+  0x006D16DD  graph=['0x6D16D2']  linear_nearest=0x6D16D2 mov ecx, dword ptr [0x887368]
+  0x006D1744  graph=['0x6D1728']  linear_nearest=0x6D1728 mov ecx, dword ptr [0x887368]
+  0x006D1754  graph=['0x6D1749']  linear_nearest=0x6D1749 mov ecx, dword ptr [0x887368]
+
+  线性最近写点 != 图写点 的站点数: 0 / 67

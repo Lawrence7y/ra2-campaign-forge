@@ -250,15 +250,22 @@ def main():
     # 另一条分支由 _verify_stack_offset.py 的 hand_esp() 独立手算补齐
     # （两条分支同为 -0x10），本工具不重复验证。
     print()
-    print("  --- ★ 覆盖边界（§387 如实登记）---")
+    print("  --- ★ 覆盖边界（§387 登记；§395 改为不进 PASS 计数）---")
     ind = sorted(indirect_calls)
     print("    间接调用点 %d 处，路径在此终止：%s"
           % (len(ind), ["0x%08X" % a for a, _ in ind][:6]))
-    check("★ 本工具结果只覆盖「不经间接调用」的分支（已登记局限）",
-          len(ind) > 0, "%d 处间接调用 ⇒ 另一分支由 hand_esp() 补" % len(ind))
+    # ★★★ §395：这两条原来记成 PASS，但它们是**工具按构造必然成立**的局限，
+    #   不是对被测物的任何断言（异族判为「免责声明伪装成 PASS」）。
+    #   改成只打印、不进 RESULTS —— PASS 计数只统计真断言。
+    print("    [局限] 本工具结果只覆盖「不经间接调用」的分支"
+          "（%d 处间接调用 ⇒ 另一分支由 hand_esp() 补）" % len(ind))
     has_getmenu = any(a == 0x77764F for a, _ in ind)
-    check("★ 0x77764F(GetMenu) 确实在终止点内 ⇒ 本工具不含该分支",
-          has_getmenu, "0x77764F" if has_getmenu else "未命中")
+    print("    [局限] 0x77764F(GetMenu) %s 终止点内 ⇒ 本工具不含该分支"
+          % ("在" if has_getmenu else "不在"))
+    # 真正有意义的断言：间接调用终止点**确实**存在（否则「局限」无从谈起）
+    check("★ 确实存在间接调用终止点且含 GetMenu（局限是真实的，不是空话）",
+          len(ind) > 0 and has_getmenu,
+          "%d 处，含 GetMenu=%s" % (len(ind), has_getmenu))
 
     npass = sum(1 for _, c, _ in RESULTS if c)
     print()

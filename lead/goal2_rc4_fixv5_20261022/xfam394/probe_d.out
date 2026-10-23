@@ -1,0 +1,157 @@
+==========================================================================================
+D1. merged 不变量检查（全部 67 站点）
+==========================================================================================
+  0x00640427 merged@0x6403E9 reg=ecx preds=['0x6403E7'] 未记录前驱=[]
+  merged 事件总数=1，不变量违反=0
+
+==========================================================================================
+D2. 0x724530 / 0x724540 上下文
+==========================================================================================
+  0x00724500  03 01                    add      eax, dword ptr [ecx]
+  0x00724502  02 02                    add      al, byte ptr [edx]
+  0x00724504  03 02                    add      eax, dword ptr [edx]
+  0x00724506  02 03                    add      al, byte ptr [ebx]
+  0x00724508  02 02                    add      al, byte ptr [edx]
+  0x0072450A  90                       nop      
+  0x0072450B  90                       nop      
+  0x0072450C  90                       nop      
+  0x0072450D  90                       nop      
+  0x0072450E  90                       nop      
+  0x0072450F  90                       nop      
+  0x00724510  8b 81 28 02 00 00        mov      eax, dword ptr [ecx + 0x228]
+  0x00724516  c3                       ret      
+  0x00724517  90                       nop      
+  0x00724518  90                       nop      
+  0x00724519  90                       nop      
+  0x0072451A  90                       nop      
+  0x0072451B  90                       nop      
+  0x0072451C  90                       nop      
+  0x0072451D  90                       nop      
+  0x0072451E  90                       nop      
+  0x0072451F  90                       nop      
+  0x00724520  8b 44 24 04              mov      eax, dword ptr [esp + 4]   <<< TARGET
+  0x00724524  89 81 28 02 00 00        mov      dword ptr [ecx + 0x228], eax
+  0x0072452A  c2 04 00                 ret      4
+  0x0072452D  90                       nop      
+  0x0072452E  90                       nop      
+  0x0072452F  90                       nop      
+  0x00724530  8b 81 28 02 00 00        mov      eax, dword ptr [ecx + 0x228]   <<< TARGET
+  0x00724536  89 81 2c 02 00 00        mov      dword ptr [ecx + 0x22c], eax
+  0x0072453C  c3                       ret      
+  0x0072453D  90                       nop      
+  0x0072453E  90                       nop      
+  0x0072453F  90                       nop      
+  0x00724540  8b 81 2c 02 00 00        mov      eax, dword ptr [ecx + 0x22c]   <<< TARGET
+  0x00724546  89 81 28 02 00 00        mov      dword ptr [ecx + 0x228], eax
+  0x0072454C  c3                       ret      
+  0x0072454D  90                       nop      
+  0x0072454E  90                       nop      
+  0x0072454F  90                       nop      
+  0x00724550  8b 81 30 02 00 00        mov      eax, dword ptr [ecx + 0x230]
+  0x00724556  c3                       ret      
+  0x00724557  90                       nop      
+  0x00724558  90                       nop      
+  0x00724559  90                       nop      
+  0x0072455A  90                       nop      
+  0x0072455B  90                       nop      
+  0x0072455C  90                       nop      
+  0x0072455D  90                       nop      
+  0x0072455E  90                       nop      
+  0x0072455F  90                       nop      
+  0x00724560  8b 44 24 04              mov      eax, dword ptr [esp + 4]
+  0x00724564  89 81 30 02 00 00        mov      dword ptr [ecx + 0x230], eax
+  0x0072456A  c2 04 00                 ret      4
+  0x0072456D  90                       nop      
+  0x0072456E  90                       nop      
+  0x0072456F  90                       nop      
+  0x00724570  8b 81 44 02 00 00        mov      eax, dword ptr [ecx + 0x244]
+  0x00724576  c3                       ret      
+  0x00724577  90                       nop      
+  0x00724578  90                       nop      
+  0x00724579  90                       nop      
+  0x0072457A  90                       nop      
+  0x0072457B  90                       nop      
+  0x0072457C  90                       nop      
+  0x0072457D  90                       nop      
+  0x0072457E  90                       nop      
+  0x0072457F  90                       nop      
+  0x00724580  53                       push     ebx   <<< TARGET
+  0x00724581  55                       push     ebp
+  0x00724582  56                       push     esi
+  0x00724583  57                       push     edi
+  0x00724584  8b 7c 24 14              mov      edi, dword ptr [esp + 0x14]
+  0x00724588  8b d9                    mov      ebx, ecx
+  0x0072458A  8b 07                    mov      eax, dword ptr [edi]
+  0x0072458C  8d b3 4c 02 00 00        lea      esi, [ebx + 0x24c]
+  0x00724592  89 44 24 14              mov      dword ptr [esp + 0x14], eax
+  0x00724596  8b 46 04                 mov      eax, dword ptr [esi + 4]
+  0x00724599  85 c0                    test     eax, eax
+  0x0072459B  74 30                    je       0x7245cd
+  0x0072459D  8d 4c 24 14              lea      ecx, [esp + 0x14]
+
+  0x724530 前驱: ['0x72452F']
+  0x724540 前驱: ['0x72453F']
+  0x724520 前驱: ['0x72451F']
+  0x724580 前驱: ['0x72457F']
+
+  --- 目标前 8 字节（看是否紧跟 ret / 对齐填充）---
+    0x007241A0 前 8 字节: 5f 08 5f 5e 5b c3 90 90 | 该处 mov al, byte ptr [esp + 4]
+    0x00724200 前 8 字节: 90 90 90 90 90 90 90 90 | 该处 push ebx
+    0x00724520 前 8 字节: 90 90 90 90 90 90 90 90 | 该处 mov eax, dword ptr [esp + 4]
+    0x00724530 前 8 字节: 00 00 c2 04 00 90 90 90 | 该处 mov eax, dword ptr [ecx + 0x228]
+    0x00724540 前 8 字节: 2c 02 00 00 c3 90 90 90 | 该处 mov eax, dword ptr [ecx + 0x22c]
+    0x00724580 前 8 字节: 90 90 90 90 90 90 90 90 | 该处 push ebx
+    0x00724730 前 8 字节: 32 c0 5b c2 04 00 90 90 | 该处 sub esp, 0xc
+    0x00724C00 前 8 字节: 90 90 90 90 90 90 90 90 | 该处 mov edx, dword ptr [ecx + 4]
+
+  --- 以 0x724530 为 call 目标的调用者，其上下文 ---
+    站点 0x006AB99A:
+      0x006AB984  ret      0xc
+      0x006AB987  nop      
+      0x006AB988  nop      
+      0x006AB989  nop      
+      0x006AB98A  nop      
+      0x006AB98B  nop      
+      0x006AB98C  nop      
+      0x006AB98D  nop      
+      0x006AB98E  nop      
+      0x006AB98F  nop      
+      0x006AB990  push     ebx
+      0x006AB991  push     esi
+      0x006AB992  mov      esi, ecx
+      0x006AB994  mov      ecx, dword ptr [0x887368]
+      0x006AB99A  call     0x724530   <<<
+      0x006AB99F  mov      ecx, dword ptr [0x887368]
+    站点 0x006AB9E9:
+      0x006AB9D1  ret      
+      0x006AB9D2  nop      
+      0x006AB9D3  nop      
+      0x006AB9D4  nop      
+      0x006AB9D5  nop      
+      0x006AB9D6  nop      
+      0x006AB9D7  nop      
+      0x006AB9D8  nop      
+      0x006AB9D9  nop      
+      0x006AB9DA  nop      
+      0x006AB9DB  nop      
+      0x006AB9DC  nop      
+      0x006AB9DD  nop      
+      0x006AB9DE  nop      
+      0x006AB9DF  nop      
+      0x006AB9E0  push     esi
+      0x006AB9E1  mov      esi, ecx
+      0x006AB9E3  mov      ecx, dword ptr [0x887368]
+      0x006AB9E9  call     0x724540   <<<
+      0x006AB9EE  mov      eax, dword ptr [esi + 0x2c]
+
+==========================================================================================
+D3. 8 个目标地址是否作为函数指针出现在镜像里（间接调用面）
+==========================================================================================
+  0x007241A0  裸字节命中 0 处: []
+  0x00724200  裸字节命中 0 处: []
+  0x00724520  裸字节命中 0 处: []
+  0x00724530  裸字节命中 0 处: []
+  0x00724540  裸字节命中 0 处: []
+  0x00724580  裸字节命中 0 处: []
+  0x00724730  裸字节命中 0 处: []
+  0x00724C00  裸字节命中 0 处: []

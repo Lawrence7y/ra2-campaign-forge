@@ -193,7 +193,7 @@ def main():
             if i.mnemonic == "call" and i.op_str == "0x7b0d90":
                 ctor_calls.append(i.address)
         pc2 = ins2[-1].address + ins2[-1].size
-    check("调用构造器 0x7B0D90 的站点只有 5 处（无第二种构造入口）",
+    check("调用构造器 0x7B0D90 的站点只有 5 处（这是**类型 A** 的构造入口数）",
           len(ctor_calls) == 5,
           "%d 处: %s" % (len(ctor_calls), ["0x%08X" % a for a in ctor_calls]))
     # 构造器内部写 vtable 的指令必须唯一，且值 = 0x7F794C
@@ -204,9 +204,77 @@ def main():
             vt_writes.append(int(i.op_str.split(",")[1].strip(), 16))
     check("构造器 0x7B0D90 内只有 1 条写 vtable 的指令，值 = 0x7F794C",
           vt_writes == [0x7F794C], "%s" % ["0x%08X" % v for v in vt_writes])
-    check("★ 故 [0x887628] 的对象类型唯一 ⇒ vtable 恒为 0x7F794C",
-          len(ctor_calls) == 5 and vt_writes == [0x7F794C],
-          "5 个构造点 × 1 个 vtable")
+
+    # ★★★ §395 修正：原断言「[0x887628] 的对象类型唯一 ⇒ vtable 恒为 0x7F794C」
+    #   已被异族实测推翻。真实情况是**两种**具体类型都写同一个全局：
+    #     A: 0x7B0D90 → 0x7F794C（5 个构造点）
+    #     B: 0x7B2DB0 → 0x7F7A6C（1 个构造点 0x52F456，经 0x52F461 写全局）
+    #   原断言只查了 0x7B0D90 的 5 个站点就把「唯一」写成结论 ——
+    #   正是 [[gate-assert-values-not-existence]] 变种 F（样本当总体）。
+    #
+    #   ★ 这里不扫全镜像的 vtable（那会捞到几十个无关类），
+    #     只查**两个已知构造器**各自写什么 vtable，以及它们是否都通向 [0x887628]。
+    print()
+    print("--- STEP 4c  ★ [0x887628] 的类型普查（§395 修正）---")
+    for ctor, label, want_n in ((0x7B0D90, "类型A", 1), (0x7B2DB0, "类型B", 2)):
+        o_ct = va2off(ctor)
+        vs = []
+        for i in md.disasm(b[o_ct:o_ct + 0xC0], ctor):
+            if i.mnemonic == "mov" and i.op_str.startswith("dword ptr [esi],"):
+                try:
+                    v = int(i.op_str.split(",")[1].strip(), 16)
+                except ValueError:
+                    continue
+                if 0x7E0000 <= v <= 0x800000:
+                    vs.append((i.address, v))
+        print("    构造器 0x%08X（%s）写 vtable: %s"
+              % (ctor, label, ["0x%08X@0x%08X" % (v, a) for a, v in vs]))
+        check("★ 构造器 0x%08X（%s）内写 %d 条 vtable 指令，且值唯一"
+              % (ctor, label, want_n),
+              len(vs) == want_n and len(set(v for _, v in vs)) == 1,
+              "%d 条 / %d 个不同值"
+              % (len(vs), len(set(v for _, v in vs))))
+
+    def imm_at(va):
+        o = va2off(va)
+        if o is None:
+            return None
+        ins = next(md.disasm(b[o:o + 12], va), None)
+        if ins is None or ins.mnemonic != "mov":
+            return None
+        try:
+            return int(ins.op_str.split(",")[1].strip(), 16)
+        except (ValueError, IndexError):
+            return None
+
+    v_a = imm_at(0x7B0DA4)
+    v_b = imm_at(0x7B2E2D) or imm_at(0x7B2E56)
+    print("    实测：0x7B0DA4 写 0x%08X ；类型B(0x7B2E2D) 写 0x%08X"
+          % (v_a or 0, v_b or 0))
+    check("★★ 两种类型写的是**不同** vtable（0x7F794C vs 0x7F7A6C）",
+          v_a == 0x7F794C and v_b == 0x7F7A6C,
+          "A=0x%08X B=0x%08X" % (v_a or 0, v_b or 0))
+    check("★★ 故 [0x887628] 的 vtable **不唯一**（原「恒为 0x7F794C」已推翻）",
+          v_a != v_b, "两种类型共存")
+
+    # 两种类型的 slot14 都必须 ret 4 —— 这才是 esp 结论真正依赖的东西
+    print()
+    print("--- STEP 4d  ★ 两种类型的 slot14 ret 尺寸 ---")
+    for vt_val, label in ((0x7F794C, "类型A"), (0x7F7A6C, "类型B")):
+        fn = read_dw(vt_val + SLOT * 4)
+        if fn is None:
+            check("%s vtable 0x%08X 的 slot14 可读" % (label, vt_val), False)
+            continue
+        ret_sz = None
+        o_fn = va2off(fn)
+        for i in md.disasm(b[o_fn:o_fn + 0x60], fn):
+            if i.mnemonic == "ret":
+                ret_sz = 0 if not i.op_str else int(i.op_str, 16)
+                break
+        print("    %s vtable 0x%08X slot14 -> 0x%08X  ret %s"
+              % (label, vt_val, fn, ret_sz))
+        check("★★ %s 的 slot14 也是 ret 4（⇒ esp 净变化与类型无关）" % label,
+              ret_sz == 4, "ret %s" % ret_sz)
 
     # ---------- STEP 5: vtable[14] ----------
     print()

@@ -1,0 +1,58 @@
+WRITE_MNEM  (37): ['adc', 'add', 'and', 'cmova', 'cmovae', 'cmovb', 'cmovbe', 'cmove', 'cmovg', 'cmovge', 'cmovl', 'cmovle', 'cmovne', 'cmovnz', 'cmovz', 'dec', 'imul', 'inc', 'lea', 'mov', 'movsx', 'movsxd', 'movzx', 'neg', 'not', 'or', 'pop', 'rol', 'ror', 'sar', 'sbb', 'shl', 'shr', 'sub', 'xadd', 'xchg', 'xor']
+EXTRA_WRITE (7): ['bswap', 'btc', 'btr', 'bts', 'cmpxchg', 'shld', 'shrd']
+CLOBBER_MULTI (13): ['cdq', 'cpuid', 'cwd', 'div', 'enter', 'idiv', 'imul1', 'leave', 'mul', 'popa', 'popad', 'rdtsc', 'xlat']
+PARTIAL (16): ['ah', 'al', 'ax', 'bh', 'bl', 'bp', 'bx', 'ch', 'cl', 'cx', 'dh', 'di', 'dl', 'dx', 'si', 'sp']
+
+bytes                              disasm           operand_write classify_source        判定
+----------------------------------------------------------------------------------------------------------------------------------
+8b 0d 68 73 88 00                  mov ecx, dword ptr [0x887368] d=ecx src=dword ptr [0x887368] GLOBAL/None            mov ecx,[0x887368]
+23 0d 68 73 88 00                  and ecx, dword ptr [0x887368] d=ecx src=dword ptr [0x887368] GLOBAL/None            and ecx,[0x887368]
+0b 0d 68 73 88 00                  or ecx, dword ptr [0x887368] d=ecx src=dword ptr [0x887368] GLOBAL/None            or  ecx,[0x887368]
+03 0d 68 73 88 00                  add ecx, dword ptr [0x887368] d=ecx src=dword ptr [0x887368] GLOBAL/None            add ecx,[0x887368]
+2b 0d 68 73 88 00                  sub ecx, dword ptr [0x887368] d=ecx src=dword ptr [0x887368] GLOBAL/None            sub ecx,[0x887368]
+0f af 0d 68 73 88 00               imul ecx, dword ptr [0x887368] d=ecx src=dword ptr [0x887368] GLOBAL/None            imul ecx,[0x887368]
+0f b1 0d 68 73 88 00               cmpxchg dword ptr [0x887368], ecx d=None src=None -                      cmpxchg ecx,[0x887368]
+0f a5 f1                           shld ecx, esi, cl d=ecx src=esi REG/esi                shld ecx,esi,cl
+0f ab c8                           bts eax, ecx     d=eax src=ecx REG/ecx                bts eax,ecx
+0f ab c1                           bts ecx, eax     d=ecx src=eax REG/eax                bts ecx,eax
+0f c1 f1                           xadd ecx, esi    d=ecx src=esi REG/esi                xadd ecx,esi
+0f 94 c1                           sete cl          d=None src=None -                      sete cl
+0f b6 c9                           movzx ecx, cl    d=ecx src=cl UNKNOWN/cl             movzx ecx,cl
+66 0f b6 0d 68 73 88 00            movzx cx, byte ptr [0x887368] d=ecx src=__PARTIAL__byte ptr [0x887368] GLOBAL/None            movzx ecx,byte[0x887368]
+0f b7 0d 68 73 88 00               movzx ecx, word ptr [0x887368] d=ecx src=word ptr [0x887368] GLOBAL/None            movzx ecx,word[0x887368]
+66 0f be 0d 68 73 88 00            movsx cx, byte ptr [0x887368] d=ecx src=__PARTIAL__byte ptr [0x887368] GLOBAL/None            movsx ecx,word[0x887368]
+66 0f 6e c8                        movd xmm1, eax   d=None src=None -                      movd ecx,xmm0
+f3 0f b8 c8                        popcnt ecx, eax  d=None src=None -                      popcnt ecx,eax
+0f c7 f1                           rdrand ecx       d=None src=None -                      rdrand ecx
+f2 0f 38 f1 c8                     crc32 ecx, eax   d=None src=None -                      crc32 ecx,eax
+9f                                 lahf             d=None src=None -                      lahf
+0f a4 c8 04                        shld eax, ecx, 4 d=eax src=ecx REG/ecx                shld eax,ecx,4
+f3 a5                              rep movsd dword ptr es:[edi], dword ptr [esi] d=__IMPLICIT__ src=string-op IMPLICIT               rep movsd
+f3 ab                              rep stosd dword ptr es:[edi], eax d=__IMPLICIT__ src=string-op IMPLICIT               rep stosd
+0f a2                              cpuid            d=__IMPLICIT__ src=cpuid IMPLICIT               cpuid
+c8 10 00 00                        enter 0x10, 0    d=__IMPLICIT__ src=enter IMPLICIT               enter 0x10,0
+c9                                 leave            d=__IMPLICIT__ src=leave IMPLICIT               leave
+f7 e1                              mul ecx          d=__IMPLICIT__ src=mul IMPLICIT               mul ecx
+f7 e9                              imul ecx         d=ecx src=None UNKNOWN/read-modify-write imul ecx (1-op)
+f7 f1                              div ecx          d=__IMPLICIT__ src=div IMPLICIT               div ecx
+0f af c1                           imul eax, ecx    d=eax src=ecx REG/ecx                imul eax,ecx
+87 c8                              xchg eax, ecx    d=eax src=ecx REG/ecx                xchg eax,ecx
+8b c8                              mov ecx, eax     d=ecx src=eax REG/eax                mov ecx,eax
+8b c9                              mov ecx, ecx     d=ecx src=ecx REG/ecx                mov ecx,ecx
+d1 e1                              shl ecx, 1       d=ecx src=1 UNKNOWN/1              shl ecx,1
+0f bc c8                           bsf ecx, eax     d=None src=None -                      bsf ecx,eax
+0f bd c8                           bsr ecx, eax     d=None src=None -                      bsr ecx,eax
+0f 4e c8                           cmovle ecx, eax  d=ecx src=eax UNKNOWN/conditional-write cmovle ecx,eax
+
+=== 覆盖缺口 ===
+  ★ and ecx,[0x887368]           被判 GLOBAL（假绿）  (classify=GLOBAL/None)
+  ★ or  ecx,[0x887368]           被判 GLOBAL（假绿）  (classify=GLOBAL/None)
+  ★ add ecx,[0x887368]           被判 GLOBAL（假绿）  (classify=GLOBAL/None)
+  ★ sub ecx,[0x887368]           被判 GLOBAL（假绿）  (classify=GLOBAL/None)
+  ★ imul ecx,[0x887368]          被判 GLOBAL（假绿）  (classify=GLOBAL/None)
+  ★ shld ecx,esi,cl              被判 REG esi（假绿：ecx 实际不是 esi）  (classify=REG/esi)
+  ★ bts ecx,eax                  被判 REG eax（假绿）  (classify=REG/eax)
+  ★ xadd ecx,esi                 被判 REG esi（假绿：ecx 实际不是 esi）  (classify=REG/esi)
+  ★ movzx ecx,byte[0x887368]     被判 GLOBAL（宽度不符，值不等）  (classify=GLOBAL/None)
+  ★ movzx ecx,word[0x887368]     被判 GLOBAL（宽度不符，值不等）  (classify=GLOBAL/None)
+  ★ movsx ecx,word[0x887368]     被判 GLOBAL（宽度不符，值不等）  (classify=GLOBAL/None)

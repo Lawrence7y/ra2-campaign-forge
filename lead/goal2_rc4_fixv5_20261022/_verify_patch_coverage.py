@@ -297,7 +297,7 @@ def main():
     print("    已实测抓不住的变异：P23 / P23b / P27（装载换全局、拆守卫）")
     print("    抓得住的：P24（改 call 目标，调用点数分布变化）")
     print("    ⇒ 本门禁定位为**结构性普查**，不作取值证明。")
-    print("    ★ 取值证明已由 §394 _verify_ecx_dataflow.py 完成（35/35，")
+    print("    ★ 取值证明已由 §394 _verify_ecx_dataflow.py 完成（50/50，")
     print("      字节级负控 P23/P23b 使 67→66 翻红）。本门禁与其并存不冲突：")
     print("      本节管「站点分布与形态」，§394 管「ecx 的实际取值来源」。")
     print("    P27（拆守卫）归 §392 _verify_guard_premise.py。")

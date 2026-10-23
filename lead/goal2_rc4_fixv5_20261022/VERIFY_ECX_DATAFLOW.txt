@@ -78,10 +78,40 @@
         §393 登记的 P27 盲区在本门禁下仍未闭合，但归属已明确。
   ★ 确定性：同一站点两次分析结果一致（无遍历顺序依赖）                                            PASS  [('GLOBAL', None)] == [('GLOBAL', None)]
 
+--- 4g. ★ 写入分类覆盖自检（合成指令，非二进制）---
+    写入分类 mov        ecx, dword ptr [0x887368]              → ecx（GLOBAL-eligible） PASS  实测 ecx
+    写入分类 mov        cl, 1                                  → ecx（partial→UNKNOWN） PASS  实测 ecx
+    写入分类 mov        dl, 1                                  → edx（partial 归宿主 edx，与 ecx 无关） PASS  实测 edx
+    写入分类 add        cx, ax                                 → ecx（partial→UNKNOWN） PASS  实测 ecx
+    写入分类 shld       ecx, edx, 4                            → ecx（EXTRA_WRITE 覆盖） PASS  实测 ecx
+    写入分类 bts        ecx, 3                                 → ecx（EXTRA_WRITE 覆盖） PASS  实测 ecx
+    写入分类 mul        ecx                                    → __IMPLICIT__（隐含写 eax/edx） PASS  实测 __IMPLICIT__
+    写入分类 cdq                                               → __IMPLICIT__（隐含写 edx） PASS  实测 __IMPLICIT__
+    写入分类 cpuid                                             → __IMPLICIT__（隐含写全部） PASS  实测 __IMPLICIT__
+    写入分类 rep movsd  dword ptr es:[edi], dword ptr [esi]    → __IMPLICIT__（字符串指令隐含写 ecx） PASS  实测 __IMPLICIT__
+    写入分类 cmp        ecx, 0                                 → None（cmp 不写） PASS  实测 None
+    写入分类 test       ecx, ecx                               → None（test 不写） PASS  实测 None
+  ★ 回归：mov dl,1 不得导致 ecx 被判定为 partial 写                                  PASS  第一版误判成 __IMPLICIT__ ⇒ 7 个站点假红
+
+--- 4h. ★★★ classify_source 假绿形态（真实字节解码）---
+    and      ecx, dword ptr [0x887368]        → UNKNOWN/not-pure-assignment(and) ecx = 旧ecx & [..] ≠ [..]
+    or       ecx, dword ptr [0x887368]        → UNKNOWN/not-pure-assignment(or) ecx = 旧ecx | [..] ≠ [..]
+    add      ecx, dword ptr [0x887368]        → UNKNOWN/not-pure-assignment(add) ecx = 旧ecx + [..] ≠ [..]
+    sub      ecx, dword ptr [0x887368]        → UNKNOWN/not-pure-assignment(sub) ecx = 旧ecx - [..] ≠ [..]
+    imul     ecx, dword ptr [0x887368]        → UNKNOWN/not-pure-assignment(imul) ecx = 旧ecx × [..] ≠ [..]
+    shld     ecx, esi, cl                     → UNKNOWN/not-pure-assignment(shld) ecx 是拼接结果 ≠ esi
+    bts      ecx, eax                         → UNKNOWN/not-pure-assignment(bts) 只置一位 ≠ eax
+    xadd     ecx, esi                         → UNKNOWN/not-pure-assignment(xadd) 交换后相加 ≠ esi
+    movzx    ecx, word ptr [0x887368]         → UNKNOWN/not-pure-assignment(movzx) 只取低 16 位 ≠ [..] 的 32 位值
+    movzx    cx, byte ptr [0x887368]          → UNKNOWN/partial-write 只取低 8 位 ≠ [..]
+    movsx    cx, byte ptr [0x887368]          → UNKNOWN/partial-write 符号扩展 16 位 ≠ [..]
+  ★★★ 上述 11 种非纯赋值指令**无一**被判为 GLOBAL（否则假绿）                                PASS  全部正确拒绝
+  ★ 正控：mov ecx,[0x887368] 仍判 GLOBAL（拒绝不是恒真）                              PASS  判为 GLOBAL
+
 --- 5. 结论 ---
     命题：每个调用点 ecx == [0x887368]
     证明手段：CFG 后向数据流（分支目标解析 + 寄存器中转追踪）
     推论：函数头 test ecx,ecx / je 在全局为 0 时于所有调用路径命中
     ⇒ §393 的 C 类（调用者前置守卫）为多余分类，已弃用
 
-35/35 PASS
+50/50 PASS
