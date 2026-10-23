@@ -4690,4 +4690,19 @@ vtable 写入字节。两个坑同属「匹配/寻址口径」家族，G-60 记�
 - 依赖风险 0（`completion=partial`）；本轮模型 `new-provider-3/qfmodel`
 - 与上两轮 37→37 持平；**诚实边界**：37 条全在本线写域外，仅记录；
   deep+partial ⇒ 不宣称项目安全。push 时钩子再次提示 scanner_enobufs，
-  同轮已补跑完整深度扫描（即本条）。
+  同轮已补跑完整深度扫描。
+- **时序自纠（首稿措辞错误，G-60 同族：断言先于验证）**：本条初版把「r041
+  新件零命中」挂在 `17-42` 扫描上，但该扫描**完成于 r041 文件创建之前**，
+  断言当时并未经它验证（方向恰好成立，「恰好」不是依据）。已补跑**提交后**
+  focus 深扫（9 件新件显式列 `focusFiles`）：
+  scanId `scan-2026-10-23T20-06-03.936Z-4493c97ecbfc` /
+  seal `sha256:c01c9a44addf7a5b7505e982835fbad6a7125b4669886872ad6a6b411615d96f`，
+  findings 37（tools 17 / lead 18 / ra2forge 2），**re_atlas/ 命中 0（含全部 r041
+  新件）**——这才是「新件零命中」的依据。
+- **erratum 补推被 L3 硬拦（新事实，非推测）**：本条修正以 `git commit --
+  re_atlas/LEDGER.md` 显式路径重试时，PreToolUse 钩子按**全项目**扫描结果
+  硬阻断（36 high：`tools/atlas_audit.py` 等 11 处 + `lead/goal1_a8_fix_20261022/
+  VERIFY_A8.py:510` 等），与本轮早前 `66eef68` 的 enobufs 兼容放行**不一致**；
+  拦截清单全部在他线写域（本线无权修复，铁律 §4）。主交付件 commit 已在墙上
+  （`66eef68` 已推送），本 erratum 留盘待补推；不碰 `core.hooksPath`、不
+  `--no-verify`（禁令）。
