@@ -18,14 +18,36 @@
 |:---|:---|:---|
 | 类型 ID 名字表 | `0x00816EE0`，**74 项**，元素 `{char* name, u32 value}` 各 8 字节 | 逐项解引用读出 74 个非空名字 |
 | ID 值域 | `0x00..0x49`（`<none>` .. `DiskLaser`） | 表内 `value` 字段 |
-| `vtable[11]` = `WhatAmI()` | `mov eax, imm; ret` | **69 个类**全部命中，imm 与名字表 `value` 一一对应 |
+| `vtable[11]` = `WhatAmI()` | `mov eax, imm; ret` | **69 个类**命中（分母是 78 个后代，见 §0 作用域修正），imm 与名字表 `value` 一一对应 |
 | `vtable[12]` = `GetSize()` | `mov eax, imm; ret` | 同上 69 个类 |
 | ID 冲突数 | **0**（69 个 ID，69 个不同类） | 见 `evidence/class_ids.txt` |
 | 名称一致率 | 62/69 字面一致，7 条为已知别名 | 见 §3.1 |
 | 剩余未对应 | 5 项，各有正当原因（抽象桩 / 无此类） | 见 §3.2 |
 
-**载荷**：任何 `AbstractClass*` 都能用 `vtable[11]` 识别真实类型，不需要 RTTI、
-不需要 `dynamic_cast`。这是写"按类型分派"补丁的正确入口。
+**载荷**：对**具体的（最派生的）`AbstractClass` 实例**，`vtable[11]` 是类型 ID、
+`vtable[12]` 是实例尺寸，不需要 RTTI、不需要 `dynamic_cast`。这是写"按类型分派"
+补丁的正确入口。
+
+> ### ⚠ 作用域修正（2026-10-23，R-037）
+>
+> 原文写的是「**任何** `AbstractClass*`」。**这句话范围过大**：实测 78 个
+> `AbstractClass` 后代里 **69 个成立、9 个不成立**（覆盖率 88.5%，不是 100%）。
+> 不成立的 9 个**全部是抽象中间基类**，它们的槽 11/12 都指向抽象桩
+> `0x004C9150`（`xor eax,eax; ret`，字节 `33 C0 C3`），返回 0 而不是 ID：
+>
+> `AbstractClass` / `AbstractTypeClass` / `ObjectClass` / `ObjectTypeClass` /
+> `MissionClass` / `RadioClass` / `TechnoClass` / `TechnoTypeClass` / `FootClass`
+>
+> 这 9 个**从不被实例化**，所以真实对象的虚表永远不会是这 9 张 ——
+> **契约对实例仍然安全**。但若拿一个「基类虚表」去读槽 11，会拿到 0。
+>
+> **分母也要说清**：RTTI 共 988 个类，954 个带虚表，其中 **804 个槽数 ≤12**
+> （`vfunc_count` 字段），**槽 11/12 根本不存在**。所以 69 的正确读法是
+> 「78 个后代中 69 个符合」，不是「954 个类中 69 个通过」。
+>
+> 复跑：`python re_atlas/tools/verify_r037_scope.py`（8/8 PASS，EXIT=0）；
+> 变异 `tools/mutate_r037_gate.py`（3/3 killed）；证据 `evidence/r037_vtable_scope.txt`。
+
 
 ---
 

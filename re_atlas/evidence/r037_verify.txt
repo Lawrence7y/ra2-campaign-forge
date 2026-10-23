@@ -1,0 +1,10 @@
+PASS	P1	sha256 与交付锚一致	73201cc021497c95
+PASS	P2	RTTI 总类数 **988**，带虚表 **954** ⇒ 契约的分母不是 69，先要说清 69 / 954	classes=988 with_vt=954
+PASS	P3	虚表槽数 ≤12 的类 **804** 个（`vfunc_count` 字段独立给出）⇒ 对它们**根本不存在槽 11/12**，契约是「不适用」而不是「被违反」	le12=804
+PASS	P4	`AbstractClass` 后代（有虚表）**78** 个 ⇒ 这才是契约真正的作用域，不是 954 也不是 988	abstract_descendants=78
+PASS	P5	78 个后代里 **69** 个符合（槽 11/12 都是 `mov eax,imm; ret`）、**9** 个不符合 ⇒ 覆盖率 69/78 = 88.5%，不是 69/69 = 100%	conform=69 gap=9
+PASS	P6	9 个不符合的**全部是抽象中间基类**，且槽 11/12 都指向同一地址 `0x004C9150`（名字集合一致=True，指针命中 9/9），**且该地址的字节确实是 `xor eax,eax; ret`**（`33c0c3`）⇒ 它不是「某个函数」而是抽象桩	names_match=True stub_hits=9 stub_bytes=33c0c3 stub_ok=True
+PASS	P7	非 `AbstractClass` 后代里符合的类 = **0** ⇒ 69 恰好等于「后代中覆写了桩的叶子类」，契约不外溢	outside=0
+PASS	P8	69 个符合的类里，**被别的类继承的 = 0** ⇒ 它们全是叶子（最派生）类；所以契约对**实例**成立（实例的虚表必是最派生的），对 9 个中间基类的虚表不成立	conforming_that_are_bases=0
+
+RESULT: 8/8 PASS

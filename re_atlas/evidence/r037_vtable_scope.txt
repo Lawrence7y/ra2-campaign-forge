@@ -1,0 +1,117 @@
+# R-037 · vtable[11]/[12] 契约的真实作用域
+
+镜像 sha256 `73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476`
+
+## 一句话
+
+`kb/20` 说「**任何** `AbstractClass*` 都能用 `vtable[11]` 识别真实类型」。
+这句话**对实例成立、对中间基类不成立**，而且 69 这个数字的分母从来不是 69。
+
+## 漏斗
+
+| 层 | 类数 | 说明 |
+|:--|--:|:--|
+| RTTI 总类数 | 988 | `symbols.json` 全部 |
+| 带虚表 | 954 | 其余 34 个无虚表 |
+| 虚表槽数 ≤12 | 804 | **槽 11/12 不存在**，契约不适用 |
+| 虚表槽数 >12 | 150 | 槽 11/12 存在 |
+| **`AbstractClass` 后代** | **78** | **契约真正的作用域** |
+| 其中符合 | **69** | 槽 11/12 都是 `mov eax,imm; ret` |
+| 其中不符合 | **9** | 全是抽象中间基类，槽 11/12 = 抽象桩 |
+
+## 9 个不符合的类（抽象中间基类）
+
+| 类 | 槽数 | 槽 11 | 槽 12 |
+|:--|--:|:--|:--|
+| `AbstractClass` | 24 | `0x004C9150` | `0x004C9150` |
+| `AbstractTypeClass` | 27 | `0x004C9150` | `0x004C9150` |
+| `FootClass` | 341 | `0x004C9150` | `0x004C9150` |
+| `MissionClass` | 157 | `0x004C9150` | `0x004C9150` |
+| `ObjectClass` | 122 | `0x004C9150` | `0x004C9150` |
+| `ObjectTypeClass` | 40 | `0x004C9150` | `0x004C9150` |
+| `RadioClass` | 161 | `0x004C9150` | `0x004C9150` |
+| `TechnoClass` | 309 | `0x004C9150` | `0x004C9150` |
+| `TechnoTypeClass` | 48 | `0x004C9150` | `0x004C9150` |
+
+全部指向 `0x004C9150`：`xor eax,eax; ret`（`31 C0 C3`）。
+它们**从不被实例化**，所以真实对象的虚表永远不会是这 9 张。
+
+## 可以安全依赖的表述
+
+> 对**具体的（最派生的）`AbstractClass` 实例**，`vtable[11]` 是类型 ID、
+> `vtable[12]` 是实例尺寸。69 个叶子类型类全部成立。
+> **不要**把这套读法用在中间基类的虚表上 —— 那 9 张的槽 11/12 返回 0。
+
+## 69 个符合类的 ID / 尺寸
+
+| ID | 尺寸 | 类 |
+|--:|--:|:--|
+| `0x01` | 2280 | `UnitClass` |
+| `0x02` | 1752 | `AircraftClass` |
+| `0x03` | 3600 | `AircraftTypeClass` |
+| `0x04` | 456 | `AnimClass` |
+| `0x05` | 888 | `AnimTypeClass` |
+| `0x06` | 1824 | `BuildingClass` |
+| `0x07` | 6040 | `BuildingTypeClass` |
+| `0x08` | 352 | `BulletClass` |
+| `0x09` | 760 | `BulletTypeClass` |
+| `0x0A` | 928 | `CampaignClass` |
+| `0x0B` | 328 | `CellClass` |
+| `0x0C` | 116 | `FactoryClass` |
+| `0x0D` | 90296 | `HouseClass` |
+| `0x0E` | 432 | `HouseTypeClass` |
+| `0x0F` | 1776 | `InfantryClass` |
+| `0x10` | 3792 | `InfantryTypeClass` |
+| `0x11` | 176 | `IsometricTileClass` |
+| `0x12` | 780 | `IsometricTileTypeClass` |
+| `0x13` | 232 | `BuildingLightClass` |
+| `0x14` | 176 | `OverlayClass` |
+| `0x15` | 700 | `OverlayTypeClass` |
+| `0x16` | 312 | `ParticleClass` |
+| `0x17` | 792 | `ParticleTypeClass` |
+| `0x18` | 256 | `ParticleSystemClass` |
+| `0x19` | 784 | `ParticleSystemTypeClass` |
+| `0x1A` | 48 | `ScriptClass` |
+| `0x1B` | 564 | `ScriptTypeClass` |
+| `0x1C` | 180 | `SideClass` |
+| `0x1D` | 176 | `SmudgeClass` |
+| `0x1E` | 676 | `SmudgeTypeClass` |
+| `0x20` | 256 | `SuperWeaponTypeClass` |
+| `0x21` | 212 | `TaskForceClass` |
+| `0x22` | 160 | `TeamClass` |
+| `0x23` | 248 | `TeamTypeClass` |
+| `0x24` | 224 | `TerrainClass` |
+| `0x25` | 700 | `TerrainTypeClass` |
+| `0x26` | 72 | `TriggerClass` |
+| `0x27` | 180 | `TriggerTypeClass` |
+| `0x28` | 3704 | `UnitTypeClass` |
+| `0x29` | 328 | `VoxelAnimClass` |
+| `0x2A` | 776 | `VoxelAnimTypeClass` |
+| `0x2B` | 576 | `WaveClass` |
+| `0x2C` | 56 | `TagClass` |
+| `0x2D` | 164 | `TagTypeClass` |
+| `0x2E` | 296 | `TiberiumClass` |
+| `0x2F` | 148 | `TActionClass` |
+| `0x30` | 88 | `TEventClass` |
+| `0x31` | 352 | `WeaponTypeClass` |
+| `0x32` | 464 | `WarheadTypeClass` |
+| `0x33` | 64 | `WaypointPathClass` |
+| `0x35` | 452 | `TubeClass` |
+| `0x36` | 76 | `LightSourceClass` |
+| `0x37` | 52 | `EMPulseClass` |
+| `0x38` | 3608 | `Tactical` |
+| `0x39` | 128 | `SuperClass` |
+| `0x3B` | 272 | `AITriggerTypeClass` |
+| `0x3C` | 56 | `NeuronClass` |
+| `0x3D` | 120 | `FoggedObjectClass` |
+| `0x3E` | 64 | `AlphaShapeClass` |
+| `0x3F` | 264 | `VeinholeMonsterClass` |
+| `0x41` | 116 | `SpawnManagerClass` |
+| `0x42` | 80 | `CaptureManagerClass` |
+| `0x43` | 88 | `ParasiteClass` |
+| `0x44` | 92 | `BombClass` |
+| `0x45` | 116 | `RadSiteClass` |
+| `0x46` | 80 | `TemporalClass` |
+| `0x47` | 96 | `AirstrikeClass` |
+| `0x48` | 100 | `SlaveManagerClass` |
+| `0x49` | 64 | `DiskLaserClass` |
