@@ -55,6 +55,22 @@ KNOWN_HARNESS = {
     "ff8245d27b3db22a": "harness6（母本，463,219 B）",
     "d019e8beecfb5fd8": "harness7（D-05 补丁副本，472,020 B）",
 }
+HARNESS7_SHA16 = "d019e8beecfb5fd8"
+
+# ★★ H-2e（§407）：D-05 冒烟验收的 5 条判据（S399 §九）此前**判档器一条都不读**。
+#   真机三趟跑完，`h7_fs_rect_wait_skipped` / `pre_capture_wait_polls` /
+#   `h7_nav_to_measure` 全在 `qc151_fields.json` 里，但判档器输出里看不到 ⇒
+#   冒烟等于没验（证据在盘上却无人读，与 §401 的 H-5 同型教训）。
+#   ⇒ 本区只在**该趟确实由 harness7 跑出**时生效，harness6 趟不受影响。
+#   ★ 判据取值来自 S399 §九 的设计预期，**不是**从产物反推的：
+H7_SMOKE = {
+    # 窗口模式：短路不该出现；polls 与 harness6 同量级（历史窗口趟实测 0）
+    "windowed": {"skipped": False, "polls_max": 5, "frame_s_max": None},
+    # 全屏短路：polls 必须归零，frame 段必须从 ~125 s 掉到 <2 s
+    "fullscreen_short": {"skipped": True, "polls_max": 0, "frame_s_max": 2.0},
+    # 对照臂：polls 必须回到 244–253，frame 段回到 ~125 s
+    "fullscreen_keep": {"skipped": False, "polls_min": 200, "frame_s_min": 100.0},
+}
 
 EXIT_PASS, EXIT_FAIL, EXIT_UNDECIDABLE = 0, 1, 2
 EXIT_SHORT_CIRCUIT = 3
@@ -112,6 +128,102 @@ def rec_get(recs, group, key):
     """按 (group, key) 取**最后一条**记录的值（同键多次读写时取末次）。"""
     hit = [v for (g, k, v) in recs if g == group and k == key]
     return hit[-1] if hit else None
+
+
+def h7_smoke_section(lr, check, out_dir):
+    """★★ H-2e（§407）：harness7 冒烟验收判据。
+
+    ★★ 为什么必须是**独立函数**：本判档器在「设计内短路」分支里会 `return`
+    （那正是全屏短路臂的正常结局），而冒烟判据恰恰要在那种趟上生效。
+    写成脚本中段的顺序代码，等于**真机冒烟趟一条都执行不到**。
+
+    ★ 判据来源是**产物自身**，不看命令行记忆：
+      `h7_fs_rect_wait_skipped.skipped=True`      ⇒ 全屏短路臂
+      `skipped=False` 且 `pre_capture_wait_polls≥200` ⇒ 对照臂
+      `skipped=False` 且 polls 很小              ⇒ 窗口模式
+    """
+    qf = Path(out_dir) / "qc151_fields.json"
+    print("\n[4b] ★★ harness7 冒烟验收（S399 §九 五条判据）")
+    if not qf.is_file():
+        print("      [局限] 无 qc151_fields.json ⇒ 冒烟判据无从判读（不是通过）")
+        return
+    recs7 = field_records(load(qf))
+    sk = rec_get(recs7, "FRAME", "h7_fs_rect_wait_skipped")
+    polls = rec_get(recs7, "FRAME", "pre_capture_wait_polls")
+    n2m = rec_get(recs7, "MEASURE", "h7_nav_to_measure")
+    skipped = sk.get("skipped") if isinstance(sk, dict) else (
+        None if sk is None else bool(sk))
+    frame_s = rec_get(recs7, "BUDGET", "stage_seconds:frame")
+
+    print("      h7_fs_rect_wait_skipped = %s" % (skipped,))
+    print("      pre_capture_wait_polls   = %s" % (polls,))
+    print("      stage_seconds:frame      = %s" % (frame_s,))
+    if n2m is not None:
+        print("      h7_nav_to_measure        = %s" % (n2m,))
+
+    # ★ 是否是 **有效** harness7 冒烟趟：需要**同时**满足两条
+    #   ① 趟由 harness7 跑出（哈希对得上，或产物里有 h7_* 记录）
+    #   ② 冒烟判据**所需的字段确实在场**（skipped 与 polls）
+    #   ★★ 只判①会出岔子（§407 回归实测 B2 变红）：harness7 的趟若在 window 阶段
+    #     就失败，`h7_fs_rect_wait_skipped` 根本不会被写 —— 那种趟**不是**冒烟样本，
+    #     用冒烟判据要求它「skipped == False」是拿设计预期去判一个没跑到那里的趟。
+    #   ⇒ 缺字段时**明确报「不是冒烟样本」**，不产生断言（既不算通过也不算失败）。
+    is_h7_run = (lr.get("harness_sha16") == HARNESS7_SHA16) or (sk is not None) or (n2m is not None)
+    if not is_h7_run:
+        print("      [跳过] 本趟不是 harness7（harness_sha16=%s，无 h7_* 记录）"
+              " ⇒ 冒烟判据不适用，**不是通过**" % lr.get("harness_sha16"))
+        return
+    if sk is None or polls is None:
+        print("      [跳过] 本趟虽由 harness7 跑出，但冒烟字段缺失"
+              "（h7_fs_rect_wait_skipped=%s / pre_capture_wait_polls=%s）"
+              " ⇒ **不是冒烟样本**（多半在 window 阶段就失败了），"
+              "不产生冒烟断言" % (sk, polls))
+        return
+
+    check("★ 本趟确为 harness7 冒烟样本 ⇒ 判据适用", True, "h7 记录齐全")
+
+    if skipped is True:
+        form = "fullscreen_short"
+    elif polls is not None and polls >= 200:
+        form = "fullscreen_keep"
+    else:
+        form = "windowed"
+    print("      ⇒ 形态（由产物判定）: %s" % form)
+    exp = H7_SMOKE[form]
+
+    check("★ h7_fs_rect_wait_skipped == %s（%s 臂的设计预期）"
+          % (exp["skipped"], form),
+          skipped is exp["skipped"], "实测 %s" % (skipped,))
+    if "polls_max" in exp:
+        check("★ pre_capture_wait_polls ≤ %d（%s 臂）" % (exp["polls_max"], form),
+              polls is not None and polls <= exp["polls_max"], "实测 %s" % (polls,))
+    if "polls_min" in exp:
+        check("★ pre_capture_wait_polls ≥ %d（%s 臂）" % (exp["polls_min"], form),
+              polls is not None and polls >= exp["polls_min"], "实测 %s" % (polls,))
+    if exp.get("frame_s_max") is not None:
+        check("★★ stage_seconds:frame < %.1f s（全屏短路臂的核心收益）"
+              % exp["frame_s_max"],
+              frame_s is not None and frame_s < exp["frame_s_max"],
+              "实测 %s（harness6 历史 122–127 s）" % (frame_s,))
+    if exp.get("frame_s_min") is not None:
+        check("★ stage_seconds:frame ≥ %.1f s（对照臂必须保持原等待）"
+              % exp["frame_s_min"],
+              frame_s is not None and frame_s >= exp["frame_s_min"],
+              "实测 %s" % (frame_s,))
+
+    late = n2m.get("late_start") if isinstance(n2m, dict) else None
+    if form == "fullscreen_keep":
+        # ★ S399 §九 第 3 条：对照臂**不得**出现 late_start
+        check("★★ 对照臂 late_start 不得出现（前置条件按设计生效）",
+              late is not True, "late_start=%s" % (late,))
+    if form == "fullscreen_short":
+        # ★ 第 2 趟的 nav_to_measure_s 是边界 2 的唯一实测数
+        val = n2m.get("nav_to_measure_s") if isinstance(n2m, dict) else None
+        check("★★ 全屏短路臂记录了 nav_to_measure_s（边界 2 的唯一实测数）",
+              val is not None, "%s" % (val,))
+        if val is not None:
+            print("      ⇒ nav_to_measure_s = %.3f s"
+                  "（90 s 阈值是否需重标看这个数）" % val)
 
 
 def main():
@@ -246,11 +358,32 @@ def main():
                   "与上一种死法不同，须分开记（H-5 档）")
         if w0_v == "late_start":
             h7 = w0.get("h7") or {}
+            # ★ H-2e：字段名以 **harness7 实际写入**为准。实测 harness7 `:4994`
+            #   写的是 `limit_s`，而本行原文读 `max_nav_to_w0_s` —— 那个键
+            #   在 harness7 里**根本不存在**（全仓 grep 仅此一处），
+            #   ⇒ 真机冒烟跑出来后阈值恒显示 None。
+            #   两键都接受（未来若改名也能读），并显式标注取到了哪个。
+            _limit = h7.get("limit_s")
+            if _limit is None:
+                _limit = h7.get("max_nav_to_w0_s")
+                _lim_src = "max_nav_to_w0_s（兼容旧名）"
+            else:
+                _lim_src = "limit_s"
             print("   ★ harness7 late-start 闸生效：nav_to_measure_s=%s"
-                  "（阈值 %s s）"
-                  % (h7.get("nav_to_measure_s"), h7.get("max_nav_to_w0_s")))
+                  "（阈值 %s s，取自 %s）"
+                  % (h7.get("nav_to_measure_s"), _limit, _lim_src))
             print("   ★ 本趟正是 D-05 §6 边界 2 的实测样本 —— "
                   "这个数字决定 90 s 阈值是否需重标")
+            check("late_start 趟的 nav_to_measure_s 有值",
+                  h7.get("nav_to_measure_s") is not None,
+                  "%s" % h7.get("nav_to_measure_s"))
+            check("late_start 确实超阈值（阈值取自产物，不是常量）",
+                  _limit is not None
+                  and h7.get("nav_to_measure_s") is not None
+                  and h7["nav_to_measure_s"] > _limit,
+                  "n2m=%s limit=%s" % (h7.get("nav_to_measure_s"), _limit))
+        # ★★ H-2e：短路分支也必须跑冒烟判据 —— 全屏短路臂本来就走这里。
+        h7_smoke_section(lr, check, OUT_DIR)
         return EXIT_SHORT_CIRCUIT
 
     if w0_v not in WINDOW_OK_VERDICTS:
@@ -350,6 +483,13 @@ def main():
         check("S4.hit_count == 0（Arm A 定义）", s4 == 0, str(s4))
     else:
         check("qc151_fields.json 存在", False, str(qf.name))
+
+    # ---- 4b. ★★ H-2e（§407）：harness7 冒烟验收判据 ----
+    #   ★★ 判据本体在 `h7_smoke_section()` 里，**不是**这里的内联代码。
+    #      原因：全屏短路臂的正常结局就是「设计内短路 ⇒ return 3」，
+    #      内联在这条 return 之后等于**真机冒烟趟一条都执行不到**。
+    #      本调用点只服务「三窗齐全」的趟（窗口模式 / 对照臂走完三窗时）。
+    h7_smoke_section(lr, check, OUT_DIR)
 
     # ---- 5. except 新增 ----
     print("\n[5] except 增量（不作唯一判据，仅记录）")
