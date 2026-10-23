@@ -1,0 +1,29 @@
+============================================================================
+可机检项（在真实产物上复算）
+============================================================================
+[PASS         ] C1 deadline 不是 global（局部重绑不会外泄）  global deadline 声明=False
+[PASS         ] C1b main() 里有 STAGE_TIMEOUT_S/TRIP_BUDGET_S 的 global（说明作者知道该机制）
+[PASS         ] C2 短路块在 deadline 定义之后（不是引用未定义变量）  def@334483 skip@357016
+[PASS         ] C3 deadline = 0.0 位于 if 体内（缩进正确）
+[PASS         ] C4 _H7_STATE 四键全被使用（无死键）  def=['fs_rect_wait_skipped', 'late_start', 'nav_end_t', 'nav_to_measure_s'] used=['fs_rect_wait_skipped', 'late_start', 'nav_end_t', 'nav_to_measure_s']
+[PASS         ] C5 late_start 的 return 在 try 内且 finally 仍关句柄  try@212825 return@215440 finally=True
+[PASS         ] C6 late_start 分支内无 _rpm_close（交给 finally，不重复关）
+[PASS         ] C7 --h7-keep-rect-wait default=False  "--h7-keep-rect-wait", action="store_true", default=False
+[PASS         ] C8 置 True 唯一发生在 --fullscreen 块内 ⇒ 窗口模式恒 False  置 True 次数=1，其中在 --fullscreen 块内=True
+[PASS         ] C9 nav_end_t 打戳在 nav 结果（含 failed_at）之后  failed_at@355666 stamp@355887
+[PASS         ] C10 late-start 闸在 handle_opened 之后（句柄已就绪）  handle@211908 gate@212825
+[PASS         ] C11 未引入新 rec group  new=none
+[PASS         ] C12 late_start 是唯一新增 verdict 值  added=['late_start']
+[PASS         ] C13 窗口模式：短路块不进入（容器 False）且 while 谓词首判即假  依赖 C8
+[PASS         ] C14 h7.diff 是纯文本（无 NUL 字节）
+
+============================================================================
+必需真机、无法离线判定的项
+============================================================================
+[REQUIRES_LIVE] L1 短路后 stage_seconds:frame 是否真降到 <2 s
+[REQUIRES_LIVE] L2 短路后 nav→measure 实际值（决定 90 s 阈值是否需重标）
+[REQUIRES_LIVE] L3 对照臂 --h7-keep-rect-wait 是否真复现 122-127 s 死等
+[REQUIRES_LIVE] L4 窗口模式真机结果是否与 harness6 可比
+[REQUIRES_LIVE] L5 late_start 在真机上是否会出现（正常开局应永不出现）
+
+机检：15 PASS / 0 FAIL；真机待验：5 项

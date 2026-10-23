@@ -179,6 +179,40 @@ late-start 是**主动拒采**，语义完全不同。初版直接复用它、�
 两套都过 ⇒ 零删除行这个结论有两个独立来源。
 原始输出：`crosscheck_h7_output.txt`。
 
+### 5.2 裁决自查（15/15 机检 PASS + 5 项明确标「需真机」）
+
+`_adjudicate_h7.py` 把「盲验员最可能报的缺陷类别」列成 15 条**可在真实产物上执行**的
+检查，逐条复算。**能机检的给 PASS/FAIL；不能机检的显式标 `REQUIRES_LIVE`，不硬凑结论。**
+
+| 组 | 检查 | 结果 |
+|:--|:--|:--|
+| C1 | `deadline` 不是 global（局部重绑不外泄） | PASS |
+| C1b | `main()` 确有 `STAGE_TIMEOUT_S` 的 global（作者知道该机制） | PASS |
+| C2 | 短路块在 `deadline` 定义之后（非引用未定义变量） | PASS |
+| C3 | `deadline = 0.0` 确在 `if` 体内（缩进正确） | PASS |
+| C4 | `_H7_STATE` 四键全被使用（无死键） | PASS |
+| C5 | late_start 的 `return` 在 `try` 内且 `finally` 仍关句柄 | PASS |
+| C6 | late_start 分支内无 `_rpm_close`（不重复关，交给 finally） | PASS |
+| C7 | `--h7-keep-rect-wait` `default=False` | PASS |
+| C8 | 置 True **唯一**发生在 `--fullscreen` 块内 ⇒ 窗口模式恒 False | PASS（次数=1） |
+| C9 | `nav_end_t` 打戳在 nav 结果（含 `failed_at`）之后 | PASS |
+| C10 | late-start 闸在 `handle_opened` 之后（句柄已就绪） | PASS |
+| C11 | 未引入新 `rec` group | PASS（none） |
+| C12 | `late_start` 是唯一新增 verdict 值 | PASS |
+| C13 | 窗口模式：短路块不进入 且 while 谓词首判即假 | PASS |
+| C14 | `h7.diff` 是纯文本（无 NUL 字节） | PASS |
+
+**5 项显式标 `REQUIRES_LIVE`（离线无法判定，不许用推理冒充）**：
+L1 短路后 `stage_seconds:frame` 是否真降到 <2 s；L2 短路后 nav→measure 实际值
+（决定 90 s 阈值是否需重标）；L3 对照臂是否真复现死等；L4 窗口模式真机可比性；
+L5 late_start 在正常开局是否永不出现。
+
+> ★ C7 第一版误报 FAIL：正则写成 `\s*\n\s*default=False`（要求 default 在下一行），
+> 而产物里它在**同一行**。改同行匹配后 PASS。**这是检查写错，不是产物有问题** ——
+> 记在此处，是因为「门禁报红」和「产物有病」是两件事，混了就白改一遍代码。
+
+原始输出：`adjudicate_h7_output.txt`。
+
 ---
 
 ## 六、诚实边界（六条，全部未闭合项）
@@ -264,10 +298,12 @@ muze GLM 上，按后一次指示**立即 amend 到 buddy switch 千问族**并�
 | `_gen_harness7.py` | 23,968 | `1731c48121e29f4e` | 生成器（14 项自检） |
 | `_verify_h7_behavior.py` | 15,827 | `3e113a5ee51bc020` | 离线验证（22 断言 / 5 变异） |
 | `_crosscheck_h7_bytes.py` | 6,142 | `40044b350ed05e31` | 第二实现交叉核验（18 断言） |
+| `_adjudicate_h7.py` | 8,828 | `0ddfffd8769a23b4` | 裁决自查（15 机检 + 5 需真机） |
 | `h7.diff` | 11,279 | `08fcd286fe554393` | +122 / −0 |
 | `HARNESS7_REPORT.md` | — | — | 交付报告 |
 | `verify_h7_output.txt` | — | — | 验证原始输出（22/22） |
 | `crosscheck_h7_output.txt` | — | — | 交叉核验原始输出（18/18） |
+| `adjudicate_h7_output.txt` | — | — | 裁决自查原始输出（15 PASS / 5 LIVE） |
 | `gen_h7_selfcheck.txt` | — | — | 生成器自检输出（14/14） |
 
 母本 `qc151_trip.harness6.py` = 463,219 B / LF16 `ff8245d27b3db22a`，**零改动**。
