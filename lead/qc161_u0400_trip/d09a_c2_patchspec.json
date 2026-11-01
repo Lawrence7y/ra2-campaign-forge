@@ -1,0 +1,27 @@
+{
+ "name": "d09a_c2_exitbail",
+ "gated_by": "[Logic] EnableRC4Guard（复用守卫总闸）或独立 EnableRC4ExitBail（Lead 裁决）",
+ "sibling_cave_rule": "新专用 cave，不与 v5 8 头 cave 共用（RC4-SPEC-V2 姊妹 cave 规则）",
+ "snapshot_sha16": "73201cc021497c95",
+ "site": {
+  "va": 7069921,
+  "orig_win_hex": "393dd8eda80074f3",
+  "len": 8,
+  "patch_hex_at_test_base": "e91a2f940f90",
+  "patch_hex_template": "e9{rel32}90",
+  "dead_after": "je@0x6BE0E7 74F3 不可达（E9 不落回）"
+ },
+ "cave": {
+  "va_template": "runtime-allocated (v5 分配器同域, 参考基址 0x10000000 区)",
+  "len": 36,
+  "test_base_hex": "0x10001000",
+  "bytes_at_test_base_hex": "a15035b70085c00f84dcd06bf0833dd8eda800010f85cfd06bf0e9bdd06bf0e9c5d06bf0"
+ },
+ "targets": {
+  "loop_head": "0x6be0dc",
+  "exit": "0x6be0e9"
+ },
+ "semantics": "hwnd==0 ⇒ 放弃等待出环（=B@0x6BEC94..9B 原生 bail）；exitstate!=1 ⇒ 出环（原 cmp/je 语义）；否则回 0x6BE0DC 继续泵等",
+ "regs": "cave 仅动 eax（call 泵后 eax 本就死值）；不碰栈；E9 不经 ret",
+ "verify_recipe": "_verify_c2_cave.py --selfcheck（独立重查 + 每个变异必被抓）"
+}

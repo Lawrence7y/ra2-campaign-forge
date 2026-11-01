@@ -1,0 +1,25 @@
+== selftest: 判定器对真实形态合成工件 ==
+[OK] C1   _rec 必备键齐                          miss=[]
+[OK] C2   verdict∈{OK,PARTIAL}               OK
+[OK] C3   投递 post_ok=True∧err=0              True/0
+[OK] C4   win_pid==gamemd_pid                4242/4242
+[OK] C5   close_rows 全量落盘(非尾6)               n=41 rec=41 kind=still_running_at_wat
+[OK] C8   时间轴单调+衔接+窗跨度                       mono=True order=True span=True (n_r=41 ws=40)
+[OK] C6   battle_tl 数吻合∧pre5=5               bt=30 rec=30 pre5=5
+[OK] C7   行含五哨兵轴+wait/code                   ['code', 'code_read_ok', 'exitstate', 'frame', 'hwnd', 'singleton', 't', 'tick']
+[OK] C9   截图段 pre_close+post_close_end 在录    {'battle_end', 'post_close_end', 'pre_close'}
+[OK] C10  自然退码适用                             n/a(非自然退)
+[OK] S1   PNG 规范可解(magic/IHDR/IDAT/CRC/filter) ['battle_end:120x80 frac=0.0015', 'pre_close:120x80 frac=0.0015', 'post_close_end:120x80 frac=0.0015']
+[OK] S2   截图非全黑(≥0.001)                      ['battle_end:120x80 frac=0.0015', 'pre_close:120x80 frac=0.0015', 'post_close_end:120x80 frac=0.0015']
+== 负控变异（每项必把指定 ID 打红）==
+[OK] N:post_fail              ⇒ C3 red=True
+[OK] N:stub_PNG               ⇒ S1 red=True
+[OK] N:all_black              ⇒ S2 red=True
+[OK] N:truncated_png          ⇒ S1 red=True
+[OK] N:tail6_only             ⇒ C5 red=True
+[OK] N:bt_dropped             ⇒ C6 red=True
+[OK] N:missing_keys           ⇒ C1 red=True
+[OK] N:sync_truncation        ⇒ C8 red=True
+[OK] N:winpid_mismatch        ⇒ C4 red=True
+[OK] N:drop_post_shot         ⇒ C9 red=True
+selftest: 主判定红=0 负控漏抓=0 缺ID=[] ⇒ ALL-PASS

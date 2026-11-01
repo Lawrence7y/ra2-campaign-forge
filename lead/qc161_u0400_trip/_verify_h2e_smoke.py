@@ -91,9 +91,18 @@ def mk_trip(root: Path, name: str, *, sha: str, skipped, polls, frame_s,
     if polls is not None:
         recs.append({"group": "FRAME", "key": "pre_capture_wait_polls",
                      "value": polls, "source": "s", "note": "", "ts": ""})
-    if skipped is not None:
+    if skipped is True:
+        # ★ §422 双写契约（合成保真）：真机短路臂 META(:7373) 与 FRAME(:8087) 都写
+        recs.append({"group": "META", "key": "h7_fs_rect_wait_skipped",
+                     "value": True, "source": "argv:--fullscreen",
+                     "note": "", "ts": ""})
         recs.append({"group": "FRAME", "key": "h7_fs_rect_wait_skipped",
-                     "value": {"skipped": skipped}, "source": "s",
+                     "value": {"skipped": True}, "source": "s",
+                     "note": "", "ts": ""})
+    elif skipped is False:
+        # ★ 对照臂真机**只写 META=False**（FRAME 被 `if fs_rect_wait_skipped` 挡住）
+        recs.append({"group": "META", "key": "h7_fs_rect_wait_skipped",
+                     "value": False, "source": "argv:--h7-keep-rect-wait",
                      "note": "", "ts": ""})
     if fullscreen_meta is True:
         recs.append({"group": "META", "key": "fullscreen", "value": True,
@@ -160,6 +169,19 @@ def main() -> int:
         #   不是「判不出来就放过」
         s9 = mk_trip(root, "S9_windowed_bad_polls", sha=H7, skipped=None,
                      polls=40, frame_s=3.0)
+        # ★★ S10（§414）：**对照臂但 polls < 200** —— 专打「用被验证量当判型依据」。
+        #   真实依据：l3_20261021 是全屏趟、frame 段仅 48 s、polls=96
+        #   （十趟实测 polls == frame 秒数 ÷ 0.5007，是**时长代理**不是次数上限）。
+        #   旧判法 `polls>=200 ⇒ keep` 会把它误判成 windowed，再去判
+        #   「窗口模式不该写 skipped」，而对照臂确实写 skipped=False
+        #   ⇒ 红在**错误的原因**上。新判法用 META.fullscreen + skipped 直接判型
+        #   ⇒ 正确识别为 keep，且 polls=96 违反 polls_min ⇒ 红在该红的原因上。
+        #   ★ 不能传 `make_w12=False`：那是 S5 的写法，S5 靠 verdict="late_start"
+        #     走短路分支；S10 是 verdict="ok"，缺 w1/w2 会在 [1] 段就被判
+        #     「产物异常」而**根本到不了 [4b]**（本轮实测 rc=2 即此因）。
+        s10 = mk_trip(root, "S10_keep_short_polls", sha=H7, skipped=False,
+                      polls=96, frame_s=48.2, verdict="ok",
+                      fullscreen_meta=True)
 
         print()
         print("--- A. 六趟合成产物的判读 ---")
@@ -220,6 +242,21 @@ def main() -> int:
         sec = section(out)
         chk("S9 窗口模式但 polls=40 ⇒ 必须变红（窗口模式也被真判）",
             "FAIL" in sec, "rc=%d" % rc)
+
+        # ★★ S10（§414 的核心）：
+        rc, out = run(JUDGE, s10)
+        sec = section(out)
+        chk("S10 对照臂 polls=96：必须识别为 fullscreen_keep（不是 windowed）",
+            "fullscreen_keep" in sec, "见 [4b] 形态行")
+        chk("S10 必须变红 —— 且红在 polls_min，不是「窗口模式写了 skipped」",
+            "FAIL" in sec and "pre_capture_wait_polls ≥ 200" in sec,
+            "rc=%d" % rc)
+        # ★★ S10 承重性：旧判法（polls>=200 定形态）在**同一产物**上应给出不同形态。
+        #   否则「修了判型」只是文字变化，没有行为差别。
+        old_form = "fullscreen_keep" if 96 >= 200 else "windowed"
+        chk("S10 承重：旧判法会把这份产物判成 windowed（与新的 keep 不同）",
+            old_form != "fullscreen_keep" and "fullscreen_keep" in sec,
+            "旧=%s 新=keep" % old_form)
 
         # ---- B. 变异 ----
         print()

@@ -1,0 +1,87 @@
+== 段表 ==
+  .text    VA=00401000 sz=3DF38D raw=001000 rsz=3E0000
+  .rdata   VA=007E1000 sz=030074 raw=3E1000 rsz=031000
+  .data    VA=00812000 sz=367BE4 raw=412000 rsz=06C000
+  .rsrc    VA=00B7A000 sz=018128 raw=47E000 rsz=019000
+  .detour  VA=00B93000 sz=002718 raw=497000 rsz=003000
+
+== 能对齐解码并精确踩中 WRITER 的起点数：6864 ==
+== 其中前字节=填充/ret 的起点（真头强判据）：28 ==
+   head=006BC327 count=2283 prevbyte=C3
+   head=006BC731 count=1961 prevbyte=CC
+   head=006BC8F1 count=1814 prevbyte=CC
+   head=006BC980 count=1766 prevbyte=90
+   head=006BCA51 count=1699 prevbyte=C3
+   head=006BCA52 count=1698 prevbyte=C3
+   head=006BCA8F count=1678 prevbyte=C3
+   head=006BCAB1 count=1666 prevbyte=90
+   head=006BCACC count=1658 prevbyte=C3
+   head=006BCB09 count=1638 prevbyte=C3
+
+== 采用函数头 = 0x006BE081 ==
+
+== esi 写入点 ==
+  006BE1C2  mov esi, dword ptr [0xa8f794]
+  006BE230  mov esi, dword ptr [ecx]
+
+== push imm32 名字串（去重按序） ==
+  006BE17D push 00840E0C = 'D:\\ra2mdpost\\Startup.CPP'
+
+== call esi 站点与返回值消费者 ==
+  call esi 总数（本次窗口）: 0
+
+== call 0x6C7400 之前的 ecx 装载（去重） ==
+   []
+
+== 0x6C7400 本体（前 30 条） ==
+  006C7400  je 0x6c7414
+  006C7402  cmp eax, edi
+  006C7404  je 0x6c7414
+  006C7406  mov ebx, dword ptr [esp + 0x2c]
+  006C740A  mov dword ptr [ecx], eax
+  006C740C  inc ebx
+  006C740D  add ecx, 4
+  006C7410  mov dword ptr [esp + 0x2c], ebx
+  006C7414  add edx, 4
+  006C7417  dec esi
+  006C7418  jne 0x6c73f6
+  006C741A  mov eax, dword ptr [esp + 0x2c]
+  006C741E  xor ecx, ecx
+  006C7420  cmp eax, ebp
+  006C7422  mov dword ptr [esp + 0x30], ecx
+  006C7426  jbe 0x6c7470
+  006C7428  sub eax, ecx
+  006C742A  dec eax
+  006C742B  test eax, eax
+  006C742D  jbe 0x6c7463
+  006C742F  lea esi, [esp + 0x6c]
+  006C7433  mov ebx, eax
+  006C7435  mov edi, dword ptr [esi]
+  006C7437  mov ebp, dword ptr [esi - 4]
+  006C743A  lea eax, [edi + 0x15ff4]
+  006C7440  lea ecx, [ebp + 0x15ff4]
+  006C7446  push eax
+  006C7447  push ecx
+  006C7448  call 0x7c8d20
+  006C744D  add esp, 8
+  006C7450  test eax, eax
+
+== 0x7C9E17 本体（前 12 条） ==
+  007C9E17  mov bl, byte ptr [esi]
+  007C9E19  inc esi
+  007C9E1A  jmp 0x7c9dec
+  007C9E1C  cmp bl, 0x2d
+  007C9E1F  mov dword ptr [ebp - 4], esi
+  007C9E22  jne 0x7c9e2a
+  007C9E24  or dword ptr [ebp + 0x14], 2
+  007C9E28  jmp 0x7c9e2f
+  007C9E2A  cmp bl, 0x2b
+  007C9E2D  jne 0x7c9e35
+  007C9E2F  mov bl, byte ptr [esi]
+  007C9E31  inc esi
+  007C9E32  mov dword ptr [ebp - 4], esi
+
+== WRITER 之后 0x300 字节内 [0xA8EDD8] 相关 ==
+  006BE0B6  mov dword ptr [0xa8edd8], edi
+  006BE0E1  cmp dword ptr [0xa8edd8], edi
+  006BE173  ret 0x10

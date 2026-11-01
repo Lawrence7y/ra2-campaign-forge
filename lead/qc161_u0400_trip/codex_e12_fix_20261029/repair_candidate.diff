@@ -1,0 +1,234 @@
+--- source/_drive_c2_x_e12.py
++++ candidate/_drive_c2_x_e12.py
+@@ -37,6 +37,7 @@
+ import hashlib
+ import importlib.util
+ import json
++import math
+ import sys
+ import time
+ from ctypes import wintypes as wt
+@@ -91,6 +92,7 @@
+ BLOCK_MAX_DELTA = 0.2                        # CPU 阻塞侧阈值（≤0.2 ⇒ ≈0 核）
+ CPU_TICK_DIVISOR = 1e7                       # FILETIME 100ns ⇒ 秒
+ LATCH_SHOT_AFTER_S = 30.0                    # 闩+30 s 截图
++BOOT_TOLERANCE_MS = 2000
+ EXCEPT_CHECK_EVERY_S = 30.0                  # 慢采样期 except 哈希巡检节拍
+ SRC_INI_SHA16 = "27c9a60c55a8a1b4"           # 载体源 ra2render.ini（16,496 B；2026-10-29 实算命中）
+ SRC_INI_SIZE = 16496
+@@ -123,6 +125,10 @@
+     return {"kernel": _ft_int(k), "user": _ft_int(u)}, 0
+ 
+ 
++_k32.GetTickCount64.restype = ctypes.c_ulonglong
++_k32.GetTickCount64.argtypes = []
++
++
+ def _r_boot_ms():
+     return int(_k32.GetTickCount64())
+ 
+@@ -132,10 +138,38 @@
+     V2.bind_real_ops()
+     V2.OPS["process_times"] = _r_process_times
+     V2.OPS["boot_ms"] = _r_boot_ms
++    V2.OPS["wallclock_ms"] = lambda: time.time_ns() // 1_000_000
+ 
+ 
+ # ---------------------------------------------------------------------------
+ # E2 纯函数（自检套件分臂直测）
++def capture_boot():
++    """Read both clocks at each boundary; keep the batch reference immutable.
++
++    Wall-clock corrections beyond the tolerance conservatively stop the batch.
++    This is a session guard, not an authentication-quality boot identifier.
++    """
++    wall = V2.OPS["wallclock_ms"]()
++    uptime = V2.OPS["boot_ms"]()
++    if (isinstance(wall, bool) or isinstance(uptime, bool)
++            or not isinstance(wall, (int, float)) or not isinstance(uptime, (int, float))
++            or not math.isfinite(wall) or not math.isfinite(uptime) or uptime < 0):
++        raise V2.TripFail("boot_clock_invalid")
++    return {"boot_ms": uptime, "wallclock_ms": wall,
++            "boot_wallclock_ms": wall - uptime}
++
++
++def assert_same_boot(current, reference):
++    if (not isinstance(reference, dict) or "boot_wallclock_ms" not in reference
++            or not isinstance(reference["boot_wallclock_ms"], (int, float))
++            or isinstance(reference["boot_wallclock_ms"], bool)
++            or not math.isfinite(reference["boot_wallclock_ms"])):
++        raise V2.TripFail("boot_reference_invalid")
++    if abs(current["boot_wallclock_ms"] - reference["boot_wallclock_ms"]) > BOOT_TOLERANCE_MS:
++        raise V2.TripFail("stop_condition:boot_changed_between_trips(%s!=%s)"
++                          % (current["boot_wallclock_ms"], reference["boot_wallclock_ms"]))
++
++
+ def cpu_delta(prev, cur):
+     """(kernel+user)100ns 增量⇒秒；任一侧缺⇒None（不造数）。prev/cur={"kernel","user"} 或 None。"""
+     if not prev or not cur:
+@@ -240,7 +274,7 @@
+     """单趟：E1 协议（import 早窗件常量/纪律）+ E2 闩后慢采样轴。结构镜像 earlyclose.run_trip。
+     生产缺省=终钉值（watch 120 s / 慢采 1 Hz / 闩+30 s 截图 / except 30 s 巡检）。
+     自检套件传小值以在虚拟时钟下短时覆盖同一分支路径，不改生产缺省。"""
+-    for seam in ("process_times", "boot_ms"):
++    for seam in ("process_times", "boot_ms", "wallclock_ms"):
+         if seam not in V2.OPS:
+             raise V2.TripFail("ops_not_bound:%s（须先 extend_ops_real 或自检替身）" % seam)
+     stamp = time.strftime("%Y%m%dT%H%M%S")
+@@ -265,10 +299,14 @@
+     made_carrier = False
+     try:
+         rec["phase"] = "precheck"
+-        rec["boot_ms_at_start"] = V2.OPS["boot_ms"]()
+-        if boot_ref is not None and rec["boot_ms_at_start"] != boot_ref.get("boot_ms"):
+-            raise V2.TripFail("stop_condition:boot_changed_between_trips(%s≠%s)"
+-                              % (rec["boot_ms_at_start"], boot_ref.get("boot_ms")))
++        boot_current = capture_boot()
++        rec["boot_ms_at_start"] = boot_current["boot_ms"]
++        rec["wallclock_ms_at_start"] = boot_current["wallclock_ms"]
++        rec["boot_wallclock_ms_at_start"] = boot_current["boot_wallclock_ms"]
++        rec["boot_reference"] = dict(boot_ref) if isinstance(boot_ref, dict) else boot_ref
++        rec["boot_tolerance_ms"] = BOOT_TOLERANCE_MS
++        if boot_ref is not None:
++            assert_same_boot(boot_current, boot_ref)
+         if any(nm.lower() in ("gamemd.exe", "rc4_loader.exe") for nm in V2.OPS["list_procs"]().values()):
+             raise V2.TripFail("precheck_residual_procs")
+         V2._precheck_shas()
+@@ -548,7 +586,7 @@
+         fails.append("src_ini_unreadable")
+     try:
+         ms = _r_boot_ms()
+-        print("  [OK] BOOT(GetTickCount64)=%d ms——发射批次须同值复核对（同会话断言）" % ms)
++        print("  [OK] UPTIME(GetTickCount64)=%d ms——批次比较开机墙钟估计，容差2000ms" % ms)
+     except Exception as e:
+         print("  [RED] BOOT 读数：%r" % e)
+         fails.append("boot")
+@@ -599,7 +637,7 @@
+     if fails:
+         print("!! 预检拦：%s" % fails)
+         return 2
+-    boot_ref = {"boot_ms": V2.OPS["boot_ms"]()}
++    boot_ref = capture_boot()
+     last = None
+     for i in range(1, a.trips + 1):
+         r = run_trip(i, boot_ref)
+--- source/_drive_c2_x_e12_selftest.py
++++ candidate/_drive_c2_x_e12_selftest.py
+@@ -236,7 +236,7 @@
+         return V.real_sha16(p)
+ 
+     def boot_ms():
+-        return 5000001 if mode == "boot_change" else 5000000
++        return (5000000 if mode != "boot_change" else 1000) + int(st["t"] * 1000)
+ 
+     def mkdir(d):
+         if over.get("mkdir_fail"):
+@@ -268,6 +268,7 @@
+         "sha256_file": lambda p: (V.C2_DLL_SHA256 if "rc4guard_c2" in str(p)
+                                   else hashlib.sha256(Path(p).read_bytes()).hexdigest()),
+         "process_times": process_times, "boot_ms": boot_ms,
++        "wallclock_ms": lambda: 1700000000000 + int(st["t"] * 1000),
+         "__st": st,
+     }
+ 
+@@ -408,6 +409,9 @@
+ 
+     # ---------- A 组 组件分臂 ----------
+     r, ops = trip_once("hang")
++    if r.get("verdict") != "OK":
++        print("FIRST_TRIP_FAILURE=" + json.dumps(r, ensure_ascii=False))
++        return 1
+     tl, st = load_tl(r), _st(r, ops)
+     check("A-01", "闩检测切换（exitstate==1⇒latch_detected+行号+相对关窗时刻）",
+           r["verdict"] == "OK" and r["latch_detected"] is True and r["latch_row_index"] == 1
+@@ -536,11 +540,11 @@
+     rzero, _ = trip_once("hang", watch_s=-1.0)
+     check("B-17", "零 close 样本 ⇒ FAIL（承 v2 G-9）",
+           rzero["verdict"] == "FAIL" and "zero_close_samples" in rzero["fail"], rzero["fail"][:40])
+-    rbref, _ = trip_once("hang", boot_ref={"boot_ms": 111111})
+-    check("B-18", "跨趟 BOOT 读数变化 ⇒ 停（stop_condition:boot_changed_between_trips）",
++    rbref, _ = trip_once("hang", boot_ref={"boot_ms": 6000000, "boot_wallclock_ms": 1699994997000})
++    check("B-18", "跨趟开机墙钟估计超容差 ⇒ 停（stop_condition:boot_changed_between_trips）",
+           rbref["verdict"] == "FAIL" and "boot_changed" in rbref["fail"], rbref["fail"][:40])
+-    rbc, _ = trip_once("boot_change", boot_ref={"boot_ms": 5000000})
+-    check("B-19", "boot_change 形态同样被拦（读数≠参考即停，无方向假设）",
++    rbc, _ = trip_once("boot_change", boot_ref={"boot_ms": 6000000, "boot_wallclock_ms": 1699995000000})
++    check("B-19", "重启形态开机墙钟变化同样被拦",
+           rbc["verdict"] == "FAIL" and "boot_changed" in rbc["fail"], rbc["fail"][:40])
+     rwf, _ = trip_once("waitfail")
+     check("B-20", "Wait 三态补全：WAIT_FAILED ⇒ exit_kind=wait_error（不冒充「仍活/挂死」）",
+@@ -658,6 +662,8 @@
+     for name, caught, ev in _run_mutations():
+         check("F:%s" % name, "变异被抓出：%s" % name, caught, ev)
+ 
++    _boot_regressions()
++
+     # ---------- G 组 冻结件零写入 ----------
+     for p, h in FROZEN_BEFORE.items():
+         check("G:%s" % p.name, "本套件运行前后哈希不变：%s" % p.name, sha256(p) == h, sha256(p)[:16])
+@@ -731,9 +737,9 @@
+          "dialog", {}, lambda rr, tlj: rr["slow_rows_n"] > 1, "停止旁路⇒新窗后仍续采"),
+         ("no_finalize", "V2.finalize(rec, carrier, out_dir, proc)", "pass", "hang", {},
+          lambda rr, tlj: "a8_verdict" not in rr, "清扫被跳⇒残留检查缺失"),
+-        ("boot_assert", 'if boot_ref is not None and rec["boot_ms_at_start"] != boot_ref.get("boot_ms"):',
+-         'if boot_ref is None and rec["boot_ms_at_start"] != boot_ref.get("boot_ms"):', "hang",
+-         {"__boot_ref": {"boot_ms": 111111}},
++        ("boot_assert", 'if abs(current["boot_wallclock_ms"] - reference["boot_wallclock_ms"]) > BOOT_TOLERANCE_MS:',
++         'if False:', "hang",
++         {"__boot_ref": {"boot_ms": 6000000, "boot_wallclock_ms": 1699994997000}},
+          lambda rr, tlj: rr.get("verdict") == "OK" and "boot_changed" not in str(rr.get("fail", "")),
+          "BOOT 断言旁路⇒跨会话不停（合法语法变异，语义级）"),
+         ("live_gate", "    if not approved:\n        return 3",
+@@ -782,6 +788,52 @@
+     return out
+ 
+ 
++
++def _boot_regressions():
++    # Run the actual trip twice with one immutable reference and advancing clocks.
++    ops = make_ops("hang")
++    state = ops["__st"]
++    saved = _install(ops, D.V2)
++    try:
++        ref = D.capture_boot()
++        before = dict(ref)
++        r1 = D.run_trip(901, ref, watch_s=3.0)
++        state["t"] += 137.0
++        state["launched"] = False
++        state["killed"] = False
++        state["t_close"] = None
++        r2 = D.run_trip(902, ref, watch_s=3.0)
++        check("BOOT-01", "推进时钟同会话双趟实际运行均OK", r1["verdict"] == r2["verdict"] == "OK", (r1.get("fail"),r2.get("fail")))
++        check("BOOT-02", "两趟原始uptime递增且批次参考不变", r2["boot_ms_at_start"] > r1["boot_ms_at_start"] and ref == before, ref)
++        # New uptime epoch: the second capture must stop before popen.
++        state["launched"] = False
++        ops["boot_ms"] = lambda: 1000
++        D.V2.OPS["boot_ms"] = ops["boot_ms"]
++        rr = D.run_trip(903, ref, watch_s=3.0)
++        check("BOOT-03", "重启反例实际trip在发射前被拦", rr["verdict"] == "FAIL" and "boot_changed" in rr.get("fail", "") and not state["launched"], rr.get("fail"))
++    finally:
++        _uninstall(saved)
++    for delta in (-2001, -2000, 0, 2000, 2001):
++        blocked = _raises(lambda: D.assert_same_boot({"boot_ms": 99, "boot_wallclock_ms": 10000+delta}, {"boot_ms": 1, "boot_wallclock_ms": 10000}), D.V2.TripFail)
++        check("BOOT-T%s" % delta, "容差边界双向精确判据", blocked == (abs(delta)>2000), delta)
++    for ref in ({}, {"boot_wallclock_ms": float("nan")}, {"boot_wallclock_ms": True}):
++        check("BOOT-REF%s" % repr(ref), "无效参考保守拒绝", _raises(lambda: D.assert_same_boot({"boot_wallclock_ms": 0}, ref), D.V2.TripFail))
++    # Compile mutations in memory. Exercise the actual comparison, not a duplicate oracle.
++    src = DRIVER_PATH.read_text(encoding="utf-8")
++    start = src.index("def assert_same_boot(")
++    end = src.index("def cpu_delta(", start)
++    fn = src[start:end]
++    anchor = 'if abs(current["boot_wallclock_ms"] - reference["boot_wallclock_ms"]) > BOOT_TOLERANCE_MS:'
++    for name, replacement in (("RAW", 'if current["boot_ms"] != reference["boot_ms"]:'), ("BYPASS", 'if False:')):
++        assert fn.count(anchor) == 1
++        ns = {"V2": D.V2, "math": __import__("math"), "BOOT_TOLERANCE_MS": D.BOOT_TOLERANCE_MS}
++        exec(compile(fn.replace(anchor, replacement), "boot_mut_"+name, "exec"), ns)
++        guard = ns["assert_same_boot"]
++        same = not _raises(lambda: guard({"boot_ms": 200000, "boot_wallclock_ms": 10000}, {"boot_ms": 1000, "boot_wallclock_ms": 10000}), D.V2.TripFail)
++        reboot = _raises(lambda: guard({"boot_ms": 1000, "boot_wallclock_ms": 40000}, {"boot_ms": 1000, "boot_wallclock_ms": 10000}), D.V2.TripFail)
++        check("BOOT-MUT-"+name, "旧raw比较或删检查均被正反例抓红", not(same and reboot), (same,reboot))
++
++
+ run_suite = main_suite
+ 
+ if __name__ == "__main__":
