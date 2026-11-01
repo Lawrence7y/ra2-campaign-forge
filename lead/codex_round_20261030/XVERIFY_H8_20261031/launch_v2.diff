@@ -1,0 +1,186 @@
+--- lead/qc161_u0400_trip/_launch_l1_20261023.py	2026-10-24 04:04:50.984029200 +0800
++++ lead/goal1_harness8_20261031/_launch_h8_20261031.py	2026-10-31 18:49:36.963003800 +0800
+@@ -1,14 +1,18 @@
+-"""L1 基线趟发射器 · 2026-10-23 开机会话（Arm A：原版直启 + 零注入）。
++"""harness8 批发射器副本 · 2026-10-31（① 满员格绑帧批专用；v2 含 XVERIFY_H8 修复）。
+ 
+-★ 目的：① 的第 0 步 —— 重启后确认本开机会话能否跑 31 档。
+-  判据 = measure_w0.json 的 gate.pre_fps15 ≥ 25（V11-a 硬门禁，见
+-  lead/goal1_v11_env_gate_20261021/V11_ENV_GATE_DESIGN.md §3.1）。
+-★ 与 l1d_20261021 的唯一变量 = harness 版本（harness3 → harness6）。
+-  measure 协议常量逐字相同（WINDOWS=3 / WINDOW_S=25.0 / SETTLE_S=4.0 /
+-  GATE_FPS15_MIN=3.0 / GATE_SPAN_S=1.5）⇒ pre_fps15 跨代可比。
+-★ 同时充当 harness6 的首次真机冒烟（①-2）。缺省 --close-mode terminate
+-  ⇒ 控制流与 harness5 等价，不触发 WM_CLOSE 路径。
+-★ 副本制：本文件为新建发射器，harness6 母本零改动。
++★ 派生：`_launch_l1_20261023.py`（母本发射器，零改动）副本。
++  ★ v2（XVERIFY_H8 判定书回收，逐处枚举取代初版「仅三处」的不实声明）：
++    1. KNOWN_HARNESS / HARNESS_BY_SHA16 追加 harness8 条目（v2=dd5459fe0cf3461c）；
++    2. 缺省 HARNESS_SHA16 = harness8 v2；
++    3. OUT_DIR / TRIP_ID 批次命名改 20261031h/-H8-（避免与 10-23 趟目录混淆；
++       Y-6：模板缩 1 字符，suffix b 不再触 130 门禁）；
++    4. 【R-1 修复】PE32._fields_ 补回 th32ParentProcessID（初版誊写漏行 ⇒
++       sizeof 560≠568 ⇒ Process32FirstW 恒败 ⇒ A8 预检 fail-open + 清理静默失效）；
++    5. --variant 缺省 L1→L3（本批目标场景）、--extra-argv help 举例换本批参数。
++  除上述 5 处及注释外，与母本逐字一致（预检/载体/清理逻辑零语义改动）。
++★ harness8 v2 = harness7（d019e8beecfb5fd8）+ 160 行加性补丁（diff 0 删 / 160 增；
++  含 XVERIFY_H8 的 Y-2 跳帧拒采 / Y-3 措辞 / Y-4 耦合声明 / Y-5 / Y-7 N≥1 校验）。
++  缺省 None ⇒ 与母本逐字节等价（XVERIFY_H8 三法交叉验证）。见设计件与判定书。
+ ★ 载体：本趟新建 → 趟后按载体路径精确终止进程 → shutil.rmtree 删除 → 复测残留。
+ """
+ import os
+@@ -26,27 +30,21 @@
+ TRIP = LEAD / "qc161_u0400_trip"
+ SRC = TRIP / "_src_L1_sf8_20261020"
+ MANIFEST = TRIP / "_src_L1_sf8_20261020_MANIFEST.json"
+-HARNESS = ROOT / "lead/goal1_harness6_20261022/qc151_trip.harness6.py"
+-# ★★ H-2 扩散修复（2026-10-23）：原本 `HARNESS` 与 `HARNESS_SHA16` 双双焊死为
+-#   harness6，于是「用 harness7 跑真机冒烟」这件事**连预检都过不去**（A11 报
+-#   MISMATCH ⇒ `return 2`），而预检文案看起来像是「母本被改坏了」。
+-#   改成 harness 可选：`--harness` 指定路径 / `--harness-sha16` 指定期望哈希，
+-#   哈希必须落在 KNOWN_HARNESS 内。
+-#   ★ 这不是放宽门禁：仍是**取值比对**，只是把「唯一合法值」换成
+-#   「显式枚举的合法集合」，集合外一律硬停。
++HARNESS = ROOT / "lead/goal1_harness8_20261031/qc151_trip.harness8.py"
++# ★ 与母本一致的白名单纪律：哈希取值比对，集合外一律硬停。
++#   ★ 本副本追加 harness8 条目；harness6/7 条目保留（复现旧趟仍可用）。
+ KNOWN_HARNESS = {
+     "ff8245d27b3db22a": "harness6（母本，463,219 B / 8,483 行）",
+     "d019e8beecfb5fd8": "harness7（D-05 补丁副本，472,020 B / +124−0）",
++    "dd5459fe0cf3461c": "harness8 v2（H8 绑帧补丁副本，+160−0；含 XVERIFY_H8 修复）",
+ }
+ HARNESS_BY_SHA16 = {
+     "ff8245d27b3db22a": ROOT / "lead/goal1_harness6_20261022/qc151_trip.harness6.py",
+     "d019e8beecfb5fd8": ROOT / "lead/goal1_harness7_20261023/qc151_trip.harness7.py",
++    "dd5459fe0cf3461c": ROOT / "lead/goal1_harness8_20261031/qc151_trip.harness8.py",
+ }
+ 
+-# ★ 变体表：L1 = 标准基线（sf8 / 872 单位）；L3 = 高负载（sf10c / 1452 单位）。
+-#   两者的 measure 协议常量相同，V11-a 只判「档位」不判负载 ⇒ 都可用作
+-#   ① 的第 0 步。选 L3 的理由：战斗更长 ⇒ 测量窗更可能落在战斗内
+-#   （L1 在 31 档下 125 s 帧阶段就推进 ~3500 逻辑帧，战斗先结束）。
++# ★ 变体表（与母本逐字一致）：L3 = 高负载满员（sf10c）＝本批目标场景。
+ VARIANTS = {
+     "L1": {
+         "src": "_src_L1_sf8_20261020",
+@@ -66,13 +64,17 @@
+ MAP_SHA = "0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc"
+ PROBE_FRAMES = "3900,4200,4500,4800,5100,5400,5700,6000"
+ 
+-HARNESS_SHA16 = "ff8245d27b3db22a"   # 缺省仍是 harness6，既有趟不受影响
++HARNESS_SHA16 = "dd5459fe0cf3461c"   # ★ 本副本缺省 harness8 v2（母本缺省 harness6）
+ GAMEMD_SHA16 = "73201cc021497c95"
+ 
+ k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+ 
+ 
+ class PE32(ctypes.Structure):
++    # ★ R-1 修复（XVERIFY_H8 2026-10-31）：此前誊写漏掉 th32ParentProcessID 一行
++    #   ⇒ sizeof 560≠内核期望 568 ⇒ Process32FirstW 恒败 ERROR_BAD_LENGTH(24)
++    #   ⇒ list_procs 恒空 ⇒ A8 预检 fail-open + kill_under 静默失效。已补回，
++    #   与母本 _launch_l1_20261023.py 逐字段一致（9 字段）。
+     _fields_ = [("dwSize", wt.DWORD), ("cntUsage", wt.DWORD),
+                 ("th32ProcessID", wt.DWORD),
+                 ("th32DefaultHeapID", ctypes.POINTER(ctypes.c_ulong)),
+@@ -150,21 +152,11 @@
+ 
+ def build_harness_argv(*, harness, map_path, map_sha, out_dir, src, extra,
+                        trip_id, probe_frames, fullscreen, extra_argv):
+-    """拼装传给 harness 的 argv。★ 抽成纯函数，便于离线实测「缺省行为未变」。
+-
+-    ★ §408：`--fullscreen` 原先焊死在列表里，导致 D-05 冒烟第 1 趟
+-      （窗口模式，**不传** `--fullscreen`）在本发射器下根本发不出来。
+-      ⇒ 改为由 `fullscreen` 开关控制；缺省 True，与既有 10-23 四趟逐字一致。
+-
+-    ★ 位置固定在 `--evid-diff` 之前：不传 `--no-fullscreen` 时，
+-      返回的列表与改前的硬编码版本**逐元素相同**（由发射器验证器 G 组断言）。
+-    """
++    """★ 与母本 build_harness_argv 逐字一致（纯函数；缺省元素序不变）。"""
+     argv = [
+         str(harness),
+         "--target-map", str(map_path),
+         "--target-sha256", map_sha,
+-        # --carrier 只作所有权判定基准；实际载体由 create_isolated_carrier
+-        # 新建到 WORKDIR/ct/
+         "--carrier", str(Path(out_dir) / "ct"),
+         "--carrier-create-from", str(src),
+         "--carrier-create-files", ",".join(extra),
+@@ -175,7 +167,6 @@
+     if fullscreen:
+         argv.append("--fullscreen")
+     argv += ["--evid-diff", "--probe-frames", probe_frames]
+-    # ★ H-2 扩散修复：附加参数（如 harness7 对照臂的 --h7-keep-rect-wait）
+     argv.extend(x for x in (extra_argv or []) if x)
+     return argv
+ 
+@@ -185,24 +176,17 @@
+     import argparse
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--suffix", default="",
+-                    help="★ 趟后缀（如 b/c/d）；空 = 首趟原名")
+-    ap.add_argument("--variant", default="L1", choices=sorted(VARIANTS),
+-                    help="★ 载体变体（缺省 L1）")
++                    help="★ 趟后缀（如 a/b）；空 = 首趟原名")
++    ap.add_argument("--variant", default="L3", choices=sorted(VARIANTS),
++                    help="★ 载体变体（本批缺省 L3=满员 sf10c）")
+     ap.add_argument("--probe-frames", default=PROBE_FRAMES,
+                     help="★ 探针锁存帧阶梯（缺省 %s）" % PROBE_FRAMES)
+-    # ★ H-2 扩散修复：harness 可选（缺省 harness6，与既有趟一致）
+     ap.add_argument("--harness-sha16", default=HARNESS_SHA16,
+                     choices=sorted(KNOWN_HARNESS),
+                     help="★ 目标 harness（用哈希选，避免传任意路径）")
+     ap.add_argument("--extra-argv", default="",
+                     help="★ 透传给 harness 的附加参数（空格分隔，如 "
+-                         "--h7-keep-rect-wait）")
+-    # ★★ §408 H-2f：`--fullscreen` 原先**焊死**在 argv 里（原 `:244`）。
+-    #   D-05 冒烟第 1 趟要求「不传 --fullscreen ⇒ 窗口模式」，而本发射器
+-    #   没有关掉它的开关 ⇒ **第 1 趟在本工具下根本发不出来**。
+-    #   ⇒ 改成默认仍发 fullscreen（与既有 10-23 四趟逐字一致），
+-    #     用 `--no-fullscreen` 显式关闭。
+-    #   ★ 缺省行为一字未变：不传该开关时 argv 与改前完全相同。
++                         "--h7-measure-start-frame 400）")
+     ap.add_argument("--no-fullscreen", action="store_true", default=False,
+                     help="★ 发窗口模式趟（缺省仍是 --fullscreen，与既有趟一致）")
+     _a = ap.parse_args()
+@@ -213,8 +197,11 @@
+     MANIFEST = TRIP / (_v["src"] + "_MANIFEST.json")
+     MAP = SRC / "XMP29U2.MAP"
+     MAP_SHA = _v["map_sha"]
+-    OUT_DIR = TRIP / ("l%s_20261023%s" % (_a.variant[1:].lower(), _a.suffix))
+-    TRIP_ID = _v["trip_prefix"] + "-20261023" + _a.suffix.upper()
++    # ★ Y-6 修复（XVERIFY_H8）：目录名模板缩 1 字符——原「l3_20261031h8b」演算
++    #   out-dir 131 > 130 门禁 ⇒ 卡片授权的第 2 趟补发被硬拒。改「h8」→「h」：
++    #   「l3_20261031ha/hb」= 129 ≤ 130（h8 批标记由 TRIP_ID 的 -H8- 段承载）。
++    OUT_DIR = TRIP / ("l%s_20261031h%s" % (_a.variant[1:].lower(), _a.suffix))
++    TRIP_ID = _v["trip_prefix"] + "-H8-20261031" + _a.suffix.upper()
+     probe_frames = _a.probe_frames
+     extra_argv = [x for x in _a.extra_argv.split() if x]
+ 
+@@ -222,7 +209,7 @@
+     print("变体 = %s   载体源 = %s" % (_a.variant, SRC.name))
+     print("harness = %s（%s）"
+           % (HARNESS.name, KNOWN_HARNESS[HARNESS_SHA16]))
+-    print("L1 基线趟 · 2026-10-23 开机会话（Arm A：原版直启 + 零注入）")
++    print("harness8 绑帧批 · 2026-10-31（原版直启 + 零注入）")
+     print("=" * 78)
+ 
+     checks = [
+@@ -256,9 +243,6 @@
+ 
+     OUT_DIR.mkdir(parents=True, exist_ok=True)
+ 
+-    # ★ 载体件集：冻结清单 88 件 = 默认 5 件（脚本自动加）+ 83 件附加。
+-    #   83 件附加名里无空格、无逗号（唯一非 ASCII 为 `配置器.exe`，
+-    #   `_argv_rt_probe.py` 已验证 os.spawnv 下可原样往返）。
+     _mf = json.loads(MANIFEST.read_text(encoding="utf-8"))
+     _all_names = sorted(_mf["files"].keys())
+     EXTRA = [n for n in _all_names if n not in DEFAULT_CARRIER_FILES]
+@@ -273,8 +257,6 @@
+         harness=HARNESS, map_path=MAP, map_sha=MAP_SHA, out_dir=OUT_DIR,
+         src=SRC, extra=EXTRA, trip_id=TRIP_ID, probe_frames=probe_frames,
+         fullscreen=not _a.no_fullscreen, extra_argv=extra_argv)
+-    # ★ H-2 扩散修复：附加参数（如 harness7 对照臂的 --h7-keep-rect-wait）
+-    #   ★ §408：`extra_argv` 已并入 build_harness_argv，此处不再二次 extend。
+ 
+     spawn_argv = [sys.executable]
+     for a in argv:

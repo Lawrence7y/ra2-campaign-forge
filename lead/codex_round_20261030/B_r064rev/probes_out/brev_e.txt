@@ -1,0 +1,106 @@
+### E1. 错位 0xC 的第三种读法：GL/List 落格 vs witness this+偏移 ###
+  参照：0x5256F0（INIClass 复位体）本线亲读：[esi]=0x7EA5F4@5256F8 ; [esi+0xC]=0x7E1B04@52571E ;
+        lea eax,[esi+0x1C]→[eax]=0x7E1B0C@525760 ; lea eax,[esi+0x10]→[eax]=0x7E1B0C@52578D
+        且 0x40E320 体（@40E32A）置 [that]=0x7E1B0C(GenericNode)，本线亲读。
+  A row 77884F W=-0x98 | 各 stamp 相对 witness this 的偏移=[('GenericList', '-0x8c', '+0xC'), ('List<INISection*>', '-0x8c', '+0xC'), ('INIClass', '-0x98', '+0x0'), ('CDFileClass', '-0x58', '+0x40')] | INIClass@+0=True
+  B row 779C3D W=-0x98 | 各 stamp 相对 witness this 的偏移=[('GenericList', '-0x8c', '+0xC'), ('List<INISection*>', '-0x8c', '+0xC'), ('INIClass', '-0x98', '+0x0'), ('CDFileClass', '-0x58', '+0x40')] | INIClass@+0=True
+  C row 779EBD W=-0x98 | 各 stamp 相对 witness this 的偏移=[('GenericList', '-0x8c', '+0xC'), ('List<INISection*>', '-0x8c', '+0xC'), ('INIClass', '-0x98', '+0x0'), ('CDFileClass', '-0x58', '+0x40')] | INIClass@+0=True
+  D row 5CEFC9 W=-0xac | 各 stamp 相对 witness this 的偏移=[('List<INISection*>', '-0xa0', '+0xC'), ('INIClass', '-0xac', '+0x0'), ('CCFileClass', '-0x6c', '+0x40'), ('CDFileClass', '-0x6c', '+0x40'), ('CCFileClass', '-0x6c', '+0x40'), ('CDFileClass', '-0x6c', '+0x40'), ('CCFileClass', '-0x6c', '+0x40'), ('CDFileClass', '-0x6c', '+0x40')] | INIClass@+0=True
+  E row 76C555 W=-0xac | 各 stamp 相对 witness this 的偏移=[('List<INISection*>', '-0xa0', '+0xC'), ('INIClass', '-0xac', '+0x0'), ('CCFileClass', '-0x6c', '+0x40'), ('CDFileClass', '-0x6c', '+0x40')] | INIClass@+0=True
+  F row 778BCF W=-0xb8 | 各 stamp 相对 witness this 的偏移=[('CDFileClass', '-0x58', '+0x60'), ('GenericNode', '-0xa8', '+0x10'), ('GenericList', '-0xac', '+0xC'), ('List<INISection*>', '-0xac', '+0xC'), ('INIClass', '-0xb8', '+0x0'), ('CDFileClass', '-0x58', '+0x60'), ('CDFileClass', '-0x58', '+0x60')] | INIClass@+0=True
+  T16 row 5D76A9 W=-0xac | 各 stamp 相对 witness this 的偏移=[('List<INISection*>', '-0xa0', '+0xC'), ('INIClass', '-0xac', '+0x0'), ('CCFileClass', '-0x6c', '+0x40'), ('CDFileClass', '-0x6c', '+0x40')] | INIClass@+0=True
+
+### E2. 帧 D 承重假设网格：两处间接 call 的 ret-imm 取 0/4/8/0xC 会翻转结论吗 ###
+  (c1,c2)=两处可落实间接call的假设ret ; u=三处未落实call的假设ret(剪枝=None)
+    c1=0x0  u=None  闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=3
+    c1=0x0  u=0     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=1
+    c1=0x0  u=4     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=1
+    c1=0x0  u=8     闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=0
+    c1=0x4  u=None  闭合=7/7 W命中INIClass=7 W命中GenericList=0 多命中=0 剪枝点数=3
+    c1=0x4  u=0     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=1
+    c1=0x4  u=4     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=1
+    c1=0x4  u=8     闭合=7/7 W命中INIClass=7 W命中GenericList=0 多命中=0 剪枝点数=0
+    c1=0x8  u=None  闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=3
+    c1=0x8  u=0     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=1
+    c1=0x8  u=4     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=1
+    c1=0x8  u=8     闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=0
+    c1=0xc  u=None  闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=3
+    c1=0xc  u=0     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=1
+    c1=0xc  u=4     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=1
+    c1=0xc  u=8     闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0 剪枝点数=0
+
+### E2b. 其余六帧（无间接假设）在 STRICT 下是否闭合（应恒等） ###
+  A 行=3 闭合=3 INIClass命中=3 GenericList命中=0 剪枝点=[]
+  B 行=1 闭合=1 INIClass命中=1 GenericList命中=0 剪枝点=[]
+  C 行=1 闭合=1 INIClass命中=1 GenericList命中=0 剪枝点=[]
+  E 行=1 闭合=1 INIClass命中=1 GenericList命中=0 剪枝点=[]
+  F 行=3 闭合=3 INIClass命中=3 GenericList命中=0 剪枝点=[]
+  T16 行=1 闭合=1 INIClass命中=1 GenericList命中=0 剪枝点=['5D79D0']
+
+### E3. 帧 D 两处间接 call 的 this 数据流（对象身份假设） ###
+  5CEEF0 81ecc4000000         sub esp, 0xc4
+  5CEEF6 53                   push ebx
+  5CEEF7 55                   push ebp
+  5CEEF8 8be9                 mov ebp, ecx
+  5CEEFA 56                   push esi
+  5CEEFB 57                   push edi
+  5CEEFC 8d4c2468             lea ecx, [esp + 0x68]
+  5CEF00 896c2420             mov dword ptr [esp + 0x20], ebp
+  5CEF04 e8774beaff           call 0x473a80
+  5CEF09 33f6                 xor esi, esi
+  5CEF0B 8d4c2434             lea ecx, [esp + 0x34]
+  5CEF0F 8974242c             mov dword ptr [esp + 0x2c], esi
+  5CEF13 89742430             mov dword ptr [esp + 0x30], esi
+  5CEF17 e8c4bdf5ff           call 0x52ace0
+  5CEF1C 8d4c241c             lea ecx, [esp + 0x1c]
+  5CEF20 c7442434fc1a7e00     mov dword ptr [esp + 0x34], 0x7e1afc
+  5CEF28 89742450             mov dword ptr [esp + 0x50], esi
+  5CEF2C 89742454             mov dword ptr [esp + 0x54], esi
+  5CEF30 89742458             mov dword ptr [esp + 0x58], esi
+  5CEF34 c644245c00           mov byte ptr [esp + 0x5c], 0
+  5CEF39 89742460             mov dword ptr [esp + 0x60], esi
+  5CEF3D 89742464             mov dword ptr [esp + 0x64], esi
+  5CEF41 c7442428f4a57e00     mov dword ptr [esp + 0x28], 0x7ea5f4
+  5CEF49 e8d2561e00           call 0x7b4620
+  5CEF4E 8d4c2414             lea ecx, [esp + 0x14]
+  5CEF52 e8c9561e00           call 0x7b4620
+  5CEF57 8bcd                 mov ecx, ebp
+  5CEF59 e892060000           call 0x5cf5f0
+  5CEF5E 8b442468             mov eax, dword ptr [esp + 0x68]
+  5CEF62 6870038300           push 0x830370
+  5CEF67 8d4c246c             lea ecx, [esp + 0x6c]
+  5CEF6B ff5008               call dword ptr [eax + 8]   <== 间接 call
+  5CEF6E 8b542468             mov edx, dword ptr [esp + 0x68]
+  5CEF72 6a01                 push 1
+  5CEF74 8d4c246c             lea ecx, [esp + 0x6c]
+  5CEF78 ff521c               call dword ptr [edx + 0x1c]   <== 间接 call
+  5CEF7B 8d442468             lea eax, [esp + 0x68]
+  5CEF7F 56                   push esi
+  5CEF80 50                   push eax
+  5CEF81 8d4c2430             lea ecx, [esp + 0x30]
+  5CEF85 e8866af5ff           call 0x525a10
+  → 判定：eax/edx 在 call 前是否可静态钉为 0x7E16B0(CCFileClass) 对象的实例？
+    R-064 主张：对象=0x473A80 构造的 CCFileClass，rb(0x473A9B,6)=c706b0167e00
+    0x473A80 起：
+      473A80 56                   push esi
+      473A81 8bf1                 mov esi, ecx
+      473A83 e8a86f0000           call 0x47aa30
+      473A88 6a00                 push 0
+      473A8A 6a00                 push 0
+      473A8C 8d4e58               lea ecx, [esi + 0x58]
+      473A8F e86c72fcff           call 0x43ad00
+      473A94 c7466400000000       mov dword ptr [esi + 0x64], 0
+      473A9B c706b0167e00         mov dword ptr [esi], 0x7e16b0
+      473AA1 c7466800000000       mov dword ptr [esi + 0x68], 0
+    帧 D 头..0x5CEF78 范围内 call 0x473A80 的站点：['0x5cef04']
+    0x5CEEF0 起 10 条（入口区）：
+      5CEEF0 81ecc4000000         sub esp, 0xc4
+      5CEEF6 53                   push ebx
+      5CEEF7 55                   push ebp
+      5CEEF8 8be9                 mov ebp, ecx
+      5CEEFA 56                   push esi
+      5CEEFB 57                   push edi
+      5CEEFC 8d4c2468             lea ecx, [esp + 0x68]
+      5CEF00 896c2420             mov dword ptr [esp + 0x20], ebp
+      5CEF04 e8774beaff           call 0x473a80
+      5CEF09 33f6                 xor esi, esi

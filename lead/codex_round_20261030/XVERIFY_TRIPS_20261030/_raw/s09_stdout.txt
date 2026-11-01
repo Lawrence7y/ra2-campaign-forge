@@ -1,0 +1,39 @@
+### (a) 边界点总表（close 实测值 / latch / 闩绝对 / hwnd 归零绝对 / 会话 boot 墙钟）
+  本批 hold13: close=14.131 latch=True 闩绝对=21.867 hwnd归零绝对=14.232 会话boot=1793337038119(本会话)
+  本批 hold14: close=14.997 latch=True 闩绝对=22.029 hwnd归零绝对=15.098 会话boot=1793337038113(本会话)
+  本批 hold15: close=16.272 latch=False 闩绝对=None hwnd归零绝对=21.094 会话boot=1793337038106(本会话)
+  E5 hold10: close=11.193 latch=True 闩绝对=21.538 hwnd归零绝对=11.294 会话boot=1793256614230(另一会话)
+  E5 hold15: close=16.091 latch=False 闩绝对=None hwnd归零绝对=21.114 会话boot=1793256614227(另一会话)
+  E5 hold20: close=21.249 latch=False 闩绝对=None hwnd归零绝对=21.651 会话boot=1793256614228(另一会话)
+
+  闩侧最大 close（本批）=14.997
+  不闩侧最小 close：本会话=16.272  合并全部会话=16.091
+  ⇒ 台账『同会话』边界=(14.997, 16.272] ；若合并跨会话可比点 ⇒ 上界收到 (14.997, 16.091]
+  ⇒ 台账称『较 E5 (11.19,16.09] 显著窄』：宽度 E5=4.898s 本批=1.275s 合并建议=1.094s
+
+### (b) E2 轴是否跨越进程退出时刻（hold13/14）
+  本批 hold13: 闩 t=1793366285.465 退出 t=1793366287.469
+    slow[0] t=1793366286.466 [退出前] hook6=present ws_kb=129100 cpu_delta=0.828125 区间宽度=1.001s
+    slow[1] t=1793366287.469 [跨退出(paired wait==0)] hook6=read_fail ws_kb=20 cpu_delta=0.734375 区间宽度=1.003s
+    cpu deltas=[0.828125, 0.734375] rec.cpu_delta_median_s=0.7812 自算median=0.7812
+    ⇒ SPIN_MIN_DELTA=0.7（_drive_c2_x_e12.py:103）；其中跨退出的 delta 数=1
+    ws_delta_kb=-129080 自算=-129080
+  本批 hold14: 闩 t=1793366532.116 退出 t=1793366534.121
+    slow[0] t=1793366533.118 [退出前] hook6=present ws_kb=118628 cpu_delta=0.859375 区间宽度=1.002s
+    slow[1] t=1793366534.121 [跨退出(paired wait==0)] hook6=read_fail ws_kb=20 cpu_delta=0.578125 区间宽度=1.003s
+    cpu deltas=[0.859375, 0.578125] rec.cpu_delta_median_s=0.7188 自算median=0.7188
+    ⇒ SPIN_MIN_DELTA=0.7（_drive_c2_x_e12.py:103）；其中跨退出的 delta 数=1
+    ws_delta_kb=-118608 自算=-118608
+
+### (c) 菜单退化轴（close_rows 的 frame/tick 是否恒值）
+  本批 hold13: frame值域={0, 'dict'} tick值域={1, 'dict'} mode=menu protocol='early-close (window+13.0s)+E2-slow1Hz(latch后轴)'
+  本批 hold14: frame值域={0, 'dict'} tick值域={1, 'dict'} mode=menu protocol='early-close (window+14.0s)+E2-slow1Hz(latch后轴)'
+  本批 hold15: frame值域={0} tick值域={1} mode=menu protocol='early-close (window+15.0s)+E2-slow1Hz(latch后轴)'
+  E5 hold10: frame值域={0, 'dict'} tick值域={1, 'dict'} mode=menu protocol='early-close (window+10.0s)+E2-slow1Hz(latch后轴)'
+  E5 hold15: frame值域={0} tick值域={1} mode=menu protocol='early-close (window+15.0s)+E2-slow1Hz(latch后轴)'
+  E5 hold20: frame值域={0} tick值域={1} mode=menu protocol='early-close (window+20.0s)+E2-slow1Hz(latch后轴)'
+
+### (d) 逐字段对照表所需（_rec 值 vs 原始时间戳实算）
+  本批 hold13: closed(rec)=14.131 vs raw=14.131 | latch_after(rec)=7.736 vs raw=7.736 | exit_after(rec)=9.74 vs raw=9.74 | 闩→退(rec相减)=2.004 vs raw=2.004
+  本批 hold14: closed(rec)=14.997 vs raw=14.997 | latch_after(rec)=7.032 vs raw=7.032 | exit_after(rec)=9.04 vs raw=9.037 | 闩→退(rec相减)=2.008 vs raw=2.005
+  本批 hold15: closed(rec)=16.272 vs raw=16.272 | latch_after(rec)=None vs raw=None | exit_after(rec)=None vs raw=119.941 | 闩→退(rec相减)=None vs raw=None

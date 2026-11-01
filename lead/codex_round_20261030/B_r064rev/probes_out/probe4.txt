@@ -1,0 +1,74 @@
+== CHD/BaseClassDescriptor 正确解链（[CHD]=自身TD*；BCD+0=基类TD*）==
+  GenericList      CHD=7FAD08 自身TD=000000 None numBases=1 bases=[('0x7fad00', '')]
+  INIClass         CHD=802500 自身TD=000000 None numBases=1 bases=[('0x8024f4', '')]
+  GenericNode      CHD=7FACC0 自身TD=000000 None numBases=1 bases=[('0x7facb8', '')]
+  List<INISection*> CHD=7FAC10 自身TD=000000 None numBases=2 bases=[('0x7fac00', ''), ('0x0', '-')]
+  CDFileClass      CHD=7FA4C8 自身TD=000000 None numBases=4 bases=[('0x7fa4b0', ''), ('0x0', '-'), ('0x0', '-'), ('0x0', '-')]
+  CCFileClass      CHD=7FA580 自身TD=000000 None numBases=5 bases=[('0x7fa568', ''), ('0x0', '-'), ('0x0', '-'), ('0x0', '-'), ('0x815e58', 'ss violation - no RTTI data!')]
+  互不为基类：GenericList 基类含 INIClass TD(8174B0)? False ; INIClass 基类含 GenericList TD(817508)? False
+  List<INISection*> 基类名=['', None]（R-064 声称恰含 GenericList ⇒ False）
+
+== 全镜像 0x7EA5F4 stamp 后 12 条窗内构造链普查（lea 同 disp + call 0x525A10）==
+  stamp 4F1C3C disp=0x10   lea=- call=- 
+  stamp 5977FA disp=0x10   lea=- call=- 
+  stamp 597AC9 disp=0x14   lea=- call=- 
+  stamp 597E1C disp=0x14   lea=- call=- 
+  stamp 5C137B disp=0xc    lea=- call=- 
+  stamp 5CEF41 disp=0x28   lea=- call=- 帧D
+  stamp 5D761D disp=0x78   lea=- call=- 帧T16
+  stamp 5E530F disp=0x70   lea=- call=- 帧T16
+  stamp 5E65D9 disp=0x14   lea=- call=- 帧T16
+  stamp 695341 disp=0x28   lea=- call=- 帧T16
+  stamp 6999CE disp=0x24   lea=- call=- 帧T16
+  stamp 764AA6 disp=0x14   lea=- call=- 帧T16
+  stamp 764DFF disp=0x3c   lea=- call=- 帧T16
+  stamp 765080 disp=0x18   lea=- call=- 帧T16
+  stamp 765231 disp=0x14   lea=- call=- 帧T16
+  stamp 765480 disp=0xc    lea=- call=- 帧T16
+  stamp 7695C3 disp=0x80   lea=- call=- 帧T16
+  stamp 76C4A4 disp=0x30   lea=- call=- 帧E
+  stamp 7787F7 disp=0x30   lea=- call=- 帧A
+  stamp 778B20 disp=0x2c   lea=- call=- 帧F
+  stamp 7797D5 disp=0xc    lea=- call=- 帧F
+  stamp 7798DA disp=0xc    lea=- call=- 帧F
+  stamp 7799E5 disp=0xc    lea=- call=- 帧F
+  stamp 779AEA disp=0xc    lea=- call=- 帧F
+  stamp 779BEA disp=0x1c   lea=- call=- 帧B
+  stamp 779D3A disp=0x14   lea=- call=- 帧B
+  stamp 779E6A disp=0x1c   lea=- call=- 帧C
+  stamp 779FBA disp=0x14   lea=- call=- 帧C
+  stamp 77A1A3 disp=0x1c   lea=- call=- 帧C
+  stamp 78827D disp=0x2c   lea=- call=- 帧C
+  共 30 处 stamp（R-064 口径 30 处）
+
+== R-064 声称六帧构造链 (lea,call525A10) 逐址验 ==
+  A lea 7787DB=[8d4c2430 ecx, [esp + 0x30]] ; call 7787FF=[e80cd2daff 0x525a10]
+  B lea 779BCE=[8d4c241c ecx, [esp + 0x1c]] ; call 779BF2=[e819bedaff 0x525a10]
+  C lea 779E4E=[8d4c241c ecx, [esp + 0x1c]] ; call 779E72=[e899bbdaff 0x525a10]
+  D lea 5CEF81=[8d4c2430 ecx, [esp + 0x30]] ; call 5CEF85=[e8866af5ff 0x525a10]
+  E lea 76C480=[8d4c2430 ecx, [esp + 0x30]] ; call 76C4AC=[e85f95dbff 0x525a10]
+  F lea 778B03=[8d4c242c ecx, [esp + 0x2c]] ; call 778B28=[e8e3cedaff 0x525a10]
+
+== 帧 A 手算 D 轨迹（R-064 §3 逐项：stamp@D=0xC4 → … → lea@D=0xD0）==
+    ('STAMP-GL', 7833536, None, 'D=0')
+    ('call40E340(r=4)', 7833544, None, 'D=-4 p=0')
+    ('STAMP-INI', 7833591, None, 'D=4')
+    ('call525A10(r=8)', 7833599, None, 'D=-4 p=0')
+    ('call4325C0(r=0)', 7833608, None, 'D=-4 p=0')
+    ('UNK-CALL', 7833618, 8082496, 'p=0')
+    ('call526810(r=0)', 7833628, None, 'D=0 p=4')
+    ('call7B4630(r=0)', 7833650, None, 'D=4 p=8')
+    ('LEA-W', 7833675, None, 'D=14')
+    ('call528C00(r=16)', 7833679, None, 'D=4 p=8')
+  期望：STAMP-GL D=0xc4；STAMP-INI D=0xc8；LEA-W D=0xd0
+
+== 帧 A 反汇编 0x7787B0..0x778860（分支在场否，亲验直线）==
+
+== 声称『−0x8C 槽先 GenericList 后 List<INISection*> 复用』（帧 A stamp 0x7E1AFC）==
+  stamp 7787D1 disp=0x34 帧A
+  stamp 779BC4 disp=0x20 帧B
+  stamp 779D19 disp=0x1c 帧B
+  stamp 779E44 disp=0x20 帧C
+  stamp 779F99 disp=0x1c 帧C
+  stamp 77A183 disp=0x28 帧C
+  stamp 788257 disp=0x34 帧C

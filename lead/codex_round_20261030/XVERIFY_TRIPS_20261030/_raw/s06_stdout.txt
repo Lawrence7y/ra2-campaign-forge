@@ -1,0 +1,90 @@
+f9d3f36a543d995f lead/qc161_u0400_trip/_drive_c2_x_e12.py
+90a1890afe356191 lead/qc161_u0400_trip/codex_e12_e5_20261030/candidate/_drive_c2_x_e12.py
+75daf4f7358996aa lead/qc161_u0400_trip/codex_e12_fix_20261029/candidate/_drive_c2_x_e12.py
+
+--- 特征串存在性（能否区分三份）
+  'hold_override'                            A=False  B=True  C=False
+  'normalize_hold_s'                         A=False  B=True  C=False
+  'module_const_s'                           A=False  B=True  C=False
+  'effective_s'                              A=False  B=True  C=False
+  'early-close (window+%.1fs)'               A=True  B=True  C=True
+  'E2-slow1Hz'                               A=True  B=True  C=True
+  'zero_close_samples'                       A=True  B=True  C=True
+  'wait_error:%d'                            A=True  B=True  C=True
+  'present_with_read_fail_rows'              A=True  B=True  C=True
+  'spin_x_hook6_undetermined'                A=True  B=True  C=True
+  'latch_plus_30'                            A=True  B=True  C=True
+  'interaction_window'                       A=True  B=True  C=True
+
+--- A vs B 差异行数/摘要
+  diff 行数= 138
+    --- A_root
+    +++ B_e5candidate
+    @@ -2 +2,2 @@
+    -"""_drive_c2_x_e12.py — E1+E2 合批候选驱动（D-11 审定对象；本件=离线候选，发射永远等用户授权）。
+    +"""_drive_c2_x_e12.py — E1+E2 合批候选驱动 · E5 关窗时机梯度版（基线=修复候选 75daf4f7…；
+    +本件=离线候选，发射永远等 Leader/用户授权）。
+    @@ -12,0 +14,11 @@
+    +
+    +E5 增量（本轮唯一改动面；其余与修复候选 75daf4f7… 逐行同源）：
+    +- 新增 `--hold <秒>`：覆盖模块常量 HOLD_AFTER_WINDOW 的**本趟生效值**——经 normalize_hold_s seam
+    +  → run_trip(hold_after_window_s=…) **参数传递**实现；两冻结母版（v2/earlyclose）零字节不动，
+    +  import 前哈希门（FROZEN_SHA256/_MAESTRO）原样生效；
+    +- 缺省不传=6.0 s=现协议不变；显式 --hold 6 与缺省、与修复候选**逐字节等价**（同替身同输出，
+    +  自检 E5-12 三方比对背书：==常量时不加任何新键）；
+    +- 非法 hold（非数/≤0/非有限）CLI 层 argparse rc=2 拒收（先于一切闸/分支），run_trip 直调层
+    +  TripFail(hold_invalid) 拒收（双保险，自检 E5-02/E5-03/E5-13）；
+    +- `--trips` 语义不变（Leader 梯度发射=--hold 10/15/20 各 --trips 1 单趟，见自证报告 §发射）；
+    +- E2 轴全保留（hook6/CPU/ws/窗口枚举/闩+30 截图）；硬闸不变（--live 无 --approved 恒 rc=3）。
+    @@ -39,0 +52 @@
+    +import math
+    @@ -93,0 +107 @@
+    +BOOT_TOLERANCE_MS = 2000
+    @@ -97,0 +112,25 @@
+    +
+    +
+    +# ---------------------------------------------------------------------------
+    +# E5 seam：--hold 生效值归一（参数传递覆盖 HOLD_AFTER_WINDOW；不改两冻结母版、不改常量本身）
+    +def normalize_hold_s(val):
+    +    """E5 seam：hold 生效值归一。None⇒模块常量 HOLD_AFTER_WINDOW（6.0=现协议不变）；
+    +    合法数⇒float(>0 且有限)；非数/非有限/≤0⇒(None, err)（不抛，交调用方定拒收形态）。"""
+    +    if val is None:
+    +        return HOLD_AFTER_WINDOW, None
+    +    try:
+    +        f = float(val)
+    +    except (TypeError, ValueError):
+    +        return None, "hold_not_numeric:%r" % (val,)
+    +    if not math.isfinite(f) or f <= 0:
+    +        return None, "hold_out_of_range:%r" % (val,)
+    +    return f, None
+    +
+    +
+    +def _hold_arg(s):
+    +    """argparse 类型闸：非法 hold ⇒ ArgumentTypeError（CLI 层 rc=2 拒收，先于一切闸/分支）。"""
+    +    f, err = normalize_hold_s(s)
+    +    if err is not None:
+    +        raise argparse.ArgumentTypeError("hold_invalid(%s)——--hold 须为正有限秒数（如 10/15/20）" % err)
+    +    return f
+    +
+    @@ -125,0 +165,4 @@
+    +_k32.GetTickCount64.restype = ctypes.c_ulonglong
+    +_k32.GetTickCount64.argtypes = []
+    +
+    +
+    @@ -134,0 +178 @@
+    +    V2.OPS["wallclock_ms"] = lambda: time.time_ns() // 1_000_000
+    @@ -138,0 +183,27 @@
+    +def capture_boot():
+    +    """Read both clocks at each boundary; keep the batch reference immutable.
+    +
+    +    Wall-clock corrections beyond the tolerance conservatively stop the batch.
+
+--- 三份文件字节数/行数
+  A: bytes=31492 lines=618
+  B: bytes=36637 lines=711
+  C: bytes=33199 lines=656
+
+--- _rec.json 内是否有驱动自身哈希留痕字段
+  keys 含 'e12' 驱动哈希? []
+  frozen_masters 只含: ['_drive_c2_x_earlyclose.py', '_drive_c2_x_probe_v2.py']
+  90a1890a 在 _rec 中出现? False | f9d3f36a 出现? False

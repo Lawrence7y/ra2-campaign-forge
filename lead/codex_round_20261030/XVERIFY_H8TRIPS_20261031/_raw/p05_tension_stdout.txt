@@ -1,0 +1,69 @@
+==============================================================================
+(A) 全库窗 fps_avg 分布（族内可持续平均上限标定）
+==============================================================================
+  有值窗数 n=48   top10 = [31.32, 31.281, 31.28, 31.242, 31.242, 31.241, 31.241, 31.24, 31.203, 31.12]
+  ⇒ 族内观测到的最大窗平均 fps = 31.32（l3_20261023r/measure_w0.json）
+  31 档带（>25）窗数=17  低相带（<12）窗数=23
+
+==============================================================================
+(B) Δu/Δf 逐窗（同帧号是否同战场状态）
+==============================================================================
+  注：counters.t_rel 用同窗 frame_edges 内插到帧轴；首末 counters 点求差。
+  l3_20261031ha   measure_w0.json    frame   400→409   units  1342→1340  Δu/Δf=-0.2122
+  l3_20261031hb   measure_w0.json    frame   437→604   units  1341→1298  Δu/Δf=-0.2576
+  l3_20261031hb   measure_w1.json    frame   607→725   units  1297→1262  Δu/Δf=-0.2966
+  l3_20261031hb   measure_w2.json    frame   726→979   units  1262→1179  Δu/Δf=-0.3285
+  l3_20261023q    measure_w0.json    frame  2955→3703  units   953→854   Δu/Δf=-0.1324
+  l3_20261023q    measure_w1.json    frame  3733→4485  units   852→811   Δu/Δf=-0.0545
+  l3_20261023q    measure_w2.json    frame  4516→4636  units   811→811   Δu/Δf=0.0
+  l3_20261023r    measure_w0.json    frame  3100→3853  units   923→842   Δu/Δf=-0.1076
+  l3_20261023r    measure_w1.json    frame  3883→4367  units   839→828   Δu/Δf=-0.0227
+  l3_20261023r    measure_w2.json    frame  4367→4367  units   828→828   Δu/Δf=None
+  l3_20261021     measure_w0.json    frame   387→596   units  1330→1270  Δu/Δf=-0.2867
+  l3_20261021     measure_w1.json    frame   606→895   units  1267→1187  Δu/Δf=-0.2769
+  l3_20261021     measure_w2.json    frame   905→1150  units  1184→1106  Δu/Δf=-0.3181
+  l1_20261023e4   measure_w0.json    frame  2821→3527  units   697→644   Δu/Δf=-0.0751
+  l1_20261023e4   measure_w1.json    frame  3557→0     units   642→640   Δu/Δf=0.0006
+  l1_20261023e4   measure_w2.json    units 读数含 null ⇒ 不可算
+  t55k_20261020   measure_w0.json    frame  3899→4651  units   841→809   Δu/Δf=-0.0426
+  t55k_20261020   measure_w1.json    frame  4681→5432  units   807→770   Δu/Δf=-0.0492
+  t55k_20261020   measure_w2.json    frame  5463→6215  units   769→762   Δu/Δf=-0.0093
+  l1a_20261020    measure_w0.json    frame  3849→4601  units   730→727   Δu/Δf=-0.004
+  l1a_20261020    measure_w1.json    frame  4631→5382  units   727→708   Δu/Δf=-0.0253
+  l1a_20261020    measure_w2.json    frame  5412→6137  units   706→629   Δu/Δf=-0.1062
+
+==============================================================================
+(C) q 早相可行性：若含 L 帧慢段（≤10fps），其余帧需 ≥V fps ⇒ 解 L 上界
+==============================================================================
+
+  l3_20261023q: NAV.h7_nav_end_t=27402.609  w0 t[0]=27527.346953  ⇒ 同一 perf_counter 轴墙钟 battle起→w0 = 124.738 s
+    f0=2955 ⇒ 平均 = 23.69 fps（≥23 主张 成立）
+    hb 慢段参照帧数（437→991）= 554；若 q 也含 L 帧 ≤10 fps 段，余下按 V fps：
+      V=31.4  ⇒ L ≤   449.4 帧  < hb 慢段 ⇒ q 不可能整段同慢
+      V=32.0  ⇒ L ≤   471.2 帧  < hb 慢段 ⇒ q 不可能整段同慢
+      V=40.0  ⇒ L ≤   678.2 帧  ≥ hb 慢段 ⇒ 不能排除
+      V=50.0  ⇒ L ≤   820.5 帧  ≥ hb 慢段 ⇒ 不能排除
+      V=60.0  ⇒ L ≤   905.9 帧  ≥ hb 慢段 ⇒ 不能排除
+
+  l3_20261023r: NAV.h7_nav_end_t=28110.109  w0 t[0]=28240.852951  ⇒ 同一 perf_counter 轴墙钟 battle起→w0 = 130.744 s
+    f0=3100 ⇒ 平均 = 23.71 fps（≥23 主张 成立）
+    hb 慢段参照帧数（437→991）= 554；若 q 也含 L 帧 ≤10 fps 段，余下按 V fps：
+      V=31.4  ⇒ L ≤   469.8 帧  < hb 慢段 ⇒ q 不可能整段同慢
+      V=32.0  ⇒ L ≤   492.6 帧  < hb 慢段 ⇒ q 不可能整段同慢
+      V=40.0  ⇒ L ≤   709.9 帧  ≥ hb 慢段 ⇒ 不能排除
+      V=50.0  ⇒ L ≤   859.3 帧  ≥ hb 慢段 ⇒ 不能排除
+      V=60.0  ⇒ L ≤   948.9 帧  ≥ hb 慢段 ⇒ 不能排除
+
+==============================================================================
+(D) P2 哨兵 house c5574 求和（战场实体规模）+ 读侧可靠性标注
+==============================================================================
+  l3_20261031hb    snap=000000 kind=frozen_final houses=[480, 480, 240, 240] sum=1440
+      （时间归属：H8 等待={"n": 400, "reached_frame": 400, "offset_frames": 0, "overrun": false, "timed_out": false, "wait_s": 94.676, "poll_count": 26939} / nav→measure={"nav_to_measure_s": 0.125, "limit_s": 90.0, "late_start": false, "fs_rect_wait_skipped": true}）⇒ 快照期=等待期/加载期，非采窗期（Y-4 声明：探针不承重）
+  l3_20261031ha    snap=000000 kind=frozen_final houses=[0, 0, 0, 0] sum=0
+      （时间归属：H8 等待={"n": 400, "reached_frame": 400, "offset_frames": 0, "overrun": false, "timed_out": false, "wait_s": 73.135, "poll_count": 25349} / nav→measure={"nav_to_measure_s": 0.125, "limit_s": 90.0, "late_start": false, "fs_rect_wait_skipped": true}）⇒ 快照期=等待期/加载期，非采窗期（Y-4 声明：探针不承重）
+  l3_20261023q     snap=002830 kind=early houses=[384, 143, 207, 240] sum=974
+  l3_20261023q     snap=004636 kind=frozen_final houses=[384, 0, 187, 240] sum=811
+      （时间归属：H8 等待=null / nav→measure=null）⇒ 快照期=等待期/加载期，非采窗期（Y-4 声明：探针不承重）
+  l3_20261023r     snap=002976 kind=early houses=[384, 97, 220, 240] sum=941
+  l3_20261023r     snap=004367 kind=frozen_final houses=[384, 0, 204, 240] sum=828
+      （时间归属：H8 等待=null / nav→measure=null）⇒ 快照期=等待期/加载期，非采窗期（Y-4 声明：探针不承重）

@@ -1,0 +1,55 @@
+=== 帧 A 0x7787A0..0x778860：谁把地址取进 −0x8C（GL/List 落格）——本线亲读反汇编 ===
+  77879D 8d4c2438               lea   ecx, [esp + 0x38]             
+  7787A1 895c242c               mov   dword ptr [esp + 0x2c], ebx      <== lea/mov [esp+0x2c] (=−0x8C 槽 @D=0xC0)
+  7787A5 895c2430               mov   dword ptr [esp + 0x30], ebx   
+  7787A9 e8725bc9ff             call  0x40e320                      
+  7787AE 8d4c2444               lea   ecx, [esp + 0x44]             
+  7787B2 e8695bc9ff             call  0x40e320                      
+  7787B7 8d442444               lea   eax, [esp + 0x44]             
+  7787BB 8d4c2438               lea   ecx, [esp + 0x38]             
+  7787BF 50                     push  eax                           
+  7787C0 c7442438041b7e00       mov   dword ptr [esp + 0x38], 0x7e1b04
+  7787C8 e8735bc9ff             call  0x40e340                      
+  7787CD 8d4c2468               lea   ecx, [esp + 0x68]             
+  7787D1 c7442434fc1a7e00       mov   dword ptr [esp + 0x34], 0x7e1afc
+  7787D9 53                     push  ebx                           
+  7787DA 51                     push  ecx                           
+  7787DB 8d4c2430               lea   ecx, [esp + 0x30]                <== [esp+0x30] (=INIClass this 槽)
+  7787DF 895c2458               mov   dword ptr [esp + 0x58], ebx   
+  7787E3 895c245c               mov   dword ptr [esp + 0x5c], ebx   
+  7787E7 895c2460               mov   dword ptr [esp + 0x60], ebx   
+  7787EB 885c2464               mov   byte ptr [esp + 0x64], bl     
+  7787EF 895c2468               mov   dword ptr [esp + 0x68], ebx   
+  7787F3 895c246c               mov   dword ptr [esp + 0x6c], ebx   
+  7787F7 c7442430f4a57e00       mov   dword ptr [esp + 0x30], 0x7ea5f4
+  7787FF e80cd2daff             call  0x525a10                      
+  778804 8d4c2468               lea   ecx, [esp + 0x68]             
+  778808 e8b39dcbff             call  0x4325c0                      
+  77880D b99035b700             mov   ecx, 0xb73590                 
+  778812 e829cc0300             call  0x7b5440                      
+  778817 8d4c2428               lea   ecx, [esp + 0x28]             
+  77881B 50                     push  eax                           
+  77881C e8efdfdaff             call  0x526810                      
+  778821 85c0                   test  eax, eax                      
+  778823 0f8455010000           je    0x77897e                      
+  778829 68849f8400             push  0x849f84                      
+  77882E 8d4c2414               lea   ecx, [esp + 0x14]             
+  778832 e8f9bd0300             call  0x7b4630                      
+  778837 8d542418               lea   edx, [esp + 0x18]             
+  77883B 8d442418               lea   eax, [esp + 0x18]             
+  77883F 52                     push  edx                           
+  778840 8d4c2414               lea   ecx, [esp + 0x14]             
+  778844 50                     push  eax                           
+  778845 51                     push  ecx                           
+  778846 689035b700             push  0xb73590                      
+  77884B 8d4c2438               lea   ecx, [esp + 0x38]             
+  77884F e8ac03dbff             call  0x528c00                      
+  778854 8d4c2410               lea   ecx, [esp + 0x10]             
+  778858 e893be0300             call  0x7b46f0                      
+  77885D 8d4c2410               lea   ecx, [esp + 0x10]             
+
+=== 0x40E320（本线亲读：置 [that]=0x7E1B0C GenericNode, 清 +4/+8）与 0x40E340（链表插入, ret 4）===
+  帧 A 调用序列：lea ecx,[esp+0x38]@77879D(D=0xC0→P=−0x88) call 0x40E320@7787A9
+                  lea ecx,[esp+0x44]@7787AE(D=0xC0→P=−0x7C) call 0x40E320@7787B2
+                  push eax(=−0x7C)@7787BF(D=0xC0) → GL stamp @7787C0(D=0xC4→P=−0x8C) → call 0x40E340@7787C8(ret 4)
+  ⇒ 0x40E340 把 [−0x8C]（GenericNode 头件）插入 −0x7C 的链表；−0x8C 正是 INIClass this(−0x98)+0xC

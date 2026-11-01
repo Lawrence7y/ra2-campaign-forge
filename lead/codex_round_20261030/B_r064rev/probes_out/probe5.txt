@@ -1,0 +1,115 @@
+== COL/CHD/BCD 盘面 dump（GenericList 家族 + INIClass 家族 + List）==
+
+GenericList V=7E1B04 COL=7FAD18
+  COL+0x00 = 000000
+  COL+0x04 = 000000
+  COL+0x08 = 000000
+  COL+0x0C = 817508 ->TD(vfp=7F9594) 名='.?AVGenericList@@'
+  COL+0x10 = 7FAD08
+  COL+0x14 = 000000
+  COL+0x18 = 817528 ->TD(vfp=7F9594) 名='.?AV?$VectorClass@PAVScriptClass@@@@'
+  COL+0x1C = 000000
+  CHD=7FAD08:
+    CHD+0x00 = 000000
+    CHD+0x04 = 000000
+    CHD+0x08 = 000001
+    CHD+0x0C = 7FAD00
+    CHD+0x10 = 000000
+    CHD+0xC起[0] = 7FACE8 '' (BCD? 首字=817508 '.?AVGenericList@@')
+
+INIClass V=7EA5F4 COL=802510
+  COL+0x00 = 000000
+  COL+0x04 = 000000
+  COL+0x08 = 000000
+  COL+0x0C = 8174B0 ->TD(vfp=7F9594) 名='.?AVINIClass@@'
+  COL+0x10 = 802500
+  COL+0x14 = 000000
+  COL+0x18 = 824100 ->TD(vfp=7F9594) 名='.?AV?$VectorClass@PAVGraphicMenuItem@@@@'
+  COL+0x1C = 000000
+  CHD=802500:
+    CHD+0x00 = 000000
+    CHD+0x04 = 000000
+    CHD+0x08 = 000001
+    CHD+0x0C = 8024F4
+    CHD+0x10 = 000000
+    CHD+0xC起[0] = 7FAC38 '' (BCD? 首字=8174B0 '.?AVINIClass@@')
+
+List<INISection*> V=7E1AFC COL=7FAC20
+  COL+0x00 = 000000
+  COL+0x04 = 000000
+  COL+0x08 = 000000
+  COL+0x0C = 817480 ->TD(vfp=7F9594) 名='.?AV?$List@PAUINISection@INIClass@@@@'
+  COL+0x10 = 7FAC10
+  COL+0x14 = 000000
+  COL+0x18 = 8174B0 ->TD(vfp=7F9594) 名='.?AVINIClass@@'
+  COL+0x1C = 000000
+  CHD=7FAC10:
+    CHD+0x00 = 000000
+    CHD+0x04 = 000000
+    CHD+0x08 = 000002
+    CHD+0x0C = 7FAC00
+    CHD+0x10 = 000000
+    CHD+0xC起[0] = 7FABE8 '' (BCD? 首字=817480 '.?AV?$List@PAUINISection@INIClass@@@@')
+    CHD+0xC起[1] = 7FACE8 '' (BCD? 首字=817508 '.?AVGenericList@@')
+  GenericList CHD+0xC 指向: [7FAD00]=7FACE8 名='' vfp?=08758100
+  INIClass CHD+0xC 指向: [8024F4]=7FAC38 名='' vfp?=b0748100
+  List CHD+0xC 指向: [7FAC00]=7FABE8 名='' vfp?=80748100
+
+== 帧 A 第三法：0x778710→0x77884F 直线 D 轨迹（亲验该段无分支）==
+  分支指令： [(7833447, 'jne', '0x77878b'), (7833495, 'je', '0x778987'), (7833635, 'je', '0x77897e')]
+    未知 callee 7B4620 @778722 p=192
+    未知 callee 7B4620 @778736 p=192
+    未知 callee 7B66C0 @77873F p=192
+    未知 callee 7B66C0 @778748 p=192
+    未知 callee 47A9D0 @778756 p=196
+    未知 callee 431F10 @778760 p=200
+    未知 callee 65D150 @77876D p=200
+    未知 callee 47AF10 @778786 p=208
+    未知 callee 431F10 @778790 p=212
+    未知 callee 40E320 @7787A9 p=212
+    未知 callee 40E320 @7787B2 p=212
+    未知 callee 7B5440 @778812 p=212
+  关键点 (D,p):
+    7787C0 c7442438041b7e00 dword ptr [esp + 0x38], 0x7e1b04 D=0xD8 p=216
+    7787D1 c7442434fc1a7e00 dword ptr [esp + 0x34], 0x7e1afc D=0xD4 p=212
+    7787DB 8d4c2430 ecx, [esp + 0x30]            D=0xDC p=220
+    7787F7 c7442430f4a57e00 dword ptr [esp + 0x30], 0x7ea5f4 D=0xDC p=220
+    77884B 8d4c2438 ecx, [esp + 0x38]            D=0xEC p=236
+  G-stamp 0x7787C0: P=0x38-0xD8 = 0x-A0
+  INI-stamp 0x7787F7: P=0x30-0xDC = -0xac
+  witness lea 0x77884B: W=0x38-0xEC = -0xb4
+  0x7787DB this-lea (INIClass ctor this): 0x30-0xDC = -0xac ；期望同 W 格（R-064 构造完整性）
+  List-stamp 0x7787D1 (0x7E1AFC): disp=0x34 D=0xD4 P=-0xa0
+
+== 帧 F 线外块（R-064 E6：jne→0x778B61..0x778B9F 与 stamp 0x778B20 同帧）==
+  778A20 81ecd0000000 sub esp, 0xd0
+  778B20 c744242cf4a57e00 mov dword ptr [esp + 0x2c], 0x7ea5f4
+  778B61 753c jne 0x778b9f
+  778B95 5f pop edi
+  778B9F 55 push ebp
+
+== 0x5D76A9(T16) 直线片段：0x5D761D(stamp) 前后各 6 条 ==
+  5D75F3 899c24a0000000       mov dword ptr [esp + 0xa0], ebx
+  5D75FA 899c24a4000000       mov dword ptr [esp + 0xa4], ebx
+  5D7601 899c24a8000000       mov dword ptr [esp + 0xa8], ebx
+  5D7608 889c24ac000000       mov byte ptr [esp + 0xac], bl
+  5D760F 899c24b0000000       mov dword ptr [esp + 0xb0], ebx
+  5D7616 899c24b4000000       mov dword ptr [esp + 0xb4], ebx
+  5D761D c7442478f4a57e00     mov dword ptr [esp + 0x78], 0x7ea5f4
+  5D7625 e8e6e3f4ff           call 0x525a10
+  5D762A 85c0                 test eax, eax
+  5D762C 0f8e50060000         jle 0x5d7c82
+  5D7632 56                   push esi
+  5D7633 8d4c2474             lea ecx, [esp + 0x74]
+  5D7637 e8f4f3f4ff           call 0x526a30
+
+== 0x5CF4C7 帧 D：0x5CEF41 前后 ==
+  5CEF30 89742458             mov dword ptr [esp + 0x58], esi
+  5CEF34 c644245c00           mov byte ptr [esp + 0x5c], 0
+  5CEF39 89742460             mov dword ptr [esp + 0x60], esi
+  5CEF3D 89742464             mov dword ptr [esp + 0x64], esi
+  5CEF41 c7442428f4a57e00     mov dword ptr [esp + 0x28], 0x7ea5f4
+  5CEF49 e8d2561e00           call 0x7b4620
+  5CEF4E 8d4c2414             lea ecx, [esp + 0x14]
+  5CEF52 e8c9561e00           call 0x7b4620
+  5CEF57 8bcd                 mov ecx, ebp

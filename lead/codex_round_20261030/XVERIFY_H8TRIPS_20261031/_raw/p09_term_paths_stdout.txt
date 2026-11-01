@@ -1,0 +1,60 @@
+==============================================================================
+(1) ha/hb 收尾形态（§487「强杀 0（两趟自然走完 rc=0）」）
+==============================================================================
+  l3_20261031ha: harness_rc=0 duration=170.2 CLOSE.close_mode='terminate' close_posted=None TERM.term_requested=True terminate_sent=True wait_returncode=1 termination_verdict='PASS'
+  l3_20261031hb: harness_rc=0 duration=241.1 CLOSE.close_mode='terminate' close_posted=None TERM.term_requested=True terminate_sent=True wait_returncode=1 termination_verdict='PASS'
+  l3_20261023q: harness_rc=0 duration=259.7 CLOSE.close_mode='terminate' close_posted=None TERM.term_requested=True terminate_sent=True wait_returncode=1 termination_verdict='PASS'
+  l3_20261023r: harness_rc=0 duration=262.8 CLOSE.close_mode='terminate' close_posted=None TERM.term_requested=True terminate_sent=True wait_returncode=1 termination_verdict='PASS'
+  判读依据：harness8:1423 `proc.terminate()`（Windows ⇒ TerminateProcess）；1419-1421 注释「缺省 terminate ⇒ 控制流与 harness5 一致」；rc=0 是 harness 脚本退出码（_launch_result.json 的 rc 由发射器 os.spawnv 取子进程退出码），wait_returncode=1 才是游戏进程退出码。
+
+==============================================================================
+(2) 抓帧件同一性（跨趟证据独立性）
+==============================================================================
+  l3_20261031ha/frame_target_01.png: 115981B sha16=b633740a547d8097
+  l3_20261031ha/frame_early_01.png: 46542B sha16=69fea1aa06e273ca
+  l3_20261031ha/navsig_burst_00_g.png: 115981B sha16=b633740a547d8097
+  l3_20261031hb/frame_target_01.png: 115981B sha16=b633740a547d8097
+  l3_20261031hb/frame_early_01.png: 45175B sha16=dbfff88d883ee59a
+  l3_20261031hb/navsig_burst_00_g.png: 115981B sha16=b633740a547d8097
+  l3_20261023q/frame_target_01.png: 1117623B sha16=7a8c793cb387b90f
+  l3_20261023q/frame_early_01.png: 53206B sha16=c9c28203aeb633c1
+  l3_20261023q/navsig_burst_00_g.png: 115981B sha16=b633740a547d8097
+  l3_20261023r/frame_target_01.png: 1182327B sha16=e93c2011a2d8947d
+  l3_20261023r/frame_early_01.png: 26612B sha16=e228e54af9b5e01c
+  l3_20261023r/navsig_burst_00_g.png: 115981B sha16=b633740a547d8097
+  l3_20261021/frame_target_01.png: 1250846B sha16=5d673e978f955e58
+  l3_20261021/frame_early_01.png: 69795B sha16=abf1751288ee7d3a
+  l3_20261021/navsig_burst_00_g.png: 115981B sha16=b633740a547d8097
+
+==============================================================================
+(3) 路径长度口径（§486「两后缀 100≤130」/ 卡片「130 门禁」）
+==============================================================================
+  ha: 趟目录 len=106  预演载体 len=130
+  hb: 趟目录 len=106  预演载体 len=130
+  l3_20261031ha 实测载体 len=130 dir=c_000000000000_35684
+  l3_20261031hb 实测载体 len=130 dir=c_000000000000_15800
+
+==============================================================================
+(4) C-2 预登记（jump ⇒ 等待期 ≥96ms 停顿证据）在卡片/台账的落地文字
+==============================================================================
+  GOAL1_BATCH_H8_FRAMEBOUND_20261031.md 含 '96' 行号: []
+  GOAL1_BATCH_H8_FRAMEBOUND_20261031.md 含 'jump' 行号: [25]
+  GOAL1_BATCH_H8_FRAMEBOUND_20261031.md 含 '噪声重排' 行号: []
+  ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md 含 '96' 行号: [44, 220, 223, 232, 278, 372, 375, 383, 456, 671, 684, 707]
+  ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md 含 'jump' 行号: [20065, 20072, 20127]
+  ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md 含 '噪声重排' 行号: [20072]
+
+==============================================================================
+(5) reviewer __pycache__ 留置（§486）
+==============================================================================
+  lead/goal1_harness8_20261031/__pycache__: 3 件 ['qc151_trip.harness8.cpython-312.pyc', '_judge_h8_20261031.cpython-312.pyc', '_launch_h8_20261031.cpython-312.pyc']
+  lead/codex_round_20261030/XVERIFY_H8_20261031/__pycache__: 0 件 []
+
+==============================================================================
+(6) 2C 趟 _rec 键存在性 vs §485 用词（killed_on_cleanup / stop_triggered）
+==============================================================================
+  'killed_on_cleanup' in rec = False | stop_triggered in rec = True 值= None
+  对照既往自然退趟（键缺席=无清扫强杀，probe_v2:458-468 仅 survivors 非空才写键）：
+    20261028T205108_9001_P3e: has_key=False val=-
+    20261030T211741_9001_P3e: has_key=False val=-
+    20261031T083340_9001_P3e: has_key=True val=[[1896, 'rc4_loader.exe'], [6000, 'gamemd.exe']]

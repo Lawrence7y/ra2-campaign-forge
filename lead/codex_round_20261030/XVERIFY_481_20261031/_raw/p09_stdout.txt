@@ -1,0 +1,42 @@
+== boot_ms_at_start 是否落在 15.625 ms（1/64 s）量化格上 ==
+  20261028T084855_0001_P0_ORIG                 boot_ms=None（旧 schema）
+  20261028T085311_0001_P0N_INJ_OFF             boot_ms=None（旧 schema）
+  20261028T085640_0001_P1_G1B0exp              boot_ms=None（旧 schema）
+  20261028T090813_0001_P2_G1B0def              boot_ms=None（旧 schema）
+  20261028T091330_0001_P3_G1B1                 boot_ms=None（旧 schema）
+  20261028T092052_0001_P3m_MENU                boot_ms=None（旧 schema）
+  20261028T192013_0001_P0_ORIG                 boot_ms=None（旧 schema）
+  20261028T192830_0001_P1_G1B0exp              boot_ms=None（旧 schema）
+  20261028T193722_0001_P3m_MENU                boot_ms=None（旧 schema）
+  20261028T204123_9001_P3e_EARLY_MENU          boot_ms=None（旧 schema）
+  20261028T204921_9001_P3e_EARLY_MENU          boot_ms=None（旧 schema）
+  20261028T205108_9001_P3e_EARLY_MENU          boot_ms=None（旧 schema）
+  20261029T222811_9001_P3e_E12_T1              boot_ms=27477265     /15.625=1758544.96     整? False  /1000整? False
+  20261029T222840_9001_P3e_E12_T2              boot_ms=27505781     /15.625=1760369.984    整? False  /1000整? False
+  20261029T231621_9001_P3e_E12_T1              boot_ms=30367734     /15.625=1943534.976    整? False  /1000整? False
+  20261030T072242_9001_P3e_E12_T1              boot_ms=59548640     /15.625=3811112.96     整? False  /1000整? False
+  20261030T072353_9001_P3e_E12_T1              boot_ms=59619468     /15.625=3815645.952    整? False  /1000整? False
+  20261030T072630_9001_P3e_E12_T1              boot_ms=59776750     /15.625=3825712.0      整? True  /1000整? False
+  20261030T211741_9001_P3e_E12_T1              boot_ms=29223156     /15.625=1870281.984    整? False  /1000整? False
+  20261030T212148_9001_P3e_E12_T1              boot_ms=29470234     /15.625=1886094.976    整? False  /1000整? False
+  20261030T212233_9001_P3e_E12_T1              boot_ms=29515500     /15.625=1888992.0      整? True  /1000整? False
+  20261031T083340_9001_P3e_E12_T1              boot_ms=433000       /15.625=27712.0        整? True  /1000整? True
+  20261031T083611_9001_P3e_E12_T1              boot_ms=584234       /15.625=37390.976      整? False  /1000整? False
+
+== preflight 读数与 trip1 起始的一致性（同一会话交叉旁证）==
+  b2-h15.3: Δuptime=12.735s  Δwallclock=12.735s  差=0.2 ms ⇒ 同会话一致=True
+  b2-h15.8: Δuptime=163.969s  Δwallclock=163.959s  差=10.2 ms ⇒ 同会话一致=True
+
+== 13 趟 closed_at_s − hold 的分解（launch→窗口 vs 循环过冲 vs 投递）本批 2 趟 ==
+  b2-h15.3: t0(启动)=1793406821.719 hold首读=1793406822.342 ⇒ 启动→hold开始=0.623s
+          hold末读=1793406837.366 读数数=16 实测跨度=15.024s (hold_s=15.3)
+          末读→t_close=1.358s（含 sleep 1.0 后循环退出判定 + 截图）
+          closed_at_s=17.005 = (启动→hold开始)+(hold 循环跨度)+(末读→t_close) = 17.005
+          §481 口径 closed−hold = 1.705 = 启动→hold 0.623 + 循环过冲/量化 1.082
+          pre_close 截图 t=1793406838.724（与 close_delivery.t 同值=True）
+  b2-h15.8: t0(启动)=1793406972.872 hold首读=1793406973.496 ⇒ 启动→hold开始=0.624s
+          hold末读=1793406988.525 读数数=16 实测跨度=15.029s (hold_s=15.8)
+          末读→t_close=1.520s（含 sleep 1.0 后循环退出判定 + 截图）
+          closed_at_s=17.173 = (启动→hold开始)+(hold 循环跨度)+(末读→t_close) = 17.173
+          §481 口径 closed−hold = 1.373 = 启动→hold 0.624 + 循环过冲/量化 0.749
+          pre_close 截图 t=1793406990.045（与 close_delivery.t 同值=True）

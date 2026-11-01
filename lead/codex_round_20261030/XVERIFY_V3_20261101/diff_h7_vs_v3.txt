@@ -1,0 +1,213 @@
+3873a3874,3901
+> # >>> H8-BEGIN const（★ 缺省 None ⇒ 零行为差；删本块即还原 harness7 语义）
+> # ★★ [H8-1] measure 窗起点绑帧计数（--h7-measure-start-frame N；缺省 None）。
+> #   ★ 动机（HARNESS8_FRAME_BOUND_DESIGN_20261031.md §1）：墙钟起点跨档相位不可控
+> #     ——短路臂早=引擎未推帧（no_advance）、keep-rect 臂晚=满员已消耗（units0 974/941，
+> #     满员消耗后段）。绑帧等待使 W0 落点=「引擎开始推帧且达 N」⇒ 31 档可测
+> #     「满员早期相位（units-下降活动窗；units 字段语义未定义，交火断言保留项沿 §479）」。
+> #   ★ 仅 N 给定时进入新代码路径；缺省 None ⇒ 与 harness7（d019e8beecfb5fd8）逐字节等价。
+> H8_MEASURE_START_FRAME = None
+> # ★★ [H8-2] 越界拒采：等待开始时 frame 已 > N ⇒ 无法对齐目标相位 ⇒ 拒采
+> #   （verdict=frame_overrun；仿 late_start「宁如实拒采、不产错相位样本」纪律）。
+> # ★★ [H8-3] 等待超时拒采：verdict=frame_wait_timeout（同上纪律；不硬停趟）。
+> H8_FRAME_WAIT_TIMEOUT_S = 120.0
+> # ★★ [H8-4] 跳帧拒采容差（XVERIFY_H8 Y-2）：等待期 RPM 失败/调度停顿可跳过帧沿——
+> #   500Hz 相邻有效拍间引擎推进 ≤1 帧；reached−N > 2（留 1 拍丢失余量）⇒ 相位不可信
+> #   ⇒ verdict=frame_overrun（overrun_kind="jump"）。
+> H8_OFFSET_MAX_FRAMES = 2
+> # ★★ 轮询粒度论证：31fps 帧长 ≈32ms；轮询周期 _doze(0.002)+调度抖动 ⇒ 帧沿定位
+> #   误差 ≤1 帧（实测节律随 h7_frame_wait.poll_count/wait_s 照实留痕，不宣称精确 500Hz；
+> #   名义 500Hz；真机等待期实测 284-347Hz——C-R3 口径，裸机 _doze(0.002)≈407-411Hz 仅为对照值）。
+> #   只读 RPM u32（_rpm_u32），与既有 measure 采样同款；零写入目标进程。
+> H8_FRAME_WAIT_HZ = 500               # 名义粒度（文档口径）；实际延时经 _doze
+> _H8_STATE = {"frame_wait": None}     # 绑帧等待实测留痕（n/reached/offset/wait_s/polls）
+> # ★★ [H8-6] 等待轮询粒度旋钮目标（--h8-wait-hz 注入；None=500 名义）：XVERIFY_H8TRIPS
+> #   归因开放项判别实验——50Hz 对照趟 vs 500Hz 现状；兼清偿 Y-5（H8_FRAME_WAIT_HZ
+> #   由死常量转为缺省源）。v3 新增；缺省 None ⇒ 与 v2 逐字节一致。
+> H8_WAIT_HZ = None
+> # <<< H8-END const
+> 
+5005a5034,5147
+>         # >>> H8-BEGIN frame-wait（★ 缺省 None ⇒ 本块零执行；行为与 harness7 逐字节一致）
+>         # ★★ [H8-1] 绑帧等待：--h7-measure-start-frame N 给定时，在 late-start-gate
+>         #   之后 / settle 之前等待 CurrentFrame ≥ N（设计件 §2：不影响 late-start-gate
+>         #   判定）。★ 延时只经 _doze（QC197）；只读 _rpm_u32（§10.8 同款零写入）。
+>         #   ★ Y-4 耦合声明（XVERIFY_H8）：等待期 _rpm_u32 会顺路驱动 QC213/QC213P2
+>         #     探针 tick——本批不以探针读数承重；P2 早帧阶梯可能于等待期命中，
+>         #     其时间归属=等待期（非采窗期），判读时须分开。
+>         if H8_MEASURE_START_FRAME is not None:
+>             _h8_n = int(H8_MEASURE_START_FRAME)
+>             _h8_t0 = time.perf_counter()
+>             _h8_polls = 0
+>             # ★★ [H8-6] 轮询粒度旋钮：缺省 (None→500) ⇒ _doze(0.002)=v2 逐字节一致；
+>             #   --h8-wait-hz 50 ⇒ _doze(0.02)（对照实验）；上限 0.05s 防呆。
+>             _h8_doze_s = min(0.05, 1.0 / (H8_WAIT_HZ or 500))
+>             _h8_frame = _rpm_u32(handle, MEASURE_CURRENT_FRAME_VA)
+>             _h8_polls += 1
+>             if _h8_frame is not None and _h8_frame > _h8_n:
+>                 # ★★ [H8-2] 越界拒采：等待起点相位已越过 N ⇒ 拒绝产出
+>                 #   「看似同相位」的样本（仿 late_start：如实、不硬停趟）。
+>                 _h8_fw = {"n": _h8_n, "reached_frame": _h8_frame,
+>                           "offset_frames": _h8_frame - _h8_n, "overrun": True,
+>                           "overrun_kind": "first_read",
+>                           "timed_out": False,
+>                           "wait_s": round(time.perf_counter() - _h8_t0, 3),
+>                           "poll_count": _h8_polls}
+>                 _H8_STATE["frame_wait"] = _h8_fw
+>                 _h8_payload = _measure_error_payload(
+>                     0, TRIP_ID, map_sha256,
+>                     f"frame_overrun: 等待起点 frame={_h8_frame} 已 >N={_h8_n}"
+>                     "（相位已过 ⇒ 拒采）")
+>                 _h8_payload["verdict"] = "frame_overrun"
+>                 _h8_payload["h8"] = _h8_fw
+>                 _h8_p = _measure_write_json(out_dir, 0, _h8_payload)
+>                 rec.add("MEASURE", "h7_frame_wait", _h8_fw, "script:_measure_run",
+>                         note="★ H8-2：越界拒采（等待起点 frame>N）")
+>                 rec.add("MEASURE", "window_0_stats", _h8_payload["stats"],
+>                         "script:_measure_stats",
+>                         note=f"★ H8-2：verdict=frame_overrun；JSON={_h8_p.name}")
+>                 rec.add("MEASURE", "verdict", "frame_overrun", "script:_measure_run",
+>                         note="★ H8-2：入口相位已越过目标帧 ⇒ 不采三窗；"
+>                              "不硬停趟、不加退出码（§5.2/§5.4）")
+>                 return
+>             while _h8_frame is None or _h8_frame < _h8_n:
+>                 if time.perf_counter() - _h8_t0 > H8_FRAME_WAIT_TIMEOUT_S:
+>                     # ★★ [H8-3] 超时拒采：帧钟未达 N ⇒ 不产「未进战斗相位」的伪样本。
+>                     _h8_fw = {"n": _h8_n, "reached_frame": _h8_frame,
+>                               "offset_frames": None, "overrun": False,
+>                               "overrun_kind": "timeout",
+>                               "timed_out": True,
+>                               "wait_s": round(time.perf_counter() - _h8_t0, 3),
+>                               "poll_count": _h8_polls}
+>                     _H8_STATE["frame_wait"] = _h8_fw
+>                     _h8_payload = _measure_error_payload(
+>                         0, TRIP_ID, map_sha256,
+>                         f"frame_wait_timeout: 等待 "
+>                         f"{round(time.perf_counter() - _h8_t0, 3)}s 未达 frame≥{_h8_n}"
+>                         f"（最后读数 {_h8_frame}）⇒ 拒采")
+>                     _h8_payload["verdict"] = "frame_wait_timeout"
+>                     _h8_payload["h8"] = _h8_fw
+>                     _h8_p = _measure_write_json(out_dir, 0, _h8_payload)
+>                     rec.add("MEASURE", "h7_frame_wait", _h8_fw, "script:_measure_run",
+>                             note="★ H8-3：绑帧等待超时拒采（引擎未达目标帧）")
+>                     rec.add("MEASURE", "window_0_stats", _h8_payload["stats"],
+>                             "script:_measure_stats",
+>                             note=f"★ H8-3：verdict=frame_wait_timeout；JSON={_h8_p.name}")
+>                     rec.add("MEASURE", "verdict", "frame_wait_timeout",
+>                             "script:_measure_run",
+>                             note="★ H8-3：帧钟超时未达 N ⇒ 不采三窗；"
+>                                  "不硬停趟、不加退出码（§5.2/§5.4）")
+>                     return
+>                 _doze(_h8_doze_s)
+>                 _h8_frame = _rpm_u32(handle, MEASURE_CURRENT_FRAME_VA)
+>                 _h8_polls += 1
+>             if _h8_frame - _h8_n > H8_OFFSET_MAX_FRAMES:
+>                 # ★★ [H8-4] 跳帧拒采（XVERIFY_H8 Y-2）：等待期 RPM 失败/调度停顿可跳过
+>                 #   帧沿——首拍失败后跳读、或中途跳读，均可能以 offset≫0「达标」。
+>                 #   相邻有效拍推进 ≤1 帧（500Hz），offset>2 ⇒ 相位不可信 ⇒ 拒采。
+>                 _h8_fw = {"n": _h8_n, "reached_frame": _h8_frame,
+>                           "offset_frames": _h8_frame - _h8_n, "overrun": True,
+>                           "overrun_kind": "jump", "timed_out": False,
+>                           "wait_s": round(time.perf_counter() - _h8_t0, 3),
+>                           "poll_count": _h8_polls}
+>                 _H8_STATE["frame_wait"] = _h8_fw
+>                 _h8_payload = _measure_error_payload(
+>                     0, TRIP_ID, map_sha256,
+>                     f"frame_overrun: 达标读数 frame={_h8_frame} 超出 N={_h8_n} 达 "
+>                     f"{_h8_frame - _h8_n} 帧（> 跳帧容差 {H8_OFFSET_MAX_FRAMES}，"
+>                     "等待期疑有读败/停顿 ⇒ 相位不可信 ⇒ 拒采）")
+>                 _h8_payload["verdict"] = "frame_overrun"
+>                 _h8_payload["h8"] = _h8_fw
+>                 _h8_p = _measure_write_json(out_dir, 0, _h8_payload)
+>                 rec.add("MEASURE", "h7_frame_wait", _h8_fw, "script:_measure_run",
+>                         note="★ H8-4：跳帧拒采（offset 超容差，等待期疑读败/停顿）")
+>                 rec.add("MEASURE", "window_0_stats", _h8_payload["stats"],
+>                         "script:_measure_stats",
+>                         note=f"★ H8-4：verdict=frame_overrun(jump)；JSON={_h8_p.name}")
+>                 rec.add("MEASURE", "verdict", "frame_overrun", "script:_measure_run",
+>                         note="★ H8-4：达标读数相位不可信（跳帧超容差）⇒ 不采三窗；"
+>                              "不硬停趟、不加退出码（§5.2/§5.4）")
+>                 return
+>             _h8_fw = {"n": _h8_n, "reached_frame": _h8_frame,
+>                       "offset_frames": _h8_frame - _h8_n, "overrun": False,
+>                       "timed_out": False,
+>                       "wait_s": round(time.perf_counter() - _h8_t0, 3),
+>                       "poll_count": _h8_polls}
+>             _H8_STATE["frame_wait"] = _h8_fw
+>             rec.add("MEASURE", "h7_frame_wait", _h8_fw, "script:_measure_run",
+>                     note="★ H8-1：绑帧等待达标（frame≥N 且 offset≤跳帧容差）⇒ 落入既有 "
+>                          "settle→在局闸→3窗（该段零改动）；settle 定长 4s ⇒ 各窗实际起点"
+>                          "帧=各窗 JSON samples.f[0]（既有留痕）；跨档「同相位」不宣称、"
+>                          "只报实测（评审点②）；有效节律=本行 poll_count/wait_s 折算"
+>                          "（名义 500Hz；真机等待期实测 284-347Hz——C-R3 口径；本趟粒度"
+>                          "=--h8-wait-hz）；等待期探针 tick 耦合见块头 Y-4 声明")
+>         # <<< H8-END frame-wait
+5032a5175,5194
+>         # >>> H8-BEGIN gate-override（★ 缺省 None ⇒ 本块零执行；行为与 v2 逐字节一致）
+>         # ★★ [H8-5] 早相位批在局闸分档（XVERIFY_H8TRIPS 判据失配项）：H8 武装时 gate
+>         #   降级为「settle 内帧推进 ≥1 帧 ∧ units0>0」——原 pre_fps15 照常计算、照常入
+>         #   gate_block/JSON（**降为数据不设门**）；V11-a 档位判定照旧输出、不触发跳窗；
+>         #   非武装路径零改动（缺省中性维持）。
+>         if H8_MEASURE_START_FRAME is not None:
+>             _h8_frames_adv = bool(s_samples
+>                                   and s_samples[-1][1] > s_samples[0][1])
+>             gate_ok = bool(_h8_frames_adv
+>                            and units0 is not None and units0 > 0)
+>             rec.add("MEASURE", "h7_gate_override", {
+>                 "armed": True,
+>                 "frames_advanced": _h8_frames_adv,
+>                 "pre_fps15_as_data": (round(pre_fps15, 3)
+>                                       if pre_fps15 is not None else None),
+>                 "gate_ok": gate_ok,
+>             }, "script:_measure_run",
+>                 note="★ H8-5：早相位批在局闸降级（帧推进存在级）；pre_fps15 降为数据"
+>                      "不设门（V11-a 档位判定照旧输出、不触发跳窗）")
+>         # <<< H8-END gate-override
+7223a7386,7398
+>     # >>> H8-BEGIN argparse（缺省 None ⇒ 行为与 harness7 逐字节一致）
+>     ap.add_argument("--h7-measure-start-frame", type=int, default=None,
+>                     help="★ H8：绑帧测量起点 N（缺省 None=harness7 原语义；须 ≥1）。"
+>                          "entry 后等待 CurrentFrame≥N 再 settle+采窗；等待起点已 "
+>                          "frame>N 或达标读数跳帧超容差(2) ⇒ verdict=frame_overrun 拒采；"
+>                          "超 120s 未达 ⇒ verdict=frame_wait_timeout 拒采")
+>     # <<< H8-END argparse
+>     # >>> H8-BEGIN argparse wait-hz（缺省 None ⇒ 行为与 v2 逐字节一致）
+>     ap.add_argument("--h8-wait-hz", type=int, default=None,
+>                     help="★ H8-6：绑帧等待轮询粒度 Hz（缺省 None=500 名义；须 ≥20）。"
+>                          "对照实验：500Hz 现状 vs 50Hz 低频——判别等待期轮询对游戏 fps"
+>                          " 的观测影响（XVERIFY_H8TRIPS 归因开放项判别实验）")
+>     # <<< H8-END argparse wait-hz
+7394a7570,7602
+> 
+>     # >>> H8-BEGIN main-arm（缺省 None ⇒ 零行为、零 rec 行；行为与 harness7 逐字节一致）
+>     # ★★ H8：--h7-measure-start-frame 给定 ⇒ 模块级装订 + META 如实留痕。
+>     #   ★ 与 --fullscreen 正交（推荐与全屏短路臂组合；越界/超时/跳帧拒采兜底误配置）。
+>     #   ★ Y-7（XVERIFY_H8）：N<1 ⇒ frame≥N 恒真 ⇒「不绑帧」伪装成「绑到 0 帧」
+>     #     ⇒ 发射前硬拒（rc=2，argparse 非法取值同语义）。
+>     if getattr(args, "h7_measure_start_frame", None) is not None:
+>         _h8_n_arg = int(args.h7_measure_start_frame)
+>         if _h8_n_arg < 1:
+>             print("★ H8：--h7-measure-start-frame 必须 ≥1（实得 %d）⇒ 拒发" % _h8_n_arg)
+>             raise SystemExit(2)
+>         global H8_MEASURE_START_FRAME
+>         H8_MEASURE_START_FRAME = _h8_n_arg
+>         rec.add("META", "h7_measure_start_frame", H8_MEASURE_START_FRAME,
+>                 "argv:--h7-measure-start-frame",
+>                 note="★ H8：绑帧测量起点已武装（等待起点 frame>N 或跳帧超容差 ⇒ "
+>                      "frame_overrun 拒采；超 120s ⇒ frame_wait_timeout 拒采；"
+>                      "缺省 None=harness7 原语义）")
+>     # <<< H8-END main-arm
+> 
+>     # >>> H8-BEGIN main-arm wait-hz（缺省 None ⇒ 零行为、零 rec 行；与 v2 逐字节一致）
+>     # ★★ H8-6：--h8-wait-hz 给定 ⇒ 模块级装订 + META 留痕（对照实验判别轮询影响）。
+>     if getattr(args, "h8_wait_hz", None) is not None:
+>         _h8_hz_arg = int(args.h8_wait_hz)
+>         if _h8_hz_arg < 20:
+>             print("★ H8：--h8-wait-hz 必须 ≥20（实得 %d）⇒ 拒发" % _h8_hz_arg)
+>             raise SystemExit(2)
+>         global H8_WAIT_HZ
+>         H8_WAIT_HZ = _h8_hz_arg
+>         rec.add("META", "h8_wait_hz", H8_WAIT_HZ, "argv:--h8-wait-hz",
+>                 note="★ H8-6：绑帧等待轮询粒度旋钮（缺省 500=H8_FRAME_WAIT_HZ；"
+>                      "对照趟 50Hz 判别轮询观测影响——XVERIFY_H8TRIPS 归因开放项）")
+>     # <<< H8-END main-arm wait-hz

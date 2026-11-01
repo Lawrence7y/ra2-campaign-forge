@@ -1,0 +1,27 @@
+### (1) 键态（驱动排他指纹的适用范围）
+  1029T2228 hold_override=KEY_ABSENT e2.hold_after_window_s=KEY_ABSENT protocol='early-close (window+6.0s)+E2-slow1Hz(latch后轴)' boot=None closed=7.558 latch=True
+  1029T2316 hold_override=KEY_ABSENT e2.hold_after_window_s=KEY_ABSENT protocol='early-close (window+6.0s)+E2-slow1Hz(latch后轴)' boot=1793256614228 closed=7.102 latch=True
+  E5h10     hold_override={'module_const_s': 6.0, 'effective_s': 10.0} e2.hold_after_window_s=10.0 protocol='early-close (window+10.0s)+E2-slow1Hz(latch后轴)' boot=1793256614230 closed=11.193 latch=True
+  hold13    hold_override={'module_const_s': 6.0, 'effective_s': 13.0} e2.hold_after_window_s=13.0 protocol='early-close (window+13.0s)+E2-slow1Hz(latch后轴)' boot=1793337038119 closed=14.131 latch=True
+  hold14    hold_override={'module_const_s': 6.0, 'effective_s': 14.0} e2.hold_after_window_s=14.0 protocol='early-close (window+14.0s)+E2-slow1Hz(latch后轴)' boot=1793337038113 closed=14.997 latch=True
+  hold15    hold_override={'module_const_s': 6.0, 'effective_s': 15.0} e2.hold_after_window_s=15.0 protocol='early-close (window+15.0s)+E2-slow1Hz(latch后轴)' boot=1793337038106 closed=16.272 latch=False
+
+### (2) 三副本 protocol 串写法
+  A root: :256 "protocol": "early-close (window+%.1fs)+E2-slow1Hz(latch后轴)" % HOLD_AFTER_WINDOW,
+  A root: 无 normalize_hold_s ⇒ protocol 恒 window+6.0
+  B e5candidate: :330 "protocol": ("early-close (window+INVALID-HOLD)+E2-slow1Hz(latch后轴)"
+  B e5candidate: 使用 normalize_hold_s 拼 protocol ⇒ 可产 window+13/14/15
+  C fix20261029: :290 "protocol": "early-close (window+%.1fs)+E2-slow1Hz(latch后轴)" % HOLD_AFTER_WINDOW,
+  C fix20261029: 无 normalize_hold_s ⇒ protocol 恒 window+6.0
+
+### (3) 31 档战斗趟 W0 帧时表（原始 stats + 自算变化步）
+  l1a_20261020     units0=732 pre=31.397 p50=32.29 p90=35.15 p99=37.73 max=42.10 fps=31.242 max_stall=0.042096 | W0内≥0.5s停顿=0? max_stall<0.5 -> True
+       units 730->727 dU=-3 变化步=3/24 非严格降的步 idx=[1, 2, 3, 5, 6, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+  t55k_20261020    units0=842 pre=31.401 p50=32.24 p90=36.74 p99=41.70 max=48.17 fps=31.241 max_stall=0.048165 | W0内≥0.5s停顿=0? max_stall<0.5 -> True
+       units 841->809 dU=-32 变化步=15/24 非严格降的步 idx=[1, 2, 3, 4, 5, 7, 8, 9, 13]
+  l1_20261023e4    units0=702 pre=30.692 p50=32.62 p90=43.14 p99=60.96 max=69.58 fps=29.441 max_stall=0.06958 | W0内≥0.5s停顿=0? max_stall<0.5 -> True
+       units 697->644 dU=-53 变化步=23/24 非严格降的步 idx=[1]
+  l3_20261023q     units0=974 pre=31.34 p50=31.90 p90=37.17 p99=44.43 max=68.40 fps=31.120 max_stall=0.068397 | W0内≥0.5s停顿=0? max_stall<0.5 -> True
+       units 953->854 dU=-99 变化步=24/24 非严格降的步 idx=[]
+  l3_20261023r     units0=941 pre=30.716 p50=32.11 p90=36.03 p99=41.36 max=45.68 fps=31.320 max_stall=0.045683 | W0内≥0.5s停顿=0? max_stall<0.5 -> True
+       units 923->842 dU=-81 变化步=23/24 非严格降的步 idx=[16]

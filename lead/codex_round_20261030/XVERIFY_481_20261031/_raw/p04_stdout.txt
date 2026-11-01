@@ -1,0 +1,64 @@
+== (c) Δ 基准口径逐位差 ==
+   基准A（本线自定）：t0 = close_rows[0].t ；基准B（上轮 _xv_s11）：t0 = close_delivery.t − closed_at_s
+trip                   close_s        Δ_A        Δ_B          t0A          t0B    t0A−t0B
+hold13                  14.131      0.101     14.232 1793366277.729 1793366263.598  14.131000
+hold14                  14.997      0.101     15.098 1793366525.084 1793366510.087  14.997000
+hold15                  16.272      4.822     21.094 1793366571.642 1793366555.370  16.272000
+E5h10                   11.193      0.101     11.294 1793316175.906 1793316164.713  11.193000
+E5h15                   16.091      5.023     21.114 1793316251.562 1793316235.471  16.091000
+E5h20                   21.249      0.402     21.651 1793316414.092 1793316392.843  21.249000
+E12-1029T2228            7.558      0.122       7.68 1793284102.435 1793284094.877   7.558000
+E12-1029T2316            7.102      0.101      7.203 1793286990.969 1793286983.867   7.102000
+P3e-204123(挂死)           7.164      0.101      7.266 1793191293.273 1793191286.108   7.165000
+P3e-204921               7.047      0.102      7.149 1793191769.920 1793191762.873   7.047000
+P3e-205108               7.192        0.1      7.292 1793191877.235 1793191870.043   7.192000
+b2-hold15.3             17.005      3.718     20.723 1793406838.724 1793406821.719  17.005000
+b2-hold15.8             17.173      3.414     20.587 1793406990.045 1793406972.872  17.173000
+
+== (a) 归零持续性（本批 2 趟）+ (b) 全字段值域 ==
+  b2-hold15.3: hwnd==0 行数=1158 首=37 末=1194 连续=True
+          singleton==0 行数=1158 首=37 末=1194 连续=True 同一行=True
+          hwnd 归零后是否再非零: False
+          singleton 归零后是否再非零: False
+          wait          值域=['258']
+          code          值域=['None']
+          code_read_ok  值域=['True']
+          exitstate     值域=['0']
+          frame         值域=['0']
+          tick          值域=['1']
+          frame 非零行数=0  tick 非零行数=1195  （frame=0/tick=1 恒 ⇒ 采样期内无帧推进读数、非闩证据）
+          归零前一行 idx=36 hwnd=265036 singleton=16640608
+          归零后 3 行: {"t": 1793406842.442, "wait": 258, "code": null, "code_read_ok": true, "exitstate": 0, "frame": 0, "hwnd": 0, "singleton": 0, "tick": 1} | {"t": 1793406842.543, "wait": 258, "code": null, "code_read_ok": true, "exitstate": 0, "frame": 0, "hwnd": 0, "singleton": 0, "tick": 1}
+  b2-hold15.8: hwnd==0 行数=1161 首=34 末=1194 连续=True
+          singleton==0 行数=1161 首=34 末=1194 连续=True 同一行=True
+          hwnd 归零后是否再非零: False
+          singleton 归零后是否再非零: False
+          wait          值域=['258']
+          code          值域=['None']
+          code_read_ok  值域=['True']
+          exitstate     值域=['0']
+          frame         值域=['0']
+          tick          值域=['1']
+          frame 非零行数=0  tick 非零行数=1195  （frame=0/tick=1 恒 ⇒ 采样期内无帧推进读数、非闩证据）
+          归零前一行 idx=33 hwnd=7473960 singleton=17230432
+          归零后 3 行: {"t": 1793406993.459, "wait": 258, "code": null, "code_read_ok": true, "exitstate": 0, "frame": 0, "hwnd": 0, "singleton": 0, "tick": 1} | {"t": 1793406993.56, "wait": 258, "code": null, "code_read_ok": true, "exitstate": 0, "frame": 0, "hwnd": 0, "singleton": 0, "tick": 1}
+
+== (d) BOOT 会话独立旁证：preflight 落盘 UPTIME + 文件 mtime 反推 ==
+  lead/codex_round_20261030/LEADER_battle/preflight_batch2_20261031.txt: mtime=1793406807 (2026-10-31T08:33:27+08) UPTIME=420265 ms
+    反推 boot_wallclock ∈ [1793406386.129, 1793406387.129] (秒)
+    b2-hold15.3 记录 boot_wall=1793406387.129 ⇒ 落在反推区间? True
+    b2-hold15.8 记录 boot_wall=1793406387.119 ⇒ 落在反推区间? True
+  对照 §474 批（10-30 会话）boot_wall=1793337038106~119 ⇒ 与本批差 69349 s ≈ 19.26 h（不同会话）
+  对照 E5 批（10-29 会话）boot_wall=1793256614227~30 ⇒ 与本批差 41.60 h
+
+== (e) 载体/残留 与 R-1 可算性 ==
+  b2-hold15.3: out_dir/ct 存在? False  目录内容=['ra2render_after_kill.log', 'ra2render_close_last.log', 'shots', 'timeline.json', '_rec.json']
+      latch_row_index=None ⇒ 闩→退间隔(R-1) 可算? False
+      stop_triggered=None exited=False exit_kind=still_running_at_watch_end final_exitcode=None exit_after_close_s=None
+      观察跨度(末行t − rows[0]t) = 119.922 s  watch_s=120.0
+      归零后仍持续观察到窗末 = True（归零后余 116.204 s）
+  b2-hold15.8: out_dir/ct 存在? False  目录内容=['ra2render_after_kill.log', 'ra2render_close_last.log', 'shots', 'timeline.json', '_rec.json']
+      latch_row_index=None ⇒ 闩→退间隔(R-1) 可算? False
+      stop_triggered=None exited=False exit_kind=still_running_at_watch_end final_exitcode=None exit_after_close_s=None
+      观察跨度(末行t − rows[0]t) = 119.906 s  watch_s=120.0
+      归零后仍持续观察到窗末 = True（归零后余 116.492 s）

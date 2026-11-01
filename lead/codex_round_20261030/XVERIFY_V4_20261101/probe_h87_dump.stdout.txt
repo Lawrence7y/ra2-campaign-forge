@@ -1,0 +1,62 @@
+PASS  A1 dump 调用恰 4 处  | [5171, 5093, 5156, 5122]
+PASS  A2 四路 verdict 常量齐全  | ['frame_overrun_first_read', 'frame_overrun_jump', 'frame_wait_timeout', 'ok']
+PASS  A3 ok 路 dump 为块尾（后继 = H8-END）  | next=None
+PASS  A4 frame_overrun_first_read 路 dump 后紧随 return  | Return
+PASS  A4 frame_overrun_jump 路 dump 后紧随 return  | Return
+PASS  A4 frame_wait_timeout 路 dump 后紧随 return  | Return
+PASS  A5 逐拍 append 恰 2 处  | [5066, 5128]
+PASS  A6 两处 append 均被 if H8_WAIT_TRACE 直接守卫  | [True, True]
+PASS  A7 dump 首句 = if not H8_WAIT_TRACE: return
+PASS  A8 dump 第二句 = write_text(json.dumps(...))
+PASS  A9 JSON 顶层键 = n/verdict/wait_s/samples  | ['n', 'verdict', 'wait_s', 'samples']
+PASS  A10 dump 体内无 try/except（溢出面：裸 write_text）
+PASS  A11 argparse --h8-wait-trace 存在
+PASS  A12 argparse action=store_true
+PASS  A13 argparse default=False（缺省中性）
+PASS  A14 main-arm 守卫 getattr(args,'h8_wait_trace',False)
+PASS  A15 main-arm 内 rec.add 仅在守卫内（off ⇒ 零 rec 行）
+PASS  A16 frame-wait 块定位（含 _h8_trace_dump 的 H8_MEASURE_START_FRAME If）  | lines 5044-5171
+PASS  A17 _h8_trace 全部引用均在 frame-wait 块内  | refs=4 lines
+PASS  B0 提取段含四路 dump 调用
+---- 场景 S1 off+ok：trace=False reads=[799, 800]
+     rec 行 = [('MEASURE', 'h7_frame_wait')]
+     trace 文件在场 = False
+PASS  S1a off+ok 无 h8_wait_trace.json
+PASS  S1b off+ok rec 仅 h7_frame_wait（零 trace rec 行）  | [('MEASURE', 'h7_frame_wait', {'n': 800, 'reached_frame': 800, 'offset_frames': 0, 'overrun': False, 'timed_out': False, 'wait_s': 0.0, 'poll_count': 2})]
+PASS  S1c off+ok 达标语义不变（reached=800 offset=0 overrun=False）  | {'n': 800, 'reached_frame': 800, 'offset_frames': 0, 'overrun': False, 'timed_out': False, 'wait_s': 0.0, 'poll_count': 2}
+---- 场景 S2 on+ok：trace=True reads=[799, 800]
+     rec 行 = [('MEASURE', 'h7_frame_wait')]
+     trace 文件在场 = True
+     JSON 键=['n', 'samples', 'verdict', 'wait_s'] verdict=ok n=800 wait_s=0.003 samples_n=2 首样=[0.0, 799] 末样=[0.0, 800]
+PASS  S2a JSON 顶层键恰 n/verdict/wait_s/samples  | ['n', 'samples', 'verdict', 'wait_s']
+PASS  S2b verdict=ok n=800
+PASS  S2c 样本数 = 读点数 2（首拍+循环内拍，无缺无重）  | [[0.0, 799], [0.0, 800]]
+PASS  S2d 末样 frame=800（达标拍在环内）
+PASS  S2e t_rel 4 位小数
+PASS  S2f wait_s 3 位小数且与末样 t_rel 接近  | (0.003, 0.0)
+---- 场景 S3 on+first_read：trace=True reads=[810]
+     rec 行 = [('MEASURE', 'h7_frame_wait'), ('MEASURE', 'window_0_stats'), ('MEASURE', 'verdict')]
+     trace 文件在场 = True
+     JSON 键=['n', 'samples', 'verdict', 'wait_s'] verdict=frame_overrun_first_read n=800 wait_s=0.005 samples_n=1 首样=[0.0, 810] 末样=[0.0, 810]
+PASS  S3a verdict=frame_overrun_first_read 样本 1 拍  | [[0.0, 810]]
+PASS  S3b rec 带 verdict=frame_overrun（拒采，不硬停趟）  | [('MEASURE', 'h7_frame_wait', {'n': 800, 'reached_frame': 810, 'offset_frames': 10, 'overrun': True, 'overrun_kind': 'first_read', 'timed_out': False, 'wait_s': 0.0, 'poll_count': 1}), ('MEASURE', 'window_0_stats', {'stub': True}), ('MEASURE', 'verdict', 'frame_overrun')]
+---- 场景 S4 on+timeout：trace=True reads=[300]
+     rec 行 = [('MEASURE', 'h7_frame_wait'), ('MEASURE', 'window_0_stats'), ('MEASURE', 'verdict')]
+     trace 文件在场 = True
+     JSON 键=['n', 'samples', 'verdict', 'wait_s'] verdict=frame_wait_timeout n=800 wait_s=0.332 samples_n=3880 首样=[0.0, 300] 末样=[0.0178, 300]
+PASS  S4a verdict=frame_wait_timeout  | (3880, [0.0178, 300])
+PASS  S4b rec 带 verdict=frame_wait_timeout
+PASS  S4c 超时拍全部留痕（样本数 = 全部读点）  | 3880
+---- 场景 S5 on+jump：trace=True reads=[700, 810]
+     rec 行 = [('MEASURE', 'h7_frame_wait'), ('MEASURE', 'window_0_stats'), ('MEASURE', 'verdict')]
+     trace 文件在场 = True
+     JSON 键=['n', 'samples', 'verdict', 'wait_s'] verdict=frame_overrun_jump n=800 wait_s=0.015 samples_n=2 首样=[0.0, 700] 末样=[0.0006, 810]
+PASS  S5a verdict=frame_overrun_jump 样本 2 拍（跳沿前后都在环内）  | [[0.0, 700], [0.0006, 810]]
+---- 场景 S6 off+first_read：trace=False reads=[810]
+     rec 行 = [('MEASURE', 'h7_frame_wait'), ('MEASURE', 'window_0_stats'), ('MEASURE', 'verdict')]
+     trace 文件在场 = False
+PASS  S6a off+失败路径 无 trace 文件
+PASS  S6b off+失败路径 rec 行为与 v3 语义同（verdict/frame_wait/error payload 三行）  | [('MEASURE', 'h7_frame_wait', {'n': 800, 'reached_frame': 810, 'offset_frames': 10, 'overrun': True, 'overrun_kind': 'first_read', 'timed_out': False, 'wait_s': 0.0, 'poll_count': 1}), ('MEASURE', 'window_0_stats', {'stub': True}), ('MEASURE', 'verdict', 'frame_overrun')]
+PASS  C1 S3 失败路径 stub measure JSON 先于 trace 落盘
+
+FAILS = []

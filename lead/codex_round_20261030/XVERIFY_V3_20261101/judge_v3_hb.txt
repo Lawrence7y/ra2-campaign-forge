@@ -1,0 +1,73 @@
+★ 趟目录（CLI 覆盖）: out\re_work\work_chain\CONTINUE_20261003\lead\qc161_u0400_trip\l3_20261031hb
+★ 开机指纹目录      : out\re_work\work_chain\CONTINUE_20261003\lead\qc161_u0400_trip\boot_fp_20261031
+==============================================================================
+① 判档器 · V11-a 硬门禁（pre_fps15 ≥ 25.0）
+==============================================================================
+
+[0] 趟产物
+      rc=0  duration_s=241.1  carriers_deleted=True  leftover=[]
+      harness_sha16=dd5459fe0cf3461c  trip_id=QC161-U0800-L3-H8-20261031B
+  趟 exit code == 0                                         PASS  rc=0
+  载体已删除                                                    PASS  
+  残留进程为空                                                   PASS  []
+  harness 在已知清单内（harness6/harness7/harness8v2/v3）          PASS  dd5459fe0cf3461c = harness8 v2（H8 绑帧补丁副本，+160−0；字节冻结维持）
+  h8 武装趟 frame_wait 在场（C-R1）                               PASS  META.h7_measure_start_frame 在场 ∧ h7_frame_wait 在场
+
+[1] measure 三窗
+      w0.verdict   = ok
+      w0.gate      = pre_fps15=6.676 units0=1347 ok=True
+      w0.error     = None
+  measure_w1.json 存在                                       PASS  measure_w1.json
+  measure_w2.json 存在                                       PASS  measure_w2.json
+
+      窗   fps_avg   fps_p50   frame_ms_p50  logic_frames  pre_fps15  units0   verdict 
+      W0  6.787163913198485 9.379367267451554 106.61700000491692 169           6.676      1347     ok      
+      W1  4.731722368997936 5.468718383922593 182.85820000164676 118           6.676      1347     ok      
+      W2  10.600849382453761 13.88034861830716 72.04430000274442 265           6.676      1347     ok      
+
+[2] ★ V11-a 硬门禁（pre_fps15 ≥ 25.0）
+  三窗 verdict 均属正常完成集 ('ok', 'empty', 'degraded')           PASS  ok
+  三窗 pre_fps15 均非 None                                     PASS  [6.676, 6.676, 6.676]
+      pre_fps15 范围: [6.676, 6.676]
+      档位判定      : 10
+  V11-a 通过（min(pre_fps15) ≥ 25.0）                          FAIL  min=6.676
+  三窗档位一致（无 MIXED）                                          PASS  10
+
+[3] 既有在局闸与 units0
+  三窗 gate.ok 全 True（MEASURE_GATE_FPS15_MIN=3.0）            PASS  [True, True, True]
+  W1 裁决门 units0 ≥ 150                                      PASS  units0=1347
+  Arm A 基线 units0 ≥ 800（l1c/l1d 口径 881/874）                PASS  units0=1347
+
+[4] 导航与 S4
+      记录条数: 500（group 数 29）
+      NAV.verdict = OK
+  NAV.verdict == OK                                        PASS  OK
+      S4.hit_count = 0
+  S4.hit_count == 0（Arm A 定义）                              PASS  0
+
+[4b] ★★ harness7 冒烟验收（S399 §九 五条判据）
+      META.fullscreen          = True
+      h7_fs_rect_wait_skipped = True
+      pre_capture_wait_polls   = 0
+      stage_seconds:frame      = 0.125
+      h7_nav_to_measure        = {'nav_to_measure_s': 0.125, 'limit_s': 90.0, 'late_start': False, 'fs_rect_wait_skipped': True}
+  ★ 本趟确为 harness7 冒烟样本 ⇒ 判据适用                              PASS  polls 在场（全屏标志=True / skipped=True）
+      ⇒ 形态（由 META.fullscreen / skipped 直接判定）: fullscreen_short
+  ★ h7_fs_rect_wait_skipped == True（fullscreen_short 臂的设计预期） PASS  实测 True
+  ★ pre_capture_wait_polls ≤ 0（fullscreen_short 臂）         PASS  实测 0
+  ★★ stage_seconds:frame < 2.0 s（全屏短路臂的核心收益）               PASS  实测 0.125（harness6 历史 122–127 s）
+  ★★ 全屏短路臂记录了 nav_to_measure_s（边界 2 的唯一实测数）                PASS  0.125
+      ⇒ nav_to_measure_s = 0.125 s（90 s 阈值是否需重标看这个数）
+
+[5] except 增量（不作唯一判据，仅记录）
+      except_set_diff: {"method": "collections.Counter 多重集差（★ 非 post[len(pre):] 切片）", "pre_line_count": 1046, "post_line_count": 1046, "new_line_count": 0, "gone_line_count": 0, "new_lines": [], "gone_lines": [], "new_exception_lines": [], "new_exception_count": 0, "no_new_exception": true}
+  except 新增 0                                              PASS  added=0
+
+[6] V11-c 开机会话一致性
+  开机会话指纹存在                                                 FAIL  目录=out\re_work\work_chain\CONTINUE_20261003\lead\qc161_u0400_trip\boot_fp_20261031
+
+==============================================================================
+★ 判定：2 项 FAIL（EXIT=1）
+   - V11-a 通过（min(pre_fps15) ≥ 25.0）
+   - 开机会话指纹存在
+==============================================================================

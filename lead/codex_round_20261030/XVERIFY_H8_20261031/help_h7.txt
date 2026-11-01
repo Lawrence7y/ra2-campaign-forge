@@ -1,0 +1,100 @@
+Traceback (most recent call last):
+  File "D:\Project\ra2-campaign-forge\lead\goal1_harness7_20261023\qc151_trip.harness7.py", line 8496, in _main_wrapper
+    code = main()
+           ^^^^^^
+  File "D:\Project\ra2-campaign-forge\lead\goal1_harness7_20261023\qc151_trip.harness7.py", line 7295, in main
+    args = parse_args(argv)
+           ^^^^^^^^^^^^^^^^
+  File "D:\Project\ra2-campaign-forge\lead\goal1_harness7_20261023\qc151_trip.harness7.py", line 7290, in parse_args
+    return ap.parse_args(argv)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\argparse.py", line 1904, in parse_args
+    args, argv = self.parse_known_args(args, namespace)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\argparse.py", line 1914, in parse_known_args
+    return self._parse_known_args2(args, namespace, intermixed=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\argparse.py", line 1943, in _parse_known_args2
+    namespace, args = self._parse_known_args(args, namespace, intermixed)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\argparse.py", line 2184, in _parse_known_args
+    start_index = consume_optional(start_index)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\argparse.py", line 2113, in consume_optional
+    take_action(action, args, option_string)
+  File "C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\argparse.py", line 2018, in take_action
+    action(self, namespace, argument_values, option_string)
+  File "C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\argparse.py", line 1149, in __call__
+    parser.exit()
+  File "C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\argparse.py", line 2637, in exit
+    _sys.exit(status)
+SystemExit: 0
+usage: qc151_trip.py [-h] --target-map TARGET_MAP --target-sha256
+                     TARGET_SHA256 --carrier CARRIER
+                     [--carrier-create-from CARRIER_CREATE_FROM]
+                     [--carrier-create-files CARRIER_CREATE_FILES]
+                     [--carrier-handover CARRIER_HANDOVER] [--trip-id TRIP_ID]
+                     [--allow-loader] [--out-dir OUT_DIR] [--measure MEASURE]
+                     [--spot-select] [--fullscreen] [--h7-keep-rect-wait]
+                     [--evid-diff] [--frozen-dump]
+                     [--probe-frames PROBE_FRAMES] [--sg-capture]
+                     [--sg-toggle-x SG_TOGGLE_X] [--sg-toggle-y SG_TOGGLE_Y]
+                     [--close-mode {terminate,close}]
+
+QC151 · U0400 首趟载体趟（★ 直启 gamemd.exe；★ 不注入）
+
+options:
+  -h, --help            show this help message and exit
+  --target-map TARGET_MAP
+                        ★ 目标地图**全路径**（含根名），如
+                        …\lead\<card>\carrier\[2]0LoadBench_U0400.yrm
+  --target-sha256 TARGET_SHA256
+                        ★ 目标地图的预期 sha256（小写十六进制）
+  --carrier CARRIER     ★ 载体目录（含 gamemd.exe 与 [2]0LoadBench_U0400.yrm）★ 第 1
+                        项：★ 该目录须**本趟创建**或持**受控交接证明**，★
+                        否则启动前拒绝（EXIT_CARRIER_NOT_OWNED=23）
+  --carrier-create-from CARRIER_CREATE_FROM
+                        ★ 源目录：在本趟写域内排他新建唯一执行副本，★ 逐件复制并验 SHA（★ 给出时 --carrier
+                        被覆盖）
+  --carrier-create-files CARRIER_CREATE_FILES
+                        ★ 追加复制的载体件名（逗号分隔；默认只复制 CARRIER_FILES 五件，★
+                        来源须**明列**，§2.3）
+  --carrier-handover CARRIER_HANDOVER
+                        ★ 交接证明 JSON（carrier_dir / exclusive_for_trip / trip_id
+                        / handover_from / handover_to / source_dir /
+                        files{name:{sha256}}）⇒ ★ 逐件复核后所有权才成立
+  --trip-id TRIP_ID     ★ 本趟唯一标识（★ 与交接证明 trip_id **必须一致**；★ 使用 --carrier-
+                        handover 时**必须**显式给出）
+  --allow-loader        ★★ [U8] 授权直启载体 ra2loader.exe（注入 ra2render.dll）。★ 默认关；★
+                        必须同时给 --trip-id 且逐字匹配才生效；★ 授权趟证据仅可用于 B0/B1 臂对比，不得用于 A
+                        臂基线
+  --out-dir OUT_DIR     ★ 运行期写域（默认：lead\qc161_u0400_trip，即本趟批准域；★ 也可用环境变量
+                        QC151_OUT_DIR 预设）
+  --measure MEASURE     ★ QC202/C1：进图态测量开关（缺省 0=不开启；非 0 ⇒ 按 MEASURE_DESIGN_v1
+                        固定协议采样，仅导航全绿后执行；退出码表不加新码）
+  --spot-select         ★ QC210：设置屏显式指位（人类行=1/AI 行=2）+ 帧钟 burst 分类器（缺省
+                        off=行为与改前逐字节一致；T36 显式给 on）
+  --fullscreen          ★ QC151FS：全屏模式适配（缺省 off=行为与改前逐字节一致；T55 显式给 on）
+  --h7-keep-rect-wait   ★ H7-①：显式保持 harness6 原语义（全屏矩形等待不短路；供 A/B 对照复现 122–127
+                        s 死等；缺省 off=短路）
+  --evid-diff           ★ EVID-DIFF：证据搬出差异件模式（缺省
+                        off=全量拷贝与改前逐字节一致；on=差异件才拷出＋每趟写
+                        evidence/<stamp>/MANIFEST.json +
+                        README_REBUILD.md；参照缺失 ⇒ 本趟回退全量并记为参照）
+  --frozen-dump         ★ QC151P3：冻结触发抓 gamemd.exe minidump（缺省
+                        off=行为与改前逐字节一致；P3 显式给 on；须配 --measure≠0）
+  --probe-frames PROBE_FRAMES
+                        ★ QC151P3：探针锁存帧阶梯（逗号分隔正整数；缺省
+                        '300,600,1800'=现行为逐字节一致；P3 趟显式给阶梯串；须配 --measure≠0）
+  --sg-capture          ★ QC151SG：设置屏取证（抓 navsig_skirmish_set_pre.png；缺省
+                        off=行为与改前逐字节一致；T55i 显式给 on）
+  --sg-toggle-x SG_TOGGLE_X
+                        ★ QC151SG：「短游戏」开关点击 x（800×600 游戏系；缺省 None=零点击；须与 --sg-
+                        toggle-y 成对给，单给 ⇒ 拒点并如实记账；T55j 凭 T55i 标定值给）
+  --sg-toggle-y SG_TOGGLE_Y
+                        ★ QC151SG：「短游戏」开关点击 y（800×600 游戏系；缺省 None=零点击；语义同
+                        --sg-toggle-x）
+  --close-mode {terminate,close}
+                        ★ H6-④：收尾方式（缺省 terminate=与改前一致；close=先 WM_CLOSE 等
+                        ≤20s，超时回落 TerminateProcess 并记
+                        close_fallback_terminate=true）

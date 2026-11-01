@@ -1,0 +1,37 @@
+--- lead/qc161_u0400_trip/_judge_l1_20261023.py	2026-10-25 22:31:03.787783400 +0800
++++ lead/goal1_harness8_20261031/_judge_h8_20261031.py	2026-10-31 18:52:22.958033000 +0800
+@@ -39,10 +39,16 @@
+ 
+ # ★ H-2：设计内短路 verdict 集 —— 这些值意味着 `_measure_run` 在采样窗前就
+ #   `return`，**按设计只落 w0**，w1/w2 缺失是正常不是缺陷。
+-SHORT_CIRCUIT_VERDICTS = ("no_advance", "tier_invalid", "late_start", "error")
++# ★★ harness8 副本扩集（XVERIFY_H8 2026-10-31 Y-1 接入）：+frame_overrun /
++#   +frame_wait_timeout —— H8 绑帧等待的三拒采路径（越界/跳帧/超时）与
++#   late_start 同语义（采样窗前主动拒采、只落 w0）。副本仅此集与 KNOWN_HARNESS
++#   两处加性扩集，其余与母本 _judge_l1_20261023.py（72ca057dfe728188）逐字一致。
++SHORT_CIRCUIT_VERDICTS = ("no_advance", "tier_invalid", "late_start", "error",
++                          "frame_overrun", "frame_wait_timeout")
+ #   no_advance / tier_invalid：harness §5.4 / D-4（母本既有）
+ #   late_start：harness7 新增（measure 起始硬约束，只在短路生效时判）
+ #   error：`_measure_error_payload` 占位（如窗前异常）；同样是「没进采样窗」
++#   frame_overrun / frame_wait_timeout：harness8 新增（绑帧等待拒采，XVERIFY_H8 Y-1）
+ #
+ # ★ H-2：逐窗 verdict 的**正常完成**取值（三窗齐全时必须是这些）
+ WINDOW_OK_VERDICTS = ("ok", "empty", "degraded")
+@@ -54,6 +60,7 @@
+ KNOWN_HARNESS = {
+     "ff8245d27b3db22a": "harness6（母本，463,219 B）",
+     "d019e8beecfb5fd8": "harness7（D-05 补丁副本，472,020 B）",
++    "dd5459fe0cf3461c": "harness8 v2（H8 绑帧补丁副本，+160−0；XVERIFY_H8 复审件）",
+ }
+ HARNESS7_SHA16 = "d019e8beecfb5fd8"
+ 
+@@ -368,7 +375,7 @@
+     #     字段（那时的发射器不记），故要区分「字段缺失」与「哈希未知」两种 FAIL，
+     #     否则会让人以为「换了个陌生 harness」。
+     _h = lr.get("harness_sha16")
+-    check("harness 在已知清单内（harness6/harness7）",
++    check("harness 在已知清单内（harness6/harness7/harness8v2）",
+           _h in KNOWN_HARNESS,
+           ("%s = %s" % (_h, KNOWN_HARNESS[_h])) if _h in KNOWN_HARNESS
+           else ("★ 旁路发射器不记 harness_sha16（该字段只在主发射器产物里）"

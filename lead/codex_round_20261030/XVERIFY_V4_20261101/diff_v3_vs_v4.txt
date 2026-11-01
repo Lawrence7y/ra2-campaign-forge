@@ -1,0 +1,51 @@
+3899a3900,3902
+> # ★★ [H8-7] 等待环逐拍轨迹落盘（--h8-wait-trace；缺省 False ⇒ 与 v3 逐字节一致）：
+> #   补齐 0→N 帧段观测盲区（§500 双稳态切换定位需要等待期全分辨轨迹）。
+> H8_WAIT_TRACE = False
+5047a5051,5062
+>             # ★★ [H8-7] 逐拍轨迹（--h8-wait-trace）：[t_rel_s, frame] 逐拍留痕，
+>             #   任一退出路径前落 h8_wait_trace.json（0→N 帧段全分辨观测）。
+>             _h8_trace = []
+> 
+>             def _h8_trace_dump(verdict):
+>                 if not H8_WAIT_TRACE:
+>                     return
+>                 (out_dir / "h8_wait_trace.json").write_text(
+>                     json.dumps({"n": _h8_n, "verdict": verdict,
+>                                 "wait_s": round(time.perf_counter() - _h8_t0, 3),
+>                                 "samples": _h8_trace}, ensure_ascii=False),
+>                     encoding="utf-8")
+5049a5065,5067
+>             if H8_WAIT_TRACE:
+>                 _h8_trace.append([round(time.perf_counter() - _h8_t0, 4),
+>                                   _h8_frame])
+5074a5093
+>                 _h8_trace_dump("frame_overrun_first_read")
+5102a5122
+>                     _h8_trace_dump("frame_wait_timeout")
+5106a5127,5129
+>                 if H8_WAIT_TRACE:
+>                     _h8_trace.append([round(time.perf_counter() - _h8_t0, 4),
+>                                       _h8_frame])
+5132a5156
+>                 _h8_trace_dump("frame_overrun_jump")
+5146a5171
+>             _h8_trace_dump("ok")
+7398a7424,7429
+>     # >>> H8-BEGIN argparse wait-trace（缺省 False ⇒ 行为与 v3 逐字节一致）
+>     ap.add_argument("--h8-wait-trace", action="store_true", default=False,
+>                     help="★ H8-7：等待环逐拍轨迹落盘 h8_wait_trace.json"
+>                          "（[t_rel_s, frame] 逐拍；0→N 帧段全分辨观测——"
+>                          "§500 双稳态切换定位）")
+>     # <<< H8-END argparse wait-trace
+7602a7634,7643
+> 
+>     # >>> H8-BEGIN main-arm wait-trace（缺省 False ⇒ 零行为、零 rec 行；与 v3 逐字节一致）
+>     # ★★ H8-7：--h8-wait-trace 给定 ⇒ 模块级装订 + META 留痕。
+>     if getattr(args, "h8_wait_trace", False):
+>         global H8_WAIT_TRACE
+>         H8_WAIT_TRACE = True
+>         rec.add("META", "h8_wait_trace", True, "argv:--h8-wait-trace",
+>                 note="★ H8-7：等待环逐拍轨迹落盘已武装（h8_wait_trace.json；"
+>                      "0→N 帧段全分辨观测——§500 双稳态切换定位）")
+>     # <<< H8-END main-arm wait-trace

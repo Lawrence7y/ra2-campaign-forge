@@ -1,0 +1,89 @@
+== 不闩族 5 点：close / hwnd 归零绝对（rows[0].t 基准）==
+  E5h15     close=16.091   Δ=5.023   归零绝对=21.114   boot=1793256614227
+  E5h20     close=21.249   Δ=0.402   归零绝对=21.651   boot=1793256614228
+  hold15    close=16.272   Δ=4.822   归零绝对=21.094   boot=1793337038106
+  b2-h15.3  close=17.005   Δ=3.718   归零绝对=20.723   boot=1793406387129
+  b2-h15.8  close=17.173   Δ=3.414   归零绝对=20.587   boot=1793406387119
+
+  全 5 点: close 跨度 16.091~21.249 = 5.158s ; 归零跨度 20.587~21.651 = 1.064s
+  同集合口径（close≤17.2 的 4 点）: close 跨度 16.091~17.173 = 1.082s ; 归零跨度 20.587~21.114 = 0.527s
+  §481 原句核对：『close 分布 16.09~17.17（跨 1.1s）』对应哪几趟? [('E5h15', 16.091), ('hold15', 16.272), ('b2-h15.3', 17.005), ('b2-h15.8', 17.173)]
+  『归零聚在 ~1.1s 窄带』的 1.1s 数值来源: 全 5 点归零跨度 1.064s（含 E5h20=21.651，其 close=21.249 不在 16.09~17.17 内）
+  不闩族可证会话数 = 5 [1793256614227, 1793256614228, 1793337038106, 1793406387119, 1793406387129]（均非 None ⇒ 字段可证，跨 3 会话成立）
+
+== Δ 与「排队到 ~21.3s 边界」模型的一致性（Δ ≈ 21.3 − close？）==
+  E5h15     close=16.091   Δ=5.023   归零绝对=21.114    (21.3−close=5.209)
+  E5h20     close=21.249   Δ=0.402   归零绝对=21.651    (21.3−close=0.051)
+  hold15    close=16.272   Δ=4.822   归零绝对=21.094    (21.3−close=5.028)
+  b2-h15.3  close=17.005   Δ=3.718   归零绝对=20.723    (21.3−close=4.295)
+  b2-h15.8  close=17.173   Δ=3.414   归零绝对=20.587    (21.3−close=4.127)
+
+== timeline 其余键（hold_tl / _e2）与本批主张 ==
+  b2-h15.3: hold_tl type=list len=16  _e2={"params": {"latch_value": 1, "slow_sleep_s": 1.0, "watch_s": 120.0, "latch_shot_after_s": 30.0, "except_check_every_s": 30.0, "hook6_anchor": "e91a1f941790", "hook6_nbytes": 6, "bail_site_hex": "0x6be0e1", "watch_access_hex": "0x100410", "spin_min_delta_s": 0.7, "block_max_delta_s": 0.2, "frozen_ma
+      hold_tl[0]={"t": 1793406822.342, "singleton": 16640608, "hwnd": 265036, "exitstate": 0, "frame": 0, "tick": 1, "hook6": "e91a1f941790", "ws_kb": 23444, "visible_windows": [{"title": "Yuri's Revenge", "class": "Yuri's Revenge"}]}
+      hold_tl[-1]={"t": 1793406837.366, "singleton": 16640608, "hwnd": 265036, "exitstate": 0, "frame": 0, "tick": 1, "hook6": "e91a1f941790", "ws_kb": 70260, "visible_windows": [{"title": "Yuri's Revenge", "class": "Yuri's Revenge"}]}
+      hold_tl hwnd 值域=[265036]  （早窗内 hwnd 应恒非 0 → 关窗前窗口在）
+  b2-h15.8: hold_tl type=list len=16  _e2={"params": {"latch_value": 1, "slow_sleep_s": 1.0, "watch_s": 120.0, "latch_shot_after_s": 30.0, "except_check_every_s": 30.0, "hook6_anchor": "e91a1f941790", "hook6_nbytes": 6, "bail_site_hex": "0x6be0e1", "watch_access_hex": "0x100410", "spin_min_delta_s": 0.7, "block_max_delta_s": 0.2, "frozen_ma
+      hold_tl[0]={"t": 1793406973.496, "singleton": 17230432, "hwnd": 7473960, "exitstate": 0, "frame": 0, "tick": 1, "hook6": "e91a1f941790", "ws_kb": 23512, "visible_windows": [{"title": "Yuri's Revenge", "class": "Yuri's Revenge"}]}
+      hold_tl[-1]={"t": 1793406988.525, "singleton": 17230432, "hwnd": 7473960, "exitstate": 0, "frame": 0, "tick": 1, "hook6": "e91a1f941790", "ws_kb": 88288, "visible_windows": [{"title": "Yuri's Revenge", "class": "Yuri's Revenge"}]}
+      hold_tl hwnd 值域=[7473960]  （早窗内 hwnd 应恒非 0 → 关窗前窗口在）
+
+== 守卫日志全文（bail / 钩子计数）==
+  b2-h15.3 ra2render_close_last.log 行数=10
+      | [ra2rc4guard] EnableRC4Guard=1 EnableRC4ExitBail=1 DryRun=0 (ra2rc4exitbail/v1 d09a_c2 (spec: d09a_c2_patchspec.json))
+      | [ra2rc4guard] 原字节比对 8/8 一致
+      | [ra2rc4guard] 安装前原字节 FNV-1a-64 = 758FF6705D117993
+      | [ra2rc4guard] 守卫已装 8/8 站点（cave 池 0x20000000）
+      | [ra2rc4exitbail] 原字节比对 8/8 一致；hook 窗(6B) FNV-1a-64 = 9113B9A2A59FAE12
+      | [ra2rc4exitbail] 已装 1/1（cave 0x18000000；语义=hwnd==0 或 exitstate!=1 ⇒ 出环 0x6BE0E9 走 teardown；不写任何状态值）
+      sha256=d5b2a91459760745…
+  b2-h15.3 ra2render_after_kill.log 行数=10
+      | [ra2rc4guard] EnableRC4Guard=1 EnableRC4ExitBail=1 DryRun=0 (ra2rc4exitbail/v1 d09a_c2 (spec: d09a_c2_patchspec.json))
+      | [ra2rc4guard] 原字节比对 8/8 一致
+      | [ra2rc4guard] 安装前原字节 FNV-1a-64 = 758FF6705D117993
+      | [ra2rc4guard] 守卫已装 8/8 站点（cave 池 0x20000000）
+      | [ra2rc4exitbail] 原字节比对 8/8 一致；hook 窗(6B) FNV-1a-64 = 9113B9A2A59FAE12
+      | [ra2rc4exitbail] 已装 1/1（cave 0x18000000；语义=hwnd==0 或 exitstate!=1 ⇒ 出环 0x6BE0E9 走 teardown；不写任何状态值）
+      sha256=d5b2a91459760745…
+  b2-h15.8 ra2render_close_last.log 行数=10
+      | [ra2rc4guard] EnableRC4Guard=1 EnableRC4ExitBail=1 DryRun=0 (ra2rc4exitbail/v1 d09a_c2 (spec: d09a_c2_patchspec.json))
+      | [ra2rc4guard] 原字节比对 8/8 一致
+      | [ra2rc4guard] 安装前原字节 FNV-1a-64 = 758FF6705D117993
+      | [ra2rc4guard] 守卫已装 8/8 站点（cave 池 0x20000000）
+      | [ra2rc4exitbail] 原字节比对 8/8 一致；hook 窗(6B) FNV-1a-64 = 9113B9A2A59FAE12
+      | [ra2rc4exitbail] 已装 1/1（cave 0x18000000；语义=hwnd==0 或 exitstate!=1 ⇒ 出环 0x6BE0E9 走 teardown；不写任何状态值）
+      sha256=671c5c05c1ae8b42…
+  b2-h15.8 ra2render_after_kill.log 行数=10
+      | [ra2rc4guard] EnableRC4Guard=1 EnableRC4ExitBail=1 DryRun=0 (ra2rc4exitbail/v1 d09a_c2 (spec: d09a_c2_patchspec.json))
+      | [ra2rc4guard] 原字节比对 8/8 一致
+      | [ra2rc4guard] 安装前原字节 FNV-1a-64 = 758FF6705D117993
+      | [ra2rc4guard] 守卫已装 8/8 站点（cave 池 0x20000000）
+      | [ra2rc4exitbail] 原字节比对 8/8 一致；hook 窗(6B) FNV-1a-64 = 9113B9A2A59FAE12
+      | [ra2rc4exitbail] 已装 1/1（cave 0x18000000；语义=hwnd==0 或 exitstate!=1 ⇒ 出环 0x6BE0E9 走 teardown；不写任何状态值）
+      sha256=671c5c05c1ae8b42…
+
+== 冻结件盘上 sha 复验（§474/§481 主张零字节）==
+  _drive_c2_x_earlyclose.py: 盘上找到 3 份
+      lead\qc161_u0400_trip\_drive_c2_x_earlyclose.py  sha=2e970eec43fe37ff…  match_at_import=True
+      lead\qc161_u0400_trip\codex_e12_e5_20261030\candidate\_drive_c2_x_earlyclose.py  sha=2e970eec43fe37ff…  match_at_import=True
+      lead\qc161_u0400_trip\codex_e12_fix_20261029\candidate\_drive_c2_x_earlyclose.py  sha=2e970eec43fe37ff…  match_at_import=True
+  _drive_c2_x_probe_v2.py: 盘上找到 3 份
+      lead\qc161_u0400_trip\_drive_c2_x_probe_v2.py  sha=6afe2711136c3b52…  match_at_import=True
+      lead\qc161_u0400_trip\codex_e12_e5_20261030\candidate\_drive_c2_x_probe_v2.py  sha=6afe2711136c3b52…  match_at_import=True
+      lead\qc161_u0400_trip\codex_e12_fix_20261029\candidate\_drive_c2_x_probe_v2.py  sha=6afe2711136c3b52…  match_at_import=True
+
+== 批产物 preflight / selftest 留档（§481 主张 Y-3 整改完成）==
+  lead/codex_round_20261030/LEADER_battle\GOAL2_BATCH2_DELTA_AXIS_20261031.md  bytes=1628  mtime=1793382312
+      tail: - **轴分歧情形（新 UNKNOWN）**：Δ<0.15 却不闩，或 Δ>0.35 却闩 ⇒ **Δ 二分轴被否**，登记（这是本批对轴本身的检验价值，双向都有信息）。 | - **有效样本**：a8=PASS、载体删、stop=None、except 恒；闩→退用 timeline 原始时间戳相减（R-1 纪律）。 | - **趟数/时间**：≤2 趟或 20min 先到者停；停止条件同 §474 批（弹框/异常/隔离失败留证停批）；清扫只限本批载体，强杀单记。 | - **判读纪律**：禁真率；Δ 与 exitstate 双轴并报；cpu 轴须带「中位含跨退出样本、净退前 n=1」免责（Y-2）；ws 死进程读数不引用。
+  lead/codex_round_20261030/LEADER_battle\preflight_batch2_20261031.txt  bytes=576  mtime=1793406807
+      tail:   [OK] 终钉件 sha256 复验（6afe2711/2e970eec） |   [OK] 源 ra2render.ini sha16=27c9a60c55a8a1b4 size=16496（钉 27c9a60c55a8a1b4/16,496） |   [OK] UPTIME(GetTickCount64)=420265 ms——批次比较开机墙钟估计，容差2000ms | preflight: 全过
+  lead/codex_round_20261030/LEADER_battle\selftest_batch2_20261031.txt  bytes=16012  mtime=1793406807
+      tail: == E5 SELFTEST (E12-lineage): 110 项，红=0 ⇒ ALL-PASS == | 件 sha256: e12=90a1890afe356191231307b80efa2a3b920de2fa480c8f5ffc5185f33a038d03 |            earlyclose=2e970eec43fe37ff02cab98e71bce9c764d11d758ab2a7b31b495100d109c2e1 |            v2=6afe2711136c3b52344cd435f6dbd64508378a1e019c552228ff4f5e653d13b9
+  lead/codex_round_20261030/LEADER_battle\GOAL2_BATCH2_DELTA_AXIS_20261031.md  bytes=1628  mtime=1793382312
+      tail: - **轴分歧情形（新 UNKNOWN）**：Δ<0.15 却不闩，或 Δ>0.35 却闩 ⇒ **Δ 二分轴被否**，登记（这是本批对轴本身的检验价值，双向都有信息）。 | - **有效样本**：a8=PASS、载体删、stop=None、except 恒；闩→退用 timeline 原始时间戳相减（R-1 纪律）。 | - **趟数/时间**：≤2 趟或 20min 先到者停；停止条件同 §474 批（弹框/异常/隔离失败留证停批）；清扫只限本批载体，强杀单记。 | - **判读纪律**：禁真率；Δ 与 exitstate 双轴并报；cpu 轴须带「中位含跨退出样本、净退前 n=1」免责（Y-2）；ws 死进程读数不引用。
+  lead/codex_round_20261030/LEADER_battle\HARNESS8_FRAME_BOUND_DESIGN_20261031.md  bytes=5286  mtime=1793380137
+      tail: - 回退：副本制、载体趟后删、无部署。 |  | ## 5. 本设计件未做（如实） | - 未实现代码（harness8 副本未建）、未跑离线自检、未派独立复核、未排真机——均需后续唤醒/用户指示逐步办。
+  lead/codex_round_20261030/LEADER_battle\preflight_batch2_20261031.txt  bytes=576  mtime=1793406807
+      tail:   [OK] 终钉件 sha256 复验（6afe2711/2e970eec） |   [OK] 源 ra2render.ini sha16=27c9a60c55a8a1b4 size=16496（钉 27c9a60c55a8a1b4/16,496） |   [OK] UPTIME(GetTickCount64)=420265 ms——批次比较开机墙钟估计，容差2000ms | preflight: 全过
+  lead/codex_round_20261030/LEADER_battle\selftest_batch2_20261031.txt  bytes=16012  mtime=1793406807
+      tail: == E5 SELFTEST (E12-lineage): 110 项，红=0 ⇒ ALL-PASS == | 件 sha256: e12=90a1890afe356191231307b80efa2a3b920de2fa480c8f5ffc5185f33a038d03 |            earlyclose=2e970eec43fe37ff02cab98e71bce9c764d11d758ab2a7b31b495100d109c2e1 |            v2=6afe2711136c3b52344cd435f6dbd64508378a1e019c552228ff4f5e653d13b9

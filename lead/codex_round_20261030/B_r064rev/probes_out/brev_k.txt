@@ -1,0 +1,76 @@
+=== 帧 F 区段 0x778B40..0x778BE0（看 0x778B95..0x778B9E 是否 ret、0x778B9F 是否新序言）===
+  778B40 bb03008d4c             mov   ebx, 0x4c8d0003               
+  778B45 2410                   and   al, 0x10                      
+  778B47 e8e4cf0300             call  0x7b5b30                      
+  778B4C 8d4c2410               lea   ecx, [esp + 0x10]             
+  778B50 e8ebc80300             call  0x7b5440                      
+  778B55 8d4c2424               lea   ecx, [esp + 0x24]             
+  778B59 50                     push  eax                           
+  778B5A e8b1dcdaff             call  0x526810                      
+  778B5F 85c0                   test  eax, eax                      
+  778B61 753c                   jne   0x778b9f                      
+  778B63 8bce                   mov   ecx, esi                      
+  778B65 e8a6fbffff             call  0x778710                      
+  778B6A 8d4c2410               lea   ecx, [esp + 0x10]             
+  778B6E e87dbb0300             call  0x7b46f0                      
+  778B73 8d4c2424               lea   ecx, [esp + 0x24]             
+  778B77 e874cbdaff             call  0x5256f0                      
+  778B7C 8d8c2484000000         lea   ecx, [esp + 0x84]             
+  778B83 c784248400000068167e00 mov   dword ptr [esp + 0x84], 0x7e1668
+  778B8E e8ed8fcbff             call  0x431b80                      
+  778B93 8bc6                   mov   eax, esi                      
+  778B95 5f                     pop   edi                           
+  778B96 5e                     pop   esi                           
+  778B97 5b                     pop   ebx                           
+  778B98 81c4d0000000           add   esp, 0xd0                     
+  778B9E c3                     ret                                    <== RET（帧尾候选）
+  778B9F 55                     push  ebp                              <== probe2 frame_lo 落点
+  778BA0 8d4c241c               lea   ecx, [esp + 0x1c]             
+  778BA4 e877ba0300             call  0x7b4620                      
+  778BA9 8d4c2410               lea   ecx, [esp + 0x10]             
+  778BAD 68849f8400             push  0x849f84                      
+  778BB2 e879ba0300             call  0x7b4630                      
+  778BB7 8d54241c               lea   edx, [esp + 0x1c]             
+  778BBB 8d44241c               lea   eax, [esp + 0x1c]             
+  778BBF 52                     push  edx                           
+  778BC0 8d4c2414               lea   ecx, [esp + 0x14]             
+  778BC4 50                     push  eax                           
+  778BC5 8d54241c               lea   edx, [esp + 0x1c]             
+  778BC9 51                     push  ecx                           
+  778BCA 52                     push  edx                           
+  778BCB 8d4c2438               lea   ecx, [esp + 0x38]             
+  778BCF e82c00dbff             call  0x528c00                         <== 本线关注址
+  778BD4 8d4c2410               lea   ecx, [esp + 0x10]             
+  778BD8 e813bb0300             call  0x7b46f0                      
+
+=== 0x778A20 序言与 esp 操作 ===
+  778A20 81ecd0000000           sub esp, 0xd0
+  778A26 53                     push ebx
+  778A27 56                     push esi
+  778A28 8bf1                   mov esi, ecx
+  778A2A 57                     push edi
+  778A2B 8bda                   mov ebx, edx
+  778A2D 688c9f8400             push 0x849f8c
+  778A32 8d8c2488000000         lea ecx, [esp + 0x88]
+  778A39 89742478               mov dword ptr [esp + 0x78], esi
+=== 0x778B9F 若为独立函数：其序言 esp 动作（决定 D 基线） ===
+  778B9F 55                     push ebp
+  778BA0 8d4c241c               lea ecx, [esp + 0x1c]
+  778BA4 e877ba0300             call 0x7b4620
+  778BA9 8d4c2410               lea ecx, [esp + 0x10]
+  778BAD 68849f8400             push 0x849f84
+  778BB2 e879ba0300             call 0x7b4630
+  778BB7 8d54241c               lea edx, [esp + 0x1c]
+  778BBB 8d44241c               lea eax, [esp + 0x1c]
+  778BBF 52                     push edx
+  778BC0 8d4c2414               lea ecx, [esp + 0x14]
+  778BC4 50                     push eax
+  778BC5 8d54241c               lea edx, [esp + 0x1c]
+  778BC9 51                     push ecx
+  778BCA 52                     push edx
+  778BCB 8d4c2438               lea ecx, [esp + 0x38]
+
+=== 谁跳进/调用 0x778B9F？（全镜像：E8 目标 / jmp 目标 / 立即数出现）===
+  E8 call 0x778B9F 站点: []
+  jmp 0x778B9F 站点: []
+  F head 0x778A20 的 E8 callers 数: 22
