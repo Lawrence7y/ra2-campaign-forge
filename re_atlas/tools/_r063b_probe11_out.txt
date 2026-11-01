@@ -1,0 +1,61 @@
+== 0) hard ret census retry
+  007b5b30 ret_imm=None
+  005256f0 ret_imm=None
+
+== 1) context disasm
+  -- 0x5cef5c..0x5cefd0 (indirect call ctx) --
+   005cef5e: 8b442468       mov    eax, dword ptr [esp + 0x68]
+   005cef62: 6870038300     push   0x830370
+   005cef67: 8d4c246c       lea    ecx, [esp + 0x6c]
+   005cef6b: ff5008         call   dword ptr [eax + 8]
+   005cef6e: 8b542468       mov    edx, dword ptr [esp + 0x68]
+   005cef72: 6a01           push   1
+   005cef74: 8d4c246c       lea    ecx, [esp + 0x6c]
+   005cef78: ff521c         call   dword ptr [edx + 0x1c]
+   005cef7b: 8d442468       lea    eax, [esp + 0x68]
+   005cef7f: 56             push   esi
+   005cef80: 50             push   eax
+   005cef81: 8d4c2430       lea    ecx, [esp + 0x30]
+   005cef85: e8866af5ff     call   0x525a10 ->525a10
+   005cef8a: 85c0           test   eax, eax
+   005cef8c: 750a           jne    0x5cef98
+   005cef8e: 6850038300     push   0x830350
+   005cef93: e9e5000000     jmp    0x5cf07d ->5cf07d
+   005cef98: bf01000000     mov    edi, 1
+   005cef9d: 56             push   esi
+   005cef9e: 8d4c2414       lea    ecx, [esp + 0x14]
+   005cefa2: e889561e00     call   0x7b4630 ->7b4630
+   005cefa7: 8d4c2414       lea    ecx, [esp + 0x14]
+   005cefab: 8d542410       lea    edx, [esp + 0x10]
+   005cefaf: 51             push   ecx
+   005cefb0: 52             push   edx
+   005cefb1: 8bd7           mov    edx, edi
+   005cefb3: 8d4c2420       lea    ecx, [esp + 0x20]
+   005cefb7: e8d4721e00     call   0x7b6290 ->7b6290
+   005cefbc: 50             push   eax
+   005cefbd: 8b8424e4000000 mov    eax, dword ptr [esp + 0xe4]
+   005cefc4: 50             push   eax
+   005cefc5: 8d4c2438       lea    ecx, [esp + 0x38]
+   005cefc9: e8329cf5ff     call   0x528c00 ->528c00
+   005cefce: 85c0           test   eax, eax
+  -- 0x5d7c78..0x5d7c92 --
+   005d7c7a: 0f8cd5f9ffff   jl     0x5d7655
+   005d7c80: 5f             pop    edi
+   005d7c81: 5d             pop    ebp
+   005d7c82: 8d4c2470       lea    ecx, [esp + 0x70]
+   005d7c86: e865daf4ff     call   0x5256f0
+   005d7c8b: 8d8c2408010000 lea    ecx, [esp + 0x108]
+  -- 0x76c68a..0x76c69a --
+   0076c68e: 8d4c2428       lea    ecx, [esp + 0x28]
+   0076c692: e85990dbff     call   0x5256f0
+   0076c697: 8d8c24c0000000 lea    ecx, [esp + 0xc0]
+
+== 2) strict sim (probe10 rules, cap 200k rets)
+Traceback (most recent call last):
+  File "D:\Project\ra2-campaign-forge\re_atlas\tools\_r063b_probe11.py", line 294, in <module>
+    states, causes = sim(heads[0], c)
+                     ^^^^^^^^^^^^^^^^
+  File "D:\Project\ra2-campaign-forge\re_atlas\tools\_r063b_probe11.py", line 115, in sim
+    causes.append("ret-unknown@%08x->%08x" % (a, t))
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~
+TypeError: %x format: an integer is required, not NoneType

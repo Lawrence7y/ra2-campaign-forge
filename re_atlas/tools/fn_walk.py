@@ -3,11 +3,31 @@
 A linear capstone sweep decodes only ~11% of .text here (it desyncs on data
 embedded in the section), so the denominator must come from a worklist walk
 that follows call/jump edges from real entry points. Roots: PE entry point,
-the raw E8/E9 target set, and every vtable slot from RTTI.
+the E8 call targets and every vtable slot from RTTI.
+
+R-060 (D-06 option C, 2026-10-25) -- TWO defects fixed at the root set:
+
+  (a) E9 is NOT an entry source.  `jmp rel32` doubles as MSVC's intra-function
+      block jump; every E9 target previously promoted to "function entry"
+      inflated the count (R-035: 1,445 of 2,042 E9 targets land inside already
+      covered bodies).  The walk still FOLLOWS jmp edges, but they no longer
+      seed the root/entry set.
+
+  (b) E8 came from a byte scan (`re.finditer(b"\\xe8")`) -- 563 of those bytes
+      are operands inside other instructions and their bogus rel32s pointed at
+      560 targets NO real call reaches.  The root set now uses the ALIGNED
+      reading: a resuming sweep that records exactly the addresses where
+      capstone decodes a `call rel32`, and takes their targets.  Both readings
+      are printed so the byte-scan figure stays reproducible as an UPPER bound.
+
+  Verified numbers (sha256 73201cc0...f67476): aligned roots = 12,792,
+  byte-scan-with-E9 roots (the old broken build) = 15,224, aligned walk entries
+  = 12,792 (the CFG discovers nothing new -- roots already close under calls).
 
 Read-only; prints a report.
 """
 
+import hashlib
 import json
 import re
 import struct
@@ -18,6 +38,7 @@ ROOT = r"D:\Project\ra2-campaign-forge"
 EXE = ROOT + r"\ra2youli\gamemd.exe"
 SYMS = ROOT + r"\re_atlas\evidence\symbol_map.json"
 RTTI = ROOT + r"\re_atlas\evidence\rtti\symbols.json"
+SHA256 = "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
 
 
 def load_pe(path):
@@ -49,7 +70,10 @@ MD.detail = True
 
 
 def raw_rel32_targets():
-    """Every E8/E9 rel32 that lands in .text; cheap and instruction-agnostic."""
+    """BYTE-SCAN reading (upper bound only): every E8/E9 rel32 landing in .text.
+
+    Kept for historical reproducibility of the old numbers; NOT used for roots
+    any more (docstring defects a+b)."""
     out = set()
     for op in (b"\xe8", b"\xe9"):
         for m in re.finditer(op, CODE):
@@ -63,7 +87,32 @@ def raw_rel32_targets():
     return out
 
 
-VENDORED_IMM32 = re.compile(rb"[\x00-\xff]{4}")
+def aligned_call_targets():
+    """RESUMING aligned sweep (R-060): only 0xE8 bytes at addresses where capstone
+    decodes `call rel32` count.  On a decode failure advance 1 byte and retry --
+    .text holds embedded data and a purely linear sweep desyncs (this file's own
+    docstring says so).  This is the same engine r038/verify_r035 P2b uses; the
+    production census must not be looser than its own gate."""
+    outs = set()
+    starts = 0
+    cur = TLO
+    while cur < THI:
+        off = cur - TLO
+        got = None
+        for insn in MD.disasm(CODE[off:off + 16], cur):
+            got = insn
+            break
+        if got is None:
+            cur += 1
+            continue
+        if (got.mnemonic == "call" and got.operands
+                and got.operands[0].type == capstone.x86.X86_OP_IMM):
+            starts += 1
+            t = got.operands[0].imm
+            if TLO <= t < THI:
+                outs.add(t)
+        cur += got.size
+    return outs, starts
 
 
 def vtable_targets():
@@ -142,15 +191,27 @@ def walk(roots, limit_insns=4_000_000):
 
 
 def main():
-    rel = raw_rel32_targets()
+    h = hashlib.sha256(BLOB).hexdigest()
+    if h != SHA256:
+        print(f"!! fingerprint drift: {h} != {SHA256}  (refusing to publish)")
+        raise SystemExit(2)
+    aligned, call_sites = aligned_call_targets()
+    rel_bs = raw_rel32_targets()
     vt = vtable_targets()
     entry = IB + ENTRY_RVA
     print(f"# .text 0x{TLO:08X}..0x{THI:08X}  entry=0x{entry:08X}")
-    print(f"# roots: rel32 E8/E9={len(rel)}  vtable slots={len(vt)}  entry=1")
-    roots = rel | vt | {entry}
+    print(f"# fingerprint OK sha256={h[:16]}…")
+    print(f"# ALIGNED call rel32: {call_sites:,} call sites -> {len(aligned):,} "
+          f"in-.text targets  [R-060 primary]")
+    print(f"# (byte-scan E8∪E9 would yield {len(rel_bs):,} targets -- upper bound "
+          f"only, NOT used as roots)")
+    print(f"# roots: aligned-E8 {len(aligned):,} ∪ vtable {len(vt):,} ∪ PE 1")
+    roots = aligned | vt | {entry}
     funcs, insns = walk(roots)
     print(f"# traversal decoded instructions: {insns:,}")
-    print(f"# distinct function entries discovered: {len(funcs):,}")
+    print(f"# distinct function entries discovered: {len(funcs):,} "
+          f"(LOWER-aligned reading; UPPER adds unreachable prologue heads -- "
+          f"see verify_r035_claims R1..R6)")
 
     smap = json.load(open(SYMS, encoding="utf-8"))["map"]
     named = {int(k, 16) for k in smap}

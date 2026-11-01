@@ -1,0 +1,11 @@
+X1 PASS: ctor 边界 0x725FA0（`push ebx;push esi;mov esi,ecx;call`）..0x726131 `ret 4` 逐字节钉
+X2 PASS: 三条注册腿整窗逐字节：block1→0xB0F670 / block2→0xB0F708（皆 DynamicVector<AbstractClass*>）/ block3→0xA8EAE8（DynamicVector<TriggerClass*>）；三块同构=三查+b9 global+ff5208+count+++893481
+X3 PASS: ctor 全跨度内 `89 34 81`（SIB 原始指针存）恰 3 处 = ['0x726037', '0x72608a', '0x7260dd']（全镜像同 pattern 共 286 处，ctor 外的不作宣称）
+X4 PASS: RTTI 定谳：0xB0F670 与 0xB0F708 **共用** vptr 0x7E91EC=DynamicVector<AbstractClass*>；0xA8EAE8 vptr 0x7E9BE4=**DynamicVector<TriggerClass*>**（降级 0x7E9C04=Vector<TriggerClass*>） ⇒ **推翻 R-050「不是专用 trigger 向量」**
+X5 PASS: 三容器各自的 vptr 安装/降级 pattern 全 .text 各唯一 ⇒ 容器类型无第三方改写者：0x00B0F670: install ['0x72536d'] demote ['0x725398']；0x00B0F708: install ['0x72546d'] demote ['0x725498']；0x00A8EAE8: install ['0x4e65fd'] demote ['0x4e6628']
+X6 PASS: dtor 0x726950 = vtable 0x7F5858 **slot8**（退化 vptr 四连写 + call 0x7258D0），随后三路注销逐字节同构（A8EAE8 @0x726976 / B0F670 @0x7269BF / B0F708 @0x726A08）：Find(slot16) → count-- → SIB 压缩
+X7 PASS: ctor **body**（0x725FA0..0x72612A，止于 epilogue 前）写 esi 的指令集 == ['0x725fa2']（唯一=头部 mov esi,ecx） ⇒ 三个容器入册的都是同一个 TriggerClass this（0x72612E 的 `pop esi` 是 epilogue 恢复，不计入赋值）
+X8 PASS: 引用量纲明确分化：共享 Abstract 表 0xB0F670=116 站、第二共享表 0xB0F708=12 站、**专用 Trigger 表 0xA8EAE8=8 站（8，全在 trigger 族内）** ⇒ 专用表才是 trigger 遍历入口
+S1 PASS: 【结构性·不计数】WhatAmI@0x726940=`mov eax,0x26;ret`=vtable+0x2C 且专用表名以 PAVTriggerClass 结尾 ⇒ 表名与元素类型自洽（遍历无需再筛 WhatAmI）
+
+== R-051 8/8 字节断言 PASS（S1 结构性不入分母，红仍非零退出）==

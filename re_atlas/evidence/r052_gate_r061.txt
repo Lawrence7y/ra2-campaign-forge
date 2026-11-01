@@ -1,0 +1,14 @@
+Y1 PASS: 0x6E53A0 体内 [ebp+disp] 集合 == ['0x24', '0x28', '0x2c', '0x34', '0x35']（恰五字段）且 +0x34/+0x35 为字节访问（8a4534/8a4535 读、c6453501/00 写=重入旗标置/清）
+Y2 PASS: 边界逐字节：头 `push ecx; mov al,[0xA8ED6B]; push ebx; xor bl,bl; push ebp; …mov ebp,ecx`；尾两退出口皆 `ret 0x14`（0x6E554E/0x6E5556），0x6E5559 起 90 填充
+Y3 PASS: TagClass ctor 0x6E4DE0 整窗逐字节：[esi+0x24]=arg、+0x28/+0x2C 清 dword、**+0x34/+0x35 清字节**（885e34 885e35）、+0x30=[0xB0E700]、装主 vptr 0x7F44E0 与三 facet vptr
+Y4 PASS: TriggerClass ctor 对 +0x34 是 **dword** 写（894e34 @0x725FC4）；字节写止于 +0x30（885e30）；ctor 跨度内 c64634/c64635 census=0/0 ⇒ 0x6E53A0 的字节 +0x34/+0x35 与 TriggerClass 布局矛盾（排除法阳性=同 pattern 在镜像他处有命中，机制看得见）
+Y5 PASS: Tag ctor 0x6E4F27 起：`push 0x48; call 0x7C8E17`（new TriggerClass 尺寸 0x48）、`push arg; mov ecx,eax; call 0x725FA0`（rel32 复算=0x00725FA0）、头插 [esi+0x28]（8b5628 895028 894628）⇒ TagClass +0x28 = trigger 链头
+Y6 PASS: 0x6E53A0 起步 `mov esi,[ebp+0x28]`、回边 `mov esi,[esi+0x28]`、循环体 `mov ecx,esi; call`（rel32 复算=0x007264C0=0x7264C0）⇒ 逐 tag-trigger 调收割趟
+Y7 PASS: 0x6E53A0 在 .rdata/.data 对齐 dword census=0（非任何 vtable 槽）；**阳性对照**=同法命中 TagClass slot10 函数 0x6E5610 恰 1 处 @0x7F4508（(0x7F4508-0x7F44E0)/4=10）⇒ 机制可见，结论=TagClass 非虚成员
+Y8 PASS: Tag ctor 三注册腿逐字节同构（→0xB0E720/0xB0F670/0xB0F708；ff5208=Add 槽2）；ctor 跨度尾存 893481 恰 3 处=['0x6e4e70', '0x6e4ec3', '0x6e4f16']；专用表 0xB0E720 安装/降级 pattern 全段唯一 =['0x6e4d7d']/=['0x6e4da8']；0x7EA5A4 RTTI=DynamicVector<PAVTagClass@@>
+Y9 PASS: 两代表调用点 this 皆取自 [0x8B40CC]（数据指针）索引：0x6E92FC / 0x6EA4BE `mov ecx,[reg+edi*4]`；0x8B40C8 vptr 安装唯一站=['0x4e7fcd'] imm=0x7EA5A4（与 0xB0E720 **同型**：DynamicVector<TagClass*>）⇒ 迭代元素=TagClass*，this=TagClass*
+Y10 PASS: RTTI 链解 0x7F44E0=.?AVTagClass@@；槽11 WhatAmI：TagClass=0x2C（44）、TriggerClass=0x26（38）两族自证不同 ⇒ 收割驱动宿主类定谳 **TagClass**（实例类，非 TagTypeClass）
+S1 PASS: 【结构性·不计数】0xB0F698=第四共享 Abstract 表（安装/降级唯一站 0x72586D/0x725898，vptr 与 0xB0F670 同 0x7E91EC）；0x6E53A0 尾段把**本对象**（ebp）经 Add 槽后 `892c81` 存入它 ⇒ 登记不定谳：收割驱动收尾自报进入延迟处理表
+
+== R-052 10/10 字节断言 PASS（S1 结构性不入分母，红仍非零退出）==
+GATE: GREEN

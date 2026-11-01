@@ -1,0 +1,26 @@
+G1 PASS: ctor @0x71E6BB: `mov byte[esi+0x38],bl; mov [esi+0x54],ebx(ebx=0)` 紧接 `mov [esi],0x7F5578`（主 vptr）⇒ +0x54 是构造即清零的成员字段
+G2 PASS: Load-ctor @0x71F91B: `add esi,0x54; push esi; push 0xB0C110` ⇒ 与 +0x28/+0x30 并列入 swizzle 登记（指针重定位字段，kb/21 §1.1 同窗复证）
+G3 PASS: Save @0x71F820..0x71F87A（0x5B 字节整窗逐字节钉死，含 `ret 4`）：仅 +0x28/+0x2C/+0x30/+0x34 四项、基类 Save 在前 ⇒ 整窗锁死即排除任何 `[reg+0x54]` 形态（capstone 复核：窗内 0 个 +0x54 操作数）⇒ L-20 坐实：+0x54 不进 Save
+G4 PASS: handler @0x71E940 序言 `sub esp,0x1c; push ebx; push ebp; mov ebp,ecx(=this); mov ecx,[ebp+0x2c]; lea eax,[ecx-0xd]; cmp eax,0x30` ⇒ Kind 主 switch（0xd..0x3d），ebp=this ⇒ 体内 [ebp+0x54] 为字段写
+G5 PASS: handler store 块 @0x71F1FB: `mov ecx,[esp+0x40]; mov byte[ecx],1; mov edx,[esi]; mov ecx,esi; call [edx+0x3c]; mov [ebp+0x54],eax`（89 45 54：mod=01/reg=eax/rm=101=ebp+disp8） ⇒ 存活写入把 arg 对象的 slot15(+0x3c) 返回值存入事件自身 +0x54，并置出参字节
+G6 PASS: handler 门 @0x71F1DA: edi=[ebp+0x34]；==-1 跳过，否则 `call [arg2表+0x38]` 结果 ebx 与 `0x502d30(edi)+0x30` 比对（call 目标只登记虚表派发，不臆断语义）；主表 slot15(+0x3c)=0x4104A0=`xor eax,eax; ret`；getter `mov eax,[ecx+0x54]; ret`
+G7 PASS: 消费方 @0x726538: `call 0x71E940`（rel32 复算 =0x71E940）；@0x72654F/0x72655C: 两 call 均落 0x71FA30（rel32 复算），非零则 `mov [esi+0x2c],eax` ⇒ 读侧唯一消费：事件 +0x54 收割进容器 +0x2C
+G8 PASS: 簇域 census 收口（0x71E000..0x71FC00）：`mov [reg+0x54],r32` 命中集合恰 = {0x71E6BE ctor 清零, 0x71F209 handler 存活写, 0x71FA44 死 setter}；rm==4（SIB [esp+..]）假阳性由 modrm 过滤排除
+G9 PASS: 三面引用普查：setter 字节钉死且 E8/E9/立即数全镜像零引用（死访问器）；handler E8 唯一入口 0x726540、无 E9/立即数第二入口；getter 调用者恰 {0x726551,0x72655c}（立即数零）
+S1 PASS: 【结构性·不计数】handler/getter/setter 均不在 TEventClass 24 槽 vfuncs 内 ⇒ 皆非虚方法（自由函数/访问器）；主表 0x7F5578 吻合
+
+== R-042 9/9 字节断言 PASS（G0 指纹/S1 结构性不计入分母，S1 红仍非零退出）==
+GATE_EXIT=0
+C1 ctor zero-field 54->55      expect=['G1', 'G8'] killed=['G1', 'G8'] rc=1 OK
+C2 swizzle add-disp 54->55     expect=['G2'] killed=['G2'] rc=1 OK
+C3 Save item4 off 34->35       expect=['G3'] killed=['G3'] rc=1 OK
+C4 handler head byte 90        expect=['G4'] killed=['G4'] rc=1 OK
+C5 store opcode 89->90         expect=['G5', 'G8'] killed=['G5', 'G8'] rc=1 OK
+C6 slot15 stub 33->90          expect=['G6'] killed=['G6'] rc=1 OK
+C7 handler-call rel byte       expect=['G7', 'G9'] killed=['G7', 'G9'] rc=1 OK
+C8 getter opcode 8b->90        expect=['G6'] killed=['G6'] rc=1 OK
+C9 setter head 8b->90          expect=['G9'] killed=['G9'] rc=1 OK
+C10 setter store 89->90        expect=['G8', 'G9'] killed=['G8', 'G9'] rc=1 OK
+
+== R-042 mutation 10/10 killed (exact-set) ==
+MUT_EXIT=0

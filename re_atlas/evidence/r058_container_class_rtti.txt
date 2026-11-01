@@ -1,0 +1,61 @@
+==============================================================================
+A) RTTI: vtable 0x7E1AF4 -> COL -> TD '.?AVCCINIClass@@' -> base '.?AVINIClass@@'
+==============================================================================
+A1 PASS: vtable[-1]=0x7FAC88 and COL={sig=0,offset=0,cdOffset=0,TD=0x8174C8,CD=0x7FAC78}
+A2 PASS: TD 0x8174C8 inline name (x86: TD+8) = '.?AVCCINIClass@@'
+A3 PASS: TD bytes: shared vfptr 0x7F9594, spare 0, then the literal name
+A4 PASS: CD 0x7FAC78 numBase=2 array=0x7FAC68 -> blobs {0x7FAC50, 0x7FAC38}; blob 0x7FAC38 first dword TD=0x8174B0
+A5 PASS: base TD 0x8174B0 name = '.?AVINIClass@@'  =>  CCINIClass DERIVES FROM INIClass (mdisp 0)
+A6 PASS: all six TDs share vfptr 0x7F9594 (TypeDescriptor's own vtable) => one table, no hand-edited TD; TD-vs-name binding is compiler-generated
+A7 PASS: facet B TD (COL 0x7FAC20 via [0x7E1AF8]) = '.?AV?$List@PAUINISection@INIClass@@@@'  => List<INISection*>
+A8 PASS: head vptr 0x7E1B04 TD = GenericList ; node vptr 0x7E1B0C TD = GenericNode (the List's base + element pair)
+A9 PASS: dtor-host vtable 0x7EB73C: COL 0x803708 = {0,0,0, TD=0x825B40, CD=0x8036F8}
+A10 PASS: TD 0x825B40 = '.?AUINISection@INIClass@@'  =>  the 0x52AB80 teardown host is INISection (a NESTED struct of INIClass; 'U' = struct), NOT an anonymous dtor-shaped blob
+
+==============================================================================
+B) the new(0x58) ctor stamps exactly the RTTI-named vtable => BATTLEMD*.INI factory
+==============================================================================
+B1 PASS: string @0x8261A8 = 'BATTLEMD*.INI'
+B2 PASS: factory pushes the string @0x52CBA0, then `push 0x58; call rel32` @0x52CBFB; rel32 decodes: 0x52CC02 + 0x29C215 = 0x7C8E17 (CRT new)
+B3 PASS: call target arithmetic resolves to operator new 0x7C8E17 (G-11: decode, not eyeball)
+B4 PASS: ctor stamps [esi]=0x7E1AF4 (CCINIClass vptr) @0x52CC36 and `lea edi,[esi+0xC]` + [edi]=0x7E1AFC (List vptr) @0x52CC0B/0x52CC1B
+B5 PASS: ctor zero-initialises +0x28..+0x40 -- INCLUDING the container slots +0x2C/+0x30/+0x38(b)/+0x3C: the container is constructed as a field of the CCINIClass object
+B6 PASS: List sub-ctor 0x52ACE0 stamps nodes with GenericNode vptr 0x7E1B0C twice and the head with GenericList vptr 0x7E1B04 -- then the factory OVERWRITES head with the derived List vptr 0x7E1AFC (B4): textbook base-then-derived vptr sequence
+
+==============================================================================
+C) sibling loaders in the same 0x52C6DF..0x52D357 family (push string; new(0x58))
+==============================================================================
+C1 PASS: RULEMD*.INI: push 0x82626C @0x52CD97; string verified; `new(0x58)` @0x52CDF3 (same size as the BATTLEMD factory => same class)
+C2 PASS: six sibling `push imm32` sites decoded from their OWN operand bytes: SOUNDMD/EVAMD/THEMEMD/ARTMD/LANGRULE/AIMD .INI strings (same family, same class)
+
+==============================================================================
+D) six .data globals are CONSTRUCTED CCINIClass instances (no new -- L-25 closes)
+==============================================================================
+D1 PASS: global stamper @0x40E241 `mov dword [0x887058],0x7E1AF4`; the global's own bytes are UNREADABLE (past .data raw range => zero-fill/BSS-style) -- exactly what a compiler-emitted global-ctor must fix up at startup
+D2 PASS: the 0x40DFE0 cluster stamps vptr 0x7E1AF4 into FOUR more globals (0x887180/0x887208/0x887128/0x8870C0), each also stamping 0x7E1B04+0x7E1AFC siblings => five static CCINIClass objects built by one global ctor
+D3 PASS: a sixth global 0x89F518 is stamped vptr 0x7E1AF4 @0x49B405, with dtor thunk @0x49B420 `mov ecx,0x89F518` (+jmp 0x49E510). WHICH .ini it serves is NOT asserted (the coopsave.ini pushes at 0x49BE64.. are in later, different bodies -- unproven link)
+D4 PASS: destructor-registration sequence, decoded arithmetically (G-11): `push 0x88719c` @0x40DFDF -> `call 0x40E340` @0x40DFF3 (registration worker: reads [arg+4]/[arg+8]) -> `push 0x40E050` @0x40DFF8; thunk @0x40E050 = `mov ecx,0x887180; jmp` -> dtor-shaped 0x5256F0 for global 0x887180. Worker's node initialiser 0x40E320 zeroes node +4/+8 and stamps [node]=0x7E1B0C -- the GenericNode vptr from A8: the registration list is the same Generic* type family as the List facets
+
+==============================================================================
+E) the two live +0x2C witnesses on record (byte-exact)
+==============================================================================
+E1 PASS: witness1 @0x52772C: `mov ecx,[esi+0x30]` ; `add esi,0x2c` ; call @0x527750 -> 0x52B4F0
+E2 PASS: witness2 @0x52A7BA (GLM blind find, byte-verified): count read + `add esi,0x2c` + call 0x52B4F0 + on-miss cache fill `mov [esi+0x10],eax` -- the caller owns the container's +0x10 cache slot
+E3 PASS: kernel-caller @0x526BBF fills [esi+0x10] after `call 0x52B6D0` hit -- third confirmation the +0x10 slot = last-hit cache, written by host-side code
+
+==============================================================================
+F) engine-wide census (one cached pass; reads go through read() so mutations apply)
+==============================================================================
+F1 PASS: twin A: 22 E8 callers, 13 with `add esi,0x2c` within 0x40 before the call; twin B: 20 callers, 0 near-rebase (all its rebase-form hits are >0x40 away). The twins are NOT interchangeable dispatch forms -- A is the section-cache lookup on INIClass/CCINIClass hosts, B serves a differently-placed container
+F2 PASS: 0x52A4D0: E8=0, E9=0, imm32=0 across .text, POSITIVE CONTROL = twin A's 22 in the same pass (G-14). Still only 'statically invisible', not 'dead'
+F3 PASS: the 13-member near-rebase set includes BOTH witnesses @0x527750/@0x52A7DE (set membership, not just a count -- G-75 read-scope note)
+
+==============================================================================
+S) structural cross-checks (not in the denominator; red still exits nonzero)
+==============================================================================
+G0 OK (structural; not counted): fingerprint sha256=73201cc021497c95…
+S1 OK (structural; not counted): all four TD names resolved non-empty
+S2 OK (structural; not counted): TypeDescriptor vftable slot0 = 0x7C8AB7 (.text -- the catch thrown by RTTI APIs)
+
+== R-058 28/28 字节断言 PASS（S1..S2/G0 结构性不入分母，红仍非零退出）==
+GATE: GREEN

@@ -183,6 +183,25 @@
 > `+0x54` 虽然也被 swizzle 登记，但**不在 `Save` 里**。
 > ⇒ 它是纯运行时字段，或由别处（如 `TriggerClass` 的存档）负责。
 > 这是本轮**没解完**的一点，记 L-20。
+>
+> **R-047 检验（2026-10-24）：上面「或由 TriggerClass 的存档负责」这一候选被证伪。**
+> `TriggerClass::Save`（主表 `0x7F5858` slot13 @`0x726790`）整窗 0x86 字节逐字节钉死：
+> 窗内 disp 普查 **+0x54 = 0 处**（阳性对照=同解析器看得见 +0x24/28/30/34/3c/40/44 七字段），
+> 直接 call 集恰={基类 Save, 两族字段 writer}（T4），无任何被调方可序列化事件 +0x54；
+> handler `0x71E940`（+0x54 唯一存活写入者）的全镜像 E8 入口 `{0x726540}` 不在 Save 路径（T5）。
+> ⇒ 「+0x54 由 TriggerClass 存档」**不成立**；R-042 的**运行时缓存假说**又多一条负证据。
+> **但 L-20 不关闭**：证伪一条点名候选 ≠ 定谳「谁存档」——完整答案要裁决读侧容器宿主类
+> （L-30 域），静态到此为止。门禁 5/5、变异 12/12，`evidence/r047_l20_triggersave.md`。
+>
+> **R-048（2026-10-24）：读侧宿主定谳 = TriggerClass，「容器」证伪为标量字段，机制升级为
+> 正面假说（仍未闭）**。收割函数 `0x7264C0` 的 this 字段集与 TriggerClass ctor `0x725FA0`
+> 初始化集双向吻合（恰 {+0x24,+0x2C,+0x30,+0x34,+0x40,+0x44} ⊆ ctor 集，含 vptr
+> `0x7F5858` 与 detach/Save 虚法同域双证，门禁 10/10+变异 13/13，
+> `evidence/r048_triggerclass_host.md`）；`+0x2C` 有 setter/getter/detach 三件套（标量），
+> 整条「写 +0x54 → 读 +0x54 → 存 this+0x2C」链都在这一个 TriggerClass 成员函数内 ⇒
+> **运行时缓存假说获得正面机制**：载入后重算使能趟（非「谁存档」而是「无需存档、可重算」）。
+> L-20 仍开放：「载入后必跑该趟」需动态序证据（调用方 `0x6E53A0` 有 72 个 E8 入口，
+> 静态无法定序）。
 
 ### 1.3 `+0x28` / `+0x30` 的结构（同构）
 
@@ -216,6 +235,30 @@ if p:
 > 全簇存储站点 census 收口 = 门禁 X10；`evidence/r041_l21_eventteam.md`
 > （门禁 10/10、变异 10/10）。**L-21 关闭；同函数 `0x72759D` 已归属排除
 > （`[edi+0x28]` 属 TActionClass 兄弟链：new 0x94/ctor `0x6DD000`/主 vtable `0x7F443C`）。**
+
+### 1.4 ★ L-29 定谳（R-042，2026-10-24）：`+0x54` = 事件挂接对端对象的运行时缓存
+
+`evidence/r042_l29_field54.md`（门禁 9/9、变异 10/10）。字节事实四条：
+
+1. **成员字段**：ctor `0x71E6BE` 在装 vptr 前清零 `[esi+0x54]`（G1）；
+   `0x71F91B` `add esi,0x54` 把地址交 swizzle（G2）——与 +0x28/+0x30 并列第三接口字段。
+2. **不进 Save**：`0x71F820..0x71F87A` 整窗 0x5B 字节逐字节钉死，四项
+   `+0x28/+0x2C/+0x30/+0x34` 之外无任何 `[reg+0x54]`（G3）。L-20 的「由谁存档」
+   就此给出现象解释（运行时缓存 ⇒ 无需存档），**但非证明**，L-20 保持开放。
+3. **写入点**：存活写入 = handler `0x71E940` 内 `0x71F209`
+   （`mov [ebp+0x54],eax`，ebp=this；值来自传入对象 vtable slot15(+0x3c) 的返回值；
+   门：`[this+0x34]==-1` 跳过，否则 slot14(+0x38) 结果参与比对）。
+   **setter `0x71FA44` 是死代码**：E8/E9/立即数三面普查全镜像零引用（G9）。
+   主表 slot15=`0x4104A0`=`xor eax,eax; ret` ⇒ 对裸 TEvent 恒 NULL（引擎共享桩，72 表）。
+4. **读侧**：getter `0x71FA30` 唯二调用者 `0x726551/0x72655c`（消费方 `0x7264C0`
+   的事件循环内），非空即存入 `[esi+0x2C]`（G6/G7）。
+   【勘误 R-048】原文此处称「收割进**容器** `[esi+0x2C]`」为措辞误导：V8 三件套
+   （setter `0x726920`/getter `0x726910`/detach 等值摘除 `0x726690`）证其为
+   **TriggerClass 标量对端字段**；R-043 证据件同词挂同一勘误指针（站点与值不变）。
+
+普查新坑：`modrm rm==4` 是 SIB（`[esp+disp]`）不是 `[esi+disp]`——首轮把 0x44 当 esi
+双向失真；capstone `op.size` 单位=字节（dword 判据 `==4` 非 `==32`，否则全镜像 0 命中，
+G-60 假阴性第二次复发形态）。handler 参数对象类归属记 **L-30**。
 
 ---
 
@@ -357,12 +400,36 @@ Dirty(+0x20) / padding_21[3](+0x21..+0x23)`
 
 | # | 悬项 |
 |:--|:---|
-| L-20 | `TEventClass+0x54` 被 swizzle 登记但不在 `Save` 里，由谁存档 |
+| L-20 | `TEventClass+0x54` 被 swizzle 登记但不在 `Save` 里，由谁存档（**R-047：TriggerClass::Save 候选已证伪**，见 §1.2 横幅；**R-048：正面机制成立——`+0x54` 与 TriggerClass`+0x2C` 由同一使能收割趟（`0x7264C0`）重算，「无需存档、可重建」取代「谁存档」**；仍开放：「载入后必跑该趟」需动态序证据） |
 | L-23 | `0x528A10` 的节名缓存快速路径（`[esp+0x1c]` vs `[ebp+4]`） |
-| L-29 | `+0x54` 的取值写入点归属（R-041 census 实测 2 处：`0x71F209`/`0x71FA44`；清零站点 ctor `0x71E6BE`） |
+| L-30 | `0x71E940` 参数对象（slot15 派发宿主）与容器 `[esi+0x2C]` 的类归属（R-042 遗留）。**R-043 进展**：门查询的注册表已定谳 = `DynamicVectorClass<HouseClass*>` @`0xA80228`（finder `0x502D30` 整函数钉死，RTTI TD 名双证）；且 **arg2 不是裸 HouseClass**（其 slot15 是 `xor eax,eax` 桩⇒若 arg2=House 则 +0x54 恒 NULL 自相矛盾，G-62 反证），arg2 具体类仍未定谳。**R-048 消费侧收口**：消费函数 `0x7264C0` 宿主 = TriggerClass（字段签名互校+虚法同域，10/10+13/13）；「容器」证伪为标量字段（三件套，V8）；arg2 = `[T+0x24](owner)+0xA4 → +0xB4` 运行期对端（R-043 Y5 链在册）。**R-050 实例容器定谳**：TriggerClass 对象的持有容器 = `DynamicVectorClass<AbstractClass*>` @`0xB0F670`（引擎级共享注册表；安装/降级双 pattern 全段唯一、RTTI 链解名 + House 阳性对照 + TriggerClass 名串反证对照，7/7+12/12，`evidence/r050_trigger_registry.md`）；入册值=ctor this（esi 保全普查唯一写点=头部）。**【R-051 推翻·部分】** 本条曾断言「**非** `<TriggerClass*>`、不存在专用 trigger 向量」——**不成立**：ctor 实际向**三**个容器注册（`0xB0F670`、`0xB0F708` 皆 AbstractClass*；**`0xA8EAE8` = `DynamicVector<TriggerClass*>` 专用表**，vptr `0x7E9BE4`），R-050 只看到一条腿就外推到总体（变种 F「样本当总体」复发）。**GOAL-3T 遍历全部 trigger 的静态入口 = 直接遍历 `0xA8EAE8`**（`[+4]`data/`[+0x10]`count/`[+8]`cap），**无需** WhatAmI 过滤（表名与元素类型自洽）；见 `evidence/r051_trigger_three_registries.md`（8/8+12/12）。**【R-052 定谳残余②】** 调用方
+`0x6E53A0`（73 E8 入口）宿主类 = **TagClass 非虚成员**：体内 `[ebp+disp]` 集恰 `{24,28,2C,34,35}`、
++0x34/+0x35 字节重入旗标=Tag ctor `0x6E4DE0` 五字段签名；反证非 TriggerClass（其 +0x34 是 dword）；
+链路=Tag ctor 造 TriggerClass（rel32=0x725FA0）头插 `[esi+0x28]` 链、`0x6E53A0` 逐成员调 `0x7264C0`；
+this 来源=`DynamicVector<TagClass*>`（`[0x8B40CC]`，vptr `0x7EA5A4` 安装唯一站 `0x4E7FCD`）；
+RTTI `.?AVTagClass@@`+WhatAmI 0x2C 双证（10/10+13/13，`evidence/r052_tagclass_host.md`）。
+**副产物**：TagClass ctor 亦三注册腿（专用 `0xB0E720`=DynamicVector<TagClass*> + 共享
+`0xB0F670`/`0xB0F708`，ctor 跨度尾存 `893481` 恰 3）；**第四共享 Abstract 表 `0xB0F698`**
+（vptr 同 `0x7E91EC`；`0x6E53A0` 尾段自报入它，登记不定谳）。**残余①重述**：旧「attach 工厂
+`0x6E4EC0..`」地址**落在 TagClass ctor 本体跨度内**（非独立工厂）；所谓「arg1 列表驱动构造」实为
+Tag ctor 的 `[[arg1+0xA0]→+0xA8]` 节点链（0x6E4F19 起，Y5 在册）；新残量=Tag ctor arg1 类归属
+（调用点 `0x6C20CE`/`0x6E52D6`/`0x6E8D90` 待追），且 Trigger+0x24 实存**链节点**而非 arg1 原值
+（0x6E4F35 `push edi`）。**【R-053 定谳残余①·L-30 全闭】** TagClass ctor `0x6E4DE0` 的 arg1 =
+**`TagTypeClass*` 或 NULL**：构造点精确集合恰 3（E9 尾跳 0）——`0x6C20CE`（`TClassFactory<TagClass>`
+虚表 `0x7F3A80` slot3，arg1=`push 0` ⇒ **NULL** 无主 Tag）、`0x6E52D6`（find-or-create `0x6E52A0`
+**按 `[tag+0x24]==arg1` 去重**；调用者经 `0x6E5E70` 取 `DynamicVector<TagTypeClass*>`
+@`[0xB0E784]`（vptr `0x7F4558`，安装站 `0x6E5AFD`）的元素）、`0x6E8D90`（TeamClass ctor 三参，
+arg1=`[[TeamClass+0x24]+0xD0]`；`TeamTypeClass+0xD0` 写入者精确集合恰 3、值来自 `0x6E6310` 的
+`push 0xA4`（=TagTypeClass GetSize）+`call 0x6E5B60`（TagTypeClass ctor））。arg1 落 `Tag+0x24`，
+沿 `[arg1+0xA0]→[+0xA8]` 逐节点 `push 0x48`+`call 0x725FA0` 派生 TriggerClass 头插 `Tag+0x28`；
+`+0xA0` 链头归 TagTypeClass（其 ctor `0x6E5B73` 清零、dtor `0x6E5CA0` 沿链释放、`0x6E5E50` 按值摘链）；
+`+0xA8`/`+0x9C` 为同簇链指针。六类 RTTI/WhatAmI/GetSize 同钉（Tag `2C/38`、TagType `2D/A4`、
+Trigger `26/48`、TriggerType `27/B4`、Team `22/A0`、TeamType `23/F8`）。门禁 10/10 + 变异 16/16，
+见 `evidence/r053_tag_arg1.md`。 |
 
 **关闭**：L-15（§4.5 全解）、L-16（§2 全解）、L-22（§2.3.1 结清 —— 是**本线误读**，YRpp 无误）、
-**L-21（R-041 §1.3 定谳横幅：`+0x28`=前一个 `TEventClass`、`+0x30`=`TeamTypeClass*`）**。
+**L-21（R-041 §1.3 定谳横幅：`+0x28`=前一个 `TEventClass`、`+0x30`=`TeamTypeClass*`）**、
+**L-29（R-042 §1.4 横幅：`+0x54` 归属——事件挂接对端对象的运行时缓存；写入点 `0x71E940`@`0x71F209`；setter `0x71FA44` 死代码；读侧 getter `0x71FA30` 唯二调用者 `0x726551/5c` 收割进 `[esi+0x2C]`——原文「容器」措辞已由 R-048 勘误为标量字段，见 §1.4 第 4 条勘误注）**。
 
 ---
 

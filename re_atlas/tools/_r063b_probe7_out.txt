@@ -1,0 +1,178 @@
+== A) image self-check
+  sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+  expect = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+  match  = True
+
+== B) row call insns
+  row 4f2ced: e80e5f0300     call  0x528c00                       tgt=0x528c00
+  row 4f2d5c: e89f5e0300     call  0x528c00                       tgt=0x528c00
+  row 4f2e30: e8eb500300     call  0x527f20                       tgt=0x527f20
+  row 4f3219: e8024d0300     call  0x527f20                       tgt=0x527f20
+  row 4f32a4: e857590300     call  0x528c00                       tgt=0x528c00
+  row 4f32e9: e812590300     call  0x528c00                       tgt=0x528c00
+  row 4f332e: e8cd580300     call  0x528c00                       tgt=0x528c00
+  row 4f337c: e87f580300     call  0x528c00                       tgt=0x528c00
+  row 4f33ca: e831580300     call  0x528c00                       tgt=0x528c00
+  row 4f38f9: e802530300     call  0x528c00                       tgt=0x528c00
+  row 4f39c1: e83a520300     call  0x528c00                       tgt=0x528c00
+  row 4f3bf3: e808500300     call  0x528c00                       tgt=0x528c00
+  row 5cefc9: e8329cf5ff     call  0x528c00                       tgt=0x528c00
+  row 5cf10e: e8ed9af5ff     call  0x528c00                       tgt=0x528c00
+  row 5cf162: e8999af5ff     call  0x528c00                       tgt=0x528c00
+  row 5cf284: e87799f5ff     call  0x528c00                       tgt=0x528c00
+  row 5cf2e0: e81b99f5ff     call  0x528c00                       tgt=0x528c00
+  row 5cf42c: e8cf97f5ff     call  0x528c00                       tgt=0x528c00
+  row 5cf4c7: e83497f5ff     call  0x528c00                       tgt=0x528c00
+  row 5d76a9: e85215f5ff     call  0x528c00                       tgt=0x528c00
+  row 76c555: e8a6c6dbff     call  0x528c00                       tgt=0x528c00
+  row 778bcf: e82c00dbff     call  0x528c00                       tgt=0x528c00
+  row 778dd1: e82afedaff     call  0x528c00                       tgt=0x528c00
+  row 778e24: e8d7fddaff     call  0x528c00                       tgt=0x528c00
+
+== C) edi provenance at 0x778ac7
+  nearest_writer(edi)= None
+  block disasm 0x778ab0..0x778af0:
+  00778ab1: 5f             pop    edi
+  00778ab2: 5e             pop    esi
+  00778ab3: 5b             pop    ebx
+  00778ab4: 81c4d0000000   add    esp, 0xd0
+  00778aba: c3             ret    
+  00778abb: 8d4c2440       lea    ecx, [esp + 0x40]
+  00778abf: 897c2428       mov    dword ptr [esp + 0x28], edi
+  00778ac3: 897c242c       mov    dword ptr [esp + 0x2c], edi
+  00778ac7: 897c2438       mov    dword ptr [esp + 0x38], edi
+  00778acb: 897c243c       mov    dword ptr [esp + 0x3c], edi
+  00778acf: c74424340c1b7e00 mov    dword ptr [esp + 0x34], 0x7e1b0c
+  00778ad7: e84458c9ff     call   0x40e320 ->40e320
+  00778adc: 8d442440       lea    eax, [esp + 0x40]
+  00778ae0: 8d4c2434       lea    ecx, [esp + 0x34]
+  00778ae4: 50             push   eax
+  00778ae5: c7442434041b7e00 mov    dword ptr [esp + 0x34], 0x7e1b04
+  00778aed: e84e58c9ff     call   0x40e340 ->40e340
+
+== D) 0x528C00 callee-side fill check
+  aligned callers of 0x528c00 image-wide: 67
+  first 48 insns:
+   00528c00: 81ec18040000   sub    esp, 0x418
+   00528c06: 53             push   ebx
+   00528c07: 55             push   ebp
+   00528c08: 8be9           mov    ebp, ecx
+   00528c0a: 56             push   esi
+   00528c0b: 8b8c2430040000 mov    ecx, dword ptr [esp + 0x430]
+   00528c12: 57             push   edi
+   00528c13: e828c82800     call   0x7b5440 ->7b5440
+   00528c18: 8b8c2430040000 mov    ecx, dword ptr [esp + 0x430]
+   00528c1f: 89442418       mov    dword ptr [esp + 0x18], eax
+   00528c23: e818c82800     call   0x7b5440 ->7b5440
+   00528c28: 8b8c242c040000 mov    ecx, dword ptr [esp + 0x42c]
+   00528c2f: 8bf8           mov    edi, eax
+   00528c31: 897c2410       mov    dword ptr [esp + 0x10], edi
+   00528c35: e806c82800     call   0x7b5440 ->7b5440
+   00528c3a: 8bd8           mov    ebx, eax
+   00528c3c: 8d442428       lea    eax, [esp + 0x28]
+   00528c40: 85c0           test   eax, eax
+   00528c42: 0f8456010000   je     0x528d9e
+   00528c48: 33c0           xor    eax, eax
+   00528c4a: 3bd8           cmp    ebx, eax
+   00528c4c: 0f844c010000   je     0x528d9e
+   00528c52: 3bf8           cmp    edi, eax
+   00528c54: 0f8444010000   je     0x528d9e
+   00528c5a: 3b5d04         cmp    ebx, dword ptr [ebp + 4]
+   00528c5d: 0f8583000000   jne    0x528ce6
+   00528c63: 8b7508         mov    esi, dword ptr [ebp + 8]
+   00528c66: 33c0           xor    eax, eax
+   00528c68: 3bf0           cmp    esi, eax
+   00528c6a: 0f8422010000   je     0x528d92
+   00528c70: 83c9ff         or     ecx, 0xffffffff
+   00528c73: 8944241c       mov    dword ptr [esp + 0x1c], eax
+   00528c77: f2ae           repne scasb al, byte ptr es:[edi]
+   00528c79: f7d1           not    ecx
+   00528c7b: 49             dec    ecx
+   00528c7c: 89442420       mov    dword ptr [esp + 0x20], eax
+   00528c80: 51             push   ecx
+   00528c81: 8b4c2414       mov    ecx, dword ptr [esp + 0x14]
+   00528c85: 51             push   ecx
+   00528c86: 8d4c2424       lea    ecx, [esp + 0x24]
+   00528c8a: 8944242c       mov    dword ptr [esp + 0x2c], eax
+   00528c8e: e84d91f7ff     call   0x4a1de0 ->4a1de0
+   00528c93: 8b4e30         mov    ecx, dword ptr [esi + 0x30]
+   00528c96: 83c62c         add    esi, 0x2c
+   00528c99: 85c9           test   ecx, ecx
+   00528c9b: 89442410       mov    dword ptr [esp + 0x10], eax
+   00528c9f: 0f84ed000000   je     0x528d92
+   00528ca5: 8b4e10         mov    ecx, dword ptr [esi + 0x10]
+  imm32 dword stores to [ecx]/[reg] in first 200 insns:
+  count: 0
+  any 'mov dword ptr [ecx' in first 40 insns:
+
+== E) [esp+0x20] textual writes in [0x4f1ca0, 0x4f207c)
+   004f1caf 89542420 mov dword ptr [esp + 0x20], edx
+  count: 1
+
+== F) hop anchors re-pin (bytes from stream)
+  004f3976: 8bd6           mov    edx, esi
+  004f392e: 8bd6           mov    edx, esi
+  004f394b: 8bd6           mov    edx, esi
+  004f38b8: 8bf2           mov    esi, edx
+  004f20b7: 8bd6           mov    edx, esi
+  004f207c: 8b742420       mov    esi, dword ptr [esp + 0x20]
+  004f397a: e8f1f2ffff     call   0x4f2c70 ->4f2c70
+  004f3932: e809f8ffff     call   0x4f3140 ->4f3140
+  004f394f: e82c020000     call   0x4f3b80 ->4f3b80
+  004f20c1: e8ea170000     call   0x4f38b0 ->4f38b0
+  00778ac7: 897c2438       mov    dword ptr [esp + 0x38], edi
+  00778acf: c74424340c1b7e00 mov    dword ptr [esp + 0x34], 0x7e1b0c
+  00778ae5: c7442434041b7e00 mov    dword ptr [esp + 0x34], 0x7e1b04
+
+== G) callee-saved writer census in whole function prefixes
+  F=004f2c70 row=4f2ced  esi-writers=[('0x4f2c78', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f2cdf', '8d542424', 'lea', 'edx, [esp + 0x24]')]
+  F=004f2c70 row=4f2d5c  esi-writers=[('0x4f2c78', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f2cdf', '8d542424', 'lea', 'edx, [esp + 0x24]'), ('0x4f2d4e', '8d542414', 'lea', 'edx, [esp + 0x14]')]
+  F=004f2c70 row=4f2e30  esi-writers=[('0x4f2c78', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f2cdf', '8d542424', 'lea', 'edx, [esp + 0x24]'), ('0x4f2d4e', '8d542414', 'lea', 'edx, [esp + 0x14]'), ('0x4f2dba', '8d542428', 'lea', 'edx, [esp + 0x28]'), ('0x4f2de7', '8b542430', 'mov', 'edx, dword ptr [esp + 0x30]'), ('0x4f2e04', '8b5304', 'mov', 'edx, dword ptr [ebx + 4]'), ('0x4f2e28', '8d542420', 'lea', 'edx, [esp + 0x20]')]
+  F=004f3140 row=4f3219  esi-writers=[('0x4f3148', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f31a3', '8d542424', 'lea', 'edx, [esp + 0x24]'), ('0x4f31d0', '8b54242c', 'mov', 'edx, dword ptr [esp + 0x2c]'), ('0x4f31ed', '8b5304', 'mov', 'edx, dword ptr [ebx + 4]'), ('0x4f3211', '8d54243c', 'lea', 'edx, [esp + 0x3c]')]
+  F=004f3140 row=4f32a4  esi-writers=[('0x4f3148', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f31a3', '8d542424', 'lea', 'edx, [esp + 0x24]'), ('0x4f31d0', '8b54242c', 'mov', 'edx, dword ptr [esp + 0x2c]'), ('0x4f31ed', '8b5304', 'mov', 'edx, dword ptr [ebx + 4]'), ('0x4f3211', '8d54243c', 'lea', 'edx, [esp + 0x3c]'), ('0x4f3224', '8b5004', 'mov', 'edx, dword ptr [eax + 4]'), ('0x4f3236', '8b500c', 'mov', 'edx, dword ptr [eax + 0xc]'), ('0x4f3248', '8b542448', 'mov', 'edx, dword ptr [esp + 0x48]'), ('0x4f3292', '8d542420', 'lea', 'edx, [esp + 0x20]')]
+  F=004f3140 row=4f32e9  esi-writers=[('0x4f3148', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f31a3', '8d542424', 'lea', 'edx, [esp + 0x24]'), ('0x4f31d0', '8b54242c', 'mov', 'edx, dword ptr [esp + 0x2c]'), ('0x4f31ed', '8b5304', 'mov', 'edx, dword ptr [ebx + 4]'), ('0x4f3211', '8d54243c', 'lea', 'edx, [esp + 0x3c]'), ('0x4f3224', '8b5004', 'mov', 'edx, dword ptr [eax + 4]'), ('0x4f3236', '8b500c', 'mov', 'edx, dword ptr [eax + 0xc]'), ('0x4f3248', '8b542448', 'mov', 'edx, dword ptr [esp + 0x48]'), ('0x4f3292', '8d542420', 'lea', 'edx, [esp + 0x20]'), ('0x4f32d7', '8d54241c', 'lea', 'edx, [esp + 0x1c]')]
+  F=004f3140 row=4f332e  esi-writers=[('0x4f3148', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f31a3', '8d542424', 'lea', 'edx, [esp + 0x24]'), ('0x4f31d0', '8b54242c', 'mov', 'edx, dword ptr [esp + 0x2c]'), ('0x4f31ed', '8b5304', 'mov', 'edx, dword ptr [ebx + 4]'), ('0x4f3211', '8d54243c', 'lea', 'edx, [esp + 0x3c]'), ('0x4f3224', '8b5004', 'mov', 'edx, dword ptr [eax + 4]'), ('0x4f3236', '8b500c', 'mov', 'edx, dword ptr [eax + 0xc]'), ('0x4f3248', '8b542448', 'mov', 'edx, dword ptr [esp + 0x48]'), ('0x4f3292', '8d542420', 'lea', 'edx, [esp + 0x20]'), ('0x4f32d7', '8d54241c', 'lea', 'edx, [esp + 0x1c]'), ('0x4f331c', '8d542418', 'lea', 'edx, [esp + 0x18]')]
+  F=004f3140 row=4f337c  esi-writers=[('0x4f3148', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f31a3', '8d542424', 'lea', 'edx, [esp + 0x24]'), ('0x4f31d0', '8b54242c', 'mov', 'edx, dword ptr [esp + 0x2c]'), ('0x4f31ed', '8b5304', 'mov', 'edx, dword ptr [ebx + 4]'), ('0x4f3211', '8d54243c', 'lea', 'edx, [esp + 0x3c]'), ('0x4f3224', '8b5004', 'mov', 'edx, dword ptr [eax + 4]'), ('0x4f3236', '8b500c', 'mov', 'edx, dword ptr [eax + 0xc]'), ('0x4f3248', '8b542448', 'mov', 'edx, dword ptr [esp + 0x48]'), ('0x4f3292', '8d542420', 'lea', 'edx, [esp + 0x20]'), ('0x4f32d7', '8d54241c', 'lea', 'edx, [esp + 0x1c]'), ('0x4f331c', '8d542418', 'lea', 'edx, [esp + 0x18]'), ('0x4f336a', '8d542414', 'lea', 'edx, [esp + 0x14]')]
+  F=004f3140 row=4f33ca  esi-writers=[('0x4f3148', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f31a3', '8d542424', 'lea', 'edx, [esp + 0x24]'), ('0x4f31d0', '8b54242c', 'mov', 'edx, dword ptr [esp + 0x2c]'), ('0x4f31ed', '8b5304', 'mov', 'edx, dword ptr [ebx + 4]'), ('0x4f3211', '8d54243c', 'lea', 'edx, [esp + 0x3c]'), ('0x4f3224', '8b5004', 'mov', 'edx, dword ptr [eax + 4]'), ('0x4f3236', '8b500c', 'mov', 'edx, dword ptr [eax + 0xc]'), ('0x4f3248', '8b542448', 'mov', 'edx, dword ptr [esp + 0x48]'), ('0x4f3292', '8d542420', 'lea', 'edx, [esp + 0x20]'), ('0x4f32d7', '8d54241c', 'lea', 'edx, [esp + 0x1c]'), ('0x4f331c', '8d542418', 'lea', 'edx, [esp + 0x18]'), ('0x4f336a', '8d542414', 'lea', 'edx, [esp + 0x14]'), ('0x4f33b8', '8d542410', 'lea', 'edx, [esp + 0x10]')]
+  F=004f3b80 row=4f3bf3  esi-writers=[('0x4f3b8a', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f3bea', '8d542414', 'lea', 'edx, [esp + 0x14]')]
+  F=004f38b0 row=4f38f9  esi-writers=[('0x4f38b8', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f38f0', '8d542414', 'lea', 'edx, [esp + 0x14]')]
+  F=004f38b0 row=4f39c1  esi-writers=[('0x4f38b8', '8bf2', 'mov', 'esi, edx')]
+                 edx-writers=[('0x4f38f0', '8d542414', 'lea', 'edx, [esp + 0x14]'), ('0x4f392e', '8bd6', 'mov', 'edx, esi'), ('0x4f394b', '8bd6', 'mov', 'edx, esi'), ('0x4f396c', '8b542424', 'mov', 'edx, dword ptr [esp + 0x24]'), ('0x4f3976', '8bd6', 'mov', 'edx, esi'), ('0x4f39b3', '8d542418', 'lea', 'edx, [esp + 0x18]')]
+
+== H) H=0x4f1ca0 head + prologue + callers
+  E8 callers of 0x4f1ca0: ['0x4f1c53']
+  004f1ca0: 81ecb4000000   sub    esp, 0xb4
+  004f1ca6: 53             push   ebx
+  004f1ca7: 55             push   ebp
+  004f1ca8: 56             push   esi
+  004f1ca9: 8bf1           mov    esi, ecx
+  004f1cab: 33db           xor    ebx, ebx
+  004f1cad: 8bca           mov    ecx, edx
+  004f1caf: 89542420       mov    dword ptr [esp + 0x20], edx
+  004f1cb3: 8974241c       mov    dword ptr [esp + 0x1c], esi
+  004f1cb7: 899c24bc000000 mov    dword ptr [esp + 0xbc], ebx
+  004f1cbe: e87d372c00     call   0x7b5440 ->7b5440
+  004f1cc3: 8bce           mov    ecx, esi
+  004f1cc5: 50             push   eax
+  004f1cc6: e8454b0300     call   0x526810 ->526810
+  004f1ccb: 85c0           test   eax, eax
+  004f1ccd: 750c           jne    0x4f1cdb
+  004f1ccf: 5e             pop    esi
+  004f1cd0: 5d             pop    ebp
+  004f1cd1: 33c0           xor    eax, eax
+  004f1cd3: 5b             pop    ebx
+  004f1cd4: 81c4b4000000   add    esp, 0xb4
+  004f1cda: c3             ret    
+  004f1cdb: 6a70           push   0x70
+done.

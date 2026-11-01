@@ -1,0 +1,152 @@
+== 1) SMALL hosts
+  SMALL = ['0x527920', '0x527cc0', '0x527f20', '0x528220', '0x528c00', '0x529160', '0x52a760']
+  00528c00 in SMALL: True ; aligned callers: 67
+  00527f20 in SMALL: True ; aligned callers: 7
+
+== 2) 0x527f20 first 20 insns
+   00527f20: 83ec78         sub    esp, 0x78
+   00527f23: 53             push   ebx
+   00527f24: 55             push   ebp
+   00527f25: 8be9           mov    ebp, ecx
+   00527f27: 56             push   esi
+   00527f28: 8b8c2490000000 mov    ecx, dword ptr [esp + 0x90]
+   00527f2f: 57             push   edi
+   00527f30: e80bd52800     call   0x7b5440 ->7b5440
+   00527f35: 8b8c2490000000 mov    ecx, dword ptr [esp + 0x90]
+   00527f3c: 8bf8           mov    edi, eax
+   00527f3e: 897c2410       mov    dword ptr [esp + 0x10], edi
+   00527f42: e8f9d42800     call   0x7b5440 ->7b5440
+   00527f47: 8bd8           mov    ebx, eax
+   00527f49: 8d442448       lea    eax, [esp + 0x48]
+   00527f4d: 85c0           test   eax, eax
+   00527f4f: c7442418c85b8200 mov    dword ptr [esp + 0x18], 0x825bc8
+   00527f57: 0f84db010000   je     0x528138
+   00527f5d: 33c0           xor    eax, eax
+   00527f5f: 3bd8           cmp    ebx, eax
+   00527f61: 0f84d1010000   je     0x528138
+  [ebp+X] reads in first 120 insns:
+   00527f6f 3b5d04 cmp ebx, dword ptr [ebp + 4]
+   00527f78 8b7508 mov esi, dword ptr [ebp + 8]
+   00528023 8d7528 lea esi, [ebp + 0x28]
+   00528070 897508 mov dword ptr [ebp + 8], esi
+   00528073 895d04 mov dword ptr [ebp + 4], ebx
+   0052807f 894504 mov dword ptr [ebp + 4], eax
+   00528082 894508 mov dword ptr [ebp + 8], eax
+
+== 3) 0x778a20 prologue
+   00778a20: 81ecd0000000   sub    esp, 0xd0
+   00778a26: 53             push   ebx
+   00778a27: 56             push   esi
+   00778a28: 8bf1           mov    esi, ecx
+   00778a2a: 57             push   edi
+   00778a2b: 8bda           mov    ebx, edx
+   00778a2d: 688c9f8400     push   0x849f8c
+   00778a32: 8d8c2488000000 lea    ecx, [esp + 0x88]
+   00778a39: 89742478       mov    dword ptr [esp + 0x78], esi
+   00778a3d: e88e1fd0ff     call   0x47a9d0
+   00778a42: 33ff           xor    edi, edi
+   00778a44: 8d8c2484000000 lea    ecx, [esp + 0x84]
+
+== 4) flow 0x778af2..0x778bd0 + key jcc/ret bytes
+   00778af2: 8d8c2484000000 lea    ecx, [esp + 0x84]
+   00778af9: c7442430fc1a7e00 mov    dword ptr [esp + 0x30], 0x7e1afc
+   00778b01: 57             push   edi
+   00778b02: 51             push   ecx
+   00778b03: 8d4c242c       lea    ecx, [esp + 0x2c]
+   00778b07: 897c2454       mov    dword ptr [esp + 0x54], edi
+   00778b0b: 897c2458       mov    dword ptr [esp + 0x58], edi
+   00778b0f: 897c245c       mov    dword ptr [esp + 0x5c], edi
+   00778b13: c644246000     mov    byte ptr [esp + 0x60], 0
+   00778b18: 897c2464       mov    dword ptr [esp + 0x64], edi
+   00778b1c: 897c2468       mov    dword ptr [esp + 0x68], edi
+   00778b20: c744242cf4a57e00 mov    dword ptr [esp + 0x2c], 0x7ea5f4
+   00778b28: e8e3cedaff     call   0x525a10 ->525a10
+   00778b2d: 8d8c2484000000 lea    ecx, [esp + 0x84]
+   00778b34: e8879acbff     call   0x4325c0 ->4325c0
+   00778b39: 8d4c2410       lea    ecx, [esp + 0x10]
+   00778b3d: 53             push   ebx
+   00778b3e: e84dbb0300     call   0x7b4690 ->7b4690
+   00778b43: 8d4c2410       lea    ecx, [esp + 0x10]
+   00778b47: e8e4cf0300     call   0x7b5b30 ->7b5b30
+   00778b4c: 8d4c2410       lea    ecx, [esp + 0x10]
+   00778b50: e8ebc80300     call   0x7b5440 ->7b5440
+   00778b55: 8d4c2424       lea    ecx, [esp + 0x24]
+   00778b59: 50             push   eax
+   00778b5a: e8b1dcdaff     call   0x526810 ->526810
+   00778b5f: 85c0           test   eax, eax
+   00778b61: 753c           jne    0x778b9f
+   00778b63: 8bce           mov    ecx, esi
+   00778b65: e8a6fbffff     call   0x778710 ->778710
+   00778b6a: 8d4c2410       lea    ecx, [esp + 0x10]
+   00778b6e: e87dbb0300     call   0x7b46f0 ->7b46f0
+   00778b73: 8d4c2424       lea    ecx, [esp + 0x24]
+   00778b77: e874cbdaff     call   0x5256f0 ->5256f0
+   00778b7c: 8d8c2484000000 lea    ecx, [esp + 0x84]
+   00778b83: c784248400000068167e00 mov    dword ptr [esp + 0x84], 0x7e1668
+   00778b8e: e8ed8fcbff     call   0x431b80 ->431b80
+   00778b93: 8bc6           mov    eax, esi
+   00778b95: 5f             pop    edi
+   00778b96: 5e             pop    esi
+   00778b97: 5b             pop    ebx
+   00778b98: 81c4d0000000   add    esp, 0xd0
+   00778b9e: c3             ret    
+   00778b9f: 55             push   ebp
+   00778ba0: 8d4c241c       lea    ecx, [esp + 0x1c]
+   00778ba4: e877ba0300     call   0x7b4620 ->7b4620
+   00778ba9: 8d4c2410       lea    ecx, [esp + 0x10]
+   00778bad: 68849f8400     push   0x849f84
+   00778bb2: e879ba0300     call   0x7b4630 ->7b4630
+   00778bb7: 8d54241c       lea    edx, [esp + 0x1c]
+   00778bbb: 8d44241c       lea    eax, [esp + 0x1c]
+   00778bbf: 52             push   edx
+   00778bc0: 8d4c2414       lea    ecx, [esp + 0x14]
+   00778bc4: 50             push   eax
+   00778bc5: 8d54241c       lea    edx, [esp + 0x1c]
+   00778bc9: 51             push   ecx
+   00778bca: 52             push   edx
+   00778bcb: 8d4c2438       lea    ecx, [esp + 0x38]
+   00778bcf: e82c00dbff     call   0x528c00 ->528c00
+  jcc 0x778a8f:
+   00778a8f 752a jne 0x778abb ->778abb
+  insns at 0x778b96..0x778ba4:
+   00778b96: 5e             pop    esi
+   00778b97: 5b             pop    ebx
+   00778b98: 81c4d0000000   add    esp, 0xd0
+   00778b9e: c3             ret    
+   00778b9f: 55             push   ebp
+   00778ba0: 8d4c241c       lea    ecx, [esp + 0x1c]
+
+== 5) H caller 0x4f1c53
+   004f1c53 e848000000 call 0x4f1ca0 ->4f1ca0
+   004f1c44: e8c73d0300     call   0x525a10
+   004f1c49: 85c0           test   eax, eax
+   004f1c4b: 7e0f           jle    0x4f1c5c
+   004f1c4d: 8bd6           mov    edx, esi
+   004f1c4f: 8d4c2408       lea    ecx, [esp + 8]
+   004f1c53: e848000000     call   0x4f1ca0
+   004f1c58: 8bf0           mov    esi, eax
+   004f1c5a: eb02           jmp    0x4f1c5e
+   004f1c5c: 33f6           xor    esi, esi
+   004f1c5e: 8d4c2408       lea    ecx, [esp + 8]
+
+== 6) witness-lea adjacency (8 bytes before each bare row)
+  row 5cefc9: 005cefbd:8b8424e4000000(mov eax, dword ptr [esp + 0xe4]) | 005cefc4:50(push eax) | 005cefc5:8d4c2438(lea ecx, [esp + 0x38])
+  row 5cf10e: 005cf108:50(push eax) | 005cf109:51(push ecx) | 005cf10a:8d4c2438(lea ecx, [esp + 0x38])
+  row 5cf162: 005cf15c:51(push ecx) | 005cf15d:52(push edx) | 005cf15e:8d4c2438(lea ecx, [esp + 0x38])
+  row 5cf284: 005cf27e:50(push eax) | 005cf27f:51(push ecx) | 005cf280:8d4c2438(lea ecx, [esp + 0x38])
+  row 5cf2e0: 005cf2da:50(push eax) | 005cf2db:52(push edx) | 005cf2dc:8d4c2438(lea ecx, [esp + 0x38])
+  row 5cf42c: 005cf426:50(push eax) | 005cf427:51(push ecx) | 005cf428:8d4c2438(lea ecx, [esp + 0x38])
+  row 5cf4c7: 005cf4c1:51(push ecx) | 005cf4c2:52(push edx) | 005cf4c3:8d4c2438(lea ecx, [esp + 0x38])
+  row 5d76a9: 005d76a0:52(push edx) | 005d76a1:56(push esi) | 005d76a2:8d8c2488000000(lea ecx, [esp + 0x88])
+  row 76c555: 0076c54f:50(push eax) | 0076c550:52(push edx) | 0076c551:8d4c2438(lea ecx, [esp + 0x38])
+  row 778bcf: 00778bc9:51(push ecx) | 00778bca:52(push edx) | 00778bcb:8d4c2438(lea ecx, [esp + 0x38])
+  row 778dd1: 00778dcb:50(push eax) | 00778dcc:51(push ecx) | 00778dcd:8d4c2438(lea ecx, [esp + 0x38])
+  row 778e24: 00778e1e:51(push ecx) | 00778e1f:52(push edx) | 00778e20:8d4c2438(lea ecx, [esp + 0x38])
+
+== 7) constructed rows call targets
+  row 77884f: e8ac03dbff call 0x528c00 ->528c00
+  row 77890c: e8ef02dbff call 0x528c00 ->528c00
+  row 778956: e8a502dbff call 0x528c00 ->528c00
+  row 779c3d: e8beefdaff call 0x528c00 ->528c00
+  row 779ebd: e83eeddaff call 0x528c00 ->528c00
+done.

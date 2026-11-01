@@ -1,0 +1,52 @@
+G0 OK (structural; not counted): sha256=73201cc021497c95…f67476
+==============================================================================
+A) marker 0x12 = action id, compared against the entry KEY [+0xA4]
+==============================================================================
+A1 PASS: fixup 0x691E60: lea edx,[ebx+0xA8] / cmp [edx-4],0x12 / stride 8 / count [ebx+0xA0] = 8d93a8000000837afc12753f83f9ff752133c085f67e428b0da4eca8003929
+A2 PASS: entry key field = +0xA4: writer 898cc6a4000000 @0x69192E, reader 8bb4d1a4000000 @0x691520
+A3 PASS: dispatch 0x6DD8D7: mov edx,[esi+0x2c]; dec edx; cmp edx,0x90; ja (=> id 0x12 -> idx 0x11)
+A4 PASS: 0x6DFDEC: 145/145 in-text, 143 unique, alias idx=[38, 91, 92] (R-041 cross-check)
+A5 PASS: id 0x12 handler = 0x6DE37B -> `call 0x6E11C0` then ret 0x10
+A6 PASS: 0x6E11C0 head loads [0xA83D4C] and calls 0x68BCC0 with [0xA8B230] => name lookup
+
+==============================================================================
+B) key template: element key is a DECIMAL STRING of an int ("%d"), not a name
+==============================================================================
+B1 PASS: 0x6918D5: push edi / lea eax / push 0x817F6C("%%d") / push eax / call 0x7C8EF4
+B2 PASS: 0x817F6C = b'%d'; neighbours 0x817F60=b',%d' 0x817F64=b'None'
+B3 PASS: 0x7C8EF4 = format-string writer (0x7C8F07 imm 0x42 = 'B' = formatted-output class)
+B4 PASS: 0x723CAC: 0x7CA530("%d,%d") -> writes (dword,dword) pair; 0x81C000 = b'%d,%d'
+B5 PASS: pair writer: [esi+eax*8+0xA4]<-ecx @0x69192E then [+0xA8]<-edx @0x691939
+B6 PASS: 0x691925: cmp eax,0x32 / jge skip (=> at most 50 entries), matches +0xA0 count
+
+==============================================================================
+C) 0x691A5B IS a third construction site -- R-046 'exactly two' OVERTURNED
+==============================================================================
+C1 PASS: 0x691A55: [esi+0x9C]<-ebx ; [esi+0xA0]<-ebx ; four vptr installs (same 0x2F tail)
+C2 PASS: ebx writers in 0x691989..0x691A55 == [('0x691989', 'xor', 'ebx, ebx')] => +0x9C/+0xA0 both zero
+C3 PASS: vptr-quad init identical at 0x6916D1 / 0x691C95 / 0x691A61 => same class, no derived variant
+C4 PASS: +0x9C stores == ['0x6916bd', '0x691a55', '0x691b0d', '0x691c81'], loads == []  (R-046 saw only the two C7 forms)
+C5 PASS: three zero-init ENCODINGS: two C7-imm32 @0x6916BD/0x691C81 + one 89-reg @0x691A55 (missed hole)
+C6 PASS: 0x691970 is the [ScriptTypes] parser: three `push 0x83E728` ("ScriptTypes") @0x69197D/0x69199A/0x6919B3
+C7 PASS: 0x691A50 `call 0x410800` = same shared init as ctor 0x6916B8 / factory 0x691C7C
+
+==============================================================================
+D) +0x98 is a stale cache: dtor compacts the VECTOR but never fixes any +0x98
+==============================================================================
+D1 PASS: registry immediates: count [0x8B41D8] @0x6916EC, vptr [0x8B41C8] @0x691718 (ctor) and 0x691796 (dtor)
+D2 PASS: dtor 0x6917CE: mov edx,[ecx+eax*4] ; mov [ecx+eax*4-4],edx = vector compaction (registry only)
+D3 PASS: dtor disp32 set == ['0x0', '0x4', '0x8', '0xc', '0x10'] (pinned); 0x98 ∉ set => NO +0x98 fixup after compaction
+D4 PASS: +0x98 stores == ['0x691763', '0x691aec', '0x691d26'] (one per ctor site), loads == ['0x691f90'] (slot16)
+D5 PASS: 0x691748..0x69176C: scan vector for self, or -1 if absent => index written at 0x691763
+D6 PASS: slot16 @0x691F90: mov eax,[ecx+0x98]; ret  -> stale value returned verbatim
+D7 PASS: vector push `893481` @0x69173F precedes the +0x98 store @0x691763 => index is post-insert
+
+==============================================================================
+S) structural cross-checks (not in the denominator; red still exits nonzero)
+==============================================================================
+S1 OK (structural; not counted): three construction entry points: ctor 0x6916B0, factory 0x691C00, parser 0x691970
+S2 OK (structural; not counted): main vtable 0x7F1008: slot10(fixup)=0x691E30, slot12(GetSize)=0x691F80 (=0x234)
+S3 OK (structural; not counted): main vtable: slot25(parse)=0x6918A0, slot16(+0x98 getter)=0x691F90
+
+== R-054 26/26 字节断言 PASS（S1..S3 结构性不入分母，红仍非零退出）==
+GATE: GREEN

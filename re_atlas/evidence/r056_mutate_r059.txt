@@ -1,0 +1,27 @@
+pre-run byte verify: all offsets' current bytes match expectations
+
+baseline rc=0 failed=[]
+M1 twin nop fence          expect=['A1']         killed=['A1']         rc=1 OK
+M2 comparator imm          expect=['A3']         killed=['A3']         rc=1 OK
+M3 miss xor eax,eax        expect=['A2', 'A6']   killed=['A2', 'A6']   rc=1 OK
+M4 comparator body         expect=['A4', 'S3']   killed=['A4', 'S3']   rc=1 OK
+M5 2nd twin worker call    expect=['A5']         killed=['A5']         rc=1 OK
+M6 kernel head             expect=['B1']         killed=['B1']         rc=1 OK
+M7 kernel hit tail         expect=['B2']         killed=['B2']         rc=1 OK
+M8 1st inlined loop        expect=['A2', 'B5']   killed=['A2', 'B5']   rc=1 OK
+M9 2nd inlined loop        expect=['A2', 'B5']   killed=['A2', 'B5']   rc=1 OK
+M10 teardown block         expect=['C1']         killed=['C1']         rc=1 OK
+M11 host vptr stamp        expect=['C2']         killed=['C2']         rc=1 OK
+M12 virtual-delete arg     expect=['C3']         killed=['C3']         rc=1 OK
+M13 facet vptr stamp       expect=['C4']         killed=['C4']         rc=1 OK
+M14 host head              expect=['C5']         killed=['C5']         rc=1 OK
+M15 non-host head          expect=['C5b']        killed=['C5b']        rc=1 OK
+M16 a caller retargets     expect=['B6']         killed=['B6']         rc=1 OK
+M17 kernel caller retargets expect=['B3', 'B6']   killed=['B3', 'B6']   rc=1 OK
+M18 twinA worker->kernel   expect=['A2', 'A5', 'B3', 'B4'] killed=['A2', 'A5', 'B3', 'B4'] rc=1 OK
+M19 C6 release-loop disp   expect=['C6']         killed=['C6']         rc=1 OK
+M20 C6 back-edge jne       expect=['C6']         killed=['C6']         rc=1 OK
+
+G-79 coverage: all 19 counted assertions have >=1 killer
+
+== R-056 mutation 20/20 精确集合击杀 ==

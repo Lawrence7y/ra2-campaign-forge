@@ -1,0 +1,27 @@
+Z1 PASS: 构造簇清零 @0x6916C7：`mov [esi+0xA0],0` 后 6 字节即 `mov [esi],0x7F1008`（主 vptr 安装） ⇒ +0xA0:=0 是构造路径（计数初值）
+Z2 PASS: 第二构造变体 @0x691C8B：同型 `mov [esi+0xA0],0`+`mov [esi],0x7F1008` ⇒ 两条构造路径（不同构造现场）同一初值；不宣称二者类层次差异
+Z3 PASS: @0x691A5B `mov [esi+0xA0],ebx` 紧邻主 vptr 安装 ⇒ 初始化域第三形态（ebx 取值不宣称，只钉邻接关系）
+Z4 PASS: 解析入口清零 @0x6918CF：`mov [esi+0xA0],edi`，且 5 字节前 `xor edi,edi`（33 ff）⇒ **edi 恒 0：这是解析路径的清零**（kb/11 §10 原注释「计数清零」成立；本轮首版把「源=寄存器」误读成「写非常量」，被现场 xor 证据纠正——见 evidence §3）。位于 vfunc 槽入口 0x6918A0 与下一入口 0x00691D50 之间的邻接区间（槽入口≠体边界）
+Z8 PASS: 解析建表循环 @0x6918CF..0x691951：入口清零后 `mov [esi+eax*8+0xA4],ecx`/`mov [esi+eax*8+0xA8],edx`（modrm rm==4=**SIB**：base=esi idx=eax scale=8——G-61 判读；L-4 条目双 dword 就此细分：元素=[+0xA4 键,+0xA8 值] 8 字节对）；界比较两处 imm32=0x32（元素数上限 50，值语义不宣称）；随后 `read/inc/store` 计数（0x691940 窗含 `inc edi` 尾）
+Z5 PASS: 循环上界读 @0x691547：`mov esi,[edx+0xA0]; lea eax,[ecx+1]; cmp eax,esi; jl` ⇒ +0xA0 作条目循环边界（独立于 Save 的语义证据）
+Z7 PASS: 读取-自增-写回 @0x691940：`mov eax,[esi+0xA0]; inc eax; mov [esi+0xA0],eax`（0x691940 读 + 0x691947 写为同一条自增的三个字节段）⇒ 计数 +=1 形态（增条目路径）
+Z6 PASS: census 复现（与 R-044 X9 同判据、内存态再算）：存储={0x6916C7,0x6918CF,0x691947,0x691A5B,0x691C8B}、读取={0x691547,0x69191F,0x691940,0x691E0E,0x691E4B,0x691EAB}；本轮全部生命周期站点恰落 census 集内（站点即普查，非另择子集）
+
+== R-045 8/8 字节断言 PASS（G0 指纹不入分母）==
+GATE_EXIT=0
+C1 Z1 store opcode c7->90 (win+census)       expect=['Z1', 'Z6'] killed=['Z1', 'Z6'] rc=1 OK
+C2 Z1 imm0 lowbyte 00->01 (win only)         expect=['Z1'] killed=['Z1'] rc=1 OK
+C3 Z1 vptr-imm 10->11 (win only)             expect=['Z1'] killed=['Z1'] rc=1 OK
+C4 Z2 store disp a0->a1 (win+census)         expect=['Z2', 'Z6'] killed=['Z2', 'Z6'] rc=1 OK
+C5 Z3 store opcode 89->90 (win+census)       expect=['Z3', 'Z6'] killed=['Z3', 'Z6'] rc=1 OK
+C6 Z4 store disp a0->a1 (win+census)         expect=['Z4', 'Z6'] killed=['Z4', 'Z6'] rc=1 OK
+C7 Z5 load disp a0->a1 (win+census)          expect=['Z5', 'Z6'] killed=['Z5', 'Z6'] rc=1 OK
+C8 Z7 inc byte 40->90 (shared Z7+Z8)         expect=['Z7', 'Z8'] killed=['Z7', 'Z8'] rc=1 OK
+C9 Z7 store disp a0->a1 (Z7+Z8+Z6)           expect=['Z6', 'Z7', 'Z8'] killed=['Z6', 'Z7', 'Z8'] rc=1 OK
+C10 census-only byte at 0x69191F disp        expect=['Z6'] killed=['Z6'] rc=1 OK
+C11 Z4 xor-pair head 33->90 (win only)       expect=['Z4'] killed=['Z4'] rc=1 OK
+C12 Z8 element-store disp a4->b4 (win only)  expect=['Z8'] killed=['Z8'] rc=1 OK
+C13 Z8 inc-chain disp a0->a1 (Z8+Z7+Z6)      expect=['Z6', 'Z7', 'Z8'] killed=['Z6', 'Z7', 'Z8'] rc=1 OK
+
+== R-045 mutation 13/13 killed (exact-set) ==
+MUT_EXIT=0

@@ -1,0 +1,56 @@
+G0 OK (structural; not counted): sha256=73201cc021497c95…f67476
+==============================================================================
+A) the container SHAPE, at the one host where `this` IS the container (twins)
+==============================================================================
+A1 PASS: 0x52B4F0 footprint over esi(=this, `mov esi,ecx`) == {+0,+4,+0xC,+0x10}; got ['0x0', '0x10', '0x4', '0xc']
+A2 PASS: this+0x4=count (0x52B4F3 `mov eax,[esi+4]`), +0xC=sorted byte (0x52B4FE read / 0x52B51F set to 1), +0x10=cache cleared on re-sort (0x52B518)
+A3 PASS: this+0x0=array base (0x52B529 `mov edi,[esi]`), +0x4=count again as the search bound (0x52B52D), stride 8 (0x52B53B `[edi+eax*8]`)
+
+==============================================================================
+B) 0x52A4D0: the SAME container shape, embedded at this+0x2C
+==============================================================================
+B1 PASS: 0x52A4D0 `mov esi,ecx` => esi IS this
+B2 PASS: array base = this+0x2C (0x52A52A `mov eax,[esi+0x2C]` pushed into qsort with width 8)
+B3 PASS: count = this+0x30 (0x52A545 `mov edx,[esi+0x30]`)
+B4 PASS: sorted flag = byte this+0x38 (0x52A525 `cmp byte [esi+0x38],bl` / 0x52A541 set to 1)
+B5 PASS: cache = this+0x3C (read 0x52A51A / cleared 0x52A53E / refilled 0x52A561)
+
+==============================================================================
+C) 0x528A10 holds TWO containers, in two DIFFERENT objects
+==============================================================================
+C1 PASS: ebp is written exactly 1 time(s) in 0x528A10 (['mov ebp, ecx']) => ebp stays == this, so [ebp+disp] IS this+disp (no rebase trap here)
+C2 PASS: path B takes its container as `lea esi,[ebp+0x28]` => this+0x28
+C3 PASS: path B container fields: +4 = count (0x528B1F), +0x10 = cache (read 0x528B26 / refill 0x528B41) => this+0x2C and this+0x38
+C4 PASS: path A loads esi from the STACK ARG (`mov esi,[ebp+8]`) then rebases with `add esi,0x2C` => container base is [arg+8]+0x2C, NOT this+0x2C
+C5 PASS: path A reads `[esi+0x30]` BEFORE the add (0x528A83) => that operand is [arg+8]+0x30 = container+4 (the count); the cache read 0x528A95 happens AFTER the add => [arg+8]+0x3C = container+0x10
+
+==============================================================================
+D) embedding offset +0x2C is PROVEN by a LIVE caller; the first draft's
+   'interleave conflict' compared two DIFFERENT classes and was an artifact
+==============================================================================
+D1 PASS: 0x52772C: `mov ecx,[esi+0x30]` (count) -> `add esi,0x2C` (rebase) -> `mov ecx,esi; call 0x52B4F0`.  So the container sits at host+0x2C and the host reads its count at +0x30 -- exactly the map 0x52A4D0 uses.
+D2 PASS: container {base+0, count+4, flag+0xC, cache+0x10} embedded at host+0x2C yields {0x2C,0x30,0x38,0x3C} == 0x52A4D0's four field offsets => ONE structure
+D3 PASS: 0x528A10 path B embeds at this+0x28, the live caller embeds at host+0x2C. Both are real; they conflict ONLY IF 0x528A10's `this` and that caller's host were the same class -- and NOTHING establishes that. The first draft assumed it silently, so the 'interleave' was an artifact of comparing two different objects' field maps, NOT a property of any object.
+
+==============================================================================
+E) 0x52A4D0 is UNREACHABLE by all three channels => its `this` type is unknown
+==============================================================================
+E1 PASS: 0x52A4D0: E8 callers=0, E9 jumps=0, dword refs in .text=0  -- all zero, so this function is reachable only indirectly (or is dead); nothing pins its `this` type
+E2 PASS: positive control on the same census code: 0x52B4F0 -> 22 callers, 0x528A10 -> 650 callers (so the zero for 0x52A4D0 is real, not a dead scanner)
+
+==============================================================================
+F) INIClass ctor: the zero-init set, and what it does NOT prove
+==============================================================================
+F1 PASS: ctor zero-init block 0x52CC21..0x52CC35: +0x28,+0x2C,+0x30,byte+0x34,+0x38,+0x3C,byte+0x40 -- i.e. the union of BOTH views, which is exactly why the ctor cannot discriminate between them (zeroing is symmetric)
+F2 PASS: and then stamps vptr 0x7E1AF4 (the CCINIClass vtable R-055 recorded)
+F3 PASS: before that it constructs an in-place member at this+0xC (`lea edi,[esi+0xC]`, call 0x52ACE0, stamp sub-vptr 0x7E1AFC) => INIClass clearly HAS embedded sub-objects, which is consistent with the container being embedded too
+
+==============================================================================
+S) structural cross-checks (not in the denominator; red still exits nonzero)
+==============================================================================
+S1 OK (structural; not counted): twin B has the same footprint as twin A
+S2 PASS: 0x52A4D0 footprint over esi == {+0,+0x2C,+0x30,+0x38,+0x3C} -- exactly one container at this+0x2C plus the +0 slot; got ['0x0', '0x2c', '0x30', '0x38', '0x3c']
+S3 OK (structural; not counted): 0x528A10 window readable to its ret 0x14 boundary
+
+== R-057 22/22 字节断言 PASS（S1..S3 结构性不入分母，红仍非零退出）==
+GATE: GREEN

@@ -1,0 +1,25 @@
+Y1 PASS: finder @0x502D30 整函数 0x30 字节钉死：walk [0xA8022C]×[0xA80238]、item=[v+4i]、`cmp [item+0x34 所指+0xB8], ecx(arg)` 命中返 item、未命中 `xor eax,eax`
+Y2a PASS: 全局对象 @0xA80228：init `mov [0xA80228],0x7E9EE4`@0x4E6CFD、teardown 换 vptr `mov [0xA80228],0x7E9F04`@0x4E6D28；`mov [0xA8022C],eax(0)`@0x4E6CE7、`mov [0xA80238],eax(0)`@0x4E6D11 ⇒ 0xA80228 是 this（vptr+Vector+Count 布局），vptr 两态 0x7E9EE4/0x7E9F04
+Y2b PASS: 【结构性】RTTI：vtable 0x7E9EE4/0x7E9F04 的 COL→TD 名 = `?$DynamicVectorClass@PAVHouseClass@@` / `?$VectorClass@PAVHouseClass@@`；两条修饰名原始串在镜像中存在 ⇒ 注册表元素类型=HouseClass*（定名半边）
+Y3 PASS: 存储站 census（全编码枚举：a3/89+r/m/c705/88/a2）：[0xA8022C]←恰 {0x4E6CE7,0x4E6D47}、[0xA80238]←恰 {0x4E6D11,0x4F61E0(Push 的 inc;mov)}；元素写入 0x4F61EC=`mov [ecx+eax*4],ebp`（rm==4 此站是合法 SIB，G-61 规则正确判读）⇒ 该向量只被 init/teardown/Push 三态触碰
+Y4 PASS: handler 门 @0x71F1DA（33 字节到 jne，含 rel32 复算 call 0x502D30）：edi=[this+0x34]==-1 跳存；call [arg2_vt+0x38]→ebx；arg2=esi=[esp+0x38]；finder 命中后 `cmp ebx,[eax+0x30]` ⇒ 写 +0x54 前 arg2 的 slot14 必须等于命中 House 的 +0x30（门语义钉到字段级，不再多推）
+Y5 PASS: 消费方 @0x72651F: edx=[esi+0x24]、push [esi+0x34]、eax=[edx+0xA4]、push ecx、ecx=[eax+0xB4]、call 0x502D30（rel32 复算）⇒ arg2 经宿主 TypeLink(+0x24)→+0xA4→+0xB4 链取得（链只登记不臆断类名）
+Y6 PASS: HouseClass 自证：vtable 0x7EA8A0 slot11(+0x2C)=0x50E360=`mov eax,0xd; ret`；AbstractType 名字表 @0x816EE0 每对 8 字节（实测 word0=nameptr、word1=id，dump 坐实：+0x00→'<none>'/id0、+0x08→'Unit'/id1）第 0x0D 对 = 'House'+id 0x0D ⇒ 注册表元素类=HouseClass* 与注册表 TD 名交叉闭合
+
+== R-043 6/6 字节断言 PASS（G0 指纹/Y2b 结构性不计入分母，Y2b 红仍非零退出）==
+GATE_EXIT=0
+C1 finder walk bound 7e->8e (in Y1 window)   expect=['Y1'] killed=['Y1'] rc=1 OK
+C2 vec-init opcode a3->a4                    expect=['Y2a', 'Y3'] killed=['Y2a', 'Y3'] rc=1 OK
+C3 mangled-string first byte (Y2b raw find)  expect=['Y2b'] killed=['Y2b'] rc=1 OK
+C4 teardown store 89->90 (Y3-only site)      expect=['Y3'] killed=['Y3'] rc=1 OK
+C5 count-init store a3->a4 (Y2a+Y3)          expect=['Y2a', 'Y3'] killed=['Y2a', 'Y3'] rc=1 OK
+C6 push-count store head 89->90              expect=['Y3'] killed=['Y3'] rc=1 OK
+C7 element store 89->90 (SIB site Y3)        expect=['Y3'] killed=['Y3'] rc=1 OK
+C8 init-vptr imm byte (Y2a window)           expect=['Y2a'] killed=['Y2a'] rc=1 OK
+C9 gate cmp target f9->fa (Y4 window)        expect=['Y4'] killed=['Y4'] rc=1 OK
+C10 consumer call byte (Y5 window)           expect=['Y5'] killed=['Y5'] rc=1 OK
+C11 handler-call rel32 (Y4 window)           expect=['Y4'] killed=['Y4'] rc=1 OK
+C12 House WhatAmI imm 0d->0c (Y6 window)     expect=['Y6'] killed=['Y6'] rc=1 OK
+
+== R-043 mutation 12/12 killed (exact-set) ==
+MUT_EXIT=0

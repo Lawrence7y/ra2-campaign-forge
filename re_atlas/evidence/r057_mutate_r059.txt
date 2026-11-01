@@ -1,0 +1,39 @@
+pre-run byte verify: all offsets' current bytes match expectations
+
+baseline rc=0 failed=[]
+M1 twinA +4 count read     expect=['A1', 'A2']           killed=['A1', 'A2']           rc=1 OK
+M2 twinA +C flag read      expect=['A1', 'A2']           killed=['A1', 'A2']           rc=1 OK
+M3 twinA +C flag set       expect=['A1', 'A2']           killed=['A1', 'A2']           rc=1 OK
+M4 twinA +10 cache clear   expect=['A1', 'A2']           killed=['A1', 'A2']           rc=1 OK
+M5 twinA array base read   expect=['A3']                 killed=['A3']                 rc=1 OK
+M6 twinA stride            expect=['A3']                 killed=['A3']                 rc=1 OK
+M7 52A4D0 this==ecx        expect=['B1']                 killed=['B1']                 rc=1 OK
+M8 52A4D0 array base       expect=['B2', 'D2', 'S2']     killed=['B2', 'D2', 'S2']     rc=1 OK
+M9 52A4D0 count            expect=['B3', 'D2', 'S2']     killed=['B3', 'D2', 'S2']     rc=1 OK
+M10 52A4D0 sorted flag     expect=['B4', 'S2']           killed=['B4', 'S2']           rc=1 OK
+M11 52A4D0 cache read      expect=['B5', 'D2', 'S2']     killed=['B5', 'D2', 'S2']     rc=1 OK
+M12 528A10 container B     expect=['C2', 'D3']           killed=['C2', 'D3']           rc=1 OK
+M13 528A10 arg load        expect=['C4']                 killed=['C4']                 rc=1 OK
+M14 528A10 rebase          expect=['C4']                 killed=['C4']                 rc=1 OK
+M15 ctor zero-init block   expect=['F1']                 killed=['F1']                 rc=1 OK
+M16 ctor vptr stamp        expect=['F2']                 killed=['F2']                 rc=1 OK
+M17 ctor sub-object lea    expect=['F3']                 killed=['F3']                 rc=1 OK
+M18 ebp write site         expect=['C1']                 killed=['C1']                 rc=1 OK
+M19 twinA +4 at BOTH sites expect=['A1', 'A2', 'A3']     killed=['A1', 'A2', 'A3']     rc=1 OK
+M20 twinA +C at BOTH sites expect=['A1', 'A2']           killed=['A1', 'A2']           rc=1 OK
+M21 twinA +0 -> disp8 form expect=['A3']                 killed=['A3']                 rc=1 OK
+M22 52A4D0 +2C all 4 sites expect=['B2', 'D2', 'S2']     killed=['B2', 'D2', 'S2']     rc=1 OK
+M23 52A4D0 +38 all 4 sites expect=['B4', 'S2']           killed=['B4', 'S2']           rc=1 OK
+M24 give 52A4D0 a caller   expect=['E1', 'E2']           killed=['E1', 'E2']           rc=1 OK
+M25 live caller count read expect=['D1']                 killed=['D1']                 rc=1 OK
+M26 live caller rebase     expect=['D1', 'D2', 'D3']     killed=['D1', 'D2', 'D3']     rc=1 OK
+M27 live caller ecx set    expect=['D1']                 killed=['D1']                 rc=1 OK
+M28 C3 count disp          expect=['C3']                 killed=['C3']                 rc=1 OK
+M29 C5 count disp          expect=['C5']                 killed=['C5']                 rc=1 OK
+M30 D2 twin cache disp     expect=['D2']                 killed=['D2']                 rc=1 OK
+M31 D2 A4D0 base disp      expect=['B2', 'D2', 'S2']     killed=['B2', 'D2', 'S2']     rc=1 OK
+M32 D2 A4D0 cache disp     expect=['B5', 'D2', 'S2']     killed=['B5', 'D2', 'S2']     rc=1 OK
+
+G-79 coverage: all 21 counted assertions have >=1 killer
+
+== R-057 mutation 32/32 精确集合击杀 ==

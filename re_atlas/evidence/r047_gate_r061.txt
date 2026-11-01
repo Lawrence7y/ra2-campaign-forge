@@ -1,0 +1,8 @@
+T1 PASS: 常量与交叉：vtable 0x7F5858 slot11=WhatAmI 0x726940(`mov eax,0x26`)、slot12=GetSize 0x726930(`mov eax,0x48`=72，触发器族尺寸台账复证)、slot13=Save=0x726790；名字表 @0x816EE0 第 0x26 对 word1=0x26/word0='Trigger'（R-043 实测对布局）⇒ 类身份闭合
+T2 PASS: TriggerClass::Save 整窗 0x86 字节（53 指令，head→`ret 4`）逐字节钉死；基类 Save 在前（`call 0x410410`，与 TEvent::Save 同基类 Save，R-041/42 交叉）
+T3 PASS: 窗口内 +0x54 disp 形态 = **0 处**；阳性对照（同解析器可见性证明）：字段 disp8 集合 ⊇ {+0x24,+0x28,+0x30,+0x34,+0x3c,+0x40,+0x44}（7 个都在⇒解析器没瞎），另 [esp+0xc] 是 SIB(rm==4) 按 G-61 排除出字段表。⇒ TriggerClass::Save 不解引用任何 +0x54
+T4 PASS: Save 窗口内**直接 call** 目标集合（**capstone 线性解码**取 imm 操作数，非裸 0xE8 扫描——首版用字节扫描撞上 rel32 内的幻影 E8，目标集与权威解码不符，已纠正）= 恰 {0x410410 基类Save ×1, 0x4A1CA0 ×2, 0x4A1D50 ×4}（后两者头字节复证=字段 writer 族，0x4A1D50 与 R-042 X5 同一 writer）。另有 2 个**间接 call** `[ecx+0x10]`/`[edx+0x10]`（与 R-042 X2 **同形态**：+0x24/+0x28 存子对象指针、`+4` 取 facet vptr、调 slot4 后把返回值写流——该形态在 R-042 解出 ID-getter；TriggerClass 的这两处 facet 未重解，登记）⇒ Save 无任何可序列化事件 +0x54 的被调方
+T5 PASS: handler 0x71E940（event+0x54 唯一存活写入者，R-042）全镜像 E8 入口集恰={0x726540}（消费循环体内）；0x726540 不在 Save 窗口地址域、Save 的 E8 集也不含 handler ⇒ Save 路径根本不经过写 +0x54 的那条链（间接调用不可排除，按 charter 只登记直调面）
+S1 PASS: 【结构性·不计数】RTTI：Save/WhatAmI/GetSize/slot5 入 vfuncs、0x7264C0/0x726540 不在（消费循环非 TriggerClass 虚方法）、主表 0x7F5858 吻合 ⇒ 门禁钉的 Save 确属 TriggerClass
+
+== R-047 5/5 字节断言 PASS（G0 指纹/S1 结构性不入分母，S1 红仍非零退出）==

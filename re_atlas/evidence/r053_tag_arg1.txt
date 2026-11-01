@@ -1,0 +1,16 @@
+Z1 PASS: E8→TagClass ctor 站点精确集合 == ['0x6c20ce', '0x6e52d6', '0x6e8d90']（恰 3），E9 尾跳 0 处
+Z2 PASS: 站点 A @0x6C20CE 窗逐字节同；宿主 TClassFactory<TagClass> slot3=0x006C2090；arg1=`push 0` ⇒ NULL
+Z3 PASS: 站点 B @0x6E52D6 窗逐字节同；find-or-create 0x6E52A0 按 `cmp [eax+0x24],edi` 去重 ⇒ arg1 是 Tag 的 owner 键
+Z4 PASS: 站点 C @0x6E8D90 arg1=`[[esi+0x24]+0xD0]` 逐字节同；TeamClass ctor `ret 0xc`（三参）
+Z5 PASS: Tag ctor 0x6E4DE0 窗逐字节同：`mov [esi+0x24],edi`（arg1 落 +0x24）+ 四 vptr 0x7F44E0/…C4/…BC/…B4
+Z6 PASS: Tag ctor 沿 `[arg1+0xA0]`→`[+0xA8]` 遍历（回边 8bbfa8 与头插 8b5628/895028/894628 逐字节钉），每节点 push 0x48 + push edi + call 0x725FA0（rel32 复算=0x00725FA0） ⇒ arg1+0xA0 是 TriggerType 链头
+Z7 PASS: 六类 RTTI 名 + WhatAmI/GetSize 即时数全对：TagClass=0x2C/0x38 TagTypeClass=0x2D/0xA4 TriggerClass=0x26/0x48 TriggerTypeClass=0x27/0xB4 TeamClass=0x22/0xA0 TeamTypeClass=0x23/0xF8
+Z8 PASS: Tag 专用向量 0xB0E720 与 TagType 专用向量 0xB0E780 安装/降级点精确集合各 2 处，RTTI 双向确认
+Z9 PASS: TagType 查找器 0x6E5E70 扫 `[0xB0E784]` 元素并比 `[elem+0x24]` 名串 ⇒ 站点 B 的 arg1 = TagTypeClass*
+Z10 PASS: TeamType+0xD0 写入者精确集合 == ['0x6f0799', '0x6f1041', '0x6f135d']（恰 3，可杀「有第四个写入者」）；0x6F135D 的值来自 0x6E6310：push 0xA4（=TagTypeClass GetSize）+ call 0x6E5B60（TagTypeClass ctor）
+S1 PASS: TagTypeClass ctor 清 +0xA0 / dtor 沿链释放 / 0x6E5E50 按值摘链（结构性，不入分母；红仍非零退出）
+== SEC[0] tuple == (4096, 4060045, 4096, 4063232)
+== sha256(fp) == OK
+
+== R-053 10/10 字节断言 PASS（S1 结构性不入分母，红仍非零退出）==
+GATE: GREEN

@@ -18,14 +18,39 @@ This round measures the opposite error, which R-034 did not look for:
 
 Both errors are real. The published 15,224 is neither an upper nor a lower bound
 on the number of functions -- it is a different quantity ("flat CFG roots").
-Measured here:
+Measured here (R-035 original byte-scan readings -- since R-038/R-049 these are
+**upper-bound caliber**, and R-060 (D-06 option C) makes the ALIGNED reading the
+primary one; see the R-060 block at the end of the docstring):
 
-  E8 targets (calls)          7,279
+  E8 targets (calls)          7,279   [byte scan = UPPER reading]
   E9 targets (jumps)          2,042   of which 1,445 are intra-function
   vtable slots                6,499
-  LOWER entries              13,352   = E8 | vtable | PE entry, all reachable
-  UPPER entries              14,242   = LOWER + 890 unreachable prologue heads
+  LOWER entries              13,352   = E8 | vtable | PE entry, all reachable  [上界族]
+  UPPER entries              14,242   = LOWER + 890 unreachable prologue heads  [上界族]
   published                  15,224
+
+R-060 (D-06 裁决选 C，2026-10-25): the byte-scan E8 side is DEFEATED as primary
+reading -- 563 of its 68,807 E8 byte hits are operand bytes inside other
+instructions; their 560 unique targets must be filtered.  The gate now carries
+BOTH readings end-to-end and the aligned one is primary:
+
+  E8 targets, ALIGNED (real `call rel32` starts only)        6,719
+  LOWER_aligned = aligned E8 | vtable | PE entry           = 12,792
+  CFG from aligned roots: visited 12,792  covered 980,379
+  heads against aligned coverage (CFG misses them, ret+pad+prologue, decodes to ret) = 891
+    (the byte-scan reading got 890 because phantom root 0x405B99 "covered" head
+     0x40A090 via a bogus call edge -- one extra byte-scan artifact)
+  UPPER_aligned = 12,792 + 891                            = 13,683
+  named LOWER/UPPER = 547 / 557 (unchanged: zero lost roots were named)
+  coverage 547/12,792 = 4.28% ... 557/13,683 = 4.07%
+
+★ ERRATUM vs the R-049-era caliber table: the published aligned UPPER was
+written 13,682 (= 12,792 + byte-scan heads 890) and the 2026-10-24 ledger called
+V-001's 13,683 a "typo".  That judgment was WRONG: heads must be collected
+against the SAME CFG as the reading, and under the aligned CFG the extra head
+0x40A090 is genuinely unreachable (it was covered only through a phantom call
+edge).  The internally consistent aligned UPPER is 12,792 + 891 = **13,683** --
+exactly V-001's number.  Affected rows are listed in LEDGER R-060 §3.
 
 So the real denominator is BELOW the published one, and the real coverage is
 ABOVE 3.62%, not below it. R-034's direction is FALSIFIED.
@@ -131,6 +156,20 @@ EXP_ROOTS_ALIGNED = 12792
 EXP_E9_ONLY = 1872
 EXP_NAMED_LOWER = 547
 EXP_NAMED_UPPER = 557
+# R-060 (D-06 option C): the aligned reading becomes PRIMARY -- CFG rerun from
+# aligned roots, heads collected against THAT coverage, sensitivity counted.
+# All values machine-dumped by out/_probe_r060_pipeline.py / _mutdiff.py (G-65).
+EXP_VISITED_ALIGNED = 12792
+EXP_COVERED_ALIGNED = 980379
+EXP_HEADS_ALIGNED = 891          # NOT 890: head 0x40A090 was byte-scan-covered
+EXP_UPPER_ALIGNED = 13683        # 12,792 + 891 -- V-001's number; the R-049-era
+                                 # published 13,682 is the ERRATUM corrected here
+EXP_HEADS_RET_ONLY = 451         # sensitivity variant (i) vs aligned coverage
+EXP_HEADS_NARROW = 352           # sensitivity variant (ii) vs aligned coverage
+EXP_DROP_ROOTS = 560             # byte-scan roots minus aligned roots (subset!)
+EXP_NAMED_ALIGNED = 547          # measured: no lost root is a named point
+EXP_NAMED_ALIGNED_UPPER = 557
+EXP_OVERLAP3 = 3                 # phantom targets also reached by a REAL call
 EXP_PURE_NAME_LIT = 5
 EXP_PREFIX_LIT = 30
 EXP_METHODS = 21
@@ -451,7 +490,11 @@ check("P5", len(heads) == EXP_HEADS and ANCHOR in heads
 PROLOGUE_NARROW = re.compile(rb"^(?:\x55\x8b\xec|\x83\xec|\x81\xec|\x53|\x56|\x57|\x8b\xff|\x6a)")
 
 
-def collect_heads(pats, prologue_re, window):
+def collect_heads(pats, prologue_re, window, cov=None):
+    # R-060: `cov` makes the head filter CFG-reading independent -- heads for the
+    # aligned UPPER must be collected against the ALIGNED coverage (P5b/R1 below),
+    # not the byte-scan one.  Default None keeps the historical byte-scan behavior.
+    _cov = covered if cov is None else cov
     out = []
     for pat, skip in pats:
         for m in re.finditer(pat, TEXT):
@@ -464,7 +507,7 @@ def collect_heads(pats, prologue_re, window):
             if npad < 2:
                 continue
             a = TLO + j
-            if a in covered:
+            if a in _cov:
                 continue
             if not prologue_re.match(read_va(a, window)):
                 continue
@@ -515,15 +558,124 @@ lo2_den = len(roots_aligned)
 up2_den = len(roots_aligned) + len(heads)
 n_lo2 = len(named & roots_aligned)
 n_up2 = len(named & (roots_aligned | set(heads)))
-print(f"REGISTER\tP7b\t**三档双报**：\n"
+print(f"REGISTER\tP7b\t**三档双报（R-038 历史形态，已被下面 R1..R6 取代）**：\n"
       f"  · 上界族（字节扫描 E8）：LOWER **13,352** → "
       f"{100.0*n_lo/lo_den:.2f}%；UPPER **14,242** → {100.0*n_up/up_den:.2f}%\n"
-      f"  · 对齐族（真 call 起点）：LOWER **{lo2_den:,}** → "
-      f"{100.0*n_lo2/lo2_den:.2f}%；UPPER **{up2_den:,}** → "
-      f"{100.0*n_up2/up2_den:.2f}%\n"
-      f"  命名点 {n_lo2}（对齐 LOWER）/ {n_up2}（对齐 UPPER）\n"
-      f"  ⇒ 对齐族是本轮推荐引用口径（剔除 560 个可证伪幻影根），"
-      f"但 UPPER 序言敏感度见 P5b（结构性普查，不计入 PASS 数）")
+      f"  · 对齐族（R-038 半修）：LOWER **{lo2_den:,}** → "
+      f"{100.0*n_lo2/lo2_den:.2f}%；UPPER **{up2_den:,}**（ heads 仍来自字节扫描 "
+      f"CFG ⇒ 少 1 个真头部 0x40A090，R-049 时代 13,682 即错在此，见 R6）")
+
+# ================================================================ R-060 block
+# D-06 裁决选 C：对齐解码升为 PRIMARY 读法。字节扫描 CFG 保留（历史可复算），
+# 下面把同一台 CFG 机从对齐根集再跑一遍，头部对着**对齐覆盖**收集。
+visited_a = set()
+covered_a = set()
+work = list(roots_aligned)
+while work:
+    e = work.pop()
+    if e in visited_a:
+        continue
+    visited_a.add(e)
+    stack = [e]
+    while stack:
+        cur = stack.pop()
+        guard = 0
+        while True:
+            guard += 1
+            if guard > 6000 or not (TLO <= cur < THI) or cur in covered_a:
+                break
+            r = dec1(cur)
+            if r is None:
+                break
+            mn, _op_str, size, ops = r
+            covered_a.add(cur)
+            nxt = cur + size
+            if mn == "call":
+                if ops and ops[0][0] == "imm":
+                    t = ops[0][1]
+                    if TLO <= t < THI and t not in visited_a:
+                        work.append(t)
+                cur = nxt
+                continue
+            if mn == "jmp":
+                if ops and ops[0][0] == "imm" and TLO <= ops[0][1] < THI:
+                    cur = ops[0][1]
+                    continue
+                break
+            if mn.startswith("j"):
+                if ops and ops[0][0] == "imm" and TLO <= ops[0][1] < THI:
+                    stack.append(ops[0][1])
+                cur = nxt
+                continue
+            if mn.startswith("ret") or mn in ("hlt", "ud2", "iretd", "retf"):
+                break
+            cur = nxt
+    if len(covered_a) > 1_300_000:
+        break
+
+check("R1", len(visited_a) == EXP_VISITED_ALIGNED
+      and len(covered_a) == EXP_COVERED_ALIGNED,
+      f"**对齐 CFG**：从 12,792 对齐根集遍历 ⇒ visited = **{len(visited_a):,}**"
+      f"（= 根集本身，遍历无新入口）；覆盖地址 **{len(covered_a):,}** = .text 的 "
+      f"{100.0*len(covered_a)/NT:.1f}%（字节扫描 992,227，差 {len(covered)-len(covered_a):,} "
+      f"全是幻影边的产物）",
+      f"visited_a={len(visited_a)} covered_a={len(covered_a)}")
+
+# the ruling's hard negative control: phantom contribution in the ALIGNED
+# reading must be exactly zero, AND the 560 byte-scan phantom roots must not be
+# real call targets anymore.  (D-06 验收判据 ① ：「E8 幻影 560 条复现为 0」。)
+# NOTE: "lost roots never appear in e8_aligned" is an ALGEBRAIC consequence of
+# roots_aligned being built FROM e8_aligned -- stating it as a conjunct would be
+# a G-80 tautology.  The control that has teeth is the PAIR of mutations
+# (M-promote: aligned moves, byte-scan side unchanged; M-displace-overlap:
+# byte-scan moves, aligned unchanged) -- enforced in mutate_r035_gate.py.
+check("R2", len(phantom_targets & e8_aligned) == EXP_OVERLAP3
+      and len(roots_call - roots_aligned) == EXP_DROP_ROOTS,
+      f"**负控定式**：字节扫描 13,352 根减去对齐 12,792 根 = 恰 **560**（判据"
+      f"「幻影 560 条」的集合表达）；幻影源指向的目标与对齐目标集交 **{len(phantom_targets & e8_aligned)}** "
+      f"个（同目标双来源的幻影被剔除，对齐计数不动）⇒ 「幻影在对齐读法出现 0 次」"
+      f"的可杀形态由变异 M-promote / M-displace-overlap 双向钉",
+      f"overlap={len(phantom_targets & e8_aligned)} lost_roots="
+      f"{len(roots_call - roots_aligned)}")
+
+# heads under the ALIGNED coverage -- the correction that turns 890 into 891.
+heads_a = collect_heads(((rb"\xc3", 1), (rb"\xc2", 3)), PROLOGUE, 8, cov=covered_a)
+check("R3", len(heads_a) == EXP_HEADS_ALIGNED and 0x40A090 in heads_a
+      and 0x40A090 in covered and ANCHOR in heads_a,
+      f"头部对着**对齐覆盖**收集 = **{len(heads_a)}**（不是 890）：字节扫描里 "
+      f"0x40A090 被**幻影边**覆盖 ⇒ 从未进头部集；对齐 CFG 下它真不可达 ⇒ 补回来。"
+      f"锚点 0x403A80 仍在集内（阳性对照）",
+      f"heads_a={len(heads_a)} extra_head_in={'0x40A090' in [hex(x) for x in heads_a]}")
+
+# sensitivity now runs on the aligned base and is a COUNTED assertion (R-038
+# had it REGISTER-only): the ~2x spread must hold against the corrected base.
+heads_a_ro = collect_heads(((rb"\xc3", 1),), PROLOGUE, 8, cov=covered_a)
+heads_a_nw = collect_heads(((rb"\xc3", 1), (rb"\xc2", 3)),
+                           re.compile(rb"^(?:\x55\x8b\xec|\x83\xec|\x81\xec)"),
+                           8, cov=covered_a)
+check("R4", len(heads_a_ro) == EXP_HEADS_RET_ONLY and len(heads_a_nw) == EXP_HEADS_NARROW,
+      f"**序言敏感度（计数断言）**：对齐基准 {len(heads_a)}；去 `\\xc2` 分支 → "
+      f"**{len(heads_a_ro)}**；序言判据收紧到三主形 → **{len(heads_a_nw)}** ⇒ "
+      f"极差 {len(heads_a_ro)}…{len(heads_a)} ≈ {len(heads_a)/max(1,len(heads_a_nw)):.1f}×"
+      f"（≈2× 定性不变）⇒ **UPPER 不可单值冻结**，引用带区间",
+      f"ret_only={len(heads_a_ro)} narrow={len(heads_a_nw)} base={len(heads_a)}")
+
+upper_a = len(visited_a) + len(heads_a)
+n_lo_a = len(named & visited_a)
+n_up_a = len(named & (visited_a | set(heads_a)))
+check("R5", n_lo_a == EXP_NAMED_ALIGNED and n_up_a == EXP_NAMED_ALIGNED_UPPER
+      and len(visited_a) == EXP_VISITED_ALIGNED and upper_a == EXP_UPPER_ALIGNED,
+      f"**主口径（对齐族，推荐引用）**：LOWER **{len(visited_a):,}** → "
+      f"{100.0*n_lo_a/len(visited_a):.2f}%（命名 {n_lo_a}）；UPPER **{upper_a:,}** → "
+      f"{100.0*n_up_a/upper_a:.2f}%（命名 {n_up_a}，含 +{len(heads_a)} 不可达头部）",
+      f"lower={len(visited_a)} upper={upper_a} named={n_lo_a}/{n_up_a}")
+
+check("R6", heads == [h for h in heads if h != 0x40A090] and 0x40A090 in heads_a,
+      f"**勘误锁定**：R-049 时代发布值 13,682 = 12,792 + **字节扫描头部 890**，"
+      f"混了两种读法 ⇒ 漏掉头部 0x40A090（它只对字节扫描 CFG 不可达，对齐 CFG "
+      f"本就够不到它——幻影边才是唯一覆盖路径）。自洽值 = 12,792 + 891 = "
+      f"**{upper_a:,}** = V-001 的 13,683。当年判 V-001 '笔误' 为 13,682 是**判反了**",
+      f"890_set_has_extra_head={0x40A090 in heads} upper_a={upper_a}")
 
 
 # ---------------------------------------------------------------- P8

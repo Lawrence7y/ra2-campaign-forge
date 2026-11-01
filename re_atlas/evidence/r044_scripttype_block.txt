@@ -1,0 +1,31 @@
+X1 PASS: GetSize slot12 @0x691F80=`mov eax,0x234`（564，G-1/kb/11 复证）；WhatAmI slot11 @0x691F70=`mov eax,0x1B`；名字表 @0x816EE0 第 0x1B 对（word1=id 0x1B、word0=nameptr→'ScriptType'）交叉闭合
+X2 PASS: Save slot13 @0x691E00 整窗 0x22 字节钉死（到 `ret 4`）：基类 Save=0x410BE0（rel32 复算）、自有载荷仅 ONE dword：@0x691E0E `mov eax,[esi+0xA0]`（8b 86 a0000000）→ writer 0x4A1D50（rel32 复算） ⇒ ScriptTypeClass::Save 自有字段 = +0xA0 计数（L-4 的核心一问）
+X3 PASS: AbstractTypeClass::Save @0x410BE0 整窗 0x32 字节钉死：先基类 0x410410（rel32 复算），再三个字符串字段 `lea [esi+0x24]`/`lea [esi+0x64]`/`add esi,0x3d` 全走同一 writer 0x4A1DB0 ⇒ Name(+0x24, R-023) + 两串(+0x64/+0x3D)；类型层 Save 载荷=字符串×3
+X4 PASS: 串 writer @0x4A1DB0（0x15 字节窗）：`mov edx,[esp+4]; …or ecx,-1; xor eax,eax; repne scasb`（`83c9ff 33c0 f2ae`）= strlen 起手段（`repne scasb al,[es:edi]`）⇒ 按串长序列化，非固定 0x31 缓冲拷贝（not/dec 收尾在窗外，不宣称）
+X5 PASS: dword writer @0x4A1D50：`mov eax,[esp+4]; lea edx,[esp+4]; push 4; push edx` —— **同一个** R-042 TEvent Save 里调用的 dword writer（引擎共享 4 字节 blob 写）
+X6 PASS: slot5 Load 尾 @0x691DB4：装主 vptr 0x7F1008 + 三 facet 0x7F0FEC/0x7F0FE4/0x7F0FDC 于 +0/+4/+8/+0xC（facet 间距 −0x1C/−0x24/−0x2C，kb/20 多 vptr 族复现）
+X7 PASS: fixup slot10 @0x691E30：51 字节窗钉死（WhatAmI 门 `cmp eax,0x23`、count [ebx+0xA0]、`mov esi,[0xA8ECB0]`@0x691E5A/`lea edx,[ebx+0xA8]`@0x691E60）+ `add edx,8`（@0x691EB2 条目步长 8）+ `dec eax; mov [edx],eax`（@0x691E98 重编号）+ `mov ecx,[0xA8ECA4]`（@0x691E77 TeamTypes 向量） ⇒ 数组=[+0xA8] 步长 8、计数=[+0xA0]、扫描 TeamTypes 全局注册表向量 [0xA8ECA4]（R-041 同一对全局）。地址由单次整段线性解码+独立 raw-find（83c208/488902/8b0da4eca800）双坐实；双游标同时推进（o 与 a 都 +=size 且喂 a+o）会漂到 0x691F34/0x691F00——消融证：win=255 也漂，与窗口大小无关
+X8 PASS: 名字表第 0x23 对 = 'TeamType'/id 0x23 ⇒ fixup 入参 WhatAmI 门 0x23 = TeamTypeClass*；结合 X7 注册表同址对 ⇒ ScriptType 条目存的是 TeamType **注册表索引**（int），TeamType 被移除时前移重编号
+X9 PASS: census 收口（0x691000..0x692100，89/8B/C7 mod=10 rm!=4 全 reg 字段枚举）：[reg+0xA0] 存储 = {0x6916C7,0x6918CF,0x691947,0x691A5B,0x691C8B}、读取 = {0x691547,0x69191F,0x691940,0x691E0E,0x691E4B,0x691EAB}（含 Save 读 0x691E0E 阳性对照）；首版掩码把 reg 字段钉死在 eax ⇒ kb/11 引的 edi 源存储 0 命中——G-60 阳性对照当场抓到
+X10 PASS: 【结构性·不计数】RTTI：主 vtable 0x7F1008 吻合且 slot5/Save/GetSize/WhatAmI/fixup 五址全在 ScriptTypeClass.vfuncs ⇒ 本门禁断言的对象确为 ScriptTypeClass 方法
+
+== R-044 9/9 字节断言 PASS（G0 指纹/X10 结构性不计入分母，X10 红仍非零退出）==
+GATE_EXIT=0
+M1 GetSize imm 0x234->0x235            expect=['X1'] killed=['X1'] rc=1 OK
+M2 WhatAmI imm 0x1B->0x1C              expect=['X1'] killed=['X1'] rc=1 OK
+M3 namepair 0x1B id ->0x1C             expect=['X1'] killed=['X1'] rc=1 OK
+M4 Save disp a0->a1 (X2 win+X9 ctrl)   expect=['X2', 'X9'] killed=['X2', 'X9'] rc=1 OK
+M5 Save call1 rel32 (X2 only)          expect=['X2'] killed=['X2'] rc=1 OK
+M6 baseSave lea+0x24->+0x25            expect=['X3'] killed=['X3'] rc=1 OK
+M7 strWriter head mov->nop             expect=['X4'] killed=['X4'] rc=1 OK
+M8 dwordWriter push4 len->5            expect=['X5'] killed=['X5'] rc=1 OK
+M9 vptr low 0x08->0x09                 expect=['X6'] killed=['X6'] rc=1 OK
+M10 fixup cmp 0x23->0x24 (in win)      expect=['X7'] killed=['X7'] rc=1 OK
+M11 stride add edx,8->9                expect=['X7'] killed=['X7'] rc=1 OK
+M12 regscan vector a4->a5 (out win)    expect=['X7'] killed=['X7'] rc=1 OK
+M13 namepair 0x23 id ->0x22            expect=['X8'] killed=['X8'] rc=1 OK
+M14 census load a0->a1 (X9 only)       expect=['X9'] killed=['X9'] rc=1 OK
+M15 fixup head 53->90 (X7 win)         expect=['X7'] killed=['X7'] rc=1 OK
+
+== R-044 mutation 15/15 killed (exact-set) ==
+MUT_EXIT=0

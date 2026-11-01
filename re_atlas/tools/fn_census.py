@@ -61,23 +61,39 @@ def cstr_vendored():
 
 
 def direct_call_targets():
-    """All rel32 call targets that land inside .text on an instruction boundary."""
+    """All rel32 call targets that land inside .text on an instruction boundary.
+
+    R-060 same-class fix (铁律 5 / G-77): the previous version ran ONE linear
+    `md.disasm_lite(data, base)` -- .text holds embedded data, and a linear sweep
+    STOPS at the first undecodable byte (measured: 0x46F5A0 region), so it
+    silently returned 1,118 targets (~83% lost) against the resuming engine's
+    6,719.  Same engine as fn_walk.aligned_call_targets: decode from `cur`,
+    advance by size, on failure advance 1 byte and retry."""
     data = text_bytes()
     base = TEXT["va"]
+    end = base + len(data)
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
     md.detail = True
     targets = set()
-    for insn in md.disasm_lite(data, base):
-        addr, size, mnem, ops = insn
-        if mnem != "call" or not ops.startswith("0x"):
+    cur = base
+    while cur < end:
+        off = cur - base
+        got = None
+        for insn in md.disasm_lite(data[off:off + 16], cur):
+            got = insn
+            break
+        if got is None:
+            cur += 1
             continue
-        try:
-            tgt = int(ops, 16)
-        except ValueError:
-            continue
-        lo, hi = TEXT["va"], TEXT["va"] + len(data)
-        if lo <= tgt < hi:
-            targets.add(tgt)
+        addr, size, mnem, ops = got
+        if mnem == "call" and ops.startswith("0x"):
+            try:
+                tgt = int(ops, 16)
+            except ValueError:
+                tgt = None
+            if tgt is not None and base <= tgt < end:
+                targets.add(tgt)
+        cur += size
     return targets
 
 

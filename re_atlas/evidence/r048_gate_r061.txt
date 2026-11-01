@@ -1,0 +1,13 @@
+V1 PASS: 消费方头 @0x7264C0 `push ecx;push esi;mov esi,ecx`（this→esi）+ 守卫读 [esi+0x44]/[esi+0x30]（18 字节钉死）
+V2 PASS: 消费方体 0x7264C0..0x7265B3 全部 [esi+disp]（无 SIB）= ['0x24', '0x2c', '0x30', '0x34', '0x40', '0x44']（恰 6 字段；含收割写 +0x2C、位图写 +0x40）
+V3 PASS: ctor 0x725FA0 字节窗（54B，vptr 0x7F5858 安装在内）+ 其 [esi+disp] 初始化集 ⊇ 消费方字段集∪{+0x28,+0x3c}（实测 ['0x0', '0x24', '0x28', '0x2c', '0x30', '0x34', '0x3c', '0x40', '0x44']）⇒ 消费方 this 的字段全部由 TriggerClass ctor 建立
+V4 PASS: 收割块 @0x72654F: `mov ecx,edi; call 0x0071FA30` ×2 后 `mov [esi+0x2C],eax`（两 rel32 均复算到 getter 0x71FA30）
+V5 PASS: getter @0x71FA30 `mov eax,[ecx+0x54]; ret` —— 收割源即 R-042 定谳的运行时缓存字段
+V6 PASS: @0x72651F arg2 取链 `[esi+0x24]→+0xa4→+0xb4`（finder 0x00502D30=0x502D30，R-043 Y1）；@0x726538 `mov ecx,edi; call 0x0071E940`（handler=+0x54 唯一存活写入者，R-042）
+V7 PASS: 消费方全镜像 E8 入口集恰 = ['0x6e5414']（唯一调用点 0x6E5414，字节含 `mov ecx,esi; call`）+ 阳性对照 handler 入口集 = ['0x726540']（同扫描机制，非恒真）
+V8 PASS: slot10 detach @0x726690 对 {+0x24,+0x28,+0x2C} 做等值摘除/清零；+0x2C 取回 0x726910、置位 0x726920(ret 4)、使能清 0x726900（[+0x44]=0）⇒ +0x2C 是 TriggerClass 标量对端字段（非 VectorClass 容器——R-043 措辞修正）
+V9 PASS: 事件 ctor @0x71E6A0 窗（+0x24=-1、+0x28/+0x2C/+0x30=0、+0x38=0、**+0x54=0**、主 vptr 0x7F5578 起）⇒ 收割读到的 0 有出厂来源；链默认态字节钉死
+V10 PASS: vtable 0x007F5858 slot10=0x00726690（detach）、slot13=0x00726790（Save，R-047 T1 复证）⇒ 消费方操作的 +0x24/+0x28/+0x2C 与虚法 detach/Save 同字段域，宿主同一性双证
+S1 PASS: 【结构性·不计数】RTTI：0x726690/0x726790 ∈ TriggerClass.vfuncs、0x7264C0 ∉（直接调用法，非虚）；主表吻合
+
+== R-048 10/10 字节断言 PASS（V0 指纹 + S1 结构性不入分母，红仍非零退出）==

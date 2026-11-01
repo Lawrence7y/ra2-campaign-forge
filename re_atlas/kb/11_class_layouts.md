@@ -124,8 +124,9 @@
 | 类 | 总尺寸 | 减去前缀 0x21≈33 | 派生追加区 |
 |:---|---:|---:|---:|
 | `ScriptClass` | 48 | 15 | 极小，符合"脚本 = 指令数组"的轻量设计 |
-| `TagClass` | 56 | 23 | 含名字指针/引用计数类字段 |
-| `TriggerClass` | 72 | 39 | 含 Tag 指针 + Event/Action 链头 |
+| `TagClass` | 56 | 23 | 含名字指针/引用计数类字段。**字段边界已由 R-052 实测**：+0x24=**TagTypeClass\*（或 NULL）**（R-053 定谳；作 owner 键）、+0x28=**trigger 链头**（ctor 造 TriggerClass 头插）、+0x2C=标量、+0x30=`[0xB0E700]` 快照、**+0x34/+0x35=字节标志**（非 dword——与 TriggerClass 同偏移宽度不同，宿主判别的判据）。见 `evidence/r052_tagclass_host.md`、`evidence/r053_tag_arg1.md` |
+| `TriggerClass` | 72 | 39 | 含 Tag 指针 + Event/Action 链头【**R-048/R-052 勘正**：`+0x24`=owner（Tag ctor 传入的挂接节点）、`+0x28`=**同级 trigger 链环**（链头在 Tag+0x28）、`+0x2C`=标量对端】 |
+| `TagTypeClass` | 164 | — | R-053 实测尺寸 `0xA4`（GetSize 即时数）；`+0x24`=名字串基址（查找键）、`+0x98`/`+0x9C` 链指针簇、**`+0xA0`=TriggerType 链头**（Tag ctor 沿此链派生 TriggerClass；ctor `0x6E5B60` 清零、dtor `0x6E5CA0` 沿 `[+0xA0]→[+0xA8]` 释放）。主虚表 `0x7F45C4`，WhatAmI `0x2D`。见 `evidence/r053_tag_arg1.md` |
 | `TEventClass` | 88 | 55 | 已知 `+0x2C` = 事件 Kind（见 `10_map_triggers.md` §3.1） |
 | `TActionClass` | 148 | 115 | 已知 `+0x90` 有标志字节（见 §2） |
 | `TeamClass` | 160 | 127 | 已知 `+0x3C` = 当前脚本状态（见 §2） |
@@ -374,7 +375,7 @@ ATLAS §11.2 只列了 `HouseClass`/`CellClass` 等 24 槽类，未涉及本族�
 | L-1 | `AbstractClass` 的 `+0x14..+0x1C` 三个 dword 语义（`Save` 不写，可能只在内存态） |
 | L-2 | `+0x10` 与 `+0x20` 的业务语义（是 ID？引用计数？标志位？）——需找更多读点 |
 | L-3 | `TaskForceClass` 212 字节的内部结构（29 项数组？） |
-| L-4 | `ScriptTypeClass` 564 字节的大块结构 |
+| L-4 | `ScriptTypeClass` 564 字节的大块结构 —— **R-044 半闭**（§8.1：Save 载荷=计数 +0xA0、数组 +0xA8 步长8=TeamType 注册表索引不进 Save；条目内双 dword 细分转按需） |
 | L-5 | `TagClass` / `TriggerClass` 的字段（本轮只证了尺寸） |
 | L-6 | `TEventClass` 的 Event/Action 参数区（`+0x30` 之后） |
 
@@ -423,7 +424,78 @@ ATLAS §11.2 只列了 `HouseClass`/`CellClass` 等 24 槽类，未涉及本族�
 两类偏移差 4 字节 ⇒ 可能是**同一模板类在不同基类尺寸下的实例化**，
 或各自带一个额外 dword 前缀。**待下一轮统一建模**（列 L-7）。
 
+### 8.1 ★ ScriptTypeClass 大块定谳（R-044，2026-10-24）——§6 表的 L-4 关闭
+
+`evidence/r044_scripttype_block.md`（门禁 9/9、变异 15/15 精确集合）。§6 悬项表里
+`L-4 = ScriptTypeClass 564 字节的大块结构` 就此**半闭**（Save 载荷 + 计数/索引簇已解；
+条目内双 dword 细分转按需补充）。字节事实：
+
+- **Save slot13 `0x691E00`**（整窗 0x21 字节钉死，X2）：先基类 `AbstractTypeClass::Save`
+  `0x410BE0`，自有载荷**仅一个 dword `mov eax,[esi+0xA0]`** → writer `0x4A1D50`。
+  基类 Save（X3，整窗 0x34 字节）序列化三串：`Name(+0x24)`、`+0x64`、`+0x3D`
+  （`add esi,0x3d`），全走 strlen 串 writer `0x4A1DB0`（X4：`repne scasb` 指纹）。
+- **计数 +0xA0 / 数组 +0xA8（步长 8）**：fixup slot10 `0x691E30`（X7）门
+  `call [arg_vt+0x2c]→cmp eax,0x23`（=`TeamType`，X8 名字表交叉）；数组 `[+0xA8]`
+  条目存 **TeamType 在注册表 `[0xA8ECA4]/[0xA8ECB0]` 的下标**（R-041 同一对全局），
+  TeamType 被移除时 `dec` 前移重编号（`add edx,8`@0x691EB2、`dec eax;mov[edx],eax`@0x691E98、
+  `mov ecx,[0xA8ECA4]`@0x691E77——**单次整段线性解码 + 独立 raw find 双坐实**）。
+  ⇒ 数组**不进 Save**（与 R-042 `TEventClass+0x54` 运行时缓存同族现象）。
+- GetSize slot12 `0x691F80`=`mov eax,0x234`；WhatAmI slot11 `0x691F70`=`mov eax,0x1B`
+  （名字表第 0x1B 对='ScriptType'，X1）；Load slot5 装主 vptr `0x7F1008`+三 facet
+  `0x7F0FEC/0x7F0FE4/0x7F0FDC`（间距 −0x1C/−0x24/−0x2C，X6）。
+
+### 8.2 L-4 细目收口（R-045，2026-10-24）：计数 `+0xA0` 生命周期八站全归因
+
+`evidence/r045_count_lifecycle.md`（门禁 8/8、变异 13/13）。§8.1 遗留的「条目内双 dword
+细分、census 存储点功能归属」就此收口：**清零两处**（ctor `0x6916C7`/`0x691C8B`
+imm32=0+vptr 邻接；解析入口 `0x6918CF` 前 5 字节 `xor edi,edi` ⇒ 恒 0）、
+**建表循环** `0x69192E/39` 写元素对 `[esi+eax*8+0xA4]键/+0xA8值`（SIB，元素=8 字节对）、
+**界 imm 0x32**（50，语义不宣称）、**自增** `0x691940..47`、**读侧** 循环上界 `0x691547`/
+界检查 `0x69191F`/Save `0x691E0E`/fixup `0x691E4B`,`0x691EAB`——站点集合=R-044 X9 census
+集合（无遗漏）。marker 0x12、键名模板生成语义未宣称。**（R-046 追加：两 ctor 变体归属
+已定谳=同一类的 plain ctor `0x6916B0` vs INI find-or-create 工厂 `0x691C00`，共享 init
+尾 0x2F 字节逐字节相等 ⇒ 非派生变体；`0x691A5B` 归因降级——无 [+0x9C] 伙伴，非第三条
+ctor；见 §8.3 与 `evidence/r046_ctor_vs_factory.md`。）**
+
+### 8.3 L-4 残余定谳（R-046，2026-10-24）：构造路径 = plain ctor vs find-or-create 工厂
+
+`evidence/r046_ctor_vs_factory.md`（门禁 7/7、变异 13/13）。字节事实：
+
+- **plain ctor `0x6916B0`**：头 `mov esi,ecx`（this）+ `call 0x410800`（共享 init 助手，
+  rel32）；**全函数零分配调用** ⇒ new 由调用方完成。
+- **工厂 `0x691C00`**（`"ScriptTypes"` 串现场 0x69197D 区）：双串守卫 `'<none>'/'none'`
+  → `call 0x7C8D20`（strcmp 形态）je-fail；按名扫注册表 `[0x8B41CC]`（`add ecx,0x24`
+  Name 槽）；未命中 `push 0x234; call 0x7C8E17`（分配包装，尺寸=GetSize）再走同一 init。
+- **共享 init 尾 0x2F 字节两站逐字节相等**（C3）⇒ 同一类，无派生变体。
+- **两站都登记进注册表并写下标 `+0x98`**（C4：`mov [esi+0x98],eax` @0x691763/0x691D26；
+- census（**R-054 已更正，见 §8.2**）：`+0x9C` 零初始化现场是**三处** `{0x6916BD(C7),0x691A55(89 寄存器 ebx=0),0x691C81(C7)}`，`+0x98` 写恰三处（每个构造现场一处）。R-046 原文「恰两处、无第三形态」已作废。
+- **dtor `0x691770`**：deleting 标志 → 重装 vptr → `call 0x7258D0` → `[0x8B41D8]--` +
+  **SIB 压缩**（后项下移）@0x6917CE/7D1 → `call 0x4109C0`（析构助手）。
+  压缩后各对象存的 `+0x98` **不再修正**（R-054 定谳）：dtor 全区间位移 0x98 访存为空集，`slot16 0x691F90` 原样返回 ⇒ `+0x98` 是**构造时快照的陈旧缓存**。
+
+**编号冲突登记（不擅改他轮条目）**：本节 §6 表把 `L-4` 指给「ScriptTypeClass 大块」，
+而本 kb 后文多处把 `L-4` 标成「TaskForceClass 计数 @+0x9C」——**同一号两名**。
+本轮只关闭 §6 表定义下的 L-4（ScriptTypeClass）；他轮 TaskForceClass 的 L-4 措辞属其
+原始上下文，按「重复编号先查再发」教训仅登记不覆盖。
+
 ---
+
+
+### 8.2 ★ L-4 四项残余全部定谳（R-054，2026-10-25）——并推翻 R-046 一处
+
+`evidence/r054_l4_residuals.md`（门禁 **26/26**、变异 **22/22** 精确集合）。
+R-044/R-045/R-046 登记的四个未宣称项就此结清：
+
+| 残余 | 定谳 |
+|:--|:--|
+| fixup 的 marker `0x12` | **脚本动作 ID**，不是类型标记。fixup 比的是条目**键** `[+0xA4]`；`0x12` = 参数为 TeamType 的那个动作。派发器 `0x6DD8D7` `mov edx,[esi+0x2c]; dec edx; cmp edx,0x90; jmp [edx*4+0x6DFDEC]` ⇒ ID N → 表索引 N−1；ID `0x12` → `0x6DE37B`（`call 0x6E11C0`，按名查 TeamType） |
+| 键模板 `%d` + `0x817F6C` | 键是**整数的十进制串**，不是名字。写侧 `0x6918D5` push `"%d"` → `0x7C8EF4`（printf 族，类别立即数 `0x42`）；读侧 `0x723CA0` 用 `"%d,%d"`(`0x81C000`) 经 `0x7CA530`（sscanf 族，类别 `0x49`）拆两整数 ⇒ 元素对 = (`动作ID`,`参数`) |
+| `0x691A5B` 用途 | **第三个构造现场**：`[ScriptTypes]` 解析 `0x691970` 内联，`0x691A55` `[+0x9C]←ebx` + `0x691A5B` `[+0xA0]←ebx`，`ebx` 由 `xor ebx,ebx` 恒 0 ⇒ 同型双清零。三处 vptr 四连 20 字节逐字节相等 |
+| 压缩后 `+0x98` | **不修 = 陈旧缓存**。dtor 只做向量 SIB 压缩，不碰任何 `+0x98`；写点恰三处（各算各的，`893481` push 后线性查自身或 −1）；读者唯一 `slot16 0x691F90` 原样返回 |
+
+**R-046 推翻项**：C6「双零对恰两处、无第三形态」→ **实为三处**。成因是本件 census
+只匹配 `C7` 立即数编码，漏 `89` 寄存器形态（**G-73**：少命中比零命中更危险——集合"恰好等于
+预期两元素"从内部看完全自洽，反而强化错误结论）。
 
 ## 10. 容器簇的统一模型（L-7，本轮解）
 
@@ -466,6 +538,14 @@ ATLAS §11.2 只列了 `HouseClass`/`CellClass` 等 24 槽类，未涉及本族�
 
 且 `0x006918CF: mov [esi+0xA0], edi` 是**写**（初始化时置 0 或置初值），
 与 `0x00691831` 的读配对 ⇒ 确认它是**计数器**而非指针。
+
+> **R-045 定案（2026-10-24，本句分岔收口；`evidence/r045_count_lifecycle.md` 门禁 8/8+变异 13/13）**：
+> 置 0 有两处——**ctor**（`0x6916C7`/`0x691C8B`，imm32=0 + 主 vptr 安装邻接）与**解析入口**
+> （本行 `0x6918CF`：前 5 字节 `xor edi,edi` ⇒ edi 恒 0，原注释「计数清零」成立）。
+> 「写值/自增」在建表循环 `0x691940/47`（read;inc;store）；元素=**8 字节对
+> `[esi+eax*8+0xA4] 键 / +0xA8 值`**（SIB，L-4 条目双 dword 细分就此解决）；
+> 循环/界上限 imm=`0x32`（50，语义不宣称）。计数读侧：循环上界 `0x691547`、
+> 界检查 `0x69191F`、Save `0x691E0E`（R-044）、fixup `0x691E4B/691EAB`（R-044）。
 
 **`+0xA4` 是数组基址**（`ScriptTypeClass` 同 `TaskForce`）：
 由 §6 中 `TaskForceClass` 的 `lea ebx,[edi+0xA4]` 已证；
