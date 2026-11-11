@@ -1,0 +1,1283 @@
+====================================================================================================
+0. FILE
+====================================================================================================
+exe      : D:\Project\ra2-campaign-forge\ra2bench\gamemd.exe
+size     : 4825360 bytes
+sha256   : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+
+====================================================================================================
+1. KEY STRINGS IN IMAGE (exact C-string occurrences, VA = foff + 0x400000)
+====================================================================================================
+PlayerControl    1 occurrence(s): 0x824E28
+PercentBuilt     1 occurrence(s): 0x8189A0
+NodeCount        1 occurrence(s): 0x818994
+MultiplayPassive 1 occurrence(s): 0x825444
+MaxPlayer        0 occurrence(s): 
+MinPlayer        0 occurrence(s): 
+MaxPlayers       2 occurrence(s): 0x83407E, 0x83F3F0
+MinPlayers       1 occurrence(s): 0x83F3FC
+
+Raw "maxplayer"/"minplayer" case-insensitive scan over the WHOLE image (catches substrings inside other strings):
+   0x831CAB  context: 'ion.ScenarioMaxPlayers = %d\n'
+   0x83407E  context: 'T:WOLNewGameMaxPlayers'
+   0x83F3F0  context: 'No Digest'
+   0x83F3FC  context: 'MaxPlayers'
+
+=> 地图键拼写 "MaxPlayer"/"MinPlayer"（无 s）在镜像中不存在；只有带 s 的
+   "MaxPlayers"/"MinPlayers"（0x83F3F0/0x83F3FC）与 WOL 字符串内的子串。
+
+====================================================================================================
+2. .text XREFS TO KEY STRINGS (LE32 scan over VA 0x401000..0x7E1000)
+====================================================================================================
+PlayerControl @ 0x824E28
+   0x500BBF  real ref
+   0x5012ED  real ref
+
+PercentBuilt @ 0x8189A0
+   0x42EC05  real ref
+   0x42ED80  real ref
+
+NodeCount @ 0x818994
+   0x42EC14  real ref
+   0x42ED93  real ref
+
+MultiplayPassive @ 0x825444
+   0x511A7F  real ref
+
+MaxPlayers @ 0x83407E
+
+MinPlayers @ 0x83F3FC
+   0x6997D7  real ref
+   0x69A549  real ref
+
+====================================================================================================
+3. CHUNKED-DISASM SANITY: whole-.text linear scan must pass file offset 0x6F59D
+====================================================================================================
+chunked scan produced 1328762 instructions, highest VA reached: 0x7E0FFE
+trap file offset 0x6F59D (VA 0x46F59D) was passed: True
+   (单次 disasm 在 0x6F59D 截断 —— 见 trap 注释；分块 + 逐块容错可越过)
+
+====================================================================================================
+4. HouseClass::Read_INI @ 0x500B40 (reads per-house INI section; stores PlayerControl)
+====================================================================================================
+0x500B40  55                   push ebp
+0x500B41  8bec                 mov ebp, esp
+0x500B43  83e4f8               and esp, 0xfffffff8
+0x500B46  81ecbc000000         sub esp, 0xbc
+0x500B4C  53                   push ebx
+0x500B4D  8bd9                 mov ebx, ecx
+0x500B4F  56                   push esi
+0x500B50  57                   push edi
+0x500B51  8dbbf45f0100         lea edi, [ebx + 0x15ff4]
+0x500B57  83c9ff               or ecx, 0xffffffff
+0x500B5A  33c0                 xor eax, eax
+0x500B5C  8d542430             lea edx, [esp + 0x30]
+0x500B60  f2ae                 repne scasb al, byte ptr es:[edi]
+0x500B62  f7d1                 not ecx
+0x500B64  2bf9                 sub edi, ecx
+0x500B66  8bc1                 mov eax, ecx
+0x500B68  8bf7                 mov esi, edi
+0x500B6A  8bfa                 mov edi, edx
+0x500B6C  c1e902               shr ecx, 2
+0x500B6F  f3a5                 rep movsd dword ptr es:[edi], dword ptr [esi]
+0x500B71  8bc8                 mov ecx, eax
+0x500B73  83e103               and ecx, 3
+0x500B76  f3a4                 rep movsb byte ptr es:[edi], byte ptr [esi]
+0x500B78  8b7508               mov esi, dword ptr [ebp + 8]
+0x500B7B  8bce                 mov ecx, esi
+0x500B7D  e87e5f0200           call 0x526b00
+0x500B82  8b0d30b2a800         mov ecx, dword ptr [0xa8b230]
+0x500B88  8d442430             lea eax, [esp + 0x30]
+0x500B8C  8b9154120000         mov edx, dword ptr [ecx + 0x1254]
+0x500B92  8bce                 mov ecx, esi
+0x500B94  52                   push edx
+0x500B95  68404e8200           push 0x824e40
+0x500B9A  50                   push eax
+0x500B9B  e8306b0200           call 0x5276d0  <<< Get_Int "TechLevel" -> HouseClass+0x1D4
+0x500BA0  6a00                 push 0
+0x500BA2  8d4c2434             lea ecx, [esp + 0x34]
+0x500BA6  68384e8200           push 0x824e38
+0x500BAB  51                   push ecx
+0x500BAC  8bce                 mov ecx, esi
+0x500BAE  8983d4010000         mov dword ptr [ebx + 0x1d4], eax
+0x500BB4  e8176b0200           call 0x5276d0  <<< Get_Int "Credits" (×100) -> HouseClass+0x1DC
+0x500BB9  8d0480               lea eax, [eax + eax*4]
+0x500BBC  6a00                 push 0
+0x500BBE  68284e8200           push 0x824e28
+0x500BC3  8bce                 mov ecx, esi
+0x500BC5  8d1480               lea edx, [eax + eax*4]
+0x500BC8  8d442438             lea eax, [esp + 0x38]
+0x500BCC  c1e202               shl edx, 2
+0x500BCF  50                   push eax
+0x500BD0  8993dc010000         mov dword ptr [ebx + 0x1dc], edx
+0x500BD6  e8158a0200           call 0x5295f0  <<< call CCINIClass::Get_Bool(ini, "PlayerControl", def=0)
+0x500BDB  84c0                 test al, al  <<< al = PlayerControl
+0x500BDD  8883ed010000         mov byte ptr [ebx + 0x1ed], al  <<< HouseClass+0x1ED = PlayerControl flag
+0x500BE3  746c                 je 0x500c51  <<< branch: PlayerControl==no  -> 0x500C51 (credits untouched)
+0x500BE5  a138b2a800           mov eax, dword ptr [0xa8b238]
+0x500BEA  85c0                 test eax, eax  <<< branch: [0xA8B238] (session/multiplayer flag) != 0 -> 0x500C51 (same as no)
+0x500BEC  7563                 jne 0x500c51
+0x500BEE  a164eba800           mov eax, dword ptr [0xa8eb64]
+0x500BF3  85c0                 test eax, eax
+0x500BF5  7516                 jne 0x500c0d  <<< campaign difficulty index [0xA8EB64]
+0x500BF7  8b0de0718800         mov ecx, dword ptr [0x8871e0]
+0x500BFD  8b83dc010000         mov eax, dword ptr [ebx + 0x1dc]
+0x500C03  8b91fc0d0000         mov edx, dword ptr [ecx + 0xdfc]
+0x500C09  03d0                 add edx, eax
+0x500C0B  eb26                 jmp 0x500c33
+0x500C0D  83f802               cmp eax, 2
+0x500C10  751b                 jne 0x500c2d
+0x500C12  a1e0718800           mov eax, dword ptr [0x8871e0]
+0x500C17  8b88000e0000         mov ecx, dword ptr [eax + 0xe00]
+0x500C1D  8b83dc010000         mov eax, dword ptr [ebx + 0x1dc]
+0x500C23  03c8                 add ecx, eax
+0x500C25  898b0c030000         mov dword ptr [ebx + 0x30c], ecx
+0x500C2B  eb0c                 jmp 0x500c39
+0x500C2D  8b93dc010000         mov edx, dword ptr [ebx + 0x1dc]
+0x500C33  89930c030000         mov dword ptr [ebx + 0x30c], edx
+0x500C39  8b830c030000         mov eax, dword ptr [ebx + 0x30c]
+0x500C3F  33c9                 xor ecx, ecx
+0x500C41  85c0                 test eax, eax
+0x500C43  0f9ec1               setle cl  <<< sign-clamp start credits to >= 0
+0x500C46  49                   dec ecx
+0x500C47  23c1                 and eax, ecx
+0x500C49  89830c030000         mov dword ptr [ebx + 0x30c], eax
+0x500C4F  eb0c                 jmp 0x500c5d
+0x500C51  8b93dc010000         mov edx, dword ptr [ebx + 0x1dc]  <<< PlayerControl==no / MP: start credits = stored Credits*100 ([+0x1DC] -> [+0x30C])
+0x500C57  89930c030000         mov dword ptr [ebx + 0x30c], edx
+0x500C5D  8d442464             lea eax, [esp + 0x64]
+0x500C61  8dbb09600100         lea edi, [ebx + 0x16009]
+0x500C67  6a20                 push 0x20
+0x500C69  50                   push eax
+0x500C6A  57                   push edi
+0x500C6B  8d4c243c             lea ecx, [esp + 0x3c]
+0x500C6F  684c788100           push 0x81784c
+0x500C74  51                   push ecx
+0x500C75  8bce                 mov ecx, esi
+0x500C77  e8947d0200           call 0x528a10
+0x500C7C  8d542464             lea edx, [esp + 0x64]
+0x500C80  85d2                 test edx, edx
+0x500C82  7506                 jne 0x500c8a
+0x500C84  88542444             mov byte ptr [esp + 0x44], dl
+0x500C88  eb19                 jmp 0x500ca3
+0x500C8A  8d442464             lea eax, [esp + 0x64]
+0x500C8E  6a1f                 push 0x1f
+0x500C90  8d4c2448             lea ecx, [esp + 0x48]
+0x500C94  50                   push eax
+0x500C95  51                   push ecx
+0x500C96  e835852c00           call 0x7c91d0
+0x500C9B  83c40c               add esp, 0xc
+0x500C9E  c644246300           mov byte ptr [esp + 0x63], 0
+0x500CA3  8d542444             lea edx, [esp + 0x44]
+0x500CA7  3bd7                 cmp edx, edi
+0x500CA9  740e                 je 0x500cb9
+0x500CAB  b908000000           mov ecx, 8
+0x500CB0  8d742444             lea esi, [esp + 0x44]
+0x500CB4  f3a5                 rep movsd dword ptr es:[edi], dword ptr [esi]
+0x500CB6  8b7508               mov esi, dword ptr [ebp + 8]
+0x500CB9  8a8309600100         mov al, byte ptr [ebx + 0x16009]
+0x500CBF  8d8b09600100         lea ecx, [ebx + 0x16009]
+0x500CC5  84c0                 test al, al
+0x500CC7  742e                 je 0x500cf7
+0x500CC9  6a20                 push 0x20
+0x500CCB  683b210000           push 0x213b
+0x500CD0  6824478200           push 0x824724
+0x500CD5  33d2                 xor edx, edx
+0x500CD7  e884412300           call 0x734e60
+0x500CDC  50                   push eax
+0x500CDD  8d832a600100         lea eax, [ebx + 0x1602a]
+0x500CE3  50                   push eax
+0x500CE4  e839972c00           call 0x7ca422
+0x500CE9  83c40c               add esp, 0xc
+0x500CEC  66c783526001000000   mov word ptr [ebx + 0x16052], 0
+0x500CF5  eb16                 jmp 0x500d0d
+0x500CF7  8b4b34               mov ecx, dword ptr [ebx + 0x34]
+0x500CFA  8d832a600100         lea eax, [ebx + 0x1602a]
+0x500D00  8b5160               mov edx, dword ptr [ecx + 0x60]
+0x500D03  52                   push edx
+0x500D04  50                   push eax
+0x500D05  e87f972c00           call 0x7ca489
+0x500D0A  83c408               add esp, 8
+0x500D0D  8b8b5c560000         mov ecx, dword ptr [ebx + 0x565c]
+0x500D13  8d542430             lea edx, [esp + 0x30]
+0x500D17  51                   push ecx
+0x500D18  68144e8200           push 0x824e14
+0x500D1D  52                   push edx
+0x500D1E  8bce                 mov ecx, esi
+0x500D20  e8ab690200           call 0x5276d0
+0x500D25  89835c560000         mov dword ptr [ebx + 0x565c], eax
+0x500D2B  6a4b                 push 0x4b
+0x500D2D  8d442434             lea eax, [esp + 0x34]
+0x500D31  68004e8200           push 0x824e00
+0x500D36  50                   push eax
+0x500D37  8bce                 mov ecx, esi
+0x500D39  e892690200           call 0x5276d0
+0x500D3E  6a4b                 push 0x4b
+0x500D40  8d4c2434             lea ecx, [esp + 0x34]
+0x500D44  68ec4d8200           push 0x824dec
+0x500D49  51                   push ecx
+0x500D4A  8bce                 mov ecx, esi
+0x500D4C  898360560000         mov dword ptr [ebx + 0x5660], eax
+0x500D52  e879690200           call 0x5276d0
+0x500D57  6a4b                 push 0x4b
+0x500D59  8d542434             lea edx, [esp + 0x34]
+0x500D5D  68dc4d8200           push 0x824ddc
+0x500D62  52                   push edx
+0x500D63  8bce                 mov ecx, esi
+0x500D65  898364560000         mov dword ptr [ebx + 0x5664], eax
+0x500D6B  e860690200           call 0x5276d0
+0x500D70  898368560000         mov dword ptr [ebx + 0x5668], eax
+0x500D76  8b4334               mov eax, dword ptr [ebx + 0x34]
+0x500D79  8b80bc000000         mov eax, dword ptr [eax + 0xbc]
+0x500D7F  83f8ff               cmp eax, -1
+0x500D82  8983e8010000         mov dword ptr [ebx + 0x1e8], eax
+0x500D88  750a                 jne 0x500d94
+0x500D8A  c783e801000000000000 mov dword ptr [ebx + 0x1e8], 0
+0x500D94  6a00                 push 0
+0x500D96  8d4c2434             lea ecx, [esp + 0x34]
+0x500D9A  68d84d8200           push 0x824dd8
+0x500D9F  51                   push ecx
+0x500DA0  8bce                 mov ecx, esi
+0x500DA2  e829690200           call 0x5276d0
+0x500DA7  8b15e0718800         mov edx, dword ptr [0x8871e0]
+0x500DAD  3b8234140000         cmp eax, dword ptr [edx + 0x1434]
+0x500DB3  7e05                 jle 0x500dba
+0x500DB5  b801000000           mov eax, 1
+0x500DBA  8983d0010000         mov dword ptr [ebx + 0x1d0], eax
+0x500DC0  89834c020000         mov dword ptr [ebx + 0x24c], eax
+0x500DC6  6aff                 push -1
+0x500DC8  8d442434             lea eax, [esp + 0x34]
+0x500DCC  68d04d8200           push 0x824dd0
+0x500DD1  50                   push eax
+0x500DD2  8bce                 mov ecx, esi
+0x500DD4  e8a74bf7ff           call 0x475980
+0x500DD9  8b8b54600100         mov ecx, dword ptr [ebx + 0x16054]
+0x500DDF  8d542430             lea edx, [esp + 0x30]
+0x500DE3  51                   push ecx
+0x500DE4  6838b18100           push 0x81b138
+0x500DE9  52                   push edx
+0x500DEA  8bce                 mov ecx, esi
+0x500DEC  8983e0010000         mov dword ptr [ebx + 0x1e0], eax
+0x500DF2  e8993cf7ff           call 0x474a90
+0x500DF7  85c0                 test eax, eax
+0x500DF9  898354600100         mov dword ptr [ebx + 0x16054], eax
+0x500DFF  bf05000000           mov edi, 5
+0x500E04  7d06                 jge 0x500e0c
+0x500E06  89bb54600100         mov dword ptr [ebx + 0x16054], edi
+0x500E0C  8b8b54600100         mov ecx, dword ptr [ebx + 0x16054]
+0x500E12  a1d454b000           mov eax, dword ptr [0xb054d4]
+0x500E17  8b0488               mov eax, dword ptr [eax + ecx*4]
+0x500E1A  85c0                 test eax, eax
+0x500E1C  752b                 jne 0x500e49
+0x500E1E  51                   push ecx
+0x500E1F  8b4b34               mov ecx, dword ptr [ebx + 0x34]
+0x500E22  83c164               add ecx, 0x64
+0x500E25  8d83f45f0100         lea eax, [ebx + 0x15ff4]
+0x500E2B  51                   push ecx
+0x500E2C  50                   push eax
+0x500E2D  68644d8200           push 0x824d64
+0x500E32  e8a95af0ff           call 0x4068e0
+0x500E37  89bb54600100         mov dword ptr [ebx + 0x16054], edi
+0x500E3D  8b15d454b000         mov edx, dword ptr [0xb054d4]
+0x500E43  83c410               add esp, 0x10
+0x500E46  8b4214               mov eax, dword ptr [edx + 0x14]
+0x500E49  8b8830030000         mov ecx, dword ptr [eax + 0x330]
+0x500E4F  8b800c030000         mov eax, dword ptr [eax + 0x30c]
+0x500E55  8b5004               mov edx, dword ptr [eax + 4]
+0x500E58  8b8074010000         mov eax, dword ptr [eax + 0x174]
+0x500E5E  83fa01               cmp edx, 1
+0x500E61  7509                 jne 0x500e6c
+0x500E63  33d2                 xor edx, edx
+0x500E65  8a1408               mov dl, byte ptr [eax + ecx]
+0x500E68  8bfa                 mov edi, edx
+0x500E6A  eb06                 jmp 0x500e72
+0x500E6C  33ff                 xor edi, edi
+0x500E6E  668b3c48             mov di, word ptr [eax + ecx*2]
+0x500E72  668b0dd00d8a00       mov cx, word ptr [0x8a0dd0]
+0x500E79  8bd7                 mov edx, edi
+0x500E7B  66d3ea               shr dx, cl
+0x500E7E  8b0dd40d8a00         mov ecx, dword ptr [0x8a0dd4]
+0x500E84  8bc7                 mov eax, edi
+0x500E86  83ec08               sub esp, 8
+0x500E89  d2e2                 shl dl, cl
+0x500E8B  668b0de00d8a00       mov cx, word ptr [0x8a0de0]
+0x500E92  66d3e8               shr ax, cl
+0x500E95  8b0de40d8a00         mov ecx, dword ptr [0x8a0de4]
+0x500E9B  88542418             mov byte ptr [esp + 0x18], dl
+0x500E9F  d2e0                 shl al, cl
+0x500EA1  668b0dd80d8a00       mov cx, word ptr [0x8a0dd8]
+0x500EA8  88442419             mov byte ptr [esp + 0x19], al
+0x500EAC  8bc7                 mov eax, edi
+0x500EAE  66d3e8               shr ax, cl
+0x500EB1  8b0ddc0d8a00         mov ecx, dword ptr [0x8a0ddc]
+0x500EB7  668b7c2418           mov di, word ptr [esp + 0x18]
+0x500EBC  d2e0                 shl al, cl
+0x500EBE  8d8bf9560000         lea ecx, [ebx + 0x56f9]
+0x500EC4  8bd1                 mov edx, ecx
+0x500EC6  66893a               mov word ptr [edx], di
+0x500EC9  884202               mov byte ptr [edx + 2], al
+0x500ECC  33c0                 xor eax, eax
+0x500ECE  8a01                 mov al, byte ptr [ecx]
+0x500ED0  33c9                 xor ecx, ecx
+0x500ED2  8a8bfa560000         mov cl, byte ptr [ebx + 0x56fa]
+0x500ED8  89442418             mov dword ptr [esp + 0x18], eax
+0x500EDC  db442418             fild dword ptr [esp + 0x18]
+0x500EE0  894c2418             mov dword ptr [esp + 0x18], ecx
+0x500EE4  33d2                 xor edx, edx
+0x500EE6  8a93fb560000         mov dl, byte ptr [ebx + 0x56fb]
+0x500EEC  dd542420             fst qword ptr [esp + 0x20]
+0x500EF0  db442418             fild dword ptr [esp + 0x18]
+0x500EF4  89542418             mov dword ptr [esp + 0x18], edx
+0x500EF8  dd542428             fst qword ptr [esp + 0x28]
+0x500EFC  db442418             fild dword ptr [esp + 0x18]
+0x500F00  dd542418             fst qword ptr [esp + 0x18]
+0x500F04  d9c0                 fld st(0)
+0x500F06  d8c9                 fmul st(1)
+0x500F08  d9c2                 fld st(2)
+0x500F0A  d8cb                 fmul st(3)
+0x500F0C  dec1                 faddp st(1)
+0x500F0E  d9c3                 fld st(3)
+0x500F10  d8cc                 fmul st(4)
+0x500F12  dec1                 faddp st(1)
+0x500F14  dd1c24               fstp qword ptr [esp]
+0x500F17  ddd8                 fstp st(0)
+0x500F19  ddd8                 fstp st(0)
+0x500F1B  ddd8                 fstp st(0)
+0x500F1D  e81e9dfcff           call 0x4cac40
+0x500F22  dc1500287e00         fcom qword ptr [0x7e2800]
+0x500F28  83c408               add esp, 8
+0x500F2B  dfe0                 fnstsw ax
+0x500F2D  f6c440               test ah, 0x40
+0x500F30  7437                 je 0x500f69
+0x500F32  ddd8                 fstp st(0)
+0x500F34  c744241000000000     mov dword ptr [esp + 0x10], 0
+0x500F3C  c744241400e06f40     mov dword ptr [esp + 0x14], 0x406fe000
+0x500F44  c744242000000000     mov dword ptr [esp + 0x20], 0
+0x500F4C  c744242400e06f40     mov dword ptr [esp + 0x24], 0x406fe000
+0x500F54  c744241800000000     mov dword ptr [esp + 0x18], 0
+0x500F5C  c744241c00e06f40     mov dword ptr [esp + 0x1c], 0x406fe000
+0x500F64  e9e2000000           jmp 0x50104b
+0x500F69  dd442418             fld qword ptr [esp + 0x18]
+0x500F6D  dc0d785f7e00         fmul qword ptr [0x7e5f78]
+0x500F73  d8f1                 fdiv st(1)
+0x500F75  dd542418             fst qword ptr [esp + 0x18]
+0x500F79  dc1d50aa7e00         fcomp qword ptr [0x7eaa50]
+0x500F7F  dfe0                 fnstsw ax
+0x500F81  f6c441               test ah, 0x41
+0x500F84  7510                 jne 0x500f96
+0x500F86  c744241800000000     mov dword ptr [esp + 0x18], 0
+0x500F8E  c744241c00e06f40     mov dword ptr [esp + 0x1c], 0x406fe000
+0x500F96  dd442420             fld qword ptr [esp + 0x20]
+0x500F9A  dc0d785f7e00         fmul qword ptr [0x7e5f78]
+0x500FA0  d8f1                 fdiv st(1)
+0x500FA2  dd542420             fst qword ptr [esp + 0x20]
+0x500FA6  dc1d50aa7e00         fcomp qword ptr [0x7eaa50]
+0x500FAC  dfe0                 fnstsw ax
+0x500FAE  f6c441               test ah, 0x41
+0x500FB1  7510                 jne 0x500fc3
+0x500FB3  c744242000000000     mov dword ptr [esp + 0x20], 0
+0x500FBB  c744242400e06f40     mov dword ptr [esp + 0x24], 0x406fe000
+0x500FC3  dd442410             fld qword ptr [esp + 0x10]
+0x500FC7  dc0d785f7e00         fmul qword ptr [0x7e5f78]
+0x500FCD  def1                 fdivrp st(1)
+0x500FCF  dc1550aa7e00         fcom qword ptr [0x7eaa50]
+0x500FD5  dd542410             fst qword ptr [esp + 0x10]
+0x500FD9  dfe0                 fnstsw ax
+0x500FDB  f6c441               test ah, 0x41
+0x500FDE  750c                 jne 0x500fec
+0x500FE0  ddd8                 fstp st(0)
+0x500FE2  dd0550aa7e00         fld qword ptr [0x7eaa50]
+0x500FE8  dd542410             fst qword ptr [esp + 0x10]
+0x500FEC  dd442418             fld qword ptr [esp + 0x18]
+0x500FF0  dc1d48aa7e00         fcomp qword ptr [0x7eaa48]
+0x500FF6  dfe0                 fnstsw ax
+0x500FF8  f6c401               test ah, 1
+0x500FFB  7410                 je 0x50100d
+0x500FFD  c744241800000000     mov dword ptr [esp + 0x18], 0
+0x501005  c744241c00000000     mov dword ptr [esp + 0x1c], 0
+0x50100D  dd442420             fld qword ptr [esp + 0x20]
+0x501011  dc1d48aa7e00         fcomp qword ptr [0x7eaa48]
+0x501017  dfe0                 fnstsw ax
+0x501019  f6c401               test ah, 1
+0x50101C  7410                 je 0x50102e
+0x50101E  c744242000000000     mov dword ptr [esp + 0x20], 0
+0x501026  c744242400000000     mov dword ptr [esp + 0x24], 0
+0x50102E  dc1d48aa7e00         fcomp qword ptr [0x7eaa48]
+0x501034  dfe0                 fnstsw ax
+0x501036  f6c401               test ah, 1
+0x501039  7410                 je 0x50104b
+0x50103B  c744241000000000     mov dword ptr [esp + 0x10], 0
+0x501043  c744241400000000     mov dword ptr [esp + 0x14], 0
+0x50104B  8d442410             lea eax, [esp + 0x10]
+0x50104F  8d542420             lea edx, [esp + 0x20]
+0x501053  50                   push eax
+0x501054  8d4c241c             lea ecx, [esp + 0x1c]
+0x501058  e8c3a80000           call 0x50b920
+0x50105D  dd442410             fld qword ptr [esp + 0x10]
+0x501061  e89a4e2c00           call 0x7c5f00
+0x501066  dd442420             fld qword ptr [esp + 0x20]
+0x50106A  50                   push eax
+0x50106B  e8904e2c00           call 0x7c5f00
+0x501070  dd44241c             fld qword ptr [esp + 0x1c]
+0x501074  50                   push eax
+0x501075  e8864e2c00           call 0x7c5f00
+0x50107A  50                   push eax
+0x50107B  8d8bfc560000         lea ecx, [ebx + 0x56fc]
+0x501081  e8aad30000           call 0x50e430
+0x501086  8b4b30               mov ecx, dword ptr [ebx + 0x30]
+0x501089  33ff                 xor edi, edi
+0x50108B  89bbe0570000         mov dword ptr [ebx + 0x57e0], edi
+0x501091  8b152c02a800         mov edx, dword ptr [0xa8022c]
+0x501097  57                   push edi
+0x501098  8b048a               mov eax, dword ptr [edx + ecx*4]
+0x50109B  8bcb                 mov ecx, ebx
+0x50109D  50                   push eax
+0x50109E  e8cd8affff           call 0x4f9b70
+0x5010A3  57                   push edi
+0x5010A4  8d4c2434             lea ecx, [esp + 0x34]
+0x5010A8  685c4d8200           push 0x824d5c
+0x5010AD  51                   push ecx
+0x5010AE  8bce                 mov ecx, esi
+0x5010B0  e8ab41f7ff           call 0x475260
+0x5010B5  89442410             mov dword ptr [esp + 0x10], eax
+0x5010B9  a13802a800           mov eax, dword ptr [0xa80238]
+0x5010BE  85c0                 test eax, eax
+0x5010C0  7e2f                 jle 0x5010f1
+0x5010C2  8b152c02a800         mov edx, dword ptr [0xa8022c]
+0x5010C8  8b04ba               mov eax, dword ptr [edx + edi*4]
+0x5010CB  ba01000000           mov edx, 1
+0x5010D0  8b4830               mov ecx, dword ptr [eax + 0x30]
+0x5010D3  d3e2                 shl edx, cl
+0x5010D5  8b4c2410             mov ecx, dword ptr [esp + 0x10]
+0x5010D9  85d1                 test ecx, edx
+0x5010DB  740a                 je 0x5010e7
+0x5010DD  6a00                 push 0
+0x5010DF  50                   push eax
+0x5010E0  8bcb                 mov ecx, ebx
+0x5010E2  e8898affff           call 0x4f9b70
+0x5010E7  a13802a800           mov eax, dword ptr [0xa80238]
+0x5010EC  47                   inc edi
+0x5010ED  3bf8                 cmp edi, eax
+0x5010EF  7cd1                 jl 0x5010c2
+0x5010F1  a1e0718800           mov eax, dword ptr [0x8871e0]
+0x5010F6  8b4b30               mov ecx, dword ptr [ebx + 0x30]
+0x5010F9  8b9384010000         mov edx, dword ptr [ebx + 0x184]
+0x5010FF  8bb85c110000         mov edi, dword ptr [eax + 0x115c]
+0x501105  8d04cd00000000       lea eax, [ecx*8]
+0x50110C  2bc1                 sub eax, ecx
+0x50110E  8d0480               lea eax, [eax + eax*4]
+0x501111  8d0c80               lea ecx, [eax + eax*4]
+0x501114  8b0497               mov eax, dword ptr [edi + edx*4]
+0x501117  03c1                 add eax, ecx
+0x501119  8b0d84eda800         mov ecx, dword ptr [0xa8ed84]
+0x50111F  8d9398570000         lea edx, [ebx + 0x5798]
+0x501125  898b98570000         mov dword ptr [ebx + 0x5798], ecx
+0x50112B  8b4c2424             mov ecx, dword ptr [esp + 0x24]
+0x50112F  894a04               mov dword ptr [edx + 4], ecx
+0x501132  8d8b00570000         lea ecx, [ebx + 0x5700]
+0x501138  894208               mov dword ptr [edx + 8], eax
+0x50113B  8d542430             lea edx, [esp + 0x30]
+0x50113F  52                   push edx
+0x501140  56                   push esi
+0x501141  e89adaf2ff           call 0x42ebe0  <<< call BaseClass node/percent reader 0x42EBE0(this=HouseClass+0x5700)
+0x501146  5f                   pop edi
+0x501147  899b74570000         mov dword ptr [ebx + 0x5774], ebx  <<< HouseClass+0x5774 = HouseClass backlink
+0x50114D  5e                   pop esi
+0x50114E  5b                   pop ebx
+0x50114F  8be5                 mov esp, ebp
+0x501151  5d                   pop ebp
+0x501152  c20400               ret 4
+  [function end: ret]
+
+结论（静态）：PlayerControl 的读取点在 0x500BD6-0x500BDD，读后分支只有一处：
+  yes && [0xA8B238]==0（战役）-> 按难度重算开局资金进 +0x30C（0x500BEE..0x500C4F）
+  no / MP                    -> 直接沿用 Credits*100（0x500C51）
+  该分支不创建、不删除、不跳过任何 HouseClass。
+
+====================================================================================================
+5. HOUSE-CREATION WRAPPER @ 0x5009B0 (per [Houses] entry) + passive/PlayerControl loop
+====================================================================================================
+0x5009B0  83ec30               sub esp, 0x30
+0x5009B3  53                   push ebx
+0x5009B4  55                   push ebp
+0x5009B5  56                   push esi
+0x5009B6  57                   push edi
+0x5009B7  8be9                 mov ebp, ecx
+0x5009B9  68544d8200           push 0x824d54
+0x5009BE  e89d5f0200           call 0x526960  <<< Get entries count of section "Houses"
+0x5009C3  33db                 xor ebx, ebx
+0x5009C5  85c0                 test eax, eax
+0x5009C7  89442410             mov dword ptr [esp + 0x10], eax
+0x5009CB  0f8eb8000000         jle 0x500a89
+0x5009D1  8d442414             lea eax, [esp + 0x14]
+0x5009D5  6a14                 push 0x14
+0x5009D7  50                   push eax
+0x5009D8  68649f8800           push 0x889f64
+0x5009DD  53                   push ebx
+0x5009DE  68544d8200           push 0x824d54
+0x5009E3  8bcd                 mov ecx, ebp
+0x5009E5  e8d6620200           call 0x526cc0  <<< Get_Entry(section "Houses", index)
+0x5009EA  8bcd                 mov ecx, ebp
+0x5009EC  50                   push eax
+0x5009ED  68544d8200           push 0x824d54
+0x5009F2  e819800200           call 0x528a10
+0x5009F7  8d4c2414             lea ecx, [esp + 0x14]
+0x5009FB  6aff                 push -1
+0x5009FD  684c4d8200           push 0x824d4c
+0x500A02  51                   push ecx
+0x500A03  8bcd                 mov ecx, ebp
+0x500A05  e8364bf7ff           call 0x475540  <<< Get house-type index from entry key "Country" (def -1)
+0x500A0A  8bf0                 mov esi, eax
+0x500A0C  83feff               cmp esi, -1
+0x500A0F  7502                 jne 0x500a13
+0x500A11  33f6                 xor esi, esi
+0x500A13  68b8600100           push 0x160b8
+0x500A18  e8fa832c00           call 0x7c8e17  <<< operator new(0x160B8) = sizeof(HouseClass)
+0x500A1D  83c404               add esp, 4
+0x500A20  85c0                 test eax, eax
+0x500A22  7415                 je 0x500a39
+0x500A24  8b159c3ca800         mov edx, dword ptr [0xa83c9c]
+0x500A2A  8b0cb2               mov ecx, dword ptr [edx + esi*4]
+0x500A2D  51                   push ecx
+0x500A2E  8bc8                 mov ecx, eax
+0x500A30  e86b4affff           call 0x4f54a0  <<< HouseClass::HouseClass(this, country)  <<< LOOP1: one per [Houses] entry
+0x500A35  8bf0                 mov esi, eax
+0x500A37  eb02                 jmp 0x500a3b
+0x500A39  33f6                 xor esi, esi
+0x500A3B  8d542414             lea edx, [esp + 0x14]
+0x500A3F  85d2                 test edx, edx
+0x500A41  7506                 jne 0x500a49
+0x500A43  88542428             mov byte ptr [esp + 0x28], dl
+0x500A47  eb19                 jmp 0x500a62
+0x500A49  8d442414             lea eax, [esp + 0x14]
+0x500A4D  6a14                 push 0x14
+0x500A4F  8d4c242c             lea ecx, [esp + 0x2c]
+0x500A53  50                   push eax
+0x500A54  51                   push ecx
+0x500A55  e876872c00           call 0x7c91d0
+0x500A5A  83c40c               add esp, 0xc
+0x500A5D  c644243c00           mov byte ptr [esp + 0x3c], 0
+0x500A62  8dbef45f0100         lea edi, [esi + 0x15ff4]
+0x500A68  8d542428             lea edx, [esp + 0x28]
+0x500A6C  3bd7                 cmp edx, edi
+0x500A6E  740c                 je 0x500a7c
+0x500A70  b905000000           mov ecx, 5
+0x500A75  8d742428             lea esi, [esp + 0x28]
+0x500A79  f3a5                 rep movsd dword ptr es:[edi], dword ptr [esi]
+0x500A7B  a4                   movsb byte ptr es:[edi], byte ptr [esi]
+0x500A7C  8b442410             mov eax, dword ptr [esp + 0x10]
+0x500A80  43                   inc ebx
+0x500A81  3bd8                 cmp ebx, eax
+0x500A83  0f8c48ffffff         jl 0x5009d1
+0x500A89  a13802a800           mov eax, dword ptr [0xa80238]
+0x500A8E  33ff                 xor edi, edi
+0x500A90  85c0                 test eax, eax
+0x500A92  7e5b                 jle 0x500aef
+0x500A94  a12c02a800           mov eax, dword ptr [0xa8022c]
+0x500A99  55                   push ebp
+0x500A9A  8b34b8               mov esi, dword ptr [eax + edi*4]
+0x500A9D  8bce                 mov ecx, esi
+0x500A9F  e89c000000           call 0x500b40  <<< HouseClass::Read_INI(house, ini)      <<< LOOP2
+0x500AA4  a138b2a800           mov eax, dword ptr [0xa8b238]  <<< [0xA8B238]==0 gate
+0x500AA9  85c0                 test eax, eax
+0x500AAB  7536                 jne 0x500ae3
+0x500AAD  8a86ec010000         mov al, byte ptr [esi + 0x1ec]
+0x500AB3  84c0                 test al, al
+0x500AB5  750a                 jne 0x500ac1  <<< branch: +0x1EC != 0 -> use Scen+0x60C
+0x500AB7  8a86ed010000         mov al, byte ptr [esi + 0x1ed]
+0x500ABD  84c0                 test al, al
+0x500ABF  740f                 je 0x500ad0  <<< branch: PlayerControl(+0x1ED)==no -> use Scen+0x610
+0x500AC1  8b0d30b2a800         mov ecx, dword ptr [0xa8b230]
+0x500AC7  8b910c060000         mov edx, dword ptr [ecx + 0x60c]
+0x500ACD  52                   push edx
+0x500ACE  eb0c                 jmp 0x500adc
+0x500AD0  a130b2a800           mov eax, dword ptr [0xa8b230]
+0x500AD5  8b8810060000         mov ecx, dword ptr [eax + 0x610]
+0x500ADB  51                   push ecx
+0x500ADC  8bce                 mov ecx, esi
+0x500ADE  e8dd63ffff           call 0x4f6ec0  <<< call 0x4F6EC0(house, difficulty)
+0x500AE3  a13802a800           mov eax, dword ptr [0xa80238]
+0x500AE8  47                   inc edi
+0x500AE9  3bf8                 cmp edi, eax
+0x500AEB  7ca7                 jl 0x500a94
+0x500AED  85c0                 test eax, eax
+0x500AEF  7543                 jne 0x500b34
+0x500AF1  a1a83ca800           mov eax, dword ptr [0xa83ca8]
+0x500AF6  33f6                 xor esi, esi
+0x500AF8  85c0                 test eax, eax
+0x500AFA  7e38                 jle 0x500b34
+0x500AFC  68b8600100           push 0x160b8
+0x500B01  e811832c00           call 0x7c8e17
+0x500B06  83c404               add esp, 4
+0x500B09  85c0                 test eax, eax
+0x500B0B  7413                 je 0x500b20
+0x500B0D  8b159c3ca800         mov edx, dword ptr [0xa83c9c]
+0x500B13  8b0cb2               mov ecx, dword ptr [edx + esi*4]
+0x500B16  51                   push ecx
+0x500B17  8bc8                 mov ecx, eax
+0x500B19  e88249ffff           call 0x4f54a0  <<< HouseClass ctor <<< LOOP3
+0x500B1E  eb02                 jmp 0x500b22
+0x500B20  33c0                 xor eax, eax
+0x500B22  55                   push ebp
+0x500B23  8bc8                 mov ecx, eax
+0x500B25  e816000000           call 0x500b40  <<< Read_INI <<< LOOP3
+0x500B2A  a1a83ca800           mov eax, dword ptr [0xa83ca8]
+0x500B2F  46                   inc esi
+0x500B30  3bf0                 cmp esi, eax
+0x500B32  7cc8                 jl 0x500afc
+0x500B34  5f                   pop edi
+0x500B35  5e                   pop esi
+0x500B36  5d                   pop ebp
+0x500B37  5b                   pop ebx
+0x500B38  83c430               add esp, 0x30
+0x500B3B  c3                   ret 
+  [function end: ret]
+
+创建计数静态结论：
+  LOOP1 (0x5009D1..0x500A83)：无任何 PlayerControl 条件 —— 地图 [Houses] 节有几条
+  名字就 new 几个 HouseClass（0x160B8B，ctor 0x4F54A0）。
+  LOOP2 (0x500A94..0x500AEB)：对每个已建 house 调 Read_INI，然后仅当 [0xA8B238]==0
+  时按 (+0x1EC || PlayerControl) 选择难度值调 0x4F6EC0 —— 只改难度/资金倍率，不改数量。
+  LOOP3 (0x500AF1..0x500B32)：仅当 HouseArray 为空（[Houses] 节 0 条）时按 HouseType
+  数量兜底创建。
+
+====================================================================================================
+6. PercentBuilt/NodeCount READER 0x42EBE0 and WRITER 0x42ED60
+====================================================================================================
+0x42EBE0  81ec9c000000         sub esp, 0x9c
+0x42EBE6  53                   push ebx
+0x42EBE7  8b9c24a4000000       mov ebx, dword ptr [esp + 0xa4]
+0x42EBEE  56                   push esi
+0x42EBEF  8bf1                 mov esi, ecx
+0x42EBF1  57                   push edi
+0x42EBF2  8bcb                 mov ecx, ebx
+0x42EBF4  e8077f0f00           call 0x526b00  <<< (ini-object method; this = HouseClass+0x5700 = embedded BaseClass)
+0x42EBF9  8b461c               mov eax, dword ptr [esi + 0x1c]
+0x42EBFC  8bbc24b0000000       mov edi, dword ptr [esp + 0xb0]
+0x42EC03  50                   push eax
+0x42EC04  68a0898100           push 0x8189a0  <<< "PercentBuilt"
+0x42EC09  57                   push edi
+0x42EC0A  8bcb                 mov ecx, ebx
+0x42EC0C  e8bf8a0f00           call 0x5276d0
+0x42EC11  6a00                 push 0
+0x42EC13  6894898100           push 0x818994  <<< "NodeCount"
+0x42EC18  57                   push edi
+0x42EC19  8bcb                 mov ecx, ebx
+0x42EC1B  89461c               mov dword ptr [esi + 0x1c], eax  <<< PercentBuilt -> BaseClass+0x1C = HouseClass+0x571C
+0x42EC1E  e8ad8a0f00           call 0x5276d0
+0x42EC23  85c0                 test eax, eax
+0x42EC25  89442414             mov dword ptr [esp + 0x14], eax
+0x42EC29  c744240c00000000     mov dword ptr [esp + 0xc], 0
+0x42EC31  0f8e10010000         jle 0x42ed47
+0x42EC37  55                   push ebp
+0x42EC38  83c604               add esi, 4
+0x42EC3B  eb07                 jmp 0x42ec44
+0x42EC3D  8bbc24b4000000       mov edi, dword ptr [esp + 0xb4]
+0x42EC44  8b4c2410             mov ecx, dword ptr [esp + 0x10]
+0x42EC48  8d54241c             lea edx, [esp + 0x1c]
+0x42EC4C  51                   push ecx
+0x42EC4D  688c898100           push 0x81898c
+0x42EC52  52                   push edx
+0x42EC53  e89ca23900           call 0x7c8ef4  <<< sprintf "Node%03d"
+0x42EC58  83c40c               add esp, 0xc
+0x42EC5B  8d44242c             lea eax, [esp + 0x2c]
+0x42EC5F  8d4c241c             lea ecx, [esp + 0x1c]
+0x42EC63  6880000000           push 0x80
+0x42EC68  50                   push eax
+0x42EC69  6a00                 push 0
+0x42EC6B  51                   push ecx
+0x42EC6C  57                   push edi
+0x42EC6D  8bcb                 mov ecx, ebx
+0x42EC6F  e89c9d0f00           call 0x528a10  <<< Get per-node string
+0x42EC74  8a44242c             mov al, byte ptr [esp + 0x2c]
+0x42EC78  68707f8100           push 0x817f70
+0x42EC7D  3c2d                 cmp al, 0x2d
+0x42EC7F  7515                 jne 0x42ec96
+0x42EC81  8d542430             lea edx, [esp + 0x30]
+0x42EC85  52                   push edx
+0x42EC86  e837b03900           call 0x7c9cc2
+0x42EC8B  50                   push eax
+0x42EC8C  e86caf3900           call 0x7c9bfd
+0x42EC91  83c40c               add esp, 0xc
+0x42EC94  eb14                 jmp 0x42ecaa
+0x42EC96  8d442430             lea eax, [esp + 0x30]
+0x42EC9A  50                   push eax
+0x42EC9B  e822b03900           call 0x7c9cc2
+0x42ECA0  83c408               add esp, 8
+0x42ECA3  8bc8                 mov ecx, eax
+0x42ECA5  e806fb0200           call 0x45e7b0
+0x42ECAA  68707f8100           push 0x817f70
+0x42ECAF  6a00                 push 0
+0x42ECB1  8be8                 mov ebp, eax
+0x42ECB3  e80ab03900           call 0x7c9cc2
+0x42ECB8  50                   push eax
+0x42ECB9  e83faf3900           call 0x7c9bfd
+0x42ECBE  68707f8100           push 0x817f70
+0x42ECC3  6a00                 push 0
+0x42ECC5  6689442428           mov word ptr [esp + 0x28], ax
+0x42ECCA  e8f3af3900           call 0x7c9cc2
+0x42ECCF  50                   push eax
+0x42ECD0  e828af3900           call 0x7c9bfd
+0x42ECD5  8b4e10               mov ecx, dword ptr [esi + 0x10]
+0x42ECD8  668944242e           mov word ptr [esp + 0x2e], ax
+0x42ECDD  8b4608               mov eax, dword ptr [esi + 8]
+0x42ECE0  8b7c242c             mov edi, dword ptr [esp + 0x2c]
+0x42ECE4  83c418               add esp, 0x18
+0x42ECE7  3bc8                 cmp ecx, eax
+0x42ECE9  7c22                 jl 0x42ed0d
+0x42ECEB  8a4e0d               mov cl, byte ptr [esi + 0xd]
+0x42ECEE  84c9                 test cl, cl
+0x42ECF0  7504                 jne 0x42ecf6
+0x42ECF2  85c0                 test eax, eax
+0x42ECF4  753b                 jne 0x42ed31
+0x42ECF6  8b4e14               mov ecx, dword ptr [esi + 0x14]
+0x42ECF9  85c9                 test ecx, ecx
+0x42ECFB  7e34                 jle 0x42ed31
+0x42ECFD  8b16                 mov edx, dword ptr [esi]
+0x42ECFF  03c8                 add ecx, eax
+0x42ED01  6a00                 push 0
+0x42ED03  51                   push ecx
+0x42ED04  8bce                 mov ecx, esi
+0x42ED06  ff5208               call dword ptr [edx + 8]
+0x42ED09  84c0                 test al, al
+0x42ED0B  7424                 je 0x42ed31
+0x42ED0D  8b4610               mov eax, dword ptr [esi + 0x10]
+0x42ED10  8d4801               lea ecx, [eax + 1]
+0x42ED13  894e10               mov dword ptr [esi + 0x10], ecx
+0x42ED16  8b4e04               mov ecx, dword ptr [esi + 4]
+0x42ED19  c1e004               shl eax, 4
+0x42ED1C  03c1                 add eax, ecx
+0x42ED1E  8928                 mov dword ptr [eax], ebp
+0x42ED20  897804               mov dword ptr [eax + 4], edi
+0x42ED23  8b542424             mov edx, dword ptr [esp + 0x24]
+0x42ED27  895008               mov dword ptr [eax + 8], edx
+0x42ED2A  8b4c2428             mov ecx, dword ptr [esp + 0x28]
+0x42ED2E  89480c               mov dword ptr [eax + 0xc], ecx
+0x42ED31  8b442410             mov eax, dword ptr [esp + 0x10]
+0x42ED35  8b4c2418             mov ecx, dword ptr [esp + 0x18]
+0x42ED39  40                   inc eax
+0x42ED3A  3bc1                 cmp eax, ecx
+0x42ED3C  89442410             mov dword ptr [esp + 0x10], eax
+0x42ED40  0f8cf7feffff         jl 0x42ec3d
+0x42ED46  5d                   pop ebp
+0x42ED47  5f                   pop edi
+0x42ED48  5e                   pop esi
+0x42ED49  5b                   pop ebx
+0x42ED4A  81c49c000000         add esp, 0x9c  <<< ret 8
+0x42ED50  c20800               ret 8
+  [function end: ret]
+
+0x42ED60  81ec8c000000         sub esp, 0x8c
+0x42ED66  55                   push ebp
+0x42ED67  8bac2498000000       mov ebp, dword ptr [esp + 0x98]
+0x42ED6E  56                   push esi
+0x42ED6F  8bf1                 mov esi, ecx
+0x42ED71  57                   push edi
+0x42ED72  8bbc249c000000       mov edi, dword ptr [esp + 0x9c]
+0x42ED79  8b461c               mov eax, dword ptr [esi + 0x1c]
+0x42ED7C  6a00                 push 0
+0x42ED7E  50                   push eax
+0x42ED7F  68a0898100           push 0x8189a0  <<< "PercentBuilt"
+0x42ED84  55                   push ebp
+0x42ED85  8bcf                 mov ecx, edi
+0x42ED87  e834880f00           call 0x5275c0
+0x42ED8C  8b4e14               mov ecx, dword ptr [esi + 0x14]
+0x42ED8F  6a00                 push 0
+0x42ED91  51                   push ecx
+0x42ED92  6894898100           push 0x818994  <<< "NodeCount"
+0x42ED97  55                   push ebp
+0x42ED98  8bcf                 mov ecx, edi
+0x42ED9A  e821880f00           call 0x5275c0
+0x42ED9F  8b4614               mov eax, dword ptr [esi + 0x14]
+0x42EDA2  33ff                 xor edi, edi
+0x42EDA4  85c0                 test eax, eax
+0x42EDA6  7e75                 jle 0x42ee1d
+0x42EDA8  53                   push ebx
+0x42EDA9  33db                 xor ebx, ebx
+0x42EDAB  57                   push edi
+0x42EDAC  8d542414             lea edx, [esp + 0x14]
+0x42EDB0  688c898100           push 0x81898c  <<< sprintf "Node%03d"
+0x42EDB5  52                   push edx
+0x42EDB6  e839a13900           call 0x7c8ef4
+0x42EDBB  8b4608               mov eax, dword ptr [esi + 8]
+0x42EDBE  83c40c               add esp, 0xc
+0x42EDC1  03c3                 add eax, ebx
+0x42EDC3  8b08                 mov ecx, dword ptr [eax]
+0x42EDC5  0fbf5006             movsx edx, word ptr [eax + 6]
+0x42EDC9  0fbf4004             movsx eax, word ptr [eax + 4]
+0x42EDCD  85c9                 test ecx, ecx
+0x42EDCF  52                   push edx
+0x42EDD0  50                   push eax
+0x42EDD1  7c14                 jl 0x42ede7
+0x42EDD3  8b156c3ca800         mov edx, dword ptr [0xa83c6c]
+0x42EDD9  8b048a               mov eax, dword ptr [edx + ecx*4]
+0x42EDDC  83c024               add eax, 0x24
+0x42EDDF  50                   push eax
+0x42EDE0  68bc898100           push 0x8189bc
+0x42EDE5  eb06                 jmp 0x42eded
+0x42EDE7  51                   push ecx
+0x42EDE8  68b0898100           push 0x8189b0
+0x42EDED  8d4c242c             lea ecx, [esp + 0x2c]
+0x42EDF1  51                   push ecx
+0x42EDF2  e8fda03900           call 0x7c8ef4  <<< node value "%s,%d,%d" / "%d,%d,%d"
+0x42EDF7  8b8c24b4000000       mov ecx, dword ptr [esp + 0xb4]
+0x42EDFE  83c414               add esp, 0x14
+0x42EE01  8d54241c             lea edx, [esp + 0x1c]
+0x42EE05  8d442410             lea eax, [esp + 0x10]
+0x42EE09  52                   push edx
+0x42EE0A  50                   push eax
+0x42EE0B  55                   push ebp
+0x42EE0C  e84f980f00           call 0x528660
+0x42EE11  8b4614               mov eax, dword ptr [esi + 0x14]
+0x42EE14  47                   inc edi
+0x42EE15  83c310               add ebx, 0x10
+0x42EE18  3bf8                 cmp edi, eax
+0x42EE1A  7c8f                 jl 0x42edab
+0x42EE1C  5b                   pop ebx
+0x42EE1D  5f                   pop edi
+0x42EE1E  5e                   pop esi
+0x42EE1F  5d                   pop ebp
+0x42EE20  81c48c000000         add esp, 0x8c
+0x42EE26  c20800               ret 8
+  [function end: ret]
+
+0x42E6F0  53                   push ebx
+0x42E6F1  56                   push esi
+0x42E6F2  8bf1                 mov esi, ecx
+0x42E6F4  57                   push edi
+0x42E6F5  33ff                 xor edi, edi
+0x42E6F7  8d5e04               lea ebx, [esi + 4]
+0x42E6FA  57                   push edi
+0x42E6FB  57                   push edi
+0x42E6FC  8bcb                 mov ecx, ebx
+0x42E6FE  e83d150000           call 0x42fc40
+0x42E703  c703b0387e00         mov dword ptr [ebx], 0x7e38b0
+0x42E709  c743140a000000       mov dword ptr [ebx + 0x14], 0xa
+0x42E710  897b10               mov dword ptr [ebx + 0x10], edi
+0x42E713  8d5e20               lea ebx, [esi + 0x20]
+0x42E716  57                   push edi
+0x42E717  57                   push edi
+0x42E718  8bcb                 mov ecx, ebx
+0x42E71A  897e1c               mov dword ptr [esi + 0x1c], edi  <<< BaseClass ctor: PercentBuilt = 0  (HouseClass+0x571C default 0)
+0x42E71D  e88e150000           call 0x42fcb0
+0x42E722  c70390387e00         mov dword ptr [ebx], 0x7e3890
+0x42E728  c743140a000000       mov dword ptr [ebx + 0x14], 0xa
+0x42E72F  897b10               mov dword ptr [ebx + 0x10], edi
+0x42E732  8d5e38               lea ebx, [esi + 0x38]
+0x42E735  57                   push edi
+0x42E736  57                   push edi
+0x42E737  8bcb                 mov ecx, ebx
+0x42E739  e872150000           call 0x42fcb0
+0x42E73E  c70390387e00         mov dword ptr [ebx], 0x7e3890
+0x42E744  c743140a000000       mov dword ptr [ebx + 0x14], 0xa
+0x42E74B  897b10               mov dword ptr [ebx + 0x10], edi
+0x42E74E  66897e50             mov word ptr [esi + 0x50], di
+0x42E752  66897e52             mov word ptr [esi + 0x52], di
+0x42E756  897e54               mov dword ptr [esi + 0x54], edi
+0x42E759  897e58               mov dword ptr [esi + 0x58], edi
+0x42E75C  897e5c               mov dword ptr [esi + 0x5c], edi
+0x42E75F  897e60               mov dword ptr [esi + 0x60], edi
+0x42E762  897e64               mov dword ptr [esi + 0x64], edi
+0x42E765  897e68               mov dword ptr [esi + 0x68], edi
+0x42E768  897e6c               mov dword ptr [esi + 0x6c], edi
+0x42E76B  897e70               mov dword ptr [esi + 0x70], edi
+0x42E76E  897e74               mov dword ptr [esi + 0x74], edi
+0x42E771  c70680387e00         mov dword ptr [esi], 0x7e3880  <<< BaseClass vtable = 0x7E3880
+0x42E777  8bc6                 mov eax, esi
+0x42E779  5f                   pop edi
+0x42E77A  5e                   pop esi
+0x42E77B  5b                   pop ebx
+0x42E77C  c3                   ret 
+  [function end: ret]
+
+PercentBuilt 运行时消费者检索（全 .text 线性扫描）：
+  同时引用 0x5700 族成员且含寄存器型 [reg+0x1C] 的函数：0 个
+  BaseClass vtable 0x7E3880 各方法 (0x42EE30,0x42F070,0x42F180,0x42FBF0,
+  0x42F620,0x42F860,0x42F420) 中寄存器型 [reg+0x1C] 访问：仅栈偏移，无成员访问。
+  .text 内三个原始字节 `1c 57 00 00` 命中 (0x401E00/0x674FC0/0x6750B0) 全部是
+  call rel32 (e8 xx xx xx xx) 的位移字节巧合，反汇编验证见上第 2 节 kind 标注。
+  => 静态结论：PercentBuilt 写入 HouseClass+0x571C 后，除 Write_INI 回写
+     (0x42ED79) 外，引擎无任何运行时读取点。Neutral=100 其余=0 对本 exe 无行为差异。
+
+====================================================================================================
+7. ALL HouseClass CREATION SITES (operator new 0x7C8E17, sizeof=0x160B8, ctor 0x4F54A0)
+====================================================================================================
+callers of ctor 0x4F54A0: 0x500a30, 0x500b19, 0x59a198, 0x687fc3, 0x6881a0, 0x6882fe, 0x688351, 0x6c3ed1
+
+--- wrapper LOOP1: new + ctor, country = [0xA83C9C][Get "Country" key] ---
+0x500A13  68b8600100           push 0x160b8
+0x500A18  e8fa832c00           call 0x7c8e17
+0x500A1D  83c404               add esp, 4
+0x500A20  85c0                 test eax, eax
+0x500A22  7415                 je 0x500a39
+0x500A24  8b159c3ca800         mov edx, dword ptr [0xa83c9c]
+0x500A2A  8b0cb2               mov ecx, dword ptr [edx + esi*4]
+0x500A2D  51                   push ecx
+0x500A2E  8bc8                 mov ecx, eax
+0x500A30  e86b4affff           call 0x4f54a0
+0x500A35  8bf0                 mov esi, eax
+
+--- wrapper LOOP3: fallback per HouseType when HouseArray empty ---
+0x500AFC  68b8600100           push 0x160b8
+0x500B01  e811832c00           call 0x7c8e17
+0x500B06  83c404               add esp, 4
+0x500B09  85c0                 test eax, eax
+0x500B0B  7413                 je 0x500b20
+0x500B0D  8b159c3ca800         mov edx, dword ptr [0xa83c9c]
+0x500B13  8b0cb2               mov ecx, dword ptr [edx + esi*4]
+0x500B16  51                   push ecx
+0x500B17  8bc8                 mov ecx, eax
+0x500B19  e88249ffff           call 0x4f54a0
+0x500B1E  eb02                 jmp 0x500b22
+0x500B20  33c0                 xor eax, eax
+0x500B22  55                   push ebp
+0x500B23  8bc8                 mov ecx, eax
+0x500B25  e816000000           call 0x500b40
+
+--- fn 0x599650 fallback: per HouseType when [0xA80238]==0 ---
+0x59A167  391d3802a800         cmp dword ptr [0xa80238], ebx
+0x59A16D  754d                 jne 0x59a1bc
+0x59A16F  8b0da83ca800         mov ecx, dword ptr [0xa83ca8]
+0x59A175  33f6                 xor esi, esi
+0x59A177  3bcb                 cmp ecx, ebx
+0x59A179  7e41                 jle 0x59a1bc
+0x59A17B  68b8600100           push 0x160b8
+0x59A180  e892ec2200           call 0x7c8e17
+0x59A185  83c404               add esp, 4
+0x59A188  3bc3                 cmp eax, ebx
+0x59A18A  7413                 je 0x59a19f
+0x59A18C  8b0d9c3ca800         mov ecx, dword ptr [0xa83c9c]
+0x59A192  8b14b1               mov edx, dword ptr [ecx + esi*4]
+0x59A195  8bc8                 mov ecx, eax
+0x59A197  52                   push edx
+0x59A198  e803b3f5ff           call 0x4f54a0
+0x59A19D  eb02                 jmp 0x59a1a1
+0x59A19F  33c0                 xor eax, eax
+0x59A1A1  8d4c244c             lea ecx, [esp + 0x4c]
+0x59A1A5  51                   push ecx
+0x59A1A6  8bc8                 mov ecx, eax
+0x59A1A8  e89369f6ff           call 0x500b40
+0x59A1AD  a1a83ca800           mov eax, dword ptr [0xa83ca8]
+0x59A1B2  46                   inc esi
+0x59A1B3  3bf0                 cmp esi, eax
+
+--- MP creator 0x687F10: per session-slot house ---
+0x687F97  8b442410             mov eax, dword ptr [esp + 0x10]
+0x687F9B  68b8600100           push 0x160b8
+0x687FA0  8b1c86               mov ebx, dword ptr [esi + eax*4]
+0x687FA3  c644042801           mov byte ptr [esp + eax + 0x28], 1
+0x687FA8  e86a0e1400           call 0x7c8e17
+0x687FAD  83c404               add esp, 4
+0x687FB0  85c0                 test eax, eax
+0x687FB2  7418                 je 0x687fcc
+0x687FB4  8b4b4b               mov ecx, dword ptr [ebx + 0x4b]
+0x687FB7  8b159c3ca800         mov edx, dword ptr [0xa83c9c]
+0x687FBD  8b0c8a               mov ecx, dword ptr [edx + ecx*4]
+0x687FC0  51                   push ecx
+0x687FC1  8bc8                 mov ecx, eax
+0x687FC3  e8d8d4e6ff           call 0x4f54a0
+0x687FC8  8be8                 mov ebp, eax
+0x687FCA  eb02                 jmp 0x687fce
+0x687FCC  33ed                 xor ebp, ebp
+
+--- MP slot house init: +0x1EC=1; human slot +0x1ED=1 (0x68810F) ---
+0x6880AD  c685ec01000001       mov byte ptr [ebp + 0x1ec], 1
+0x6880B4  a15cb2a800           mov eax, dword ptr [0xa8b25c]
+0x6880B9  8b4b4b               mov ecx, dword ptr [ebx + 0x4b]
+0x6880BC  8b5353               mov edx, dword ptr [ebx + 0x53]
+0x6880BF  50                   push eax
+0x6880C0  51                   push ecx
+0x6880C1  52                   push edx
+0x6880C2  8bcd                 mov ecx, ebp
+0x6880C4  e8374de7ff           call 0x4fce00
+0x6880C9  8b4353               mov eax, dword ptr [ebx + 0x53]
+0x6880CC  b938b2a800           mov ecx, 0xa8b238
+0x6880D1  50                   push eax
+0x6880D2  e839220100           call 0x69a310
+0x6880D7  8bcd                 mov ecx, ebp
+0x6880D9  898554600100         mov dword ptr [ebp + 0x16054], eax
+0x6880DF  e85c37e8ff           call 0x50b840
+0x6880E4  8bcd                 mov ecx, ebp
+0x6880E6  e81539e8ff           call 0x50ba00
+0x6880EB  8bcb                 mov ecx, ebx
+0x6880ED  e85eee0000           call 0x696f50
+0x6880F2  898558600100         mov dword ptr [ebp + 0x16058], eax
+0x6880F8  8b442410             mov eax, dword ptr [esp + 0x10]
+0x6880FC  8b4b63               mov ecx, dword ptr [ebx + 0x63]
+0x6880FF  85c0                 test eax, eax
+0x688101  898d5c600100         mov dword ptr [ebp + 0x1605c], ecx
+0x688107  750d                 jne 0x688116
+0x688109  892d4c3da800         mov dword ptr [0xa83d4c], ebp
+0x68810F  c685ed01000001       mov byte ptr [ebp + 0x1ed], 1
+0x688116  837b6bff             cmp dword ptr [ebx + 0x6b], -1
+0x68811A  7506                 jne 0x688122
+0x68811C  892d9811ac00         mov dword ptr [0xac1198], ebp
+0x688122  8b15f42c8200         mov edx, dword ptr [0x822cf4]
+0x688128  6a01                 push 1
+0x68812A  8bcd                 mov ecx, ebp
+
+--- MP AI-list house (<=8): +0x1EC=0 ---
+0x68817B  8b7320               mov esi, dword ptr [ebx + 0x20]
+0x68817E  40                   inc eax
+0x68817F  68b8600100           push 0x160b8
+0x688184  89442420             mov dword ptr [esp + 0x20], eax
+0x688188  e88a0c1400           call 0x7c8e17
+0x68818D  83c404               add esp, 4
+0x688190  85c0                 test eax, eax
+0x688192  7415                 je 0x6881a9
+0x688194  8b159c3ca800         mov edx, dword ptr [0xa83c9c]
+0x68819A  8b0cba               mov ecx, dword ptr [edx + edi*4]
+0x68819D  51                   push ecx
+0x68819E  8bc8                 mov ecx, eax
+0x6881A0  e8fbd2e6ff           call 0x4f54a0
+0x6881A5  8be8                 mov ebp, eax
+0x6881A7  eb02                 jmp 0x6881ab
+0x6881A9  33ed                 xor ebp, ebp
+
+--- Neutral house (name 0x82BA08 "Neutral", color LightGrey 0x836ECC) ---
+0x6882D1  68b8600100           push 0x160b8
+0x6882D6  e83c0b1400           call 0x7c8e17
+0x6882DB  83c404               add esp, 4
+0x6882DE  8bf0                 mov esi, eax
+0x6882E0  85f6                 test esi, esi
+0x6882E2  5d                   pop ebp
+0x6882E3  5b                   pop ebx
+0x6882E4  7421                 je 0x688307
+0x6882E6  b908ba8200           mov ecx, 0x82ba08
+0x6882EB  e8e094e8ff           call 0x5117d0
+0x6882F0  8b159c3ca800         mov edx, dword ptr [0xa83c9c]
+0x6882F6  8bce                 mov ecx, esi
+0x6882F8  8d0482               lea eax, [edx + eax*4]
+0x6882FB  8b00                 mov eax, dword ptr [eax]
+0x6882FD  50                   push eax
+0x6882FE  e89dd1e6ff           call 0x4f54a0
+0x688303  8bf0                 mov esi, eax
+0x688305  eb02                 jmp 0x688309
+0x688307  33f6                 xor esi, esi
+0x688309  ba35000000           mov edx, 0x35
+0x68830E  b9cc6e8300           mov ecx, 0x836ecc
+0x688313  e898470000           call 0x68cab0
+0x688318  8bce                 mov ecx, esi
+0x68831A  898654600100         mov dword ptr [esi + 0x16054], eax
+
+--- Special house (name 0x817318 "Special") ---
+0x688325  68b8600100           push 0x160b8
+0x68832A  e8e80a1400           call 0x7c8e17
+0x68832F  8bf0                 mov esi, eax
+0x688331  83c404               add esp, 4
+0x688334  85f6                 test esi, esi
+0x688336  7422                 je 0x68835a
+0x688338  b918738100           mov ecx, 0x817318
+0x68833D  e88e94e8ff           call 0x5117d0
+0x688342  8b0d9c3ca800         mov ecx, dword ptr [0xa83c9c]
+0x688348  8b1481               mov edx, dword ptr [ecx + eax*4]
+0x68834B  8d0481               lea eax, [ecx + eax*4]
+0x68834E  52                   push edx
+0x68834F  8bce                 mov ecx, esi
+0x688351  e84ad1e6ff           call 0x4f54a0
+0x688356  8bf0                 mov esi, eax
+0x688358  eb02                 jmp 0x68835c
+0x68835A  33f6                 xor esi, esi
+0x68835C  ba35000000           mov edx, 0x35
+0x688361  b9cc6e8300           mov ecx, 0x836ecc
+0x688366  e845470000           call 0x68cab0
+0x68836B  8bce                 mov ecx, esi
+0x68836D  898654600100         mov dword ptr [esi + 0x16054], eax
+
+--- COM-style exported stub 0x6C3E90 (HRESULT; no .text callers) ---
+0x6C3EBC  68b8600100           push 0x160b8
+0x6C3EC1  e8514f1000           call 0x7c8e17
+0x6C3EC6  83c404               add esp, 4
+0x6C3EC9  85c0                 test eax, eax
+0x6C3ECB  740f                 je 0x6c3edc
+0x6C3ECD  6a00                 push 0
+0x6C3ECF  8bc8                 mov ecx, eax
+0x6C3ED1  e8ca15e3ff           call 0x4f54a0
+0x6C3ED6  8bf0                 mov esi, eax
+0x6C3ED8  85f6                 test esi, esi
+0x6C3EDA  750a                 jne 0x6c3ee6
+0x6C3EDC  5f                   pop edi
+0x6C3EDD  b80e000780           mov eax, 0x8007000e
+0x6C3EE2  5e                   pop esi
+0x6C3EE3  c21000               ret 0x10
+0x6C3EE6  8b4c2414             mov ecx, dword ptr [esp + 0x14]
+0x6C3EEA  8b06                 mov eax, dword ptr [esi]
+0x6C3EEC  57                   push edi
+0x6C3EED  51                   push ecx
+0x6C3EEE  56                   push esi
+0x6C3EEF  ff10                 call dword ptr [eax]
+0x6C3EF1  8bf8                 mov edi, eax
+0x6C3EF3  85ff                 test edi, edi
+0x6C3EF5  7d09                 jge 0x6c3f00
+0x6C3EF7  8b16                 mov edx, dword ptr [esi]
+0x6C3EF9  6a01                 push 1
+0x6C3EFB  8bce                 mov ecx, esi
+0x6C3EFD  ff5220               call dword ptr [edx + 0x20]
+0x6C3F00  8bc7                 mov eax, edi
+0x6C3F02  5f                   pop edi
+0x6C3F03  5e                   pop esi
+
+====================================================================================================
+8. DISPATCH IN SCENARIO-START FN 0x686B20: call 0x687F10 (always) vs wrapper 0x5009B0
+====================================================================================================
+fn 0x686B20 callers: 0x599a56, 0x686845
+fn 0x687F10 callers: 0x68745e, 0x68acff
+wrapper 0x5009B0 callers: 0x6877bd
+
+--- wrapper-call gate: cmp [0xA8B238], esi(0); jne skip ---
+0x6877B5  3bd6                 cmp edx, esi
+0x6877B7  8bd9                 mov ebx, ecx
+0x6877B9  7572                 jne 0x68782d
+0x6877BB  8bcf                 mov ecx, edi
+0x6877BD  e8ee91e7ff           call 0x5009b0
+0x6877C2  8d8c2400010000       lea ecx, [esp + 0x100]
+0x6877C9  6a20                 push 0x20
+0x6877CB  51                   push ecx
+
+--- esi=0 feed into the gate ---
+0x68773D  33f6                 xor esi, esi
+0x68773F  e83c59e0ff           call 0x48d080
+0x687744  8b7c2418             mov edi, dword ptr [esp + 0x18]
+0x687748  8b0de0718800         mov ecx, dword ptr [0x8871e0]
+0x68774E  57                   push edi
+0x68774F  e89c14feff           call 0x668bf0
+0x687754  b938b2a800           mov ecx, 0xa8b238
+0x687759  6a2d                 push 0x2d
+0x68775B  e830370100           call 0x69ae90
+
+=> [0xA8B238]==0（战役/单机场景）才走地图 [Houses] 解析；MP/遭遇战跳过，
+   此时地图 per-house 节（PlayerControl/Credits/PercentBuilt...）整体不被解析。
+   遭遇战路径 0x687F10：slot 房子 + Neutral + Special —— 2 slot 时恰好 4 个。
+
+====================================================================================================
+9. RUNTIME USES OF PlayerControl(+0x1ED): 0x4F6EC0 difficulty setter & 0x50A5C0 to-Computer
+====================================================================================================
+0x4F6EC0  55                   push ebp
+0x4F6EC1  8bec                 mov ebp, esp
+0x4F6EC3  83e4f8               and esp, 0xfffffff8
+0x4F6EC6  83ec14               sub esp, 0x14
+0x4F6EC9  8b8184010000         mov eax, dword ptr [ecx + 0x184]
+0x4F6ECF  53                   push ebx
+0x4F6ED0  56                   push esi
+0x4F6ED1  8b7508               mov esi, dword ptr [ebp + 8]
+0x4F6ED4  8944240c             mov dword ptr [esp + 0xc], eax
+0x4F6ED8  89b184010000         mov dword ptr [ecx + 0x184], esi
+0x4F6EDE  a138b2a800           mov eax, dword ptr [0xa8b238]
+0x4F6EE3  57                   push edi
+0x4F6EE4  85c0                 test eax, eax
+0x4F6EE6  0f8402010000         je 0x4f6fee
+0x4F6EEC  a1e0718800           mov eax, dword ptr [0x8871e0]
+0x4F6EF1  8b7934               mov edi, dword ptr [ecx + 0x34]
+0x4F6EF4  8d14b6               lea edx, [esi + esi*4]
+0x4F6EF7  8d9cb654010000       lea ebx, [esi + esi*4 + 0x154]
+0x4F6EFE  c1e204               shl edx, 4
+0x4F6F01  c1e304               shl ebx, 4
+0x4F6F04  dd840238150000       fld qword ptr [edx + eax + 0x1538]
+0x4F6F0B  dc8fc8000000         fmul qword ptr [edi + 0xc8]
+0x4F6F11  dd9988010000         fstp qword ptr [ecx + 0x188]
+0x4F6F17  a1e0718800           mov eax, dword ptr [0x8871e0]
+0x4F6F1C  dd0403               fld qword ptr [ebx + eax]
+0x4F6F1F  dc8818140000         fmul qword ptr [eax + 0x1418]
+0x4F6F25  dc8fd0000000         fmul qword ptr [edi + 0xd0]
+
+0x50A5C0  a138b2a800           mov eax, dword ptr [0xa8b238]
+0x50A5C5  83ec48               sub esp, 0x48
+0x50A5C8  85c0                 test eax, eax
+0x50A5CA  53                   push ebx
+0x50A5CB  55                   push ebp
+0x50A5CC  8be9                 mov ebp, ecx
+0x50A5CE  56                   push esi
+0x50A5CF  57                   push edi
+0x50A5D0  8a85ec010000         mov al, byte ptr [ebp + 0x1ec]
+0x50A5D6  7514                 jne 0x50a5ec
+0x50A5D8  84c0                 test al, al
+0x50A5DA  750e                 jne 0x50a5ea
+0x50A5DC  8a85ed010000         mov al, byte ptr [ebp + 0x1ed]
+0x50A5E2  84c0                 test al, al
+0x50A5E4  7504                 jne 0x50a5ea
+0x50A5E6  32c0                 xor al, al
+0x50A5E8  eb02                 jmp 0x50a5ec
+0x50A5EA  b001                 mov al, 1
+0x50A5EC  84c0                 test al, al
+0x50A5EE  0f840b090000         je 0x50aeff
+0x50A5F4  c685ec01000000       mov byte ptr [ebp + 0x1ec], 0
+0x50A5FB  c685ed01000000       mov byte ptr [ebp + 0x1ed], 0
+0x50A602  a1e0718800           mov eax, dword ptr [0x8871e0]
+0x50A607  bad84f8200           mov edx, 0x824fd8
+0x50A60C  85d2                 test edx, edx
+0x50A60E  8b8834140000         mov ecx, dword ptr [eax + 0x1434]
+0x50A614  898d4c020000         mov dword ptr [ebp + 0x24c], ecx
+0x50A61A  7506                 jne 0x50a622
+0x50A61C  88542440             mov byte ptr [esp + 0x40], dl
+
+0x50A5C0：SP 下仅当 (+0x1EC || +0x1ED) 才继续；随后两标志清零并把房名改 "Computer"
+（0x824FD8）—— PlayerControl 是“人类控制房”标志，不是创建开关。
+
+====================================================================================================
+10. MaxPlayers/MinPlayers READ SITES (strings 0x83F3F0 / 0x83F3FC)
+====================================================================================================
+xrefs of "MinPlayers" 0x83F3FC: 0x6997d7, 0x69a549
+xrefs of "MaxPlayers" 0x83F3F0: 
+
+--- fn 0x6994F0: Get_Int("Basic", "MinPlayers"/"MaxPlayers", *cur) — session/lobby code ---
+0x6997C5  8d8c24c4000000       lea ecx, [esp + 0xc4]
+0x6997CC  8bbc24c4010000       mov edi, dword ptr [esp + 0x1c4]
+0x6997D3  8b07                 mov eax, dword ptr [edi]
+0x6997D5  50                   push eax
+0x6997D6  68fcf38300           push 0x83f3fc
+0x6997DB  689cbf8200           push 0x82bf9c
+0x6997E0  e8ebdee8ff           call 0x5276d0
+0x6997E5  8907                 mov dword ptr [edi], eax
+0x6997E7  8b8c24c8010000       mov ecx, dword ptr [esp + 0x1c8]
+0x6997EE  8b11                 mov edx, dword ptr [ecx]
+0x6997F0  8d8c24c4000000       lea ecx, [esp + 0xc4]
+0x6997F7  52                   push edx
+0x6997F8  68f0f38300           push 0x83f3f0
+0x6997FD  689cbf8200           push 0x82bf9c
+0x699802  e8c9dee8ff           call 0x5276d0
+0x699807  8b8c24c8010000       mov ecx, dword ptr [esp + 0x1c8]
+
+--- fn 0x69A3B0: Get_Int(section, "MinPlayers"/"MaxPlayers", [ebx+0x180/0x184]) — Session object ---
+0x69A530  0e                   push cs
+0x69A531  53                   push ebx
+0x69A532  68a4b18100           push 0x81b1a4
+0x69A537  56                   push esi
+0x69A538  8bcf                 mov ecx, edi
+0x69A53A  e821ece8ff           call 0x529160
+0x69A53F  8b8380010000         mov eax, dword ptr [ebx + 0x180]
+0x69A545  8bcf                 mov ecx, edi
+0x69A547  50                   push eax
+0x69A548  68fcf38300           push 0x83f3fc
+0x69A54D  56                   push esi
+0x69A54E  e87dd1e8ff           call 0x5276d0
+0x69A553  8b8b84010000         mov ecx, dword ptr [ebx + 0x184]
+0x69A559  898380010000         mov dword ptr [ebx + 0x180], eax
+0x69A55F  51                   push ecx
+0x69A560  68f0f38300           push 0x83f3f0
+0x69A565  56                   push esi
+0x69A566  8bcf                 mov ecx, edi
+0x69A568  e863d1e8ff           call 0x5276d0
+0x69A56D  8d942494010000       lea edx, [esp + 0x194]
+0x69A574  6880000000           push 0x80
+0x69A579  52                   push edx
+
+=> 读取点全部位于会话/大厅代码（0x6994F0/0x69A3B0 互相调用；其调用链
+   0x69A0FC 与 0x699A77/0x699BC8/0x699E5C 均在会话区），与地图解析、
+   HouseClass 创建循环（0x5009B0/0x599650/0x687F10）无交集。
+   地图键 "MaxPlayer"/"MinPlayer"（无 s）二进制里不存在 —— 引擎读不到。
+   HouseClass 数量不由任何 Min/Max 值静态决定：数量=创建站点循环的循环上界。
+
+====================================================================================================
+11. BREAKPOINT PLAN (静态无法裁定的两处)
+====================================================================================================
+B1. ba w1 / bp 0x4F54A0（HouseClass ctor），每次命中记录：
+    - 调用返回地址（0x500A30/0x500B19/0x59A198/0x687FC3/0x6881A0/0x6882FE/0x688351）
+      → 立即判定走的是哪条创建路径；
+    - dword [0xA8B238] 的值（0=战役 / 非0=会话）。
+    预期：若 4 次命中且返回地址=0x6882FE/0x688351/0x687FC3 → 遭遇战路径
+    （2 slot + Neutral + Special），“4 个 HouseClass”与 PlayerControl 无关成立。
+    若战役路径（返回 0x500A30）出现 14 次 + 0x6882FE/0x688351 各 1 次 → 共 16 个，
+    与“4 个”观测冲突，需要复查观测方法。
+B2. 静态已证 PercentBuilt 无运行时消费者；若要在动态侧复核，
+    bp 0x42EC1B（写 +0x571C）确认 Neutral=100 落进内存即可，之后该地址无人读。
+

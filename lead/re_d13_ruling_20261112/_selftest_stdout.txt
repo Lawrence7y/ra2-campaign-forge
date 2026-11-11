@@ -1,0 +1,59 @@
+==============================================================================
+E3 候选件离线单测（零真机 · 全部 Win32 经 stub）
+==============================================================================
+
+-- C1 帧号停推检测 --
+[OK] C1-a 未满 1.0s 不触发                                     [False, False, False, False]
+[OK] C1-b 满 1.0s 触发一次                                     
+[OK] C1-c 同段只报一次                                          
+[OK] C1-d 帧号变化即重置                                         
+[OK] C1-e 读失败(None)不推进不重置                                 
+[OK] C1-f 读失败后仍能正常触发                                      
+[OK] C1-g 观测数不足 min_obs 不触发                               obs=5<8
+
+-- C2/D 死锁防护（挂起必恢复） --
+[OK] D-a 三线程全部被采样                                         n=3
+[OK] D-b 采样结束后无残留挂起                                       set()
+[OK] D-c 三线程都被恢复过                                         {11, 12, 13}
+[OK] D-d 无错误                                              []
+[OK] D-e prev>0 的线程被跳过不接管                                 [{'tid': 21, 'skipped': 'already_suspended', 'prev': 1}]
+[OK] D-f 被跳过的线程已还原挂起态后未被我们恢复掉                             {21, 22}
+[OK] C5-a 单线程失败不影响其余                                      n=2
+[OK] C5-b 错误码被记录                                          ['open_thread_fail:tid=32']
+[OK] C5-c 失败后无残留挂起                                        set()
+[OK] C3-a 超预算即中止                                          paused=120.0ms
+[OK] C3-b 中止后无残留挂起                                        set()
+[OK] D3-a 非 E3Fail 异常下仍恢复全部挂起                             susp=set() resumed={51, 52}
+[OK] D3-b 非 E3Fail 异常被记为 unexpected 且不逃逸                  ['unexpected:RuntimeError', 'unexpected:RuntimeError']
+[OK] C3-c 预算内（20ms<50ms）不中止                               paused=40.0ms
+[OK] MF3-a 单线程预算(15ms)先于总预算(1000ms)生效                     ['per_thread_budget_exceeded']
+[OK] MF3-b 单线程预算中止后无残留挂起                                  set()
+[OK] C5-d snapshot 失败被记录不抛                                ['snapshot_fail']
+[OK] MF4-a walker 未绑定 → preflight 拒绝                      ['preflight:walker_not_bound']
+[OK] MF4-b preflight 拒绝后零线程被挂起                            susp=set() resumed=set()
+[OK] MF5 自 pid 被拒（防自死锁）                                   ['refuse_self_pid:40384']
+[OK] MF1 suspend 失败(0xFFFFFFFF) 被判失败不误采                   errors=['suspend_thread_fail:tid=91:prev=4294967295'] resumed=set()
+[OK] MF1 suspend 失败(-1) 被判失败不误采                           errors=['suspend_thread_fail:tid=91:prev=-1'] resumed=set()
+[OK] MF1 suspend 失败(None) 被判失败不误采                         errors=['suspend_thread_fail:tid=91:prev=None'] resumed=set()
+[OK] MF6 resume 失败被记入 errors（不静默）                         ['resume_fail:tid=95']
+[OK] MF8-a 未声明窗口 → 默认拒绝                                   
+[OK] MF8-b 窗口重叠 → 拒绝                                      
+[OK] MF8-c 窗口不重叠 → 通过                                     
+[OK] MF8-d 输出写入独立目录成功                                     None
+[OK] MF8-e 输出目录在写域内（非②读数路径）                               D:\Project\ra2-campaign-forge\lead\re_d13_ruling_20261112\e3_out
+
+-- C5 冻结母本零字节改动 + importlib 复用（只 import 不调用） --
+[OK] C5-mother _drive_c2_x_probe_v2.py                    6afe2711136c3b52...
+[OK] C5-mother _drive_c2_x_earlyclose.py                  2e970eec43fe37ff...
+[OK] C5-import 母本 import 成功（只 import，未绑定 Win32）           None
+[OK] C5-import 复用得到 tri_read_u32                          
+[OK] C5-import 复用得到 phase_sentinels                       
+[OK] C5-import 母本 OPS 未被绑定（未触发任何真实 Win32）                 len(OPS)=0
+[OK] C5-import G_FRAME 与母本一致                              mother=0xa8ed84 ours=0xa8ed84
+
+-- 真机入口拒绝（授权边界） --
+[OK] AUTH-a --live 被拒并返回非 0                               rc=3
+
+==============================================================================
+结果：44 项检查，0 项失败
+==============================================================================

@@ -1,0 +1,341 @@
+# G3 · 11-10/11-11 静态逆向线（docs/ 侧 grep 输出）
+
+> 范围：docs/ 下全部 416 个文本文件。事实侧文件见 G7。
+
+## pattern: `slot2`
+
+**total matches = 3**
+
+```text
+docs/re/asm_fix2_report.md:97:            004BADA9 call [ecx+0x60]  (IDirectDrawSurface7 IsLost，slot24)
+docs/re/asm_fix2_report.md:98:            004BADAC cmp eax,0x887601C2 (DDERR_SURFACELOST) / 004BADB9 call [edx+0x6C] (Restore，slot27)
+docs/re/asm_fix2_report.md:99:            004BAE46 call [ecx+0x64]  <- IDirectDrawSurface7::Lock（slot25）★语义定谳
+```
+
+## pattern: `0x54A56E`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+
+## pattern: `0x54A4F0`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+
+## pattern: `0x54A630`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+
+## pattern: `HouseClass`
+
+**total matches = 297**
+
+```text
+docs/NEXT_RE_AND_MODERNIZATION.md:134:> **依据**：旧基准图 `[2]0LoadBench_U0200/U0800.yrm` 的 200/800 预置单位全挂在 `Russians`/`Americans`；遭遇战（`MultiplayerOnly=1`）只实例化玩家槽 house 的对象 ⇒ 真机仅 **21/22 单位**（= `HouseClass::RespawnStartingForces` 0x50D440 国家默认开局部队），**不是地图负载**。
+docs/re/ARCHITECTURE_ATLAS.md:267:        S3["战术 AI 与小队调度 (HouseClass / TeamClass / AITrigger)"]
+docs/re/ARCHITECTURE_ATLAS.md:1260:        GT2["阵营存活检测: HouseClass::IsDefeatedOrPurged (0x0050B730)"]
+docs/re/ARCHITECTURE_ATLAS.md:1336:  0x006F8E29: 8B 8E 1C 02 00 00 mov  ecx, [esi+0x21C]        ; ecx = this->Owner (HouseClass*)
+docs/re/ARCHITECTURE_ATLAS.md:1337:  0x006F8E2F: E8 FC 28 E1 FF    call 0x0050B730              ; HouseClass::IsDefeatedOrPurged
+docs/re/ARCHITECTURE_ATLAS.md:1393:   - 结盟排除 `HouseClass::IsAlliedWith`（`0x006F7F29`）。
+docs/re/ARCHITECTURE_ATLAS.md:1425:    subgraph House_Update ["HouseClass::Update 虚调用 (v[23] @ 0x004F8440)"]
+docs/re/ARCHITECTURE_ATLAS.md:1483:2. **阵营独立更新（`HouseClass::Update @ 0x004F8440`）**：
+docs/re/ARCHITECTURE_ATLAS.md:1503:当 `TeamDelayTimer` 到期且 `HouseClass+0x1F2 (AITriggersActive)` 为真时，进入 `0x006F0AB0`：
+docs/re/ARCHITECTURE_ATLAS.md:1551:在 `HouseClass::Update` 尾部，依据 `this+0x1E4 (AIMode)` 进行生产分发：
+docs/re/ARCHITECTURE_ATLAS.md:2232:| **G-06** | `MpStateWrites` | **0** | **联机模式下强制阻断对 `ScenarioClass` 与 `HouseClass` 状态写操作** | 彻底杜绝表现层元数据污染锁步序列化状态 |
+docs/re/ARCHITECTURE_ATLAS.md:2411:| **`HouseClass::Player`**| **`0x00A83D4C`** | `HouseClass**` (一级解引用) | 指向本地玩家阵营实例 | 本地人类玩家阵营实体指针，控制 UI 交互与盟友视野判定 |
+docs/re/ARCHITECTURE_ATLAS.md:2412:| **`HouseClass::Array`** | **`0x00A80228`** | `DynamicVectorClass<HouseClass*>` | `+0x04`=Items, `+0x10`=Count | 全局参战阵营动态向量表 |
+docs/re/ARCHITECTURE_ATLAS.md:2450:| **`HouseClass`** | **`0x007EA8A0`** | 24 | 90296 | `0x160B8` | `0x504730: mov eax, 0x160B8; ret` | `AbstractClass` $	o$ `IPersistStream` |
+docs/re/ARCHITECTURE_ATLAS.md:2487:- `+0x21C`: `HouseClass* Owner` (所属阵营物理指针)
+docs/re/ARCHITECTURE_ATLAS.md:2506:- `+0x2C`: `HouseClass* Owner` (拥有该超武的所属阵营)
+docs/re/ARCHITECTURE_ATLAS.md:2520:- `+0xFC`: `HouseClass* OwnerHouse` (所属阵营物理指针)
+docs/re/ARCHITECTURE_ATLAS.md:2928:| 直呼点 | `RaiseEvent` 73 点 | **仅 2 点**：`0x4F8A6A`、`0x4FA220`（均在 `HouseClass` AI 簇 `0x4F8440`） |
+docs/re/ARCHITECTURE_ATLAS.md:2942:| **§5 战术 AI 与小队调度** | AITrigger 由 `HouseClass` AI 簇调用，与 Team 计数/上限比较耦合（见 14.9） | [实证] + [推演] |
+docs/re/ARCHITECTURE_ATLAS.md:3055:| **S-1 标量块** | 写 `0x67F7E0` / 读 `0x67F9C0` | 一次写入的全局序列：`0xA8ED78` → `0xA83D4C`（`HouseClass::Player`）→ **`0xA8ED84`（CurrentFrame）** → `0xA8ECC8`(Count) + `0xA8ECBC[i]` → `0x89EA40`（`0x1B0` 字节）→ … | `0x67F819 = 68 84 ED A8 00` + `call [vtable+0x10]`；读侧 `0x67FA19` + `call [vtable+0xC]` |
+docs/re/ARCHITECTURE_ATLAS.md:3451:**经济侧关联**：`HouseClass::Update 0x004F8440`（v[23]，序言 `83 EC 4C 53 55 56 8B F1`）每帧驱动工厂/超武/经济；前置依赖检查 `HouseClass::CanBuild 0x004F7870`（序言 `83 EC 3C 8A 44 24 44 53`）+ `0x0050B370` 是全库最重的可用性扫描之一（UI/AI 高频）。
+docs/re/ARCHITECTURE_ATLAS.md:4247:**（a）SpySat 状态机 `HouseClass::UpdateSpySat 0x00508F60`**
+docs/re/ARCHITECTURE_ATLAS.md:4330:| `0x00508F60` | HouseClass::UpdateSpySat（SpySat 状态机） | [实证] | `gap_generator_spysat_deep_dive.md:440-470` |
+docs/re/ARCHITECTURE_ATLAS.md:4440:**HouseClass::CanBuild (0x004F7870) 频次定论 [实证]**：全 .text 直调点 **13 处**（本轮 E8 rel32 普查，13/13 站点通过指令边界确认）：AI/放置 11 处（0x004140CC、0x00445758/9D/DE/1E、0x004FEDB7、0x004FF0E1、0x004FF411、0x00517DDB、0x005F79A3、0x007357DF）+ **UI 侧仅 2 处**（0x006A97D2 在 Cameo 循环内、0x006AA781）。
+docs/re/ARCHITECTURE_ATLAS.md:4572:| 0x004F7870 | HouseClass::CanBuild（UI 侧仅 2 处直调） | [实证] | 13/13 E8 站点 claims |
+docs/re/ARCHITECTURE_ATLAS.md:4577:| 0x0050B6F0 | HouseClass::IsPlayerControl（217 处直调公共闸） | [实证] | claims 0x0050B6F0/B716/B71E |
+docs/re/atlas_rev/R3_ai_hooks.md:251:| §1 每帧 AI 调用树 | **已收口** | atlas L853-908 mermaid + §5.1/§5.2 已含 ProcessAllTaskforces / HouseClass::Update / 8 帧 / 100 帧 / Timer / AITrigger / 三兄弟 / dtor |
+docs/re/atlas_rev/R3_ai_hooks.md:253:| §2.2 HouseClass 偏移 | **已收口** | atlas §5.2 表已含 `+0x1E4/+0x1F2/+0x5798/+0x5634/+0x566C` 等 |
+docs/re/atlas_rev/R3_ai_hooks.md:441:0x4f8440   83 ec 4c 53 55 56 8b f1    83 ec 4c 53 55 56 8b f1 OK     HouseClass::Update 序言 (v[23] 逐 House 虚调用) | sub esp, 0x4c
+docs/re/atlas_rev/R5_triggers_save.md:196:| 直呼点 | `RaiseEvent` 73 点 | **仅 2 点**：`0x4F8A6A`、`0x4FA220`（均在 `HouseClass` AI 簇 `0x4F8440`） |
+docs/re/atlas_rev/R5_triggers_save.md:210:| **§5 战术 AI 与小队调度** | AITrigger 由 `HouseClass` AI 簇调用，与 Team 计数/上限比较耦合（见 14.9） | [实证] + [推演] |
+docs/re/atlas_rev/R5_triggers_save.md:335:| **S-1 标量块** | 写 `0x67F7E0` / 读 `0x67F9C0` | 一次写入的全局序列：`0xA8ED78` → `0xA83D4C`（`HouseClass::Player`）→ **`0xA8ED84`（CurrentFrame）** → `0xA8ECC8`(Count) + `0xA8ECBC[i]` → `0x89EA40`（`0x1B0` 字节）→ … | `0x67F819 = 68 84 ED A8 00` + `call [vtable+0x10]`；读侧 `0x67FA19` + `call [vtable+0xC]` |
+docs/re/atlas_rev/R5_triggers_save.md:696:0x4f8a6a   e8 41 80 1f 00             e8 41 80 1f 00         OK     [triggers_deep] AITrigger caller #1 (HouseClass AI cluster) | call 0x6f0ab0
+docs/re/atlas_rev/R5_triggers_save.md:697:0x4fa220   e8 8b 68 1f 00             e8 8b 68 1f 00         OK     [triggers_deep] AITrigger caller #2 (HouseClass AI cluster) | call 0x6f0ab0
+docs/re/atlas_rev/R6_weapons_mix.md:232:**经济侧关联**：`HouseClass::Update 0x004F8440`（v[23]，序言 `83 EC 4C 53 55 56 8B F1`）每帧驱动工厂/超武/经济；前置依赖检查 `HouseClass::CanBuild 0x004F7870`（序言 `83 EC 3C 8A 44 24 44 53`）+ `0x0050B370` 是全库最重的可用性扫描之一（UI/AI 高频）。
+docs/re/atlas_rev/R6_weapons_mix.md:489:| §3.3 每帧生产推进 | 282-311 | §16.5（FactoryUpdate 0x004500F0 / HouseClass::Update 0x004F8440） |
+docs/re/atlas_rev/R7_vxl_fx_gap.md:625:**（a）SpySat 状态机 `HouseClass::UpdateSpySat 0x00508F60`**
+docs/re/atlas_rev/R7_vxl_fx_gap.md:708:| `0x00508F60` | HouseClass::UpdateSpySat（SpySat 状态机） | [实证] | `gap_generator_spysat_deep_dive.md:440-470` |
+docs/re/atlas_rev/R8_ui_crt.md:114:**HouseClass::CanBuild (0x004F7870) 频次定论 [实证]**：全 .text 直调点 **13 处**（本轮 E8 rel32 普查，13/13 站点通过指令边界确认）：AI/放置 11 处（0x004140CC、0x00445758/9D/DE/1E、0x004FEDB7、0x004FF0E1、0x004FF411、0x00517DDB、0x005F79A3、0x007357DF）+ **UI 侧仅 2 处**（0x006A97D2 在 Cameo 循环内、0x006AA781）。
+docs/re/atlas_rev/R8_ui_crt.md:238:| 0x004F7870 | HouseClass::CanBuild（UI 侧仅 2 处直调） | [实证] | 13/13 E8 站点 claims |
+docs/re/atlas_rev/R8_ui_crt.md:243:| 0x0050B6F0 | HouseClass::IsPlayerControl（217 处直调公共闸） | [实证] | claims 0x0050B6F0/B716/B71E |
+docs/re/atlas_rev/R8_ui_crt.md:548:0x7357df   e8 8c 20 dc ff             e8 8c 20 dc ff         OK     call 0x004F7870 HouseClass::CanBuild 直调点（第 13/13 处，指令边界已确认） | call 0x4f7870
+docs/re/bench_map_rework.md:13:2. **21/22 的来源**：不是地图负载，而是 `HouseClass::RespawnStartingForces()`（`0x50D440`）生成的**国家默认开局部队**（2 个玩家槽 × MCV+护卫）。
+docs/re/bench_map_rework.md:45:| 遭遇战按玩家槽创建 HouseClass | `MultiplayerOnly=1` + `MaxPlayer=2`；`ScenarioClass.HouseIndices[0x10]`（YRpp ScenarioClass.h:113） |
+docs/re/bench_map_rework.md:46:| 玩家 house 名 = 大厅所选国家名 | `HouseClass.IsPlayer() = CurrentPlayer \|\| PlayerControl`（HouseClass.h:421） |
+docs/re/bench_map_rework.md:47:| 开局部队来自 StartingUnits 而非地图 [Units] | `HouseClass.StartingUnits` + `RespawnStartingForces() @ 0x50D440`（HouseClass.h:246,695） |
+docs/re/bench_map_rework.md:48:| 地图 [Units] 的 owner 必须命中已存在的 HouseClass | RA2 对象创建通用规则；owner 无对应 house ⇒ 对象不实例化 `[推演]` |
+docs/re/bullet_particle_fog_deep_dive.md:271:00466527  mov  eax, dword ptr [esi + 0x21C] ; eax = pOwner->OwnerHouse (HouseClass*)
+docs/re/bullet_particle_fog_deep_dive.md:283:        └─> +0x21C: HouseClass* OwnerHouse (所属作战阵营)
+docs/re/bullet_particle_fog_deep_dive.md:289:- 若 `pOwnerHouse == HouseClass::Player`（本地人类玩家）：**100% 豁免绘制**。
+docs/re/bullet_particle_fog_deep_dive.md:290:- 若 `(HouseClass::Player->Allies & (1 << pOwnerHouse->ArrayIndex)) != 0`（玩家盟友）：**100% 豁免绘制**。
+docs/re/bullet_particle_fog_deep_dive.md:376:- 其所属阵营位于 `[edi + 0xFC]`（`HouseClass* OwnerHouse`），所属发射单位位于 `[edi + 0xE0]`（`TechnoClass* Owner`）。
+docs/re/bullet_particle_fog_deep_dive.md:421:#define ADDR_HOUSE_PLAYER                0x00A83D4C  // HouseClass::Player
+docs/re/bullet_particle_fog_deep_dive.md:452:// 辅助判定函数：判断所属 HouseClass 是否为己方或盟军
+docs/re/bullet_particle_fog_deep_dive.md:511:        // 读取所属阵营 OwnerHouse (HouseClass* @ +0x21C)
+docs/re/bullet_particle_fog_deep_dive.md:699:  +0xB0:  TechnoClass* Owner         (发射者对象，->+0x21C 索引所属 HouseClass)
+docs/re/bullet_particle_fog_deep_dive.md:723:  +0x124: ParticleSystemClass* Sys   (所属微粒系统容器，->+0xFC 索引所属 HouseClass)
+docs/re/bullet_particle_fog_deep_dive.md:734:  +0xFC:  HouseClass* OwnerHouse     (所属阵营指针)
+docs/re/cross_doc_consistency_audit.md:135:  1. `docs/re/house_team_ai_update.md:118` 声明：`0x00A80228` 为 `HouseClass*`，Items 为 `0x00A8022C`，Count 为 `0x00A80238`。
+docs/re/cross_doc_consistency_audit.md:395:| **4** | **0xA8022C 数组归属** | `house_team_ai_update.md:118`: 标为 `HouseClass*` | `net_sync_checksum.md:260` & `superweapon_re.md:531`: 标为 `AircraftClass*` | `0x0064DCBD`: 读 `[A8022C]`；`0x0041EC90`: 遍历取 `[edx+0x34]` 查战机属性 | **严重笔误纠偏**：权威裁定为 `AircraftClass::Array`，House 位于 `0x87F77C` |
+docs/re/cross_doc_consistency_audit.md:418:| `docs/re/house_team_ai_update.md` | 118 行表格 | 标注 `0x00A80228` 为 `HouseClass*` | 撤销 House 标注，更正为 `AircraftClass::Array`（House 位于 `0x87F77C`） | `[实证]` | **阻断级**（严重笔误） |
+docs/re/crt_callgraph.md:94:| 9 | `0x0064DEA0` | 87 | new 43 / del 43 / sprintf 1 | 读 `HouseClass::Player`（`0xA83D4C`）+ sprintf —— 分数/外交 UI | UI | 禁帧内 sprintf |
+docs/re/crt_callgraph.md:98:| 13 | `0x004B6C30` | 60 | new 30 / del 30 | 读 `ScenarioClass::Instance`（`0xA8B230`）+ `HouseClass::Player` —— 存档/侧栏 | UI | 禁帧内 sprintf |
+docs/re/crt_memory_pool_deep_dive.md:311:- 编译器为不同类型指针（`TechnoClass*`、`AnimClass*`、`SuperClass*`、`HouseClass*`、`CellStruct`、`int` 等）生成了大量内联或独立展开的 `SetCapacity`、`Clear`、`~VectorClass`。
+docs/re/dispatch/2026-09-26_1940_Antigravity.md:13:- `[v1.5.12]`（A-4）：`ParticleSystemClass+0xFC` = **HouseClass\***（OwnerHouse）；`+0xE0` = **TechnoClass\***（Owner）。
+docs/re/dispatch/2026-09-26_1955_MiMo.md:8:- **M-9 📄**：`landing_pack_particle.md` 已落盘且采用 A-4 版本（`+0xE0`=TechnoClass* Owner、`+0xFC`=HouseClass* OwnerHouse），与我**风险加权暂定裁定一致**（我实测 `0x62DE54 mov [esi+0xE0], ebx` = 空参写 0 ⇒ 指针语义）。
+docs/re/dispatch/2026-09-26_2010_MiMo.md:6:- Antigravity 的 A-15 已定谳，**Lead 逐字节复核 11/11 通过**：`+0xE0` = `TechnoClass* Owner`、`+0xFC` = `HouseClass* OwnerHouse`、`+0x124` = `ParticleSystem*`，坐标在 `+0x9C`（`>>8` 得格）。→ 你 `landing_pack_particle.md` 里采用的 A-4 版本**就是最终版本，偏移无需修改**。
+docs/re/errata_from_rtrack.md:37:| 11 | HouseClass Array 布局偏移差 +4/+0x10（`warhead_abi_residuals_deep_dive.md:23,209-217`） | 无既有勘误 | **[冲突-轻微] 新登记** | 记入 **E-ABI-AC** 附注（不升 P0） |
+docs/re/errata_from_rtrack.md:94:④ [冲突-轻微] HouseClass::Array：YRpp 记 `0xA80228`，二进制内部布局偏移差 +4/+0x10
+docs/re/errata_from_rtrack.md:143:3. **[P1] E-ABI-AC 新增**：`+0xAC=WeaponTypeClass.Warhead`、Armor@+0x9C、HouseClass Array 轻微偏移差。
+docs/re/execution_runbook.md:164:  - 目标：VA `0x00508F8F`（`HouseClass::UpdateSpySat`）；
+docs/re/execution_runbook.md:467:   - 比对快照中第 9 块（`HouseClass::Array`）、第 2 块（`BuildingClass::Array`）、第 1 块（单位与地图格状态）；
+docs/re/execution_runbook.md:494:  5. 进而读取 `pTypeDescriptor->name`，打印装饰类名（如 `.?AVBuildingClass@@`、`.?AVUnitClass@@`、`.?AVHouseClass@@`）；
+docs/re/gap_generator_spysat_deep_dive.md:31:        SpySatToggle["HouseClass::UpdateSpySat (0x00508F60)"]
+docs/re/gap_generator_spysat_deep_dive.md:157:00455623  mov     ecx, [esi + 0x21c]      ; Owner (HouseClass*)
+docs/re/gap_generator_spysat_deep_dive.md:158:00455629  call    0x4fce30                ; HouseClass::HasSufficientPower()
+docs/re/gap_generator_spysat_deep_dive.md:168:0045567C  mov     al, [edi + 0x577b]      ; HouseClass+0x577B (PowerBlackoutTimer)
+docs/re/gap_generator_spysat_deep_dive.md:239:006FB2D6  call    0x4f9a50                ; HouseClass::IsAlliedWith(pPlayer)
+docs/re/gap_generator_spysat_deep_dive.md:271:006FB603  mov     cl, [eax + 0x577a]      ; HouseClass+0x577A (SpySatActive)
+docs/re/gap_generator_spysat_deep_dive.md:440:### 3.4 间谍卫星状态机：`HouseClass::UpdateSpySat`（`0x00508F60`）
+docs/re/gap_generator_spysat_deep_dive.md:443:00508F60  mov     esi, ecx                ; esi = HouseClass* this
+docs/re/gap_generator_spysat_deep_dive.md:454:00509054  mov     al, [esi + 0x577a]      ; HouseClass+0x577A (SpySatActive)
+docs/re/gap_psychic_reveal_deep_dive.md:166:HouseClass::UpdateSpySat (0x00508F60)
+docs/re/h1_fanout_mechanism.md:20:   - **B（引擎侧真实噪声源）**：遭遇战本地设置 **`UnitCount=10`（开局兵力最大档）+ `Credits=10000`**（`ra2bench/ra2md.ini` `[Skirmish]`）。`MPGameModeClass::GenerateStartingUnits @ 0x5D70F0` 按该预算为每个 HouseClass 生成开局部队；H1 图把 **14 个 house 全部写了 `IQ=5 / Credits=10000`**，一旦引擎为多个 house 建 HouseClass，开局兵力 fanout 与图内 `[Units]` 条目数脱钩。
+docs/re/h1_fanout_mechanism.md:92:    RSF["HouseClass::RespawnStartingForces\n@ 0x50D440\n国家默认开局部队\n≈11/槽 → 21–32/2槽"]
+docs/re/h1_fanout_mechanism.md:94:    HCR["HouseClass 创建\n遭遇战：玩家槽 + Neutral/Special\n（MultiplayerOnly=1）"]
+docs/re/h1_fanout_mechanism.md:101:  U -->|"owner 匹配 HouseClass\n且 cell 空闲"| HCR
+docs/re/h1_fanout_mechanism.md:117:| B `RespawnStartingForces` | `0x50D440`，`HouseClass.StartingUnits` | 21–32 / 2 槽 | 否 | **是**（国家默认编成） |
+docs/re/h1_fanout_mechanism.md:130:  2. **owner 名与运行期 House 不匹配**（玩家 House 以 Multi*/槽位命名，`HouseClass::FindByCountryName` 对 `Americans` 找不到玩家实例）；
+docs/re/h1_fanout_mechanism.md:157:- `GameModeOptionsClass::Instance @ 0xA8B250` 的 `UnitCount/Money` 即大厅「开局部队/资金」档；`GenerateStartingUnits` 按此为 **每个 HouseClass** 生成部队。
+docs/re/h1_fanout_mechanism.md:158:- H1 图 14 个 house 全部 `IQ=5, Credits=10000`。若引擎为多个 house 建 HouseClass（地图 `[Houses]` 全量创建，或随机选国路径扩面），则开局兵力 ≈ `N_house × f(UnitCount=10)`，**与图内 350/1400/5600 无关** ⇒ 解释「无标度关系」。
+docs/re/h1_fanout_mechanism.md:176:| `HouseClass::RespawnStartingForces` | `0x50D440`（`HouseClass.h:246`） | 按 `StartingUnits` 生成国家默认开局部队 | 美蘇 22–30 的直接来源 |
+docs/re/h1_fanout_mechanism.md:177:| `HouseClass::StartingUnits` | `HouseClass.h:695` | `DynamicVectorClass<StartingTechnoStruct*>` | 与图内 `[Units]` 无关 |
+docs/re/h1_fanout_mechanism.md:181:| `HouseClass::FindByCountryName/ByCountryIndex` | `0x502D30` / `0x50C170`（`HouseClass.h:335-346`） | 按 HouseType 名找 HouseClass | 预置行 owner 匹配点 |
+docs/re/h1_fanout_mechanism.md:182:| `HouseClass::Index_IsMP` | `0x510F60`（`HouseClass.h:333`） | MP/非 MP 查找分流 | MultiplayerOnly 下匹配路径可能不同 |
+docs/re/h1_fanout_mechanism.md:187:| `ScenarioClass::HouseIndices[0x10]` | `ScenarioClass.h:113` | 起点 → HouseClass 槽 | 2 槽图只应有 2 个玩家 House |
+docs/re/h1_fanout_mechanism.md:274:> **9.4 证据**：`out/re_work/h1_fanout/{parse_h1_maps.py,h1_ini_stats.json,fanout_compare.py,fanout_compare.json}`；本文件 §1–§4；ZC-11 `segD_*_record.json`；`ra2bench/ra2md.ini [Skirmish]`；YRpp `HouseClass.h/MPGameModeClass.h/GameModeOptionsClass.h`。
+docs/re/h1_map_fingerprint.md:17:5. **H1 前提的性能 ROI 仍冻结**：cell 互斥只修几何层，owner→HouseClass 实例化规则（美蘇预置行 0 条进 Array）与 U0200 误选嫌疑尚需真机复测（A3/指纹）。
+docs/re/h1_map_fingerprint.md:228:- Neutral/Special 在遭遇战是否创建 HouseClass、是否消费 `[Units]` 行：`[待实测]`（U-MB-1）。
+docs/re/house_team_ai_update.md:1:# HouseClass / TeamClass / AITrigger 每帧更新循环逆向
+docs/re/house_team_ai_update.md:17:| 每帧谁遍历 House 列表？ | **没有单一"全 House 循环"**。`HouseClass::Update`（`0x004F8440`，v[23]）由主循环按虚表逐 House 调用；内部自带 8 帧 / 100 帧 / Timer 三层限频。 |
+docs/re/house_team_ai_update.md:19:| 每帧谁遍历 AITrigger 列表？ | **不是每帧**。`0x006F0AB0`（AITrigger 评估宿主）由 `HouseClass::Update` 里的 **TeamDelayTimer**（`this+0x5798/0x57A0`）门控；另有 Team 析构 `0x006E8DE0` 反向扫全 AITrigger 做权重回写。 |
+docs/re/house_team_ai_update.md:37:├─ HouseClass::Update 0x004F8440  ← v[23]，逐 House 虚调用（无直呼）
+docs/re/house_team_ai_update.md:121:| `0x00A80228` | `HouseClass*` | `0x00A8022C` | `0x00A80238`（待复核） | 全部 House |
+docs/re/house_team_ai_update.md:138:### 2.2 HouseClass 关键偏移（AI 相关）
+docs/re/house_team_ai_update.md:164:| `+0x2C` | `Owner`（HouseClass*） | `0x6E8E40` |
+docs/re/house_team_ai_update.md:197:| `0x004F8440` | **HouseClass::Update**（v[23]） | 汇聚体 | 每帧 × House 数 | **调度中枢**，内部限频 |
+docs/re/house_team_ai_update.md:206:| `0x004F7870` | HouseClass::CanBuild | O(前置递归) | 13 个调用点（UI+AI 递归） | 中：**会被招募路径递归重入** |
+docs/re/house_team_ai_update.md:295:**位置**：`0x004F90E7`–`0x004F9260`（HouseClass::Update 内 AIMode==2 分支），及 `0x004FEA60/0x004FEEE0/0x004FF210` 入口。
+docs/re/house_team_ai_update.md:330:1. **`HouseClass::Update` 的调用方**：`0x004F8440` 无 E8 直呼，必走虚表 v[23]。主循环中"逐 House 调 Update"的具体循环体未钉死（可能在 `0x00686B20` 深处或 `0x00599650` 链上）。需用硬件断点或插桩确认每帧 House 数与调用序。
+docs/re/house_team_ai_update.md:332:3. **`HouseClass+0x3C/+0x48` 向量的真实类型**：8 帧遍历调用 `0x006E53A0` 时传 5 个栈参，未确认是 Buildings、Teams 还是 Tag 列表。
+docs/re/house_team_ai_update.md:336:7. **HouseClass 数组 Count 偏移**：Items=`0xA8022C` 已证，Count 疑为 `0xA80238`（差 0xC，与 Team/AITrigger 一致），但 `0xA80230` 也有 3 处引用，需复核是 Capacity 还是 Count。
+docs/re/house_team_ai_update.md:421:   - 在 `HouseClass::Update`（`0x004F8440`）内，当满足 `CurrentFrame % 8 == 0` 且 `House->AIMode == 2`（`+0x1E4`）时：
+docs/re/INSTALLED_HOOKS_AUDIT.md:128:| S3 | `UpdateVisionGrid` 每帧 | :721 | `HouseClass+0x577A` SpySatActive = 0 | 随上 | 无（每帧重写） | **是**：House 进 `Save_Sides`（§4.2） | **条件**：同上，常量写；若原版逻辑依赖该字段且被联机命令流读取 → 潜在分叉面 |
+docs/re/INSTALLED_HOOKS_AUDIT.md:340:| `L123`（S3）：「`:721` `HouseClass+0x577A` SpySatActive = 0」 | **`:855`** | S3 |
+docs/re/landing_equivalence_static_proof.md:168:; [SpySat Gate] 0x00508F88 (FileOffset: 0x108F88) - HouseClass::UpdateSpySat
+docs/re/landing_equivalence_static_proof.md:257:   - `ParticleSystem + 0xFC` = `HouseClass* OwnerHouse`
+docs/re/landing_pack_crt_audio_particle.md:309:   - **`+0xFC`：`HouseClass* OwnerHouse`（直接阵营指针）**：
+docs/re/landing_pack_crt_audio_particle.md:356:    void *pPlayerHouse = *reinterpret_cast<void**>(0x00A83D4C); // HouseClass::Player
+docs/re/landing_pack_gap_spysat.md:128:`HouseClass::UpdateSpySat`（`0x508F60`）遍历建筑时的核心门：
+docs/re/landing_pack_particle.md:3:> 归属链状态：**已定谳（A-15 读取点实证 + Lead 逐字节复核 11/11）**——**A-4 版本即最终版本，偏移无需修改**。最终语义：`+0xE0=TechnoClass* Owner`、`+0xFC=HouseClass* OwnerHouse`、`+0x124=ParticleSystem*`、坐标在 `+0x9C`（`>>8` 得格）。（与 Lead 0x62DE54 `mov [esi+0xE0],ebx` 空参写 0 的指针语义一致。）
+docs/re/landing_pack_particle.md:10:> **暂定语义（A-4 / `[v1.5.12]` / 本文现稿）**：`+0xFC` = `HouseClass* OwnerHouse`、`+0xE0` = `TechnoClass* Owner`。  
+docs/re/landing_pack_particle.md:17:| 3 | §1.5 字段图 | **L132** | `+0xFC  HouseClass*  OwnerHouse` | `+0xFC  TechnoClass* Owner` | 字段图 |
+docs/re/landing_pack_particle.md:139:  +0xFC  HouseClass*  OwnerHouse ──────┘
+docs/re/landing_pack_particle_fog.md:61:pHouse = *(pSys + 0xFC)                // ① HouseClass* OwnerHouse（首选）
+docs/re/landing_pack_sw_charge.md:126:每逻辑帧由 `HouseClass::Update 0x4F8440` @ `0x4F8E4A` 驱动，携带 **7 项副作用**（**非幂等**，跳一帧就错）：
+docs/re/net_sync_checksum.md:113:| 0x03 | Ally | `0x4C6DEE` | **是**（`HouseClass` 0x4F9A50/0x4F9F70/0x4F9B50） |
+docs/re/net_sync_checksum.md:334:| House（资金、电力、科技、生产、AI 触发器状态、`Team/Script/Trigger/Tag` 链） | `HouseClass` + `Save_Sides` |
+docs/re/net_sync_checksum.md:365:| **生产/建造** | Kind 0x0E–0x11 handler；`FactoryClass`；`HouseClass::CanBuild` | 出兵序列影响战局 | 队列算法可提速，顺序不可变 |
+docs/re/net_sync_checksum.md:695:| 12 | **生产队列算法** | Kind `0x0E–0x11` handler `0x4C711B/140/163/18C`；`FactoryClass`；`HouseClass::CanBuild` | **是**（出兵时机/位置） | 是 | **条件安全** | 可改队列内部数据结构；**出兵顺序与帧**不可变；不许并行预计算导致某端提前 `Place` |
+docs/re/net_sync_checksum.md:846:| **超级武器** (`SuperClass`) | **否** | **否** | **间接** | `SuperClass`（vtable `0x007F3FE8`）直接继承 `AbstractClass`，**非 `ObjectClass` 子类**；无 `+0x9C` 空间坐标，不挂入 5 个 `LayerClass` 或 `LogicClass`，`0x64DAB0` 零访问。`0x64C911/CC0A` 仅执行 `0x4C6CB0` 命令派发（Kind `0x12/0x18`），不产生 CRC。SYNC 诊断中无独立 Super CRC 节，仅作为 `HouseClass` 状态间接存在 |
+docs/re/net_sync_checksum.md:888:  - **S3 (`HouseClass + 0x577A` SpySatActive)**：
+docs/re/net_sync_checksum.md:893:  - `ScenarioClass` 与 `HouseClass` 均为核心同步状态（进存档与网络契约）。在混联对局中，安装 DLL 的客户端强清两处状态，而原版客户端保持置位，将立即造成黑幕遮蔽状态和裂缝产生器遮盖时机的两端分叉。
+docs/re/offline_verification_alternatives.md:1283:   - 形式化证明：无条件跳转使得调用 `RevealArea3` 的代码块处于无前驱节点的死代码状态（Dead Code），阵营 `HouseClass+0x577A`（`SpySatActive`）永远无法被置 1，全图亮图路径完全被物理切断。
+docs/re/offline_verification_alternatives.md:1476:  - ① 反汇编追溯粒子归属判定链：`Particle+0x124 -> ParticleSystem+0xFC -> HouseClass`；② 符号推演 `IsPlayerOrAlly(House)` 为真时直接放行 Draw；③ 估算归属判断指令耗时仅 4 cycles；④ 离线测试己方/盟友/敌方判定真值表；⑤ 即插即用：己方 V3 火箭在自身基地开火尾烟视觉断言。
+docs/re/particle_fog_owner_evidence.md:189:  └── +0xFC : HouseClass*  OwnerHouse ──────────┴─────────┘
+docs/re/particle_fog_owner_evidence.md:204:### 4.2 链二：`ParticleSystemClass + 0xFC` 存放直接所有者 `HouseClass* OwnerHouse`
+docs/re/particle_fog_owner_evidence.md:206:  - 参数 6 为 `HouseClass* pOwnerHouse`，位于栈帧 `[esp + 0x40]`。
+docs/re/particle_fog_owner_evidence.md:349:| **`ParticleSystemClass`** | **`+0xFC`** | **`HouseClass* OwnerHouse`**<br>(发射阵营指针) | `0x0062DD9A`:<br>`mov [esi+0xFC], eax`<br>(实参 `[esp+0x40]`) | **`0x0062C2CC`**:<br>`mov edx, [eax+0xFC]`<br>`push edx` $\to$ `call [ebx+0x16C]` | **[实证] 直接阵营指针**。在粒子着色/贴图时读出阵营指针，作为参数压栈传给 `vtable[0x16C]` 调色板重映射函数。 |
+docs/re/particle_fog_owner_evidence.md:359:   - 阵营穿透优先走 `pSystem + 0xFC`（直接读取 `HouseClass*`，若为空则备用回退 `pSystem + 0xE0` $\to$ `+0x21C`）；
+docs/re/particle_fog_owner_landing.md:13:**A-15 语义本轮独立复算全部命中，争议终结**：`PSys+0xE0=TechnoClass* Owner`、`PSys+0xFC=HouseClass* OwnerHouse`、`Particle+0x124=ParticleSystemClass*`、坐标在 `+0x9C`（`>>8` 得格）。迷雾剔除谓词**首选读 `pSys+0xFC`（House）**，空则回退 `pSys+0xE0 → Techno+0x21C`。落地走 M-9 虚表槽 69 双钩（`0x007EFA68`/`0x007EFCB0`），与 `Hook_Bullet_Draw` 同批装/卸，**禁重复装已装 5 槽**。
+docs/re/particle_fog_owner_landing.md:23:| `ParticleSystemClass` (sizeof `0x100`) | **`+0xFC`** | **`HouseClass* OwnerHouse`** | `0x0062DD9A: mov [esi+0xFC], eax`，`eax=[esp+0x40]`=ctor arg6；前置 `0x0062DD10` 零初始化 | **`0x0062C2CC: mov edx,[eax+0xFC]; push edx`** → 作调色板重映射参数压栈（`0x0062C2DC: push edx`） | 指针 + 作 House 实参消费 |
+docs/re/particle_fog_owner_landing.md:31:3. `+0xFC` 读出后 `push edx` 作函数实参（调色板），且 ctor 来源是 arg6 `HouseClass*`（YRpp `ParticleSystemClass.h:40` 签名一致）。[实证]
+docs/re/particle_fog_owner_landing.md:39:| `House+0x30` | `0x004F9A16: cmp [eax+0x30], ecx` | `HouseClass::ArrayIndex`（0..31） |
+docs/re/particle_fog_owner_landing.md:40:| `House+0x5788` | `0x004F9A25: mov eax,[eax+0x5788]; shl edx,cl; and` | `HouseClass::Allies` 位掩码（整函数即 `IsAlliedWith`，`0x004F9A10` 起） |
+docs/re/particle_fog_owner_landing.md:45:                        ├─ +0xE0  TechnoClass* Owner ──► +0x21C HouseClass*
+docs/re/particle_fog_owner_landing.md:46:                        └─ +0xFC  HouseClass* OwnerHouse   ← 谓词首选
+docs/re/particle_fog_owner_landing.md:54:**裁决：首选 `pSys+0xFC`（`HouseClass*`），空则回退 `pSys+0xE0 → Techno+0x21C`。**
+docs/re/pending_execution_master_table.md:138:- 目标点：`0x00508F8F`（`HouseClass::UpdateSpySat` 内部）；
+docs/re/pending_execution_master_table.md:182:    // 主路径：读取 +0xFC (HouseClass* OwnerHouse)
+docs/re/pending_execution_master_table.md:184:    // 备用路径：读取 +0xE0 (TechnoClass* Owner) -> +0x21C (HouseClass*)
+docs/re/pending_execution_master_table.md:191:    void* pPlayer = *reinterpret_cast<void**>(0x00A83D4C); // HouseClass::Player
+docs/re/pending_execution_master_table.md:442:; ★ G-06（MP-G06，P1）：0 = 联机模式禁止写 ScenarioClass / HouseClass+0x577A 状态字段
+docs/re/radar_fix_report.md:45:4. **选定的新谓词（证据最强）= 引擎自己的判据**：`HouseClass::Player / PlayerPtr (0x00A83D4C) != 0`，并以 `ScenarioClass::Instance (0xA8B230) != 0`、`ScenarioClass+0x3598 == 0`（非加载屏）、`GameMode (0xA8B238) <= 5` 三项收窄。首项正是 `RadarClass::Plot_Cell` 函数头 **0x00655C5D `cmp eax,ebp` / 0x00655C62 `je 0x00656138`** 所用的同一判据（`PlayerPtr==0` 直接 return）——语义 = 存在本地玩家 = 有活对局。
+docs/re/radar_fix_report.md:59:| F1-c5 | 最强谓词是什么？ | **`PlayerPtr (0x00A83D4C) != 0`（+3 项收窄）**：`HouseClass::Player` 指针，**引擎自身对这条路径的判据** | [实证] | `ref/yrpp/HouseClass.h:145 reference<HouseClass*,0xA83D4Cu>`；`0x00655C50 A1 4C3DA800` / `0x00655C5D 3BC5` / `0x00655C62 0F 84 D0040000`（→`0x00656138` 尾声）；语义定谳 `0x0050B71E 3BCA` + `0x0050B720 0F94C0`（`sete al`：owner==Player）；赋值 `0x0068ACE9 A3 4C3DA800`；清零 `0x0052D9DE 89 1D 4C3DA800` |
+docs/re/radar_fix_report.md:164:**(a) 符号**：`ref/yrpp/HouseClass.h:145` → `static constexpr reference<HouseClass*, 0xA83D4Cu> const Player{};`（**指针变量**）。
+docs/re/radar_fix_report.md:180:**(c) 语义定谳（它是 HouseClass*，且是「本地玩家」）**：`0x50B6F0`（Plot_Cell 内部"未探索格只画己方"门所调函数）：
+docs/re/radar_fix_report.md:238:    1000226D  B9 4C3DA800             mov  ecx,0x00A83D4C             ; HouseClass::Player
+docs/re/radar_minimap_dots.md:14:| 颜色 | 按 **House 颜色查表**：`Object::v[49]`（0xC4）判是否走特殊色；否则 `ebx = House*`（`Techno+0x21C`），从 **`HouseClass+0x56F9/56FA/56FB`** 读 RGB 三字节，再用显示格式掩码 `0x8A0DD0..0x8A0DE4` 打包成像素。`UnitClass::v[52]`（0xD0）覆写：友军/己方返回 House，敌方返回 `Unit+0x51C`（伪装色源）。取不到时回退 `ColorSchemeClass::FindOrCreate(0x68CA50)` 从全局表 `0xB054D4` 查。 |
+docs/re/radar_minimap_dots.md:234:| U5 | `House+0x1EC/0x1ED` 语义（`0x50B6F0` 用） | 与 L3「玩家/盟军」判定是否同一套 | 对 YRpp HouseClass 偏移标定 |
+docs/re/radar_minimap_dots.md:311:   - `gamemd.exe` 全代码段直呼 `0x004F7870`（`HouseClass::CanBuild`）共 13 处：
+docs/re/radar_minimap_dots.md:322:   - 仅当逻辑层（如 `HouseClass::v[23]` 逻辑节拍）发现科技/资金变化而通过 `0x006A7D44: mov byte ptr [edi], 1` 置脏 `NeedsRedraw` 时，才会触发重绘。
+docs/re/radar_minimap_dots.md:333:     - `0x004AC2BE: call 0x0050B6F0`（`HouseClass::RadarVisible / IsControlledByPlayer`）。
+docs/re/radar_sweep_sw_deep_dive.md:47:### 1.2 并行链 A：原版 SpySat（`HouseClass::UpdateSpySat 0x508F60`）
+docs/re/re_sprint_S10_report.md:19:| **2. Cameo 脏门与 CanBuild 频率** | 全 exe 直呼 `0x004F7870`（`HouseClass::CanBuild`）共 13 处，渲染帧仅 `0x006A97D2`（位于 `0x006A9540`）一处。`0x006A9540` 入口受 `AllowedToDraw`（`+0x1C`）与 `NeedsRedraw`（`+0x3C`）双门控保护。在静态帧中该函数 7 条指令退出，`CanBuild` 调用为 **0 次/帧**；仅在逻辑置脏帧重绘，且仅轮询当前 Tab 可见槽（6~10 个），绝非每帧轮询 75 个或科技树。 | `[实证]` |
+docs/re/re_sprint_S10_report.md:154:    - `0x00655F80 - 0x00655FD2`：从 `[ebp+0x21C]`（`HouseClass*`）的 `+0x56F9..56FB` 打包 16 位 RGB 像素值进 `ebx`；
+docs/re/re_sprint_S10_report.md:192:| 6 | `0x004FEDB7` | `0x000FEDB7` | `0x004FEA60` | HouseClass AI 建造决策 | AI 决策帧（数秒一次） |
+docs/re/re_sprint_S10_report.md:193:| 7 | `0x004FF0E1` | `0x000FF0E1` | `0x004FEEE0` | HouseClass AI 步兵生产决策 | 同上 |
+docs/re/re_sprint_S10_report.md:194:| 8 | `0x004FF411` | `0x000FF411` | `0x004FF210` | HouseClass AI 载具生产决策 | 同上 |
+docs/re/re_sprint_S10_report.md:230:   - `0x006A97D2: call 0x4F7870`（`HouseClass::CanBuild`），仅对可见槽位的合法 TechnoType 调 1 次；
+docs/re/re_sprint_S10_report.md:235:- **状态变更帧**：`HouseClass::v[23]` 逻辑节拍置脏后，仅对当前激活 Tab 的 **6~10 个可见槽位**各调用 1 次 `CanBuild`。
+docs/re/re_sprint_S10_report.md:254:004AC2BC (FO:000AC2BC)  8bc8          mov     ecx, eax        ; ecx = HouseClass*
+docs/re/re_sprint_S10_report.md:255:004AC2BE (FO:000AC2BE)  e82df40500    call    0x50b6f0        ; ★ HouseClass::RadarVisible / IsControlledByPlayer
+docs/re/re_sprint_S10_report.md:349:| `HouseClass::CanBuild` | `0x004F7870` | `0x000F7870` | 科技树与建造许可核心判定（全 exe 共 13 处调用） |
+docs/re/re_sprint_S10_report.md:352:| `HouseClass::UpdateCameos` | `0x006A7D20` | `0x002A7D20` | 逻辑节拍驱动的侧边栏置脏入口（由 `HouseClass::v[23]` 调用） |
+docs/re/re_sprint_S10_report.md:363:| `HouseClass::RadarVisible` | `0x0050B6F0` | `0x0010B6F0` | 本地玩家/盟军可控所有权判定（框选/点选/雷达共用闸门） |
+docs/re/re_sprint_S17_report.md:104:- **分层拓扑**：顶层 `AI::Process` -> `HouseClass::Update (0x004F8440)` -> `AITrigger::ConditionCheck (0x006F0AB0)` -> `TeamClass::Create`；
+docs/re/re_sprint_S17_report.md:145:  - `HouseClass`: `0x160B8` (90296B)
+docs/re/re_sprint_S19_report.md:88:   对 `ScenarioClass` 标志强写与 `HouseClass+0x577A` 强写施加 `MpActive()` 门控，联机混端下严禁覆写同步状态。
+docs/re/re_sprint_S1_report.md:304:  - `HouseClass+0x577A` 是每个玩家对象私有的标志。
+docs/re/re_sprint_S2_report.md:27:| **7.3** | 每帧驱动与 Grant 调用源 | `HasChargeProgressed` / `Grant` 的真实调用链与每帧推进源 | **每帧驱动源为 `HouseClass::Update` (`0x4F8E4A`)** 循环遍历 `Supers`；澄清 `0x4F9397` 为孤立未引用死代码。**Grant 仅由 3 大途径触发**：建筑建造/占领/来电 (`0x50B314`)、地图触发器 (`0x6DE93F/0x6E1BED`)、随机宝箱 (`0x482D20`)。 | **[实证]** | 闭环 |
+docs/re/re_sprint_S2_report.md:183:### 1. 每帧推进驱动源：`HouseClass::Update` 深度实证
+docs/re/re_sprint_S2_report.md:185:`HouseClass::Update`（`0x004F8440`，文件偏移 `0x0F8440`）：
+docs/re/re_sprint_S2_report.md:211:  - `0x004F9370..0x004F93D7` 位于 `HouseClass::Update` 尾部已由 `ret` 隔开的代码区；
+docs/re/re_sprint_S2_report.md:221:| **常规建筑制造/占领/来电** | `0x0050B314` | `HouseClass::RecheckSuperWeapons`<br>(`0x0050B1D0`) | 当建筑建造完成、工程师占领、断电后发电机修复供电时触发。<br>遍历当前阵营已有建筑，对照 `BuildingTypeClass->SuperWeapon`。满足要求则装配 `OneTime = 0`，调用 `call 0x6CB560`。 |
+docs/re/re_sprint_S2_report.md:517:| `find_hascharge_grant_callers.py` | 7.3 | 扫描全局 `call 0x6CBCA0` 与 `call 0x6CB560`，定位 `HouseClass::Update` 驱动点与 Grant 全量来源。 |
+docs/re/re_sprint_S2_report.md:548:> 3. **7.3 [实证]**：每帧驱动源为 `HouseClass::Update 0x4F8E4A`（澄清 `0x4F9397` 为孤立死代码）；Grant 仅有建筑（`0x50B314`）、触发器（`0x6DE93F/0x6E1BED`）与宝箱（`0x482D20`）3 大来源。
+docs/re/re_sprint_S3_report.md:132:VA: 0x00423B4A (FileOff: 0x023B4A) | 8B 8E 80 01 00 00    | mov ecx, dword ptr [esi + 0x180]  ; 所属/观察方 HouseClass*
+docs/re/re_sprint_S6_report.md:19:2. **招募三兄弟轮转时序与全生命周期**：纠正了此前猜测的“陆/海/空”兵种定义，实证三兄弟分别严格对应 **战车（0x4FEA60）**、**步兵（0x4FEEE0）** 与 **战机（0x4FF210）**；实证其在 `HouseClass::Update` 内部每 8 帧同帧严格串行执行，并直接向对应工厂下达 `v[0x94]` 生产指令；揭示了跨帧轮转（Round-Robin）在兵种成型时延与资金抢占上的确定性风险；补全了队伍主动拉取（`0x006EAA90`）与工厂被动推送（`0x0073DC19` / `0x0073815F`）的招募双通道。
+docs/re/re_sprint_S6_report.md:173:在 `HouseClass::Update`（`0x004F8440`）的 `0x004F9074`–`0x004F9240` 区域，呈现高度紧凑的流水线：
+docs/re/re_sprint_S6_report.md:317:| E6 | 招募三兄弟每 8 帧同帧串行执行 | **[实证]** | HouseClass::Update 在 0x4F90F2/0x4F9198/0x4F919F 紧随无分支串行 call |
+docs/re/re_sprint_S8_report.md:161:  - **S3 (`HouseClass + 0x577A` SpySatActive)**：
+docs/re/re_sprint_S8_report.md:166:  - `ScenarioClass` 与 `HouseClass` 均为联机锁步契约内的核心可序列化状态。
+docs/re/rtrack_bridge_h1rm.md:65:| E-ABI-AC / HouseClass Array | R-06 | **否** | 已入包 | **维持** |
+docs/re/savegame_block_manifest.md:311:| 9 | `0x006801F0` | `0x0067DFDF` | `0x00A80208` | `0x00A801FC` | 未知（紧邻 `HouseClass::Array 0xA80220`） | 未见裸指针 | `[待实测]` |
+docs/re/savegame_block_manifest.md:612:- 旧（`house_team_ai_update.md:118`）：`0x00A80228` → `HouseClass*`，Items `0x00A8022C`，Count `0x00A80238`（表内自带「待复核」）
+docs/re/savegame_block_manifest.md:1018:| 5 | 与 YRpp 符号表比对（`BuildingClass`/`UnitClass`/`HouseClass`…） | 名称可解析 | 回填 §12.3「类名」列 |
+docs/re/shroud_click_interaction.md:17:| **框选机制与迷雾** | **框选完全不判迷雾，仅判本地玩家控制权**。鼠标抬起若为拉框，调用 `0x6D9FF0` $\to$ `Tactical::ForEachInRect` (0x6DA5C0) 遍历视口屏幕对象数组 `0xB0CEC8`。回调 `0x4AC2B0` 仅对通过 `HouseClass::IsPlayerControl` (0x50B6F0) 的友方/己方单位且满足 `CanBeSelected` (v[78]) 执行选中。在联机模式下 `0x0050B716` 读 `PlayerHouse`，`0x0050B71E` 硬性比对 `cmp ecx, edx`。**敌方单位因所有权不符被 100% 机械剔除**。 | `0x004AC2BE call 0x50B6F0`<br>`0x0050B716 mov edx, [0xA83D4C]`<br>`0x0050B71E cmp ecx, edx` |
+docs/re/shroud_click_interaction.md:34:PlayerHouse (0x00A83D4C)   —— 本地人类玩家 HouseClass* 实例指针
+docs/re/shroud_click_interaction.md:44:| `HouseClass::IsPlayerControl` | `0x0050B6F0` | 非虚成员函数 | 判定指定 House 是否为本地受控玩家（联机硬比对 `PlayerHouse`） |
+... [display truncated at 200 of 297; exact total above]
+```
+
+## pattern: `地图预置`
+
+**total matches = 4**
+
+```text
+docs/re/bench_map_rework.md:53:与地图预置 200/800 **无交集**。旧图的军队在选国 ≠ Russians/Americans 时全部丢失。
+docs/re/h1_fanout_mechanism.md:16:   - **美 vs 蘇 = 22/30/22** `[实证]`：落在 `RespawnStartingForces` 的国家默认开局部队带（2 槽 × MCV+护卫 ≈ 21–32）⇒ **美国人/苏联人的地图预置行 0 条进入 `mobile_count`**。
+docs/re/h1_fanout_mechanism.md:129:  1. **遭遇战玩家 House 的地图预置行被开局部队路径覆盖/跳过**（`MultiplayerOnly=1` 时玩家槽只走 `RespawnStartingForces`/`GenerateStartingUnits`，不消费 `[Units]` 行）；
+docs/re/landing_pack_gap_p21_a3.md:25:| B-1 | `ra2bench` 遭遇战**不实例化地图预置建筑** | 自建 GAPP21 图（玩家基地 + 14 家环置 GAGAP/CAFARM02）开局后全图 `bld_cells≡0`（AltOcc bit0x80），t=0 与 t=165s 一致 | 造不出**真**敌方 GapGenerator 实体（`CreateGap` 无从盖印） |
+```
+
+## pattern: `预置槽位`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+
+## pattern: `PlayerControl`
+
+**total matches = 13**
+
+```text
+docs/DESIGN.md:131:（PlayerControl/Credits/IQ/Edge/Color/Allies——游戏靠 `PlayerControl=yes`
+docs/re/ARCHITECTURE_ATLAS.md:4577:| 0x0050B6F0 | HouseClass::IsPlayerControl（217 处直调公共闸） | [实证] | claims 0x0050B6F0/B716/B71E |
+docs/re/atlas_rev/R8_ui_crt.md:243:| 0x0050B6F0 | HouseClass::IsPlayerControl（217 处直调公共闸） | [实证] | claims 0x0050B6F0/B716/B71E |
+docs/re/bench_map_rework.md:31:| PlayerControl | 双方均为 `no` | 同左 | `[Russians]`/`[Americans]` |
+docs/re/bench_map_rework.md:46:| 玩家 house 名 = 大厅所选国家名 | `HouseClass.IsPlayer() = CurrentPlayer \|\| PlayerControl`（HouseClass.h:421） |
+docs/re/bench_map_rework.md:82:**方案 B 规格（未实施）**：改用战役图（`MultiplayerOnly=0`，`PlayerControl=yes` 固定我方 house），
+docs/re/h1_fanout_mechanism.md:44:| house 配置 | 全 14 个：`PlayerControl=no, IQ=5, Credits=10000, TechLevel=10, Allies=<self>` | 同左 | 同左 |
+docs/re/shroud_click_interaction.md:17:| **框选机制与迷雾** | **框选完全不判迷雾，仅判本地玩家控制权**。鼠标抬起若为拉框，调用 `0x6D9FF0` $\to$ `Tactical::ForEachInRect` (0x6DA5C0) 遍历视口屏幕对象数组 `0xB0CEC8`。回调 `0x4AC2B0` 仅对通过 `HouseClass::IsPlayerControl` (0x50B6F0) 的友方/己方单位且满足 `CanBeSelected` (v[78]) 执行选中。在联机模式下 `0x0050B716` 读 `PlayerHouse`，`0x0050B71E` 硬性比对 `cmp ecx, edx`。**敌方单位因所有权不符被 100% 机械剔除**。 | `0x004AC2BE call 0x50B6F0`<br>`0x0050B716 mov edx, [0xA83D4C]`<br>`0x0050B71E cmp ecx, edx` |
+docs/re/shroud_click_interaction.md:44:| `HouseClass::IsPlayerControl` | `0x0050B6F0` | 非虚成员函数 | 判定指定 House 是否为本地受控玩家（联机硬比对 `PlayerHouse`） |
+docs/re/shroud_click_interaction.md:171:0x00692AED: e8 fe 8b e7 ff       call     0x0050B6F0         ; HouseClass::IsPlayerControl(ecx)
+docs/re/shroud_click_interaction.md:208:  │              ├── 2. HouseClass::IsPlayerControl (0x0050B6F0) ──▶ 非己方直接 REJECT
+docs/re/shroud_click_interaction.md:302:0x004AC2BE: e8 2d f4 05 00       call     0x0050B6F0             ; HouseClass::IsPlayerControl(ecx)
+docs/re/shroud_click_interaction.md:323:#### `HouseClass::IsPlayerControl` (0x0050B6F0) 精准规范口径拆解：
+```
+
+## pattern: `PercentBuilt`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+
+## pattern: `esi_caller_trace`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+
+## pattern: `re_crashwriter_static`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+
+## pattern: `re_map_preset_decode`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+
+## pattern: `playerctrl_semantics`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+
+## pattern: `re_orphan_owners`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+
+## pattern: `2026-11-1[01]`
+
+**total matches = 0**
+
+```text
+(no matches)
+```
+

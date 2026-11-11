@@ -1,0 +1,294 @@
+== C5 静态反汇编：0x5012ED 性质核实 ==
+[0] exe      : D:\Project\ra2-campaign-forge\ra2bench\gamemd.exe
+[0] size     : 4825360 B
+[0] sha256   : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+[0] 铁律     : 只读磁盘字节；未启动 gamemd.exe/ra2loader/YURI.exe，未 attach，未读活进程内存，未写 hook/采样/MiniDump 代码。
+
+[1] VA 0x5012ED 处 (foff 0x1012ED) 附近原始字节:
+    [-8..+24) = 00 00 8d 4c 24 10 50 68 28 4e 82 00 51 8b ce e8 67 82 02 00 8b 93 54 60 01 00 52 8d 44 24 14 68
+    4 字节 LE32 @0x5012ED = 0x00824E28  (字符串 PlayerControl VA = 0x00824E28) -> MATCH（该处即 xref 的 imm32/disp32 本体）
+
+[2] 线性反汇编 [0x501140, 0x5013C0)（capstone x86-32）:
+    0x501140  56                      push    esi
+    0x501141  e89adaf2ff              call    0x42ebe0
+    0x501146  5f                      pop     edi
+    0x501147  899b74570000            mov     dword ptr [ebx + 0x5774], ebx
+    0x50114D  5e                      pop     esi
+    0x50114E  5b                      pop     ebx
+    0x50114F  8be5                    mov     esp, ebp
+    0x501151  5d                      pop     ebp
+    0x501152  c20400                  ret     4
+    0x501155  90                      nop     
+    0x501156  90                      nop     
+    0x501157  90                      nop     
+    0x501158  90                      nop     
+    0x501159  90                      nop     
+    0x50115A  90                      nop     
+    0x50115B  90                      nop     
+    0x50115C  90                      nop     
+    0x50115D  90                      nop     
+    0x50115E  90                      nop     
+    0x50115F  90                      nop     
+    0x501160  83ec40                  sub     esp, 0x40
+    0x501163  53                      push    ebx
+    0x501164  55                      push    ebp
+    0x501165  56                      push    esi
+    0x501166  6a00                    push    0
+    0x501168  8be9                    mov     ebp, ecx
+    0x50116A  68544d8200              push    0x824d54
+    0x50116F  e84c460200              call    0x5257c0
+    0x501174  a13802a800              mov     eax, dword ptr [0xa80238]
+    0x501179  33db                    xor     ebx, ebx
+    0x50117B  85c0                    test    eax, eax
+    0x50117D  7e64                    jle     0x5011e3
+    0x50117F  57                      push    edi
+    0x501180  a12c02a800              mov     eax, dword ptr [0xa8022c]
+    0x501185  83c9ff                  or      ecx, 0xffffffff
+    0x501188  8d542410                lea     edx, [esp + 0x10]
+    0x50118C  53                      push    ebx
+    0x50118D  8b3c98                  mov     edi, dword ptr [eax + ebx*4]
+    0x501190  33c0                    xor     eax, eax
+    0x501192  81c7f45f0100            add     edi, 0x15ff4
+    0x501198  686c7f8100              push    0x817f6c
+    0x50119D  f2ae                    repne scasb al, byte ptr es:[edi]
+    0x50119F  f7d1                    not     ecx
+    0x5011A1  2bf9                    sub     edi, ecx
+    0x5011A3  8bc1                    mov     eax, ecx
+    0x5011A5  8bf7                    mov     esi, edi
+    0x5011A7  8bfa                    mov     edi, edx
+    0x5011A9  c1e902                  shr     ecx, 2
+    0x5011AC  f3a5                    rep movsd dword ptr es:[edi], dword ptr [esi]
+    0x5011AE  8bc8                    mov     ecx, eax
+    0x5011B0  83e103                  and     ecx, 3
+    0x5011B3  f3a4                    rep movsb byte ptr es:[edi], byte ptr [esi]
+    0x5011B5  8d4c2438                lea     ecx, [esp + 0x38]
+    0x5011B9  51                      push    ecx
+    0x5011BA  e8357d2c00              call    0x7c8ef4
+    0x5011BF  83c40c                  add     esp, 0xc
+    0x5011C2  8d542410                lea     edx, [esp + 0x10]
+    0x5011C6  8d442430                lea     eax, [esp + 0x30]
+    0x5011CA  8bcd                    mov     ecx, ebp
+    0x5011CC  52                      push    edx
+    0x5011CD  50                      push    eax
+    0x5011CE  68544d8200              push    0x824d54
+    0x5011D3  e888740200              call    0x528660
+    0x5011D8  a13802a800              mov     eax, dword ptr [0xa80238]
+    0x5011DD  43                      inc     ebx
+    0x5011DE  3bd8                    cmp     ebx, eax
+    0x5011E0  7c9e                    jl      0x501180
+    0x5011E2  5f                      pop     edi
+    0x5011E3  33f6                    xor     esi, esi
+    0x5011E5  85c0                    test    eax, eax
+    0x5011E7  7e19                    jle     0x501202
+    0x5011E9  8b0d2c02a800            mov     ecx, dword ptr [0xa8022c]
+    0x5011EF  55                      push    ebp
+    0x5011F0  8b0cb1                  mov     ecx, dword ptr [ecx + esi*4]
+    0x5011F3  e818000000              call    0x501210
+    0x5011F8  a13802a800              mov     eax, dword ptr [0xa80238]
+    0x5011FD  46                      inc     esi
+    0x5011FE  3bf0                    cmp     esi, eax
+    0x501200  7ce7                    jl      0x5011e9
+    0x501202  5e                      pop     esi
+    0x501203  5d                      pop     ebp
+    0x501204  5b                      pop     ebx
+    0x501205  83c440                  add     esp, 0x40
+    0x501208  c3                      ret     
+    0x501209  90                      nop     
+    0x50120A  90                      nop     
+    0x50120B  90                      nop     
+    0x50120C  90                      nop     
+    0x50120D  90                      nop     
+    0x50120E  90                      nop     
+    0x50120F  90                      nop     
+    0x501210  83ec14                  sub     esp, 0x14
+    0x501213  33c0                    xor     eax, eax
+    0x501215  8d542400                lea     edx, [esp]
+    0x501219  53                      push    ebx
+    0x50121A  55                      push    ebp
+    0x50121B  8bd9                    mov     ebx, ecx
+    0x50121D  56                      push    esi
+    0x50121E  57                      push    edi
+    0x50121F  83c9ff                  or      ecx, 0xffffffff
+    0x501222  8dbbf45f0100            lea     edi, [ebx + 0x15ff4]
+    0x501228  6a00                    push    0
+    0x50122A  f2ae                    repne scasb al, byte ptr es:[edi]
+    0x50122C  f7d1                    not     ecx
+    0x50122E  2bf9                    sub     edi, ecx
+    0x501230  8bc1                    mov     eax, ecx
+    0x501232  8bf7                    mov     esi, edi
+    0x501234  8bfa                    mov     edi, edx
+    0x501236  c1e902                  shr     ecx, 2
+    0x501239  f3a5                    rep movsd dword ptr es:[edi], dword ptr [esi]
+    0x50123B  8bc8                    mov     ecx, eax
+    0x50123D  83e103                  and     ecx, 3
+    0x501240  f3a4                    rep movsb byte ptr es:[edi], byte ptr [esi]
+    0x501242  8b74242c                mov     esi, dword ptr [esp + 0x2c]
+    0x501246  8d4c2414                lea     ecx, [esp + 0x14]
+    0x50124A  51                      push    ecx
+    0x50124B  8bce                    mov     ecx, esi
+    0x50124D  e86e450200              call    0x5257c0
+    0x501252  8b5334                  mov     edx, dword ptr [ebx + 0x34]
+    0x501255  8d442410                lea     eax, [esp + 0x10]
+    0x501259  83c224                  add     edx, 0x24
+    0x50125C  8bce                    mov     ecx, esi
+    0x50125E  52                      push    edx
+    0x50125F  684c4d8200              push    0x824d4c
+    0x501264  50                      push    eax
+    0x501265  e8f6730200              call    0x528660
+    0x50126A  8b8bd4010000            mov     ecx, dword ptr [ebx + 0x1d4]
+    0x501270  6a00                    push    0
+    0x501272  51                      push    ecx
+    0x501273  8d542418                lea     edx, [esp + 0x18]
+    0x501277  68404e8200              push    0x824e40
+    0x50127C  52                      push    edx
+    0x50127D  8bce                    mov     ecx, esi
+    0x50127F  e83c630200              call    0x5275c0
+    0x501284  8b8bdc010000            mov     ecx, dword ptr [ebx + 0x1dc]
+    0x50128A  b81f85eb51              mov     eax, 0x51eb851f
+    0x50128F  f7e9                    imul    ecx
+    0x501291  c1fa05                  sar     edx, 5
+    0x501294  8bc2                    mov     eax, edx
+    0x501296  6a00                    push    0
+    0x501298  c1e81f                  shr     eax, 0x1f
+    0x50129B  03d0                    add     edx, eax
+    0x50129D  8d4c2414                lea     ecx, [esp + 0x14]
+    0x5012A1  52                      push    edx
+    0x5012A2  68384e8200              push    0x824e38
+    0x5012A7  51                      push    ecx
+    0x5012A8  8bce                    mov     ecx, esi
+    0x5012AA  e811630200              call    0x5275c0
+    0x5012AF  8b93d0010000            mov     edx, dword ptr [ebx + 0x1d0]
+    0x5012B5  6a00                    push    0
+    0x5012B7  52                      push    edx
+    0x5012B8  8d442418                lea     eax, [esp + 0x18]
+    0x5012BC  68d84d8200              push    0x824dd8
+    0x5012C1  50                      push    eax
+    0x5012C2  8bce                    mov     ecx, esi
+    0x5012C4  e8f7620200              call    0x5275c0
+    0x5012C9  8b8be0010000            mov     ecx, dword ptr [ebx + 0x1e0]
+    0x5012CF  8d542410                lea     edx, [esp + 0x10]
+    0x5012D3  51                      push    ecx
+    0x5012D4  68d04d8200              push    0x824dd0
+    0x5012D9  52                      push    edx
+    0x5012DA  8bce                    mov     ecx, esi
+    0x5012DC  e8ef46f7ff              call    0x4759d0
+    0x5012E1  8a83ed010000            mov     al, byte ptr [ebx + 0x1ed]
+    0x5012E7  8d4c2410                lea     ecx, [esp + 0x10]
+    0x5012EB  50                      push    eax
+    0x5012EC  68284e8200              push    0x824e28   <<< 0x5012ED 落在此指令编码内
+    0x5012F1  51                      push    ecx
+    0x5012F2  8bce                    mov     ecx, esi
+    0x5012F4  e867820200              call    0x529560
+    0x5012F9  8b9354600100            mov     edx, dword ptr [ebx + 0x16054]
+    0x5012FF  52                      push    edx
+    0x501300  8d442414                lea     eax, [esp + 0x14]
+    0x501304  6838b18100              push    0x81b138
+    0x501309  50                      push    eax
+    0x50130A  8bce                    mov     ecx, esi
+    0x50130C  e80f38f7ff              call    0x474b20
+    0x501311  a13802a800              mov     eax, dword ptr [0xa80238]
+    0x501316  33ed                    xor     ebp, ebp
+    0x501318  85c0                    test    eax, eax
+    0x50131A  7e30                    jle     0x50134c
+    0x50131C  8bbbd8010000            mov     edi, dword ptr [ebx + 0x1d8]
+    0x501322  8b152c02a800            mov     edx, dword ptr [0xa8022c]
+    0x501328  89442428                mov     dword ptr [esp + 0x28], eax
+    0x50132C  8b0a                    mov     ecx, dword ptr [edx]
+    0x50132E  b801000000              mov     eax, 1
+    0x501333  8b4930                  mov     ecx, dword ptr [ecx + 0x30]
+    0x501336  d3e0                    shl     eax, cl
+    0x501338  85f8                    test    eax, edi
+    0x50133A  7402                    je      0x50133e
+    0x50133C  0be8                    or      ebp, eax
+    0x50133E  8b442428                mov     eax, dword ptr [esp + 0x28]
+    0x501342  83c204                  add     edx, 4
+    0x501345  48                      dec     eax
+    0x501346  89442428                mov     dword ptr [esp + 0x28], eax
+    0x50134A  75e0                    jne     0x50132c
+    0x50134C  55                      push    ebp
+    0x50134D  8d4c2414                lea     ecx, [esp + 0x14]
+    0x501351  685c4d8200              push    0x824d5c
+    0x501356  51                      push    ecx
+    0x501357  8bce                    mov     ecx, esi
+    0x501359  e8823ff7ff              call    0x4752e0
+    0x50135E  8a8b09600100            mov     cl, byte ptr [ebx + 0x16009]
+    0x501364  8d8309600100            lea     eax, [ebx + 0x16009]
+    0x50136A  84c9                    test    cl, cl
+    0x50136C  7412                    je      0x501380
+    0x50136E  50                      push    eax
+    0x50136F  8d542414                lea     edx, [esp + 0x14]
+    0x501373  684c788100              push    0x81784c
+    0x501378  52                      push    edx
+    0x501379  8bce                    mov     ecx, esi
+    0x50137B  e8e0720200              call    0x528660
+    0x501380  8d442410                lea     eax, [esp + 0x10]
+    0x501384  8d8b00570000            lea     ecx, [ebx + 0x5700]
+    0x50138A  50                      push    eax
+    0x50138B  56                      push    esi
+    0x50138C  e8cfd9f2ff              call    0x42ed60
+    0x501391  5f                      pop     edi
+    0x501392  5e                      pop     esi
+    0x501393  5d                      pop     ebp
+    0x501394  5b                      pop     ebx
+    0x501395  83c414                  add     esp, 0x14
+    0x501398  c20400                  ret     4
+    0x50139B  90                      nop     
+    0x50139C  90                      nop     
+    0x50139D  90                      nop     
+    0x50139E  90                      nop     
+    0x50139F  90                      nop     
+    0x5013A0  57                      push    edi
+    0x5013A1  8b7c2408                mov     edi, dword ptr [esp + 8]
+    0x5013A5  8b87cc020000            mov     eax, dword ptr [edi + 0x2cc]
+    0x5013AB  85c0                    test    eax, eax
+    0x5013AD  7e3d                    jle     0x5013ec
+    0x5013AF  53                      push    ebx
+    0x5013B0  8b5f54                  mov     ebx, dword ptr [edi + 0x54]
+    0x5013B3  56                      push    esi
+    0x5013B4  33f6                    xor     esi, esi
+    0x5013B6  85db                    test    ebx, ebx
+    0x5013B8  7e2a                    jle     0x5013e4
+    0x5013BA  8b4748                  mov     eax, dword ptr [edi + 0x48]
+    0x5013BD  8b0cb0                  mov     ecx, dword ptr [eax + esi*4]
+
+[3] 靶点归属指令 / 上下文:
+    归属指令: 0x5012EC  68284e8200  push 0x824e28  bytes=68 28 4e 82 00
+    0x5012ED 在该指令内的偏移 = +1（即 4 字节立即数/位移量的起始）
+        0x5012D9  push    edx
+        0x5012DA  mov     ecx, esi
+        0x5012DC  call    0x4759d0
+        0x5012E1  mov     al, byte ptr [ebx + 0x1ed]
+        0x5012E7  lea     ecx, [esp + 0x10]
+        0x5012EB  push    eax
+      >>0x5012EC  push    0x824e28
+        0x5012F1  push    ecx
+        0x5012F2  mov     ecx, esi
+        0x5012F4  call    0x529560
+        0x5012F9  mov     edx, dword ptr [ebx + 0x16054]
+        0x5012FF  push    edx
+        0x501300  lea     eax, [esp + 0x14]
+        0x501304  push    0x81b138
+        0x501309  push    eax
+
+[4] 性质判定（仅依据以上静态字节，不引入运行期推测）:
+    - 该 4 字节是指令 push 0x824e28 的 imm32 立即数（字符串 'PlayerControl' 地址），属于「读取字符串常量地址」的编码，不是对 [ebx+0x1ED] 或 INI 缓冲区的写指令。
+    - 窗口内 call/jmp 目标（供与 Read_INI 的 Get_Bool 调用 0x5295f0 对照）:
+        0x501141  0x42ebe0
+        0x50116F  0x5257c0
+        0x5011BA  0x7c8ef4
+        0x5011D3  0x528660
+        0x5011F3  0x501210
+        0x50124D  0x5257c0
+        0x501265  0x528660
+        0x50127F  0x5275c0
+        0x5012AA  0x5275c0
+        0x5012C4  0x5275c0
+        0x5012DC  0x4759d0
+        0x5012F4  0x529560
+        0x50130C  0x474b20
+        0x501359  0x4752e0
+        0x50137B  0x528660
+        0x50138C  0x42ed60
+    - 结论见 FIX_RECORD.md C5：仅凭静态字节可判「读字符串地址 / 传参」与「非 0x1ED 回写」；是否为 Write_INI 类回写调用，需看 call 目标与 0x5295f0(Get_Bool, 读) 是否同类，符号名本身不可证（见 §4.4），故对『是否 Write_INI 回写』只给静态归类，不宣称符号级定谳。
+
+[5] 完成（stdout 由 PowerShell *> 落盘 _disasm_5012ed_out.txt）。

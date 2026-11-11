@@ -1,0 +1,16 @@
+== STEP2 复跑：_ps_disasm stdout 口径实测 ==
+[1] 原件 9a16086763924c269c2166fbcfd22c636ffb1800d6f78d54c72437c0c2d6c37e (20572 B)
+    副本 9a16086763924c269c2166fbcfd22c636ffb1800d6f78d54c72437c0c2d6c37e (20572 B)  一致=True
+[2] 重跑退出码=0 (命令=python -I -X utf8 <写域副本>)
+[3] 重跑 stdout              sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  0 B  (== 空串 sha)
+[3] 重跑 stderr              sha256=225689b5f041e351c4c2355ca3e32c76c860fbd2cd3644fcb1d86b173a316463  8 B
+[3] 重跑 out.txt(写域)         sha256=3fa97f526f53fb261e1692f327770cc1bb236e5d191a7a9d5d739d5b7aae5e58  65202 B
+[3] 重跑 out.json(写域)        sha256=445bc0609f2c70e00417a77686435cecb3774f8c75f6ccc2ab01f9c1bb03fa0d  3297 B
+[3] 既有 out.txt(只读原件)       sha256=3fa97f526f53fb261e1692f327770cc1bb236e5d191a7a9d5d739d5b7aae5e58  65202 B
+[3] 既有 out.json(只读原件)      sha256=445bc0609f2c70e00417a77686435cecb3774f8c75f6ccc2ab01f9c1bb03fa0d  3297 B
+[4] 文件级对拍（重跑 out.txt vs 既有 out.txt）: MATCH
+    文件级对拍（重跑 out.json vs 既有 out.json）: MATCH
+[5] 判定: stdout=0 B, stderr=8 B
+    stdout 复现门不可建立：探针 stdout 恒为空 —— 脚本把 print 重定向为内部缓冲
+    并只写自己目录的 _ps_disasm_out.txt/_ps_disasm_out.json（原件 L19/L22-23/L113/L456-457/L471-472），
+    唯一控制台输出为 stderr '(done)'（原件 L474）。复现口径只能是文件级对拍。

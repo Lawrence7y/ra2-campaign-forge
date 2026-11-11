@@ -1,0 +1,522 @@
+====================================================================================================
+XVERIFY 机械复算输出  (repo=D:\Project\ra2-campaign-forge)
+写域(唯一): D:\Project\ra2-campaign-forge\lead\re_chain_v2_xverify_20261112
+python: 3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]
+====================================================================================================
+
+########## SEC 0 · 靶件与两份交付件的 size/sha ##########
+  CHAIN_SYNTHESIS.md               c88717d71c4b59d88ecd04f234843f561a829e63f5b967659e10acfdcf8254b3  20971 B
+  RE_GRADING.md                    4cd502f3c7d9fabcbcb0406d86ee9ed0840d0beb3bfc2294e0879ea0f4b06bf3  16885 B
+  LEDGER_SECTION_DRAFT_v2.md       eb8510294de11e56bef81401c6d59ac3c3686d9a8e8cba18bb91180bf8e17bde  7587 B
+  ra2bench/gamemd.exe              73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  4825360 B
+
+########## SEC X1 · 【已证】计数（两种数法各跑一次） ##########
+  文件总行数 = 154
+  (a) sum( line.count('【已证】') ) = 16
+  (b) len(re.findall('【已证】', full_text)) = 16
+  命中行 = L66,L67,L68,L69,L70,L71,L72,L73,L75,L77,L78,L79,L80,L81,L82,L83
+  声称命中行 = L66,L67,L68,L69,L70,L71,L72,L73,L75,L77,L78,L79,L80,L81,L82,L83
+  与声称一致 = True ; 差集(实算-声称)=[] ; 差集(声称-实算)=[]
+  每行精确 count：L66=1, L67=1, L68=1, L69=1, L70=1, L71=1, L72=1, L73=1, L75=1, L77=1, L78=1, L79=1, L80=1, L81=1, L82=1, L83=1
+  --- CFG 前缀陷阱 ---
+  说明：'【已证】' 要求 '证' 后紧接 '】'；'【已证（CFG）】' 在 '证' 后是 '（'，故精确计数天然【不含】它。
+        若误用裸前缀 '【已证' 计数，则 '【已证（CFG）】' 会被算进来（含口径）。
+  口径「不含 CFG 前缀」= 精确 '【已证】'            = 16
+  口径「含 CFG 前缀」  = 正则 '【已证(?:（CFG）)?】' = 16
+  裸前缀 '【已证' 全文字串计数                     = 16
+  '【已证（CFG）】' 在 CHAIN_SYNTHESIS.md 中出现     = 0
+  RE_GRADING.md: 精确'【已证】'=22  '【已证（CFG）】'=7  裸前缀'【已证'=29  含口径=29
+  LEDGER_SECTION_DRAFT_v2.md: 精确'【已证】'=2  '【已证（CFG）】'=0  裸前缀'【已证'=2  含口径=2
+  其他标记精确计数：【未证】=7  【未验】=4  【未决】=1  【未定谳】=1
+
+########## SEC X2 · 16 条【已证】的 24 个证据引用独立核验 ##########
+  自动解析出的引用总数 = 24 （执行方声称 24）
+  REF01 L66  slot2_fullscan_20261111/_sf_scan_out.txt:L13-L15 -> 存在(1834 行) 范围有效 [OK]
+      首行实文: [T4 直接调用复核]
+      条目读数: 全 .text 中 direct `call/jmp 0x54A4F0` = 0；direct `call/jmp 0x54A630` = 0；FF 15/25 绝对间接 = 0
+  REF02 L67  slot2_fullscan_20261111/_sf_scan_out.txt:L18-L20 -> 存在(1834 行) 范围有效 [OK]
+      首行实文:   G1a: 全镜像值==0x54A4F0 的 dword 仅 1 处: 0x7ECC04 (=vtable 0x7ECBFC slot2) → 无第二虚表/无回调表/无立即数
+      条目读数: 全镜像 dword==`0x54A4F0` 仅 1 处 (`0x7ECC04` = vtable `0x7ECBFC` slot2)；dword==`0x54A630` 仅 1 处 (`0x7ECBE4` = vtable `0x7ECBDC` slot2)；全镜像无任何指令装载或复制该单元值
+  REF03 L68  slot2_fullscan_20261111/_sf_scan_out.txt:L7-L11 -> 存在(1834 行) 范围有效 [OK]
+      首行实文: [T1 覆盖率复现]
+      条目读数: 单次线性 disasm 在 `fo 0x6F59D` (VA `0x46F59D`) 截断，仅得 155,215 条 (11.13%)；分块 `0x10000` 独立块得 1,150,117 条；分块 seg-extend（自然停点跳过 65 处非法字节）得 1,392,527 条，完整覆盖至 `.text` 结束 `0x7E038D`
+  REF04 L69  slot2_fullscan_20261111/_sf_scan_out.txt:L43-L47 -> 存在(1834 行) 范围有效 [OK]
+      首行实文: [候选点(可能指向 0x54A4F0/0x54A630)]
+      条目读数: 主流 seg-extend 普查 `call/jmp [reg+8]` 共 1714 处（字节级 1716 处）；能指向 `0x54A4F0/0x54A630` 的调用点**全镜像唯一**：即 `0x00546069`。该点 `this` 来源为 `0x00546064 mov ecx, 0xaa1078`，`vptr` 来源为 `0x0054605F mov eax, [0xaa1078]`
+  REF05 L69  slot2_fullscan_20261111/_sf_scan_out.txt:L66-L68 -> 存在(1834 行) 范围有效 [OK]
+      首行实文:   0054605F mov eax, dword ptr [0xaa1078]
+      条目读数: 主流 seg-extend 普查 `call/jmp [reg+8]` 共 1714 处（字节级 1716 处）；能指向 `0x54A4F0/0x54A630` 的调用点**全镜像唯一**：即 `0x00546069`。该点 `this` 来源为 `0x00546064 mov ecx, 0xaa1078`，`vptr` 来源为 `0x0054605F mov eax, [0xaa1078]`
+  REF06 L70  slot2_fullscan_20261111/_sf_scan_out.txt:L21-L24 -> 存在(1834 行) 范围有效 [OK]
+      首行实文:   G3 存储指令锚点解码确认: mov dword ptr [0xaa1078], 0x7ecbdc | mov dword ptr [0xaa1078], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc
+      条目读数: 动态初始化器 `0x543E70` 写入派生虚表 `0x7ECBDC`（常态 slot2 派发至 `0x54A630`）；`atexit` 析构器 `0x543EB0` 写入基类虚表 `0x7ECBFC`（析构后 slot2 派发至 `0x54A4F0`）
+  REF07 L70  re_crashwriter_static_20261110/_cw_disasm_out.txt:L20-L24 -> 存在(177 行) 范围有效 [OK]
+      首行实文:   全局对象 0xAA1078 (DynamicVectorClass<PAUTileInsertType>):
+      条目读数: 动态初始化器 `0x543E70` 写入派生虚表 `0x7ECBDC`（常态 slot2 派发至 `0x54A630`）；`atexit` 析构器 `0x543EB0` 写入基类虚表 `0x7ECBFC`（析构后 slot2 派发至 `0x54A4F0`）
+  REF08 L71  re_crashwriter_static_20261110/_cw_disasm_out.txt:L66 -> 存在(177 行) 范围有效 [OK]
+      首行实文:   0054A56E  c7460400000000         mov dword ptr [esi + 4], 0  <== TARGET 0x0054A56E
+      条目读数: 指令为 `mov dword ptr [esi+4], 0`，作用为清空 `this->Vector` 指针
+  REF09 L72  re_crashwriter_static_20261110/_cw_disasm_out.txt:L34-L66 -> 存在(177 行) 范围有效 [OK]
+      首行实文:   0054A524  85ff                   test edi, edi
+      条目读数: 静态 CFG 分支： 1) `0x54A524 test edi, edi` -> `0x54A52A jne 0x54A535`：若 `edi==0`（新缓冲分配失败），走 `0x54A52C` 弹出寄存器提前返回，不达置零点； 2) `0x54A538 test eax, eax` -> `0x54A53A je 0x54A575`：若原 `Vector==0`，**直接跳过**置零点到达 `
+  REF10 L73  re_crashwriter_static_20261110/_cw_disasm_out.txt:L68 -> 存在(177 行) 范围有效 [OK]
+      首行实文:   0054A577  897e04                 mov dword ptr [esi + 4], edi
+      条目读数: `mov dword ptr [esi+4], edi`：置零后仅间隔 9 字节即被无条件覆盖写入新分配指针 `edi`。两指令间无内存读取、无函数调用、无分支跳转
+  REF11 L75  re_orphan_owners_20261110/_oo_map_out.txt:L28-L46 -> 存在(151 行) 范围有效 [OK]
+      首行实文: [1][Houses] 声明 14 个 house：Americans, Alliance, French, Germans, British, Africans, Arabs, Confederation, Russians, YuriCountry, GDI, Nod, Neutral, Special
+      条目读数: 地图 `[Houses]` 声明 14 个 house（Americans..Special）；文件中含 `Country=` 键的 house 节恰有 14 个，两者**逐项严格一一对应**，无多出节
+  REF12 L77  re_map_preset_decode_20261110/_md_parse_out.txt:L17-L50 -> 存在(167 行) 范围有效 [OK]
+      首行实文:     [Units] 条目=3360 (未解析行=0)
+      条目读数: `[Units]`=3360, `[Infantry]`=2240, `[Structures]`=0, 合计 5600 预置实体。 14 个 owner（11 国 + Computer + Neutral + Special），每带恰 400（240 车 + 160 步）。`Americans` 与 `Russians` 声明但拥有 0 单位
+  REF13 L77  re_orphan_owners_20261110/_oo_map_out.txt:L56-L82 -> 存在(151 行) 范围有效 [OK]
+      首行实文: [1] 逐 owner 实体统计（14 行；顺序照台账 §2.6，坐标范围=车辆+步兵合并 min/max）
+      条目读数: `[Units]`=3360, `[Infantry]`=2240, `[Structures]`=0, 合计 5600 预置实体。 14 个 owner（11 国 + Computer + Neutral + Special），每带恰 400（240 车 + 160 步）。`Americans` 与 `Russians` 声明但拥有 0 单位
+  REF14 L78  re_map_preset_decode_20261110/_md_parse_out.txt:L54-L78 -> 存在(167 行) 范围有效 [OK]
+      首行实文: [B_ra2bench_yrm]  ra2bench/[2]0LoadBench_U0400.yrm
+      条目读数: `[Units]`=240, `[Infantry]`=160, `[Structures]`=41, 合计 441 个预置实体。 仅 2 房持单位：`Russians` (120车+80步), `Americans` (120车+80步)；`Neutral` 持 41 建筑；其余 11 房为 0
+  REF15 L78  re_loadbench_diff_20261110/_ld_diff_out.txt:L25-L28 -> 存在(103 行) 范围有效 [OK]
+      首行实文:   big       Units=240 Infantry=160 Structures=41
+      条目读数: `[Units]`=240, `[Infantry]`=160, `[Structures]`=41, 合计 441 个预置实体。 仅 2 房持单位：`Russians` (120车+80步), `Americans` (120车+80步)；`Neutral` 持 41 建筑；其余 11 房为 0
+  REF16 L79  re_map_preset_decode_20261110/_md_parse_out.txt:L81-L103 -> 存在(167 行) 范围有效 [OK]
+      首行实文: [C_out_loadbench_yrm]  out/loadbench/[2]0LoadBench_U0400.yrm
+      条目读数: `[Units]`=240, `[Infantry]`=160, `[Structures]`=0, 合计 400 预置实体。 仅 2 房持单位：`Russians` (120车+80步), `Americans` (120车+80步)；建筑为 0；其余 12 房为 0
+  REF17 L79  re_loadbench_diff_20261110/_ld_diff_out.txt:L29-L31 -> 存在(103 行) 范围有效 [OK]
+      首行实文:   small     Units=240 Infantry=160 Structures=0
+      条目读数: `[Units]`=240, `[Infantry]`=160, `[Structures]`=0, 合计 400 预置实体。 仅 2 房持单位：`Russians` (120车+80步), `Americans` (120车+80步)；建筑为 0；其余 12 房为 0
+  REF18 L80  re_loadbench_diff_20261110/_ld_diff_out.txt:L88-L103 -> 存在(103 行) 范围有效 [OK]
+      首行实文: ◆ 5. 压缩/编码（小版是否大版的 LZO/zlib 压缩形态）
+      条目读数: XMP29U2.MAP (311,822 B, sha `0add791d`) 与台账载体 `[2]0LoadBench_U0400.yrm` (222,799 B, sha `93c2974b` / md5 `11ec8ff6`) 是**完全不同的文件**；ra2bench 盘面件 (92,332 B) 又是另一个 Urban Rush Pro 底图文件
+  REF19 L81  playerctrl_semantics_20261111/_ps_disasm_out.txt:L11 -> 存在(1283 行) 范围有效 [OK]
+      首行实文: PlayerControl    1 occurrence(s): 0x824E28
+      条目读数: 字符串 `PlayerControl` 全镜像仅 1 处 (`0x824E28`)；在 `HouseClass::Read_INI` (`0x500B40`) 内 `0x500BD6 call Get_Bool` 读取并写入 `byte ptr [ebx+0x1ED]`
+  REF20 L81  playerctrl_semantics_20261111/_ps_disasm_out.txt:L113-L115 -> 存在(1283 行) 范围有效 [OK]
+      首行实文: 0x500BD6  e8158a0200           call 0x5295f0  <<< call CCINIClass::Get_Bool(ini, "PlayerControl", def=0)
+      条目读数: 字符串 `PlayerControl` 全镜像仅 1 处 (`0x824E28`)；在 `HouseClass::Read_INI` (`0x500B40`) 内 `0x500BD6 call Get_Bool` 读取并写入 `byte ptr [ebx+0x1ED]`
+  REF21 L82  playerctrl_semantics_20261111/_ps_disasm_out.txt:L116-L147 -> 存在(1283 行) 范围有效 [OK]
+      首行实文: 0x500BE3  746c                 je 0x500c51  <<< branch: PlayerControl==no  -> 0x500C51 (credits untouched)
+      条目读数: 1) `0x500BE3`: `PlayerControl==no` 跳过战役难度起始资金加成，直接将 `Credits*100` 存入 `+0x30C`； 2) `0x500ABF`: 战役初始化循环中决定读取 `Scenario+0x60C` 还是 `+0x610` 难度； 3) `0x50A5C0`: 清除标志时重命名为 "Computer"； 4) **全 .text 中 8 处 Hous
+  REF22 L82  playerctrl_semantics_20261111/_ps_disasm_out.json:verdict -> 非'文件:行'引用；文件存在(147 行)；JSON 顶层键 'verdict' 存在=True
+      键值实文: {"playercontrol_creation_link": "NONE — never tested at any HouseClass creation site", "playercontrol_branches": ["Read_INI 0x500BE3/0x500BEA: yes&&campaign -> difficulty-adjusted start credits", "wrapper loop2 0x500ABF: !PlayerControl -> Scen+0x610 
+      条目读数: 1) `0x500BE3`: `PlayerControl==no` 跳过战役难度起始资金加成，直接将 `Credits*100` 存入 `+0x30C`； 2) `0x500ABF`: 战役初始化循环中决定读取 `Scenario+0x60C` 还是 `+0x610` 难度； 3) `0x50A5C0`: 清除标志时重命名为 "Computer"； 4) **全 .text 中 8 处 Hous
+      [注意] 此类引用无'首行'可打印；执行方 _regrade_scan_out.txt 对这两条标 [OK*] 仅核文件存在
+  REF23 L83  playerctrl_semantics_20261111/_ps_disasm_out.txt:L36-L39 -> 存在(1283 行) 范围有效 [OK]
+      首行实文: PercentBuilt @ 0x8189A0
+      条目读数: 字符串 `PercentBuilt` (`0x8189A0`) 解析后写入 `HouseClass+0x571C`，默认值 0。静态扫全 .text 对 `[reg+0x571C]` 的直接读指令 = 0
+  REF24 L83  playerctrl_semantics_20261111/_ps_disasm_out.json:percent_built -> 非'文件:行'引用；文件存在(147 行)；JSON 顶层键 'percent_built' 存在=True
+      键值实文: {"string_va": "0x8189a0", "reader": "0x42ebe0", "writer": "0x42ed60", "store": "HouseClass+0x571C (BaseClass+0x1C)", "default": 0, "runtime_consumers": 0}
+      条目读数: 字符串 `PercentBuilt` (`0x8189A0`) 解析后写入 `HouseClass+0x571C`，默认值 0。静态扫全 .text 对 `[reg+0x571C]` 的直接读指令 = 0
+      [注意] 此类引用无'首行'可打印；执行方 _regrade_scan_out.txt 对这两条标 [OK*] 仅核文件存在
+  ==> X2 汇总: OK=24 BAD=0 （执行方声称 OK=24 BAD=0）
+
+########## SEC E · 关键证据区间带行号全文（供 X2 内容核对 / X3 定级判断） ##########
+
+  --- sf  L7-L11   (R3 覆盖计数)  [slot2_fullscan_20261111/_sf_scan_out.txt]
+         7 | [T1 覆盖率复现]
+         8 |   .text = [0x401000..0x7E038D] (4060045 B)
+         9 |   单次 disasm      : 155215 条, 末条 0x46F59D, 覆盖 452000 B (11.13% .text 字节) — 陷阱复现(155215)
+        10 |   分块 0x10000 独立块: 1150117 条 (× 62 块) — 复现 ask 给数 1150117
+        11 |   分块 seg-extend  : 1392527 条, 65 个自然停点, 覆盖至 0x7E038D (主普查流, 无重复计数)
+
+  --- sf  L13-L15  (R1 直接调用普查)  [slot2_fullscan_20261111/_sf_scan_out.txt]
+        13 | [T4 直接调用复核]
+        14 |   → 0x0054A4F0: 指令级 A流 [] / B流 []; 字节级 E8/E9 []; 全镜像 dword 位点 ['0x7ecc04']; slot2 单元引用 []
+        15 |   → 0x0054A630: 指令级 A流 [] / B流 []; 字节级 E8/E9 []; 全镜像 dword 位点 ['0x7ecbe4']; slot2 单元引用 []
+
+  --- sf  L18-L20  (R2 函数指针值)  [slot2_fullscan_20261111/_sf_scan_out.txt]
+        18 |   G1a: 全镜像值==0x54A4F0 的 dword 仅 1 处: 0x7ECC04 (=vtable 0x7ECBFC slot2) → 无第二虚表/无回调表/无立即数
+        19 |   G1a: 全镜像值==0x54A630 的 dword 仅 1 处: 0x7ECBE4 (=vtable 0x7ECBDC slot2)
+        20 |   G1b: 无任何指令 call/jmp [slot2单元] 或从其装载(FF15/FF25/A1/8B/89/SIB-abs 全编码 = 0) → 函数指针值无法运行期复制到其它单元
+
+  --- sf  L21-L24  (R5 初始化/atexit)  [slot2_fullscan_20261111/_sf_scan_out.txt]
+        21 |   G3 存储指令锚点解码确认: mov dword ptr [0xaa1078], 0x7ecbdc | mov dword ptr [0xaa1078], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc
+        22 |   G2: 值 0x7ECBFC×3 + 0x7ECBDC×1 共 4 处全落在 c7 存储立即数内: 0x543EC4 ← imm of mov dword ptr [0xaa1078], 0x7ecbfc; 0x54A7B8 ← imm of mov dword ptr [esi], 0x7ecbfc; 0x54A808 ← imm of mov dword ptr [esi], 0x7ecb
+        23 |   G3: vptr 写入点(c7 /0)全镜像重扫一致 — 0x7ECBDC: [0x543E8D]→[0xAA1078](动态初始化器 0x543E70 体内); 0x7ECBFC: [0x543EBE]→[0xAA1078](atexit 析构器 0x543EB0 体内), [0x54A7B6]/[0x54A806]→[esi](deleting dtor 体内)
+        24 |   G3 归属: 0x543E8D ∈ 动态初始化器 0x543E70 体内; 0x543EBE ∈ atexit 析构器 0x543EB0 体内 (ask 前提的初始化/析构归属复核)
+
+  --- sf  L26-L29  (R4 G4/G5 普查)  [slot2_fullscan_20261111/_sf_scan_out.txt]
+        26 |   G4: 全镜像 imm32/disp32 引用 0xAA1078 恰 4 处(立即数字节地址): 0x543E8F(init 存储)/0x543EC0(atexit 存储)/0x546060(vptr 装载 @0x54605F)/0x546065(this 装载 @0x546064)
+        27 |   G4-load: 全编码扫「load r32 ← [0xAA1078]」恰 1 处 = 0x54605F (mov eax, dword ptr [0xAA1078]); 「store reg → [0xAA1078]」= 0 (vptr 单元只被 2 条 c7 立即数写) — 字节级,与解码流无关
+        28 |   G5: .rdata/.data 无 dword==0xAA1078 → 不存在指向该全局对象的指针变量(指针值不逃逸前提)
+        29 |   G4b: 基址立即数装载中仅 0x546064 恰为 0xAA1078(this 装载); 其余装载值均 ≠ 0xAA1078 → 无别名合成路径读取 vptr 单元
+
+  --- sf  L31-L35  (R4 计数)  [slot2_fullscan_20261111/_sf_scan_out.txt]
+        31 | [T2 普查]
+        32 |   字节级(解码无关): call [reg+8] 1715, jmp [reg+8] 1, 异形(变址) 2
+        33 |   主流(seg-extend): call+jmp [reg+8] 1714 (call 1713, jmp 1), 异形 2
+        34 |   对照流(0x10000块): 1311 (call 1310)
+        35 |   对账: 字节级命中总数 1716, 其中两流均非 site 0; 主流∉字节级 0; A/B 流差集 403
+
+  --- sf  L39-L47  (R4 污点/唯一性)  [slot2_fullscan_20261111/_sf_scan_out.txt]
+        39 | [T5 唯一性判定 — 污点传播]
+        40 |   GROW = 0x545150..0x546D90; 唯一 vptr 装载 0x54605F; 消费者 = [('0x546069', 'dword ptr [eax + 8]')]; 逃逸 = []
+        41 |   GROW 直接调用者: ['0x4ad048', '0x59a1e9', '0x5be647']
+        42 | 
+        43 | [候选点(可能指向 0x54A4F0/0x54A630)]
+        44 |   ★ 0x546069  call dword ptr [eax + 8]
+        45 |       this 来源 : ecx = 0xAA1078 (0x546064 mov ecx, 0xaa1078 — 全镜像唯一 this 装载)
+        46 |       vptr 来源 : eax = [0xAA1078] (0x54605F mov eax, dword ptr [0xaa1078] — 全镜像唯一)
+        47 |       派发去向  : 常态 vptr=0x7ECBDC → 0x54A630; atexit 析构后 vptr=0x7ECBFC → 0x54A4F0
+
+  --- sf  L66-L68  (R4 指令)  [slot2_fullscan_20261111/_sf_scan_out.txt]
+        66 |   0054605F mov eax, dword ptr [0xaa1078]
+        67 |   00546064 mov ecx, 0xaa1078
+        68 |   00546069 call dword ptr [eax + 8]
+
+  --- cw  L20-L24  (R5 初始化/atexit)  [re_crashwriter_static_20261110/_cw_disasm_out.txt]
+        20 |   全局对象 0xAA1078 (DynamicVectorClass<PAUTileInsertType>):
+        21 |     动态初始化器 0x543E70: vptr←0x7ECBDC@0x543E8D, Vector←0, VectorMax←0, [0xAA1084]←1, IsAllocated←0, GrowthStep←10@0x543E97
+        22 |     atexit 析构器 0x543EB0 (经 0x543EA6 call 0x7C978A 注册): vptr←0x7ECBFC@0x543EBE(永久), free(Vector)@0x543EE4, Vector←0@0x543EEC, VectorMax←0@0x543EFD
+        23 |     .text 立即数引用: 0x543e8f, 0x543ec0, 0x546060, 0x546065
+        24 | 
+
+  --- cw  L34-L42  (R7 edi==0 早退)  [re_crashwriter_static_20261110/_cw_disasm_out.txt]
+        34 |   0054A524  85ff                   test edi, edi
+        35 |   0054A526  c6460c01               mov byte ptr [esi + 0xc], 1
+        36 |   0054A52A  7509                   jne 0x54a535
+        37 |   0054A52C  5f                     pop edi
+        38 |   0054A52D  5e                     pop esi
+        39 |   0054A52E  5d                     pop ebp
+        40 |   0054A52F  32c0                   xor al, al
+        41 |   0054A531  5b                     pop ebx
+        42 |   0054A532  c20800                 ret 8
+
+  --- cw  L43-L68  (R7/R8 CFG 与覆盖)  [re_crashwriter_static_20261110/_cw_disasm_out.txt]
+        43 |   0054A535  8b4604                 mov eax, dword ptr [esi + 4]
+        44 |   0054A538  85c0                   test eax, eax
+        45 |   0054A53A  7439                   je 0x54a575
+        46 |   0054A53C  8b4e08                 mov ecx, dword ptr [esi + 8]
+        47 |   0054A53F  3be9                   cmp ebp, ecx
+        48 |   0054A541  7d02                   jge 0x54a545
+        49 |   0054A543  8bcd                   mov ecx, ebp
+        50 |   0054A545  33c0                   xor eax, eax
+        51 |   0054A547  85c9                   test ecx, ecx
+        52 |   0054A549  7e10                   jle 0x54a55b
+        53 |   0054A54B  8b5604                 mov edx, dword ptr [esi + 4]
+        54 |   0054A54E  40                     inc eax
+        55 |   0054A54F  3bc1                   cmp eax, ecx
+        56 |   0054A551  8b5482fc               mov edx, dword ptr [edx + eax*4 - 4]
+        57 |   0054A555  895487fc               mov dword ptr [edi + eax*4 - 4], edx
+        58 |   0054A559  7cf0                   jl 0x54a54b
+        59 |   0054A55B  8a460d                 mov al, byte ptr [esi + 0xd]
+        60 |   0054A55E  84c0                   test al, al
+        61 |   0054A560  7413                   je 0x54a575
+        62 |   0054A562  8b4604                 mov eax, dword ptr [esi + 4]
+        63 |   0054A565  50                     push eax
+        64 |   0054A566  e8d2e52700             call 0x7c8b3d
+        65 |   0054A56B  83c404                 add esp, 4
+        66 |   0054A56E  c7460400000000         mov dword ptr [esi + 4], 0  <== TARGET 0x0054A56E
+        67 |   0054A575  33c0                   xor eax, eax
+        68 |   0054A577  897e04                 mov dword ptr [esi + 4], edi
+
+  --- cw  L126-L137 (可达性结论)  [re_crashwriter_static_20261110/_cw_disasm_out.txt]
+       126 | [0x0054A56E 可达性]
+       127 |   normal_state: 不可达: vptr=0x7ECBDC → 走孪生 0x54A630(free@0x54A699, null@0x54A6A1)
+       128 |   post_atexit_state: 半可达: vptr=0x7ECBFC → 进 0x54A4F0, 但 Vector 已被析构器清 0 → 0x54A53A je 跳过 free+null 块; 需此后再发生一次扩容 Capacity(先重建 Vector, IsAllocated=1), 第二次扩容才触达 0x54A56E
+       129 |   corruption_state: 可达: vptr 被改写为 0x7ECBFC 且 Vector/IsAllocated 仍为活跃值(需内存破坏)
+       130 |   conclusion: 静态上 0x54A56E 只在对象处于已析构/异常状态时可达 — 这与『该指令语义正常』的评价相冲突(见 free_then_null_assessment)
+       131 | 
+       132 | [『释放后置空』评估]
+       133 |   local_semantics: 支持: 0x54A565 push [esi+4] → 0x54A566 call 0x7C8B3D(释放旧数组) → 0x54A56E 将同一字段清 0; 被释放的是数组(旧 Vector 值), 置 0 的是对象字段([esi+4] 本身) — 与 Westwood VectorClass<T>::Capacity 源码形态『if (IsAllocated
+       134 |   transient: 0x54A56E 的置 0 是过渡写: 0x54A575 xor eax,eax 后 0x54A577 mov [esi+4], edi 无条件覆盖为新缓冲, 中间无 [esi+4] 读、无调用、无跳转
+       135 |   guard: 执行条件为 [esi+0xD](IsAllocated)非零(0x54A55B mov al,[esi+0xD]; 0x54A55E test; 0x54A560 je 跳过)
+       136 |   crash_context: 若 EIP 崩在 0x54A56E, 故障访问是该写本身 → this 所在页不可写; 而同页早前已有成功写(0x54A506/0x54A526 [esi+0xC])与成功读(0x54A53C/0x54A54B/0x54A55B/0x54A562), 两者之间唯一的外部操作是 0x54A566 的 free → 静态上最自洽的解释是对象本身处于已释放/页被去提交状
+       137 |   verdict: 台账『释放后置空, 语义正常』: 对非崩溃路径成立(局部代码形态与原始源码一致); 但作为对『崩在 0x54A56E』这一事实的解释不成立 — 正常态该指令根本不可达(见 reachability), 能执行到它本身就说明对象状态异常
+
+  --- cw  L156-L177 (FACT 断言)  [re_crashwriter_static_20261110/_cw_disasm_out.txt]
+       156 |   [FACT] 0x0054A56E 处字节 = c7 46 04 00 00 00 00 = mov dword ptr [esi+4], 0 (与台账一致)
+       157 |   [FACT] 函数起点 0x0054A4F0 线性 disasm 干净到达 0x0054A56E (52 条指令)
+       158 |   [FACT] 0x0054A4F0 无直接 call/jmp xref; 被指针引用于 0x7ECC04 (.rdata vtable 项)
+       159 |   [FACT] 0x0054A4F0 全 .text 无直接 call/jmp → 只能经 vtable 派发进入
+       160 |   [FACT] RTTI: COL@0x804B08 → TypeDescriptor@0x829030 → 类名 '.?AV?$VectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@' (= VectorClass<TileInsertType<IsometricTileTypeClass>*>)
+       161 |   [FACT] 派生 RTTI: '.?AV?$DynamicVectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@' (= DynamicVectorClass<TileInsertType<IsometricTileTypeClass>*>)
+       162 |   [FACT] 派生 vtable 0x7ECBDC 的写入仅 1 处: 0x543E8D → 全模块唯一实例 = 全局 0xAA1078
+       163 |   [FACT] 基类 vtable 0x7ECBFC 写入仅 3 处: 0x543EBE(全局 atexit 析构器)/0x54A7B6/0x54A806(析构函数体) → 无独立 VectorClass<PAUTileInsertType> 实例
+       164 |   [FACT]   - 0x54A7B6: mov dword ptr [esi], 0x7ECBFC (基类 deleting dtor 0x54A7B0 入口处, 作用于 this)
+       165 |   [FACT]   - 0x54A806: mov dword ptr [esi], 0x7ECBFC (派生 deleting dtor 0x54A800 入口处, 作用于 this)
+       166 |   [FACT] 全局动态初始化器 0x543E70: [0xAA1078] ← 0x7ECBDC(派生 vtable)
+       167 |   [FACT] 初始化器: [0xAA108C] ← 10 → +0x14 = GrowthStep = 10 (DynamicVectorClass 布局证据)
+       168 |   [FACT] 函数 0x0054A4F0..0x54A58E 内 esi 定义共 2 处: 0x54A4FA mov esi, ecx (=this, thiscall, 唯一可达 0x0054A56E 的定义) + 0x54A52D pop esi (edi==0 早退路径的现场恢复, 不达目标)
+       169 |   [FACT] 0x54A52A jne 0x54A535: 0x54A52D pop esi 确在早退路径上(与 0x0054A56E 无数据流)
+       170 |   [FACT] 全局 0xAA1078 在 .text 的立即数引用共 4 处(字节地址): 0x543E8F(初始化器 0x543E8D 指令)/0x543EC0(atexit 析构器 0x543EBE 指令)/0x546060+0x546065(Add 派发 0x54605F/0x546064 指令)
+       171 |   [FACT] 0x546069  call dword ptr [eax+8] = 经 vtable slot2 虚派发 Capacity, 其中 eax=[0xAA1078](vptr), ecx=0xAA1078(this) — 全模块对本对象唯一的虚派发点
+       172 |   [FACT] slot2 派发: vptr=0x7ECBFC → 0x0054A4F0(本函数); vptr=0x7ECBDC → 0x0054A630(孪生体)
+       173 |   [FACT] 孪生函数 0x54A630 同构 free-then-null: 0x54A699 call 0x7C8B3D / 0x54A6A1 mov [esi+4],0
+       174 |   [FACT] atexit 析构器 0x543EB0: [0xAA1078]←0x7ECBFC@0x543EBE(永久留基类 vtable), free 后 [0xAA107C]←0@0x543EEC, [0xAA1080](VectorMax)←0@0x543EFD; 全程未触碰 ActiveCount(0xAA1088)/GrowthStep(0xAA108C)
+       175 |   [FACT] 0x7C8B3D(释放包装 → 0x7C93E8)有 4499 个调用点; 0x7C8E17(分配包装 → 0x7C9442)有 2832 个调用点 → 全局堆原语
+       176 |   [FACT] 0x54A53A je 0x54A575: Vector==0 时整块 free+null(0x54A535..0x54A56E)被跳过 → post-dtor 状态下一次 Capacity 不触达 0x54A56E
+       177 |   [FACT] 0x54A577 mov dword ptr [esi+4], edi: 0x54A56E 的置 0 在 8 字节内被无条件覆盖(Vector = 新缓冲), 两点之间无 [esi+4] 读、无调用、无跳转
+
+  --- ps  L11-L12  (字符串)  [playerctrl_semantics_20261111/_ps_disasm_out.txt]
+        11 | PlayerControl    1 occurrence(s): 0x824E28
+        12 | PercentBuilt     1 occurrence(s): 0x8189A0
+
+  --- ps  L32-L39  (0x5012ED / PercentBuilt)  [playerctrl_semantics_20261111/_ps_disasm_out.txt]
+        32 | PlayerControl @ 0x824E28
+        33 |    0x500BBF  real ref
+        34 |    0x5012ED  real ref
+        35 | 
+        36 | PercentBuilt @ 0x8189A0
+        37 |    0x42EC05  real ref
+        38 |    0x42ED80  real ref
+        39 | 
+
+  --- ps  L113-L121 (R14 写入点)  [playerctrl_semantics_20261111/_ps_disasm_out.txt]
+       113 | 0x500BD6  e8158a0200           call 0x5295f0  <<< call CCINIClass::Get_Bool(ini, "PlayerControl", def=0)
+       114 | 0x500BDB  84c0                 test al, al  <<< al = PlayerControl
+       115 | 0x500BDD  8883ed010000         mov byte ptr [ebx + 0x1ed], al  <<< HouseClass+0x1ED = PlayerControl flag
+       116 | 0x500BE3  746c                 je 0x500c51  <<< branch: PlayerControl==no  -> 0x500C51 (credits untouched)
+       117 | 0x500BE5  a138b2a800           mov eax, dword ptr [0xa8b238]
+       118 | 0x500BEA  85c0                 test eax, eax  <<< branch: [0xA8B238] (session/multiplayer flag) != 0 -> 0x500C51 (same as no)
+       119 | 0x500BEC  7563                 jne 0x500c51
+       120 | 0x500BEE  a164eba800           mov eax, dword ptr [0xa8eb64]
+       121 | 0x500BF3  85c0                 test eax, eax
+
+  --- ps  L116-L147 (R15 控制流)  [playerctrl_semantics_20261111/_ps_disasm_out.txt]
+       116 | 0x500BE3  746c                 je 0x500c51  <<< branch: PlayerControl==no  -> 0x500C51 (credits untouched)
+       117 | 0x500BE5  a138b2a800           mov eax, dword ptr [0xa8b238]
+       118 | 0x500BEA  85c0                 test eax, eax  <<< branch: [0xA8B238] (session/multiplayer flag) != 0 -> 0x500C51 (same as no)
+       119 | 0x500BEC  7563                 jne 0x500c51
+       120 | 0x500BEE  a164eba800           mov eax, dword ptr [0xa8eb64]
+       121 | 0x500BF3  85c0                 test eax, eax
+       122 | 0x500BF5  7516                 jne 0x500c0d  <<< campaign difficulty index [0xA8EB64]
+       123 | 0x500BF7  8b0de0718800         mov ecx, dword ptr [0x8871e0]
+       124 | 0x500BFD  8b83dc010000         mov eax, dword ptr [ebx + 0x1dc]
+       125 | 0x500C03  8b91fc0d0000         mov edx, dword ptr [ecx + 0xdfc]
+       126 | 0x500C09  03d0                 add edx, eax
+       127 | 0x500C0B  eb26                 jmp 0x500c33
+       128 | 0x500C0D  83f802               cmp eax, 2
+       129 | 0x500C10  751b                 jne 0x500c2d
+       130 | 0x500C12  a1e0718800           mov eax, dword ptr [0x8871e0]
+       131 | 0x500C17  8b88000e0000         mov ecx, dword ptr [eax + 0xe00]
+       132 | 0x500C1D  8b83dc010000         mov eax, dword ptr [ebx + 0x1dc]
+       133 | 0x500C23  03c8                 add ecx, eax
+       134 | 0x500C25  898b0c030000         mov dword ptr [ebx + 0x30c], ecx
+       135 | 0x500C2B  eb0c                 jmp 0x500c39
+       136 | 0x500C2D  8b93dc010000         mov edx, dword ptr [ebx + 0x1dc]
+       137 | 0x500C33  89930c030000         mov dword ptr [ebx + 0x30c], edx
+       138 | 0x500C39  8b830c030000         mov eax, dword ptr [ebx + 0x30c]
+       139 | 0x500C3F  33c9                 xor ecx, ecx
+       140 | 0x500C41  85c0                 test eax, eax
+       141 | 0x500C43  0f9ec1               setle cl  <<< sign-clamp start credits to >= 0
+       142 | 0x500C46  49                   dec ecx
+       143 | 0x500C47  23c1                 and eax, ecx
+       144 | 0x500C49  89830c030000         mov dword ptr [ebx + 0x30c], eax
+       145 | 0x500C4F  eb0c                 jmp 0x500c5d
+       146 | 0x500C51  8b93dc010000         mov edx, dword ptr [ebx + 0x1dc]  <<< PlayerControl==no / MP: start credits = stored Credits*100 ([+0x1DC] -> [+0x30C])
+       147 | 0x500C57  89930c030000         mov dword ptr [ebx + 0x30c], edx
+
+  --- ps  L589     (R15 8处创建点)  [playerctrl_semantics_20261111/_ps_disasm_out.txt]
+       585 | 0x500AB3  84c0                 test al, al
+       586 | 0x500AB5  750a                 jne 0x500ac1  <<< branch: +0x1EC != 0 -> use Scen+0x60C
+       587 | 0x500AB7  8a86ed010000         mov al, byte ptr [esi + 0x1ed]
+       588 | 0x500ABD  84c0                 test al, al
+       589 | 0x500ABF  740f                 je 0x500ad0  <<< branch: PlayerControl(+0x1ED)==no -> use Scen+0x610
+       590 | 0x500AC1  8b0d30b2a800         mov ecx, dword ptr [0xa8b230]
+       591 | 0x500AC7  8b910c060000         mov edx, dword ptr [ecx + 0x60c]
+       592 | 0x500ACD  52                   push edx
+
+  --- ps  L894-L905 (R16)  [playerctrl_semantics_20261111/_ps_disasm_out.txt]
+       894 |   同时引用 0x5700 族成员且含寄存器型 [reg+0x1C] 的函数：0 个
+       895 |   BaseClass vtable 0x7E3880 各方法 (0x42EE30,0x42F070,0x42F180,0x42FBF0,
+       896 |   0x42F620,0x42F860,0x42F420) 中寄存器型 [reg+0x1C] 访问：仅栈偏移，无成员访问。
+       897 |   .text 内三个原始字节 `1c 57 00 00` 命中 (0x401E00/0x674FC0/0x6750B0) 全部是
+       898 |   call rel32 (e8 xx xx xx xx) 的位移字节巧合，反汇编验证见上第 2 节 kind 标注。
+       899 |   => 静态结论：PercentBuilt 写入 HouseClass+0x571C 后，除 Write_INI 回写
+       900 |      (0x42ED79) 外，引擎无任何运行时读取点。Neutral=100 其余=0 对本 exe 无行为差异。
+       901 | 
+       902 | ====================================================================================================
+       903 | 7. ALL HouseClass CREATION SITES (operator new 0x7C8E17, sizeof=0x160B8, ctor 0x4F54A0)
+       904 | ====================================================================================================
+       905 | callers of ctor 0x4F54A0: 0x500a30, 0x500b19, 0x59a198, 0x687fc3, 0x6881a0, 0x6882fe, 0x688351, 0x6c3ed1
+
+  --- ps  L1183-L1214 (R15 创建窗口)  [playerctrl_semantics_20261111/_ps_disasm_out.txt]
+      1183 | 0x50A5C0  a138b2a800           mov eax, dword ptr [0xa8b238]
+      1184 | 0x50A5C5  83ec48               sub esp, 0x48
+      1185 | 0x50A5C8  85c0                 test eax, eax
+      1186 | 0x50A5CA  53                   push ebx
+      1187 | 0x50A5CB  55                   push ebp
+      1188 | 0x50A5CC  8be9                 mov ebp, ecx
+      1189 | 0x50A5CE  56                   push esi
+      1190 | 0x50A5CF  57                   push edi
+      1191 | 0x50A5D0  8a85ec010000         mov al, byte ptr [ebp + 0x1ec]
+      1192 | 0x50A5D6  7514                 jne 0x50a5ec
+      1193 | 0x50A5D8  84c0                 test al, al
+      1194 | 0x50A5DA  750e                 jne 0x50a5ea
+      1195 | 0x50A5DC  8a85ed010000         mov al, byte ptr [ebp + 0x1ed]
+      1196 | 0x50A5E2  84c0                 test al, al
+      1197 | 0x50A5E4  7504                 jne 0x50a5ea
+      1198 | 0x50A5E6  32c0                 xor al, al
+      1199 | 0x50A5E8  eb02                 jmp 0x50a5ec
+      1200 | 0x50A5EA  b001                 mov al, 1
+      1201 | 0x50A5EC  84c0                 test al, al
+      1202 | 0x50A5EE  0f840b090000         je 0x50aeff
+      1203 | 0x50A5F4  c685ec01000000       mov byte ptr [ebp + 0x1ec], 0
+      1204 | 0x50A5FB  c685ed01000000       mov byte ptr [ebp + 0x1ed], 0
+      1205 | 0x50A602  a1e0718800           mov eax, dword ptr [0x8871e0]
+      1206 | 0x50A607  bad84f8200           mov edx, 0x824fd8
+      1207 | 0x50A60C  85d2                 test edx, edx
+      1208 | 0x50A60E  8b8834140000         mov ecx, dword ptr [eax + 0x1434]
+      1209 | 0x50A614  898d4c020000         mov dword ptr [ebp + 0x24c], ecx
+      1210 | 0x50A61A  7506                 jne 0x50a622
+      1211 | 0x50A61C  88542440             mov byte ptr [esp + 0x40], dl
+      1212 | 
+      1213 | 0x50A5C0：SP 下仅当 (+0x1EC || +0x1ED) 才继续；随后两标志清零并把房名改 "Computer"
+      1214 | （0x824FD8）—— PlayerControl 是“人类控制房”标志，不是创建开关。
+
+  --- oo  L28-L46  (R9)  [re_orphan_owners_20261110/_oo_map_out.txt]
+        28 | [1][Houses] 声明 14 个 house：Americans, Alliance, French, Germans, British, Africans, Arabs, Confederation, Russians, YuriCountry, GDI, Nod, Neutral, Special
+        29 | 
+        30 | [4] house 节（有 Country= 键的节，共 14 个；[Houses] 之外多出的: 无）
+        31 | 
+        32 |     [section]      Country       PlayerCtrl Color     IQ   Edge     Credits    Allies
+        33 |     Americans      Americans     no        DarkBlue  5    West     10000      Americans
+        34 |     Alliance       Alliance      no        DarkBlue  5    East     10000      Alliance
+        35 |     French         French        no        DarkBlue  5    West     10000      French
+        36 |     Germans        Germans       no        DarkBlue  5    East     10000      Germans
+        37 |     British        British       no        DarkBlue  5    West     10000      British
+        38 |     Africans       Africans      no        DarkRed   5    East     10000      Africans
+        39 |     Arabs          Arabs         no        DarkRed   5    West     10000      Arabs
+        40 |     Confederation  Confederation no        DarkRed   5    East     10000      Confederation
+        41 |     Russians       Russians      no        DarkRed   5    West     10000      Russians
+        42 |     YuriCountry    YuriCountry   no        Gold      5    East     10000      YuriCountry
+        43 |     GDI            GDI           no        Gold      5    West     10000      GDI
+        44 |     Nod            Nod           no        DarkRed   5    East     10000      Nod
+        45 |     Neutral        Neutral       no        Grey      5    West     10000      Neutral
+        46 |     Special        Special       no        DarkRed   5    East     10000      Special
+
+  --- md  L17-L22  (R10)  [re_map_preset_decode_20261110/_md_parse_out.txt]
+        17 |     [Units] 条目=3360 (未解析行=0)
+        18 |       按屋: {"<human player>": 240, "Alliance": 240, "French": 240, "Germans": 240, "British": 240, "Africans": 240, "Arabs": 240, "Confederation": 240, "Computer": 240, "YuriCountry": 240, "GDI": 240, 
+        19 |         <human player> 型号分布: {"MTNK": 80, "HTNK": 80, "TTNK": 80}
+        20 |         Alliance       型号分布: {"MTNK": 80, "HTNK": 80, "TTNK": 80}
+        21 |         French         型号分布: {"MTNK": 80, "HTNK": 80, "TTNK": 80}
+        22 |         Germans        型号分布: {"MTNK": 80, "HTNK": 80, "TTNK": 80}
+
+  --- ld  L25-L31  (R11/R12)  [re_loadbench_diff_20261110/_ld_diff_out.txt]
+        25 |   big       Units=240 Infantry=160 Structures=41
+        26 |       Units      {'Americans': 120, 'Russians': 120}
+        27 |       Infantry   {'Americans': 80, 'Russians': 80}
+        28 |       Structures {'Neutral': 41}
+        29 |   small     Units=240 Infantry=160 Structures=0
+        30 |       Units      {'Americans': 120, 'Russians': 120}
+        31 |       Infantry   {'Americans': 80, 'Russians': 80}
+
+  --- ld  L88-L103 (R13)  [re_loadbench_diff_20261110/_ld_diff_out.txt]
+        88 | ◆ 5. 压缩/编码（小版是否大版的 LZO/zlib 压缩形态）
+        89 |   大版: 明文 INI：可打印 ASCII 占比 1.0000，熵 5.652 bit/byte（文本典型值），首字节 ';'（0x3B）非任何压缩流魔数
+        90 |   小版: 明文 INI：可打印 ASCII 占比 1.0000，熵 4.699 bit/byte，首字节 '['（0x5B）；zlib 魔数 0x78 检测=False；无 LZO 容器结构；内容层面直接否证——压缩不改变语义，而两版 [Map] 尺寸/Author/小节集合/单位坐标全部不同，故小版不是大版的任何压缩或变换形态
+        91 |   含义: 『差 3.6 倍 = 差在压缩』假设被三重证据排除：熵（两者都是文本熵，非 8 bit/byte 的压缩流）、头字节（可读文本起头）、内容结构矛盾（压缩是等价变换，两版语义不同）。大小差来自内容量不同（1575 vs 643 键行、Terrain/触发系/建筑系整段缺失），不是编码。对『实载哪一版』：排除压缩解释后，唯一剩余解释就是两版本就是两张不同的图。
+        92 |   matters=True
+        93 | ------------------------------------------------------------------------------
+        94 | ◆ 6. 三份 .yrm 与实载 XMP29U2.MAP 的关系
+        95 |   大版: ra2bench/（=游戏目录，内有 YURI.exe/game.exe/BINKW32.DLL）中的 [2]0LoadBench_U0400.yrm，92,332 B，md5=3c47bff8…，与参照件 pristine/old/ 逐字节同一（md5+sha256 全等：True）。Content=Urban Rush Pro 底图 + 2 房各 120 车/80 步 + 41 建
+        96 |   小版: out/loadbench/ 中同名文件，25,604 B，md5=d9a57d5f…，mtime 2026-09-25 18:41 （比大版 20:38 早约 2 小时）＝生成器第一代合成图（100×100、IsoMapPack5 仅 12 B 桩无真实地块、240/160、0 建筑、2 waypoint）。第三份（参照件）与大版同一件。真正实载的字节是第四份：T32 时代 XMP2
+        97 |   含义: 实载既不是大版也不是小版：台账判据（c5574 八帧恒 240 = .MAP 的 Special 预置 240，而任何 U0400 yrm 变体每房只有 120 车）在三份 .yrm 上全部成立——大版/小版/参照件的 [Units] 每 house 都是 120，谁也产不出 240。三份 .yrm 的身份：参照件=大版的逐字节存档（给指纹 3c47bff8/cb5785a1…）；大版
+        98 |   matters=True
+        99 | ------------------------------------------------------------------------------
+       100 | [结论] out/loadbench/[2]0LoadBench_U0400.yrm（25,604 B）是 RA2 Campaign Forge 生成器于 2026-09-25 18:41 生成的第一代合成 LoadBench 图：100×100、IsoMapPack5 仅 12 B 桩（无真实地块）、240 units+160 infantry（每房 120/80）、0 建筑、2 waypoin
+       101 | [实载] 台账判据所指实载字节 = 222,799 B 变体（md5 11ec8ff6，[Basic].Name='[2] 0LoadBench U0400'，1680/1120/41）以 XMP29U2.MAP 名被载入；其后 l1 时代换成 U0800 H1 字节（3360/2240/0，Special=240）。大版/小版/参照件三份 .yrm 均非该判据的实载字节
+       102 | [置信] 高。每一项结论都有在盘文件直接证据（md5/sha256/小节计数/键行样例），无推测项；唯一未决是台账指纹 93c2974b 的具体算法（已列所有否证数值）
+       103 | [未决] 台账 T32『U0400 字节（93c2974b）』未匹配到任何在盘候选的 md5/sha1前缀/crc32（big=3c47bff8/ad4855d, small=d9a57d5f/db493c05, T32变体=11ec8ff6/4c2cebd9）；map-name 内 fp:xxxx 为项目内部指纹，已证非文件 md5 前缀（U0800_H1 md5 前缀 11b3672276da
+
+  --- sp  L37      (L74 历史崩溃)  [stale_pass_20261109/_sp_report.txt]
+        35 | GOAL:255 [哨兵,EXIT=0] | - 2026-10-20 17:0x **★★★ 三目标并行推进轮（日志 §309）**：① **L1 根因翻案已落账**（§308，真因=进程 5 秒自行退出 + csf 失败消息框，非弹窗）；③ **P1 版本校验门 rebase 落地**——`goal3_versioncheck_p2rebase_20261020/blitter_hooks_p
+        36 | GOAL:256 [门禁,EXIT=0] | - 2026-10-20 17:1x **★★★ Notion 三裁决执行轮（日志 §310）**：**裁决1（①）=A E1/E2/E3 阶梯**（B 并入 E1 做两张图裸起对照；E1 固化成趟前门禁=清屏；harness 补「进程死亡 fail-fast」另开项；procdump 兜底）——⏸ **待用户在场**；**裁决2（③）=B+C 合并，
+        37 | GOAL:258 [carrier] | - 2026-10-20 17:5x **★★★ E1/E1b 真机两趟定谳（日志 §312）**：**「弹窗」真身=Windows 崩溃对话框**（标题 `Red Alert 2`、正文 `gamemd.exe - 错误应用程序` / **`0x0084f2ba` 指令引用了 `0x0084f2ba` 内存。该内存不能为 written**），**推翻 
+        38 | GOAL:260 [EXIT=0] | - 2026-10-20 20:1x **E2 短路径趟 = L1 首次完整生命周期（日志 §313 续）**：out-dir 改 `l1a_20261020`（载体 129 字符 < 131）后 **EXIT=0**（main/finalize 全 0）；导航链 nav_menu→nav_setup→nav_start **全一次过**（attempts=
+        39 | GOAL:261 [门禁,EXIT=0] | - 2026-10-20 22:4x **★★ P1+SBH 合批编译通过 + verify_hooks 假绿揪出（日志 §314）**：5 段合并 5/5 干净命中、**CL_EXIT=0 / LINK_EXIT=0**（产物 `build/ra2render_merged.dll` 178,688 B / `4d3aacf7ddf5139f`）、§
+
+########## SEC X4 · _ps_disasm stdout 复现门 ##########
+  --- X4(a) 源码行号逐个核对 ---
+      :19   HERE = os.path.dirname(os.path.abspath(__file__))
+      :20   DEFAULT_EXE = os.path.normpath(os.path.join(HERE, '..', '..', 'ra2bench', 'gamemd.exe'))
+      :22   OUT_TXT = os.path.join(HERE, '_ps_disasm_out.txt')
+      :23   OUT_JSON = os.path.join(HERE, '_ps_disasm_out.json')
+      :34   txt_lines = []
+      :37   def P(s=''):
+      :38       txt_lines.append(s)
+      :113  print = P
+      :456  with open(OUT_TXT, 'w', encoding='utf-8', newline='\n') as f:
+      :457      f.write('\n'.join(txt_lines) + '\n')
+      :459  json_out['verdict'] = {
+      :471  with open(OUT_JSON, 'w', encoding='utf-8', newline='\n') as f:
+      :472      json.dump(json_out, f, ensure_ascii=False, indent=1)
+      :474  sys.stderr.write('(done)\n')
+  --- 全文件 stdout 写入检索 ---
+      L113  print = P
+  stdout 写入语句数 = 0
+  '(done)' 出现行 = [474]
+  --- X4(c) 指纹实算 ---
+  原件 _ps_disasm.py                               9a16086763924c269c2166fbcfd22c636ffb1800d6f78d54c72437c0c2d6c37e  20572 B
+  写域副本 _ps_disasm_rerun_copy.py                  9a16086763924c269c2166fbcfd22c636ffb1800d6f78d54c72437c0c2d6c37e  20572 B
+  既有 _ps_disasm_out.txt                          3fa97f526f53fb261e1692f327770cc1bb236e5d191a7a9d5d739d5b7aae5e58  65202 B
+  既有 _ps_disasm_out.json                         445bc0609f2c70e00417a77686435cecb3774f8c75f6ccc2ab01f9c1bb03fa0d  3297 B
+  写域重跑 _ps_disasm_out.txt                        3fa97f526f53fb261e1692f327770cc1bb236e5d191a7a9d5d739d5b7aae5e58  65202 B
+  写域重跑 _ps_disasm_out.json                       445bc0609f2c70e00417a77686435cecb3774f8c75f6ccc2ab01f9c1bb03fa0d  3297 B
+  _repro_ps_disasm.txt                           e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  0 B
+  _pssim_rerun_stdout.txt                        e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  0 B
+  _pssim_rerun_stderr.txt                        225689b5f041e351c4c2355ca3e32c76c860fbd2cd3644fcb1d86b173a316463  8 B
+  _pssim_rerun_out.txt (执行方 L73/L91 引用)          不存在 [MISSING]
+  _regrade_scan_out.txt                          f8468118614900feaf7494b57e126ce2d8f66c5b87e3f236a97a2c2ab8177038  7062 B
+  empty string sha256 = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  副本==原件 sha: True
+  重跑txt == 既有txt sha: True
+  重跑json == 既有json sha: True
+
+########## SEC X5 · 零改动实证（关键件 + 全 100 件基线独立复核） ##########
+  ra2bench\gamemd.exe                                        73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 4825360 B  与声称一致=True
+  lead\re_chain_synthesis_20261111\CHAIN_SYNTHESIS.md        c88717d71c4b59d88ecd04f234843f561a829e63f5b967659e10acfdcf8254b3 20971 B  与声称一致=True
+  lead\re_chain_synthesis_20261111\LEDGER_SECTION_DRAFT.md   b40ac2a7b6fade6854fc0960aa9b01252ccff3dc292c780b979a8e56b664a800 3415 B  与声称一致=True
+  lead\re_chain_synthesis_20261111\_repro_ps_disasm.txt      e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 0 B  与声称一致=True
+  lead\playerctrl_semantics_20261111\_ps_disasm.py           9a16086763924c269c2166fbcfd22c636ffb1800d6f78d54c72437c0c2d6c37e 20572 B  与声称一致=True
+  _baseline_snapshot.json 条目数 = 100 （执行方声称 watched=100）
+  独立复算 verify: watched=100 drift=0 missing=0 new=0
+  执行方声称: watched=100 drift=0 missing=0 new=0  ->  一致=True
+  --- 现有证据件 vs baseline_backup 对拍（核 §0.3 / §4.9 的 7 处既有件） ---
+      playerctrl_semantics_20261111/_ps_disasm_out.txt           MATCH=True
+      playerctrl_semantics_20261111/_ps_disasm_out.json          MATCH=True
+      re_crashwriter_static_20261110/_cw_disasm_out.txt          MATCH=True
+      re_crashwriter_static_20261110/_cw_disasm_out.json         MATCH=True
+      re_orphan_owners_20261110/_oo_map_out.txt                  MATCH=True
+      re_orphan_owners_20261110/_oo_map_out.json                 MATCH=True
+      re_map_preset_decode_20261110/_md_parse_out.txt            MATCH=True
+      re_map_preset_decode_20261110/_md_parse_out.json           MATCH=True
+      re_loadbench_diff_20261110/_ld_diff_out.txt                MATCH=True
+      re_loadbench_diff_20261110/_ld_diff_out.json               MATCH=True
+      slot2_fullscan_20261111/_sf_scan_out.txt                   MATCH=True
+      slot2_fullscan_20261111/_sf_scan_out.json                  MATCH=True
+
+########## SEC X6 · 反向找茬辅助检索 ##########
+  --- 0x5012ED 在 ps 探针输出/json 中的实文 ---
+        30 | 2. .text XREFS TO KEY STRINGS (LE32 scan over VA 0x401000..0x7E1000)
+        31 | ====================================================================================================
+        32 | PlayerControl @ 0x824E28
+        33 |    0x500BBF  real ref
+        34 |    0x5012ED  real ref
+        35 | 
+        36 | PercentBuilt @ 0x8189A0
+      json L55      "0x5012ed"
+  --- 0x7C978A / atexit 在 cw 与 sf 中的实文 ---
+      re_crashwriter_static_20261110/_cw_disasm_out.txt L22       atexit 析构器 0x543EB0 (经 0x543EA6 call 0x7C978A 注册): vptr←0x7ECBFC@0x543EBE(永久), free(Vector)@0x543EE4, Vector←0@0x543EEC, VectorMax←0@0x543EFD
+      re_crashwriter_static_20261110/_cw_disasm_out.txt L122          atexit 析构器 0x543EB0 置基类 vtable(永久) → 此后派发才可能进 0x54A4F0
+      re_crashwriter_static_20261110/_cw_disasm_out.txt L128    post_atexit_state: 半可达: vptr=0x7ECBFC → 进 0x54A4F0, 但 Vector 已被析构器清 0 → 0x54A53A je 跳过 free+null 块; 需此后再发生一次扩容 Capacity(先重建 Vector, IsAllocated=1), 第二次扩容才触达 0x54A56E
+      re_crashwriter_static_20261110/_cw_disasm_out.txt L163    [FACT] 基类 vtable 0x7ECBFC 写入仅 3 处: 0x543EBE(全局 atexit 析构器)/0x54A7B6/0x54A806(析构函数体) → 无独立 VectorClass<PAUTileInsertType> 实例
+      re_crashwriter_static_20261110/_cw_disasm_out.txt L170    [FACT] 全局 0xAA1078 在 .text 的立即数引用共 4 处(字节地址): 0x543E8F(初始化器 0x543E8D 指令)/0x543EC0(atexit 析构器 0x543EBE 指令)/0x546060+0x546065(Add 派发 0x54605F/0x546064 指令)
+      re_crashwriter_static_20261110/_cw_disasm_out.txt L174    [FACT] atexit 析构器 0x543EB0: [0xAA1078]←0x7ECBFC@0x543EBE(永久留基类 vtable), free 后 [0xAA107C]←0@0x543EEC, [0xAA1080](VectorMax)←0@0x543EFD; 全程未触碰 ActiveCount(0xAA1088)/GrowthStep(0xA
+      slot2_fullscan_20261111/_sf_scan_out.txt L23     G3: vptr 写入点(c7 /0)全镜像重扫一致 — 0x7ECBDC: [0x543E8D]→[0xAA1078](动态初始化器 0x543E70 体内); 0x7ECBFC: [0x543EBE]→[0xAA1078](atexit 析构器 0x543EB0 体内), [0x54A7B6]/[0x54A806]→[esi](deleting dt
+      slot2_fullscan_20261111/_sf_scan_out.txt L24     G3 归属: 0x543E8D ∈ 动态初始化器 0x543E70 体内; 0x543EBE ∈ atexit 析构器 0x543EB0 体内 (ask 前提的初始化/析构归属复核)
+      slot2_fullscan_20261111/_sf_scan_out.txt L26     G4: 全镜像 imm32/disp32 引用 0xAA1078 恰 4 处(立即数字节地址): 0x543E8F(init 存储)/0x543EC0(atexit 存储)/0x546060(vptr 装载 @0x54605F)/0x546065(this 装载 @0x546064)
+      slot2_fullscan_20261111/_sf_scan_out.txt L47         派发去向  : 常态 vptr=0x7ECBDC → 0x54A630; atexit 析构后 vptr=0x7ECBFC → 0x54A4F0
+      slot2_fullscan_20261111/_sf_scan_out.txt L1824   [FACT] G3: vptr 写入点(c7 /0)全镜像重扫一致 — 0x7ECBDC: [0x543E8D]→[0xAA1078](动态初始化器 0x543E70 体内); 0x7ECBFC: [0x543EBE]→[0xAA1078](atexit 析构器 0x543EB0 体内), [0x54A7B6]/[0x54A806]→[esi](dele
+      slot2_fullscan_20261111/_sf_scan_out.txt L1825   [FACT] G3 归属: 0x543E8D ∈ 动态初始化器 0x543E70 体内; 0x543EBE ∈ atexit 析构器 0x543EB0 体内 (ask 前提的初始化/析构归属复核)
+      slot2_fullscan_20261111/_sf_scan_out.txt L1827   [FACT] G4: 全镜像 imm32/disp32 引用 0xAA1078 恰 4 处(立即数字节地址): 0x543E8F(init 存储)/0x543EC0(atexit 存储)/0x546060(vptr 装载 @0x54605F)/0x546065(this 装载 @0x546064)
+  --- RE_GRADING.md §2 理由列 / §4 边界节 的关键词 ---
+      RE_GRADING L76  ## 4 · 边界与未验（必含节）
+      RE_GRADING L78  1. 本任务全部结论为**磁盘文件的静态读数**：未启动 gamemd.exe/ra2loader/YURI.exe，未 attach、未读活进程内存、未写任何 hook/采样/MinDump 代码。
+      RE_GRADING L79  2. 所有【已证（CFG）】（R7、R4 核心结论、R15、R1 尾注）**均为静态控制流/数据流推断，未做运行期确认**；零真机铁律下运行期确认不可得。「未做运行期确认」≠「已被运行期证伪」。
+      RE_GRADING L80  3. 新增【未证】2 项及所缺证据：R5 时序（缺：CRT 初始化表遍历顺序、atexit 注册时序、0x7C978A=atexit 的确认）；R2 尾注（缺：运行期指针逃逸/别名行为的确认——静态普查只能证明无静态编码引用）。
+      RE_GRADING L81  4. 符号命名（`HouseClass::Read_INI`、`CCINIClass::Get_Bool`、`this->Vector/VectorMax/IsAllocated/GrowthStep`、`deleting dtor`）是探针标注与结构推断，**不是二进制内字面**；字节级条目只对指令字节与计数负责。
+      RE_GRADING L82  5. R14 的第二 xref 0x5012ED 在 CHAIN_SYNTHESIS.md 条目中未呈现，其性质（是否 Write_INI 回写等）本任务**未核实**。
+      RE_GRADING L83  6. R10 括注（「11 国」）与探针 owner 表（14 owner 实为 `<human player>`/`Computer` 等，与 [Houses] 14 名差集 {Americans,Russians}↔{<human player>,Computer}）存在措辞出入；计数读数不受影响。R11 的「其余 11 房为 0」依赖 14 房框架（大版 yrm 无 [Houses] 节），框架属外推。
+      RE_GRADING L85  8. 台账历史指纹 `93c2974b` 算法仍未决（维持原状，CHAIN_SYNTHESIS.md:L152）。
+
+[EOF] stdout 已落盘: D:\Project\ra2-campaign-forge\lead\re_chain_v2_xverify_20261112\_x_stdout.txt  (241 行)

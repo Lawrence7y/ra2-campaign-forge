@@ -1,0 +1,304 @@
+# G6 · P0/P1 队列口径（docs/ 侧 grep 输出）
+
+> 范围：docs/ 下全部 416 个文本文件。事实侧台账/进度报告见 G7。
+
+## pattern: `P0`
+
+**total matches = 832**
+
+```text
+docs/NEXT_RE_AND_MODERNIZATION.md:3:> **2026-10-02 后续派工依据**：以 [PROJECT_DIRECTION.md](PROJECT_DIRECTION.md) 的三条交付线和 P0/P1/P2 队列为准。先收尾当前审计，再围绕真实热点、闪退根因、关键系统行为契约和 DLC 资源/战役/兼容链定向逆向。下文地址结论与优化建议保留为历史输入，热点排序须经有效负载重测，不能直接当作当前优先级。
+docs/NEXT_RE_AND_MODERNIZATION.md:76:1. **废弃针对 `0x48D000` 的迷雾优化假设**：P0-2（L4 视野脏区折中）应纯粹在 `TacticalClass::Render`（`0x6D3D99`）与视野更新环实施，切勿修改 `Game::CallBack`（`0x48D080`），防止破坏音频混音心跳与联机保活；
+docs/NEXT_RE_AND_MODERNIZATION.md:133:> **【勘误 2026-09-29 · MIMO-H1VOID】上段验收门槛与下表 P0-1「+5～12%」、P0-3「+3～8%」的收益预估，其负载前提不成立，重测前不得引用。**（原文保留，不删字）
+docs/NEXT_RE_AND_MODERNIZATION.md:136:> **处置**：P0-1 / P0-3 的百分比预估**标记为作废**；待 H1 图重测后按实测数据回填。P0-2 不含百分比预估，其技术路线不受影响。
+docs/NEXT_RE_AND_MODERNIZATION.md:138:### P0（本周可做，收益确定）
+docs/NEXT_RE_AND_MODERNIZATION.md:142:| P0-1 | **补全 RLE 步兵 Blit** | `m1_blit_targets.txt` 中 `RLEBlit*` 51 个，现只 Hook 了 2 个 | 优先 `RLEBlitTransDarkenZRead`、`RLEBlitTransLucent*`（loadbench 已见 `RLEBlitTransXlat@E` 进 Top） | 高密度局 +5～12% | 中（RLE 解码要与原版像素一致） |
+docs/NEXT_RE_AND_MODERNIZATION.md:143:| P0-2 | **L4 全量刷 → 视野脏区折中** | `TacticalClass::Render` 已在 `0x6D3D99` 强制全量；`0x48D000` 显示格子标志在拖后腿 | 仅当 `s_visionToken` / 本帧 `UpdateVisionGrid` 变动格打 dirty，或按「视野环外扩 1 格」重绘 | 抵消 L4 回归，保住迷雾即时性 | 中（需重扫 Render 内 dirty 标记写入点） |
+docs/NEXT_RE_AND_MODERNIZATION.md:144:| P0-3 | **L2 空间哈希代替纯节流** | `SelectAutoTarget` / `Greatest_Threat` 已知虚表；目标列表仍是 O(N²)/8 | 建 `CellSpread` 网格（YRpp 已有 `CellSpread.h` 语义），查询只扫邻域 | 高密度逻辑帧 +3～8%，且不再「开火发呆」 | 中高（必须回放对拍攻击顺序） |
+docs/NEXT_RE_AND_MODERNIZATION.md:164:| P2-5 | 裂缝产生器 / 间谍卫星机制完善 | 挂在 `UpdateVisionGrid`，与 P0-2 同一文件可顺带 |
+docs/NEXT_RE_AND_MODERNIZATION.md:207:2) P0-1 补 RLE 步兵 Top3 Blit → 回放测帧
+docs/NEXT_RE_AND_MODERNIZATION.md:208:3) P0-2 L4 视野脏区折中 → 回放测帧 + 迷雾即时性手测
+docs/NEXT_RE_AND_MODERNIZATION.md:210:5) 再决定是否上 P0-3 空间哈希寻敌
+docs/PROJECT_DIRECTION.md:73:| P0 | 当前审计与正文落地收尾 | 核对 APP2 独立审计、已判伪项回填和回归残红；按实际产物回填状态；形成当前指纹下的可信基线 |
+docs/PROJECT_DIRECTION.md:81:P1 三线可在写域互斥时并行；真机测试串行，运行时代码和安装目录维持单写者。P0 收尾不阻塞纯只读能力盘点，但依赖未核验 ABI 的修改必须等待相关缺口闭合。
+docs/re/a3_campaign_map_spec.md:219:> 【W3 勘误 · W3-A6/ISSUE-DEFAULT-GAPPROTECTION】改前：EnableGapProtection=1；改后：EnableGapProtection=0  ; [代码/出厂默认0，安全侧；测试或启用时显式置1]；依据：ra2render/blitter_hooks.cpp:606; ra2render/ra2render.ini:199; config_key_matrix.md:109；分级：P0
+docs/re/AGENT_DELIVERY_FORMAT.md:32:每条给：缺口 | 为何无法静态闭环 | 下一步取证方法（可直接执行的命令/断点/地址） | 阻塞级别(P0/P1/P2)
+docs/re/AGENT_DELIVERY_FORMAT.md:74:| **MiMo 桌面** | 必须给 ① 结论表 ② 分级订正清单（P0/P1/P2）③ 门禁原文输出；不接受只有散文式总结 |
+docs/re/ARCHITECTURE_ATLAS.md:365:   - ⚠️ **校验器冲突（P0，交 Lead 裁决）**：`tools/verify_evidence.py:345-348` 仍按旧 v2 阈值 `colors_80x80 < 1500 ⇒ FAIL`（文案仍写「建议 ≥ 2000」），与本条生效口径冲突，**放闸前必须先收口**，否则 §13.4 第一级过滤会误杀同量级合法证据（详见 §13.1 表末行）。
+docs/re/ARCHITECTURE_ATLAS.md:463: 8 字节：单成员变体（vtable + 1 个 4 字节槽）—— 全部 P0 微内核均属此类
+docs/re/ARCHITECTURE_ATLAS.md:485:> 上表加粗的 8 字节变体恰是**步兵/载具本体与影子主路径（P0）**。若按「统一 12 字节」声明成员并在 `this+0x08` 读/写，即对该分配块**越界 4 字节**（堆块尾部踩踏 ⇒ 不可恢复的内存破坏，且不保证立刻崩溃）。Darken 变体另有更早的既有红线：`this+0x04` 是**掩码数值**（`66 89 48 04` 写 16 位）而非指针，按 `uint16_t*` 解引用必触发 `EXCEPTION_ACCESS_VIOLATION (0xC0000005)`（见本节下方既有 CAUTION）。
+docs/re/ARCHITECTURE_ATLAS.md:2153:   > **〔ASM-FIX2-1 · P0 证据链重建（闭环 ASM-FIX §4 L4）〕** 原记锚点 `0x0064DAD9: E8 52 1A F6 FF`（`call 0x005AF530`）**作废**（三重否定：① 该 5 字节串全镜像 **0 命中**；② 全 `.text` **无任何** `call/jmp` 以 `0x005AF530` 为目标（rel32 站点普查 = 0）；③ 该 VA **非指令边界** —— `0x0064DAD6: 8D 88 9C 00 00 00` 是 6 字节指令（覆盖 DAD6–DADB），DAD9 落在其操作数中段）。「每逻辑帧固定消费 **1** 次」的表述**精确化为「帧 CRC 路径每逻辑帧共消费 **2** 次」**。以下为**本批独立复算**（PE 段表映射 + Capstone 5.0.7；脚本 `out/re_work/asm_fix2/frame_crc_dump.py`、`out/re_work/asm_fix2/rng_census.py`；原始输出 `out/re_work/asm_fix2/frame_crc_rng_evidence.txt`、`out/re_work/asm_fix2/rng_census.txt`）：
+docs/re/ARCHITECTURE_ATLAS.md:2355:| **1** | **16** | `0x10` | 192 处 | `VectorClass<void*>` 实例本体、双指针链表节点 | 中高频 | **P0** |
+docs/re/ARCHITECTURE_ATLAS.md:2356:| **2** | **8** | `0x08` | 166 处 | `0x0048EBF0` 载入映射节点、`WaypointClass` 路径节点 | 极高频，微小对象 | **P0** |
+docs/re/ARCHITECTURE_ATLAS.md:2357:| **3** | **456** | `0x1C8` | 145 处 | **`AnimClass` 动画实体**（爆炸、开火、弹壳烟雾） | 瞬态高频（数十毫秒至 1 秒） | **P0** |
+docs/re/ARCHITECTURE_ATLAS.md:2363:| **9** | **352** | `0x160` | — | **`BulletClass` 弹丸实体**（`v[12] @ 0x46B540`） | 瞬态高频（飞行数秒内销毁） | **P0** |
+docs/re/ARCHITECTURE_ATLAS.md:2364:| **10** | **312** | `0x138` | — | **`ParticleClass` 粒子实体**（`v[12] @ 0x62D970`） | 瞬态极高频（每帧成百上千增删）| **P0** |
+docs/re/ARCHITECTURE_ATLAS.md:2956:| U-7 | 锁存位 `[Scenario+0x34AA / 0x34AB / 0x34BE]` 置位来源与 MP 确定性 | 本批只证「轮询器读它们」 | 扫全镜像写点（含经 `ecx=[0xA8B230]` 的间接寻址），判定是否含本机输入路径 | **P0（联机风险面）** |
+docs/re/ARCHITECTURE_ATLAS.md:2958:| U-9 | 触发器「每帧总 RNG 消费量」的真机分布 | 需运行期计数 | 真机 hook `0x65C780 / 0x65C7E0` 计数 + 与 CRC 帧号对拍 | **P0（联机对拍门禁）** |
+docs/re/ARCHITECTURE_ATLAS.md:3303:> **〔勘误 R6-E2｜P0 级〕** `docs/re/weapons_damage_production.md:126-129`（§2.1 布局表）把 `Verses[11]` 记为 **`Warhead+0xB0`**、把 `Deform` 记为 `+0xA8`。本基线实测：**`Verses[0]` 落在 `+0xA0`**（`Verses` 覆盖 `+0xA0…+0xF7`），因此 **`+0xB0` 实为 `Verses[2]`**（Plate/装甲档位之一）。
+docs/re/ARCHITECTURE_ATLAS.md:4107:| Q1 | 各类的 **v[65] 表项归属**（哪些类真用共享体 `0x5F4B10`） | 需逐类虚表扫描 + 调用点 xref | 对 6 类 FX + Building/Unit/Infantry/Aircraft 的 vtbl+0x104 表项逐个 dump；再统计 `0x5F4B10` 的 IMM 直呼数 | **P0**（决定 §19.7 裁决能否翻案） |
+docs/re/ARCHITECTURE_ATLAS.md:4311:| Q1 | 3×NOP 是否已由**外部补丁器/加载器**安装 | 本流只读 `ra2render/**`；不排除其他安装路径 | 真机读 `0x568273` 首字节（`89` / `90`）；或检查加载器安装清单 | **P0** |
+docs/re/ARCHITECTURE_ATLAS.md:4607:        P1["P0: 8 / 12 / 16 / 456B 定长 freelist"]
+docs/re/ARCHITECTURE_ATLAS.md:4656:| **Vector / DynamicVector 缓冲清空与扩容** | 0x004E97B0（362 处 CRT 点，0x004E97C3: `E8 75 F3 2D 00` = call _delete）、0x006C6400（84 处，0x006C6421: `03 C1` = add eax,ecx 线性扩容） | 实体生成/死亡、目标列表重建时反复 _delete(Items) + _new | **P0**（_delete 静态份额 ~38%，见 §10.2） |
+docs/re/ARCHITECTURE_ATLAS.md:4657:| **小节点构造（8 / 12 / 16B）** | 0x0048EBF0（116 处）、0x005A9A20（63 处） | 反复 push 8/12/16; call _new 造链表节点 | **P0**（最高频小块抖动） |
+docs/re/ARCHITECTURE_ATLAS.md:4734:| 0x0048EBF0 / 0x005A9A20 | 8B 小节点构造簇（P0 池化目标） | [实证] | claims 0x0048EBF0、0x005A9A20 |
+docs/re/ARCHITECTURE_ATLAS.md:4746:| `:99`（§0.2 拓扑节点 R6） | `R6["雷达小地图主循环覆写 (0x006574C3 + 0x0065719A)"]` | `R6["雷达小地图绘制代理覆写 (Plot_Cell 内部下沉点 0x00655D38 + 强刷 0x0065719A；历史口径 0x006574C3)"]` | 路线 A 下沉后现网安装点为 `0x00655D38`（9 字节），`0x006574C3` 已废弃 | **影响产品决策**（钩点速查）；`docs/re/doc_consistency_fix_list.md` P0-2 |
+docs/re/ARCHITECTURE_ATLAS.md:4747:| `:517-518`（§2.6-1 标题与挂钩位置） | `#### 1. 主调用点代理覆写（0x006574C3）` ／ `- **挂钩位置**：0x006574C3（原版指令：E8 88 E7 FF FF call 0x00655C50）；` | `#### 1. Plot_Cell 内部下沉代理覆写（0x00655D38，路线 A）` ／ `- **挂钩位置**：0x00655D38（9 字节补丁 E9 rel32 + 4×90；跳板还原 9 字节后 jmp 0x00655D41）…`（改前原文已内嵌保留于该节首行） | 源码 `InstallRadarFogHooks` `:1570-1620`、`:1471-1473`；字节 `0x00655D38 = 89 44 24 28 A1 50 35 B7 00`、`0x00655D41 = 3B C5 74 18` | **影响产品决策**（回滚手册/Hook 点表）；`doc_consistency_fix_list.md` P0-1 |
+docs/re/ARCHITECTURE_ATLAS_REV.md:21:4. **最大风险不在 atlas 本身，而在"纸面已定谳、代码未落地"**：§20.6 实证 3×6B NOP 未落地 ⇒ PsychicReveal 仍清 `Cell+0x134`，裂缝**永久静默失能**（P0，ra2render 域）。
+docs/re/ARCHITECTURE_ATLAS_REV.md:83:| 1 | ARCHITECTURE_ATLAS.md:242-249（已就地更正） | 「所有 Blitter 固定 12 字节」→ **4/8/12/16 四级尺寸矩阵**，P0 微内核 8 字节；按 12 字节声明 `this+0x08` **越界 4 字节** | R1 | **产品级阻断**（ra2render 结构体声明） |
+docs/re/ARCHITECTURE_ATLAS_REV.md:93:| 11 | weapons_damage_production.md | `Verses` 起于 **+0xA0**（非 +0xB0）；`FactoryClass` 步数 **+0x24**、在造对象 **+0x58**；`FootClass` v[243]=`0x6FDD50` | R6 | **P0**（按 +0xB0 读会错位 16 字节） |
+docs/re/ARCHITECTURE_ATLAS_REV.md:106:| **P0** | §20.6：3×6B NOP 未落地 ⇒ PsychicReveal 经 `0x568273` 清 `Cell+0x134`，裂缝**永久静默失能** | 属 ra2render 代码轨（本批禁改） | `ra2render/**` 检索 `568273/577EC5/577B60`（现 0 命中）→ 三处各打 6B NOP 后真机复现 |
+docs/re/ARCHITECTURE_ATLAS_REV.md:107:| **P0** | L4DirtyMode 像素等价性 / ZC-11 模型判别 / MP 对拍 | 需真机（本批真机 0 启动） | 按 §13.4 两级过滤 + `tools/verify_evidence.py` 机械筛 → 人工抽验 |
+docs/re/ARCHITECTURE_ATLAS_REV.md:108:| **P0** | P-2（`Cell+0x134` 三处 6B NOP + SpySat 门控）触 ①同步语义 ③存档结构 | 需双端对拍 | MP 门控矩阵 + 握手键取证（见 [9]-D1） |
+docs/re/ARCHITECTURE_ATLAS_REV.md:109:| **P0** | 触发器轮询器锁存位 `[Scenario+0x34AA/34AB/34BE]` 是否含本机输入路径 | 决定触发器 MP 分叉面，静态无法判定 | 双端 hook `0x65C780/0x65C7E0` 对拍 |
+docs/re/ARCHITECTURE_ATLAS_REV.md:209:**D. tools/verify_evidence.py 阈值改动回归**（回应 R4 的 P0）：两批历史证据重跑 —— v160_test（伪造批）4 张全部 **FAIL**（唯一色数 = 1，命中伪造判据）；calib（校准批）c0 **PASS**（250 采样色）、c2 **PASS**（909 采样 / 6135 全画面）、c1 与 d0 **FAIL**（MD5 与 c0 重复 ⇒ 按键未生效推断成立）。即：**新口径未削弱任何既有拦截**，且不再误杀同量级合法证据（旧口径会把 250 色菜单误判为色数不足）。报告：`out/re_work/atlas_rev/lead/verify_regress_v160_test.json`、`out/re_work/atlas_rev/lead/verify_regress_calib.json`
+docs/re/ARCHITECTURE_ATLAS_REV.md:217:> **只追加、不删改**：§[0]–§[10] 全部逐字保留（含 `[META]` 的「真机=0 启动」自证与本节要订正的 P0 条目原文）。
+docs/re/ARCHITECTURE_ATLAS_REV.md:220:### C-1 · §[0] 第 4 条 与 §[4] 表首行（§20.6 P0）：裂缝保护「纸面已定谳、代码未落地」→ **已落地，P0 消解**
+docs/re/ARCHITECTURE_ATLAS_REV.md:222:- **改前逐字**（`:21`）：「**最大风险不在 atlas 本身，而在"纸面已定谳、代码未落地"**：§20.6 实证 3×6B NOP 未落地 ⇒ PsychicReveal 仍清 `Cell+0x134`，裂缝**永久静默失能**（P0，ra2render 域）。」
+docs/re/ARCHITECTURE_ATLAS_REV.md:223:  （`:104` 未闭环清单同条目：「**P0** | §20.6：3×6B NOP 未落地 ⇒ PsychicReveal 经 `0x568273` 清 `Cell+0x134`，裂缝**永久静默失能** | 属 ra2render 代码轨（本批禁改）| `ra2render/**` 检索 `568273/577EC5/577B60`（现 0 命中）→ 三处各打 6B NOP 后真机复现」）
+docs/re/ARCHITECTURE_ATLAS_REV.md:224:- **改后表述**：检索建议已可执行且**结果为命中**——三点 3×6B NOP 已于 2026-09-30 合入 `ra2render`（构建 `626f98b6…`），A1/A2 真机 PASS、C5 逆序回滚 PASS。故「永久静默失能」这条 **P0 已消解**；**残留的是行为验收**（A3/A4/A5 初判无法判定，战役轨进行中）与「`GapProt Version` 存档标记未实现」，二者不再是代码轨缺口。
+docs/re/ARCHITECTURE_ATLAS_REV.md:249:- **A3 = PASS（带窗口限定）**：on 档 3 会话全程 `gap_cells=663` kept=100.0%、三点 in-process `90×6`、遥测 `installed=3/3`；off 对照晚期 a5 `663→373→0`。⇒ §[4] 表首行那条 P0 的**全部残留**只剩三项：A4 未闭环（存档 UI 注入 + 读档歧路）、A5 部分（on >6min 长窗未取得）、`GapProt Version` 存档标记未实现。
+docs/re/asm_fix2_report.md:1:# ASM-FIX2 交付报告：帧 CRC 的 RNG 消费点锚点重建（P0）+ 残余定向重锚 + 扫描器豁免规则
+docs/re/asm_fix2_report.md:26:1. **F1（P0）已完成**：`ARCHITECTURE_ATLAS.md §9.2` 的帧 CRC RNG 证据链**已用实测锚点重建**——原记 `0x0064DAD9: E8 52 1A F6 FF (call 0x005AF530)` 三重证伪后**作废**（0 命中／0 站点／非指令边界），改为 `0x0064DE33/39/3F`（CRC 折叠抽取）与 `0x0064DE70 → 0x00650A90`（帧尾抽取，体内 `0x650AB7`/`0x650AF2` 互斥各 1 次）；「每逻辑帧固定消费 **1** 次」**精确化为「帧 CRC 路径每逻辑帧共 **2** 次」**，并同步订正同源的 mermaid 节点与红线框图（§3.1–3.4）。
+docs/re/asm_fix2_report.md:52:### 2.1 [E1] 帧 CRC 路径的局内共享 RNG 消费点（P0 重建核心）
+docs/re/asm_fix2_report.md:148:### 3.2 `docs/re/ARCHITECTURE_ATLAS.md:1516-1531`（§9.2 第 1 条，P0）
+docs/re/asm_fix2_report.md:150:- 改后：原文**逐字保留**，其后新增 `〔ASM-FIX2-1 · P0 证据链重建（闭环 ASM-FIX §4 L4）〕` 块：三重否定原锚 + 14 行实测 asm（含 FileOffset）+ 6 行复算表 + 语义边界与影响面，并标注行为面 [待实测]。
+docs/re/asm_fix2_report.md:179:- 改后：新增 `〔ASM-FIX2 追加〕` 段：L4（P0）已闭环、L5 已闭环、L3 已闭环（采纳排除规则方案）、L1/L2 仍在禁区（附复扫现存 2 条 P1 的现址行号）。
+docs/re/asm_fix2_report.md:197:| 1 | 「每帧 2 次」的**行为面后果**（是否改变 desync 判定/对拍门限） | 静态只能定字节与计数；行为须运行期观测 | MP 门控矩阵 + 双端真机对拍（同帧 CRC 序列比对 / `SYNC_SNAP`）；**本批严禁启动游戏** | **P0 [待实测]** |
+docs/re/asm_fix_report.md:39:> 【W3 勘误 · W3-A6/ISSUE-TABLE-GAP-BYTES】改前：89 91 34 01 00 00；改后：89 B8 34 01 00 00 (0x00577EC5) / 89 98 34 01 00 00 (0x00577B60)；依据：ra2youli/gamemd.exe:0x177EC5, 0x177B60; docs/re/doc_consistency_fix_list.md:49 (N-2)；分级：P0
+docs/re/asm_fix_report.md:229:| L4 | U-1/`ATLAS:1511-1514` 的「唯一共享 RNG 每帧消费 1 次」**字节级证据链缺失** | 原锚点全镜像 0 命中、其目标 0x5AF530 全 .text 0 处调用站点、且该 VA 非函数入口 ⇒ 静态只能证伪，无法证真 | 以 `RandomObject::Random` 的**真实入口**（由 `0x64DAB0` 帧 CRC 函数体内的调用点反查）重建锚点；建议专项（含 `Rules+0xFEC` 邻域） | **P0** |
+docs/re/asm_fix_report.md:238:> - **L4（P0）→ 已闭环**：帧 CRC 路径的局内 RNG 消费点已用实测锚点重建（`0x0064DE3F` + `0x0064DE70 → 0x00650A90` 内 `0x650AB7`/`0x650AF2` 之一 ⇒ 每逻辑帧 **2** 次），见 `ARCHITECTURE_ATLAS.md §9.2`〔ASM-FIX2-1〕。
+docs/re/asm_fix_report.md:343:3. **L4（帧 CRC RNG 锚点重建）**：建议立专项（P0）——以 `0x0064DAB0` 函数体内真实调用点为起点反查 `RandomObject::Random` 入口，再重建「唯一共享 RNG」断言。本批不越权改判结论。
+docs/re/atlas_rev/R1_render_blit.md:76:- **现状问题**：atlas §1.2 断言所有 Blitter 实例由 `push 0x0C` 分配、**固定 12 字节**，并把 `+0x08` 描述为「变体辅助参数/掩码」。两处均有实证反证：① 09-27 S13（`blitter_microkernel_deep_dive.md:1028-1037` / `re_sprint_S13_report.md:17,58,65-72`）已证「4/8/12/16 四级分配」，**该纠正从未并入 atlas**；② 本流独立复算给出逐 vtable 的分配尺寸：**全部 P0 微内核（步兵/载具本体与影子主路径）实测仅 8 字节**。后果：按 atlas 现文的 12 字节统一结构体实现，在 8 字节对象上访问 `+0x08` 即**堆越界 4 字节**（内存破坏，且不保证立刻崩溃 ⇒ 极难定位）。
+docs/re/atlas_rev/R1_render_blit.md:85: 8 字节：单成员变体（vtable + 1 个 4 字节槽）—— 全部 P0 微内核均属此类
+docs/re/atlas_rev/R1_render_blit.md:107:> 上表加粗的 8 字节变体恰是**步兵/载具本体与影子主路径（P0）**。若按「统一 12 字节」声明成员并在 `this+0x08` 读/写，即对该分配块**越界 4 字节**（堆块尾部踩踏 ⇒ 不可恢复的内存破坏，且不保证立刻崩溃）。Darken 变体另有更早的既有红线：`this+0x04` 是**掩码数值**（`66 89 48 04` 写 16 位）而非指针，按 `uint16_t*` 解引用必触发 `EXCEPTION_ACCESS_VIOLATION (0xC0000005)`（见本节下方既有 CAUTION）。
+docs/re/atlas_rev/R1_render_blit.md:112:- **影响面**：**§1.1/§1.3/§1.5 无影响**；**§11.2 虚表总表**（建议补「对象尺寸」列）；**§12.4** 补丁生命周期（结构体声明属工程侧，需与 `ra2render.h` 同步纠正）；**对产品决策是阻断项**——按 12 字节声明将在 P0 路径越界；§0 准则无影响。
+docs/re/atlas_rev/R1_render_blit.md:340:| §2 优先级表（P0–P7 排序） | **PATCH-R1-08**（Top10 与批次口径）；P0–P2 具体地址已在 atlas §1.1 表中 → 已收口→PATCH-R1-08 命中 |
+docs/re/atlas_rev/R1_render_blit.md:355:| §6 建议 Hook 地址表（P0–P7 全量 vtable/Hook 位置/CallBlit0/dtor） | **PATCH-R1-02**（槽口径与「只 Hook 槽 1」的实证依据）；具体地址表：不入 atlas（atlas 是架构图谱，地址清单宜由 `docs/re/HOOK_POINT_MATRIX.md` 承载；如需入 atlas，建议进 §11.2 而非 §1） |
+docs/re/atlas_rev/R1_render_blit.md:386:| §2 非 RLE 优先级表（P0–P3，8 项） | **PATCH-R1-08**（Top10 表 #1/#2/#5/#6/#7/#8/#9 取自本表） |
+docs/re/atlas_rev/R1_render_blit.md:421:| §3 交付物核验清单 / §4 下一步建议 | 不入 atlas（流程性与建议）；头文件重构与 P0 批量注入归 [9] 待裁决 |
+docs/re/atlas_rev/R1_render_blit.md:435:1. 产出 9 个锚定补丁块（R1-01..09），覆盖 §1.1–§1.6 与 §2.1；其中 R1-03 是推翻性勘误：atlas §1.2「所有 Blitter 实例固定 12 字节」被字节级实证推翻——全部 P0 微内核（步兵/载具本体与影子）实测仅 8 字节，按 12 字节声明结构体将越界 4 字节。
+docs/re/atlas_rev/R1_render_blit.md:461:1. docs/re/ARCHITECTURE_ATLAS.md:242（§1.2）｜改前：「在西木引擎的工厂函数（…）中，所有 Blitter 实例的尺寸由 push 0x0C; call operator new 分配，固定为 12 字节：」（含 L244–L249 的 12 字节布局围栏）｜改后：见 PATCH-R1-03 替换文本（4/8/12/16 四级 + 逐 vtable 尺寸矩阵 + this+0x08 越界红线）｜理由：P0 微内核实测仅 8 字节（分配点字节 + vtable 落位双向锁定）｜影响面：产品决策阻断项（结构体声明）、§11.2、§12.4。
+docs/re/atlas_rev/R1_render_blit.md:469:| 1 | 「每函数调用数 × 像素」分布 | 遥测只有总量；虚表间接派发无静态 xref | 按 PATCH-R1-08 §1.8 插桩：108 个 vtable 槽 1 建 trampoline，重放 U0800_Accelerated_Skirmish + Brutal AI，核对守恒判据 | P0 |
+docs/re/atlas_rev/R1_render_blit.md:470:| 2 | perf 百分比（11.55%→16.55% / 15.64%） | 采样场景真机只实例化 21/22 单位，已判作废 | 按 out/loadbench/H1_REMEASURE_RUNBOOK.md 重测后回填 | P0 |
+docs/re/atlas_rev/R2_fog_l4.md:401:| §[9] 待裁决项（建议按 P0-2 折中落地） | **PATCH-R2-09**（现网解耦状态声明）+ 本报告 §[9] D-R2-01 |
+docs/re/atlas_rev/R2_fog_l4.md:438:| §7 未闭环 FM-1~FM-4 | **PATCH-R2-03**（FM-4 空帧用途未闭环）+ **PATCH-R2-04 §5.2**（FM-1 `P0`）+ 本报告 §[4] |
+docs/re/atlas_rev/R2_fog_l4.md:587:| **U-R2-02** | `M1 vs M4` 模型判别（向灰混合 vs 两段复合） | 仅 3 档 × 4 ROI，`DIR/TOP` 残差 `SS≈50`；纯静态无法补数据 | 按 `fog_model_hypothesis.md` §4 执行 ZC-11 4 档（A/B/C/D）× 4 ROI 真机采集 + `discriminate.py` | **P0** |
+docs/re/atlas_rev/R2_fog_l4.md:588:| **U-R2-03** | `L4DirtyMode=1` 的"零延迟退回"与像素等价性 | 需真机同帧像素对拍；本任务禁启动游戏 | 静态镜头下 `L4DirtyMode=0` vs `=1` 同场景逐像素 diff，判据 `D ≡ 0`；遥测 `l4_redraw_skipped_static > 0` | **P0** |
+docs/re/atlas_rev/R2_fog_l4.md:657:| **D-R2-03** | `fog_model_hypothesis` §9 请求：是否二次订正台账 `[v1.8.36]` 的"保留（P2）"条目 | **建议订正为"证据已充分、待模型判别"** | `FOG.SHP` 三条量化断言**已成立**（本轮独立复算确认），原"保留"过保守；但**模型判别仍未闭环**（U-R2-02 `P0`），故不能升级为"已定谳" |
+docs/re/atlas_rev/R3_ai_hooks.md:335:| [4] 未闭环 1（RNG 2 次行为面，P0） | **PATCH-R3-09** + 回报 [4] | [待实测] |
+docs/re/atlas_rev/R3_ai_hooks.md:395:| 1 | 「帧 CRC 每逻辑帧 2 次 RNG」的**行为面后果**（是否改变 desync 判定/对拍门限） | 静态只能定字节与计数 | MP 门控矩阵 + 双端真机对拍：同种子开局，逐帧比对 `CurrentFrameCRC (0x00AC51FC)` 序列与 `SYNC_SNAP`；判据＝两端 CRC 序列逐帧一致且 RNG 抽取计数各为 2 | **P0 [待实测]** |
+docs/re/atlas_rev/R4_acceptance_standard.md:23:**额外 P0 发现（超出 atlas 域，交 Lead 裁决）**：机械校验器 `tools/verify_evidence.py:345-348` 仍按**旧 v2 阈值** `colors_80x80 < 1500 ⇒ FAIL`（文案仍写「建议 ≥ 2000」），与 09-28 生效口径 `≥600` **冲突** ⇒ 现网第一级过滤会**误杀**同量级合法证据（ZC-9B 实测 841–1046 < 1500）。放闸前必须先收口，否则 §13.4 两级过滤第 1 步即失效。见 [3]-E1、[9]-D1。
+docs/re/atlas_rev/R4_acceptance_standard.md:133:   - ⚠️ **校验器冲突（P0，交 Lead 裁决）**：`tools/verify_evidence.py:345-348` 仍按旧 v2 阈值 `colors_80x80 < 1500 ⇒ FAIL`（文案仍写「建议 ≥ 2000」），与本条生效口径冲突，**放闸前必须先收口**，否则 §13.4 第一级过滤会误杀同量级合法证据（详见 §13.1 表末行）。
+docs/re/atlas_rev/R4_acceptance_standard.md:267:| `MP_SAFETY_REVIEW.md` §5 修复优先级 :398-407 | §13.2（U-4）+ §13.5 | P0/P1/P2 与 G-0x 缺口映射 |
+docs/re/atlas_rev/R4_acceptance_standard.md:271:| `tools/verify_evidence.py` :15,345-348（**非来源文档，属证据链实测对象**） | §13.1 表末行 + [3]-E1 + [9]-D1 | 校验器旧阈值与 09-28 口径冲突（P0） |
+docs/re/atlas_rev/R4_acceptance_standard.md:292:5. **最大风险（P0）**：`tools/verify_evidence.py:345-348` 仍按**旧阈值** `colors_80x80 < 1500 ⇒ FAIL` 判定 —— 放闸时第一级机械过滤会**误杀**同量级合法证据（ZC-9B 实测 841–1046），必须与 09-28 订正同步收口（见 [3]-E1 / [9]-D1）。
+docs/re/atlas_rev/R4_acceptance_standard.md:306:| 9 | 校验器是否已按 09-28 新阈值执行？ | **否**（仍 `<1500 ⇒ FAIL`，文案「建议 ≥ 2000」）⇒ P0 冲突 | [实证] | `tools/verify_evidence.py:15,345-348`（本批实读源码）；`EVIDENCE_STANDARD.md:117-130` |
+docs/re/atlas_rev/R4_acceptance_standard.md:337:| **E1（P0）** | `tools/verify_evidence.py:345-348`（另 `:15` 文档串） | `if colors_80x80 < 1500:` / `issues.append(f"战场画面色数不足: {colors_80x80} (标准 v2 建议 ≥ 2000)")` / `verdict = "FAIL"` | 按 09-28 生效口径改为 **`< 600 ⇒ FAIL`**（并给「同量级」提示：与同场景既有已验收证据比对）；文案改为「新口径 ≥600（80×80 采样）/ ≥800（全画面）；=1 判伪造」；:15 文档串同步 | 旧 v2 阈值已被 Lead 2026-09-28 裁定**不可达、作废**；现网执行旧阈值会**误杀**同量级合法证据（ZC-9B 实测 841–1046 < 1500）⇒ 第一级机械过滤失效 | **影响产品决策/放闸**；该文件**不在本批写作用域** ⇒ 交 Lead 派工（[9]-D1） |
+docs/re/atlas_rev/R4_acceptance_standard.md:351:| N1 | v1.6.0 五项功能真机表现（U-1/U-2） | 需真机运行 + 截图/存档/遥测；本批**禁跑游戏/禁注入** | 按 `ZCODE_LIVE_ACCEPTANCE_TASK.md` Q3 执行；证据落 `out/re_work/zcode_live/evidence/**`；跑 `python tools/verify_evidence.py out/loadbench/shots/v160_real --log ra2youli/ra2render.log --except-file ra2youli/except.txt --sav-dir ra2youli`，须退出码 0 | **P0** |
+docs/re/atlas_rev/R4_acceptance_standard.md:352:| N2 | 崩溃窗口与 EIP 归属（U-3） | 需对局中复现/排除 `0x5450202F`；静态只能给归属规则 | 连续 3 局对局，记录 `ra2youli/except.txt` mtime 是否 > 截图最早 mtime；若命中则解析 `Eip` 是否 ∈ `0x54500000–0x545F0000` | **P0** |
+docs/re/atlas_rev/R4_acceptance_standard.md:354:| N4 | 阈值「同量级」无机器化判据（E1 连带） | 需先收口 `verify_evidence.py` 阈值与「同场景既有已验收证据」比对逻辑 | 修 `:345-348` 为 `<600 ⇒ FAIL`，并新增「与 `out/loadbench/shots` 内既有已验收同场景样本中位数同量级」检查；改后自跑三批历史证据回归（须仍正确 FAIL 单色图 batching） | **P0** |
+docs/re/atlas_rev/R4_acceptance_standard.md:460:| **D1** | `verify_evidence.py` 旧阈值（P0）如何收口 | **本批派工修**：改 `:345-348` 为 `<600 ⇒ FAIL` + 文案改新口径 + 加「同量级」检查；改后跑三批历史证据回归（须保持对单色伪造批次的 FAIL） | 不动则放闸第一级过滤与 09-28 裁定冲突，会误杀 ZC 证据；属放闸路径的关键工具 |
+docs/re/atlas_rev/R5_triggers_save.md:224:| U-7 | 锁存位 `[Scenario+0x34AA / 0x34AB / 0x34BE]` 置位来源与 MP 确定性 | 本批只证「轮询器读它们」 | 扫全镜像写点（含经 `ecx=[0xA8B230]` 的间接寻址），判定是否含本机输入路径 | **P0（联机风险面）** |
+docs/re/atlas_rev/R5_triggers_save.md:226:| U-9 | 触发器「每帧总 RNG 消费量」的真机分布 | 需运行期计数 | 真机 hook `0x65C780 / 0x65C7E0` 计数 + 与 CRC 帧号对拍 | **P0（联机对拍门禁）** |
+docs/re/atlas_rev/R5_triggers_save.md:525:5. **最大风险**：§14.7 的"全帧 RNG 总量非恒定 2"与 §12.2 现有红线框口径存在读法冲突（已用 PATCH-R5-03 限定，**须 Lead 裁决是否采纳**）；另 §14 U-7（轮询器锁存位是否含本机输入路径）**直接决定触发器在 MP 下的分叉面**，列为 P0。
+docs/re/atlas_rev/R5_triggers_save.md:635:| 轮询器锁存位 `[Scenario+0x34AA/0x34AB/0x34BE]` 置位来源 | 只证"轮询器读它们"，写点未穷尽 | 扫全镜像这三处的写指令（含 `ecx=[0xA8B230]` 间接寻址），判定是否含本机输入（拾取木箱等）路径 | **P0** |
+docs/re/atlas_rev/R5_triggers_save.md:636:| 触发器"每帧总 RNG 消费量"分布 | 需运行期计数 | 真机 hook `0x65C780 / 0x65C7E0` 计数 + 与 CRC 帧号对拍（联机双端） | **P0** |
+docs/re/atlas_rev/R6_weapons_mix.md:131:> **〔勘误 R6-E2｜P0 级〕** `docs/re/weapons_damage_production.md:126-129`（§2.1 布局表）把 `Verses[11]` 记为 **`Warhead+0xB0`**、把 `Deform` 记为 `+0xA8`。本基线实测：**`Verses[0]` 落在 `+0xA0`**（`Verses` 覆盖 `+0xA0…+0xF7`），因此 **`+0xB0` 实为 `Verses[2]`**（Plate/装甲档位之一）。
+docs/re/atlas_rev/R6_weapons_mix.md:483:| §2.1 WarheadTypeClass 布局 | 120-142 | **§16.3（含 P0 勘误 R6-E2：Verses 起于 +0xA0）** |
+docs/re/atlas_rev/R6_weapons_mix.md:498:| S24 §二.2 PRNG 消费清单 P01-P27/L01-L06 | 587-630 | §16.4-D（抽验承伤 5 处局内 + 6 处局外装载点；全 33 处清单以断言库引用，不逐条抄入 atlas） |
+docs/re/atlas_rev/R6_weapons_mix.md:567:2) 新增 4 条源文档勘误：R6-E1 FootClass v[243]（非 0x415EE0）、R6-E2 WarheadTypeClass.Verses 起于 +0xA0（非 +0xB0，**P0**）、R6-E3「Verses 在 ReceiveDamage 0x701939 乘算」不成立、R6-E4 FactoryClass 步数 +0x24 / 在造对象 +0x58（非 +0x20 / +0x50，**P1**）。
+docs/re/atlas_rev/R7_vxl_fx_gap.md:462:| Q1 | 各类的 **v[65] 表项归属**（哪些类真用共享体 `0x5F4B10`） | 需逐类虚表扫描 + 调用点 xref | 对 6 类 FX + Building/Unit/Infantry/Aircraft 的 vtbl+0x104 表项逐个 dump；再统计 `0x5F4B10` 的 IMM 直呼数 | **P0**（决定 §19.7 裁决能否翻案） |
+docs/re/atlas_rev/R7_vxl_fx_gap.md:689:| Q1 | 3×NOP 是否已由**外部补丁器/加载器**安装 | 本流只读 `ra2render/**`；不排除其他安装路径 | 真机读 `0x568273` 首字节（`89` / `90`）；或检查加载器安装清单 | **P0** |
+docs/re/atlas_rev/R7_vxl_fx_gap.md:843:| U1 | 3×6B NOP 落地与否 | 本流只读渲染 DLL 源码；不排除外部补丁器/加载器安装 | 真机断点读 `0x568273` 首字节：`89` = 未打、`90` = 已打；或查加载器安装清单 | **P0** |
+docs/re/atlas_rev/R7_vxl_fx_gap.md:844:| U2 | 各类 v[65] 表项归属（决定能否改用共享体钩） | 需逐类虚表扫描 + 调用点 xref，本流未跑 | dump 6 类 FX + Building/Unit/Infantry/Aircraft 的 `vtbl+0x104` 表项；统计 `0x5F4B10` 的 IMM 直呼数 | **P0** |
+docs/re/atlas_rev/R7_vxl_fx_gap.md:981:| | §7 未决 Q1–Q7 | §19.10（Q1 升级为 P0；Q2/Q3 勘误定谳） |
+docs/re/atlas_rev/R8_ui_crt.md:290:        P1["P0: 8 / 12 / 16 / 456B 定长 freelist"]
+docs/re/atlas_rev/R8_ui_crt.md:339:| **Vector / DynamicVector 缓冲清空与扩容** | 0x004E97B0（362 处 CRT 点，0x004E97C3: `E8 75 F3 2D 00` = call _delete）、0x006C6400（84 处，0x006C6421: `03 C1` = add eax,ecx 线性扩容） | 实体生成/死亡、目标列表重建时反复 _delete(Items) + _new | **P0**（_delete 静态份额 ~38%，见 §10.2） |
+docs/re/atlas_rev/R8_ui_crt.md:340:| **小节点构造（8 / 12 / 16B）** | 0x0048EBF0（116 处）、0x005A9A20（63 处） | 反复 push 8/12/16; call _new 造链表节点 | **P0**（最高频小块抖动） |
+docs/re/atlas_rev/R8_ui_crt.md:417:| 0x0048EBF0 / 0x005A9A20 | 8B 小节点构造簇（P0 池化目标） | [实证] | claims 0x0048EBF0、0x005A9A20 |
+docs/re/atlas_rev/R8_ui_crt.md:439:- **证据**: [实证] 0x006924DF = `E8 FC 40 EF FF`（call 0x5865E0，FileOffset 0x002924DF）、0x00692A87 = `E8 54 3B EF FF`（0x00292A87）、0x00655F48 = `85 ED 0F 84 2E FF`（0x00255F48）；来源 docs/re/shroud_click_interaction.md:427-437（方案 A 挂载点与 100% 混联安全论证）、docs/re/radar_minimap_dots.md:181（P0 挂载点 0x00655F48）。
+docs/re/atlas_rev/R8_ui_crt.md:481:- 0x00655F48（0x00255F48）：`85 ED 0F 84 2E FF` = test ebp,ebp; je 0x00655E7E（P0 雷达点绘剔除挂载点前后文一致）。
+docs/re/atlas_rev/R8_ui_crt.md:599:| radar_minimap_dots.md §5 / §5.1 / §5.2 | 最小侵入 Hook 点表与性能约束 | PATCH-R8-01 §21.6（hook 面分级） | P0 之外的 hook 建议属落地方案，保留在来源文档 |
+docs/re/b_class_merge_zc_cards.md:67:> 【W3 勘误 · W3-A6/ISSUE-DEFAULT-GAPPROTECTION】改前：EnableGapProtection=1；改后：EnableGapProtection=0  ; [代码/出厂默认0，安全侧；测试或启用时显式置1]；依据：ra2render/blitter_hooks.cpp:606; ra2render/ra2render.ini:199; config_key_matrix.md:109；分级：P0
+docs/re/b_regression_required.md:78:> 【W3 勘误 · W3-A6/ISSUE-DEFAULT-GAPPROTECTION】改前：EnableGapProtection=1；改后：EnableGapProtection=0  ; [代码/出厂默认0，安全侧；测试或启用时显式置1]；依据：ra2render/blitter_hooks.cpp:606; ra2render/ra2render.ini:199; config_key_matrix.md:109；分级：P0
+docs/re/bench_map_rework.md:16:5. **历史 ROI 估计（P0-1「+5～12%」等）作废**：建立在未承载负载的图上，不构成基准支撑。
+docs/re/bench_map_rework.md:129:| P0-1 渲染优化「+5～12%」 | **作废** | 建立在未承载 U200/U800 负载的图上；有效样本/覆盖率不达门禁 |
+docs/re/bench_map_rework.md:156:| U-MB-2 | H1 图实际 units_seen 区间 | 需真机 | V3 实测后回填期望区间 | **P0** |
+docs/re/blit_coverage_top10.md:14:3. **排序结论**：Top10 以三类静态证据排序（§5）。Top3 = `BlitTransXlatZRead@G`（单位重叠本体）→ `BlitTransDarkenZRead@G`（单位重叠影子）→ `RLEBlitTransXlatZRead@G`（步兵重叠本体 RLE）。这三项是单位绘制主路径在**重叠场景**下的真正热点变体，也是文档已定谳的 P0/P1。
+docs/re/blit_coverage_top10.md:145:| 1 | `?$BlitTransXlatZRead@G` | 透明/Xlat/ZRead | [实证] nonrle §2 P0「单位重叠本体主路径」；[实证] ARCHITECTURE_ATLAS `0x007E5978`；[推演] 重叠时替代已 Hook 的 `BlitTransXlatAlphaZRead` 更瘦路径 | **高**（重叠单位本体） | 中：Z 逐像素比较 + `zBuf` 环绕（`0x00887644`）；无 overshoot/zmap |
+docs/re/blit_coverage_top10.md:146:| 2 | `?$BlitTransDarkenZRead@G` | 透明/变暗/ZRead | [实证] nonrle §2 P0「单位重叠影子路径」；[实证] `HOOK_POINT_MATRIX:107` P1；SIMD 收益最大（纯 dst RMW） | **高**（重叠阴影） | 中：同上 Z 环绕 + DarkenMask（`this+0x04` 是 **uint16 值**非指针，解引用会 Crash） |
+docs/re/blit_coverage_top10.md:321:| 1 | 每函数调用数 × 像素 | 遥测只有总量；虚函数间接派发无静态 xref | 按 §7 插桩；重放 U0800_Accelerated_Skirmish + Brutal AI 场景 | **P0**（排序校准） |
+docs/re/blit_coverage_top10.md:323:| 3 | Top10 收益档实测 | 无 per-func 分布 | 同 #1 | **P0** |
+docs/re/blitter_microkernel_deep_dive.md:42:【勘误 2026-09-29 · E-1 · landing_audit】原文「所有 Blitter 对象的分配大小统一为 12 字节」→ 订正为：**按成员数分级 4/8/12/16 四级分配**（`push <size>; call operator new (0x007C8E17)`），**P0 微内核（步兵/载具本体与影子主路径）实测仅 8 字节**。按 12B 声明 `this+0x08` 将**越界 4 字节**（堆块尾部踩踏）。权威：`ARCHITECTURE_ATLAS.md` §1.2〔勘误 R1〕+ 同文 L1029 自勘误 + `re_sprint_S13_report.md:17`。原文保留不删字。
+docs/re/blitter_microkernel_deep_dive.md:46:【勘误 2026-09-29 · E-1 · landing_audit】下图标题「(12 字节)」→ 订正为：**尺寸按成员数分级 4/8/12/16**；P0 微内核 = **8 字节**（仅 `+0x00` vtable + `+0x04` 一槽，**无 `+0x08`**）。Lucent/ZRemap/Alpha 族才是 12 字节（vtable + 2 槽）。按 12B 统一布局图声明结构体，在 8B 对象上访问 `this+0x08` 即越界 4 字节。原文围栏保留不删字。
+docs/re/blitter_microkernel_deep_dive.md:1177:| **TOP 1 (P0)** | **`?$BlitTransXlatZRead@G`** | `0x007E5978` | `0x00492B00` | 载具集群重叠、建筑与重叠单位本体主路径 | 密集未压缩 8 位索引，多单位交战单帧达数十万像素 | 极高：8 字节无条件前进，`_mm_cmpgt_epi16` 并行测试，标量查表+向量写回 |
+docs/re/blitter_microkernel_deep_dive.md:1178:| **TOP 2 (P0)** | **`?$BlitTransDarkenZRead@G`** | `0x007E5948` | `0x00492D20` | 载具/建筑向斜坡或重叠单位投射的带深度阴影 | 密集未压缩流，纯目标读-改-写（RMW） | **极高（最高收益点）**：无查表开销，8 像素单拍 `psrlw` + `pand`，吞吐提升 6~8 倍 |
+docs/re/claims_factory_spec_v2.md:9:| `factory_fix.py` | 修补版流水线（P0 intake 分桶 / P0 F3 锚点 / P1 双锚点 / P2 kind+census） |
+docs/re/claims_factory_spec_v2.md:19:### P0-A — intake 分 `upgrade` / `new` 桶（窗宽归一必须可触发）
+docs/re/claims_factory_spec_v2.md:35:### P0-B — `pick_anchors` 强制 F3 imm 覆盖，禁止盲窗回退
+docs/re/claims_factory_spec_v2.md:129:| P0 intake | （升级桶空跑） | upgrade=45 / new=35（回归集内） | **改善** |
+docs/re/claims_factory_spec_v2.md:144:## 4. 出口判据（继承 T17 §4.2，补充 P0/P1 断言）
+docs/re/config_key_matrix.md:17:> 【W3 勘误 · W3-A6/ISSUE-SECTION-L4DIRTYMODE】改前：[Render] L4DirtyMode；改后：[FogOfWar] L4DirtyMode=force-full；依据：ra2render/blitter_hooks.cpp:757; ra2render/ra2render.ini:251；分级：P0
+docs/re/config_key_matrix.md:19:> 【W3 勘误 · W3-A6/ISSUE-DEFAULT-GAPPROTECTION】改前：EnableGapProtection=1；改后：EnableGapProtection=0  ; [代码/出厂默认0，安全侧；测试或启用时显式置1]；依据：ra2render/blitter_hooks.cpp:606; ra2render/ra2render.ini:199; config_key_matrix.md:109；分级：P0
+docs/re/config_key_matrix.md:21:> 【W3 勘误 · W3-A6/ISSUE-SECTION-AUDIO】[W3-Lead临时裁决] 改前：[Audio] EnableAudioThrottling；改后：[AudioThrottle] ; DC-02 裁决口径: 8 键体系，宿主 ra2render.ini Enable=0 MaxVoicePerFrame=6 VoiceDedupMs=80；依据：docs/re/dispatch/W3_20261001_Lead_DECISION_AND_BOARD.md:41; docs/re/audio_throttle_landing.md:19, 139-147；分级：P0
+docs/re/config_key_matrix.md:129:> 【W3 勘误 · W3-A6/ISSUE-KEY-POOLBLOCKCOUNT】[W3-Lead临时裁决] 改前：PoolBlockCount=4096；改后：; [DC-04 裁决: PoolBlockCount 保持未定，禁入冻结面，予以删除]；依据：docs/re/dispatch/W3_20261001_Lead_DECISION_AND_BOARD.md:43, 49；分级：P0
+docs/re/config_key_matrix.md:136:> 【W3 勘误 · W3-A6/ISSUE-SECTION-MEMORYPOOL】[W3-Lead临时裁决] 改前：[MemoryPool] EnableMemoryPool；改后：[System] ; DC-01 裁决口径: 使用既有 [System] 节，零新增节 EnableMemoryPool=0；依据：docs/re/dispatch/W3_20261001_Lead_DECISION_AND_BOARD.md:40; docs/re/pending_execution_master_table.md:410-412；分级：P0
+docs/re/crt_callgraph.md:122:| **16 (0x10)** | 192 | 双指针节点 / 小结构 | **P0** |
+docs/re/crt_callgraph.md:123:| **8 (0x8)** | 166 | 单指针+标志节点（`0x48EBF0` 簇） | **P0** |
+docs/re/crt_callgraph.md:124:| **456 (0x1C8)** | 145 | 中型游戏对象（Type/Control 片段，ctor 写多 vtable） | **P0** |
+docs/re/crt_callgraph.md:190:| **帧内风险（优化目标）** | `VectorClass::v[3]` 清空与 `DynamicVectorClass` 扩容（`0x4E97B0`、`0x6C6400`、`0x40BA50` 等）；`0x48EBF0` 8B 节点；`0x490E50` Convert 缓冲 | 实体生成/死亡、目标列表重建、渲染换算表时触发 | **P0** |
+docs/re/crt_callgraph.md:203:| **P0** | 8 / 12 / 16 字节 | 三级 freelist（TLS 或单线程全局），拦截 `_new/_delete` 中对应尺寸；节点类对象 ctor/dtor 改为 pop/push | 削减最高频小块抖动 |
+docs/re/crt_callgraph.md:204:| **P0** | 456 (0x1C8) | 对象池（构造时从池取，析构归还）；对应 145 个静态构造点中的热对象 | 消除中型块碎片 |
+docs/re/crt_l2_class34_fix_spec.md:180:- P0 `0xFE00FFFF`（本次主毒，`CellStruct{-1,-512}`）
+docs/re/crt_memory_pool_deep_dive.md:475:| **`AnimClass`** | **456 (0x1C8)** | 111 处 | **超高频，生命周期极短**（数十毫秒至 1~2 秒）。爆炸、开火、弹壳烟雾全靠它，全战场同时存在数百个，帧间频繁增删 | **P0 必池化**（彻底消除中块堆碎片与 CRT 锁消耗） |
+docs/re/crt_memory_pool_deep_dive.md:476:| **`BulletClass`** | **352 (0x160)** | `0x006C50BC` | **高频，生命周期短**（几百毫秒至数秒）。开火时 `new`，飞行动力学更新，击中引爆或出界后立即 `delete` | **P0 必池化** |
+docs/re/crt_memory_pool_deep_dive.md:477:| **`ParticleClass`** | **312 (0x138)** | `0x0062E397` | **极高频，生命周期瞬态**（数帧至数十帧）。由烟囱、起火车辆、尾烟等 `ParticleSystemClass` 批量喷射与淘汰 | **P0 必池化** |
+docs/re/crt_memory_pool_deep_dive.md:478:| **8 字节链表节点** | **8 (0x08)** | 141 处 | `push 8; call _new`。典型如 `0x00448669` 单向链表节点、`0x0048EBF0` 载入映射节点、`WaypointClass` 路点 | **P0 必池化**（单次 pop/push 仅 2 指令） |
+docs/re/crt_memory_pool_deep_dive.md:480:| **16 字节节点/向量**| **16 (0x10)** | 112 处 | 双指针结构体、堆分配的 `VectorClass` 实例本体、中型链表节点 | **P0 必池化** |
+docs/re/crt_memory_pool_deep_dive.md:482:| **向量扩容缓冲块** | **40B / 80B / 160B** | 动态生成 | `DynamicVectorClass` 每次扩容时申请的指针数组（10 / 20 / 40 个指针） | **P0 采用向量保留策略** |
+docs/re/crt_pool_landing.md:100:| **8** | 176 | 链表节点簇（`0x0048EBF0` 等） | **Freelist 池** | P0 |
+docs/re/crt_pool_landing.md:102:| **16** | 196 | 节点 / `VectorClass` 体 | **Freelist 池** | P0 |
+docs/re/crt_pool_landing.md:104:| **40** | 65 | DVC 步长 10×4B 增长块 / 对话 | 池 **或** L1 预留消灭 | P0（优先 L1） |
+docs/re/crt_pool_landing.md:106:| **312 (0x138)** | 8 | `ParticleClass`（样例 `0x0062E39C`） | **实体池** | P0 |
+docs/re/crt_pool_landing.md:107:| **352 (0x160)** | 3 | `BulletClass`（`0x006C50C1`） | **实体池** | P0 |
+docs/re/crt_pool_landing.md:108:| **456 (0x1C8)** | 149 | `AnimClass`（`0x00414C2B` 等） | **实体池** | P0 |
+docs/re/dirty_rect_deep_dive_p2.md:243:`l4_dirty_residual_check.md` P0-1 flags 纪律（`pushfd/popfd`）、P0-2 E5 像素对拍、P1-1 遥测语义、P2-1 视口窗外扩 —— 仍是 vision-dirty 放行门槛；本卡不改 `ra2render/**`。
+docs/re/dirty_rect_l4.md:9:> `docs/NEXT_RE_AND_MODERNIZATION.md` P0-2。
+docs/re/dispatch/2026-09-26_1735_Antigravity.md:7:## A-1（P0）v1.6.0 独立真机验收 + 像素对拍
+docs/re/dispatch/2026-09-26_1735_ZCode.md:7:## Z-1（P0，最高优先，可立刻并行）基准/回放 harness 可信化
+docs/re/dispatch/2026-09-26_1750_ZCode.md:6:## Z-1′（P0，可与 Z-3 并行）基准 harness **+ v1.6.0 真机证据采集**
+docs/re/dispatch/2026-09-26_1800_ZCode.md:6:## Z-1′b（P0）补齐：协议 + 真机证据 + 三局数据
+docs/re/dispatch/2026-09-26_1800_ZCode.md:17:> 【W3 勘误 · W3-A6/ISSUE-SECTION-L4DIRTYMODE】改前：[Render] L4DirtyMode；改后：[FogOfWar] L4DirtyMode=force-full；依据：ra2render/blitter_hooks.cpp:757; ra2render/ra2render.ini:251；分级：P0
+docs/re/dispatch/2026-09-26_1805_ZCode.md:9:## Z-1′b（P0）按《证据标准 v2》重做证据包
+docs/re/dispatch/2026-09-26_1805_ZCode.md:19:> 【W3 勘误 · W3-A6/ISSUE-SECTION-L4DIRTYMODE】改前：[Render] L4DirtyMode；改后：[FogOfWar] L4DirtyMode=force-full；依据：ra2render/blitter_hooks.cpp:757; ra2render/ra2render.ini:251；分级：P0
+docs/re/dispatch/2026-09-26_1815_Antigravity.md:3:仓库：`D:\Project\ra2-campaign-forge`。先读 `docs/RE_COORDINATION.md` → **§🔴 P0 缺陷通报与派工 v6**。
+docs/re/dispatch/2026-09-26_1815_ZCode.md:1:# 派工提示词 · ZCode（v6 · P0 崩溃排查，可直接粘贴） — 2026-09-26 18:15
+docs/re/dispatch/2026-09-26_1815_ZCode.md:3:仓库：`D:\Project\ra2-campaign-forge`。先读 `docs/RE_COORDINATION.md` → **§🔴 P0 缺陷通报与派工 v6**。
+docs/re/dispatch/2026-09-26_1815_ZCode.md:4:你的真机采集是真实的（`ra2render.log` 有注入痕迹、`calib/` 已出战场帧 425 KB），但**采集期间游戏崩了**，这是当前 P0。
+docs/re/dispatch/2026-09-26_1815_ZCode.md:13:## P0-1 崩溃排查（最高优先）
+docs/re/dispatch/2026-09-26_1815_ZCode.md:20:## P0-2 解释遥测全 0
+docs/re/dispatch/2026-09-26_1815_ZCode.md:27:> 【W3 勘误 · W3-A6/ISSUE-SECTION-L4DIRTYMODE】改前：[Render] L4DirtyMode；改后：[FogOfWar] L4DirtyMode=force-full；依据：ra2render/blitter_hooks.cpp:757; ra2render/ra2render.ini:251；分级：P0
+docs/re/dispatch/2026-09-26_1828_ZCode.md:1:# 派工提示词 · ZCode（v8 · 两个 P0，可直接粘贴） — 2026-09-26 18:28
+docs/re/dispatch/2026-09-26_1828_ZCode.md:3:仓库：`D:\Project\ra2-campaign-forge`。先读 `docs/RE_COORDINATION.md` → **§核验 v8 + 派工 v8**（含当前 P0 板）。
+docs/re/dispatch/2026-09-26_1828_ZCode.md:4:**注意：你的 `ra2render` 自 17:18:42 起没有任何改动**（`blitter_hooks.cpp` 17:18:42 / `ra2render.dll` 17:18:58 = 含崩溃的构建），两个 P0 都还悬着。
+docs/re/dispatch/2026-09-26_1828_ZCode.md:6:## P0-1 崩溃修复（`0x5450202F`）
+docs/re/dispatch/2026-09-26_1828_ZCode.md:12:## P0-3（新）L2 节流用指针地址做键 → 联机 desync（缺陷2）
+docs/re/dispatch/2026-09-26_1828_ZCode.md:17:## P0-2 解释「四项遥测全 0」
+docs/re/dispatch/2026-09-26_1828_ZCode.md:20:## P0-4 证据与纪律
+docs/re/dispatch/2026-09-26_1832_ZCode.md:15:4. **P0-2**：解释 `迷雾剔除/建筑剔除/弹道剔除/小地图灰化像素` 四项遥测全 0（未触发 or 未生效）。
+docs/re/dispatch/2026-09-26_1832_ZCode.md:16:5. **P0-4**：`out/loadbench/shots/v160_real/**` + `PROTOCOL.md`（按《证据标准 v3》，采集脚本内置 MD5 去重）+ `ra2youli/RA2MD.INI`、`ddraw.ini` 两次改动（17:50:19、18:09:13）的 `*.benchbak` 备份与 §游戏目录改动台账 登记。
+docs/re/dispatch/2026-09-26_1832_ZCode.md:19:- **P0-3**：`blitter_hooks.cpp` 第 404/425/463 行 `unitHash = (uintptr_t)pThis >> 4` → 联机 desync 高风险。请改为确定性键（对象唯一 ID/索引或 `CurrentFrame % N`），**联机默认禁用该节流**，带开关与回滚。
+docs/re/dispatch/2026-09-26_1836_ZCode.md:12:1. **路线 A 落地（P0-1b，坐标误用）**：按 `docs/re/radar_hook_routeA_spec.md`（我已逐字节核验规格无误）把雷达挂钩下沉到 **`0x00655D38`**：
+docs/re/dispatch/2026-09-26_1836_ZCode.md:19:3. **P0-2 解释四项遥测全 0**：`迷雾剔除/建筑剔除/弹道剔除/小地图灰化像素` 为何为 0（未触发 vs 未生效），给出判定方法与证据。
+docs/re/dispatch/2026-09-26_1836_ZCode.md:20:4. **P0-4 证据包**：`out/loadbench/shots/v160_real/**`（按《证据标准 v3》：真实截图、MD5 互异、战场 ≥400 KB/色数 ≥2000、真实存档、2 秒遥测）+ `PROTOCOL.md`。
+docs/re/dispatch/2026-09-26_1847_ZCode.md:14:3. **P0-2 解释遥测全 0**：`迷雾剔除 / 建筑剔除 / 弹道剔除 / 小地图灰化像素` 为何为 0（未触发 vs 未生效），给出判定方法与证据（提示：`smoke_routeA` 已经能提供第一手数据 —— 路线 A 生效时 `s_minimapFogPixels` 应 >0）。
+docs/re/dispatch/2026-09-26_1852_ZCode.md:9:3. **战局内 2 秒遥测必须非零**：`小地图灰化像素`（路线 A 生效时应 >0）、`迷雾剔除/建筑剔除/弹道剔除` 若条件触发也应 >0；若仍为 0，需给出「未触发 vs 未生效」的判定与证据（这是 P0-2）。
+docs/re/dispatch/2026-09-26_1920_Antigravity.md:12:> 【W3 勘误 · W3-A6/ISSUE-SECTION-L4DIRTYMODE】改前：[Render] L4DirtyMode；改后：[FogOfWar] L4DirtyMode=force-full；依据：ra2render/blitter_hooks.cpp:757; ra2render/ra2render.ini:251；分级：P0
+docs/re/dispatch/CONTINUE_20261003_DLC.md:11:收口后提供 DLC 最小贯通设计草案和 EXP001-K/K′ 问题清单供 Codex 裁定；此卡不授权安装 strict 默认策略、生产安装器修改、部署、存档或联机变更。外部仅三家、内部仅获准三模型，先核对真实模型/身份与后台任务，GUI 独立聊天确认，notify_complete=true 或等效回执，不取消/重启。记录真实 running/依赖/待验收并及时补位。
+docs/re/dispatch/CONTINUE_20261003_MAIN.md:1:# CONT-MAIN01：EXP001 收尾与可信门禁修复
+docs/re/dispatch/CONTINUE_20261003_MAIN.md:7:第一包收尾：核对 B-r1b、E-r1、I′、J6、FV4 真件。acceptance.json 的 rework_log 仍有 IN FLIGHT，STATUS.md 下一步及跨线状态也过期；以实际终态更新，仅本会话写 EXP001/control/**、EXP001/STATUS.md。旧快照不删除，哈希注明测量时点；任何新编辑后的 JSON 须重新真实解析。
+docs/re/dispatch/CONTINUE_20261003_PERF.md:5:Codex 裁定 PD-CARD-01 基准身份钉桩归本性能普通会话，原 EXP001 队友不得重复执行。下一步先离线建立真机采样的就绪证据；不把名义 H1 单位数当 actual_units，不把 ra2opt 改过的 exe 当 pristine。
+docs/re/dispatch/EXP001_work_chain.md:1:# EXP001 · 三层工作链首轮实验（DSH 调度入口）
+docs/re/dispatch/EXP001_work_chain.md:18:调度者仅写 `out/re_work/work_chain/EXP001/control/**` 和本轮 `STATUS.md`；执行者分别独占下述目录。所有人只读其他目录。你不是唯一工作者，不得回滚或覆盖别人变更。
+docs/re/dispatch/EXP001_work_chain.md:36:- 写域：`out/re_work/work_chain/EXP001/qwen_perf/**`。
+docs/re/dispatch/EXP001_work_chain.md:44:- 写域：`out/re_work/work_chain/EXP001/step37_pe/**`。
+docs/re/dispatch/EXP001_work_chain.md:53:- 写域：`out/re_work/work_chain/EXP001/glm_dlc/**`。
+docs/re/dispatch/EXP001_work_chain.md:61:- 写域：`out/re_work/work_chain/EXP001/step5_review/**`；只读 B 目录。
+docs/re/dispatch/IMPL001_parallel_dispatch.md:13:- 原 EXP001 调度会话：继续收口原任务、独立审计与返工，不迁移或重复派发原包；公共 EXP001 索引仍由它唯一维护。
+docs/re/dispatch/IMPL001_parallel_dispatch.md:50:先读本卡和 WORK_CHAIN。各调度会话分别探测可用的外部 harness，按实际能力、难度和额度选模型。Qoder/ZCode 仅在独立聊天身份明确时可同时操作，否则使用可并行的 Antigravity/CLI 后台任务；不得多个调度者争抢同一 GUI 输入框。外部任务需指定自己会话为回执接收方，不把结果都发给 EXP001 总协调者。
+... [display truncated at 200 of 832; exact total above]
+```
+
+## pattern: `P1-A`
+
+**total matches = 2**
+
+```text
+docs/PROJECT_DIRECTION.md:74:| P1-A | 真实负载与闪退基线 | H1 实际单位数确认、负载曲线、热点归因、崩溃复现/证据、可重复测试步骤 |
+docs/re/claims_factory_spec_v2.md:46:### P1-A — `emit_text(bss_ref)` 成对输出区域行
+```
+
+## pattern: `P1-B`
+
+**total matches = 8**
+
+```text
+docs/PROJECT_DIRECTION.md:75:| P1-B | 安全补丁与行为验证基础 | 版本/字节守卫、开关/遥测/回滚能力盘点；固定场景和对拍样例；兼容缺口清单 |
+docs/re/asm_fix2_report.md:44:| 验收① | P1/P2 真勘误降为 0 | **达成**：AFTER `P1-BYTE-ERROR = 0` / `P2-VA-DRIFT = 0`（授权范围内；原 38/9） | [实证] | `out/re_work/asm_fix2/before_after_table.md` |
+docs/re/asm_fix2_report.md:266:| P1-BYTE-ERROR | 38 | 2 | 0 |
+docs/re/asm_fix_report.md:207:| P1-BYTE-ERROR | 36 | **2** | −34 |
+docs/re/asm_fix_report.md:296:build_errata  : {'P1-BYTE-ERROR': 38, 'P2-VA-DRIFT': 9, 'P3-LIST-DRIFT': 27, 'P4-REVIEW': 29,
+docs/re/claims_factory_spec_v2.md:58:              [0xSITE2 = HEX  # bss-xref -> 0xVA] （P1-B 第二锚点，可选）
+docs/re/claims_factory_spec_v2.md:63:### P1-B — 高 xref 双锚点（可选，已实现）
+docs/re/inline_assertion_scan.md:67:| `P1-BYTE-ERROR` | 声明 ≥3 字节且**全镜像 0 命中**（非 VA 漂移） | 36 |
+```
+
+## pattern: `P1-C`
+
+**total matches = 1**
+
+```text
+docs/PROJECT_DIRECTION.md:76:| P1-C | DLC 最小样例与差距盘点 | ra2forge 能力实测、内容包规范草案、贯通样例与缺口列表 |
+```
+
+## pattern: `P2-A`
+
+**total matches = 2**
+
+```text
+docs/PROJECT_DIRECTION.md:77:| P2-A | 第一批有收益的优化修复 | 按基线选热点和根因；通过预设性能/稳定性目标、行为回归与回滚 |
+docs/re/claims_factory_spec_v2.md:70:### P2-A — `kind_of` 扩展 + 入口对齐
+```
+
+## pattern: `P2-C`
+
+**total matches = 5**
+
+```text
+docs/PROJECT_DIRECTION.md:78:| P2-C | DLC 框架增量实现 | 最小样例全流程通过后扩展内容类型、依赖/冲突与升级能力 |
+docs/re/warhead_verses_residual_p2.md:194:| `weapons_damage_production.md` 「Verses 应用点在 0x701939」 | **否定**（R6-E3 + 本轮 P2-C42 空集） |
+docs/re/warhead_verses_residual_p2.md:244:| V1 块属主 | **已闭环**（R-06：`GetTotalDamage`）+ 本轮补 3 个 call 点 | P2-C31 / P2b-D1 |
+docs/re/warhead_verses_residual_p2.md:297:| Verses 施加于 `ReceiveDamage 0x701939` | 该段 `fild/fmul/fdivr` 无 `*8+0xA0`；P2-C42 空集 | `[实证]` |
+docs/re/warhead_verses_residual_p2.md:298:| Verses 施加于 `DamageArea 0x489280` 本体 | P2-C43 空集；本体只读 CellSpread | `[实证]` |
+```
+
+## pattern: `APP2`
+
+**total matches = 24**
+
+```text
+docs/PROJECT_DIRECTION.md:73:| P0 | 当前审计与正文落地收尾 | 核对 APP2 独立审计、已判伪项回填和回归残红；按实际产物回填状态；形成当前指纹下的可信基线 |
+docs/PROJECT_DIRECTION.md:83:当前 APP2 等名称仅标识 2026-10-02 的衔接任务，不代表这些任务仍未完成。后续执行前须读取最新验收记录。新增规划不重写历史交付，不把历史指纹强行更新成当前值。
+docs/re/dispatch/W3_20261002_APP2_atlas_append13.md:1:# W3-APP2 派工单 · 补追加 §13（m35 补丁块落进原版侧 ATLAS）—— M35P 参数驱动
+docs/re/dispatch/W3_20261002_APP2_atlas_append13.md:30:`out/re_work/zcode_live/W3_20261002/app2_atlas_append/`：`APP2_REPORT.md` + `verify_app2.py` + 快照/负控/Δ 对拍原文。完成后回报 `[0]`：改前/改后大小与 sha、Δ 实测 vs 预测表、verdict tally 原文。
+docs/re/dispatch/W3_20261002_AUD2_app2_audit.md:1:# W3-AUD2 派工单 · APP2 独立审计（§13 落位的第三方复核）
+docs/re/dispatch/W3_20261002_AUD2_app2_audit.md:3:> 派发：2026-10-02 21:2x（Lead）· 前置：**APP2 已验收（46/46，§483）** —— 项目铁律：大写写操作必有独立审计（APP1→APPR 同款）
+docs/re/dispatch/W3_20261002_AUD2_app2_audit.md:12:## 审计问题（逐条独立取证，不许拿 APP2 的工具当唯一判据）
+docs/re/dispatch/W3_20261002_AUD2_app2_audit.md:14:1. **纯插入 + 可逐字节还原**：你自写解析（difflib/行级）复核 opcode ⊆ {equal, insert}；**删掉 APP2 插入的行回写 ⇒ sha == 1dce588aa505 改前快照**（逐字节）。插入块的位置/行区间由你自己算，不抄 APP2 报告。
+docs/re/dispatch/W3_20261002_AUD2_app2_audit.md:17:4. **Δ 独立复算**：+31 行、逐章守恒（§13 增、他章不减）—— 用**你自己的**行数/章界统计（不是 APP2 的 step 日志）；unique_va 用官方 `tools/atlas_va_crosscheck.py` 独立跑：改前快照 vs 现件（若官方工具只能对现件跑，则用 APP2 的 xc_before/xc_after 原始 JSON **复核其内部一致性** + 抽 5 个 VA 字节实读）。
+docs/re/dispatch/W3_20261002_AUD2_app2_audit.md:19:6. **红线自证**：game.exe `c4bf2a57a80f` 未变；两份 coverage_ledger、dispatch 台账、`m35_ch13_expand` 聚合 sha 前后全等（APP2 执行窗 20:58–21:15 之后你再测一次）；YR 侧 `docs/re/ARCHITECTURE_ATLAS.md`（f939d6e3e709 / 470,294 B）未被 APP2 碰。
+docs/re/dispatch/W3_20261002_AUD2_app2_audit.md:20:7. **APP2 报告的诚实项复核**（§8 残差三条）：§13.6 快照三元组残差、就地注记未插、Mimosa 钩子 4 次拦截绕行 —— 逐条判定"披露是否充分、有无藏问题"。
+docs/re/dispatch/W3_20261002_AUD2_app2_audit.md:24:- **写域仅** `out/re_work/workbuddy/W3_20261002/aud2_app2_audit/`。**ATLAS 现件与快照、补丁件、APP2 产物全部只读**；不碰任何 verify_*.py（你测出的红只报告不修 —— 已知：CS7 括号波在测绘中）。
+docs/re/dispatch/W3_20261002_DOC2_runbook_terms.md:8:RPT1C 测绘结论：RPT1 的四条建议里，**"成文/注记"半区现在就能做**，落点在 `execution_runbook.md` 与门禁词汇文档；正文半（补丁/claims）被 verify_m35p 的 17,571 B 钉死 + APP2 唯一写者锁 ⇒ 排队（CS4/APP3 之后做）。
+docs/re/dispatch/W3_20261002_M35P_prep.md:1:# W3-M35P 派工单 · **§13 补丁质量核验 + 现行 ATLAS 首手锚点实测（APP2 前置件）**（ZCode 客户端 · 新会话）
+docs/re/dispatch/W3_20261002_M35P_prep.md:5:> **本卡 = APP2（补追加 §13）的前置件：核验补丁质量 + 在现行 1,212,472 B ATLAS 上首手实测锚点**（为 APP2 提供可直接执行的落位参数）。**本卡不写 ATLAS**（写者是 APP1/APP2 会话）。
+docs/re/dispatch/W3_20261002_M35P_prep.md:8:1. **开工先核 ATLAS 现指纹**：应为 `1,212,472 B / 1dce588aa505 / 18:17:38`。**变了 ⇒ 停手报告**（可能 APP2 或他人在写，移动靶上不测）。
+docs/re/dispatch/W3_20261002_M35P_prep.md:18:2. **现行锚点首手实测**（APP2 的执行参数）：
+docs/re/dispatch/W3_20261002_M35P_prep.md:20:   - 若**锚点在现文件里已不唯一/不存在** ⇒ 给出**替代锚点建议**（§13 标题行附近、唯一命中），并标注"供 APP2 裁量"。
+docs/re/GATE_VOCABULARY.md:91:⇒ 措辞约定：引用 `00001000h` 时**不得**写成"门禁判据"；要写成判据必须落到 `out/re_work/zcode_live/W3_20261001/m35_ch13_expand/claims.txt:15` 的 `0x004000A4 = 00100000` 这条断言 + 本节 §3.1 的读者链。补丁行 `out/re_work/zcode_live/W3_20261001/m35_ch13_expand/M35_ch13_atlas_patch.md:42` 已写「GATE-MAP (头区上界)」方向正确，但**缺回退注记与实测背书** ⇒ 那半区属正文（等 APP2 收口），不在本卡写域。
+docs/re/GATE_VOCABULARY.md:105:- 补丁/claims 侧的对应措辞半区（`out/re_work/zcode_live/W3_20261001/m35_ch13_expand/M35_ch13_atlas_patch.md:36`、`:43`、`out/re_work/zcode_live/W3_20261001/m35_ch13_expand/claims.txt:9`、`:16`）**不在本卡写域**（正文与补丁件逐字节绑定，等 APP2 收口）。
+docs/re/GATE_VOCABULARY.md:117:- 正文/claims 侧的措辞改动**不在本卡**（等 APP2 收口 + 台账引用面走 CS 卡）。
+docs/re/GATE_VOCABULARY.md:138:| 改 `M35_ch13_atlas_patch.md` / `claims.txt` / ATLAS 正文措辞 | 补丁件被 `verify_m35p` 按 size `17571` 钉死；正文与补丁逐字节绑定且 APP2 是唯一写者（`RPT1C_SCOPING.md:15`、`:16`、`:14`） | `APP3_atlas_s13_semantics`（APP2 之后 append-only 加注） |
+docs/re/landing_pack_gap_p21_a3.md:25:| B-1 | `ra2bench` 遭遇战**不实例化地图预置建筑** | 自建 GAPP21 图（玩家基地 + 14 家环置 GAGAP/CAFARM02）开局后全图 `bld_cells≡0`（AltOcc bit0x80），t=0 与 t=165s 一致 | 造不出**真**敌方 GapGenerator 实体（`CreateGap` 无从盖印） |
+docs/re/landing_pack_gap_p21_a3.md:169:| `tools/gap_p21_map_gen.py` | GAPP21 场景图生成（graft 到 bench 骨架；[Header]/[Digest]/CellTags/触发器；GAGAP+CAFARM02 环置；TA17 5×5 waypoint；FogOfWar 补丁） | **C1** 战役变体基座：改 PLAYER/GAP_OWNER、注册战役、保留 CellTags/TA17/字母编码 |
+```
+
+## pattern: `当前审计与正文落地收尾`
+
+**total matches = 1**
+
+```text
+docs/PROJECT_DIRECTION.md:73:| P0 | 当前审计与正文落地收尾 | 核对 APP2 独立审计、已判伪项回填和回归残红；按实际产物回填状态；形成当前指纹下的可信基线 |
+```
+

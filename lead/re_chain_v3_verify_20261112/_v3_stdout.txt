@@ -1,0 +1,283 @@
+==================================================================
+V3 INDEPENDENT VERIFICATION (_v3.py)
+==================================================================
+[0] 靶件与被核验件指纹自核 (hashlib.sha256)
+  gamemd.exe                  : exists=True size=4825360 B sha256=73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+  RE_GRADING.md               : exists=True size=26217 B sha256=c17a3c63a3c8858761b206622f60f96ff5fc579ffd1cd2fe838869c2fcc967e5
+  LEDGER_SECTION_DRAFT_v2.md  : exists=True size=12266 B sha256=da79a234804247fd3477957b997e51202553e882d8654dd68e91c9274e5e0bab
+  FIX_RECORD.md               : exists=True size=23869 B sha256=6276243bf0b0f2ef3b99dfb7849bd56ace58431e4cc6d9049e47c7e3db8c5efe
+  XVERIFY.md                  : exists=True size=24363 B sha256=9ef8b4a1fbe51278e190d30b48807a504bb191d396238c2507ce26ee1da9856f
+
+==================================================================
+[V-C1] 虚假声称是否已撤
+==================================================================
+1) os.path.exists(lead\re_chain_synth_v2_20261111\_pssim_rerun_out.txt) = False
+2) grep '_pssim_rerun_out' in RE_GRADING.md and LEDGER_SECTION_DRAFT_v2.md:
+  RE_GRADING.md: 2 hit(s)
+    L81 (is_markdown_link=False): - 实测（**更正 v2 原件 L73 的错误声称**：`_pssim_rerun_out.txt` 实际不存在，v2 原件称「全文落盘」为 FALSE）：探针 **stdout = 0 B**（`_pssim_rerun_stdout.txt`，sha256 `e3b0c442…`=空串）、stderr = 8 B `(done)`（`_pssim_rerun_stderr.txt`）、退出码 0；**未产生综合日志文件**，故不存在「全文落盘」件。重跑产物见写域内 `_ps_disasm_out.txt` = 65,202 B / sha `3fa97f526f53fb26…` 与既有件**逐字节 MATCH**；`_ps_disasm_out.json` = 3,297 B / sha `445bc0609f2c70e0…` **MATCH**。
+    L103 (is_markdown_link=False):   - v2 原件写域：`RE_GRADING.md`、`LEDGER_SECTION_DRAFT_v2.md`（本修正版就地修正）、`_regrade_scan.py`、`_regrade_scan_out.txt`、`_pssim_rerun.py`、`_pssim_rerun_stdout.txt`、`_pssim_rerun_stderr.txt`、`_ps_disasm_rerun_copy.py`、`_ps_disasm_out.txt`、`_ps_disasm_out.json`、`_integrity_check.py`、`_baseline_snapshot.json`。**`_pssim_rerun_out.txt` 从未存在，已从本清单删除**（更正 v2 原件 L91 的错误声称）。
+  LEDGER_SECTION_DRAFT_v2.md: 1 hit(s)
+    L60 (is_markdown_link=False): - 上轮 `_ps_disasm` 复现口径裁定：stdout 恒 0 B（实测空串 sha），复现门=文件级对拍 out.txt/out.json，本次重跑已独立 MATCH（65,202 B / 3,297 B 逐字节同 sha）。**C1 更正**：v2 原件 RE_GRADING L73/L91 声称的 `_pssim_rerun_out.txt`「全文落盘」**不成立（该文件不存在）**；本修正版在新写域 `lead/re_chain_v2_fix_20261112/_pssim_rerun_runlog.txt` 补出带起止时间戳、命令、退出码（0）、driver stdout 指纹、产物指纹的运行日志，重跑证据可闭环；原 `_pssim_rerun.py` 与写域内既有产物零改动。
+4) _pssim_rerun_runlog.txt: exists=True, size=1941 B, sha256=23a536dde1912ab4ed236f8d1398229fdc406ada331c0b3887db3fa886faabd1
+    runlog L01: # _pssim_rerun.py 运行日志（C1 补件；本文件由 _pssim_rerun_logged.py 在本轮实跑后写出）
+    runlog L02: run_id              : C1-20261112-rerun-01
+    runlog L03: start_local         : 2026-11-12T01:34:23+08:00
+    runlog L04: start_utc           : 2026-11-11T17:34:23+00:00
+    runlog L05: end_local           : 2026-11-12T01:34:33+08:00
+    runlog L06: end_utc             : 2026-11-11T17:34:33+00:00
+    runlog L07: command             : C:\Users\Administrator\AppData\Local\Programs\Python\Python312\python.exe -I -X utf8 D:\Project\ra2-campaign-forge\lead\re_chain_synth_v2_20261111\_pssim_rerun.py
+    runlog L08: cwd                 : D:\Project\ra2-campaign-forge\lead\re_chain_synth_v2_20261111
+    runlog L09: driver_exit_code    : 0
+    runlog L10: driver_sha256_before: 37d2f977f680809bb3b777a4e16fc5f9dcc2608321985e85afb58393b3f77086 (4151 B)
+    runlog L11: driver_sha256_after : 37d2f977f680809bb3b777a4e16fc5f9dcc2608321985e85afb58393b3f77086 (4151 B)
+    runlog L12: driver_stdout_file  : D:\Project\ra2-campaign-forge\lead\re_chain_v2_fix_20261112\_pssim_rerun_driver_stdout.txt
+    runlog L13: driver_stdout_sha256: f87288b79cd337bf0ababb269c83adabe1adbd6254fff358dd59518ed8cb581f (1515 B)
+    runlog L14: probe_stdout        : _pssim_rerun_stdout.txt  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 (0 B)
+    runlog L15: probe_stderr        : _pssim_rerun_stderr.txt  225689b5f041e351c4c2355ca3e32c76c860fbd2cd3644fcb1d86b173a316463 (8 B)
+    runlog L16: rerun_out_txt_sha256: 3fa97f526f53fb261e1692f327770cc1bb236e5d191a7a9d5d739d5b7aae5e58 (65202 B)
+    runlog L17: rerun_out_json_sha256:445bc0609f2c70e00417a77686435cecb3774f8c75f6ccc2ab01f9c1bb03fa0d (3297 B)
+    runlog L18: file_level_match_txt : True
+    runlog L19: file_level_match_json: True
+    runlog L20: products_unchanged   : True
+    runlog L21: note                : 探针 stdout 恒 0 B（脚本把 print 重定向进内部缓冲）；本日志的时间戳/退出码/driver stdout 由本轮 subprocess.call 实跑产生，可与 _pssim_rerun_driver_stdout.txt 的 [1]-[5] 判定日志互证。
+    runlog L22: zero_live_machine   : 未启动 gamemd.exe/ra2loader/YURI.exe，未 attach，未读活进程内存，未写 hook/采样/MiniDump 代码。
+   _pssim_rerun_driver_stdout.txt: exists=True, size=1515 B, sha256=f87288b79cd337bf0ababb269c83adabe1adbd6254fff358dd59518ed8cb581f
+
+==================================================================
+[V-C2] 措辞绝对化是否改准 + _regrade_scan_out.txt [OK*] 实算
+==================================================================
+1) RE_GRADING.md L20-L30 实文:
+  L20: - **数法**：对 `CHAIN_SYNTHESIS.md` 全文 154 行逐行做 Python 子串 `count('【已证】')` 求和（等价于全文字符级出现次数，不漏 mermaid/清单/表格）。
+  L21: - **总数：16 处【已证】**，命中行 L66, L67, L68, L69, L70, L71, L72, L73, L75, L77, L78, L79, L80, L81, L82, L83 —— 全部位于 §2 逐环证据表（L66–L84 区间内），证据表之外零散出现 0 处。
+  L22: - 同一扫描的其他标记计数：【未证】7、【未验】4、【未决】1、【未定谳】1。
+  L23: - 扫描工具：[_regrade_scan.py](lead/re_chain_synth_v2_20261111/_regrade_scan.py)，全文输出落盘 [_regrade_scan_out.txt](lead/re_chain_synth_v2_20261111/_regrade_scan_out.txt)（7,062 B）。
+  L24: - 该扫描同时做了**证据引用可达性核验**：共解析出 **24 条引用，OK=24 / BAD=0**。精确表述为：**24 条中 22 条为 `文件:行区间`、2 条为 `文件:键`**；前者核「文件存在 + 行号范围有效」并打印区间首行实文，后者核「文件存在 + JSON 键存在 + 键值」（`_regrade_scan_out.txt` L53/L55 对这两条标 `[OK*] 键引用不核行号`，**只核文件存在，未打印首行实文**）。**不作「逐引用首行内容相符」的判据**：多条首行只是小节标题（如 `[T4 直接调用复核]`、`[T1 覆盖率复现]`、`[候选点(可能指向 0x54A4F0/0x54A630)]`、`全局对象 0xAA1078 (…):`、`◆ 5. 压缩/编码（…）`），读数落在区间后续行。
+  L25:   - 补记 2 条键引用的**实际键值**（本轮 `json.load` 独立核键，见 `lead/re_chain_v2_fix_20261112/_fix_checks_out.txt`）：
+  L26:     - `_ps_disasm_out.json:verdict` = `{"playercontrol_creation_link": "NONE — never tested at any HouseClass creation site", "playercontrol_branches": [...], "percentbuilt": "parsed to HouseClass+0x571C, default 0, no runtime reader in .text", "houseclass_count_driver": ..., "best_expl_4_houses": ..., "breakpoint": ...}`（键存在，与 L82 条目读数实质相符）。
+  L27:     - `_ps_disasm_out.json:percent_built` = `{"string_va": "0x8189a0", "reader": "0x42ebe0", "writer": "0x42ed60", "store": "HouseClass+0x571C (BaseClass+0x1C)", "default": 0, "runtime_consumers": 0}`（键存在，含 `default:0` / `runtime_consumers:0` / `store`，与 L83 条目读数实质相符）。
+  L28:   - **REF18（L80 → `ld:L88-L103`）补记**：该区间首行为 `◆ 5. 压缩/编码（小版是否大版的 LZO/zlib 压缩形态）`，只支撑 CHAIN_SYNTHESIS.md L80 的**边界说明列**「排除压缩/编码变换假说」，**不支撑读数列**的 `311,822 B / 0add791d / 222,799 B / 93c2974b / 11ec8ff6`。实算：`0add791d` 在 `_ld_diff_out.txt` **全文 0 命中**；`311,822` 见 L96、`222,799` 见 L96/L101、`93c2974b` 见 L97/L102/L103、`11ec8ff6` 见 L9/L11/L96/L101/L103。**部分反驳核验方**：`0add791d` 虽不在 `ld:L88-L103`，但 R13 证据列另引的 `_oo_map_out.txt:L6` 实文为 `sha256 : 0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc`，该 sha 由该文件支撑；故准确说法是「不由 `ld:L88-L103` 支撑」，而非「无引用可达」。行号合法但首行答非所问这一点**成立**。
+  L29: 
+  L30: ## 2 · STEP 1 逐条重定级表（16 条，全部普查，非只改点名条）
+
+2) 实算 _regrade_scan_out.txt (size=7062 B, sha256=f8468118614900feaf7494b57e126ce2d8f66c5b87e3f236a97a2c2ab8177038):
+  [OK]  条数 = 22
+  [OK*] 条数 = 2 ; 合计 = 24
+  [OK*] 具体行:
+    L53:   L82  playerctrl_semantics_20261111/_ps_disasm_out.json:verdict -> 文件存在(147 行), 键引用不核行号 [OK*]
+    L55:   L83  playerctrl_semantics_20261111/_ps_disasm_out.json:percent_built -> 文件存在(147 行), 键引用不核行号 [OK*]
+  [OK] 中首行仅为小节标题的条目抽核:
+    L32:   L66  slot2_fullscan_20261111/_sf_scan_out.txt:L13-L15 -> 文件 1834 行, 范围有效 [OK] 首行: [T4 直接调用复核]
+    L34:   L68  slot2_fullscan_20261111/_sf_scan_out.txt:L7-L11 -> 文件 1834 行, 范围有效 [OK] 首行: [T1 覆盖率复现]
+    L35:   L69  slot2_fullscan_20261111/_sf_scan_out.txt:L43-L47 -> 文件 1834 行, 范围有效 [OK] 首行: [候选点(可能指向 0x54A4F0/0x54A630)]
+    L38:   L70  re_crashwriter_static_20261110/_cw_disasm_out.txt:L20-L24 -> 文件 177 行, 范围有效 [OK] 首行:   全局对象 0xAA1078 (DynamicVectorClass<PAUTileInsertType>):
+    L49:   L80  re_loadbench_diff_20261110/_ld_diff_out.txt:L88-L103 -> 文件 103 行, 范围有效 [OK] 首行: ◆ 5. 压缩/编码（小版是否大版的 LZO/zlib 压缩形态）
+
+==================================================================
+[V-C3] R4「无别名逃逸」定级是否已统一
+==================================================================
+1) 搜索 '无别名逃逸' / '逃逸' 在 LEDGER_SECTION_DRAFT_v2.md 全文:
+  LEDGER_v2 L38: | §6xx 待编号 | 能指向 0x54A4F0/0x54A630 的 `call/jmp [reg+8]` 调用点全镜像唯一 = 0x546069（污点传播唯一消费者）；由此推「进入两函数必须经虚派发」。**C3 更正：原括注「无别名逃逸」已移出本条、降入 C 节第 3 项【未证】**——它不是字节级读数（字节级是 sf:L20 全编码=0、sf:L26-L28 的 dword/装载计数），而是依赖 sf:L28 探针自标「(指针值不逃逸前提)」与 sf:L40「逃逸 = []」有界静态污点窗口的全称否定；与同源于 sf:L20/L28/L40 的 R2 尾注按 RE_GRADING §2 统一口径同级 | sf:L39-L47; sf:L20, L28, L40 |
+  LEDGER_v2 L44: 2. §6xx 待编号【未证】「函数指针值无法在运行期逃逸或复制到其它函数指针变量」：静态普查仅证无静态编码引用，运行期机制未证（sf:L20 由「全编码=0」跳到「无法运行期复制」）。
+  LEDGER_v2 L45: 3. **§6xx 待编号【未证】（C3 本修正版新增）「0xAA1078 无别名逃逸」**：CHAIN_SYNTHESIS.md L69 边界列原文「污点分析证明 0xAA1078 是全镜像唯一消费者，无别名逃逸」。该断言不是字节级读数，且探针自标为**前提**（`sf:L28`「(指针值不逃逸前提)」）、`sf:L40`「逃逸 = []」只是 GROW=0x545150..0x546D90 有界静态污点窗口结果。按 RE_GRADING §2 统一口径（依赖未验前提/运行期机制断言→【未证】），与第 2 项同级；**不再留在 B 节 CFG**。缺：运行期别名/逃逸行为确认（零真机铁律下不可得）。**与核验方表述的差异**：L69 未写「运行期」三字、且对象是全局对象指针 0xAA1078（第 2 项对象是 slot2 函数指针值），故并非「同类运行期机制断言」；但分级不能只凭措辞，须按证据强度统一（详见 FIX_RECORD.md C3）。
+
+2) 搜索 '无别名逃逸' / '逃逸' 在 RE_GRADING.md 全文:
+  RE_GRADING L33: **统一口径补充（本修正版）**：凡「逃逸 / 无别名 / 无任何运行时读取点」这类**全称否定**结论，只要仅依赖静态扫描、且探针自身把它标为前提或未做运行期确认，一律不留在【已证】/【已证（CFG）】，与 R2 尾注同降【未证】；其**底层计数/指令字节**仍按字节级读数维持【已证】。表内「推断写成读数」的四条按此拆出，不整条降掉。
+  RE_GRADING L38: | R2 | L67 | ① 虚表单元与函数指针值 | 已证 | 维持【已证】（读数）；尾注拆出【未证】 | dword 全镜像各恰 1 处、全编码装载/复制=0 为字节普查；尾注「函数指针值无法在运行期逃逸或复制」是把静态无引用升格为运行期机制结论（sf:L20 探针原文即由「全编码=0」跳到「无法运行期复制」） | _sf_scan_out.txt:L18-L20, L27-L28 |
+  RE_GRADING L40: | R4 | L69 | ① 虚派发唯一实效点 | 已证 | 核心结论降【已证（CFG）】；指令个体与普查计数维持【已证】；**边界列「无别名逃逸」拆出降【未证】** | 「能指向两目标的调用点全镜像唯一=0x546069」「污点分析唯一消费者」由 G1a/G2/G4 普查+污点传播推导，属静态数据流推断；0x546069 处 FF 50 08、装载指令与各项普查计数为字节级。**边界列「无别名逃逸」不是字节级读数**（字节级是 sf:L20 全编码=0、sf:L26-L28 的 dword/装载计数），而是由 sf:L28 探针自标「(指针值不逃逸**前提**)」、sf:L40「逃逸 = []」的有界静态污点窗口推出的全称否定，与 R2 尾注同属依赖未验前提的结论，按统一口径同降【未证】（详见 §2.1 与 FIX_RECORD C3） | _sf_scan_out.txt:L39-L47, L26-L29, L31-L35, L66-L68 |
+  RE_GRADING L59: - **降为【未证】**：**3 项**（原 2 项 + 本修正版新增 1 项）—— R5 时序归属、R2 尾注「运行期无法逃逸」、**R4 边界列「无别名逃逸」**（C3 统一口径）。
+  RE_GRADING L60: - **拆出单列、不并入字节级台账的推断/机制项**：R10「11 国」括注、R11「其余 11 房为 0」（14 房框架外推）、R13「排除压缩/编码变换假说」（排除法）、R14「读取并写入 / Read_INI·Get_Bool」（数据流关联与符号命名）、R16 `ps:L899`「引擎无任何运行时读取点」（单列【未证】）、R4「无别名逃逸」（单列【未证】）。**均为「拆出」而非整条降掉**：计数部分维持【已证】。
+  RE_GRADING L66: - CHAIN_SYNTHESIS.md §3.1 标题「闭环咬合部分（已证因果）」中，1) 复述 R1+R4（唯一性部分为 CFG，且 R4 的「无别名逃逸」已降【未证】）；2) 复述 R7+R8（路径语义为 CFG，「若在 atexit 之后调用……」一句还叠加 R5 时序未证项）；3) 复述 R15。其「已证因果」措辞应理解为「读数咬合」，因果/时序部分按本表降级。
+  RE_GRADING L89: 3. **新增【未证】3 项**及所缺证据：R5 时序（缺：CRT 初始化表遍历顺序、atexit 注册时序、0x7C978A=atexit 的确认）；R2 尾注（缺：运行期指针逃逸/别名行为的确认——静态普查只能证明无静态编码引用）；**R4 边界列「无别名逃逸」**（缺：运行期别名/逃逸行为的确认；探针 `sf:L28` 自标「(指针值不逃逸前提)」、`sf:L40`「逃逸 = []」仅为有界静态污点窗口结果，按 §2 统一口径与 R2 尾注同降）。
+  RE_GRADING L113: - **结论一句话**：CHAIN_SYNTHESIS.md 的 16 处【已证】经全表普查后，4 条整条/核心结论降为【已证（CFG）】（含点名条目）、**3 项**运行期/前提依赖断言降为【未证】（含 C3 补降的「无别名逃逸」）、4 条按「计数维持【已证】、推断拆出单列」处理、其余维持字节级【已证】；`_ps_disasm` 的 stdout 复现门实测不可建立（脚本自写文件、stdout 恒 0 B），该探针复现口径应为文件级对拍且本次已独立 MATCH。
+
+==================================================================
+[V-C4] §2 理由列的「推断写成读数」是否已拆出 (R10/R11/R13/R14/R16)
+==================================================================
+1) RE_GRADING.md 中 R10..R16 及 §2.1 实文:
+  RE_GRADING L46: | R10 | L77 | ④ XMP29U2.MAP 计数 | 已证 | 维持【已证】（计数）；「11 国」括注拆出【推断·单列】 | Units=3360 / Infantry=2240 / 14×400=5600 为直接解析计数；「11 国+Computer+Neutral+Special」括注与探针 owner 表有出入，属措辞/结构推断，不计入字节级读数 | re_map_preset_decode/_md_parse_out.txt:L17-L50; _oo_map_out.txt:L50-L52, L56-L82 |
+  RE_GRADING L47: | R11 | L78 | ④ 大版 yrm 计数 | 已证 | 维持【已证】（**仅计数部分**：240/160/41 与 owner 分布）；**「其余 11 房为 0」拆出单列【推断·外推】** | 240/160/41 与 `{'Americans':120,'Russians':120}` 等为 `_md_parse_out.txt` / `_ld_diff_out.txt:L25-L28` 文件直接读数；「其余 11 房为 0」以 14 房框架为前提，而大版 yrm 无 [Houses] 节（框架为外推），按自定口径不得整行算字节级读数 | _md_parse_out.txt:L54-L78; re_loadbench_diff/_ld_diff_out.txt:L25-L28 |
+  RE_GRADING L48: | R12 | L79 | ④ 小版 yrm 计数 | 已证 | 维持【已证】 | 240/160/0、[Houses] 14 声明、仅 2 房持单位均为文件直接读数 | _md_parse_out.txt:L81-L103; _ld_diff_out.txt:L29-L31 |
+  RE_GRADING L49: | R13 | L80 | ④ 地图文件独立性 | 已证 | 维持【已证】（**仅 size/sha/结构读数**）；**「排除压缩/编码变换假说」拆出单列【推断·排除法】** | 三份文件 size/sha/内容结构（熵 5.652/4.699、首字节 `;`/`[`、小节集 34/28、Map 几何 52×53 vs 100×100）互异为直接读数；「排除压缩/编码变换假说」是 `ld:L88-L103` 维度5 三重证据的**对比/排除法结论**，`ld:L91` 实文「唯一剩余解释就是两版本就是两张不同的图」，不是读数 | _ld_diff_out.txt:L88-L103; _md_parse_out.txt:L55, L82; _oo_map_out.txt:L6 |
+  RE_GRADING L50: | R14 | L81 | ⑤ 字符串与写入点 | 已证 | 维持【已证】（**仅指令/普查读数**）；「Read_INI/Get_Bool」「读取并写入」拆出单列【推断】 | 字符串普查恰 1 处 @0x824E28、0x500BD6 `call 0x5295f0`、0x500BDD `mov byte ptr [ebx+0x1ED], al` 为指令级读数；「Read_INI/Get_Bool」为符号命名推断、「读取并写入」为寄存器数据流关联，均非字节级读数；另存在条目未呈现的第二 xref 0x5012ED（本修正版已静态核实，见 §4.5） | playerctrl_semantics/_ps_disasm_out.txt:L11, L32-L34, L113-L115 |
+  RE_GRADING L51: | R15 | L82 | ⑤ 控制流影响 | 已证 | **降为【已证（CFG）】**；「8 处创建点」普查维持【已证】 | 三条分支语义为控制流语义推断；「8 处创建点均未读取或依赖」是对创建窗口反汇编的检视结论（**无独立的全 .text +0x1ED 普查计数**，属未验完备性前提，见 §4.11）；8 处 = ctor 0x4F54A0 call 普查 | _ps_disasm_out.txt:L116-L147, L589, L1183-L1214, L905; _ps_disasm_out.json verdict |
+  RE_GRADING L52: | R16 | L83 | ⑤ PercentBuilt 读点与直接消费者 | 已证 | 维持【已证】（**仅普查读数**）；**`ps:L899` 机制断言拆出单列【未证】** | disp32 字节 `1c 57 00 00` 全 .text 命中恰 3 处、引用 0x5700 族且含寄存器型 `[reg+0x1C]` 的函数=0、BaseClass vtable 方法仅栈偏移访问——均为普查读数；`_ps_disasm_out.txt:L899-L900` 实文「=> 静态结论：…除 Write_INI 回写 (0x42ED79) 外，**引擎无任何运行时读取点**」是全称否定机制断言，非读数，按统一口径单列【未证】；「间接读点」原文已另标【未验】，维持。CHAIN_SYNTHESIS.md L83 边界列「仅证明直接偏移读取为 0」才是正确表述 | _ps_disasm_out.txt:L12, L36-L39, L894-L899 |
+  RE_GRADING L54: ### 2.1 重定级统计（本修正版）
+  RE_GRADING L55: 
+  RE_GRADING L56: - **整条维持【已证】**：3 条（R3, R9, R12）；R10/R11/R13/R14/R16 为「计数/指令读数部分维持【已证】+ 推断部分拆出」。
+  RE_GRADING L57: - **维持【已证】的读数部分（含拆出子项）**：10 条（R1, R2, R4 部分, R5 部分, R6, R8, R10, R11, R14, R16）——字节级读数合计覆盖 14/16 条。
+  RE_GRADING L58: - **降为【已证（CFG）】**：4 项 —— R7（整条，调度方点名）、R4 核心结论、R15（整条）、R1 尾注。
+  RE_GRADING L59: - **降为【未证】**：**3 项**（原 2 项 + 本修正版新增 1 项）—— R5 时序归属、R2 尾注「运行期无法逃逸」、**R4 边界列「无别名逃逸」**（C3 统一口径）。
+  RE_GRADING L60: - **拆出单列、不并入字节级台账的推断/机制项**：R10「11 国」括注、R11「其余 11 房为 0」（14 房框架外推）、R13「排除压缩/编码变换假说」（排除法）、R14「读取并写入 / Read_INI·Get_Bool」（数据流关联与符号命名）、R16 `ps:L899`「引擎无任何运行时读取点」（单列【未证】）、R4「无别名逃逸」（单列【未证】）。**均为「拆出」而非整条降掉**：计数部分维持【已证】。
+  RE_GRADING L61: - **命名/措辞注记**（不改定级）：R6/R14 符号命名推断；R15 的「无独立全 .text +0x1ED 普查计数」完备性前提。
+  RE_GRADING L62: - 调度方点名条目（0x54A524 test edi,edi → 「edi==0 则提前返回」）= R7，已降；**同类全表普查另降 R4/R15/R1 尾注**，未只改点名一条。
+  RE_GRADING L63: 
+
+2) LEDGER_SECTION_DRAFT_v2.md 中对应 A 节 (L23-L31)、C 节 (L46)、备注 (L54-L58):
+  LEDGER_v2 L23: | §6xx 待编号 | XMP29U2.MAP（311,822 B，sha256 `0add791d…`）[Houses] 声明 14 house；含 `Country=` 的节恰 14 个，一一对应无多出节；14 节均 `PlayerControl=no` | oo:L6, L28-L46; 地图原文件 grep 14 处 `PlayerControl=no` |
+  LEDGER_v2 L24: | §6xx 待编号 | XMP29U2.MAP [Units]=3360、[Infantry]=2240，合计 5600；14 owner 各 400（240 车+160 步） | md:L17-L50; oo:L50-L52, L56-L82 |
+  LEDGER_v2 L25: | §6xx 待编号 | 大版 `ra2bench/[2]0LoadBench_U0400.yrm`（92,332 B，sha `cb5785a1…`）Units=240 Inf=160 Structures=41；Russians/Americans 各 120 车+80 步，Neutral 持 41 建筑 | md:L54-L78; ld:L25-L28 |
+  LEDGER_v2 L26: | §6xx 待编号 | 小版 `out/loadbench/[2]0LoadBench_U0400.yrm`（25,604 B，sha `6027eb20…`）Units=240 Inf=160 Structures=0；Russians/Americans 各 120 车+80 步；[Houses] 声明 14、仅 2 房持单位 | md:L81-L103; ld:L29-L31 |
+  LEDGER_v2 L27: | §6xx 待编号 | 三份载体 size/sha/内容结构互异（另列 222,799 B / md5 `11ec8ff6` 变体）：熵 5.652 vs 4.699、首字节 `;` vs `[`、小节集 34 vs 28、Map 几何 52×53 vs 100×100、键行 1575 vs 643 | ld:L88-L103; md:L55, L82; oo:L6 |
+  LEDGER_v2 L28: | §6xx 待编号 | 字符串 `PlayerControl` 全镜像恰 1 处 @0x824E28；.text 中 LE32==0x824E28 的 xref 2 处（0x500BBF、0x5012ED） | ps:L11, L32-L34 |
+  LEDGER_v2 L29: | §6xx 待编号 | 0x500BD6 `call 0x5295f0`；0x500BDB `test al,al`；0x500BDD `8883 ed010000` = `mov byte ptr [ebx+0x1ED], al` | ps:L113-L115 |
+  LEDGER_v2 L30: | §6xx 待编号 | ctor 0x4F54A0 的 call 普查恰 8 处：0x500A30 / 0x500B19 / 0x59A198 / 0x687FC3 / 0x6881A0 / 0x6882FE / 0x688351 / 0x6C3ED1 | ps:L905 |
+  LEDGER_v2 L31: | §6xx 待编号 | 字符串 `PercentBuilt` 恰 1 处 @0x8189A0；全 .text 原始字节 `1c 57 00 00` 命中恰 3 处（0x401E00/0x674FC0/0x6750B0）且均为 call rel32 位移巧合；引用 0x5700 族且含寄存器型 `[reg+0x1C]` 的函数 = 0；BaseClass vtable 0x7E3880 各方法仅栈偏移访问 | ps:L12, L36-L39, L894-L899 |
+  LEDGER_v2 L46: 4. §6xx 待编号【未证】（C4 拆出）`ps:L899-L900`「引擎无任何运行时读取点」：全称否定机制断言，非字节级读数；PercentBuilt 的普查计数仍按字节级收入 A 节，边界以 CHAIN_SYNTHESIS.md L83「仅证明直接偏移读取为 0」为准。
+  LEDGER_v2 L54: - 符号命名（`HouseClass::Read_INI`/`CCINIClass::Get_Bool`/`this->Vector`/`IsAllocated`/`GrowthStep` 等）为探针标注与结构推断，非二进制字面；A 节各条只对指令字节与计数负责。
+  LEDGER_v2 L55: - 「14 owner 各 400」的 owner 名单实为 `<human player>`/`Computer` 等 14 个，与 [Houses] 14 名差集 {Americans,Russians}↔{`<human player>`,Computer}；CHAIN_SYNTHESIS.md:L77「11 国」括注有出入，**已从 A 节读数中拆出单列**（推断/措辞，计数不受影响）。
+  LEDGER_v2 L56: - 大版 yrm 无 [Houses] 节，「其余 11 房为 0」以 14 房框架为前提（外推），**已从 A 节读数中拆出单列**，台账 A 节相应行只保留 240/160/41 与 owner 分布等文件直接读数。
+  LEDGER_v2 L57: - A 节「三份载体互异」一行**不含**「非同文件、非压缩/编码变换形态」这一结论：它是 `ld:L88-L103` 维度5 的排除法对比结论（`ld:L91` 实文「唯一剩余解释就是两版本就是两张不同的图」），按 C4 拆出单列【推断】，不入字节级台账。另：`0add791d` 在 `_ld_diff_out.txt` 全文 0 命中，但由同列另引的 `oo:L6`（`sha256 : 0add791d11aea84d…60bc`）支撑，故该 sha 并非「无引用可达」，只是不由 `ld:L88-L103` 支撑。
+  LEDGER_v2 L58: - A 节「PercentBuilt」一行的证据区间含 `ps:L894-L899`，其中 `ps:L899-L900` 的「引擎无任何运行时读取点」为机制断言，已按 C4 拆入 C 节第 4 项【未证】；A 节该行只对普查计数负责。
+
+==================================================================
+[V-C5] 0x5012ED 独立静态反汇编实算 vs 修正件对比
+==================================================================
+1) gamemd.exe sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 (match=True)
+   gamemd.exe length = 4825360 B (match=True)
+2) PE 节映射核实: ImageBase=0x00400000
+   VA 0x5012ED -> section=.text, file_offset=0x1012ED; LE32 @0x5012ED = 0x00824E28
+   VA 0x824E28 -> section=.data, file_offset=0x424E28; ASCII @0x824E28 = 'PlayerControl'
+
+3) Capstone 独立反汇编 0x5012EC..0x501300:
+   0x5012EC  68284e8200        push   0x824e28
+   0x5012F1  51                push   ecx
+   0x5012F2  8bce              mov    ecx, esi
+   0x5012F4  e867820200        call   0x529560
+   0x5012F9  8b9354600100      mov    edx, dword ptr [ebx + 0x16054]
+   0x5012FF  52                push   edx
+
+4) Capstone 独立反汇编所在函数上下文 0x501210..0x50139B (关键片段 0x501210..0x501230 & 0x5012D9..0x50139A):
+   0x501210  83ec14            sub    esp, 0x14
+   0x501213  33c0              xor    eax, eax
+   0x501215  8d542400          lea    edx, [esp]
+   0x501219  53                push   ebx
+   0x50121A  55                push   ebp
+   0x50121B  8bd9              mov    ebx, ecx
+   0x50121D  56                push   esi
+   0x50121E  57                push   edi
+   0x50121F  83c9ff            or     ecx, 0xffffffff
+   0x501222  8dbbf45f0100      lea    edi, [ebx + 0x15ff4]
+   0x501228  6a00              push   0
+   0x5012D9  52                push   edx
+   0x5012DA  8bce              mov    ecx, esi
+   0x5012DC  e8ef46f7ff        call   0x4759d0
+   0x5012E1  8a83ed010000      mov    al, byte ptr [ebx + 0x1ed]
+   0x5012E7  8d4c2410          lea    ecx, [esp + 0x10]
+   0x5012EB  50                push   eax
+   0x5012EC  68284e8200        push   0x824e28
+   0x5012F1  51                push   ecx
+   0x5012F2  8bce              mov    ecx, esi
+   0x5012F4  e867820200        call   0x529560
+   0x5012F9  8b9354600100      mov    edx, dword ptr [ebx + 0x16054]
+   0x5012FF  52                push   edx
+   0x501300  8d442414          lea    eax, [esp + 0x14]
+   0x501304  6838b18100        push   0x81b138
+   0x501309  50                push   eax
+   0x50130A  8bce              mov    ecx, esi
+   0x50130C  e80f38f7ff        call   0x474b20
+   0x501380  8d442410          lea    eax, [esp + 0x10]
+   0x501384  8d8b00570000      lea    ecx, [ebx + 0x5700]
+   0x50138A  50                push   eax
+   0x50138B  56                push   esi
+   0x50138C  e8cfd9f2ff        call   0x42ed60
+   0x501391  5f                pop    edi
+   0x501392  5e                pop    esi
+   0x501393  5d                pop    ebp
+   0x501394  5b                pop    ebx
+   0x501395  83c414            add    esp, 0x14
+   0x501398  c20400            ret    4
+
+==================================================================
+[V-C6 & V-ALL] LEDGER_SECTION_DRAFT_v2.md A 节纯净度 & 证据可定位性核验
+==================================================================
+A 节条目总数 = 18
+  A-01 (L14): uncertain_words=[]
+        读数: .text 单次线性 disasm 于 fo 0x6F59D（VA 0x46F59D）截断，得 155,215 条（11.13%）；分块 0x10000 得 1,150,117 条；seg-extend 得 1,392,527 条（65 自然停点），覆盖至 .text 末 0x7E038D
+        证据: sf:L7-L11
+  A-02 (L15): uncertain_words=[]
+        读数: 全 .text 直接 `call/jmp` 0x54A4F0 = 0、0x54A630 = 0；FF 15/25 绝对间接 = 0；全镜像 dword 位点 0x54A4F0={0x7ECC04}、0x54A630={0x7ECBE4}
+        证据: sf:L13-L15
+  A-03 (L16): uncertain_words=[]
+        读数: 全镜像 dword==0x54A4F0 恰 1 处（0x7ECC04 = vtable 0x7ECBFC slot2）；dword==0x54A630 恰 1 处（0x7ECBE4 = vtable 0x7ECBDC slot2）
+        证据: sf:L18-L19
+  A-04 (L17): uncertain_words=[]
+        读数: 对 slot2 单元的 call/jmp [单元]/A1/8B/89/SIB-abs 装载或复制全编码 = 0
+        证据: sf:L20
+  A-05 (L18): uncertain_words=[]
+        读数: 0x546069 处字节 `FF 50 08` = `call dword ptr [eax+8]`；0x54605F `mov eax,[0xAA1078]`；0x546064 `mov ecx,0xAA1078`
+        证据: sf:L66-L68
+  A-06 (L19): uncertain_words=[]
+        读数: `call/jmp [reg+8]` 普查：字节级 1716（call 1715 + jmp 1 + 异形 2 计法见源）、主流 seg-extend 1714；imm32/disp32 引用 0xAA1078 恰 4 处；load r32←[0xAA1078] 恰 1 处（0x54605F）；store→[0xAA1078] = 0；.rdata/.data 无 dword==0xAA1078
+        证据: sf:L26-L29, L31-L35
+  A-07 (L20): uncertain_words=[]
+        读数: c7 存储锚点：0x543E8D `mov dword [0xAA1078],0x7ECBDC`；0x543EBE `mov dword [0xAA1078],0x7ECBFC`；0x54A7B6/0x54A806 `mov dword [esi],0x7ECBFC`
+        证据: sf:L21-L23
+  A-08 (L21): uncertain_words=[]
+        读数: 0x0054A56E 指令 `C7 46 04 00 00 00 00` = `mov dword ptr [esi+4], 0`
+        证据: cw:L66
+  A-09 (L22): uncertain_words=[]
+        读数: 0x0054A577 指令 `89 7E 04` = `mov dword ptr [esi+4], edi`；与 0x0054A56E 相距 9 字节；两指令间仅 `33C0 xor eax,eax`（无内存读取/调用/分支）
+        证据: cw:L66-L68
+  A-10 (L23): uncertain_words=[]
+        读数: XMP29U2.MAP（311,822 B，sha256 `0add791d…`）[Houses] 声明 14 house；含 `Country=` 的节恰 14 个，一一对应无多出节；14 节均 `PlayerControl=no`
+        证据: oo:L6, L28-L46; 地图原文件 grep 14 处 `PlayerControl=no`
+  A-11 (L24): uncertain_words=[]
+        读数: XMP29U2.MAP [Units]=3360、[Infantry]=2240，合计 5600；14 owner 各 400（240 车+160 步）
+        证据: md:L17-L50; oo:L50-L52, L56-L82
+  A-12 (L25): uncertain_words=[]
+        读数: 大版 `ra2bench/[2]0LoadBench_U0400.yrm`（92,332 B，sha `cb5785a1…`）Units=240 Inf=160 Structures=41；Russians/Americans 各 120 车+80 步，Neutral 持 41 建筑
+        证据: md:L54-L78; ld:L25-L28
+  A-13 (L26): uncertain_words=[]
+        读数: 小版 `out/loadbench/[2]0LoadBench_U0400.yrm`（25,604 B，sha `6027eb20…`）Units=240 Inf=160 Structures=0；Russians/Americans 各 120 车+80 步；[Houses] 声明 14、仅 2 房持单位
+        证据: md:L81-L103; ld:L29-L31
+  A-14 (L27): uncertain_words=[]
+        读数: 三份载体 size/sha/内容结构互异（另列 222,799 B / md5 `11ec8ff6` 变体）：熵 5.652 vs 4.699、首字节 `;` vs `[`、小节集 34 vs 28、Map 几何 52×53 vs 100×100、键行 1575 vs 643
+        证据: ld:L88-L103; md:L55, L82; oo:L6
+  A-15 (L28): uncertain_words=[]
+        读数: 字符串 `PlayerControl` 全镜像恰 1 处 @0x824E28；.text 中 LE32==0x824E28 的 xref 2 处（0x500BBF、0x5012ED）
+        证据: ps:L11, L32-L34
+  A-16 (L29): uncertain_words=[]
+        读数: 0x500BD6 `call 0x5295f0`；0x500BDB `test al,al`；0x500BDD `8883 ed010000` = `mov byte ptr [ebx+0x1ED], al`
+        证据: ps:L113-L115
+  A-17 (L30): uncertain_words=[]
+        读数: ctor 0x4F54A0 的 call 普查恰 8 处：0x500A30 / 0x500B19 / 0x59A198 / 0x687FC3 / 0x6881A0 / 0x6882FE / 0x688351 / 0x6C3ED1
+        证据: ps:L905
+  A-18 (L31): uncertain_words=[]
+        读数: 字符串 `PercentBuilt` 恰 1 处 @0x8189A0；全 .text 原始字节 `1c 57 00 00` 命中恰 3 处（0x401E00/0x674FC0/0x6750B0）且均为 call rel32 位移巧合；引用 0x5700 族且含寄存器型 `[reg+0x1C]` 的函数 = 0；BaseClass vtable 0x7E3880 各方法仅栈偏移访问
+        证据: ps:L12, L36-L39, L894-L899
+
+[V-C6 汇总] A 节含不确定词 ('未核实/未验/待证/未证/未决/未定谳/可能/猜测/疑似/或许/外推/假说') 的条目数 = 0
+
+[V-ALL 逐条检查 A 节证据列]
+  A-01 (L14): has_line_ref=True, has_unlined_subclause=False | sf -> L7-L11(valid=True,total=1834)
+  A-02 (L15): has_line_ref=True, has_unlined_subclause=False | sf -> L13-L15(valid=True,total=1834)
+  A-03 (L16): has_line_ref=True, has_unlined_subclause=False | sf -> L18-L19(valid=True,total=1834)
+  A-04 (L17): has_line_ref=True, has_unlined_subclause=False | sf -> L20(valid=True,total=1834)
+  A-05 (L18): has_line_ref=True, has_unlined_subclause=False | sf -> L66-L68(valid=True,total=1834)
+  A-06 (L19): has_line_ref=True, has_unlined_subclause=False | sf -> L26-L29(valid=True,total=1834), L31-L35(valid=True,total=1834)
+  A-07 (L20): has_line_ref=True, has_unlined_subclause=False | sf -> L21-L23(valid=True,total=1834)
+  A-08 (L21): has_line_ref=True, has_unlined_subclause=False | cw -> L66(valid=True,total=177)
+  A-09 (L22): has_line_ref=True, has_unlined_subclause=False | cw -> L66-L68(valid=True,total=177)
+  A-10 (L23): has_line_ref=True, has_unlined_subclause=True | oo -> L6(valid=True,total=151), L28-L46(valid=True,total=151) ; NON_FILE_LINE_CLAUSE('地图原文件 grep 14 处 `PlayerControl=no`')
+  A-11 (L24): has_line_ref=True, has_unlined_subclause=False | md -> L17-L50(valid=True,total=167) ; oo -> L50-L52(valid=True,total=151), L56-L82(valid=True,total=151)
+  A-12 (L25): has_line_ref=True, has_unlined_subclause=False | md -> L54-L78(valid=True,total=167) ; ld -> L25-L28(valid=True,total=103)
+  A-13 (L26): has_line_ref=True, has_unlined_subclause=False | md -> L81-L103(valid=True,total=167) ; ld -> L29-L31(valid=True,total=103)
+  A-14 (L27): has_line_ref=True, has_unlined_subclause=False | ld -> L88-L103(valid=True,total=103) ; md -> L55(valid=True,total=167), L82(valid=True,total=167) ; oo -> L6(valid=True,total=151)
+  A-15 (L28): has_line_ref=True, has_unlined_subclause=False | ps -> L11(valid=True,total=1283), L32-L34(valid=True,total=1283)
+  A-16 (L29): has_line_ref=True, has_unlined_subclause=False | ps -> L113-L115(valid=True,total=1283)
+  A-17 (L30): has_line_ref=True, has_unlined_subclause=False | ps -> L905(valid=True,total=1283)
+  A-18 (L31): has_line_ref=True, has_unlined_subclause=False | ps -> L12(valid=True,total=1283), L36-L39(valid=True,total=1283), L894-L899(valid=True,total=1283)
+
+[V-ALL 计数汇总（按条，共 18 条）]:
+  有行号 (文件:行 可定位) : 18 / 18
+  只文件名 (无行号)       : 0 / 18
+  无证据                  : 0 / 18
+  [注] 含附加非 '缩写:行号' 子句的条目（主引用已有 文件:行，附加子句未写文件名+行号）:
+    A-10 (L23): '地图原文件 grep 14 处 `PlayerControl=no`' （对应 RE_GRADING R9 L45 为 scratch/boot_probe/arm_a/XMP29U2.MAP:107-263）
+
+==================================================================
+[V-INTEGRITY] 170 个既有件基线对拍 (基于 _fix_baseline.json)
+==================================================================
+  baseline_total=170 drift=2 missing=0
+    DRIFT: lead/re_chain_synth_v2_20261111/LEDGER_SECTION_DRAFT_v2.md: eb8510294de1..(7587 B) -> da79a2348042..(12266 B)
+    DRIFT: lead/re_chain_synth_v2_20261111/RE_GRADING.md: 4cd502f3c7d9..(16885 B) -> c17a3c63a3c8..(26217 B)

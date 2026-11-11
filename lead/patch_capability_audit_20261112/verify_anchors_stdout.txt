@@ -1,0 +1,24 @@
+===================================================================================================================
+  RA2/YR 二进制决定性锚点自动化回归测试套件 (verify_anchors.py)
+===================================================================================================================
+目标文件 : D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe (大小: 4,825,360 字节, ImageBase: 0x400000)
+断言文件 : D:\Project\ra2-campaign-forge\docs\re\anchor_claims.txt
+反汇编器 : Capstone x86-32 引擎已就绪
+-------------------------------------------------------------------------------------------------------------------
+[基线完整性审计]
+  [PASS] .text 原始段哈希: c0368a179f6e1a0f85bf94ebeb3a3e62efc8b1a2000abe164e5e1c61714eb738 (口径: raw(SizeOfRawData=0x3E0000))
+  [INFO] PE头特征判定 : RA2OPT_PERF_APPLIED (0xAE=0x20, Stack=4MB, .text未变) (DllChar: 0x20, StackReserve: 0x400000)
+  [PASS] .detour 原生签名: 40 00 00 00 44 74 72 00 ('@\0\0\0Dtr\0' @ VA 0xb93000) -> 严禁写入/注入原则确立
+  [SCOPE] .detour 完整性说明: 签名 8 字节由锚点断言覆盖；整段(raw=0x3000)其余字节仅在 --segments 段级哈希下受检。
+-------------------------------------------------------------------------------------------------------------------
+[段级基线校验 GATE-SEG01]
+  [WARN] 段级基线校验未启用（未指定 --segments <baseline.json>）：
+         本次射程仅 .text 整段 raw 哈希 + 断言覆盖字节，.rdata/.data/.rsrc/.detour/PE头/尾部 的篡改不会被发现。
+         实测无检测区域: 15.78%（761,569 字节未被任何判据取过哈希）
+         仓库中已有规范基线: D:/Project/ra2-campaign-forge/out/re_work/work_chain/CONTINUE_20261003/lead/gate_seg/segment_baseline.json
+-------------------------------------------------------------------------------------------------------------------
+回归汇总 : 断言总数 323 条 | PASS: 323 (100.00%) | FAIL: 0 | NOREAD: 0
+★ 最终裁决 : [REDUCED-COVERAGE PASS] 323 条断言全部一致但未声明 --min-claims 下限；但段级 raw 哈希未启用：本镜像约 15.78% 字节（.rdata/.data/.rsrc/.detour/PE头/尾部）处于无检测区域，非生产放行依据。
+            完整放行调用式（两条件缺一不可）: python tools/verify_anchors.py --min-claims 323 --segments D:/Project/ra2-campaign-forge/out/re_work/work_chain/CONTINUE_20261003/lead/gate_seg/segment_baseline.json
+===================================================================================================================
+[SCOPE] 断言条数参照值 : 323 (来源: default_claims_file(docs/re/anchor_claims.txt)) —— 该值只决定裁决措辞强度，不是门禁下限；下限须由 --min-claims 显式声明

@@ -1,0 +1,46 @@
+==============================================================================
+E3 真机路径验证 —— 对无害哑进程（不触碰游戏）
+==============================================================================
+
+候选件 sha256 = 141650e2b41bd2f3fb54ea2008a20fc4f9a0c8bf4268b80cfd1ee1dc4c0dd100
+哑进程 pid = 33016
+
+-- MF-1 验证：bind_real_ops 签名与挂起失败判据 --
+[OK] 真机 ops 已绑定                                         n=13
+
+-- MF-2 验证：CreateToolhelp32Snapshot + Thread32First --
+[OK] MF2-a 真实 enumerate_threads 成功                      tids=[39112, 37452, 7728, 8996]
+
+-- MF-1 核心：真实 SuspendThread / ResumeThread 配对 --
+[OK] MF1-a 真实 OpenThread 成功                             handle=552
+[OK] MF1-b 真实 SuspendThread 返回上次计数(0)                   prev=0 (0=首次挂起)
+[OK] MF1-c 二次挂起返回 1（计数语义确认）                             prev2=1
+[OK] MF1-d 两次 Resume 精确还原（2→1→0）                        r1=2 r2=1
+
+-- 真实 GetThreadContext（先挂起，后取上下文；64 位用 AMD64 CONTEXT）--
+  本进程位宽 = 64 位；CONTEXT_i386=716 B；CONTEXT_AMD64=1232 B
+[OK] CONTEXT_AMD64 大小 == 1232                           1232
+[OK] CONTEXT_i386 大小 == 716                             716
+[OK]   取上下文前已挂起线程                                       prev=0
+[OK] 真机 GetThreadContext(AMD64) 成功                      sizeof=1232
+[OK]   取得非零 Rip                                         rip=0x7ffb365628a4
+[OK]   取得非零 Rsp                                         rsp=0x2808def1a8
+[OK]   取上下文后已精确恢复                                       resume=1
+
+-- 静默陷阱复现：64 位进程传 32 位 CONTEXT --
+[OK]   传 i386 CONTEXT 到 64 位进程：返回成功但字段为零（静默陷阱）          ok=1 eip=0x0（ok=True 但 eip=0 ⇒ 不匹配不报错）
+
+-- 完整 sample() 真机路径（对哑进程） --
+  n_threads=4  paused_ms=63.0  wall_ms=63.0  errors=[]
+[OK] 真机 sample 采到线程栈                                    n=4
+  首个栈: tid=39112 frames[0]=[0]
+
+-- 安全断言：哑进程未被搞死/未被残留挂起 --
+[OK] 哑进程仍存活（未被杀）                                        poll=None
+[OK] 哑进程无残留挂起（线程可被正常调度）                                 通过 Sleep 计时间接验证
+
+哑进程已终止 rc=1
+
+==============================================================================
+结果：17 项检查，0 项失败
+==============================================================================

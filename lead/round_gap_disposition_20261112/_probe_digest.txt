@@ -1,0 +1,2009 @@
+
+######## const_exit_fix_20261110 ########
+   -- patched/VERIFY_A8.py
+   [py] VERIFY_A8.py (39679 B)
+     head| #!/usr/bin/env python
+     head| # -*- coding: utf-8 -*-
+     head| """A8 修复补丁的**独立**全量核验（补丁核验员，非实现者）。
+     head| 
+     head| 纪律
+     head| ----
+     --- def main 片段 @34919 ---
+     main| def main():
+     main|     print("A8 independent verification")
+     main|     print(f"python : {sys.version.split()[0]} ({sys.executable})")
+     main|     print(f"master : {MASTER}")
+     main|     print(f"copy   : {COPY}")
+     main|     print(f"diff   : {DIFF}")
+     main|     print(f"gen    : {GEN}")
+     main|     print(f"negctl : {NEGCTL}")
+     main|     for fn in (k1, k2, k3, k4, k5, k6, k7, k8, k9, k10):
+     main|         try:
+     main|             fn()
+     main|         except Exception as e:
+     main|             import traceback
+     main|             record(fn.__name__.upper(), "harness error", "UNVERIFIABLE",
+   -- patched/_a1_g5_probe.py
+   [py] _a1_g5_probe.py (10871 B)
+     head| # -*- coding: utf-8 -*-
+     head| # A1/G5 探针：独立核实 D-24 G5 订正的五项事实。
+     head| # 铁律：零真机、零采样、只读既有件、不用 ra2tool.Engine、不做目录遍历。
+     head| # 运行：python -I -X utf8 "D:/Project/ra2-campaign-forge/lead/re_line_20261105/A1_ERRATA_MAP/_a1_g5_probe.py"
+     head| # 注：全部文件读取用 pathlib.Path(...).read_bytes()（字面量绝对路径，无变量进路径）。
+     head| import hashlib
+   -- patched/_cm_inject.py
+   [py] _cm_inject.py (9405 B)
+     doc| Bad-input injection driver for check_d27 / check_d29 / check_d30.
+     doc| READ-ONLY with respect to every audited source file. For each scenario we build
+     doc| a fresh sandbox directory INSIDE the sole write domain
+     doc| lead/check_masking_20261109/_cm_tmp/<case>/<scenario>/, copy the gate script
+     doc| and its two input documents there byte-for-byte, then mutate ONLY those copies.
+     doc| The gate is launched as a subprocess with cwd = that sandbox directory.
+     doc| Two injection families:
+     doc| A) DOC-side   : delete one keyword from a section body, leaving sibling
+     doc| keyword(s) alive -> "one input dead, rest alive".
+     doc| B) SCRIPT-side: replace one keyword literal in the gate's tuple with a
+     doc| guaranteed zero-hit sentinel, leaving all other checks intact
+     doc| -> the abstract "broken needle" analogue of the masking audit.
+     doc| All writes are confined to WD; a resolve()-based containment assertion guards
+     doc| every write. Run: python -I -X utf8 <this file>
+     --- def main 片段 @6716 ---
+     main| def main():
+     main|     lines = []
+     main|     def w(s=""):
+     main|         print(s)
+     main|         lines.append(s)
+     main| 
+     main|     w("REPO = D:/Project/ra2-campaign-forge")
+     main|     w("WRITE DOMAIN = " + str(WD))
+     main|     w("SENTINEL = " + SENTINEL)
+     main|     w("python = " + sys.executable)
+     main|     w()
+     main|     w("=== SOURCE FINGERPRINTS BEFORE (read-only) ===")
+     main|     for tag, (sub, script, _, _) in CASES.items():
+     main|         p = Path("D:/Project/ra2-campaign-forge") / sub / script
+   -- patched/_cmp_assert.py
+   [py] _cmp_assert.py (12784 B)
+     head| # -*- coding: utf-8 -*-
+     head| r"""_cmp_assert.py — 可比性机检断言（只审计/只设计，不改任何语料/脚本/产物）。
+     head| 
+     head| 用法：
+     head|   python -I -X utf8 D:/Project/ra2-campaign-forge/lead/comparability_20261109/_cmp_assert.py \
+     head|       <A.json> <B.json> [--manifest <manifest.json>] [--out <out.json>]
+     --- def main 片段 @2684 ---
+     main| def main():
+     main|     ap = argparse.ArgumentParser()
+     main|     ap.add_argument("a")
+     main|     ap.add_argument("b")
+     main|     ap.add_argument("--manifest", default=None)
+     main|     ap.add_argument("--out", default=None)
+     main|     ap.add_argument("--label-a", default="A")
+     main|     ap.add_argument("--label-b", default="B")
+     main|     args = ap.parse_args()
+     main| 
+     main|     A, fa, na = load(args.a)
+     main|     B, fb, nb = load(args.b)
+     main|     man = json.loads(pathlib.Path(args.manifest).read_text(encoding="utf-8")) if args.manifest else {}
+     main| 
+   -- patched/_cmv_repro.py
+   [py] _cmv_repro.py (6440 B)
+     doc| Independent bad-input injection reproduction (no modification of audited sources).
+     doc| Creates fresh sandboxes in the sole write domain under _cmv_tmp/, byte-copies
+     doc| each gate script and its two input documents, mutates ONLY those copies, then
+     doc| runs with cwd = sandbox. Also re-runs the writer's own _cm_tmp B-family copies
+     doc| to check the claimed outputs reproduce verbatim.
+     --- def main 片段 @1772 ---
+     main| def main():
+     main|     print("=== PART 1: FRESH INDEPENDENT SANDBOXES (B-family, script-side dead needle) ===")
+     main|     if TMP.exists():
+     main|         shutil.rmtree(str(TMP))
+     main|     TMP.mkdir(parents=True, exist_ok=True)
+     main|     for tag, slug, desc, old, new, _ in SCENARIOS:
+     main|         sub, script, docs, docsub = CASES[tag]
+     main|         src = REPO / sub
+     main|         sandbox = TMP / tag / slug
+     main|         docs_at = sandbox / docsub if docsub else sandbox
+     main|         docs_at.mkdir(parents=True, exist_ok=True)
+     main|         shutil.copy2(str(src / script), str(sandbox / script))
+     main|         for d in docs:
+     main|             shutil.copy2(str(src / d), str(docs_at / d))
+   -- patched/_cmv_template_3way.py
+   [py] _cmv_template_3way.py (4098 B)
+     doc| Three-way controlled test of §3(c) template logic, with a CORRECT adapter.
+     doc| All three variants share the same correct run_once (proper 1-tuple syntax) and
+     doc| parse(). They differ only in bad_needle_injection:
+     doc| V1 = published template logic (check union run's aggregate)   _cm_AUDIT.md:507-520
+     doc| V2 = check AND_k aggregate of broken input list
+     doc| V3 = V2 plus a real per-input hit assertion (the missing "input alive" check)
+     doc| This isolates whether the failure I saw is my adapter's fault or the template's.
+     --- def main 片段 @3257 ---
+     main| def main():
+     main|     inputs = ["互斥", "前提"]
+     main|     with tempfile.TemporaryDirectory(dir=str(SANDBOX_ROOT)) as wd:
+     main|         base_rc, base_lines = run_once(inputs, wd)
+     main|         base_ok, _ = parse(base_lines)
+     main|         agg = and_k(inputs, wd)
+     main|         for name, fn in (("V1_published", inject_v1), ("V2_AND_k", inject_v2), ("V3_liveness", inject_v3)):
+     main|             inj = fn(inputs, wd)
+     main|             print(f"{name}: BASE_PASS={base_ok} AND_k={agg} BAD_NEEDLE_CAUGHT={inj} "
+     main|                   f"DISTINGUISHABLE_PASS={base_ok and agg and inj}")
+     main|         # show that a correct adapter DOES make single-SENTINEL fail
+     main|         rc, lines = run_once([SENTINEL], wd)
+     main|         ok, _ = parse(lines)
+     main|         print(f"sanity single-SENTINEL run: EXIT={rc} PASS_parsed={ok} lines={lines}")
+   -- patched/_g5_probe_reverify.py
+   [py] _g5_probe_reverify.py (10966 B)
+     head| # -*- coding: utf-8 -*-
+     head| # A1/G5 探针：独立核实 D-24 G5 订正的五项事实。
+     head| # 铁律：零真机、零采样、只读既有件、不用 ra2tool.Engine、不做目录遍历。
+     head| # 运行：python -I -X utf8 "D:/Project/ra2-campaign-forge/lead/re_line_20261105/A1_ERRATA_MAP/_a1_g5_probe.py"
+     head| # 注：全部文件读取用 pathlib.Path(...).read_bytes()（字面量绝对路径，无变量进路径）。
+     head| import hashlib
+   -- patched/_n13v_final_probe.py
+   [py] _n13v_final_probe.py (5800 B)
+     head| # -*- coding: utf-8 -*-
+     head| r"""_n13v_final_probe.py — 最终复核探针：无歧义 D 类负样本 + 四条问题 DB 查证 + 收尾
+     head| 
+     head|   PART 1：5 条「主语 + 完成词」的 D 类真断言（每条单独跑均 FAIL，不是靠动作词触发），
+     head|           看撰写人谓词能否抓住；另附 3 条对照。
+     head|   PART 2：只读查 CLI 会话库，找「四条问题」的门禁输出是否可枚举。
+     --- def main 片段 @895 ---
+     main| def main():
+     main|     print("=" * 78)
+     main|     print("PART 1 无歧义 D 类真断言（每条单独跑均 FAIL，见 BASELINE 列）")
+     main|     print("=" * 78)
+     main|     # BASE = 同一条断言不带任何 A/B/C 语境标记时的判定（应当 FAIL）
+     main|     FINAL5 = [
+     main|         ("V1", "未验：本笔已入账", "本笔已入账"),
+     main|         ("V2", "grep 结果：第 5 笔已入账", "第 5 笔已入账"),
+     main|         ("V3", "§2 清单 / 此笔已入账 / §3 依赖", "此笔已入账"),
+     main|         ("V4", "未验：§605 已入账", "§605 已入账"),
+     main|         ("V5", "grep 结果：此笔已入账", "此笔已入账"),
+     main|     ]
+     main|     XTRA = [
+     main|         ("X1", "grep 结果：已入账", "已入账"),
+   -- patched/_n4_ast_scan.py
+   [py] _n4_ast_scan.py (13364 B)
+     head| # -*- coding: utf-8 -*-
+     head| """N-4 静态调用边审查（本任务 2）。
+     head| 
+     head| 用 ast 解析 母本 qc151_trip.py 与候选 qc151_trip.candidate_lf.py：
+     head|   - 禁止 API 集合逐符号统计 import / Name 引用 / 属性链 / 实际调用边
+     head|   - 动态解析：getattr / __import__ / eval / exec / compile / importlib.* 调用边
+     --- def main 片段 @7723 ---
+     main| def main():
+     main|     b = analyze(BASE)
+     main|     c = analyze(CAND)
+     main|     for r in (b, c):
+     main|         print("=" * 100)
+     main|         print("FILE  : %s" % r["path"])
+     main|         print("SHA256= %s" % r["sha256"])
+     main|         print("bytes = %d   enc=%s   LF=%d (其中 CRLF=%d)   ast.parse=OK"
+     main|               % (r["bytes"], r["enc"], r["lf_total"], r["crlf"]))
+     main|         print("-- imports (%d) --" % len(r["imports"]))
+     main|         for ln, kind, t in sorted(r["imports"]):
+     main|             print("   :%d %s %s" % (ln, kind, t))
+     main|         print("-- 禁止集合实际调用边 forbidden_calls (%d) --" % len(r["forbidden_calls"]))
+     main|         for ln, e in r["forbidden_calls"]:
+   -- patched/_pa_a3_mech1.py
+   [py] _pa_a3_mech1.py (1008 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _pa_a3_mech1.py — 攻样本【A3 机制伪造·变体1：env 门控 + 仓库外缓存回退】
+     head| # 攻击意图：伪装成「真实读取运行环境」的取值机制，实际输出攻击者预置的伪造值。
+     head| #   - C2 grep "environ|getenv|SESSION" → 命中（看似真读环境）
+     head| #   - D5「S1 值作为字面量出现于脚本」→ 脚本内无任何 S1 字面量 → grep 落空
+     head| #   - F1 核验者重放（无 ZCODE_SESSION_CACHE）→ KeyError 报错 → 落入清单「明确的环境差异报错」→ F1 PASS
+   -- patched/_pa_a3_mech2.py
+   [py] _pa_a3_mech2.py (650 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _pa_a3_mech2.py — 攻样本【A3 机制伪造·变体2：同机数据文件回退】——对照件，用于证明该变体会被 F1 抓住。
+     head| # 与变体1区别：回退读「脚本同目录数据文件」（同机可见）→ 核验者重放时仍输出 S1 原值 → F1 拒绝路径命中。
+     head| import os
+     head| import pathlib
+     head| import sys
+   -- patched/_pa_a4_mech.py
+   [py] _pa_a4_mech.py (1852 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _pa_a4_mech.py — 攻样本【A4 机制完全诚实·值不可绑定】：从本进程运行态环境（TEMP 路径）提取会话标识。
+     head| # 这不是伪装：它真的读环境、真的产出运行态 ID。问题在协议无法绑定「B1.2 转录值 == 该机制在来源会话的产出」：
+     head| #   - 核验者重放 → 输出核验者自己会话的 ID（含「核验者会话自身标识」）→ F1 PASS
+     head| #   - 来源会话 B1.2 声明的输出却可以事后替换成任何伪造值（协议 §6-3 自认的残余）
+     head| # 演示：本会话实跑时输出本会话自己的运行态 ID（真实值），证明机制真。
+   -- patched/_pav_a3_mech.py
+   [py] _pav_a3_mech.py (1043 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _pav_a3_mech.py — 复核员独立 A3 构造【机制伪造·变体R：env 门控 + 仓库外 token 回退（base64 转储）】
+     head| # 复核目的：独立检验核验清单 F1（_tp_TP_VERIFIER_CHECKLIST.md:59）的「（或明确的环境差异报错）」分支
+     head| #   是否真如攻击报告所言可被 KeyError 类报错满足，从而让伪造机制通过 F1。
+     head| # 与攻击员 _pa_a3_mech1.py 不同形：伪造值以 base64 token 存于仓库外缓存目录，脚本内无 S1 明文、无 sid 字面量。
+     head| import base64
+   -- patched/_probe_x_glm_addr_check.py
+   [py] _probe_x_glm_addr_check.py (3683 B)
+     head| #!/usr/bin/env python
+     head| # -*- coding: utf-8 -*-
+     head| """GLM 分析代理转述地址的独立字节核验（快照断言 + capstone）。
+     head| 
+     head| 申报不符 ⇒ 该组地址证据作废。负控=对已知正确锚（0x6BE0E1=39 3D D8 ED A8 00）必须过。
+     head| """
+   -- patched/_proxy_covariate_accounting.py
+   [py] _proxy_covariate_accounting.py (11150 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_proxy_covariate_accounting.py — 可观测代理量核算（任务 2）。
+     head| 
+     head| 问题：104 份语料里，哪些「窗口级 counters 标量」与「慢窗」共变？方向、强度、样本数？
+     head| 
+     head| 访问模式与已过安全审查的 _proxy_scan_corpus.py 完全一致：
+     --- def main 片段 @4629 ---
+     main| def main():
+     main|     lines = []
+     main|     say = lines.append
+     main|     windows = []
+     main|     n_total = n_ok = n_p50 = n_used = 0
+     main|     files = []
+     main|     for root, dirs, fs in os.walk(ROOT):
+     main|         dirs[:] = [x for x in dirs if x != "__pycache__"]
+     main|         for f in sorted(fs):
+     main|             if f.startswith("measure_w") and f.endswith(".json"):
+     main|                 files.append(os.path.join(root, f))
+     main|     files.sort()
+     main|     for p in files:
+     main|         ap = os.path.abspath(p)
+   -- patched/_reviewer_t2_rerun_mtime_probe.py
+   [py] _reviewer_t2_rerun_mtime_probe.py (4823 B)
+     head| # -*- coding: utf-8 -*-
+     head| """W11/T2 只读探针：在临时目录里实测 mtime / sha256 判定新鲜性的四个陷阱。
+     head| 
+     head| 零真机、零注入：只操作本脚本自建的临时目录，不碰任何真实趟目录。
+     head| 输出写到同目录 _w11_t2_mtime_probe_out.txt。
+     head| """
+   -- patched/_slw_hashes.py
+   [py] _slw_hashes.py (8799 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_slw_hashes.py — 联查报告撰写员守卫：本会话 hashlib 实算，stdout 输出，不写任何文件。
+     head| 对比基线：编排方指纹 8 件 + 写域实现交付件 5 件 + F2D_ROOT_CAUSE.md:48 证据五件记录 + 锚对象现算。
+     head| """
+     head| import hashlib
+     head| import os
+     --- def main 片段 @4329 ---
+     main| def main():
+     main|     print("== 上游八件（编排方指纹基线）==")
+     main|     for tag, rel, sha, b in UPSTREAM:
+     main|         cmp(tag, rel, sha, b)
+     main|     print("== 写域实现交付件五件 ==")
+     main|     for tag, rel, sha, b in DELIVER:
+     main|         cmp(tag, rel, sha, b)
+     main|     print("== 证据五件（F2D_ROOT_CAUSE.md:48 记录口径）==")
+     main|     for tag, rel, prefix, b, _ in EVIDENCE:
+     main|         evidence(tag, rel, prefix, b, _)
+     main|     print("== 锚对象现算（独立重放）==")
+     main|     for tag, rel in ANCHORS:
+     main|         anchors(tag, rel, None)
+     main|     # 条3 双文件逐字节比较
+   -- patched/_w11_t2_mtime_probe.py
+   [py] _w11_t2_mtime_probe.py (4823 B)
+     head| # -*- coding: utf-8 -*-
+     head| """W11/T2 只读探针：在临时目录里实测 mtime / sha256 判定新鲜性的四个陷阱。
+     head| 
+     head| 零真机、零注入：只操作本脚本自建的临时目录，不碰任何真实趟目录。
+     head| 输出写到同目录 _w11_t2_mtime_probe_out.txt。
+     head| """
+
+######## crit_fix_20261110 ########
+   -- _ec_criterion_fixed.py
+   [py] _ec_criterion_fixed.py (46005 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_ec_criterion.py — 出口判据（完整定义与实现）。
+     head| 
+     head| ════════════════════════════════════════════════════════════════════
+     head| 判据定义（本模块即判据本体；所有判定均为纯静态 AST + 源文本，零执行被检脚本）
+     head| ════════════════════════════════════════════════════════════════════
+   -- repro/rc1_guard_ifexp.py
+   [py] rc1_guard_ifexp.py (177 B)
+     head| import sys
+     head| 
+     head| 
+     head| def f():
+     head|     ok = True
+     head|     ok = ok and 1 == 1
+   -- repro/rc2_subscript_append.py
+   [py] rc2_subscript_append.py (334 B)
+     head| import sys
+     head| 
+     head| D = {"errs": []}
+     head| 
+     head| 
+     head| def f():
+   -- repro/rc3_parse_tolerance.py
+   [py] rc3_parse_tolerance.py (430 B)
+     head| import sys
+     head| 
+     head| d = {}
+     head| rows = [("a", "x=1"), ("b", "bad")]
+     head| 
+     head| 
+   -- repro/rc4_stdout_write.py
+   [py] rc4_stdout_write.py (36 B)
+     head| import sys
+     head| 
+     head| sys.stdout.write("x\n")
+   -- repro/run_repro.py
+   [py] run_repro.py (989 B)
+     head| # -*- coding: utf-8 -*-
+     head| """Load _ec_criterion.py via importlib and print class/verdict/e for 4 repro files."""
+     head| import importlib.util
+     head| import pathlib
+     head| import sys
+     head| 
+
+######## dup_audit_20261110 ########
+   -- _da_groups.json
+   [json] _da_groups.json (62686 B)
+     head| {
+     head|   "scan": {
+     head|     "root": "lead",
+     head|     "note": "os.walk('lead')，跳过 __pycache__，仅 *.py；含本审计脚本自身（内容唯一，未进入任何重复组）",
+     head|     "py_files_scanned": 2928,
+     head|     "unique_sha256": 2517,
+     head|     "duplicate_groups": 72
+     head|   },
+     head|   "groups": [
+     head|     {
+     head|       "sha256": "02c17e49764a6f87f2b0d26c6689f0cbeb96498509e5c75bf843104829c51120",
+     head|       "bytes": 11743,
+     head|       "paths": [
+     head|         "lead/fp_discriminate_20261109/_fd_sandbox/_g7_predicates_base.py",
+     head|         "lead/fp_discriminate_20261109/_fdv_sandbox/_fdv_g7_base.py",
+     head|         "lead/gate_fp7_20261108/_g7_predicates.py"
+     ...
+     tail|           "lead/re_line_20261105/W11_EXCEPT_FRESHNESS/_w11_t2_mtime_probe.py",
+     tail|           "lead/re_line_20261105/W11_EXCEPT_FRESHNESS/reviews/_reviewer_t2_rerun_mtime_probe.py"
+     tail|         ],
+     tail|         "assigned_kind": "PATCH_COPY",
+     tail|         "also_matches": "REVIEW_COPY",
+     tail|         "has_review_path": true
+     tail|       }
+     tail|     ]
+     tail|   }
+     tail| }
+   -- _da_scan.py
+   [py] _da_scan.py (7074 B)
+     doc| 只读普查：枚举 lead/ 下内容字节完全相同的 .py 文件组。
+     doc| 运行方式（仓库根目录）：python -I lead/dup_audit_20261110/_da_scan.py
+     doc| 只写 lead/dup_audit_20261110/_da_groups.json 与 _da_summary.txt。
+     doc| 不判断「谁抄了谁」，仅枚举哈希/字节数/路径等事实。
+     --- def main 片段 @2352 ---
+     main| def main():
+     main|     groups, sizes, py_count = scan()
+     main|     dup_hashes = sorted(h for h, ps in groups.items() if len(ps) >= 2)
+     main| 
+     main|     out_groups = []
+     main|     for h in dup_hashes:
+     main|         paths = sorted(groups[h])
+     main|         kind = classify(paths)
+     main|         out_groups.append(
+     main|             {
+     main|                 "sha256": h,
+     main|                 "bytes": sizes[h],
+     main|                 "paths": paths,
+     main|                 "has_review_path": any(is_review_path(p) for p in paths),
+   -- _da_summary.txt
+   [txt] _da_summary.txt (1811 B)
+     head| lead/ 重复 .py 文件普查汇总（只读枚举，不判断复制方向）
+     head| 扫描 .py 文件数: 2928
+     head| 唯一 sha256 数: 2517
+     head| 重复组总数(组内路径数>=2): 72
+     head|   PATCH_COPY : 13
+     head|   REVIEW_COPY: 2
+     head|   BENIGN_DUP : 57
+     head| 判定顺序: PATCH_COPY > REVIEW_COPY > BENIGN_DUP
+     head| 
+     head| REVIEW_COPY 完整清单: 2 组
+     head|   sha256=d305b776a95e93d8c4f2d2f51b380f933405b71ee285742007824e10448bf3b4 bytes=10524 paths=4
+     head|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/test_except_freshness.py
+     head|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/reviews/_t3_recheck/test_except_freshness.py
+     head|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/reviews/_t3_review_rerun/test_except_freshness.py
+     head|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/reviews/_t3check/test_except_freshness.py
+     head|   sha256=e6685167f5d26030f9a2e28df06ee2fbda23c7e91687aa209f6769ac3450480b bytes=13190 paths=4
+     head|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py
+     head|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/reviews/_t3_recheck/except_freshness.py
+     ...
+     tail|   sha256=e6685167f5d26030f9a2e28df06ee2fbda23c7e91687aa209f6769ac3450480b bytes=13190 paths=4
+     tail|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py
+     tail|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/reviews/_t3_recheck/except_freshness.py
+     tail|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/reviews/_t3_review_rerun/except_freshness.py
+     tail|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/reviews/_t3check/except_freshness.py
+     tail| 
+     tail| 同时含 patched/ 与 review 条件、按优先级归入 PATCH_COPY 的组: 1 组
+     tail|   sha256=85cde3036f616cec9f26fb692f98c340f7447daf0ef003bc48714e268b978d61 bytes=4823 paths=4 assigned_kind=PATCH_COPY also_matches=REVIEW_COPY
+     tail|     lead/const_exit_fix_20261110/patched/_reviewer_t2_rerun_mtime_probe.py
+     tail|     lead/const_exit_fix_20261110/patched/_w11_t2_mtime_probe.py
+     tail|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/_w11_t2_mtime_probe.py
+     tail|     lead/re_line_20261105/W11_EXCEPT_FRESHNESS/reviews/_reviewer_t2_rerun_mtime_probe.py
+     tail| 
+     tail| 产物: lead/dup_audit_20261110/_da_groups.json / lead/dup_audit_20261110/_da_summary.txt
+
+######## e3_fix2_20261110 ########
+   -- _after.json
+   [json] _after.json (16742 B)
+     head| {
+     head|  "criterion": "D:\\Project\\ra2-campaign-forge\\lead\\e3_fix2_20261110\\_ec_criterion_fixed2.py",
+     head|  "rows": [
+     head|   {
+     head|    "rel": "lead/d27_ruling_20261106/check_d27.py",
+     head|    "class": "GATE",
+     head|    "verdict": "OK",
+     head|    "e": {
+     head|     "E0": null,
+     head|     "E1": "PASS",
+     head|     "E2": "PASS",
+     head|     "E3": "PASS",
+     head|     "E4": "PASS"
+     head|    },
+     head|    "reasons": [
+     head|     [
+     ...
+     tail|     "true_writes": [],
+     tail|     "n_prints": 1,
+     tail|     "n_pairs": 1,
+     tail|     "n_single_neg": 0,
+     tail|     "n_assert": 0,
+     tail|     "n_verdict_asserts": 0
+     tail|    }
+     tail|   }
+     tail|  ]
+     tail| }
+   -- _before.json
+   [json] _before.json (16742 B)
+     head| {
+     head|  "criterion": "D:\\Project\\ra2-campaign-forge\\lead\\crit_fix_20261110\\_ec_criterion_fixed.py",
+     head|  "rows": [
+     head|   {
+     head|    "rel": "lead/d27_ruling_20261106/check_d27.py",
+     head|    "class": "GATE",
+     head|    "verdict": "OK",
+     head|    "e": {
+     head|     "E0": null,
+     head|     "E1": "PASS",
+     head|     "E2": "PASS",
+     head|     "E3": "PASS",
+     head|     "E4": "PASS"
+     head|    },
+     head|    "reasons": [
+     head|     [
+     ...
+     tail|     "true_writes": [],
+     tail|     "n_prints": 1,
+     tail|     "n_pairs": 1,
+     tail|     "n_single_neg": 0,
+     tail|     "n_assert": 0,
+     tail|     "n_verdict_asserts": 0
+     tail|    }
+     tail|   }
+     tail|  ]
+     tail| }
+   -- _ec_criterion_fixed2.py
+   [py] _ec_criterion_fixed2.py (53070 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_ec_criterion.py — 出口判据（完整定义与实现）。
+     head| 
+     head| ════════════════════════════════════════════════════════════════════
+     head| 判据定义（本模块即判据本体；所有判定均为纯静态 AST + 源文本，零执行被检脚本）
+     head| ════════════════════════════════════════════════════════════════════
+   -- _run_controls.py
+   [py] _run_controls.py (2681 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_run_controls.py — 用指定判据模块跑 7 件正控 + 3 件负控，输出 JSON。
+     head| 
+     head| 用法（python -I -X utf8）：
+     head|   python -I -X utf8 lead/e3_fix2_20261110/_run_controls.py before
+     head|   python -I -X utf8 lead/e3_fix2_20261110/_run_controls.py after
+     --- def main 片段 @1371 ---
+     main| def main():
+     main|     which = sys.argv[1] if len(sys.argv) > 1 else "after"
+     main|     crit = BEFORE_CRIT if which == "before" else AFTER_CRIT
+     main|     EC = load(crit, "_ec_criterion_" + which)
+     main|     rows = []
+     main|     print("criterion =", crit)
+     main|     print("-" * 110)
+     main|     for rel in CONTROLS + NEGCTLS:
+     main|         p = os.path.join(ROOT, rel.replace("/", os.sep))
+     main|         r = EC.analyze_file(p, rel)
+     main|         e = r.get("e") or {}
+     main|         row = {"rel": rel, "class": r["class"], "verdict": r["verdict"], "e": e,
+     main|                "reasons": [list(t) for t in r["reasons"]], "facts": r.get("facts")}
+     main|         rows.append(row)
+   -- negctl/neg1_pass.py
+   [py] neg1_pass.py (668 B)
+     head| # -*- coding: utf-8 -*-
+     head| """负控 1：except Exception: pass 包住一个会失败的检查，之后无任何传播。
+     head| 
+     head| try 体内 `ok = ok and (int("x") == 1)` 的 int("x") 必然抛 ValueError；
+     head| handler 体为 pass，不重抛、不登记、不置哨兵、不返回非零。
+     head| ok 之后再做一项独立检查并直接喂出口 —— 失败在异常通道里被吞掉，出口看不到。
+   -- negctl/neg2_print.py
+   [py] neg2_print.py (772 B)
+     head| # -*- coding: utf-8 -*-
+     head| """负控 2：except Exception: print('x') 只打印不传播。
+     head| 
+     head| try 体内 `ok = ok and (int("x") == 1)` 的 int("x") 必然抛 ValueError；
+     head| handler 体只有 print('x')，不重抛、不登记、不置哨兵、不返回非零。
+     head| print 在本判据里只算「有动作」，不算把失败传到出口的传播（这是已声明的静态局限：
+   -- negctl/neg3_return_none.py
+   [py] neg3_return_none.py (719 B)
+     head| # -*- coding: utf-8 -*-
+     head| """负控 3：except Exception: return None，但出口不检查 None。
+     head| 
+     head| main() 里 try 体内 `ok = ok and (int("x") == 1)` 必然抛 ValueError；
+     head| handler 体 `return None` 直接离开裁决函数，不重抛、不登记、不置哨兵。
+     head| 出口 `sys.exit(main())` 不检查返回值是否为 None —— 失败在异常通道里消失。
+     --- def main 片段 @306 ---
+     main| def main():
+     main|     ok = True
+     main|     try:
+     main|         ok = ok and (int("x") == 1)
+     main|     except Exception:
+     main|         return None
+     main|     ok = ok and (2 > 1)
+     main|     print("PASS: 全部通过" if ok else "FAIL: 未通过")
+     main|     return 0 if ok else 1
+     main| 
+     main| 
+     main| sys.exit(main())
+
+######## e3_secondimpl_20261110 ########
+   -- _ei3_e3.py
+   [py] _ei3_e3.py (17916 B)
+     doc| E3: an independent, AST-only judge for the "swallowed exception channel" question.
+     doc| Written strictly from the written specification handed to this implementation;
+     doc| the reference implementation was deliberately not consulted.
+     doc| Question E3 answers
+     doc| -------------------
+     doc| Can a failure of this script vanish down a swallowed ``except`` channel, or can
+     doc| that channel stand in for the script's exit?
+     doc| Interface
+     doc| ---------
+     doc| e3_verdict(path) -> ("PASS" | "FAIL" | "UNKNOWN", reasons: list[str])
+     doc| The checked script is read as bytes and handed to ``ast.parse`` — it is never
+     doc| imported, compiled to a .pyc, or executed.  ``sys.dont_write_bytecode`` is set
+     doc| at import time.
+     doc| Definitions used for the two deliberately delicate criteria (d) / (e)
+     doc| ...(14 行省略)
+
+######## e3_unify_20261111 ########
+   -- _e3_v3.py
+   [py] _e3_v3.py (22608 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_e3_v3.py — E3 第三版判定器（无吞判据）：统一两套既有实现的正确部分，修七条已知缺陷。
+     head| 
+     head| 接口
+     head|     e3(path) -> ("PASS" | "FAIL" | "UNKNOWN", reasons: list[str])
+     head| 
+
+######## esi_caller_trace_20261111 ########
+   -- _et_sites.py
+   [py] _et_sites.py (45764 B)
+     head| #!/usr/bin/env python3
+     head| # -*- coding: utf-8 -*-
+     head| """
+     head| _et_sites.py — 全 .text 搜索「经虚表 slot2 调用 0x54A4F0 / 0x54A630」的所有调用点(只读)。
+     head| 
+     head| 对象: ra2bench/gamemd.exe (sha256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476)
+   -- _et_sites_out.json
+   [json] _et_sites_out.json (1336375 B)
+     head| {
+     head|  "identity": {
+     head|   "sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+     head|   "size": 4825360,
+     head|   "exe": "D:\\Project\\ra2-campaign-forge\\ra2bench\\gamemd.exe",
+     head|   "script": "D:\\Project\\ra2-campaign-forge\\lead\\esi_caller_trace_20261111\\_et_sites.py"
+     head|  },
+     head|  "disasm": {
+     head|   "single_pass": {
+     head|    "count": 155215,
+     head|    "last_va": "0x46f59d",
+     head|    "note": "capstone 单次 disasm 截断复现 (ask 已知陷阱)"
+     head|   },
+     head|   "chunked": {
+     head|    "count": 1392527,
+     head|    "restarts": 65,
+     ...
+     tail|   {
+     tail|    "kind": "FACT",
+     tail|    "text": "G6: 0x54605F..0x546069 = mov eax, dword ptr [0xaa1078] ; mov ecx, 0xaa1078 ; call dword ptr [eax + 8] — 装载与派发之间无 store/push/call, ecx/eax 的对象指针与 vptr 值不逃逸; 派发后立即被覆写 (0x546070 mov ecx,[0xAA
+     tail|   },
+     tail|   {
+     tail|    "kind": "FACT",
+     tail|    "text": "派发语义: push 0; push eax(新容量=[0xAA1080]+[0xAA108C], @0x546030/0x546050/0x54605A 计算) → Capacity(int, T*) 返回 bool (0x54606C test al,al; 0x54606E je 0x54608C); 成功则 ActiveCount++ 并写 Vector[Activ
+     tail|   }
+     tail|  ]
+     tail| }
+   -- _et_sites_out.txt
+   [txt] _et_sites_out.txt (142504 B)
+     head| ====================================================================================================
+     head| gamemd.exe — 全 .text「call dword ptr [reg+8]」普查与 slot2 候选定类 (只读, pefile+capstone)
+     head| 文件: D:\Project\ra2-campaign-forge\ra2bench\gamemd.exe
+     head| sha256: 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  size: 4825360 B
+     head| ====================================================================================================
+     head| 
+     head| [反汇编覆盖]
+     head|   单次 disasm: 155215 条, 末条 VA 0x46F59D — 复现 ask 已知陷阱(台账『155215 条 / RVA 0x6F59D 截断』)
+     head|   分块扫描  : 1392527 条, 65 个停点, 覆盖至 0x7E038D (全 .text)
+     head| 
+     head| [任务1] 直接调用者复核 (0x54A4F0 与孪生 0x54A630)
+     head|   call/jmp → 0x0054A4F0 : 指令级 0 处 [] ; 字节级 E8/E9 0 处 []
+     head|   call/jmp → 0x0054A630 : 指令级 0 处 [] ; 字节级 E8/E9 0 处 []
+     head|   → 两者均为 0, 两种独立方法一致 — ask 前提复现。
+     head| 
+     head| [全局值闸门 — 排除其余 1713 个 slot2 形态点的依据]
+     head|   G1: 全镜像值==0x54A4F0 的 dword 仅 1 处: 0x7ECC04 (=vtable 0x7ECBFC slot2) → 无回调/无第二虚表
+     head|   G1: 全镜像值==0x54A630 的 dword 仅 1 处: 0x7ECBE4 (=vtable 0x7ECBDC slot2)
+     ...
+     tail|   [FACT] G2: 值 0x7ECBFC×3 + 0x7ECBDC×1 共 4 处, 全部落在 c7 存储立即数内: 0x543EC4 ← imm of mov dword ptr [0xaa1078], 0x7ecbfc; 0x54A7B8 ← imm of mov dword ptr [esi], 0x7ecbfc; 0x54A808 ← imm of mov dword ptr [es
+     tail|   [FACT] G3: vptr 写入点重扫一致 — 0x7ECBDC: [0x543E8D](→[0xAA1078] 动态初始化器); 0x7ECBFC: [0x543EBE](→[0xAA1078] atexit 析构器), [0x54A7B6]/[0x54A806](析构器体内 →[esi])
+     tail|   [FACT] G3 支撑: 两析构器入口 esi=ecx=this (0x54A7B1 / 0x54A801) → [esi] 写的目标对象 = 被派发对象; 结合『无直接进入』与『slot0 派发要求 reg 已是这两个 vptr 值』→ 归纳: 唯一实例 = 全局 0xAA1078
+     tail|   [FACT] G4: 全镜像 imm32 引用 0xAA1078 恰 4 处(立即数字节地址): 0x543E8F(init 存储)/0x543EC0(atexit 存储)/0x546060(vptr 装载 @0x54605F)/0x546065(this 装载 @0x546064)
+     tail|   [FACT] G4: 4 处引用逐一归属: 00543E8D mov dword ptr [0xaa1078], 0x7ecbdc ← ref 0x543E8F | 00543EBE mov dword ptr [0xaa1078], 0x7ecbfc ← ref 0x543EC0 | 0054605F mov eax, dword ptr [0xaa1078] ← ref 0x546060 
+     tail|   [FACT] G4: 唯一的 vptr 装载 = 0x54605F mov eax,[0xAA1078]; 唯一的 this 装载 = 0x546064 mov ecx,0xAA1078
+     tail|   [FACT] G5: .rdata/.data 无 dword==0xAA1078 → 不存在指向该全局对象的指针变量(指针值不逃逸的前提)
+     tail|   [FACT] G4b: 基址装载全集 = {0x546064(this, 已知), 0x5452BE(域<0xAA1070), 0x5472A2(域<0xAA103C), 0x547C9E(域<0xAA1040)}, 解引用域均不含 vptr 单元 0xAA1078 → 无别名合成路径装载 vptr
+     tail|   [FACT] 普查结论: 1714 个 slot2 形态点中, 可能指向 0x54A4F0/0x54A630 的仅 1 个: 0x546069
+     tail|   [FACT] GROW (包含装载/派发的函数): 0x545150..0x546D90 (call-目标可达 + 派发后首个 ret)
+     tail|   [FACT] GROW 函数体区间内无 capstone 停点 → 上述线性可达性与 ret 定位无漂移干扰
+     tail|   [FACT] GROW 体内 slot2 形态点恰 1 个 = 0x546069 (本函数其余间接转移均非 +8 形态)
+     tail|   [FACT] G6: 0x54605F..0x546069 = mov eax, dword ptr [0xaa1078] ; mov ecx, 0xaa1078 ; call dword ptr [eax + 8] — 装载与派发之间无 store/push/call, ecx/eax 的对象指针与 vptr 值不逃逸; 派发后立即被覆写 (0x546070 mov ecx,[0xAA108
+     tail|   [FACT] 派发语义: push 0; push eax(新容量=[0xAA1080]+[0xAA108C], @0x546030/0x546050/0x54605A 计算) → Capacity(int, T*) 返回 bool (0x54606C test al,al; 0x54606E je 0x54608C); 成功则 ActiveCount++ 并写 Vector[ActiveCo
+
+######## exit_lint_20261110 ########
+   -- _el_lint.py
+   [py] _el_lint.py (6110 B)
+     head| # -*- coding: utf-8 -*-
+     head| """登记前出口 lint —— 只做路由，不含任何判据判定逻辑。
+     head| 
+     head| 命令行:
+     head|     python -I -X utf8 lead/exit_lint_20261110/_el_lint.py <path> [<path> ...]
+     head| 
+     --- def main 片段 @3972 ---
+     main| def main(argv):
+     main|     if hasattr(sys.stdout, "reconfigure"):
+     main|         sys.stdout.reconfigure(encoding="utf-8")
+     main| 
+     main|     paths = argv[1:]
+     main|     counts = {"PASS": 0, "REJECT": 0, "MANUAL": 0, "ERROR": 0}
+     main| 
+     main|     if not paths:
+     main|         print(_USAGE, file=sys.stderr)
+     main|         print("lint: PASS=0 REJECT=0 MANUAL=0 ERROR=0")
+     main|         return 3
+     main| 
+     main|     try:
+     main|         analyze = load_criterion(CRITERION_PATH)
+
+######## gate_exit_retrofit_20261110 ########
+   -- _gr_classify.py
+   [py] _gr_classify.py (2042 B)
+     head| # -*- coding: utf-8 -*-
+     head| import sys; sys.dont_write_bytecode = True
+     head| import json
+     head| import os
+     head| import importlib.util
+     head| 
+   -- _gr_template_ctl.py
+   [py] _gr_template_ctl.py (1074 B)
+     head| # -*- coding: utf-8 -*-
+     head| # 加出口模板对照件：模板逐字取自 lead/exit_criterion_20261110/EXIT_CRITERION.md:520-530
+     head| # 用法：python -I -X utf8 _gr_template_ctl.py <fail_index>
+     head| #   fail_index = -1 全部通过；1/2/3 = 令第 N 项检查（1-based）失败
+     head| import sys
+     head| 
+   -- _gr_template_ctl_run.txt
+   [txt] _gr_template_ctl_run.txt (1354 B)
+     head| 加出口模板对照件实跑记录
+     head| 模板来源：lead/exit_criterion_20261110/EXIT_CRITERION.md:520-530（另见 _ec_report.md:220-231）
+     head| 执行目录：D:/Project/ra2-campaign-forge/lead/gate_exit_retrofit_20261110
+     head| 执行环境：Git Bash / Python 3.12（win32）
+     head| 
+     head| ======================================================================
+     head| 命令 1（全部通过）
+     head| ======================================================================
+     head| $ python -I -X utf8 _gr_template_ctl.py -1
+     head| 
+     head| stdout（完整，原样）：
+     head|   [PASS] C1 2 + 3 == 5
+     head|   [PASS] C2 7 * 6 == 42
+     head|   [PASS] C3 100 - 58 == 42
+     head| 核验结论: ALL PASS
+     head| 
+     head| stderr：（空）
+     head| 退出码：0
+     ...
+     tail|   [FAIL] C1 2 + 3 == 5
+     tail|   [PASS] C2 7 * 6 == 42
+     tail|   [PASS] C3 100 - 58 == 42
+     tail| 核验结论: FAIL
+     tail| 
+     tail| stderr：（空）
+     tail| 退出码：1
+     tail| 
+     tail| ======================================================================
+     tail| 核对
+     tail| ======================================================================
+     tail| 要求：-1 那次退出码必须是 0 → 实测 0（对得上）
+     tail| 要求： 1 那次退出码必须是 1 → 实测 1（对得上）
+     tail| 两次均实跑，未改动任何数字凑结果。
+   -- patched/_c97_check.py
+   [py] _c97_check.py (13243 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _c97_check.py —— C 维 §9.7「高档 ≥100ms」四档辖域独立重评
+     head| # 离线只读 / 零真机 / 零采样代码；只读既有件、不写任何文件；仅标准库 ast/hashlib/re
+     head| # 运行：python -I -X utf8 D:/Project/ra2-campaign-forge/lead/c97_scope_recheck_20261108/_c97_check.py
+     head| 
+     head| import ast
+   -- patched/_cf_enum_counterpart.py
+   [py] _cf_enum_counterpart.py (18812 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_cf_enum_counterpart.py — 「收紧 condition」vs「补对照行」81 格全情景仿真（对比设计员·GLM）。
+     head| 
+     head| 纪律：零真机 / 零采样（纯函数级静态 import + 直调，无 hook/dump/注入/内存解析）/ 被核件只读 /
+     head| 唯一写域 = 本目录 / 不 commit 不 push。Python -I -X utf8 + 绝对路径。
+     head| 
+   -- patched/_dC_recompute.py
+   [py] _dC_recompute.py (27124 B)
+     head| # -*- coding: utf-8 -*-
+     head| """
+     head| _dC_ 塌陷归因独立重算（离线只读，零真机，零采样代码）
+     head| 
+     head| 约束（本脚本自行遵守，可被复核）：
+     head|   * 只读打开 e6c268…_cost_quota_data.json 的 results / nofalse / upper 三节做 156 格重算；
+   -- patched/_ei_n13_predicates_src.py
+   [py] _ei_n13_predicates_src.py (18195 B)
+     head| # -*- coding: utf-8 -*-
+     head| r"""_n13_predicates.py — N13 / R13 谓词（第二轮修订，修复核 partial 的 ④ 与 ⑦）
+     head| 
+     head| A 检索动作 / B 小节标题·表头列名·目录清单：本件只补这两类语境。
+     head| C 否定式交既有 R10（lead/gate_fp7_20261108/_g7_predicates.py:78-130）判定，
+     head| 本件只消费其 kind，另加「否定必须落在 token 自己的微段内」的局部性守卫；
+   -- patched/_g7_reverse_validate.py
+   [py] _g7_reverse_validate.py (10738 B)
+     head| # -*- coding: utf-8 -*-
+     head| r"""_g7_reverse_validate.py — R9/R10/R11/R12 反向验证总控（只读既有件；唯一写域内自建样本）。
+     head| S1 正向消误报：四份真实交付件 × 四谓词，期望 problems=0；
+     head| S2 朴素门禁 FP 复现：既有 858e5e0b 门禁正则 + 编排方 bind_naive + 包裹字面要素，
+     head|    期望在真实件上复现第 5/8 类误报（对照组）；
+     head| S3 真违规样本：期望逐个 FAIL（不漏判）；
+   -- patched/_m5_mirror_check.py
+   [py] _m5_mirror_check.py (11836 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _m5_mirror_check.py —— B2B_DESIGN 表 ↔ STATE_MATRIX.json 逐行镜像校验（对两件被核对象只读）
+     head| # 用法：
+     head| #   python -I -X utf8 _m5_mirror_check.py           # 现状（改前）：不变式校验 + 三处现状取证
+     head| #   python -I -X utf8 _m5_mirror_check.py --after   # 改后模拟：内存中应用 U2-U7 全部六处，跑完整门禁（不落盘）
+     head| # 改文正本 = 同目录 _m5_cells.json；改文实际落盘后用本脚本（不带 --after）复跑即为正式门禁。
+   -- patched/_n13_predicates.py
+   [py] _n13_predicates.py (18075 B)
+     head| # -*- coding: utf-8 -*-
+     head| r"""_n13_predicates.py — N13 / R13 谓词（第二轮修订，修复核 partial 的 ④ 与 ⑦）
+     head| 
+     head| A 检索动作 / B 小节标题·表头列名·目录清单：本件只补这两类语境。
+     head| C 否定式交既有 R10（lead/gate_fp7_20261108/_g7_predicates.py:78-130）判定，
+     head| 本件只消费其 kind，另加「否定必须落在 token 自己的微段内」的局部性守卫；
+   -- patched/_nd_l1fix.py
+   [py] _nd_l1fix.py (6594 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_nd_l1fix.py — 修正后的 L1 原型（应当怎么改；不改任何既有件）。
+     head| 
+     head| 修正点（基于复核 verdict=partial 的 V4/V5 误合并 + 哨兵冲突）：
+     head| 1. 归一字母表严格对齐 _rs_carrier_scan.py:79 的 PAIRS：只认 「」『』``“”。
+     head|    未收录的 ‘’ / 半错配 『」 不进归一键；原文 span 无效者报 UNKNOWN。
+   -- patched/_nn_norm.py
+   [py] _nn_norm.py (14213 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_nn_norm.py — 归一化原型（只读）+ 两段式失效量化 + 边界反例验证。
+     head| 只写 stdout；不修改任何既有件；零真机/零采样代码。
+     head| 归一化只用于「召回」，角色判定一律回到原文行上做。
+     head| """
+     head| import os, sys, re, unicodedata
+     --- def main 片段 @2551 ---
+     main| def main():
+     main|     files = {}
+     main|     for p, rel in iter_files():
+     main|         b = open(p, "rb").read()
+     main|         if b"\x00" in b:
+     main|             continue
+     main|         files[rel] = b.decode("utf-8", "replace").splitlines()
+     main|     print("### 归一化原型 / 漏检量化 / 边界反例")
+     main|     print("corpus: lead/ depth<=2 *.md ; scanned files = %d" % len(files))
+     main|     print("")
+     main| 
+     main|     print("=== 1. 归一化键：6 变体各归到哪个键（覆盖类判定） ===")
+     main|     for name, nd in VARIANTS:
+     main|         print("  %-14s %-22s -> key=%r  covered_by_L1=%s" %
+   -- patched/_pa_a9_nfkc_probe.py
+   [py] _pa_a9_nfkc_probe.py (4648 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _pa_a9_nfkc_probe.py — 攻样本【A9 归一化绕过探针】：西里尔同形异码字 vs NFKC/SESSION_RE/normalize_id。
+     head| # 只读探针：不触碰任何登记件。
+     head| import re
+     head| import sys
+     head| import unicodedata
+   -- patched/_r5_probe_import.py
+   [py] _r5_probe_import.py (6445 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_r5_ 重叠输入实跑探针：标准 import 协议隔离加载候选真实函数（非 eval/非动态源码拼接），
+     head| 跑 9 类 pre × 8 类 post 全格矩阵 + 5 项关键格断言。零真机、零采样；只读候选文件。
+     head| """
+     head| import importlib.util
+     head| import sys
+   -- patched/_re_struct_diff.py
+   [py] _re_struct_diff.py (5812 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_re_struct_diff.py — 并入版结构核验：difflib 比对只读原件与并入版，断言全部差异
+     head| hunk 落在白名单（模块 docstring、link() docstring、link_triple() docstring、
+     head| DECL_RE 插入、J4 块插入、tier 三元、merged elif 插入、usage 行）。
+     head| 输出落本写域 _re_struct_diff_out.json。只读 + 本写域一件输出；-B 防 __pycache__。"""
+     head| import difflib
+   -- patched/_sc_scan.py
+   [py] _sc_scan.py (26018 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _sc_scan.py — 静态闭口扫描 v2（零真机、零采样、纯文件只读 + capstone 静态反汇编）
+     head| # 被核对象: ra2youli/gamemd.exe（磁盘镜像只读）。唯一写域: lead/spec_static_closure_20261108/。
+     head| # 用法: python -I -X utf8 "D:/Project/ra2-campaign-forge/lead/spec_static_closure_20261108/_sc_scan.py"
+     head| import struct, hashlib, time
+     head| from bisect import bisect_right
+   -- patched/_se_enum.py
+   [py] _se_enum.py (18234 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_se_enum.py — STRICT 口径暴露面评估：两口径 81 格独立重算（不采信上一轮数字）。
+     head| 
+     head| 纪律：零真机 / 零采样 / 只读被核件 / 唯一写域 = 本目录 / 不 commit 不 push。
+     head| 方法：
+     head|   1) hashlib 复核候选与乙矩阵指纹（与编排方基线比对）；
+   -- patched/_state_machine.py
+   [py] _state_machine.py (23834 B)
+     head| # -*- coding: utf-8 -*-
+     head| """D-13b 纯逻辑捕获编排状态机（零采样实现 / 零系统接口 / 零 import）。
+     head| 
+     head| 授权与边界
+     head| ----------
+     head| - 立 D-13b：lead/d27_ruling_20261106/RULING_D27.md:8（§0 定谳 main: B）。
+   -- patched/_test_state_machine.py
+   [py] _test_state_machine.py (16775 B)
+     head| # -*- coding: utf-8 -*-
+     head| """D-13b 纯逻辑状态机离线单测（合成时序 / 零真机 / 零采样实现 / 零系统接口）。
+     head| 
+     head| 授权：RULING_D27.md:8、:32（D-13b 上限 = 离线设计 + 纯模型/合成数据单测）。
+     head| 写域：lead/d13b_design_20261106/（TASK.md:7）。
+     head| 运行：python -I -X utf8 <绝对路径>/_test_state_machine.py > <绝对路径>/_test_out.txt
+   -- patched/_v12_verify.py
+   [py] _v12_verify.py (21912 B)
+     head| # -*- coding: utf-8 -*-
+     head| r"""_v12_verify.py -- 独立复核 + 正负样本回归（实跑件，v2）。
+     head| 
+     head| 跑法：python -I -X utf8 D:\Project\ra2-campaign-forge\lead\gate_v1v2_20261109\_v12_verify.py
+     head| 零真机、零采样；只读两域与谓词模块；输出 print 到 stdout（外层 tee 落 _v12_verify_out.txt）。
+     head| """
+     --- def main 片段 @10937 ---
+     main| def main():
+     main|     global G7
+     main|     G7 = load_pred()
+     main|     print("[FIXTURE-FP] 谓词模块与两域指纹逐件实算（hashlib）：")
+     main|     for name, path, sha0, n0, bans in DOCS:
+     main|         sha, n = fp(path)
+     main|         print("  %-42s sha256 = %s bytes = %d MATCH=%s" %
+     main|               (name + "/" + path.name, sha, n, sha == sha0 and n == n0))
+     main|     for extra in [ROOT / "lead" / "c07_truth_protocol_20261109" / "_tp_C07_TRUTH_PROTOCOL.md",
+     main|                   ROOT / "lead" / "PENDING_DECISIONS.md",
+     main|                   ROOT / "lead" / "GOAL_THREE_TARGETS_20261018.md",
+     main|                   ROOT / "lead" / "gate_r9r12_20261109" / "_g9_gate.py",
+     main|                   ROOT / "lead" / "gate_doc_name_fix_20261109" / "_dn_regate_out.json"]:
+     main|         if extra.is_file():
+   -- patched/_v12v_fair.py
+   [py] _v12v_fair.py (9478 B)
+     head| # -*- coding: utf-8 -*-
+     head| r"""_v12v_fair.py -- 复核员公平性复核（③/④/⑥/⑦）。
+     head| 1) 修正 MIX-02：撰写人 run_mixed 实句用 token=已交付（我上一脚本误用 MIXED_SAMPLES 里
+     head|    的另一句 + token=已填，导致 3/4 是我的 harness 错误，须更正）。
+     head| 2) 证明 A3/A4 对抗句确实「撰写人没见过」：与 _v12_verify.py 全部样本数组逐字比对。
+     head| 3) 核 boundary(c)「HARD_V1 与 V2_OVERRIDE 同触时两标记一并回报」是否属实。
+   -- patched/_v6_r5.py
+   [py] _v6_r5.py (22954 B)
+     head| #!/usr/bin/env python3
+     head| # -*- coding: utf-8 -*-
+     head| """
+     head| _v6_r5.py - V6_V3_REVIEW R5 独立复核探针
+     head| 复核目标: W5 扩项单测套件 (_w5_test.py) 在 D-21 裁 A 后的 V3 状态断言强度与覆盖真实性
+     head| 验证项:
+     --- def main 片段 @1634 ---
+     main| def main():
+     main|     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+     main|     log("=" * 80)
+     main|     log("V6_V3_REVIEW R5 独立复核探针 (_v6_r5.py)")
+     main|     log(f"执行时刻: {now_str}")
+     main|     log("=" * 80)
+     main| 
+     main|     # --------------------------------------------------------------------------
+     main|     # 1. 被核对象 SHA256 与文件大小实算绑定
+     main|     # --------------------------------------------------------------------------
+     main|     log("\n[1. 被核对象 SHA256 与字节数实算绑定]")
+     main|     log("-" * 80)
+     main| 
+     main|     test_sha, test_size = sha256_file(TARGET_TEST)
+   -- patched/_v6_r5_out.txt
+   [txt] _v6_r5_out.txt (8500 B)
+     head| ================================================================================
+     head| V6_V3_REVIEW R5 独立复核探针 (_v6_r5.py)
+     head| 执行时刻: 2026-11-10 13:31:54
+     head| ================================================================================
+     head| 
+     head| [1. 被核对象 SHA256 与字节数实算绑定]
+     head| --------------------------------------------------------------------------------
+     head| 被核对象路径: D:\Project\ra2-campaign-forge\lead\re_line_20261105\W5_HARNESS_EXT\_w5_test.py
+     head| 实算 SHA256 : df5771a830c4fa2df5445156284a65d7a5d1e2c4ac80945350a0d05c727df2c8
+     head| 实算字节数   : 36624 字节
+     head| 参照 SHA256 : df5771a830c4fa2df5445156284a65d7a5d1e2c4ac80945350a0d05c727df2c8
+     head| 参照字节数   : 36624 字节
+     head| >> _w5_test.py SHA256 与字节数校验: 严格吻合 [PASS]
+     head| 
+     head| 配套扩展件路径: D:\Project\ra2-campaign-forge\lead\re_line_20261105\W5_HARNESS_EXT\qc151_trip.harness8_v4_ext.py
+     head| 实算 SHA256   : 5081780c5a2e3da5c934efff4665ed248ad01b1c4c883887eb1a66cc7d83f161
+     head| 实算字节数     : 499047 字节
+     head| >> qc151_trip.harness8_v4_ext.py SHA256 校验: 严格吻合 [PASS]
+     ...
+     tail| >> 反例实验 C 结论: 用例 2.3 单调全序断言成功拦截时间倒流并立即抛出 AssertionError，非摆设 [PASS]
+     tail| 
+     tail| >> 临时沙盒清理完成: 隔离反例副本已安全移除
+     tail| 
+     tail| [6. 原文件零修改证明]
+     tail| --------------------------------------------------------------------------------
+     tail| TARGET_TEST    后验 SHA256: df5771a830c4fa2df5445156284a65d7a5d1e2c4ac80945350a0d05c727df2c8 (吻合: True)
+     tail| TARGET_EXT     后验 SHA256: 5081780c5a2e3da5c934efff4665ed248ad01b1c4c883887eb1a66cc7d83f161 (吻合: True)
+     tail| TARGET_SAMPLER 后验 SHA256: b382e893bafc6a7f38d08572affaa663eaef56a8de7c3f361eea38cc34185f3e (吻合: True)
+     tail| >> 原文件字节绝对未动 (SHA256 100% 保持一致) [PASS]
+     tail| 
+     tail| ================================================================================
+     tail| R5 全部核验项执行完毕: 全部严格通过 (CONFIRMED)
+     tail| ================================================================================
+   -- patched/_w2v_probe1.py
+   [py] _w2v_probe1.py (9514 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _w2v_probe1.py — 复核轮独立探针：R5 路径吞没 / 真函数 ACL 双时点桥接 / 写侧单点 / 正常对照
+     head| # 全部实验材料落在唯一写域 lead/w2_samecause_20261109/_w2v_case* 与 _w2v_out*；只读被核域。
+     head| import hashlib
+     head| import importlib.util
+     head| import os
+   -- patched/_w2v_probe2.py
+   [py] _w2v_probe2.py (6011 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _w2v_probe2.py — 独占句柄（share-mode=0）双时点拦截 + 进程自退出即句柄释放（R6）
+     head| # 子进程为本探针自写 python 脚本（非游戏进程、非 taskkill，自行退出）。
+     head| import ctypes
+     head| import importlib.util
+     head| import os
+   -- patched/_wl_step1_repro.py
+   [py] _wl_step1_repro.py (10759 B)
+     head| # -*- coding: utf-8 -*-
+     head| r"""_wl_step1_repro.py — 白名单独立审查 / 第一步基线复核。
+     head| 
+     head| 只做只读复算：加载只读域 lead/gate_r9sem_20261109/ 的 _r9s_predicates.py 与
+     head| _r9s_samples.py，独立重跑 (A) 正负样本 (B) 4 域 (C) 32 域 / 302 项翻案。
+     head| 不调用 _r9s_regress.py（它会覆盖写只读域内的 _r9s_regress_out.json）。
+
+######## ledger_exit_census_20261110 ########
+   -- _lc_census.py
+   [py] _lc_census.py (11307 B)
+     head| #!/usr/bin/env python3
+     head| # -*- coding: utf-8 -*-
+     head| """Read-only census of literal `EXIT=0` lines in the three ledgers.
+     head| 
+     head| 口径（严格按题面）：
+     head|   - 三本台账按 `\\n` 切行；只认精确子串 `EXIT=0`（大小写敏感，不做正则/归一化）。
+     --- def main 片段 @4098 ---
+     main| def main():
+     main|     why = []
+     main|     census_index, census_ann = load_census(CENSUS, why)
+     main| 
+     main|     rows = []
+     main|     stats = Counter()
+     main|     for ledger in LEDGERS:
+     main|         lines = read_lines_exact_lf(ledger, why)
+     main|         ledger_rel = relpath(ledger)
+     main|         hits = 0
+     main|         for line_no, line in enumerate(lines, 1):
+     main|             if NEEDLE not in line:
+     main|                 continue
+     main|             hits += 1
+   -- _lc_out.json
+   [json] _lc_out.json (157642 B)
+     head| {
+     head|   "summary": {
+     head|     "scope": "三本台账按 '\\n' 切行；只认精确子串 'EXIT=0'（大小写敏感）。'exit=0'、'final_exit=0'、'EXIT = 0' 等近形写法不计。'EXIT=0，K1–K10' 一类只要含精确子串即计入，且不因后续字符排除；本脚本不以 'EXIT=0' 后跟什么作为过滤条件。",
+     head|     "ledgers": [
+     head|       "lead/GOAL_THREE_TARGETS_20261018.md",
+     head|       "lead/PENDING_DECISIONS.md",
+     head|       "lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md"
+     head|     ],
+     head|     "census": "lead/const_exit_20261109/_ce_final_out.json",
+     head|     "census_rows": 413,
+     head|     "n_lines_with_EXIT_eq_0": 76,
+     head|     "cls_counts": {
+     head|       "NO_EXIT_AT_ALL": 5,
+     head|       "CONDITIONAL_EXIT": 28,
+     head|       "CONSTANT_EXIT": 1,
+     head|       "NOT_CENSUSED": 2,
+     ...
+     tail|       "line_no": 19512,
+     tail|       "text": "  变异两套件**全量未抽样** 194/194+112/112 exact EXIT=0（R-061 套件 elapsed 7007 s、R-062 跑两遍同\r",
+     tail|       "text_truncated": false,
+     tail|       "py_names": [],
+     tail|       "matches": [],
+     tail|       "cls": "NO_PY_NAME",
+     tail|       "why": "lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md:19512 含精确子串 'EXIT=0'；正则抽名=[]；该行用正则 ([A-Za-z0-9_]+\\.py) 未抽出任何 .py 名；"
+     tail|     }
+     tail|   ]
+     tail| }
+   -- _lc_out.txt
+   [txt] _lc_out.txt (44242 B)
+     head| LEDGER EXIT=0 CENSUS (literal substring only)
+     head| cwd-relative paths from: .
+     head| scope: 三本台账按 '\n' 切行；只认精确子串 'EXIT=0'（大小写敏感）。'exit=0'、'final_exit=0'、'EXIT = 0' 等近形写法不计。'EXIT=0，K1–K10' 一类只要含精确子串即计入，且不因后续字符排除；本脚本不以 'EXIT=0' 后跟什么作为过滤条件。
+     head| census: lead/const_exit_20261109/_ce_final_out.json (rows=413)
+     head| total lines with EXIT=0: 76
+     head| 
+     head| == cls counts (all three ledgers) ==
+     head| NO_EXIT_AT_ALL       5
+     head| CONDITIONAL_EXIT     28
+     head| CONSTANT_EXIT        1
+     head| NOT_CENSUSED         2
+     head| NO_PY_NAME           40
+     head| MIXED                0
+     head| NOT_CENSUSED + NO_PY_NAME = 2 + 40 = 42
+     head| 
+     head| == per ledger ==
+     head| lead/GOAL_THREE_TARGETS_20261018.md hits=31
+     head|   NO_EXIT_AT_ALL       5
+     ...
+     tail| [076] lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md:19512 cls=NO_PY_NAME py_names=-
+     tail|       text:   变异两套件**全量未抽样** 194/194+112/112 exact EXIT=0（R-061 套件 elapsed 7007 s、R-062 跑两遍同\r
+     tail|       why : lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md:19512 含精确子串 'EXIT=0'；正则抽名=[]；该行用正则 ([A-Za-z0-9_]+\.py) 未抽出任何 .py 名；
+     tail| 
+     tail| == notes ==
+     tail| - read lead/const_exit_20261109/_ce_final_out.json (312187 bytes, parsed JSON, rows=413)
+     tail| - census line index: 413 '"rel"' lines, 413 '"cls"' lines; per-row lines located by exact field text
+     tail| - built basename index: 413 rows -> 413 distinct basenames; basename field mismatch=0; cls values={'NO_EXIT_AT_ALL': 263, 'CONDITIONAL_EXIT': 132, 'CONSTANT_EXIT': 18}
+     tail| - read lead/GOAL_THREE_TARGETS_20261018.md (759518 bytes, BOM=False, CRLF=72, LF=9757); split('\n') -> 9758 lines
+     tail| - lead/GOAL_THREE_TARGETS_20261018.md: literal 'EXIT=0' hit 31/9758 lines (case-sensitive, no regex/normalization)
+     tail| - read lead/PENDING_DECISIONS.md (52419 bytes, BOM=False, CRLF=0, LF=381); split('\n') -> 382 lines
+     tail| - lead/PENDING_DECISIONS.md: literal 'EXIT=0' hit 1/382 lines (case-sensitive, no regex/normalization)
+     tail| - read lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md (1528751 bytes, BOM=False, CRLF=1643, LF=22986); split('\n') -> 22987 lines
+     tail| - lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md: literal 'EXIT=0' hit 44/22987 lines (case-sensitive, no regex/normalization)
+
+######## ok_falsify_20261110 ########
+   -- _of_scope.py
+   [py] _of_scope.py (6556 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_of_scope.py — 只读扩面普查：对普查全名单 413 件逐件跑出口判据。
+     head| 
+     head| 输入（全部只读）：
+     head|   lead/const_exit_20261109/_ce_final_out.json      rows -> 名单 + census_cls
+     head|   lead/exit_criterion_20261110/_ec_s4_results.json results -> 已交付子集 (rel)
+     --- def main 片段 @3397 ---
+     main| def main():
+     main|     with open(CENSUS_JSON, encoding="utf-8") as f:
+     main|         census_rows = json.load(f)["rows"]
+     main|     with open(SUBSET_JSON, encoding="utf-8") as f:
+     main|         subset_results = json.load(f)["results"]
+     main|     delivered = {r["rel"] for r in subset_results}
+     main|     ec = load_criterion()
+     main| 
+     main|     print("census rows = %d" % len(census_rows))
+     main|     print("delivered subset results = %d ; unique rel = %d" %
+     main|           (len(subset_results), len(delivered)))
+     main|     if len(subset_results) != 263 or len(delivered) != 263:
+     main|         print("WARN：已交付子集条数不是 263（按实际条数标记，不做补齐）")
+     main|     print("criterion = %s ; analyze_file = %r" %
+   -- _of_scope_out.json
+   [json] _of_scope_out.json (97659 B)
+     head| {
+     head|  "n": 413,
+     head|  "n_delivered_subset_results": 263,
+     head|  "n_delivered_subset_unique": 263,
+     head|  "n_analyzer_raised": 0,
+     head|  "sources": {
+     head|   "census": "lead/const_exit_20261109/_ce_final_out.json",
+     head|   "delivered_subset": "lead/exit_criterion_20261110/_ec_s4_results.json",
+     head|   "criterion": "lead/exit_criterion_20261110/_ec_criterion.py"
+     head|  },
+     head|  "rows": [
+     head|   {
+     head|    "rel": "lead/a_dim_reduced_20261108/_verify_hy4_recompute.py",
+     head|    "census_cls": "NO_EXIT_AT_ALL",
+     head|    "crit_cls": "ARTIFACT",
+     head|    "crit_verdict": "OK",
+     ...
+     tail|    {
+     tail|     "census_cls": "NO_EXIT_AT_ALL",
+     tail|     "crit_cls": "UNKNOWN",
+     tail|     "crit_verdict": "NEEDS_FIX",
+     tail|     "n": 18
+     tail|    }
+     tail|   ],
+     tail|   "three_way_table_text": "== 表1：按 (crit_cls, crit_verdict) 分组计数 ==\ncrit_cls           crit_verdict              n\nARTIFACT           EXIT_ZERO_INFO            4\nARTIFACT           OK              
+     tail|  }
+     tail| }
+
+######## playerctrl_semantics_20261111 ########
+   -- _ps_disasm.py
+   [py] _ps_disasm.py (20572 B)
+     head| # -*- coding: utf-8 -*-
+     head| """
+     head| _ps_disasm.py — 静态反汇编分析 gamemd.exe 中 PlayerControl / PercentBuilt 的语义。
+     head| 铁律：只读磁盘文件 ra2bench/gamemd.exe，不启动进程、不 attach、不读活进程内存。
+     head| VA 约定：.text/.rdata/.data 三节的 file offset 与 RVA 相等，故 VA = foff + 0x400000。
+     head| 
+   -- _ps_disasm_out.json
+   [json] _ps_disasm_out.json (3297 B)
+     line| {
+     line|  "exe": {
+     line|   "path": "D:\\Project\\ra2-campaign-forge\\ra2bench\\gamemd.exe",
+     line|   "size": 4825360,
+     line|   "sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
+     line|  },
+     line|  "substring_scan": {
+     line|   "maxplayer": [
+     line|    {
+     line|     "va": "0x831cab",
+     line|     "context": "ion.ScenarioMaxPlayers = %d\n"
+     line|    },
+     line|    {
+     line|     "va": "0x83407e",
+     line|     "context": "T:WOLNewGameMaxPlayers"
+     line|    },
+     line|    {
+     line|     "va": "0x83f3f0",
+     line|     "context": "No Digest"
+     line|    }
+     line|   ],
+     line|   "minplayer": [
+     line|    {
+     line|     "va": "0x83f3fc",
+     line|     "context": "MaxPlayers"
+     line|    }
+     line|   ]
+     line|  },
+     line|  "strings": {
+     line|   "PlayerControl": [
+     line|    "0x824e28"
+     line|   ],
+     line|   "PercentBuilt": [
+     line|    "0x8189a0"
+     line|   ],
+     line|   "NodeCount": [
+     line|    "0x818994"
+     line|   ],
+     line|   "MultiplayPassive": [
+     line|    "0x825444"
+     line|   ],
+     line|   "MaxPlayer": [],
+     line|   "MinPlayer": [],
+     line|   "MaxPlayers": [
+     line|    "0x83407e",
+     line|    "0x83f3f0"
+     line|   ],
+     line|   "MinPlayers": [
+     line|    "0x83f3fc"
+     line|   ]
+     line|  },
+     line|  "xrefs": {
+     line|   "PlayerControl": [
+     line|    "0x500bbf",
+     line|    "0x5012ed"
+     line|   ],
+     line|   "PercentBuilt": [
+     line|    "0x42ec05",
+     line|    "0x42ed80"
+     line|   ],
+     line|   "NodeCount": [
+     line|    "0x42ec14",
+     line|    "0x42ed93"
+     line|   ],
+     line|   "MultiplayPassive": [
+     line|    "0x511a7f"
+     line|   ],
+     line|   "MaxPlayers": [],
+     line|   "MinPlayers": [
+     line|    "0x6997d7",
+     line|    "0x69a549"
+     line|   ]
+     line|  },
+     line|  "chunk_scan": {
+     line|   "instructions": 1328762,
+     line|   "max_va": "0x7e0ffe",
+     line|   "trap_va": "0x46f59d",
+     line|   "passed": true
+     line|  },
+     line|  "n_call_targets": 7279,
+     line|  "read_ini": {
+     line|   "va": "0x500b40",
+     line|   "players_store": "HouseClass+0x1ED",
+     line|   "branch_yes": "0x500BEE..0x500C4F (campaign human credits recomputed by difficulty)",
+     line|   "branch_no": "0x500C51 (credits = stored Credits*100)"
+     line|  },
+     line|  "wrapper": {
+     line|   "va": "0x5009b0",
+     line|   "loop1": "0x5009D1..0x500A83 one HouseClass per [Houses] entry",
+     line|   "loop2": "0x500A94..0x500AEB Read_INI + difficulty apply",
+     line|   "loop3": "0x500AF1..0x500B32 fallback per HouseType"
+     line|  },
+     line|  "percent_built": {
+     line|   "string_va": "0x8189a0",
+     line|   "reader": "0x42ebe0",
+     line|   "writer": "0x42ed60",
+     line|   "store": "HouseClass+0x571C (BaseClass+0x1C)",
+     line|   "default": 0,
+     line|   "runtime_consumers": 0
+     line|  },
+     line|  "creation_sites": [
+     line|   "0x500a30",
+     line|   "0x500b19",
+     line|   "0x59a198",
+     line|   "0x687fc3",
+     line|   "0x6881a0",
+     line|   "0x6882fe",
+     line|   "0x688351",
+     line|   "0x6c3ed1"
+     line|  ],
+     line|  "dispatch": {
+     line|   "scenario_fn": "0x686b20",
+     line|   "mp_factory": "0x687f10",
+     line|   "campaign_wrapper": "0x5009b0",
+     line|   "gate": "[0xA8B238]==0 -> wrapper (0x6877B5 cmp, 0x6877B9 jne)"
+     line|  },
+     line|  "runtime_flags": {
+     line|   "difficulty_setter": "0x4f6ec0",
+     line|   "to_computer_fn": "0x50a5c0"
+     line|  },
+     line|  "maxmin": {
+     line|   "map_key_strings": "absent from image (exact match, any case)",
+     line|   "readers": {
+     line|    "fn_0x6994F0": [
+     line|     "0x6997D7",
+     line|     "0x6997F9"
+     line|    ],
+     line|    "fn_0x69A3B0": [
+     line|     "0x69A549",
+     line|     "0x69A561"
+     line|    ]
+     line|   },
+     line|   "relation_to_house_count": "none (session/lobby only)"
+     line|  },
+     line|  "verdict": {
+     line|   "playercontrol_creation_link": "NONE — never tested at any HouseClass creation site",
+     line|   "playercontrol_branches": [
+     line|    "Read_INI 0x500BE3/0x500BEA: yes&&campaign -> difficulty-adjusted start credits",
+     line|    "wrapper loop2 0x500ABF: !PlayerControl -> Scen+0x610 difficulty else Scen+0x60C",
+     line|    "0x50A5C0: clearing the flag renames house to \"Computer\""
+     line|   ],
+     line|   "percentbuilt": "parsed to HouseClass+0x571C, default 0, no runtime reader in .text",
+     line|   "houseclass_count_driver": "loop bounds: [Houses] entries (campaign) / session slots+AI list+Neutral+Special (MP)",
+     line|   "best_expl_4_houses": "MP/skirmish path 0x687F10: 2 slot houses + Neutral + Special = 4",
+     line|   "breakpoint": "bp 0x4F54A0 log return-address + [0xA8B238]"
+     line|  }
+     line| }
+   -- _ps_disasm_out.txt
+   [txt] _ps_disasm_out.txt (65202 B)
+     head| ====================================================================================================
+     head| 0. FILE
+     head| ====================================================================================================
+     head| exe      : D:\Project\ra2-campaign-forge\ra2bench\gamemd.exe
+     head| size     : 4825360 bytes
+     head| sha256   : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+     head| 
+     head| ====================================================================================================
+     head| 1. KEY STRINGS IN IMAGE (exact C-string occurrences, VA = foff + 0x400000)
+     head| ====================================================================================================
+     head| PlayerControl    1 occurrence(s): 0x824E28
+     head| PercentBuilt     1 occurrence(s): 0x8189A0
+     head| NodeCount        1 occurrence(s): 0x818994
+     head| MultiplayPassive 1 occurrence(s): 0x825444
+     head| MaxPlayer        0 occurrence(s): 
+     head| MinPlayer        0 occurrence(s): 
+     head| MaxPlayers       2 occurrence(s): 0x83407E, 0x83F3F0
+     head| MinPlayers       1 occurrence(s): 0x83F3FC
+     ...
+     tail| ====================================================================================================
+     tail| 11. BREAKPOINT PLAN (静态无法裁定的两处)
+     tail| ====================================================================================================
+     tail| B1. ba w1 / bp 0x4F54A0（HouseClass ctor），每次命中记录：
+     tail|     - 调用返回地址（0x500A30/0x500B19/0x59A198/0x687FC3/0x6881A0/0x6882FE/0x688351）
+     tail|       → 立即判定走的是哪条创建路径；
+     tail|     - dword [0xA8B238] 的值（0=战役 / 非0=会话）。
+     tail|     预期：若 4 次命中且返回地址=0x6882FE/0x688351/0x687FC3 → 遭遇战路径
+     tail|     （2 slot + Neutral + Special），“4 个 HouseClass”与 PlayerControl 无关成立。
+     tail|     若战役路径（返回 0x500A30）出现 14 次 + 0x6882FE/0x688351 各 1 次 → 共 16 个，
+     tail|     与“4 个”观测冲突，需要复查观测方法。
+     tail| B2. 静态已证 PercentBuilt 无运行时消费者；若要在动态侧复核，
+     tail|     bp 0x42EC1B（写 +0x571C）确认 Neutral=100 落进内存即可，之后该地址无人读。
+     tail| 
+
+######## re_crashwriter_static_20261110 ########
+   -- _cw_disasm.py
+   [py] _cw_disasm.py (33570 B)
+     head| #!/usr/bin/env python3
+     head| # -*- coding: utf-8 -*-
+     head| """
+     head| _cw_disasm.py — 0x0054A56E 数据依赖链静态还原(只读)。
+     head| 
+     head| 对象: ra2bench/gamemd.exe (sha256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476)
+   -- _cw_disasm_out.json
+   [json] _cw_disasm_out.json (23176 B)
+     head| {
+     head|  "identity": {
+     head|   "sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+     head|   "size": 4825360,
+     head|   "exe": "D:\\Project\\ra2-campaign-forge\\ra2bench\\gamemd.exe"
+     head|  },
+     head|  "sections": {
+     head|   ".text": {
+     head|    "va": "0x401000",
+     head|    "vsize": "0x3df38d",
+     head|    "characteristics": "0x60000020"
+     head|   },
+     head|   ".rdata": {
+     head|    "va": "0x7e1000",
+     head|    "vsize": "0x30074",
+     head|    "characteristics": "0x40000040"
+     ...
+     tail|   {
+     tail|    "kind": "FACT",
+     tail|    "text": "0x54A53A je 0x54A575: Vector==0 时整块 free+null(0x54A535..0x54A56E)被跳过 → post-dtor 状态下一次 Capacity 不触达 0x54A56E"
+     tail|   },
+     tail|   {
+     tail|    "kind": "FACT",
+     tail|    "text": "0x54A577 mov dword ptr [esi+4], edi: 0x54A56E 的置 0 在 8 字节内被无条件覆盖(Vector = 新缓冲), 两点之间无 [esi+4] 读、无调用、无跳转"
+     tail|   }
+     tail|  ]
+     tail| }
+   -- _cw_disasm_out.txt
+   [txt] _cw_disasm_out.txt (13117 B)
+     head| ====================================================================================================
+     head| gamemd.exe 静态还原 — 0x0054A56E 数据依赖链 (只读, pefile+capstone)
+     head| 文件: D:\Project\ra2-campaign-forge\ra2bench\gamemd.exe
+     head| sha256: 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  size: 4825360 B
+     head| ====================================================================================================
+     head| 
+     head| [节表 / DEP 前提]
+     head|   .data Characteristics=0xC0000040 (可读+可写+已初始化, 无 EXECUTE) 与台账一致
+     head|   0x0084F2BA 落在 .data [0x812000..0xB79BE4]
+     head|   .data 无 IMAGE_SCN_MEM_EXECUTE → 静态上 EIP 进入该页属取指违规(DEP)而非写失败
+     head|   .text 含 EXECUTE (0x60000020)
+     head| 
+     head| [RTTI 定类]
+     head|   基类 vtable 0x7ECBFC (COL 0x804B08): .?AV?$VectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@
+     head|     slot0..slot6: 0x54a7b0, 0x54a4b0, 0x54a4f0, 0x54a5a0, 0x54a5d0, 0x54a610, 0x54a240
+     head|   派生 vtable 0x7ECBDC (COL 0x804AD8): .?AV?$DynamicVectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@
+     head|     slot0..slot6: 0x54a800, 0x54a4b0, 0x54a630, 0x54a1f0, 0x54a6e0, 0x54a220, 0x54a240
+     head| 
+     ...
+     tail|   [FACT]   - 0x54A7B6: mov dword ptr [esi], 0x7ECBFC (基类 deleting dtor 0x54A7B0 入口处, 作用于 this)
+     tail|   [FACT]   - 0x54A806: mov dword ptr [esi], 0x7ECBFC (派生 deleting dtor 0x54A800 入口处, 作用于 this)
+     tail|   [FACT] 全局动态初始化器 0x543E70: [0xAA1078] ← 0x7ECBDC(派生 vtable)
+     tail|   [FACT] 初始化器: [0xAA108C] ← 10 → +0x14 = GrowthStep = 10 (DynamicVectorClass 布局证据)
+     tail|   [FACT] 函数 0x0054A4F0..0x54A58E 内 esi 定义共 2 处: 0x54A4FA mov esi, ecx (=this, thiscall, 唯一可达 0x0054A56E 的定义) + 0x54A52D pop esi (edi==0 早退路径的现场恢复, 不达目标)
+     tail|   [FACT] 0x54A52A jne 0x54A535: 0x54A52D pop esi 确在早退路径上(与 0x0054A56E 无数据流)
+     tail|   [FACT] 全局 0xAA1078 在 .text 的立即数引用共 4 处(字节地址): 0x543E8F(初始化器 0x543E8D 指令)/0x543EC0(atexit 析构器 0x543EBE 指令)/0x546060+0x546065(Add 派发 0x54605F/0x546064 指令)
+     tail|   [FACT] 0x546069  call dword ptr [eax+8] = 经 vtable slot2 虚派发 Capacity, 其中 eax=[0xAA1078](vptr), ecx=0xAA1078(this) — 全模块对本对象唯一的虚派发点
+     tail|   [FACT] slot2 派发: vptr=0x7ECBFC → 0x0054A4F0(本函数); vptr=0x7ECBDC → 0x0054A630(孪生体)
+     tail|   [FACT] 孪生函数 0x54A630 同构 free-then-null: 0x54A699 call 0x7C8B3D / 0x54A6A1 mov [esi+4],0
+     tail|   [FACT] atexit 析构器 0x543EB0: [0xAA1078]←0x7ECBFC@0x543EBE(永久留基类 vtable), free 后 [0xAA107C]←0@0x543EEC, [0xAA1080](VectorMax)←0@0x543EFD; 全程未触碰 ActiveCount(0xAA1088)/GrowthStep(0xAA108C)
+     tail|   [FACT] 0x7C8B3D(释放包装 → 0x7C93E8)有 4499 个调用点; 0x7C8E17(分配包装 → 0x7C9442)有 2832 个调用点 → 全局堆原语
+     tail|   [FACT] 0x54A53A je 0x54A575: Vector==0 时整块 free+null(0x54A535..0x54A56E)被跳过 → post-dtor 状态下一次 Capacity 不触达 0x54A56E
+     tail|   [FACT] 0x54A577 mov dword ptr [esi+4], edi: 0x54A56E 的置 0 在 8 字节内被无条件覆盖(Vector = 新缓冲), 两点之间无 [esi+4] 读、无调用、无跳转
+
+######## re_loadbench_diff_20261110 ########
+   -- _ld_diff.py
+   [py] _ld_diff.py (24231 B)
+     head| # -*- coding: utf-8 -*-
+     head| """[2]0LoadBench_U0400.yrm 大版/小版逐维比对（只读磁盘，不启动游戏、不读活进程）。
+     head| 
+     head| 大版: ra2bench/[2]0LoadBench_U0400.yrm           (92,332 B)
+     head| 小版: out/loadbench/[2]0LoadBench_U0400.yrm      (25,604 B)
+     head| 参照: out/loadbench/pristine/old/[2]0LoadBench_U0400.yrm
+     --- def main 片段 @5623 ---
+     main| def main() -> None:
+     main|     data = {k: read_bytes(p) for k, p in FILES.items() if p.exists()}
+     main|     missing = [k for k, p in FILES.items() if not p.exists()]
+     main|     fps = {k: fingerprint(v) for k, v in data.items()}
+     main|     heads = {k: head32(v) for k, v in data.items()}
+     main|     secs = {k: parse_sections(v) for k, v in data.items()}
+     main|     ents = {k: entity_counts(s) for k, s in secs.items()}
+     main|     bm = {k: basic_map(s) for k, s in secs.items()}
+     main|     packs = {k: pack_sizes(s) for k, s in secs.items()}
+     main| 
+     main|     big_sec = set(secs["big"])
+     main|     small_sec = set(secs["small"])
+     main|     sec_common = sorted(big_sec & small_sec)
+     main|     sec_big_only = sorted(big_sec - small_sec)
+   -- _ld_diff_out.json
+   [json] _ld_diff_out.json (28794 B)
+     head| {
+     head|   "generated_at": "2026-11-10",
+     head|   "rule": "只读磁盘文件；不启动游戏、不读活进程",
+     head|   "files": {
+     head|     "big": {
+     head|       "path": "D:\\Project\\ra2-campaign-forge\\ra2bench\\[2]0LoadBench_U0400.yrm",
+     head|       "exists": true,
+     head|       "size": 92332,
+     head|       "md5": "3c47bff8915ba94de3ad33c9958a33dd",
+     head|       "sha256": "cb5785a1e540b8fcdbb7e8948dfb5a0b77fde4e5d8a0c38172e7676531c94ba7",
+     head|       "crc32": "0ad4855d",
+     head|       "entropy_bits_per_byte": 5.6524,
+     head|       "printable_ascii_ratio": 1.0,
+     head|       "crlf_pairs": 1808,
+     head|       "lf_total": 1808,
+     head|       "bare_lf": 0,
+     ...
+     tail|       "matters": true
+     tail|     }
+     tail|   ],
+     tail|   "verdict": {
+     tail|     "small_is": "out/loadbench/[2]0LoadBench_U0400.yrm（25,604 B）是 RA2 Campaign Forge 生成器于 2026-09-25 18:41 生成的第一代合成 LoadBench 图：100×100、IsoMapPack5 仅 12 B 桩（无真实地块）、240 units+160 infantry（每房 120/80）、0 
+     tail|     "same_format": "不是同一种『格式产物』但同属 RA2 文本 INI 地图方言：大版=FinalAlert 2 派生（CRLF、FA2 注释头、完整触发/地形/建筑系），小版=生成器直排（LF、无注释头、无 [Structures]/Terrain/Triggers/Digest）。称不上『两种格式』（游戏读取器同源可解析），但确定是两条产出链",
+     tail|     "loaded_one": "台账判据所指实载字节 = 222,799 B 变体（md5 11ec8ff6，[Basic].Name='[2] 0LoadBench U0400'，1680/1120/41）以 XMP29U2.MAP 名被载入；其后 l1 时代换成 U0800 H1 字节（3360/2240/0，Special=240）。大版/小版/参照件三份 .yrm 均非该判据的实载字
+     tail|     "confidence": "高。每一项结论都有在盘文件直接证据（md5/sha256/小节计数/键行样例），无推测项；唯一未决是台账指纹 93c2974b 的具体算法（已列所有否证数值）"
+     tail|   }
+     tail| }
+   -- _ld_diff_out.txt
+   [txt] _ld_diff_out.txt (15142 B)
+     head| ==============================================================================
+     head| [2]0LoadBench_U0400.yrm 大版/小版逐维比对  (2026-11-10, 只读磁盘)
+     head| ==============================================================================
+     head| 
+     head| [指纹]
+     head|   big                92332 B  md5=3c47bff8915ba94de3ad33c9958a33dd  crc32=0ad4855d  entropy=5.652  printable=1.0000  CRLF=1808 LF=1808
+     head|   small              25604 B  md5=d9a57d5f3d0844ad0ca186f537feeb8d  crc32=db493c05  entropy=4.699  printable=1.0000  CRLF=0 LF=696
+     head|   ref                92332 B  md5=3c47bff8915ba94de3ad33c9958a33dd  crc32=0ad4855d  entropy=5.652  printable=1.0000  CRLF=1808 LF=1808
+     head|   xmp_t32           222799 B  md5=11ec8ff6bb56cca2951c608985f28d67  crc32=4c2cebd9  entropy=5.217  printable=1.0000  CRLF=4392 LF=4392
+     head|   xmp_l1            311822 B  md5=7aca9c218314939140319cdbdd64bc1c  crc32=a1daaef4  entropy=4.506  printable=1.0000  CRLF=0 LF=5884
+     head|   carrier_qc104     222799 B  md5=11ec8ff6bb56cca2951c608985f28d67  crc32=4c2cebd9  entropy=5.217  printable=1.0000  CRLF=4392 LF=4392
+     head|   参照件 pristine/old 与大版同一份（md5+sha256 全等）: True
+     head| 
+     head| [头 32 字节]
+     head|   big    '; Map created with FinalAlert 2('
+     head|   small  '[Header]\nWidth=100\nHeight=100\nSt'
+     head| 
+     head| [Basic]/[Map]
+     ...
+     tail|   小版: 明文 INI：可打印 ASCII 占比 1.0000，熵 4.699 bit/byte，首字节 '['（0x5B）；zlib 魔数 0x78 检测=False；无 LZO 容器结构；内容层面直接否证——压缩不改变语义，而两版 [Map] 尺寸/Author/小节集合/单位坐标全部不同，故小版不是大版的任何压缩或变换形态
+     tail|   含义: 『差 3.6 倍 = 差在压缩』假设被三重证据排除：熵（两者都是文本熵，非 8 bit/byte 的压缩流）、头字节（可读文本起头）、内容结构矛盾（压缩是等价变换，两版语义不同）。大小差来自内容量不同（1575 vs 643 键行、Terrain/触发系/建筑系整段缺失），不是编码。对『实载哪一版』：排除压缩解释后，唯一剩余解释就是两版本就是两张不同的图。
+     tail|   matters=True
+     tail| ------------------------------------------------------------------------------
+     tail| ◆ 6. 三份 .yrm 与实载 XMP29U2.MAP 的关系
+     tail|   大版: ra2bench/（=游戏目录，内有 YURI.exe/game.exe/BINKW32.DLL）中的 [2]0LoadBench_U0400.yrm，92,332 B，md5=3c47bff8…，与参照件 pristine/old/ 逐字节同一（md5+sha256 全等：True）。Content=Urban Rush Pro 底图 + 2 房各 120 车/80 步 + 41 建
+     tail|   小版: out/loadbench/ 中同名文件，25,604 B，md5=d9a57d5f…，mtime 2026-09-25 18:41 （比大版 20:38 早约 2 小时）＝生成器第一代合成图（100×100、IsoMapPack5 仅 12 B 桩无真实地块、240/160、0 建筑、2 waypoint）。第三份（参照件）与大版同一件。真正实载的字节是第四份：T32 时代 XMP2
+     tail|   含义: 实载既不是大版也不是小版：台账判据（c5574 八帧恒 240 = .MAP 的 Special 预置 240，而任何 U0400 yrm 变体每房只有 120 车）在三份 .yrm 上全部成立——大版/小版/参照件的 [Units] 每 house 都是 120，谁也产不出 240。三份 .yrm 的身份：参照件=大版的逐字节存档（给指纹 3c47bff8/cb5785a1…）；大版
+     tail|   matters=True
+     tail| ------------------------------------------------------------------------------
+     tail| [结论] out/loadbench/[2]0LoadBench_U0400.yrm（25,604 B）是 RA2 Campaign Forge 生成器于 2026-09-25 18:41 生成的第一代合成 LoadBench 图：100×100、IsoMapPack5 仅 12 B 桩（无真实地块）、240 units+160 infantry（每房 120/80）、0 建筑、2 waypoin
+     tail| [实载] 台账判据所指实载字节 = 222,799 B 变体（md5 11ec8ff6，[Basic].Name='[2] 0LoadBench U0400'，1680/1120/41）以 XMP29U2.MAP 名被载入；其后 l1 时代换成 U0800 H1 字节（3360/2240/0，Special=240）。大版/小版/参照件三份 .yrm 均非该判据的实载字节
+     tail| [置信] 高。每一项结论都有在盘文件直接证据（md5/sha256/小节计数/键行样例），无推测项；唯一未决是台账指纹 93c2974b 的具体算法（已列所有否证数值）
+     tail| [未决] 台账 T32『U0400 字节（93c2974b）』未匹配到任何在盘候选的 md5/sha1前缀/crc32（big=3c47bff8/ad4855d, small=d9a57d5f/db493c05, T32变体=11ec8ff6/4c2cebd9）；map-name 内 fp:xxxx 为项目内部指纹，已证非文件 md5 前缀（U0800_H1 md5 前缀 11b3672276da
+
+######## re_map_preset_decode_20261110 ########
+   -- _md_parse.py
+   [py] _md_parse.py (15205 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_md_parse.py -- RA2/YR 地图预置单位表逐槽位解析（只读磁盘，不碰游戏/进程）。
+     head| 
+     head| 输入三份只读地图：
+     head|   A scratch/boot_probe/arm_a/XMP29U2.MAP          (311,822 B)
+     head|   B ra2bench/[2]0LoadBench_U0400.yrm              (92,332 B)
+     --- def main 片段 @7438 ---
+     main| def main():
+     main|     results = OrderedDict()
+     main|     for tag, path in FILES.items():
+     main|         results[tag] = analyze(path)
+     main|     family = family_scan()
+     main|     # ra2bench yrm 是否为某个家族件的字节复制
+     main|     b_sha = results["B_ra2bench_yrm"]["sha256_16"]
+     main|     twin = [r["path"] for r in family
+     main|             if r["sha256_16"] == b_sha and "ra2bench" not in r["path"]]
+     main| 
+     main|     # ---- 两份 .yrm 的结构差集 ----
+     main|     b, c = results["B_ra2bench_yrm"], results["C_out_loadbench_yrm"]
+     main|     sections_b = set(b["section_order"])
+     main|     sections_c = set(c["section_order"])
+   -- _md_parse_out.json
+   [json] _md_parse_out.json (29521 B)
+     head| {
+     head|   "generated_by": "lead/re_map_preset_decode_20261110/_md_parse.py",
+     head|   "mode": "offline disk-only",
+     head|   "files": {
+     head|     "A_XMP29U2_MAP": {
+     head|       "path": "scratch/boot_probe/arm_a/XMP29U2.MAP",
+     head|       "size_bytes": 311822,
+     head|       "sha256_16": "0add791d11aea84d",
+     head|       "sha256_full": "0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc",
+     head|       "line_endings": {
+     head|         "CRLF": 0,
+     head|         "LF_only": 5884
+     head|       },
+     head|       "decode_encoding": "utf-8",
+     head|       "n_sections": 27,
+     head|       "section_order": [
+     ...
+     tail|           "out_yrm": {
+     tail|             "units": 240,
+     tail|             "infantry": 160
+     tail|           }
+     tail|         },
+     tail|         "verdict": "两份 yrm 均不符（见正文）"
+     tail|       }
+     tail|     ]
+     tail|   }
+     tail| }
+   -- _md_parse_out.txt
+   [txt] _md_parse_out.txt (12845 B)
+     head| ==============================================================================
+     head| RA2/YR 地图预置单位表解析  (_md_parse.py)  -- 只读磁盘件，未启动游戏/读进程
+     head| ==============================================================================
+     head| 
+     head| ------------------------------------------------------------------------------
+     head| [A_XMP29U2_MAP]  scratch/boot_probe/arm_a/XMP29U2.MAP
+     head|   size=311822 B  sha256=0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc
+     head|   first_line='[Preview]'
+     head|   line_endings={'CRLF': 0, 'LF_only': 5884}  encoding=utf-8
+     head|   sections=27  order=Preview, PreviewPack, Map, Basic, SpecialFlags, Lighting, Houses, Americans, Alliance, French, Germans, British, Africans, Arabs, Confederation, Russians, YuriCountry, GDI, Nod, N
+     head|   特征: PreviewPack=True IsoMapPack5=True Digest=False FA2注释头=False
+     head|   打包段条目数: {"PreviewPack": 2, "IsoMapPack5": 1, "OverlayPack": 1, "OverlayDataPack": 1}
+     head|   [Basic] Name=[2] 0LoadBench U0800 H1 fp:1189b6b550ff  Author=RA2 Campaign Forge  Player=Russians
+     head|   [Map] Size=0,0,100,100  LocalSize=1,1,98,98  Theater=TEMPERATE
+     head|   [Houses] Americans  Alliance  French  Germans  British  Africans  Arabs  Confederation  Russians  YuriCountry  GDI  Nod  Neutral  Special
+     head|   预置小节: 在场=['Units', 'Infantry'] 缺席=['Structures', 'Aircraft']
+     head|     [Units] 条目=3360 (未解析行=0)
+     head|       按屋: {"<human player>": 240, "Alliance": 240, "French": 240, "Germans": 240, "British": 240, "Africans": 240, "Arabs": 240, "Confederation": 240, "Computer": 240, "YuriCountry": 240, "GDI": 240, 
+     ...
+     tail|       判定: 符合
+     tail|   * .MAP Special 车辆预置=240
+     tail|       声称: 240
+     tail|       实算: 240
+     tail|       判定: 符合
+     tail|   * yrm Special 车辆预置=120
+     tail|       声称: 120
+     tail|       实算: {"ra2bench_yrm": 0, "out_yrm": 0}
+     tail|       判定: 不符
+     tail|   * yrm 车辆=1680 / 步兵=1120
+     tail|       声称: {"units": 1680, "infantry": 1120}
+     tail|       实算: {"ra2bench_yrm": {"units": 240, "infantry": 160}, "out_yrm": {"units": 240, "infantry": 160}}
+     tail|       判定: 两份 yrm 均不符（见正文）
+     tail| 
+
+######## re_orphan_owners_20261110 ########
+   -- _oo_disasm.py
+   [py] _oo_disasm.py (19621 B)
+     head| # -*- coding: utf-8 -*-
+     head| # _oo_disasm.py — 静态反汇编 ra2bench/gamemd.exe（只读磁盘文件，不启动进程、不 attach）
+     head| #
+     head| # 问题：HouseClass 由什么决定建几个、各自对应哪个 owner？
+     head| #
+     head| # 方法（三层，结论全部以 C 层新鲜解码为准）：
+   -- _oo_disasm_out.json
+   [json] _oo_disasm_out.json (71813 B)
+     head| {
+     head|  "meta": {
+     head|   "file": "D:\\Project\\ra2-campaign-forge\\ra2bench\\gamemd.exe",
+     head|   "size": 4825360,
+     head|   "image_base": "0x400000",
+     head|   "text_fo": "0x1000",
+     head|   "text_end": "0x3E038D",
+     head|   "addr_convention": "文档地址=fo=RVA(.text raw==RVA); 真实VA=fo+0x400000",
+     head|   "sweep_A": {
+     head|    "insns": 1392527,
+     head|    "skipped_bytes": 65,
+     head|    "first_skips": [
+     head|     "0x6F5A0",
+     head|     "0x8DB25",
+     head|     "0x8DD18",
+     head|     "0xC8114",
+     ...
+     tail|   },
+     tail|   "plus_0x5574_check": {
+     tail|    "byte_pattern_74550500_hits": null,
+     tail|    "note": "linear-sweep 全量语料中 「+ 0x5574]」 形态 0 命中；字节级 disp32(74 55 00 00) 前接 modrm 的命中 0（B 层验证）",
+     tail|    "disasm_hits": 0,
+     tail|    "raw_disp32_positions": [],
+     tail|    "count": 0
+     tail|   }
+     tail|  }
+     tail| }
+   -- _oo_disasm_out.txt
+   [txt] _oo_disasm_out.txt (73899177 B)
+     head| 00001000  53                     push   ebx
+     head| 00001001  56                     push   esi
+     head| 00001002  57                     push   edi
+     head| 00001003  8bf1                   mov    esi, ecx
+     head| 00001005  ba00400000             mov    edx, 0x4000
+     head| 0000100A  e8f1600000             call   0x7100
+     head| 0000100F  8d7e28                 lea    edi, [esi + 0x28]
+     head| 00001012  ba64000000             mov    edx, 0x64
+     head| 00001017  8bcf                   mov    ecx, edi
+     head| 00001019  e8e2600000             call   0x7100
+     head| 0000101E  8d5e50                 lea    ebx, [esi + 0x50]
+     head| 00001021  ba00200000             mov    edx, 0x2000
+     head| 00001026  8bcb                   mov    ecx, ebx
+     head| 00001028  e8d3600000             call   0x7100
+     head| 0000102D  ba0a000000             mov    edx, 0xa
+     head| 00001032  8bcf                   mov    ecx, edi
+     head| 00001034  6a00                   push   0
+     head| 00001036  68e8030000             push   0x3e8
+     ...
+     tail| 003E0366  8b45e8                 mov    eax, dword ptr [ebp - 0x18]
+     tail| 003E0369  88871cf9a800           mov    byte ptr [edi + 0xa8f91c], al
+     tail| 003E036F  ff45f0                 inc    dword ptr [ebp - 0x10]
+     tail| 003E0372  59                     pop    ecx
+     tail| 003E0373  5f                     pop    edi
+     tail| 003E0374  8d7f03                 lea    edi, [edi + 3]
+     tail| 003E0377  49                     dec    ecx
+     tail| 003E0378  0f8573ffffff           jne    0x3e02f1
+     tail| 003E037E  8d7603                 lea    esi, [esi + 3]
+     tail| 003E0381  ff4dfc                 dec    dword ptr [ebp - 4]
+     tail| 003E0384  0f855cffffff           jne    0x3e02e6
+     tail| 003E038A  61                     popal  
+     tail| 003E038B  c9                     leave  
+     tail| 003E038C  c3                     ret    
+   -- _oo_map.py
+   [py] _oo_map.py (19119 B)
+     head| # -*- coding: utf-8 -*-
+     head| """
+     head| _oo_map.py — XMP29U2.MAP owner 实体清点（只读磁盘文件，不启动游戏、不读活进程）。
+     head| 
+     head| 对照件：lead/goal1_h1decay_20261021/HOUSE_COUNTERS_DECODED.md §2.6（L213-L236）的声明：
+     head|   14 个 owner 沿对角线 14 个条带、每带 400 实体、坐标区间逐条列出；
+     --- def main 片段 @3984 ---
+     main| def main():
+     main|     sections, meta = parse_ini(MAP_PATH)
+     main|     out_lines = []
+     main|     P = out_lines.append
+     main| 
+     main|     P("=" * 78)
+     main|     P("XMP29U2.MAP owner 实体清点 — 只读解析")
+     main|     P("=" * 78)
+     main|     P("file   : %s" % MAP_PATH)
+     main|     P("size   : %d bytes" % meta["size_bytes"])
+     main|     P("sha256 : %s" % meta["sha256"])
+     main|     P("EOL    : CRLF=%d, LF-only=%d" % (meta["crlf_count"], meta["lf_only_count"]))
+     main|     P("")
+     main| 
+   -- _oo_map_out.json
+   [json] _oo_map_out.json (22130 B)
+     head| {
+     head|   "source": {
+     head|     "path": "D:\\Project\\ra2-campaign-forge\\scratch\\boot_probe\\arm_a\\XMP29U2.MAP",
+     head|     "size_bytes": 311822,
+     head|     "sha256": "0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc",
+     head|     "crlf": 0,
+     head|     "lf_only": 5884
+     head|   },
+     head|   "sections": [
+     head|     "Preview",
+     head|     "PreviewPack",
+     head|     "Map",
+     head|     "Basic",
+     head|     "SpecialFlags",
+     head|     "Lighting",
+     head|     "Houses",
+     ...
+     tail|     [
+     tail|       "0",
+     tail|       "51054"
+     tail|     ],
+     tail|     [
+     tail|       "1",
+     tail|       "51145"
+     tail|     ]
+     tail|   ]
+     tail| }
+   -- _oo_map_out.txt
+   [txt] _oo_map_out.txt (8832 B)
+     head| ==============================================================================
+     head| XMP29U2.MAP owner 实体清点 — 只读解析
+     head| ==============================================================================
+     head| file   : D:\Project\ra2-campaign-forge\scratch\boot_probe\arm_a\XMP29U2.MAP
+     head| size   : 311822 bytes
+     head| sha256 : 0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc
+     head| EOL    : CRLF=0, LF-only=5884
+     head| 
+     head| [0] 节清单（27 节）
+     head|     Preview, PreviewPack, Map, Basic, SpecialFlags, Lighting, Houses, Americans, Alliance, French, Germans, British, Africans, Arabs, Confederation, Russians, YuriCountry, GDI, Nod, Neutral, Special, 
+     head|     缺失节: 无
+     head|     [Structures]/[Aircraft] 存在性: 均不存在（对象只有 Units+Infantry 两类）
+     head| 
+     head| [Basic] 关键键
+     head|     Name            = [2] 0LoadBench U0800 H1 fp:1189b6b550ff
+     head|     Author          = RA2 Campaign Forge
+     head|     Player          = Russians
+     head|     MaxPlayer       = 2
+     ...
+     tail| 
+     tail| [E] 不可解析行：无
+     tail| 
+     tail| [5c] MaxPlayer=2 vs 14 owner —— 文件层面的事实
+     tail|     (a) [Basic] MaxPlayer=2, MinPlayer=2, MultiplayerOnly=1 —— 键在 [Basic]（多人元数据区），
+     tail|         语义是「可加入的人类玩家槽位」；它与 [Houses] 的 house 数量在文件里就是两个独立的量。
+     tail|     (b) [Houses] 独立声明了 14 个 house（0=Americans..13=Special），14 个 house 节全部
+     tail|         PlayerControl=no —— 即文件层面没有任何一个 house 被标记为人类操控。
+     tail|     (c) [Units]/[Infantry] 用了 14 个 owner 字符串，其中 <human player> 和 Computer 不在
+     tail|         [Houses] 名单里；Americans 和 Russians 在 [Houses] 里声明了却拥有 0 个对象。
+     tail|     (d) 因此「MaxPlayer=2 但 14 owner」在文件层面不是矛盾：MaxPlayer 不约束 [Houses]/对象
+     tail|         owner 的数量，只约束多人加入槽位。运行期 meta_count=4 是引擎侧的实例化结果，
+     tail|         文件本身不包含 HouseClass 实例表，无法从文件验证或反驳 4 这个数。
+     tail| 
+
+######## slot2_fullscan_20261111 ########
+   -- _sf_scan.py
+   [py] _sf_scan.py (55866 B)
+     head| #!/usr/bin/env python3
+     head| # -*- coding: utf-8 -*-
+     head| """
+     head| _sf_scan.py — 100% 分块覆盖重验「经 vtable slot2 调用 0x54A4F0 / 0x54A630」的全部调用点 (只读)。
+     head| 
+     head| 对象: ra2bench/gamemd.exe (sha256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476)
+   -- _sf_scan_out.json
+   [json] _sf_scan_out.json (1522576 B)
+     head| {
+     head|  "identity": {
+     head|   "sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+     head|   "size": 4825360,
+     head|   "exe": "D:\\Project\\ra2-campaign-forge\\ra2bench\\gamemd.exe",
+     head|   "script": "D:\\Project\\ra2-campaign-forge\\lead\\slot2_fullscan_20261111\\_sf_scan.py"
+     head|  },
+     head|  "coverage": {
+     head|   "text_range": [
+     head|    "0x401000",
+     head|    "0x7E038D"
+     head|   ],
+     head|   "text_bytes": 4060045,
+     head|   "single_pass": {
+     head|    "count": 155215,
+     head|    "last_va": "0x46f59d",
+     ...
+     tail|   {
+     tail|    "kind": "FACT",
+     tail|    "text": "T5: 从全镜像唯一 vptr 装载 0x54605F 的污点传播 → 消费者恰 1 个 = 0x546069 (call dword ptr [eax + 8]); 无 push/store/ret 逃逸 → vptr 值不逃逸出 GROW"
+     tail|   },
+     tail|   {
+     tail|    "kind": "FACT",
+     tail|    "text": "T5-final: 1714 个主流 slot2 点中可能指向 0x54A4F0/0x54A630 的恰 1 个: 0x546069"
+     tail|   }
+     tail|  ]
+     tail| }
+   -- _sf_scan_out.txt
+   [txt] _sf_scan_out.txt (158502 B)
+     head| ====================================================================================================
+     head| gamemd.exe — 100% 分块覆盖重验: 全 .text「call dword ptr [reg+8]」普查与 slot2 候选 (只读)
+     head| 文件: D:\Project\ra2-campaign-forge\ra2bench\gamemd.exe
+     head| sha256: 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  size: 4825360 B
+     head| ====================================================================================================
+     head| 
+     head| [T1 覆盖率复现]
+     head|   .text = [0x401000..0x7E038D] (4060045 B)
+     head|   单次 disasm      : 155215 条, 末条 0x46F59D, 覆盖 452000 B (11.13% .text 字节) — 陷阱复现(155215)
+     head|   分块 0x10000 独立块: 1150117 条 (× 62 块) — 复现 ask 给数 1150117
+     head|   分块 seg-extend  : 1392527 条, 65 个自然停点, 覆盖至 0x7E038D (主普查流, 无重复计数)
+     head| 
+     head| [T4 直接调用复核]
+     head|   → 0x0054A4F0: 指令级 A流 [] / B流 []; 字节级 E8/E9 []; 全镜像 dword 位点 ['0x7ecc04']; slot2 单元引用 []
+     head|   → 0x0054A630: 指令级 A流 [] / B流 []; 字节级 E8/E9 []; 全镜像 dword 位点 ['0x7ecbe4']; slot2 单元引用 []
+     head| 
+     head| [字节级值闸门]
+     head|   G1a: 全镜像值==0x54A4F0 的 dword 仅 1 处: 0x7ECC04 (=vtable 0x7ECBFC slot2) → 无第二虚表/无回调表/无立即数
+     ...
+     tail|   [FACT] G1b: 无任何指令 call/jmp [slot2单元] 或从其装载(FF15/FF25/A1/8B/89/SIB-abs 全编码 = 0) → 函数指针值无法运行期复制到其它单元
+     tail|   [FACT] G3 存储指令锚点解码确认: mov dword ptr [0xaa1078], 0x7ecbdc | mov dword ptr [0xaa1078], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc
+     tail|   [FACT] G2: 值 0x7ECBFC×3 + 0x7ECBDC×1 共 4 处全落在 c7 存储立即数内: 0x543EC4 ← imm of mov dword ptr [0xaa1078], 0x7ecbfc; 0x54A7B8 ← imm of mov dword ptr [esi], 0x7ecbfc; 0x54A808 ← imm of mov dword ptr [esi],
+     tail|   [FACT] G3: vptr 写入点(c7 /0)全镜像重扫一致 — 0x7ECBDC: [0x543E8D]→[0xAA1078](动态初始化器 0x543E70 体内); 0x7ECBFC: [0x543EBE]→[0xAA1078](atexit 析构器 0x543EB0 体内), [0x54A7B6]/[0x54A806]→[esi](deleting dtor 体内)
+     tail|   [FACT] G3 归属: 0x543E8D ∈ 动态初始化器 0x543E70 体内; 0x543EBE ∈ atexit 析构器 0x543EB0 体内 (ask 前提的初始化/析构归属复核)
+     tail|   [FACT] G3 支撑: 两 deleting dtor (0x54A7B0/0x54A800) 无直接 call/jmp 进入 → [esi] 写只作用于经 slot0 虚派发到达的 this, 而 slot0 派发要求 reg 已持这两个 vptr 值 → 归纳: 唯一实例 0xAA1078
+     tail|   [FACT] G4: 全镜像 imm32/disp32 引用 0xAA1078 恰 4 处(立即数字节地址): 0x543E8F(init 存储)/0x543EC0(atexit 存储)/0x546060(vptr 装载 @0x54605F)/0x546065(this 装载 @0x546064)
+     tail|   [FACT] G4-load: 全编码扫「load r32 ← [0xAA1078]」恰 1 处 = 0x54605F (mov eax, dword ptr [0xAA1078]); 「store reg → [0xAA1078]」= 0 (vptr 单元只被 2 条 c7 立即数写) — 字节级,与解码流无关
+     tail|   [FACT] G5: .rdata/.data 无 dword==0xAA1078 → 不存在指向该全局对象的指针变量(指针值不逃逸前提)
+     tail|   [FACT] G4b: 基址立即数装载中仅 0x546064 恰为 0xAA1078(this 装载); 其余装载值均 ≠ 0xAA1078 → 无别名合成路径读取 vptr 单元
+     tail|   [FACT] 唯一 vptr 装载 0x54605F 在主流中定位成功 (idx=465556)
+     tail|   [FACT] GROW(包含唯一装载与派发的函数) = 0x545150..0x546D92 (ret@0x546D90), 体内无停点
+     tail|   [FACT] T5: 从全镜像唯一 vptr 装载 0x54605F 的污点传播 → 消费者恰 1 个 = 0x546069 (call dword ptr [eax + 8]); 无 push/store/ret 逃逸 → vptr 值不逃逸出 GROW
+     tail|   [FACT] T5-final: 1714 个主流 slot2 点中可能指向 0x54A4F0/0x54A630 的恰 1 个: 0x546069
+
+######## unknown_locate_20261110 ########
+   -- _ul_stdout_census.py
+   [py] _ul_stdout_census.py (11378 B)
+     head| # -*- coding: utf-8 -*-
+     head| """_ul_stdout_census.py — 只读普查：263 件 NO_EXIT_AT_ALL 的 stdout 产物通道。
+     head| 
+     head| 问题：在 263 件 NO_EXIT_AT_ALL 里，有多少件的产物通道是
+     head|       sys.stdout.write(...) / sys.stdout.buffer.write(...) 而不是 print(...)？
+     head| 
+     --- def main 片段 @3319 ---
+     main| def main():
+     main|     with open(SRC, encoding="utf-8") as f:
+     main|         data = json.load(f)
+     main|     rows = data["results"]
+     main|     lines = []
+     main|     emit = lines.append
+     main| 
+     main|     emit("== 263 件 NO_EXIT_AT_ALL 的 stdout.write 产物通道普查 ==")
+     main|     emit("名单来源: %s 的 results[*].rel" % os.path.relpath(SRC, ROOT).replace(os.sep, "/"))
+     main|     emit("名单件数(results 长度) = %d ; 文件内 n_no_exit = %s" % (len(rows), data.get("n_no_exit")))
+     main|     emit("判据结论来源: 同一 json 的 results[*].class / verdict / reasons")
+     main|     emit("检测方式: ast.parse(源码 bytes) 后遍历 ast.Call；匹配 func=sys.stdout.write / sys.stdout.buffer.write（含 import sys as s、from sys import stdout 的等价别名）")
+     main|     emit("脚本约束: sys.dont_write_bytecode=True；唯一写入文件 = %s" % os.path.relpath(OUT, ROOT).replace(os.sep, "/"))
+     main|     emit("")
+   -- _ul_stdout_census_out.txt
+   [txt] _ul_stdout_census_out.txt (7703 B)
+     head| == 263 件 NO_EXIT_AT_ALL 的 stdout.write 产物通道普查 ==
+     head| 名单来源: lead/exit_criterion_20261110/_ec_s4_results.json 的 results[*].rel
+     head| 名单件数(results 长度) = 263 ; 文件内 n_no_exit = 263
+     head| 判据结论来源: 同一 json 的 results[*].class / verdict / reasons
+     head| 检测方式: ast.parse(源码 bytes) 后遍历 ast.Call；匹配 func=sys.stdout.write / sys.stdout.buffer.write（含 import sys as s、from sys import stdout 的等价别名）
+     head| 脚本约束: sys.dont_write_bytecode=True；唯一写入文件 = lead/unknown_locate_20261110/_ul_stdout_census_out.txt
+     head| 
+     head| rel 去重后 = 263 ; 重复 rel 数 = 0
+     head| 缺失文件数 = 0
+     head| 
+     head| ast 解析成功 = 263 ; 解析失败 = 0
+     head| 
+     head| == 按 class 分组计数表 ==
+     head|   n_sw      = 含 >=1 个 sys.stdout.write(...) 的件数
+     head|   n_bw      = 含 >=1 个 sys.stdout.buffer.write(...) 的件数
+     head|   n_either  = 含任一类 stdout 写调用的件数（去重后的件数）
+     head|   n_print   = 含 >=1 个 print(...) 的件数
+     head|   n_both    = 同时含 stdout 写调用与 print(...) 的件数
+     ...
+     tail|     lead/d13b_design_20261106/_state_machine.py (class=UNKNOWN verdict=NEEDS_FIX)
+     tail|     lead/gate_fp7_20261108/_g7_predicates.py (class=UNKNOWN verdict=NEEDS_FIX)
+     tail|     lead/gate_r9sem_20261109/_r9s_predicates.py (class=UNKNOWN verdict=NEEDS_FIX)
+     tail|     lead/gate_r9sem_20261109/_r9s_samples.py (class=UNKNOWN verdict=NEEDS_FIX)
+     tail|     lead/gate_v1v2_20261109/_v12_rule.py (class=UNKNOWN verdict=NEEDS_FIX)
+     tail|     lead/h5_governance_20261109/_h5_pasteable.py (class=UNKNOWN verdict=NEEDS_FIX)
+     tail|     lead/r11_f2_fix_20261109/_f2_r11plus.py (class=UNKNOWN verdict=NEEDS_FIX)
+     tail|     lead/re_line_20261105/A1_SAMPLER_CANDIDATE/frame_edge_sampler.py (class=UNKNOWN verdict=NEEDS_FIX)
+     tail| 
+     tail| == 自检 ==
+     tail|   文本含 'sys.stdout.write' 但 AST 无对应调用的行 = 1 处（不计入命中）
+     tail|     lead/r2_unclosed_cd_20261108/_verify_cd.py:L383  w("      sys.stdout.write 调用 = %d（脚本只写 stdout）" %
+     tail|   import sys as / from sys import stdout 的别名形式 stdout 写调用 = 0 处
+     tail| 
+
+######## re_atlas_reassess_20261112 ########
+   -- step1_fingerprint.py
+   [py] step1_fingerprint.py (2645 B)
+     head| # -*- coding: utf-8 -*-
+     head| """STEP1: re_atlas/ 全量指纹实算（字节数 / sha256 / mtime），hashlib 实算，无手写估计。
+     head| 只读遍历，输出 TSV 到写域 stdout/stderr。"""
+     head| import hashlib
+     head| import os
+     head| import sys
+     --- def main 片段 @518 ---
+     main| def main() -> int:
+     main|     rows = []
+     main|     for dirpath, dirnames, filenames in os.walk(ROOT):
+     main|         dirnames.sort()
+     main|         for name in sorted(filenames):
+     main|             full = os.path.join(dirpath, name)
+     main|             try:
+     main|                 st = os.stat(full)
+     main|                 digest = sha256_of(full)
+     main|                 rel = os.path.relpath(full, r"D:\Project\ra2-campaign-forge")
+     main|                 rows.append((rel, st.st_size, st.st_mtime, digest))
+     main|             except OSError as exc:
+     main|                 sys.stderr.write("ERR %s: %s\n" % (full, exc))
+     main|     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
+   -- step1_fingerprint.stdout.txt
+   [txt] step1_fingerprint.stdout.txt (2579 B)
+     head| files=498
+     head| --- key files ---
+     head| re_atlas\HANDOFF_TO_GOAL3T.md	bytes=127332	mtime=2026-10-29 19:16:32	sha256=00fbe2383bb4059c9e07ec0b84cdca3f84a117e775395e7f704eae0283a6f219
+     head| re_atlas\INDEX.md	bytes=116281	mtime=2026-10-29 19:25:30	sha256=a080bc246ea09006ebd1b02d39a95a9b572a29644bdf5930d24166247105bc67
+     head| re_atlas\LEDGER.md	bytes=397746	mtime=2026-10-30 07:09:08	sha256=3a20921958131b776f4920ab104f3d1d5006aa6758067f4f1f01a8422faefd2d
+     head| re_atlas\STATUS.md	bytes=89528	mtime=2026-10-30 07:09:08	sha256=dc2df84d1a75dbac30019d65800d67c2914998ef2ba05e1be1753b8344212f53
+     head| re_atlas\kb\00_global_skeleton.md	bytes=10125	mtime=2026-10-21 22:08:49	sha256=29a579889a12c3bdfd577e8eba1801c2d04d1b7dc392399aad85a3903af45587
+     head| re_atlas\kb\10_map_triggers.md	bytes=15665	mtime=2026-10-21 22:08:49	sha256=702b80b28b5e9ce089f3547a2727497655d4c47fc1333cc169a89426d4c26510
+     head| re_atlas\kb\11_class_layouts.md	bytes=48978	mtime=2026-10-25 22:31:03	sha256=3b0b70a40d9f4bef64728d5fa157acdbe3d4b130ffa247761e13c5ea72d22d25
+     head| re_atlas\kb\20_vtable_contract.md	bytes=14171	mtime=2026-10-23 23:56:02	sha256=600965b9c7a4a3bf892dac3c1df2db5b5df8cc8124c6789b5aa6ecc1c04c196a
+     head| re_atlas\kb\21_swizzle_and_object_fields.md	bytes=28739	mtime=2026-10-25 22:31:03	sha256=4764eca67e2ee5e11e307fa4c3535fd3f56ae17517189f4b5eeda5c7c0dfec62
+     head| re_atlas\kb\22_abstractclass_vtable_slots.md	bytes=14597	mtime=2026-10-21 22:08:49	sha256=e48c2122eb608646a1cfa602e98f7e7afcb8e0873af23bedece096968c5dd767
+     head| re_atlas\kb\30_ini_subsystem.md	bytes=169077	mtime=2026-10-26 01:51:39	sha256=977a29fd95d05e7612f6909d6f0517b10612a9894e0dc3f368fd1d44e26953c9
+     head| --- last modified top15 ---
+     head| re_atlas\tools\_r064rev_probe7.py	mtime=2026-10-30 12:39:53
+     head| re_atlas\tools\_r064rev_probe6.py	mtime=2026-10-30 12:31:05
+     head| re_atlas\tools\_r064rev_probe5.py	mtime=2026-10-30 12:19:54
+     head| re_atlas\tools\_r064rev_probe4.py	mtime=2026-10-30 12:07:59
+     ...
+     tail| re_atlas\tools\_r064rev_probe6.py	mtime=2026-10-30 12:31:05
+     tail| re_atlas\tools\_r064rev_probe5.py	mtime=2026-10-30 12:19:54
+     tail| re_atlas\tools\_r064rev_probe4.py	mtime=2026-10-30 12:07:59
+     tail| re_atlas\tools\_r064rev_probe3.py	mtime=2026-10-30 11:06:21
+     tail| re_atlas\tools\_r064rev_probe2.py	mtime=2026-10-30 10:26:15
+     tail| re_atlas\tools\_r064rev_probe1.py	mtime=2026-10-30 10:19:06
+     tail| re_atlas\LEDGER.md	mtime=2026-10-30 07:09:08
+     tail| re_atlas\STATUS.md	mtime=2026-10-30 07:09:08
+     tail| re_atlas\evidence\r063b_upward_second_hop.md	mtime=2026-10-30 07:08:07
+     tail| re_atlas\evidence\r061_r062_oof_review_20261029.md	mtime=2026-10-30 07:08:07
+     tail| re_atlas\evidence\r061_r062_independent_review_20261028.md	mtime=2026-10-30 07:08:07
+     tail| re_atlas\evidence\r062_upward_trace.md	mtime=2026-10-30 07:08:07
+     tail| re_atlas\evidence\r064_rtti_naming_adjudication.md	mtime=2026-10-30 07:03:59
+     tail| re_atlas\tools\_r064_probe3.py	mtime=2026-10-30 07:00:58
+   -- step1_re_atlas_manifest.tsv (90500 B) [未摘要]
+   -- step2_r036_rerun.py
+   [py] step2_r036_rerun.py (23439 B)
+     head| # -*- coding: utf-8 -*-
+     head| """R-036 (D-03 execution): the R1-3 deliverable, computed instead of asserted.
+     head| 
+     head| R-035 measured the CEILING of R1-3 and falsified its original goal: the image
+     head| can name at most 17 functions (0.15%), so R1-3 cannot raise coverage.  What
+     head| R-035 did NOT hand over was the substance behind that number.  This script
+   -- step2_r036_rerun.stderr.txt
+   [txt] step2_r036_rerun.stderr.txt (2318 B)
+     head| PASS	P1	sha256 与交付锚一致	73201cc021497c95
+     head| PASS	P2	归属用的入口集复现：T2 候选 **886** 个，`flat|T2` = **16,110**（= R-035 §2 所述的 16,110）	T2=886 flatT2=16110
+     head| PASS	P3	字符串站点四分类复现（**字节扫描口径**，R-039 对齐复核见 P3b）：path **1,299** / format **351** / text **939** / ident **3,688** = 合计 **6,277**	path=1299 fmt=351 text=939 ident=3688
+     head| PASS	P3b	**对齐复核**：四分类里只有 **1** 个字节扫描幻影，落在 text 类：`0x005BA0CE` 是 `0x005BA0CC` 处 `cmp eax,0x68`（83 F8 68）的 imm8 字节，其后四字节恰好拼出一个合法字符串指针 ⇒ 通过可打印过滤。对齐口径 path 1,299 / format 351 / text **938**（字节扫描 939） / id
+     head| REGISTER	OVERLAP	入口集 flat|T2 (16,110)：Σ闭包 1,596,441 / 并集 1,073,260 / 超出 523,181（48.7%）/ >1 所有者地址 228,884
+     head| REGISTER	OVERLAP	入口集 flat (15,224)：Σ闭包 1,529,944 / 并集 1,019,137 / 超出 510,807（50.1%）/ >1 所有者地址 222,419
+     head| PASS	P4	函数名字面量复现：纯名 **5**、带前缀 **30**、不同方法名 **21**、push 站点 **35**	pure=5 pref=30 methods=21 sites=35
+     head| PASS	P5	35 个 push 站点去嵌套后归属到 **17** 个函数（R-035 报 17）⇒ 天花板 17/14,242 = 0.12%	functions=17
+     head| PASS	P6	`__FILE__` 去重后 **74** 个源文件，其中至少一个站点能归属的 **69** 个（差 5 个零归属）⇒ R-035 的 69 的口径是「可归属文件数」	all=74 attributed=69
+     head| PASS	P7	debug 类站点合计（path+format+text）= **2,589**	debug_sites=2589
+     head| REGISTER	N1	R-035 §六 报 debug 归属 **761** 个函数（path 425 / fmt 147 / text 289 / ident 277）。本轮闭包类 12 种口径落在 730…838，无一命中；本轮「最早入口优先」得 **758**（差 -3）。R-036b 的地址类规则（入口集 `roots_call|T2`=14,238 +「最近前驱且闭包包含」）**命中合
+     head| 
+     head| RESULT: 8/8 PASS
+     ...
+     tail| PASS	P1	sha256 与交付锚一致	73201cc021497c95
+     tail| PASS	P2	归属用的入口集复现：T2 候选 **886** 个，`flat|T2` = **16,110**（= R-035 §2 所述的 16,110）	T2=886 flatT2=16110
+     tail| PASS	P3	字符串站点四分类复现（**字节扫描口径**，R-039 对齐复核见 P3b）：path **1,299** / format **351** / text **939** / ident **3,688** = 合计 **6,277**	path=1299 fmt=351 text=939 ident=3688
+     tail| PASS	P3b	**对齐复核**：四分类里只有 **1** 个字节扫描幻影，落在 text 类：`0x005BA0CE` 是 `0x005BA0CC` 处 `cmp eax,0x68`（83 F8 68）的 imm8 字节，其后四字节恰好拼出一个合法字符串指针 ⇒ 通过可打印过滤。对齐口径 path 1,299 / format 351 / text **938**（字节扫描 939） / id
+     tail| REGISTER	OVERLAP	入口集 flat|T2 (16,110)：Σ闭包 1,596,441 / 并集 1,073,260 / 超出 523,181（48.7%）/ >1 所有者地址 228,884
+     tail| REGISTER	OVERLAP	入口集 flat (15,224)：Σ闭包 1,529,944 / 并集 1,019,137 / 超出 510,807（50.1%）/ >1 所有者地址 222,419
+     tail| PASS	P4	函数名字面量复现：纯名 **5**、带前缀 **30**、不同方法名 **21**、push 站点 **35**	pure=5 pref=30 methods=21 sites=35
+     tail| PASS	P5	35 个 push 站点去嵌套后归属到 **17** 个函数（R-035 报 17）⇒ 天花板 17/14,242 = 0.12%	functions=17
+     tail| PASS	P6	`__FILE__` 去重后 **74** 个源文件，其中至少一个站点能归属的 **69** 个（差 5 个零归属）⇒ R-035 的 69 的口径是「可归属文件数」	all=74 attributed=69
+     tail| PASS	P7	debug 类站点合计（path+format+text）= **2,589**	debug_sites=2589
+     tail| REGISTER	N1	R-035 §六 报 debug 归属 **761** 个函数（path 425 / fmt 147 / text 289 / ident 277）。本轮闭包类 12 种口径落在 730…838，无一命中；本轮「最早入口优先」得 **758**（差 -3）。R-036b 的地址类规则（入口集 `roots_call|T2`=14,238 +「最近前驱且闭包包含」）**命中合
+     tail| 
+     tail| RESULT: 8/8 PASS
+   -- step2_r036_rerun.stdout.md (368959 B) [未摘要]
+   -- step2_verify_r035.stderr.txt
+   [txt] step2_verify_r035.stderr.txt (0 B)
+     ...
+   -- step2_verify_r035.stdout.txt
+   [txt] step2_verify_r035.stdout.txt (7045 B)
+     head| PASS	P1	[恒真项，不计入 PASS 数] sha256 与交付锚一致	73201cc021497c95
+     head| PASS	P2	E8（调用）目标 = **7,279**（**字节扫描口径**，见 P2b），E9（跳转）目标 = **2,042**，两者重叠 = 138；`fn_walk` 把这两个集合并成一个根集，是分母混口径的根源	E8=7279 E9=2042 ovl=138
+     head| PASS	P2b	**对齐解码**：只有真正 `call rel32` 起点的 0xE8 才算 ⇒ E8 目标 **6,719**（字节扫描 7,279，差 560）。幻影源 **563** 个，**563/563 逐址复核确认 0xE8 落在别的指令体内**；其中只被幻影源指向的目标 **560** 个 ⇒ 字节扫描是**上界**，不是下界	aligned=6719 phantom_sites=
+     head| PASS	P2c	**纯对齐口径**（不含任何字节扫描量）：真 `call rel32` 目标 = **6,719**，独立于 `re.finditer(b"\xe8")` 的结果。幻影位移被改动时本断言必须保持绿，而 P2/P3 变红 ⇒ 两种读法可区分	aligned_only=6719
+     head| PASS	P3	只取调用类根集（E8 ∪ 虚表 ∪ PE 入口）= **13,352**（虚表槽 6,499）；E9 一律当跳转，不当入口。**注意：这是字节扫描口径，是上界**（见 P3b）	roots=13352 vt=6499
+     head| PASS	P3b	**对齐口径的 LOWER** = 对齐 call 目标 ∪ 虚表 ∪ PE 入口 = **12,792**（字节扫描 13,352，差 560 = 那 560 个只被幻影源指向的目标）⇒ **字节扫描 13,352 是上界；12,792 是更紧的口径**（注意：两者都是「根集大小」，均不是函数数的严格证明 —— R-035 §八.1 的边界同样适用）	roots_aligned
+     head| PASS	P4	LOWER 口径：从调用类根集出发，CFG 能到达的入口 = **13,352**（等于根集本身 —— 遍历没有发现任何**新**入口），覆盖指令地址 992,227 个 = .text 的 24.4%	visited=13352 covered=992227
+     head| PASS	P5	UPPER 补集：CFG 到不了、但「ret+填充+序言」且能解到 ret 的头部 = **890**；锚点 0x00403A80（`sub esp,0x2c0`、零 E8/E9 引用者、零数据指针）在其中 ⇒ 确实存在根集看不见的函数	heads=890 anchor_in=True anchor_root=False
+     head| REGISTER	P5b	UPPER 序言敏感度：基准 **890**；只保留 `\xc3` 分支 → **450**；序言窗口 8→6 B → **890**。极差 450…890（≈2.0×）⇒ **UPPER 不可单值冻结**，引用须带敏感度区间（结构性普查，不计入 PASS 数）
+     head| PASS	P6	E9 目标里落在已覆盖代码内部的（= 函数内块跳转，**不是**函数入口）= **1,445**；这正是 `fn_walk` 分母里虚高的部分	e9_intra=1445
+     head| PASS	P7	语料命名点 1,304 个中，落在 LOWER 入口 547 个、落在 UPPER 入口 557 个 ⇒ 覆盖率 **4.10%（LOWER 13,352）… 3.91%（UPPER 14,242）**，**高于**公布的 3.62%（551/15,224）—— 与 R-034 的方向相反	n_lo=547 n_up=557 lo_den=13352 up_den=14242
+     head| REGISTER	P7b	**三档双报（R-038 历史形态，已被下面 R1..R6 取代）**：
+     head|   · 上界族（字节扫描 E8）：LOWER **13,352** → 4.10%；UPPER **14,242** → 3.91%
+     head|   · 对齐族（R-038 半修）：LOWER **12,792** → 4.28%；UPPER **13,682**（ heads 仍来自字节扫描 CFG ⇒ 少 1 个真头部 0x40A090，R-049 时代 13,682 即错在此，见 R6）
+     head| PASS	R1	**对齐 CFG**：从 12,792 对齐根集遍历 ⇒ visited = **12,792**（= 根集本身，遍历无新入口）；覆盖地址 **980,379** = .text 的 24.1%（字节扫描 992,227，差 11,848 全是幻影边的产物）	visited_a=12792 covered_a=980379
+     head| PASS	R2	**负控定式**：字节扫描 13,352 根减去对齐 12,792 根 = 恰 **560**（判据「幻影 560 条」的集合表达）；幻影源指向的目标与对齐目标集交 **3** 个（同目标双来源的幻影被剔除，对齐计数不动）⇒ 「幻影在对齐读法出现 0 次」的可杀形态由变异 M-promote / M-displace-overlap 双向钉	overlap=3 lost_roots
+     head| PASS	R3	头部对着**对齐覆盖**收集 = **891**（不是 890）：字节扫描里 0x40A090 被**幻影边**覆盖 ⇒ 从未进头部集；对齐 CFG 下它真不可达 ⇒ 补回来。锚点 0x403A80 仍在集内（阳性对照）	heads_a=891 extra_head_in=False
+     head| PASS	R4	**序言敏感度（计数断言）**：对齐基准 891；去 `\xc2` 分支 → **451**；序言判据收紧到三主形 → **352** ⇒ 极差 451…891 ≈ 2.5×（≈2× 定性不变）⇒ **UPPER 不可单值冻结**，引用带区间	ret_only=451 narrow=352 base=891
+     ...
+     tail| PASS	R3	头部对着**对齐覆盖**收集 = **891**（不是 890）：字节扫描里 0x40A090 被**幻影边**覆盖 ⇒ 从未进头部集；对齐 CFG 下它真不可达 ⇒ 补回来。锚点 0x403A80 仍在集内（阳性对照）	heads_a=891 extra_head_in=False
+     tail| PASS	R4	**序言敏感度（计数断言）**：对齐基准 891；去 `\xc2` 分支 → **451**；序言判据收紧到三主形 → **352** ⇒ 极差 451…891 ≈ 2.5×（≈2× 定性不变）⇒ **UPPER 不可单值冻结**，引用带区间	ret_only=451 narrow=352 base=891
+     tail| PASS	R5	**主口径（对齐族，推荐引用）**：LOWER **12,792** → 4.28%（命名 547）；UPPER **13,683** → 4.07%（命名 557，含 +891 不可达头部）	lower=12792 upper=13683 named=547/557
+     tail| PASS	R6	**勘误锁定**：R-049 时代发布值 13,682 = 12,792 + **字节扫描头部 890**，混了两种读法 ⇒ 漏掉头部 0x40A090（它只对字节扫描 CFG 不可达，对齐 CFG 本就够不到它——幻影边才是唯一覆盖路径）。自洽值 = 12,792 + 891 = **13,683** = V-001 的 13,683。当年判 V-001 '笔误' 为 13,68
+     tail| PASS	P8	全镜像**纯函数名字面量只有 5 个**；带 `Class::Method` 前缀的 字面量 30 个，含 **21 个不同方法名** ⇒ 「用调试字符串给函数命名」的天花板是 21 个函数	pure=5 prefixed=30 methods=21
+     tail| PASS	P9	push 这些函数名字面量的站点 = **35** 个 ⇒ 即使全部正确归属，也只覆盖 21 个函数 / 14,242 = 0.15%	sites=35
+     tail| PASS	P10	`__FILE__` 字面量站点 = **1299** 个，其中 1190 个（91.6%）跟的是 `call 0x734E60`（`ret 8` 的字符串驻留表查找，**不是 assert**）⇒ 这条路给的是**源文件名**，不是函数名	path_sites=1299 callee734e60=1190
+     tail| PASS	P11	裸标识符类字符串站点 = **3,688** 个，其中 **2,291** 个（62.1%）是 8 个 INI reader 的实参 ⇒ 这一类是 **INI 键名**，不能算调试命名（否则会把 INI 普查重复计入）	ident=3688 ini_arg=2291
+     tail| PASS	N1	[负控1] 已知函数 0x4039C0 的中段 0x004039C9 **被覆盖**（= 遍历真的走进了这个函数体）但**不是**入口 ⇒ 「中段地址不会被当成函数」这条成立；注意 `not in heads` 由 `in covered` 蕴含，是装饰性的，已从断言里删掉	covered=True entry=False
+     tail| PASS	N2	[负控2] 0x00404555 是 **E9 目标**、**被覆盖**（落在 0x4041D0 函数体内）、但**不是**调用类根集成员 ⇒ 新口径把它排除、旧口径（E8∪E9 扁平根集）会把它算成函数	in_e9=True covered=True root=False
+     tail| PASS	N3	[负控3] 锚点 0x00403A80 在**四种**引用方式下全为零：E8 目标=False、E9 目标=False、虚表槽=False、.rdata/.data dword 指针=0 ⇒ 任何「根集 + CFG」方法都到不了它，盲区是结构性的	e8=False e9=False vt=False data=0
+     tail| PASS	N4	**E9-only 目标**（E9 目标 ∧ ¬E8 目标 ∧ ¬虚表槽）= **1,872** 个，其中进入调用类根集的 = **0** ⇒ 「E9 只当跳转不当入口」这条规则被机械地执行了；旧口径把这 1,872 个里的函数内跳转也算成函数	e9_only=1872 in_roots=0
+     tail| 
+     tail| RESULT: 23/23 PASS
