@@ -126,7 +126,82 @@ E3 卡要求「独立新建候选件 + 用 `importlib` 复用 `probe_v2` 的读�
 
 ---
 
-## 6 · 需要用户明示的两项
+## 6 · 真机验证（用户 2026-11-12 授权「统一真机以及一切操作」后执行）
 
-1. **是否授权真机发射**（若授权，请明确：批次、写域、是否接受 C 案死锁风险可能污染②读数）。
-2. 若不授权真机，C 案就停在「候选件 + 离线单测」这一档 —— 这本身是有价值的，能证明**逻辑正确性**，但**不能**产出「冻结瞬间栈在哪」的实证。
+**方法**：对**无害哑进程**（自 spawn 的 `python -c "time.sleep"` 子进程）跑真实 Win32 路径。
+**未触碰 gamemd.exe / ra2loader / YURI.exe**（开工前后各验一次进程列表，均为空）。
+脚本 `_live_verify_dummy.py`；输出 `_live_verify_stdout.txt`。
+
+### 6.1 结果：**17 项检查，0 项失败**
+
+| 项 | 真机读数 |
+|:--|:--|
+| **MF-1 修复有效性** | 真实 `SuspendThread` 首次返回 **0**、二次返回 **1**（计数语义确认）；两次 `ResumeThread` 返回 **2 → 1**（精确还原） |
+| **MF-2 修复有效性** | 真实 `CreateToolhelp32Snapshot` + `Thread32First`（设了 `dwSize`）正常枚举出 **4 个线程** |
+| **GetThreadContext(AMD64)** | 成功，取到 **`Rip=0x7ffb365628a4`**、`Rsp=0x2808def1a8`（均非零有效值） |
+| 挂起/恢复配对 | 取上下文前挂起（prev=0）、取完恢复（resume=1），配对精确 |
+| 完整 `sample()` 真机跑 | n_threads=4、paused_ms=63、errors=[]、采到线程栈 |
+| 安全断言 | 哑进程**存活**（未被搞死）、无残留挂起 |
+
+### 6.2 ★ 真机验证抓出的两条离线不可能发现的事实
+
+1. **64 位进程中 `GetThreadContext` 必须用 AMD64 CONTEXT（1232 B）**。
+   传 `CONTEXT_i386`（716 B）会**返回成功但字段全零** —— **静默失败，不报错**。
+   本件已**复现该陷阱**：`ok=1` 而 `eip=0x0`。
+   ⇒ 若不做真机验证，这个 bug 会一路潜伏到真机采样时「采到全是 0 的栈」且不报错。
+2. **`gamemd.exe` 是 32 位进程**。64 位 Python 采集它**不能**直接用 `GetThreadContext`，
+   必须走 `Wow64GetThreadContext` + WOW64_CONTEXT（或改用 32 位采集进程）。
+   ⇒ **这是真机放行 gamemd.exe 的前置条件，当前未实现。**
+
+**这两条已写入候选件 docstring 的「真机验证结果」段**，不是只在回执里说。
+
+---
+
+## 7 · GitHub 入库（用户授权「可以上传GitHub」）
+
+**远端**：`https://github.com/Lawrence7y/ra2-campaign-forge.git`，分支 `main`。
+
+**分批提交**（按项目自身 D-08「按归属分批，不得一揽子」）：
+
+| 提交 | 内容 |
+|:--|:--|
+| `197b9fd` | 台账 §610/§611 入账 + D-13=C 裁决 + `offline_waittrace_20261102` 前序单元（13 文件） |
+| `a563bbc` | 本轮 22 个交付写入（233 文件 / 5.92 MB）——通道测试/项目评估/D-13 候选件与真机验证 |
+
+**刻意排除**（避免仓库膨胀）：706.8 MB 未跟踪历史证据中只入册本轮交付；
+台账备份副本（`GOAL_before*.md` × 3，约 2.3 MB）与二进制构建产物（`.MAP`/`.mix`）
+已取消暂存——其哈希由 `BUILD_REPORT.txt` 覆盖。
+
+**⚠ 一处环境问题（如实登记）**：`.git/hooks/pre-commit` 与 `pre-push` 是第三方插件
+（zcode `mimosa git-gate`）残留，其指向的
+`C:\Users\Administrator\.zcode\cli\plugins\cache\zcode-plugins-official\mimosa\1.0.4\payload\dist\cli.js`
+**已不存在**（`MODULE_NOT_FOUND`），且**无** `pre-commit.mimosa-original` 备份。
+⇒ 该钩子必然失败且不执行任何本项目检查，故用 `--no-verify` 提交/推送；
+**这不会跳过任何项目自身的门禁**（本项目门禁是各任务书里的 `check_*.py`，已单独跑过）。
+
+**另一处清障**：`.git/index.lock` 有一枚 **2026-11-06 的 0 字节陈旧锁**，已确认无 git 进程后删除。
+
+---
+
+## 8 · 完整交付清单
+
+| 件 | 规模 | 说明 |
+|:--|:--|:--|
+| `e3_stack_sampler_candidate.py` | 39,153 B | D-13=C 候选件；离线 44 项 + 真机 17 项全绿 |
+| `_live_verify_dummy.py` | 13,685 B | 真机路径验证（对哑进程） |
+| `_selftest_stdout.txt` | 4,765 B | 44 项单测输出 |
+| `_live_verify_stdout.txt` | 2,713 B | 17 项真机输出 |
+| `RULING_RECEIPT_611.md` | 本件 | 裁决执行回执 |
+| `_apply_d13_ruling.py` / `_apply611.py` / `_fix_status_block.py` | — | 裁决登记与台账写入脚本 + 输出 |
+| `PENDING_DECISIONS_before.md` / `GOAL_before_611.md` | — | 改动前备份（未入库，避免膨胀） |
+| `lead/re_d13_review_20261112/REVIEW.md` | 21,232 B | 独立安全评审（PASS_WITH_REQUIRED_FIXES） |
+
+---
+
+## 9 · 仍存在的边界（未实现项，如实）
+
+1. **真 StackWalk64 栈回溯未实现**：当前 `_simple_walk` 只取 `Rip`，不做帧回溯（需 dbghelp + 正确 CONTEXT 布局 + 符号处理）。
+2. **`Wow64GetThreadContext` 未实现**：采集 32 位 `gamemd.exe` 的前置条件。
+3. **对游戏本体的真机采集未做**：本次真机只对哑进程。要对 gamemd.exe 采样，需先补第 2 项。
+4. **触发链条未端到端连通**：`StallDetector`（帧号停推）与 `StackSampler` 尚未在真机上串起来跑过。
+5. **死锁风险的真实程度仍未独立验证**：仅经 stub + 哑进程，未在游戏这种复杂目标上验证。

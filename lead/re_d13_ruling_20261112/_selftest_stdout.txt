@@ -21,7 +21,7 @@ E3 候选件离线单测（零真机 · 全部 Win32 经 stub）
 [OK] C5-a 单线程失败不影响其余                                      n=2
 [OK] C5-b 错误码被记录                                          ['open_thread_fail:tid=32']
 [OK] C5-c 失败后无残留挂起                                        set()
-[OK] C3-a 超预算即中止                                          paused=120.0ms
+[OK] C3-a 超预算即中止                                          paused=90.0ms
 [OK] C3-b 中止后无残留挂起                                        set()
 [OK] D3-a 非 E3Fail 异常下仍恢复全部挂起                             susp=set() resumed={51, 52}
 [OK] D3-b 非 E3Fail 异常被记为 unexpected 且不逃逸                  ['unexpected:RuntimeError', 'unexpected:RuntimeError']
@@ -29,9 +29,11 @@ E3 候选件离线单测（零真机 · 全部 Win32 经 stub）
 [OK] MF3-a 单线程预算(15ms)先于总预算(1000ms)生效                     ['per_thread_budget_exceeded']
 [OK] MF3-b 单线程预算中止后无残留挂起                                  set()
 [OK] C5-d snapshot 失败被记录不抛                                ['snapshot_fail']
-[OK] MF4-a walker 未绑定 → preflight 拒绝                      ['preflight:walker_not_bound']
+[OK] MF4-a context 未绑定 → preflight 拒绝                     ['preflight:context_not_bound']
 [OK] MF4-b preflight 拒绝后零线程被挂起                            susp=set() resumed=set()
-[OK] MF5 自 pid 被拒（防自死锁）                                   ['refuse_self_pid:40384']
+[OK] MF4-c 无 walker 时退回单帧（frames 长度 1）                    [{'tid': 73, 'prev': 0, 'ctx': {'bits': 32, 'ip': 4198473, 'sp': 4096, 'bp': 4352, 'eflags': 514, 'cs': 27}, 'frames': [4198473]}]
+[OK] MF4-d 单帧回退路径仍无残留挂起                                   set()
+[OK] MF5 自 pid 被拒（防自死锁）                                   ['refuse_self_pid:30180']
 [OK] MF1 suspend 失败(0xFFFFFFFF) 被判失败不误采                   errors=['suspend_thread_fail:tid=91:prev=4294967295'] resumed=set()
 [OK] MF1 suspend 失败(-1) 被判失败不误采                           errors=['suspend_thread_fail:tid=91:prev=-1'] resumed=set()
 [OK] MF1 suspend 失败(None) 被判失败不误采                         errors=['suspend_thread_fail:tid=91:prev=None'] resumed=set()
@@ -51,9 +53,10 @@ E3 候选件离线单测（零真机 · 全部 Win32 经 stub）
 [OK] C5-import 母本 OPS 未被绑定（未触发任何真实 Win32）                 len(OPS)=0
 [OK] C5-import G_FRAME 与母本一致                              mother=0xa8ed84 ours=0xa8ed84
 
--- 真机入口拒绝（授权边界） --
-[OK] AUTH-a --live 被拒并返回非 0                               rc=3
+-- 真机入口护栏（2026-11-12 已授权真机；护栏仍在） --
+[OK] AUTH-a 无 --pid/--launch 时拒绝并返回 2                     rc=2
+[OK] AUTH-b 自 pid 拒绝并返回 4（防自死锁）                           rc=4
 
 ==============================================================================
-结果：44 项检查，0 项失败
+结果：47 项检查，0 项失败
 ==============================================================================

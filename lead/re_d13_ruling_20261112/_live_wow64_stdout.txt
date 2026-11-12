@@ -1,0 +1,35 @@
+==============================================================================
+E3 Wow64 路径真机验证 —— 对 32 位目标（不触碰游戏）
+==============================================================================
+
+-- 结构自证 --
+[OK] WOW64_CONTEXT sizeof == 716                          716
+[OK] Eip offset == 184                                    184
+[OK] Esp offset == 196                                    196
+
+32 位目标 pid = 6832 (C:\Windows\SysWOW64\charmap.exe)
+[OK] 目标是 32 位进程（IsWow64Process=True）                      wow64=True
+[OK] 真实枚举到 32 位目标的线程                                      tids=[34812, 14356, 3540, 15140, 6292, 32464, 37672]
+
+-- 核心：Wow64GetThreadContext（32 位上下文）--
+[OK] OpenThread(32 位目标线程) 成功                              tid=34812 handle=368
+[OK] SuspendThread 成功（prev=0）                             prev=0
+[OK] Wow64GetThreadContext 成功                             err=18
+[OK]   取得非零 Eip（32 位）                                     eip=0x766911dc
+[OK]   取得非零 Esp（32 位）                                     esp=0x003ffb44
+[OK]   Eflags 有效                                          eflags=0x00000206
+[OK]   SegCs 是 32 位选择子 (0x1B)                             cs=0x23
+  完整读数: eip=0x766911dc esp=0x3ffb44 ebp=0x3ffb7c eax=0x0 ebx=0x0 cs=0x23
+[OK] 取上下文后精确恢复                                            resume=1
+
+-- 反例：对 32 位目标用 64 位 GetThreadContext --
+[OK] 对 32 位目标用 GetThreadContext(AMD64) 失败或无效              ok=True (32 位目标不能用 AMD64 CONTEXT)
+
+-- 安全断言 --
+[OK] 32 位目标仍存活                                            poll=None
+
+32 位目标已终止 rc=1
+
+==============================================================================
+结果：0 项失败
+==============================================================================

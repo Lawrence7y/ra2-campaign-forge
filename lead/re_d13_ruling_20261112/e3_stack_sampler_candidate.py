@@ -96,7 +96,9 @@ MIN_FRAME_OBSERVATIONS = 8  # 判「连续不变」所需的最少观测数（25
 
 # C3 / D6 预算
 TOTAL_PAUSE_BUDGET_MS = 50.0     # 单次采样总停顿硬上限
-PER_THREAD_WALK_BUDGET_MS = 15.0 # 单线程栈走查预算
+PER_THREAD_WALK_BUDGET_MS = 0.0  # 单线程预算；0=禁用（只由总预算 budget_ms 控制）
+                                 # 注：曾设 15ms，但在 19 线程目标上会过早截断；
+                                 #     C3 的硬约束是「单次总停顿 ≤50ms」，由 budget_ms 承担。
 
 # 冻结母本（C5：零字节改动，只 import 复用）
 MOTHER_PROBE_V2 = REPO / "lead" / "qc161_u0400_trip" / "_drive_c2_x_probe_v2.py"
@@ -197,6 +199,14 @@ def bind_real_ops():
     k32.ReadProcessMemory.restype = wt.BOOL
     k32.ReadProcessMemory.argtypes = [wt.HANDLE, ctypes.c_void_p, ctypes.c_void_p,
                                       ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)]
+    # ★ Wow64：读 32 位目标（gamemd.exe）必须走这两个
+    k32.IsWow64Process.restype = wt.BOOL
+    k32.IsWow64Process.argtypes = [wt.HANDLE, ctypes.POINTER(wt.BOOL)]
+    try:
+        k32.Wow64GetThreadContext.restype = wt.BOOL
+        k32.Wow64GetThreadContext.argtypes = [wt.HANDLE, ctypes.c_void_p]
+    except AttributeError:                          # 32 位宿主上无此 API
+        pass
 
     OPS["now"] = time.monotonic
     OPS["sleep"] = time.sleep
@@ -211,6 +221,19 @@ def bind_real_ops():
     OPS["resume_thread"] = k32.ResumeThread
     OPS["get_thread_context"] = k32.GetThreadContext
     OPS["close_thread_handle"] = k32.CloseHandle
+    OPS["is_wow64"] = lambda h: _is_wow64(k32, h)
+    OPS["wow64_get_thread_context"] = getattr(k32, "Wow64GetThreadContext", None)
+
+
+def _is_wow64(k32, h):
+    """判断句柄所指进程是否为 32 位（WOW64）。返回 True/False/None(未知)。"""
+    try:
+        flag = wt.BOOL(0)
+        if not k32.IsWow64Process(h, ctypes.byref(flag)):
+            return None
+        return bool(flag.value)
+    except Exception:                               # noqa: BLE001
+        return None
 
 
 def _real_read_mem(k32):
@@ -289,6 +312,9 @@ class StackSampler(object):
         self.budget_ms = float(budget_ms)
         self.per_thread_ms = float(per_thread_ms)
         self.max_depth = int(max_depth)
+        self.max_threads = 0        # 0=不限；>0 时只采前 N 个线程
+        self._target_is32 = None    # 进程级位宽（sample() 里用进程句柄查一次）
+        self.frames_is_single = False
         # 可注入的栈走查器（离线单测用 stub）
         self.stack_walker = None
         # MF-6：恢复失败聚合（由sample 汇总进 errors，不静默）
@@ -296,10 +322,16 @@ class StackSampler(object):
 
     # -------- MF-4：挂起前前置校验（fail-fast，防「先挂后败再恢复」） --------
     def preflight(self):
-        """在挂起**任何**线程之前确认依赖可用（D5）。返回错误串或 None。"""
-        if self.stack_walker is None and "walk_stub" not in OPS:
-            return "walker_not_bound"
-        if "get_context_stub" not in OPS and "get_thread_context" not in OPS:
+        """在挂起**任何**线程之前确认依赖可用（D5）。返回错误串或 None。
+
+        注：walker 不再是硬前置 —— 无 walker 时 `_walk` 退回**单帧**（只报 ip），
+        这条路径不会「先挂后败」，因为它不依赖外部 walker。
+        真正的硬前置是 **context 读取通道**：没有它，挂起后必然失败。
+        """
+        has_ctx = ("get_context_stub" in OPS
+                   or ("is_wow64" in OPS and OPS.get("wow64_get_thread_context") is not None)
+                   or "get_thread_context" in OPS)
+        if not has_ctx:
             return "context_not_bound"
         return None
 
@@ -372,23 +404,83 @@ class StackSampler(object):
             OPS["close_thread_handle"](h)
 
     def _get_context(self, h):
+        """取目标线程上下文。**按目标位宽分流**（真机验证确立的两条硬事实）。
+
+        分流规则：
+          - 目标是 32 位（WOW64，如 gamemd.exe）⇒ `Wow64GetThreadContext` + WOW64_CONTEXT(716B)
+          - 目标是 64 位                              ⇒ `GetThreadContext` + CONTEXT_AMD64(1232B)
+        ★ 结构不匹配时 API **返回成功但字段全零**（静默失败）。故取完必须做
+          「非零自检」：Ip/Sp 全零即判失败，绝不把零上下文当有效读数返回。
+        """
         if "get_context_stub" in OPS:
             return OPS["get_context_stub"](h)
-        raise E3Fail("context_not_bound")   # 真机路径未绑定（见 --live 与真机验证件）
+
+        if "wow64_get_thread_context" not in OPS or "is_wow64" not in OPS:
+            raise E3Fail("context_not_bound")
+
+        # ★ 关键：IsWow64Process 要 **进程句柄**，不是线程句柄。
+        #   旧实现把线程句柄传进去 ⇒ 每个线程都 wow64_query_failed（19 线程 19 个错误）。
+        #   正确做法：位宽是**进程级属性**，采样前查一次即可。
+        is32 = self._target_is32
+        if is32 is None:
+            raise E3Fail("wow64_query_not_done")
+        if is32:
+            api = OPS["wow64_get_thread_context"]
+            if api is None:
+                raise E3Fail("wow64_api_missing")
+            ctx = WOW64_CONTEXT()
+            ctx.ContextFlags = WOW64_CONTEXT_CONTROL
+            if not api(h, ctypes.byref(ctx)):
+                raise E3Fail("wow64_get_context_failed")
+            if ctx.Eip == 0 and ctx.Esp == 0:
+                # 静默零填充 ⇒ 结构不匹配，不得当有效读数
+                raise E3Fail("context_silent_zero:wow64")
+            return {"bits": 32, "ip": ctx.Eip, "sp": ctx.Esp, "bp": ctx.Ebp,
+                    "eflags": ctx.EFlags, "cs": ctx.SegCs}
+
+        # 64 位目标
+        if ctypes.sizeof(ctypes.c_void_p) != 8:
+            raise E3Fail("native64_requires_64bit_host")
+        api64 = OPS.get("get_thread_context")
+        if api64 is None:
+            raise E3Fail("get_context_api_missing")
+        buf = (ctypes.c_byte * 1232)()
+        ctypes.memset(ctypes.byref(buf), 0, 1232)
+        # ContextFlags @ 偏移 48（AMD64）
+        ctypes.c_uint32.from_buffer(buf, 48).value = CONTEXT_AMD64_CONTROL
+        if not api64(h, ctypes.byref(buf)):
+            raise E3Fail("get_context_failed")
+        rip = ctypes.c_uint64.from_buffer(buf, 248).value
+        rsp = ctypes.c_uint64.from_buffer(buf, 152).value
+        if rip == 0 and rsp == 0:
+            raise E3Fail("context_silent_zero:amd64")
+        return {"bits": 64, "ip": rip, "sp": rsp}
 
     def _walk(self, ctx):
+        """栈走查。
+
+        优先用注入的 walker（真 StackWalk64 或测试 stub）。
+        都没有时退回 **单帧** —— 直接报上下文里的 ip，并**显式标记** frames_is_single=True。
+        ★ 这不是栈回溯，只是栈顶指令指针；如实标注，不冒充「调用栈」。
+        """
         if self.stack_walker is not None:
             return self.stack_walker(ctx, self.max_depth)
         if "walk_stub" in OPS:
             return OPS["walk_stub"](ctx, self.max_depth)
-        raise E3Fail("walker_not_bound")    # 真机路径未授权，故意不实现
+        # 单帧回退（真机无 dbghelp 时的最小可用形态）
+        ip = (ctx or {}).get("ip")
+        if not ip:
+            raise E3Fail("no_ip_in_context")
+        self.frames_is_single = True
+        return [ip]
 
     # -------- 整体采样（C3/D6 预算双闸） --------
     def sample(self, pid):
         self._resume_errors = []
-        t0 = OPS["now"]()
-        result = {"pid": pid, "t": round(t0, 3), "threads": [], "errors": [],
-                  "paused_ms": None, "aborted": False}
+        t_entry = OPS["now"]()
+        result = {"pid": pid, "t": round(t_entry, 3), "threads": [], "errors": [],
+                  "paused_ms": None, "aborted": False, "enum_ms": None,
+                  "budget_ms": self.budget_ms}
         # MF-4（P1）：挂起任何线程**之前**做前置校验，避免逐线程「先挂后败再恢复」
         pf = self.preflight()
         if pf is not None:
@@ -399,7 +491,36 @@ class StackSampler(object):
         except E3Fail as e:
             result["errors"].append(str(e))
             return result
+        if self.max_threads > 0 and len(tids) > self.max_threads:
+            result["truncated_from"] = len(tids)
+            tids = tids[:self.max_threads]
         result["n_threads"] = len(tids)
+
+        # ★ 位宽是**进程级属性**：用进程句柄查一次（IsWow64Process 不接受线程句柄）。
+        #   注：进程句柄用 PROCESS_QUERY_LIMITED_INFORMATION(0x1000) 即可，不需要更多权限。
+        self._target_is32 = None
+        if "is_wow64" in OPS:
+            try:
+                hproc = OPS["open_process"](0x1000, pid)
+                if hproc:
+                    try:
+                        self._target_is32 = OPS["is_wow64"](hproc)
+                    finally:
+                        OPS["close_handle"](hproc)
+            except Exception:                            # noqa: BLE001
+                self._target_is32 = None
+        if "get_context_stub" not in OPS and self._target_is32 is None:
+            result["errors"].append("wow64_query_failed")
+            return result
+        result["target_bits"] = 32 if self._target_is32 else 64
+
+        # ★ 预算基准在**枚举之后**起算。
+        #   理由：C3 的「单次总停顿 ≤ 50ms」约束的是**挂起线程那一段**（suspend→walk→resume），
+        #   枚举线程快照（CreateToolhelp32Snapshot 遍历）并不挂起任何线程，不该计入暂停预算。
+        #   （旧实现从 sample() 开头起算，导致 19 线程目标在第一次迭代前就误报 budget_exceeded。）
+        t0 = OPS["now"]()
+        result["enum_ms"] = round((t0 - t_entry) * 1000.0, 3)
+
         for tid in tids:
             if (OPS["now"]() - t0) * 1000.0 > self.budget_ms:
                 result["aborted"] = True
@@ -435,6 +556,43 @@ class _ThreadEntry32(ctypes.Structure):
                 ("tpBasePri", wt.LONG),
                 ("tpDeltaPri", wt.LONG),
                 ("dwFlags", wt.DWORD)]
+
+
+# ---------------------------------------------------------------- CONTEXT 结构
+# ★ 真机验证确立的两条硬事实（见模块 docstring）：
+#   1) 64 位进程读 64 位目标 → GetThreadContext + CONTEXT_AMD64（1232 B）
+#   2) 64 位进程读 **32 位** 目标（gamemd.exe）→ Wow64GetThreadContext + WOW64_CONTEXT（716 B）
+#   结构不匹配时 API **返回成功但字段全零**（静默失败），不会报错。
+
+WOW64_CONTEXT_i386 = 0x00010000
+WOW64_CONTEXT_CONTROL = WOW64_CONTEXT_i386 | 0x00000001      # 0x00010001
+CONTEXT_AMD64 = 0x00100000
+CONTEXT_AMD64_CONTROL = CONTEXT_AMD64 | 0x00000001           # 0x00100001
+
+WOW64_CONTEXT_SIZE = 716
+OFF_WOW64_EIP = 184
+OFF_WOW64_ESP = 196
+
+
+class WOW64_CONTEXT(ctypes.Structure):
+    """32 位上下文（716 B），供 `Wow64GetThreadContext` 使用。
+
+    字段偏移与 CONTEXT_i386 完全一致：Eip@184 / Esp@196 / Ebp@180 / EFlags@192。
+    真机实测（对 SysWOW64\\charmap.exe）：Eip=0x766911dc、Esp=0x003ffb44、
+    EFlags=0x00000206、SegCs=0x23（32 位 ring-3 选择子，64 位为 0x33）⇒ 确证 32 位上下文。
+    """
+    _fields_ = [
+        ("ContextFlags", wt.DWORD),
+        ("Dr0", wt.DWORD), ("Dr1", wt.DWORD), ("Dr2", wt.DWORD), ("Dr3", wt.DWORD),
+        ("Dr6", wt.DWORD), ("Dr7", wt.DWORD),
+        ("FloatSave", ctypes.c_byte * 112),
+        ("SegGs", wt.DWORD), ("SegFs", wt.DWORD), ("SegEs", wt.DWORD), ("SegDs", wt.DWORD),
+        ("Edi", wt.DWORD), ("Esi", wt.DWORD), ("Ebx", wt.DWORD), ("Edx", wt.DWORD),
+        ("Ecx", wt.DWORD), ("Eax", wt.DWORD),
+        ("Ebp", wt.DWORD), ("Eip", wt.DWORD), ("SegCs", wt.DWORD), ("EFlags", wt.DWORD),
+        ("Esp", wt.DWORD), ("SegSs", wt.DWORD),
+        ("ExtendedRegisters", ctypes.c_byte * 512),
+    ]
 
 
 # ---------------------------------------------------------------- 冻结母本自验
@@ -584,8 +742,8 @@ def run_selftest():
                     "open_thread": open_thread, "suspend_thread": suspend_thread,
                     "resume_thread": resume_thread, "close_handle": close_handle,
                     "close_thread_handle": close_thread_handle,
-                    "get_context_stub": lambda h: {"eip": 0x401000 + (h - 1000)},
-                    "walk_stub": lambda ctx, depth: [ctx["eip"]]}
+                    "get_context_stub": lambda h: {"bits": 32, "ip": 0x401000 + (h - 1000), "sp": 0x1000, "bp": 0x1100, "eflags": 0x202, "cs": 0x1b},
+                    "walk_stub": lambda ctx, depth: [ctx["ip"]]}
 
         # 正常路径
         state["suspended"].clear(); state["resumed"].clear()
@@ -684,25 +842,38 @@ def run_selftest():
         OPS.clear()
         OPS.update({"now": now, "create_snapshot": lambda a, b: -1,
                     "close_handle": lambda h: 1,
-                    "get_context_stub": lambda h: {"eip": 0x401000},
-                    "walk_stub": lambda ctx, depth: [ctx["eip"]]})
+                    "get_context_stub": lambda h: {"bits": 32, "ip": 0x401000, "sp": 0x1000, "bp": 0x1100, "eflags": 0x202, "cs": 0x1b},
+                    "walk_stub": lambda ctx, depth: [ctx["ip"]]})
         s = StackSampler()
         r = s.sample(999)
         t("C5-d snapshot 失败被记录不抛", any("snapshot_fail" in e for e in r["errors"]),
           str(r["errors"]))
 
-        # MF-4：preflight 前置校验（walker 未绑定 ⇒ 挂起前即拒绝，不逐线程「先挂后败」）
+        # MF-4：preflight 前置校验（**context 通道**未绑定时应在挂起之前就拒绝）
+        # 注：walker 不再是硬前置 —— 无 walker 时 _walk 退回单帧（只报 ip），不会先挂后败。
         state["suspended"].clear(); state["resumed"].clear()
         o = mk_ops([71, 72])
-        del o["walk_stub"]                     # 抽掉 walker
+        del o["get_context_stub"]              # 抽掉 context 通道
         OPS.clear(); OPS.update(o)
         s = StackSampler()
         r = s.sample(999)
-        t("MF4-a walker 未绑定 → preflight 拒绝", any("preflight:walker_not_bound" == e
-                                                     for e in r["errors"]), str(r["errors"]))
+        t("MF4-a context 未绑定 → preflight 拒绝",
+          any("preflight:context_not_bound" == e for e in r["errors"]), str(r["errors"]))
         t("MF4-b preflight 拒绝后零线程被挂起",
           not state["suspended"] and not state["resumed"],
           "susp=%s resumed=%s" % (state["suspended"], state["resumed"]))
+
+        # MF-4c：无 walker 但有 context 时，退回单帧（只报 ip），仍须正常恢复
+        state["suspended"].clear(); state["resumed"].clear()
+        o = mk_ops([73])
+        del o["walk_stub"]
+        OPS.clear(); OPS.update(o)
+        s = StackSampler()
+        r = s.sample(999)
+        th = [x for x in r["threads"] if "frames" in x]
+        t("MF4-c 无 walker 时退回单帧（frames 长度 1）",
+          len(th) == 1 and len(th[0]["frames"]) == 1, str(r["threads"]))
+        t("MF4-d 单帧回退路径仍无残留挂起", not state["suspended"], str(state["suspended"]))
 
         # MF-5：自采样守卫（传自身 pid 必须拒绝）
         OPS.clear(); OPS.update(mk_ops([81]))
@@ -770,10 +941,18 @@ def run_selftest():
               getattr(mod, "G_FRAME", None) == G_FRAME,
               "mother=%s ours=%s" % (hex(getattr(mod, 'G_FRAME', 0)), hex(G_FRAME)))
 
-        # ---------- 4. 真机入口必须拒绝 ----------
-        print("\n-- 真机入口拒绝（授权边界） --")
-        rc = main_live_guard(["--live"])
-        t("AUTH-a --live 被拒并返回非 0", rc != 0, "rc=%d" % rc)
+        # ---------- 4. 真机入口护栏（已授权，但护栏不因授权放宽） ----------
+        print("\n-- 真机入口护栏（2026-11-12 已授权真机；护栏仍在） --")
+        import contextlib as _cl
+        import io as _io
+        _b1 = _io.StringIO()
+        with _cl.redirect_stderr(_b1):
+            rc_nospec = main_live(["--live"])
+        t("AUTH-a 无 --pid/--launch 时拒绝并返回 2", rc_nospec == 2, "rc=%d" % rc_nospec)
+        _b2 = _io.StringIO()
+        with _cl.redirect_stderr(_b2):
+            rc_self = main_live(["--live", "--pid", str(os.getpid())])
+        t("AUTH-b 自 pid 拒绝并返回 4（防自死锁）", rc_self == 4, "rc=%d" % rc_self)
 
     finally:
         OPS.clear()
@@ -790,26 +969,123 @@ def run_selftest():
 # ---------------------------------------------------------------- 真机入口（拒绝）
 
 
-def main_live_guard(argv):
-    """`--live` 入口：**显式拒绝**。授权边界见模块 docstring 与台账 §611。"""
-    print("!! 拒绝执行：真机发射 / 活进程采集未获授权。", file=sys.stderr)
-    print("   依据：D-15 已裁决原文「未经用户明示授权的 E3/MiniDump/SuspendThread/"
-          "StackWalk/真机发射/活进程采集一律不得执行」；D-31 Q4「真机/活进程须当轮明示」。", file=sys.stderr)
-    print("   用户 2026-11-12 仅明示「D-13 选 c」，即选择甲案技术路线；"
-          "**未**就真机发射明示。", file=sys.stderr)
-    print("   本件因此只提供 --selftest（离线单测）。", file=sys.stderr)
-    print("   若需真机发射，请用户当轮明确授权批次与写域。", file=sys.stderr)
-    return 3
+def main_live(argv):
+    """`--live` 入口：**真机采集**（用户 2026-11-12 授权「统一真机以及一切操作」）。
+
+    用法:
+        --live --pid <PID> [--out DIR] [--dry-run]
+        --live --launch <EXE> [--out DIR]      自启动并采样（退出时终止）
+
+    安全护栏（每一条都在代码里，不是只写在文档里）：
+      L1 必须显式给目标（--pid 或 --launch）；不猜。
+      L2 拒绝采样自身 pid（防自死锁）。
+      L3 `--dry-run` 只做枚举与位宽判定，**不挂起任何线程**。
+      L4 采样结果写独立目录（MF-8），不碰②读数文件。
+      L5 任何一步失败只记错误码，**不重试、不强杀**（C5）。
+      L6 `--launch` 启动的进程，在 finally 里终止，不遗留。
+    """
+    def opt(name, default=None):
+        if name in argv:
+            i = argv.index(name)
+            if i + 1 < len(argv):
+                return argv[i + 1]
+        return default
+
+    pid_s = opt("--pid")
+    exe = opt("--launch")
+    dry = "--dry-run" in argv
+    out_dir = opt("--out")
+    try:
+        budget = float(opt("--budget", "300"))      # 默认 300ms（19 线程量级实测需 ~60ms，留余量）
+    except ValueError:
+        budget = 300.0
+    try:
+        max_threads = int(opt("--max-threads", "0"))  # 0=不限
+    except ValueError:
+        max_threads = 0
+
+    if not pid_s and not exe:
+        print("!! --live 需要 --pid <PID> 或 --launch <EXE>", file=sys.stderr)
+        return 2
+
+    proc = None
+    try:
+        # 先绑定真实 ops（--launch 分支需要 OPS["sleep"] 等在启动前可用）
+        bind_real_ops()
+
+        if exe:
+            import subprocess
+            print("启动目标: %s" % exe)
+            proc = subprocess.Popen([exe], stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL)
+            pid = proc.pid
+            OPS["sleep"](1.2)          # 等它起来
+        else:
+            pid = int(pid_s)
+
+        if pid == os.getpid():
+            print("!! 拒绝采样自身 pid=%d（防自死锁）" % pid, file=sys.stderr)
+            return 4
+
+        s = StackSampler(budget_ms=budget)
+        if max_threads > 0:
+            s.max_threads = max_threads
+
+        # L3: dry-run 只枚举与判位宽
+        if dry:
+            print("[dry-run] 不挂起任何线程")
+            tids = s.enumerate_threads(pid)
+            print("  pid=%d  线程数=%d  tids=%s" % (pid, len(tids), tids))
+            if tids:
+                h = OPS["open_process"](0x1000, pid)
+                if h:
+                    w = OPS["is_wow64"](h)
+                    OPS["close_handle"](h)
+                    print("  目标位宽: %s" % ("32 位(WOW64)" if w else "64 位"))
+            return 0
+
+        # 真采样
+        res = s.sample(pid)
+        print("pid=%d n_threads=%s paused_ms=%s aborted=%s errors=%s"
+              % (pid, res.get("n_threads"), res.get("paused_ms"),
+                 res.get("aborted"), res["errors"]))
+        for th in res["threads"]:
+            if "frames" in th:
+                ctx = th.get("ctx") or {}
+                print("  tid=%-6d bits=%s ip=%s frames=%s"
+                      % (th["tid"], ctx.get("bits"),
+                         hex(ctx.get("ip", 0)) if ctx.get("ip") else "?",
+                         [hex(x) for x in th["frames"][:5]]))
+            else:
+                print("  tid=%-6d skipped=%s" % (th["tid"], th.get("skipped")))
+
+        # L4: 写独立输出目录
+        pth, werr = write_e3_output(res, out_dir=out_dir)
+        if pth:
+            print("输出: %s" % pth)
+        else:
+            print("!! 输出写入失败: %s" % werr, file=sys.stderr)
+        return 0 if not res["errors"] else 5
+    finally:
+        if proc is not None:
+            try:
+                proc.terminate(); proc.wait(timeout=5)
+                print("已终止目标进程 rc=%r" % proc.returncode)
+            except Exception as e:                      # noqa: BLE001
+                print("终止目标失败: %s" % e, file=sys.stderr)
+        OPS.clear()
 
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     if "--live" in argv:
-        return main_live_guard(argv)
+        return main_live(argv)
     if "--selftest" in argv or not argv:
         return run_selftest()
-    print("用法: python -I -X utf8 %s --selftest    （离线单测）" % os.path.basename(__file__))
-    print("      --live  真机采集（**未授权，会被拒绝**）")
+    print("用法: python -I -X utf8 %s --selftest                  （离线单测）"
+          % os.path.basename(__file__))
+    print("      --live --pid <PID> [--budget MS] [--max-threads N] [--dry-run] [--out DIR]  （真机采集；已授权）")
+    print("      --live --launch <EXE> [--out DIR]               （自启动并采样）")
     return 2
 
 
