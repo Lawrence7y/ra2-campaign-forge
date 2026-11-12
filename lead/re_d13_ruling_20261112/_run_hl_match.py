@@ -169,9 +169,11 @@ def game_window_thread(pid):
     u.EnumWindows(ENUM(cb), 0)
     if not hwnds:
         return None
-    tid = wt.DWORD(0)
-    u.GetWindowThreadProcessId(hwnds[0], ctypes.byref(tid))
-    return int(tid.value)
+    # ★ 关键：GetWindowThreadProcessId 的**返回值**才是线程 id；
+    #   lpdwProcessId 收到的是进程 id。早期版本读反了 ⇒ 一直退化成兜底路径。
+    p_out = wt.DWORD(0)
+    ret = u.GetWindowThreadProcessId(hwnds[0], ctypes.byref(p_out))
+    return int(ret)
 
 
 def pick_thread(threads, want_tid):
@@ -200,6 +202,8 @@ def main():
     ap.add_argument("--budget", type=float, default=400.0)
     ap.add_argument("--pid", type=int, default=0)
     ap.add_argument("--list-only", action="store_true")
+    ap.add_argument("--only-tid", action="store_true",
+                    help="只采游戏窗口线程（1 线程），用于压进 <=50ms 预算")
     a = ap.parse_args()
 
     pid = a.pid
@@ -344,6 +348,31 @@ def main():
             if det.observe(now, v):
                 print("  ★★ 停滞 @ t=%.2fs frame=%s → 抓栈" % (now - t0, v))
                 res = sampler.sample(pid)
+                if a.only_tid and want_tid:
+                    t1 = time.monotonic()
+                    one = sampler.sample_one_thread(want_tid)
+                    cost = (time.monotonic() - t1) * 1000.0
+                    ev = {"t": round(now - t0, 3), "frame": v,
+                          "mode": "single_thread",
+                          "paused_ms": round(cost, 1),
+                          "errors": one.get("errors") if isinstance(one, dict) else None,
+                          "picked_by": "only_tid"}
+                    if isinstance(one, dict) and one.get("frames"):
+                        ev["stack"] = {"tid": want_tid,
+                                       "bits": (one.get("ctx") or {}).get("bits"),
+                                       "n": len(one["frames"]),
+                                       "frames": one["frames"]}
+                        print("      单线程采样 tid=%d %d 帧  cost=%.1fms"
+                              % (want_tid, len(one["frames"]), cost))
+                        for i2, f2 in enumerate(one["frames"][:12]):
+                            nm = f2.get("name") if isinstance(f2, dict) else f2
+                            ad = f2.get("addr") if isinstance(f2, dict) else 0
+                            print("        #%-2d %s" % (i2, nm or hex(ad)))
+                    else:
+                        print("      单线程采样无帧 cost=%.1fms %s" % (cost, one))
+                    events.append(ev)
+                    time.sleep(a.interval)
+                    continue
                 threads = res.get("threads", [])
                 got = [x for x in threads if x.get("frames")]
                 best, how = pick_thread(threads, want_tid)
