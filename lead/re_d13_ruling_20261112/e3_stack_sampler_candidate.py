@@ -149,8 +149,20 @@ def write_e3_output(result, out_dir=None):
     d = Path(out_dir) if out_dir else E3_OUT_DIR
     d.mkdir(parents=True, exist_ok=True)
     path = d / ("e3_sample_%d.json" % int(result.get("pid", 0)))
+
+    def _default(o):
+        # ctypes 结构（ctx["_raw"] 等）不可 JSON 序列化 ⇒ 只留类型名，不丢数据
+        if isinstance(o, ctypes.Structure):
+            return {"__ctypes__": type(o).__name__}
+        if isinstance(o, ctypes.Array):
+            return {"__ctypes_array__": type(o).__name__, "len": len(o)}
+        if isinstance(o, bytes):
+            return {"__bytes_len__": len(o)}
+        return {"__unserializable__": type(o).__name__}
+
     try:
-        path.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
+        path.write_text(json.dumps(result, ensure_ascii=False, indent=1,
+                                   default=_default), encoding="utf-8")
         return (path, None)
     except Exception as e:                              # noqa: BLE001
         return (None, "write_fail:%s" % type(e).__name__)
@@ -389,7 +401,7 @@ class StackSampler(object):
             suspended_by_us = True
 
             ctx = self._get_context(h)
-            frames = self._walk(ctx)
+            frames = self._walk(ctx, hthread=h)
             return {"tid": tid, "prev": int(prev), "ctx": ctx, "frames": frames}
         finally:
             # D3 兜底：无论成功/异常，若我们挂起了它就必须恢复
@@ -436,7 +448,7 @@ class StackSampler(object):
                 # 静默零填充 ⇒ 结构不匹配，不得当有效读数
                 raise E3Fail("context_silent_zero:wow64")
             return {"bits": 32, "ip": ctx.Eip, "sp": ctx.Esp, "bp": ctx.Ebp,
-                    "eflags": ctx.EFlags, "cs": ctx.SegCs}
+                    "eflags": ctx.EFlags, "cs": ctx.SegCs, "_raw": ctx}
 
         # 64 位目标
         if ctypes.sizeof(ctypes.c_void_p) != 8:
@@ -452,19 +464,36 @@ class StackSampler(object):
             raise E3Fail("get_context_failed")
         rip = ctypes.c_uint64.from_buffer(buf, 248).value
         rsp = ctypes.c_uint64.from_buffer(buf, 152).value
+        rbp = ctypes.c_uint64.from_buffer(buf, 160).value
         if rip == 0 and rsp == 0:
             raise E3Fail("context_silent_zero:amd64")
-        return {"bits": 64, "ip": rip, "sp": rsp}
+        return {"bits": 64, "ip": rip, "sp": rsp, "bp": rbp, "_raw": buf}
 
-    def _walk(self, ctx):
+    def _walk(self, ctx, hthread=None):
         """栈走查。
 
-        优先用注入的 walker（真 StackWalk64 或测试 stub）。
-        都没有时退回 **单帧** —— 直接报上下文里的 ip，并**显式标记** frames_is_single=True。
-        ★ 这不是栈回溯，只是栈顶指令指针；如实标注，不冒充「调用栈」。
+        优先级：
+          1. 注入的 `stack_walker`（真 StackWalk64 / 测试 stub）
+          2. OPS 里的 `walk_stub`（离线单测）
+          3. **单帧回退** —— 只报 ctx["ip"]，并置 frames_is_single=True（不冒充调用栈）
+
+        真机路径下由 `--live` 注入 StackWalker（见 `attach_stackwalker`），
+        它需要 hthread + 原始 CONTEXT 结构（32 位必须 WOW64_CONTEXT）。
         """
         if self.stack_walker is not None:
-            return self.stack_walker(ctx, self.max_depth)
+            sw_obj = self.stack_walker
+            if getattr(sw_obj, "is_dbghelp_walker", False):
+                # StackWalker 实例：需 (hthread, raw_ctx, ip, sp, bp)
+                raw = (ctx or {}).get("_raw")
+                return sw_obj.walk(hthread, raw,
+                                   (ctx or {}).get("ip"),
+                                   (ctx or {}).get("sp"),
+                                   (ctx or {}).get("bp"))
+            # 普通 callable（测试 stub）
+            try:
+                return sw_obj(ctx, self.max_depth)
+            except TypeError:
+                return sw_obj(ctx)
         if "walk_stub" in OPS:
             return OPS["walk_stub"](ctx, self.max_depth)
         # 单帧回退（真机无 dbghelp 时的最小可用形态）
@@ -546,6 +575,34 @@ class StackSampler(object):
         for e in self._resume_errors:
             result["errors"].append(e)
         return result
+
+
+def attach_stackwalker(sampler, hproc, pid, is32, max_frames=32):
+    """给 sampler 挂上真 StackWalk64 回溯器。返回 (ok, err)。
+
+    需要同目录的 3_stackwalker.py（独立模块，含结构定义与 5 参数回调）。
+    挂载后 _walk 走真回溯；失败则保持单帧回退（并如实返回 err）。
+    """
+    try:
+        import importlib.util as _ilu
+        import os as _os
+        here = _os.path.dirname(_os.path.abspath(__file__))
+        mod_path = _os.path.join(here, "e3_stackwalker.py")
+        if not _os.path.exists(mod_path):
+            return (False, "e3_stackwalker_missing")
+        spec = _ilu.spec_from_file_location("e3_stackwalker", mod_path)
+        swm = _ilu.module_from_spec(spec)
+        spec.loader.exec_module(swm)
+        mods = swm.modules_of(pid)
+        walker = swm.StackWalker(hproc, is32, mods, max_frames=max_frames)
+        if not walker.init_symbols():
+            return (False, walker.last_error or "sym_init_fail")
+        walker.is_dbghelp_walker = True
+        sampler.stack_walker = walker
+        sampler._dbghelp_walker = walker
+        return (True, None)
+    except Exception as e:                               # noqa: BLE001
+        return (False, "attach_exc:%s" % type(e).__name__)
 
 
 class _ThreadEntry32(ctypes.Structure):
@@ -1044,18 +1101,58 @@ def main_live(argv):
                     print("  目标位宽: %s" % ("32 位(WOW64)" if w else "64 位"))
             return 0
 
-        # 真采样
-        res = s.sample(pid)
+        # 真采样前挂 StackWalk64 回溯器（拿真调用栈，而非单帧）
+        # ★ 必须先判位宽再 attach：attach 需要 is32 决定用 I386 还是 AMD64 机器类型；
+        #   若在 sample() 之前拿不到（_target_is32 尚未计算），会用错机器类型 ⇒ OSError。
+        hproc = OPS["open_process"](0x0010 | 0x0400, pid)   # VM_READ | QUERY_INFORMATION
+        walker_ok, walker_err = (False, "no_open_process")
+        if hproc:
+            is32 = None
+            try:
+                is32 = OPS["is_wow64"](hproc)
+            except Exception:                            # noqa: BLE001
+                is32 = None
+            if is32 is None:
+                walker_ok, walker_err = (False, "wow64_query_failed")
+            else:
+                s._target_is32 = is32        # 提前固化，sample() 内会复用
+                walker_ok, walker_err = attach_stackwalker(s, hproc, pid, bool(is32))
+            if not walker_ok:
+                print("!! StackWalker 挂载失败(%s) ⇒ 退回单帧" % walker_err, file=sys.stderr)
+        try:
+            res = s.sample(pid)
+        finally:
+            if walker_ok:
+                try:
+                    s.stack_walker.cleanup()
+                except Exception:                        # noqa: BLE001
+                    pass
+            if hproc:
+                OPS["close_handle"](hproc)
         print("pid=%d n_threads=%s paused_ms=%s aborted=%s errors=%s"
               % (pid, res.get("n_threads"), res.get("paused_ms"),
                  res.get("aborted"), res["errors"]))
+        res["frames_is_single"] = s.frames_is_single
+        res["stackwalker"] = walker_ok
+        if s.frames_is_single:
+            print("  ⚠ 单帧模式（非调用栈）：StackWalker 未挂上")
         for th in res["threads"]:
             if "frames" in th:
                 ctx = th.get("ctx") or {}
-                print("  tid=%-6d bits=%s ip=%s frames=%s"
+                fr = th["frames"]
+                # frames 元素可能是 dict({"addr","name"}) 或裸 int（stub）
+                def _fmt(x):
+                    if isinstance(x, dict):
+                        return x.get("name") or hex(int(x.get("addr") or 0))
+                    return hex(int(x))
+                print("  tid=%-6d bits=%s ip=%s frames=%d"
                       % (th["tid"], ctx.get("bits"),
                          hex(ctx.get("ip", 0)) if ctx.get("ip") else "?",
-                         [hex(x) for x in th["frames"][:5]]))
+                         len(fr)))
+                for i, x in enumerate(fr[:8]):
+                    print("        #%d %s" % (i, _fmt(x)))
+                if len(fr) > 8:
+                    print("        ... (%d more)" % (len(fr) - 8))
             else:
                 print("  tid=%-6d skipped=%s" % (th["tid"], th.get("skipped")))
 
