@@ -1,0 +1,41 @@
+==============================================================================
+E3 最终闭环：高负载对局 + 停滞检测 + 停滞瞬间真栈
+==============================================================================
+
+[N1] 主菜单 → GUI:SinglePlayer
+
+[N2] 单人菜单 → GUI:Skirmish
+
+[N3] 遭遇战界面：枚举控件
+  ListBox 1 / ComboBox 39 / TrackBar 3
+  ListBox hwnd=1055008  条目 0 个：
+
+  !! 地图列表里没找到含 'U0800' 的条目 —— 仍用当前默认地图开局
+
+[N4] GUI:StartGame
+  已点击，等待加载...
+
+目标 is32=True
+StackWalker 挂载: True 
+
+[N5] 轮询 G_FRAME 8s（间隔 0.20s，停滞阈值 1.0s）
+  ★ 停滞 @ t=1.02s (frame=0) → 抓栈
+      采到 29 线程，最长栈 11 帧（tid=41188, paused=78.0ms）
+        #0 ntdll.dll+0x787fc
+        #1 KERNELBASE.dll+0x15f4d8
+        #2 wetype_tip_core.dll+0x105cd9
+        #3 wetype_tip_core.dll+0x10532f
+        #4 wetype_tip_core.dll+0x104ec4
+        #5 wetype_tip_core.dll+0x103f0e
+        #6 wetype_tip_core.dll+0x10515f
+        #7 wetype_tip_core.dll+0x105e5b
+
+[N7] 结果
+  采样 40 次，可读 40 次（100.0%）
+  首值=0 末值=103 min=0 max=103 不同值=18
+  Δ: min=0 max=7 非零Δ=17/39
+  Δ 中位=6 ⇒ 约 30.0 fps（0.20s 采样）
+  零 Δ 连续段（次数=1）: 最长 22 个采样间隔 ≈ 4.40s
+  ≥1.0s 的停滞段数 = 1
+  停滞事件（StallDetector 触发）= 1 次
+  落盘: D:\Project\ra2-campaign-forge\lead\re_d13_ruling_20261112\_stall_capture_4396.json
