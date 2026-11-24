@@ -1,0 +1,189 @@
+{
+ "scan_with_d2": 11,
+ "scan_d4_plus1": 0,
+ "scan_drop_d2": 11,
+ "s1_exec_containment": {
+  "funcs": 55,
+  "exactly1": 55,
+  "ge2": 0,
+  "ge3": 0,
+  "zero": 0
+ },
+ "s2_main_nearest_entry": {
+  "funcs": 74,
+  "exactly1": 69,
+  "ge2": 5
+ },
+ "criterion_disagree": 60,
+ "exec_views": [
+  {
+   "view": "A_containment",
+   "funcs": 55,
+   "exactly1": 55,
+   "pct": 100.0
+  },
+  {
+   "view": "B_innermost",
+   "funcs": 55,
+   "exactly1": 55,
+   "pct": 100.0
+  },
+  {
+   "view": "C_addr_range_to_next_entry",
+   "funcs": 74,
+   "exactly1": 69,
+   "pct": 93.24
+  },
+  {
+   "view": "D_enclosure_else_nearest_B2",
+   "funcs": 81,
+   "exactly1": 81,
+   "pct": 100.0
+  },
+  {
+   "view": "E_nearest_B2_always",
+   "funcs": 84,
+   "exactly1": 84,
+   "pct": 100.0
+  }
+ ],
+ "conclusion": "该统计量对函数边界判据敏感（两判据占比 100.00% vs 93.24%，站点级分歧 60/60），故**不能**用它排除「通用包装器」解释；R116 §EL 的 L3 替代解释维持「未排除」",
+ "checks": [
+  {
+   "name": "N1 反控（IID 判据非恒真）：d4=0x46000001 ⇒ 命中 0（必须 0）",
+   "ok": true,
+   "detail": {
+    "n": 0
+   }
+  },
+  {
+   "name": "N2 反控（判据真在筛，分项）：去掉 d2==0 ⇒ 11（与 11 相同 ⇒ d2 条件在本镜像上冗余）；再去掉 d3 低字 ⇒ 12（> 11 ⇒ d3 条件确实在筛）；d4 改值 ⇒ 0（= 0 ⇒ d4 是主筛）",
+   "ok": true,
+   "detail": {
+    "with_all": 11,
+    "drop_d2": 11,
+    "drop_d2_d3": 12,
+    "d4_plus1": 0
+   }
+  },
+  {
+   "name": "N3 0x7ed358 的 16 字节 = 90320f074198d111b70900a024ddafd1，dwords=['0x70f3290', '0x11d19841', '0xa00009b7', '0xd1afdd24'] ⇒ 不满足 COM 形状（d2=298948673, d3&0xFFFF=0x09B7, d4=0xD1AFDD24）",
+   "ok": true,
+   "detail": {
+    "in_scan": false
+   }
+  },
+  {
+   "name": "N4 反控（键精确性）：把 0x7f7c80 换成 0x7f7c84（GUID+4）后不可能出现在站点表里 ⇒ 命中 0",
+   "ok": true,
+   "detail": {
+    "n": 0
+   }
+  },
+  {
+   "name": "S1/S2 两种函数边界判据下「恰好 1 个 IID」占比 = 100.00%（55 函数） vs 93.24%（74 函数）⇒ 数字不同（该统计量对判据敏感）",
+   "ok": true,
+   "detail": {
+    "S1 执行员 containment（55 个函数）": {
+     "funcs": 55,
+     "exactly1": 55,
+     "pct": 100.0
+    },
+    "S2 主会话 nearest-entry（74 个函数）": {
+     "funcs": 74,
+     "exactly1": 69,
+     "pct": 93.24324324324324
+    }
+   }
+  },
+  {
+   "name": "S3 三种边界判据（int3 填充后首指令 / 终结指令后首指令 / nearest-preceding-entry）在 60 个站点上归属函数不同的站点数 = 60（样例 [{\"site\": \"0x67d36e\", \"int3pad\": \"0x6732e1\", \"afterterm\": \"0x67d300\", \"nearest_entry\": \"0x67d300\"}, {\"site\": \"0x67d3ee\", \"int3pad\": \"0x6732e1\", \"afterterm\": \"0x67d300\", \"nearest_entry\": \"0x67d300\"}, {\"site\": \"0x67d48d\", \"int3pad\": \"0x6732e1\", \"afterterm\": \"0x67d457\", \"nearest_entry\": \"0x67d300\"}]）",
+   "ok": true,
+   "detail": {
+    "n_disagree": 60,
+    "sample": [
+     {
+      "site": "0x67d36e",
+      "int3pad": "0x6732e1",
+      "afterterm": "0x67d300",
+      "nearest_entry": "0x67d300"
+     },
+     {
+      "site": "0x67d3ee",
+      "int3pad": "0x6732e1",
+      "afterterm": "0x67d300",
+      "nearest_entry": "0x67d300"
+     },
+     {
+      "site": "0x67d48d",
+      "int3pad": "0x6732e1",
+      "afterterm": "0x67d457",
+      "nearest_entry": "0x67d300"
+     },
+     {
+      "site": "0x67d4fe",
+      "int3pad": "0x6732e1",
+      "afterterm": "0x67d457",
+      "nearest_entry": "0x67d300"
+     },
+     {
+      "site": "0x67d577",
+      "int3pad": "0x6732e1",
+      "afterterm": "0x67d457",
+      "nearest_entry": "0x67d300"
+     },
+     {
+      "site": "0x67d5f0",
+      "int3pad": "0x6732e1",
+      "afterterm": "0x67d457",
+      "nearest_entry": "0x67d300"
+     }
+    ]
+   }
+  },
+  {
+   "name": "S5 执行员 5 种边界判据的「恰好 1 个 IID」占比 = [{\"view\": \"A_containment\", \"funcs\": 55, \"exactly1\": 55, \"pct\": 100.0}, {\"view\": \"B_innermost\", \"funcs\": 55, \"exactly1\": 55, \"pct\": 100.0}, {\"view\": \"C_addr_range_to_next_entry\", \"funcs\": 74, \"exactly1\": 69, \"pct\": 93.24}, {\"view\": \"D_enclosure_else_nearest_B2\", \"funcs\": 81, \"exactly1\": 81, \"pct\": 100.0}, {\"view\": \"E_nearest_B2_always\", \"funcs\": 84, \"exactly1\": 84, \"pct\": 100.0}]；主会话 nearest-entry 判据 = 93.24%（与执行员的 C_addr_range_to_next_entry 逐个相同：69/74 vs 69/74）",
+   "ok": true,
+   "detail": {
+    "exec_views": [
+     {
+      "view": "A_containment",
+      "funcs": 55,
+      "exactly1": 55,
+      "pct": 100.0
+     },
+     {
+      "view": "B_innermost",
+      "funcs": 55,
+      "exactly1": 55,
+      "pct": 100.0
+     },
+     {
+      "view": "C_addr_range_to_next_entry",
+      "funcs": 74,
+      "exactly1": 69,
+      "pct": 93.24
+     },
+     {
+      "view": "D_enclosure_else_nearest_B2",
+      "funcs": 81,
+      "exactly1": 81,
+      "pct": 100.0
+     },
+     {
+      "view": "E_nearest_B2_always",
+      "funcs": 84,
+      "exactly1": 84,
+      "pct": 100.0
+     }
+    ],
+    "mine": 93.24
+   }
+  },
+  {
+   "name": "S4 结论（只写判据支撑得住的那句）：该统计量对函数边界判据敏感（两判据占比 100.00% vs 93.24%，站点级分歧 60/60），故**不能**用它排除「通用包装器」解释；R116 §EL 的 L3 替代解释维持「未排除」",
+   "ok": true,
+   "detail": {}
+  }
+ ]
+}

@@ -1,0 +1,223 @@
+{
+ "file": "/home/t628/projects/ra2-campaign-forge/ra2bench/gamemd.exe",
+ "checks": [
+  {
+   "name": "A1 复算：consume 的写入点在第 178 行，P 的唯一使用点在第 180 行 ⇒ 写入点早于/不含 P 检查",
+   "ok": true,
+   "detail": {
+    "consume_write_line": 178,
+    "p_use_line": 180
+   }
+  },
+  {
+   "name": "A1b 复算：源码里是否存在 P is None 的门槛（必须不存在，才叫缺失门槛）",
+   "ok": true,
+   "detail": {
+    "has_p_gate": false
+   }
+  },
+  {
+   "name": "A5 复算：win 调用在后向 0x40 / 前向 0x100（第 135 行）",
+   "ok": true,
+   "detail": {
+    "line": 135
+   }
+  },
+  {
+   "name": "A3 复算 K 分布 = {\"0x10\": 1, \"0x14\": 24, \"0xc\": 35}",
+   "ok": true,
+   "detail": {
+    "K": {
+     "0x10": 1,
+     "0x14": 24,
+     "0xc": 35
+    }
+   }
+  },
+  {
+   "name": "A3b 复算 consume 分布 = {\"REG:ebp<-OleSaveToStream\": 1, \"REG:ebp<-UNRESOLVED\": 24, \"IAT:OleSaveToStream\": 35}",
+   "ok": true,
+   "detail": {
+    "consume": {
+     "REG:ebp<-OleSaveToStream": 1,
+     "REG:ebp<-UNRESOLVED": 24,
+     "IAT:OleSaveToStream": 35
+    }
+   }
+  },
+  {
+   "name": "A3c 复算 K=0x14 那 24 站的 consume = {\"REG:ebp<-UNRESOLVED\": 24}（审计员报「全是 UNRESOLVED」，必须一致）",
+   "ok": true,
+   "detail": {
+    "k14": {
+     "REG:ebp<-UNRESOLVED": 24
+    }
+   }
+  },
+  {
+   "name": "A4 复算（审计员只给推断，这里实跑）：加 P 门槛后 K 平移 +4 的 OleSaveToStream = 0（审计员预测 0）；基准 = 35",
+   "ok": true,
+   "detail": {
+    "shift4": {
+     "NO-P-AT-K": 60
+    },
+    "base": {
+     "OTHER": 25,
+     "OleSaveToStream": 35
+    }
+   }
+  },
+  {
+   "name": "B1 复算：24 个 UNRESOLVED 站点的消费 call 字节全为 ff d5（call ebp）；例外 = 0",
+   "ok": true,
+   "detail": {
+    "n": 24,
+    "distinct_bytes": [
+     "ffd5"
+    ],
+    "bad": []
+   }
+  },
+  {
+   "name": "B2 复算：站点 0x67d3ee 之前最后一次写 ebp = mov ebp, dword ptr [0x7e15f4] @0x67d351（审计员报 0x67d351 mov ebp,[0x7e15f4]）",
+   "ok": true,
+   "detail": {
+    "last_write": [
+     "0x67d351",
+     "mov ebp, dword ptr [0x7e15f4]"
+    ]
+   }
+  },
+  {
+   "name": "B3 复算：(0x67d351, 0x67d3ee) 开区间内的 ebp 写 = 0 条（必须 0）",
+   "ok": true,
+   "detail": {
+    "n": 0
+   }
+  },
+  {
+   "name": "B4 复算：写→站点距离 = 0x9d = 157 字节，> 0x40 = 64 ⇒ 落在后向窗口外",
+   "ok": true,
+   "detail": {
+    "dist": 157
+   }
+  },
+  {
+   "name": "B4b 复算：24 个站点中到该写的最大距离 = 2938 字节（崩溃轮的 0x40 窗口必然全部漏掉）",
+   "ok": true,
+   "detail": {
+    "max_dist": 2938
+   }
+  },
+  {
+   "name": "B5 复算：IAT 0x7e15f4 = ole32.dll!OleSaveToStream（自解析导入表）",
+   "ok": true,
+   "detail": {
+    "slot": [
+     "ole32.dll",
+     "OleSaveToStream"
+    ]
+   }
+  },
+  {
+   "name": "N-B5 反控：相邻槽 0x7e15f8 = OleLoadFromStream（必须不同，证明解析不是恒返回同一名）",
+   "ok": true,
+   "detail": {
+    "slot": [
+     "ole32.dll",
+     "OleLoadFromStream"
+    ]
+   }
+  },
+  {
+   "name": "C1 复算：summary 三桶 {\"REG:ebp<-OleSaveToStream\": 1, \"REG:ebp<-UNRESOLVED\": 24, \"IAT:OleSaveToStream\": 35} 之和 = 60，站点数 = 60",
+   "ok": true,
+   "detail": {
+    "sum": 60
+   }
+  },
+  {
+   "name": "C2 复算：after 的循环上界写 i+10（第 186 行），断言文案写 <=8 条（第 226 行）⇒ 文案与代码差 1 条，审计员这条成立",
+   "ok": true,
+   "detail": {
+    "loop_line": 186,
+    "assert_line": 226
+   }
+  },
+  {
+   "name": "N-C2 反控 窗口位数：真 9 条内命中 = 60，真 8 条内命中 = 60 ⇒ 两值必须相同才说明这条偏差在本样本上不改变结论（若不同则旧断言是错的）",
+   "ok": true,
+   "detail": {
+    "in_9": 60,
+    "in_8": 60,
+    "same": true
+   }
+  },
+  {
+   "name": "C3 复算：after 里出现的基址寄存器集合 = ['ecx']（审计员报恒为 ecx ⇒ 断言写成任意 reg 是特化）",
+   "ok": true,
+   "detail": {
+    "regs": [
+     "ecx"
+    ]
+   }
+  },
+  {
+   "name": "C4 复算（审计员标为未复算）：全 .text 里 ebp <- IAT 槽 的写点 = 176（脚本声称 176）",
+   "ok": true,
+   "detail": {
+    "n": 176,
+    "claimed": 176,
+    "match": true
+   }
+  },
+  {
+   "name": "C4b 复算：其中 ebp <- OleSaveToStream 的写点 = 2 个 ['0x5be84f', '0x67d351']（脚本声称 2 个）",
+   "ok": true,
+   "detail": {
+    "sites": [
+     "0x5be84f",
+     "0x67d351"
+    ]
+   }
+  }
+ ],
+ "summary": {
+  "K": {
+   "0x10": 1,
+   "0x14": 24,
+   "0xc": 35
+  },
+  "consume": {
+   "REG:ebp<-OleSaveToStream": 1,
+   "REG:ebp<-UNRESOLVED": 24,
+   "IAT:OleSaveToStream": 35
+  },
+  "k14": {
+   "REG:ebp<-UNRESOLVED": 24
+  },
+  "pgate_base": {
+   "OTHER": 25,
+   "OleSaveToStream": 35
+  },
+  "pgate_shift4": {
+   "NO-P-AT-K": 60
+  },
+  "after_in_9": 60,
+  "after_in_8": 60,
+  "n6": 176,
+  "save_writes": [
+   "0x5be84f",
+   "0x67d351"
+  ],
+  "b1_bytes": [
+   "ffd5"
+  ],
+  "b2_last_write": [
+   "0x67d351",
+   "mov ebp, dword ptr [0x7e15f4]"
+  ],
+  "b4_dist": 157,
+  "b4b_max": 2938
+ }
+}

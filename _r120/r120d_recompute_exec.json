@@ -1,0 +1,165 @@
+{
+ "n_insn": 1392706,
+ "n_entry": 6693,
+ "iids": {
+  "0x7f7c70": ".rdata",
+  "0x7f7c80": ".rdata",
+  "0x7f7c90": ".rdata",
+  "0x7f7ca0": ".rdata",
+  "0x7f7cf0": ".rdata",
+  "0x7f7d00": ".rdata",
+  "0x817bc0": ".data",
+  "0x818858": ".data",
+  "0x81fc50": ".data",
+  "0x820270": ".data",
+  "0x87da00": ".data"
+ },
+ "push_sites": {
+  "0x7ed358": 7,
+  "0x7f7c80": 60,
+  "0x7f7c90": 56,
+  "0x7f7d00": 2,
+  "0x817bc0": 9,
+  "0x818858": 16,
+  "0x81fc50": 2,
+  "0x820270": 8,
+  "0x87da00": 1
+ },
+ "dist_all": {
+  "funcs": 74,
+  "exactly1": 69,
+  "ge2": 5
+ },
+ "dist_grp": {
+  "funcs": 36,
+  "exactly1": 36,
+  "ge2": 0
+ },
+ "dist_rest": {
+  "funcs": 38,
+  "exactly1": 33,
+  "ge2": 5
+ },
+ "fisher_p": 0.05456247294950749,
+ "verdict": "no_discriminative_power",
+ "checks": [
+  {
+   "name": "R1 自判据 IID 普查：11 个（.rdata 6 / .data 5）",
+   "ok": true,
+   "detail": {
+    "0x7f7c70": ".rdata",
+    "0x7f7c80": ".rdata",
+    "0x7f7c90": ".rdata",
+    "0x7f7ca0": ".rdata",
+    "0x7f7cf0": ".rdata",
+    "0x7f7d00": ".rdata",
+    "0x817bc0": ".data",
+    "0x818858": ".data",
+    "0x81fc50": ".data",
+    "0x820270": ".data",
+    "0x87da00": ".data"
+   }
+  },
+  {
+   "name": "R2a 流式扫描：1392706 条指令、68245 个直接 call 目标、24722 个 push 立即数（分块 65536 B，未整段 detail=True）",
+   "ok": true,
+   "detail": {
+    "n_insn": 1392706
+   }
+  },
+  {
+   "name": "R2b 0x7f7c80 的 push 站点 = 60（执行员报 60）；0x7ed358 的 push 站点 = 7（执行员报 7）",
+   "ok": true,
+   "detail": {
+    "mine": {
+     "0x7ed358": 7,
+     "0x7f7c80": 60,
+     "0x7f7c90": 56,
+     "0x7f7d00": 2,
+     "0x817bc0": 9,
+     "0x818858": 16,
+     "0x81fc50": 2,
+     "0x820270": 8,
+     "0x87da00": 1
+    }
+   }
+  },
+  {
+   "name": "R2c 站点位置集合与执行员逐个相同（0x7f7c80）",
+   "ok": true,
+   "detail": [
+    "0x67d36e",
+    "0x67d3ee",
+    "0x67d48d",
+    "0x67d4fe",
+    "0x67d577"
+   ]
+  },
+  {
+   "name": "R2d 站点位置集合与执行员逐个相同（0x7ed358）",
+   "ok": true,
+   "detail": [
+    "0x4af7df",
+    "0x4b629f",
+    "0x4db560",
+    "0x54b7b8",
+    "0x69eeef",
+    "0x719d1b",
+    "0x75c6df"
+   ]
+  },
+  {
+   "name": "R3a 全体「至少 push 过 1 个 IID」的函数 = 74 个，其中恰好 1 个 IID 的 69 个、>=2 的 5 个",
+   "ok": true,
+   "detail": {
+    "funcs": 74,
+    "exactly1": 69,
+    "ge2": 5
+   }
+  },
+  {
+   "name": "R3b 含 0x7f7c80 站点的函数 = 36 个（恰好 1 个 IID 的 36 个）；不含者 = 38 个（恰好 1 个的 33 个）⇒ 与执行员的 55 / 55 / 0 不同，差异如实登记（判据不同：CFG 前驱走 vs nearest-preceding-entry）",
+   "ok": true,
+   "detail": {
+    "grp": {
+     "funcs": 36,
+     "exactly1": 36,
+     "ge2": 0
+    },
+    "rest": {
+     "funcs": 38,
+     "exactly1": 33,
+     "ge2": 5
+    },
+    "exec_said": "containment 55 / exactly1 55 / rest 0"
+   }
+  },
+  {
+   "name": "R4 2x2 列联表 [[36,0],[33,5]] 的 Fisher 双尾 p = 0.0546",
+   "ok": true,
+   "detail": {
+    "p": 0.05456247294950749
+   }
+  },
+  {
+   "name": "R5 结论：特征「恰好 push 1 个不同 IID」的 Fisher p = 0.0546（>=0.05 即不显著）⇒ no_discriminative_power。即：本量**不能**把「通用包装器」解释排除；只能如实记「未排除」",
+   "ok": true,
+   "detail": {
+    "p": 0.05456247294950749,
+    "verdict": "no_discriminative_power"
+   }
+  },
+  {
+   "name": "N1 反控（entry 判据非空且有牙）：entry 数 = 6693，其中 call 目标 6692",
+   "ok": true,
+   "detail": {
+    "n_entry": 6693
+   }
+  },
+  {
+   "name": "N2 反控（IID 判据非恒真）：把 d4 改成 0x46000001 后 IID 数必须为 0",
+   "ok": true,
+   "detail": "see r120e"
+  }
+ ]
+}

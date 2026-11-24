@@ -1,0 +1,2479 @@
+{
+ "file": "/home/t628/projects/ra2-campaign-forge/ra2bench/gamemd.exe",
+ "checks": [
+  {
+   "name": "F0 站点数 = 60（首字节 0x68 且 imm32 == 0x7f7c80）；桶合计 = 60（必须相等）",
+   "ok": true,
+   "detail": {
+    "sites": 60,
+    "buckets": {
+     "OleSaveToStream": 37,
+     "REG-OTHER-WRITE": 23
+    },
+    "ole": 37
+   }
+  },
+  {
+   "name": "N1 反控 imm32 精确：60 站点逐字节核对 0x68 + imm32，不符 = 0（必须 0）",
+   "ok": true,
+   "detail": {
+    "bad": 0
+   }
+  },
+  {
+   "name": "N2 反控 偏移敏感：站点 +1 起算解出 ppv 槽的 = 0（必须 0）",
+   "ok": true,
+   "detail": {
+    "n": 0
+   }
+  },
+  {
+   "name": "N5 反控 恒真排除：目标 0x7f7c84 站点 = 0（必须 0）",
+   "ok": true,
+   "detail": {
+    "n": 0
+   }
+  },
+  {
+   "name": "N3 反控 槽位敏感（P 门槛生效后）：K 平移 -4/+4/+8 的 OleSaveToStream = {\"-4\": 0, \"4\": 0, \"8\": 0}，基准 = 37 ⇒ 必须全变化",
+   "ok": true,
+   "detail": {
+    "shifted": {
+     "-4": 0,
+     "4": 0,
+     "8": 0
+    },
+    "base": 37
+   }
+  },
+  {
+   "name": "P2 正控 对照 0x7f7c90：站点 56，桶 {\"NO-PPV-SLOT\": 2, \"NO-QI\": 54} ⇒ 与 0x7f7c80 桶分布不同",
+   "ok": true,
+   "detail": {
+    "sites": 56,
+    "buckets": {
+     "NO-PPV-SLOT": 2,
+     "NO-QI": 54
+    }
+   }
+  },
+  {
+   "name": "P3 正控 合成字节串：lea/push/site/QI/consume 形状能被正确解出（判据非恒 0）",
+   "ok": true,
+   "detail": {
+    "slot": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x1000",
+     "push": "0x1004"
+    },
+    "qi": 5,
+    "n_ins": 9
+   }
+  },
+  {
+   "name": "F2 后向窗口改为精确链后：寄存器调用 25 个，仍 UNRESOLVED = 0（崩溃轮为 24），未支配 = 0",
+   "ok": true,
+   "detail": {
+    "reg_rows": 25,
+    "unresolved": [],
+    "not_dominated": [],
+    "write_dist_min": 29,
+    "write_dist_max": 2684
+   }
+  },
+  {
+   "name": "F3 残差登记：全 .text 里间接 call/jmp 站点 = 27342 个（其目标无法静态解析，是 F2 的残差）",
+   "ok": true,
+   "detail": {
+    "n": 27342
+   }
+  },
+  {
+   "name": "F4 消费 call 之后 <=8 条内的 call 操作数分布 = {\"dword ptr [ecx + 8]\": 60}；其中 [ecx+8]（槽 2 = Release）= 60",
+   "ok": true,
+   "detail": {
+    "after": {
+     "dword ptr [ecx + 8]": 60
+    }
+   }
+  },
+  {
+   "name": "F5 ppv 槽 K 分布 = {\"0x10\": 1, \"0x14\": 24, \"0xc\": 35}；ppv 的实参位置分布 = {\"0\": 60}",
+   "ok": true,
+   "detail": {
+    "K": {
+     "0x10": 1,
+     "0x14": 24,
+     "0xc": 35
+    },
+    "arg": {
+     "0": 60
+    }
+   }
+  }
+ ],
+ "text": {
+  "va": "0x401000",
+  "vsize": "0x3df38d"
+ },
+ "summary": {
+  "sites_7f7c80": 60,
+  "buckets_7f7c80": {
+   "OleSaveToStream": 37,
+   "REG-OTHER-WRITE": 23
+  },
+  "ole_7f7c80": 37,
+  "sites_7f7c90": 56,
+  "buckets_7f7c90": {
+   "NO-PPV-SLOT": 2,
+   "NO-QI": 54
+  },
+  "after_7f7c80": {
+   "dword ptr [ecx + 8]": 60
+  },
+  "K_dist": {
+   "0x10": 1,
+   "0x14": 24,
+   "0xc": 35
+  },
+  "arg_dist": {
+   "0": 60
+  },
+  "indirect_jmps": 27342
+ },
+ "results": {
+  "0x7f7c80": [
+   {
+    "site": "0x67d36e",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x10",
+     "lea": "0x67d366",
+     "push": "0x67d36d"
+    },
+    "qi": "0x67d376",
+    "K_used": "0x10",
+    "P": "eax",
+    "P_at": "0x67d380",
+    "consume": {
+     "at": "0x67d386",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d351",
+     "write_raw": "mov ebp, dword ptr [0x7e15f4]",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d3ee",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d3e9",
+     "push": "0x67d3ed"
+    },
+    "qi": "0x67d3f6",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d3fc",
+    "consume": {
+     "at": "0x67d402",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d351",
+     "write_raw": "mov ebp, dword ptr [0x7e15f4]",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d48d",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d485",
+     "push": "0x67d48c"
+    },
+    "qi": "0x67d495",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d49b",
+    "consume": {
+     "at": "0x67d4a1",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d4fe",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d4f9",
+     "push": "0x67d4fd"
+    },
+    "qi": "0x67d506",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d510",
+    "consume": {
+     "at": "0x67d516",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d577",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d572",
+     "push": "0x67d576"
+    },
+    "qi": "0x67d57f",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d589",
+    "consume": {
+     "at": "0x67d58f",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d5f0",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d5eb",
+     "push": "0x67d5ef"
+    },
+    "qi": "0x67d5f8",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d602",
+    "consume": {
+     "at": "0x67d608",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d669",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d664",
+     "push": "0x67d668"
+    },
+    "qi": "0x67d671",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d67b",
+    "consume": {
+     "at": "0x67d681",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d6e2",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d6dd",
+     "push": "0x67d6e1"
+    },
+    "qi": "0x67d6ea",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d6f4",
+    "consume": {
+     "at": "0x67d6fa",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d75b",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d756",
+     "push": "0x67d75a"
+    },
+    "qi": "0x67d763",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d76d",
+    "consume": {
+     "at": "0x67d773",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d7d4",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d7cf",
+     "push": "0x67d7d3"
+    },
+    "qi": "0x67d7dc",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d7e6",
+    "consume": {
+     "at": "0x67d7ec",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d84d",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d848",
+     "push": "0x67d84c"
+    },
+    "qi": "0x67d855",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d85f",
+    "consume": {
+     "at": "0x67d865",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d8c6",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d8c1",
+     "push": "0x67d8c5"
+    },
+    "qi": "0x67d8ce",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d8d8",
+    "consume": {
+     "at": "0x67d8de",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d93f",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d93a",
+     "push": "0x67d93e"
+    },
+    "qi": "0x67d947",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d951",
+    "consume": {
+     "at": "0x67d957",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d9b8",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67d9b3",
+     "push": "0x67d9b7"
+    },
+    "qi": "0x67d9c0",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67d9ca",
+    "consume": {
+     "at": "0x67d9d0",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67da31",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67da2c",
+     "push": "0x67da30"
+    },
+    "qi": "0x67da39",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67da43",
+    "consume": {
+     "at": "0x67da49",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67daaa",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67daa5",
+     "push": "0x67daa9"
+    },
+    "qi": "0x67dab2",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67dabc",
+    "consume": {
+     "at": "0x67dac2",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67db23",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67db1e",
+     "push": "0x67db22"
+    },
+    "qi": "0x67db2b",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67db35",
+    "consume": {
+     "at": "0x67db3b",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67db9c",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67db97",
+     "push": "0x67db9b"
+    },
+    "qi": "0x67dba4",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67dbae",
+    "consume": {
+     "at": "0x67dbb4",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67dc15",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67dc10",
+     "push": "0x67dc14"
+    },
+    "qi": "0x67dc1d",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67dc27",
+    "consume": {
+     "at": "0x67dc2d",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67dc8e",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67dc89",
+     "push": "0x67dc8d"
+    },
+    "qi": "0x67dc96",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67dca0",
+    "consume": {
+     "at": "0x67dca6",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67dd07",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67dd02",
+     "push": "0x67dd06"
+    },
+    "qi": "0x67dd0f",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67dd19",
+    "consume": {
+     "at": "0x67dd1f",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67dd80",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67dd7b",
+     "push": "0x67dd7f"
+    },
+    "qi": "0x67dd88",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67dd92",
+    "consume": {
+     "at": "0x67dd98",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67ddf5",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67ddf0",
+     "push": "0x67ddf4"
+    },
+    "qi": "0x67ddfd",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67de03",
+    "consume": {
+     "at": "0x67de09",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67de5e",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67de59",
+     "push": "0x67de5d"
+    },
+    "qi": "0x67de66",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67de6c",
+    "consume": {
+     "at": "0x67de72",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67decb",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67dec6",
+     "push": "0x67deca"
+    },
+    "qi": "0x67ded3",
+    "K_used": "0x14",
+    "P": "eax",
+    "P_at": "0x67dedd",
+    "consume": {
+     "at": "0x67dee3",
+     "kind": "REG",
+     "reg": "ebp",
+     "raw": "call ebp",
+     "write": "0x67d44f",
+     "write_raw": "pop ebp",
+     "name": "REG-OTHER-WRITE",
+     "inner_entries": [],
+     "dominated": true
+    },
+    "bucket": "REG-OTHER-WRITE",
+    "arg_index": 0,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67fe31",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x67fe29",
+     "push": "0x67fe30"
+    },
+    "qi": "0x67fe39",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x67fe3f",
+    "consume": {
+     "at": "0x67fe45",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67feb1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x67fea9",
+     "push": "0x67feb0"
+    },
+    "qi": "0x67feb9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x67febf",
+    "consume": {
+     "at": "0x67fec5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67ff31",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x67ff29",
+     "push": "0x67ff30"
+    },
+    "qi": "0x67ff39",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x67ff3f",
+    "consume": {
+     "at": "0x67ff45",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67ffb1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x67ffa9",
+     "push": "0x67ffb0"
+    },
+    "qi": "0x67ffb9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x67ffbf",
+    "consume": {
+     "at": "0x67ffc5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680031",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680029",
+     "push": "0x680030"
+    },
+    "qi": "0x680039",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x68003f",
+    "consume": {
+     "at": "0x680045",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6800b1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x6800a9",
+     "push": "0x6800b0"
+    },
+    "qi": "0x6800b9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x6800bf",
+    "consume": {
+     "at": "0x6800c5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680131",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680129",
+     "push": "0x680130"
+    },
+    "qi": "0x680139",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x68013f",
+    "consume": {
+     "at": "0x680145",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6801b1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x6801a9",
+     "push": "0x6801b0"
+    },
+    "qi": "0x6801b9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x6801bf",
+    "consume": {
+     "at": "0x6801c5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680231",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680229",
+     "push": "0x680230"
+    },
+    "qi": "0x680239",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x68023f",
+    "consume": {
+     "at": "0x680245",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6802b1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x6802a9",
+     "push": "0x6802b0"
+    },
+    "qi": "0x6802b9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x6802bf",
+    "consume": {
+     "at": "0x6802c5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680331",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680329",
+     "push": "0x680330"
+    },
+    "qi": "0x680339",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x68033f",
+    "consume": {
+     "at": "0x680345",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6803b1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x6803a9",
+     "push": "0x6803b0"
+    },
+    "qi": "0x6803b9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x6803bf",
+    "consume": {
+     "at": "0x6803c5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680431",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680429",
+     "push": "0x680430"
+    },
+    "qi": "0x680439",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x68043f",
+    "consume": {
+     "at": "0x680445",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6804b1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x6804a9",
+     "push": "0x6804b0"
+    },
+    "qi": "0x6804b9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x6804bf",
+    "consume": {
+     "at": "0x6804c5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680531",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680529",
+     "push": "0x680530"
+    },
+    "qi": "0x680539",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x68053f",
+    "consume": {
+     "at": "0x680545",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6805b1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x6805a9",
+     "push": "0x6805b0"
+    },
+    "qi": "0x6805b9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x6805bf",
+    "consume": {
+     "at": "0x6805c5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680631",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680629",
+     "push": "0x680630"
+    },
+    "qi": "0x680639",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x68063f",
+    "consume": {
+     "at": "0x680645",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6806b1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x6806a9",
+     "push": "0x6806b0"
+    },
+    "qi": "0x6806b9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x6806bf",
+    "consume": {
+     "at": "0x6806c5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680731",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680729",
+     "push": "0x680730"
+    },
+    "qi": "0x680739",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x68073f",
+    "consume": {
+     "at": "0x680745",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6807b1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x6807a9",
+     "push": "0x6807b0"
+    },
+    "qi": "0x6807b9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x6807bf",
+    "consume": {
+     "at": "0x6807c5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680831",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680829",
+     "push": "0x680830"
+    },
+    "qi": "0x680839",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x68083f",
+    "consume": {
+     "at": "0x680845",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6808b1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x6808a9",
+     "push": "0x6808b0"
+    },
+    "qi": "0x6808b9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x6808bf",
+    "consume": {
+     "at": "0x6808c5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680931",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680929",
+     "push": "0x680930"
+    },
+    "qi": "0x680939",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x68093f",
+    "consume": {
+     "at": "0x680945",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6809b1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x6809a9",
+     "push": "0x6809b0"
+    },
+    "qi": "0x6809b9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x6809bf",
+    "consume": {
+     "at": "0x6809c5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680a31",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680a29",
+     "push": "0x680a30"
+    },
+    "qi": "0x680a39",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680a3f",
+    "consume": {
+     "at": "0x680a45",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680ab1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680aa9",
+     "push": "0x680ab0"
+    },
+    "qi": "0x680ab9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680abf",
+    "consume": {
+     "at": "0x680ac5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680b31",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680b29",
+     "push": "0x680b30"
+    },
+    "qi": "0x680b39",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680b3f",
+    "consume": {
+     "at": "0x680b45",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680bb1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680ba9",
+     "push": "0x680bb0"
+    },
+    "qi": "0x680bb9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680bbf",
+    "consume": {
+     "at": "0x680bc5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680c31",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680c29",
+     "push": "0x680c30"
+    },
+    "qi": "0x680c39",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680c3f",
+    "consume": {
+     "at": "0x680c45",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680cb1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680ca9",
+     "push": "0x680cb0"
+    },
+    "qi": "0x680cb9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680cbf",
+    "consume": {
+     "at": "0x680cc5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680d31",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680d29",
+     "push": "0x680d30"
+    },
+    "qi": "0x680d39",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680d3f",
+    "consume": {
+     "at": "0x680d45",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680db1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680da9",
+     "push": "0x680db0"
+    },
+    "qi": "0x680db9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680dbf",
+    "consume": {
+     "at": "0x680dc5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680e31",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680e29",
+     "push": "0x680e30"
+    },
+    "qi": "0x680e39",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680e3f",
+    "consume": {
+     "at": "0x680e45",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680eb1",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680ea9",
+     "push": "0x680eb0"
+    },
+    "qi": "0x680eb9",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680ebf",
+    "consume": {
+     "at": "0x680ec5",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680f31",
+    "ppv": {
+     "reg": "edx",
+     "K": "0xc",
+     "lea": "0x680f29",
+     "push": "0x680f30"
+    },
+    "qi": "0x680f39",
+    "K_used": "0xc",
+    "P": "eax",
+    "P_at": "0x680f3f",
+    "consume": {
+     "at": "0x680f45",
+     "kind": "IAT",
+     "slot": "0x7e15f4",
+     "name": "OleSaveToStream",
+     "raw": "call dword ptr [0x7e15f4]"
+    },
+    "bucket": "OleSaveToStream",
+    "arg_index": 0,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   }
+  ],
+  "0x7f7c90": [
+   {
+    "site": "0x469f23",
+    "ppv": null,
+    "qi": null,
+    "bucket": "NO-PPV-SLOT"
+   },
+   {
+    "site": "0x46a105",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x4c",
+     "lea": "0x46a100",
+     "push": "0x46a104"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x46a536",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x90",
+     "lea": "0x46a52e",
+     "push": "0x46a535"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x46a9cc",
+    "ppv": {
+     "reg": "eax",
+     "K": "0x40",
+     "lea": "0x46a9c7",
+     "push": "0x46a9cb"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x46b058",
+    "ppv": null,
+    "qi": null,
+    "bucket": "NO-PPV-SLOT"
+   },
+   {
+    "site": "0x46b3b8",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x10",
+     "lea": "0x46b3a9",
+     "push": "0x46b3b7"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x4f6499",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x4f6490",
+     "push": "0x4f6498"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x5be4e7",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x44",
+     "lea": "0x5be4e2",
+     "push": "0x5be4e6"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67c6c0",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x10",
+     "lea": "0x67c6bb",
+     "push": "0x67c6bf"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67e851",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67e84c",
+     "push": "0x67e850"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67e89a",
+    "ppv": {
+     "reg": "edx",
+     "K": "0x14",
+     "lea": "0x67e895",
+     "push": "0x67e899"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67e8f9",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x18",
+     "lea": "0x67e8f4",
+     "push": "0x67e8f8"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67e934",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67e92f",
+     "push": "0x67e933"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67e972",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67e96d",
+     "push": "0x67e971"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67e9b0",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67e9ab",
+     "push": "0x67e9af"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67e9ee",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67e9e9",
+     "push": "0x67e9ed"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ea2c",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ea27",
+     "push": "0x67ea2b"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ea6a",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ea65",
+     "push": "0x67ea69"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67eaa8",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67eaa3",
+     "push": "0x67eaa7"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67eae6",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67eae1",
+     "push": "0x67eae5"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67eb24",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67eb1f",
+     "push": "0x67eb23"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67eb62",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67eb5d",
+     "push": "0x67eb61"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67eba0",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67eb9b",
+     "push": "0x67eb9f"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ebde",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ebd9",
+     "push": "0x67ebdd"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ec1c",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ec17",
+     "push": "0x67ec1b"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ec5a",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ec55",
+     "push": "0x67ec59"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ec98",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ec93",
+     "push": "0x67ec97"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ecd6",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ecd1",
+     "push": "0x67ecd5"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ed14",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ed0f",
+     "push": "0x67ed13"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ed52",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ed4d",
+     "push": "0x67ed51"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ed90",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ed8b",
+     "push": "0x67ed8f"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67edce",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67edc9",
+     "push": "0x67edcd"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ee0c",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ee07",
+     "push": "0x67ee0b"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ee4a",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ee45",
+     "push": "0x67ee49"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ee88",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ee83",
+     "push": "0x67ee87"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67eec6",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67eec1",
+     "push": "0x67eec5"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ef04",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67eeff",
+     "push": "0x67ef03"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ef42",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ef3d",
+     "push": "0x67ef41"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67ef80",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67ef7b",
+     "push": "0x67ef7f"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67efbe",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67efb9",
+     "push": "0x67efbd"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67effc",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67eff7",
+     "push": "0x67effb"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f03a",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f035",
+     "push": "0x67f039"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f078",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f073",
+     "push": "0x67f077"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f0b6",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f0b1",
+     "push": "0x67f0b5"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f0f4",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f0ef",
+     "push": "0x67f0f3"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f132",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f12d",
+     "push": "0x67f131"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f170",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f16b",
+     "push": "0x67f16f"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f1ae",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f1a9",
+     "push": "0x67f1ad"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f1ec",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f1e7",
+     "push": "0x67f1eb"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f22a",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f225",
+     "push": "0x67f229"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f268",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f263",
+     "push": "0x67f267"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f2a6",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f2a1",
+     "push": "0x67f2a5"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f2e4",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f2df",
+     "push": "0x67f2e3"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f322",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f31d",
+     "push": "0x67f321"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f360",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f35b",
+     "push": "0x67f35f"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   },
+   {
+    "site": "0x67f39e",
+    "ppv": {
+     "reg": "ecx",
+     "K": "0x14",
+     "lea": "0x67f399",
+     "push": "0x67f39d"
+    },
+    "qi": null,
+    "bucket": "NO-QI"
+   }
+  ]
+ }
+}

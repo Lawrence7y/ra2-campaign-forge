@@ -1,0 +1,1771 @@
+{
+ "checks": [
+  {
+   "name": "A1 站点数 = 60（判据：首字节 0x68 且 imm32 == 0x7f7c80），全部能定位 ppv 槽 = 60",
+   "ok": true,
+   "detail": {
+    "n": 60
+   }
+  },
+  {
+   "name": "A2 消费面桶分布 = {\"REG:ebp<-OleSaveToStream\": 1, \"REG:ebp<-UNRESOLVED\": 24, \"IAT:OleSaveToStream\": 35}；其中 OleSaveToStream 类 = 36",
+   "ok": true,
+   "detail": {
+    "buckets": {
+     "REG:ebp<-OleSaveToStream": 1,
+     "REG:ebp<-UNRESOLVED": 24,
+     "IAT:OleSaveToStream": 35
+    }
+   }
+  },
+  {
+   "name": "A3 ppv 的实参位置分布 = {\"REG:ebp<-OleSaveToStream@0\": 1, \"REG:ebp<-UNRESOLVED@0\": 24, \"IAT:OleSaveToStream@0\": 35}（0 = OleSaveToStream 的第 1 个实参 pPStm；该分布的键集合 = [0]）",
+   "ok": true,
+   "detail": {
+    "argpos": {
+     "REG:ebp<-OleSaveToStream@0": 1,
+     "REG:ebp<-UNRESOLVED@0": 24,
+     "IAT:OleSaveToStream@0": 35
+    }
+   }
+  },
+  {
+   "name": "A4 消费调用之后 <=8 条内出现 call dword ptr [reg + 8]（= Release）的站点 = 60/60",
+   "ok": true,
+   "detail": {
+    "after": {
+     "dword ptr [ecx + 8]": 60
+    }
+   }
+  },
+  {
+   "name": "N1 反控 imm32 精确：60 个站点逐字节核对首字节 0x68 + imm32 == 0x7f7c80，不符 = 0",
+   "ok": true,
+   "detail": {
+    "n_bad": 0
+   }
+  },
+  {
+   "name": "N2 反控 偏移敏感：从站点 +1 处起算同一套判据，解出 ppv 槽的 = 0/60（必须 0）",
+   "ok": true,
+   "detail": {
+    "n": 0
+   }
+  },
+  {
+   "name": "N3 反控 槽位敏感：把 ppv 槽 K 改成 K+4 重跑，OleSaveToStream 命中 = 36（原 36，必须变化）",
+   "ok": false,
+   "detail": {
+    "kshift": 36
+   }
+  },
+  {
+   "name": "N4 对照 0x7f7c90：站点 56，ppv 槽解出 55，消费桶 {\"NO-QI\": 55, \"NO-PPV\": 1} ⇒ 与 0x7f7c80 的桶分布不同",
+   "ok": true,
+   "detail": {
+    "c90": {
+     "NO-QI": 55,
+     "NO-PPV": 1
+    }
+   }
+  },
+  {
+   "name": "N5 反控 恒真排除：目标换成 0x7f7c84（+4，不是指令立即数）⇒ 站点 = 0（必须 0）",
+   "ok": true,
+   "detail": {
+    "n": 0
+   }
+  },
+  {
+   "name": "N6 全 .text 里「ebp <- IAT 槽」的写点 = 176 个（S4 的寄存器回溯判据有真实基数，非恒真）",
+   "ok": true,
+   "detail": {
+    "n": 176
+   }
+  },
+  {
+   "name": "A5 其中 ebp <- OleSaveToStream 的写点 = 2 个：['0x5be84f', '0x67d351']（这解释了 A2 里 REG 桶的来源）",
+   "ok": true,
+   "detail": {
+    "sites": [
+     [
+      "0x5be84f",
+      "OleSaveToStream"
+     ],
+     [
+      "0x67d351",
+      "OleSaveToStream"
+     ]
+    ]
+   }
+  }
+ ],
+ "results": {
+  "0x7f7c80": [
+   {
+    "site": "0x67d36e",
+    "ppv": [
+     "edx",
+     "0x10"
+    ],
+    "qi": "0x67d376",
+    "P": "eax",
+    "P_at": "0x67d380",
+    "consume": "REG:ebp<-OleSaveToStream",
+    "consume_at": "0x67d386",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d3ee",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d3f6",
+    "P": "eax",
+    "P_at": "0x67d3fc",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d402",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d48d",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d495",
+    "P": "eax",
+    "P_at": "0x67d49b",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d4a1",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d4fe",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d506",
+    "P": "eax",
+    "P_at": "0x67d510",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d516",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d577",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d57f",
+    "P": "eax",
+    "P_at": "0x67d589",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d58f",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d5f0",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d5f8",
+    "P": "eax",
+    "P_at": "0x67d602",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d608",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d669",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d671",
+    "P": "eax",
+    "P_at": "0x67d67b",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d681",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d6e2",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d6ea",
+    "P": "eax",
+    "P_at": "0x67d6f4",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d6fa",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d75b",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d763",
+    "P": "eax",
+    "P_at": "0x67d76d",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d773",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d7d4",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d7dc",
+    "P": "eax",
+    "P_at": "0x67d7e6",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d7ec",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d84d",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d855",
+    "P": "eax",
+    "P_at": "0x67d85f",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d865",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d8c6",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d8ce",
+    "P": "eax",
+    "P_at": "0x67d8d8",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d8de",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d93f",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d947",
+    "P": "eax",
+    "P_at": "0x67d951",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d957",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67d9b8",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67d9c0",
+    "P": "eax",
+    "P_at": "0x67d9ca",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67d9d0",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67da31",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67da39",
+    "P": "eax",
+    "P_at": "0x67da43",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67da49",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67daaa",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67dab2",
+    "P": "eax",
+    "P_at": "0x67dabc",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67dac2",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67db23",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67db2b",
+    "P": "eax",
+    "P_at": "0x67db35",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67db3b",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67db9c",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67dba4",
+    "P": "eax",
+    "P_at": "0x67dbae",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67dbb4",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67dc15",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67dc1d",
+    "P": "eax",
+    "P_at": "0x67dc27",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67dc2d",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67dc8e",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67dc96",
+    "P": "eax",
+    "P_at": "0x67dca0",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67dca6",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67dd07",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67dd0f",
+    "P": "eax",
+    "P_at": "0x67dd19",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67dd1f",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67dd80",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67dd88",
+    "P": "eax",
+    "P_at": "0x67dd92",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67dd98",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67ddf5",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67ddfd",
+    "P": "eax",
+    "P_at": "0x67de03",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67de09",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67de5e",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67de66",
+    "P": "eax",
+    "P_at": "0x67de6c",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67de72",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67decb",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": "0x67ded3",
+    "P": "eax",
+    "P_at": "0x67dedd",
+    "consume": "REG:ebp<-UNRESOLVED",
+    "consume_at": "0x67dee3",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "esi",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67fe31",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x67fe39",
+    "P": "eax",
+    "P_at": "0x67fe3f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x67fe45",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67feb1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x67feb9",
+    "P": "eax",
+    "P_at": "0x67febf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x67fec5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67ff31",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x67ff39",
+    "P": "eax",
+    "P_at": "0x67ff3f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x67ff45",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x67ffb1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x67ffb9",
+    "P": "eax",
+    "P_at": "0x67ffbf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x67ffc5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680031",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680039",
+    "P": "eax",
+    "P_at": "0x68003f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680045",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6800b1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x6800b9",
+    "P": "eax",
+    "P_at": "0x6800bf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x6800c5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680131",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680139",
+    "P": "eax",
+    "P_at": "0x68013f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680145",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6801b1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x6801b9",
+    "P": "eax",
+    "P_at": "0x6801bf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x6801c5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680231",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680239",
+    "P": "eax",
+    "P_at": "0x68023f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680245",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6802b1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x6802b9",
+    "P": "eax",
+    "P_at": "0x6802bf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x6802c5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680331",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680339",
+    "P": "eax",
+    "P_at": "0x68033f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680345",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6803b1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x6803b9",
+    "P": "eax",
+    "P_at": "0x6803bf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x6803c5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680431",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680439",
+    "P": "eax",
+    "P_at": "0x68043f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680445",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6804b1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x6804b9",
+    "P": "eax",
+    "P_at": "0x6804bf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x6804c5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680531",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680539",
+    "P": "eax",
+    "P_at": "0x68053f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680545",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6805b1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x6805b9",
+    "P": "eax",
+    "P_at": "0x6805bf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x6805c5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680631",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680639",
+    "P": "eax",
+    "P_at": "0x68063f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680645",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6806b1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x6806b9",
+    "P": "eax",
+    "P_at": "0x6806bf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x6806c5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680731",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680739",
+    "P": "eax",
+    "P_at": "0x68073f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680745",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6807b1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x6807b9",
+    "P": "eax",
+    "P_at": "0x6807bf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x6807c5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680831",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680839",
+    "P": "eax",
+    "P_at": "0x68083f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680845",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6808b1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x6808b9",
+    "P": "eax",
+    "P_at": "0x6808bf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x6808c5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680931",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680939",
+    "P": "eax",
+    "P_at": "0x68093f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680945",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x6809b1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x6809b9",
+    "P": "eax",
+    "P_at": "0x6809bf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x6809c5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680a31",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680a39",
+    "P": "eax",
+    "P_at": "0x680a3f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680a45",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680ab1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680ab9",
+    "P": "eax",
+    "P_at": "0x680abf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680ac5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680b31",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680b39",
+    "P": "eax",
+    "P_at": "0x680b3f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680b45",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680bb1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680bb9",
+    "P": "eax",
+    "P_at": "0x680bbf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680bc5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680c31",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680c39",
+    "P": "eax",
+    "P_at": "0x680c3f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680c45",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680cb1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680cb9",
+    "P": "eax",
+    "P_at": "0x680cbf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680cc5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680d31",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680d39",
+    "P": "eax",
+    "P_at": "0x680d3f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680d45",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680db1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680db9",
+    "P": "eax",
+    "P_at": "0x680dbf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680dc5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680e31",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680e39",
+    "P": "eax",
+    "P_at": "0x680e3f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680e45",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680eb1",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680eb9",
+    "P": "eax",
+    "P_at": "0x680ebf",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680ec5",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   },
+   {
+    "site": "0x680f31",
+    "ppv": [
+     "edx",
+     "0xc"
+    ],
+    "qi": "0x680f39",
+    "P": "eax",
+    "P_at": "0x680f3f",
+    "consume": "IAT:OleSaveToStream",
+    "consume_at": "0x680f45",
+    "arg_index": 0,
+    "n_pushes": 2,
+    "pushes": [
+     "ebx",
+     "eax"
+    ],
+    "after": "dword ptr [ecx + 8]"
+   }
+  ],
+  "0x7f7c90": [
+   {
+    "site": "0x469f23",
+    "ppv": [
+     "eax",
+     "0x4c"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x46a105",
+    "ppv": [
+     "ecx",
+     "0x4c"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x46a536",
+    "ppv": [
+     "ecx",
+     "0x90"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x46a9cc",
+    "ppv": [
+     "eax",
+     "0x40"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x46b058",
+    "ppv": null,
+    "qi": null,
+    "consume": "NO-PPV"
+   },
+   {
+    "site": "0x46b3b8",
+    "ppv": [
+     "ecx",
+     "0x10"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x4f6499",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x5be4e7",
+    "ppv": [
+     "ecx",
+     "0x44"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67c6c0",
+    "ppv": [
+     "edx",
+     "0x10"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67e851",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67e89a",
+    "ppv": [
+     "edx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67e8f9",
+    "ppv": [
+     "ecx",
+     "0x18"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67e934",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67e972",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67e9b0",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67e9ee",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ea2c",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ea6a",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67eaa8",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67eae6",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67eb24",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67eb62",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67eba0",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ebde",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ec1c",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ec5a",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ec98",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ecd6",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ed14",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ed52",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ed90",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67edce",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ee0c",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ee4a",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ee88",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67eec6",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ef04",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ef42",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67ef80",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67efbe",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67effc",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f03a",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f078",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f0b6",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f0f4",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f132",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f170",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f1ae",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f1ec",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f22a",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f268",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f2a6",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f2e4",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f322",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f360",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   },
+   {
+    "site": "0x67f39e",
+    "ppv": [
+     "ecx",
+     "0x14"
+    ],
+    "qi": null,
+    "consume": "NO-QI"
+   }
+  ]
+ },
+ "summary": {
+  "sites_7f7c80": 60,
+  "buckets_7f7c80": {
+   "REG:ebp<-OleSaveToStream": 1,
+   "REG:ebp<-UNRESOLVED": 24,
+   "IAT:OleSaveToStream": 35
+  },
+  "argpos_7f7c80": {
+   "REG:ebp<-OleSaveToStream@0": 1,
+   "REG:ebp<-UNRESOLVED@0": 24,
+   "IAT:OleSaveToStream@0": 35
+  },
+  "after_7f7c80": {
+   "dword ptr [ecx + 8]": 60
+  },
+  "sites_7f7c90": 56,
+  "buckets_7f7c90": {
+   "NO-QI": 55,
+   "NO-PPV": 1
+  }
+ }
+}

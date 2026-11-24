@@ -1,0 +1,731 @@
+{
+ "pe": {
+  "file_len": "0x49a110",
+  "e_lfanew": "0x50",
+  "ImageBase": "0x400000",
+  "SizeOfImage": "0x796000",
+  "entry_rva": "0x3cd80f",
+  "entry_va": "0x7cd80f",
+  "num_sections": 5,
+  "sections": {
+   ".text": {
+    "va": "0x401000",
+    "vsize": "0x3df38d",
+    "rawptr": "0x1000",
+    "rawsize": "0x3e0000",
+    "file_backed_va_range": "0x401000-0x7e038d",
+    "zero_fill_bytes": 0
+   },
+   ".rdata": {
+    "va": "0x7e1000",
+    "vsize": "0x30074",
+    "rawptr": "0x3e1000",
+    "rawsize": "0x31000",
+    "file_backed_va_range": "0x7e1000-0x811074",
+    "zero_fill_bytes": 0
+   },
+   ".data": {
+    "va": "0x812000",
+    "vsize": "0x367be4",
+    "rawptr": "0x412000",
+    "rawsize": "0x6c000",
+    "file_backed_va_range": "0x812000-0x87e000",
+    "zero_fill_bytes": 3128292
+   },
+   ".rsrc": {
+    "va": "0xb7a000",
+    "vsize": "0x18128",
+    "rawptr": "0x47e000",
+    "rawsize": "0x19000",
+    "file_backed_va_range": "0xb7a000-0xb92128",
+    "zero_fill_bytes": 0
+   },
+   ".detour": {
+    "va": "0xb93000",
+    "vsize": "0x2718",
+    "rawptr": "0x497000",
+    "rawsize": "0x3000",
+    "file_backed_va_range": "0xb93000-0xb95718",
+    "zero_fill_bytes": 0
+   }
+  },
+  "data_dirs": {
+   "1": [
+    "0x7955c0",
+    "0x154"
+   ],
+   "2": [
+    "0x77a000",
+    "0x18128"
+   ],
+   "6": [
+    "0x3e1610",
+    "0x1c"
+   ],
+   "12": [
+    "0x3e1000",
+    "0x608"
+   ]
+  },
+  "import_dir": {
+   "rva": "0x7955c0",
+   "size": "0x154"
+  },
+  "ole_iat_slots": {
+   "0x7e15f8": "OleLoadFromStream",
+   "0x7e15f4": "OleSaveToStream",
+   "0x7e15e4": "StgOpenStorage",
+   "0x7e15c8": "StgCreateDocfile",
+   "0x7e15fc": "CoCreateInstance",
+   "0x7e1600": "OleRun"
+  }
+ },
+ "q4": {
+  "a_dword3_46000001": {
+   "rule": "identical to census but dword[3]==0x46000001",
+   "count": 0,
+   "addrs": [],
+   "expected": 0,
+   "pass_": true
+  },
+  "b_drop_dword1_eq_0": {
+   "rule": "drop only the dword[1]==0 clause",
+   "count": 11,
+   "baseline": 11,
+   "strictly_greater": false,
+   "pass_as_specified": false,
+   "explanation": "FAILS as specified: on this image every aligned window that already has (dword[2]&0xFFFF)==0x00C0 and dword[3]==0x46000000 also has dword[1]==0, so removing that clause changes nothing (11 -> 11). The clause is therefore non-selective here; it is not what does the filtering.",
+   "addrs": [
+    "0x7f7c70",
+    "0x7f7c80",
+    "0x7f7c90",
+    "0x7f7ca0",
+    "0x7f7cf0",
+    "0x7f7d00",
+    "0x817bc0",
+    "0x818858",
+    "0x81fc50",
+    "0x820270",
+    "0x87da00"
+   ]
+  },
+  "b2_drop_dword1_and_dword2clause": {
+   "rule": "drop dword[1]==0 AND drop (dword[2]&0xFFFF)==0x00C0",
+   "count": 12,
+   "baseline": 11,
+   "strictly_greater": true,
+   "addrs": [
+    "0x7f68dc",
+    "0x7f7c70",
+    "0x7f7c80",
+    "0x7f7c90",
+    "0x7f7ca0",
+    "0x7f7cf0",
+    "0x7f7d00",
+    "0x817bc0",
+    "0x818858",
+    "0x81fc50",
+    "0x820270",
+    "0x87da00"
+   ],
+   "explanation": "this is the version that does show the criterion filtering: 12 > 11"
+  },
+  "b3_drop_dword2clause_only": {
+   "rule": "drop only (dword[2]&0xFFFF)==0x00C0",
+   "count": 11,
+   "baseline": 11,
+   "strictly_greater": false
+  },
+  "c_anti_true_plus4_7f7c84": {
+   "target": "0x7f7c84",
+   "is_census_iid": false,
+   "raw_68_hits": 0,
+   "push_imm_sites": 0,
+   "imm32_occurrences_anywhere_in_text": 0
+  },
+  "c_anti_card_claims_plus4_7f7c94": {
+   "target": "0x7f7c94",
+   "is_census_iid": false,
+   "raw_68_hits": 0,
+   "push_imm_sites": 0,
+   "imm32_occurrences_anywhere_in_text": 0
+  },
+  "c_anti_plus0x10_7f7c90": {
+   "target": "0x7f7c90",
+   "is_census_iid": true,
+   "raw_68_hits": 56,
+   "push_imm_sites": 56,
+   "imm32_occurrences_anywhere_in_text": 147
+  },
+  "d_anti_fake_boundary": {
+   "rule": "function start := site-0x200, extent := the following 0x200 bytes",
+   "fake": {
+    "funcs": 60,
+    "exactly1": 56,
+    "ge2": 0,
+    "zero": 4
+   },
+   "real": {
+    "funcs": 36,
+    "exactly1": 36,
+    "ge2": 0,
+    "zero": 0
+   },
+   "numbers_differ": true
+  },
+  "e_first_call_vs_OleSaveToStream": {
+   "n_sites": 60,
+   "count_first_call_is_directly_to_OleSaveToStream_IAT": 0,
+   "count_function_contains_OleSaveToStream_operand": 60,
+   "first_call_kind_histogram": {
+    "indirect": 60
+   },
+   "first_call_iat_slot_histogram": {
+    "None": 60
+   },
+   "two_counts_agree": false,
+   "per_site": [
+    {
+     "site": "0x67d36e",
+     "first_call": "0x67d376",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d3ee",
+     "first_call": "0x67d3f6",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d48d",
+     "first_call": "0x67d495",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d4fe",
+     "first_call": "0x67d506",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d577",
+     "first_call": "0x67d57f",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d5f0",
+     "first_call": "0x67d5f8",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d669",
+     "first_call": "0x67d671",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d6e2",
+     "first_call": "0x67d6ea",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d75b",
+     "first_call": "0x67d763",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d7d4",
+     "first_call": "0x67d7dc",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d84d",
+     "first_call": "0x67d855",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d8c6",
+     "first_call": "0x67d8ce",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d93f",
+     "first_call": "0x67d947",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67d9b8",
+     "first_call": "0x67d9c0",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67da31",
+     "first_call": "0x67da39",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67daaa",
+     "first_call": "0x67dab2",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67db23",
+     "first_call": "0x67db2b",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67db9c",
+     "first_call": "0x67dba4",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67dc15",
+     "first_call": "0x67dc1d",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67dc8e",
+     "first_call": "0x67dc96",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67dd07",
+     "first_call": "0x67dd0f",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67dd80",
+     "first_call": "0x67dd88",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67ddf5",
+     "first_call": "0x67ddfd",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67de5e",
+     "first_call": "0x67de66",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67decb",
+     "first_call": "0x67ded3",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67d300",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67fe31",
+     "first_call": "0x67fe39",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67fdf0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67feb1",
+     "first_call": "0x67feb9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67fe70",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67ff31",
+     "first_call": "0x67ff39",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67fef0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x67ffb1",
+     "first_call": "0x67ffb9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67ff70",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680031",
+     "first_call": "0x680039",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x67fff0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x6800b1",
+     "first_call": "0x6800b9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680070",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680131",
+     "first_call": "0x680139",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x6800f0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x6801b1",
+     "first_call": "0x6801b9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680170",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680231",
+     "first_call": "0x680239",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x6801f0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x6802b1",
+     "first_call": "0x6802b9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680270",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680331",
+     "first_call": "0x680339",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x6802f0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x6803b1",
+     "first_call": "0x6803b9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680370",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680431",
+     "first_call": "0x680439",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x6803f0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x6804b1",
+     "first_call": "0x6804b9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680470",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680531",
+     "first_call": "0x680539",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x6804f0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x6805b1",
+     "first_call": "0x6805b9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680570",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680631",
+     "first_call": "0x680639",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x6805f0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x6806b1",
+     "first_call": "0x6806b9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680670",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680731",
+     "first_call": "0x680739",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x6806f0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x6807b1",
+     "first_call": "0x6807b9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680770",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680831",
+     "first_call": "0x680839",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x6807f0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x6808b1",
+     "first_call": "0x6808b9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680870",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680931",
+     "first_call": "0x680939",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x6808f0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x6809b1",
+     "first_call": "0x6809b9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680970",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680a31",
+     "first_call": "0x680a39",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x6809f0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680ab1",
+     "first_call": "0x680ab9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680a70",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680b31",
+     "first_call": "0x680b39",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680af0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680bb1",
+     "first_call": "0x680bb9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680b70",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680c31",
+     "first_call": "0x680c39",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680bf0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680cb1",
+     "first_call": "0x680cb9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680c70",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680d31",
+     "first_call": "0x680d39",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680cf0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680db1",
+     "first_call": "0x680db9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680d70",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680e31",
+     "first_call": "0x680e39",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680df0",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680eb1",
+     "first_call": "0x680eb9",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680e70",
+     "function_has_OleSaveToStream_operand": true
+    },
+    {
+     "site": "0x680f31",
+     "first_call": "0x680f39",
+     "first_call_kind": "indirect",
+     "first_call_iat_slot": null,
+     "first_call_is_OleSaveToStream": false,
+     "function": "0x680ef0",
+     "function_has_OleSaveToStream_operand": true
+    }
+   ]
+  }
+ }
+}
