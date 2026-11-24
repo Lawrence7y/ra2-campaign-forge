@@ -1,7 +1,5 @@
 # RA2 Campaign Forge
 
-> **t628 Harness 远程状态与派单指南**：[T628_HARNESS_GUIDE.md](T628_HARNESS_GUIDE.md)（面向其他 Harness/Agent：查询 `t628` 上 R17 自治逆向进度、检查资源与守护状态、跨节点向 `t628` / `win-main` 规范派单）。
-
 > **本机 DSH 通信**：[DSH Bridge 插件](plugins/dsh-bridge/README.md)，用于连接、选择模型、发送任务与读取结果。
 
 > **执行工作链**：[分工、并行与升级规则](docs/WORK_CHAIN.md)；首轮 [EXP001 实验任务卡](docs/re/dispatch/EXP001_work_chain.md)。

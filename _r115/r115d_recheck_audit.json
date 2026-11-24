@@ -1,0 +1,69 @@
+{
+ "checks": [
+  {
+   "name": "A5 【审计指出的缺口】镜像树**不改任何文件**空跑：exit=0（须 0），C11 行与真树逐字相同=True",
+   "ok": true,
+   "detail": "{'mirror_rc': 0, 'true_rc': 0, 'mirror_c11': ['NOTE  C11 col7 machine-check: ok=5 fail=0 frozen-unverifiable=12 claims-none=14'], 'true_c11': ['NOTE  C11 col7 machine-check: ok=5 fail=0 frozen-unverifiable=12 claims-none=14']}"
+  },
+  {
+   "name": "A3a 审计结论复算：is_placeholder(ANCHOR_SILENTLY_REWRITTEN_R115)=(False, '')（审计说 False，故 B6b 里 C9 不该触发）；对照 is_placeholder(GARBAGE)=(True, 'whole-cell garbage')、空=(True, 'empty-after-norm')",
+   "ok": true,
+   "detail": "{'ANCHOR...': (False, ''), 'GARBAGE': (True, 'whole-cell garbage'), 'empty': (True, 'empty-after-norm')}"
+  },
+  {
+   "name": "A1i 【C9 有牙】把 7 行的第 4 列锚改成占位词 GARBAGE ⇒ exit=1、C9 FAIL 7 条 ⇒ 审计正确：「完全无约束」过强，C9 管得住垃圾化锚",
+   "ok": true,
+   "detail": "{'rc': 1, 'c9_fails': 7, 'sample': ['FAIL  C9 id 16 anchor-column empty/placeholder (whole-cell garbage)', 'FAIL  C9 id 19 anchor-column empty/placeholder (whole-cell garbage)']}"
+  },
+  {
+   "name": "A1ii 【C13 有牙】把 7 行的第 2 列节号改成 §9.99 ⇒ exit=1、C13 FAIL 7 条",
+   "ok": true,
+   "detail": "{'rc': 1, 'c13_fails': 7, 'sample': [\"FAIL  C13 id 16 section '§9.99' != definition section(s) ['2.26'] (col2 must point at the defining section)\", \"FAIL  C13 id 19 section '§9.99' != definition section(s) ['2.27'] (col2 must point at the defining section)\"]}"
+  },
+  {
+   "name": "A1iii 【C7 有牙】删掉 id 16 的产物 lead/next_re_20261117_r14/R17_R72_T1_CLEANSCALE/REPORT.md（删前存在=True）⇒ exit=1、C7 id 16 FAIL 1 条",
+   "ok": true,
+   "detail": "{'rc': 1, 'path': 'lead/next_re_20261117_r14/R17_R72_T1_CLEANSCALE/REPORT.md', 'existed': True, 'c7_fails': 1, 'sample': ['FAIL  C7 id 16 expr grepcount=\\\\*\\\\*相同\\\\*\\\\*=3 mismatch (FILE_MISSING)']}"
+  },
+  {
+   "name": "A1 【审计结论成立】B2 的「完全无约束」必须降级为「在 claims-有 / 冻结档两条防线上无约束」：C9 管锚的占位化（7 条）、C13 管节号（7 条）、C7 管产物存在性（1 条）",
+   "ok": true,
+   "detail": "{'c9_placeholder': {'rc': 1, 'c9_fails': 7, 'sample': ['FAIL  C9 id 16 anchor-column empty/placeholder (whole-cell garbage)', 'FAIL  C9 id 19 anchor-column empty/placeholder (whole-cell garbage)']}, 'c13_wrong_section': {'rc': 1, 'c13_fails': 7, 'sample': [\"FAIL  C13 id 16 section '§9.99' != definition section(s) ['2.26'] (col2 must point at the defining section)\", \"FAIL  C13 id 19 section '§9.99' != definition section(s) ['2.27'] (col2 must point at the defining section)\"]}, 'c7_missing_product': {'rc': 1, 'path': 'lead/next_re_20261117_r14/R17_R72_T1_CLEANSCALE/REPORT.md', 'existed': True, 'c7_fails': 1, 'sample': ['FAIL  C7 id 16 expr grepcount=\\\\*\\\\*相同\\\\*\\\\*=3 mismatch (FILE_MISSING)']}}"
+  },
+  {
+   "name": "A2 【审计结论复算】把 7 个 gap 行翻成「有」⇒ exit=1、总 FAIL 8 条 = C11 自描述 7 条 + C11b drift 1 条（审计说「8 条」是观察值，此处给出精确构成）",
+   "ok": true,
+   "detail": "{'rc': 1, 'total_fails': 8, 'c11': 7, 'c11b': 1, 'all': ['FAIL  C11b loadable gap drifted: [] != pinned [11, 12, 13, 14, 15, 17, 26] (fix the rows, then re-pi', 'FAIL  C11 id 11 claims recheck but has no valid self-description line (R1 line_count_for_discipline_', 'FAIL  C11 id 12 claims recheck but has no valid self-description line (R1 line_count_for_discipline_', 'FAIL  C11 id 13 claims recheck but has no valid self-description line (R1 line_count_for_discipline_', 'FAIL  C11 id 14 claims recheck but has no valid self-description line (R1 line_count_for_discipline_', 'FAIL  C11 id 15 claims recheck but has no valid self-description line (R1 line_count_for_discipline_', 'FAIL  C11 id 17 claims recheck but has no valid self-description line (R1 line_count_for_discipline_', 'FAIL  C11 id 26 claims recheck but has no valid self-description line (R1 line_count_for_discipline_']}"
+  },
+  {
+   "name": "A3b 【B6b 归因更正】同样改 7 行的第 4 列、但用 GARBAGE（占位词）⇒ C9 FAIL 7 条 + C14 FAIL 1 条 ⇒ 证实 B6b 原文「C9 抓垃圾锚」在 ANCHOR_SILENTLY_REWRITTEN_R115 上**是错的**（那个值不是占位词，C9 不触发），审计的更正成立",
+   "ok": true,
+   "detail": "{'c9': 7, 'c14': 1}"
+  },
+  {
+   "name": "A4-0 re-pin 基线：改 7 行锚 + 同步重算 C14 常量 ⇒ exit=0（须 0，复刻 B6）",
+   "ok": true,
+   "detail": "{'rc': 0, 'fails': []}"
+  },
+  {
+   "name": "A4-1 【审计限定语成立】re-pin 之后再改一个未 re-pin 行（id 3）的第 4 列 ⇒ exit=1、C14 FAIL 1 条 ⇒ re-pin 只覆盖被改的那几行，不是「C14 永不 FAIL」",
+   "ok": true,
+   "detail": "{'rc': 1, 'c14': [\"FAIL  C14 col2/col3/col4 free-text table changed: sha256 2a8aa3fd68c140af != pinned b17ad257f94d5b25 ; drifted ids=['3'] (re-pin C\"]}"
+  },
+  {
+   "name": "A4-2 【C10 未被 re-pin 放松】改门自身行的 GATE_VER 注册值 ⇒ exit=1、C10 FAIL 1 条",
+   "ok": true,
+   "detail": "{'gate_row': ['20', '§2.27', '⇒ **纪律 20 · 不可见字符会跨轮传染。** 我在 R37 往 `FACT_INDEX` 里误打过 U+200B，当时的生成脚本加了禁用断言，', '生成脚本禁不可见字符断言', 'lead\\\\next_re_20261117_r14\\\\check_disc.py', \"grep=(?m)^GATE_VER = 'R103'\", '有（后续轮回跑）'], 'rc': 1, 'c10_fails': 1, 'sample': ['FAIL  C10 self GATE_VER registered R102 != actual R103']}"
+  },
+  {
+   "name": "A6 【B7 的外推边界】只改冻结表第 6 列（理由）+ 同步重算 FREEZE_SHA256 ⇒ exit=0；sha 检查=PASS；C12 FAIL 0 条 ⇒ 「同步 sha 即过」**不能**外推到冻结档，因为 C12 会把锚真跑一遍（此处锚未动故 0 条，但改锚必被抓）",
+   "ok": true,
+   "detail": "{'rc': 0, 'sha_line': ['NOTE  C11 frozen-class registry loaded: 12 ids [1, 2, 5, 6, 7, 8, 9, 10, 18, 20, 24, 25] ; sha256=a225bf12de09d114 OK'], 'c12': 0, 'fails': []}"
+  },
+  {
+   "name": "A6b 【关键对照】改冻结表的**锚**（坏锚）+ 同步重算 FREEZE_SHA256 ⇒ exit=1、C12 FAIL 1 条 ⇒ 证明审计 A6 的限定成立：冻结档的 sha 钉背后有内容级复核，不是 C14 式纯文本钉",
+   "ok": true,
+   "detail": "{'rc': 1, 'c12': ['FAIL  C12 id 1 frozen anchor does not hold (grep hits=0) :: grep=THIS_ANCHOR_CANNOT_MATCH_R115']}"
+  }
+ ]
+}

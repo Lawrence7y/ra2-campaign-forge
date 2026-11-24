@@ -1,0 +1,171 @@
+{
+ "length_consumers": {
+  "n": 24,
+  "by_file": {
+   "_r98/r98f_main.py": 4,
+   "_r98/r98g_main.py": 8,
+   "_r98/r98h_refs.py": 2,
+   "_r98/r98k_bytefall.py": 10
+  }
+ },
+ "base": {
+  "N": 1392516,
+  "sum_LENS": 4042726,
+  "sum_TL": 4060005,
+  "max_LENS": 7,
+  "max_TL": 11
+ },
+ "by_length_variant": {
+  "const1": {
+   "heads_real": 205601,
+   "heads_old": 205542,
+   "heads_f1": 204605,
+   "absorbed_f1": 18523,
+   "heads_f3": 204868,
+   "absorbed_f3": 16252,
+   "fall_byte": 347254,
+   "noh_real_line": 23462,
+   "noh_old_line": 23470,
+   "noh_real_byte": 117634,
+   "noh_old_byte": 117672,
+   "heads_real_hash": 8817807662459808730,
+   "heads_old_hash": -4083269714546417520
+  },
+  "const7": {
+   "heads_real": 205601,
+   "heads_old": 205542,
+   "heads_f1": 204605,
+   "absorbed_f1": 18523,
+   "heads_f3": 204868,
+   "absorbed_f3": 16252,
+   "fall_byte": 25991,
+   "noh_real_line": 23462,
+   "noh_old_line": 23470,
+   "noh_real_byte": 117630,
+   "noh_old_byte": 117668,
+   "heads_real_hash": 8817807662459808730,
+   "heads_old_hash": -4083269714546417520
+  },
+  "true": {
+   "heads_real": 205601,
+   "heads_old": 205542,
+   "heads_f1": 204605,
+   "absorbed_f1": 18523,
+   "heads_f3": 204868,
+   "absorbed_f3": 16252,
+   "fall_byte": 1344616,
+   "noh_real_line": 23462,
+   "noh_old_line": 23470,
+   "noh_real_byte": 23463,
+   "noh_old_byte": 23471,
+   "heads_real_hash": 8817807662459808730,
+   "heads_old_hash": -4083269714546417520
+  }
+ },
+ "nc2_reconcile": {
+  "N": 1392516,
+  "r99_match": 1392424,
+  "r99_wait_mismatch": 27,
+  "implied_undecodable": 65
+ },
+ "item_table": [
+  {
+   "item": "块首集（0x7e038d 上界）205,601",
+   "class": "len-free",
+   "value": 205601
+  },
+  {
+   "item": "块首集（0x7df390 上界）205,542",
+   "class": "len-free",
+   "value": 205542
+  },
+  {
+   "item": "ret/int 后填充吸收块首 18,523",
+   "class": "len-free",
+   "value": 18523
+  },
+  {
+   "item": "FILL_MIN=3 吸收块首 16,252",
+   "class": "len-free",
+   "value": 16252
+  },
+  {
+   "item": "换块首口径后块首 204,605",
+   "class": "len-free",
+   "value": 204605
+  },
+  {
+   "item": "换块首口径后块首(F3) 204,868",
+   "class": "len-free",
+   "value": 204868
+  },
+  {
+   "item": "NOH line 列 23,470 / 23,462",
+   "class": "len-free",
+   "value": [
+    23470,
+    23462
+   ]
+  },
+  {
+   "item": "FALL_line 1,344,621",
+   "class": "len-free",
+   "value": 1344621
+  },
+  {
+   "item": "FALL_byte（真长度）1,344,616",
+   "class": "LEN-SENSITIVE",
+   "value": 1344616
+  },
+  {
+   "item": "NOH byte 列（真长度）23,471 / 23,463",
+   "class": "LEN-SENSITIVE",
+   "value": [
+    23471,
+    23463
+   ]
+  }
+ ],
+ "checks": [
+  {
+   "name": "D1 长度消费点已逐行登记（不是抽样）",
+   "ok": true,
+   "detail": "24 行"
+  },
+  {
+   "name": "PC1 常数长度 1 / 常数长度 7 / 真长度 三种输入下，块首集与吸收计数完全逐元素相同 （⇒ 18,523 / 16,252 / 4,940 这些数天生长度无关）",
+   "ok": true,
+   "detail": "all equal"
+  },
+  {
+   "name": "PC2 FALL_byte 在真长度下 == 1,344,616（R99 修正值），在常数长度 1 下显著不同 ⇒ 该项真长度敏感",
+   "ok": true,
+   "detail": "true 1344616 / const1 347254 / const7 25991"
+  },
+  {
+   "name": "PC3 NOH 的 byte 列（真长度）== 23,471 / 23,463（R99 修正值）",
+   "ok": true,
+   "detail": "23471 / 23463"
+  },
+  {
+   "name": "PC3b NOH 的 line 列（长度无关）三变体全都 == 23,470 / 23,462",
+   "ok": true,
+   "detail": "[(23470, 23462), (23470, 23462), (23470, 23462)]"
+  },
+  {
+   "name": "NC1 反控有效：把判据换成「用长度」的版本后，三种长度输入确实给出不同结果 （⇒ PC1 的「相同」不是因为判据被架空，而是该项本来就只吃行序）",
+   "ok": true,
+   "detail": "[347254, 25991, 1344616]"
+  },
+  {
+   "name": "NC2 R99 的「相符 1,392,424 / 不符 27」与本轮「capstone 解不出 65」精确对账：1,392,424 + 27 + 65 == 1,392,516（R99 那 65 条被静默跳过，既不算相符也不算不符）",
+   "ok": true,
+   "detail": "1,392,424 + 27 + 65 == 1392516"
+  },
+  {
+   "name": "D2 逐项判定完成：长度无关 8 项、长度敏感 2 项（后者已在 R99 修正），无第三类",
+   "ok": true,
+   "detail": "8 / 2"
+  }
+ ]
+}

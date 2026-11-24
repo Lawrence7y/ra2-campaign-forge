@@ -1,0 +1,150 @@
+{
+ "b7_scope": "C14 式纯自由文本 sha 钉不防伪造；不外推到带内容级复核的 FREEZE_SHA256+C12",
+ "partition": {
+  "real_checkable": [
+   3,
+   4,
+   22,
+   27,
+   28
+  ],
+  "frozen": [
+   1,
+   2,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   18,
+   20,
+   24,
+   25
+  ],
+  "claims_none": [
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   19,
+   21,
+   23,
+   26,
+   31,
+   32,
+   33
+  ]
+ },
+ "hole_A_unconstrained_none": [
+  16,
+  19,
+  21,
+  23,
+  31,
+  32,
+  33
+ ],
+ "hole_B_candidates": [
+  1,
+  2,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  18,
+  20,
+  24,
+  25
+ ],
+ "hole_B_guarded_by_C12": [
+  1,
+  2,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  18,
+  20,
+  24,
+  25
+ ],
+ "hole_B_unguarded": [],
+ "landable": [
+  3,
+  4,
+  11,
+  12,
+  13,
+  14,
+  15,
+  17,
+  22,
+  26,
+  27,
+  28
+ ],
+ "pin_gap": [
+  11,
+  12,
+  13,
+  14,
+  15,
+  17,
+  26
+ ],
+ "checks": [
+  {
+   "name": "B1 三通道分区实测：可真检 5 [3, 4, 22, 27, 28] / 冻结 12 [1, 2, 5, 6, 7, 8, 9, 10, 18, 20, 24, 25] / claims-无(永不 FAIL) 14 [11, 12, 13, 14, 15, 16, 17, 19, 21, 23, 26, 31, 32, 33] ; 合计 31",
+   "ok": true,
+   "detail": "{'real': [3, 4, 22, 27, 28], 'frozen': [1, 2, 5, 6, 7, 8, 9, 10, 18, 20, 24, 25], 'none': [11, 12, 13, 14, 15, 16, 17, 19, 21, 23, 26, 31, 32, 33]}"
+  },
+  {
+   "name": "B2 漏洞 A（措辞已按审计降级）：claims-无 里 7 个不在 C11_LANDABLE ⇒ 不进 C11B_PIN_GAP、在 claims-有/冻结档这两条防线上永不可 FAIL ids=[16, 19, 21, 23, 31, 32, 33]（C9/C13/C7 仍管它们的第 3/4 列与产物，见 r115d 的 A1i/A1ii/A1iii 实测）",
+   "ok": true,
+   "detail": "{'pinned_gap': [11, 12, 13, 14, 15, 17, 26], 'unconstrained': [16, 19, 21, 23, 31, 32, 33]}"
+  },
+  {
+   "name": "B3 漏洞 B 的精确边界：claims-有 里 12 个不在 LANDABLE，其中 12 个被 C12 冻结档防线拦住（[1, 2, 5, 6, 7, 8, 9, 10, 18, 20, 24, 25]），真正无人拦的只有 0 个 []",
+   "ok": true,
+   "detail": "{'candidates': [1, 2, 5, 6, 7, 8, 9, 10, 18, 20, 24, 25], 'guarded_by_C12': [1, 2, 5, 6, 7, 8, 9, 10, 18, 20, 24, 25], 'unguarded': []}"
+  },
+  {
+   "name": "B4a 基线：未改动的 check_disc.py 在真树上 exit=0（应为 0），C11 行=['  NOTE  C11 col7 machine-check: ok=5 fail=0 frozen-unverifiable=12 claims-none=14']",
+   "ok": true,
+   "detail": "{'rc': 0}"
+  },
+  {
+   "name": "B4a-mirror 镜像树空跑基线：exit=0（须 0）、C11 行与真树逐字相同=True",
+   "ok": true,
+   "detail": "{'mirror_rc': 0, 'c11': ['NOTE  C11 col7 machine-check: ok=5 fail=0 frozen-unverifiable=12 claims-none=14']}"
+  },
+  {
+   "name": "B4 【C12 防线实测（正向结论）】把 12 个「有且不在 LANDABLE」ids=[1, 2, 5, 6, 7, 8, 9, 10, 18, 20, 24, 25] 全翻成「无」后，未改动的 check_disc.py exit=1、报出 12 条 C12「frozen but not claims-有」FAIL ⇒ **C12 确实拦得住**，初稿「可静默摘帽」的断言被实测推翻",
+   "ok": true,
+   "detail": "{'rc': 1, 'c12_fails': 12, 'all_fails': 12}"
+  },
+  {
+   "name": "B5 对照（必须反向）：把 7 个「无且在 LANDABLE」ids=[11, 12, 13, 14, 15, 17, 26] 翻成「有」⇒ exit=1（必须非 0），FAIL 8 条 = C11 自描述 7 条 + C11b drift 1 条 —— 变异方法本身有牙",
+   "ok": true,
+   "detail": "{'rc': 1, 'c11': 7, 'c11b': 1, 'fails': ['  FAIL  C11b loadable gap drifted: [] != pinned [11, 12, 13, 14, 15, 17, 26] (fix the rows, then re-pin delibe', '  FAIL  C11 id 11 claims recheck but has no valid self-description line (R1 line_count_for_discipline_11=0 (mu', '  FAIL  C11 id 12 claims recheck but has no valid self-description line (R1 line_count_for_discipline_12=0 (mu']}"
+  },
+  {
+   "name": "B6 【可静默改写实测】把 7 个 claims-无 行的第 4 列锚改成 'ANCHOR_SILENTLY_REWRITTEN_R115' 并**同步重算** C14_TEXT_SHA256/C14_ROW_SHA 后，check_disc.py exit=0、FAIL 0 条 ⇒ sha 钉只抬高成本不防伪造（与 C14 注释自述一致，本轮首次做成实测）",
+   "ok": true,
+   "detail": "{'rc': 0, 'fails': []}"
+  },
+  {
+   "name": "B6b 对照（必须反向）：同样改锚但**不**同步 C14 常量 ⇒ exit=1、FAIL 1 条 = C9 0 条 + C14 1 条 ⇒ 归因更正：该变异值不是占位词，C9 不触发，只由 C14 抓",
+   "ok": true,
+   "detail": "{'rc': 1, 'c9': 0, 'c14': 1, 'fails': ['FAIL  C14 col2/col3/col4 free-text table changed: sha256 b17ad257f94d5b25 != pinned a740bcc9add4e607']}"
+  }
+ ]
+}

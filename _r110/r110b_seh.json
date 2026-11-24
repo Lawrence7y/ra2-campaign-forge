@@ -1,0 +1,194 @@
+{
+ "checks": [
+  {
+   "name": "S0 节表现读：.text = [0x401000, 0x7e038d)；无 .pdata（5 节：['.text', '.rdata', '.data', '.rsrc', '.detour']）",
+   "ok": true,
+   "detail": "['.text', '.rdata', '.data', '.rsrc', '.detour']"
+  },
+  {
+   "name": "E1a .text 内四种 fs:[0] 访问形态计数 = {'mov_eax_fs0': 14, 'mov_fs0_esp': 15, 'mov_fs0_eax': 0, 'push_dw_fs0': 1}",
+   "ok": true,
+   "detail": "{'mov_eax_fs0': 14, 'mov_fs0_esp': 15, 'mov_fs0_eax': 0, 'push_dw_fs0': 1}"
+  },
+  {
+   "name": "E1b 全镜像（含 .detour）计数 = {'mov_eax_fs0': 14, 'mov_fs0_esp': 15, 'mov_fs0_eax': 0, 'push_dw_fs0': 1}；.detour 内 = {'mov_eax_fs0': [], 'mov_fs0_esp': [], 'mov_fs0_eax': [], 'push_dw_fs0': []}",
+   "ok": true,
+   "detail": "{'mov_eax_fs0': 14, 'mov_fs0_esp': 15, 'mov_fs0_eax': 0, 'push_dw_fs0': 1}"
+  },
+  {
+   "name": "E1c 「取链头(64 A1/64 FF 35) → 挂帧(64 89 25)」距离 < 64 B 的成对点数 = 15；若 SEH 是常用边界，此处应达数万（HB 边界实测 17,766 个）",
+   "ok": true,
+   "detail": "{'pairs': 15, 'sample': [('0x6bb9af', '0x6bb9b6', 7), ('0x7ca8fe', '0x7ca905', 7), ('0x7caa14', '0x7caa1b', 7), ('0x7caaf3', '0x7caafa', 7), ('0x7cc12d', '0x7cc134', 7), ('0x7cd81e', '0x7cd825', 7)]}"
+  },
+  {
+   "name": "E1d HB 边界复算 = 17766（R108/R109 同口径 17,766）",
+   "ok": true,
+   "detail": "17766"
+  },
+  {
+   "name": "E1e 含成对 SEH 帧操作的函数数 = 6 / HB 总函数 17766 = 0.03% ⇒ **SEH 覆盖不到 1% 的函数，不能当第二套函数边界**",
+   "ok": true,
+   "detail": "{'seh_funcs': 6, 'hb': 17766, 'pct': 0.03}"
+  },
+  {
+   "name": "E2a magic 0x19930520/21/22/10 在镜像内的「完整 FuncInfo 形态」命中 = 1；不满足形态的巧合命中 = 1（含 .text 内那一处）",
+   "ok": true,
+   "detail": "{'straight': [('0x87c1d0', '.data')], 'coincid': [('0x7f993c', '.rdata')]}"
+  },
+  {
+   "name": "E2b 完整形态命中里落在 .text 的 = 0（FuncInfo 应在 .rdata/.data，落 .text 即判为字节巧合）",
+   "ok": true,
+   "detail": "[('0x87c1d0', '.data')]"
+  },
+  {
+   "name": "E3 .text 中指向「完整 FuncInfo」的立即数引用 = 3 条",
+   "ok": true,
+   "detail": "[('0x7cb3a6', '0x87c1d0'), ('0x7cc1ab', '0x87c1d0'), ('0x7cc1b4', '0x87c1d0')]"
+  },
+  {
+   "name": "E4 结论（机械判定）：第二套函数边界**不存在** —— SEH 覆盖 0.03% 的函数、C++ EH FuncInfo 全镜像 1 条、被 .text 引用 3 条；三者都远不足以当边界源",
+   "ok": true,
+   "detail": "{'seh_pct': 0.03, 'funcinfo': 1, 'refs': 3}"
+  }
+ ],
+ "pat_counts": {
+  "mov_eax_fs0": 14,
+  "mov_fs0_esp": 15,
+  "mov_fs0_eax": 0,
+  "push_dw_fs0": 1
+ },
+ "seh_sites": [
+  "0x6bb9b6",
+  "0x7ca905",
+  "0x7caa1b",
+  "0x7caafa",
+  "0x7cc134",
+  "0x7cd825",
+  "0x7d10d8",
+  "0x7d973f",
+  "0x7da107",
+  "0x7da2cc",
+  "0x7da73b",
+  "0x7dc1d8",
+  "0x7dc251",
+  "0x7dc4df",
+  "0x7dc5f2"
+ ],
+ "pairs": [
+  [
+   "0x6bb9af",
+   "0x6bb9b6",
+   7
+  ],
+  [
+   "0x7ca8fe",
+   "0x7ca905",
+   7
+  ],
+  [
+   "0x7caa14",
+   "0x7caa1b",
+   7
+  ],
+  [
+   "0x7caaf3",
+   "0x7caafa",
+   7
+  ],
+  [
+   "0x7cc12d",
+   "0x7cc134",
+   7
+  ],
+  [
+   "0x7cd81e",
+   "0x7cd825",
+   7
+  ],
+  [
+   "0x7d10d1",
+   "0x7d10d8",
+   7
+  ],
+  [
+   "0x7d9738",
+   "0x7d973f",
+   7
+  ],
+  [
+   "0x7da100",
+   "0x7da107",
+   7
+  ],
+  [
+   "0x7da2c5",
+   "0x7da2cc",
+   7
+  ],
+  [
+   "0x7da734",
+   "0x7da73b",
+   7
+  ],
+  [
+   "0x7dc1d1",
+   "0x7dc1d8",
+   7
+  ],
+  [
+   "0x7dc24a",
+   "0x7dc251",
+   7
+  ],
+  [
+   "0x7dc4d8",
+   "0x7dc4df",
+   7
+  ],
+  [
+   "0x7dc5eb",
+   "0x7dc5f2",
+   7
+  ]
+ ],
+ "seh_funcs": [
+  "0x6bb990",
+  "0x7ca650",
+  "0x7cc0dc",
+  "0x7cd790",
+  "0x7d0d3c",
+  "0x7d7ee0"
+ ],
+ "hb": 17766,
+ "funcinfo": [
+  [
+   "0x87c1d0",
+   ".data",
+   "0x19930520",
+   "0x87c1e8",
+   "0x0",
+   "0x7f9788"
+  ]
+ ],
+ "funcinfo_coincid": [
+  [
+   "0x7f993c",
+   ".rdata",
+   "0x19930520"
+  ]
+ ],
+ "text_refs": [
+  [
+   "0x7cb3a6",
+   "0x87c1d0"
+  ],
+  [
+   "0x7cc1ab",
+   "0x87c1d0"
+  ],
+  [
+   "0x7cc1b4",
+   "0x87c1d0"
+  ]
+ ]
+}

@@ -1,0 +1,151 @@
+{
+ "checks": [
+  {
+   "name": "D0 exe sha256 与 r105a 同值",
+   "ok": true,
+   "detail": "73201cc021497c95"
+  },
+  {
+   "name": "D1 .text VirtualSize == 4060045（与 r105a 手解一致）",
+   "ok": true,
+   "detail": "4060045"
+  },
+  {
+   "name": "D2 反向路径（先找指针串）与正向路径（先找持有指令）在 19 张用到的表上一致",
+   "ok": true,
+   "detail": "247"
+  },
+  {
+   "name": "D2b 表数 == 360（与 r105a 同值，两条实现路径）",
+   "ok": true,
+   "detail": "360"
+  },
+  {
+   "name": "D2c B1 落在 19 张表内、合计 292 个项值（与 r105a 同值）",
+   "ok": true,
+   "detail": "(19, 292)"
+  },
+  {
+   "name": "D3a 292 个项值全部在线性扫描的 ip 集合里",
+   "ok": true,
+   "detail": "292"
+  },
+  {
+   "name": "D3b 292 个项值全部是**合法**（非 invalid）单元起点",
+   "ok": true,
+   "detail": "292/292"
+  },
+  {
+   "name": "D3c 单独解码口径下有 0 个项值 invalid（两口径分开报，不合并）",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "D4a capstone 全扫覆盖满 .text（skipdata 开启后 coverage == VirtualSize）",
+   "ok": true,
+   "detail": "4060045/4060045"
+  },
+  {
+   "name": "D4b capstone 的 call 目标数 == 6728（与 iced 同值，两实现互证）",
+   "ok": true,
+   "detail": "6728"
+  },
+  {
+   "name": "D4 292 个项值里被 call 直引的个数 == 0（capstone 独立口径，与 r105a 的 iced 一致）",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "D5a 反向：292 个 call 目标抽样命中 292/292（A3b 判据不是恒 0）",
+   "ok": true,
+   "detail": "292"
+  },
+  {
+   "name": "D5b 反控：换成「是 jmp 直接目标」判据后命中数显著非 0（说明「0 个 call 目标」不是判据太松）",
+   "ok": true,
+   "detail": "7"
+  },
+  {
+   "name": "D5c 292 个项值里被任意控制流指令直接引用的个数（含 jcc，capstone 口径）—— 报数，不作断言",
+   "ok": true,
+   "detail": "27"
+  }
+ ],
+ "R": {
+  "D1_text": {
+   "va": "0x401000",
+   "vsize": 4060045,
+   "roff": 4096,
+   "image_base": "0x400000"
+  },
+  "D2_runs": {
+   "n_runs": 505,
+   "n_entries": 2927
+  },
+  "D2_driven": {
+   "n_holders_disp": 368,
+   "n_intersect_runs": 247
+  },
+  "D2c_used": {
+   "n_tables": 19,
+   "n_entries": 292,
+   "bases": [
+    "0x46f5a0",
+    "0x48db10",
+    "0x48dd10",
+    "0x4c8114",
+    "0x5001e4",
+    "0x58bda4",
+    "0x69b15c",
+    "0x6a92c4",
+    "0x6adbdc",
+    "0x6b0238",
+    "0x6dfdec",
+    "0x708d54",
+    "0x71f2c0",
+    "0x71f328",
+    "0x71f778",
+    "0x71f9e0",
+    "0x728e08",
+    "0x7291ac",
+    "0x79f028"
+   ]
+  },
+  "D3_sweep": {
+   "units": 1392537,
+   "valid": 1392471,
+   "invalid": 66
+  },
+  "D3_entries": {
+   "total": 292,
+   "in_sweep_ipset": 292,
+   "valid_start": 292
+  },
+  "D3c_solo": {
+   "solo_invalid": 0,
+   "examples": []
+  },
+  "D4_calls_capstone": {
+   "n": 6728,
+   "coverage_bytes": 4060045,
+   "text_vsize": 4060045,
+   "skipped_units": 65
+  },
+  "D4_entries_called": {
+   "n_called": 0,
+   "of": 292
+  },
+  "D5a_reverse": {
+   "sample": 292,
+   "hit": 292
+  },
+  "D5b_jmp_targets": {
+   "n_jmp_targets": 11406,
+   "entries_that_are_jmp_target": 7
+  },
+  "D5c_any_control_flow_ref": {
+   "n_refs": 94665,
+   "entries_referenced": 27
+  }
+ }
+}

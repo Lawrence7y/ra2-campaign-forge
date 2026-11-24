@@ -1,0 +1,462 @@
+{
+ "bug_repro": {
+  "my_r101b_classes": {
+   "R_resync": 59,
+   "T_exact": 27,
+   "T_short": 2
+  },
+  "r101b_reported": {
+   "R_resync": 59,
+   "T_exact": 27,
+   "T_short": 2
+  },
+  "note": "用 h in CAPLEN 判宿主可否解码"
+ },
+ "fixed": {
+  "classes": {
+   "B1": 41,
+   "B2": 27,
+   "B3": 2,
+   "B5": 18
+  },
+  "hy4_151_reported": {
+   "B1": 41,
+   "B2": 27,
+   "B3": 2,
+   "B4": 0,
+   "B5": 18
+  }
+ },
+ "bug_mechanism": {
+  "n_misclassified": 18,
+  "why": "这些 88 个地址的宿主起点用 h in CAPLEN 判为「不可解码」，但 dec(h) 实际能解出 18 条合法指令；它们不是线性扫描起点，是因为扫描在此之前的某处跳过了这段字节。",
+  "sample": [
+   {
+    "a": "0x69b166",
+    "host": "0x69b162",
+    "dec_len": 6,
+    "txt": "imul   eax,DWORD PTR [eax],0x69af45"
+   },
+   {
+    "a": "0x69b16c",
+    "host": "0x69b16a",
+    "dec_len": 6,
+    "txt": "imul   eax,DWORD PTR [eax],0x90909090"
+   },
+   {
+    "a": "0x69b16d",
+    "host": "0x69b16a",
+    "dec_len": 6,
+    "txt": "imul   eax,DWORD PTR [eax],0x90909090"
+   },
+   {
+    "a": "0x69b16e",
+    "host": "0x69b16a",
+    "dec_len": 6,
+    "txt": "imul   eax,DWORD PTR [eax],0x90909090"
+   },
+   {
+    "a": "0x69b16f",
+    "host": "0x69b16a",
+    "dec_len": 6,
+    "txt": "imul   eax,DWORD PTR [eax],0x90909090"
+   },
+   {
+    "a": "0x6a92d2",
+    "host": "0x6a92d1",
+    "dec_len": 2,
+    "txt": "add    BYTE PTR [edx],al"
+   },
+   {
+    "a": "0x6a92d4",
+    "host": "0x6a92d3",
+    "dec_len": 2,
+    "txt": "add    al,BYTE PTR [edx]"
+   },
+   {
+    "a": "0x6a92d6",
+    "host": "0x6a92d5",
+    "dec_len": 2,
+    "txt": "add    DWORD PTR [edx],eax"
+   },
+   {
+    "a": "0x6a92d8",
+    "host": "0x6a92d7",
+    "dec_len": 2,
+    "txt": "add    al,BYTE PTR [edx]"
+   },
+   {
+    "a": "0x6a92da",
+    "host": "0x6a92d9",
+    "dec_len": 2,
+    "txt": "add    al,BYTE PTR [edx]"
+   }
+  ]
+ },
+ "jt_overlap_detail": [
+  {
+   "a": "0x7c7b3c",
+   "srcs": [
+    {
+     "kind": "table_base",
+     "at": "0x7c77b6",
+     "txt": "jmp    DWORD PTR [ebx*4+0x7c7b3c]"
+    },
+    {
+     "kind": "direct",
+     "at": "0x7c7b3a",
+     "txt": "jl     0x7c7b3c"
+    }
+   ],
+   "row_here": "test   eax,0xc0007c77"
+  },
+  {
+   "a": "0x7c7f10",
+   "srcs": [
+    {
+     "kind": "table_base",
+     "at": "0x7c7b86",
+     "txt": "jmp    DWORD PTR [ebx*4+0x7c7f10]"
+    },
+    {
+     "kind": "direct",
+     "at": "0x7c7f0e",
+     "txt": "jl     0x7c7f10"
+    }
+   ],
+   "row_here": "jns    0x7c7f8d"
+  },
+  {
+   "a": "0x7d0b78",
+   "srcs": [
+    {
+     "kind": "table_base",
+     "at": "0x7d0a74",
+     "txt": "jmp    DWORD PTR [ecx*4+0x7d0b78]"
+    },
+    {
+     "kind": "direct",
+     "at": "0x7d0b76",
+     "txt": "jge    0x7d0b78"
+    }
+   ],
+   "row_here": "mov    eax,DWORD PTR [ebp+0x8]"
+  },
+  {
+   "a": "0x7dcbf8",
+   "srcs": [
+    {
+     "kind": "table_base",
+     "at": "0x7dc94a",
+     "txt": "jmp    DWORD PTR [esi*4+0x7dcbf8]"
+    },
+    {
+     "kind": "direct",
+     "at": "0x7dcbf6",
+     "txt": "jge    0x7dcbf8"
+    }
+   ],
+   "row_here": "pop    eax"
+  },
+  {
+   "a": "0x7dcc34",
+   "srcs": [
+    {
+     "kind": "table_base",
+     "at": "0x7dcb50",
+     "txt": "jmp    DWORD PTR [eax*4+0x7dcc34]"
+    },
+    {
+     "kind": "direct",
+     "at": "0x7dcc32",
+     "txt": "jge    0x7dcc34"
+    }
+   ],
+   "row_here": "addr16 retf"
+  }
+ ],
+ "jump_sets": {
+  "JT_direct": 94642,
+  "JT_table": 368,
+  "intersect": 5
+ },
+ "setA_refs": {
+  "n_A": 65,
+  "hit_JT_direct": [
+   "0x71f2c5",
+   "0x71f9e4",
+   "0x728e0c",
+   "0x7b0084",
+   "0x7d9d2f"
+  ],
+  "hit_JT_table": [
+   "0x46f5a0",
+   "0x4c8114",
+   "0x5001e4",
+   "0x51f1fc",
+   "0x520efc",
+   "0x58bda4",
+   "0x5bcacc",
+   "0x69b15c",
+   "0x71f60c",
+   "0x71f9e0",
+   "0x799b54",
+   "0x79f028"
+  ],
+  "n_direct": 5,
+  "n_table": 12
+ },
+ "table_base_rows": [
+  {
+   "a": "0x46f5a0",
+   "row": "kxnorw k0,k3,(bad)"
+  },
+  {
+   "a": "0x4c8114",
+   "row": "lock ins BYTE PTR es:[edi],dx"
+  },
+  {
+   "a": "0x5001e4",
+   "row": "lock std"
+  },
+  {
+   "a": "0x51f1fc",
+   "row": "(bad)"
+  },
+  {
+   "a": "0x520efc",
+   "row": "(bad)"
+  },
+  {
+   "a": "0x58bda4",
+   "row": "mov    WORD PTR [ebp-0x426affa8],?"
+  },
+  {
+   "a": "0x5bcacc",
+   "row": "(bad)"
+  },
+  {
+   "a": "0x69b15c",
+   "row": "mov    WORD PTR [eax-0x4f73ff97],?"
+  },
+  {
+   "a": "0x71f60c",
+   "row": "(bad)"
+  },
+  {
+   "a": "0x71f9e0",
+   "row": "(bad)"
+  },
+  {
+   "a": "0x799b54",
+   "row": "(bad)"
+  },
+  {
+   "a": "0x79f028",
+   "row": "(bad)"
+  }
+ ],
+ "set88_refs": {
+  "hit_JT_direct": [],
+  "hit_JT_table": []
+ },
+ "setA_target_form": [
+  {
+   "a": "0x71f2c5",
+   "srcs": [
+    {
+     "at": "0x71f2d4",
+     "mn": "jmp",
+     "bytes": "eb ef",
+     "txt": "jmp    0x71f2c5",
+     "insn_len": 2,
+     "is_zero_disp_fallthrough": false,
+     "target_minus_next": -17
+    }
+   ],
+   "n_srcs": 1,
+   "all_zero_disp": false
+  },
+  {
+   "a": "0x71f9e4",
+   "srcs": [
+    {
+     "at": "0x71f9e2",
+     "mn": "jno",
+     "bytes": "71 00",
+     "txt": "jno    0x71f9e4",
+     "insn_len": 2,
+     "is_zero_disp_fallthrough": true,
+     "target_minus_next": 0
+    }
+   ],
+   "n_srcs": 1,
+   "all_zero_disp": true
+  },
+  {
+   "a": "0x728e0c",
+   "srcs": [
+    {
+     "at": "0x728e0a",
+     "mn": "jb",
+     "bytes": "72 00",
+     "txt": "jb     0x728e0c",
+     "insn_len": 2,
+     "is_zero_disp_fallthrough": true,
+     "target_minus_next": 0
+    }
+   ],
+   "n_srcs": 1,
+   "all_zero_disp": true
+  },
+  {
+   "a": "0x7b0084",
+   "srcs": [
+    {
+     "at": "0x7b0082",
+     "mn": "jp",
+     "bytes": "7a 00",
+     "txt": "jp     0x7b0084",
+     "insn_len": 2,
+     "is_zero_disp_fallthrough": true,
+     "target_minus_next": 0
+    }
+   ],
+   "n_srcs": 1,
+   "all_zero_disp": true
+  },
+  {
+   "a": "0x7d9d2f",
+   "srcs": [
+    {
+     "at": "0x7d9d2d",
+     "mn": "jge",
+     "bytes": "7d 00",
+     "txt": "jge    0x7d9d2f",
+     "insn_len": 2,
+     "is_zero_disp_fallthrough": true,
+     "target_minus_next": 0
+    }
+   ],
+   "n_srcs": 1,
+   "all_zero_disp": true
+  }
+ ],
+ "a2_split": {
+  "non_memory_operand_token": 95217,
+  "memory_displacement": 0,
+  "union": 95217
+ },
+ "checks": [
+  {
+   "name": "S0 exe sha256",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "S0b 反汇编 sha256",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "S1 行数 1,392,516 / 续行 9,028 / 省略 5",
+   "ok": true,
+   "detail": "1392516/9028/5"
+  },
+  {
+   "name": "S2 capstone 跳1 可解 1,392,527 / 不可解 65",
+   "ok": true,
+   "detail": "1392527/65"
+  },
+  {
+   "name": "S3 集 A（行起点不可解）65，与集 B（扫描不可解）65 交集 62",
+   "ok": true,
+   "detail": "65 / 62"
+  },
+  {
+   "name": "S4 108 = 20 + 88",
+   "ok": true,
+   "detail": "108/20/88"
+  },
+  {
+   "name": "NC1 反控 bug 存在：用 h in CAPLEN 判据必须复现我的 59/27/2/0/0",
+   "ok": true,
+   "detail": "{'R_resync': 59, 'T_exact': 27, 'T_short': 2}"
+  },
+  {
+   "name": "PC1 修正后五类之和 == 88",
+   "ok": true,
+   "detail": "{'B1': 41, 'B2': 27, 'B3': 2, 'B5': 18}"
+  },
+  {
+   "name": "PC2 与 hy4 #151 的 41/27/2/0/18 逐项对照：完全一致则 CONFIRMED，否则逐项报差",
+   "ok": true,
+   "detail": "{'B1': '41 vs 41', 'B2': '27 vs 27', 'B3': '2 vs 2', 'B4': '0 vs 0', 'B5': '18 vs 18'}"
+  },
+  {
+   "name": "PC4 被误判的地址数 == 59 - 41 == 18（与 hy4 B5 的巧合必须解释成同一批地址，不是数字巧合）",
+   "ok": true,
+   "detail": "18"
+  },
+  {
+   "name": "PC3 如实报 JT_direct ∩ JT_table = 5 个（第一版断言「交集为 0」是我的断言错，已改）",
+   "ok": true,
+   "detail": "5 个：['0x7c7b3c', '0x7c7f10', '0x7d0b78', '0x7dcbf8', '0x7dcc34']"
+  },
+  {
+   "name": "PC3b 交集 5 个每个都必须同时给出 direct 与 table_base 两类来源（不是解析假象）",
+   "ok": true,
+   "detail": "[['direct', 'table_base'], ['direct', 'table_base'], ['direct', 'table_base'], ['direct', 'table_base'], ['direct', 'table_base']]"
+  },
+  {
+   "name": "R100 的「65 条中 5 条被跳转引用」在 JT_direct 口径下复算",
+   "ok": true,
+   "detail": "5 条：['0x71f2c5', '0x71f9e4', '0x728e0c', '0x7b0084', '0x7d9d2f']"
+  },
+  {
+   "name": "hy4 #151 的「17 条被跳转来源命中」= JT_direct ∪ JT_table（口径是并，不是直接目标）",
+   "ok": true,
+   "detail": "5 + 12 = 17"
+  },
+  {
+   "name": "NC2 反控 JT_direct：全体 1,392,516 起点命中数必须 > 1000",
+   "ok": true,
+   "detail": "94515"
+  },
+  {
+   "name": "NC3 反控 JT_table：表基址整体 +4 后与集 A 的命中数必须变化",
+   "ok": true,
+   "detail": "12 -> 5"
+  },
+  {
+   "name": "F1 集 A 的 5 个直接跳转目标里，全部引用源都是「jXX 位移 0（跳到自己下一条）」的有 4 个",
+   "ok": true,
+   "detail": "4 / 5"
+  },
+  {
+   "name": "F2 这 5 个的引用源总数如实报（每个几处）",
+   "ok": true,
+   "detail": "{'0x71f2c5': 1, '0x71f9e4': 1, '0x728e0c': 1, '0x7b0084': 1, '0x7d9d2f': 1}"
+  },
+  {
+   "name": "F3 结论措辞必须改：位移 0 的 jXX 在数据区是「数据被读成代码」的典型形态，不能当作「该地址是真实指令入口」的证据",
+   "ok": true,
+   "detail": "jXX+0 的 4 / 5"
+  },
+  {
+   "name": "X1 hy4 的 A1 95,005 = 直接跳转目标 ∪ 跳表基址（我复算精确相等）",
+   "ok": true,
+   "detail": "95005 = 94642 + 368 - 5"
+  },
+  {
+   "name": "X2 hy4 的 A2 95,771 与「非内存操作数 token」95,217 差 554，我复算并集仍是 95217 ⇒ 差数来自它对内存位移/其它 token 的收取边界",
+   "ok": true,
+   "detail": "95217 vs hy4 95771（差 554）"
+  },
+  {
+   "name": "X3 两处口径差都不影响核心结论：88 个地址的命中数在两种口径下都为 0 或 1",
+   "ok": true,
+   "detail": "我 0 / hy4 1（0x6a92d0，仅 A2 命中，我复算该地址只以内存位移形式出现）"
+  }
+ ]
+}

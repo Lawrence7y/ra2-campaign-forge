@@ -1,0 +1,198 @@
+{
+ "checks": [
+  {
+   "name": "A1 exe sha256 == 登记值",
+   "ok": true,
+   "detail": "73201cc021497c95"
+  },
+  {
+   "name": "A2 R101 所用的 objdump 文本 sha256 == 登记值",
+   "ok": true,
+   "detail": "5935356b2914d90b"
+  },
+  {
+   "name": "A3 ABI：本机 objdump 重生成与 R101 使用的文本逐字节相同（可复现性前提）",
+   "ok": true,
+   "detail": "0 5935356b2914d90b"
+  },
+  {
+   "name": "A4 反控：去掉 -M intel（AT&T 语法）后 sha 必须不同（证明 A3 不是恒真断言）",
+   "ok": true,
+   "detail": "96bca479e90bd640"
+  },
+  {
+   "name": "B1 iced 从 vendored 目录加载（不依赖 /tmp 或网络）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "B2 vendored 目录体积 < 8 MiB（不与 t628 内存/磁盘争抢）",
+   "ok": true,
+   "detail": "4.2M"
+  },
+  {
+   "name": "C1 .text 段起点/长度与 R99..R103 一致",
+   "ok": true,
+   "detail": "401000 4060045"
+  },
+  {
+   "name": "C2 正控：iced 线性铺满 .text（sum(len) == VirtualSize，无缝隙无重叠）",
+   "ok": true,
+   "detail": "4060045 vs 4060045"
+  },
+  {
+   "name": "C3 iced 单元总数与 capstone 单元总数不同（两实现确实不同，不是同一份结果）",
+   "ok": true,
+   "detail": "iced=1392537 capstone=1392527"
+  },
+  {
+   "name": "NC1 反控：.text 去尾 1 字节后 iced sum(len) 必须 != VirtualSize（正控因此不是恒真）",
+   "ok": true,
+   "detail": "4060044 vs 4060045"
+  },
+  {
+   "name": "NC2 反控：NO_INVALID_CHECK 下 invalid 集合严格缩小（66 -> 53），且仍是子集（证明 is_invalid 会随解码选项变化，不是恒真）",
+   "ok": true,
+   "detail": "default=66 opt=53 subset=True sum=4060045"
+  },
+  {
+   "name": "D1 capstone「拒解即 1 字节重同步」口径下 sum(len) == VirtualSize",
+   "ok": true,
+   "detail": "4060045 vs 4060045"
+  },
+  {
+   "name": "D2 capstone 拒解数 == 65（与 R99/R100 登记值一致）",
+   "ok": true,
+   "detail": "65"
+  },
+  {
+   "name": "NC3 反控：skipdata 打开后全段仍铺满（sum==VirtualSize），且恰有 65 个 1 字节 .byte 单元",
+   "ok": true,
+   "detail": "sum=4060045 .byte=65 units=1392592"
+  },
+  {
+   "name": "NC3b 这 65 个 .byte 的地址集合 == capstone 的拒解地址集合（逐址相等，不是只数相等）",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "E1 两个「拒解集」不相等（必须分开数，R100 教训：65 与 65 不是同一集合）",
+   "ok": true,
+   "detail": "iced_invalid=66 cap_bad=65 inters=63"
+  }
+ ],
+ "R": {
+  "A_sha": {
+   "exe": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+   "dump": "5935356b2914d90baeaeb0d8ea5198961976118526b37d341ab72f06d4046c70"
+  },
+  "A_regen": {
+   "rc": 0,
+   "sha": "5935356b2914d90baeaeb0d8ea5198961976118526b37d341ab72f06d4046c70",
+   "bytes": 69543320,
+   "lines": 1401556
+  },
+  "B_iced": {
+   "module_file": "/home/t628/projects/ra2-campaign-forge/_r104/vendor/iced_x86/__init__.py",
+   "distinfo_record": [
+    [
+     "/tmp/r104venv/lib/python3.13/site-packages/iced_x86-1.22.0.dist-info/RECORD",
+     "774b8cd4851ab8aa10f9bbd25285aa87678c3d420d87555029ecae12e4baaab5"
+    ]
+   ]
+  },
+  "C_sections": [
+   {
+    "name": ".text",
+    "va": 4198400,
+    "vsize": 4060045,
+    "vsz_raw": 4063232,
+    "roff": 4096
+   },
+   {
+    "name": ".rdata",
+    "va": 8261632,
+    "vsize": 196724,
+    "vsz_raw": 200704,
+    "roff": 4067328
+   },
+   {
+    "name": ".data",
+    "va": 8462336,
+    "vsize": 3570660,
+    "vsz_raw": 442368,
+    "roff": 4268032
+   },
+   {
+    "name": ".rsrc",
+    "va": 12034048,
+    "vsize": 98600,
+    "vsz_raw": 102400,
+    "roff": 4710400
+   },
+   {
+    "name": ".detour",
+    "va": 12136448,
+    "vsize": 10008,
+    "vsz_raw": 12288,
+    "roff": 4812800
+   }
+  ],
+  "C_iced": {
+   "units": 1392537,
+   "valid_starts": 1392471,
+   "invalid": 66,
+   "sum_len": 4060045,
+   "vsize": 4060045
+  },
+  "C_iced_invalid_len_hist": {
+   "2": 43,
+   "3": 9,
+   "4": 10,
+   "5": 1,
+   "6": 3
+  },
+  "NC2_detail": {
+   "default_invalid": 66,
+   "no_invalid_check_invalid": 53,
+   "became_valid": [
+    "0x488ed1",
+    "0x48dd18",
+    "0x4c8114",
+    "0x5001e4",
+    "0x502d18",
+    "0x6dfe19",
+    "0x6dfe41",
+    "0x71f2c5",
+    "0x71f2c9",
+    "0x71f2e1",
+    "0x71f329",
+    "0x71f32d",
+    "0x71f33d"
+   ],
+   "note": "这 13 个是「仅因保留位/非法组合被拒」的编码，绕过检查后可解；其余 53 个是 opcode 表里不存在的编码，绕过检查仍不可解。"
+  },
+  "D_capstone": {
+   "valid_starts": 1392527,
+   "bad": 65,
+   "units": 1392592,
+   "sum_len": 4060045
+  },
+  "E_set_relation": {
+   "iced_valid": 1392471,
+   "cap_valid": 1392527,
+   "both": 1392422,
+   "iced_only": 49,
+   "cap_only": 105,
+   "iced_invalid_not_cap_bad": [
+    "0x488ed1",
+    "0x502d18",
+    "0x7b007d"
+   ],
+   "cap_bad_not_iced_invalid": [
+    "0x708d59",
+    "0x7b0084"
+   ]
+  }
+ }
+}

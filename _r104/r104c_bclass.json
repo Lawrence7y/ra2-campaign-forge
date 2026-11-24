@@ -1,0 +1,415 @@
+{
+ "checks": [
+  {
+   "name": "S0 exe sha256",
+   "ok": true,
+   "detail": "73201cc021497c95"
+  },
+  {
+   "name": "S1 iced 线性单元 sum(len) == VirtualSize",
+   "ok": true,
+   "detail": "4060045"
+  },
+  {
+   "name": "S2 指针表集重算得到 360 张（与 r104b 一致，两脚本互不 import）",
+   "ok": true,
+   "detail": "360"
+  },
+  {
+   "name": "S3 R101 的五类合计 88 且 B1=41 / B2=27 / B3=2 / B4=0 / B5=18",
+   "ok": true,
+   "detail": "{'B1': 41, 'B2': 27, 'B3': 2, 'B5': 18}"
+  },
+  {
+   "name": "W1a B1 的 41 个宿主，从该地址**单独**解码时 iced 也全部 invalid（41/41）",
+   "ok": true,
+   "detail": "41"
+  },
+  {
+   "name": "W1b 其中「恰好是 iced 线性扫描的 invalid 单元起点」只有 40 个：0x728e15 的全局切分不在它这里起单元（两个口径不可混引）",
+   "ok": true,
+   "detail": "40"
+  },
+  {
+   "name": "NC1 反控：把「宿主在 iced invalid 集内」换成恒假后计数必须为 0（判据有判别力）",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "W1b 宿主 invalid 单元覆盖目标地址的只有一部分（不是全部）⇒ B1 内部还要再分类",
+   "ok": true,
+   "detail": "32"
+  },
+  {
+   "name": "W2a B1 的 41 个宿主中，落在 DWORD 指针表项内的有 41 个（给出定性与剩下的）",
+   "ok": true,
+   "detail": "41"
+  },
+  {
+   "name": "W2b B1 的 41 个宿主首字节全部落在 iced 也拒解的字节形态上（f0/76/c5/d9/dd/8c/8e/8f/62/db 等），无一条是普通 prologue",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "W3a B3 两处的宿主字节都以 9b 9b 开头（双 WAIT 前缀）",
+   "ok": true,
+   "detail": "['9b 9b d9 7d fe 9b 66 8b', '9b 9b df e0 f6 c1 10 74']"
+  },
+  {
+   "name": "W3b iced 的切分是 wait(1) / wait(1) / fnstcw|fnstsw(3|2)，即 objdump 那个「6 字节 fstcw / 4 字节 fstsw」是把 9b 9b 并进了下一条指令",
+   "ok": true,
+   "detail": "[('wait', 'wait', 'fnstcw [ebp-2]'), ('wait', 'wait', 'fnstsw ax')]"
+  },
+  {
+   "name": "NC2 反控：把宿主第 2 字节 9b 改成 d9 后，3 条切分必须不再是 wait/wait/...",
+   "ok": true,
+   "detail": "['wait', 'wait']"
+  },
+  {
+   "name": "W4a B5 的 18 个：两实现对宿主那一条指令的长度**一致**，18/18 都覆盖目标（故 B5 的成因不是局部可解性，是上游全局切分的分歧）",
+   "ok": true,
+   "detail": "18"
+  },
+  {
+   "name": "W4b B5 的 18 个里，有相当一部分在 iced 下就是合法单元起点（capstone 把一行读成一条长指令）",
+   "ok": true,
+   "detail": "12"
+  },
+  {
+   "name": "NC3 反控：随机抽 18 个 iced 合法单元起点，判据「是合法起点」会给 18/18（与 B5 的分布不同）",
+   "ok": true,
+   "detail": "18"
+  },
+  {
+   "name": "W5a 用 iced 重判 B1 的「铺满宿主行尾」，得到的数 != 19（R101 的 19 是 capstone 口径）",
+   "ok": true,
+   "detail": "b1_fill_iced=0 (R101 capstone=19)"
+  }
+ ],
+ "R": {
+  "S2_tables": {
+   "count": 360
+  },
+  "S3_r101_classes": {
+   "B1": 41,
+   "B2": 27,
+   "B3": 2,
+   "B5": 18
+  },
+  "W1_b1_iced": {
+   "n": 41,
+   "host_invalid": 40,
+   "host_covers_a": 32,
+   "a_is_iced_start": 9
+  },
+  "W1_host_invalid_unit_covers_a": 32,
+  "W2_b1_detail": {
+   "n": 41,
+   "host_in_pointer_table": 41,
+   "host_is_table_item_textptr": 41,
+   "samples": [
+    {
+     "a": "0x46f5a1",
+     "host": "0x46f5a0",
+     "host_bytes": "c5 e4 46 00 04 e6",
+     "in_pointer_table": {
+      "base": "0x46f5a0",
+      "idx": 0
+     },
+     "table_item_is_text_ptr": true,
+     "iced_host_invalid_len": 4,
+     "covers_a": true
+    },
+    {
+     "a": "0x48db26",
+     "host": "0x48db25",
+     "host_bytes": "d9 48 00 98 d7 48",
+     "in_pointer_table": {
+      "base": "0x48db10",
+      "idx": 5
+     },
+     "table_item_is_text_ptr": true,
+     "iced_host_invalid_len": 2,
+     "covers_a": true
+    },
+    {
+     "a": "0x48db27",
+     "host": "0x48db25",
+     "host_bytes": "d9 48 00 98 d7 48",
+     "in_pointer_table": {
+      "base": "0x48db10",
+      "idx": 5
+     },
+     "table_item_is_text_ptr": true,
+     "iced_host_invalid_len": 2,
+     "covers_a": false
+    },
+    {
+     "a": "0x48dd19",
+     "host": "0x48dd18",
+     "host_bytes": "f0 dc 48 00 fa dc",
+     "in_pointer_table": {
+      "base": "0x48dd10",
+      "idx": 2
+     },
+     "table_item_is_text_ptr": true,
+     "iced_host_invalid_len": 4,
+     "covers_a": true
+    },
+    {
+     "a": "0x4c8115",
+     "host": "0x4c8114",
+     "host_bytes": "f0 6c 4c 00 4d 6d",
+     "in_pointer_table": {
+      "base": "0x4c8114",
+      "idx": 0
+     },
+     "table_item_is_text_ptr": true,
+     "iced_host_invalid_len": 2,
+     "covers_a": true
+    },
+    {
+     "a": "0x5001e5",
+     "host": "0x5001e4",
+     "host_bytes": "f0 fd 4f 00 36 fe",
+     "in_pointer_table": {
+      "base": "0x5001e4",
+      "idx": 0
+     },
+     "table_item_is_text_ptr": true,
+     "iced_host_invalid_len": 2,
+     "covers_a": true
+    }
+   ]
+  },
+  "W2b_b1_host_prefix": {
+   "dd 6d": 6,
+   "f0 71": 6,
+   "d9 8c": 3,
+   "d9 48": 2,
+   "8c b0": 2,
+   "8f 6a": 2,
+   "f0 6d": 2,
+   "d9 8d": 2,
+   "c5 ed": 2,
+   "c5 e4": 1,
+   "f0 dc": 1,
+   "f0 6c": 1,
+   "f0 fd": 1,
+   "8c bd": 1
+  },
+  "W3_b3": [
+   {
+    "a": "0x7c5eeb",
+    "host": "0x7c5eea",
+    "host_len": 5,
+    "host_bytes": "9b 9b d9 7d fe 9b 66 8b",
+    "chain": [
+     {
+      "at": "0x7c5eea",
+      "len": 1,
+      "txt": "wait"
+     },
+     {
+      "at": "0x7c5eeb",
+      "len": 1,
+      "txt": "wait"
+     },
+     {
+      "at": "0x7c5eec",
+      "len": 3,
+      "txt": "fnstcw [ebp-2]"
+     },
+     {
+      "at": "0x7c5eef",
+      "len": 1,
+      "txt": "wait"
+     },
+     {
+      "at": "0x7c5ef0",
+      "len": 4,
+      "txt": "mov ax,[ebp-2]"
+     }
+    ]
+   },
+   {
+    "a": "0x7dbcc3",
+    "host": "0x7dbcc2",
+    "host_len": 4,
+    "host_bytes": "9b 9b df e0 f6 c1 10 74",
+    "chain": [
+     {
+      "at": "0x7dbcc2",
+      "len": 1,
+      "txt": "wait"
+     },
+     {
+      "at": "0x7dbcc3",
+      "len": 1,
+      "txt": "wait"
+     },
+     {
+      "at": "0x7dbcc4",
+      "len": 2,
+      "txt": "fnstsw ax"
+     },
+     {
+      "at": "0x7dbcc6",
+      "len": 3,
+      "txt": "test cl,10h"
+     },
+     {
+      "at": "0x7dbcc9",
+      "len": 2,
+      "txt": "je short 007DBCD5h"
+     }
+    ]
+   }
+  ],
+  "W3_nc2": [
+   {
+    "host": "0x7c5eea",
+    "patched_chain": [
+     {
+      "len": 1,
+      "txt": "wait",
+      "bad": false
+     },
+     {
+      "len": 2,
+      "txt": "fstp st(1)",
+      "bad": false
+     },
+     {
+      "len": 2,
+      "txt": "jge short 007C5EEDh",
+      "bad": false
+     }
+    ]
+   },
+   {
+    "host": "0x7dbcc2",
+    "patched_chain": [
+     {
+      "len": 1,
+      "txt": "wait",
+      "bad": false
+     },
+     {
+      "len": 2,
+      "txt": "fstp st(7)",
+      "bad": false
+     },
+     {
+      "len": 2,
+      "txt": "loopne 007DBCBDh",
+      "bad": false
+     }
+    ]
+   }
+  ],
+  "W4_b5_summary": {
+   "n": 18,
+   "iced_host_covers_a": 18,
+   "a_is_iced_start": 12,
+   "iced_host_invalid": 0,
+   "samples": [
+    {
+     "a": "0x69b166",
+     "host": "0x69b162",
+     "host_len": 6,
+     "iced_host": "imul eax,[eax],69AF45h",
+     "iced_host_len": 6,
+     "iced_host_invalid": false,
+     "iced_host_covers_a": true,
+     "cap_at_a_len": 6,
+     "a_is_iced_start": false,
+     "host_bytes": "69 00 45 af 69 00"
+    },
+    {
+     "a": "0x69b16c",
+     "host": "0x69b16a",
+     "host_len": 6,
+     "iced_host": "imul eax,[eax],90909090h",
+     "iced_host_len": 6,
+     "iced_host_invalid": false,
+     "iced_host_covers_a": true,
+     "cap_at_a_len": 1,
+     "a_is_iced_start": false,
+     "host_bytes": "69 00 90 90 90 90"
+    },
+    {
+     "a": "0x69b16d",
+     "host": "0x69b16a",
+     "host_len": 6,
+     "iced_host": "imul eax,[eax],90909090h",
+     "iced_host_len": 6,
+     "iced_host_invalid": false,
+     "iced_host_covers_a": true,
+     "cap_at_a_len": 1,
+     "a_is_iced_start": false,
+     "host_bytes": "69 00 90 90 90 90"
+    },
+    {
+     "a": "0x69b16e",
+     "host": "0x69b16a",
+     "host_len": 6,
+     "iced_host": "imul eax,[eax],90909090h",
+     "iced_host_len": 6,
+     "iced_host_invalid": false,
+     "iced_host_covers_a": true,
+     "cap_at_a_len": 1,
+     "a_is_iced_start": false,
+     "host_bytes": "69 00 90 90 90 90"
+    },
+    {
+     "a": "0x69b16f",
+     "host": "0x69b16a",
+     "host_len": 6,
+     "iced_host": "imul eax,[eax],90909090h",
+     "iced_host_len": 6,
+     "iced_host_invalid": false,
+     "iced_host_covers_a": true,
+     "cap_at_a_len": 1,
+     "a_is_iced_start": false,
+     "host_bytes": "69 00 90 90 90 90"
+    },
+    {
+     "a": "0x6a92d2",
+     "host": "0x6a92d1",
+     "host_len": 2,
+     "iced_host": "add [edx],al",
+     "iced_host_len": 2,
+     "iced_host_invalid": false,
+     "iced_host_covers_a": true,
+     "cap_at_a_len": 2,
+     "a_is_iced_start": true,
+     "host_bytes": "00 02 02 02 01 02"
+    }
+   ]
+  },
+  "W4_nc3_random": {
+   "n": 18,
+   "all_are_starts": true
+  },
+  "W5_recalc": {
+   "B1": {
+    "tiles_under_iced": 0,
+    "not": 41
+   },
+   "B2": {
+    "tiles_under_iced": 27,
+    "not": 0
+   },
+   "B3": {
+    "tiles_under_iced": 2,
+    "not": 0
+   },
+   "B5": {
+    "tiles_under_iced": 18,
+    "not": 0
+   }
+  },
+  "W5_note": "「真歧义 46 = B2 27 + B1 铺满 19」是 capstone 口径下的数；iced 重判后 B1 铺满 = 0、B2 = 27 ⇒ 同口径真歧义 = 27。两数都必须连解码器名字一起引（R101 待办③ 的要求）。"
+ }
+}

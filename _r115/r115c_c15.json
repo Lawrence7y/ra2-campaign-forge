@@ -1,0 +1,35 @@
+{
+ "bytes_now": 968599,
+ "floor_bytes": 831406,
+ "margin_bytes": 137193,
+ "sections_parsed": 112,
+ "first_section": 7,
+ "last_section": 118,
+ "checks": [
+  {
+   "name": "C1 基线：真树上 check_disc.py exit=0 ; ['NOTE  C15 content floor: 2.x sections 112 (pinned 100), last 118 (pinned 106), bytes 968599 (floor 831406)']",
+   "ok": true,
+   "detail": "{'rc': 0, 'c15': ['NOTE  C15 content floor: 2.x sections 112 (pinned 100), last 118 (pinned 106), bytes 968599 (floor 831406)']}"
+  },
+  {
+   "name": "C1b 现盘字节 968599 对 floor 831406 的余量 = 137193 B；2.x 标题 112 对 floor 99 的余量 = 13",
+   "ok": true,
+   "detail": "{'margin_bytes': 137193, 'margin_heads': 13}"
+  },
+  {
+   "name": "C2 【漏洞实测】把 §2.50 的正文整节清空（保留标题，省下 5436 B）后，未改动的 check_disc.py exit=0、FAIL 0 条 ⇒ C15 四子项对「整节空壳」完全失明",
+   "ok": true,
+   "detail": "{'rc': 0, 'c15': ['NOTE  C15 content floor: 2.x sections 112 (pinned 100), last 118 (pinned 106), bytes 963163 (floor 831406)'], 'fails': []}"
+  },
+  {
+   "name": "C3 【字节预算】逐节清空（每节只留标题）：清到第 14 节时门禁才失败 （此前已把 6 节的正文全部抹掉、共省 25004 B，floor 余量 137193 B）⇒ C15 只防「量跌破」，不防「节内被掏空」",
+   "ok": true,
+   "detail": "{'fail_at_section': 14, 'cleared_before_fail': 6, 'bytes_saved_before_fail': 25004, 'fail_lines': ['FAIL  C1 rows 31 != disciplines 29', 'FAIL  C2 discipline numbers mismatch: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33] vs [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33]', 'FAIL  C7 id 1 expr grep=(?m)^\\\\*\\\\*\\\\u7eaa\\\\u5f8b mismatch (grep hits=0)']}"
+  },
+  {
+   "name": "C5 反向对照：整节删除 §2.60（连标题）⇒ exit=1、FAIL 1 条（C15 disappeared 分支）",
+   "ok": true,
+   "detail": "{'rc': 1, 'fails': ['FAIL  C15 R14_COMMON section(s) disappeared: 1 missing [60] (content loss is NOT allowed; if a secti']}"
+  }
+ ]
+}

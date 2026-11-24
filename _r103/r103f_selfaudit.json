@@ -1,0 +1,108 @@
+{
+ "checks": [
+  {
+   "name": "E1a 现沙箱：DISC_RECHECK 引用的 23 个产物全部是实体文件（无 symlink）",
+   "ok": true,
+   "detail": "symlinked=[]"
+  },
+  {
+   "name": "E1b 沙箱里写 id 3 的产物，真树该文件 sha256 不变（写不透）",
+   "ok": true,
+   "detail": "15fe4e776e54b798"
+  },
+  {
+   "name": "E1c 反控：R102 的旧建法下该产物路径上有一段 symlink（写它就会改真树，这就是事故机制）",
+   "ok": true,
+   "detail": "symlink_component=/tmp/r103_sbx_old/lead/next_re_20261117_r14/R17_R61_FACTINDEX_V58"
+  },
+  {
+   "name": "E1c2 关键：只查末端 islink 会漏掉（末端不是 symlink，父目录才是）",
+   "ok": true,
+   "detail": "islink(file)=False symlink(dir)=/tmp/r103_sbx_old/lead/next_re_20261117_r14/R17_R61_FACTINDEX_V58"
+  },
+  {
+   "name": "E1d guard_write 作为结构性防线：对 symlink 路径必抛 RuntimeError",
+   "ok": true,
+   "detail": "REFUSE: /tmp/r103_sbx_old/lead/next_re_20261117_r14/R17_R61_FACTINDEX_V58/anchor"
+  },
+  {
+   "name": "E2a check_disc.py：CRLF=466，LF-only 行号集合仍为 [24, 25]（补丁只用 CRLF 增行）",
+   "ok": true,
+   "detail": "[24, 25]"
+  },
+  {
+   "name": "E2b R14_COMMON.md：CRLF 计数 == 1081（未因本轮改动漂移）",
+   "ok": true,
+   "detail": "CRLF=1081"
+  },
+  {
+   "name": "E2c DISC_RECHECK.tsv：仍 LF-only（CR 数 0）",
+   "ok": true,
+   "detail": "CR-free"
+  },
+  {
+   "name": "E3a 两个 R103 备份都在盘上（门禁 + DISC_RECHECK）",
+   "ok": true,
+   "detail": "{'gate_bak': ['R103.before_check_disc_C13C14C15_20261124_051034.bak'], 'dr_bak': ['R103.before_DISC_RECHECK_ver_20261124_051034.bak']}"
+  },
+  {
+   "name": "E3b 备份门禁 GATE_VER=R102、备份 DISC_RECHECK 登记 R102（成对，可直接配对跑）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "E3c 现门禁 GATE_VER=R103、现 DISC_RECHECK 登记 R103（成对）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "E3d 交叉配对反控：旧门禁(R102) + 现表(登记 R103) ⇒ 同时触发 C7 与 C10（证明配对必须成对）",
+   "ok": true,
+   "detail": "['C7 id 20 expr grep=(?m)^GATE_VER mismatch (grep hits=0)', 'C10 self GATE_VER registered R103 != actual R102']"
+  },
+  {
+   "name": "E3e 正确配对：旧门禁(R102) + 旧表(登记 R102) ⇒ exit 0（反向控制的前提成立）",
+   "ok": true,
+   "detail": "exit=0 fails=[]"
+  }
+ ],
+ "results": {
+  "E1": {
+   "products": 23,
+   "symlinked": [],
+   "real_products_sha": {
+    "lead/next_re_20261117_r14/R17_R61_FACTINDEX_V58/anchor_check.txt": {
+     "before": "15fe4e776e54b798776e798210000dc7c029e384c9dad4530ed2ae87432b6bbf",
+     "after": "15fe4e776e54b798776e798210000dc7c029e384c9dad4530ed2ae87432b6bbf"
+    }
+   },
+   "old_sandbox_symlink_component": "/tmp/r103_sbx_old/lead/next_re_20261117_r14/R17_R61_FACTINDEX_V58",
+   "guard_msg": "REFUSE: /tmp/r103_sbx_old/lead/next_re_20261117_r14/R17_R61_FACTINDEX_V58/anchor"
+  },
+  "E2": {
+   "gate_crlf": 466,
+   "gate_lf_only_lines": [
+    24,
+    25
+   ]
+  },
+  "E2b": {
+   "rc_crlf": 1081
+  },
+  "E3": {
+   "gate_bak": [
+    "R103.before_check_disc_C13C14C15_20261124_051034.bak"
+   ],
+   "dr_bak": [
+    "R103.before_DISC_RECHECK_ver_20261124_051034.bak"
+   ],
+   "cross_pair": {
+    "exit": 1,
+    "fails": [
+     "C7 id 20 expr grep=(?m)^GATE_VER mismatch (grep hits=0)",
+     "C10 self GATE_VER registered R103 != actual R102"
+    ]
+   }
+  }
+ }
+}

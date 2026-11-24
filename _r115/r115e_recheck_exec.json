@@ -1,0 +1,85 @@
+{
+ "E_A13": {
+  "s_lt_t": [],
+  "s_eq_t": 979,
+  "s_gt_t": 234,
+  "e_gt_t": []
+ },
+ "E_A14": {
+  "iface_n": 260,
+  "not_last_n": 260,
+  "identical": true
+ },
+ "stratified": {
+  "last": {
+   "n": 953,
+   "eq": 719
+  },
+  "not_last": {
+   "n": 260,
+   "eq": 260
+  }
+ },
+ "E_A16": {
+  "n_multi": 84,
+  "n_differ": 84
+ },
+ "E_A16b_pairs": {
+  "(1, 6)": 76,
+  "(1, 6, 9)": 1,
+  "(8, 50)": 6,
+  "(1, 5, 6, 9, 15)": 1
+ },
+ "checks": [
+  {
+   "name": "E-A13a 执行员说「S>=T 恒真（COL 全在 .rdata）」—— 复算：S<T 的实例 0 个；S==T 的 979 个、S>T 的 234 个 ⇒ 「恒真」说法需看判据：S>=T 成立但**不是定义内含**，而是「槽区不含合法 COL 值」这一实测事实",
+   "ok": true,
+   "detail": "{'S_lt_T': [], 'eq': 979, 'gt': 234}"
+  },
+  {
+   "name": "E-A13b 执行员说「S==B 恒真（同一集合）」—— 复算：逐点不等的 0 个 ⇒ 确实逐点全等，但这是**两条独立实现的同值**（S 沿途扫值、B 用 colptr 排序后取下一个），不是「同一集合」的平凡推论：B 需要 colptr 索引，S 不需要",
+   "ok": true,
+   "detail": "{'mismatch': []}"
+  },
+  {
+   "name": "E-A13c 执行员说「E<=T 定义内含」。复算：E>T 的实例 0 个 ⇒ 需注意 E 的判据是「在 STARTS 内且有填充」，T 是「落在 .text」，前者更严，理论上 E<=T；但这是**判据包含关系**（E 的条件是 T 的子集），确实恒真 —— 这点执行员说对了",
+   "ok": true,
+   "detail": "{'E_gt_T': []}"
+  },
+  {
+   "name": "E-A14 【执行员的核心质疑】复算：接口子对象 vtable 260 个，「非组尾」vtable 260 个，两集合完全相同=True（差集 0 / 0）⇒ 执行员说的混淆**成立**：本轮所有在接口子对象上做的「三源同值」实测，都无法区分「因为是接口所以槽数固定」与「因为排布紧邻所以三把尺子对齐」",
+   "ok": true,
+   "detail": "{'iface': 260, 'not_last': 260, 'iface_minus_notlast': [], 'notlast_minus_iface': []}"
+  },
+  {
+   "name": "E-A14b 分层对照复算：组尾 T==S 719/953=75.45%；非组尾 260/260=100.00% ⇒ 分层「有差」但**非组尾层与接口子对象层完全重合**，故这个差**不能**证明「接口属性」——只能证明「非组尾位置」这个更弱的性质",
+   "ok": true,
+   "detail": "{'last': 0.7544596012591815, 'not_last': 1.0, 'n': {'last': {'n': 953, 'eq': 719}, 'not_last': {'n': 260, 'eq': 260}}}"
+  },
+  {
+   "name": "E-A16 【执行员最有分量的对照，复算】同时承 2 个及以上接口的类 84 个；其中「各接口槽数互不相同」的 84 个 ⇒ 同一类内部槽数就不同，故「槽数由承接类决定」被直接排除（例：[('AITriggerTypeClass', {'INoticeSource': 1, 'INoticeSink': 1, 'IRTTITypeInfo': 6})]）",
+   "ok": true,
+   "detail": "{'n_multi': 84, 'n_differ': 84, 'sample': [('AITriggerTypeClass', {'INoticeSource': 1, 'INoticeSink': 1, 'IRTTITypeInfo': 6}), ('AbstractClass', {'INoticeSource': 1, 'INoticeSink': 1, 'IRTTITypeInfo': 6})]}"
+  },
+  {
+   "name": "E-A15 复算：260 个接口子对象的 1318 个槽里，不是已知指令起点的 1 个（全在 .text 内）⇒ 执行员说对了；这也反向证明 T 尺（「落在 .text」）比 E 尺（「是指令起点」）更适合当槽数尺",
+   "ok": true,
+   "detail": "{'total': 1318, 'notstart': [['ILocomotion', '0x7f5a24', 14, '0x729e50', True]]}"
+  },
+  {
+   "name": "E-A17 复算执行员的「样本偏斜」质疑：10 个接口里 5 个只有 **1 个**承接类（['IConnectionPointContainer', 'IFlyControl', 'IHouse', 'ILinkStream', 'IPublicHouse']），它们的「槽数恒定」是单样本、恒真且零信息量；真正多样本的只有 5 个（[('ILocomotion', 12), ('INoticeSink', 81), ('INoticeSource', 78), ('IPiggyback', 6), ('IRTTITypeInfo', 78)]）⇒ 「10 个接口全部恒定」这句话的**有效样本是 5 个**，不是 10 个",
+   "ok": true,
+   "detail": "{'single': ['IConnectionPointContainer', 'IFlyControl', 'IHouse', 'ILinkStream', 'IPublicHouse'], 'multi': {'ILocomotion': 12, 'INoticeSink': 81, 'INoticeSource': 78, 'IPiggyback': 6, 'IRTTITypeInfo': 78}}"
+  },
+  {
+   "name": "E-A18 复算：COL.offset > 0x2000 的接口子对象记录共 3 条，全部是 INoticeSink 且 offset=21784(0x5518) （[(('INoticeSink', 21784), 3)]）⇒ 这是**虚基类子对象偏移**，与其他 257 条的小偏移不是同一形态；它把 INoticeSink 的样本从 78 抬到 81，但不改变 T 值（=1），「81 个类」不应被读成 81 个普通二级子对象",
+   "ok": true,
+   "detail": "{'large_offsets': [[['INoticeSink', 21784], 3]]}"
+  },
+  {
+   "name": "E-A16b 【加固】A16 的 84 个多接口类里，按「槽数取值组合」分布 {(1, 6): 76, (1, 6, 9): 1, (8, 50): 6, (1, 5, 6, 9, 15): 1} —— **没有一个组合是 {1}**（即不依赖单样本接口），76 个是 (1,6)、6 个是 (8,50)、各 1 个是 (1,6,9) 与 (1,5,6,9,15)。(8,50) 这 6 个尤其干净：IPiggyback 与 ILocomotion 都是多样本接口（6 类 / 12 类）⇒ A16 的对照**经受得住样本偏斜的批评**",
+   "ok": true,
+   "detail": "{'pairs': {'(1, 6)': 76, '(1, 6, 9)': 1, '(8, 50)': 6, '(1, 5, 6, 9, 15)': 1}}"
+  }
+ ]
+}

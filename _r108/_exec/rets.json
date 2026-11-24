@@ -1,0 +1,3964 @@
+{
+ "criterion": "Mechanical test used: a ret belongs to the function rooted at S only if the stack frame it tears down matches the sub esp,N of S. Tearing down a frame size that no enclosing prologue in the interval allocated means control never came from S, i.e. a separate function. `ret imm16` must also equal the frame owner's argument bytes. Presence of a ret alone decides nothing.",
+ "why_ret_alone_is_insufficient": "MSVC emits a ret after every early-return path, so one function routinely contains many rets; conversely NOP padding between functions means consecutive functions also produce many rets. The two cases are indistinguishable without checking the frame the ret unwinds against the enclosing prologue.",
+ "verdicts": {
+  "0x46f5a0": "INTERNAL (early return), 1 exception",
+  "0x5001e4": "INTERNAL (early return)",
+  "0x58bda4": "NOT INTERNAL - separate functions",
+  "0x71f2c0": "INTERNAL (early return)",
+  "0x71f328": "INTERNAL (early return)",
+  "0x79f028": "NOT INTERNAL - multiple functions (3 frame sizes)"
+ },
+ "tables": [
+  {
+   "table": "0x46f5a0",
+   "S": "0x46de20",
+   "H": "0x46e4be",
+   "ret_count": 6,
+   "distinct_cleanup_consts": 1,
+   "cleanup_consts": [
+    "0x410"
+   ],
+   "sub_esp_in_region": [
+    {
+     "addr": "0x46dfd4",
+     "imm": "0x410",
+     "text": "esp, 0x410"
+    },
+    {
+     "addr": "0x46e073",
+     "imm": "0x410",
+     "text": "esp, 0x410"
+    },
+    {
+     "addr": "0x46e093",
+     "imm": "0x4",
+     "text": "esp, 4"
+    },
+    {
+     "addr": "0x46e0af",
+     "imm": "0x410",
+     "text": "esp, 0x410"
+    },
+    {
+     "addr": "0x46e176",
+     "imm": "0x4",
+     "text": "esp, 4"
+    },
+    {
+     "addr": "0x46e21c",
+     "imm": "0x18",
+     "text": "esp, 0x18"
+    },
+    {
+     "addr": "0x46e283",
+     "imm": "0x410",
+     "text": "esp, 0x410"
+    },
+    {
+     "addr": "0x46e340",
+     "imm": "0x410",
+     "text": "esp, 0x410"
+    },
+    {
+     "addr": "0x46e49e",
+     "imm": "0x410",
+     "text": "esp, 0x410"
+    }
+   ],
+   "reachable_from_S": 209,
+   "insn_count": 584,
+   "reachable_pct": 35.8,
+   "unreachable_after_ret": [
+    "0x46e07c",
+    "0x46e0b8",
+    "0x46e28c",
+    "0x46e349",
+    "0x46e4a7"
+   ],
+   "verdict": "INTERNAL (early return), 1 exception",
+   "rets": [
+    {
+     "ret": "0x46dfc6",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x46dfc5",
+      "bytes": "59",
+      "text": "pop ecx",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x46dfc5",
+      "bytes": "59",
+      "text": "pop ecx",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x46dfc7",
+     "after_bytes": "9090909090909090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x46e079",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x46e073",
+      "bytes": "81c410040000",
+      "text": "add esp, 0x410",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x46e073",
+      "bytes": "81c410040000",
+      "text": "add esp, 0x410",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x46e073",
+      "imm": 1040,
+      "text": "esp, 0x410"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x46dfd4",
+       "esp, 0x410"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x46e07c",
+     "after_bytes": "8b355411ac0085f6",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x46e0b5",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x46e0af",
+      "bytes": "81c410040000",
+      "text": "add esp, 0x410",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x46e0af",
+      "bytes": "81c410040000",
+      "text": "add esp, 0x410",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x46e0af",
+      "imm": 1040,
+      "text": "esp, 0x410"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x46dfd4",
+       "esp, 0x410"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x46e0b8",
+     "after_bytes": "81fe110100000f85",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x46e289",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x46e283",
+      "bytes": "81c410040000",
+      "text": "add esp, 0x410",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x46e283",
+      "bytes": "81c410040000",
+      "text": "add esp, 0x410",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x46e283",
+      "imm": 1040,
+      "text": "esp, 0x410"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x46dfd4",
+       "esp, 0x410"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x46e28c",
+     "after_bytes": "8b442418c7000200",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x46f4e4",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x46e346",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x46e340",
+      "bytes": "81c410040000",
+      "text": "add esp, 0x410",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x46e340",
+      "bytes": "81c410040000",
+      "text": "add esp, 0x410",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x46e340",
+      "imm": 1040,
+      "text": "esp, 0x410"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x46dfd4",
+       "esp, 0x410"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x46e349",
+     "after_bytes": "8bcde810b81700e8",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x46f4d8",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x46e4a4",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x46e49e",
+      "bytes": "81c410040000",
+      "text": "add esp, 0x410",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x46e49e",
+      "bytes": "81c410040000",
+      "text": "add esp, 0x410",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x46e49e",
+      "imm": 1040,
+      "text": "esp, 0x410"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x46dfd4",
+       "esp, 0x410"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x46e4a7",
+     "after_bytes": "8d825ef9ffff83f8",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    }
+   ]
+  },
+  {
+   "table": "0x5001e4",
+   "S": "0x4ffd90",
+   "H": "0x4ffde9",
+   "ret_count": 1,
+   "distinct_cleanup_consts": 1,
+   "cleanup_consts": [
+    "0xc"
+   ],
+   "sub_esp_in_region": [
+    {
+     "addr": "0x4ffd90",
+     "imm": "0xc",
+     "text": "esp, 0xc"
+    },
+    {
+     "addr": "0x4ffdc9",
+     "imm": "0xc",
+     "text": "esp, 0xc"
+    },
+    {
+     "addr": "0x4ffdd6",
+     "imm": "0x70",
+     "text": "esp, 0x70"
+    }
+   ],
+   "reachable_from_S": 16,
+   "insn_count": 27,
+   "reachable_pct": 59.3,
+   "unreachable_after_ret": [],
+   "verdict": "INTERNAL (early return)",
+   "rets": [
+    {
+     "ret": "0x4ffdcc",
+     "ret_bytes": "c20400",
+     "ret_text": "ret 4",
+     "prev_insn": {
+      "addr": "0x4ffdc9",
+      "bytes": "83c40c",
+      "text": "add esp, 0xc",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x4ffdc9",
+      "bytes": "83c40c",
+      "text": "add esp, 0xc",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": {
+      "addr": "0x4ffdc9",
+      "imm": 12,
+      "text": "esp, 0xc"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x4ffd90",
+       "esp, 0xc"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x4ffdcf",
+     "after_bytes": "90558bec83e4f883",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    }
+   ]
+  },
+  {
+   "table": "0x58bda4",
+   "S": "0x58bc20",
+   "H": "0x58bd85",
+   "ret_count": 13,
+   "distinct_cleanup_consts": 0,
+   "cleanup_consts": [],
+   "sub_esp_in_region": [
+    {
+     "addr": "0x58bca9",
+     "imm": "0x4",
+     "text": "esp, 4"
+    }
+   ],
+   "reachable_from_S": 2,
+   "insn_count": 161,
+   "reachable_pct": 1.2,
+   "unreachable_after_ret": [
+    "0x58bc6d",
+    "0x58bcc8",
+    "0x58bce2",
+    "0x58bce8",
+    "0x58bd06",
+    "0x58bd15",
+    "0x58bd2d",
+    "0x58bd33",
+    "0x58bd4d",
+    "0x58bd53",
+    "0x58bd6d",
+    "0x58bd73"
+   ],
+   "verdict": "NOT INTERNAL - separate functions",
+   "rets": [
+    {
+     "ret": "0x58bc2a",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bc20",
+      "bytes": "c7050cedab0000000000",
+      "text": "mov dword ptr [0xabed0c], 0",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x58bc20",
+      "bytes": "c7050cedab0000000000",
+      "text": "mov dword ptr [0xabed0c], 0",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bc2b",
+     "after_bytes": "909090909033c068",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bc6c",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bc6b",
+      "bytes": "59",
+      "text": "pop ecx",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bc6b",
+      "bytes": "59",
+      "text": "pop ecx",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bc6d",
+     "after_bytes": "9090908a0db0dfab",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bcc7",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bcbd",
+      "bytes": "c70598dfab0000000000",
+      "text": "mov dword ptr [0xabdf98], 0",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bcbd",
+      "bytes": "c70598dfab0000000000",
+      "text": "mov dword ptr [0xabdf98], 0",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bcc8",
+     "after_bytes": "9090909090909090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bce1",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bcdf",
+      "bytes": "33c0",
+      "text": "xor eax, eax",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bcdf",
+      "bytes": "33c0",
+      "text": "xor eax, eax",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bce2",
+     "after_bytes": "b801000000c39090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bce7",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bce2",
+      "bytes": "b801000000",
+      "text": "mov eax, 1",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bce2",
+      "bytes": "b801000000",
+      "text": "mov eax, 1",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bce8",
+     "after_bytes": "9090909090909090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bd05",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bd03",
+      "bytes": "8ac1",
+      "text": "mov al, cl",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bd03",
+      "bytes": "8ac1",
+      "text": "mov al, cl",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bd06",
+     "after_bytes": "b80100000033c984",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bd14",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bd12",
+      "bytes": "8ac1",
+      "text": "mov al, cl",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bd12",
+      "bytes": "8ac1",
+      "text": "mov al, cl",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bd15",
+     "after_bytes": "9090909090909090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bd2c",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bd2a",
+      "bytes": "33c0",
+      "text": "xor eax, eax",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bd2a",
+      "bytes": "33c0",
+      "text": "xor eax, eax",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bd2d",
+     "after_bytes": "b801000000c39090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bd32",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bd2d",
+      "bytes": "b801000000",
+      "text": "mov eax, 1",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bd2d",
+      "bytes": "b801000000",
+      "text": "mov eax, 1",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bd33",
+     "after_bytes": "9090909090909090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bd4c",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bd4a",
+      "bytes": "33c0",
+      "text": "xor eax, eax",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bd4a",
+      "bytes": "33c0",
+      "text": "xor eax, eax",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bd4d",
+     "after_bytes": "b801000000c39090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bd52",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bd4d",
+      "bytes": "b801000000",
+      "text": "mov eax, 1",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bd4d",
+      "bytes": "b801000000",
+      "text": "mov eax, 1",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bd53",
+     "after_bytes": "9090909090909090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bd6c",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bd6a",
+      "bytes": "33c0",
+      "text": "xor eax, eax",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bd6a",
+      "bytes": "33c0",
+      "text": "xor eax, eax",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bd6d",
+     "after_bytes": "b801000000c39090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x58bd72",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x58bd6d",
+      "bytes": "b801000000",
+      "text": "mov eax, 1",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x58bd6d",
+      "bytes": "b801000000",
+      "text": "mov eax, 1",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x58bd73",
+     "after_bytes": "9090909090909090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    }
+   ]
+  },
+  {
+   "table": "0x71f2c0",
+   "S": "0x71e940",
+   "H": "0x71eea2",
+   "ret_count": 14,
+   "distinct_cleanup_consts": 1,
+   "cleanup_consts": [
+    "0x1c"
+   ],
+   "sub_esp_in_region": [
+    {
+     "addr": "0x71e940",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ea2a",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eae1",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eb00",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eb22",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eb4d",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eb6f",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eb98",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ebba",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ebe3",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ec2d",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ec5d",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ed53",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71edb5",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ee18",
+     "imm": "0x8",
+     "text": "esp, 8"
+    },
+    {
+     "addr": "0x71ee3d",
+     "imm": "0x8",
+     "text": "esp, 8"
+    },
+    {
+     "addr": "0x71ee51",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    }
+   ],
+   "reachable_from_S": 185,
+   "insn_count": 464,
+   "reachable_pct": 39.9,
+   "unreachable_after_ret": [
+    "0x71ea30",
+    "0x71eae7",
+    "0x71eb06",
+    "0x71eb28",
+    "0x71eb53",
+    "0x71eb75",
+    "0x71eb9e",
+    "0x71ebc0",
+    "0x71ebe9",
+    "0x71ec33"
+   ],
+   "verdict": "INTERNAL (early return)",
+   "rets": [
+    {
+     "ret": "0x71ea2d",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ea2a",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ea2a",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ea2a",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ea30",
+     "after_bytes": "8b3d10eba80083c8",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f240",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eae4",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eae1",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eae1",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eae1",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eae7",
+     "after_bytes": "a130b2a8008b5534",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f230",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eb03",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eb00",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eb00",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eb00",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eb06",
+     "after_bytes": "8b1530b2a80033c9",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f234",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eb25",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eb22",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eb22",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eb22",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eb28",
+     "after_bytes": "8b0d84eda800b889",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f238",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eb50",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eb4d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eb4d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eb4d",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eb53",
+     "after_bytes": "8b55348d4c244051",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f220",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eb72",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eb6f",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eb6f",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eb6f",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eb75",
+     "after_bytes": "8b4d348d44244050",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f224",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eb9b",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eb98",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eb98",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eb98",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eb9e",
+     "after_bytes": "8b45348b0d30b2a8",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f228",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ebbd",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ebba",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ebba",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ebba",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ebc0",
+     "after_bytes": "8b55348d4c244051",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f22c",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ebe6",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ebe3",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ebe3",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ebe3",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ebe9",
+     "after_bytes": "8b0d30b2a80083b9",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f21c",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ec30",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ec2d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ec2d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ec2d",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ec33",
+     "after_bytes": "8b4c243c8b118b41",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f218",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ec60",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ec5d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ec5d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ec5d",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ec63",
+     "after_bytes": "85c90f84f8040000",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f244",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ed56",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ed53",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x71ed53",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": {
+      "addr": "0x71ed53",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ed59",
+     "after_bytes": "83f936755d3bf10f",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x71edb8",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71edb5",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x71edb5",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": {
+      "addr": "0x71edb5",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71edbb",
+     "after_bytes": "83f9220f85930000",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x71ee54",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ee51",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x71ee51",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": {
+      "addr": "0x71ee51",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ee57",
+     "after_bytes": "83f92c75263bf10f",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    }
+   ]
+  },
+  {
+   "table": "0x71f328",
+   "S": "0x71e940",
+   "H": "0x71f092",
+   "ret_count": 19,
+   "distinct_cleanup_consts": 1,
+   "cleanup_consts": [
+    "0x1c"
+   ],
+   "sub_esp_in_region": [
+    {
+     "addr": "0x71e940",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ea2a",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eae1",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eb00",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eb22",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eb4d",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eb6f",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eb98",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ebba",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ebe3",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ec2d",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ec5d",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ed53",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71edb5",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ee18",
+     "imm": "0x8",
+     "text": "esp, 8"
+    },
+    {
+     "addr": "0x71ee3d",
+     "imm": "0x8",
+     "text": "esp, 8"
+    },
+    {
+     "addr": "0x71ee51",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71eefb",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ef1a",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71ef39",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71efa2",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    },
+    {
+     "addr": "0x71f052",
+     "imm": "0x1c",
+     "text": "esp, 0x1c"
+    }
+   ],
+   "reachable_from_S": 197,
+   "insn_count": 622,
+   "reachable_pct": 31.7,
+   "unreachable_after_ret": [
+    "0x71ea30",
+    "0x71eae7",
+    "0x71eb06",
+    "0x71eb28",
+    "0x71eb53",
+    "0x71eb75",
+    "0x71eb9e",
+    "0x71ebc0",
+    "0x71ebe9",
+    "0x71ec33",
+    "0x71ef01",
+    "0x71ef20",
+    "0x71ef3f",
+    "0x71efa8",
+    "0x71f058"
+   ],
+   "verdict": "INTERNAL (early return)",
+   "rets": [
+    {
+     "ret": "0x71ea2d",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ea2a",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ea2a",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ea2a",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ea30",
+     "after_bytes": "8b3d10eba80083c8",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f240",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eae4",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eae1",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eae1",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eae1",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eae7",
+     "after_bytes": "a130b2a8008b5534",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f230",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eb03",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eb00",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eb00",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eb00",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eb06",
+     "after_bytes": "8b1530b2a80033c9",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f234",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eb25",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eb22",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eb22",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eb22",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eb28",
+     "after_bytes": "8b0d84eda800b889",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f238",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eb50",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eb4d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eb4d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eb4d",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eb53",
+     "after_bytes": "8b55348d4c244051",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f220",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eb72",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eb6f",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eb6f",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eb6f",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eb75",
+     "after_bytes": "8b4d348d44244050",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f224",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71eb9b",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eb98",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eb98",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eb98",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71eb9e",
+     "after_bytes": "8b45348b0d30b2a8",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f228",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ebbd",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ebba",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ebba",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ebba",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ebc0",
+     "after_bytes": "8b55348d4c244051",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f22c",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ebe6",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ebe3",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ebe3",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ebe3",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ebe9",
+     "after_bytes": "8b0d30b2a80083b9",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f21c",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ec30",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ec2d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ec2d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ec2d",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ec33",
+     "after_bytes": "8b4c243c8b118b41",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f218",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ec60",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ec5d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ec5d",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ec5d",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ec63",
+     "after_bytes": "85c90f84f8040000",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f244",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ed56",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ed53",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x71ed53",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": {
+      "addr": "0x71ed53",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ed59",
+     "after_bytes": "83f936755d3bf10f",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x71edb8",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71edb5",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x71edb5",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": {
+      "addr": "0x71edb5",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71edbb",
+     "after_bytes": "83f9220f85930000",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x71ee54",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ee51",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x71ee51",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": {
+      "addr": "0x71ee51",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ee57",
+     "after_bytes": "83f92c75263bf10f",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x71eefe",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71eefb",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71eefb",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71eefb",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ef01",
+     "after_bytes": "8b482483c02450ff",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": true,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f2c0",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ef1d",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ef1a",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ef1a",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ef1a",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ef20",
+     "after_bytes": "8b502483c02450ff",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": true,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f2ec",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71ef3c",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71ef39",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71ef39",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71ef39",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71ef3f",
+     "after_bytes": "8b88f002000085c9",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": true,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f2cc",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71efa5",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71efa2",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71efa2",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71efa2",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71efa8",
+     "after_bytes": "8b55348d88505500",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": true,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f2e8",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x71f055",
+     "ret_bytes": "c21800",
+     "ret_text": "ret 0x18",
+     "prev_insn": {
+      "addr": "0x71f052",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x71f052",
+      "bytes": "83c41c",
+      "text": "add esp, 0x1c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x71f052",
+      "imm": 28,
+      "text": "esp, 0x1c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x71e940",
+       "esp, 0x1c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x71f058",
+     "after_bytes": "8b80345400008b4d",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": true,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x71f2c8",
+       "aligned": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "table": "0x79f028",
+   "S": "0x79da90",
+   "H": "0x79ed73",
+   "ret_count": 36,
+   "distinct_cleanup_consts": 3,
+   "cleanup_consts": [
+    "0x7c",
+    "0x84",
+    "0xe4"
+   ],
+   "sub_esp_in_region": [
+    {
+     "addr": "0x79db50",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79dbb0",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79dbd9",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79dbf2",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79dca8",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79dd73",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79ddc4",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79de15",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79de68",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79df80",
+     "imm": "0x10",
+     "text": "esp, 0x10"
+    },
+    {
+     "addr": "0x79dfaf",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79dfd1",
+     "imm": "0x84",
+     "text": "esp, 0x84"
+    },
+    {
+     "addr": "0x79dfe0",
+     "imm": "0xe4",
+     "text": "esp, 0xe4"
+    },
+    {
+     "addr": "0x79e072",
+     "imm": "0xe4",
+     "text": "esp, 0xe4"
+    },
+    {
+     "addr": "0x79e09b",
+     "imm": "0xe4",
+     "text": "esp, 0xe4"
+    },
+    {
+     "addr": "0x79e149",
+     "imm": "0xc",
+     "text": "esp, 0xc"
+    },
+    {
+     "addr": "0x79e1db",
+     "imm": "0xc",
+     "text": "esp, 0xc"
+    },
+    {
+     "addr": "0x79e262",
+     "imm": "0xc",
+     "text": "esp, 0xc"
+    },
+    {
+     "addr": "0x79e2e9",
+     "imm": "0xc",
+     "text": "esp, 0xc"
+    },
+    {
+     "addr": "0x79e329",
+     "imm": "0x4",
+     "text": "esp, 4"
+    },
+    {
+     "addr": "0x79e38b",
+     "imm": "0x4",
+     "text": "esp, 4"
+    },
+    {
+     "addr": "0x79e408",
+     "imm": "0xe4",
+     "text": "esp, 0xe4"
+    },
+    {
+     "addr": "0x79e422",
+     "imm": "0xe4",
+     "text": "esp, 0xe4"
+    },
+    {
+     "addr": "0x79e479",
+     "imm": "0xe4",
+     "text": "esp, 0xe4"
+    },
+    {
+     "addr": "0x79e4b1",
+     "imm": "0xe4",
+     "text": "esp, 0xe4"
+    },
+    {
+     "addr": "0x79e50e",
+     "imm": "0xe4",
+     "text": "esp, 0xe4"
+    },
+    {
+     "addr": "0x79e520",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79e5a1",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79e5c7",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79e5eb",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79e606",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79e7fb",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79e830",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79e843",
+     "imm": "0x4",
+     "text": "esp, 4"
+    },
+    {
+     "addr": "0x79e858",
+     "imm": "0x4",
+     "text": "esp, 4"
+    },
+    {
+     "addr": "0x79e884",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79e92e",
+     "imm": "0x4",
+     "text": "esp, 4"
+    },
+    {
+     "addr": "0x79e98d",
+     "imm": "0x4",
+     "text": "esp, 4"
+    },
+    {
+     "addr": "0x79e9d3",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79ea80",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79eae0",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79eaf9",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79eb22",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79eb3b",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79eb7d",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79ebea",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79ec34",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    },
+    {
+     "addr": "0x79ed57",
+     "imm": "0x7c",
+     "text": "esp, 0x7c"
+    }
+   ],
+   "reachable_from_S": 76,
+   "insn_count": 1530,
+   "reachable_pct": 5.0,
+   "unreachable_after_ret": [
+    "0x79dbb9",
+    "0x79dbe2",
+    "0x79dbfb",
+    "0x79dcb1",
+    "0x79dd7c",
+    "0x79ddcd",
+    "0x79de1e",
+    "0x79de71",
+    "0x79dfb8",
+    "0x79dfda",
+    "0x79e07b",
+    "0x79e0a4",
+    "0x79e411",
+    "0x79e42b",
+    "0x79e482",
+    "0x79e4ba",
+    "0x79e517",
+    "0x79e5a7",
+    "0x79e5cd",
+    "0x79e5f1",
+    "0x79e60c",
+    "0x79e801",
+    "0x79e836",
+    "0x79e88a",
+    "0x79e9d9",
+    "0x79ea86",
+    "0x79eae6",
+    "0x79eaff",
+    "0x79eb28",
+    "0x79eb41",
+    "0x79eb83",
+    "0x79ebf0",
+    "0x79ec3a",
+    "0x79ed5d"
+   ],
+   "verdict": "NOT INTERNAL - multiple functions (3 frame sizes)",
+   "rets": [
+    {
+     "ret": "0x79db28",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x79db27",
+      "bytes": "59",
+      "text": "pop ecx",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x79db27",
+      "bytes": "59",
+      "text": "pop ecx",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x79db29",
+     "after_bytes": "6a288d4c2414e8ec",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79db4f",
+     "ret_bytes": "c3",
+     "ret_text": "ret",
+     "prev_insn": {
+      "addr": "0x79db4e",
+      "bytes": "59",
+      "text": "pop ecx",
+      "reachable_from_S": true
+     },
+     "prev": {
+      "addr": "0x79db4e",
+      "bytes": "59",
+      "text": "pop ecx",
+      "reachable_from_S": true
+     },
+     "cleanup_insn": null,
+     "matching_sub_esp_in_region": [],
+     "matching_sub_count": 0,
+     "after": "0x79db50",
+     "after_bytes": "81ec84000000538b",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": [
+      {
+       "section": ".text",
+       "at": "0x79be7f",
+       "aligned": false
+      },
+      {
+       "section": ".text",
+       "at": "0x79ea2c",
+       "aligned": true
+      },
+      {
+       "section": ".text",
+       "at": "0x7a946c",
+       "aligned": true
+      },
+      {
+       "section": ".text",
+       "at": "0x7a9718",
+       "aligned": true
+      }
+     ]
+    },
+    {
+     "ret": "0x79dbb6",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79dbb0",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79dbb0",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79dbb0",
+      "imm": 132,
+      "text": "esp, 0x84"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79db50",
+       "esp, 0x84"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79dbb9",
+     "after_bytes": "8bcee8d042e8ff8b",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79dbdf",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79dbd9",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79dbd9",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79dbd9",
+      "imm": 132,
+      "text": "esp, 0x84"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79db50",
+       "esp, 0x84"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79dbe2",
+     "after_bytes": "8bcde8b737e8ff5f",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79dbf8",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79dbf2",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79dbf2",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79dbf2",
+      "imm": 132,
+      "text": "esp, 0x84"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79db50",
+       "esp, 0x84"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79dbfb",
+     "after_bytes": "81fb110100000f84",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79dcae",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79dca8",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79dca8",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79dca8",
+      "imm": 132,
+      "text": "esp, 0x84"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79db50",
+       "esp, 0x84"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79dcb1",
+     "after_bytes": "8bc725ffff00003d",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79dd79",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79dd73",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79dd73",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79dd73",
+      "imm": 132,
+      "text": "esp, 0x84"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79db50",
+       "esp, 0x84"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79dd7c",
+     "after_bytes": "8d4c2410e83b8901",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79ddca",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79ddc4",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79ddc4",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79ddc4",
+      "imm": 132,
+      "text": "esp, 0x84"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79db50",
+       "esp, 0x84"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79ddcd",
+     "after_bytes": "8d4c2410e8ea8801",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79de1b",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79de15",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79de15",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79de15",
+      "imm": 132,
+      "text": "esp, 0x84"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79db50",
+       "esp, 0x84"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79de1e",
+     "after_bytes": "c1ef104f0f85a301",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79de6e",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79de68",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79de68",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79de68",
+      "imm": 132,
+      "text": "esp, 0x84"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79db50",
+       "esp, 0x84"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79de71",
+     "after_bytes": "8d4c2410e8468801",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79dfb5",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79dfaf",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79dfaf",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79dfaf",
+      "imm": 132,
+      "text": "esp, 0x84"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79db50",
+       "esp, 0x84"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79dfb8",
+     "after_bytes": "3d86060000750cba",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79dfd7",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79dfd1",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79dfd1",
+      "bytes": "81c484000000",
+      "text": "add esp, 0x84",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79dfd1",
+      "imm": 132,
+      "text": "esp, 0x84"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79db50",
+       "esp, 0x84"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79dfda",
+     "after_bytes": "90909090909081ec",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e078",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e072",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e072",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e072",
+      "imm": 228,
+      "text": "esp, 0xe4"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79dfe0",
+       "esp, 0xe4"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e07b",
+     "after_bytes": "8bcde80e3ee8ff8b",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e0a1",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e09b",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e09b",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e09b",
+      "imm": 228,
+      "text": "esp, 0xe4"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79dfe0",
+       "esp, 0xe4"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e0a4",
+     "after_bytes": "8bc725ffff00002d",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e40e",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e408",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e408",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e408",
+      "imm": 228,
+      "text": "esp, 0xe4"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79dfe0",
+       "esp, 0xe4"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e411",
+     "after_bytes": "8b11688606000055",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e428",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e422",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e422",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e422",
+      "imm": 228,
+      "text": "esp, 0xe4"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79dfe0",
+       "esp, 0xe4"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e42b",
+     "after_bytes": "c1ef100f84d40000",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e47f",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e479",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e479",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e479",
+      "imm": 228,
+      "text": "esp, 0xe4"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79dfe0",
+       "esp, 0xe4"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e482",
+     "after_bytes": "81ee970400007430",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e4b7",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e4b1",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e4b1",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e4b1",
+      "imm": 228,
+      "text": "esp, 0xe4"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79dfe0",
+       "esp, 0xe4"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e4ba",
+     "after_bytes": "8b1da8147e006840",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e514",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e50e",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e50e",
+      "bytes": "81c4e4000000",
+      "text": "add esp, 0xe4",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e50e",
+      "imm": 228,
+      "text": "esp, 0xe4"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79dfe0",
+       "esp, 0xe4"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e517",
+     "after_bytes": "9090909090909090",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": false,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e5a4",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e5a1",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e5a1",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e5a1",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e5a7",
+     "after_bytes": "8bcde8e238e8ff8b",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e5ca",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e5c7",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e5c7",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e5c7",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e5cd",
+     "after_bytes": "8b358c147e006a00",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e5ee",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e5eb",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e5eb",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e5eb",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e5f1",
+     "after_bytes": "8b8c249c000000e8",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e609",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e606",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e606",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e606",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e60c",
+     "after_bytes": "81ee110100000f84",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e7fe",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e7fb",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e7fb",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e7fb",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e801",
+     "after_bytes": "85db743181fb0407",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e833",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e830",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e830",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e830",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e836",
+     "after_bytes": "6a00e842be02008b",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e887",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e884",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e884",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e884",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e88a",
+     "after_bytes": "a18069b70033f685",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79e9d6",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79e9d3",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79e9d3",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79e9d3",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79e9d9",
+     "after_bytes": "8b078bcfff500884",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79ea83",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79ea80",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79ea80",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79ea80",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79ea86",
+     "after_bytes": "c1eb1081fb000300",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79eae3",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79eae0",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79eae0",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79eae0",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79eae6",
+     "after_bytes": "8b17682b06000055",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79eafc",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79eaf9",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79eaf9",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79eaf9",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79eaff",
+     "after_bytes": "2d2d060000742283",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79eb25",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79eb22",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79eb22",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79eb22",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79eb28",
+     "after_bytes": "8b17682d06000055",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79eb3e",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79eb3b",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79eb3b",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79eb3b",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79eb41",
+     "after_bytes": "c1eb104b0f84ef00",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79eb80",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79eb7d",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79eb7d",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79eb7d",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79eb83",
+     "after_bytes": "b9246eb700e82369",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79ebed",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79ebea",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79ebea",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79ebea",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79ebf0",
+     "after_bytes": "85f60f8423040000",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79ec37",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79ec34",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79ec34",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79ec34",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79ec3a",
+     "after_bytes": "8bb4249c0000006a",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    },
+    {
+     "ret": "0x79ed5a",
+     "ret_bytes": "c21000",
+     "ret_text": "ret 0x10",
+     "prev_insn": {
+      "addr": "0x79ed57",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "prev": {
+      "addr": "0x79ed57",
+      "bytes": "83c47c",
+      "text": "add esp, 0x7c",
+      "reachable_from_S": false
+     },
+     "cleanup_insn": {
+      "addr": "0x79ed57",
+      "imm": 124,
+      "text": "esp, 0x7c"
+     },
+     "matching_sub_esp_in_region": [
+      [
+       "0x79e520",
+       "esp, 0x7c"
+      ]
+     ],
+     "matching_sub_count": 1,
+     "after": "0x79ed5d",
+     "after_bytes": "05fef8ffff83f85e",
+     "after_is_A": false,
+     "after_is_B": false,
+     "after_is_C_target": true,
+     "after_is_switch_slot": false,
+     "after_refs_immediate_or_data": []
+    }
+   ]
+  }
+ ]
+}

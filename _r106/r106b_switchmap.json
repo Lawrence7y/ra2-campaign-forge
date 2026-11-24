@@ -1,0 +1,1753 @@
+{
+ "checks": [
+  {
+   "name": "S0 exe sha256 == R104/R105 记录值",
+   "ok": true,
+   "detail": "73201cc021497c95"
+  },
+  {
+   "name": "E0a 19 张表项数合计 == 292",
+   "ok": true,
+   "detail": "292"
+  },
+  {
+   "name": "E0b 表基址全在 .text 内",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "E0c 全部 292 项值都落在 .text 且是 4 字节对齐位",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "E1a 19/19 holder 都是 jmp dword ptr [reg*4+表基址] 且 memory_index == R105 枚举值",
+   "ok": true,
+   "detail": "19"
+  },
+  {
+   "name": "E1b 19/19 disp == 表基址（表基址取自持有指令，非外部猜测）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "M2a 两级形态 10/10：表长 == BOUND+1",
+   "ok": true,
+   "detail": "[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]"
+  },
+  {
+   "name": "M2b 两级形态 10/10：max(byte) < n",
+   "ok": true,
+   "detail": "[3, 12, 4, 2, 2, 13, 9, 1, 1, 4]"
+  },
+  {
+   "name": "M2c 两级形态 10/10：未用 case 数 == 0（满射）",
+   "ok": true,
+   "detail": "10"
+  },
+  {
+   "name": "N1 反控：10/10 byte 表置 0 后 distinct == 1（满射判据非恒真）",
+   "ok": true,
+   "detail": "10"
+  },
+  {
+   "name": "N2 反控：10/10 byte 表 +1 后必出现 >= n 的值（max<n 判据非恒真）",
+   "ok": true,
+   "detail": "10"
+  },
+  {
+   "name": "M1a 10 张表 sum(分组输入数) == BOUND+1（映射不重不漏）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "M1b 10 张表每组 target 都是该项的真实表项值（字节闭合）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "M1c 10 张表的 case 数 == n（满射，与 M2c 互证）",
+   "ok": true,
+   "detail": "[('0x46f5a0', 4, 4), ('0x48db10', 13, 13), ('0x48dd10', 5, 5), ('0x6a92c4', 3, 3), ('0x6adbdc', 3, 3), ('0x71f2c0', 14, 14), ('0x71f328', 10, 10), ('0x71f778', 2, 2), ('0x71f9e0', 2, 2), ('0x79f028', 5, 5)]"
+  },
+  {
+   "name": "M3a 直接形态 9/9：BOUND == n-1（故输入域 0..BOUND 恰等于项下标域）",
+   "ok": true,
+   "detail": "9"
+  },
+  {
+   "name": "M3b 直接形态里 9 张中 3 张至少 1 项与 default 目标同址（0x4c8114/0x6dfdec/0x708d54）",
+   "ok": true,
+   "detail": "[('0x4c8114', 5), ('0x5001e4', 0), ('0x58bda4', 0), ('0x69b15c', 0), ('0x6b0238', 0), ('0x6dfdec', 1), ('0x708d54', 1), ('0x728e08', 0), ('0x7291ac', 0)]"
+  },
+  {
+   "name": "M4a 重复项值共 8 组（5 张表）—— E-sw1 修正后实测",
+   "ok": true,
+   "detail": "(8, 5)"
+  },
+  {
+   "name": "M4b 5 组目标块首 4 条未写索引寄存器（粗判据下无覆盖迹象）",
+   "ok": true,
+   "detail": "5"
+  },
+  {
+   "name": "M4c 3 组目标块首 4 条写了索引寄存器：0x69af45(xor 全写) / 0x69b08c(xor 全写) / 0x728de0(mov 全写)——三者皆不读旧值，粗判据不能据此判「不等价」，须交 r106c 细判据",
+   "ok": true,
+   "detail": "['0x69af45', '0x69b08c', '0x728de0']"
+  },
+  {
+   "name": "M5a 0x728e08 项值序列 == [728de0,728dd9,728dd0,728c1e,728de0,728de0,728de0]",
+   "ok": true,
+   "detail": "['0x728de0', '0x728dd9', '0x728dd0', '0x728c1e', '0x728de0', '0x728de0', '0x728de0']"
+  },
+  {
+   "name": "M5b 0x728dd0 = mov [edi+14h],5 ; jmp 728de0（前置设置块）",
+   "ok": true,
+   "detail": "['mov dword ptr [edi+14h],5', 'jmp short 00728DE0h']"
+  },
+  {
+   "name": "M5c 0x728dd9 = mov [edi+14h],7 ; 落穿 728de0（前置设置块）",
+   "ok": true,
+   "detail": "['mov dword ptr [edi+14h],7', 'mov eax,[0B0F910h]']"
+  },
+  {
+   "name": "M5d 0x728de0 = 公共尾块（mov eax,[0B0F910h] 起始）",
+   "ok": true,
+   "detail": "['mov eax,[0B0F910h]', 'add edi,18h']"
+  },
+  {
+   "name": "M5e 0x728c1e = 与前三者完全不同的一段（mov eax,[edi+8]）",
+   "ok": true,
+   "detail": "['mov eax,[edi+8]', 'mov ebx,[edi+1Ch]']"
+  },
+  {
+   "name": "M5f 因此 case 0/4/5/6 在代码上完全同址同码（4 项真等价）；case 1/2 不是与它们等价，而是各写不同常量后合流到同一尾块",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "R": {
+  "E1_holder_index": {
+   "tested": 19,
+   "ok": 19,
+   "rows": [
+    {
+     "table": "0x46f5a0",
+     "holder": "0x46e4be",
+     "insn": "jmp dword ptr [ecx*4+46F5A0h]",
+     "mem_index_enum": 38,
+     "mem_index_name": "ecx",
+     "disp": "0x46f5a0",
+     "r105_enum": 38,
+     "ok": true
+    },
+    {
+     "table": "0x48db10",
+     "holder": "0x48d583",
+     "insn": "jmp dword ptr [edx*4+48DB10h]",
+     "mem_index_enum": 39,
+     "mem_index_name": "edx",
+     "disp": "0x48db10",
+     "r105_enum": 39,
+     "ok": true
+    },
+    {
+     "table": "0x48dd10",
+     "holder": "0x48dce0",
+     "insn": "jmp dword ptr [ecx*4+48DD10h]",
+     "mem_index_enum": 38,
+     "mem_index_name": "ecx",
+     "disp": "0x48dd10",
+     "r105_enum": 38,
+     "ok": true
+    },
+    {
+     "table": "0x4c8114",
+     "holder": "0x4c6cd7",
+     "insn": "jmp dword ptr [eax*4+4C8114h]",
+     "mem_index_enum": 37,
+     "mem_index_name": "eax",
+     "disp": "0x4c8114",
+     "r105_enum": 37,
+     "ok": true
+    },
+    {
+     "table": "0x5001e4",
+     "holder": "0x4ffde9",
+     "insn": "jmp dword ptr [eax*4+5001E4h]",
+     "mem_index_enum": 37,
+     "mem_index_name": "eax",
+     "disp": "0x5001e4",
+     "r105_enum": 37,
+     "ok": true
+    },
+    {
+     "table": "0x58bda4",
+     "holder": "0x58bd85",
+     "insn": "jmp dword ptr [ecx*4+58BDA4h]",
+     "mem_index_enum": 38,
+     "mem_index_name": "ecx",
+     "disp": "0x58bda4",
+     "r105_enum": 38,
+     "ok": true
+    },
+    {
+     "table": "0x69b15c",
+     "holder": "0x69af3e",
+     "insn": "jmp dword ptr [eax*4+69B15Ch]",
+     "mem_index_enum": 37,
+     "mem_index_name": "eax",
+     "disp": "0x69b15c",
+     "r105_enum": 37,
+     "ok": true
+    },
+    {
+     "table": "0x6a92c4",
+     "holder": "0x6a8e1e",
+     "insn": "jmp dword ptr [ecx*4+6A92C4h]",
+     "mem_index_enum": 38,
+     "mem_index_name": "ecx",
+     "disp": "0x6a92c4",
+     "r105_enum": 38,
+     "ok": true
+    },
+    {
+     "table": "0x6adbdc",
+     "holder": "0x6acf2a",
+     "insn": "jmp dword ptr [ecx*4+6ADBDCh]",
+     "mem_index_enum": 38,
+     "mem_index_name": "ecx",
+     "disp": "0x6adbdc",
+     "r105_enum": 38,
+     "ok": true
+    },
+    {
+     "table": "0x6b0238",
+     "holder": "0x6afd73",
+     "insn": "jmp dword ptr [eax*4+6B0238h]",
+     "mem_index_enum": 37,
+     "mem_index_name": "eax",
+     "disp": "0x6b0238",
+     "r105_enum": 37,
+     "ok": true
+    },
+    {
+     "table": "0x6dfdec",
+     "holder": "0x6dd8e7",
+     "insn": "jmp dword ptr [edx*4+6DFDECh]",
+     "mem_index_enum": 39,
+     "mem_index_name": "edx",
+     "disp": "0x6dfdec",
+     "r105_enum": 39,
+     "ok": true
+    },
+    {
+     "table": "0x708d54",
+     "holder": "0x708c4e",
+     "insn": "jmp dword ptr [eax*4+708D54h]",
+     "mem_index_enum": 37,
+     "mem_index_name": "eax",
+     "disp": "0x708d54",
+     "r105_enum": 37,
+     "ok": true
+    },
+    {
+     "table": "0x71f2c0",
+     "holder": "0x71eea2",
+     "insn": "jmp dword ptr [edx*4+71F2C0h]",
+     "mem_index_enum": 39,
+     "mem_index_name": "edx",
+     "disp": "0x71f2c0",
+     "r105_enum": 39,
+     "ok": true
+    },
+    {
+     "table": "0x71f328",
+     "holder": "0x71f092",
+     "insn": "jmp dword ptr [ecx*4+71F328h]",
+     "mem_index_enum": 38,
+     "mem_index_name": "ecx",
+     "disp": "0x71f328",
+     "r105_enum": 38,
+     "ok": true
+    },
+    {
+     "table": "0x71f778",
+     "holder": "0x71f6d0",
+     "insn": "jmp dword ptr [eax*4+71F778h]",
+     "mem_index_enum": 37,
+     "mem_index_name": "eax",
+     "disp": "0x71f778",
+     "r105_enum": 37,
+     "ok": true
+    },
+    {
+     "table": "0x71f9e0",
+     "holder": "0x71f9d3",
+     "insn": "jmp dword ptr [ecx*4+71F9E0h]",
+     "mem_index_enum": 38,
+     "mem_index_name": "ecx",
+     "disp": "0x71f9e0",
+     "r105_enum": 38,
+     "ok": true
+    },
+    {
+     "table": "0x728e08",
+     "holder": "0x728c17",
+     "insn": "jmp dword ptr [eax*4+728E08h]",
+     "mem_index_enum": 37,
+     "mem_index_name": "eax",
+     "disp": "0x728e08",
+     "r105_enum": 37,
+     "ok": true
+    },
+    {
+     "table": "0x7291ac",
+     "holder": "0x728e6c",
+     "insn": "jmp dword ptr [ecx*4+7291ACh]",
+     "mem_index_enum": 38,
+     "mem_index_name": "ecx",
+     "disp": "0x7291ac",
+     "r105_enum": 38,
+     "ok": true
+    },
+    {
+     "table": "0x79f028",
+     "holder": "0x79ed73",
+     "insn": "jmp dword ptr [edx*4+79F028h]",
+     "mem_index_enum": 39,
+     "mem_index_name": "edx",
+     "disp": "0x79f028",
+     "r105_enum": 39,
+     "ok": true
+    }
+   ]
+  },
+  "M2_surjective": {
+   "tested": 10,
+   "surjective": 10,
+   "rows": [
+    {
+     "table": "0x46f5a0",
+     "n": 4,
+     "bound": 47,
+     "n_bytes": 48,
+     "max_byte": 3,
+     "distinct_cases_used": 4,
+     "unused_cases": [],
+     "surjective": true
+    },
+    {
+     "table": "0x48db10",
+     "n": 13,
+     "bound": 37,
+     "n_bytes": 38,
+     "max_byte": 12,
+     "distinct_cases_used": 13,
+     "unused_cases": [],
+     "surjective": true
+    },
+    {
+     "table": "0x48dd10",
+     "n": 5,
+     "bound": 39,
+     "n_bytes": 40,
+     "max_byte": 4,
+     "distinct_cases_used": 5,
+     "unused_cases": [],
+     "surjective": true
+    },
+    {
+     "table": "0x6a92c4",
+     "n": 3,
+     "bound": 14,
+     "n_bytes": 15,
+     "max_byte": 2,
+     "distinct_cases_used": 3,
+     "unused_cases": [],
+     "surjective": true
+    },
+    {
+     "table": "0x6adbdc",
+     "n": 3,
+     "bound": 22,
+     "n_bytes": 23,
+     "max_byte": 2,
+     "distinct_cases_used": 3,
+     "unused_cases": [],
+     "surjective": true
+    },
+    {
+     "table": "0x71f2c0",
+     "n": 14,
+     "bound": 45,
+     "n_bytes": 46,
+     "max_byte": 13,
+     "distinct_cases_used": 14,
+     "unused_cases": [],
+     "surjective": true
+    },
+    {
+     "table": "0x71f328",
+     "n": 10,
+     "bound": 55,
+     "n_bytes": 56,
+     "max_byte": 9,
+     "distinct_cases_used": 10,
+     "unused_cases": [],
+     "surjective": true
+    },
+    {
+     "table": "0x71f778",
+     "n": 2,
+     "bound": 55,
+     "n_bytes": 56,
+     "max_byte": 1,
+     "distinct_cases_used": 2,
+     "unused_cases": [],
+     "surjective": true
+    },
+    {
+     "table": "0x71f9e0",
+     "n": 2,
+     "bound": 58,
+     "n_bytes": 59,
+     "max_byte": 1,
+     "distinct_cases_used": 2,
+     "unused_cases": [],
+     "surjective": true
+    },
+    {
+     "table": "0x79f028",
+     "n": 5,
+     "bound": 94,
+     "n_bytes": 95,
+     "max_byte": 4,
+     "distinct_cases_used": 5,
+     "unused_cases": [],
+     "surjective": true
+    }
+   ]
+  },
+  "M1_input_to_case": {
+   "tested": 10,
+   "rows": [
+    {
+     "table": "0x46f5a0",
+     "n": 4,
+     "bound": 47,
+     "n_inputs_total": 48,
+     "n_cases_used": 4,
+     "groups": [
+      {
+       "case": 0,
+       "n_inputs": 1,
+       "inputs": [
+        0
+       ],
+       "target": "0x46e4c5"
+      },
+      {
+       "case": 1,
+       "n_inputs": 2,
+       "inputs": [
+        1,
+        2
+       ],
+       "target": "0x46e604"
+      },
+      {
+       "case": 2,
+       "n_inputs": 1,
+       "inputs": [
+        47
+       ],
+       "target": "0x46e743"
+      },
+      {
+       "case": 3,
+       "n_inputs": 44,
+       "inputs": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+       ],
+       "target": "0x46f4c9"
+      }
+     ],
+     "largest_group": 44,
+     "n_singleton_groups": 2
+    },
+    {
+     "table": "0x48db10",
+     "n": 13,
+     "bound": 37,
+     "n_inputs_total": 38,
+     "n_cases_used": 13,
+     "groups": [
+      {
+       "case": 0,
+       "n_inputs": 1,
+       "inputs": [
+        0
+       ],
+       "target": "0x48d81a"
+      },
+      {
+       "case": 1,
+       "n_inputs": 1,
+       "inputs": [
+        2
+       ],
+       "target": "0x48d8dd"
+      },
+      {
+       "case": 2,
+       "n_inputs": 1,
+       "inputs": [
+        5
+       ],
+       "target": "0x48da45"
+      },
+      {
+       "case": 3,
+       "n_inputs": 2,
+       "inputs": [
+        6,
+        9
+       ],
+       "target": "0x48dad3"
+      },
+      {
+       "case": 4,
+       "n_inputs": 1,
+       "inputs": [
+        18
+       ],
+       "target": "0x48d58a"
+      },
+      {
+       "case": 5,
+       "n_inputs": 1,
+       "inputs": [
+        19
+       ],
+       "target": "0x48d9bd"
+      },
+      {
+       "case": 6,
+       "n_inputs": 1,
+       "inputs": [
+        22
+       ],
+       "target": "0x48d798"
+      },
+      {
+       "case": 7,
+       "n_inputs": 1,
+       "inputs": [
+        23
+       ],
+       "target": "0x48d7d5"
+      },
+      {
+       "case": 8,
+       "n_inputs": 1,
+       "inputs": [
+        24
+       ],
+       "target": "0x48d7f4"
+      },
+      {
+       "case": 9,
+       "n_inputs": 1,
+       "inputs": [
+        29
+       ],
+       "target": "0x48d59e"
+      },
+      {
+       "case": 10,
+       "n_inputs": 1,
+       "inputs": [
+        31
+       ],
+       "target": "0x48d620"
+      },
+      {
+       "case": 11,
+       "n_inputs": 1,
+       "inputs": [
+        37
+       ],
+       "target": "0x48d872"
+      },
+      {
+       "case": 12,
+       "n_inputs": 25,
+       "inputs": [
+        1,
+        3,
+        4,
+        7,
+        8,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        30,
+        32,
+        33,
+        34,
+        35,
+        36
+       ],
+       "target": "0x48dac4"
+      }
+     ],
+     "largest_group": 25,
+     "n_singleton_groups": 11
+    },
+    {
+     "table": "0x48dd10",
+     "n": 5,
+     "bound": 39,
+     "n_inputs_total": 40,
+     "n_cases_used": 5,
+     "groups": [
+      {
+       "case": 0,
+       "n_inputs": 2,
+       "inputs": [
+        0,
+        39
+       ],
+       "target": "0x48dce7"
+      },
+      {
+       "case": 1,
+       "n_inputs": 2,
+       "inputs": [
+        1,
+        2
+       ],
+       "target": "0x48dd03"
+      },
+      {
+       "case": 2,
+       "n_inputs": 2,
+       "inputs": [
+        5,
+        6
+       ],
+       "target": "0x48dcf0"
+      },
+      {
+       "case": 3,
+       "n_inputs": 2,
+       "inputs": [
+        14,
+        15
+       ],
+       "target": "0x48dcfa"
+      },
+      {
+       "case": 4,
+       "n_inputs": 32,
+       "inputs": [
+        3,
+        4,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+       ],
+       "target": "0x48dd0d"
+      }
+     ],
+     "largest_group": 32,
+     "n_singleton_groups": 0
+    },
+    {
+     "table": "0x6a92c4",
+     "n": 3,
+     "bound": 14,
+     "n_inputs_total": 15,
+     "n_cases_used": 3,
+     "groups": [
+      {
+       "case": 0,
+       "n_inputs": 3,
+       "inputs": [
+        0,
+        1,
+        14
+       ],
+       "target": "0x6a8eb8"
+      },
+      {
+       "case": 1,
+       "n_inputs": 1,
+       "inputs": [
+        5
+       ],
+       "target": "0x6a8e25"
+      },
+      {
+       "case": 2,
+       "n_inputs": 11,
+       "inputs": [
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+       ],
+       "target": "0x6a8f49"
+      }
+     ],
+     "largest_group": 11,
+     "n_singleton_groups": 1
+    },
+    {
+     "table": "0x6adbdc",
+     "n": 3,
+     "bound": 22,
+     "n_inputs_total": 23,
+     "n_cases_used": 3,
+     "groups": [
+      {
+       "case": 0,
+       "n_inputs": 7,
+       "inputs": [
+        0,
+        3,
+        11,
+        15,
+        16,
+        17,
+        18
+       ],
+       "target": "0x6acf31"
+      },
+      {
+       "case": 1,
+       "n_inputs": 7,
+       "inputs": [
+        5,
+        8,
+        9,
+        19,
+        20,
+        21,
+        22
+       ],
+       "target": "0x6adb62"
+      },
+      {
+       "case": 2,
+       "n_inputs": 9,
+       "inputs": [
+        1,
+        2,
+        4,
+        6,
+        7,
+        10,
+        12,
+        13,
+        14
+       ],
+       "target": "0x6adbcc"
+      }
+     ],
+     "largest_group": 9,
+     "n_singleton_groups": 0
+    },
+    {
+     "table": "0x71f2c0",
+     "n": 14,
+     "bound": 45,
+     "n_inputs_total": 46,
+     "n_cases_used": 14,
+     "groups": [
+      {
+       "case": 0,
+       "n_inputs": 1,
+       "inputs": [
+        0
+       ],
+       "target": "0x71ef01"
+      },
+      {
+       "case": 1,
+       "n_inputs": 1,
+       "inputs": [
+        3
+       ],
+       "target": "0x71f03f"
+      },
+      {
+       "case": 2,
+       "n_inputs": 1,
+       "inputs": [
+        4
+       ],
+       "target": "0x71f058"
+      },
+      {
+       "case": 3,
+       "n_inputs": 1,
+       "inputs": [
+        5
+       ],
+       "target": "0x71ef3f"
+      },
+      {
+       "case": 4,
+       "n_inputs": 1,
+       "inputs": [
+        6
+       ],
+       "target": "0x71ef8e"
+      },
+      {
+       "case": 5,
+       "n_inputs": 1,
+       "inputs": [
+        7
+       ],
+       "target": "0x71efeb"
+      },
+      {
+       "case": 6,
+       "n_inputs": 1,
+       "inputs": [
+        8
+       ],
+       "target": "0x71f003"
+      },
+      {
+       "case": 7,
+       "n_inputs": 1,
+       "inputs": [
+        9
+       ],
+       "target": "0x71f01d"
+      },
+      {
+       "case": 8,
+       "n_inputs": 1,
+       "inputs": [
+        10
+       ],
+       "target": "0x71f037"
+      },
+      {
+       "case": 9,
+       "n_inputs": 1,
+       "inputs": [
+        11
+       ],
+       "target": "0x71eea9"
+      },
+      {
+       "case": 10,
+       "n_inputs": 1,
+       "inputs": [
+        20
+       ],
+       "target": "0x71efa8"
+      },
+      {
+       "case": 11,
+       "n_inputs": 1,
+       "inputs": [
+        40
+       ],
+       "target": "0x71ef20"
+      },
+      {
+       "case": 12,
+       "n_inputs": 1,
+       "inputs": [
+        45
+       ],
+       "target": "0x71efcb"
+      },
+      {
+       "case": 13,
+       "n_inputs": 33,
+       "inputs": [
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        41,
+        42,
+        43,
+        44
+       ],
+       "target": "0x71f069"
+      }
+     ],
+     "largest_group": 33,
+     "n_singleton_groups": 13
+    },
+    {
+     "table": "0x71f328",
+     "n": 10,
+     "bound": 55,
+     "n_inputs_total": 56,
+     "n_cases_used": 10,
+     "groups": [
+      {
+       "case": 0,
+       "n_inputs": 1,
+       "inputs": [
+        0
+       ],
+       "target": "0x71f0e1"
+      },
+      {
+       "case": 1,
+       "n_inputs": 1,
+       "inputs": [
+        2
+       ],
+       "target": "0x71f0fb"
+      },
+      {
+       "case": 2,
+       "n_inputs": 1,
+       "inputs": [
+        6
+       ],
+       "target": "0x71f12f"
+      },
+      {
+       "case": 3,
+       "n_inputs": 1,
+       "inputs": [
+        7
+       ],
+       "target": "0x71f115"
+      },
+      {
+       "case": 4,
+       "n_inputs": 1,
+       "inputs": [
+        8
+       ],
+       "target": "0x71f189"
+      },
+      {
+       "case": 5,
+       "n_inputs": 1,
+       "inputs": [
+        27
+       ],
+       "target": "0x71f099"
+      },
+      {
+       "case": 6,
+       "n_inputs": 1,
+       "inputs": [
+        52
+       ],
+       "target": "0x71f159"
+      },
+      {
+       "case": 7,
+       "n_inputs": 1,
+       "inputs": [
+        53
+       ],
+       "target": "0x71f16f"
+      },
+      {
+       "case": 8,
+       "n_inputs": 1,
+       "inputs": [
+        55
+       ],
+       "target": "0x71f0bd"
+      },
+      {
+       "case": 9,
+       "n_inputs": 47,
+       "inputs": [
+        1,
+        3,
+        4,
+        5,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+       ],
+       "target": "0x71f1b1"
+      }
+     ],
+     "largest_group": 47,
+     "n_singleton_groups": 9
+    },
+    {
+     "table": "0x71f778",
+     "n": 2,
+     "bound": 55,
+     "n_inputs_total": 56,
+     "n_cases_used": 2,
+     "groups": [
+      {
+       "case": 0,
+       "n_inputs": 22,
+       "inputs": [
+        0,
+        2,
+        5,
+        6,
+        7,
+        8,
+        9,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        27,
+        29,
+        49,
+        52,
+        53,
+        54,
+        55
+       ],
+       "target": "0x71f6d7"
+      },
+      {
+       "case": 1,
+       "n_inputs": 34,
+       "inputs": [
+        1,
+        3,
+        4,
+        10,
+        11,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        50,
+        51
+       ],
+       "target": "0x71f6da"
+      }
+     ],
+     "largest_group": 34,
+     "n_singleton_groups": 0
+    },
+    {
+     "table": "0x71f9e0",
+     "n": 2,
+     "bound": 58,
+     "n_inputs_total": 59,
+     "n_cases_used": 2,
+     "groups": [
+      {
+       "case": 0,
+       "n_inputs": 5,
+       "inputs": [
+        0,
+        5,
+        30,
+        43,
+        58
+       ],
+       "target": "0x71f9da"
+      },
+      {
+       "case": 1,
+       "n_inputs": 54,
+       "inputs": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57
+       ],
+       "target": "0x71f9dd"
+      }
+     ],
+     "largest_group": 54,
+     "n_singleton_groups": 0
+    },
+    {
+     "table": "0x79f028",
+     "n": 5,
+     "bound": 94,
+     "n_inputs_total": 95,
+     "n_cases_used": 5,
+     "groups": [
+      {
+       "case": 0,
+       "n_inputs": 1,
+       "inputs": [
+        0
+       ],
+       "target": "0x79edc5"
+      },
+      {
+       "case": 1,
+       "n_inputs": 1,
+       "inputs": [
+        1
+       ],
+       "target": "0x79ee0b"
+      },
+      {
+       "case": 2,
+       "n_inputs": 1,
+       "inputs": [
+        2
+       ],
+       "target": "0x79ee87"
+      },
+      {
+       "case": 3,
+       "n_inputs": 2,
+       "inputs": [
+        93,
+        94
+       ],
+       "target": "0x79ed7a"
+      },
+      {
+       "case": 4,
+       "n_inputs": 90,
+       "inputs": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92
+       ],
+       "target": "0x79f01b"
+      }
+     ],
+     "largest_group": 90,
+     "n_singleton_groups": 3
+    }
+   ]
+  },
+  "M3_direct": {
+   "tested": 9,
+   "rows": [
+    {
+     "table": "0x4c8114",
+     "n": 46,
+     "bound": 45,
+     "bound_eq_n_minus_1": true,
+     "default": "0x4c8109",
+     "entries_eq_default": [
+      24,
+      25,
+      27,
+      36,
+      37
+     ],
+     "n_entries_eq_default": 5
+    },
+    {
+     "table": "0x5001e4",
+     "n": 5,
+     "bound": 4,
+     "bound_eq_n_minus_1": true,
+     "default": "0x5001ce",
+     "entries_eq_default": [],
+     "n_entries_eq_default": 0
+    },
+    {
+     "table": "0x58bda4",
+     "n": 5,
+     "bound": 4,
+     "bound_eq_n_minus_1": true,
+     "default": "0x58bda1",
+     "entries_eq_default": [],
+     "n_entries_eq_default": 0
+    },
+    {
+     "table": "0x69b15c",
+     "n": 4,
+     "bound": 3,
+     "bound_eq_n_minus_1": true,
+     "default": "0x69b148",
+     "entries_eq_default": [],
+     "n_entries_eq_default": 0
+    },
+    {
+     "table": "0x6b0238",
+     "n": 7,
+     "bound": 6,
+     "bound_eq_n_minus_1": true,
+     "default": "0x6b0231",
+     "entries_eq_default": [],
+     "n_entries_eq_default": 0
+    },
+    {
+     "table": "0x6dfdec",
+     "n": 145,
+     "bound": 144,
+     "bound_eq_n_minus_1": true,
+     "default": "0x6dfddd",
+     "entries_eq_default": [
+      14
+     ],
+     "n_entries_eq_default": 1
+    },
+    {
+     "table": "0x708d54",
+     "n": 5,
+     "bound": 4,
+     "bound_eq_n_minus_1": true,
+     "default": "0x708d4d",
+     "entries_eq_default": [
+      3
+     ],
+     "n_entries_eq_default": 1
+    },
+    {
+     "table": "0x728e08",
+     "n": 7,
+     "bound": 6,
+     "bound_eq_n_minus_1": true,
+     "default": "0x728dfc",
+     "entries_eq_default": [],
+     "n_entries_eq_default": 0
+    },
+    {
+     "table": "0x7291ac",
+     "n": 7,
+     "bound": 6,
+     "bound_eq_n_minus_1": true,
+     "default": "0x7290f6",
+     "entries_eq_default": [],
+     "n_entries_eq_default": 0
+    }
+   ]
+  },
+  "M4_dup_targets": {
+   "tested": 8,
+   "rows": [
+    {
+     "table": "0x4c8114",
+     "target": "0x4c6cde",
+     "count": 3,
+     "indices": [
+      41,
+      42,
+      43
+     ],
+     "idx_reg": "eax",
+     "head": [
+      "mov ecx,esi",
+      "call 00637E00h",
+      "pop edi",
+      "pop esi"
+     ],
+     "head_writes_idx_reg": false,
+     "head_write_at": "",
+     "is_default_target": false
+    },
+    {
+     "table": "0x4c8114",
+     "target": "0x4c71ca",
+     "count": 2,
+     "indices": [
+      3,
+      4
+     ],
+     "idx_reg": "eax",
+     "head": [
+      "lea ecx,[esi+7]",
+      "call 006E6F20h",
+      "mov edi,eax",
+      "mov al,[esi+1Dh]"
+     ],
+     "head_writes_idx_reg": false,
+     "head_write_at": "",
+     "is_default_target": false
+    },
+    {
+     "table": "0x4c8114",
+     "target": "0x4c8109",
+     "count": 5,
+     "indices": [
+      24,
+      25,
+      27,
+      36,
+      37
+     ],
+     "idx_reg": "eax",
+     "head": [
+      "pop edi",
+      "pop esi",
+      "pop ebp",
+      "pop ebx"
+     ],
+     "head_writes_idx_reg": false,
+     "head_write_at": "",
+     "is_default_target": true
+    },
+    {
+     "table": "0x58bda4",
+     "target": "0x58bd95",
+     "count": 3,
+     "indices": [
+      1,
+      3,
+      4
+     ],
+     "idx_reg": "ecx",
+     "head": [
+      "xor eax,eax",
+      "cmp edx,3",
+      "setne al",
+      "ret"
+     ],
+     "head_writes_idx_reg": false,
+     "head_write_at": "",
+     "is_default_target": false
+    },
+    {
+     "table": "0x69b15c",
+     "target": "0x69af45",
+     "count": 2,
+     "indices": [
+      2,
+      3
+     ],
+     "idx_reg": "eax",
+     "head": [
+      "mov ecx,71h",
+      "xor eax,eax",
+      "lea edi,[esp+20h]",
+      "push 0"
+     ],
+     "head_writes_idx_reg": true,
+     "head_write_at": "0x69af4a:xor eax,eax",
+     "is_default_target": false
+    },
+    {
+     "table": "0x69b15c",
+     "target": "0x69b08c",
+     "count": 2,
+     "indices": [
+      0,
+      1
+     ],
+     "idx_reg": "eax",
+     "head": [
+      "mov ecx,3Eh",
+      "xor eax,eax",
+      "lea edi,[esp+20h]",
+      "push 0"
+     ],
+     "head_writes_idx_reg": true,
+     "head_write_at": "0x69b091:xor eax,eax",
+     "is_default_target": false
+    },
+    {
+     "table": "0x6dfdec",
+     "target": "0x6dfddb",
+     "count": 3,
+     "indices": [
+      38,
+      91,
+      92
+     ],
+     "idx_reg": "edx",
+     "head": [
+      "mov al,1",
+      "pop edi",
+      "pop esi",
+      "pop ebp"
+     ],
+     "head_writes_idx_reg": false,
+     "head_write_at": "",
+     "is_default_target": false
+    },
+    {
+     "table": "0x728e08",
+     "target": "0x728de0",
+     "count": 4,
+     "indices": [
+      0,
+      4,
+      5,
+      6
+     ],
+     "idx_reg": "eax",
+     "head": [
+      "mov eax,[0B0F910h]",
+      "add edi,18h",
+      "mov [edi],eax",
+      "mov ecx,[0B0F914h]"
+     ],
+     "head_writes_idx_reg": true,
+     "head_write_at": "0x728de0:mov eax,[0B0F910h]",
+     "is_default_target": false
+    }
+   ]
+  },
+  "M5_728e08": {
+   "entries": [
+    "0x728de0",
+    "0x728dd9",
+    "0x728dd0",
+    "0x728c1e",
+    "0x728de0",
+    "0x728de0",
+    "0x728de0"
+   ],
+   "blocks": {
+    "0x728de0": [
+     "mov eax,[0B0F910h]",
+     "add edi,18h"
+    ],
+    "0x728dd9": [
+     "mov dword ptr [edi+14h],7",
+     "mov eax,[0B0F910h]"
+    ],
+    "0x728dd0": [
+     "mov dword ptr [edi+14h],5",
+     "jmp short 00728DE0h"
+    ],
+    "0x728c1e": [
+     "mov eax,[edi+8]",
+     "mov ebx,[edi+1Ch]"
+    ]
+   },
+   "verdict": "case 0/4/5/6 同址同码 = 4 项真等价；case 1/2 各写不同常量（5/7）到 [edi+14h] 后合流到 0x728de0 尾块，故 case 0/1/2/4/5/6 六者在「尾块」上共享代码，但 1/2 有各自独有的前置写入"
+  },
+  "M6_summary": {
+   "two_level_tables": 10,
+   "direct_tables": 9,
+   "entries_total": 292,
+   "distinct_targets": 276,
+   "dup_groups": 8,
+   "dup_entries_surplus": 16,
+   "tables_with_zero_dup": 14,
+   "input_domain_total_two_level": 476,
+   "case_slots_total": 61
+  }
+ }
+}

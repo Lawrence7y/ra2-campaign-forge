@@ -1,0 +1,567 @@
+{
+ "checks": [
+  {
+   "name": "S0 exe sha256",
+   "ok": true,
+   "detail": "73201cc021497c95"
+  },
+  {
+   "name": "S1 指针表数 == 360（三处独立实现同值：r104b / r104c / 本文）",
+   "ok": true,
+   "detail": "360"
+  },
+  {
+   "name": "S1b 每张表都至少有一个 jmp [reg*4+base] 持有指令（否则它不满足「被索引跳转使用」）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "S2 B1 取到 41 行",
+   "ok": true,
+   "detail": "41"
+  },
+  {
+   "name": "X1 B1 的 41 行宿主全部落在指针表体内部（41/41）",
+   "ok": true,
+   "detail": "41"
+  },
+  {
+   "name": "X1b 这 41 个所在项的整数值全部是 .text 指针（41/41）",
+   "ok": true,
+   "detail": "41"
+  },
+  {
+   "name": "X1c 它们分布在多张表上（不是集中在 1 张表，避免「一张表的巧合」）",
+   "ok": true,
+   "detail": "19"
+  },
+  {
+   "name": "X2 随机全 .text 地址落在表内的中位比例 << 1（不能与 41/41 混为一谈）",
+   "ok": true,
+   "detail": "0.0"
+  },
+  {
+   "name": "X2b 中位比例与「表体字节占比」同一量级（说明随机基线就是面积比，符合直觉）",
+   "ok": true,
+   "detail": "(0.0, 0.0027)"
+  },
+  {
+   "name": "X3 随机「指令内部非起点」地址落在表内的中位比例仍远小于 1（41/41 不是自动成立）",
+   "ok": true,
+   "detail": "0.0"
+  },
+  {
+   "name": "X3b B1 的 41/41 严格高于 X3 的全部 200 次随机抽样的最大值（判据有强判别力）",
+   "ok": true,
+   "detail": "0.0244"
+  },
+  {
+   "name": "X4 用到的每一张表的每条持有指令都真的以 scale4 + 该 disp32 寻址（逐条复核）",
+   "ok": true,
+   "detail": "19"
+  },
+  {
+   "name": "X4b 这些表的每一项都是 .text 指针（逐项，不留例外）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "X4c 用到的表**全部项**都是 .text 指针（按 base+n 全量复核，不只前 5 项）",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "X5 这 31 个宿主里只有 0 个曾被某张表当作跳转目标",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "X5b 若一个都没有 ⇒ 「它们不是代码」这条更强（两种结果都要如实报，本断言只要求可判）",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "X6 反控：把判据放松成「在任意 4 字节窗口内」后随机池命中率 == 1.0（证明 X2/X3 的判据不是这种无判别力的宽松判据）",
+   "ok": true,
+   "detail": "41/41"
+  }
+ ],
+ "R": {
+  "S1_tables": {
+   "n_tables": 360,
+   "n_holders_total": 378,
+   "n_entries_total": 2702
+  },
+  "S2_b1": {
+   "rows": 41,
+   "distinct_hosts": 31,
+   "distinct_targets": 41
+  },
+  "X1_result": {
+   "rows": 41,
+   "in_pointer_table": 41,
+   "item_is_text_ptr": 41,
+   "distinct_tables_used": 19,
+   "samples": [
+    {
+     "a": "0x46f5a1",
+     "host": "0x46f5a0",
+     "in_table": {
+      "base": "0x46f5a0",
+      "idx": 0
+     },
+     "item_val_is_text_ptr": true,
+     "host_is_table_base_and_idx0": true
+    },
+    {
+     "a": "0x48db26",
+     "host": "0x48db25",
+     "in_table": {
+      "base": "0x48db10",
+      "idx": 5
+     },
+     "item_val_is_text_ptr": true,
+     "host_is_table_base_and_idx0": false
+    },
+    {
+     "a": "0x48db27",
+     "host": "0x48db25",
+     "in_table": {
+      "base": "0x48db10",
+      "idx": 5
+     },
+     "item_val_is_text_ptr": true,
+     "host_is_table_base_and_idx0": false
+    },
+    {
+     "a": "0x48dd19",
+     "host": "0x48dd18",
+     "in_table": {
+      "base": "0x48dd10",
+      "idx": 2
+     },
+     "item_val_is_text_ptr": true,
+     "host_is_table_base_and_idx0": false
+    },
+    {
+     "a": "0x4c8115",
+     "host": "0x4c8114",
+     "in_table": {
+      "base": "0x4c8114",
+      "idx": 0
+     },
+     "item_val_is_text_ptr": true,
+     "host_is_table_base_and_idx0": true
+    },
+    {
+     "a": "0x5001e5",
+     "host": "0x5001e4",
+     "in_table": {
+      "base": "0x5001e4",
+      "idx": 0
+     },
+     "item_val_is_text_ptr": true,
+     "host_is_table_base_and_idx0": true
+    }
+   ]
+  },
+  "X2_random_all_text": {
+   "trials": 200,
+   "k": 41,
+   "median_frac": 0.0,
+   "min": 0.0,
+   "max": 0.0244,
+   "table_bytes": 10808,
+   "text_bytes": 4060045,
+   "expected_frac_by_area": 0.0027
+  },
+  "X3_nonstart_pool": {
+   "size": 2667508
+  },
+  "X3_random_nonstart": {
+   "trials": 200,
+   "k": 41,
+   "median_frac": 0.0,
+   "min": 0.0,
+   "max": 0.0244
+  },
+  "X4_tables_used": [
+   {
+    "base": "0x46f5a0",
+    "n": 4,
+    "holders": [
+     {
+      "at": "0x46e4be",
+      "txt": "jmp dword ptr [ecx*4+46F5A0h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "38"
+     }
+    ],
+    "first_vals": [
+     "0x46e4c5",
+     "0x46e604",
+     "0x46e743",
+     "0x46f4c9"
+    ]
+   },
+   {
+    "base": "0x48db10",
+    "n": 13,
+    "holders": [
+     {
+      "at": "0x48d583",
+      "txt": "jmp dword ptr [edx*4+48DB10h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "39"
+     }
+    ],
+    "first_vals": [
+     "0x48d81a",
+     "0x48d8dd",
+     "0x48da45",
+     "0x48dad3",
+     "0x48d58a"
+    ]
+   },
+   {
+    "base": "0x48dd10",
+    "n": 5,
+    "holders": [
+     {
+      "at": "0x48dce0",
+      "txt": "jmp dword ptr [ecx*4+48DD10h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "38"
+     }
+    ],
+    "first_vals": [
+     "0x48dce7",
+     "0x48dd03",
+     "0x48dcf0",
+     "0x48dcfa",
+     "0x48dd0d"
+    ]
+   },
+   {
+    "base": "0x4c8114",
+    "n": 46,
+    "holders": [
+     {
+      "at": "0x4c6cd7",
+      "txt": "jmp dword ptr [eax*4+4C8114h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "37"
+     }
+    ],
+    "first_vals": [
+     "0x4c6cf0",
+     "0x4c6d4d",
+     "0x4c6dee",
+     "0x4c71ca",
+     "0x4c71ca"
+    ]
+   },
+   {
+    "base": "0x5001e4",
+    "n": 5,
+    "holders": [
+     {
+      "at": "0x4ffde9",
+      "txt": "jmp dword ptr [eax*4+5001E4h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "37"
+     }
+    ],
+    "first_vals": [
+     "0x4ffdf0",
+     "0x4ffe36",
+     "0x4fff47",
+     "0x500170",
+     "0x50005c"
+    ]
+   },
+   {
+    "base": "0x58bda4",
+    "n": 5,
+    "holders": [
+     {
+      "at": "0x58bd85",
+      "txt": "jmp dword ptr [ecx*4+58BDA4h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "38"
+     }
+    ],
+    "first_vals": [
+     "0x58bd8c",
+     "0x58bd95",
+     "0x58bd9e",
+     "0x58bd95",
+     "0x58bd95"
+    ]
+   },
+   {
+    "base": "0x69b15c",
+    "n": 4,
+    "holders": [
+     {
+      "at": "0x69af3e",
+      "txt": "jmp dword ptr [eax*4+69B15Ch]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "37"
+     }
+    ],
+    "first_vals": [
+     "0x69b08c",
+     "0x69b08c",
+     "0x69af45",
+     "0x69af45"
+    ]
+   },
+   {
+    "base": "0x6a92c4",
+    "n": 3,
+    "holders": [
+     {
+      "at": "0x6a8e1e",
+      "txt": "jmp dword ptr [ecx*4+6A92C4h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "38"
+     }
+    ],
+    "first_vals": [
+     "0x6a8eb8",
+     "0x6a8e25",
+     "0x6a8f49"
+    ]
+   },
+   {
+    "base": "0x6adbdc",
+    "n": 3,
+    "holders": [
+     {
+      "at": "0x6acf2a",
+      "txt": "jmp dword ptr [ecx*4+6ADBDCh]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "38"
+     }
+    ],
+    "first_vals": [
+     "0x6acf31",
+     "0x6adb62",
+     "0x6adbcc"
+    ]
+   },
+   {
+    "base": "0x6b0238",
+    "n": 7,
+    "holders": [
+     {
+      "at": "0x6afd73",
+      "txt": "jmp dword ptr [eax*4+6B0238h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "37"
+     }
+    ],
+    "first_vals": [
+     "0x6afd7a",
+     "0x6afdc1",
+     "0x6afec0",
+     "0x6aff43",
+     "0x6aff8e"
+    ]
+   },
+   {
+    "base": "0x6dfdec",
+    "n": 145,
+    "holders": [
+     {
+      "at": "0x6dd8e7",
+      "txt": "jmp dword ptr [edx*4+6DFDECh]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "39"
+     }
+    ],
+    "first_vals": [
+     "0x6dea37",
+     "0x6dea67",
+     "0x6dea97",
+     "0x6deb57",
+     "0x6deb8d"
+    ]
+   },
+   {
+    "base": "0x708d54",
+    "n": 5,
+    "holders": [
+     {
+      "at": "0x708c4e",
+      "txt": "jmp dword ptr [eax*4+708D54h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "37"
+     }
+    ],
+    "first_vals": [
+     "0x708c55",
+     "0x708cd9",
+     "0x708cb4",
+     "0x708d4d",
+     "0x708c7a"
+    ]
+   },
+   {
+    "base": "0x71f2c0",
+    "n": 14,
+    "holders": [
+     {
+      "at": "0x71eea2",
+      "txt": "jmp dword ptr [edx*4+71F2C0h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "39"
+     }
+    ],
+    "first_vals": [
+     "0x71ef01",
+     "0x71f03f",
+     "0x71f058",
+     "0x71ef3f",
+     "0x71ef8e"
+    ]
+   },
+   {
+    "base": "0x71f328",
+    "n": 10,
+    "holders": [
+     {
+      "at": "0x71f092",
+      "txt": "jmp dword ptr [ecx*4+71F328h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "38"
+     }
+    ],
+    "first_vals": [
+     "0x71f0e1",
+     "0x71f0fb",
+     "0x71f12f",
+     "0x71f115",
+     "0x71f189"
+    ]
+   },
+   {
+    "base": "0x71f778",
+    "n": 2,
+    "holders": [
+     {
+      "at": "0x71f6d0",
+      "txt": "jmp dword ptr [eax*4+71F778h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "37"
+     }
+    ],
+    "first_vals": [
+     "0x71f6d7",
+     "0x71f6da"
+    ]
+   },
+   {
+    "base": "0x71f9e0",
+    "n": 2,
+    "holders": [
+     {
+      "at": "0x71f9d3",
+      "txt": "jmp dword ptr [ecx*4+71F9E0h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "38"
+     }
+    ],
+    "first_vals": [
+     "0x71f9da",
+     "0x71f9dd"
+    ]
+   },
+   {
+    "base": "0x728e08",
+    "n": 7,
+    "holders": [
+     {
+      "at": "0x728c17",
+      "txt": "jmp dword ptr [eax*4+728E08h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "37"
+     }
+    ],
+    "first_vals": [
+     "0x728de0",
+     "0x728dd9",
+     "0x728dd0",
+     "0x728c1e",
+     "0x728de0"
+    ]
+   },
+   {
+    "base": "0x7291ac",
+    "n": 7,
+    "holders": [
+     {
+      "at": "0x728e6c",
+      "txt": "jmp dword ptr [ecx*4+7291ACh]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "38"
+     }
+    ],
+    "first_vals": [
+     "0x728e73",
+     "0x728e90",
+     "0x728f86",
+     "0x729035",
+     "0x729042"
+    ]
+   },
+   {
+    "base": "0x79f028",
+    "n": 5,
+    "holders": [
+     {
+      "at": "0x79ed73",
+      "txt": "jmp dword ptr [edx*4+79F028h]",
+      "disp_matches": true,
+      "scale4": true,
+      "idx_reg": "39"
+     }
+    ],
+    "first_vals": [
+     "0x79edc5",
+     "0x79ee0b",
+     "0x79ee87",
+     "0x79ed7a",
+     "0x79f01b"
+    ]
+   }
+  ],
+  "X5_as_jump_target": {
+   "n_hosts": 31,
+   "n_appearing_as_table_value": 0,
+   "detail": []
+  },
+  "X6_control_any_window": {
+   "frac": 1.0
+  }
+ }
+}

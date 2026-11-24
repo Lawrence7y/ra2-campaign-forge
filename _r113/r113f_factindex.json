@@ -1,0 +1,90 @@
+{
+ "checks": [
+  {
+   "name": "F1 FACT_INDEX 存在（取版本号最大的 R17_R88_T1_FACTINDEX，共 7 个版本目录）",
+   "ok": true,
+   "detail": "{'cand': ['/home/t628/projects/ra2-campaign-forge/lead/next_re_20261117_r14/R17_R104_FACTINDEX_V532/FACT_INDEX.tsv'], 'versions': ['R17_R102_FACTINDEX_V530', 'R17_R103_FACTINDEX_V531', 'R17_R104_FACTINDEX_V532', 'R17_R56_FACTINDEX_V53', 'R17_R61_FACTINDEX_V58', 'R17_R66_FACTINDEX_V511', 'R17_R88_T1_FACTINDEX']}"
+  },
+  {
+   "name": "F1b FACT_INDEX 可解析：55 行",
+   "ok": true,
+   "detail": "{'path': '/home/t628/projects/ra2-campaign-forge/lead/next_re_20261117_r14/R17_R104_FACTINDEX_V532/FACT_INDEX.tsv', 'rows': 55}"
+  },
+  {
+   "name": "F2 提到 IClassFactory 的条目 2 条；逐条检查是否与「本轮实测槽数 == 5」冲突",
+   "ok": true,
+   "detail": "[(30, 'F29\\t硬规则：工厂族产品类的 AddRef / Release 有两类形态并存，必须逐表读该槽字节再判，且粗粒度族**几乎决定结果**（此前「逐表逐槽、非族属性」的表述方向相反，已撤回）。实测 77 张 TClassFactory 表、每张取 mdisp==0 主虚表的 slot1(+4) 与 s'), (55, 'F54\\tRTTI 读不对时 pefile 抛 PEFormatError 是「读法错」的症状，不是「不可解」的证据（0x7E88D0/0x7F6B30/0x7F3D98/0x7E1964 四表实测；按 COL=u32(vt−4) 的正确读法四表 COL 全部合法、sig=0、pTD 与 pCHD 均')]"
+  },
+  {
+   "name": "F2b 其中写成具体槽数且 != 5 的 = 0 条（有则为 **与本轮实测冲突**，必须改正）",
+   "ok": true,
+   "detail": "no conflict"
+  },
+  {
+   "name": "F3b0 提到「槽数/vfunc」的条目 1 条（这些是本轮 C 组判据的适用范围，逐条列出）",
+   "ok": true,
+   "detail": "[(30, 'F29\\t硬规则：工厂族产品类的 AddRef / Release 有两类形态并存，必须逐表读该槽字节再判，且粗粒度族**几乎决定结果**（此前「逐表逐槽、非族属性」的表述方向相反，已撤回）。实测 77 张 TClassFactory 表、每张取 mdisp==0 主虚表的 slo')]"
+  },
+  {
+   "name": "F3 提到 IPersist/PersistStream 的条目 0 条；若给出方法数具体整数 => 本轮判 unverifiable（0x7f7c70/0x7f7c80 的 COL.offset==0，子对象即对象本身，读不到接口槽数）",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "F3b 其中写成具体方法数的 = 0 条 —— 这些若被当成已证结论即为**越证**（本轮只能判 unverifiable）",
+   "ok": true,
+   "detail": "none claimed"
+  },
+  {
+   "name": "F4 提到 0x7ed358 的条目 0 条",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "F4b 其中写成「未定/无候选」的 = 0 条 —— **本轮已推翻**（闭包后 |Q|=12，FULL(N=4)={ILocomotion} 唯一），这些行必须更新",
+   "ok": true,
+   "detail": "no stale claim found"
+  },
+  {
+   "name": "F5 反控：把关键字换成不可能出现的串，命中数必须为 0",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "F02 机检：FACT_INDEX 称 BuildingClass 主 vtable 0x7E3EBC 为 322 槽、且 322 个值互不相同 —— 实测 T 尺 322、distinct 322",
+   "ok": true,
+   "detail": "{'T': 322, 'distinct': 322}"
+  },
+  {
+   "name": "F02b 机检：同一行称 TechnoClass 0x7F4960 的 309 是「含重复值」而非 309 个不同函数 —— 实测 T=309、distinct 305（必须 < T 才印证「含重复」）",
+   "ok": true,
+   "detail": "{'T': 309, 'distinct': 305}"
+  },
+  {
+   "name": "F29 机检：77 张 TClassFactory **产品类**主表里，slot1(+4) 与 slot2(+8) 皆为 8 字节桩 B8 01 00 00 00 C2 04 00（mov eax,1 ; ret 4）的 = 63/77 = 81.82% （FACT_INDEX 写 63/77 = 81.82%，逐字复现）",
+   "ok": true,
+   "detail": "{'n_tables': 77, 'stub_both': 63, 'claimed': '63/77 = 81.82%', 'non_stub': ['AircraftClass', 'BulletClass', 'CStreamClass', 'DriveLocomotionClass', 'DropPodLocomotionClass', 'FlyLocomotionClass', 'HoverLocomotionClass', 'JumpjetLocomotionClass']}"
+  },
+  {
+   "name": "F29b 同一行还称「Locomotion 11 个全非桩」—— 实测非桩 14 个里含 11 个 Locomotion 类，逐一列出（这条是 F29 的族级论断，必须独立核）",
+   "ok": true,
+   "detail": "{'non_stub_loco': ['DriveLocomotionClass', 'DropPodLocomotionClass', 'FlyLocomotionClass', 'HoverLocomotionClass', 'JumpjetLocomotionClass', 'MechLocomotionClass', 'RocketLocomotionClass', 'ShipLocomotionClass', 'TeleportLocomotionClass', 'TunnelLocomotionClass', 'WalkLocomotionClass']}"
+  },
+  {
+   "name": "F6 纪律 3 自检：本表里「命中 0 条」的检查已全部改判 FAIL/不可判，且已用 F02/F29 两条真能机检的条目补上样本；当前 FAIL 数 = 0",
+   "ok": true,
+   "detail": "0"
+  }
+ ],
+ "path": "/home/t628/projects/ra2-campaign-forge/lead/next_re_20261117_r14/R17_R104_FACTINDEX_V532/FACT_INDEX.tsv",
+ "rows": 55,
+ "iclassfactory_rows": [
+  30,
+  55
+ ],
+ "ipersiststream_rows": [],
+ "iid358_rows": [],
+ "stale_358": [],
+ "conflicts": [],
+ "ps_numeric": []
+}

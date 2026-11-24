@@ -1,0 +1,429 @@
+{
+ "checks": [
+  {
+   "name": "S0 exe sha256",
+   "ok": true,
+   "detail": "73201cc021497c95"
+  },
+  {
+   "name": "S1 载入：指令 1392592 / ret 31084 / call 目标 6728",
+   "ok": true,
+   "detail": "(1392592, 31084, 6728)"
+  },
+  {
+   "name": "Q0 ret 形态普查：ret 14652 / ret imm16 16407 / 带前缀怪异 25（后者必须是少数）",
+   "ok": true,
+   "detail": "(14652, 16407, 25)"
+  },
+  {
+   "name": "I1 IMMPTR v3（非分支指令的**立即数**操作数里的 .text 地址）= 598 个 distinct；扫描 100898 个 token",
+   "ok": true,
+   "detail": "598"
+  },
+  {
+   "name": "Q1a HB 对 call 目标（已知函数入口）的召回 = 5629/6728 = 83.7%",
+   "ok": true,
+   "detail": "83.7%"
+  },
+  {
+   "name": "Q1b HB 对 vtable 槽值（已知函数入口）的召回 = 5819/6499 = 89.5%",
+   "ok": true,
+   "detail": "89.5%"
+  },
+  {
+   "name": "Q1c HB 里带独立外部证据（call∪slot∪immptr）的比例 = 11561/17766 = 65.1%",
+   "ok": true,
+   "detail": "65.1%"
+  },
+  {
+   "name": "Q1d 反控：随机 20000 个指令起点里是 HB 的比例（判据基线密度）",
+   "ok": true,
+   "detail": "1.25% (250/20000)"
+  },
+  {
+   "name": "Q2a 负控：3000 个随机相邻-call-目标短窗口里 ret imm 一致（<=1 种）的比例 = 80.7%",
+   "ok": true,
+   "detail": "80.7%"
+  },
+  {
+   "name": "Q2b 正控：0x46dfd0..0x46e4be 内 ret imm 集合 = [16]（单函数多 ret 且 imm 全同 16）",
+   "ok": true,
+   "detail": "[16]"
+  },
+  {
+   "name": "A1 19 张全部有 owner（含「S 本身即最大 E 成员」的退化情形）",
+   "ok": true,
+   "detail": "19"
+  },
+  {
+   "name": "A2 有 owner 却四类外部证据全无的张数（应为 0 —— 否则该 owner 只是退化取 S）",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "P1 正控：13 张 R107-OWNER 上 owner 与 R107 一致",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "A3 6 张 AMBIGUOUS：改判 4 张 / 保持 2 张",
+   "ok": true,
+   "detail": "改判 [('0x46f5a0', '0x46de20', '0x46dfd0'), ('0x5001e4', '0x4ffd90', '0x4ffdd0'), ('0x58bda4', '0x58bc20', '0x58bd80'), ('0x79f028', '0x79da90', '0x79e520')] ; 保持 ['0x71f2c0', '0x71f328']"
+  },
+  {
+   "name": "Q4 R107 判据 P 对「按 HD/证据定出的正确 owner」的误拒张数 = 4/19 = 21.1%",
+   "ok": true,
+   "detail": "['0x46f5a0', '0x71f2c0', '0x71f328', '0x79f028']"
+  },
+  {
+   "name": "A4 按 ret imm 一致性仍判不出（imm 混用）的张数",
+   "ok": true,
+   "detail": "[]"
+  }
+ ],
+ "rows": [
+  {
+   "table": "0x46f5a0",
+   "holder": "0x46e4be",
+   "R107_owner": "0x46de20",
+   "R107_status": "AMBIGUOUS",
+   "owner_new": "0x46dfd0",
+   "evidence": [
+    "HB",
+    "IMM"
+   ],
+   "changed": true,
+   "n_ret_owner_to_holder": 5,
+   "ret_imm_owner_to_holder": [
+    16
+   ],
+   "ret_imm_consistent": true,
+   "R107_would_reject": true,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x48db10",
+   "holder": "0x48d583",
+   "R107_owner": "0x48d1e0",
+   "R107_status": "OWNER",
+   "owner_new": "0x48d1e0",
+   "evidence": [
+    "HB",
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x48dd10",
+   "holder": "0x48dce0",
+   "R107_owner": "0x48dcd0",
+   "R107_status": "OWNER",
+   "owner_new": "0x48dcd0",
+   "evidence": [
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x4c8114",
+   "holder": "0x4c6cd7",
+   "R107_owner": "0x4c6cb0",
+   "R107_status": "OWNER",
+   "owner_new": "0x4c6cb0",
+   "evidence": [
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x5001e4",
+   "holder": "0x4ffde9",
+   "R107_owner": "0x4ffd90",
+   "R107_status": "AMBIGUOUS",
+   "owner_new": "0x4ffdd0",
+   "evidence": [
+    "HB"
+   ],
+   "changed": true,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x58bda4",
+   "holder": "0x58bd85",
+   "R107_owner": "0x58bc20",
+   "R107_status": "AMBIGUOUS",
+   "owner_new": "0x58bd80",
+   "evidence": [
+    "HB"
+   ],
+   "changed": true,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x69b15c",
+   "holder": "0x69af3e",
+   "R107_owner": "0x69ae90",
+   "R107_status": "OWNER",
+   "owner_new": "0x69ae90",
+   "evidence": [
+    "HB",
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x6a92c4",
+   "holder": "0x6a8e1e",
+   "R107_owner": "0x6a8b30",
+   "R107_status": "OWNER",
+   "owner_new": "0x6a8b30",
+   "evidence": [
+    "HB",
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x6adbdc",
+   "holder": "0x6acf2a",
+   "R107_owner": "0x6acee0",
+   "R107_status": "OWNER",
+   "owner_new": "0x6acee0",
+   "evidence": [
+    "HB",
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x6b0238",
+   "holder": "0x6afd73",
+   "R107_owner": "0x6afd60",
+   "R107_status": "OWNER",
+   "owner_new": "0x6afd60",
+   "evidence": [
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x6dfdec",
+   "holder": "0x6dd8e7",
+   "R107_owner": "0x6dd8b0",
+   "R107_status": "OWNER",
+   "owner_new": "0x6dd8b0",
+   "evidence": [
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x708d54",
+   "holder": "0x708c4e",
+   "R107_owner": "0x708c30",
+   "R107_status": "OWNER",
+   "owner_new": "0x708c30",
+   "evidence": [
+    "HB",
+    "CALL",
+    "VSLOT"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x71f2c0",
+   "holder": "0x71eea2",
+   "R107_owner": "0x71e940",
+   "R107_status": "AMBIGUOUS",
+   "owner_new": "0x71e940",
+   "evidence": [
+    "HB",
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 14,
+   "ret_imm_owner_to_holder": [
+    24
+   ],
+   "ret_imm_consistent": true,
+   "R107_would_reject": true,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x71f328",
+   "holder": "0x71f092",
+   "R107_owner": "0x71e940",
+   "R107_status": "AMBIGUOUS",
+   "owner_new": "0x71e940",
+   "evidence": [
+    "HB",
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 19,
+   "ret_imm_owner_to_holder": [
+    24
+   ],
+   "ret_imm_consistent": true,
+   "R107_would_reject": true,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x71f778",
+   "holder": "0x71f6d0",
+   "R107_owner": "0x71f680",
+   "R107_status": "OWNER",
+   "owner_new": "0x71f680",
+   "evidence": [
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x71f9e0",
+   "holder": "0x71f9d3",
+   "R107_owner": "0x71f9c0",
+   "R107_status": "OWNER",
+   "owner_new": "0x71f9c0",
+   "evidence": [
+    "CALL"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x728e08",
+   "holder": "0x728c17",
+   "R107_owner": "0x728c00",
+   "R107_status": "OWNER",
+   "owner_new": "0x728c00",
+   "evidence": [
+    "HB",
+    "VSLOT"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x7291ac",
+   "holder": "0x728e6c",
+   "R107_owner": "0x728e30",
+   "R107_status": "OWNER",
+   "owner_new": "0x728e30",
+   "evidence": [
+    "VSLOT"
+   ],
+   "changed": false,
+   "n_ret_owner_to_holder": 0,
+   "ret_imm_owner_to_holder": [],
+   "ret_imm_consistent": true,
+   "R107_would_reject": false,
+   "verdict": "OWNER"
+  },
+  {
+   "table": "0x79f028",
+   "holder": "0x79ed73",
+   "R107_owner": "0x79da90",
+   "R107_status": "AMBIGUOUS",
+   "owner_new": "0x79e520",
+   "evidence": [
+    "HB",
+    "IMM"
+   ],
+   "changed": true,
+   "n_ret_owner_to_holder": 17,
+   "ret_imm_owner_to_holder": [
+    16
+   ],
+   "ret_imm_consistent": true,
+   "R107_would_reject": true,
+   "verdict": "OWNER"
+  }
+ ],
+ "n_HB": 17766,
+ "n_IMMPTR": 598,
+ "n_CALLT": 6728,
+ "n_VSLOT": 6499,
+ "recall_HB_on_call": [
+  5629,
+  6728
+ ],
+ "recall_HB_on_slot": [
+  5819,
+  6499
+ ],
+ "HB_with_external_evidence": [
+  11561,
+  17766
+ ],
+ "negctl_imm_uniform": [
+  2421,
+  3000
+ ]
+}

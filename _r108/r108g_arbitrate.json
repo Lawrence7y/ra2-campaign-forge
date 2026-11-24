@@ -1,0 +1,147 @@
+{
+ "checks": [
+  {
+   "name": "S0 exe sha256",
+   "ok": true,
+   "detail": "73201cc021497c95"
+  },
+  {
+   "name": "A1 exec 声称「属于 S」的 4 组里，H 真正落在 S 直线体内的只有 0 组",
+   "ok": true,
+   "detail": "[('0x46f5a0', '0x46dfc6', '0x46e4be'), ('0x5001e4', '0x4ffdcc', '0x4ffde9'), ('0x71f2c0', '0x71ea2d', '0x71eea2'), ('0x71f328', '0x71ea2d', '0x71f092')]"
+  },
+  {
+   "name": "A2 0x46f5a0：0x410 帧的 prologue 落在 0x46dfd0（不是 0x46de20）—— exec 把配对算到了错的对象上",
+   "ok": true,
+   "detail": "(4644820, 'sub', 1040)"
+  },
+  {
+   "name": "A3 0x5001e4：0x4ffd90 的帧是 0xc，而分派点 0x4ffde9 属于 0x4ffdd0（and esp,-8 后 sub esp,0x70）",
+   "ok": true,
+   "detail": "((5242256, 'sub', 12), (5242326, 'sub', 112))"
+  },
+  {
+   "name": "A4 0x71f2c0 / 0x71f328：S=0x71e940 的首条 ret 就在 H 之前/之后（同函数内 early return 情形）",
+   "ok": true,
+   "detail": "('0x71ea2d', '0x71ea2d', '0x71eea2', '0x71f092')"
+  },
+  {
+   "name": "B1 0x58bda4 窗口里 13 条 ret 的清理常量唯一（=0，即全为 c3）—— 与 exec 的形态描述一致",
+   "ok": true,
+   "detail": "{'0': 13}"
+  },
+  {
+   "name": "B2 0x79f028 窗口里 36 条 ret 的清理常量有 2 种（0 与 16）—— 与 exec 报的 3 种不同（它把 pop 型另计）",
+   "ok": true,
+   "detail": "{'0': 2, '16': 34}"
+  },
+  {
+   "name": "C1 call 目标全量 6728 / 落 .text 6719 / 其中是指令起点 6692（差 27 = 线性扫描漂移锚点，见 r108h）",
+   "ok": true,
+   "detail": "(6728, 6719, 6692)"
+  },
+  {
+   "name": "C2 审计员报的 5904 与我方 6719 之差 815（口径差异，不是数据差异）—— 其基数偏小，故其「ret0 仅 144/5713」的分布不可直接用作判据鉴别力",
+   "ok": true,
+   "detail": "815"
+  },
+  {
+   "name": "C3 我方口径复核：387 站点按「最近 call 目标」取 S 后，S→H 间 ret==0 的 181 个 / >0 的 206 个（46.8% 为 0）",
+   "ok": true,
+   "detail": "46.8%"
+  }
+ ],
+ "A": [
+  {
+   "table": "0x46f5a0",
+   "S_claim": "0x46de20",
+   "H": "0x46e4be",
+   "S_frame": null,
+   "S_first_ret": "0x46dfc6",
+   "ret_to_next_owner": "0x46dfd0",
+   "next_owner_frame": [
+    4644820,
+    "sub",
+    1040
+   ],
+   "H_inside_S_body": false
+  },
+  {
+   "table": "0x5001e4",
+   "S_claim": "0x4ffd90",
+   "H": "0x4ffde9",
+   "S_frame": [
+    5242256,
+    "sub",
+    12
+   ],
+   "S_first_ret": "0x4ffdcc",
+   "ret_to_next_owner": "0x4ffdd0",
+   "next_owner_frame": [
+    5242326,
+    "sub",
+    112
+   ],
+   "H_inside_S_body": false
+  },
+  {
+   "table": "0x71f2c0",
+   "S_claim": "0x71e940",
+   "H": "0x71eea2",
+   "S_frame": [
+    7465280,
+    "sub",
+    28
+   ],
+   "S_first_ret": "0x71ea2d",
+   "ret_to_next_owner": null,
+   "next_owner_frame": null,
+   "H_inside_S_body": false
+  },
+  {
+   "table": "0x71f328",
+   "S_claim": "0x71e940",
+   "H": "0x71f092",
+   "S_frame": [
+    7465280,
+    "sub",
+    28
+   ],
+   "S_first_ret": "0x71ea2d",
+   "ret_to_next_owner": null,
+   "next_owner_frame": null,
+   "H_inside_S_body": false
+  }
+ ],
+ "B": [
+  {
+   "table": "0x58bda4",
+   "S": "0x58bc20",
+   "H": "0x58bd85",
+   "n_ret": 13,
+   "imm_hist": {
+    "0": 13
+   },
+   "n_distinct_imm": 1
+  },
+  {
+   "table": "0x79f028",
+   "S": "0x79da90",
+   "H": "0x79ed73",
+   "n_ret": 36,
+   "imm_hist": {
+    "0": 2,
+    "16": 34
+   },
+   "n_distinct_imm": 2
+  }
+ ],
+ "C": {
+  "all_ct": 6728,
+  "in_text": 6719,
+  "in_start": 6692,
+  "audit_reported": 5904,
+  "ret0": 181,
+  "ret_pos": 206
+ }
+}

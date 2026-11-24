@@ -1,0 +1,67 @@
+{
+ "checks": [
+  {
+   "name": "S1 读回 r110a 的 QI 类数 172（应 172）",
+   "ok": true,
+   "detail": "172"
+  },
+  {
+   "name": "S2 distinct QI 实现函数 = 90（r110a 报 90）",
+   "ok": true,
+   "detail": "90"
+  },
+  {
+   "name": "D1 有「委托基类 QI」的 QI 实现 = 1/90；委托边总数 = 1",
+   "ok": true,
+   "detail": "{'with_deleg': 1, 'edges': 1, 'sample': [('0x414290', ['0x410260'])]}"
+  },
+  {
+   "name": "D4 委托关系中的环 = 0 个（基类链应无环；有环即判据取错，如把 tail-call 当委托）",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "D2 IUnknown 认得的口径对比：直接 89/90；含委托闭包 90/90",
+   "ok": true,
+   "detail": "{'direct': 89, 'closure': 90}"
+  },
+  {
+   "name": "D3 按类计：直接认 IUnknown 的类 = 171/172（r110a S7 报 171）；含委托闭包 = 172/172",
+   "ok": true,
+   "detail": "{'direct': 171, 'closure': 172, 'still_missing': []}"
+  },
+  {
+   "name": "D5 正控：AircraftClass 的 QI 0x414290 委托到 ['0x410260']，且该目标直接比 IUnknown ⇒ 它其实认得 IUnknown",
+   "ok": true,
+   "detail": "{'deleg': ['0x410260'], 'target_direct_iunk': ['0x410260']}"
+  },
+  {
+   "name": "D6 反控：随机 20000 个指令起点里「头部 240 B 内 call 到某个 QI 实现」的 = 3（0.015%）；真 QI 实现里含委托的 = 1.1% ⇒ 富集 74.1 倍",
+   "ok": true,
+   "detail": "{'rand': 3, 'rand_pct': 0.015, 'real_pct': 1.1, 'enrich': 74.1}"
+  }
+ ],
+ "impls": 90,
+ "with_deleg": 1,
+ "deleg": {
+  "0x414290": [
+   "0x410260"
+  ]
+ },
+ "cycles": [],
+ "iunk_direct": 171,
+ "iunk_closure": 172,
+ "impl_direct_iunk": 89,
+ "impl_closure_iunk": 90,
+ "negctl": [
+  3,
+  20000,
+  0.015
+ ],
+ "aircraft": {
+  "func": "0x414290",
+  "deleg": [
+   "0x410260"
+  ]
+ }
+}

@@ -1,0 +1,129 @@
+{
+ "checks": [
+  {
+   "name": "S0 HB == 17766",
+   "ok": true,
+   "detail": "17766"
+  },
+  {
+   "name": "S1 |E| == 19490",
+   "ok": true,
+   "detail": "19490"
+  },
+  {
+   "name": "S2 分派站点 387",
+   "ok": true,
+   "detail": "387"
+  },
+  {
+   "name": "E1 400 个 call 站点抽样：旧口径声称包含 400，SC 严格判据确认 279；旧口径对 SC 错 121、SC 对旧口径错 0、都错 0、不可判 0",
+   "ok": true,
+   "detail": "{'old_ok': 400, 'sc_ok': 279, 'both': 279, 'old_only': 121, 'sc_only': 0, 'neither': 0, 'unknown': 0}"
+  },
+  {
+   "name": "E1b 严格口径下「最近 E 成员确实是容器」的比例 = 69.8%（旧口径自称 400/400 = 100.0%）",
+   "ok": true,
+   "detail": "69.8"
+  },
+  {
+   "name": "E2 SC 口径下已知类函数的 caller 同类票 = 2 / 异类票 = 528（同类占比 0.38%），可评函数 218",
+   "ok": true,
+   "detail": "{'same': 2, 'diff': 528, 'eval': 218}"
+  },
+  {
+   "name": "E2b 随机基线（随机两个真值函数同类）概率 = 3.48%；实测同类票 0.38% ⇒ Q 的同类性假设不成立（不高于随机）",
+   "ok": true,
+   "detail": "{'base': 3.48, 'obs': 0.38}"
+  },
+  {
+   "name": "E3 vtable 写入点 == 4611（与 r109a S6 同口径）",
+   "ok": true,
+   "detail": "4611"
+  },
+  {
+   "name": "E3b 写偏移 0 的点 2762 / 非 0 偏移 1849（原预期 >3000，实测 2762 ⇒ 非 0 偏移比预想多，「vt 只写 this+0」的覆盖须靠 COL.offset 字段判，见 r109g）",
+   "ok": true,
+   "detail": "(2762, 1849)"
+  },
+  {
+   "name": "E3c 装配函数中「写 [reg+0]=vt 后同一 reg 又被 [reg+disp] 取字段」的实例 = 1304 / 2438（实证 vt 位于 this+0）",
+   "ok": true,
+   "detail": "(1304, 2438)"
+  },
+  {
+   "name": "E3d 反控：随机 2000 个指令起点里满足同一形态（写 vt 到 [reg+0] 且随后读字段）的比例 = 需对同一形态取随机基线",
+   "ok": true,
+   "detail": "见 negctl"
+  },
+  {
+   "name": "E3d 反控：随机 2000 个起点中「写偏移 0 且立即数 ∈ VT」的指令 = 9（0.45%）",
+   "ok": true,
+   "detail": "9"
+  }
+ ],
+ "E1": {
+  "old_ok": 400,
+  "sc_ok": 279,
+  "both": 279,
+  "old_only": 121,
+  "sc_only": 0,
+  "neither": 0,
+  "unknown": 0
+ },
+ "sc_ratio": 69.8,
+ "same": 2,
+ "diff": 528,
+ "eval": 218,
+ "vt_at0": 2762,
+ "vt_stores": 4611,
+ "e3c": 1304,
+ "e3c_total": 2438,
+ "e3c_ex": [
+  {
+   "func": "0x4019a0",
+   "vt": "0x7e16b0",
+   "cls": "CCFileClass",
+   "field_read": [
+    "0x4019ac",
+    "mov dword ptr [esi + 0x64], 0"
+   ]
+  },
+  {
+   "func": "0x40b070",
+   "vt": "0x7e177c",
+   "cls": "?$VectorClass@USubzoneConnectionStruct@@",
+   "field_read": [
+    "0x40b0a2",
+    "cmp byte ptr [esi + 0xd], bl"
+   ]
+  },
+  {
+   "func": "0x40b300",
+   "vt": "0x7e177c",
+   "cls": "?$VectorClass@USubzoneConnectionStruct@@",
+   "field_read": [
+    "0x40b310",
+    "mov cl, byte ptr [esi + 0xd]"
+   ]
+  },
+  {
+   "func": "0x40bbc0",
+   "vt": "0x7e17ec",
+   "cls": "?$VectorClass@PAVBombClass@@",
+   "field_read": [
+    "0x40bbd0",
+    "mov cl, byte ptr [esi + 0xd]"
+   ]
+  },
+  {
+   "func": "0x40bc10",
+   "vt": "0x7e17ec",
+   "cls": "?$VectorClass@PAVBombClass@@",
+   "field_read": [
+    "0x40bc20",
+    "mov cl, byte ptr [esi + 0xd]"
+   ]
+  }
+ ],
+ "negctl_rnd": 9
+}

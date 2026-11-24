@@ -1,0 +1,966 @@
+{
+ "checks": [
+  {
+   "name": "S0 exe sha256",
+   "ok": true,
+   "detail": "73201cc021497c95"
+  },
+  {
+   "name": "S1 call 目标 distinct=6728，其中落在 .text 内 6719、落在 .text 外 9",
+   "ok": true,
+   "detail": "(6728, 6719)"
+  },
+  {
+   "name": "K1 19 张表的 H 全是 7 字节间接 jmp 且最小槽值 == H+7",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "K1b 逐表 (表, H, 形态, 长度, 最小槽, 差)",
+   "ok": true,
+   "detail": "0x46f5a0:0x46e4be/0x7; 0x48db10:0x48d583/0x7; 0x48dd10:0x48dce0/0x7; 0x4c8114:0x4c6cd7/0x7; 0x5001e4:0x4ffde9/0x7; 0x58bda4:0x58bd85/0x7; 0x69b15c:0x69af3e/0x7; 0x6a92c4:0x6a8e1e/0x7; 0x6adbdc:0x6acf2a/0x7; 0x6b0238:0x6afd73/0x7; 0x6dfdec:0x6dd8e7/0x7; 0x708d54:0x708c4e/0x7; 0x71f2c0:0x71eea2/0x7; 0x71f328:0x71f092/0x7; 0x71f778:0x71f6d0/0x7; 0x71f9e0:0x71f9d3/0x7; 0x728e08:0x728c17/0x7; 0x7291ac:0x728e6c/0x7; 0x79f028:0x79ed73/0x7"
+  },
+  {
+   "name": "K2 每个 owner 的帧常量与区间内每条 ret 的前置清理配对（不配对数应为 0）",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "K2b 全部改判表：R107 的 S 线性体在到达新 owner 之前就已 ret（S 不可能是含 H 的函数）",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "K2c 改判表的 S 到 owner 之间确实隔着至少 1 个 HB 边界",
+   "ok": true,
+   "detail": "[('0x46f5a0', ['0x46dfd0']), ('0x5001e4', ['0x4ffdd0']), ('0x58bda4', ['0x58bc30', '0x58bc70', '0x58bcd0', '0x58bcf0', '0x58bd20', '0x58bd40', '0x58bd60', '0x58bd80']), ('0x79f028', ['0x79dfe0', '0x79e520'])]"
+  },
+  {
+   "name": "K3 0x58bc20 起前向解码到首条 ret 只有 2 条指令（不含 H=0x58bd85）",
+   "ok": true,
+   "detail": "[('0x58bc20', 'mov', 'dword ptr [0xabed0c], 0'), ('0x58bc2a', 'ret', '')]"
+  },
+  {
+   "name": "K3b 0x58bd80 起 2 条指令即落到 H=0x58bd85（cmp/ja 后正好是分派）",
+   "ok": true,
+   "detail": "[('0x58bd80', 'cmp', 'ecx, 4'), ('0x58bd83', 'ja', '0x58bda1')]"
+  },
+  {
+   "name": "K4 0x79db50 的取址点在 .text 内至少 1 处、且其宿主指令以立即数形式引用它",
+   "ok": true,
+   "detail": "[('0x79be7e', 'push', '0x79db50'), ('0x79ea2b', 'push', '0x79db50'), ('0x7a946b', 'mov', 'edx, 0x79db50'), ('0x7a9717', 'mov', 'edx, 0x79db50')]"
+  },
+  {
+   "name": "K4b 0x79db50 的宿主函数紧随其后 call 0x775700，且 0x775700 内 call [0x7e1450]（导入槽）",
+   "ok": true,
+   "detail": "([('0x79be89', '0x775700'), ('0x79be97', '0x622820')], [('0x775755', 'dword ptr [0x7e1450]')])"
+  },
+  {
+   "name": "K6 取址入口 IMMPTR=598，其中 CALLT∪VSLOT∪HB 都收不到的边际新增 91 个",
+   "ok": true,
+   "detail": "['0x4059f0', '0x405a00', '0x4093c0', '0x412540', '0x43c2f8', '0x44e3df', '0x44e3e3', '0x46f529']"
+  },
+  {
+   "name": "K6b 19 张表的最终 owner 里落在「取址入口边际新增」中的",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "K7 HB 精确度代理（带 call/slot/imm 证据）= 11561/17766 = 65.1%；随机起点基线 1.25%",
+   "ok": true,
+   "detail": "(11561, 17766, 250)"
+  }
+ ],
+ "K1": [
+  [
+   "0x46f5a0",
+   "0x46e4be",
+   "jmp",
+   7,
+   "0x46e4c5",
+   "0x7"
+  ],
+  [
+   "0x48db10",
+   "0x48d583",
+   "jmp",
+   7,
+   "0x48d58a",
+   "0x7"
+  ],
+  [
+   "0x48dd10",
+   "0x48dce0",
+   "jmp",
+   7,
+   "0x48dce7",
+   "0x7"
+  ],
+  [
+   "0x4c8114",
+   "0x4c6cd7",
+   "jmp",
+   7,
+   "0x4c6cde",
+   "0x7"
+  ],
+  [
+   "0x5001e4",
+   "0x4ffde9",
+   "jmp",
+   7,
+   "0x4ffdf0",
+   "0x7"
+  ],
+  [
+   "0x58bda4",
+   "0x58bd85",
+   "jmp",
+   7,
+   "0x58bd8c",
+   "0x7"
+  ],
+  [
+   "0x69b15c",
+   "0x69af3e",
+   "jmp",
+   7,
+   "0x69af45",
+   "0x7"
+  ],
+  [
+   "0x6a92c4",
+   "0x6a8e1e",
+   "jmp",
+   7,
+   "0x6a8e25",
+   "0x7"
+  ],
+  [
+   "0x6adbdc",
+   "0x6acf2a",
+   "jmp",
+   7,
+   "0x6acf31",
+   "0x7"
+  ],
+  [
+   "0x6b0238",
+   "0x6afd73",
+   "jmp",
+   7,
+   "0x6afd7a",
+   "0x7"
+  ],
+  [
+   "0x6dfdec",
+   "0x6dd8e7",
+   "jmp",
+   7,
+   "0x6dd8ee",
+   "0x7"
+  ],
+  [
+   "0x708d54",
+   "0x708c4e",
+   "jmp",
+   7,
+   "0x708c55",
+   "0x7"
+  ],
+  [
+   "0x71f2c0",
+   "0x71eea2",
+   "jmp",
+   7,
+   "0x71eea9",
+   "0x7"
+  ],
+  [
+   "0x71f328",
+   "0x71f092",
+   "jmp",
+   7,
+   "0x71f099",
+   "0x7"
+  ],
+  [
+   "0x71f778",
+   "0x71f6d0",
+   "jmp",
+   7,
+   "0x71f6d7",
+   "0x7"
+  ],
+  [
+   "0x71f9e0",
+   "0x71f9d3",
+   "jmp",
+   7,
+   "0x71f9da",
+   "0x7"
+  ],
+  [
+   "0x728e08",
+   "0x728c17",
+   "jmp",
+   7,
+   "0x728c1e",
+   "0x7"
+  ],
+  [
+   "0x7291ac",
+   "0x728e6c",
+   "jmp",
+   7,
+   "0x728e73",
+   "0x7"
+  ],
+  [
+   "0x79f028",
+   "0x79ed73",
+   "jmp",
+   7,
+   "0x79ed7a",
+   "0x7"
+  ]
+ ],
+ "K2": [
+  {
+   "table": "0x46f5a0",
+   "owner": "0x46dfd0",
+   "frame": "0x410",
+   "n_ret": 5,
+   "n_paired": 5
+  },
+  {
+   "table": "0x48db10",
+   "owner": "0x48d1e0",
+   "frame": "0x1f0",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x48dd10",
+   "owner": "0x48dcd0",
+   "frame": null,
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x4c8114",
+   "owner": "0x4c6cb0",
+   "frame": "0x370",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x5001e4",
+   "owner": "0x4ffdd0",
+   "frame": "0x70",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x58bda4",
+   "owner": "0x58bd80",
+   "frame": null,
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x69b15c",
+   "owner": "0x69ae90",
+   "frame": "0x1dc",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x6a92c4",
+   "owner": "0x6a8b30",
+   "frame": "0x88",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x6adbdc",
+   "owner": "0x6acee0",
+   "frame": "0x250",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x6b0238",
+   "owner": "0x6afd60",
+   "frame": "0x28",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x6dfdec",
+   "owner": "0x6dd8b0",
+   "frame": "0x240",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x708d54",
+   "owner": "0x708c30",
+   "frame": "0x14",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x71f2c0",
+   "owner": "0x71e940",
+   "frame": "0x1c",
+   "n_ret": 14,
+   "n_paired": 14
+  },
+  {
+   "table": "0x71f328",
+   "owner": "0x71e940",
+   "frame": "0x1c",
+   "n_ret": 19,
+   "n_paired": 19
+  },
+  {
+   "table": "0x71f778",
+   "owner": "0x71f680",
+   "frame": null,
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x71f9e0",
+   "owner": "0x71f9c0",
+   "frame": null,
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x728e08",
+   "owner": "0x728c00",
+   "frame": "0x20",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x7291ac",
+   "owner": "0x728e30",
+   "frame": "0x10",
+   "n_ret": 0,
+   "n_paired": 0
+  },
+  {
+   "table": "0x79f028",
+   "owner": "0x79e520",
+   "frame": "0x7c",
+   "n_ret": 17,
+   "n_paired": 17
+  }
+ ],
+ "K2_detail": [
+  {
+   "table": "0x46f5a0",
+   "owner": "0x46dfd0",
+   "frame": "0x410",
+   "n_ret": 5,
+   "n_paired": 5,
+   "detail": [
+    [
+     "0x46e079",
+     16,
+     "0x46e073",
+     "add esp, 0x410"
+    ],
+    [
+     "0x46e0b5",
+     16,
+     "0x46e0af",
+     "add esp, 0x410"
+    ],
+    [
+     "0x46e289",
+     16,
+     "0x46e283",
+     "add esp, 0x410"
+    ],
+    [
+     "0x46e346",
+     16,
+     "0x46e340",
+     "add esp, 0x410"
+    ],
+    [
+     "0x46e4a4",
+     16,
+     "0x46e49e",
+     "add esp, 0x410"
+    ]
+   ]
+  },
+  {
+   "table": "0x48db10",
+   "owner": "0x48d1e0",
+   "frame": "0x1f0",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x48dd10",
+   "owner": "0x48dcd0",
+   "frame": null,
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x4c8114",
+   "owner": "0x4c6cb0",
+   "frame": "0x370",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x5001e4",
+   "owner": "0x4ffdd0",
+   "frame": "0x70",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x58bda4",
+   "owner": "0x58bd80",
+   "frame": null,
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x69b15c",
+   "owner": "0x69ae90",
+   "frame": "0x1dc",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x6a92c4",
+   "owner": "0x6a8b30",
+   "frame": "0x88",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x6adbdc",
+   "owner": "0x6acee0",
+   "frame": "0x250",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x6b0238",
+   "owner": "0x6afd60",
+   "frame": "0x28",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x6dfdec",
+   "owner": "0x6dd8b0",
+   "frame": "0x240",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x708d54",
+   "owner": "0x708c30",
+   "frame": "0x14",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x71f2c0",
+   "owner": "0x71e940",
+   "frame": "0x1c",
+   "n_ret": 14,
+   "n_paired": 14,
+   "detail": [
+    [
+     "0x71ea2d",
+     24,
+     "0x71ea2a",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eae4",
+     24,
+     "0x71eae1",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eb03",
+     24,
+     "0x71eb00",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eb25",
+     24,
+     "0x71eb22",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eb50",
+     24,
+     "0x71eb4d",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eb72",
+     24,
+     "0x71eb6f",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eb9b",
+     24,
+     "0x71eb98",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ebbd",
+     24,
+     "0x71ebba",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ebe6",
+     24,
+     "0x71ebe3",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ec30",
+     24,
+     "0x71ec2d",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ec60",
+     24,
+     "0x71ec5d",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ed56",
+     24,
+     "0x71ed53",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71edb8",
+     24,
+     "0x71edb5",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ee54",
+     24,
+     "0x71ee51",
+     "add esp, 0x1c"
+    ]
+   ]
+  },
+  {
+   "table": "0x71f328",
+   "owner": "0x71e940",
+   "frame": "0x1c",
+   "n_ret": 19,
+   "n_paired": 19,
+   "detail": [
+    [
+     "0x71ea2d",
+     24,
+     "0x71ea2a",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eae4",
+     24,
+     "0x71eae1",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eb03",
+     24,
+     "0x71eb00",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eb25",
+     24,
+     "0x71eb22",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eb50",
+     24,
+     "0x71eb4d",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eb72",
+     24,
+     "0x71eb6f",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eb9b",
+     24,
+     "0x71eb98",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ebbd",
+     24,
+     "0x71ebba",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ebe6",
+     24,
+     "0x71ebe3",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ec30",
+     24,
+     "0x71ec2d",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ec60",
+     24,
+     "0x71ec5d",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ed56",
+     24,
+     "0x71ed53",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71edb8",
+     24,
+     "0x71edb5",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ee54",
+     24,
+     "0x71ee51",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71eefe",
+     24,
+     "0x71eefb",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ef1d",
+     24,
+     "0x71ef1a",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71ef3c",
+     24,
+     "0x71ef39",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71efa5",
+     24,
+     "0x71efa2",
+     "add esp, 0x1c"
+    ],
+    [
+     "0x71f055",
+     24,
+     "0x71f052",
+     "add esp, 0x1c"
+    ]
+   ]
+  },
+  {
+   "table": "0x71f778",
+   "owner": "0x71f680",
+   "frame": null,
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x71f9e0",
+   "owner": "0x71f9c0",
+   "frame": null,
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x728e08",
+   "owner": "0x728c00",
+   "frame": "0x20",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x7291ac",
+   "owner": "0x728e30",
+   "frame": "0x10",
+   "n_ret": 0,
+   "n_paired": 0,
+   "detail": []
+  },
+  {
+   "table": "0x79f028",
+   "owner": "0x79e520",
+   "frame": "0x7c",
+   "n_ret": 17,
+   "n_paired": 17,
+   "detail": [
+    [
+     "0x79e5a4",
+     16,
+     "0x79e5a1",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79e5ca",
+     16,
+     "0x79e5c7",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79e5ee",
+     16,
+     "0x79e5eb",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79e609",
+     16,
+     "0x79e606",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79e7fe",
+     16,
+     "0x79e7fb",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79e833",
+     16,
+     "0x79e830",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79e887",
+     16,
+     "0x79e884",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79e9d6",
+     16,
+     "0x79e9d3",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79ea83",
+     16,
+     "0x79ea80",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79eae3",
+     16,
+     "0x79eae0",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79eafc",
+     16,
+     "0x79eaf9",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79eb25",
+     16,
+     "0x79eb22",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79eb3e",
+     16,
+     "0x79eb3b",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79eb80",
+     16,
+     "0x79eb7d",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79ebed",
+     16,
+     "0x79ebea",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79ec37",
+     16,
+     "0x79ec34",
+     "add esp, 0x7c"
+    ],
+    [
+     "0x79ed5a",
+     16,
+     "0x79ed57",
+     "add esp, 0x7c"
+    ]
+   ]
+  }
+ ],
+ "K2b": [
+  {
+   "table": "0x46f5a0",
+   "S_R107": "0x46de20",
+   "owner_new": "0x46dfd0",
+   "first_ret_from_S": "0x46dfc6",
+   "n_insn_to_first_ret_from_S": 209,
+   "first_ret_from_owner": "0x46e079",
+   "n_insn_to_first_ret_from_owner": 49,
+   "S_body_ends_before_owner": true,
+   "boundaries_between": [
+    "0x46dfd0"
+   ]
+  },
+  {
+   "table": "0x5001e4",
+   "S_R107": "0x4ffd90",
+   "owner_new": "0x4ffdd0",
+   "first_ret_from_S": "0x4ffdcc",
+   "n_insn_to_first_ret_from_S": 16,
+   "first_ret_from_owner": "0x4ffe20",
+   "n_insn_to_first_ret_from_owner": 25,
+   "S_body_ends_before_owner": true,
+   "boundaries_between": [
+    "0x4ffdd0"
+   ]
+  },
+  {
+   "table": "0x58bda4",
+   "S_R107": "0x58bc20",
+   "owner_new": "0x58bd80",
+   "first_ret_from_S": "0x58bc2a",
+   "n_insn_to_first_ret_from_S": 2,
+   "first_ret_from_owner": "0x58bd94",
+   "n_insn_to_first_ret_from_owner": 7,
+   "S_body_ends_before_owner": true,
+   "boundaries_between": [
+    "0x58bc30",
+    "0x58bc70",
+    "0x58bcd0",
+    "0x58bcf0",
+    "0x58bd20",
+    "0x58bd40",
+    "0x58bd60",
+    "0x58bd80"
+   ]
+  },
+  {
+   "table": "0x79f028",
+   "S_R107": "0x79da90",
+   "owner_new": "0x79e520",
+   "first_ret_from_S": "0x79db28",
+   "n_insn_to_first_ret_from_S": 61,
+   "first_ret_from_owner": "0x79e5a4",
+   "n_insn_to_first_ret_from_owner": 45,
+   "S_body_ends_before_owner": true,
+   "boundaries_between": [
+    "0x79dfe0",
+    "0x79e520"
+   ]
+  }
+ ],
+ "K3": [
+  [
+   [
+    "0x58bc20",
+    "mov",
+    "dword ptr [0xabed0c], 0"
+   ],
+   [
+    "0x58bc2a",
+    "ret",
+    ""
+   ]
+  ],
+  [
+   [
+    "0x58bd80",
+    "cmp",
+    "ecx, 4"
+   ],
+   [
+    "0x58bd83",
+    "ja",
+    "0x58bda1"
+   ]
+  ]
+ ],
+ "K4": [
+  [
+   "0x79be7e",
+   "push",
+   "0x79db50"
+  ],
+  [
+   "0x79ea2b",
+   "push",
+   "0x79db50"
+  ],
+  [
+   "0x7a946b",
+   "mov",
+   "edx, 0x79db50"
+  ],
+  [
+   "0x7a9717",
+   "mov",
+   "edx, 0x79db50"
+  ]
+ ],
+ "IMMPTR": 598,
+ "IMMPTR_marginal": 91,
+ "owner_in_marginal": [],
+ "HB": 17766,
+ "HB_with_evidence": 11561
+}

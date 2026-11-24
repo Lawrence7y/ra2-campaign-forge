@@ -1,0 +1,409 @@
+{
+ "checks": [
+  {
+   "name": "S0 沙箱基线 exit 0",
+   "ok": true,
+   "detail": "exit=0 fails=[]"
+  },
+  {
+   "name": "S1 行数 31、列数全 7",
+   "ok": true,
+   "detail": "rows=31"
+  },
+  {
+   "name": "M1: 第 3 列 31 行全改单字符 x ⇒ 门禁不 FAIL（第 3 列无内容级校验）",
+   "ok": true,
+   "detail": "exit=0"
+  },
+  {
+   "name": "M1b: 只改 id 3 的第 3 列 ⇒ 与 M1 同结果（该行也不读第 3 列内容）",
+   "ok": true,
+   "detail": "M1=0 M1b=0"
+  },
+  {
+   "name": "M2: 第 4 列 31 行全改成 ANCHOR-X ⇒ exit 1，且 FAIL 全部来自 C11 的 R5（26 行不可见、5 行可见）",
+   "ok": true,
+   "detail": "exit=1 fails=[3, 4, 22, 27, 28]"
+  },
+  {
+   "name": "M2b: 只改 id 3 的第 4 列 ⇒ exit 1 且报 R5 anchors mismatch（sha256 绑定真在跑）",
+   "ok": true,
+   "detail": "fails=['C11 id 3 claims recheck but has no valid self-description li']"
+  },
+  {
+   "name": "M3: 第 2 列 31 行全改成 §2.14（真实存在）⇒ exit 0（只校验存在，不校验对应）",
+   "ok": true,
+   "detail": "exit=0"
+  },
+  {
+   "name": "M3b: 第 2 列全改成 §2.999（不存在）⇒ exit 1（C8 真在跑，M3 不是门禁失灵）",
+   "ok": true,
+   "detail": "fails=[\"C8 id 1 section '§2.999' not found in R14_COMMON\", \"C8 id 2 section '§2.999' not found in R14_COMMON\"]"
+  },
+  {
+   "name": "M4: 第 2/3/4 列同时伪造 ⇒ 仍被 C11 的 R5 抓到（26 行不可见，5 行可见）",
+   "ok": true,
+   "detail": "fails=['C11 id 3 claims recheck but has no valid self-desc', 'C11 id 4 claims recheck but has no valid self-desc']"
+  },
+  {
+   "name": "C13 可行性：31 行第 2 列全部等于「纪律 N」在正文里所属的节（严格化不会误伤）",
+   "ok": true,
+   "detail": "mismatch=[]"
+  },
+  {
+   "name": "C13 边界：有 1 个纪律号在正文里出现在两个节（歧义，严格化必须按集合而非单值）",
+   "ok": true,
+   "detail": "ambiguous={1: ['2.14', '2.26']}"
+  },
+  {
+   "name": "S2 第 3 列声称「逐字截取」：实测 28/31 逐字在正文，3 行不在（31/32/33）",
+   "ok": true,
+   "detail": "bad=[31, 32, 33]"
+  },
+  {
+   "name": "S3 第 4 列锚在「自己那行的产物」里逐字出现的只有 1 行（id 14）",
+   "ok": true,
+   "detail": "in_product=[14]"
+  },
+  {
+   "name": "S4 第 4 列锚在 R14_COMMON 正文里逐字出现的只有 2 行（id 14/32）",
+   "ok": true,
+   "detail": "in_doc=[14, 32]"
+  },
+  {
+   "name": "M5 完整伪造链可成功：改第 4 列锚 + 同步重写 5 条自述行的 anchors ⇒ exit 0（R5 是自洽性检查，不是真实性检查）",
+   "ok": true,
+   "detail": "exit=0 rewritten=[3, 4, 22, 27, 28] fails=[]"
+  },
+  {
+   "name": "PAT1 落盘后：第 3 列全改 x ⇒ FAIL（C14 指纹，M1 的历史结论已被收紧）",
+   "ok": true,
+   "detail": "['C14 col2/col3/col4 free-text table changed: sha256 9dfe5815f']"
+  },
+  {
+   "name": "PAT2 落盘后：第 2 列全指 §2.14 ⇒ FAIL（C13 + C14 双响，M3 的历史结论已被收紧）",
+   "ok": true,
+   "detail": "[\"C13 id 4 section '§2.14' != definition section(s) ['2.17'] (\", \"C13 id 5 section '§2.14' != definition section(s) ['2.19'] (\"]"
+  },
+  {
+   "name": "PAT3 落盘后：只改 id 16 的第 4 列 ⇒ FAIL（C14，此前 26 行完全不被读）",
+   "ok": true,
+   "detail": "['C14 col2/col3/col4 free-text table changed: sha256 c7bbaeb1e']"
+  }
+ ],
+ "results": {
+  "M1_col3_all_x": {
+   "exit": 0,
+   "fails": []
+  },
+  "M1b_col3_id3_x": {
+   "exit": 0,
+   "fails": []
+  },
+  "M2_col4_all": {
+   "exit": 1,
+   "fails": [
+    "C11 id 3 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:22395a6103650a4840fe208f6a00fd2ae02f14)",
+    "C11 id 4 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:61a7cb58aceec89a0de2710fe207cf4fa02070)",
+    "C11 id 22 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:05c5e2f80851b40495523165b34a91c855588f)",
+    "C11 id 27 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:58357032f760e2862f487da66ff9948458d017)",
+    "C11 id 28 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:e394ea5dbbb4dbbc88d1d386402fc938a32ec5)"
+   ]
+  },
+  "M2b_col4_id3": {
+   "exit": 1,
+   "fails": [
+    "C11 id 3 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:22395a6103650a4840fe208f6a00fd2ae02f14)"
+   ]
+  },
+  "M3_col2_existing": {
+   "exit": 0,
+   "fails": []
+  },
+  "M3b_col2_missing": {
+   "exit": 1,
+   "fails": [
+    "C8 id 1 section '§2.999' not found in R14_COMMON",
+    "C8 id 2 section '§2.999' not found in R14_COMMON",
+    "C8 id 3 section '§2.999' not found in R14_COMMON",
+    "C8 id 4 section '§2.999' not found in R14_COMMON",
+    "C8 id 5 section '§2.999' not found in R14_COMMON",
+    "C8 id 6 section '§2.999' not found in R14_COMMON",
+    "C8 id 7 section '§2.999' not found in R14_COMMON",
+    "C8 id 8 section '§2.999' not found in R14_COMMON",
+    "C8 id 9 section '§2.999' not found in R14_COMMON",
+    "C8 id 10 section '§2.999' not found in R14_COMMON",
+    "C8 id 11 section '§2.999' not found in R14_COMMON",
+    "C8 id 12 section '§2.999' not found in R14_COMMON",
+    "C8 id 13 section '§2.999' not found in R14_COMMON",
+    "C8 id 14 section '§2.999' not found in R14_COMMON",
+    "C8 id 15 section '§2.999' not found in R14_COMMON",
+    "C8 id 16 section '§2.999' not found in R14_COMMON",
+    "C8 id 17 section '§2.999' not found in R14_COMMON",
+    "C8 id 18 section '§2.999' not found in R14_COMMON",
+    "C8 id 19 section '§2.999' not found in R14_COMMON",
+    "C8 id 20 section '§2.999' not found in R14_COMMON",
+    "C8 id 21 section '§2.999' not found in R14_COMMON",
+    "C8 id 22 section '§2.999' not found in R14_COMMON",
+    "C8 id 23 section '§2.999' not found in R14_COMMON",
+    "C8 id 24 section '§2.999' not found in R14_COMMON",
+    "C8 id 25 section '§2.999' not found in R14_COMMON",
+    "C8 id 26 section '§2.999' not found in R14_COMMON",
+    "C8 id 27 section '§2.999' not found in R14_COMMON",
+    "C8 id 28 section '§2.999' not found in R14_COMMON",
+    "C8 id 31 section '§2.999' not found in R14_COMMON",
+    "C8 id 32 section '§2.999' not found in R14_COMMON",
+    "C8 id 33 section '§2.999' not found in R14_COMMON"
+   ]
+  },
+  "M4_triple_forgery": {
+   "exit": 1,
+   "fails": [
+    "C11 id 3 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:22395a6103650a4840fe208f6a00fd2ae02f14)",
+    "C11 id 4 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:61a7cb58aceec89a0de2710fe207cf4fa02070)",
+    "C11 id 22 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:05c5e2f80851b40495523165b34a91c855588f)",
+    "C11 id 27 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:58357032f760e2862f487da66ff9948458d017)",
+    "C11 id 28 claims recheck but has no valid self-description line (R5 anchors mismatch: got sha256:e394ea5dbbb4dbbc88d1d386402fc938a32ec5)"
+   ]
+  },
+  "C13": {
+   "defs": 31,
+   "mismatch": [],
+   "ambiguous": {
+    "1": [
+     "2.14",
+     "2.26"
+    ]
+   }
+  },
+  "col3_verbatim": [
+   {
+    "id": 1,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 44
+   },
+   {
+    "id": 2,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 177
+   },
+   {
+    "id": 3,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 96
+   },
+   {
+    "id": 4,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 38
+   },
+   {
+    "id": 5,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 122
+   },
+   {
+    "id": 6,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 117
+   },
+   {
+    "id": 7,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 158
+   },
+   {
+    "id": 8,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 116
+   },
+   {
+    "id": 9,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 102
+   },
+   {
+    "id": 10,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 72
+   },
+   {
+    "id": 11,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 42
+   },
+   {
+    "id": 12,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 34
+   },
+   {
+    "id": 13,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 42
+   },
+   {
+    "id": 14,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 41
+   },
+   {
+    "id": 15,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 60
+   },
+   {
+    "id": 16,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 39
+   },
+   {
+    "id": 17,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 56
+   },
+   {
+    "id": 18,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 60
+   },
+   {
+    "id": 19,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 42
+   },
+   {
+    "id": 20,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 74
+   },
+   {
+    "id": 21,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 45
+   },
+   {
+    "id": 22,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 57
+   },
+   {
+    "id": 23,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 51
+   },
+   {
+    "id": 24,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 61
+   },
+   {
+    "id": 25,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 41
+   },
+   {
+    "id": 26,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 61
+   },
+   {
+    "id": 27,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 66
+   },
+   {
+    "id": 28,
+    "verbatim_in_doc": true,
+    "stripped_verbatim": true,
+    "len": 55
+   },
+   {
+    "id": 31,
+    "verbatim_in_doc": false,
+    "stripped_verbatim": false,
+    "len": 158
+   },
+   {
+    "id": 32,
+    "verbatim_in_doc": false,
+    "stripped_verbatim": false,
+    "len": 197
+   },
+   {
+    "id": 33,
+    "verbatim_in_doc": false,
+    "stripped_verbatim": false,
+    "len": 109
+   }
+  ],
+  "anchor_occurrence": {
+   "in_product": [
+    14
+   ],
+   "in_doc": [
+    14,
+    32
+   ]
+  },
+  "M5_full_forgery_chain": {
+   "exit": 0,
+   "fails": [],
+   "rewritten": [
+    3,
+    4,
+    22,
+    27,
+    28
+   ]
+  },
+  "PAT": {
+   "col3_all_x": {
+    "exit": 1,
+    "fails": [
+     "C14 col2/col3/col4 free-text table changed: sha256 9dfe5815fb84f3e9 != pinned a740bcc9add4e607 ; drifted ids=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] (re-pin C14_TEXT_SHA256/C14_ROW_SHA deliberately after editing those rows)"
+    ]
+   },
+   "col2_all_2_14": {
+    "exit": 1,
+    "fails": [
+     "C13 id 4 section '§2.14' != definition section(s) ['2.17'] (col2 must point at the defining section)",
+     "C13 id 5 section '§2.14' != definition section(s) ['2.19'] (col2 must point at the defining section)"
+    ]
+   },
+   "col4_id16": {
+    "exit": 1,
+    "fails": [
+     "C14 col2/col3/col4 free-text table changed: sha256 c7bbaeb1e73fcaa0 != pinned a740bcc9add4e607 ; drifted ids=['16'] (re-pin C14_TEXT_SHA256/C14_ROW_SHA deliberately after editing those rows)"
+    ]
+   }
+  }
+ }
+}

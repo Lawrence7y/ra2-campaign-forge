@@ -1,0 +1,59 @@
+{
+ "checks": [
+  {
+   "name": "V1 主会话独立重算 QI 类数 = 172（审计员核 r110a 的 172；两者必须相等）",
+   "ok": true,
+   "detail": "172"
+  },
+  {
+   "name": "V2 独立重算：17 个 distinct IID 指针里落在 .text 的 = 0（审计员核 S3 为 0）",
+   "ok": true,
+   "detail": "{'n': 17, 'in_text': 0}"
+  },
+  {
+   "name": "V3 独立重算 per_class_n = [(1, 1), (2, 92), (3, 3), (4, 76)]，四项和 = 172（审计员手工加得 172）",
+   "ok": true,
+   "detail": "[(1, 1), (2, 92), (3, 3), (4, 76)]"
+  },
+  {
+   "name": "V4 独立重算：17 指针 → 17 个不同 GUID 内容（双射）；审计员核 guid_of_ptr 键 17、值去重 17",
+   "ok": true,
+   "detail": "{'ptr': 17, 'content': 17}"
+  },
+  {
+   "name": "V5a 独立重算「直接比对 IUnknown」的类 = 171/172，不认的 = ['AircraftClass']（审计员核 171 / AircraftClass）",
+   "ok": true,
+   "detail": "171"
+  },
+  {
+   "name": "V5b 但 r110c 已证 AircraftClass 是**经委托**认得 IUnknown（委托到 0x410260），故正确值 172/172；审计员看不到 r110c，它判「一致」是对 r110a 的正确判定，不是错判",
+   "ok": true,
+   "detail": "{'direct': 171, 'closure': 172}"
+  },
+  {
+   "name": "V6 独立重算：SEH 成对点 15、涉及 HB 函数 6、HB 总数 17766（审计员核 seh_funcs=6 / hb=17766）",
+   "ok": true,
+   "detail": "{'pairs': 15, 'funcs': 6, 'hb': 17766}"
+  },
+  {
+   "name": "V7 独立重算 FuncInfo 完整形态 = 1 条，全部在 .data（审计员核 .text 项 0 个）",
+   "ok": true,
+   "detail": "[('0x87c1d0', '.data')]"
+  },
+  {
+   "name": "V8 独立重算 E4 三数：SEH 覆盖 0.03%、FuncInfo 1 条、结论方向一致",
+   "ok": true,
+   "detail": "[0.03, 1]"
+  },
+  {
+   "name": "V9 复核审计员指出的字段名问题：审计员说「顶层无 iunk_share」⇒ **审计员正确**，本会话上一稿反过来说它错，是我记错（自错 L-09）。实际存在的等价字段 = without_iunk=['AircraftClass']，且 checks 里 S7 的 detail 内联 with_iunk=171/total=172",
+   "ok": true,
+   "detail": "{'has_iunk_share': False, 'without_iunk': ['AircraftClass']}"
+  },
+  {
+   "name": "V0 反控：核对器不是恒真 —— compare(171,172)=False / compare(172,172)=True",
+   "ok": true,
+   "detail": "negative control ok"
+  }
+ ]
+}

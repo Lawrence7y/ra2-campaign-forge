@@ -1,0 +1,15 @@
+PASS S0 指令数 1,392,592 | 1392592
+PASS F1 虚调用惯用法 mov rX,[rY]; call [rX+4k] 站点数 == 9551 | 9551
+PASS F1b 槽号必须是 4 的倍数且 < 0x1000：全部满足 = True | 284
+PASS F1c 用到的 distinct 槽号 284 个，最高槽号 0x558（= 第 342 槽） | 1368
+PASS F1d 槽号落在 vtable 最长 400 槽范围内 = True | 342
+PASS F1e 抽样 6000 个虚调用里 rY 在「伪函数头 14 条内」被定义为 this 的 = 929（15.5%）——该口径因按 ret 切段而偏低，不作对象模型判据 | 15.5
+PASS F1f 实例 | [{'vc': '0x401993', 'slot': 7, 'this_def': 'mov esi, ecx', 'at': '0x401981'}, {'vc': '0x40b7de', 'slot': 3, 'this_def': 'mov esi, ecx', 'at': '0x40b7f2'}, {'vc': '0x40b90a', 'slot': 3, 'this_def': 'mov esi, ecx', 'at': '0x40b88a'}, {'vc': '0x40ba3e', 'slot': 3, 'this_def': 'mov esi, ecx', 'at': '0x40ba52'}]
+PASS F2 jmp thunk 数（按 distinct 地址）== 28 | 28
+PASS F2b |E| = 19490 | 19490
+PASS F2c 归因覆盖（跟 thunk + 全 E）：A 66 / B 19 / A∩B 3 / 无 195 ⇒ 覆盖 82/277 = 29.6%（与 r109a 完全相同：thunk 跟随对 owner 集零增量，见自错 E-f2） | (66, 19, 3, 195)
+PASS F2d thunk 跟随 + E 集扩大对覆盖**零增量**（277 个 owner 里只有 1 个是 thunk 目标且已在 66 内） | (82, 82)
+PASS F3 反控：随机 20000 个指令起点上该惯用法发火 49（0.24%） | 49
+PASS F3b 富集倍数 = 2.8 倍（全段 9551 / 1,392,592 = 0.686% vs 随机 0.245%） | 2.8
+
+ASSERT 13/13 PASS, FAIL 0

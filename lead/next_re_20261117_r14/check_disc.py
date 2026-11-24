@@ -22,13 +22,15 @@ R47 落地；R48 装下半截（C7）；R49 关闭 T4 审计查出的 6 处「�
 import io, os, re, sys, hashlib, hashlib
 
 ROOT = r'D:\Project\ra2-campaign-forge'
+if not os.path.isdir(ROOT):                      # R73：POSIX 上按本文件位置反推三层
+    ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 R14  = os.path.join(ROOT, 'lead', 'next_re_20261117_r14')
 RC   = os.path.join(R14, 'R14_COMMON.md')
 DR   = os.path.join(R14, 'DISC_RECHECK.tsv')
 BRD  = os.path.join(R14, 'STATUS_BOARD.md')
 LED  = os.path.join(ROOT, 'lead', 'GOAL_THREE_TARGETS_20261018.md')
 SELF = os.path.abspath(__file__)
-GATE_VER = 'R58'
+GATE_VER = 'R103'
 FREEZE_SHA256 = '0ffeeff5acb825cd5204abd013fcbe0a98a0d1df47b9a20c6a8f35c7b72aab61'   # DISC_UNVERIFIABLE.tsv 的 sha256（防静默篡改）
 
 # 阈值（可用命令行覆盖：--c6max=120）
@@ -69,6 +71,8 @@ else:
 
 # ---- C3 / C4 / C9 ----
 ALLOWED_LATER = ('\u6709', '\u65e0')   # 以「有」或「无」开头
+import place_r87 as _P87
+_PLACE_IS = _P87.is_placeholder
 PLACEHOLDER = ('', '\u65e0', 'GARBAGE', 'TBD', 'xxx', 'XXX', '?', '-')
 c3 = c4 = 0
 for r in rows:
@@ -89,10 +93,12 @@ for r in rows:
         else:
             c4 += 1
     # C9 判据/锚不得为空或占位
-    if r[2].strip() in PLACEHOLDER:
-        fails.append('C9 id %s judge-column empty/placeholder' % r[0])
-    if r[3].strip() in PLACEHOLDER:
-        fails.append('C9 id %s anchor-column empty/placeholder' % r[0])
+    _jp, _jr = _PLACE_IS(r[2].strip())
+    _ap_, _ar = _PLACE_IS(r[3].strip())
+    if _jp:
+        fails.append('C9 id %s judge-column empty/placeholder (%s)' % (r[0], _jr))
+    if _ap_:
+        fails.append('C9 id %s anchor-column empty/placeholder (%s)' % (r[0], _ar))
 
 # ---- C6 命名空间：只统计「真正在 §2.14+ 之外」的提及，并要求映射表逐条覆盖 ----
 # R50 修正：原版用 LOOSE-CANON 之差，把「§2.x 里对我自己纪律的非规范引用」也当成旧命名空间冲突。
@@ -120,6 +126,12 @@ for i, l in enumerate(lines):
             continue          # 数量修饰，非条号
         cross += len(nums)
 notes.append('C6 cross-namespace refs (compound-aware, outside 2.14+) = %d' % cross)
+# ---- C6 阈值（R102 接线）：docstring 一直声称「超阈值即 FAIL」，而 C6MAX 此前从未被读（AST 实测 Load=0）。 ----
+if cross > C6MAX:
+    fails.append('C6 cross-namespace refs %d > threshold %d (--c6max= to raise deliberately)'
+                 % (cross, C6MAX))
+else:
+    notes.append('C6 threshold ok: %d <= %d' % (cross, C6MAX))
 if not os.path.exists(NSMAP):
     fails.append('C6 DISC_NS_MAP.tsv missing (old numbering must be mapped, not guessed)')
 else:
@@ -232,6 +244,21 @@ else:
 # 规则：col7 以「有」开头者，其产物必须含一条通过 recheck_verify 的自描述行，否则 FAIL。
 #       col7 以「无」开头者计入 unverifiable 计数（不 FAIL，但必须在输出里显式可见）。
 C11_LANDABLE = {3, 4, 11, 12, 13, 14, 15, 17, 22, 26, 27, 28}
+# ---- C11b 【R102 新增】C11_LANDABLE 载重：死常量变成可核的缺口量与钉住 ----
+# R102 实测：该常量此前 Load 次数 = 0（纯死代码），且它列的 12 个 id 里有 7 个写着「无」——声明不需要回跑，故永远不可能 FAIL。那 7 行不是「还未补」是「声明不补」。
+# 本段不修那 7 行（那是写入变更，须单独一卡），只把缺口显式化并钉住。
+C11B_PIN_GAP = [11, 12, 13, 14, 15, 17, 26]
+c11b_gap = []
+for _r in rows:
+    if len(_r) == 7 and _r[0].strip().isdigit() and int(_r[0]) in C11_LANDABLE:
+        if not _r[6].strip().startswith('\u6709'):
+            c11b_gap.append(int(_r[0]))
+c11b_gap = sorted(c11b_gap)
+notes.append('C11b loadable-registry: declared=%d rows, gap(claims-none, can never FAIL)=%d ids=%s'
+             % (len(C11_LANDABLE), len(c11b_gap), c11b_gap))
+if c11b_gap != sorted(C11B_PIN_GAP):
+    fails.append('C11b loadable gap drifted: %s != pinned %s (fix the rows, then re-pin deliberately)'
+                 % (c11b_gap, sorted(C11B_PIN_GAP)))
 C11_FROZEN = set()
 _FREEZE = os.path.join(R14, 'DISC_UNVERIFIABLE.tsv')
 if os.path.exists(_FREEZE):
@@ -276,6 +303,14 @@ for r in rows:
     except Exception as e:
         ok, detail = False, 'verifier-error:%s' % e
     if ok:
+        # R87-T2: frozen-class self-produced evidence must FAIL
+        # 冻结档语义是「结构上不可能自产出凭证」；一旦该档产物出现通过校验
+        # 的自述行即违规。旧实现把它计入 ok，等于把违规记成好事。
+        if n in C11_FROZEN:
+            c11_fail += 1
+            fails.append('C11 id %s registered structurally-unverifiable but now '
+                         'carries a PASSING self-description line (R87-T2)' % r[0])
+            continue
         c11_ok += 1
     elif n in C11_FROZEN:
         # R58：冻結类——在冻结档里，结构性不可验证 ⇒ 不 FAIL，但显式计入
@@ -287,13 +322,137 @@ for r in rows:
 notes.append('C11 col7 machine-check: ok=%d fail=%d frozen-unverifiable=%d claims-none=%d'
              % (c11_ok, c11_fail, c11_declared, c11_unver))
 
+# ---- C12 【R102 新增】冻结档自身可核性：12 行「结构性不可验证」不是免检牌 ----
+# R102 实测（_r102/r102a_holes.json）：C11 的 31 行里 26 行不可 FAIL，其中 12 行走冻结档。
+# 冻结档一旦被读成「免检名单」，本门禁对它们就只剩 sha256 一个约束 —— 而 sha 是同一代码库
+# 里的常量，改锚 + 同步改常量即可无声通过（r102b NC1 实测：坏锚 + 同步 sha，未打补丁的
+# 门禁 exit 0）。故 C12 把冻结档第 4 列校验式**真跑一遍**：冻结只豁免「自产出 DISC_RECHECK
+# 行」，不豁免「它引用的锚真的存在且可命中」。
+c12 = 0
+if os.path.exists(_FREEZE):
+    _fbody = [x.split('\t') for x in _frows[1:]]
+    _claim_ids = set()
+    for _r in rows:
+        if len(_r) == 7 and _r[6].strip().startswith('\u6709') and _r[0].strip().isdigit():
+            _claim_ids.add(int(_r[0]))
+    for _c in _fbody:
+        if not (_c and _c[0].strip().isdigit()):
+            continue
+        _id = int(_c[0])
+        _fid = 'C12 id %d' % _id
+        if len(_c) < 8:
+            fails.append('%s frozen row cols=%d (must be 8)' % (_fid, len(_c)))
+            continue
+        _p, _e, _why, _at = _c[2].strip(), _c[3].strip(), _c[5].strip(), _c[6].strip()
+        if _id not in _claim_ids:
+            fails.append('%s frozen but not claims-\u6709 in DISC_RECHECK (freeze != escape hatch)'
+                         % _fid)
+        if not _p or _e in ('', 'none'):
+            fails.append('%s frozen row has empty product/expr' % _fid)
+        else:
+            _ok, _det = run_expr(_p, _e)
+            if _ok is not True:
+                fails.append('%s frozen anchor does not hold (%s) :: %s' % (_fid, _det, _e[:40]))
+            else:
+                c12 += 1
+        if not _why:
+            fails.append('%s frozen reason empty' % _fid)
+        if not re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}', _at):
+            fails.append('%s frozen timestamp not strict ISO8601(+HH:MM): %r' % (_fid, _at))
+notes.append('C12 frozen-anchor live-check: %d frozen rows, %d anchors hit' % (len(_fbody), c12))
+
+# ---- C13 【R103 新增】第 2 列「节」必须与纪律号对应，不能只求「存在」 ----
+# R103 实测（_r103/r103a_freetext.json）：31 行第 2 列全改成真实存在的 §2.14 ⇒ exit 0。
+# C8 只查「该 ## x.y 在 R14_COMMON 里存在」，故把任意行指向任意存在的节都不被看见。
+# 严格化可行（零误伤）：从正文反推每个「纪律 N ·」所属的 ## 2.x 节，31/31 行原值都在该集合内。
+# 唯一歧义：纪律 1 在正文出现于 2.14（定义）与 2.26（引用），故按**集合成员**判，不按单值。
+SEC_DEF = {}
+_c13_cur = None
+for _l in lines:
+    _m13 = re.match(r'^##\s*(\d+(?:\.\d+)*)', _l)
+    if _m13:
+        _c13_cur = _m13.group(1)
+    _mm13 = re.search(r'(?:⇒\s*)?\*{0,2}纪律\s*(\d+)\s*·', _l)
+    if _mm13 and _c13_cur and _c13_cur.startswith('2.') and float(_c13_cur.split('.')[1]) >= 14:
+        SEC_DEF.setdefault(int(_mm13.group(1)), set()).add(_c13_cur)
+c13 = 0
+for r in rows:
+    if len(r) != 7 or not r[0].strip().isdigit():
+        continue
+    _n13, _s13 = int(r[0]), r[1].lstrip('§').strip()
+    _want13 = SEC_DEF.get(_n13, set())
+    if not _want13:
+        fails.append('C13 id %d has no 纪律 %d · definition in R14_COMMON (cannot cross-check section)'
+                     % (_n13, _n13))
+    elif _s13 not in _want13:
+        fails.append('C13 id %d section %r != definition section(s) %s (col2 must point at the defining section)'
+                     % (_n13, r[1], sorted(_want13)))
+    else:
+        c13 += 1
+notes.append('C13 section-correspondence: %d/%d rows match their definition section' % (c13, len(rows)))
+
+# ---- C14 【R103 新增】第 2/3/4 列自由文本的整表指纹 ----
+# R103 实测：第 3 列 31 行全改单字符 x ⇒ exit 0；第 4 列只有 5 行被 R5 的 sha256 看到
+# （改全表 col4 的 FAIL 集合恰为 [3,4,22,27,28]），其余 26 行改一字不可见。
+# 且 R5 是自洽性检查：同时改 col4 并重写那 5 条自述行的 anchors ⇒ exit 0（M5）。
+# 故把 (id, col2, col3, col4) 逐行指纹聚合钉住；任一字符改动即 FAIL 并列出变更 id。
+# 边界（如实声明，与纪律 31 同族）：sha 钉只能抬高成本，不能防伪造 —— 同时改表与本常量者仍可过。
+# 它的价值是把今天 26 行「完全不被读」变成 31 行「改动必被看见」。
+C14_TEXT_SHA256 = 'a740bcc9add4e6073071e5d6b693d213b4711ee2f3df8ab3c1db32e1a153975f'
+C14_ROW_SHA = {'1': '975155a4cc793796937a4dd07235a319aeb91f82d034ed89994c8ce13126f2d2', '2': 'ddf02236837ea35cc1ccba7a6847d61ee37c75c4812357ff9dcb71e1efe36769', '3': '97879cafb1a2de25e8c36d044e1e47ff43156e9ff0481f9a46ca7794a61fb8f2', '4': '7abce6808c29cf9ef7eee62caeb85ebecf2537805e26b1ae55a12e21c1c9dc2c', '5': 'af83c382cf85d3069f6ed174506b2dbf55b330224a01971113905c682083d6c1', '6': 'e6389fc807c40a3d37b0cc8fa11120635855be964c5fb5c30061e7c1f0c4a485', '7': 'c64d3d3fc8a3ee93402b48dbde081bd12bc6ff4506c74a4c654a7539b9926cf0', '8': '5aa1cf70b8bcab954e0a085bba64fb28d755faa57cc0edffd9f921652a6b2b76', '9': '36b99c8be128cc28198951687c4067c5c8d06e8cc2975ca241b1747e281f9091', '10': '492785892e386a9f49218aeb991dbc14ef3b4418ee5a0cf882b012e5bb37ccca', '11': '65e1dfb73bb6c937fcf5489a5a7b8eaf95834b47e409f631db52334fcaddedf0', '12': 'ee732dcd91cfe3657eab27aee543bc6a20ef2b02ae1af4c3f21d94054b6744f2', '13': '603f8a65dda4c15bb14df902c4213e9e7fd1e81f21fc3f4d3f288c96ef3a675f', '14': 'bc2f2dd76390e3f919913f8864d126805a4ac5f96caa7050aa5afbde584791d2', '15': 'fa7fda157f675554572a0deb7fd567992159fd7b250d22eb1b900e3f269b6fbc', '16': '94c63079dc9e57d9f972c2a863da0682146e6830723fa265b6b6b3fb6f778ac8', '17': '2d20a5b2133953074351e618531290ef7622e693f27ffed1f6cdf53cb3bc6260', '18': '0780e1f9093f2defb109a00032ba4f076e5630e9481623600a2b40097ec3989b', '19': '1e1f3c949ecc1d0d15cc5bc59732b9a969750700930e3e1ff34156f0879faee6', '20': '279a1035b2c2a8ef59134b1fecaceec15e3bdd34782f41c520b26eae30abc42e', '21': '45f224d29d6b0d52f6a8752aa2a0dbba088221777cd89957390cdf19bbff7c51', '22': '3afbeca10b1839c1b9a551bf19259ae95c057ecce0e93be8f0aadc2f82e75d7f', '23': 'aed93a812e7b20538b61584dcded40b41fdc828541a8cdaba05ac9b6535fe0cf', '24': 'be042cfe886aa1cef48f9a5ab6e874f332842116b5a000984603fff3ba2de422', '25': 'e7d22026fd1fb5240f765c000e2138f171d9c0a6ae6f3d9f4b2a2f3b930910e8', '26': '02603207fc8d87fba0494e7c08b504c8c94e87c268e911b179238a58cfc7368c', '27': '1cdad3536710292933efb098277768f42bd21e1bb4163a23fb1009e5aaf7470b', '28': 'e7783a0e5e7f2fcd7580fb441c917550525e785de78a6d06f4e8555a7889396e', '31': '4acda5272edc789ac2627953f47edde65fdaa5f81dd754c37852f999497d819e', '32': '12ea00b28dc1d4609b492407aca66149392affa33e60b9800324d5357f1198c5', '33': '97fc2b5483135bca516cfd4852982778fa1dc9994193ccc6fa45cc12fa06375a'}
+_c14_blob = '\n'.join('%s\t%s\t%s\t%s' % (r[0], r[1], r[2], r[3])
+                      for r in rows if len(r) == 7)
+_c14_now = hashlib.sha256(_c14_blob.encode('utf-8')).hexdigest()
+if _c14_now != C14_TEXT_SHA256:
+    _c14_drift = []
+    for r in rows:
+        if len(r) != 7:
+            continue
+        _k = r[0]
+        _h = hashlib.sha256(('%s\t%s\t%s\t%s' % (r[0], r[1], r[2], r[3])).encode('utf-8')).hexdigest()
+        if C14_ROW_SHA.get(_k) != _h:
+            _c14_drift.append(_k)
+    fails.append('C14 col2/col3/col4 free-text table changed: sha256 %s != pinned %s ; drifted ids=%s '
+                 '(re-pin C14_TEXT_SHA256/C14_ROW_SHA deliberately after editing those rows)'
+                 % (_c14_now[:16], C14_TEXT_SHA256[:16], _c14_drift[:12]))
+else:
+    notes.append('C14 free-text table fingerprint ok: 31 rows, sha256=%s' % _c14_now[:16])
+
+# ---- C15 【R103 新增】R14_COMMON 内容的单调下界：整节丢失必须 FAIL ----
+# R103 实测（_r103/r103b_loss.json A 组）：删 §2.100..§2.106（7 节 / 74,626 B）⇒ 现门禁 exit 0，
+# 且 CRLF 计数 1081→1081 变化量 0 —— C5 的 CR 不变量对丢内容失明，这正是 R102 那次
+# 828,603→738,215 B 事故能全绿的结构性原因。C15 只加下界，不动任何行：
+# 允许小节内改写、允许正常增节，不允许整节消失、末节号回退、字节数跌破下界。
+C15_SECS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106]
+C15_LAST = 106
+C15_FLOOR_BYTES = 831406
+C15_FLOOR_HEAD = 99
+_rc15 = rc
+_secs15 = [int(x) for x in re.findall(r'(?m)^##\s+2\.(\d+)\b', _rc15.replace('\r\n', '\n'))]
+_miss15 = sorted(set(C15_SECS) - set(_secs15))
+if _miss15:
+    fails.append('C15 R14_COMMON section(s) disappeared: %d missing %s (content loss is NOT allowed; '
+                 'if a section was legitimately merged, re-pin C15_SECS deliberately)'
+                 % (len(_miss15), _miss15[:12]))
+if not _secs15 or max(_secs15) < C15_LAST:
+    fails.append('C15 R14_COMMON last 2.x section %s < pinned %d (tail truncation)'
+                 % (max(_secs15) if _secs15 else 'none', C15_LAST))
+_bytes15 = len(_rc15.encode('utf-8'))
+if _bytes15 < C15_FLOOR_BYTES:
+    fails.append('C15 R14_COMMON bytes %d < floor %d (lost >= %d B)'
+                 % (_bytes15, C15_FLOOR_BYTES, C15_FLOOR_BYTES - _bytes15))
+if len(_secs15) < C15_FLOOR_HEAD:
+    fails.append('C15 R14_COMMON 2.x headings %d < floor %d' % (len(_secs15), C15_FLOOR_HEAD))
+notes.append('C15 content floor: 2.x sections %d (pinned %d), last %s (pinned %d), bytes %d (floor %d)'
+             % (len(_secs15), len(C15_SECS), max(_secs15) if _secs15 else 'none', C15_LAST, _bytes15, C15_FLOOR_BYTES))
+
 # ---- C5 CR 抽查 ----
 for name, p, exp in (('R14_COMMON', RC, 1081), ('STATUS_BOARD', BRD, 0), ('LEDGER', LED, 337)):
     if not os.path.exists(p): fails.append('C5 %s missing' % name); continue
     c = read(p).count('\r\n')
     if c != exp: fails.append('C5 %s CRLF=%d expected %d' % (name, c, exp))
 
-print('--- check_disc.py (R49) ---')
+print('--- check_disc.py (%s) ---' % GATE_VER)
 print('discipline defs %d ; DISC_RECHECK rows %d' % (len(defs), len(rows)))
 for n in notes: print('  NOTE  ' + n)
 print('C7 live-checks passed %d ; none-skipped %d' % (c7_ok, c7_none))

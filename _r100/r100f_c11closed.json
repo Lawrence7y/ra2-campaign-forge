@@ -1,0 +1,149 @@
+{
+ "state_matrix": {
+  "n": 31,
+  "claims": 17,
+  "frozen": 12,
+  "verify_ok": 5
+ },
+ "cells": {
+  "claims/frozen/ok": {
+   "True/True/False": 12,
+   "True/False/True": 5,
+   "False/False/False": 14
+  }
+ },
+ "claims_none": {
+  "n": 14,
+  "ids": [
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   19,
+   21,
+   23,
+   26,
+   31,
+   32,
+   33
+  ]
+ },
+ "nc1_drop_frozen": [
+  [
+   1,
+   "FAIL"
+  ],
+  [
+   2,
+   "FAIL"
+  ],
+  [
+   5,
+   "FAIL"
+  ],
+  [
+   6,
+   "FAIL"
+  ],
+  [
+   7,
+   "FAIL"
+  ],
+  [
+   8,
+   "FAIL"
+  ],
+  [
+   9,
+   "FAIL"
+  ],
+  [
+   10,
+   "FAIL"
+  ],
+  [
+   18,
+   "FAIL"
+  ],
+  [
+   20,
+   "FAIL"
+  ],
+  [
+   24,
+   "FAIL"
+  ],
+  [
+   25,
+   "FAIL"
+  ]
+ ],
+ "nc2_add_frozen": [
+  [
+   3,
+   "VIOLATION(R87-T2)"
+  ],
+  [
+   4,
+   "VIOLATION(R87-T2)"
+  ],
+  [
+   22,
+   "VIOLATION(R87-T2)"
+  ],
+  [
+   27,
+   "VIOLATION(R87-T2)"
+  ],
+  [
+   28,
+   "VIOLATION(R87-T2)"
+  ]
+ ],
+ "c11_counts": {
+  "ok": 5,
+  "fail": 0,
+  "frozen_unverifiable": 12,
+  "claims_none": 14
+ },
+ "hole_statement": {
+  "hole_1_freeze_is_default_pass": "冻结档 12 行的判据是「校验失败 ⇒ 免检」。这条规则使「不写自述行」成为永久最优策略：写对了才可能被判 R87-T2 违规，写不对就自动免检。",
+  "hole_2_claims_none": "第 7 列写「无」即跳过 C11 全部检查（check_disc.py:273）。14 行当前处于该状态，其中包含 3/4/22/27/28 之外的一切纪律。",
+  "hole_3_no_time_bound": "冻结档没有到期条件，也没有「冻结时刻之后是否再次尝试过」的记录；DISC_UNVERIFIABLE.tsv 第 8 列「冻结时是否已声称有」全为 YES 且从未更新。"
+ },
+ "checks": [
+  {
+   "name": "PC1 冻结档 12 行全部「声称有 + 校验 False」⇒ 摘帽不是需要构造的攻击，而是**合法持续的默认态**：不写自述行就永远免检",
+   "ok": true,
+   "detail": "12 行，其中校验通过 0"
+  },
+  {
+   "name": "PC2 通过校验的 5 行全部不在冻结档（否则 R87-T2 违规分支会触发）",
+   "ok": true,
+   "detail": "[3, 4, 22, 27, 28]"
+  },
+  {
+   "name": "NC1 反控：把这 12 行的冻结位去掉（不写盘，仅内存推演）⇒ 12/12 立刻变 FAIL ⇒「冻结」这一个位就是免检开关本身",
+   "ok": true,
+   "detail": "[(1, 'FAIL'), (2, 'FAIL'), (5, 'FAIL'), (6, 'FAIL'), (7, 'FAIL'), (8, 'FAIL'), (9, 'FAIL'), (10, 'FAIL'), (18, 'FAIL'), (20, 'FAIL'), (24, 'FAIL'), (25, 'FAIL')]"
+  },
+  {
+   "name": "NC2 反控：把已通过的 5 行标成冻结 ⇒ 5/5 立刻被判 R87-T2 违规（能抓，方向相反）",
+   "ok": true,
+   "detail": "[(3, 'VIOLATION(R87-T2)'), (4, 'VIOLATION(R87-T2)'), (22, 'VIOLATION(R87-T2)'), (27, 'VIOLATION(R87-T2)'), (28, 'VIOLATION(R87-T2)')]"
+  },
+  {
+   "name": "C11 计数复现 check_disc 的 (ok, fail, frozen, none) 四元组",
+   "ok": true,
+   "detail": "{'ok': 5, 'fail': 0, 'frozen_unverifiable': 12, 'claims_none': 14}"
+  },
+  {
+   "name": "漏洞陈述三条全部有 live 证据支撑（不是推演）",
+   "ok": true,
+   "detail": "12 冻结节 / 14 claims-none / 冻结表 8 列全 YES 未更新"
+  }
+ ]
+}

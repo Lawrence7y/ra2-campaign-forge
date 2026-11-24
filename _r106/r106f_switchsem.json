@@ -1,0 +1,672 @@
+{
+ "checks": [
+  {
+   "name": "S0 exe sha256",
+   "ok": true,
+   "detail": "73201cc021497c95"
+  },
+  {
+   "name": "F0 独立重扫 .text：指令 1,392,592 条（与 R104/R105 同口径）",
+   "ok": true,
+   "detail": "1392592"
+  },
+  {
+   "name": "F0b 独立重扫 call 直接目标 6,728（与 R105 三实现同值）",
+   "ok": true,
+   "detail": "6728"
+  },
+  {
+   "name": "F1 19 张表全部找到 holder（独立前向扫，未读 r106d 的 holder 字段）",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "F2 19 个 holder 全部落在各自表基址之前 0x4000 字节内",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "F3 19 张表里 >= 18 张能在 0x4000 内找到「被 call 且是合法指令起点」的函数入口候选",
+   "ok": true,
+   "detail": "{'have': 19, 'missing': []}"
+  },
+  {
+   "name": "F3b 这些候选入口地址互不相同（不是把同一个公共函数重复算）",
+   "ok": true,
+   "detail": "['0x46de20', '0x48d1e0', '0x48dcd0', '0x4c6cb0', '0x4ffd90', '0x58bc20', '0x69ae90', '0x6a8b30', '0x6acee0', '0x6afd60', '0x6dd5b0', '0x708c30', '0x71e940', '0x71f680', '0x71f9c0', '0x728a00', '0x79da90']"
+  },
+  {
+   "name": "F4 选择子形态全部落在已知枚举内（无 UNKNOWN）",
+   "ok": true,
+   "detail": "{'LEA_SUB': 6, 'OTHER': 7, 'MEM_LOAD': 2, 'MOV_IMM': 4}"
+  },
+  {
+   "name": "F4b LEA_SUB 形态 6 张（两级形态的典型 upstream：lea reg,[reg-K]）",
+   "ok": true,
+   "detail": "{'LEA_SUB': 6, 'OTHER': 7, 'MEM_LOAD': 2, 'MOV_IMM': 4}"
+  },
+  {
+   "name": "F4c OTHER 7 张全部是第三种 idiom DEC（写判界寄存器的指令都是 dec reg）",
+   "ok": true,
+   "detail": "[('0x4c8114', 'dec eax'), ('0x69b15c', 'dec eax'), ('0x6a92c4', 'dec eax'), ('0x6dfdec', 'dec edx'), ('0x708d54', 'dec eax'), ('0x728e08', 'dec eax'), ('0x7291ac', 'dec ecx')]"
+  },
+  {
+   "name": "F4d MEM_LOAD 2 张的结构体偏移恰为 0xc 与 0x5c",
+   "ok": true,
+   "detail": "['0xc', '0x5c']"
+  },
+  {
+   "name": "H1 19 张表输入域自洽（两级：字节表长==bound+1 且 max(byte)<n；直接：n>=2）",
+   "ok": true,
+   "detail": "[]"
+  }
+ ],
+ "tables": [
+  {
+   "table": "0x46f5a0",
+   "n": 4,
+   "holder": "0x46e4be",
+   "idx_reg": "ecx",
+   "two_level": true,
+   "func_by_calltarget": "0x46de20",
+   "func_by_retpad": "0x46e4a7",
+   "prev_ret": "0x46e4a4",
+   "agree": false,
+   "selector": {
+    "at": "0x46e4a7",
+    "shape": "LEA_SUB",
+    "disp": -1698,
+    "base_reg": "edx",
+    "text": "lea eax, [edx - 0x6a2]",
+    "cmp_reg": "eax",
+    "cmp_at": "0x46e4ad",
+    "cmp_bound": 47,
+    "idx_write": {
+     "at": "0x46e4b6",
+     "text": "xor ecx, ecx"
+    }
+   },
+   "bound": 47,
+   "byte_table": "0x46f5b0",
+   "input_domain": [
+    0,
+    47
+   ],
+   "n_case_slots": 4,
+   "entry_by_call": "0x46de20"
+  },
+  {
+   "table": "0x48db10",
+   "n": 13,
+   "holder": "0x48d583",
+   "idx_reg": "edx",
+   "two_level": true,
+   "func_by_calltarget": "0x48d1e0",
+   "func_by_retpad": "0x48d1d8",
+   "prev_ret": "0x48d1d7",
+   "agree": false,
+   "selector": {
+    "at": "0x48d56f",
+    "shape": "LEA_SUB",
+    "disp": -10,
+    "base_reg": "ecx",
+    "text": "lea eax, [ecx - 0xa]",
+    "cmp_reg": "eax",
+    "cmp_at": "0x48d572",
+    "cmp_bound": 37,
+    "idx_write": {
+     "at": "0x48d57b",
+     "text": "xor edx, edx"
+    }
+   },
+   "bound": 37,
+   "byte_table": "0x48db44",
+   "input_domain": [
+    0,
+    37
+   ],
+   "n_case_slots": 13,
+   "entry_by_call": "0x48d1e0"
+  },
+  {
+   "table": "0x48dd10",
+   "n": 5,
+   "holder": "0x48dce0",
+   "idx_reg": "ecx",
+   "two_level": true,
+   "func_by_calltarget": "0x48dcd0",
+   "func_by_retpad": "0x48dc63",
+   "prev_ret": "0x48dc62",
+   "agree": false,
+   "selector": {
+    "at": "0x48dcd0",
+    "shape": "LEA_SUB",
+    "disp": -1,
+    "base_reg": "ecx",
+    "text": "lea eax, [ecx - 1]",
+    "cmp_reg": "eax",
+    "cmp_at": "0x48dcd3",
+    "cmp_bound": 39,
+    "idx_write": {
+     "at": "0x48dcd8",
+     "text": "xor ecx, ecx"
+    }
+   },
+   "bound": 39,
+   "byte_table": "0x48dd24",
+   "input_domain": [
+    0,
+    39
+   ],
+   "n_case_slots": 5,
+   "entry_by_call": "0x48dcd0"
+  },
+  {
+   "table": "0x4c8114",
+   "n": 46,
+   "holder": "0x4c6cd7",
+   "idx_reg": "eax",
+   "two_level": false,
+   "func_by_calltarget": "0x4c6cb0",
+   "func_by_retpad": "0x4c6cb0",
+   "prev_ret": "0x4c6cad",
+   "agree": true,
+   "selector": {
+    "at": "0x4c6ccd",
+    "shape": "OTHER",
+    "text": "dec eax",
+    "cmp_reg": "eax",
+    "cmp_at": "0x4c6cce",
+    "cmp_bound": 45,
+    "idx_write": {
+     "at": "0x4c6cce",
+     "text": "cmp eax, 0x2d"
+    }
+   },
+   "input_domain": [
+    0,
+    45
+   ],
+   "n_case_slots": 46,
+   "entry_by_call": "0x4c6cb0"
+  },
+  {
+   "table": "0x5001e4",
+   "n": 5,
+   "holder": "0x4ffde9",
+   "idx_reg": "eax",
+   "two_level": false,
+   "func_by_calltarget": "0x4ffd90",
+   "func_by_retpad": "0x4ffdcf",
+   "prev_ret": "0x4ffdcc",
+   "agree": false,
+   "selector": {
+    "at": "0x4ffdd9",
+    "shape": "MEM_LOAD",
+    "disp": 12,
+    "base_reg": "ebp",
+    "text": "mov eax, dword ptr [ebp + 0xc]",
+    "cmp_reg": "eax",
+    "cmp_at": "0x4ffddd",
+    "cmp_bound": 4,
+    "idx_write": {
+     "at": "0x4ffddd",
+     "text": "cmp eax, 4"
+    }
+   },
+   "input_domain": [
+    0,
+    4
+   ],
+   "n_case_slots": 5,
+   "entry_by_call": "0x4ffd90"
+  },
+  {
+   "table": "0x58bda4",
+   "n": 5,
+   "holder": "0x58bd85",
+   "idx_reg": "ecx",
+   "two_level": false,
+   "func_by_calltarget": "0x58bc20",
+   "func_by_retpad": "0x58bd73",
+   "prev_ret": "0x58bd72",
+   "agree": false,
+   "selector": {
+    "at": "0x58bd65",
+    "shape": "MOV_IMM",
+    "imm": 4,
+    "text": "cmp ecx, 4",
+    "cmp_reg": "ecx",
+    "cmp_at": "0x58bd80",
+    "cmp_bound": 4,
+    "idx_write": {
+     "at": "0x58bd80",
+     "text": "cmp ecx, 4"
+    }
+   },
+   "input_domain": [
+    0,
+    4
+   ],
+   "n_case_slots": 5,
+   "entry_by_call": "0x58bc20"
+  },
+  {
+   "table": "0x69b15c",
+   "n": 4,
+   "holder": "0x69af3e",
+   "idx_reg": "eax",
+   "two_level": false,
+   "func_by_calltarget": "0x69ae90",
+   "func_by_retpad": "0x69ae8a",
+   "prev_ret": "0x69ae89",
+   "agree": false,
+   "selector": {
+    "at": "0x69af2c",
+    "shape": "OTHER",
+    "text": "dec eax",
+    "cmp_reg": "eax",
+    "cmp_at": "0x69af35",
+    "cmp_bound": 3,
+    "idx_write": {
+     "at": "0x69af35",
+     "text": "cmp eax, 3"
+    }
+   },
+   "input_domain": [
+    0,
+    3
+   ],
+   "n_case_slots": 4,
+   "entry_by_call": "0x69ae90"
+  },
+  {
+   "table": "0x6a92c4",
+   "n": 3,
+   "holder": "0x6a8e1e",
+   "idx_reg": "ecx",
+   "two_level": true,
+   "func_by_calltarget": "0x6a8b30",
+   "func_by_retpad": "0x6a8b21",
+   "prev_ret": "0x6a8b20",
+   "agree": false,
+   "selector": {
+    "at": "0x6a8e0c",
+    "shape": "OTHER",
+    "text": "dec eax",
+    "cmp_reg": "eax",
+    "cmp_at": "0x6a8e0d",
+    "cmp_bound": 14,
+    "idx_write": {
+     "at": "0x6a8e16",
+     "text": "xor ecx, ecx"
+    }
+   },
+   "bound": 14,
+   "byte_table": "0x6a92d0",
+   "input_domain": [
+    0,
+    14
+   ],
+   "n_case_slots": 3,
+   "entry_by_call": "0x6a8b30"
+  },
+  {
+   "table": "0x6adbdc",
+   "n": 3,
+   "holder": "0x6acf2a",
+   "idx_reg": "ecx",
+   "two_level": true,
+   "func_by_calltarget": "0x6acee0",
+   "func_by_retpad": "0x6acede",
+   "prev_ret": "0x6acedd",
+   "agree": false,
+   "selector": {
+    "at": "0x6acf13",
+    "shape": "LEA_SUB",
+    "disp": -1291,
+    "base_reg": "esi",
+    "text": "lea eax, [esi - 0x50b]",
+    "cmp_reg": "eax",
+    "cmp_at": "0x6acf19",
+    "cmp_bound": 22,
+    "idx_write": {
+     "at": "0x6acf22",
+     "text": "xor ecx, ecx"
+    }
+   },
+   "bound": 22,
+   "byte_table": "0x6adbe8",
+   "input_domain": [
+    0,
+    22
+   ],
+   "n_case_slots": 3,
+   "entry_by_call": "0x6acee0"
+  },
+  {
+   "table": "0x6b0238",
+   "n": 7,
+   "holder": "0x6afd73",
+   "idx_reg": "eax",
+   "two_level": false,
+   "func_by_calltarget": "0x6afd60",
+   "func_by_retpad": "0x6afd51",
+   "prev_ret": "0x6afd50",
+   "agree": false,
+   "selector": {
+    "at": "0x6afd67",
+    "shape": "MEM_LOAD",
+    "disp": 92,
+    "base_reg": "esi",
+    "text": "mov eax, dword ptr [esi + 0x5c]",
+    "cmp_reg": "eax",
+    "cmp_at": "0x6afd6a",
+    "cmp_bound": 6,
+    "idx_write": {
+     "at": "0x6afd6a",
+     "text": "cmp eax, 6"
+    }
+   },
+   "input_domain": [
+    0,
+    6
+   ],
+   "n_case_slots": 7,
+   "entry_by_call": "0x6afd60"
+  },
+  {
+   "table": "0x6dfdec",
+   "n": 145,
+   "holder": "0x6dd8e7",
+   "idx_reg": "edx",
+   "two_level": false,
+   "func_by_calltarget": "0x6dd8b0",
+   "func_by_retpad": "0x6dd87d",
+   "prev_ret": "0x6dd87c",
+   "agree": false,
+   "selector": {
+    "at": "0x6dd8da",
+    "shape": "OTHER",
+    "text": "dec edx",
+    "cmp_reg": "edx",
+    "cmp_at": "0x6dd8db",
+    "cmp_bound": 144,
+    "idx_write": {
+     "at": "0x6dd8db",
+     "text": "cmp edx, 0x90"
+    }
+   },
+   "input_domain": [
+    0,
+    144
+   ],
+   "n_case_slots": 145,
+   "entry_by_call": "0x6dd5b0"
+  },
+  {
+   "table": "0x708d54",
+   "n": 5,
+   "holder": "0x708c4e",
+   "idx_reg": "eax",
+   "two_level": false,
+   "func_by_calltarget": "0x708c30",
+   "func_by_retpad": "0x708c21",
+   "prev_ret": "0x708c1e",
+   "agree": false,
+   "selector": {
+    "at": "0x708c44",
+    "shape": "OTHER",
+    "text": "dec eax",
+    "cmp_reg": "eax",
+    "cmp_at": "0x708c45",
+    "cmp_bound": 4,
+    "idx_write": {
+     "at": "0x708c45",
+     "text": "cmp eax, 4"
+    }
+   },
+   "input_domain": [
+    0,
+    4
+   ],
+   "n_case_slots": 5,
+   "entry_by_call": "0x708c30"
+  },
+  {
+   "table": "0x71f2c0",
+   "n": 14,
+   "holder": "0x71eea2",
+   "idx_reg": "edx",
+   "two_level": true,
+   "func_by_calltarget": "0x71e940",
+   "func_by_retpad": "0x71ee57",
+   "prev_ret": "0x71ee54",
+   "agree": false,
+   "selector": {
+    "at": "0x71ee8e",
+    "shape": "MOV_IMM",
+    "imm": -12,
+    "text": "add ecx, -0xc",
+    "cmp_reg": "ecx",
+    "cmp_at": "0x71ee91",
+    "cmp_bound": 45,
+    "idx_write": {
+     "at": "0x71ee9a",
+     "text": "xor edx, edx"
+    }
+   },
+   "bound": 45,
+   "byte_table": "0x71f2f8",
+   "input_domain": [
+    0,
+    45
+   ],
+   "n_case_slots": 14,
+   "entry_by_call": "0x71e940"
+  },
+  {
+   "table": "0x71f328",
+   "n": 10,
+   "holder": "0x71f092",
+   "idx_reg": "ecx",
+   "two_level": true,
+   "func_by_calltarget": "0x71e940",
+   "func_by_retpad": "0x71f058",
+   "prev_ret": "0x71f055",
+   "agree": false,
+   "selector": {
+    "at": "0x71f07e",
+    "shape": "MOV_IMM",
+    "imm": -3,
+    "text": "add eax, -3",
+    "cmp_reg": "eax",
+    "cmp_at": "0x71f081",
+    "cmp_bound": 55,
+    "idx_write": {
+     "at": "0x71f08a",
+     "text": "xor ecx, ecx"
+    }
+   },
+   "bound": 55,
+   "byte_table": "0x71f350",
+   "input_domain": [
+    0,
+    55
+   ],
+   "n_case_slots": 10,
+   "entry_by_call": "0x71e940"
+  },
+  {
+   "table": "0x71f778",
+   "n": 2,
+   "holder": "0x71f6d0",
+   "idx_reg": "eax",
+   "two_level": true,
+   "func_by_calltarget": "0x71f680",
+   "func_by_retpad": "0x71f60c",
+   "prev_ret": "0x71f60b",
+   "agree": false,
+   "selector": {
+    "at": "0x71f6c0",
+    "shape": "LEA_SUB",
+    "disp": -3,
+    "base_reg": "ecx",
+    "text": "lea edx, [ecx - 3]",
+    "cmp_reg": "edx",
+    "cmp_at": "0x71f6c3",
+    "cmp_bound": 55,
+    "idx_write": {
+     "at": "0x71f6c8",
+     "text": "xor eax, eax"
+    }
+   },
+   "bound": 55,
+   "byte_table": "0x71f780",
+   "input_domain": [
+    0,
+    55
+   ],
+   "n_case_slots": 2,
+   "entry_by_call": "0x71f680"
+  },
+  {
+   "table": "0x71f9e0",
+   "n": 2,
+   "holder": "0x71f9d3",
+   "idx_reg": "ecx",
+   "two_level": true,
+   "func_by_calltarget": "0x71f9c0",
+   "func_by_retpad": "0x71f970",
+   "prev_ret": "0x71f96f",
+   "agree": false,
+   "selector": {
+    "at": "0x71f9c3",
+    "shape": "LEA_SUB",
+    "disp": -1,
+    "base_reg": "ecx",
+    "text": "lea eax, [ecx - 1]",
+    "cmp_reg": "eax",
+    "cmp_at": "0x71f9c6",
+    "cmp_bound": 58,
+    "idx_write": {
+     "at": "0x71f9cb",
+     "text": "xor ecx, ecx"
+    }
+   },
+   "bound": 58,
+   "byte_table": "0x71f9e8",
+   "input_domain": [
+    0,
+    58
+   ],
+   "n_case_slots": 2,
+   "entry_by_call": "0x71f9c0"
+  },
+  {
+   "table": "0x728e08",
+   "n": 7,
+   "holder": "0x728c17",
+   "idx_reg": "eax",
+   "two_level": false,
+   "func_by_calltarget": "0x728a00",
+   "func_by_retpad": "0x728bff",
+   "prev_ret": "0x728bfc",
+   "agree": false,
+   "selector": {
+    "at": "0x728c0d",
+    "shape": "OTHER",
+    "text": "dec eax",
+    "cmp_reg": "eax",
+    "cmp_at": "0x728c0e",
+    "cmp_bound": 6,
+    "idx_write": {
+     "at": "0x728c0e",
+     "text": "cmp eax, 6"
+    }
+   },
+   "input_domain": [
+    0,
+    6
+   ],
+   "n_case_slots": 7,
+   "entry_by_call": "0x728a00"
+  },
+  {
+   "table": "0x7291ac",
+   "n": 7,
+   "holder": "0x728e6c",
+   "idx_reg": "ecx",
+   "two_level": false,
+   "func_by_calltarget": "0x728a00",
+   "func_by_retpad": "0x728e05",
+   "prev_ret": "0x728e02",
+   "agree": false,
+   "selector": {
+    "at": "0x728e62",
+    "shape": "OTHER",
+    "text": "dec ecx",
+    "cmp_reg": "ecx",
+    "cmp_at": "0x728e63",
+    "cmp_bound": 6,
+    "idx_write": {
+     "at": "0x728e63",
+     "text": "cmp ecx, 6"
+    }
+   },
+   "input_domain": [
+    0,
+    6
+   ],
+   "n_case_slots": 7,
+   "entry_by_call": "0x728a00"
+  },
+  {
+   "table": "0x79f028",
+   "n": 5,
+   "holder": "0x79ed73",
+   "idx_reg": "edx",
+   "two_level": true,
+   "func_by_calltarget": "0x79da90",
+   "func_by_retpad": "0x79ed5d",
+   "prev_ret": "0x79ed5a",
+   "agree": false,
+   "selector": {
+    "at": "0x79ed5d",
+    "shape": "MOV_IMM",
+    "imm": 4294965502,
+    "text": "add eax, 0xfffff8fe",
+    "cmp_reg": "eax",
+    "cmp_at": "0x79ed62",
+    "cmp_bound": 94,
+    "idx_write": {
+     "at": "0x79ed6b",
+     "text": "xor edx, edx"
+    }
+   },
+   "bound": 94,
+   "byte_table": "0x79f03c",
+   "input_domain": [
+    0,
+    94
+   ],
+   "n_case_slots": 5,
+   "entry_by_call": "0x79da90"
+  }
+ ],
+ "insn_scanned": 1392592,
+ "call_targets": 6728,
+ "rets": 31084,
+ "entry_by_call_count": 19,
+ "shape_hist": {
+  "LEA_SUB": 6,
+  "OTHER": 7,
+  "MEM_LOAD": 2,
+  "MOV_IMM": 4
+ },
+ "memload_struct_offsets": [
+  "0xc",
+  "0x5c"
+ ],
+ "self_errors": []
+}

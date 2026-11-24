@@ -1,0 +1,93 @@
+{
+ "n_checks": 17,
+ "n_fail": 0,
+ "patched_sha256": "f2fc285378a3457188a0793013864e0ed459c36bad95ef24aa07b261523ad7dc",
+ "real_before_sha256": "aa90cf5fdf36c83f77bc629165e1459ea7ab166b6eba0e9bc69a4b738590f569",
+ "checks": [
+  {
+   "name": "P0 补丁后源码语法可编译",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "P1 GATE_VER 已抬到 R102",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "P2 C12 块只插一次",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "P3 C6 阈值只插一次",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "POS 打补丁后原样 exit 0",
+   "ok": true,
+   "detail": "exit=0 fails=[]"
+  },
+  {
+   "name": "POS-note C12 报 12 行 12 命中",
+   "ok": true,
+   "detail": "['  NOTE  C12 frozen-anchor live-check: 12 frozen rows, 12 anchors hit']"
+  },
+  {
+   "name": "POS-note C6 阈值报 9 <= 120",
+   "ok": true,
+   "detail": "['  NOTE  C6 threshold ok: 9 <= 120']"
+  },
+  {
+   "name": "M1 冻结锚写坏+同步sha ⇒ C12 id1 FAIL（补丁前这条路无声通过）",
+   "ok": true,
+   "detail": "exit=1 C12fails=['C12 id 1 frozen anchor does not hold (grep hits=0) :: grep=R102_THIS_PATTERN_MUST_NOT_EXIST_zz']"
+  },
+  {
+   "name": "NC1 同一坏档 + 未打补丁门禁 ⇒ exit 0（抓到它的是 C12 本身，不是别的）",
+   "ok": true,
+   "detail": "exit=0 fails=[]"
+  },
+  {
+   "name": "M2 --c6max=3 ⇒ C6 阈值 FAIL（cross=9 > 3）",
+   "ok": true,
+   "detail": "['C6 cross-namespace refs 9 > threshold 3 (--c6max= to raise deliberately)']"
+  },
+  {
+   "name": "M3 --c6max=120 ⇒ exit 0",
+   "ok": true,
+   "detail": "exit=0 fails=[]"
+  },
+  {
+   "name": "NC2 --c6max=3 + 未打补丁 ⇒ exit 0（假旋钮：此前该参数无任何作用）",
+   "ok": true,
+   "detail": "exit=0"
+  },
+  {
+   "name": "NC2b 未打补丁时 --c6max=0 与默认输出逐字节相同（旋钮纯装饰）",
+   "ok": true,
+   "detail": "same=True"
+  },
+  {
+   "name": "M4 冻结行理由置空 ⇒ C12 FAIL",
+   "ok": true,
+   "detail": "['C12 id 2 frozen reason empty']"
+  },
+  {
+   "name": "M5 冻结时刻非 ISO8601+时区 ⇒ C12 FAIL",
+   "ok": true,
+   "detail": "[\"C12 id 2 frozen timestamp not strict ISO8601(+HH:MM): '2026-11-22 12:00'\"]"
+  },
+  {
+   "name": "M6 冻结行 col7 改「无」⇒ C12a FAIL（冻结不等于可退出有回跑声明）",
+   "ok": true,
+   "detail": "['C12 id 1 frozen but not claims-有 in DISC_RECHECK (freeze != escape hatch)']"
+  },
+  {
+   "name": "POS2 还原后 exit 0",
+   "ok": true,
+   "detail": "exit=0 fails=[]"
+  }
+ ]
+}

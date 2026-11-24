@@ -1,0 +1,644 @@
+{
+ "checks": [
+  {
+   "name": "S0 .text = [0x401000, 0x7e038d)",
+   "ok": true,
+   "detail": "0x7e038d"
+  },
+  {
+   "name": "S1 vtable 954",
+   "ok": true,
+   "detail": "954"
+  },
+  {
+   "name": "P1 COL.offset 分布 = {0: 942, 4: 12}（R109 §EK4 报 {0: 942, 4: 12}）",
+   "ok": true,
+   "detail": "{0: 942, 4: 12}"
+  },
+  {
+   "name": "P1b offset==4 的 12 张表类名 = ['DriveLocomotionClass', 'DropPodLocomotionClass', 'FlyLocomotionClass', 'HoverLocomotionClass', 'LocomotionClass', 'JumpjetLocomotionClass', 'MechLocomotionClass', 'RocketLocomotionClass', 'ShipLocomotionClass', 'TeleportLocomotionClass', 'TunnelLocomotionClass', 'WalkLocomotionClass']",
+   "ok": true,
+   "detail": "['DriveLocomotionClass', 'DropPodLocomotionClass', 'FlyLocomotionClass', 'HoverLocomotionClass', 'LocomotionClass', 'JumpjetLocomotionClass', 'MechLocomotionClass', 'RocketLocomotionClass', 'ShipLocomotionClass', 'TeleportLocomotionClass', 'TunnelLocomotionClass', 'WalkLocomotionClass']"
+  },
+  {
+   "name": "P1c 其中类名含 Locomotion 的 = 12/12（R109 只说「基类子对象」，没说是哪个族）",
+   "ok": true,
+   "detail": "{'loco': 12, 'of': 12}"
+  },
+  {
+   "name": "P2a 解析归类：形态命中 9713 条 = 寄存器基址 8240 + 绝对地址 863 + 其它 610（其它全为负位移/比例变址的栈帧与数组写入，见 P2a3 证明其中无 vtable 写入）",
+   "ok": true,
+   "detail": "{'shape': 9713, 'reg': 8240, 'abs': 863}"
+  },
+  {
+   "name": "P2a2 全段 vtable 装配点 = 4616 = 寄存器基址 8240（含负位移 5）+ 绝对地址 340；R109 报 4611 = 本轮 − 负位移 5（其旧正则字符类不含 -）",
+   "ok": true,
+   "detail": "{'total': 4616, 'reg': 8240, 'abs': 340}"
+  },
+  {
+   "name": "P2a3 不变量（替代覆盖率）：未解析的 610 条形态里，写 vtable 的 = 0 条（必须为 0，否则 P2b/P3 分母缺项）",
+   "ok": true,
+   "detail": "{'unparsed': 610, 'vt_writes': 0}"
+  },
+  {
+   "name": "P2b 预测：12 张 offset==4 的表，其寄存器基址装配点的 disp 必须全为 4。实测命中 = 12/12",
+   "ok": true,
+   "detail": "[{'cls': 'DriveLocomotionClass', 'vt': '0x7e7eb0', 'n_store': 4, 'disps': [4], 'ok': True}, {'cls': 'DropPodLocomotionClass', 'vt': '0x7e8278', 'n_store': 4, 'disps': [4], 'ok': True}, {'cls': 'FlyLocomotionClass', 'vt': '0x7e89f4', 'n_store': 4, 'disps': [4], 'ok': True}, {'cls': 'HoverLocomotionClass', 'vt': '0x7eacfc', 'n_store': 4, 'disps': [4], 'ok': True}, {'cls': 'LocomotionClass', 'vt': '0x7eadf4', 'n_store': 6, 'disps': [4], 'ok': True}, {'cls': 'JumpjetLocomotionClass', 'vt': '0x7ecd68', 'n_store': 4, 'disps': [4], 'ok': True}, {'cls': 'MechLocomotionClass', 'vt': '0x7edb6c', 'n_store': 4, 'disps': [4], 'ok': True}, {'cls': 'RocketLocomotionClass', 'vt': '0x7f0b1c', 'n_store': 4, 'disps': [4], 'ok': True}, {'cls': 'ShipLocomotionClass', 'vt': '0x7f2d8c', 'n_store': 4, 'disps': [4], 'ok': True}, {'cls': 'TeleportLocomotionClass', 'vt': '0x7f5000', 'n_store': 2, 'disps': [4], 'ok': True}, {'cls': 'TunnelLocomotionClass', 'vt': '0x7f5a24', 'n_store': 2, 'disps': [4], 'ok': True}, {'cls': 'WalkLocomotionClass', 'vt': '0x7f69f8', 'n_store': 4, 'disps': [4], 'ok': True}]"
+  },
+  {
+   "name": "P2c 反向预测（修正版）：offset==0 且有装配点的表 846 张，其中**无任何 disp==0 装配点**的 = 51（若 >10% 说明「offset==0 的表都以完整对象安装」不成立）",
+   "ok": true,
+   "detail": "{'n0': 846, 'nozero': 51, 'pct': 6.0, 'sample': [{'cls': '?$BlitPlain@E', 'vt': '0x7f7bdc', 'disps': [20, 72, 108]}, {'cls': '?$BlitPlain@G', 'vt': '0x7f7bc4', 'disps': [20, 56, 100]}, {'cls': '?$BlitTrans@E', 'vt': '0x7f7c0c', 'disps': [20, 72, 120]}, {'cls': '?$BlitTrans@G', 'vt': '0x7f7bf4', 'disps': [20, 56, 96]}, {'cls': '?$DynamicVectorClass@G', 'vt': '0x7e3844', 'disps': [32, 52, 60]}, {'cls': '?$DynamicVectorClass@N', 'vt': '0x7eda6c', 'disps': [120]}]}"
+  },
+  {
+   "name": "P3 反控：全段 8240 个 mov [reg+disp], imm32 写入点的 disp 分布（前 8）= [(0, 3077), (12, 505), (8, 477), (4, 455), (20, 400), (16, 349), (24, 168), (32, 145)]；disp==4 的占 5.52% ⇒ 若 offset 语义为假，12/12 全落 disp==4 的概率约为 8.04e-16",
+   "ok": true,
+   "detail": "{'total': 8240, 'disp4': 455, 'pct4': 5.52}"
+  },
+  {
+   "name": "P4 R108 全量 owner 采样可读（20 行）",
+   "ok": true,
+   "detail": "20"
+  }
+ ],
+ "offset_dist": {
+  "0": 942,
+  "4": 12
+ },
+ "offset4_names": [
+  "DriveLocomotionClass",
+  "DropPodLocomotionClass",
+  "FlyLocomotionClass",
+  "HoverLocomotionClass",
+  "LocomotionClass",
+  "JumpjetLocomotionClass",
+  "MechLocomotionClass",
+  "RocketLocomotionClass",
+  "ShipLocomotionClass",
+  "TeleportLocomotionClass",
+  "TunnelLocomotionClass",
+  "WalkLocomotionClass"
+ ],
+ "res4": [
+  {
+   "cls": "DriveLocomotionClass",
+   "vt": "0x7e7eb0",
+   "n_store": 4,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "DropPodLocomotionClass",
+   "vt": "0x7e8278",
+   "n_store": 4,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "FlyLocomotionClass",
+   "vt": "0x7e89f4",
+   "n_store": 4,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "HoverLocomotionClass",
+   "vt": "0x7eacfc",
+   "n_store": 4,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "LocomotionClass",
+   "vt": "0x7eadf4",
+   "n_store": 6,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "JumpjetLocomotionClass",
+   "vt": "0x7ecd68",
+   "n_store": 4,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "MechLocomotionClass",
+   "vt": "0x7edb6c",
+   "n_store": 4,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "RocketLocomotionClass",
+   "vt": "0x7f0b1c",
+   "n_store": 4,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "ShipLocomotionClass",
+   "vt": "0x7f2d8c",
+   "n_store": 4,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "TeleportLocomotionClass",
+   "vt": "0x7f5000",
+   "n_store": 2,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "TunnelLocomotionClass",
+   "vt": "0x7f5a24",
+   "n_store": 2,
+   "disps": [
+    4
+   ],
+   "ok": true
+  },
+  {
+   "cls": "WalkLocomotionClass",
+   "vt": "0x7f69f8",
+   "n_store": 4,
+   "disps": [
+    4
+   ],
+   "ok": true
+  }
+ ],
+ "n_ok4": 12,
+ "rev_nozero": [
+  {
+   "cls": "?$BlitPlain@E",
+   "vt": "0x7f7bdc",
+   "disps": [
+    20,
+    72,
+    108
+   ]
+  },
+  {
+   "cls": "?$BlitPlain@G",
+   "vt": "0x7f7bc4",
+   "disps": [
+    20,
+    56,
+    100
+   ]
+  },
+  {
+   "cls": "?$BlitTrans@E",
+   "vt": "0x7f7c0c",
+   "disps": [
+    20,
+    72,
+    120
+   ]
+  },
+  {
+   "cls": "?$BlitTrans@G",
+   "vt": "0x7f7bf4",
+   "disps": [
+    20,
+    56,
+    96
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@G",
+   "vt": "0x7e3844",
+   "disps": [
+    32,
+    52,
+    60
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@N",
+   "vt": "0x7eda6c",
+   "disps": [
+    120
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAUAnimationPalette@Map@WorldDominationTour@@",
+   "vt": "0x7f7144",
+   "disps": [
+    188
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAUButtonFadeEffect@@",
+   "vt": "0x7e856c",
+   "disps": [
+    176
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAUCrossDissolveEffect@@",
+   "vt": "0x7e854c",
+   "disps": [
+    136
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAUDamageGroup@@",
+   "vt": "0x7e5170",
+   "disps": [
+    56
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAUGlobalPacketType@@",
+   "vt": "0x7f11d4",
+   "disps": [
+    2288
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAUKamikazeControl@@",
+   "vt": "0x7ece7c",
+   "disps": [
+    12
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAUThemeControl@@",
+   "vt": "0x7f568c",
+   "disps": [
+    20
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAU_DDSURFACEDESC@@",
+   "vt": "0x7e5e0c",
+   "disps": [
+    32
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAU_WIN32_FIND_DATAA@@",
+   "vt": "0x7ed94c",
+   "disps": [
+    24
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAUtConnInfoStruct@@",
+   "vt": "0x7f78c4",
+   "disps": [
+    16
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVCCINIClass@@",
+   "vt": "0x7eb82c",
+   "disps": [
+    20
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVInfantryClass@@",
+   "vt": "0x7e43c8",
+   "disps": [
+    1644,
+    1668
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVInfantryTypeClass@@",
+   "vt": "0x7ea324",
+   "disps": [
+    24,
+    88
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVMapRegionClass@@",
+   "vt": "0x7ed858",
+   "disps": [
+    76,
+    124
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVMultiMission@@",
+   "vt": "0x7f11f4",
+   "disps": [
+    1680
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVMultiplayerTeam@@",
+   "vt": "0x7eee34",
+   "disps": [
+    8
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVObjectClass@@",
+   "vt": "0x7e4f64",
+   "disps": [
+    -8,
+    16,
+    20,
+    36,
+    92,
+    108
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVPhoneEntryClass@@",
+   "vt": "0x7f11b4",
+   "disps": [
+    10492
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVReestablish@@",
+   "vt": "0x7e4488",
+   "disps": [
+    72
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVTeamClass@@",
+   "vt": "0x7e9f64",
+   "disps": [
+    32
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PAVUnitTypeClass@@",
+   "vt": "0x7ea2a4",
+   "disps": [
+    56,
+    72
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@PBVMultiMission@@",
+   "vt": "0x7eef70",
+   "disps": [
+    16
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@V?$DistributionObject@PAVAITriggerTypeClass@@@?$DiscreteDistributionClass@VAITriggerTypeClass@@@@",
+   "vt": "0x7f4860",
+   "disps": [
+    68
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@V?$DistributionObject@PAVBuildingTypeClass@@@?$DiscreteDistributionClass@VBuildingTypeClass@@@@",
+   "vt": "0x7eaac4",
+   "disps": [
+    136
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@V?$TRect@H@@",
+   "vt": "0x7ed99c",
+   "disps": [
+    72
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@VSwizzlePointerClass@@",
+   "vt": "0x7f4134",
+   "disps": [
+    4,
+    28
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@W4PassabilityType@@",
+   "vt": "0x7ed580",
+   "disps": [
+    72
+   ]
+  },
+  {
+   "cls": "?$DynamicVectorClass@_N",
+   "vt": "0x7eaa7c",
+   "disps": [
+    104
+   ]
+  },
+  {
+   "cls": "?$Initializer@VFreeForAll@@@MultiplayerGameMode",
+   "vt": "0x7eee8c",
+   "disps": [
+    28
+   ]
+  },
+  {
+   "cls": "?$Initializer@VMPCooperative@@@MultiplayerGameMode",
+   "vt": "0x7eee80",
+   "disps": [
+    32
+   ]
+  },
+  {
+   "cls": "?$Initializer@VMultiplayerBattle@@@MultiplayerGameMode",
+   "vt": "0x7eeebc",
+   "disps": [
+    16
+   ]
+  },
+  {
+   "cls": "?$Initializer@VMultiplayerManBattle@@@MultiplayerGameMode",
+   "vt": "0x7eeeb0",
+   "disps": [
+    16
+   ]
+  },
+  {
+   "cls": "?$Initializer@VMultiplayerSiege@@@MultiplayerGameMode",
+   "vt": "0x7eeea4",
+   "disps": [
+    20
+   ]
+  },
+  {
+   "cls": "?$Initializer@VUnholyAlliance@@@MultiplayerGameMode",
+   "vt": "0x7eee98",
+   "disps": [
+    24
+   ]
+  },
+  {
+   "cls": "Base64Pipe",
+   "vt": "0x7eb774",
+   "disps": [
+    36
+   ]
+  },
+  {
+   "cls": "Base64Straw",
+   "vt": "0x7eb764",
+   "disps": [
+    48
+   ]
+  },
+  {
+   "cls": "BufferPipe",
+   "vt": "0x7e6200",
+   "disps": [
+    28,
+    52,
+    56,
+    60,
+    76
+   ]
+  },
+  {
+   "cls": "BufferStraw",
+   "vt": "0x7e61e0",
+   "disps": [
+    20,
+    36,
+    40,
+    48,
+    68,
+    152
+   ]
+  },
+  {
+   "cls": "CD",
+   "vt": "0x7e4c30",
+   "disps": [
+    4,
+    12,
+    24,
+    28,
+    32,
+    36
+   ]
+  },
+  {
+   "cls": "CacheStraw",
+   "vt": "0x7eb754",
+   "disps": [
+    64
+   ]
+  },
+  {
+   "cls": "CreateGameDialogControl",
+   "vt": "0x7f788c",
+   "disps": [
+    36
+   ]
+  },
+  {
+   "cls": "INoticeSource",
+   "vt": "0x7e1fb4",
+   "disps": [
+    12
+   ]
+  },
+  {
+   "cls": "LayerClass",
+   "vt": "0x7e6060",
+   "disps": [
+    -8
+   ]
+  },
+  {
+   "cls": "MapSelect",
+   "vt": "0x7edb4c",
+   "disps": [
+    16,
+    24
+   ]
+  },
+  {
+   "cls": "SHAPipe",
+   "vt": "0x7e4d78",
+   "disps": [
+    8,
+    16,
+    20,
+    24,
+    36,
+    40
+   ]
+  }
+ ],
+ "rev_n0": 846,
+ "disp_dist_top": [
+  [
+   0,
+   3077
+  ],
+  [
+   12,
+   505
+  ],
+  [
+   8,
+   477
+  ],
+  [
+   4,
+   455
+  ],
+  [
+   20,
+   400
+  ],
+  [
+   16,
+   349
+  ],
+  [
+   24,
+   168
+  ],
+  [
+   32,
+   145
+  ],
+  [
+   36,
+   140
+  ],
+  [
+   28,
+   129
+  ],
+  [
+   40,
+   127
+  ],
+  [
+   68,
+   115
+  ]
+ ],
+ "n_store_total": 4616
+}

@@ -1,0 +1,377 @@
+{
+ "checks": [
+  {
+   "name": "V0 exe sha256",
+   "ok": true,
+   "detail": "73201cc021497c95"
+  },
+  {
+   "name": "V1a 指针表 360 张（审计员 A1-C1 报 360，一致）",
+   "ok": true,
+   "detail": "360"
+  },
+  {
+   "name": "V1b 全部表项 2702（审计员 A1-C2 报 2702，一致）",
+   "ok": true,
+   "detail": "2702"
+  },
+  {
+   "name": "V1c B1 去重宿主 31（审计员 A1-C0 报 31，一致）",
+   "ok": true,
+   "detail": "31"
+  },
+  {
+   "name": "V1d B1 落在 19 张表（审计员 A1-C3 报 19，一致）",
+   "ok": true,
+   "detail": "19"
+  },
+  {
+   "name": "V1e 19 表 292 项（审计员 A1-C4 报 292，一致）",
+   "ok": true,
+   "detail": "292"
+  },
+  {
+   "name": "V1f 去重项值 276（审计员 A1-C5 报 276，一致）",
+   "ok": true,
+   "detail": "276"
+  },
+  {
+   "name": "V1g 超出 16（审计员 A1-C6 报 16，一致）",
+   "ok": true,
+   "detail": "16"
+  },
+  {
+   "name": "V2a 重复 8 组 / 5 张表（审计员 A1-C7 报 (8,5)，一致）",
+   "ok": true,
+   "detail": "(8, 5)"
+  },
+  {
+   "name": "V2b 8 组目标地址集合与 r106e 一致",
+   "ok": true,
+   "detail": "['0x4c6cde', '0x4c71ca', '0x4c8109', '0x58bd95', '0x69af45', '0x69b08c', '0x6dfddb', '0x728de0']"
+  },
+  {
+   "name": "V3a 8 组判 IDX_DEAD_HERE 6 组 / CALL_CLOBBER 2 组 / DEPENDS 0 组（审计员 A2-C1 报 6/2/0，一致）",
+   "ok": true,
+   "detail": "{'CALL_CLOBBER': 2, 'IDX_DEAD_HERE': 6}"
+  },
+  {
+   "name": "V3b 两组 CALL_CLOBBER 的目标恰是 0x4c6cde 与 0x4c71ca（与审计员 audit106e_a2 同集合）",
+   "ok": true,
+   "detail": "['0x4c6cde', '0x4c71ca']"
+  },
+  {
+   "name": "V4a 0x4c6cde：call 之后到 ret 不读 eax（审计员 A2X-5 主张等价，我方独立复核）",
+   "ok": true,
+   "detail": "{'reads': False, 'at': None, 'n_calls': 1}"
+  },
+  {
+   "name": "V4b 0x4c71ca：call 之后有指令读 eax（审计员 A2X-6 主张 mov edi,eax，我方复核）",
+   "ok": true,
+   "detail": "{'reads': True, 'at': '0x4c71d2', 'n_calls': 1}"
+  },
+  {
+   "name": "V5a 0x637e00 不存在「eax 尚未写过就读它」的可达路径（审计员 A2X-9/A2X-10 主张不消费传入 eax，我方用状态 worklist 独立验证）",
+   "ok": true,
+   "detail": "{'n_reads': 0, 'states': 275, 'truncated': False}"
+  },
+  {
+   "name": "V5b 0x6e6f20 同上（审计员 A2X-11 同结论）",
+   "ok": true,
+   "detail": "{'n_reads': 0, 'states': 85, 'truncated': False}"
+  },
+  {
+   "name": "V6a 0x637e00 每条可达返回路径都写过 eax（审计员 A2X-19 主张；我方状态 worklist 独立验证，275 状态全覆盖无截断）",
+   "ok": true,
+   "detail": "{'callee': '0x637e00', 'n_rets_no_write': 0, 'states': 275, 'truncated': False}"
+  },
+  {
+   "name": "V6b 0x6e6f20 每条可达返回路径都写过 eax（审计员 A2X-18 主张；独立验证）",
+   "ok": true,
+   "detail": "{'callee': '0x6e6f20', 'n_rets_no_write': 0, 'examples': [], 'states': 85, 'truncated': False}"
+  },
+  {
+   "name": "V7a 0x728e08 7 项序列与审计员 A3 一致",
+   "ok": true,
+   "detail": "['0x728de0', '0x728dd9', '0x728dd0', '0x728c1e', '0x728de0', '0x728de0', '0x728de0']"
+  },
+  {
+   "name": "V7b 0x728dd9 首条写常量 7 到 [edi+0x14]，第 2 条落在 0x728de0",
+   "ok": true,
+   "detail": "('dword ptr [edi + 0x14], 7', '0x728de0')"
+  },
+  {
+   "name": "V7c 0x728dd0 首条写常量 5 到 [edi+0x14]，第 2 条 jmp 0x728de0",
+   "ok": true,
+   "detail": "('dword ptr [edi + 0x14], 5', '0x728de0')"
+  },
+  {
+   "name": "V8a 反控 0x4c8109 判 IDX_DEAD_HERE（ret 前不读 eax）",
+   "ok": true,
+   "detail": "('IDX_DEAD_HERE', 'ret without reading idx')"
+  },
+  {
+   "name": "V8b 反控 0x58bd95 判 IDX_DEAD_HERE（ecx 在 ret 前未被读）",
+   "ok": true,
+   "detail": "('IDX_DEAD_HERE', 'ret without reading idx')"
+  },
+  {
+   "name": "V8c 反控 0x69af45 判 IDX_DEAD_HERE（xor eax,eax 必须算全写而非读旧值）",
+   "ok": true,
+   "detail": "('IDX_DEAD_HERE', 'full write before any read', '0x69af4a')"
+  },
+  {
+   "name": "V8d 正控 0x69af45 换成 ecx 索引后结论改变（判据有判别力，不是恒真）",
+   "ok": true,
+   "detail": "('IDX_DEAD_HERE', 'IDX_DEAD_HERE')"
+  }
+ ],
+ "V1": {
+  "tables": 360,
+  "entries_all": 2702,
+  "b1_hosts": 31,
+  "used_tables": 19,
+  "used_entries": 292,
+  "distinct": 276
+ },
+ "V2": {
+  "dup_groups": 8,
+  "dup_tables": 5
+ },
+ "V3": [
+  {
+   "target": "0x4c6cde",
+   "table": "0x4c8114",
+   "idx_reg": "eax",
+   "indices": [
+    41,
+    42,
+    43
+   ],
+   "verdict": "CALL_CLOBBER",
+   "decide_at": "0x4c6ce0",
+   "why": "call before idx defined/consumed",
+   "n_calls_in_block": 1,
+   "calls": [
+    "4c6ce0: call 0x637e00"
+   ],
+   "trace": [
+    "4c6cde: mov ecx, esi",
+    "4c6ce0: call 0x637e00"
+   ]
+  },
+  {
+   "target": "0x4c71ca",
+   "table": "0x4c8114",
+   "idx_reg": "eax",
+   "indices": [
+    3,
+    4
+   ],
+   "verdict": "CALL_CLOBBER",
+   "decide_at": "0x4c71cd",
+   "why": "call before idx defined/consumed",
+   "n_calls_in_block": 1,
+   "calls": [
+    "4c71cd: call 0x6e6f20"
+   ],
+   "trace": [
+    "4c71ca: lea ecx, [esi + 7]",
+    "4c71cd: call 0x6e6f20"
+   ]
+  },
+  {
+   "target": "0x4c8109",
+   "table": "0x4c8114",
+   "idx_reg": "eax",
+   "indices": [
+    24,
+    25,
+    27,
+    36,
+    37
+   ],
+   "verdict": "IDX_DEAD_HERE",
+   "decide_at": "0x4c8113",
+   "why": "ret without reading idx",
+   "n_calls_in_block": 0,
+   "calls": [],
+   "trace": [
+    "4c8109: pop edi",
+    "4c810a: pop esi",
+    "4c810b: pop ebp",
+    "4c810c: pop ebx",
+    "4c810d: add esp, 0x370",
+    "4c8113: ret "
+   ]
+  },
+  {
+   "target": "0x58bd95",
+   "table": "0x58bda4",
+   "idx_reg": "ecx",
+   "indices": [
+    1,
+    3,
+    4
+   ],
+   "verdict": "IDX_DEAD_HERE",
+   "decide_at": "0x58bd9d",
+   "why": "ret without reading idx",
+   "n_calls_in_block": 0,
+   "calls": [],
+   "trace": [
+    "58bd95: xor eax, eax",
+    "58bd97: cmp edx, 3",
+    "58bd9a: setne al",
+    "58bd9d: ret "
+   ]
+  },
+  {
+   "target": "0x69af45",
+   "table": "0x69b15c",
+   "idx_reg": "eax",
+   "indices": [
+    2,
+    3
+   ],
+   "verdict": "IDX_DEAD_HERE",
+   "decide_at": "0x69af4a",
+   "why": "full write before any read",
+   "n_calls_in_block": 0,
+   "calls": [],
+   "trace": [
+    "69af45: mov ecx, 0x71",
+    "69af4a: xor eax, eax"
+   ]
+  },
+  {
+   "target": "0x69b08c",
+   "table": "0x69b15c",
+   "idx_reg": "eax",
+   "indices": [
+    0,
+    1
+   ],
+   "verdict": "IDX_DEAD_HERE",
+   "decide_at": "0x69b091",
+   "why": "full write before any read",
+   "n_calls_in_block": 0,
+   "calls": [],
+   "trace": [
+    "69b08c: mov ecx, 0x3e",
+    "69b091: xor eax, eax"
+   ]
+  },
+  {
+   "target": "0x6dfddb",
+   "table": "0x6dfdec",
+   "idx_reg": "edx",
+   "indices": [
+    38,
+    91,
+    92
+   ],
+   "verdict": "IDX_DEAD_HERE",
+   "decide_at": "0x6dfde7",
+   "why": "ret without reading idx",
+   "n_calls_in_block": 0,
+   "calls": [],
+   "trace": [
+    "6dfddb: mov al, 1",
+    "6dfddd: pop edi",
+    "6dfdde: pop esi",
+    "6dfddf: pop ebp",
+    "6dfde0: pop ebx",
+    "6dfde1: add esp, 0x240",
+    "6dfde7: ret 0x10"
+   ]
+  },
+  {
+   "target": "0x728de0",
+   "table": "0x728e08",
+   "idx_reg": "eax",
+   "indices": [
+    0,
+    4,
+    5,
+    6
+   ],
+   "verdict": "IDX_DEAD_HERE",
+   "decide_at": "0x728de0",
+   "why": "full write before any read",
+   "n_calls_in_block": 0,
+   "calls": [],
+   "trace": [
+    "728de0: mov eax, dword ptr [0xb0f910]"
+   ]
+  }
+ ],
+ "V4": [
+  {
+   "target": "0x4c6cde",
+   "idx_reg": "eax",
+   "reads_idx_after_call": false,
+   "first_read_at": null,
+   "n_calls": 1,
+   "trace": [
+    "4c6cde: mov ecx, esi",
+    "4c6ce0: call 0x637e00",
+    "4c6ce5: pop edi",
+    "4c6ce6: pop esi",
+    "4c6ce7: pop ebp",
+    "4c6ce8: pop ebx",
+    "4c6ce9: add esp, 0x370",
+    "4c6cef: ret "
+   ]
+  },
+  {
+   "target": "0x4c71ca",
+   "idx_reg": "eax",
+   "reads_idx_after_call": true,
+   "first_read_at": "0x4c71d2",
+   "n_calls": 1,
+   "trace": [
+    "4c71ca: lea ecx, [esi + 7]",
+    "4c71cd: call 0x6e6f20",
+    "4c71d2: mov edi, eax"
+   ]
+  }
+ ],
+ "V5": [
+  {
+   "callee": "0x637e00",
+   "reads_eax_before_write": [],
+   "n_reads": 0,
+   "states": 275,
+   "steps": 275,
+   "truncated": false
+  },
+  {
+   "callee": "0x6e6f20",
+   "reads_eax_before_write": [],
+   "n_reads": 0,
+   "states": 85,
+   "steps": 85,
+   "truncated": false
+  }
+ ],
+ "V6": [
+  {
+   "callee": "0x637e00",
+   "rets_without_eax_write": [],
+   "n_rets_no_write": 0,
+   "states": 275,
+   "steps": 275,
+   "truncated": false
+  },
+  {
+   "callee": "0x6e6f20",
+   "rets_without_eax_write": [],
+   "n_rets_no_write": 0,
+   "states": 85,
+   "steps": 85,
+   "truncated": false
+  }
+ ],
+ "version": "r106g main-session independent recheck (capstone 5.0.7)"
+}

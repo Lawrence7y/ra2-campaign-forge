@@ -1,0 +1,83 @@
+{
+ "checks": [
+  {
+   "name": "P0 R14_COMMON 是混合换行文件：CRLF 只占 1081 / 9435 行（11.5%），其余全是 LF-only",
+   "ok": true,
+   "detail": "{'crlf': 1081, 'lf_only': 8354, 'bytes': 852847}"
+  },
+  {
+   "name": "P1 追加 §2.107（LF 行尾，见下方 S1 对 R14_COMMON 换行结构的实测）后门禁 exit 0",
+   "ok": true,
+   "detail": "exit=0 fails=[]"
+  },
+  {
+   "name": "P1b 追加一节后 C15 NOTE 的 sections 恰为 现盘节数+1（下界是「覆盖」，不是「恰好」）",
+   "ok": true,
+   "detail": "expect 102 got ['NOTE  C15 content floor: 2.x sections 102 (pinned 100), last 107 (pinned 106), bytes 853087 (floor 831406)']"
+  },
+  {
+   "name": "P1a 反控：同一节改用 CRLF 追加 ⇒ C5 立刻 FAIL（证明「新增节必须用 LF」是盘上事实）",
+   "ok": true,
+   "detail": "['C5 R14_COMMON CRLF=1086 expected 1081']"
+  },
+  {
+   "name": "P1c 小节内改写（正文加字）后 exit 0",
+   "ok": true,
+   "detail": "exit=0"
+  },
+  {
+   "name": "P2 一次追加 6 个新节后仍 exit 0（C15 不拦增节）",
+   "ok": true,
+   "detail": "exit=0"
+  },
+  {
+   "name": "P3 字节下界余量：从末尾整行删到 600 行仍 exit 0（下界不是「一字节都不许掉」）",
+   "ok": true,
+   "detail": "max_trim=600 lines"
+  },
+  {
+   "name": "P4 单节删余量：从尾部起能连续删掉 0 节而门禁仍 exit 0（多删即 FAIL）",
+   "ok": true,
+   "detail": "ok_cuts=[]"
+  }
+ ],
+ "results": {
+  "P0": {
+   "crlf": 1081,
+   "lf_only": 8354,
+   "bytes": 852847
+  },
+  "P1": {
+   "exit": 0,
+   "fails": [],
+   "note": [
+    "NOTE  C15 content floor: 2.x sections 102 (pinned 100), last 107 (pinned 106), bytes 853087 (floor 831406)"
+   ]
+  },
+  "P1b_n0": 101,
+  "P1a": {
+   "exit": 1,
+   "fails": [
+    "C5 R14_COMMON CRLF=1086 expected 1081"
+   ]
+  },
+  "P1c": {
+   "exit": 0,
+   "fails": []
+  },
+  "P2": {
+   "exit": 0,
+   "fails": [],
+   "note": [
+    "NOTE  C15 content floor: 2.x sections 106 (pinned 100), last 111 (pinned 106), bytes 853082 (floor 831406)"
+   ]
+  },
+  "P3": {
+   "max_trim_ok_lines": 600
+  },
+  "P4": {
+   "one_section_cuts_ok": [],
+   "first_blocking": 106
+  }
+ }
+}

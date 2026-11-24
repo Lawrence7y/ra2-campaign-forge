@@ -1,0 +1,162 @@
+{
+ "trio": {
+  "0x7e9ae0": {
+   "n_claim": 76,
+   "N": 4,
+   "full": [
+    "IRTTITypeInfo"
+   ]
+  },
+  "0x7f7c70": {
+   "n_claim": 83,
+   "N": 0,
+   "full": [
+    "IPersist",
+    "IPersistStream"
+   ]
+  },
+  "0x7f7c80": {
+   "n_claim": 83,
+   "N": 0,
+   "full": [
+    "IPersist",
+    "IPersistStream"
+   ]
+  }
+ },
+ "symdiff_70_80": [],
+ "same_subobj_70_80": true,
+ "d79": [
+  "FlyLocomotionClass",
+  "HouseClass",
+  "HoverLocomotionClass",
+  "LocomotionClass",
+  "MechLocomotionClass",
+  "RocketLocomotionClass",
+  "TunnelLocomotionClass"
+ ],
+ "d79_mdisp": {
+  "TunnelLocomotionClass": null,
+  "RocketLocomotionClass": null,
+  "FlyLocomotionClass": null,
+  "LocomotionClass": null,
+  "MechLocomotionClass": null,
+  "HoverLocomotionClass": null,
+  "HouseClass": [
+   4
+  ]
+ },
+ "irtti_mdisp_dist": {
+  "(4,)": 78
+ },
+ "d8": {
+  "0x7e9b10_claims": [
+   "DriveLocomotionClass",
+   "DropPodLocomotionClass",
+   "JumpjetLocomotionClass",
+   "ShipLocomotionClass",
+   "TeleportLocomotionClass",
+   "WalkLocomotionClass"
+  ],
+  "0x7e9b10_ipiggyback_mdisp": {
+   "JumpjetLocomotionClass": [
+    24
+   ],
+   "ShipLocomotionClass": [
+    24
+   ],
+   "TeleportLocomotionClass": [
+    24
+   ],
+   "DriveLocomotionClass": [
+    24
+   ],
+   "WalkLocomotionClass": [
+    24
+   ],
+   "DropPodLocomotionClass": [
+    24
+   ]
+  },
+  "0x7ed358_claims": [
+   "FlyLocomotionClass",
+   "HoverLocomotionClass",
+   "LocomotionClass",
+   "MechLocomotionClass",
+   "RocketLocomotionClass",
+   "TunnelLocomotionClass"
+  ],
+  "0x7ed358_cands": {
+   "TunnelLocomotionClass": [],
+   "RocketLocomotionClass": [],
+   "MechLocomotionClass": [],
+   "LocomotionClass": [],
+   "FlyLocomotionClass": [],
+   "HoverLocomotionClass": []
+  }
+ },
+ "verdict": {
+  "0x7e9ae0": "IRTTITypeInfo（链 D 联立后唯一；HouseClass 另有 RTTI mdisp 直证）",
+  "0x7f7c70": "IPersist 或 IPersistStream（二者在本库静态证据下不可区分）",
+  "0x7f7c80": "IPersist 或 IPersistStream（同上，且与 0x7f7c70 亦不可区分）",
+  "0x7e9b10": "IPiggyback（链 B 唯一强对应，6/6 类 mdisp 全 24）",
+  "0x7ed358": "未定（链 B 无候选，如实记）"
+ },
+ "checks": [
+  {
+   "name": "D0 三个待裁 IID 的认领类数：0x7e9ae0=76 / 0x7f7c70=83 / 0x7f7c80=83",
+   "ok": true,
+   "detail": "{'0x7e9ae0': 76, '0x7f7c70': 83, '0x7f7c80': 83}"
+  },
+  {
+   "name": "D1 0x7e9ae0（N=4）的 FULL 集 == {IRTTITypeInfo}（链 D×B 联立后唯一）",
+   "ok": true,
+   "detail": "{'N': 4, 'full': ['IRTTITypeInfo']}"
+  },
+  {
+   "name": "D2 0x7f7c70 与 0x7f7c80 的认领类集合**完全相同**（对称差 0 个）⇒ 不是两个接口的两种暴露",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "D3 链 E：两者的子对象 vtable 集合逐元素相同（各 77 个 distinct）；槽数分布也相同 [24, 25, 27, 28, 40, 41, 48, 49, 122, 123, 124, 125, 157, 161, 256]",
+   "ok": true,
+   "detail": "{'same_70_80': True, 'n_vt': 77}"
+  },
+  {
+   "name": "D4 【如实报不可区分】0x7f7c70 与 0x7f7c80：N 同为 0、FULL 同为 ['IPersist', 'IPersistStream']、认领类集合相同、子对象 vtable 集合相同 ⇒ **本精简库静态证据下二者不可区分**，不得编一个赢家",
+   "ok": true,
+   "detail": "{'N': 0, 'full': ['IPersist', 'IPersistStream']}"
+  },
+  {
+   "name": "D5 但 0x7e9ae0 与 0x7f7c70 **可以**区分：Q(0x7e9ae0) ⊂ Q(0x7f7c70)（差 7 个类：['FlyLocomotionClass', 'HouseClass', 'HoverLocomotionClass', 'LocomotionClass', 'MechLocomotionClass', 'RocketLocomotionClass', 'TunnelLocomotionClass']），且这些类的 IRTTITypeInfo mdisp 全为 4 而 0x7f7c70 的 N == 0",
+   "ok": true,
+   "detail": "['FlyLocomotionClass', 'HouseClass', 'HoverLocomotionClass', 'LocomotionClass', 'MechLocomotionClass', 'RocketLocomotionClass', 'TunnelLocomotionClass']"
+  },
+  {
+   "name": "D5b 那 7 个类里 HouseClass 的 RTTI IRTTITypeInfo mdisp 实测为 [4]；其余 6 个类**RTTI 里根本没有 IRTTITypeInfo** ⇒ 它们认 0x7e9ae0 不是经 RTTI 声明的，而是经 slot0 的 adjustor thunk（R111 §EM2 那 12 类之一）转到的共享 QI 体——故 D5 的「mdisp 全为 4」只对 HouseClass 这一条有 RTTI 支撑，其余 6 条**只能靠链 D 的 N==4**，这是如实的证据强度差别，不是同一个强度",
+   "ok": true,
+   "detail": "{'TunnelLocomotionClass': None, 'RocketLocomotionClass': None, 'FlyLocomotionClass': None, 'LocomotionClass': None, 'MechLocomotionClass': None, 'HoverLocomotionClass': None, 'HouseClass': [4]}"
+  },
+  {
+   "name": "D6 先说分母：全库 954 个类里，RTTI 明写 IRTTITypeInfo 的 78 个，其中 mdisp 含 4 的 78 个（100.0%）—— 若这 78 个类与 mdisp==4 独立，76 个全中的概率是 0.0 的量级",
+   "ok": true,
+   "detail": "{'n_classes': 954, 'n_declared': 78, 'n_mdisp4': 78}"
+  },
+  {
+   "name": "D7 关键反问：IRTTITypeInfo 的 mdisp 在全库**不是常量**（分布 {'(4,)': 78}）⇒ 「76 个类全为 4」不是同义反复，它确实把 IRTTITypeInfo 与 offset==0 的 IPersist/IPersistStream 分开了",
+   "ok": true,
+   "detail": "{'dist': {'(4,)': 78}}"
+  },
+  {
+   "name": "D8 链 B 给 0x7e9b10（92FEA800-A184-11D1-B70A-00A024DDAFD1）唯一强对应：它的 6 个认领类在 RTTI 里**全部**声明 IPiggyback 且 mdisp 全为 [24] —— 这正是 R111 §EM2 那 12 类里子对象偏移 24 的那一族。R111 说它「语义未定」，本轮定死",
+   "ok": true,
+   "detail": "{'JumpjetLocomotionClass': [24], 'ShipLocomotionClass': [24], 'TeleportLocomotionClass': [24], 'DriveLocomotionClass': [24], 'WalkLocomotionClass': [24], 'DropPodLocomotionClass': [24]}"
+  },
+  {
+   "name": "D8b 而 0x7ed358（070F3290-9841-11D1-B709-00A024DDAFD1）的 6 个认领类里，RTTI 声明的 mdisp==24 接口名**一个都没有**（{'TunnelLocomotionClass': [], 'RocketLocomotionClass': [], 'MechLocomotionClass': [], 'LocomotionClass': [], 'FlyLocomotionClass': [], 'HoverLocomotionClass': []}）⇒ **链 B 无候选**，如实记语义未定，不强行配名",
+   "ok": true,
+   "detail": "{'TunnelLocomotionClass': [], 'RocketLocomotionClass': [], 'MechLocomotionClass': [], 'LocomotionClass': [], 'FlyLocomotionClass': [], 'HoverLocomotionClass': []}"
+  }
+ ]
+}

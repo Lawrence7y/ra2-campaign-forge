@@ -1,0 +1,30 @@
+RA2 Campaign Forge - install instructions
+=========================================
+
+This package contains 3 chained mission(s).
+
+Automatic install (recommended - backs up and can restore):
+  python -m ra2forge build --design <design.json> --out out --install "<game dir>"
+  python -m ra2forge uninstall --game "<game dir>"
+
+Manual install:
+  1. Copy BATTLEMD98.INI, expandmd98.mix and every *.MAP into your
+     Red Alert 2 Yuri's Revenge directory (the folder with gamemd.exe).
+  2. Start the game -> New Campaign -> the campaign list gains one extra
+     entry (its Description is the campaign.description of the design
+     file); the official campaigns stay exactly as they were.
+  3. The last mission of the chain carries EndOfGame=yes; delete that line
+     if a real playthrough shows the campaign ending early.
+
+Why BATTLEMD98.INI must stay a loose file:
+  the engine enumerates the battle lists with FindFirstFileA("BATTLEMD*.INI")
+  in the GAME DIRECTORY and merges them by battle id. A file inside a MIX
+  is never seen by that wildcard, so the registration cannot live in the
+  archive (and nothing else may be packed there either - maps only).
+
+Files:
+  *.MAP             mission maps (YR .map format, playable standalone too)
+  BATTLEMD98.INI    appended campaign entry (delete it to unregister)
+  expandmd98.mix    map archive (maps only - no INI inside)
+  story.md          the storyline briefing for every mission
+  BUILD_REPORT.txt  build log: chain + artifact hashes + self-checks

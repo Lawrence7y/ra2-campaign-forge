@@ -1,0 +1,54 @@
+{
+ "checks": [
+  {
+   "name": "I2 COL 布局手算：AbstractClass 的 col_va=0x7fafd8 **就是 COL 起点**（sig==0），COL+0x04=offset(12)、COL+0x0C=pTD(名字 AbstractClass)、COL+0x10=pCHD(CHD+0x08=8)",
+   "ok": true,
+   "detail": "{'col': '0x7fafd8', 'sig': 0, 'offset': 12, 'ptd': '0x8177c8', 'td': 'AbstractClass', 'pchd': '0x7fb108', 'nbc': 8}"
+  },
+  {
+   "name": "I2b 同一份布局下 AbstractClass 的 8 个基类名+偏移（逐条打印，不靠任何 JSON）",
+   "ok": true,
+   "detail": "[('', 0), ('', 0), ('', 0), ('', 0), ('\\x04', 4), ('\\x04', 4), ('\\x08', 8), ('\\x0c', 12)]"
+  },
+  {
+   "name": "I1 12 个 Locomotion 类的 RTTI 中 ILocomotion 的 mdisp 全 == 4（纯字节，不经 capstone/census）",
+   "ok": true,
+   "detail": "[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]"
+  },
+  {
+   "name": "I3 12 个类的 symbols col_va 里 offset 字段实测是 24 的 6 个 + 4 的 6 个（不是 12 个全 4）—— 故 r113a A5c 的措辞需按此收紧",
+   "ok": true,
+   "detail": "{'DriveLocomotionClass': 24, 'DropPodLocomotionClass': 24, 'FlyLocomotionClass': 4, 'HoverLocomotionClass': 4, 'JumpjetLocomotionClass': 24, 'LocomotionClass': 4, 'MechLocomotionClass': 4, 'RocketLocomotionClass': 4, 'ShipLocomotionClass': 24, 'TeleportLocomotionClass': 24, 'TunnelLocomotionClass': 4, 'WalkLocomotionClass': 24}"
+  },
+  {
+   "name": "I4 objdump 侧复算 0x55a9b0（GNU binutils，不是 capstone）：mov $imm,%edi 共 4 条，立即数依序 == [0x7f7c90, 0x7f7c80, 0x7ed358, 0x7f7c70]；repe cmpsd 4 条 （注：objdump 把 F3 A7 渲染成 repz cmpsl 而非 capstone 的 repe cmpsd；首稿按 cmpsd 计得 0，二稿按 repe cmpsd 仍得 0 —— **同一块字节两个反汇编器的助记符完全不同**，断言两次当场抓住）",
+   "ok": true,
+   "detail": "{'imm': ['0x7f7c90', '0x7f7c80', '0x7ed358', '0x7f7c70'], 'repe_cmpsd': 4}"
+  },
+  {
+   "name": "I5 thunk 0x4d0510 的 `subl $N,0x4(%esp)` 立即数 == 0x4 == ILocomotion 的 mdisp（两处数据源分别是 .text 立即数与 .rdata BCD，不共用字节）（首稿正则写成 `sub` 无 l，objdump 实际写作 subl —— 断言当场抓住）",
+   "ok": true,
+   "detail": "{'text_imm': '4', 'rdata_mdisp': 4}"
+  },
+  {
+   "name": "I6 0x7ed358 的 16 字节逐字节手抄 = 070F3290-9841-11D1-B709-00A024DDAFD1，与 R111 记录的字符串一致",
+   "ok": true,
+   "detail": "070F3290-9841-11D1-B709-00A024DDAFD1"
+  },
+  {
+   "name": "I7 objdump 侧复算 0x414290（AircraftClass slot0）：体内确有 `call 0x410260`，其后 test/jge 才查 0x7e9b40",
+   "ok": true,
+   "detail": "['/home/t628/projects/ra2-campaign-forge/ra2bench/gamemd.exe:     file format pei-i386', '', '', 'Disassembly of section .text:', '', '00414290 <.text+0x13290>:']"
+  },
+  {
+   "name": "I8 objdump 侧复算 0x4af720（DriveLocomotionClass 的 thunk 目标）：体内确有 `call 0x55a9b0`，其后才查 0x7e9b10",
+   "ok": true,
+   "detail": "['/home/t628/projects/ra2-campaign-forge/ra2bench/gamemd.exe:     file format pei-i386', '', '', 'Disassembly of section .text:', '', '004af720 <.text+0xae720>:', '  4af720:\\t53                   \\tpush   %ebx', '  4af721:\\t8b 5c 24 08          \\tmov    0x8(%esp),%ebx']"
+  },
+  {
+   "name": "I9 外部常量比对：0x7f7c80 的 16 字节 == 标准 IID_IPersistStream（00000109-0000-0000-C000-000000000046）；0x7f7c70 的 16 字节 == 0000010C-0000-0000-C000-000000000046（该常量不是标准 COM 接口 ⇒ 游戏自有）",
+   "ok": true,
+   "detail": "{'0x7f7c70': '0c01000000000000c000000000000046', '0x7f7c80': '0901000000000000c000000000000046'}"
+  }
+ ]
+}

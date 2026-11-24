@@ -1,0 +1,143 @@
+{
+ "pre_sha": "4bc4ef58c5f24fab00b61c374195e5ce64e5b8b2ea5a962dd67d1b11bf2c28ee",
+ "post_sha": "0e37df51f423004f1a03966dbfc40e6d98f4cdbde79bfe9b1b3b97fbd1c878a1",
+ "ast_loads_pre": [
+  [
+   240,
+   "Store"
+  ]
+ ],
+ "ast_loads_post": [
+  [
+   246,
+   "Store"
+  ],
+  [
+   253,
+   "Load"
+  ],
+  [
+   258,
+   "Load"
+  ]
+ ],
+ "frozen": [
+  1,
+  2,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  18,
+  20,
+  24,
+  25
+ ],
+ "true_fail": [
+  3,
+  4,
+  22,
+  27,
+  28
+ ],
+ "claims_none": [
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  19,
+  21,
+  23,
+  26,
+  31,
+  32,
+  33
+ ],
+ "q3_pre_exit": 0,
+ "q3_post_exit": 1,
+ "q3_outside_exit": 0,
+ "n_checks": 15,
+ "n_fail": 0,
+ "checks": [
+  {
+   "name": "S0 改前 sha 等于登记值",
+   "ok": true,
+   "detail": "4bc4ef58c5f24fab"
+  },
+  {
+   "name": "S1 改后 sha 与改前不同",
+   "ok": true,
+   "detail": "0e37df51f423004f"
+  },
+  {
+   "name": "C1a 改前(R87) C11_LANDABLE Load 次数 = 0（我原报）",
+   "ok": true,
+   "detail": "[(240, 'Store')]"
+  },
+  {
+   "name": "C1b 改后(R102) C11_LANDABLE Load 次数 = 2（执行员报）",
+   "ok": true,
+   "detail": "[(246, 'Store'), (253, 'Load'), (258, 'Load')]"
+  },
+  {
+   "name": "C1c 判定：两数都对，被测对象不同（非任一方算错）",
+   "ok": true,
+   "detail": "pre=[(240, 'Store')] post=[(246, 'Store'), (253, 'Load'), (258, 'Load')]"
+  },
+  {
+   "name": "C2a 改前门禁 + 清空冻结档 ⇒ C11 FAIL 集合恰好 = 原冻结 12",
+   "ok": true,
+   "detail": "[1, 2, 5, 6, 7, 8, 9, 10, 18, 20, 24, 25] vs [1, 2, 5, 6, 7, 8, 9, 10, 18, 20, 24, 25]"
+  },
+  {
+   "name": "C2b 唯一对应：除 C11 外无任何其它检查 FAIL（用全 FAIL 清单核，不只看前缀）",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "C2c 执行员的「非C11附带FAIL」判定是解析 bug（以 C11 id 开头的行被它算成非 C11）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "C3a 洞仍在：R87 原版 + id3 改「无」⇒ exit 0（C11 不再 FAIL）",
+   "ok": true,
+   "detail": "exit=0"
+  },
+  {
+   "name": "C3b 现版 + id3 改「无」⇒ exit 1，且归因是 C11b pin（不是 C11）",
+   "ok": true,
+   "detail": "exit=1 pin=True C11fails=[]"
+  },
+  {
+   "name": "C3c 判定：执行员 exit=1 正确，但其「写无即免检」结论只对 R87 成立；R102 下该实例已被 C11b 关掉",
+   "ok": true,
+   "detail": "pre_exit=0 post_exit=1"
+  },
+  {
+   "name": "C3d 边界：LANDABLE 之外的 7 个「无」行改「无」后仍 exit 0 ⇒ 洞只部分关闭",
+   "ok": true,
+   "detail": "exit=0 fails=[]"
+  },
+  {
+   "name": "S2 三桶 = 5/12/14 与执行员逐项一致",
+   "ok": true,
+   "detail": "5/12/14"
+  },
+  {
+   "name": "S3 真可FAIL桶 = [3,4,22,27,28]",
+   "ok": true,
+   "detail": "[3, 4, 22, 27, 28]"
+  },
+  {
+   "name": "S4 不可FAIL 合计 26/31",
+   "ok": true,
+   "detail": "26"
+  }
+ ]
+}

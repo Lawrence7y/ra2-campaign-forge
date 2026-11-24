@@ -1,0 +1,124 @@
+{
+ "e1": {
+  "vtable": 1214,
+  "known": 954,
+  "extra": 260
+ },
+ "e2": [
+  {
+   "iid": "0x7f7c90",
+   "mine": 184,
+   "r113": 184,
+   "symdiff": 0
+  },
+  {
+   "iid": "0x7f7c70",
+   "mine": 90,
+   "r113": 90,
+   "symdiff": 0
+  },
+  {
+   "iid": "0x7f7c80",
+   "mine": 90,
+   "r113": 90,
+   "symdiff": 0
+  },
+  {
+   "iid": "0x7e9ae0",
+   "mine": 77,
+   "r113": 77,
+   "symdiff": 0
+  },
+  {
+   "iid": "0x7ed358",
+   "mine": 12,
+   "r113": 12,
+   "symdiff": 0
+  },
+  {
+   "iid": "0x7e9b10",
+   "mine": 6,
+   "r113": 6,
+   "symdiff": 0
+  }
+ ],
+ "e2_control": {
+  "raw": 77,
+  "thunk": 83,
+  "closure": 90
+ },
+ "e3": {
+  "q358": [
+   "DriveLocomotionClass",
+   "DropPodLocomotionClass",
+   "FlyLocomotionClass",
+   "HoverLocomotionClass",
+   "JumpjetLocomotionClass",
+   "LocomotionClass",
+   "MechLocomotionClass",
+   "RocketLocomotionClass",
+   "ShipLocomotionClass",
+   "TeleportLocomotionClass",
+   "TunnelLocomotionClass",
+   "WalkLocomotionClass"
+  ],
+  "full358": [
+   "ILocomotion"
+  ],
+  "full70": [
+   "IPersist",
+   "IPersistStream"
+  ],
+  "full80": [
+   "IPersist",
+   "IPersistStream"
+  ]
+ },
+ "checks": [
+  {
+   "name": "E1 独立重写的 COL 判据复算链 F：合法 COL 1214 个、vtable 1214 张；symbols.json 覆盖数 954（missing 0）、新增 260",
+   "ok": true,
+   "detail": "{'cols': 1214, 'vtable': 1214, 'missing': 0}"
+  },
+  {
+   "name": "E1b 新增 260 张里 offset==0 的 12 张，恰是 12 个 Locomotion 类的主 vtable（名字逐个核）",
+   "ok": true,
+   "detail": "['DriveLocomotionClass', 'DropPodLocomotionClass', 'FlyLocomotionClass', 'HoverLocomotionClass', 'JumpjetLocomotionClass', 'LocomotionClass', 'MechLocomotionClass', 'RocketLocomotionClass', 'ShipLocomotionClass', 'TeleportLocomotionClass', 'TunnelLocomotionClass', 'WalkLocomotionClass']"
+  },
+  {
+   "name": "E2 入口域复算：CMPSD 172 + TH 12 = 184（R113 B1 报 172+12=184）",
+   "ok": true,
+   "detail": "Counter({'CMPSD': 172, 'TH': 12})"
+  },
+  {
+   "name": "E2b 闭包 Q 逐个对账（本轮 vs R113 落盘）：[('0x7f7c90', 184, 184, 0), ('0x7f7c70', 90, 90, 0), ('0x7f7c80', 90, 90, 0), ('0x7e9ae0', 77, 77, 0), ('0x7ed358', 12, 12, 0), ('0x7e9b10', 6, 6, 0)] ⇒ 全部相等且对称差 0",
+   "ok": true,
+   "detail": "[{'iid': '0x7f7c90', 'mine': 184, 'r113': 184, 'symdiff': 0}, {'iid': '0x7f7c70', 'mine': 90, 'r113': 90, 'symdiff': 0}, {'iid': '0x7f7c80', 'mine': 90, 'r113': 90, 'symdiff': 0}, {'iid': '0x7e9ae0', 'mine': 77, 'r113': 77, 'symdiff': 0}, {'iid': '0x7ed358', 'mine': 12, 'r113': 12, 'symdiff': 0}, {'iid': '0x7e9b10', 'mine': 6, 'r113': 6, 'symdiff': 0}]"
+  },
+  {
+   "name": "E2c 反控（闭包确实在起作用）：raw（谁都不跟）|Q70|=77、thunk（只跟 jmp）|Q70|=83、closure |Q70|=90 ⇒ 三级递增 77 < 83 < 90，与 R113 报的 83→90 一致",
+   "ok": true,
+   "detail": "{'raw': 77, 'thunk': 83, 'closure': 90}"
+  },
+  {
+   "name": "E3a §EM3 复核：0x7ed358 在 R112 口径下无定值（n_of_iid 里没有它：absent），在修复后的口径下 absent ⇒ 该 IID 的站点全部只能**经闭包**到达，不能直接定 N；R113 用闭包 + ILocomotion mdisp=4 的路径定它，与本轮的站点级 N 不冲突",
+   "ok": true,
+   "detail": "{'pre': 'absent', 'post': None}"
+  },
+  {
+   "name": "E3b §EM3 复核：闭包口径 |Q(0x7ed358)|=12，在 N=4 约束下 FULL 集 = ['ILocomotion'] ⇒ 唯一 = {ILocomotion}，R113 的定死成立",
+   "ok": true,
+   "detail": "{'Q': ['DriveLocomotionClass', 'DropPodLocomotionClass', 'FlyLocomotionClass', 'HoverLocomotionClass', 'JumpjetLocomotionClass', 'LocomotionClass', 'MechLocomotionClass', 'RocketLocomotionClass', 'ShipLocomotionClass', 'TeleportLocomotionClass', 'TunnelLocomotionClass', 'WalkLocomotionClass']}"
+  },
+  {
+   "name": "E3c §EM10② 复核：闭包口径 Q(0x7f7c70)=90、Q(0x7f7c80)=90，对称差 0；N=0 下 FULL 分别为 ['IPersist', 'IPersistStream'] / ['IPersist', 'IPersistStream'] ⇒ 依然不可区分，R113「不编赢家」的裁定成立",
+   "ok": true,
+   "detail": "{'symdiff': [], 'full70': ['IPersist', 'IPersistStream'], 'full80': ['IPersist', 'IPersistStream']}"
+  },
+  {
+   "name": "E3d 修复抽取器对裁定稳健性的影响：定值站点 313→342、逐 IID 唯一定值违例 0 个 {} ⇒ **加数据没有让任何 IID 变得歧义**，故 R113 基于 N 的唯一化结论在更宽的数据上依然成立",
+   "ok": true,
+   "detail": "{'definite': 342, 'viol': {}}"
+  }
+ ]
+}

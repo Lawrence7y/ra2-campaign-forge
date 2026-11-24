@@ -1,0 +1,89 @@
+{
+ "checks": [
+  {
+   "name": "M1 共享 QI 体 0x55A9B0..0x55AA60 内 F3 A7（repe cmpsd）字节对出现 4 次",
+   "ok": true,
+   "detail": "4"
+  },
+  {
+   "name": "M2 同一区间内 BF imm32 的立即数依序 == [0x7f7c90, 0x7f7c80, 0x7ed358, 0x7f7c70]",
+   "ok": true,
+   "detail": "['0x7f7c90', '0x7f7c80', '0x7ed358', '0x7f7c70']"
+  },
+  {
+   "name": "M3 0x4D0510 头 8 字节 == 83 6C 24 04 04 E9（sub dword [esp+4],4 ; jmp rel32），立即数 4",
+   "ok": true,
+   "detail": "836c240404e996a4"
+  },
+  {
+   "name": "M4 0x414290 处 E8 rel32 算出的目标 == 0x410260（AircraftClass slot0 委托 AbstractClass 的 QI 体）",
+   "ok": true,
+   "detail": "0x410260"
+  },
+  {
+   "name": "M5 0x4AF720 + 0x12 处 E8 rel32 算出的目标 == 0x55A9B0（DriveLocomotion 的 thunk 目标里委托共享体）",
+   "ok": true,
+   "detail": "0x55a9b0"
+  },
+  {
+   "name": "M6 0x7ed358 的 16 字节 == 070F3290-9841-11D1-B709-00A024DDAFD1",
+   "ok": true,
+   "detail": "070F3290-9841-11D1-B709-00A024DDAFD1"
+  },
+  {
+   "name": "M6b 0x7ed358 的 16 字节在 .rdata 内出现 1 次",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "M6 0x7e9b10 的 16 字节 == 92FEA800-A184-11D1-B70A-00A024DDAFD1",
+   "ok": true,
+   "detail": "92FEA800-A184-11D1-B70A-00A024DDAFD1"
+  },
+  {
+   "name": "M6b 0x7e9b10 的 16 字节在 .rdata 内出现 1 次",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "M6 0x7f7c80 的 16 字节 == 00000109-0000-0000-C000-000000000046",
+   "ok": true,
+   "detail": "00000109-0000-0000-C000-000000000046"
+  },
+  {
+   "name": "M6b 0x7f7c80 的 16 字节在 .rdata 内出现 1 次",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "M6 0x7f7c70 的 16 字节 == 0000010C-0000-0000-C000-000000000046",
+   "ok": true,
+   "detail": "0000010C-0000-0000-C000-000000000046"
+  },
+  {
+   "name": "M6b 0x7f7c70 的 16 字节在 .rdata 内出现 1 次",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "M7 反控：把 M1 的模式换成 F2 A7（repne cmpsd）在该区间内出现 0 次 —— 模式匹配不是恒真",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "M8 反控：该处 opcode 逐字节 == E8（call rel32），且把同一 rel32 当成 E9(jmp) 会得到同一个目标 0x410260 —— 故**只靠目标地址不能区分 call 与 jmp**，call 判据必须绑定 opcode 字节本身",
+   "ok": true,
+   "detail": "{'opcode': '0xe8', 'tgt_as_e8': '0x410260', 'note': 'E8/E9 共用 rel32 字段 ⇒ 目标相同；判据绑定 opcode 而非目标'}"
+  }
+ ],
+ "M1_cmpsd_pairs": 4,
+ "M2_mov_edi_imms": [
+  "0x7f7c90",
+  "0x7f7c80",
+  "0x7ed358",
+  "0x7f7c70"
+ ],
+ "M3_sub_imm": 4,
+ "M4_call_target": "0x410260",
+ "M5_call_target": "0x55a9b0"
+}
