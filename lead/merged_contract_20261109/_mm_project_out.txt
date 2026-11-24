@@ -1,0 +1,29 @@
+== A 30 件对跑：totals 投影（_f2_compare.py 聚合逻辑逐行复刻，不落盘）==
+BEFORE totals (既有产物)   = {"bindings": 19, "orig_match": 0, "orig_path": 1, "orig_problems": 24, "plus_match": 9, "plus_path": 9, "plus_problems": 23}
+AFTER  totals (③接、④未裁) = {"bindings": 19, "orig_match": 0, "orig_path": 1, "orig_problems": 24, "plus_match": 18, "plus_path": 17, "plus_problems": 23}
+DRIFT = {'plus_path': (9, 17), 'plus_match': (9, 18)}
+changed docs = 5/30 ; changed bindings = 10/19 ; new tier dist = {None: 1, 'SAMEDOC_LINK': 8, 'SAMEDOC_LINK_EQ': 1}
+_f2_compare.py:44-50 断言投影 pass = 30/30  bad = []
+warnings total 11 -> 14 ; plus_problems AFTER = 23 (纪律应恒 23)
+
+== B 唯一 merged rec 的形状（来自 _integ_INTEGRATION_REPORT.md）==
+file = _integ_INTEGRATION_REPORT.md
+keys = ['citation', 'decl_lines', 'declared', 'match', 'members', 'path', 'samedoc_link', 'tier', 'tried']
+tier='SAMEDOC_LINK_EQ' match=True path=None members_n=2 decl_lines=[13]
+members = [{"path": "D:\\Project\\ra2-campaign-forge\\lead\\b2b_isolated_20261107\\qc151_trip.isolated.py", "sha": "ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2", "bytes": 412759}, {"path": "D:\\Project\\ra2-campaign-forge\\lead\\b2b_candidate_lf_20261107\\qc151_trip.candidate_lf.py", "sha": "ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2", "bytes": 412759}]
+missing single-obj keys = {'verified_path': True, 'recomputed': True, 'bytes': True}
+warnings_n = 2
+
+== C 各消费者对这条 merged rec 的实测反应（纯表达式，不改件）==
+C1 _f2v_verify9.py:24 (补丁前) = TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+C2 _f2w_checks.py:29  sha_ok = False
+C3 _f2w_extract.py:26-33 verified='' recomputed='' bytes='-'
+C4 _f2w_pass.py:17  plus match 计数 +=1（merged 混入单一回验统计）
+C5 _f2_compare.py:67/69 (plus_path,plus_match) 对 merged 单条 = (0,1)
+C6 _f2v_final.py:54-58 / _f2w_dogfood.py:25-30 collected=0 match=1 tiers={'SAMEDOC_LINK_EQ':1}
+C7 _f2v_run.py:49-52 plus_paths=[None] plus_match=[True] plus_tiers=['SAMEDOC_LINK_EQ']
+C8 _f2_selftest.py:110 nb[0].get('verified_path','').endswith(...) = False
+C9 _g9_gate.py:157-160 若改接 plus: reverified=0 match_true=1 problems=[] -> PASS（补丁②未落地时）
+C10 _f2w_final.py:31-33 只数 warnings：warnings_n=2（正常）
+
+== END ==

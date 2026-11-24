@@ -1,0 +1,98 @@
+==============================================================================
+A. 用 link_triple 真造 rec（unique / merged / multi）
+==============================================================================
+merged_text:
+# 交付件（反例）
+
+被核对象 SHA256 = 3a6f5a4383e8e0e95add13d16ee11d0e864a80710b8a7ac2badadd2eceafc5e5，字节数 = 27
+
+两个产物：`_ms_mem_a.py` 与 `_ms_mem_b.py`。
+`_ms_mem_b.py` 复制自 `_ms_mem_a.py`。
+link() verdict = merged ; link_triple problems = [] ; warnings_n = 1
+A1 merged rec KEYS = ['decl_lines', 'declared', 'match', 'members', 'path', 'samedoc_link', 'tier']
+A2 merged rec = {"decl_lines": [6], "declared": "3a6f5a4383e8e0e95add13d16ee11d0e864a80710b8a7ac2badadd2eceafc5e5", "match": true, "members": [{"bytes": 27, "path": "D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_mem_a.py", "sha": "3a6f5a4383e8e0e95add13d16ee11d0e864a80710b8a7ac2badadd2eceafc5e5"}, {"bytes": 27, "path": "D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_mem_b.py", "sha": "3a6f5a4383e8e0e95add13d16ee11d0e864a80710b8a7ac2badadd2eceafc5e5"}], "path": null, "tier": "SAMEDOC_LINK_EQ"}
+A3 MISSING KEY verified_path    : True
+A3 MISSING KEY recomputed       : True
+A3 MISSING KEY bytes            : True
+A4 path = None ; match = True ; tier = 'SAMEDOC_LINK_EQ' ; members_n = 2
+A5 members = [{"path": "D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_mem_a.py", "sha": "3a6f5a4383e8e0e95add13d16ee11d0e864a80710b8a7ac2badadd2eceafc5e5", "bytes": 27}, {"path": "D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_mem_b.py", "sha": "3a6f5a4383e8e0e95add13d16ee11d0e864a80710b8a7ac2badadd2eceafc5e5", "bytes": 27}]
+A6 samedoc_link.reverify = None
+A7 unique rec KEYS = ['bytes', 'declared', 'match', 'path', 'recomputed', 'samedoc_link', 'tier', 'verified_path'] ; path='D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_uniq.py' match=True tier='SAMEDOC_LINK'
+A8 multi  rec KEYS = ['declared', 'match', 'path', 'samedoc_link', 'tier'] ; path=None match=None tier='SAMEDOC_LINK' members=None
+A9 synthetic multi(match=True,path=None,no members) KEYS = ['declared', 'match', 'path', 'samedoc_link', 'tier']
+
+==============================================================================
+B. _f2v_verify9.py:21-29 在 merged rec 上逐行复跑
+==============================================================================
+B0 :21 `if b.get('match') is not True: continue` → match=True ⇒ 不 continue（进入 :23）
+B1 :23 `src = b.get('alt') or b` → alt=None，src is b = True
+B2 :24 Path(src.get('verified_path') or src.get('path')) → TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+B2 :28 b['declared'].lower()                               → OK '3a6f5a4383e8e0e95add13d16ee11d0e864a80710b8a7ac2badadd2eceafc5e5'
+B2 :29 size == src['bytes'] (src['bytes'] 求值)           → KeyError: 'bytes'
+B2 :34 src['bytes'] (print 参数求值)                      → KeyError: 'bytes'
+B3 src.get('verified_path')=None ; src.get('path')=None ; src.get('bytes')=None ; 'bytes' in src=False
+B4 绕过 :24 后 :29 → KeyError: 'bytes'
+B5 前提错在哪：:24 假定 `match is True ⇒ 必有单一 verified_path/path`；A1/A4 实测 merged rec match=True、path=None、缺 verified_path/recomputed/bytes，单对象信息只在 members（2 成员）⇒ 该前提为假。
+
+==============================================================================
+C. _f2v_verify9 补丁：原文逐字校验 / 语法 / 三种形态 / 缺键 / 真实 30 件回归
+==============================================================================
+C0 BEFORE_V9 逐字包含在原件中 = True (count=1)
+C1 改后整件 compile() = OK；候选副本已写入 _ms_v9_candidate.py
+[V9:19-35] difflib: before=17 lines, after=39 lines, unchanged=13, removed=4, added=26, modified=4
+C2 改后整件跑真实 30 件 = OK，末行 = 'checked 9'，MISMATCH 行数 = 0，MATCH 行 = 9
+C3 unique (有 path)                            | 原版 OK n=1 ['MATCH#1 D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_uniq.py sha_ok=True bytes_ok=True'] || 改后 OK n=1 ['MATCH#1 tier=SAMEDOC_LINK alt=False vp=D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_uniq.py sha_ok=True bytes_ok=True']
+C3 merged (无 path 有 members)                  | 原版 TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType' || 改后 OK n=2 ['MATCH#1 tier=SAMEDOC_LINK_EQ member=D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_mem_a.py sha_ok=True bytes_ok=True', 'MATCH#2 tier=SAMEDOC_LINK_EQ member=D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_mem_b.py sha_ok=True bytes_ok=True']
+C3 multi 真 rec (match=None)                   | 原版 OK n=0 [] || 改后 OK n=0 []
+C3 multi 合成 (match=True, 无 path 无 members)    | 原版 TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType' || 改后 OK n=1 ['SKIP#1 tier=SAMEDOC_LINK 无单一回验路径且无 members']
+C3 merged 缺 members[0].bytes                  | 原版 TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType' || 改后 OK n=1 ['MATCH#1 tier=SAMEDOC_LINK_EQ member=D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_mem_a.py sha_ok=True bytes_ok=False']
+C3 merged members=None                        | 原版 TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType' || 改后 OK n=0 []
+C3 unique 缺 bytes                             | 原版 KeyError: 'bytes' || 改后 OK n=1 ['MATCH#1 tier=SAMEDOC_LINK alt=False vp=D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_ms_fixtures\\_ms_uniq.py sha_ok=True bytes_ok=False']
+
+==============================================================================
+D. _g9_gate.py:155-166 判定链 + 反例（旧门禁 PASS / 新门禁 FAIL）
+==============================================================================
+D0 真实 g7.r11_scan(反例交付件): problems=[] warnings=['绑定行缺显式路径，需人工锚定（R11/R3-3b）'] bindings=[{'declared': '3a6f5a4383e8e0e95add13d16ee11d0e864a80710b8a7ac2badadd2eceafc5e5', 'path': None, 'match': None}]
+D1 r11_scan 是否产 merged rec = False （r11_scan 不调 link 家族；:155 实读为 g7.r11_scan）
+D2 :157-160 今日实际链（r11_scan 输出） 旧 = {"n_bindings": 1, "items": 2, "reverified": 0, "match_true": 0, "n_unverified": 1, "problems": [], "verdict": "PASS"}
+D3 :157-160 今日实际链（r11_scan 输出） 新 = {"n_bindings": 1, "items": 2, "reverified": 0, "match_true": 0, "n_unverified": 1, "problems": [], "verdict": "PASS"}
+D4 :157-160 假设注入真 merged rec 时 旧 = {"n_bindings": 1, "items": 2, "reverified": 0, "match_true": 1, "n_unverified": 1, "problems": [], "verdict": "PASS"}
+D5 :157-160 假设注入真 merged rec 时 新 = {"n_bindings": 1, "items": 2, "reverified": 0, "match_true": 1, "n_unverified": 1, "problems": ["R11 回验缺口：1 条 match=True 无单一回验路径"], "verdict": "FAIL"}
+
+D6 真 check_deliverable 实跑（原件不改；候选副本写入写域后用模块加载器载入）
+D6.0 BEFORE_G9 逐字包含在原件中 = True (count=1)
+D6.1 改后整件 compile() = OK；候选副本已写入 _ms_g9_candidate.py
+[G9:155-167] difflib: before=13 lines, after=17 lines, unchanged=13, removed=0, added=4, modified=0
+D6.2 OLD verdict=PASS | R9=PASS R10=PASS R12=PASS R11=PASS | R11 reverified=0 match_true=0 problems=[]
+D6.2 NEW verdict=PASS | R9=PASS R10=PASS R12=PASS R11=PASS | R11 reverified=0 match_true=0 problems=[]
+D6.3 返回结构 top keys 相同 = True ['bytes', 'checklist', 'file', 'old_gate', 'predicates', 'problems', 'sha256', 'utf8_strict', 'verdict', 'warnings']
+D6.4 返回结构 R11 keys 相同 = True ['binding_details', 'bindings', 'items', 'match_true', 'name', 'problems', 'reverified', 'rule_id', 'verdict', 'warnings']
+D6.5 两结果均 JSON 可序列化 = True
+D6.6 注入真 merged rec：OLD R11=PASS verdict=PASS reverified=0 match_true=1 problems=[]
+D6.7 注入真 merged rec：NEW R11=FAIL verdict=FAIL reverified=0 match_true=1 problems=['R11 回验缺口：1 条绑定行 match=True 但无单一回验路径（merged 副本群不得默认放行），须人工锚定']
+D6.8 改后 self_test() all_pass=True checks=[('U1_第3类空跑防线', True), ('U2_第5类包裹符词表', True), ('U3_谓词指纹', True)]
+
+==============================================================================
+E. 六件「静默误读」消费方在 merged rec 上的实跑（不崩但结论错）
+==============================================================================
+E1 _f2w_checks.py:29  sha_ok = False  ← 合法 match=True 被记成「sha 逐字不一致」
+E2 _f2_selftest.py:110 endswith('_f2_r11plus.py') = False  ← S4 断言失败
+E3 _f2_compare.py:67,69  (plus_path, plus_match) = (0, 1)  ← 计数口径混杂
+E4 _f2v_final.py:54,57-58  collected=0 tiers={'SAMEDOC_LINK_EQ': 1}  ← 开放 dict 不崩、结论错
+E5 _f2v_run.py:48-52  plus_paths=[None] plus_match=[True] plus_tiers=['SAMEDOC_LINK_EQ']
+E6 _f2w_dogfood.py:25-30  collected=0 match=1 tiers={'SAMEDOC_LINK_EQ': 1}
+E7 _f2w_pass.py:15,17  plus match 计数 = 1  ← merged 混入单一回验 PASS 统计
+E8 _f2w_extract.py:26-33  verified='' recomputed='-' bytes='-'  ← 报告静默空白
+
+==============================================================================
+F. 本会话实算指纹（hashlib，与编排方派发值比对）
+==============================================================================
+F lead/r11_f2_fix_20261109/_f2v_verify9.py sha256=c22f28ad4228d028c16d8558a8dd9a0980947631ab5bcf5c9cd84e529cf439e3 bytes=1618 MATCH=True
+F lead/gate_r9r12_20261109/_g9_gate.py sha256=a83081eeffc56e830c84ebcfe945114b5e2ac1082467ed04d97634912dacd2a6 bytes=11623 MATCH=True
+F lead/gate_fp7_20261108/_g7_predicates.py sha256=02c17e49764a6f87f2b0d26c6689f0cbeb96498509e5c75bf843104829c51120 bytes=11743 MATCH=True
+F lead/r33e_merge_20261109/_re_linked.py sha256=7ca339c6beb728f488903e1b0c748708accf45cd5e3bce45d532290c0c755b52 bytes=19481 MATCH=True
+F lead/merged_consumer_audit_20261109/_mc_AUDIT.md sha256=8b0be4a59bd3e88ffd908a234e9c8382a724478d93409fddf3814d5bb5aa3367 bytes=33762 MATCH=True
+F lead/merged_consumer_audit_20261109/MERGED_CONSUMER_AUDIT.md sha256=85de273758a6b87915f9735a07e1b9e1d11c594de50f41d83f5e70145257c263 bytes=40884 MATCH=True
+F lead/PENDING_DECISIONS.md sha256=3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 bytes=52419 MATCH=True
+F lead/GOAL_THREE_TARGETS_20261018.md sha256=2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede bytes=759518 MATCH=True
+F9 ALL_EIGHT_MATCH = True

@@ -1,0 +1,164 @@
+==============================================================================================================
+A. 逐窗口手算：live_fps=(f_last-f_first)/(t_last-t_first)，直接读 frame_edges
+==============================================================================================================
+  l3_1101v4d       w0 11-01 16:48 快                edges[0]=(920, 3434.177950) edges[-1]=(1699, 3459.161386)
+      df=779  dt=24.983436 s  => live=31.1807 fps   | json fps_avg=31.1619 p50=30.9537 units0=1225 pre15=30.053 n_edges=780
+      map=f3bb0a4efdedd067 gamemd=73201cc021497c95 span=25.000 settle=4.0 hz=500 t_clock=time.perf_counter schema=MEASURE_V1 trip=QC161-U0800-L3-V4-20261101D
+      stats keys: ['fps_1pct_low', 'fps_avg', 'fps_p50', 'frame_ms_max', 'frame_ms_p50', 'frame_ms_p90', 'frame_ms_p99', 'hz_effective', 'logic_frames', 'max_stall_s', 'n_edges', 'n_multi_advance', 'note', 'samples', 'tick_miss']
+  l3_1101v4e       w0 11-03 11:20 快                edges[0]=(925, 8774.780985) edges[-1]=(1707, 8799.775866)
+      df=782  dt=24.994881 s  => live=31.2864 fps   | json fps_avg=31.2801 p50=31.0155 units0=1189 pre15=31.395 n_edges=783
+      map=f3bb0a4efdedd067 gamemd=73201cc021497c95 span=25.000 settle=4.0 hz=500 t_clock=time.perf_counter schema=MEASURE_V1 trip=QC161-U0800-L3-V4-20261101E
+      stats keys: ['fps_1pct_low', 'fps_avg', 'fps_p50', 'frame_ms_max', 'frame_ms_p50', 'frame_ms_p90', 'frame_ms_p99', 'hz_effective', 'logic_frames', 'max_stall_s', 'n_edges', 'n_multi_advance', 'note', 'samples', 'tick_miss']
+  l1c_20261021     w0 10-21 19:03 慢（§544 说 units≈881） edges[0]=(957, 33488.022500) edges[-1]=(1186, 33512.856201)
+      df=229  dt=24.833701 s  => live=9.2213 fps   | json fps_avg=9.1603 p50=9.6855 units0=881 pre15=8.023 n_edges=230
+      map=0add791d11aea84d gamemd=73201cc021497c95 span=25.000 settle=4.0 hz=500 t_clock=time.perf_counter schema=MEASURE_V1 trip=QC161-U0800-L1C
+      stats keys: ['fps_1pct_low', 'fps_avg', 'fps_p50', 'frame_ms_max', 'frame_ms_p50', 'frame_ms_p90', 'frame_ms_p99', 'hz_effective', 'logic_frames', 'max_stall_s', 'n_edges', 'n_multi_advance', 'note', 'samples', 'tick_miss']
+  l3_20261031hb    w0 10-31 20:15 慢                edges[0]=(437, 42546.121799) edges[-1]=(606, 42571.007372)
+      df=169  dt=24.885573 s  => live=6.7911 fps   | json fps_avg=6.7872 p50=9.3794 units0=1347 pre15=6.676 n_edges=170
+      map=f3bb0a4efdedd067 gamemd=73201cc021497c95 span=25.000 settle=4.0 hz=500 t_clock=time.perf_counter schema=MEASURE_V1 trip=QC161-U0800-L3-H8-20261031B
+      stats keys: ['fps_1pct_low', 'fps_avg', 'fps_p50', 'frame_ms_max', 'frame_ms_p50', 'frame_ms_p90', 'frame_ms_p99', 'hz_effective', 'logic_frames', 'max_stall_s', 'n_edges', 'n_multi_advance', 'note', 'samples', 'tick_miss']
+  l3_20261021      w0 10-21 21:10 慢（带内）            edges[0]=(387, 41266.483191) edges[-1]=(606, 41291.414868)
+      df=219  dt=24.931677 s  => live=8.7840 fps   | json fps_avg=8.7605 p50=9.5019 units0=1342 pre15=10.023 n_edges=220
+      map=f3bb0a4efdedd067 gamemd=73201cc021497c95 span=25.000 settle=4.0 hz=500 t_clock=time.perf_counter schema=MEASURE_V1 trip=QC161-U0800-L3
+      stats keys: ['fps_1pct_low', 'fps_avg', 'fps_p50', 'frame_ms_max', 'frame_ms_p50', 'frame_ms_p90', 'frame_ms_p99', 'hz_effective', 'logic_frames', 'max_stall_s', 'n_edges', 'n_multi_advance', 'note', 'samples', 'tick_miss']
+  l3_1101v3a       w0 11-01 07:04 慢                edges[0]=(434, 81586.960838) edges[-1]=(724, 81611.907769)
+      df=290  dt=24.946931 s  => live=11.6247 fps   | json fps_avg=11.6002 p50=12.1212 units0=1349 pre15=8.689 n_edges=291
+      map=f3bb0a4efdedd067 gamemd=73201cc021497c95 span=25.000 settle=4.0 hz=500 t_clock=time.perf_counter schema=MEASURE_V1 trip=QC161-U0800-L3-V3-20261101A
+      stats keys: ['fps_1pct_low', 'fps_avg', 'fps_p50', 'frame_ms_max', 'frame_ms_p50', 'frame_ms_p90', 'frame_ms_p99', 'hz_effective', 'logic_frames', 'max_stall_s', 'n_edges', 'n_multi_advance', 'note', 'samples', 'tick_miss']
+
+==============================================================================================================
+B. 带内 units0∈[1180,1360]：fast(>=28) / slow(<20) × harness 版本
+==============================================================================================================
+   37a7c9cdf2ca97e3                 fast  0  slow  6
+   38244d2907e7f7fa                 fast  8  slow  1
+   dd5459fe0cf3461c                 fast  0  slow  4
+   name:qc151_trip.harness3.py      fast  0  slow  3
+   带内 units0 分布：fast [1189, 1225, 1229]  slow [1229, 1342, 1347, 1349, 1352]
+   带内 measure-start-frame：fast ['l3_1101v4c', 'l3_1101v4d', 'l3_1101v4e'] slow ['l3_1101v3a', 'l3_1101v3b', 'l3_1101v4c', 'l3_20261021', 'l3_20261031ha', 'l3_20261031hb']
+
+   2x2 [v4: fast 8 slow 1 | 非v4: fast 0 slow 13] 双侧 Fisher p = 2.81452e-05
+   2x2 [sf=800: fast 8 slow 1 | sf=400: fast 0 slow 10] Fisher p = 0.000119076
+   ⇒ sf=800 组 units0 [1189, 1225, 1229] (min 1189) ; sf=400 组 units0 [1342, 1347, 1349, 1352] (min 1342) —— 协议换了，负载也一起换了
+
+==============================================================================================================
+C. 带内各趟 counters 首帧构成（units/inf/air/techno/items/ws_kb）
+==============================================================================================================
+  dir              ts                  harness               units    inf   air  tech g_items     ws_kb
+  l3_20261021      2026-10-21T21:10:42 name:qc151_trip.harness3.py   1330    448     0  1780 346342800    135540  units0=1342 pre15=10.023
+  l3_20261031ha    2026-10-31T20:06:12 dd5459fe0cf3461c       1342    442     0  1784 264335856    135924  units0=1342 pre15=2.678
+  l3_20261031hb    2026-10-31T20:13:12 dd5459fe0cf3461c       1341    426     0  1767 256152480    136392  units0=1347 pre15=6.676
+  l3_1101v3a       2026-11-01T07:04:12 37a7c9cdf2ca97e3       1336    437     0  1773 256152480    136756  units0=1349 pre15=8.689
+  l3_1101v3b       2026-11-01T07:08:34 37a7c9cdf2ca97e3       1338    430     0  1768 367731736    136668  units0=1352 pre15=14.025
+  l3_1101v4c       2026-11-01T09:43:43 38244d2907e7f7fa       1211    365     0  1576 256218016    136672  units0=1229 pre15=15.346
+  l3_1101v4d       2026-11-01T16:47:11 38244d2907e7f7fa       1198    330     0  1531 369700440    137820  units0=1225 pre15=30.053
+  l3_1101v4e       2026-11-03T11:19:13 38244d2907e7f7fa       1157    383     0  1544 368594952    137712  units0=1189 pre15=31.395
+
+  窗尾（同份 json 最后一条 counter 读数）：
+  l3_20261021      units=1270  inf=412   air=0    techno=1685  g=1750  b=3     ws=135816  
+  l3_20261031ha    units=1340  inf=442   air=0    techno=1782  g=1834  b=0     ws=136004  
+  l3_20261031hb    units=1298  inf=395   air=0    techno=1693  g=1742  b=0     ws=136308  
+  l3_1101v3a       units=1265  inf=402   air=0    techno=1667  g=1721  b=0     ws=136792  
+  l3_1101v3b       units=1215  inf=374   air=0    techno=1589  g=1641  b=0     ws=136728  
+  l3_1101v4c       units=1092  inf=297   air=0    techno=1389  g=1449  b=0     ws=136756  
+  l3_1101v4d       units=1089  inf=273   air=0    techno=1366  g=1411  b=4     ws=137924  
+  l3_1101v4e       units=1068  inf=328   air=0    techno=1400  g=1487  b=4     ws=137708  
+
+==============================================================================================================
+D. 采样缺口（samples.t dt>10ms 累计，秒）vs live_fps —— 宿主争用指纹
+==============================================================================================================
+  ts                  dir              harness                  live    gap_s   gap_n max_stall
+  2026-10-18T09:11:26 archive_T32      UNKNOWN                 31.25    0.046       4 9.574864
+  2026-10-18T11:44:11 archive_T33      UNKNOWN                 31.30    0.000       0 10.814527
+  2026-10-18T12:16:43 archive_T34      UNKNOWN                 33.95    0.000       0 24.734761
+  2026-10-18T12:51:40 archive_T36      UNKNOWN                 31.42    0.000       0 19.332772
+  2026-10-18T14:05:05 archive_T38      UNKNOWN                 31.22    0.010       1 0.112586
+  2026-10-18T14:05:05 archive_T38      UNKNOWN                 31.46    0.287      20 24.077365
+  2026-10-18T15:49:37 archive_T39      UNKNOWN                 31.27    0.000       0 0.040262
+  2026-10-18T15:49:37 archive_T39      UNKNOWN                 31.45    0.000       0 23.981746
+  2026-10-18T16:02:38 archive_T40      UNKNOWN                 31.21    0.000       0 0.166851
+  2026-10-18T16:06:55 archive_T41      UNKNOWN                 31.28    0.000       0 1.72409
+  2026-10-18T16:10:15 archive_T42      UNKNOWN                 31.26    0.000       0 0.942842
+  2026-10-18T16:21:46 archive_T43      UNKNOWN                 31.32    0.000       0 19.188367
+  2026-10-18T17:32:28 archive_T44      UNKNOWN                 31.27    0.000       0 0.983718
+  2026-10-18T17:46:19 archive_T45      UNKNOWN                 30.84    0.000       0 1.880033
+  2026-10-18T17:53:52 archive_T47      UNKNOWN                 31.28    0.000       0 6.618178
+  2026-10-18T18:10:23 archive_T49_u080 UNKNOWN                 31.14    0.000       0 14.820029
+  2026-10-20T09:18:03 t55k_20261020    UNKNOWN                 31.28    0.000       0 0.048165
+  2026-10-20T09:18:03 t55k_20261020    UNKNOWN                 31.28    0.000       0 0.042802
+  2026-10-20T09:18:03 t55k_20261020    UNKNOWN                 31.27    0.000       0 0.042664
+  2026-10-20T20:11:10 l1a_20261020     UNKNOWN                 31.27    0.000       0 0.042096
+  2026-10-20T20:11:10 l1a_20261020     UNKNOWN                 31.25    0.000       0 0.060218
+  2026-10-20T20:11:10 l1a_20261020     UNKNOWN                 31.23    0.000       0 1.78159
+  2026-10-21T19:01:02 l1c_20261021     name:qc151_trip.harn     9.22    0.010       1 0.246478
+  2026-10-21T19:01:02 l1c_20261021     name:qc151_trip.harn     9.13    0.011       1 0.238382
+  2026-10-21T19:01:02 l1c_20261021     name:qc151_trip.harn    10.04    0.000       0 0.224594
+  2026-10-21T19:22:43 l1d_20261021     name:qc151_trip.harn    10.27    0.010       1 0.261453
+  2026-10-21T19:22:43 l1d_20261021     name:qc151_trip.harn    10.27    0.000       0 0.238886
+  2026-10-21T19:22:43 l1d_20261021     name:qc151_trip.harn    13.70    0.000       0 0.181353
+  2026-10-21T20:36:56 l1e_20261021     name:qc151_trip.harn    11.66    0.000       0 0.216746
+  2026-10-21T20:36:56 l1e_20261021     name:qc151_trip.harn    12.40    0.000       0 0.188701
+  2026-10-21T20:36:56 l1e_20261021     name:qc151_trip.harn    14.65    0.000       0 0.181068
+  2026-10-21T21:10:42 l3_20261021      name:qc151_trip.harn     8.78    0.000       0  0.2966
+  2026-10-21T21:10:42 l3_20261021      name:qc151_trip.harn    11.98    0.000       0 0.224015
+  2026-10-21T21:10:42 l3_20261021      name:qc151_trip.harn    10.21    0.000       0 0.270706
+  2026-10-24T11:08:13 l1_20261023hb    d019e8beecfb5fd8        10.07    0.000       0 2.558256
+  2026-10-24T11:11:15 l1_20261023hc    d019e8beecfb5fd8        32.26    0.000       0 3.286867
+  2026-10-25T10:43:53 l1_20261023k     d019e8beecfb5fd8         4.52    2.637      79 3.266247
+  2026-10-26T19:40:15 l1_20261023e1    d019e8beecfb5fd8         2.01    0.000       0 3.780845
+  2026-10-26T19:56:36 l1_20261023e4    d019e8beecfb5fd8        29.44    0.000       0 0.06958
+  2026-10-30T20:46:37 l3_20261023q     d019e8beecfb5fd8        31.14    0.000       0 0.068397
+  2026-10-30T20:46:37 l3_20261023q     d019e8beecfb5fd8        31.30    0.000       0 0.051041
+  2026-10-30T20:46:37 l3_20261023q     d019e8beecfb5fd8        31.22    0.000       0 21.155847
+  2026-10-30T20:58:31 l3_20261023r     d019e8beecfb5fd8        31.32    0.000       0 0.045683
+  2026-10-30T20:58:31 l3_20261023r     d019e8beecfb5fd8        31.10    0.000       0 9.436278
+  2026-10-31T20:06:12 l3_20261031ha    dd5459fe0cf3461c         3.05    1.844      75 0.490684
+  2026-10-31T20:13:12 l3_20261031hb    dd5459fe0cf3461c         6.79    5.334     198 0.493929
+  2026-10-31T20:13:12 l3_20261031hb    dd5459fe0cf3461c         4.76   14.336     259 0.749879
+  2026-10-31T20:13:12 l3_20261031hb    dd5459fe0cf3461c        10.61    2.333     106 0.580262
+  2026-11-01T07:04:12 l3_1101v3a       37a7c9cdf2ca97e3        11.62    0.000       0 0.201816
+  2026-11-01T07:04:12 l3_1101v3a       37a7c9cdf2ca97e3        14.07    0.000       0 0.129392
+  2026-11-01T07:04:12 l3_1101v3a       37a7c9cdf2ca97e3         5.89   11.733     447 0.308852
+  2026-11-01T07:08:34 l3_1101v3b       37a7c9cdf2ca97e3        16.74    0.000       0 0.141001
+  2026-11-01T07:08:34 l3_1101v3b       37a7c9cdf2ca97e3        12.38    9.595     328 0.306968
+  2026-11-01T07:08:34 l3_1101v3b       37a7c9cdf2ca97e3        11.22    3.441     143 0.261811
+  2026-11-01T09:43:43 l3_1101v4c       38244d2907e7f7fa        18.54    0.000       0 0.103742
+  2026-11-01T09:43:43 l3_1101v4c       38244d2907e7f7fa        28.42    0.000       0 0.063188
+  2026-11-01T09:43:43 l3_1101v4c       38244d2907e7f7fa        30.71    0.017       1 0.066098
+  2026-11-01T16:47:11 l3_1101v4d       38244d2907e7f7fa        31.18    0.000       0 0.045516
+  2026-11-01T16:47:11 l3_1101v4d       38244d2907e7f7fa        31.27    0.000       0 0.054657
+  2026-11-01T16:47:11 l3_1101v4d       38244d2907e7f7fa        31.27    0.012       1 0.047961
+  2026-11-03T11:19:13 l3_1101v4e       38244d2907e7f7fa        31.29    0.000       0 0.051982
+  2026-11-03T11:19:13 l3_1101v4e       38244d2907e7f7fa        31.24    0.000       0 0.081078
+  2026-11-03T11:19:13 l3_1101v4e       38244d2907e7f7fa        31.27    0.000       0 0.046068
+  ρ_Pearson(live_fps, 采样缺口 gap_s) = -0.43394420692399743 (n=63)
+  快窗(>=28) gap_s 中位 = 0.000 ；慢窗(<20) gap_s 中位 = 0.000
+
+==============================================================================================================
+E. 混淆轴唯一性（全库可算窗）
+==============================================================================================================
+  map_sha256   取值 9 个：{'0add791d11aea84d': 9, '60cb026241f5af2b': 2, '6fac3a3e60fb2ac9': 2, '93c2974b934acdc4': 3, '9a2495268be03f17': 4, 'be07d2b4d56a7257': 1, 'e3acc1305f98698d': 1, 'e7dee568b3a8ea9e': 2, 'f3bb0a4efdedd067': 10}
+  gamemd_sha256 取值 1 个：{'73201cc021497c95': 34}
+  t_clock      取值 1 个：{'time.perf_counte': 34}
+  schema       取值 1 个：{'MEASURE_V1': 34}
+  hz           取值 1 个：{'500': 34}
+  span_s       取值 2 个：{'25.0': 29, '4.0': 5}
+  settle_s     取值 2 个：{'0.0': 16, '4.0': 34}
+  带内各趟 map/gamemd：
+    l3_1101v3a       map=f3bb0a4efdedd067 gamemd=73201cc021497c95 hz=500 span=25.0 settle=4.0
+    l3_1101v3b       map=f3bb0a4efdedd067 gamemd=73201cc021497c95 hz=500 span=25.0 settle=4.0
+    l3_1101v4c       map=f3bb0a4efdedd067 gamemd=73201cc021497c95 hz=500 span=25.0 settle=4.0
+    l3_1101v4d       map=f3bb0a4efdedd067 gamemd=73201cc021497c95 hz=500 span=25.0 settle=4.0
+    l3_1101v4e       map=f3bb0a4efdedd067 gamemd=73201cc021497c95 hz=500 span=25.0 settle=4.0
+    l3_20261021      map=f3bb0a4efdedd067 gamemd=73201cc021497c95 hz=500 span=25.0 settle=4.0
+    l3_20261031ha    map=f3bb0a4efdedd067 gamemd=73201cc021497c95 hz=500 span=4.0 settle=4.0
+    l3_20261031hb    map=f3bb0a4efdedd067 gamemd=73201cc021497c95 hz=500 span=25.0 settle=4.0
+
+  载体（carrier）件数：
+    l3_1101v3a       carrier=files_missing=0
+    l3_1101v3b       carrier=files_missing=0
+    l3_1101v4c       carrier=files_missing=0
+    l3_1101v4d       carrier=files_missing=0
+    l3_1101v4e       carrier=files_missing=0
+    l3_20261021      carrier=files_missing=0
+    l3_20261031ha    carrier=files_missing=0
+    l3_20261031hb    carrier=files_missing=0

@@ -1,0 +1,177 @@
+{
+ "coverage": {
+  "before_sha": "412ed7e36bc1ad4907763febb3a68d5fdabb3f0d2c999800444b57098b1ab2e1",
+  "after_sha": "65e9cf2b3e778e98ef929d00f83be61a4ff111d4e1c028dd26809b557f67d8a7",
+  "before_bytes": 4097787,
+  "after_bytes": 4108800
+ },
+ "panel": {
+  "before_sha": "ec1715561fbb952b79ffd246ee1790fce24e4f242498dcc4afd3f488db16ff8f",
+  "after_sha": "e5e3e31a99a5c723f649839e9fd8d5d82e2733a90c2cbddfb05ddf628733625e",
+  "before_bytes": 190122,
+  "after_bytes": 193197,
+  "inserted_after_line": 296,
+  "inserted_before_line": 297,
+  "inserted_lines": 8,
+  "m99_text": [
+   "> ✅ **M99 补记：R16-D1-WIDE-B1 并入 18 行（D-52 宽读集合 65 行待做部分的前 18 行；含 2 行修复）**",
+   "> 本批 18 行取自 `R16_SIEVE_D1_WIDE` 按用户 D-52 宽读口径筛出的 81 行集合：其中 has_ring4_on_disk==是 16 行跳过，待做 65 行；本批为按 entry 升序第 1–18 行。16 行第 4 列取 `R16_D1_WIDE_B1/delta.tsv`，2 行（`004322A0`/`004324B0`）第 4 列取 `R16_FIX_B1_2ROWS/delta.tsv`（修复版）；18/18 严格前缀（新第 4 列 = 原第 4 列 + `；④ 活表槽位见证：…`），只改 coverage 第 4 列，第 1/2/3/5/6/7/8 列逐字节相同、grade 未改 `[已证]`。",
+   "> ① **异族审计 `R16_AUDIT_D1_WIDE_B1/VERDICT.md` 判 16/18 PASS、2/18 FAIL（唯一失败点＝C 装配方式标注）**：A 原文保全 0/18 不合格、B 字节事实 108/108 全 True、D 文本一致 0/18 不合格、E 反抄袭 PASS、F 清单一致性 PASS（sieve 81 → 是 16 / 否 65 → 按 entry 升序第 1–18 行，不多不少、顺序一致）；FAIL 仅 C：`004322A0`/`004324B0` 的「装配方式=ctor_body」标错。",
+   "> ② **2 行 FAIL 的真相与修复（如实披露）**：旧版把栈临时写 `mov [esp+0x20],0x7e1668`（装表点 `004014C4`，宿主 `004011C0`）当成构造器装表；异族审计实测宿主 `004011C0` 是普通成员函数、写在栈临时对象上，且与 scalar deleting destructor `004019A0` 逐指令同构（`test byte [esp+8],1` + `call 0x7C8B3D` + `ret 4`），实为内联析构序列而非构造。`R16_FIX_B1_2ROWS` 已改取真构造器 `0047AA3C`（宿主 `0047AA30`，指令 `mov [esi],0x7e1668`）后并入，其余 16 行审计无同类可疑。",
+   "> ③ **根因与落实**：原 `generate.py` 的 `install_form`（`generate.py:82-88`）只看操作数形态（`0x` 前缀→mov_abs，其余→ctor_body）、从不校验宿主是不是构造器，装表点又直接继承最低地址命中——这是失效根因；已在后续批次用 G1–G5 宿主身份校验规则（`R16_FIX_B1_2ROWS/host_rule.py`）落实：G1 非栈、G2 this 对象、G3 非析构、G4 基类构造前序、G5 返回 this；严格 canonical 三站点 `0047A9E3`/`0047AA10`/`0047AA3C` 五门全通。",
+   "> 数字（口径 A/B 实测，改前→改后）：口径 A（`[已证]` 且第 4 列含字符 `④`）由 **394 / 1,654（23.82%）**升至 **412 / 1,654（24.91%）**，本批净增 **18 行**（18 行改前 `④` 计数全 0，N_pre_A=0）；口径 B（`[已证]` 且第 4 列含 `④ 活表槽位见证`）由 **227 / 1,654（13.72%）**升至 **245 / 1,654（14.81%）**，净增 **18 行**（18 行均写入 `④ 活表槽位见证` 子串，实测非推算）。",
+   "> §12.6 命中（第 4 列字面 `§12.6`）：命中行数 **170 → 188（+18）**、命中次数 **202 → 220（+18）**；18 行各追加 1 处 D-47 披露指向 §12.6（实测非推算）。",
+   "> 判定与计数均未变：coverage 18,498 数据行、列分布 `{8:18498}`、全表 `[已证]` 1,654、atlas 内 1,648、atlas 外 6；名义仍 S15/S16/S17、严格仍 S17，**达标判定未翻转**。"
+  ]
+ },
+ "measure_before": {
+  "rows": 18498,
+  "col_dist": "[8]",
+  "proved": 1654,
+  "atlas_in": 1648,
+  "atlas_out": 6,
+  "cal_A": 394,
+  "cal_B": 227,
+  "sec126_lines": 170,
+  "sec126_occ": 202
+ },
+ "measure_after": {
+  "rows": 18498,
+  "col_dist": "[8]",
+  "proved": 1654,
+  "atlas_in": 1648,
+  "atlas_out": 6,
+  "cal_A": 412,
+  "cal_B": 245,
+  "sec126_lines": 188,
+  "sec126_occ": 220
+ },
+ "changed_rows": {
+  "0040B880": {
+   "line": 268,
+   "src": "B1",
+   "old_col4_sha": "5f2d29f1d7c9b05bb81ffd4c846ccd786d76a4c3b40a0e011dfde3c341780a7b",
+   "new_col4_len": 711,
+   "old_col4_len": 71
+  },
+  "0040B930": {
+   "line": 269,
+   "src": "B1",
+   "old_col4_sha": "b2be73ee97e0862f0de8fade0d421146538596e37a7228541294bed0c8ffb22b",
+   "new_col4_len": 716,
+   "old_col4_len": 76
+  },
+  "0040F7C0": {
+   "line": 392,
+   "src": "B1",
+   "old_col4_sha": "8a0e2e3f39c807228805728edaa5ddae2d759b38501cb014c1d39500a281301f",
+   "new_col4_len": 715,
+   "old_col4_len": 47
+  },
+  "0040F870": {
+   "line": 393,
+   "src": "B1",
+   "old_col4_sha": "7be6498292664554a97fc2036dbff6fbd28bdc850b8dcae592a05facbeb2853b",
+   "new_col4_len": 704,
+   "old_col4_len": 63
+  },
+  "0040FD90": {
+   "line": 404,
+   "src": "B1",
+   "old_col4_sha": "2b7dcc0f0757808f28f29d23b545f936cfbc068f5eeffddf9e1988502d59c50a",
+   "new_col4_len": 710,
+   "old_col4_len": 46
+  },
+  "0040FE40": {
+   "line": 405,
+   "src": "B1",
+   "old_col4_sha": "4518b8e4c8d7bb8d09439f673982d9f8045adb09d85b16e8c7a51de0943dd3f8",
+   "new_col4_len": 710,
+   "old_col4_len": 46
+  },
+  "00410260": {
+   "line": 414,
+   "src": "B1",
+   "old_col4_sha": "03805f711871ae4d2fb8cb73970c9aa5da38960c0b6b8f4603782c5b420f3e86",
+   "new_col4_len": 607,
+   "old_col4_len": 27
+  },
+  "00413F80": {
+   "line": 496,
+   "src": "B1",
+   "old_col4_sha": "882d06e832f105f4aa1391d6d3e3a1368e7b6f8bbd9fc7cc3093fbe9d6e8e321",
+   "new_col4_len": 636,
+   "old_col4_len": 56
+  },
+  "0041C180": {
+   "line": 609,
+   "src": "B1",
+   "old_col4_sha": "0ef9918a3f9c76c51fcb491a082b0111e1dad0ae8ac7dde046f81fc7d855ff96",
+   "new_col4_len": 625,
+   "old_col4_len": 41
+  },
+  "00431E80": {
+   "line": 985,
+   "src": "B1",
+   "old_col4_sha": "dae9743dbddbeb538c36f50b340ca5f4fdc11060a4c393c9191b90024d6adb52",
+   "new_col4_len": 647,
+   "old_col4_len": 51
+  },
+  "00431F70": {
+   "line": 989,
+   "src": "B1",
+   "old_col4_sha": "dae9743dbddbeb538c36f50b340ca5f4fdc11060a4c393c9191b90024d6adb52",
+   "new_col4_len": 647,
+   "old_col4_len": 51
+  },
+  "004322A0": {
+   "line": 991,
+   "src": "FIX",
+   "old_col4_sha": "dae9743dbddbeb538c36f50b340ca5f4fdc11060a4c393c9191b90024d6adb52",
+   "new_col4_len": 623,
+   "old_col4_len": 51
+  },
+  "004324B0": {
+   "line": 992,
+   "src": "FIX",
+   "old_col4_sha": "dae9743dbddbeb538c36f50b340ca5f4fdc11060a4c393c9191b90024d6adb52",
+   "new_col4_len": 627,
+   "old_col4_len": 51
+  },
+  "004393D0": {
+   "line": 1100,
+   "src": "B1",
+   "old_col4_sha": "574abafb6dd783a3297b595a03b4456994dc896ce2edc193423bfafac65f5e67",
+   "new_col4_len": 753,
+   "old_col4_len": 185
+  },
+  "004393F0": {
+   "line": 1102,
+   "src": "B1",
+   "old_col4_sha": "9ddfb9c83ec4a58351cc51cf9857263ad8bf9c020e78c87ea8a265b4a8330393",
+   "new_col4_len": 845,
+   "old_col4_len": 281
+  },
+  "00459EC0": {
+   "line": 1353,
+   "src": "B1",
+   "old_col4_sha": "107ab73e0bd2bc918337899b3adb8b509aa9f8d816bf00c0ab6264f98f30c829",
+   "new_col4_len": 625,
+   "old_col4_len": 41
+  },
+  "0046B7E0": {
+   "line": 1519,
+   "src": "B1",
+   "old_col4_sha": "1eaa3428501152a50bf044c482a0510f22a5514ed19f18f1b8867a58a7d9bd89",
+   "new_col4_len": 690,
+   "old_col4_len": 42
+  },
+  "0046B890": {
+   "line": 1520,
+   "src": "B1",
+   "old_col4_sha": "3dfa26d10893423576207e8adf62ae233cdbe0b68ead7378dcb2233b9230f866",
+   "new_col4_len": 690,
+   "old_col4_len": 42
+  }
+ }
+}

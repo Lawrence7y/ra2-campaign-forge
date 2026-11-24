@@ -1,0 +1,96 @@
+==============================================================================
+W9 / Q3 第三探针：±0x20 字节排除项 + RaiseException 实参 + 异常码表（自己实跑）
+==============================================================================
+运行时刻 = 2026-11-06 02:21:10
+
+Engine 自证 = COVERAGE 99.998375677293% (1394120 insns, 66 resync-fails) / IMAGEBASE 0x400000
+
+[O] 崩点 ±0x20 窗口内 INT3(0xCC)/ICEBP(0xF1)/LOCK(0xF0)/INT(0xCD) 排除
+窗口 [0x7CFC7F,0x7CFCBF) 原始字节 = CE 75 0D 8B 8C 90 C4 00 00 00 6A 20 23 4D F8 5F 85 C9 7C 05 D1 E1 47 EB F7 8B 4D F4 8B 54 F9 04 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+  0xF0 @ 0x7CFCA3 : 非指令起始（内嵌在其它指令的 ModRM/disp/imm 中）
+  0xF1 @ 0x7CFCA5 : 非指令起始（内嵌在其它指令的 ModRM/disp/imm 中）
+  冰点判据：ICEBP(0xF1) 是 trap-after，若它造成 #DB 且报告 EIP=0x7CFC9F，
+  则 0xF1 必须是 0x7CFC9E 处的 1 字节指令（末址=0x7CFC9F）。
+  e.rd(0x7CFC9E,1) = 04 ; 0x7CFC9E in by() = False
+  0x7CFC9E 落在 0x7CFC9B 的 4 字节指令 8B 54 F9 04 内（该指令字节=8B 54 F9 04）
+
+[P] RaiseException 两处调用点（0x7D2F92 / 0x7DB8A0）前 0x40 字节反汇编
+-- RaiseException call @0x7D2F92 前文 : [0x7D2F60,0x7D2FA0) 27 insns --
+  0x7D2F63  c3             ret       
+  0x7D2F64  55             push      ebp
+  0x7D2F65  8bec           mov       ebp, esp
+  0x7D2F67  83ec20         sub       esp, 0x20
+  0x7D2F6A  8b4508         mov       eax, dword ptr [ebp + 8]
+  0x7D2F6D  56             push      esi
+  0x7D2F6E  57             push      edi
+  0x7D2F6F  6a08           push      8
+  0x7D2F71  59             pop       ecx
+  0x7D2F72  be28997f00     mov       esi, 0x7f9928
+  0x7D2F77  8d7de0         lea       edi, [ebp - 0x20]
+  0x7D2F7A  f3a5           rep movsd dword ptr es:[edi], dword ptr [esi]
+  0x7D2F7C  8945f8         mov       dword ptr [ebp - 8], eax
+  0x7D2F7F  8b450c         mov       eax, dword ptr [ebp + 0xc]
+  0x7D2F82  8945fc         mov       dword ptr [ebp - 4], eax
+  0x7D2F85  8d45f4         lea       eax, [ebp - 0xc]
+  0x7D2F88  50             push      eax
+  0x7D2F89  ff75f0         push      dword ptr [ebp - 0x10]
+  0x7D2F8C  ff75e4         push      dword ptr [ebp - 0x1c]
+  0x7D2F8F  ff75e0         push      dword ptr [ebp - 0x20]
+  0x7D2F92  ff15c0127e00   call      dword ptr [0x7e12c0]
+  0x7D2F98  5f             pop       edi
+  0x7D2F99  5e             pop       esi
+  0x7D2F9A  c9             leave     
+  0x7D2F9B  c20800         ret       8
+  0x7D2F9E  56             push      esi
+  0x7D2F9F  ff74240c       push      dword ptr [esp + 0xc]
+-- RaiseException call @0x7DB8A0 前文 : [0x7DB870,0x7DB8B0) 22 insns --
+  0x7DB872  8b4508         mov       eax, dword ptr [ebp + 8]
+  0x7DB875  095850         or        dword ptr [eax + 0x50], ebx
+  0x7DB878  8b4508         mov       eax, dword ptr [ebp + 8]
+  0x7DB87B  8b4850         mov       ecx, dword ptr [eax + 0x50]
+  0x7DB87E  83e1e3         and       ecx, 0xffffffe3
+  0x7DB881  0bcf           or        ecx, edi
+  0x7DB883  8b7d1c         mov       edi, dword ptr [ebp + 0x1c]
+  0x7DB886  894850         mov       dword ptr [eax + 0x50], ecx
+  0x7DB889  8b4508         mov       eax, dword ptr [ebp + 8]
+  0x7DB88C  dd07           fld       qword ptr [edi]
+  0x7DB88E  dd5840         fstp      qword ptr [eax + 0x40]
+  0x7DB891  e8d2030000     call      0x7dbc68
+  0x7DB896  8d4508         lea       eax, [ebp + 8]
+  0x7DB899  50             push      eax
+  0x7DB89A  53             push      ebx
+  0x7DB89B  6a00           push      0
+  0x7DB89D  ff7510         push      dword ptr [ebp + 0x10]
+  0x7DB8A0  ff15c0127e00   call      dword ptr [0x7e12c0]
+  0x7DB8A6  8b4508         mov       eax, dword ptr [ebp + 8]
+  0x7DB8A9  f6400810       test      byte ptr [eax + 8], 0x10
+  0x7DB8AD  7403           je        0x7db8b2
+  0x7DB8AF  8326fe         and       dword ptr [esi], 0xfffffffe
+  stdcall RaiseException(dwExceptionCode, dwExceptionFlags, nNumberOfArguments, lpArguments)
+  => 第一实参 dwExceptionCode 是最后 push 的；看上文 push 的立即数是不是 0x80000004。
+
+[Q] 异常码表（0x7E8880 附近）：确认 0x80000004 是表项，且 handler 按 ExceptionCode 查表
+  [0x7E8840] 0x80000003  0x80000002  0xC000008D  0xC000008E
+  [0x7E8850] 0xC000008F  0xC0000090  0xC0000091  0xC0000092
+  [0x7E8860] 0xC0000093  0xC000001D  0xC0000006  0xC0000094
+  [0x7E8870] 0xC0000095  0xC0000026  0xC0000025  0xC0000096
+  [0x7E8880] 0x80000004  0xC00000FD  0xFFFFFFFF  0x00000000
+  [0x7E8890] 0x00000000  0x404E0000  0xA2529D39  0x3F91DF46
+  [0x7E88A0] 0x00800558  0x00410590  0x00800570  0x00410580
+  [0x7E88B0] 0x00800588  0x004105E0  0x004105F0  0x00410600
+  [0x7E88C0] 0x00410210  0x00410220  0x00410230  0x00800610
+  [0x7E88D0] 0x00410260  0x00410300  0x00410310  0x004CA230
+  [0x7E88E0] 0x00410450  0x004CA270  0x004CA3C0  0x004103E0
+  [0x7E88F0] 0x004CA770  0x00410470  0x004CA580  0x004CA750
+  [0x7E8900] 0x004CA760  0x004CA430  0x00410490  0x004104A0
+  [0x7E8910] 0x004104B0  0x00410440  0x004104C0  0x004104F0
+  [0x7E8920] 0x00410520  0x00410530  0x00410540  0x004C9B20
+  [0x7E8930] 0x00800540  0x004CABA0  0x004CA8F0  0x004CAA70
+  含 0x80000004 的表项 VA = 0x7E8888
+  说明：字符串池（0x820EE0 起）是「Error code: <名字>\r\r\nDescription: ...」条目，
+  handler 用 ExceptionRecord->ExceptionCode 在该表里查名字/描述 => 
+  except.txt 打印 'EXCEPTION_SINGLE_STEP' 意味着 ExceptionCode 就是 0x80000004（不是别的码被误报）。
+  本探针未逐条反汇编该查表循环，标「未验（查表循环本身）」；表项与串内容已亲读。
+
+耗时 = 66.67 s
+EXIT=0 / 零真机 / 零活进程读取 / 零采样注入 / 唯一写域内

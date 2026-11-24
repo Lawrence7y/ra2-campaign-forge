@@ -1,0 +1,47 @@
+M82 VERIFY — 并后强制复算（全部断言通过；不符即停）
+
+口径：BEFORE 基线见 _before_state.json；PATCH 见 _apply_result.json；本复算只读、不写任何卡目录 / EVID_RESOLVE / R14_COMMON / STATUS_BOARD / 台账 / BOARD_ARCHIVE。
+
+【计数不变量】
+  数据行数            : 18498   （期望 18,498）  ✅
+  全表 [已证]         : 1654     （期望 1,654）  ✅
+  atlas 内 [已证]     : 1648     （期望 1,648）  ✅  （atlas = next_re_20261112_r10/W130_atlas/function_atlas.tsv，entry 归一 %08X）
+
+【改动行 grade 未变】
+  被改 361 行逐行核对第 5 列 grade == BEFORE 记录的 grade（全部 [已证]）✅
+  被改 361 行第 1/2/3/4/7/8 列逐行字节不变 ✅
+  歧义 13 行第 6 列保持原值、无任何 M82 注记 ✅
+
+【后缀唯一匹配法复现 EVID_RESOLVE 结论】
+  读 EVID_RESOLVE/resolve.tsv 的 R_MISSING 374 行；
+  在 r14 下按 case-insensitive / 组件边界 endswith 做后缀匹配：
+  路径级 87 唯一 / 5 歧义 / 0 丢失；行级 361 唯一 / 13 歧义 / 0 丢失 —— 与 REPORT.md 一致 ✅
+
+【证据可解析率重跑（用 EVID_RESOLVE/resolve.py 原脚本，--out 指向 MERGE_M82\_verify_resolve_out，未写 EVID_RESOLVE）】
+  BEFORE : R_OK 478 / R_MISSING 374 / R_TRACE_ONLY 802 / R_EMPTY 0
+  AFTER  : R_OK 839 / R_MISSING 13 / R_TRACE_ONLY 802 / R_EMPTY 0
+  期望   : R_OK = 478 + 实修 361 = 839；R_MISSING = 374 - 361 = 13；R_TRACE_ONLY 不变 802
+  实测 R_OK 839 = 478 + 361 ✅ ；R_MISSING 13 = 374 - 361 ✅ ；R_TRACE_ONLY 802 = 802 ✅
+  新 resolve.tsv 数据行 815 = 13 + 802 ✅
+  R_OK 百分比 = 839/1654 = 50.73% （M81 上界记作 50.72%/截断，四舍五入实算为 50.73%）✅
+
+【注记回读】
+  对 361 行逐行解析新第 6 列：';M82 指针修复：原记 <旧>（缺卡目录），实为 <新>' 均可逆回原 evidence_path ✅
+  每个新路径（含多段 ; 分隔行、含 :0x… 行号锚点的 006DBE20）在盘上 os.path.isfile 为真 ✅
+
+【达标翻转】
+  no — grade/semantics/counts unchanged by pure pointer fix。
+  判定所依赖的第 4 列语义、第 5 列 grade、subsystem 与 entry 全表未变；[已证] 1,654 与 atlas 内 1,648 均未变；
+  故名义达标（S15/S16/S17，3/22）与严格达标（S17，1/22）不可能翻转。无停下理由。✅
+
+【未修（歧义）entry 清单 — 13 行】
+  0040F870, 004DF320, 004DF3A0, 004DFB70, 004DFCB0, 004DFE00, 004E0E80, 0054E890, 0054EA70, 006B6EA0, 006B6FA0, 006CDEF0, 006F4960
+  对应 5 个后缀多处匹配的路径：
+    EVIDENCE/four_rings.md                      → S13_K12 / S16_PADD / S17_PADD（3 处，3 行）
+    EVIDENCE/QUEUE_DISPATCH_AND_FALSE_KILLS.txt → S10_K8 / S10_K8F（2 处，6 行）
+    EVIDENCE/SPAWNMANAGER_CTORS.txt             → S10_K8 / S10_K8F（2 处，2 行）
+    EVIDENCE/E01_rtti.txt                       → S03-K1 / S16-K1（2 处，1 行）
+    EVIDENCE/OWNERSHIP_004E0E80.txt             → S10_K8 / S10_K8F（2 处，1 行）
+  合计 3+6+2+1+1 = 13 行，全部保持原样、不计入本次修复。
+
+结论：全部强制复算通过，无“不符停下”触发；无达标翻转。

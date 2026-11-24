@@ -1,0 +1,24 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+0047C620	S12	CellClass::CanPlacePerCell	thiscall CellClass* + 3 stack args; scans only cell+0xE4 head A via WhatAmI; AL=1/0	[已证]	EVIDENCE/t1_47C620_full.txt;EVIDENCE/T1_SEMANTICS.md
+0043F2AE	S12	CellClass::CanPlacePerCell_call_site	inside 0x43F180; al==0 -> 0x43F504 skip this cell and continue the double loop	[已证]	EVIDENCE/t1_43F180_and_wrappers_and_whatami.txt;EVIDENCE/T1_SEMANTICS.md
+0043F218	S12	BuildingClass::CanPlace_slot1	first [obj+0x1AC] gate; nonzero -> 0x43F5D8 call base slot73 mode0 then al=0 ret	[已证]	EVIDENCE/t1_43F180_and_wrappers_and_whatami.txt
+0043F678	S12	BuildingClass::CanPlace_slot2	second [obj+0x1AC] gate; nonzero -> 0x43F5E0 al=0 ret; bypassed only on short-circuit mode3 path	[已证]	EVIDENCE/t1_43F180_and_wrappers_and_whatami.txt
+0047E8A0	S12	CellClass::AddObject	attaches object to cell+0xE4/E8 by obj+0x8C flag; no occupancy scan; dedups only head->next==obj	[已证]	EVIDENCE/t1_callers_and_t2_attach.txt
+0047EA90	S12	CellClass::RemoveObject	detaches object from the selected cell chain and clears obj+0x30	[已证]	EVIDENCE/t1_callers_and_t2_attach.txt
+005683C0	S12	FootprintAddObjectWrapper	sole caller of 0x47E8A0 at 0x5684BB; passes obj+0x8C as head-select flag	[已证]	EVIDENCE/t2_wrapper_and_8c_cellclass.txt
+005687F0	S12	FootprintRemoveObjectWrapper	sole caller of 0x47EA90 at 0x5688EB	[已证]	EVIDENCE/t2_all_attach_paths.txt
+005F4D30	S12	ObjectClass::Limbo	writes byte [obj+0x81]=1 on success and byte [obj+0x80]=0; entry reads +0x81 for idempotence	[已证]	EVIDENCE/t3_81_census.txt;EVIDENCE/T3_SEMANTICS.md
+007014A0	S12	TechnoClass::SetOwner	gates slot73 detach(mode0)/attach(mode3) on byte [obj+0x81]==0	[已证]	EVIDENCE/t3_81_census.txt
+00000081	S12	ObjectClass+0x81_LimboFlag	byte flag: 1=Limbo/detached, 0=in world; 238 reads / 34 writes image-wide	[已证]	EVIDENCE/t3_81_census.txt
+0000008C	S12	ObjectClass+0x8C_HeadSelect	byte flag selecting cell chain head A(+0xE4)=0 vs B(+0xE8)=nonzero	[已证]	EVIDENCE/t2_wrapper_and_8c_cellclass.txt
+000000E4	S12	CellClass+0xE4_HeadA	primary object chain head; the only head scanned by 0x47C620	[已证]	EVIDENCE/t1_47C620_full.txt
+000000E8	S12	CellClass+0xE8_HeadB	secondary object chain head selected by obj+0x8C; not scanned by 0x47C620	[已证]	EVIDENCE/t1_47C620_full.txt
+00000030	S12	ObjectClass+0x30_Next	single next pointer used by both cell chains	[已证]	EVIDENCE/t1_callers_and_t2_attach.txt
+00459E70	S12	BuildingClass::GetSize	vtable slot12 B8 20 07 00 00 C3 -> 0x720; 15 push 0x720 allocation sites	[已证]	EVIDENCE/t4_rtti_getsize.txt
+00487E70	S12	CellClass::GetSize	vtable slot12 -> 0x148; 12 push 0x148 allocation sites; independent recheck of ledger §958	[已证]	EVIDENCE/t4_factory_getsize.txt
+0071D2F0	S12	TerrainClass::GetSize	vtable slot12 -> 0xE0; 9 push 0xE0 allocation sites	[已证]	EVIDENCE/t4_factory_getsize.txt
+004CA760	S12	FactoryClass::GetSize	vtable slot12 -> 0x74 but zero push 0x74 sites; dual-check not closed	[未证]	EVIDENCE/t4_factory_getsize.txt
+007E3EBC	S12	BuildingClass_vtable	RTTI chain vt->COL 0x7FC360->TD 0x818D60 name .?AVBuildingClass@@; slot73=0x43F180	[已证]	EVIDENCE/t4_rtti_getsize.txt
+007F522C	S12	TerrainClass_vtable	RTTI chain vt->COL 0x80C3E0->TD 0x842D48 name .?AVTerrainClass@@; slot73=0x71BFB0	[已证]	EVIDENCE/t4_rtti_getsize.txt
+004D3780	S12	MobileClass::SetOccupation_shared	shared slot73 for RTTI Aircraft/Foot/Infantry/Unit; no 0x47C620 caller	[已证]	EVIDENCE/t4_rtti_getsize.txt;EVIDENCE/t2_all_attach_paths.txt
+004151E0	S12	UnknownClass::SetOccupation	slot73 wrapper caller of 0x5683C0; RTTI chain fail-closed, class name unknown	[未证]	EVIDENCE/t4_rtti_getsize.txt;EVIDENCE/t2_all_attach_paths.txt

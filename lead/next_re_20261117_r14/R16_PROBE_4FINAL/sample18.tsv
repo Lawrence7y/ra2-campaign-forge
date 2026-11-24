@@ -1,0 +1,19 @@
+entry	subsystem	name	auto_class	manual_verdict	caveat	key_bytes	my_reason
+00410260	S05	AbstractClass::QueryInterface	D1	AGREE	-	vt 007E1F50 slot0/.?AVAbstractClass@@ 24槽；装表 00410198 c7 00 50 1f 7e 00 于 00410170（体外 [00410260,004102FB)）；另 004142A2 e8 b9 bf ff ff 直调	槽值==entry 且装表点是另一函数里的 mov [eax],vt ⇒ 活表在体外装，④ 形态成立；本行另有直调，按优先级归 D1 不改结论
+00468090	S13	BulletClass::Draw	D1	AGREE	-	vt 007E46E4 slot69/126槽/.?AVBulletClass@@；装表 00466425 c7 06 e4 46 7e 00 于 00466380（body 923 B 不含）	与 4GAP §3.3 已做过的字节级复核样例是同一行、同一槽 69、同一装表点 00466425，独立复算一致
+006CE200	S16	SuperClass::WhatAmI	D1	AGREE	-	vt 007F3FE8 slot11/.?AVSuperClass@@；装表 006CAF10 c7 06 e8 3f 7f 00 于 006CAEC0；body 6 B b8 39 00 00 00 c3	6 字节 getter，body 与装表点相距 3 KB 以上，体外成立
+007730E0	S13	WeaponTypeClass::WhatAmI	D1	AGREE	-	vt 007F73B8 slot11/.?AVWeaponTypeClass@@；装表 00771E77 于 00771C70；body 6 B b8 31 00 00 00 c3	装表点 00771E77 正是 R14_COMMON §13.4 记录的「两对行共用同一条安装指令」之一 ⇒ 本行属 D-47 讨论过的同一形态
+0040B880	S13	DynamicVectorClass<BombClass*>::SetCapacity	D1	AGREE	装表形态弱一档：绝对地址装表	vt 007E17CC slot2/7槽；装表 0040B563 c7 05 d8 f5 87 00 cc 17 7e 00 = mov [0x87f5d8],vt（宿主不在 atlas）；body 176 B	槽值==entry、装表点体外均成立；但这是全局静态对象 vptr 初始化而非 ctor 的 mov [reg],vt ⇒ 「构造器装的活表」口径下应降一档，单列待裁
+004D0390	S11	FlyLocomotionClass::GetSize	D1	AGREE	-	vt 007E8AC0 slot9/.?AVFlyLocomotionClass@@；装表 004CCA0C c7 06 c0 8a 7e 00 于 004CC9A0；body 6 B b8 60 00 00 00 c3	搬运型 getter，体外装表成立
+006AC210	S09	SidebarClass::slot33	D1	AGREE	② 即该槽 ⇒ D-47(A) 争议区	vt 007F3058 slot33/.?AVSidebarClass@@；装表 006A4EDF c7 07 58 30 7f 00 于 006A4E60；另 006D1805 e8 06 aa fd ff 直调	机械 ④ 成立（活表槽+体外装表）；但行名类别直接来自该槽号，属 §12.3 与 D-47(A) 交界，补 ④ 时必须带 §12.6+PANEL 引用
+007730F0	S13	WeaponTypeClass::slot8_deleting_dtor	D1	AGREE	析构器占槽，需过 ㉓	vt 007F73B8 slot8；装表 00771E77 于 00771C70（不在 body [007730F0,00773232)）；body 322 B	㉓ 禁的是「析构器自己重装基类表」当 ④；本行装表点在 ctor 00771C70，体内无重装，不触发陷阱
+0041D6E0	S17	AirstrikeClass::Save	D1	AGREE	-	vt 007E29A8 slot13/.?AVAirstrikeClass@@；装表 0041D308 于 0041D300；body 13 B 8b 44 24 04 50 e8…	13 字节转发桩，体外装表成立
+006635B0	S11	RocketLocomotionClass::GetSize	D1	AGREE	-	vt 007F0BE8 slot9/.?AVRocketLocomotionClass@@；装表 00661F19 于 00661EC0；body 6 B b8 60 00 00 00 c3	与 004D0390 同族同形态，独立表、独立装表点
+0075F890	S20	WaveClass::GetLayer	D1	AGREE	装表点宿主不在 atlas，溯源弱一档	vt 007F6BF4 slot30/.?AVWaveClass@@；首个体外装表点宿主函数不在 atlas；body 6 B b8 03 00 00 00 c3	槽值与体外性成立；但装表指令所在函数无 atlas 边界，无法再核该函数身份 ⇒ 记弱证据行
+004011C0	S19	AudioIDXData::Create	D2	AGREE	按 D-40 不计 ④	无 dd（vt=0）；direct 00406CE8 e8 d3 a4 ff ff = call entry；body 953 B 不含站点	机械 D2 成立（E8 边界+目标==entry+非自环+在被调函数体外）；但这是 factory Create，direct-only 属 D-40/D-39 已判死形态
+004F9790	S14	HouseClass::TakeMoney	D2	AGREE	㉘ 名only 批	5 处 direct（0043FDD1 e8 ba 99 0b 00 / 004508A3 e8 e8 8e 0a 00 …），无任何表持有	机械 D2 成立；evidence_path=classification_trace + 语义「名字已证，语义据名」⇒ ③ 本身是名only，补 ④ 也不闭合
+00680E70	S17	Save_VectorBlock_34	D2	AGREE	-	1 处 direct 0067E390 e8 db 2a 00 00；无表	机械 D2 成立；单站点，无槽位线索，direct-only 判死同前
+007DC720	S02	Unsorted::RaiseError	D2	AGREE	③ 敞口	64 处 direct（采样上限 64）；无表；语义栏自带 [未证]	机械 D2 成立；调用点极多但全部是直调，无 vtable 槽 ⇒ 按 D-40 不给 ④
+0040F510	S13	WarheadTypeClass::FindOrMakeIndex	D4	AGREE	-	dd=0、direct=0；整个镜像里该地址 0 次引用	无表、无直调、连立即数引用都没有 ⇒ 没有任何使用见证线索
+004E6070	S03	CD::CDDriveManagerClass	D4	AGREE	㉘ 名only 批	dd=0、direct=0；0 引用；语义栏 [未证]	同上；名字在 YRpp 可锚定也不改变「无使用见证」这一事实
+006C41D0	S11	JumpjetClassFactory::CreateInstance	D4	AGREE	entry 不在 atlas	dd=0、direct=0；0 引用；body 未知	entry 无函数体不影响结论：分类不依赖 body，只依赖「无 dd 命中 + 无 E8 站点」

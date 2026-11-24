@@ -1,0 +1,135 @@
+== 263 件 NO_EXIT_AT_ALL 的 stdout.write 产物通道普查 ==
+名单来源: lead/exit_criterion_20261110/_ec_s4_results.json 的 results[*].rel
+名单件数(results 长度) = 263 ; 文件内 n_no_exit = 263
+判据结论来源: 同一 json 的 results[*].class / verdict / reasons
+检测方式: ast.parse(源码 bytes) 后遍历 ast.Call；匹配 func=sys.stdout.write / sys.stdout.buffer.write（含 import sys as s、from sys import stdout 的等价别名）
+脚本约束: sys.dont_write_bytecode=True；唯一写入文件 = lead/unknown_locate_20261110/_ul_stdout_census_out.txt
+
+rel 去重后 = 263 ; 重复 rel 数 = 0
+缺失文件数 = 0
+
+ast 解析成功 = 263 ; 解析失败 = 0
+
+== 按 class 分组计数表 ==
+  n_sw      = 含 >=1 个 sys.stdout.write(...) 的件数
+  n_bw      = 含 >=1 个 sys.stdout.buffer.write(...) 的件数
+  n_either  = 含任一类 stdout 写调用的件数（去重后的件数）
+  n_print   = 含 >=1 个 print(...) 的件数
+  n_both    = 同时含 stdout 写调用与 print(...) 的件数
+  n_chan_only = 含 stdout 写调用且全件无 print(...) 的件数（严格『而不是 print』）
+  n_calls   = 两类 stdout 写调用的总调用点数
+
+class      n_total      n_sw      n_bw  n_either   n_print    n_both n_chan_only   n_calls
+------------------------------------------------------------------------------------------
+ARTIFACT       102         2         0         2        98         0           2         2
+GATE            21         0         0         0        21         0           0         0
+PROBE          122         0         0         0       122         0           0         0
+UNKNOWN         18         8         1         9         0         0           9         9
+------------------------------------------------------------------------------------------
+TOTAL          263        10         1        11       241         0          11        11
+
+直答: 263 件中，产物通道为 sys.stdout.write(...) / sys.stdout.buffer.write(...) 的 = 11 件
+      其中全件无 print(...) 调用（确为『而不是 print(...)』的通道） = 11 件
+      严格 sys.stdout.write(...) 形式 = 10 件；sys.stdout.buffer.write(...) 形式 = 1 件
+
+== 全量命中清单（11 件，含两类形式；class/verdict 取自原 json）==
+  [ARTIFACT/OK] lead/d_o1o4_necessity_20261108/_d14_recompute.py
+    stdout写 = sys.stdout.write@L127
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+  [ARTIFACT/OK] lead/ledger_appendix_20261108/_la_d14_recompute_copy.py
+    stdout写 = sys.stdout.write@L127
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+  [UNKNOWN/NEEDS_FIX] lead/minhard_check_20261109/_mhz_blocks2.py
+    stdout写 = sys.stdout.write@L155
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+  [UNKNOWN/NEEDS_FIX] lead/minhard_check_20261109/_mhz_lines2.py
+    stdout写 = sys.stdout.write@L36
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+  [UNKNOWN/NEEDS_FIX] lead/minhard_check_20261109/_mhz_slice.py
+    stdout写 = sys.stdout.write@L41
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+  [UNKNOWN/NEEDS_FIX] lead/minhard_check_20261109/_mhz_verify.py
+    stdout写 = sys.stdout.write@L186
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+  [UNKNOWN/NEEDS_FIX] lead/r2_unclosed_cd_20261108/_cd_check.py
+    stdout写 = sys.stdout.write@L316
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+  [UNKNOWN/NEEDS_FIX] lead/r2_unclosed_cd_20261108/_cdreport_check.py
+    stdout写 = sys.stdout.write@L235
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+  [UNKNOWN/NEEDS_FIX] lead/r2_unclosed_cd_20261108/_verify_cd.py
+    stdout写 = sys.stdout.write@L424
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+  [UNKNOWN/NEEDS_FIX] lead/re_line_20261105/W8_STATIC_LOCATE/reviews/_f6rev_probe.py
+    stdout写 = sys.stdout.write@L264
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+  [UNKNOWN/NEEDS_FIX] lead/stale_pass_20261109/_sp_gen_word.py
+    stdout写 = sys.stdout.buffer.write@L18
+    print(...)调用数 = 0 ; AST别名形式stdout写 = 0
+
+== class=UNKNOWN 且带 sys.stdout.write 的完整清单（含 buffer 形式，共 9 件）==
+   UNKNOWN 总件数 = 18 ; 命中 = 9 ; 未命中 = 9
+   其中严格 sys.stdout.write(...) = 8 件；仅 sys.stdout.buffer.write(...) = 1 件
+  - lead/minhard_check_20261109/_mhz_blocks2.py
+      class=UNKNOWN verdict=NEEDS_FIX
+      行号/形式 = L155 sys.stdout.write
+      n_print=0 ; 原判据 reasons 码 = CLASS,UNKNOWN
+  - lead/minhard_check_20261109/_mhz_lines2.py
+      class=UNKNOWN verdict=NEEDS_FIX
+      行号/形式 = L36 sys.stdout.write
+      n_print=0 ; 原判据 reasons 码 = CLASS,UNKNOWN
+  - lead/minhard_check_20261109/_mhz_slice.py
+      class=UNKNOWN verdict=NEEDS_FIX
+      行号/形式 = L41 sys.stdout.write
+      n_print=0 ; 原判据 reasons 码 = CLASS,UNKNOWN
+  - lead/minhard_check_20261109/_mhz_verify.py
+      class=UNKNOWN verdict=NEEDS_FIX
+      行号/形式 = L186 sys.stdout.write
+      n_print=0 ; 原判据 reasons 码 = CLASS,UNKNOWN
+  - lead/r2_unclosed_cd_20261108/_cd_check.py
+      class=UNKNOWN verdict=NEEDS_FIX
+      行号/形式 = L316 sys.stdout.write
+      n_print=0 ; 原判据 reasons 码 = CLASS,UNKNOWN
+  - lead/r2_unclosed_cd_20261108/_cdreport_check.py
+      class=UNKNOWN verdict=NEEDS_FIX
+      行号/形式 = L235 sys.stdout.write
+      n_print=0 ; 原判据 reasons 码 = CLASS,UNKNOWN
+  - lead/r2_unclosed_cd_20261108/_verify_cd.py
+      class=UNKNOWN verdict=NEEDS_FIX
+      行号/形式 = L424 sys.stdout.write
+      n_print=0 ; 原判据 reasons 码 = CLASS,UNKNOWN
+  - lead/re_line_20261105/W8_STATIC_LOCATE/reviews/_f6rev_probe.py
+      class=UNKNOWN verdict=NEEDS_FIX
+      行号/形式 = L264 sys.stdout.write
+      n_print=0 ; 原判据 reasons 码 = CLASS,UNKNOWN
+  - lead/stale_pass_20261109/_sp_gen_word.py
+      class=UNKNOWN verdict=NEEDS_FIX
+      行号/形式 = L18 sys.stdout.buffer.write
+      n_print=0 ; 原判据 reasons 码 = CLASS,UNKNOWN
+
+  [严格形式清单，不含 sys.stdout.buffer.write 的 8 件]
+    lead/minhard_check_20261109/_mhz_blocks2.py  L155
+    lead/minhard_check_20261109/_mhz_lines2.py  L36
+    lead/minhard_check_20261109/_mhz_slice.py  L41
+    lead/minhard_check_20261109/_mhz_verify.py  L186
+    lead/r2_unclosed_cd_20261108/_cd_check.py  L316
+    lead/r2_unclosed_cd_20261108/_cdreport_check.py  L235
+    lead/r2_unclosed_cd_20261108/_verify_cd.py  L424
+    lead/re_line_20261105/W8_STATIC_LOCATE/reviews/_f6rev_probe.py  L264
+
+  [UNKNOWN 中未命中任一 stdout 写调用的 9 件 —— 用于证明清单完整性]
+    lead/count_invariant_20261109/_civ_lib.py (class=UNKNOWN verdict=NEEDS_FIX)
+    lead/d13b_design_20261106/_state_machine.py (class=UNKNOWN verdict=NEEDS_FIX)
+    lead/gate_fp7_20261108/_g7_predicates.py (class=UNKNOWN verdict=NEEDS_FIX)
+    lead/gate_r9sem_20261109/_r9s_predicates.py (class=UNKNOWN verdict=NEEDS_FIX)
+    lead/gate_r9sem_20261109/_r9s_samples.py (class=UNKNOWN verdict=NEEDS_FIX)
+    lead/gate_v1v2_20261109/_v12_rule.py (class=UNKNOWN verdict=NEEDS_FIX)
+    lead/h5_governance_20261109/_h5_pasteable.py (class=UNKNOWN verdict=NEEDS_FIX)
+    lead/r11_f2_fix_20261109/_f2_r11plus.py (class=UNKNOWN verdict=NEEDS_FIX)
+    lead/re_line_20261105/A1_SAMPLER_CANDIDATE/frame_edge_sampler.py (class=UNKNOWN verdict=NEEDS_FIX)
+
+== 自检 ==
+  文本含 'sys.stdout.write' 但 AST 无对应调用的行 = 1 处（不计入命中）
+    lead/r2_unclosed_cd_20261108/_verify_cd.py:L383  w("      sys.stdout.write 调用 = %d（脚本只写 stdout）" %
+  import sys as / from sys import stdout 的别名形式 stdout 写调用 = 0 处
+

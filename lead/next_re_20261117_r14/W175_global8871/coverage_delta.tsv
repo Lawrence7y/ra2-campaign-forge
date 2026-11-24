@@ -1,0 +1,20 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+665650	RulesClass	RulesClass::RulesClass	thiscall ctor via new(0x18c0); sole caller 0x52BAD1; sets [obj+0]=0xF (non-polymorphic)	已证	EVIDENCE/t1_ctor_665650_extent.txt
+667A30	RulesClass	RulesClass::~RulesClass	dtor called directly at 0x6BEAAD (non-virtual); no write to [esi+0]	已证	EVIDENCE/t1_compare_ctor.txt
+6677B3	RulesClass	ctor write +0x1808 (default)	mov [esi+0x1808],ebx; byte 89 9E 08 18 00 00; ebx value UNPROVEN	已证	EVIDENCE/t2_doublechannel.txt
+6675B0	RulesClass	ctor write +0x172C (default)	mov [esi+0x172c],0x280 (=640); byte C7 86 2C 17 00 00	已证	EVIDENCE/t2_doublechannel.txt
+66CF70	RulesClass	RulesClass::Read_Radiation	INI [Radiation] reader; thiscall mov esi,ecx; writes +0x1808 from key RadApplicationDelay	已证	EVIDENCE/t2_ini_readers.txt
+66CFDC	RulesClass	INI write +0x1808	mov [esi+0x1808],eax <- Get_Integer([Radiation],RadApplicationDelay)	已证	EVIDENCE/t2_ini_readers.txt
+66B900	RulesClass	RulesClass::Read_CrateRules	INI [CrateRules] reader; writes +0x172C from key CrateRadius	已证	EVIDENCE/t3_global_writes.txt
+66BAA3	RulesClass	INI write +0x172C	mov [esi+0x172c],eax <- Get_Integer([CrateRules],CrateRadius)	已证	EVIDENCE/t3_global_writes.txt
+52BAD8	GlobalSingleton	write [0x8871E0] (success)	mov [0x8871E0],eax = RulesClass* from ctor 0x665650	已证	EVIDENCE/t1_callsite_52BA60.txt
+52BAFA	GlobalSingleton	write [0x8871E0] (fail=NULL)	mov [0x8871E0],ebx; ebx=0 from 0x52BA82 xor ebx,ebx	已证	EVIDENCE/t1_callsite_52BA60.txt
+6BEABD	GlobalSingleton	write [0x8871E0] (destroy=NULL)	mov [0x8871E0],ebx after dtor 0x667A30 + operator delete	已证	EVIDENCE/t1_cleanup_6BE1C0.txt
+52F63E	GlobalSwitch	write [0xA8ED6B]=0	mov byte [0xA8ED6B],bl; bl=0 from 0x52F639 xor ebx,ebx	已证	EVIDENCE/t3_final_verify.txt
+5A922F	GlobalSwitch	write [0xA8ED6B]=1 (temp)	mov byte [0xA8ED6B],1 after saving old value in al	已证	EVIDENCE/t3_final_verify.txt
+5A95A1	GlobalSwitch	restore [0xA8ED6B]	mov [0xA8ED6B],al (A2 moffs); al=saved old value from [esp+0x13]	已证	EVIDENCE/t3_final_verify.txt
+77780E	GlobalSwitch	write [0xB73550]=0 (shutdown)	mov dword [0xB73550],ebx; ebx=NULL after destroy of [0x887368]	已证	EVIDENCE/t3_final_verify.txt
+777CD6	GlobalSwitch	write [0xB73550]=HWND (A3)	mov [0xB73550],eax (A3 moffs); eax=USER32!CreateWindowExA return	已证	EVIDENCE/t3_final_verify.txt
+777D7E	GlobalSwitch	write [0xB73550]=HWND (A3, 2nd)	mov [0xB73550],eax (A3 moffs); 2nd CreateWindowExA, class "Yuri's Revenge"	已证	EVIDENCE/t3_bytechannel_full.txt
+4DA560	FootClass::AI	read +0x1808 as throttle	idiv dword [ecx+0x1808]; only consumer of RulesClass +0x1808 as divisor	已证	EVIDENCE/t2_disp_1808_172c.txt
+482943	DrawList	use +0x172C as distance cmp	cmp eax,[ecx+0x172c]; draw-list distance filter (INI: CrateRadius)	已证	EVIDENCE/t2_disp_1808_172c.txt

@@ -1,0 +1,14 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+5657a0	S12	MapClass::GetCellAt	ecx=0x87F7E8, idx=(Y<<9)+X, stride4, CellClass*=dword[dword[0x87F924]+idx*4]; 真机重算对74座建筑全得合理cell	[已证]	EVIDENCE/s2_baseline3.json
+87f924	S12	CellClassArrayBase	dword[0x87F924]=格数组基址(=MapClass单例0x87F7E8+0x13C)，取格路径A起点	[已证]	EVIDENCE/OBSERVATIONS.txt §5
+41bea0	S12	ObjectClass::GetMapCoords	vtable[+0x1B8]；Location(+0x9C/+0xA0)经sar8得cellX/cellY（静态§951路径，真机经obj_to_cell纯内存重算等价验证）	[静态推断]	EVIDENCE/OBSERVATIONS.txt §5
+e4	S12	CellClass.ChainHeadA	dword[cell+0xE4]为格内链表头A，元素next=+0x30；已存在NAPOWR(0x156820d0,cell47,91)链A长=1	[已证]	EVIDENCE/p01.json
+e8	S12	CellClass.ChainHeadB	dword[cell+0xE8]为格内链表头B；同上样本链B长=0	[已证]	EVIDENCE/p01.json
+520	S12	ObjectClass.TypePointer	obj+0x520=BuildingTypeClass*（非MapClass），+0x24为短ID串；真机读出NAPOWR/YAPOWR双射	[已证]	EVIDENCE/s2_baseline3.json
+21c	S12	TechnoClass.Owner	obj+0x21C=HouseClass*；唯一扣款对象0x15effce0的owner=PlayerHouse(0x10d50d30)	[已证]	EVIDENCE/OBSERVATIONS.txt §3
+a8ed84	S12	CurrentFrame	帧计数器，进局后从0单调递增；活动性唯一可靠判据	[已证]	EVIDENCE/s1_startgame2.json
+a8b238	S12	GameMode	0xA8B238=5 对应遭遇战/局内/暂停（≠局内充分条件）；进局时实测=5	[已证]	EVIDENCE/s1_skirmish.json
+b0f730	S12	AbstractClass::Array.Count	对象注册表计数（items@0xB0F724）；真机进局后=400+，用于枚举BuildingClass	[已证]	EVIDENCE/s2_baseline3.json
+a83d4c	S12	HouseClass::Player	[0xA83D4C]=PlayerHouse*；本卡实测=0x10d4ef60/0x10d50d30，+0x1EC=+0x1ED=1	[已证]	EVIDENCE/credit_probe.json
+30c	S12	HouseClass.CreditsDisplay	PlayerHouse+0x30C=侧栏额度真值（显示动画逼近）；扣款事件10000→9400精确-600	[已证]	EVIDENCE/credit_probe.png/json
+43f180	S12	BuildingClass::SetActiveState	slot73；mode1/3=Unlimbo挂链(o1 1→0,o2→1)、mode0=Limbo摘链；本卡limbo对象o1=1/o2=0未能转placed（静态语义§951，真机仅观测limbo态）	[静态推断]	EVIDENCE/OBSERVATIONS.txt §3

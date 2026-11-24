@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import ctypes.wintypes as wt
 import hashlib
 import json
 import os
@@ -463,7 +464,14 @@ def focus_game(hwnd: int, attempts: int = 3) -> bool:
     for i in range(attempts):
         user32.ShowWindow(hwnd, 9)          # SW_RESTORE：先恢复被 cnc-ddraw 隐藏的窗口
         time.sleep(0.2)
-        minimize_others()
+        if os.environ.get("RA2_SCREEN_MODE", "secondary") in ("secondary", "background"):
+            try:
+                import win_display_helper as _wdh
+                _wdh.place_hwnd_on_secondary(hwnd, no_activate=False)
+            except Exception:
+                pass
+        if os.environ.get("RA2_NO_MINIMIZE_PRIMARY", "1") != "1":
+            minimize_others()
         user32.BringWindowToTop(hwnd)
         fg = user32.GetForegroundWindow()
         if fg == hwnd:
@@ -507,6 +515,11 @@ def send_click(hwnd: int, lx: int, ly: int, *, lw: int = 800, lh: int = 600, hol
     l, t, r, b = window_bbox(hwnd)
     sx = l + int(lx / lw * (r - l))
     sy = t + int(ly / lh * (b - t))
+    orig_pt = None
+    if os.environ.get("RA2_RESTORE_CURSOR", "1") == "1":
+        pt = wt.POINT()
+        if user32.GetCursorPos(ctypes.byref(pt)):
+            orig_pt = (pt.x, pt.y)
     user32.SetCursorPos(sx, sy)
     time.sleep(0.3)
     a = _INP(type=0); a.u.mi = _MI(0, 0, 0, 0x0002, 0, None)
@@ -514,6 +527,9 @@ def send_click(hwnd: int, lx: int, ly: int, *, lw: int = 800, lh: int = 600, hol
     user32.SendInput(1, ctypes.byref(a), ctypes.sizeof(_INP))
     time.sleep(hold)
     user32.SendInput(1, ctypes.byref(b2), ctypes.sizeof(_INP))
+    if orig_pt is not None:
+        time.sleep(0.05)
+        user32.SetCursorPos(orig_pt[0], orig_pt[1])
     time.sleep(0.5)
 
 
@@ -859,6 +875,13 @@ CREATE_NEW_PROCESS_GROUP = 0x00200000
 def launch(*, no_render: bool = False, no_compat: bool = False) -> int:
     """启动游戏。注意：普通 Popen 实测可跨命令存活（游戏窗口保持可见）；
     DETACHED/BREAKAWAY 会导致 cnc-ddraw 失焦后隐藏窗口，导航点击全部落空。"""
+    screen_mode = os.environ.get("RA2_SCREEN_MODE", "secondary")
+    if not no_render and screen_mode in ("secondary", "background"):
+        try:
+            import win_display_helper as _wdh
+            _wdh.configure_ddraw_for_screen(GAME_DIR, mode=screen_mode)
+        except Exception:
+            pass
     exe = (GAME_DIR / ("gamemd.exe" if no_render else "ra2loader.exe")).resolve()
     env = dict(os.environ)
     if no_compat:
@@ -870,6 +893,15 @@ def launch(*, no_render: bool = False, no_compat: bool = False) -> int:
         pid = find_pid("gamemd.exe")
         if pid:
             time.sleep(2.0)
+            if not no_render and screen_mode in ("secondary", "background"):
+                try:
+                    import win_display_helper as _wdh
+                    for hw in _wdh.find_gamemd_hwnds():
+                        _wdh.place_hwnd_on_secondary(hw, no_activate=True)
+                    if os.environ.get("RA2_MUTE_AUDIO", "1") == "1":
+                        _wdh.start_mute_watcher(pid, mute=True)
+                except Exception:
+                    pass
             return pid
         time.sleep(0.5)
     raise RuntimeError("30s 内未启动 gamemd.exe")

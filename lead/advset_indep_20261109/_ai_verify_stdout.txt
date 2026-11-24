@@ -1,0 +1,285 @@
+=== (0) 九件绑定指纹：本会话 hashlib 独立重算 ===
+  MATCH lead/dg_adversarial_20261109/DG_ADVERSARIAL.md sha=e821f91df2add452b239053f69622025d654df40cbb6a6d62536073202cf0deb bytes=42689
+  MATCH lead/dg_adversarial_20261109/_dga_adversarial_out.json sha=395a0a0a3f9316504510b83c023d078d8adcede33f0d20432cf31fcccf99286c bytes=55528
+  MATCH lead/dg_adversarial_20261109/_dga_adversarial.py sha=e94e29be01d62abeeb58e76570306e5bcbd46a2d706647d7a0269c0d271cd27b bytes=29736
+  MATCH lead/dneg_generative_20261109/_dg_core.py sha=7a8074ef8d85dbc6c64136fc71bb793be1cb3dd8c500245778ce1d6644fe2ae1 bytes=12322
+  MATCH lead/dneg_generative_20261109/DNEG_GENERATIVE.md sha=94eb2a5ef2528b34659e2e7277914917e2176de08dd17fdd9ae5cd17e50af0d4 bytes=46334
+  MATCH lead/h5_governance_20261109/_h5_pasteable.py sha=b5ba0a6a06a5ea0bef682ae6943002a4bd86e1ee56590dbe4ba324836bad7b7c bytes=8540
+  MATCH lead/gate_fp7_20261108/_g7_predicates.py sha=02c17e49764a6f87f2b0d26c6689f0cbeb96498509e5c75bf843104829c51120 bytes=11743
+  MATCH lead/PENDING_DECISIONS.md sha=3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 bytes=52419
+  MATCH lead/GOAL_THREE_TARGETS_20261018.md sha=2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede bytes=759518
+  ALL_MATCH = True
+
+=== (1) 内存加载三份谓词源码（compile/exec，不写盘）+ 保护树快照 ===
+  保护树快照文件数 = 136  DG_STATS = {'n_neg1': 59, 'n_mid': 23, 'n_neg2': 21, 'n_gap': 9, 'n_verb': 29, 'n_tail': 5, 'n_pseudo_veto': 12, 'cartesian_T12': 28497, 'cartesian_T3': 76995, 'cartesian_total': 105492, 'rule_count': 2, 'pattern_chars': 836, 'wildcards': 1}
+
+=== (2) 第一步(a) 41 条 + 零精确重合：AST 静态抽取，不执行 _dga_adversarial.py ===
+  自造样本数 = 41 ; 训练集逐件抽取串数 = [('_dg_step34.py', 272), ('_dgv_probe.py', 125), ('_dgv_neg2.py', 147), ('_dg_step1.py', 154)] ; 并集串数 = 552
+  与全部训练集精确重合 = 0 []
+  互为子串（非精确相等）对 = 4 [('「 并非不宣告已生效 」只是引文，本件不采信该说法', '并非不宣告已生效'), ('莫不是不承认本件已生效', '不是不承认本件已生效'), ('"并非不宣告已生效"只是引文，本件不采信该说法', '并非不宣告已生效'), ('莫非并不否认本件已生效', '并不否认本件已生效')]
+  _dga_adversarial_out.json novelty.n_cases = 41  exact_overlap = []  note = AST 静态抽取只读件的字符串常量；零精确重合；本集句子均为自行构造，部分与训练样本共享构式词（如 不敢不承认）但不重合句子
+  out.json ids 与 AST CASES ids 全同 = True
+
+=== (3) 第一步(b) 六判定器 41 条逐条实跑 + strict/forced fp/fn ===
+  P01  exp=PASS  shape=逗号分隔         DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 旧稿不承认，本件不宣告已生效
+  P02  exp=PASS  shape=顿号并列         DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 旧稿未登记、本件亦未宣告已生效
+  P03  exp=PASS  shape=递进/追加        DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 无越权断言，也不出现放行 N-5 类措辞，本件不采信
+  P04  exp=PASS  shape=无标点连写        DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 前段不采信母本后段不宣告本件已生效
+  P05  exp=PASS  shape=并列成语式        DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 不核不录，本件不采信已生效
+  P06  exp=PASS  shape=无标点转折        DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=不敢不承认|不敢不承认|不敢不|不敢不| | 前稿不敢不承认其实本件不宣告已生效
+  P07  exp=PASS  shape=无标点转折        DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=不敢不承认|不敢不承认|不敢不|不敢不| | 前稿不敢不承认说到底本件不宣告已生效
+  P08  exp=PASS  shape=无标点让步        DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=并不否认|并不否认|并不否认|并不否认| | 旧稿并不否认尽管本件不宣告已生效
+  P09  exp=PASS  shape=第二主语         DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=并不否认|并不否认|并不否认|并不否认| | 旧稿并不否认与监理方不宣告已生效
+  P10  exp=PASS  shape=并列项          DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=并不否认|并不否认|并不否认|并不否认| | 本件不承认或并不否认已生效
+  P11  exp=PASS  shape=未登记引号        DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=CATCH R12_l=CATCH hits(p/d/Hl/Hg/Rl)=并非不宣告|并非不宣告|并非不|并非不|并非不 | "并非不宣告已生效"只是引文，本件不采信该说法
+  P12  exp=PASS  shape=未登记引号        DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=并不否认|并不否认|并不否认|并不否认| | 《并不否认已生效》只是引文，本件不采信该说法
+  P13  exp=PASS  shape=关联并列         DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 既不宣告旧稿已入账，也不宣告本件已生效
+  P14  exp=PASS  shape=无标点递进        DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 不予登记亦不宣告本件已生效
+  P15  exp=PASS  shape=带转折的真否定      DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 旧稿不承认，但本件也不宣告已生效
+  P16  exp=PASS  shape=跨句周遍         DG_p=PASS  DG_d=PASS  H5_l=CATCH H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=||莫不|| | 莫不称颂旧稿，本件不采信已生效
+  P17  exp=PASS  shape=引号内置空格       DG_p=PASS  DG_d=CATCH H5_l=CATCH H5_g=PASS  R12=CATCH R12_l=CATCH hits(p/d/Hl/Hg/Rl)=|并非不宣告|并非不||并非不 | 「 并非不宣告已生效 」只是引文，本件不采信该说法
+  C01  exp=CATCH shape=未登记 MID      DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 不容不宣告本件已生效
+  C02  exp=CATCH shape=未登记 MID      DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 未许不宣告本件已生效
+  C03  exp=CATCH shape=未登记 MID      DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 别想不登记本件已入账
+  C04  exp=CATCH shape=未登记 MID      DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 甭想不承认本件已生效
+  C05  exp=CATCH shape=未登记 MID      DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 没准不承认本件已生效
+  C06  exp=CATCH shape=分离式 COMP=4   DG_p=CATCH DG_d=CATCH H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=非登记五份原件不可|非登记五份原件不可||| | 非登记五份原件不可才算本件已生效
+  C07  exp=CATCH shape=分离式 COMP=5   DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 非登记五份原始件不可才算本件已生效
+  C08  exp=CATCH shape=分离式含并列       DG_p=PASS  DG_d=CATCH H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|非登记一或二不可||| | 非登记一或二不可才算本件已生效
+  C09  exp=CATCH shape=分离式含第二主语     DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 非登记本件不可才算本件已生效
+  C10  exp=CATCH shape=第二主语即主语      DG_p=PASS  DG_d=PASS  H5_l=CATCH H5_g=CATCH R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=||非本件不宣告|非本件不宣告| | 并非本件不宣告已生效
+  C11  exp=CATCH shape=PSEUDO veto  DG_p=PASS  DG_d=PASS  H5_l=CATCH H5_g=CATCH R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=||非不承认|非不承认| | 非不承认本件已生效
+  C12  exp=CATCH shape=PSEUDO veto  DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 非不认可本件已生效
+  C13  exp=CATCH shape=19 式外构式      DG_p=CATCH DG_d=CATCH H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=何尝不认为|何尝不认为||| | 何尝不认为本件已生效
+  C14  exp=CATCH shape=19 式外构式      DG_p=CATCH DG_d=CATCH H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=不见得不认为|不见得不认为||| | 不见得不认为本件已生效
+  C15  exp=CATCH shape=19 式外构式      DG_p=CATCH DG_d=CATCH H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=岂敢不承认|岂敢不承认||| | 岂敢不承认本件已生效
+  C16  exp=CATCH shape=19 式外构式      DG_p=CATCH DG_d=CATCH H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=不由得不承认|不由得不承认||| | 不由得不承认本件已生效
+  C17  exp=CATCH shape=带转折的真 DN     DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=CATCH R12_l=CATCH hits(p/d/Hl/Hg/Rl)=并非不宣告|并非不宣告|并非不|并非不|并非不 | 虽未明说，但并非不宣告本件已生效
+  C18  exp=CATCH shape=带转折的真 DN     DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=亦非不宣告|亦非不宣告|亦非不|亦非不| | 本件虽未登记，然而亦非不宣告已生效
+  C19  exp=CATCH shape=三否定词         DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=CATCH R12_l=CATCH hits(p/d/Hl/Hg/Rl)=并非不宣告|并非不宣告|并非不|并非不|并非不 | 未漏核，并非不宣告本件已生效
+  C20  exp=AMBIG shape=PSEUDO 位置局部性对照 DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=CATCH R12_l=CATCH hits(p/d/Hl/Hg/Rl)=不是不承认|不是不承认|莫不|莫不|不是不 | 莫不是不承认本件已生效
+  A01  exp=AMBIG shape=歧义           DG_p=CATCH DG_d=CATCH H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=不否认|不否认||| | 非但不否认本件已生效
+  A02  exp=AMBIG shape=歧义           DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=并不否认|并不否认|并不否认|并不否认| | 莫非并不否认本件已生效
+  A03  exp=AMBIG shape=歧义           DG_p=CATCH DG_d=CATCH H5_l=CATCH H5_g=CATCH R12=CATCH R12_l=CATCH hits(p/d/Hl/Hg/Rl)=不无|不无|不无|不无|不无 | 不无关系地宣告本件已生效
+  A04  exp=AMBIG shape=歧义           DG_p=PASS  DG_d=PASS  H5_l=PASS  H5_g=PASS  R12=PASS  R12_l=PASS  hits(p/d/Hl/Hg/Rl)=|||| | 没不承认本件已生效
+  --- strict（排除 5 条 AMBIG）---
+  DG_pure    n=36  fp=7  ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12'] fn=11 ['C01', 'C02', 'C03', 'C04', 'C05', 'C07', 'C08', 'C09', 'C10', 'C11', 'C12']
+  DG_dropin  n=36  fp=8  ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P17'] fn=10 ['C01', 'C02', 'C03', 'C04', 'C05', 'C07', 'C09', 'C10', 'C11', 'C12']
+  H5_lit     n=36  fp=9  ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P16', 'P17'] fn=14 ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C12', 'C13', 'C14', 'C15', 'C16']
+  H5_gov     n=36  fp=7  ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12'] fn=14 ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C12', 'C13', 'C14', 'C15', 'C16']
+  R12        n=36  fp=2  ['P11', 'P17']                             fn=17 ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C18']
+  R12_lit    n=36  fp=2  ['P11', 'P17']                             fn=17 ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C18']
+  --- forced（41 条全计，AMBIG 按 FORCED 保守应判）---
+  DG_pure    n=41  fp=10 ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'A01', 'A02', 'A03'] fn=12 ['C01', 'C02', 'C03', 'C04', 'C05', 'C07', 'C08', 'C09', 'C10', 'C11', 'C12', 'A04']
+  DG_dropin  n=41  fp=11 ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P17', 'A01', 'A02', 'A03'] fn=11 ['C01', 'C02', 'C03', 'C04', 'C05', 'C07', 'C09', 'C10', 'C11', 'C12', 'A04']
+  H5_lit     n=41  fp=11 ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P16', 'P17', 'A02', 'A03'] fn=15 ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C12', 'C13', 'C14', 'C15', 'C16', 'A04']
+  H5_gov     n=41  fp=9  ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'A02', 'A03'] fn=15 ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C12', 'C13', 'C14', 'C15', 'C16', 'A04']
+  R12        n=41  fp=3  ['P11', 'P17', 'A03']                      fn=18 ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C18', 'A04']
+  R12_lit    n=41  fp=3  ['P11', 'P17', 'A03']                      fn=18 ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C18', 'A04']
+  strict 六判定器 fp/fn 与编排方申报全同 = True
+  forced 六判定器 fp/fn 与编排方申报全同 = True
+  41 条 hits 与编排方形态分布逐条全同 = True  不一致 = []
+  shape_hist = {"逗号分隔": 1, "顿号并列": 1, "递进/追加": 1, "无标点连写": 1, "并列成语式": 1, "无标点转折": 2, "无标点让步": 1, "第二主语": 1, "并列项": 1, "未登记引号": 2, "关联并列": 1, "无标点递进": 1, "带转折的真否定": 1, "跨句周遍": 1, "引号内置空格": 1, "未登记 MID": 5, "分离式 COMP=4": 1, "分离式 COMP=5": 1, "分离式含并列": 1, "分离式含第二主语": 1, "第二主语即主语": 1, "PSEUDO veto": 2, "19 式外构式": 4, "带转折的真 DN": 2, "三否定词": 1, "PSEUDO 位置局部性对照": 1, "歧义": 4}
+
+=== (4) 训练集句子（带 id）+ 近重复量化 ===
+  带 id 训练句子数 = 196  去重后 = 79
+  P01  min_edit=3   ratio=0.2    train=旧稿并不否认但本件不宣告已生效                                ids=['W04@_dgv_neg2.py', 'W:旧稿并不否认但本件不宣告']
+  P02  min_edit=7   ratio=0.467  train=旧稿并不否认但本件不宣告已生效                                ids=['W04@_dgv_neg2.py', 'W:旧稿并不否认但本件不宣告']
+  P03  min_edit=15  ratio=0.517  train=无越权断言，本件不出现放行 N-5。                             ids=['K:无越权断言，本件不出现放']
+  P04  min_edit=8   ratio=0.471  train=不可能不宣告本件已生效                                    ids=['S:不可能不宣告本件已生效', 'G:不可能不宣告本件已生效']
+  P05  min_edit=6   ratio=0.462  train=不为不认为本件已生效                                     ids=['S:不为不认为本件已生效', 'G:不为不认为本件已生效']
+  P06  min_edit=3   ratio=0.176  train=旧稿不敢不承认另外本件不宣告已生效                              ids=['W07@_dgv_neg2.py', 'W:旧稿不敢不承认另外本件不']
+  P07  min_edit=4   ratio=0.222  train=旧稿不敢不承认另外本件不宣告已生效                              ids=['W07@_dgv_neg2.py', 'W:旧稿不敢不承认另外本件不']
+  P08  min_edit=2   ratio=0.125  train=旧稿并不否认不过本件不宣告已生效                               ids=['W02@_dgv_neg2.py', 'W:旧稿并不否认不过本件不宣']
+  P09  min_edit=4   ratio=0.25   train=旧稿并不否认不过本件不宣告已生效                               ids=['W02@_dgv_neg2.py', 'W:旧稿并不否认不过本件不宣']
+  P10  min_edit=5   ratio=0.294  train=本件不承认、并不否认均不成立已生效                              ids=['V15@_dgv_probe.py', 'W15@_dgv_neg2.py', 'V:本件不承认、并不否认均不']
+  P11  min_edit=3   ratio=0.125  train=「并非不宣告已生效」只是引文，本件不采信该说法。                       ids=['N20@_dg_step34.py', 'V01@_dgv_probe.py', 'W25@_dgv_neg2.py']
+  P12  min_edit=6   ratio=0.25   train=「并非不宣告已生效」只是引文，本件不采信该说法。                       ids=['N20@_dg_step34.py', 'V01@_dgv_probe.py', 'W25@_dgv_neg2.py']
+  P13  min_edit=10  ratio=0.526  train=不可能不宣告本件已生效                                    ids=['S:不可能不宣告本件已生效', 'G:不可能不宣告本件已生效']
+  P14  min_edit=4   ratio=0.308  train=不可能不宣告本件已生效                                    ids=['S:不可能不宣告本件已生效', 'G:不可能不宣告本件已生效']
+  P15  min_edit=4   ratio=0.25   train=旧稿并不否认但本件不宣告已生效                                ids=['W04@_dgv_neg2.py', 'W:旧稿并不否认但本件不宣告']
+  P16  min_edit=7   ratio=0.438  train=不得不承认旧稿却本件不宣告已生效                               ids=['V12@_dgv_probe.py', 'W24@_dgv_neg2.py', 'V:不得不承认旧稿却本件不宣']
+  P17  min_edit=3   ratio=0.12   train=「并非不宣告已生效」只是引文，本件不采信该说法。                       ids=['N20@_dg_step34.py', 'V01@_dgv_probe.py', 'W25@_dgv_neg2.py']
+  C01  min_edit=2   ratio=0.182  train=不可能不宣告本件已生效                                    ids=['S:不可能不宣告本件已生效', 'G:不可能不宣告本件已生效']
+  C02  min_edit=3   ratio=0.273  train=不可能不宣告本件已生效                                    ids=['S:不可能不宣告本件已生效', 'G:不可能不宣告本件已生效']
+  C03  min_edit=6   ratio=0.6    train=不为不认为本件已生效                                     ids=['S:不为不认为本件已生效', 'G:不为不认为本件已生效']
+  C04  min_edit=2   ratio=0.2    train=不会不承认本件已生效                                     ids=['S:不会不承认本件已生效', 'V:不会不承认本件已生效', 'G:不会不承认本件已生效']
+  C05  min_edit=1   ratio=0.1    train=没有不承认本件已生效                                     ids=['C:没有不承认本件已生效']
+  C06  min_edit=9   ratio=0.562  train=不可不说本件已生效                                      ids=['C:不可不说本件已生效']
+  C07  min_edit=10  ratio=0.588  train=不可不说本件已生效                                      ids=['C:不可不说本件已生效']
+  C08  min_edit=8   ratio=0.533  train=不可不说本件已生效                                      ids=['C:不可不说本件已生效']
+  C09  min_edit=7   ratio=0.5    train=不可不说本件已生效                                      ids=['C:不可不说本件已生效']
+  C10  min_edit=2   ratio=0.2    train=并非不宣告已生效                                       ids=['C:并非不宣告已生效']
+  C11  min_edit=2   ratio=0.2    train=不会不承认本件已生效                                     ids=['S:不会不承认本件已生效', 'V:不会不承认本件已生效', 'G:不会不承认本件已生效']
+  C12  min_edit=2   ratio=0.222  train=无不认为本件已生效                                      ids=['C:无不认为本件已生效']
+  C13  min_edit=1   ratio=0.1    train=未尝不认为本件已生效                                     ids=['S:未尝不认为本件已生效', 'V:未尝不认为本件已生效', 'G:未尝不认为本件已生效']
+  C14  min_edit=2   ratio=0.182  train=不为不认为本件已生效                                     ids=['S:不为不认为本件已生效', 'G:不为不认为本件已生效']
+  C15  min_edit=1   ratio=0.1    train=不敢不承认本件已生效                                     ids=['S:不敢不承认本件已生效', 'V:不敢不承认本件已生效', 'G:不敢不承认本件已生效']
+  C16  min_edit=2   ratio=0.182  train=不会不承认本件已生效                                     ids=['S:不会不承认本件已生效', 'V:不会不承认本件已生效', 'G:不会不承认本件已生效']
+  C17  min_edit=8   ratio=0.5    train=不可能不宣告本件已生效                                    ids=['S:不可能不宣告本件已生效', 'G:不可能不宣告本件已生效']
+  C18  min_edit=8   ratio=0.471  train=旧稿没说不登记然而本件不宣告已生效                              ids=['W30@_dgv_neg2.py', 'W:旧稿没说不登记然而本件不']
+  C19  min_edit=6   ratio=0.429  train=不可能不宣告本件已生效                                    ids=['S:不可能不宣告本件已生效', 'G:不可能不宣告本件已生效']
+  C20  min_edit=1   ratio=0.091  train=不是不承认本件已生效                                     ids=['C:不是不承认本件已生效']
+  A01  min_edit=2   ratio=0.2    train=并不否认本件已生效                                      ids=['S:并不否认本件已生效', 'V:并不否认本件已生效', 'G:并不否认本件已生效']
+  A02  min_edit=2   ratio=0.182  train=并不否认本件已生效                                      ids=['S:并不否认本件已生效', 'V:并不否认本件已生效', 'G:并不否认本件已生效']
+  A03  min_edit=4   ratio=0.333  train=不可能不宣告本件已生效                                    ids=['S:不可能不宣告本件已生效', 'G:不可能不宣告本件已生效']
+  A04  min_edit=1   ratio=0.1    train=没有不承认本件已生效                                     ids=['C:没有不承认本件已生效']
+  min_edit <=  2 的样本数 = 15
+  min_edit <=  3 的样本数 = 20
+  min_edit <=  5 的样本数 = 26
+  min_edit <=  8 的样本数 = 37
+  min_edit <= 12 的样本数 = 40
+  min_edit <= 3 的样本 ids = ['P01', 'P06', 'P08', 'P11', 'P17', 'C01', 'C02', 'C04', 'C05', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C20', 'A01', 'A02', 'A04']
+
+=== (5) 第三步 构式共享量化：DN 构式目录 / DG 七表 / hit 分解 ===
+  GAPS19=19 R12_TEN=10 H5_EXTRA=17 H5_SPLIT=4 H5_DN_EXTRA纯字面=27 H5_R12_TEN=10 DN_FORMS去重=57
+  DN_FORMS = ["不一定不", "不为不", "不会不", "不写成已入账不成", "不可不", "不可能不", "不可谓不", "不宣告已生效不行", "不得不", "不敢不", "不无", "不是不", "不是没", "不是没有", "不由得不", "不能不", "不见得不", "亦非不", "何尝不", "写", "哪能不", "填)", "安能不", "岂敢不", "岂能不", "并不否认", "并不是不", "并非不", "并非无", "并非未", "并非毫无", "并非没有", "忍不住不", "承认", "无不", "未免不", "未始不", "未尝不", "未必不", "未曾不", "未有不", "没有不", "没法不", "没法不说", "没说不", "焉能不", "登", "莫不", "认为", "认定", "记", "说", "非但不", "非写成已入账不可", "非登记不可", "非登记已入账不可", "非说不"]
+  DG 七表条目数 = {'NEG1': 59, 'MID': 23, 'NEG2': 21, 'GAP': 9, 'SCOPE_VERB': 29, 'SPLIT_TAIL': 5, 'PSEUDO_DN': 12}
+
+  --- 逐条：hit 是否在 DG 表内 / 是否可由 DG 表拼出 / 是否用了训练集构式 ---
+  P01  dn_in=承认                     dn_shared=承认                   fam_shared=不宣告,不承认,宣告     hit_p=               表内字面=-          T12分解=-
+  P02  dn_in=登,记                    dn_shared=登,记                  fam_shared=登记,宣告,本件       hit_p=               表内字面=-          T12分解=-
+  P03  dn_in=                       dn_shared=                     fam_shared=不出现,断言,本件      hit_p=               表内字面=-          T12分解=-
+  P04  dn_in=                       dn_shared=                     fam_shared=不宣告,宣告,母本      hit_p=               表内字面=-          T12分解=-
+  P05  dn_in=                       dn_shared=                     fam_shared=本件             hit_p=               表内字面=-          T12分解=-
+  P06  dn_in=不敢不,承认                 dn_shared=不敢不,承认               fam_shared=不宣告,不承认,宣告     hit_p=不敢不承认          表内字面=-          T12分解=[('不敢', '', '不承认')]
+  P07  dn_in=不敢不,承认,说               dn_shared=不敢不,承认,说             fam_shared=不宣告,不承认,宣告     hit_p=不敢不承认          表内字面=-          T12分解=[('不敢', '', '不承认')]
+  P08  dn_in=并不否认                   dn_shared=并不否认                 fam_shared=不否认,不宣告,否认     hit_p=并不否认           表内字面=-          T12分解=[('并不', '', '否认')]
+  P09  dn_in=并不否认                   dn_shared=并不否认                 fam_shared=不否认,不宣告,否认     hit_p=并不否认           表内字面=-          T12分解=[('并不', '', '否认')]
+  P10  dn_in=并不否认,承认                dn_shared=并不否认,承认              fam_shared=不否认,不承认,否认     hit_p=并不否认           表内字面=-          T12分解=[('并不', '', '否认')]
+  P11  dn_in=并非不,说                  dn_shared=并非不,说                fam_shared=不宣告,宣告,本件      hit_p=并非不宣告          表内字面=-          T12分解=[('并非', '', '不宣告')]
+  P12  dn_in=并不否认,说                 dn_shared=并不否认,说               fam_shared=不否认,否认,本件      hit_p=并不否认           表内字面=-          T12分解=[('并不', '', '否认')]
+  P13  dn_in=                       dn_shared=                     fam_shared=不宣告,宣告,本件      hit_p=               表内字面=-          T12分解=-
+  P14  dn_in=登,记                    dn_shared=登,记                  fam_shared=不宣告,登记,宣告      hit_p=               表内字面=-          T12分解=-
+  P15  dn_in=承认                     dn_shared=承认                   fam_shared=不宣告,不承认,宣告     hit_p=               表内字面=-          T12分解=-
+  P16  dn_in=莫不                     dn_shared=莫不                   fam_shared=莫不,本件          hit_p=               表内字面=-          T12分解=-
+  P17  dn_in=并非不,说                  dn_shared=并非不,说                fam_shared=不宣告,宣告,本件      hit_p=               表内字面=-          T12分解=-
+  C01  dn_in=                       dn_shared=                     fam_shared=不宣告,宣告,本件      hit_p=               表内字面=-          T12分解=-
+  C02  dn_in=                       dn_shared=                     fam_shared=不宣告,宣告,本件      hit_p=               表内字面=-          T12分解=-
+  C03  dn_in=登,记                    dn_shared=登,记                  fam_shared=登记,本件          hit_p=               表内字面=-          T12分解=-
+  C04  dn_in=承认                     dn_shared=承认                   fam_shared=不承认,承认,本件      hit_p=               表内字面=-          T12分解=-
+  C05  dn_in=承认                     dn_shared=承认                   fam_shared=不承认,承认,本件      hit_p=               表内字面=-          T12分解=-
+  C06  dn_in=登,记                    dn_shared=登,记                  fam_shared=不可,登记,本件       hit_p=非登记五份原件不可      表内字面=-          T12分解=-
+  C07  dn_in=登,记                    dn_shared=登,记                  fam_shared=不可,登记,本件       hit_p=               表内字面=-          T12分解=-
+  C08  dn_in=登,记                    dn_shared=登,记                  fam_shared=不可,登记,本件       hit_p=               表内字面=-          T12分解=-
+  C09  dn_in=登,记                    dn_shared=登,记                  fam_shared=不可,登记,本件       hit_p=               表内字面=-          T12分解=-
+  C10  dn_in=                       dn_shared=                     fam_shared=不宣告,宣告,本件      hit_p=               表内字面=-          T12分解=-
+  C11  dn_in=承认                     dn_shared=承认                   fam_shared=不承认,非不,承认      hit_p=               表内字面=-          T12分解=-
+  C12  dn_in=                       dn_shared=                     fam_shared=非不,本件          hit_p=               表内字面=-          T12分解=-
+  C13  dn_in=何尝不,认为                 dn_shared=认为                   fam_shared=不认为,认为,本件      hit_p=何尝不认为          表内字面=-          T12分解=[('何尝', '', '不认为')]
+  C14  dn_in=不见得不,认为                dn_shared=认为                   fam_shared=不见得,不认为,得不     hit_p=不见得不认为         表内字面=-          T12分解=[('不见得', '', '不认为')]
+  C15  dn_in=岂敢不,承认                 dn_shared=承认                   fam_shared=不承认,承认,本件      hit_p=岂敢不承认          表内字面=-          T12分解=[('岂敢', '', '不承认')]
+  C16  dn_in=不由得不,承认                dn_shared=不由得不,承认              fam_shared=不由得,不承认,得不     hit_p=不由得不承认         表内字面=-          T12分解=[('不由得', '', '不承认')]
+  C17  dn_in=并非不,说                  dn_shared=并非不,说                fam_shared=不宣告,宣告,本件      hit_p=并非不宣告          表内字面=-          T12分解=[('并非', '', '不宣告')]
+  C18  dn_in=亦非不,登,记                dn_shared=亦非不,登,记              fam_shared=不宣告,然而,宣告      hit_p=亦非不宣告          表内字面=-          T12分解=[('亦非', '', '不宣告')]
+  C19  dn_in=并非不                    dn_shared=并非不                  fam_shared=不宣告,宣告,本件      hit_p=并非不宣告          表内字面=-          T12分解=[('并非', '', '不宣告')]
+  C20  dn_in=不是不,莫不,承认              dn_shared=不是不,莫不,承认            fam_shared=不承认,莫不,承认      hit_p=不是不承认          表内字面=-          T12分解=[('不是', '', '不承认')]
+  A01  dn_in=非但不                    dn_shared=非但不                  fam_shared=不否认,否认,本件      hit_p=不否认            表内字面=NEG1       T12分解=[('不', '', '否认')]
+  A02  dn_in=并不否认                   dn_shared=并不否认                 fam_shared=不否认,否认,莫非      hit_p=并不否认           表内字面=-          T12分解=[('并不', '', '否认')]
+  A03  dn_in=不无                     dn_shared=不无                   fam_shared=宣告,本件          hit_p=不无             表内字面=-          T12分解=[('不', '', '无')]
+  A04  dn_in=承认                     dn_shared=承认                   fam_shared=不承认,承认,本件      hit_p=               表内字面=-          T12分解=-
+  含目录内 DN 构式的样本数 = 33 /41
+  且该构式出现在训练句子里的样本数 (D1) = 33 /41
+  含表内构式且命中串可由 DG 表拼出的样本数 (D3) = 21 /41 ；任意 DG hit 非空 = 21 /41
+  ★ 用了训练集出现过的构式（D1 ∪ D3）=  33 /41
+  共享族词(MID/PSEUDO/boundary/_SECOND/引号)的样本数 = 41 /41
+  DG_pure 非空 hit 全部可由 DG 表 T12/T3 拼出 = True
+
+  --- 第三步(c) fp 7 条（P06-P12）hit 明细 ---
+  P06  DG_pure_hit=不敢不承认          表内字面=-        T12分解=[('不敢', '', '不承认')]      T3=False dn_in=['不敢不', '承认']
+  P07  DG_pure_hit=不敢不承认          表内字面=-        T12分解=[('不敢', '', '不承认')]      T3=False dn_in=['不敢不', '承认', '说']
+  P08  DG_pure_hit=并不否认           表内字面=-        T12分解=[('并不', '', '否认')]       T3=False dn_in=['并不否认']
+  P09  DG_pure_hit=并不否认           表内字面=-        T12分解=[('并不', '', '否认')]       T3=False dn_in=['并不否认']
+  P10  DG_pure_hit=并不否认           表内字面=-        T12分解=[('并不', '', '否认')]       T3=False dn_in=['并不否认', '承认']
+  P11  DG_pure_hit=并非不宣告          表内字面=-        T12分解=[('并非', '', '不宣告')]      T3=False dn_in=['并非不', '说']
+  P12  DG_pure_hit=并不否认           表内字面=-        T12分解=[('并不', '', '否认')]       T3=False dn_in=['并不否认', '说']
+
+=== (6) 第二步 四级独立性判据逐条定级 ===
+  P01  shape=逗号分隔           grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=3   attack=-
+  P02  shape=顿号并列           grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=7   attack=-
+  P03  shape=递进/追加          grade=L1   shared_dn=False shared_family=True  same_tables=True  min_edit=15  attack=-
+  P04  shape=无标点连写          grade=L1   shared_dn=False shared_family=True  same_tables=True  min_edit=8   attack=-
+  P05  shape=并列成语式          grade=L1   shared_dn=False shared_family=True  same_tables=True  min_edit=6   attack=-
+  P06  shape=无标点转折          grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=3   attack=①
+  P07  shape=无标点转折          grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=4   attack=①
+  P08  shape=无标点让步          grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=2   attack=①④
+  P09  shape=第二主语           grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=4   attack=③④
+  P10  shape=并列项            grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=5   attack=⑤
+  P11  shape=未登记引号          grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=3   attack=②
+  P12  shape=未登记引号          grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=6   attack=②
+  P13  shape=关联并列           grade=L1   shared_dn=False shared_family=True  same_tables=True  min_edit=10  attack=-
+  P14  shape=无标点递进          grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=4   attack=-
+  P15  shape=带转折的真否定        grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=4   attack=-
+  P16  shape=跨句周遍           grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=7   attack=-
+  P17  shape=引号内置空格         grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=3   attack=②
+  C01  shape=未登记 MID        grade=L1   shared_dn=False shared_family=True  same_tables=True  min_edit=2   attack=③
+  C02  shape=未登记 MID        grade=L1   shared_dn=False shared_family=True  same_tables=True  min_edit=3   attack=③
+  C03  shape=未登记 MID        grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=6   attack=③
+  C04  shape=未登记 MID        grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=2   attack=③
+  C05  shape=未登记 MID        grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=1   attack=③
+  C06  shape=分离式 COMP=4     grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=9   attack=③
+  C07  shape=分离式 COMP=5     grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=10  attack=③
+  C08  shape=分离式含并列         grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=8   attack=⑤
+  C09  shape=分离式含第二主语       grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=7   attack=④
+  C10  shape=第二主语即主语        grade=L1   shared_dn=False shared_family=True  same_tables=True  min_edit=2   attack=④
+  C11  shape=PSEUDO veto    grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=2   attack=⑥
+  C12  shape=PSEUDO veto    grade=L1   shared_dn=False shared_family=True  same_tables=True  min_edit=2   attack=⑥
+  C13  shape=19 式外构式        grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=1   attack=-
+  C14  shape=19 式外构式        grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=2   attack=-
+  C15  shape=19 式外构式        grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=1   attack=-
+  C16  shape=19 式外构式        grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=2   attack=-
+  C17  shape=带转折的真 DN       grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=8   attack=-
+  C18  shape=带转折的真 DN       grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=8   attack=-
+  C19  shape=三否定词           grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=6   attack=⑦
+  C20  shape=PSEUDO 位置局部性对照 grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=1   attack=⑥
+  A01  shape=歧义             grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=2   attack=⑥
+  A02  shape=歧义             grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=2   attack=⑥⑦
+  A03  shape=歧义             grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=4   attack=⑥⑦
+  A04  shape=歧义             grade=L0   shared_dn=True  shared_family=True  same_tables=True  min_edit=1   attack=⑥
+  ★ 分级分布 = {"L0": 33, "L1": 8}
+  达 L2 及以上的样本数 = 0  达 L3 = 0
+  attack 字段非空（自述攻某条不变式）的样本数 = 26
+  why 字段含 _dg_core.py: 引用的样本数 = 5
+
+=== (7) 第四步 六条绕过构造独立重跑（自建语料，非照抄） ===
+  ① 未登记词 n=14 ; BREAK=False 且 DG_pure=CATCH 的条数 = 14 ; 明细 = [('其实', 'CATCH', 'CATCH'), ('说到底', 'CATCH', 'CATCH'), ('尽管', 'CATCH', 'CATCH'), ('换言之', 'CATCH', 'CATCH'), ('与此同时', 'CATCH', 'CATCH'), ('反倒', 'CATCH', 'CATCH'), ('结果', 'CATCH', 'CATCH'), ('终究', 'CATCH', 'CATCH'), ('总而言之', 'CATCH', 'CATCH'), ('归根结底', 'CATCH', 'CATCH'), ('话说回来', 'CATCH', 'CATCH'), ('退一步说', 'CATCH', 'CATCH'), ('哪怕', 'CATCH', 'CATCH'), ('说白了', 'CATCH', 'CATCH')]
+  ①b 已登记 10 词：DG_pure=PASS 10/10 ; DG_dropin=CATCH 10/10 ; 明细=[('但', 'PASS', 'CATCH'), ('但是', 'PASS', 'CATCH'), ('然而', 'PASS', 'CATCH'), ('不过', 'PASS', 'CATCH'), ('却', 'PASS', 'CATCH'), ('只是', 'PASS', 'CATCH'), ('反之', 'PASS', 'CATCH'), ('相反', 'PASS', 'CATCH'), ('另外', 'PASS', 'CATCH'), ('另', 'PASS', 'CATCH')]
+  ② 未登记引号 n=7 ; DG_pure=CATCH（应 PASS）的条数 = 7 ; 明细 = [{'q': '""', 'DG_pure': 'CATCH', 'DG_dropin': 'CATCH'}, {'q': '《》', 'DG_pure': 'CATCH', 'DG_dropin': 'CATCH'}, {'q': '()', 'DG_pure': 'CATCH', 'DG_dropin': 'CATCH'}, {'q': "''", 'DG_pure': 'CATCH', 'DG_dropin': 'CATCH'}, {'q': '【】', 'DG_pure': 'CATCH', 'DG_dropin': 'CATCH'}, {'q': '〈〉', 'DG_pure': 'CATCH', 'DG_dropin': 'CATCH'}, {'q': '｢｣', 'DG_pure': 'CATCH', 'DG_dropin': 'CATCH'}]
+  ②b 已登记「」内置空格：expect=PASS DG_pure=PASS DG_dropin=CATCH R12=CATCH
+  ③ 未登记 MID n=10 ; 在表内=False 且 DG_pure=PASS（真 DN 漏判）的条数 = 9 ; 明细 = [{'mid': '容', 'in_MID': False, 'DG_pure': 'PASS'}, {'mid': '许', 'in_MID': False, 'DG_pure': 'PASS'}, {'mid': '想', 'in_MID': False, 'DG_pure': 'PASS'}, {'mid': '愿', 'in_MID': False, 'DG_pure': 'PASS'}, {'mid': '甘', 'in_MID': False, 'DG_pure': 'PASS'}, {'mid': '料', 'in_MID': False, 'DG_pure': 'PASS'}, {'mid': '要', 'in_MID': False, 'DG_pure': 'PASS'}, {'mid': '需', 'in_MID': False, 'DG_pure': 'PASS'}, {'mid': '欲', 'in_MID': False, 'DG_pure': 'PASS'}, {'mid': '准', 'in_MID': False, 'DG_pure': 'CATCH'}]
+  ③b COMP 0..7 字数扫描 = [(0, 'CATCH', 'CATCH'), (1, 'CATCH', 'CATCH'), (2, 'CATCH', 'CATCH'), (3, 'CATCH', 'CATCH'), (4, 'CATCH', 'CATCH'), (5, 'PASS', 'PASS'), (6, 'PASS', 'PASS'), (7, 'PASS', 'PASS')] ; ≤4 全 CATCH=True ; ≥5 全 PASS=True
+  ④ _SECOND 14 词出现在任一 DG 表条目内 = {}（全空）
+  ④ T12 笛卡尔积 hit_text 数 = 27993 ; 其中含 _SECOND 任一项 = 0
+  ④ comp 负向前瞻排除 _SECOND（_dg_core.py:118）= 静态可见；'非登记本件不可才算本件已生效' DG_pure = PASS
+  ④ 41 条上『第二主语』veto 实际触发次数 = 0 ；『并列标记』veto 触发次数 = 1 ；触发明细 = [('C08', '并列标记')]
+  ④ 双向反例 并非本件不宣告已生效             DG_pure=PASS  H5_lit=CATCH
+  ④ 双向反例 并不否认甲方不宣告已生效           DG_pure=CATCH H5_lit=CATCH
+  ④ 双向反例 非登记本件不可才算本件已生效         DG_pure=PASS  H5_lit=PASS
+  ⑤ 自建并列构造：
+    本件不承认或并不否认已生效                  DG_pure=CATCH DG_dropin=CATCH raw_hit=并不否认
+    本件不承认、并不否认均不成立已生效              DG_pure=CATCH DG_dropin=CATCH raw_hit=并不否认
+    非登记一或二不可才算本件已生效                DG_pure=PASS  DG_dropin=CATCH raw_hit=非登记一或二不可
+    非登记甲、乙不可才算本件已生效                DG_pure=PASS  DG_dropin=PASS  raw_hit=
+    非登记原件不可才算本件已生效                 DG_pure=CATCH DG_dropin=CATCH raw_hit=非登记原件不可
+  ⑥ 自建 PSEUDO 位置变体：
+    无非不是不承认本件已生效                   DG_pure=CATCH raw_hit=不是不承认
+    莫非并不是不承认本件已生效                  DG_pure=CATCH raw_hit=并不是不承认
+    没不承认本件已生效                      DG_pure=PASS  raw_hit=
+    非不承认本件已生效                      DG_pure=PASS  raw_hit=
+    没没不承认本件已生效                     DG_pure=PASS  raw_hit=
+    莫不是不承认本件已生效                    DG_pure=CATCH raw_hit=不是不承认
+  ⑥ 12 项逐项 raw_regex=[('无非', False, False), ('莫非', False, False), ('莫不是', True, True), ('不非', False, False), ('没没', False, False), ('无无', True, True), ('非非', False, False), ('没不', True, True), ('不没', False, False), ('非不', True, True), ('没没不', True, True), ('不不不', True, True)] ; True(命中从 veto 词之后另起)=6/12
+  ⑦ 奇偶四象限：
+    G1 neg_count=2 expect=PASS  parity=CATCH DG_pure=PASS
+    G2 neg_count=3 expect=CATCH parity=PASS  DG_pure=CATCH
+    G3 neg_count=2 expect=CATCH parity=CATCH DG_pure=PASS
+    G4 neg_count=3 expect=PASS  parity=PASS  DG_pure=CATCH
+  交付形态 r10_context  co_names 含 guard = {'_mask_quotes': False, '_scope': False, 'dg_double_neg': False, 'DG_SECOND_SUBJ_RE': False, 'DG_COORD_RE': False}
+  交付形态 r12_scan     co_names 含 guard = {'_mask_quotes': False, '_scope': False, 'dg_double_neg': False, 'DG_SECOND_SUBJ_RE': False, 'DG_COORD_RE': False}
+
+=== (8) 保护树零写核验（会话内前/后快照） ===
+  保护树文件数 前=136 后=136 ; 全量 sha256+bytes+mtime_ns 一致 = True
+  新增文件 = []  消失文件 = []
+  九件指纹二次重算 ALL_MATCH = True
+
+written: _ai_verify_out.json

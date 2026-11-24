@@ -1,0 +1,3 @@
+reg add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers" /v "%~dp0Ra2.exe" /t REG_SZ /d "~ RUNASADMIN 16BITCOLOR WINXPSP2" /f
+reg add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers" /v "%~dp0Ra2md.exe" /t REG_SZ /d "~ RUNASADMIN 16BITCOLOR WINXPSP2" /f
+reg add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers" /v "%~dp0≈‰÷√∆˜.exe" /t REG_SZ /d "~ RUNASADMIN 16BITCOLOR WINXPSP2" /f

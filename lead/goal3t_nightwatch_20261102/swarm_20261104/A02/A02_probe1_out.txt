@@ -1,0 +1,664 @@
+
+==============================================================================
+== 0. 现场自证
+==============================================================================
+eng.coverage = 100.00% / 1394120 insns / 66 resync
+sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+ImageBase = 0x400000
+  sec .text    VA 0x00401000 vsz 0x3DF38D raw 0x001000 rsz 0x3E0000
+  sec .rdata   VA 0x007E1000 vsz 0x030074 raw 0x3E1000 rsz 0x031000
+  sec .data    VA 0x00812000 vsz 0x367BE4 raw 0x412000 rsz 0x06C000
+  sec .rsrc    VA 0x00B7A000 vsz 0x018128 raw 0x47E000 rsz 0x019000
+  sec .detour  VA 0x00B93000 vsz 0x002718 raw 0x497000 rsz 0x003000
+.text = [0x00401000, 0x007E1000) size 0x3E0000
+
+==============================================================================
+== 1. MainLogicFrame 头部 0x55D360..0x55D3E0 逐字节
+==============================================================================
+  0055D360  a0a0e9a800            mov      al, byte ptr [0xa8e9a0]
+  0055D365  81ecb4010000          sub      esp, 0x1b4
+  0055D36B  84c0                  test     al, al
+  0055D36D  53                    push     ebx
+  0055D36E  55                    push     ebp
+  0055D36F  56                    push     esi
+  0055D370  57                    push     edi
+  0055D371  0f84580b0000          je       0x55decf
+  0055D377  a080eda800            mov      al, byte ptr [0xa8ed80]
+  0055D37C  c60558cdab0001        mov      byte ptr [0xabcd58], 1
+  0055D383  84c0                  test     al, al
+  0055D385  7534                  jne      0x55d3bb
+  0055D387  8b35f0117e00          mov      esi, dword ptr [0x7e11f0]
+  0055D38D  a138b2a800            mov      eax, dword ptr [0xa8b238]
+  0055D392  85c0                  test     eax, eax
+  0055D394  7405                  je       0x55d39b
+  0055D396  83f805                cmp      eax, 5
+  0055D399  7517                  jne      0x55d3b2
+  0055D39B  68f4010000            push     0x1f4
+  0055D3A0  ffd6                  call     esi
+  0055D3A2  e8a9790700            call     0x5d4d50
+  0055D3A7  a080eda800            mov      al, byte ptr [0xa8ed80]
+  0055D3AC  84c0                  test     al, al
+  0055D3AE  74dd                  je       0x55d38d
+  0055D3B0  eb09                  jmp      0x55d3bb
+  0055D3B2  6a0a                  push     0xa
+  0055D3B4  ffd6                  call     esi
+  0055D3B6  e895790700            call     0x5d4d50
+  0055D3BB  a184eda800            mov      eax, dword ptr [0xa8ed84]
+  0055D3C0  8b0de4e2a800          mov      ecx, dword ptr [0xa8e2e4]
+  0055D3C6  3bc1                  cmp      eax, ecx
+  0055D3C8  7c0a                  jl       0x55d3d4
+  0055D3CA  b938b2a800            mov      ecx, 0xa8b238
+  0055D3CF  e82ccf1300            call     0x69a300
+  0055D3D4  ff1530157e00          call     dword ptr [0x7e1530]
+  0055D3DA  a35cb5a800            mov      dword ptr [0xa8b55c], eax
+  0055D3DF  a108e3a800            mov      eax, dword ptr [0xa8e308]
+  0055D3E4  85c0                  test     eax, eax
+  0055D3E6  7407                  je       0x55d3ef
+  0055D3E8  c60572eda80001        mov      byte ptr [0xa8ed72], 1
+
+==============================================================================
+== 2. 0x55D3B2..0x55D3E0 之后（jne 目标 0x55D3BB 起的帧体）
+==============================================================================
+  0055D3B0  eb09                  jmp      0x55d3bb
+  0055D3B2  6a0a                  push     0xa
+  0055D3B4  ffd6                  call     esi
+  0055D3B6  e895790700            call     0x5d4d50
+  0055D3BB  a184eda800            mov      eax, dword ptr [0xa8ed84]
+  0055D3C0  8b0de4e2a800          mov      ecx, dword ptr [0xa8e2e4]
+  0055D3C6  3bc1                  cmp      eax, ecx
+  0055D3C8  7c0a                  jl       0x55d3d4
+  0055D3CA  b938b2a800            mov      ecx, 0xa8b238
+  0055D3CF  e82ccf1300            call     0x69a300
+  0055D3D4  ff1530157e00          call     dword ptr [0x7e1530]
+  0055D3DA  a35cb5a800            mov      dword ptr [0xa8b55c], eax
+  0055D3DF  a108e3a800            mov      eax, dword ptr [0xa8e308]
+  0055D3E4  85c0                  test     eax, eax
+  0055D3E6  7407                  je       0x55d3ef
+  0055D3E8  c60572eda80001        mov      byte ptr [0xa8ed72], 1
+  0055D3EF  803d78e3a80001        cmp      byte ptr [0xa8e378], 1
+  0055D3F6  7548                  jne      0x55d440
+  0055D3F8  e8039ceaff            call     0x407000
+  0055D3FD  85c0                  test     eax, eax
+  0055D3FF  743f                  je       0x55d440
+  0055D401  a1143da800            mov      eax, dword ptr [0xa83d14]
+  0055D406  83f8ff                cmp      eax, -1
+  0055D409  7505                  jne      0x55d410
+  0055D40B  a1183da800            mov      eax, dword ptr [0xa83d18]
+  0055D410  8a0da5eba800          mov      cl, byte ptr [0xa8eba5]
+  0055D416  84c9                  test     cl, cl
+  0055D418  7409                  je       0x55d423
+  0055D41A  83f8ff                cmp      eax, -1
+  0055D41D  7521                  jne      0x55d440
+
+==============================================================================
+== 3. 泵 0x5D4D50 全函数反汇编
+==============================================================================
+  005D4D50  a15035b700            mov      eax, dword ptr [0xb73550]
+  005D4D55  83ec1c                sub      esp, 0x1c
+  005D4D58  85c0                  test     eax, eax
+  005D4D5A  53                    push     ebx
+  005D4D5B  55                    push     ebp
+  005D4D5C  56                    push     esi
+  005D4D5D  57                    push     edi
+  005D4D5E  0f8402010000          je       0x5d4e66
+  005D4D64  8b1d3004aa00          mov      ebx, dword ptr [0xaa0430]
+  005D4D6A  6a00                  push     0
+  005D4D6C  43                    inc      ebx
+  005D4D6D  6a00                  push     0
+  005D4D6F  6a00                  push     0
+  005D4D71  33d2                  xor      edx, edx
+  005D4D73  8d4c241c              lea      ecx, [esp + 0x1c]
+  005D4D77  891d3004aa00          mov      dword ptr [0xaa0430], ebx
+  005D4D7D  e8ee99f6ff            call     0x53e770
+  005D4D82  85c0                  test     eax, eax
+  005D4D84  0f84dc000000          je       0x5d4e66
+  005D4D8A  8b1df4147e00          mov      ebx, dword ptr [0x7e14f4]
+  005D4D90  8b3df8147e00          mov      edi, dword ptr [0x7e14f8]
+  005D4D96  8b2dbc147e00          mov      ebp, dword ptr [0x7e14bc]
+  005D4D9C  6a00                  push     0
+  005D4D9E  6a00                  push     0
+  005D4DA0  33d2                  xor      edx, edx
+  005D4DA2  8d4c2418              lea      ecx, [esp + 0x18]
+  005D4DA6  e88599f6ff            call     0x53e730
+  005D4DAB  85c0                  test     eax, eax
+  005D4DAD  0f84b3000000          je       0x5d4e66
+  005D4DB3  8d4c2410              lea      ecx, [esp + 0x10]
+  005D4DB7  e884a9ecff            call     0x49f740
+  005D4DBC  8b0d68738800          mov      ecx, dword ptr [0x887368]
+  005D4DC2  85c9                  test     ecx, ecx
+  005D4DC4  740a                  je       0x5d4dd0
+  005D4DC6  8d442410              lea      eax, [esp + 0x10]
+  005D4DCA  50                    push     eax
+  005D4DCB  e830f41400            call     0x724200
+  005D4DD0  a1a0fcab00            mov      eax, dword ptr [0xabfca0]
+  005D4DD5  33f6                  xor      esi, esi
+  005D4DD7  85c0                  test     eax, eax
+  005D4DD9  7e1f                  jle      0x5d4dfa
+  005D4DDB  8b1594fcab00          mov      edx, dword ptr [0xabfc94]
+  005D4DE1  8d4c2410              lea      ecx, [esp + 0x10]
+  005D4DE5  51                    push     ecx
+  005D4DE6  8b04b2                mov      eax, dword ptr [edx + esi*4]
+  005D4DE9  50                    push     eax
+  005D4DEA  ffd3                  call     ebx
+  005D4DEC  85c0                  test     eax, eax
+  005D4DEE  755d                  jne      0x5d4e4d
+  005D4DF0  a1a0fcab00            mov      eax, dword ptr [0xabfca0]
+  005D4DF5  46                    inc      esi
+  005D4DF6  3bf0                  cmp      esi, eax
+  005D4DF8  7ce1                  jl       0x5d4ddb
+  005D4DFA  a1c8fcab00            mov      eax, dword ptr [0xabfcc8]
+  005D4DFF  33f6                  xor      esi, esi
+  005D4E01  85c0                  test     eax, eax
+  005D4E03  7e23                  jle      0x5d4e28
+  005D4E05  a1bcfcab00            mov      eax, dword ptr [0xabfcbc]
+  005D4E0A  8d4c2410              lea      ecx, [esp + 0x10]
+  005D4E0E  51                    push     ecx
+  005D4E0F  8b14f0                mov      edx, dword ptr [eax + esi*8]
+  005D4E12  8b44f004              mov      eax, dword ptr [eax + esi*8 + 4]
+  005D4E16  52                    push     edx
+  005D4E17  50                    push     eax
+  005D4E18  ffd7                  call     edi
+  005D4E1A  85c0                  test     eax, eax
+  005D4E1C  752f                  jne      0x5d4e4d
+  005D4E1E  a1c8fcab00            mov      eax, dword ptr [0xabfcc8]
+  005D4E23  46                    inc      esi
+  005D4E24  3bf0                  cmp      esi, eax
+  005D4E26  7cdd                  jl       0x5d4e05
+  005D4E28  a134fdab00            mov      eax, dword ptr [0xabfd34]
+  005D4E2D  85c0                  test     eax, eax
+  005D4E2F  740a                  je       0x5d4e3b
+  005D4E31  8d4c2410              lea      ecx, [esp + 0x10]
+  005D4E35  ffd0                  call     eax
+  005D4E37  84c0                  test     al, al
+  005D4E39  7512                  jne      0x5d4e4d
+  005D4E3B  8d4c2410              lea      ecx, [esp + 0x10]
+  005D4E3F  51                    push     ecx
+  005D4E40  ffd5                  call     ebp
+  005D4E42  8d542410              lea      edx, [esp + 0x10]
+  005D4E46  52                    push     edx
+  005D4E47  ff15c0147e00          call     dword ptr [0x7e14c0]
+  005D4E4D  6a00                  push     0
+  005D4E4F  6a00                  push     0
+  005D4E51  6a00                  push     0
+  005D4E53  33d2                  xor      edx, edx
+  005D4E55  8d4c241c              lea      ecx, [esp + 0x1c]
+  005D4E59  e81299f6ff            call     0x53e770
+  005D4E5E  85c0                  test     eax, eax
+  005D4E60  0f8536ffffff          jne      0x5d4d9c
+  005D4E66  5f                    pop      edi
+  005D4E67  5e                    pop      esi
+  005D4E68  5d                    pop      ebp
+  005D4E69  5b                    pop      ebx
+  005D4E6A  83c41c                add      esp, 0x1c
+  005D4E6D  c3                    ret      
+  005D4E6E  90                    nop      
+  005D4E6F  90                    nop      
+  005D4E70  a198fcab00            mov      eax, dword ptr [0xabfc98]
+  005D4E75  56                    push     esi
+  005D4E76  8bf1                  mov      esi, ecx
+  005D4E78  3905a0fcab00          cmp      dword ptr [0xabfca0], eax
+  005D4E7E  7c2e                  jl       0x5d4eae
+  005D4E80  8a0d9dfcab00          mov      cl, byte ptr [0xabfc9d]
+  005D4E86  84c9                  test     cl, cl
+  005D4E88  7504                  jne      0x5d4e8e
+  005D4E8A  85c0                  test     eax, eax
+  005D4E8C  7538                  jne      0x5d4ec6
+
+==============================================================================
+== 4. IAT 解析：0x7E11F0 / 0x7E1530 / 0x7E13CC(SetFocus ref) 等
+==============================================================================
+  [0x007E11F0] -> ('KERNEL32.dll', 'Sleep')
+  [0x007E1530] -> ('WINMM.dll', 'timeGetTime')
+
+==============================================================================
+== 5. 0xA8ED80 全镜像 disp 命中（绝对寻址普查）
+==============================================================================
+  总计 46 处
+  00432E80  R  mov      al, byte ptr [0xa8ed80]
+  004333F0  R  mov      al, byte ptr [0xa8ed80]
+  004BAD92  R  mov      al, byte ptr [0xa8ed80]
+  004BAF4D  R  mov      al, byte ptr [0xa8ed80]
+  004BB00D  R  mov      al, byte ptr [0xa8ed80]
+  004BB208  R  mov      al, byte ptr [0xa8ed80]
+  004BB689  R  mov      al, byte ptr [0xa8ed80]
+  004C3D8A  R  mov      al, byte ptr [0xa8ed80]
+  004C46AA  R  mov      al, byte ptr [0xa8ed80]
+  0052BB43  R  mov      al, byte ptr [0xa8ed80]
+  0055D377  R  mov      al, byte ptr [0xa8ed80]
+  0055D3A7  R  mov      al, byte ptr [0xa8ed80]
+  0055D88E  R  mov      al, byte ptr [0xa8ed80]
+  0055E204  R  cmp      byte ptr [0xa8ed80], 1
+  005D2469  R  mov      al, byte ptr [0xa8ed80]
+  005D2530  R  mov      al, byte ptr [0xa8ed80]
+  005D256A  R  mov      al, byte ptr [0xa8ed80]
+  005D2592  R  mov      al, byte ptr [0xa8ed80]
+  00611137  R  mov      al, byte ptr [0xa8ed80]
+  0061119E  R  mov      al, byte ptr [0xa8ed80]
+  006211D5  R  mov      cl, byte ptr [0xa8ed80]
+  0068FBC7  R  cmp      byte ptr [0xa8ed80], 1
+  0068FBEC  R  mov      al, byte ptr [0xa8ed80]
+  0068FC05  R  mov      al, byte ptr [0xa8ed80]
+  0069024A  R  mov      al, byte ptr [0xa8ed80]
+  0069027A  R  mov      al, byte ptr [0xa8ed80]
+  006902A7  R  mov      al, byte ptr [0xa8ed80]
+  006902BC  R  mov      al, byte ptr [0xa8ed80]
+  006904C0  R  mov      al, byte ptr [0xa8ed80]
+  006904E9  R  mov      al, byte ptr [0xa8ed80]
+  00690504  R  mov      al, byte ptr [0xa8ed80]
+  006BDD08  R  mov      al, byte ptr [0xa8ed80]
+  006BDD33  R  mov      al, byte ptr [0xa8ed80]
+  00759A83  R  cmp      byte ptr [0xa8ed80], bl
+  00759AAB  R  cmp      byte ptr [0xa8ed80], 1
+  00759CE1  R  cmp      byte ptr [0xa8ed80], 1
+  00759D02  R  cmp      byte ptr [0xa8ed80], 1
+  00774D74  R  mov      al, byte ptr [0xa8ed80]
+  007776C1  R  cmp      byte ptr [0xa8ed80], 1
+  007778B9  R  mov      dl, byte ptr [0xa8ed80]
+  007778CE  W  mov      byte ptr [0xa8ed80], al
+  0077DE0C  R  mov      al, byte ptr [0xa8ed80]
+  007B9EAA  R  mov      al, byte ptr [0xa8ed80]
+  007B9F86  R  mov      al, byte ptr [0xa8ed80]
+  007BA1CB  R  mov      al, byte ptr [0xa8ed80]
+  007BA234  R  mov      al, byte ptr [0xa8ed80]
+  写 = 1 / 读 = 45
+
+==============================================================================
+== 6. 0xA8ED80 raw abs32 扫描（独立于 capstone，防漏）
+==============================================================================
+  raw 命中 46 处
+     file 0x032E81 -> VA 0x00432E81 (.text)  bytes=00a080eda80084c08a46
+     file 0x0333F1 -> VA 0x004333F1 (.text)  bytes=90a080eda80083ec1884
+     file 0x0BAD93 -> VA 0x004BAD93 (.text)  bytes=0da080eda80084c00f84
+     file 0x0BAF4E -> VA 0x004BAF4E (.text)  bytes=09a080eda80084c07454
+     file 0x0BB00E -> VA 0x004BB00E (.text)  bytes=0ea080eda80084c07505
+     file 0x0BB209 -> VA 0x004BB209 (.text)  bytes=0da080eda80084c00f84
+     file 0x0BB68A -> VA 0x004BB68A (.text)  bytes=0da080eda80084c00f84
+     file 0x0C3D8B -> VA 0x004C3D8B (.text)  bytes=00a080eda80084c0742c
+     file 0x0C46AB -> VA 0x004C46AB (.text)  bytes=eda080eda80084c0746e
+     file 0x12BB44 -> VA 0x0052BB44 (.text)  bytes=00a080eda80084c074ec
+     file 0x15D378 -> VA 0x0055D378 (.text)  bytes=00a080eda800c60558cd
+     file 0x15D3A8 -> VA 0x0055D3A8 (.text)  bytes=00a080eda80084c074dd
+     file 0x15D88F -> VA 0x0055D88F (.text)  bytes=73a080eda80084c0746a
+     file 0x15E206 -> VA 0x0055E206 (.text)  bytes=803d80eda800010f859b
+     file 0x1D246A -> VA 0x005D246A (.text)  bytes=00a080eda80084c07545
+     file 0x1D2531 -> VA 0x005D2531 (.text)  bytes=90a080eda800563c0157
+     file 0x1D256B -> VA 0x005D256B (.text)  bytes=eda080eda80084c07528
+     file 0x1D2593 -> VA 0x005D2593 (.text)  bytes=00a080eda80084c074de
+     file 0x211138 -> VA 0x00611138 (.text)  bytes=00a080eda80083ff0fc6
+     file 0x21119F -> VA 0x0061119F (.text)  bytes=00a080eda800a2783683
+     file 0x2211D7 -> VA 0x006211D7 (.text)  bytes=8a0d80eda800578bfa84
+     file 0x28FBC9 -> VA 0x0068FBC9 (.text)  bytes=803d80eda80001745a8b
+     file 0x28FBED -> VA 0x0068FBED (.text)  bytes=eda080eda80084c07519
+     file 0x28FC06 -> VA 0x0068FC06 (.text)  bytes=ffa080eda80084c074e7
+     file 0x29024B -> VA 0x0069024B (.text)  bytes=ffa080eda80084c00f85
+     file 0x29027B -> VA 0x0069027B (.text)  bytes=f6a080eda80089742418
+     file 0x2902A8 -> VA 0x006902A8 (.text)  bytes=eda080eda80084c07515
+     file 0x2902BD -> VA 0x006902BD (.text)  bytes=ffa080eda80084c074eb
+     file 0x2904C1 -> VA 0x006904C1 (.text)  bytes=90a080eda800563c0157
+     file 0x2904EA -> VA 0x006904EA (.text)  bytes=eda080eda80084c0751b
+     file 0x290505 -> VA 0x00690505 (.text)  bytes=ffa080eda80084c074eb
+     file 0x2BDD09 -> VA 0x006BDD09 (.text)  bytes=ffa080eda80084c074f2
+     file 0x2BDD34 -> VA 0x006BDD34 (.text)  bytes=ffa080eda80084c074f2
+     file 0x359A85 -> VA 0x00759A85 (.text)  bytes=381d80eda80075096a21
+     file 0x359AAD -> VA 0x00759AAD (.text)  bytes=803d80eda80001756a38
+     file 0x359CE3 -> VA 0x00759CE3 (.text)  bytes=803d80eda800010f85c6
+     file 0x359D04 -> VA 0x00759D04 (.text)  bytes=803d80eda800010f85a5
+     file 0x374D75 -> VA 0x00774D75 (.text)  bytes=00a080eda80084c00f84
+     file 0x3776C3 -> VA 0x007776C3 (.text)  bytes=803d80eda80001740d80
+     file 0x3778BB -> VA 0x007778BB (.text)  bytes=8a1580eda8003bd10f84
+     file 0x3778CF -> VA 0x007778CF (.text)  bytes=c3a280eda800755b6894
+     file 0x37DE0D -> VA 0x0077DE0D (.text)  bytes=00a080eda80084c0751e
+     file 0x3B9EAB -> VA 0x007B9EAB (.text)  bytes=00a080eda80084c00f84
+     file 0x3B9F87 -> VA 0x007B9F87 (.text)  bytes=00a080eda80084c00f84
+     file 0x3BA1CC -> VA 0x007BA1CC (.text)  bytes=4da080eda80084c07444
+     file 0x3BA235 -> VA 0x007BA235 (.text)  bytes=5ba080eda80084c07452
+
+==============================================================================
+== 7. 0xA8ED81 / 0xA8ED84 写者对照（邻位）
+==============================================================================
+  0x00A8ED81: 共 2 处, 写 2 处
+      W 00777874  mov      byte ptr [0xa8ed81], 1
+      W 00777880  mov      byte ptr [0xa8ed81], bl
+  0x00A8ED84: 共 1007 处, 写 10 处
+      W 0052DA08  mov      dword ptr [0xa8ed84], ebx
+      W 0055DE81  mov      dword ptr [0xa8ed84], edx
+      W 005B7329  mov      dword ptr [0xa8ed84], 0
+      W 005BB20C  mov      dword ptr [0xa8ed84], ebp
+      W 005E550F  mov      dword ptr [0xa8ed84], esi
+      W 005E747C  mov      dword ptr [0xa8ed84], 0
+      W 0068466B  mov      dword ptr [0xa8ed84], esi
+      W 00686765  mov      dword ptr [0xa8ed84], ebp
+      W 00795234  mov      dword ptr [0xa8ed84], 0
+      W 0079758C  mov      dword ptr [0xa8ed84], eax
+
+==============================================================================
+== 8. MainLogicFrame 出口枚举（0x55D360..0x55DEE0）
+==============================================================================
+  ret 数 = 3
+    0055D877  ret      
+    0055DEC7  ret      
+    0055DEDB  ret      
+
+==============================================================================
+== 9. 0x55D360..0x55DEE0 内回边
+==============================================================================
+    0055D3AE -> 0055D38D  (je)
+    0055D5ED -> 0055D5D5  (jl)
+    0055D9B7 -> 0055D975  (jl)
+    0055DA1E -> 0055D9D2  (jl)
+    0055DAEF -> 0055DAAC  (jl)
+    0055DB83 -> 0055DB24  (jl)
+
+==============================================================================
+== 10. 0x5D4D50 函数边界：前向闭包/ret
+==============================================================================
+  ret 数 = 2
+    005D4E6D  ret      
+    005D4EC7  ret      
+  -- 从 0x5D4D50 出发、绕开 [0x5D4D70,0x5D4D7A] 仍可达 --
+    reach size = 19 ; max = 0x005D4E6D
+
+==============================================================================
+== 11. 0x5D4D50 的调用者普查（E8 直呼）
+==============================================================================
+  call 0x5D4D50 命中 43 处
+    0x0046FD5C
+    0x0048D230
+    0x0048D2A2
+    0x0048D36B
+    0x0048D4D6
+    0x0048DAD3
+    0x0054EE9F
+    0x0054F020
+    0x0054F071
+    0x0054F09C
+    0x0054F740
+    0x0054F768
+    0x0055D3A2
+    0x0055D3B6
+    0x0055D830
+    0x005B7047
+    0x005B72B3
+    0x005BAC17
+    0x005BAFFD
+    0x005BB065
+    0x005D2464
+    0x005D258D
+    0x005F33B6
+    0x006081D8
+    0x0060D3D9
+    0x00623120
+    0x00623D44
+    0x00624243
+    0x0068FC00
+    0x00690245
+    0x006902B7
+    0x006904FF
+    0x006943A3
+    0x0069452F
+    0x00694DBD
+    0x00694FBB
+    0x0069B062
+    0x006BDD03
+    0x006BDD2E
+    0x006BE0DC
+    0x006BEC87
+    0x007B3858
+    0x007B38DE
+
+==============================================================================
+== 12. DispatchMessageA / PeekMessageA 在 0x5D4D50 体内
+==============================================================================
+  005D4E47  ff15c0147e00         dword ptr [0x7e14c0]
+
+==============================================================================
+== 13. 0x7778CE 上下文逐字节（写者）
+==============================================================================
+  00777890  000f                  add      byte ptr [edi], cl
+  00777892  8522                  test     dword ptr [edx], esp
+  00777894  0100                  add      dword ptr [eax], eax
+  00777896  005f5e                add      byte ptr [edi + 0x5e], bl
+  00777899  33c0                  xor      eax, eax
+  0077789B  5b                    pop      ebx
+  0077789C  59                    pop      ecx
+  0077789D  c21000                ret      0x10
+  007778A0  3b3d5035b700          cmp      edi, dword ptr [0xb73550]
+  007778A6  0f859d000000          jne      0x777949
+  007778AC  8b44241c              mov      eax, dword ptr [esp + 0x1c]
+  007778B0  33c9                  xor      ecx, ecx
+  007778B2  3bc3                  cmp      eax, ebx
+  007778B4  0f95c1                setne    cl
+  007778B7  33d2                  xor      edx, edx
+  007778B9  8a1580eda800          mov      dl, byte ptr [0xa8ed80]
+  007778BF  3bd1                  cmp      edx, ecx
+  007778C1  0f8482000000          je       0x777949
+  007778C7  3bc3                  cmp      eax, ebx
+  007778C9  0f95c0                setne    al
+  007778CC  3ac3                  cmp      al, bl
+  007778CE  a280eda800            mov      byte ptr [0xa8ed80], al
+  007778D3  755b                  jne      0x777930
+  007778D5  68949e8400            push     0x849e94
+  007778DA  e801f0c8ff            call     0x4068e0
+  007778DF  83c404                add      esp, 4
+  007778E2  b101                  mov      cl, 1
+  007778E4  e8177ce4ff            call     0x5bf500
+  007778E9  e832f7c8ff            call     0x407020
+
+==============================================================================
+== 14. 0xA8B238 GameMode 读点（MainLogicFrame 内 + 全镜像计数）
+==============================================================================
+  0xA8B238 共 570 处引用
+  其中落在 MainLogicFrame 内: 7 处
+    0055D38D R mov      eax, dword ptr [0xa8b238]
+    0055D440 R mov      eax, dword ptr [0xa8b238]
+    0055D597 R mov      eax, dword ptr [0xa8b238]
+    0055D7C2 R mov      eax, dword ptr [0xa8b238]
+    0055D8D5 R cmp      dword ptr [0xa8b238], 4
+    0055DBCD R cmp      dword ptr [0xa8b238], edi
+    0055DDAA R mov      eax, dword ptr [0xa8b238]
+  全镜像写者 30 处:
+    W 0048CF94 mov      dword ptr [0xa8b238], ebx
+    W 0052DD61 mov      dword ptr [0xa8b238], 4
+    W 0052DD7F mov      dword ptr [0xa8b238], 3
+    W 0052E10F mov      dword ptr [0xa8b238], 5
+    W 0052E175 mov      dword ptr [0xa8b238], ebx
+    W 0052E1FE mov      dword ptr [0xa8b238], ebx
+    W 0052E213 mov      dword ptr [0xa8b238], ebx
+    W 0052E2B3 mov      dword ptr [0xa8b238], edi
+    W 0052E2FA mov      dword ptr [0xa8b238], edi
+    W 0052E337 mov      dword ptr [0xa8b238], edi
+    W 0052E3C6 mov      dword ptr [0xa8b238], 3
+    W 0052E42B mov      dword ptr [0xa8b238], ebx
+    W 0052E553 mov      dword ptr [0xa8b238], ebx
+    W 0052E577 mov      dword ptr [0xa8b238], ebx
+    W 0052E599 mov      dword ptr [0xa8b238], ebx
+    W 0052E5B6 mov      dword ptr [0xa8b238], ebx
+    W 0052E5D4 mov      dword ptr [0xa8b238], ebx
+    W 005EF720 mov      dword ptr [0xa8b238], esi
+    W 005EF73A mov      dword ptr [0xa8b238], eax
+    W 005EF842 mov      dword ptr [0xa8b238], esi
+    W 005EF85A mov      dword ptr [0xa8b238], edi
+    W 005EFDAB mov      dword ptr [0xa8b238], esi
+    W 005EFDC3 mov      dword ptr [0xa8b238], 0
+    W 005EFDE3 mov      dword ptr [0xa8b238], edi
+    W 005EFDF6 mov      dword ptr [0xa8b238], esi
+    W 0067E4E8 mov      dword ptr [0xa8b238], eax
+    W 0077B532 mov      dword ptr [0xa8b238], ebp
+    W 0077B562 mov      dword ptr [0xa8b238], ebp
+    W 0077B585 mov      dword ptr [0xa8b238], ebp
+    W 0077B5D2 mov      dword ptr [0xa8b238], ebp
+
+==============================================================================
+== 15. 0xA8E9A0 局内标志写者/读点
+==============================================================================
+  0xA8E9A0 共 123 处
+    004140AE R mov      al, byte ptr [0xa8e9a0]
+    0041D540 R mov      al, byte ptr [0xa8e9a0]
+    0041DB40 R mov      al, byte ptr [0xa8e9a0]
+    0041DC18 R cmp      byte ptr [0xa8e9a0], bl
+    0042290B R mov      al, byte ptr [0xa8e9a0]
+    0043BDF6 R mov      al, byte ptr [0xa8e9a0]
+    0043BEF5 R mov      al, byte ptr [0xa8e9a0]
+    0043BF18 R mov      al, byte ptr [0xa8e9a0]
+    00445AC6 R mov      al, byte ptr [0xa8e9a0]
+    004665D9 R mov      al, byte ptr [0xa8e9a0]
+    0047BBCE R cmp      byte ptr [0xa8e9a0], bl
+    0047C4D0 R mov      al, byte ptr [0xa8e9a0]
+    0047C520 R mov      al, byte ptr [0xa8e9a0]
+    0047C550 R mov      al, byte ptr [0xa8e9a0]
+    0047C5A0 R mov      al, byte ptr [0xa8e9a0]
+    0047C5E1 R mov      al, byte ptr [0xa8e9a0]
+    0047C64E R mov      al, byte ptr [0xa8e9a0]
+    0047C67A R mov      al, byte ptr [0xa8e9a0]
+    0047C701 R mov      al, byte ptr [0xa8e9a0]
+    0047C791 R mov      al, byte ptr [0xa8e9a0]
+    0047C7C8 R mov      al, byte ptr [0xa8e9a0]
+    0047EBA0 R mov      al, byte ptr [0xa8e9a0]
+    0047EBF0 R mov      al, byte ptr [0xa8e9a0]
+    0047EC40 R mov      al, byte ptr [0xa8e9a0]
+    0047EDCE R mov      al, byte ptr [0xa8e9a0]
+    0047EE1A R mov      al, byte ptr [0xa8e9a0]
+    004814A0 R mov      al, byte ptr [0xa8e9a0]
+    0048390B R mov      al, byte ptr [0xa8e9a0]
+    00483960 R mov      al, byte ptr [0xa8e9a0]
+    00483E45 R mov      dl, byte ptr [0xa8e9a0]
+    00483F3D R mov      cl, byte ptr [0xa8e9a0]
+    00484A90 R mov      al, byte ptr [0xa8e9a0]
+    004850A5 R mov      al, byte ptr [0xa8e9a0]
+    00487041 R mov      al, byte ptr [0xa8e9a0]
+    0048706D R mov      al, byte ptr [0xa8e9a0]
+    00487C23 R mov      al, byte ptr [0xa8e9a0]
+    00487E00 R mov      al, byte ptr [0xa8e9a0]
+    004AB9CD R mov      al, byte ptr [0xa8e9a0]
+    004C53FF R mov      al, byte ptr [0xa8e9a0]
+    004C5ADF R mov      al, byte ptr [0xa8e9a0]
+    004C9A7F R mov      al, byte ptr [0xa8e9a0]
+    004CA7DF R mov      al, byte ptr [0xa8e9a0]
+    004D35BC R cmp      byte ptr [0xa8e9a0], bl
+    004E1D2A R mov      al, byte ptr [0xa8e9a0]
+    004E1D81 R mov      al, byte ptr [0xa8e9a0]
+    004E1E28 R cmp      byte ptr [0xa8e9a0], 1
+    004E1F9D R cmp      byte ptr [0xa8e9a0], 1
+    004E1FAE R mov      al, byte ptr [0xa8e9a0]
+    004E2201 R cmp      byte ptr [0xa8e9a0], 1
+    004E22D9 R mov      al, byte ptr [0xa8e9a0]
+    004E2374 R cmp      byte ptr [0xa8e9a0], 1
+    004E239A R cmp      byte ptr [0xa8e9a0], 1
+    004E23F3 R cmp      byte ptr [0xa8e9a0], 1
+    004E2417 R cmp      byte ptr [0xa8e9a0], 1
+    004F71E7 R cmp      byte ptr [0xa8e9a0], bl
+    00501750 R mov      al, byte ptr [0xa8e9a0]
+    0050272E R mov      al, byte ptr [0xa8e9a0]
+    0050AF10 R mov      al, byte ptr [0xa8e9a0]
+    0050E088 R mov      al, byte ptr [0xa8e9a0]
+    0050E153 R mov      al, byte ptr [0xa8e9a0]
+    0050E220 R mov      al, byte ptr [0xa8e9a0]
+    0050E2E0 R mov      al, byte ptr [0xa8e9a0]
+    00517DB7 R mov      al, byte ptr [0xa8e9a0]
+    0052D9D7 W mov      byte ptr [0xa8e9a0], 1
+    005438A6 R mov      al, byte ptr [0xa8e9a0]
+    00543A40 R mov      al, byte ptr [0xa8e9a0]
+    00543B36 R mov      al, byte ptr [0xa8e9a0]
+    0055901B R mov      al, byte ptr [0xa8e9a0]
+    0055D347 R mov      cl, byte ptr [0xa8e9a0]
+    0055D360 R mov      al, byte ptr [0xa8e9a0]
+    0055D859 R mov      cl, byte ptr [0xa8e9a0]
+    0055DEA9 R mov      cl, byte ptr [0xa8e9a0]
+    0055FC83 R mov      al, byte ptr [0xa8e9a0]
+    0055FC96 W mov      byte ptr [0xa8e9a0], 0
+    0055FD9A W mov      byte ptr [0xa8e9a0], al
+    005D3639 R mov      al, byte ptr [0xa8e9a0]
+    005F4D30 R mov      al, byte ptr [0xa8e9a0]
+    005F4EF5 R mov      al, byte ptr [0xa8e9a0]
+    005FBF3F R mov      al, byte ptr [0xa8e9a0]
+    005FC53F R mov      al, byte ptr [0xa8e9a0]
+    005FDFDF R mov      al, byte ptr [0xa8e9a0]
+    006472AA W mov      byte ptr [0xa8e9a0], 0
+    006472F0 W mov      byte ptr [0xa8e9a0], 0
+    006474AC W mov      byte ptr [0xa8e9a0], 0
+    006475BE W mov      byte ptr [0xa8e9a0], al
+    00647ADC W mov      byte ptr [0xa8e9a0], al
+    006481FE W mov      byte ptr [0xa8e9a0], al
+    0064826F W mov      byte ptr [0xa8e9a0], 0
+    00652351 W mov      byte ptr [0xa8e9a0], 0
+    006858EA W mov      byte ptr [0xa8e9a0], 0
+    006859F9 W mov      byte ptr [0xa8e9a0], 0
+    00685B33 W mov      byte ptr [0xa8e9a0], 0
+    00685BC7 W mov      byte ptr [0xa8e9a0], 0
+    00685C23 W mov      byte ptr [0xa8e9a0], al
+    00686035 W mov      byte ptr [0xa8e9a0], 0
+    0068620F W mov      byte ptr [0xa8e9a0], 0
+    006863C3 W mov      byte ptr [0xa8e9a0], 0
+    006866EF W mov      byte ptr [0xa8e9a0], bl
+    006930CA R cmp      byte ptr [0xa8e9a0], bl
+    00693440 R mov      al, byte ptr [0xa8e9a0]
+    0069BABE R mov      al, byte ptr [0xa8e9a0]
+    006A70F7 R cmp      byte ptr [0xa8e9a0], bl
+    006A92EB R mov      dl, byte ptr [0xa8e9a0]
+    006B0B60 R mov      al, byte ptr [0xa8e9a0]
+    006B0C16 R mov      al, byte ptr [0xa8e9a0]
+    006B4BAF R mov      al, byte ptr [0xa8e9a0]
+    006B500F R mov      al, byte ptr [0xa8e9a0]
+    006B6258 R mov      al, byte ptr [0xa8e9a0]
+    006B62B3 R mov      al, byte ptr [0xa8e9a0]
+    006B6485 R mov      al, byte ptr [0xa8e9a0]
+    006B7030 R mov      al, byte ptr [0xa8e9a0]
+    006BE1CC W mov      byte ptr [0xa8e9a0], bl
+    006E4F89 R mov      al, byte ptr [0xa8e9a0]
+    006E4FEE R mov      al, byte ptr [0xa8e9a0]
+    006E5053 R mov      al, byte ptr [0xa8e9a0]
+    006E8E5E R mov      al, byte ptr [0xa8e9a0]
+    0071B824 R mov      al, byte ptr [0xa8e9a0]
+    007357BB R mov      al, byte ptr [0xa8e9a0]
+    00749A7B R mov      al, byte ptr [0xa8e9a0]
+    0075F8B0 R mov      al, byte ptr [0xa8e9a0]
+    0075F980 R mov      al, byte ptr [0xa8e9a0]
+    0078EC41 W mov      byte ptr [0xa8e9a0], 1
+    0078EEAD W mov      byte ptr [0xa8e9a0], bl
+
+==============================================================================
+== 16. 0xABCD58 '帧处理中' 写者
+==============================================================================
+  0xABCD58 共 11 处
+    0055CBF0 R mov      al, byte ptr [0xabcd58]
+    0055CC00 W mov      byte ptr [0xabcd58], 1
+    0055CC10 W mov      byte ptr [0xabcd58], 0
+    0055D15F W mov      byte ptr [0xabcd58], bl
+    0055D1ED W mov      byte ptr [0xabcd58], bl
+    0055D245 W mov      byte ptr [0xabcd58], bl
+    0055D292 W mov      byte ptr [0xabcd58], bl
+    0055D37C W mov      byte ptr [0xabcd58], 1
+    0055D866 W mov      byte ptr [0xabcd58], 0
+    0055DEB6 W mov      byte ptr [0xabcd58], 0
+    0055DEC8 W mov      byte ptr [0xabcd58], 0
+
+==============================================================================
+== 17. 0xAA0430 泵计数 写者
+==============================================================================
+  0xAA0430 共 17 处
+    00432CD2 R mov      ecx, dword ptr [0xaa0430]
+    00432CDD W mov      dword ptr [0xaa0430], ecx
+    0053E7EF R mov      eax, dword ptr [0xaa0430]
+    0053E9AC R mov      eax, dword ptr [0xaa0430]
+    0053EBB0 R mov      ecx, dword ptr [0xaa0430]
+    005D4D64 R mov      ebx, dword ptr [0xaa0430]
+    005D4D77 W mov      dword ptr [0xaa0430], ebx
+    005DC44E R mov      ecx, dword ptr [0xaa0430]
+    005DC459 W mov      dword ptr [0xaa0430], ecx
+    00759200 R mov      edx, dword ptr [0xaa0430]
+    00759210 W mov      dword ptr [0xaa0430], edx
+    00759A36 R mov      edx, dword ptr [0xaa0430]
+    00759A3F W mov      dword ptr [0xaa0430], edx
+    00775A74 R mov      edx, dword ptr [0xaa0430]
+    00775A7F W mov      dword ptr [0xaa0430], edx
+    0077F911 R mov      eax, dword ptr [0xaa0430]
+    0077F925 W mov      dword ptr [0xaa0430], eax
+
+==============================================================================
+== 18. 0x55D3BB 起的帧体里 0xA8ED80 的读点
+==============================================================================
+    0055D377 R mov      al, byte ptr [0xa8ed80]
+    0055D3A7 R mov      al, byte ptr [0xa8ed80]
+    0055D88E R mov      al, byte ptr [0xa8ed80]
+
+[DONE probe1]

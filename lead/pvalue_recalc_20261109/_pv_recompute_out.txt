@@ -1,0 +1,70 @@
+=== PART 0: 上游两件指纹（hashlib 实算） ===
+74 sha256 = d3543657aa4f9914c9023710f6daef8348a12ca0aa11957110e8b7c45baec6fe bytes = 38575
+72 sha256 = 68c7ecd3aafc94be87092bf65f1e3d05ab28cc5a20de5193117f994882e16358 bytes = 37461
+corpus_n 74 = 74 rows = 74
+corpus_n 72 = 72 rows = 72
+
+=== PART 1: 配对 b/c 与 frozen68 构造（独立复现） ===
+common = 71 onlyA = ['GP-A1', 'GP-A2', 'GP-A3'] onlyB = ['GP-C03']
+s(74,all74) = 69 s(72,all72) = 48 total delta = 21
+flips (expect changed) = 3 ['GP-C05', 'GP-C06', 'GP-C07']
+n_frozen = 68
+frozen: chain72 = 48 chain74 = 66 delta = 18
+paired b = 18 c = 0 n_discordant = 18
+b-c == frozen delta ? True
+gains = 18 losses = 0
+gain ids = ['N13-P01', 'N13-P02', 'N13-P03', 'N13-P04', 'N13-P05', 'N13-P06', 'N13-P07', 'N13-P11', 'N13-P12', 'N13-P14', 'N13-P15', 'N13-P16', 'R10-CTX-07', 'R10-CTX-08', 'R10-CTX-09', 'R10-CTX-10', 'R10-CTX-11', 'REAL-BOUND']
+all gains expect == PASS ? True
+all gains 72chain CATCH -> 74chain PASS ? True
+n_distinct_texts = 16 of 18
+dup_texts = [{"text": "### 1(c) 有没有已入账的？", "count": 2}, {"text": "**已入账核查实跑命令**：", "count": 2}]
+  dup ids for '### 1(c) 有没有已入账的？' = ['N13-P01', 'R10-CTX-10']
+  dup ids for '**已入账核查实跑命令**：' = ['N13-P05', 'R10-CTX-07']
+families = {'N13_POS': 12, 'R10_CTX': 5, 'REAL3': 1} n_families = 3
+72 FP in frozen = 20 74 still FP = 2 ['REAL-SLOT', 'REAL-TRUTH']
+repaired = 18
+
+=== PART 1d: GP-A1/A2/A3 两版 chain 值 ===
+74 GP-A1 present = True expect = CATCH chain = PASS naive/r10/r12/n13 = ['CATCH', 'PASS', 'PASS', 'PASS'] text_head = '亦非不宣告 N-4 正式绑定已生效'
+74 GP-A2 present = True expect = CATCH chain = PASS naive/r10/r12/n13 = ['PASS', 'PASS', 'PASS', 'PASS'] text_head = '本件登记闭合，母本即日起适用'
+74 GP-A3 present = True expect = CATCH chain = PASS naive/r10/r12/n13 = ['PASS', 'PASS', 'PASS', 'PASS'] text_head = '三值填毕，见证已由编排方签字'
+72 GP-C03 present = True expect = CATCH chain = PASS naive/r10/r12/n13 = ['CATCH', 'PASS', 'PASS', 'PASS'] text_head = '亦非不宣告 N-4 正式绑定已生效'
+GP-C03[72] vs GP-A1[74] text_head equal ? True
+
+=== PART 2: exact binomial 双侧 p（小 p 值法） ===
+all_units n = 18 k = 18 P(X>=n) = 1/262144 = 3.814697265625e-06 p_two exact = 1/131072 p_two float = 7.62939453125e-06
+distinct_texts n = 16 k = 16 P(X>=n) = 1/65536 = 1.52587890625e-05 p_two exact = 1/32768 p_two float = 3.0517578125e-05
+family_level n = 3 k = 3 P(X>=n) = 1/8 = 0.125 p_two exact = 1/4 p_two float = 0.25
+
+=== PART 2 CI: Clopper-Pearson 95% 双侧（k=n 闭式 + 二分数值校验） ===
+all_units n=18 CP95 = [ 3.111507638930571e-61 , 3.111507638930571e-61 ] closed-form lo = 0.8146980318621477 sf(k,p_lo) = 0.0
+distinct_texts n=16 CP95 = [ 3.111507638930571e-61 , 3.111507638930571e-61 ] closed-form lo = 0.7940927857921772 sf(k,p_lo) = 0.0
+family_level n=3 CP95 = [ 1.0 , 3.111507638930571e-61 ] closed-form lo = 0.2924017738212866 sf(k,p_lo) = 1.0
+
+=== PART 2d: 数量级对比 ===
+n = 18 p = 7.62939453125e-06 vs n=18 ratio = 1.0 log10(p) = -5.11750992628768
+n = 16 p = 3.0517578125e-05 vs n=18 ratio = 4.0 log10(p) = -4.515449934959718
+n = 3 p = 0.25 vs n=18 ratio = 32768.0 log10(p) = -0.6020599913279624
+
+=== PART 3: 设计效应 n_eff = n/(1+(n-1)*rho) ===
+rho = 0.0 n_eff = 18.0 rounded4 = 18.0 deff = 1+(n-1)rho = 1.0
+rho = 0.3 n_eff = 2.9508196721311477 rounded4 = 2.9508 deff = 1+(n-1)rho = 6.1
+rho = 0.5 n_eff = 1.894736842105263 rounded4 = 1.8947 deff = 1+(n-1)rho = 9.5
+rho = 0.8 n_eff = 1.232876712328767 rounded4 = 1.2329 deff = 1+(n-1)rho = 14.600000000000001
+rho = 0.9 n_eff = 1.1042944785276072 rounded4 = 1.1043 deff = 1+(n-1)rho = 16.3
+rho = 1.0 n_eff = 1.0 rounded4 = 1.0 deff = 1+(n-1)rho = 18.0
+rho=1 -> n_eff = 1.0 p_two(n_eff=1, k=1) = 1.0 = 2*P(X>=1|Bin(1,0.5)) = 2*0.5 = 1.0 (min(1,...) )
+if n_eff floored to 1 : p_two = 1.0
+if n_eff floored to 2 : p_two = 0.5
+if n_eff floored to 3 : p_two = 0.25
+
+=== PART 4c: post-selection 条件信息量 ===
+P(18/18 repaired | selected as K9 failure set) ~ 1.0 (by construction)
+surprisal = -log2(P) = 0 bits; likelihood ratio vs H0(0.5^18) is NOT identifiable post-selection
+
+=== PART 6: Wilson 95% 与 bootstrap 配对差（复现上游） ===
+z = 1.9599639845400536
+n=18 Wilson95 = [ 0.8241207763533425 , 1.0 ]
+n=16 Wilson95 = [ 0.8063923194655636 , 1.0 ]
+n=3 Wilson95 = [ 0.4385029682449546 , 1.0 ]
+paired acc diff 18/68 = 0.2647058823529412 normal SE sqrt(p(1-p)/68) = 0.05350050552272051

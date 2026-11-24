@@ -1,0 +1,98 @@
+M67 VERIFY — 并表 13 行验证报告
+================================
+
+一、实际并行数（审计 PASS ∩ 两个 delta entry）
+------------------------------------------------
+  NAMED_PUSH_AUDIT7 verdict（13 行、8 列、第 3 列 verdict，全 PASS）
+    ∩ NAMED_PUSH_S20_B2/delta（8 行）  = 8   （S20，要求 8 ✓）
+    ∩ NAMED_PUSH_S06_B3/delta（5 行）  = 5   （S06，要求 5 ✓）
+  合计 8 + 5 = 13 行（要求正好 13 ✓）。
+
+  PASS 集合（13）：0062D9A0 0062FE90 00630090 00644960 006457A0 00645950
+                  0071E1D0 007220A0 007220D0 007281A0 00749F30 0074BA30 00763D90
+  delta 集合（13）= PASS 集合；PASS∖delta=0，delta∖PASS=0，无异常，未停下。
+  S20 八：0062D9A0 0062FE90 00630090 00644960 006457A0 00645950 00749F30 0074BA30
+  S06 五：0071E1D0 007220A0 007220D0 007281A0 00763D90
+
+  atlas 归属：13 行 entry 归一大写后全部命中 function_atlas.tsv（atlas 内 13，atlas 外 0）；
+  无"A 口径不计"行。13 行在 coverage 中各命中唯一一行，改前 grade 全 [静态推断]。
+  未并 NAMED_PUSH_S12_B1 四行（审计代理失败/未产出/未过审，留池）。
+
+二、数据行数
+------------
+  coverage.tsv 数据行 18,498 → 18,498（不变，8 列、TAB 分隔、无 BOM、LF 换行）。
+  改动行 13 行，逐行 diff 核对：仅第 4/5/6 列变化，第 1/2/3/7/8 列逐字节不变。
+  第 4 列语义 = delta 第 4 列原文照抄（0062FE90 表址按审计勘误改字，见第六节）；
+  第 5 列 grade = [已证]（13/13）；
+  第 6 列 evidence_path = NAMED_PUSH_AUDIT7/VERDICT.md（13/13）。
+
+三、[已证] 计数
+---------------
+  全表 [已证]：1,556 → 1,569  （+13）
+  atlas 内 [已证]：1,550 → 1,563  （+13，因 13 行全在 atlas 内）
+  atlas 外 [已证]：6 → 6  （不变）
+  grade 直方图（改后）：[已证] 1,569 / [静态推断] 5,938 / [未证] 10,991（和 18,498）；
+  conflict==1 254→254 不变。
+
+四、S20 / S06 的 proved 与 strict（atlas 内，权威口径）
+------------------------------------------------------
+  S20：proved 53 → 61（+8）；proved_strict 41 → 49（+8）
+       proved_pct 14.88%，strict_pct 11.95%，atlas_n=410，门槛(50%)=205
+  S06：proved 130 → 135（+5）；proved_strict 115 → 120（+5）
+       proved_pct 15.94%，strict_pct 14.17%，atlas_n=847，门槛(50%)=424
+  TOTAL：proved 1,550 → 1,563；proved_strict 1,233 → 1,246
+         proved_pct 12.10%，strict_pct 9.65%
+
+  strict 与 proved 同增（+13 全数）：13 行 delta 第 4 列语义逐行核对均不含字面 [未证]
+  （13/13 False）。0062FE90 表址改字 007E9D84→007E9D64 亦未引入 [未证]。
+
+五、达标翻转
+------------
+  名义达标（named_S14≥ceil(0.9n) 且 proved≥ceil(0.5n)）：
+    改前 S15/S16/S17 → 改后 S15/S16/S17（不变，3/22）
+  严格达标（named_S14≥ceil(0.9n) 且 proved_strict≥ceil(0.5n)）：
+    改前 S17 → 改后 S17（不变，1/22）
+  结论：无达标翻转。符合卡片"达标判定不得改变（严格仍仅 S17）"。
+
+六、0062FE90 表址已改的证据
+---------------------------
+  卡片勘误要求：delta 第 4 列写 007E9D84（析构器 teardown 写的死表）须改字为
+  活表 007E9D64（ctor 0062DC50 于 0062DC95 装入，Find 004EA010）。
+  实测 delta 第 4 列原文含 "007E9D84" ×1、"0x7E9D84" ×1（同源同址两种写法）。
+  落盘 coverage.tsv 中 0062FE90 行第 4 列：
+    含 "007E9D64" = True，含 "0x7E9D64" = True；
+    含 "007E9D84" = False，含 "0x7E9D84" = False；
+    grade=[已证]，evidence_path=NAMED_PUSH_AUDIT7/VERDICT.md。
+  核对脚本 MERGE_M67/_postcheck.py 断言通过；PANEL.md 备注列已记
+  "0062FE90 表址按审计勘误改为 007E9D64" 与 "M67 按审计勘误改表址"。
+
+  S06 五行 ④ 补证（第二条勘误）：delta 第 4 列本无 ④，按卡片"照抄、不改执行器原文"，
+  coverage.tsv 五行的语义栏与 delta 原文逐字节相等、均无 ④（见 _postcheck.py 输出）；
+  ④ 由 a-S20S06 审计补证，已在 PANEL.md 备注列记
+  "M67 备注：S06 五行 ④ 由 a-S20S06 审计补证，见 NAMED_PUSH_AUDIT7\VERDICT.md"。
+
+七、strict 用的是带方括号字面 [未证] 口径的证据
+-----------------------------------------------
+  权威脚本 RULING_R15_20261119/work/strict_panel.py 第 78 行原文：
+      if "[未证]" not in sem:
+          d[s]["proved_strict_n"] += 1
+  即排除条件是语义栏含"带方括号的字面 [未证]"，不是裸"未证"二字。
+  本轮复算证据：
+    1) 将 strict_panel.py 复制并将 OUT 重定向至 MERGE_M67/_strict_out 后原样执行
+       （判定逻辑未改，仅改输出目录），实测输出与 PANEL 严格双列表逐格一致：
+         S06 135/120、S20 61/49、TOTAL 1563/1246；名义 S15/S16/S17、严格 S17。
+       输出：MERGE_M67/_strict_out/strict_panel.tsv、strict_panel.json。
+    2) 独立复核脚本 MERGE_M67/_postcheck.py 以同一字面条件复算，结果一致。
+    3) 13 行 delta 第 4 列语义逐行核对无字面 [未证]（13/13 False），
+       故 strict 增量严格等于 proved 增量。
+
+八、前置复核（卡片"Lead 已核过的前置"，改前实测全部吻合）
+----------------------------------------------------------
+  数据行 18,498 ✓；全表 [已证] 1,556 ✓；atlas 内 1,550 ✓；atlas 外 6 ✓
+  S20 proved 53 ✓、S06 proved 130 ✓。13 行应全在 atlas 内 → 实测 atlas 内 13 ✓。
+
+九、边界
+--------
+  未 git commit；未改 R14_COMMON.md / STATUS_BOARD.md / 台账 / NAMED_PUSH_* /
+  NAMED_PUSH_AUDIT* / RESCAN_MOVED；仅写 COVERAGE/coverage.tsv、COVERAGE/PANEL.md
+  两文件（改动前备份与本目录工作脚本/日志均在 MERGE_M67 内）。

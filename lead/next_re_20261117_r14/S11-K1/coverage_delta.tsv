@@ -1,0 +1,48 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+0041c250	S11	LocomotionClass::CreateInstance	按 CLSID 创建 locomotor 实例的工厂入口：ole32!CoCreateInstance(rclsid,pUnkOuter,dwClsContext,IID_ILocomotion,out)+可选 OleRun；ret 0xC	[已证]	EVIDENCE/ghidra_corroborate.log
+006bb9a0	S11	COM_ClassRegistration	启动期 COM 类注册函数：内嵌 0x6BD15C..0x6BD3BE 的 11 个 locomotion CLSID→类工厂注册块（new 工厂+push CLSID+call 0x6C6400）	[已证]	EVIDENCE/disasm_6BD130.txt
+006c6400	S11	RegisterClassObject_Wrapper	COM 类对象注册包装：ecx=0xB0BC88 注册表单例，edx=GUID 结构，push 工厂对象；78 调用点全在 0x6BB9A0 注册函数内	[已证]	work/callscan.py
+004da530	S11	FootClass::AI	FootClass 每帧 AI：frame%N 只门控 0x4DA56E..0x4DA63B 应答块；0x4DA877 在其后每帧派发 ILocomotion::Process(slot16)	[已证]	EVIDENCE/slot_anchors.txt
+004d55f0	S11	FootClass::MoveTo	FootClass 虚槽 319：取 [this+0x674] 的 ILocomotion*，call [vt+0x44] = slot17 Move_To(CoordStruct 按值)	[已证]	EVIDENCE/slot_anchors.txt
+004d55c0	S11	FootClass::StopMoving	FootClass 虚槽 320：取 [this+0x674] 的 ILocomotion*，call [vt+0x48] = slot18 Stop_Moving；恒返回 al=0	[已证]	EVIDENCE/slot_anchors.txt
+004d9c10	S11	FootClass::Can_Enter_Cell	FootClass 的 Can_Enter_Cell 转发：call [loco.vt+0x1C] = ILocomotion slot7；只转发无自身写	[已证]	EVIDENCE/slot_anchors.txt
+006c3f40	S11	DriveClassFactory::ctor	Drive class factory 构造器：由注册函数 new(8) 后调用，建立 IClassFactory vtable（含 CreateInstance=0x6C4010）	[已证]	EVIDENCE/disasm_6BD130.txt
+006c4010	S11	DriveClassFactory::CreateInstance	Drive 类工厂 CreateInstance：new(0x70)→call 0x4AF540(Drive ctor)→QueryInterface(slot0)→返回 ILocomotion*	[已证]	EVIDENCE/factory_createinstance_all11.txt
+006c40c0	S11	JumpjetClassFactory::ctor	Jumpjet class factory 构造器（注册函数 0x6BD198 处 new+ctor）	[已证]	EVIDENCE/verify_final.txt
+006c41d0	S11	JumpjetClassFactory::CreateInstance	Jumpjet 类工厂 CreateInstance（ctor+0xD0；new+派生ctor+QueryInterface 同构）	[已证]	EVIDENCE/factory_createinstance_all11.txt
+006c4240	S11	HoverClassFactory::ctor	Hover class factory 构造器（注册函数 0x6BD1D5 处 new+ctor）	[已证]	EVIDENCE/verify_final.txt
+006c4310	S11	HoverClassFactory::CreateInstance	Hover 类工厂 CreateInstance（ctor+0xD0；同构）	[已证]	EVIDENCE/factory_createinstance_all11.txt
+006c43c0	S11	RocketClassFactory::ctor	Rocket class factory 构造器	[已证]	EVIDENCE/verify_final.txt
+006c4490	S11	RocketClassFactory::CreateInstance	Rocket 类工厂 CreateInstance（ctor+0xD0；同构）	[已证]	EVIDENCE/factory_createinstance_all11.txt
+006c4540	S11	TunnelClassFactory::ctor	Tunnel class factory 构造器	[已证]	EVIDENCE/verify_final.txt
+006c4610	S11	TunnelClassFactory::CreateInstance	Tunnel 类工厂 CreateInstance（ctor+0xD0；同构）	[已证]	EVIDENCE/factory_createinstance_all11.txt
+006c46c0	S11	WalkClassFactory::ctor	Walk class factory 构造器	[已证]	EVIDENCE/verify_final.txt
+006c4790	S11	WalkClassFactory::CreateInstance	Walk 类工厂 CreateInstance：new(0x3C)→call 0x75AA90(Walk ctor)→QueryInterface	[已证]	EVIDENCE/factory_createinstance_all11.txt
+006c4840	S11	DropPodClassFactory::ctor	DropPod class factory 构造器	[已证]	EVIDENCE/verify_final.txt
+006c4910	S11	DropPodClassFactory::CreateInstance	DropPod 类工厂 CreateInstance（ctor+0xD0；同构）	[已证]	EVIDENCE/factory_createinstance_all11.txt
+006c49c0	S11	FlyClassFactory::ctor	Fly class factory 构造器	[已证]	EVIDENCE/verify_final.txt
+006c4a90	S11	FlyClassFactory::CreateInstance	Fly 类工厂 CreateInstance（ctor+0xD0；同构）	[已证]	EVIDENCE/factory_createinstance_all11.txt
+006c4b40	S11	TeleportClassFactory::ctor	Teleport class factory 构造器	[已证]	EVIDENCE/verify_final.txt
+006c4c10	S11	TeleportClassFactory::CreateInstance	Teleport 类工厂 CreateInstance（ctor+0xD0；同构）	[已证]	EVIDENCE/factory_createinstance_all11.txt
+006c4cc0	S11	MechClassFactory::ctor	Mech class factory 构造器	[已证]	EVIDENCE/verify_final.txt
+006c4d90	S11	MechClassFactory::CreateInstance	Mech 类工厂 CreateInstance（ctor+0xD0；同构）	[已证]	EVIDENCE/factory_createinstance_all11.txt
+006c4e40	S11	ShipClassFactory::ctor	Ship class factory 构造器	[已证]	EVIDENCE/verify_final.txt
+006c4f10	S11	ShipClassFactory::CreateInstance	Ship 类工厂 CreateInstance（ctor+0xD0；同构）	[已证]	EVIDENCE/factory_createinstance_all11.txt
+004b0500	S11	DriveLocomotion::Process	ILocomotion slot16：Drive 每帧推进/寻路（0x4DA877 派发目标之一）	[已证]	EVIDENCE/slot_anchors.txt
+0075ac80	S11	WalkLocomotion::Process	ILocomotion slot16：Walk 每帧推进/重寻路（0x4DA877 派发目标之一）	[已证]	EVIDENCE/slot_anchors.txt
+004ccb40	S11	FlyLocomotion::Process	ILocomotion slot16：Fly 连续积分推进，不走 PathDirections	[静态推断]	EVIDENCE/slot_anchors.txt
+00514310	S11	HoverLocomotion::Process	ILocomotion slot16：气垫推进	[静态推断]	EVIDENCE/slot_anchors.txt
+0069fc10	S11	ShipLocomotion::Process	ILocomotion slot16：船只推进	[静态推断]	EVIDENCE/slot_anchors.txt
+005b0060	S11	MechLocomotion::Process	ILocomotion slot16：机械推进	[静态推断]	EVIDENCE/slot_anchors.txt
+006622c0	S11	RocketLocomotion::Process	ILocomotion slot16：火箭推进	[静态推断]	EVIDENCE/slot_anchors.txt
+00728e30	S11	TunnelLocomotion::Process	ILocomotion slot16：隧道推进	[静态推断]	EVIDENCE/slot_anchors.txt
+0054aec0	S11	JumpjetLocomotion::Process	ILocomotion slot16：跳跳推进	[静态推断]	EVIDENCE/slot_anchors.txt
+007192f0	S11	TeleportLocomotion::Process	ILocomotion slot16：超时空推进	[静态推断]	EVIDENCE/slot_anchors.txt
+004b5b70	S11	DropPodLocomotion::Process	ILocomotion slot16：空降舱推进	[静态推断]	EVIDENCE/slot_anchors.txt
+0055ac60	S11	LocomotionClass::Process	ILocomotion slot16 基类桩：恒返回 true（无移动）	[静态推断]	EVIDENCE/slot_anchors.txt
+004afd40	S11	DriveLocomotion::Move_To	ILocomotion slot17：写 MovingDestination(+0x30)，桥面加速累计	[已证]	EVIDENCE/slot_anchors.txt
+0075acb0	S11	WalkLocomotion::Move_To	ILocomotion slot17：写 MovingDestination(+0x18)，置 HasMoveOrder	[已证]	EVIDENCE/slot_anchors.txt
+004b0ef0	S11	DriveLocomotion::Do_Turn	ILocomotion slot19：Drive 转向处理	[静态推断]	EVIDENCE/slot_anchors.txt
+0075ae00	S11	WalkLocomotion::Do_Turn	ILocomotion slot19：Walk 转向处理	[静态推断]	EVIDENCE/slot_anchors.txt
+004b48d0	S11	DriveLocomotion::Mark_All_Occupation_Bits	ILocomotion slot39：Drive 占位位标记	[静态推断]	EVIDENCE/slot_anchors.txt
+0075ca30	S11	WalkLocomotion::Mark_All_Occupation_Bits	ILocomotion slot39：Walk 占位位标记	[静态推断]	EVIDENCE/slot_anchors.txt

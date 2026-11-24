@@ -1,0 +1,101 @@
+transcript/summary 一致性：orig 37 项、enh 37 项全部对上
+
+== H系列（原15项）逐行等价核验 ==
+漂移数=0 （零漂移：原15项判定与原门禁逐一相同）
+
+== 36 攻样本逐样本对比（exit: 1=拦住 0=放行）==
+样本                                 原门禁    增强版    变化     增强版拦截主因(N系列FAIL)
+T01_empty_trio.json                1      1      保持拦    N03; N07; N09
+T02a_sid_unknown.json              1      1      保持拦    N07; N09
+T02b_sid_todo.json                 1      1      保持拦    N07; N09
+T02c_sid_na.json                   1      1      保持拦    N07; N09
+T03_sid_copied_n1r2.json           1      1      保持拦    N09; N10
+T04_n11_no_registration.json       1      1      保持拦    N11; N12
+T05_n11_registered_gap.json        0      0      保持放    -
+T06a_role_kadun.json               0      1      转拦↑    N01; N03
+T06b_role_fenliu.json              0      1      转拦↑    N01; N03
+T06c_role_fuhe.json                0      1      转拦↑    N01; N03
+T07_sid_placeholder.json           1      1      保持拦    N07; N09; N14
+T08a_records_zero.json             1      1      保持拦    N01; N03; N04; N07; N09; N11; N12; N15; N16; N17; N18; N19
+T08b_records_two.json              1      1      保持拦    N01; N03; N04; N07; N09; N11; N12; N15; N16; N17; N18; N19
+T09a_container_missing_grade.json  1      1      保持拦    N05; N13
+T09b_container_extra_key.json      0      1      转拦↑    N13
+T10_field_order.json               1      1      保持拦    -
+T11a_ts_bad.json                   1      1      保持拦    N18
+T11b_ts_int.json                   1      1      保持拦    N18
+T11c_ts_text.json                  1      1      保持拦    N18
+T12a_hash_wrong_hex.json           1      1      保持拦    N15
+T12b_hash_wrong_bytes.json         1      1      保持拦    N15
+T12c_hash_missing_binding.json     1      1      保持拦    -
+T13_positive.json                  0      0      保持放    -
+T14_decision_approve_scope.json    0      1      转拦↑    N04
+T16_decisionsemantics_tampered.json 0      1      转拦↑    N06
+T17_artifacthash_fake.json         0      1      转拦↑    N16
+T18a_sid_dash.json                 0      1      转拦↑    N07; N09
+T18b_sid_digits.json               0      1      转拦↑    N07; N09
+T19_sid_nearcopy.json              0      1      转拦↑    N07; N09; N10
+T20_n11_decorated.json             0      1      转拦↑    N11; N12
+T22_fullwidth_placeholder.json     0      1      转拦↑    N07; N09; N14
+T23_unresolved_wrong_phrase.json   0      1      转拦↑    N12
+T24_inputhash_extra_fake.json      0      1      转拦↑    N15
+T26_container_role_fuhe.json       0      1      转拦↑    N03; N02
+T27_grade_approve_scope.json       0      1      转拦↑    N05
+T29_sid_fabricated_shape.json      0      1      转拦↑    N07; N09
+
+== 模板基线 ==
+_c7_record_template.json: orig=1 enh=1
+
+== 统计 ==
+原门禁：拦 17 / 放 19（36 样本）
+增强版：拦 34 / 放 2（36 样本）
+转拦（原放→增强拦）：17 个
+退化（原拦→增强放）：0 个
+增强版仍放行：T05_n11_registered_gap.json, T13_positive.json
+
+== 转拦样本的完整 N 系列 FAIL 明细 ==
+--- T06a_role_kadun.json（orig=0 enh=1）
+    [FAIL] N01 [G1] 记录层reviewerRole非内部角色
+    [FAIL] N03 [G1] 记录层与容器层reviewer.role一致
+--- T06b_role_fenliu.json（orig=0 enh=1）
+    [FAIL] N01 [G1] 记录层reviewerRole非内部角色
+    [FAIL] N03 [G1] 记录层与容器层reviewer.role一致
+--- T06c_role_fuhe.json（orig=0 enh=1）
+    [FAIL] N01 [G1] 记录层reviewerRole非内部角色
+    [FAIL] N03 [G1] 记录层与容器层reviewer.role一致
+--- T09b_container_extra_key.json（orig=0 enh=1）
+    [FAIL] N13 [G9] 容器键集合与13键精确相等（缺+多都拦）
+--- T14_decision_approve_scope.json（orig=0 enh=1）
+    [FAIL] N04 [G2] decision值域{REGISTERED,PARTIAL}且禁签署语汇
+--- T16_decisionsemantics_tampered.json（orig=0 enh=1）
+    [FAIL] N06 [G4] 六固定字段与模板逐字一致
+--- T17_artifacthash_fake.json（orig=0 enh=1）
+    [FAIL] N16 [G11] artifactHashes全键实算（空dict合法）
+--- T18a_sid_dash.json（orig=0 enh=1）
+    [FAIL] N07 [G5] 记录层sessionId运行态形制
+    [FAIL] N09 [G14] 容器sessionId与记录层一致
+--- T18b_sid_digits.json（orig=0 enh=1）
+    [FAIL] N07 [G5] 记录层sessionId运行态形制
+    [FAIL] N09 [G14] 容器sessionId与记录层一致
+--- T19_sid_nearcopy.json（orig=0 enh=1）
+    [FAIL] N07 [G5] 记录层sessionId运行态形制
+    [FAIL] N09 [G14] 容器sessionId与记录层一致
+    [FAIL] N10 [G6] sessionId冒用面归一化比对（记录层+容器层）
+--- T20_n11_decorated.json（orig=0 enh=1）
+    [FAIL] N11 [G7] 计划号子串触发（含N-数字即须登记）
+    [FAIL] N12 [G8] 触发时unresolved必含登记语「正式任务书编号未落实」
+--- T22_fullwidth_placeholder.json（orig=0 enh=1）
+    [FAIL] N07 [G5] 记录层sessionId运行态形制
+    [FAIL] N09 [G14] 容器sessionId与记录层一致
+    [FAIL] N14 [G10] 全件无占位符残留（扩展面：全角＜＞与裸角字符）
+--- T23_unresolved_wrong_phrase.json（orig=0 enh=1）
+    [FAIL] N12 [G8] 触发时unresolved必含登记语「正式任务书编号未落实」
+--- T24_inputhash_extra_fake.json（orig=0 enh=1）
+    [FAIL] N15 [G11] inputHashes全键实算（含额外键；路径限仓库内）
+--- T26_container_role_fuhe.json（orig=0 enh=1）
+    [FAIL] N03 [G1] 记录层与容器层reviewer.role一致
+    [FAIL] N02 [G1] 容器reviewer.role非内部角色
+--- T27_grade_approve_scope.json（orig=0 enh=1）
+    [FAIL] N05 [G3] grade值域{REGISTERED,PARTIAL}且禁签署语汇
+--- T29_sid_fabricated_shape.json（orig=0 enh=1）
+    [FAIL] N07 [G5] 记录层sessionId运行态形制
+    [FAIL] N09 [G14] 容器sessionId与记录层一致

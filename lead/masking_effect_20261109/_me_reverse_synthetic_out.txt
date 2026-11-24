@@ -1,0 +1,22 @@
+=== STEP 2(d) reverse masking: minimal synthetic construction ===
+mechanism: _rs_carrier_scan.py:165 pos = min(...find(n)...)
+           :168 q = quoted_containing(line, pos) ; :173-182 role from q
+
+line = '「核对」 只能判「不可复现」'
+  [N]        role=ASSERTION        pos=5   q=None
+  [N, '核对'  ] role=QUOTED           pos=1   q=('「核对」', '「')
+  ROLE_FLIP = True  (needs_fix: True -> False)
+
+line = '「逐字」 复算数字 只能判「不可复现」'
+  [N]        role=ANALYSIS_MENTION pos=10  q=None
+  [N, '逐字'  ] role=REFUTING_QUOTE   pos=1   q=('「逐字」', '「')
+  ROLE_FLIP = True  (needs_fix: False -> False)
+
+=> adding a needle is NOT monotone in the ROLE/fix-list sense:
+   'scanned' is monotone (any/min cannot un-scan a line), but
+   'classified as ASSERTION / needs_fix' is NOT monotone.
+
+REAL-CORPUS check: _me_reverse_assertion_out.txt found 0 such flips
+   among 24 ASSERTION lines with the 9 candidate extra needles tried;
+   so the risk is demonstrated synthetically but NOT observed on
+   this particular corpus. Reported honestly, not overstated.

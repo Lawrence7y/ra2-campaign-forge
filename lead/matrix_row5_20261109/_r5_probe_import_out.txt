@@ -1,0 +1,22 @@
+FRESHNESS_SNAPSHOT_STATES = ('unknown', 'absent_confirmed', 'present', 'error')
+
+==== 全格实跑：行=pre 变体，列=post 变体，格=verdict|conf|is_new ====
+pre\post            read_error     无件             在场sha异         在场sha同mt同      在场sha同mt升      在场sha同mt降      在场sha同mt缺      在场缺post_sha    
+None                post_read_error|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|None
+empty{}             post_read_error|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|None
+缺state              post_read_error|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|None
+脏值                  post_read_error|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|None
+显式unknown           post_read_error|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|Noneunknown|none|None
+absent_conf         post_read_error|none|Noneabsent_both|low|Falsenew_first_appearance|high|Truenew_first_appearance|high|Truenew_first_appearance|high|Truenew_first_appearance|high|Truenew_first_appearance|high|Truenew_first_appearance|high|True
+present             post_read_error|none|Nonevanished|none|Nonenew_write|high|Trueleftover_unchanged|high|Falserewritten_same_content|medium|Truerewritten_same_content|low|Trueleftover_unchanged|medium|Falsepost_read_error|none|None
+present缺pre_sha     post_read_error|none|Nonevanished|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|None
+error               post_read_error|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|Noneerror_pre_snapshot|none|None
+
+==== 关键格断言 ====
+PASS  C1 pre=None + read_error → post_read_error（R2:53 同输入；码序 :4643<:4648）  实测=('post_read_error', 'none', None)
+PASS  C2 pre=absent_confirmed + read_error → post_read_error（:4643<:4657/:4666）  实测=('post_read_error', 'none', None)
+PASS  C3 pre=error + read_error → post_read_error（:4643<:4652；:4 行 condition 未排除此格）  实测=('post_read_error', 'none', None)
+PASS  C4 pre=显式unknown + 跑后在 → unknown（:3 行只写「跑后无件」，此格矩阵无行）  实测=('unknown', 'none', None)
+PASS  C5 pre=present缺pre_sha + read_error → post_read_error（:4643<:4673；:5/:13 重叠）  实测=('post_read_error', 'none', None)
+
+PROBE_ALL_PASS

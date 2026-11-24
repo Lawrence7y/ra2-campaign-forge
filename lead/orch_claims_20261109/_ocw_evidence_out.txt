@@ -1,0 +1,114 @@
+=== lead/keff_calc_20261109/KEFF_CALC.md lines 505 ===
+102 - **3.75% 是两层乘积**：`q_r10 × q_n13 = 0.487179×0.076923 = 0.037475345`（= 3.7475%）。
+103   因 R12 对「全 PASS」零增量，上游只按 R10|N13 两层算联合漏报期望。
+104   **硬乘三层** `q_r10·q_r12·q_n13 = 0.033631720`（3.36%），与 3.75% 差 0.38 pp。
+106 - 实测 `P(all3 PASS|E) = 3/39 = 0.076923`（7.69%）；**2.05 倍** = `0.076923/0.037475 = 2.052631579`
+107   （似然口径，`_kc_run_console.txt:37`）。
+108 - **3/18=16.7% 是后验，3/39=7.69% 是似然，二者不可相除**：`0.1667/0.037475 = 4.4474`
+109   属类别错误，禁用（`_kc_run_console.txt:38`）。
+110 - **编排方 `indep_wrong_prob=0.0` 判口径错置**：其来源是
+111   `fp_rate(r10)×fp_rate(r12)×fp_rate(n13) = 0.5714×0×0 = 0`，用的是「非断言被误拦率」，
+112   不是「真断言被放过率」（`_kc_run_console.txt:36`、`_ke_calc_stdout.txt:64-66`），**不能当独立假设错率**。
+256   ⇒ 正确率**低 7.79 pp / 8.63 pp**，后验错误率**放大 1.8772× / 2.0727×**。
+257 - 若沿用编排方 `indep_wrong_prob=0.0`（错置口径）则宣称 **100%**，差 **16.67 pp**。
+258 - **2.0526× 是似然口径**（7.69% vs 3.75%），**不得与后验混用**（§2.5）。
+=== lead/pvalue_recalc_20261109/PVALUE_RECALC.md lines 274 ===
+113 | 族级 / 全单元 | `0.25 / 7.62939453125e-06 = 32768.0` | `2^15` | `4.515449934959718` | 跨 **≈4.515 个数量级**，从「极显著」翻成「不显著」 |
+165   `2·2^-n_eff < 0.05 ⇒ n_eff > log₂40 = 5.321928094887363`；
+166   连续外推 `ρ̄ < 0.14013134380964332`；按整数 `n_eff ≥ 6` 需 **`ρ̄ ≤ 2/17 = 0.11764705882352941`**。
+=== lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md lines 330 ===
+127 - **一致率 = (20+18)/74 = 38/74 = 51.351%**（分歧 36/74 = 48.649%）。编排方担心的「高一致」在这份语料上**不成立**。
+128 - φ = `0.029325639294907786`（≈ +2.93%，几乎零线性相关）；MI(R10;N13) = `0.0006204988812550678 bit`；H(N13) = `0.9994730201859836 bit`，H(N13|R10) = `0.9988525213047287 bit`，**残差信息 99.938%**。
+142 - 对照本语料实测 ρ=0.5135 ≈ 独立基线 0.5：按此框架「标签层几乎无冗余」，但**这与 §3.1 的真值层 2.05 倍风险放大并存**——正是「标签独立 ≠ 误差独立」的量化表现，两套口径不可混用。
+=== lead/chain_vs_single_20261109/CHAIN_VS_SINGLE.md lines 293 ===
+93 - `:143` N13 单层：`n13.r13_assertions(text, T, ...)` —— 恒用模块级常量 `T=['已入账','已追加','已生效']`，**不看 `item['tokens']`**；
+147 | GP-A1 | CATCH | PASS | PASS | PASS | PASS | CATCH | `亦非不宣告 N-4 正式绑定已生效` | 否（同漏） |
+184 | ③ 三层共用字面词表 | **部分成立，须收窄** | `_n13_predicates.py:25 DEFAULT_TOKENS`；`_gp_pipeline.py:52` `list(n13.DEFAULT_TOKENS)`、`:132 n13_vocab=set(n13_tokens)`、`:135 tok_set=set(tokens)|n13_vocab`；`_gp_regression.py:47,143` 恒用 `T`
+=== lead/gate_rejudge32_20261109/GATE_REJUDGE_32.md lines 304 ===
+51 | gateProblems 非空 | **13 域** | **10 域** | 不符；`GATE_DOC_NAME_FIX.md:242` 自述「13 个提示域」并枚举同一清单 |
+52 | 问题条目总数 | **24 条** | — | 13 域逐条见 §3 |
+53 | bindings=0 | **6 域** | **5 域** | 不符，见 §4(c) |
+56 **「10 域」集合对齐：未验。** 任务书只给「10 个域」数字、未给枚举；我实测 6 种口径（含断言 7、含绑定行 6、含缺要素 6、断言∪绑定 9、排除纯缺要素 9、问题条目 24）都得不出 10，故按 13 域全量逐域给判定，不猜集合。任务书必现要素中的「10 域」在此登记为「编排方口径 / 未验」。
+77 **双轨数字与编排方完全一致**：30 域有 banned 词表、7 域任一轨命中、`R12` 全域 0（实读 `_g7_predicates.py:134-148` 的 `r12_scan`；本会话独立复核 `r12_all_zero=true`）。**朴素与谓词的差异数 = 6 域**（4 域朴素多报被 R10 全豁免：ledger_appendix / matrix_ab_ruling / n10c04_ruling / n4_y
+137 **重点（c07_slot / c07_truth_protocol）**：R10 比朴素多报的 7 处（c07_slot 5 + c07_truth_protocol 2）**全是新误报**（标题 / 表头 / 清单 / 条件式 / 占位符 / 先例引述），「朴素漏真断言」假设**不成立**——朴素报的正是同一 token `已填`（各 1 条），R10 多的不是新词或同义词，只是同一 token 的其它出现次数；`_g7_predi
+161 ### (c) 6 个 bindings=0 域逐个定性（任务书【交付】写「5 个」，实测 6 个；此处按 6 个全给，「5 个」差 1 标未验）
+289 1. **判不了**：编排方「10 个域」「5 个 bindings=0」的出处与枚举。我实测 13 / 6（§2.2、§4(c)），`GATE_DOC_NAME_FIX.md:242` 自述也是 13；编排方未给 10 域枚举，6 种口径都得不出 10 → **10 域集合对齐未验**，本件按 13 域全量判，不猜。
+=== lead/gate_n13_20261109/GATE_N13_QUOTED_ASSERTION.md lines 502 ===
+390 **旧门禁四条问题逐条重判（如实）**：把历史 payload `dwfrun-614dbceb…mjs` 的 `GATE_CODE` 逐字重建（写域 `_n13v_hist_gate_replay*.py`），代入三件现盘 SHA 实跑 `python -I -X utf8 D:/…/_n13v_hist_gate_replay.py`：
+404 | ④ 另 2 条（背景称四条） | **否（未验）** | 同上 | **不判** |
+499 1. **旧门禁「四条问题」的另 2 条**：现盘 0 命中、旧输出未落盘、DB `part` 表 ≥4 条 problems 且含「已入账」的 JSON 数组 = 0（实跑 `_n13v_hist_gate_replay.py` 与 `_n13v_final_probe.py PART 2`）。**未验**，不补造条目名。
+=== lead/n4_gate_verdict_20261109/N4_GATE_VERDICT.md lines 379 ===
+94 ## 3 四条 FAIL 逐条判定
+201 ### 3.5 四条 FAIL 汇总
+210 RUN 3 与本轮 `_n4g_writer_out.json` 同值：`naive_gate_problems` = 4 条，`improved_gate_problems = p9+p10+p12+p11 = []`。已实装谓词在同一文件上四条全消。
+=== lead/minhard_check_20261109/MINHARD_SET_CHECK.md lines 294 ===
+12 **目的**：按任务书要求，如实登记三组硬项（处8 / 处9 / #C1 / #C2 / #A3）在现盘的原位状态；核算「4 件最小」是否成立；核算「加注零边际成本」是否成立并给出**执行顺序**建议；给出 Leader **执行前必读**四分类与**只批 4 件的最坏情形**。
+173 ### 4.4 判定：「4 件最小」**不成立**（方向经【复核】④ 确认）
+179 | A. 严格交集（「随段进永久台账」∩「已定谳但表述旧」），**13 件内** | **2 件**：`LEDGER_APPENDIX_DRAFT.md`、`_la_draft3_s604_gapdiff.md` | `_mh_MINHARD_CHECK.md:155`；只有组① 命中 |
+180 | A′. 同上交集，**全 lead/ 实盘**（本会话独立扫） | **6 件** `IN_BLOCK=True`：上述 2 件 + `LEDGER_BOUND_VOLUME.md` + `_lb_BOUND_VOLUME.md` + 2 件 sandbox 副本 | `_mhz_blocks2_out.txt:3,6,12,14,17,19`；【复核】③ 亦指出「严格交集回件答 2 件只在其自己批判的『13 件内』口径成立，全仓实
+181 | B. 清单三组 + 清单自认的 #A3 降级分支 | **3 件**（若连降级加注都不做则 2 件；清单自述「降为 2 组」） | `S604_REFSYNC_FULL.md:85,309` |
+182 | C. 撰写人推荐「Leader 动笔前不留会进台账的过时表述 + 不留失效登记」 | **6 件**（4 件 + 两件合订本）；+ 模板指纹登记 = 7；+ 处5 连带 `_sa:90` = 8 | `_mh_MINHARD_CHECK.md:157`、`_mh_final_out.txt:25,32` |
+183 | C′. 按 C 口径**自身**严格剔除组②/③（撰写人自己判二者不进台账、可降级） | **4 件**：`LEDGER_APPENDIX_DRAFT.md`、`_la_draft3_s604_gapdiff.md`、`LEDGER_BOUND_VOLUME.md`、`_lb_BOUND_VOLUME.md`；+ 模板 = 5；+ `_sa:90` = 6；再计 §4.2(b) 的脚本/输出登记件则更多 | 【复核】④「推荐 6 件
+=== lead/masking_effect_20261109/MASKING_EFFECT_AUDIT.md lines 415 ===
+63 | 单 needle | `…_rs_carrier_scan.py --needle 只能判「不可复现」 --include-refuting --max-depth 2 --ext .md` | 1 | **FAIL** | 646 / 87 | `FAIL … got=<not-scanned>` |
+64 | 双 needle | 同上 + `--needle 不能定位当年错误步骤` | 0 | **PASS** | 646 / 136 | `PASS … got=REFUTING_QUOTE` |
+78 N1 '只能判「不可复现」' find = -1
+79 N2 '不能定位当年错误步骤' find = 172
+87 **纠正 ask 的一处表述**：`:22` **并不「同时逐字含两个 needle」**——N1 的直角引号 `「」`(U+300C/D) 与原文内层弯引号 `『』`(U+300E/F) 不一致，`find=-1`；只有 N2 在 pos=172 命中。编排方 given `hasN1=false, hasN2=true, posN1=-1, posN2=172, len=711` 正确，ask 叙述按实跑纠正为「只含第二 needl
+104 **决定性反证（本会话实跑）**：`--needle 不能定位当年错误步骤 --needle TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ` → `_me_auditcheck_out.txt` C2 `[broken]`：`EXIT=0`、`SELF_TEST = PASS`、6 条负控全 `PASS`（撰写人 `_me_broken_needle_out.txt:546-552` 同）。即**一根 needl
+109 - **但测试设计有缺陷**：`SELF_TEST = PASS` 被当成「载体扫描口径已修正、6 条负控都覆盖」的交付证据（`REFSYNC_SCOPE_FIX.md:243` R6 描述、`:251` 登记双 needle 命令 + `SELF_TEST = PASS`(6/6)、`:252-253` 另两条 PASS）。该 PASS 只证明「**N1∪N2 并集**覆盖这 6 行」，不证明「**每根 needle 独立工作**」。
+110 - 按【铁律】「掩蔽不是眼下的 bug，是**测试设计缺陷**；若某处通过是被掩蔽的，即使结果碰巧正确，也必须标为不可信」：**判测试设计缺陷，上一轮 `SELF_TEST = PASS` 不可信**（严重度 high）。不是「脚本的正确行为」，也不是「部分可信」。
+373 **`SELF_TEST = PASS` 可信度 = 不可信（not `unconfirmed` 的「待定」，是明确判废）**。依据（本会话实跑 + 直读）：
+377 4. 【铁律】：被掩蔽的通过即使结果碰巧正确（N1 别处命中 79 行）也**必须标不可信**。
+=== lead/check_family_20261109/CHECK_FAMILY_LINEAGE.md lines 559 ===
+336 ★ **「字面 `any()`+PASS 筛会漏掉 d28/d27」标 unconfirmed**（复核 verdict=`partial` 破口①）：该结论只在撰写件自定义窄口径（`_cf_census.py:55-59` 的 `orch_any_line` + `:80` 的 `print("PASS` 立即开头）下成立 —— d28 `check_d28.py:97` 是 `any(present)`（布尔列表 Name，非生成器
+410 缺陷进入点（确定）：`check_d27.py:81-88` 首次把「正文须含 X」泛化成「正文须含 X 或 Y」，用 3 元组 `("外推","卡顿不存在")` + `any(keyword in body …)`，并沿用「逐项 `errors.append` + 末尾一行 `PASS`」汇总；`check_d28.py:89-99` 再引入 `requirements` 四元组 + `require_all` 旗标把 OR/AND 
+431 | **F2** | `any(...)` 把该 k 词 OR 塌缩成单个布尔：生成器成员测试 / 布尔列表绑定后 `any(Name)` / `any(matches)` | `check_d27.py:86-87` `any(keyword in body … for keyword in keywords)`；`check_d28.py:96-97` `present=[word in body …]` + `any(presen
+439 - **CONFIRMED（生产门禁，4 件）**：`check_d27.py` / `check_d28.py` / `check_d29.py` / `check_d30.py`。`_cf_detect_out.json:four` 逐件 `P1–P4=true`；四件「坏针仍 PASS」的既有实证见 `STALE_PASS_INVENTORY.md:126-131`（4 行逐件列 OR 词表与 `check_dNN.py` 行号）
+=== lead/score_decomp_20261109/_sd_report.md lines 441 ===
+152 ### (a) `frozen68=+18` 是真改良吗 —— **不是「改良」，是「一次可定位的实现替换在冻结子集上的配对效应」**
+161 7. **in-sample**：K9 是为消 20 条 FP 而写（`_gp_pipeline.py:168-172` 注释、`GATE_PIPELINE_COMPOSE.md:431`、`COMPARABILITY_AUDIT.md:219`）；18 行全是 `expect=PASS` 的误拦（`72 chain=CATCH` ×18、`74 chain=PASS` ×18，本会话实跑），正是 K9 点名的失败形态；`CHAIN_V
+162 
+163 ⇒ **判定**：`+18` 可归因于「把合成裁决从三层朴素并集换成逐 span K1–K9」这一处实现替换，**但不能归因于「算法更好」**。范围只到「这 68 条冻结考题、这套冻结真值、这个被比较列」，且带「未验重跑」标签。
+217 | **合计** | **+21** | **可归因于「算法改进」= 0 分**；可归因于「某处实现替换」= 18 分（条件性、in-sample、不可泛化）；可归因于「修正基线」= 3 分 | 本会话全部实跑 |
+219 **严格答案：0 分**。理由：「算法改进」隐含「在新数据上更好」的泛化主张；本会话没有任何盲留出集证据（`CHAIN_VS_SINGLE.md:131` 明写「正式盲留出集本次未做，标未验」；`COMPARABILITY_AUDIT.md:357` 把 κ 列为设计），而 74 行是 train=test（`CHAIN_VS_SINGLE.md:129`、`EVIDENCE_INDEPENDENCE.md:157`）。若把措辞放宽为「
+262 2. **in-sample 调参**：K9 是为消这 20 条 FP 而写（`_gp_pipeline.py:168-172`；`GATE_PIPELINE_COMPOSE.md:431`「20 条新增误报全部来自 N13 已判 A/B 放过、R10 宽进仍报 assertion」；`COMPARABILITY_AUDIT.md:219,344` 明写「in-sample 调参收益，不是泛化证据」）。18 条增益 = 72 版 20 
+373 > 「+21 分里 3 分是把 3 条真值标注从 CATCH 改成 PASS（模型输出逐列未变，属修正基线）、18 分是在 68 条冻结考题上把合成裁决从三层朴素并集换成逐 span K1–K9 的配对差值（in-sample、72 版脚本未留盘、`chain` 列定义已变），新增 3 条全漏、删 1 条本来 0 分；**0 分可归因于算法改进**，两版 `48/72` 与 `69/74` 不可比，差值无因果含义。」
+=== lead/h5_governance_20261109/_h5_DESIGN.md lines 372 ===
+283 **判断：仍然不能全局插入；可在严格白名单 + 影子模式下有限启用。** 依据：
+285 - H5 是 `V12_FULL_IMPACT.md:226` 认定的「唯一实质缺陷」，但 `:287` 明列**四条前置条件**：「只对白名单 3 域启用 / 先修 H5 管辖误判与 `V2_OVERRIDE` 自指词 / S3 不再无条件 fail-closed / 补齐逐处回归门槛并先影子 N≥3 轮」，并写「缺一即净损失」。本补丁只满足第 2 条的一半（H5 已修，`V2_OVERRIDE` 自指词**未修**）。
+287 - `V12_FULL_IMPACT.md:344` 总闸门原话：「在门槛补齐并修掉 H5 管辖误判 / `V2_OVERRIDE` 自指词之前，**不建议把分类器真正插入任何生产门禁**」。
+288 - 本会话未重新实跑 `_v12_verify.py` 的 `V1 22/22、V2 14/14、MIXED 4/4` 套件（`V12_FULL_IMPACT.md:348` 亦标「未验」），也未跑影子 N≥3 轮；故**「可插」这一结论本会话不成立**，标未验。
+=== lead/h5_governance_20261109/H5_GOVERNANCE_FIX.md lines 523 ===
+460 **不能全局插入；结论标未验（可插 = 否）。** 依据：
+464 - 本补丁**只针对 H5**，`severity=high`（对「全库直接插入」）；且原回归套件、影子 N≥3 轮本会话**未验**（§6.5）。
+470 | 1 | `V2_OVERRIDE` 把禁用词自身当宣称词（`已入账` 检索/标题形态 6 处误判） | `_v12_rule.py:36,:149-156`；`V12_FULL_IMPACT.md:242-247,328` | 未修 |
+478 
+=== lead/dneg_generative_20261109/DNEG_GENERATIVE.md lines 491 ===
+20 | 所有「改后」数字 | **内存 Shim / 第二模块实例模拟**，非真实门禁落地 | `_dg_step4c.py:44-67`、`_dgv_chain.py:32-42`；真实落地标 **未验** |
+362 GP-A1  expect=CATCH base_chain=PASS  (r10=0 r12=0 n13=0 conflicts=0) | DG_r12=1 hit=亦非不宣告
+363 GP-A1  expect=CATCH DG_chain=CATCH layers={'R9': 3, 'R10': 0, 'R12': 1, 'N13': 1, 'R11': 1}
+368 `GP-A1 expect=CATCH base=PASS shim=CATCH oneline=CATCH`、`[oneline span] tok=已生效 pos=14 r10=CATCH r12=CATCH n13=CATCH => CATCH rules=K1`。
+387   GP-A1 expect=CATCH PASS -> CATCH (r12 0->1, n13 PASS->CATCH) ; 变更条数 = 1
+463 7. **真实落地效果**：`_g7_predicates.py` 与所有既有件绝对只读、未改；所有「改后」来自内存 Shim / 第二模块实例，**不是真实门禁运行**。
+=== lead/gate_doc_name_fix_20261109/GATE_DOC_NAME_FIX.md lines 327 ===
+234 **S1/S2 前缀过滤的现实核对（复核意见第 3 条）**：本会话实跑核查现域匹配数——`n4_yi_final_20261108` 的 `startswith('CANDIDATE_RESIGN')` 只匹配 1 件 `CANDIDATE_RESIGN_YES_V2.md`；`gate_fp7_20261108` 的 `startswith('GATE_FALSE_POSITIVE')` 只匹配 1 件 `GATE_FALSE_PO
+275 3. **欠账补救与优先级两处须澄清**：① 忠实还原 counterpart 原始门禁 `python -I -X utf8 …\_dnv_replay\replay_dwfrun-636adfc5-7ca1.py`（本会话实跑）→ `{"ok": false, "problems": ["缺「变ORPHAN不等于解决」声明", …], "docBytes": 32840, "doc": "_cf_counterpart_vs_tig
+302 | **P0** | n4_yi_final_20261108 | 终稿补跑 4 项提示（缺要素 不签 APPROVE_SCOPE / 含越界断言 可应用母本 / 放行 N-5 / 缺规范格式绑定行）；依据为**内容提示 + 约定名压根没进门禁**（非 +5768B 尺寸，见 §4.1 末段）；bare>1 | 重发一发补验任务或人工重签；CAND 前缀过滤门无大小竞争，尺寸依据作废 |
+=== lead/stale_pass_20261109/STALE_PASS_INVENTORY.md lines 414 ===
+69 **第 4 行台账 A 级（本会话独立复现题给【清点】的新证）**：`lead/PENDING_DECISIONS.md:117` = `  裁决书 lead/d28_ruling_20261106/RULING_D28.md（13,897 B / 29bb247fbf82d80a…763b5f15）+ FACTCHECK.md（13,028 B）+ _d28_facts.py/_out.txt；门禁 check_d28.py 实跑 *
+107 **结论数字**：基于已被证明不可信检验的登记 = **7 处 A 级** = 台账 **4 行**（`PENDING:92/105/117/129`）+ 交付件 **3 行**（`REFSYNC_SCOPE_FIX.md:251/252/253`）。`PENDING:162/186/199` 及其余 ~170 行**未逐条注射实证**，不得计入 A，也不得当作「已证明有效」（题给【清点】1(c) 同判；本会话未逐条复跑，记为未验）。
+143 **统一前提**：四件 PASS 是**形式/机械门禁**，且「结果碰巧对，判的是 PASS 不可信，不是结论错」（`CHECK_MASKING_INJECT.md:695` ②）。故「PASS 为假」推翻的是**「该登记已验证」这一证据资格 / 格式合规保证**，不是裁决的事实与推理。以下逐条给 file:line。
+174 1. **P0** `REFSYNC_SCOPE_FIX.md:251`（连带 `:252/:253`、并按 `MASKING_EFFECT_AUDIT.md:380` 补 `:243`）：现行交付件的验收口径、A+B 双级、正确 AND_k 下应为 FAIL。**属绝对只读件 ⇒ 只能建议 Leader 加注，我无权改**。
+196 1. **门禁自述是格式/机械检查**：`check_d27.py:1` "Read-only D-27 gate"、`check_d29.py:1` "format gate"、`check_d30.py:1` "format gate"、`check_d28.py:1` "mechanical gate"（`_spi_src_lines_out.txt:107/176/250/324`）。实际检查项：`check_d27.py:53
+204 5. **审计报告自认**：`CHECK_MASKING_INJECT.md:695` ①「判不了裁决书事实与推理（三件 docstring 自称 format gate）」②「本次是**主动注入**，三件原词在文档里都实际命中，故**结果碰巧对，判的是 PASS 不可信，不是结论错**」；`:642` 修复建议只要求「把 `PENDING_DECISIONS.md:92,105,129` 三处 `exit=0` 换成『逐输入 PASS
+=== lead/refsync_scope_20261109/REFSYNC_SCOPE_FIX.md lines 363 ===
+251 | 1 | `python -I -X utf8 "…/_rs_carrier_scan.py" --needle "只能判「不可复现」" --needle "不能定位当年错误步骤" --max-depth 2 --ext .md > "…/_fix_d2_out.txt"` | `EXIT=0`；`scanned files = 627 ; carrier occurrences = 80 ; distinct files = 19`
+252 | 2 | 同上，去 `--max-depth`（无深度上限 `--ext .md`）`> "…/_fix_md_out.txt"` | `EXIT=0`；`scanned files = 947 ; carrier occurrences = 86 ; distinct files = 23`（撰写时点 942/79/22）；B 段 `occurrences = 6 ; distinct files = 6`（+2 sandbox）；
+253 | 3 | 同上，默认全扩展名 `.md,.txt,.py,.json` 无深度上限 `> "…/_fix_all_out.txt"` | `EXIT=0`；`scanned files = 5500 ; carrier occurrences = 2429 ; distinct files = 81`（**仅供审计，不作施工数**；上一轮撰写时点 5442 / 1052 / 67，差值含本写域与并行新件）；B 段仍 `6 / 6`；`
+=== lead/gate_pipeline_20261109/_gpv_n13_reg_out.txt lines 165 ===
+132 编排方背景称「四条问题里两条是 含越权断言 已入账 / 已生效」；本会话复跑该门禁只复现 2 条，另 2 条在现盘不可复现（未验）。
+138   ③ 另 2 条（背景称四条）           未验       现盘 0 命中，旧输出未落盘；不补造具体条目名，无法逐条重判
+=== lead/evidence_indep_20261109/_ei_03_corr_out.json lines 158 ===
+19   "rate": 0.5135135135135135,
+26   "MI_r10_n13_bit": 0.0006204988812550678,

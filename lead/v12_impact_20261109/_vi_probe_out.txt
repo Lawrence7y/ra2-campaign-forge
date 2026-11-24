@@ -1,0 +1,335 @@
+=== _vi_probe.py v3 S3 可达性 / 回退探针 ===
+N13_DEFAULT_TOKENS = ['已入账', '已追加', '已生效'] (AST from _n13_predicates.py:25)
+ASSERT_TOKENS      = ['已生效', '可应用母本', '放行 N-5', '已入账', '已追加'] (AST from _g7_reverse_validate.py:26)
+
+[A/B] 库内既有语料：N13 NEG 26 + POS 16 + TV2/TV3 命中行 => 50 单元
+  N13_NEG/N02      expect=CATCH tok=已生效      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 已生效，可应用母本。
+        UNIT = '已生效，可应用母本。'
+  N13_NEG/N04      expect=CATCH tok=已生效      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 本节已生效，可应用母本
+        UNIT = '本节已生效，可应用母本'
+  N13_NEG/N05      expect=CATCH tok=已追加      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 该笔已追加至台账尾部。
+        UNIT = '该笔已追加至台账尾部。'
+  N13_NEG/N06      expect=CATCH tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 第 5 笔已入账。
+        UNIT = '第 5 笔已入账。'
+  N13_NEG/N07      expect=CATCH tok=已生效      R10=negation      V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 不宣告 X 已生效，但 Y 已入账
+        UNIT = '不宣告 X 已生效，但 Y 已入账'
+  N13_NEG/N07      expect=CATCH tok=已入账      R10=negation      V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 不宣告 X 已生效，但 Y 已入账
+        UNIT = '不宣告 X 已生效，但 Y 已入账'
+  N13_NEG/N08      expect=CATCH tok=已生效      R10=negation      V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 不宣告 N-4 正式绑定已生效，但本笔已于 §605 入账
+        UNIT = '不宣告 N-4 正式绑定已生效，但本笔已于 §605 入账'
+  N13_NEG/N10      expect=CATCH tok=已生效      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = - 本件已生效，可应用母本
+        UNIT = '- 本件已生效，可应用母本'
+  N13_NEG/N11      expect=CATCH tok=已追加      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = * 第 3 笔已追加，无需另批
+        UNIT = '* 第 3 笔已追加，无需另批'
+  N13_NEG/N12      expect=CATCH tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = | 1 | §605 | 本笔已入账 | 是 |
+        UNIT = ' 本笔已入账 '
+  N13_NEG/N13      expect=CATCH tok=已生效      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = | 2 | §606 | 该笔已生效，可应用母本 | 备注入账 |
+        UNIT = ' 该笔已生效，可应用母本 '
+  N13_NEG/N16      expect=CATCH tok=已生效      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 母本已生效，可改
+        UNIT = '母本已生效，可改'
+  N13_NEG/N17      expect=CATCH tok=已追加      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 台账已追加第五节，照此执行
+        UNIT = '台账已追加第五节，照此执行'
+  N13_NEG/N18      expect=CATCH tok=已入账      R10=assertion     V12=V1 taken=S0 S3=False hard=['H5_否定禁止管辖'] ov='' weak=[]
+        TEXT = 本笔已入账 0 命中不得写成未入账
+        UNIT = '本笔已入账 0 命中不得写成未入账'
+  N13_NEG/N19      expect=CATCH tok=已入账      R10=negation      V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 未验：本笔已入账
+        UNIT = '未验：本笔已入账'
+  N13_NEG/N20      expect=CATCH tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = grep 结果：第 5 笔已入账
+        UNIT = 'grep 结果：第 5 笔已入账'
+  N13_NEG/N21      expect=CATCH tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = §2 清单 / 此笔已入账 / §3 依赖
+        UNIT = '§2 清单 / 此笔已入账 / §3 依赖'
+  N13_NEG/N22      expect=CATCH tok=已入账      R10=negation      V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 未验：§605 已入账
+        UNIT = '未验：§605 已入账'
+  N13_NEG/N23      expect=CATCH tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = grep 结果：此笔已入账
+        UNIT = 'grep 结果：此笔已入账'
+  N13_NEG/N24      expect=CATCH tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = grep 结果：已入账
+        UNIT = 'grep 结果：已入账'
+  N13_NEG/N25      expect=CATCH tok=已入账      R10=negation      V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 未验：第 605 节已入账
+        UNIT = '未验：第 605 节已入账'
+  N13_NEG/N26      expect=CATCH tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 已入账核查清单：该条已追加
+        UNIT = '已入账核查清单：该条已追加'
+  N13_NEG/N26      expect=CATCH tok=已追加      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 已入账核查清单：该条已追加
+        UNIT = '已入账核查清单：该条已追加'
+  N13_POS/P01      expect=PASS  tok=已入账      R10=assertion     V12=V1 taken=S0 S3=False hard=['H1_疑问式', 'H5_否定禁止管辖'] ov='' weak=[]
+        TEXT = ### 1(c) 有没有已入账的？
+        UNIT = '### 1(c) 有没有已入账的？'
+  N13_POS/P02      expect=PASS  tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 一、一页纸总览  1(a) 笔数=5 / 1(b) 每笔编号·出处·字节 / 1(c) 已入账 grep=0 / 依赖速览
+        UNIT = '一、一页纸总览  1(a) 笔数=5 / 1(b) 每笔编号·出处·字节 / 1(c) 已入账 grep=0 / 依赖速览'
+  N13_POS/P03      expect=PASS  tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = ## 2 · 上游指纹（十一件）+ 待入账清点（每笔编号标题出处字节）+ 已入账 grep 结果
+        UNIT = '## 2 · 上游指纹（十一件）+ 待入账清点（每笔编号标题出处字节）+ 已入账 grep 结果'
+  N13_POS/P04      expect=PASS  tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = ### 2.2 待入账清点 + 已入账 grep 结果
+        UNIT = '### 2.2 待入账清点 + 已入账 grep 结果'
+  N13_POS/P05      expect=PASS  tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = **已入账核查实跑命令**：
+        UNIT = '**已入账核查实跑命令**：'
+  N13_POS/P06      expect=PASS  tok=已入账      R10=assertion     V12=V1 taken=S0 S3=False hard=['H1_疑问式'] ov='' weak=[]
+        TEXT = | 笔 | 暂编 | 标题 | 正文出处（单件草案件:行） | 草案件字节 | 已入账? |\n|:--:|:--:|:--|:--|--:|:--|
+        UNIT = ' 已入账? '
+  N13_POS/P07      expect=PASS  tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 本交付件按任务要求改为「## 1」到「## 5」五节：§1 总览 / §2 上游指纹 + 待入账清点 + 已入账 grep / §3 冲突与依赖 / §4 编号检查 + 结构 + 文件清单
+        UNIT = '本交付件按任务要求改为「## 1」到「## 5」五节：§1 总览 / §2 上游指纹 + 待入账清点 + 已入账 grep / §3 冲突与依赖 / §4 编号检查 + 结构 + 文件清单'
+  N13_POS/P08      expect=PASS  tok=已生效      R10=negation      V12=V1 taken=S0 S3=False hard=['H2_引述占位'] ov='' weak=[]
+        TEXT = - **附两条引用限定**（笔 4 正文自带：YI §1 引文在裁决书中 grep 0 逐字命中，逐字出处「未验」；`RULING_DIRECTION.md` 整体 unconfirmed，本节登记不宣告 N-4 正式绑定已生效）。
+        UNIT = '`RULING_DIRECTION.md` 整体 unconfirmed，本节登记不宣告 N-4 正式绑定已生效）。'
+  N13_POS/P09      expect=PASS  tok=已生效      R10=negation      V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = ② RULING_DIRECTION.md 整体状态 **unconfirmed**（:5/:77）——**本节登记「以乙替代甲」是登记动作，不宣告 N-4 正式绑定已生效**（与补登件自述一致）。
+        UNIT = '② RULING_DIRECTION.md 整体状态 **unconfirmed**（:5/:77）——**本节登记「以乙替代甲」是登记动作，不宣告 N-4 正式绑定已生效**（与补登件自述一致）。'
+  N13_POS/P10      expect=PASS  tok=已生效      R10=negation      V12=V1 taken=S0 S3=False hard=['H2_引述占位'] ov='' weak=[]
+        TEXT = - **引用限定（本会话如实登记两点，引用本节者须连带）**：① YI §1 引文在裁决书中 grep = **0 逐字命中**——**本节登记「以乙替代甲」是登记动作，不宣告 N-4 正式绑定已生效**。
+        UNIT = '- **引用限定（本会话如实登记两点，引用本节者须连带）**：① YI §1 引文在裁决书中 grep = **0 逐字命中**——**本节登记「以乙替代甲」是登记动作，不宣告 N-4 正式绑定已生效**。'
+  N13_POS/P11      expect=PASS  tok=已追加      R10=assertion     V12=V1 taken=S0 S3=False hard=['H1_疑问式', 'H5_否定禁止管辖'] ov='' weak=[]
+        TEXT =   - 有没有已追加的？grep 台账确认 = 0 命中。
+        UNIT = '  - 有没有已追加的？'
+  N13_POS/P12      expect=PASS  tok=已生效      R10=assertion     V12=V1 taken=S0 S3=False hard=['H1_疑问式'] ov='' weak=[]
+        TEXT = | 草案件 | 已生效? | 备注 |\n|:--|:--|:--|\n| X | 否（grep 0 命中） | 待裁 |
+        UNIT = ' 已生效? '
+  N13_POS/P13      expect=PASS  tok=已生效      R10=negation      V12=V1 taken=S0 S3=False hard=['H2_引述占位', 'H5_否定禁止管辖'] ov='' weak=[]
+        TEXT = **不得写成「本笔已生效」**；本件只登记。
+        UNIT = '**不得写成「本笔已生效」**；'
+  N13_POS/P14      expect=PASS  tok=已入账      R10=assertion     V12=V1 taken=S0 S3=False hard=['H2_引述占位'] ov='' weak=[]
+        TEXT =   * 已入账 grep 结果：0 逐字命中
+        UNIT = '  * 已入账 grep 结果：0 逐字命中'
+  N13_POS/P15      expect=PASS  tok=已追加      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = ### 3 已追加 grep 结果（清单）
+        UNIT = '### 3 已追加 grep 结果（清单）'
+  N13_POS/P16      expect=PASS  tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = §2 上游指纹 + 已入账 grep 结果 / §3 冲突
+        UNIT = '§2 上游指纹 + 已入账 grep 结果 / §3 冲突'
+  R10_TV/TV2:L6    expect=CATCH tok=已生效      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 本候选已生效。
+        UNIT = '本候选已生效。'
+  R10_TV/TV2:L8    expect=CATCH tok=放行 N-5   R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 本 YES 放行 N-5。
+        UNIT = '本 YES 放行 N-5。'
+  R10_TV/TV2:L10   expect=CATCH tok=可应用母本    R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 本候选可应用母本，无需另派任务书。
+        UNIT = '本候选可应用母本，无需另派任务书。'
+  R10_TV/TV2:L12   expect=CATCH tok=已入账      R10=assertion     V12=V2 taken=S1 S3=False hard=[] ov='V2_OVERRIDE:已入账' weak=[]
+        TEXT = 本节已入账，台账无需再登记。
+        UNIT = '本节已入账，台账无需再登记。'
+  R10_TV/TV2:L14   expect=CATCH tok=已追加      R10=assertion     V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 已追加至台账 §409，后续以本节为准。
+        UNIT = '已追加至台账 §409，后续以本节为准。'
+  R10_TV/TV3:L8    expect=CATCH tok=已生效      R10=double_neg    V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 复核方并未漏看：本件并非不宣告 N-4 正式绑定已生效。
+        UNIT = '复核方并未漏看：本件并非不宣告 N-4 正式绑定已生效。'
+  R10_TV/TV3:L10   expect=PASS  tok=已生效      R10=negation      V12=V2 taken=S3 S3=True  hard=[] ov='' weak=[]
+        TEXT = 作为对照，上一轮回件不宣告 N-4 正式绑定已生效（单重否定，应豁免）。
+        UNIT = '作为对照，上一轮回件不宣告 N-4 正式绑定已生效（单重否定，应豁免）。'
+  R10_TV/TV3:L12   expect=CATCH tok=已生效      R10=double_neg    V12=V1 taken=S0 S3=False hard=['H5_否定禁止管辖'] ov='' weak=[]
+        TEXT = 审阅不得不承认本候选已生效。
+        UNIT = '审阅不得不承认本候选已生效。'
+  [单元级聚合] 有命中单元=45 判对=34 单元级误报(FP)=9 单元级漏报(FN/回退)=2
+     MISMATCH N13_NEG/N18      expect=CATCH per_hit=['V1'] catches=False
+     MISMATCH N13_POS/P02      expect=PASS  per_hit=['V2'] catches=True
+     MISMATCH N13_POS/P03      expect=PASS  per_hit=['V2'] catches=True
+     MISMATCH N13_POS/P04      expect=PASS  per_hit=['V2'] catches=True
+     MISMATCH N13_POS/P05      expect=PASS  per_hit=['V2'] catches=True
+     MISMATCH N13_POS/P07      expect=PASS  per_hit=['V2'] catches=True
+     MISMATCH N13_POS/P09      expect=PASS  per_hit=['V2'] catches=True
+     MISMATCH N13_POS/P15      expect=PASS  per_hit=['V2'] catches=True
+     MISMATCH N13_POS/P16      expect=PASS  per_hit=['V2'] catches=True
+     MISMATCH R10_TV/TV3:L10   expect=PASS  per_hit=['V2'] catches=True
+     MISMATCH R10_TV/TV3:L12   expect=CATCH per_hit=['V1'] catches=False
+
+=== SUMMARY ===
+{
+ "token_sets": {
+  "N13_DEFAULT_TOKENS": [
+   "已入账",
+   "已追加",
+   "已生效"
+  ],
+  "ASSERT_TOKENS": [
+   "已生效",
+   "可应用母本",
+   "放行 N-5",
+   "已入账",
+   "已追加"
+  ]
+ },
+ "corpus_units": 50,
+ "corpus_units_with_hits": 45,
+ "corpus_hits": 47,
+ "corpus_v12_verdict": {
+  "V1": 10,
+  "V2": 37
+ },
+ "corpus_stage_taken": {
+  "S0": 10,
+  "S1": 20,
+  "S2": 0,
+  "S3": 34
+ },
+ "corpus_S3_default_hits": 34,
+ "corpus_S3_on_should_PASS": 3,
+ "corpus_V1_on_should_CATCH_regression_candidates": 2,
+ "corpus_V2_on_should_PASS_fp_candidates": 9,
+ "corpus_V2_on_should_CATCH": 28,
+ "corpus_V1_on_should_PASS": 8,
+ "corpus_co_hard_override": 4,
+ "corpus_co_hard_weak": 3,
+ "corpus_no_literal_hit_units": 5,
+ "corpus_unit_level": {
+  "units_with_hits": 45,
+  "correct": 34,
+  "FP": 9,
+  "FN": 2
+ },
+ "domains_32_stage_attribution": {
+  "lead/c07_slot_20261109/": {
+   "hits": 6,
+   "V1": 6,
+   "V2": 0,
+   "S0": 6,
+   "S1": 0,
+   "S2": 0,
+   "S3": 0,
+   "hard_marks": [
+    "H2_引述占位",
+    "H4_完成词做定语",
+    "H2_引述占位",
+    "H1_疑问式",
+    "H1_疑问式",
+    "H3_表格状态列",
+    "H2_引述占位",
+    "H3_表格状态列",
+    "H2_引述占位",
+    "H3_表格状态列"
+   ],
+   "hard_and_override": 0,
+   "hard_and_weak": 1
+  },
+  "lead/c07_truth_protocol_20261109/": {
+   "hits": 3,
+   "V1": 3,
+   "V2": 0,
+   "S0": 3,
+   "S1": 0,
+   "S2": 0,
+   "S3": 0,
+   "hard_marks": [
+    "H6_条件选言分支",
+    "H6_条件选言分支",
+    "H3_表格状态列",
+    "H6_条件选言分支"
+   ],
+   "hard_and_override": 0,
+   "hard_and_weak": 0
+  },
+  "lead/ledger_appendix_20261108/": {
+   "hits": 3,
+   "V1": 3,
+   "V2": 0,
+   "S0": 3,
+   "S1": 0,
+   "S2": 0,
+   "S3": 0,
+   "hard_marks": [
+    "H2_引述占位",
+    "H2_引述占位",
+    "H2_引述占位"
+   ],
+   "hard_and_override": 0,
+   "hard_and_weak": 2
+  },
+  "lead/matrix_ab_ruling_20261109/": {
+   "hits": 3,
+   "V1": 3,
+   "V2": 0,
+   "S0": 3,
+   "S1": 0,
+   "S2": 0,
+   "S3": 0,
+   "hard_marks": [
+    "H2_引述占位",
+    "H2_引述占位",
+    "H2_引述占位"
+   ],
+   "hard_and_override": 0,
+   "hard_and_weak": 0
+  },
+  "lead/n10c04_ruling_20261108/": {
+   "hits": 5,
+   "V1": 5,
+   "V2": 0,
+   "S0": 5,
+   "S1": 0,
+   "S2": 0,
+   "S3": 0,
+   "hard_marks": [
+    "H5_否定禁止管辖",
+    "H5_否定禁止管辖",
+    "H2_引述占位",
+    "H5_否定禁止管辖",
+    "H2_引述占位",
+    "H5_否定禁止管辖",
+    "H5_否定禁止管辖"
+   ],
+   "hard_and_override": 0,
+   "hard_and_weak": 2
+  },
+  "lead/n4_yi_final_20261108/": {
+   "hits": 5,
+   "V1": 5,
+   "V2": 0,
+   "S0": 5,
+   "S1": 0,
+   "S2": 0,
+   "S3": 0,
+   "hard_marks": [
+    "H2_引述占位",
+    "H5_否定禁止管辖",
+    "H2_引述占位",
+    "H6_条件选言分支",
+    "H5_否定禁止管辖",
+    "H2_引述占位",
+    "H2_引述占位"
+   ],
+   "hard_and_override": 2,
+   "hard_and_weak": 4
+  },
+  "lead/s604_script_hunt_20261109/": {
+   "hits": 1,
+   "V1": 1,
+   "V2": 0,
+   "S0": 1,
+   "S1": 0,
+   "S2": 0,
+   "S3": 0,
+   "hard_marks": [
+    "H5_否定禁止管辖"
+   ],
+   "hard_and_override": 0,
+   "hard_and_weak": 0
+  }
+ },
+ "domains_32_S3_total": 0,
+ "domains_32_hard_and_override_total": 2,
+ "domains_32_hard_and_weak_total": 9
+}

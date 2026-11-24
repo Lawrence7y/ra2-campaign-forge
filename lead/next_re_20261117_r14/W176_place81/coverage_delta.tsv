@@ -1,0 +1,21 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+0043F180	S12	BuildingClass::SetStage(mode)	slot73 dispatcher: mode0 unlink, mode1/3 link with can-place + per-cell validation, mode2 sub-object state refresh	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T1_disasm_0043F180.txt
+0043F218	S12	BuildingClass_canplace_check_1	can-place call [vptr+0x1AC]; nonzero eax returns failure at 0x43F5EC	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_branchA_canplace1.txt
+0043F2AE	S12	BuildingClass_percell_validate	call 0x47C620; al==0 jumps to 0x43F504 loop increment (continues, not ret)	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_branchB_cellfail.txt
+0043F504	S12	BuildingClass_cell_loop_increment	shared skip-cell target: inc esi; cmp; jl 0x43F269; all-fail reaches 0x43F5D8 then 0x43F5EC ret4 al=0	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_branchB_cellfail.txt
+0043F5D8	S12	BuildingClass_slot73_fail_exit_unlink	call 0x6F4A70; pop regs; xor al,al; ret 4 (failure from can-place #1 / all-cells-fail)	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_branchA_canplace1.txt
+0043F5E0	S12	BuildingClass_slot73_fail_exit_shared	shared epilogue (no 0x6F4A70): xor al,al; ret 4 (failure from can-place #2)	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_branchC_failure_ret.txt
+0043F658	S12	BuildingClass_slot73_shortpath_mode_gate	cmp ebp,3 on short path; CFG BFS shows ebp still=mode (xor_done=False); mode3 skips 0x43F678 can-place on that path only	[静态推断]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_shortpath_43F5EF_43F691.txt
+0043F678	S12	BuildingClass_canplace_check_2	second can-place call [vptr+0x1AC] on short path; nonzero eax jumps 0x43F5E0 then 0x43F5EC ret4 al=0	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_branchC_check_canplace2.txt
+0043F691	S12	BuildingClass_slot73_hook	call 0x5683C0 (link into grid) on success path; reached by mode1/3 short path and success path	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_cfg_mode1.txt
+007014A0	S05	TechnoClass::SetOwner	slot245: writes [esi+0x21C]; reads [+0x81] at 6 sites gating push0/call[+0x124] then call 0x70D4A0 then push3/call[+0x124]	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T1_disasm_007014A0.txt
+005F4D30	S05	ObjectClass::Limbo	writes [esi+0x81]=1 at 0x5F4E9E after unlink; reads [+0x81] at 0x5F4D45 as already-limbo guard	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T1_disasm_005F4D30.txt
+005F4EC0	S05	ObjectClass::Unlimbo	writes [esi+0x81]=0 at 0x5F4F4E before mode1 link; failure rollback writes =1 at 0x5F521C; has third can-place [+0x1AC] at 0x5F4F3C	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T1_disasm_005F4EC0.txt
+005F5850	S05	ObjectClass_world_predicate	reads [esi+0x81] at 0x5F5854 (and [+0x74]) to test if object is in world / not limbo	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T1_disasm_005F5850.txt
+0047C620	S06	CellClass::CanPlaceCell	per-cell validation: returns al=1 only at 0x47CA70; all failure exits xor al,al	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_callee_47C620.txt
+0043CEA0	S07	BuildingClass::DrawWrapper(slot65)	visibility cull reads [edi+0x81] at 0x43CEDC with [+0x80]/[+0x74] before draw	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T1_disasm_0043CEA0.txt
+005F4B10	S07	ObjectClass::DrawWrapper(slot65)	visibility cull reads [esi+0x81] at 0x5F4B3E before draw	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T1_disasm_005F4B10.txt
+0071CC50	S07	TerrainClass::DrawWrapper(slot65)	visibility cull reads [esi+0x81] at 0x71CC50+... before draw	[已证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T1_disasm_0071CC50.txt
+0047E8A0	S06	CellClass::AddObject	grid link primitive (called by 0x5683C0); itself does not validate occupancy	[静态推断]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_callee_47E8A0_head.txt
+005683C0	S06	MapClass::LinkObject	link wrapper calling 0x47E8A0; used by BuildingClass slot73 success path	[静态推断]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_callee_5683C0_head.txt
+005678E0	S06	MapClass::CellCoordHelper	coordinate-to-cell helper used inside per-cell loop (calls 0x6D20E0)	[未证]	lead/next_re_20261117_r14/W176_place81/EVIDENCE/T2_callee_5678E0.txt

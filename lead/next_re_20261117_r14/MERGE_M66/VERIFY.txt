@@ -1,0 +1,80 @@
+M66 VERIFY — 并表 29 行验证报告
+================================
+
+一、三组实际并行数（审计 PASS ∩ 对应 delta entry）
+---------------------------------------------------
+  A 组：NAMED_PUSH_AUDIT6 verdict PASS ∩ NAMED_PUSH_S22_B2/delta  = 18  （要求 18 ✓）
+  B/S06：NAMED_PUSH_AUDIT5 verdict PASS(S06) ∩ NAMED_PUSH_S06_B1/delta = 4  （要求 4 ✓）
+  B/S20：NAMED_PUSH_AUDIT5 verdict PASS(S20) ∩ NAMED_PUSH_S20_B1/delta = 7  （要求 7 ✓）
+  合计 18 + 4 + 7 = 29 行。
+
+  双向差集核验（PASS 有而 delta 无 / delta 有而 PASS 无）三组均为 0：
+    A: PASS∖delta=0, delta∖PASS=0
+    B/S06: PASS∖delta=0, delta∖PASS=0
+    B/S20: PASS∖delta=0, delta∖PASS=0
+
+  29 行 atlas 归属：全部 29 行 atlas 内（entry 归一为大写 8 位后命中 function_atlas.tsv）；
+  atlas 外行 0 条，无需"A 口径不计"。
+
+二、数据行数
+------------
+  coverage.tsv 数据行 18,498 → 18,498（不变，8 列、TAB 分隔）。
+  改动行 29 行，逐行核对仅第 4/5/6 列变化，第 1/2/3/7/8 列逐字节不变。
+  第 4 列语义 = 对应 delta 第 4 列原文照抄（逐行核对通过）；
+  第 5 列 grade = [已证]（29/29）；
+  第 6 列 evidence_path：A 组 18 行 = NAMED_PUSH_AUDIT6/VERDICT.md；
+                        B 组 11 行 = NAMED_PUSH_AUDIT5/VERDICT.md（逐行核对通过）。
+
+三、[已证] 计数
+---------------
+  全表 [已证]：1,527 → 1,556  （+29）
+  atlas 内 [已证]：1,521 → 1,550  （+29，因 29 行全在 atlas 内）
+  atlas 外 [已证]：6 → 6  （不变）
+
+四、S22 / S06 / S20 的 proved 与 strict（atlas 内，权威口径）
+-----------------------------------------------------------
+  S22：proved 69 → 87（+18）；proved_strict 26 → 44（+18）
+       proved_pct 1.42%，strict_pct 0.91%，atlas_n=4851，门槛(50%)=2426
+  S06：proved 126 → 130（+4）；proved_strict 111 → 115（+4）
+       proved_pct 15.35%，strict_pct 13.58%，atlas_n=847，门槛(50%)=424
+  S20：proved 46 → 53（+7）；proved_strict 34 → 41（+7）
+       proved_pct 12.93%，strict_pct 10.00%，atlas_n=410，门槛(50%)=205
+  TOTAL：proved 1,521 → 1,550；proved_strict 1,204 → 1,233（9.55%）
+
+  strict 与 proved 同增（+29 全数）：因 29 行 delta 第 4 列语义逐行核对均不含字面 [未证]。
+
+五、达标翻转
+------------
+  名义达标（named_S14≥ceil(0.9n) 且 proved≥ceil(0.5n)）：
+    改前 S15/S16/S17 → 改后 S15/S16/S17（不变）
+  严格达标（named_S14≥ceil(0.9n) 且 proved_strict≥ceil(0.5n)）：
+    改前 S17 → 改后 S17（不变，1/22）
+  结论：无达标翻转。符合卡片"达标判定不得改变（严格仍仅 S17）"。
+
+六、strict 用的是 [未证] 字面口径的证据
+---------------------------------------
+  权威脚本 RULING_R15_20261119/work/strict_panel.py 第 78 行原文：
+      if "[未证]" not in sem:
+          d[s]["proved_strict_n"] += 1
+  即 proved_strict 的排除条件是语义栏 one_line_semantics 含"带方括号的字面 [未证]"，
+  不是裸"未证"二字（如"未证明""未证实"不会被排除）。
+
+  本轮复算证据：
+    1) 已将 strict_panel.py 复制并将 OUT 重定向至 MERGE_M66/_strict_out 后原样执行
+       （脚本未改动判定逻辑，仅改输出目录），实测输出与 PANEL 严格双列表逐格一致：
+         S06 130/115、S20 53/41、S22 87/44、TOTAL 1550/1233。
+       输出文件：MERGE_M66/_strict_out/strict_panel.tsv、strict_panel.json。
+    2) 独立复核脚本 MERGE_M66/_postcheck.py 以同一字面条件
+       (`"[未证]" not in sem`) 复算，结果一致。
+    3) 逐行核对 29 行 delta 第 4 列语义均不含字面 [未证]（A/B 三组各 18/4/7 行全 False），
+       故 strict 增量严格等于 proved 增量。
+
+七、前置复核（卡片"Lead 已核过的前置"，改前实测全部吻合）
+----------------------------------------------------------
+  数据行 18,498 ✓；全表 [已证] 1,527 ✓；atlas 内 1,521 ✓；atlas 外 6 ✓
+  S22 proved 69 ✓、S06 126 ✓、S20 46 ✓。
+
+八、边界
+--------
+  未 git commit；未改 R14_COMMON.md / STATUS_BOARD.md / 台账 / NAMED_PUSH_* / NAMED_PUSH_AUDIT*；
+  仅写 COVERAGE/coverage.tsv、COVERAGE/PANEL.md 两文件（改动前备份与本目录工作脚本/日志均在 MERGE_M66 内）。

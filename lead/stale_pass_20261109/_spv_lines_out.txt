@@ -1,0 +1,534 @@
+
+### 台账 A/C 级与引用链  [lead/PENDING_DECISIONS.md]
+  L90    - **D-30 已裁决（2026-11-06）：`q1: 戊`（不选任何 k 档进入实现/执行）。** **保留「提前候选 + 事后分类」的离线论证资格，现阶段不选定任何 k 档进入实现或执行；D-13 实现与执行继续 PAUSE，目标①机制挂账不解除。**
+  L91      **裁决人**=`magpie/codex/gpt-6.1-sol$medium`（章程 D 类裁决通道；裁决书正文未载 run id，本条不补造）；
+  L92      裁决书 `lead/d30_ruling_20261106/RULING_D30.md`（13,197 B / `d5afc90c50bbf57b…3983d04f`）+ 事实核证 `FACTCHECK.md`（11,394 B）+ `_d30_facts.py`/`_out.txt`；门禁 `check_d30.py` 实跑 **exit=0**（2026-11-07 复跑仍 PASS）。
+  L93      **定谳要点**：`k=10` 作为「高召回候选能否承受成本」的**离线基准**（**不视为已接受其开销**）；`k=25` 作**边界敏感性对照**；**不采纳 `k=50`** 作为满足 `:177` 的现行方案，**不得为降误报牺牲 `:177`**。
+  L101     **证据**：`lead/early_trigger_feasibility_20261106/`（主交付 28,576 B + `FEASIBILITY_STATS.json` + 探针 + 复核件）;`lead/d29_ruling_20261106/RULING_D29.md:6,:20,:28,:47`。
+  L103   - **D-29 已裁决（2026-11-06）：`q1: 丁`（保留四条约束，只否决串行机制）。** **保留 `:177`「停滞发生后 50ms 内捕获」、`:190`「检测后 <50ms、安全裕量 ≤20ms」、`:191` 拒止原则、口径 B 四条；否决「等满 100ms 才触发、随后才捕获」的串行机制；允许在既定边界内继续离线论证「提前保存 + 事后分类」的独立方案。工程可达性未验，D-13 采样实现与执行继续 PAUSE。**
+  L105     裁决书 `lead/d29_ruling_20261106/RULING_D29.md`（12,258 B / `325c950eec4d3275…7212afb`）+ `FACTCHECK.md`（12,647 B）+ `_d29_facts.py`/`_out.txt`；门禁 `check_d29.py` 实跑 **exit=0**。
+  L106     ★ **「`:177` 与 100ms 门槛数学互斥」被收窄**：互斥只在「在线必须等满 100ms 才触发、捕获不早于触发」的**串行前提**下成立（设 S/T/C，`T−S≥100ms` 且 `C≥T` ⇒ `C−S≥100ms>50ms`）。**口径 B 的 100ms 是事件持续时间 d 的分类门槛**（`_stall_probe.py:28/:95/:96`），推不出「在线捕获必须等 100ms」。**` :177` 从停滞发生起算、`:190` 从检测到起算，两条不能互相代替。**
+  L107     ★ **`:191` 适用边界**：禁止累计判定 ≥100ms 的触发机制（含「等满口径 B 门槛再抓当前现场」）；其文字**没有**直接禁止离线按 `d≥100ms` 分类，**也不能**推出禁止所有提前触发或周期性历史保存。**这是规范解释，不是删除拒止原则、也不是授权新实现。**
+  L113     **证据**：`lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177,:190,:191`；`lead/d13b_timing_clarify_20261106/TIMING_SPEC_CLARIFY.md:54,:55,:141`；`lead/d28_ruling_20261106/RULING_D28.md:30,:32,:34,:36`。
+  L117     裁决书 `lead/d28_ruling_20261106/RULING_D28.md`（13,897 B / `29bb247fbf82d80a…763b5f15`）+ `FACTCHECK.md`（13,028 B）+ `_d28_facts.py`/`_out.txt`；门禁 `check_d28.py` 实跑 **exit=0**。
+  L125     **证据**：`lead/d25_ruling_20261106/RULING_D25.md:19,:21,:36,:37,:38`；`lead/d13b_design_20261106/BUDGET_MODEL.json:5,:19,:26,:32,:34`；`lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:200`；`lead/d27_ruling_20261106/RULING_D27.md:12,:28,:32,:42,:48`。
+  L127   - **D-27 已裁决（2026-11-06）：B（立 D-13b 离线设计）。** **D-13 依据新证据重裁：立 D-13b，面向当前保留的短停样本重开「离线」方案设计与「不含采样实现」的离线单测；D-13 采样代码与执行继续 PAUSE。**
+  L129     裁决书 `lead/d27_ruling_20261106/RULING_D27.md`（17,658 B，71 处引用）+ 事实核证 `FACTCHECK.md` + `_d27_facts.py`/`_out.txt`；门禁 `check_d27.py` 实跑 **exit=0**。
+  L130     **新证据（11 条经独立核证，Leader 已复算）**：`lead/stall_event_def_20261106/STALL_EVENTS.json` 共 **1737** 条候选平台，`isRealMatch=true` **1681** / `false` **56**；
+  L131     true 集合中 `durationMs>=1000` 为 **0**，最长 **566.96 ms**，中位 **129.93 ms**，`100<=d<200ms` 有 **1520** 条（**90.42%**）、`200<=d<500ms` 158 条、`500<=d<1000ms` 3 条。
+  L156     证据：`lead/d27_ruling_20261106/RULING_D27.md`、`FACTCHECK.md`、`_d27_facts_out.txt`；
+  L157     `lead/stall_event_def_20261106/`（主交付 + `STALL_EVENTS.json` 659,297 B / `5bf15284…053cad` + 探针 + 复核件）；
+  L158     `lead/d26_ruling_20261106/RULING_D26.md:9,:19`。
+  L160   - **D-26 已裁决（2026-11-06）：D-13 = PAUSE，D-14 = C。** **★ 本条的 D-13 部分已由 D-27 重裁为「B（立 D-13b）」，但 D-26 的 D-14 定谳与「不解除目标①机制挂账」继续有效。**
+  L162     裁决书 `lead/d26_ruling_20261106/RULING_D26.md`（15,373 B）+ `FACTCHECK.md` + `_d26_facts.py`/`_out.txt`；门禁 `check_d26.py` 实跑 **exit=0**。
+  L186     裁决书 `lead/d25_ruling_20261106/RULING_D25.md`（15,545 B）+ 事实核证 `FACTCHECK.md` + `_d25_facts.py`/`_out.txt`；门禁 `check_d25.py` 实跑 **exit=0**。
+  L199     **执行现状**：**A 已完成**（`lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md`，**总判仍为 PARTIAL**，须继续带引用限定）；其残余已由 N-1 固定成账（`lead/a_residual_20261106/`，17 条 = CONFIRMED 12 / PARTIAL 5，门禁 exit=0）；**B 在途**（首件 N-2 预审判 B2 `NO`，已由 **D-25** 重裁为 B2b 路线）；**D 未启**（N-7 五读负担复算 / N-8 慢窗统计核对）；**C 阻塞**（D-13 技术方案未定谳）。
+  L209   - **D-21 已裁决（2026-11-05）**：**裁 A（限定执行）**——采 W4 的**每沿新增 5 次读、20 B**；改 W5 扩项副本复用外层帧号及其读前时刻；保留四 VA 固定顺序与独立后读；修改后重验。裁决人 `magpie/codex/gpt-6.1-sol$medium`，run `dwfrun-98871df5`，裁决书 `lead/re_line_20261105/D21_RULING/RULING_D21.md`，执行记录 `D21_RULING/EXECUTION_D21.md`。**已执行完毕**：每沿 6→5 读，负担 **+15.713%→+13.094%**，最坏窗 **+37.626%→+31.355%**；A1 单测 85/85、W5 单测 6/6、删块即还原 SHA256 仍等于母本（均 EXIT=0）。**裁决书纠正我两处算式**：「−20%」应为 **−16.67%**（分母混…[TRUNC]
+  L348     **执行（GOAL-3T 线，2026-10-26）**：`mimosa git-gate install` 落地**原生 git 门禁**（pre-commit/pre-push，高危阻断），双对照实证 diff-only——阳性=暂存集含 high 两件时归因恰为该两件（`_disc_armG.py:75`/`_disc_stdio.py:47`，rc=2）；阴性=两件出暂存后 127 个变更源码文件全查放行（rc=0）；pre-push 扫**待推提交 diff**（6 文件）放行。
+
+### GOAL D级/PASS 类抽样  [lead/GOAL_THREE_TARGETS_20261018.md]
+  L246   - 2026-10-20 13:0x Notion U1–U9 裁决（日志 §300）：U1/U2 接受；**U3 的 C7 降为只记录**（写回 INI 不可信），真判别=跑 L2 或读 0xA8B558；路由=先 L1，R0 则先上 L3、L2 排后；U4 允许但称「高速档」分表报；U5/U6/U9 不做；**U7 名单=t31 84+5=89 件含 RA2MD Update.ico**；U8 单独立项但紧跟 L1（B0/B1 两档）；**D5 勘误：T55k 未加载 DLL、实载 XMP29U2，结论不变理由换三条**。
+  L260   - 2026-10-20 20:1x **E2 短路径趟 = L1 首次完整生命周期（日志 §313 续）**：out-dir 改 `l1a_20261020`（载体 129 字符 < 131）后 **EXIT=0**（main/finalize 全 0）；导航链 nav_menu→nav_setup→nav_start **全一次过**（attempts=1、fg_is_ours=True、NAV.verdict=OK）；三窗全 `verdict=ok`（span 各 25.0s）；**units0=732**（脚本门 ≥150 过、设计门 ≥800 **未达**）；fps_avg 31.24/31.24/29.00、fps_p50 30.97/31.06/30.96、p90 35.15/35.24/35.18ms、p99 37.7/38.7/39.0ms、tick_miss 0/1/1、hz_effective 500.1 …[TRUNC]
+  L261   - 2026-10-20 22:4x **★★ P1+SBH 合批编译通过 + verify_hooks 假绿揪出（日志 §314）**：5 段合并 5/5 干净命中、**CL_EXIT=0 / LINK_EXIT=0**（产物 `build/ra2render_merged.dll` 178,688 B / `4d3aacf7ddf5139f`）、§3.4 三查全绿（标记 12/4/30、35 个文件级定义零重复、`g_targetScanInterval` 与 `EnableSbhGuard` 默认值单值）。**★ 踩坑**：原始 `sbh.diff` hunk1 的 `#include <bcrypt.h>` 与 P1 的 `[VER-GATE V1]` 重复 ⇒ `patch` 拒该 hunk（`.rej` 落盘）⇒ **`g_enableSbhGuard` 全局定义缺失**而其余 hunk 仍引用它，21:07 的 `…[TRUNC]
+  L262   - 2026-10-20 23:3x **★★ 本轮后段：三线全部由主会话自行收口（日志 §314 §六–§十一）**：**③ verify_hooks 假绿已修并四档实跑全绿**——MOTHER 13/13 PASS、P1 13/13 PASS、P1+SBH+母本 ini 13/13 但 ini 23/24 **FAIL**（缺口真实）、P1+SBH+**v2 ini** 13/13 **24/24 PASS**；修法=弃固定参数正则，改**括号配平扫描+按实参位置取值**（`_split_args` 跳过嵌套括号与字符串内逗号含转义、`_iter_calls` 配平扫描；install name 取第 4 实参、`expect_orig` 取第 5 实参；remove 判据由「第 2 参 nullptr」改为「**第 3 参 nullptr**」——母本与 P1 的还原调用都是第 3 参 nullptr）；`expect_o…[TRUNC]
+  L263   - 2026-10-21 11:1x **① h1 衰减根因定谳 + 三处判读纠正（日志 §316）**：**★ 纠正一**——`loser1ED` **不是败北**，按 `YRpp/HouseClass.h` 布局（`+0x1EC=CurrentPlayer` / `+0x1ED=PlayerControl` / `+0x1F5=Defeated` / `+0x1F6=IsGameOver` / `+0x1F7=IsWinner` / `+0x1F8=IsLoser`），实测 `isHuman1EC == loser1ED` 在 8 帧×4 屋**恒等**（同语义相邻 bool 的表现），而真正的败北四字段（`def1F5`/`wf1F6`/`wf1F7`/`wf1F8`）**128 个读数非零记录 0 个** ⇒ **本趟全程无任何屋败北**，§314 的「h0 判负」撤回；**教训=探针字段名不可信，必须对结构体布局反推*…[TRUNC]
+  L303     边界在 130/131 逐字符翻转。**⇒ 上一轮回执「`--out-dir` 须缩到 ≤80」作废**，
+  L325   | 合并件离线编译 | **CL/CL2/LINK 全 exit=0**（直接 cl，未用 build.bat） |
+  L327   | `verify_hooks` 假绿 | **已复现且已修**：原版对合并件报 0/0 却 PASS；v2 报 **13/13** |
+  L384     编译 CL/CL2/LINK 全 exit=0，424 个 External 名零重复。
+  L1192    ([None,900]/[10,900]⇒jump 拒、[399,401]/[400]⇒达标)；N<1 哑图实测 exit 2；门禁演算 v2 129/130/130；
+  L5999  > **30.1M tokens**，五阶段全跑完，确定性门槛 `exit=0`）。
+  L6362  > **2.0M tokens**，五阶段跑完，门槛 `exit=0`，**独立审校 APPROVED / issues=[]**）。
+  L6499  >   六阶段跑完，门槛 `exit=0`）。定稿 `W3_COSTBOUND/W3_COSTBOUND.md`（49.6 KB）。
+  L6502  >   门槛 `exit=0`）。定稿 `W1_HOLD_SURFACE/W1_HOLD_SURFACE.md`（55.9 KB / 467 行）。
+  L6621  > **1.99M tokens**，五阶段跑完，门槛 `exit=0`，**独立审校 APPROVED / issues=[]**，
+  L6896  1. **我亲验**：`EXIT=0` 与 `SUMMARY PASS=67 FAIL=0`（上面命令与输出）。
+  L7053  # EXIT=0   SUMMARY PASS=85  FAIL=0     （V1 时是 67 项）
+  L7196  | `_w5_diff_proof.py` + `_out.txt` | **我亲自重跑** | `EXIT=0`，最终判定 **PASS** |
+  L7197  | `_w5_test.py` + `_out.txt` | **我亲自重跑** | `EXIT=0`，6 条用例全 PASS |
+  L7362  | Q3 离线单测 | **CONFIRMED** | 6 条用例全 PASS（`EXIT=0`）；**我上一轮也亲自重跑过，同样 EXIT=0** |
+  L7401  _w5_diff_proof.py  → EXIT=0，删 8 块后 SHA256 == 母本 38244d29…752a8   PASS
+  L7404  _w5_test.py        → EXIT=0，6 条用例全 PASS
+  L7566  python -I -X utf8 ".../A1_SAMPLER_CANDIDATE/test_frame_edge_sampler.py"   # EXIT=0  PASS=85 FAIL=0
+  L7567  python -I -X utf8 ".../W5_HARNESS_EXT/_w5_test.py"                        # EXIT=0  6 用例全 PASS
+  L7568  python -I -X utf8 ".../W5_HARNESS_EXT/_w5_diff_proof.py"                  # EXIT=0  最终判定 PASS
+  L7569  python -I -X utf8 ".../D21_RULING/_d21_burden5.py"                        # EXIT=0
+  L9009  > **W10 `dwfrun-67b0c1d8`（`magpie/antigravity/gemini-3.8-flash$high`）completed，28,322,953 tokens，门槛 `exit=0`。**
+  L9220  1. **我亲跑**：`test_except_freshness.py` **14/14 PASS / EXIT=0**（上面贴的就是我自己的输出）；
+  L9330  > **W11 `dwfrun-7d468cc0`（`account:bigmodel-start-plan/GLM-5.3-Flash$max`）completed，门槛 `exit=0`。**
+  L9341  | **T3 候选** | CONFIRMED | 离线候选 **14 测全绿**（`PASS=14 FAIL=0 EXIT=0`），沙箱零残留 |
+  L9349  → Ran 14 tests in 0.264s / OK / PASS=14 FAIL=0 / EXIT=0
+  L9420  > **W9 `dwfrun-6cdbba53`（`magpie/work/cn:hy4free$high`）completed，门槛 `exit=0`。**
+
+### REFSYNC_SCOPE_FIX.md §5.2  [lead/refsync_scope_20261109/REFSYNC_SCOPE_FIX.md]
+  L215   
+  L216   **关键实证**：本会话 `python -I -X utf8 -c` 读 `lead/s604_refsync_full_20261109/_full_checks_out.txt:35-55`，输出 `:35| TERM '不能定位当年错误步骤' -> 65 hits`，其中 `:48-52` 逐行是 `lead/ledger_bound_20261109/_lb_BOUND_VOLUME.md:112 / :129 / :201 / :216 / :226`，`:53-55` 是 `_lb_build.py:175 / :223 / :249`。`S604_REFSYNC_FULL.md:278`（本会话完整实读）白纸黑字：「**另全树 grep 命中 `ledger_bound_20261109`…等多处旧指纹登记**（本会话实跑，输出见 §5.4 R15）」。
+  L217   
+  L218   ⇒ **10:19 的 R2 全树 grep 已经打到 ledger_bound**，且早于 43 清单（10:26:57）7 分钟；`_lb_BOUND_VOLUME.md`（10:11:15）早于清单 15 分钟。是**扫描结果被继承自 §4.2 的 13 件人工清单过滤掉**：65 命中只被用作「改文安全性 / 无第三方逐字引用」旁证（`:126`、`:295`、`:319`），从未用来**扩充载体集合**；`ledger_bound` 只以「旧指纹 errata 登记面」身份被提及（`:278`），其「同一句被逐字收进可整段复制区块」的性质完全没被判。
+  L219   
+  L220   **如实收窄一处措辞**（【复核】次要点 (d)）：`LEDGER_BOUND_VOLUME.md` 编译本 mtime `10:29:52` **确实晚于** 43 清单 3 分钟，所以「因为更晚所以漏」只对这 1 件成立；「不是更晚 / 不是没扫到」的举证由**源件** `_lb_BOUND_VOLUME.md`（10:11:15 且已被 65 命中扫到）+ `:278` 自认承担，整体结论（不是「更晚/不存在/没扫到」）仍成立，但不写成「三件全部更早」。
+  L221   
+  L222   ### 4.4 一般性教训（≥2 条）
+  L223   
+  L224   1. **扫描集合被施工集合取代（selection-by-actionability）**：先有「要改哪些件」的清单，再拿它当「这句话在哪些件」的答案。凡只读域、后建域、分析件、复核件里的逐字副本一律不可见；而**后建的合订本/汇编件恰恰是最危险的载体**（自带「可整段复制追加」）。⇒ 扫描口径必须与被核结论的执行口径解耦，扫描全集由内容定，施工清单只能是它的子集且须明示「差集 = 未处置载体」。
+  L225   2. **grep 命中 ≠ 载体登记（结果用途错配）**：同一份 65 命中输出被用来证「改文安全」却没被用来建载体图；`S604_VERDICT_ENTRY_DRAFT.md:131` 还把约 20 处额外命中按「目录主题 + 成文日期」抽样判无关。⇒ 每次全树 grep 必须同时产出「命中全集」与「判为无关的逐行理由」，**抽样判断不得充当排除依据**。
+  L226   3. **按写域/日期/文件名过滤 = 对副本免疫**：`ledger_bound_20261109/`、`_dnw_sandbox/`、`_dnv_sandbox36/` 都是既有件的逐字副本，同哈希（`724458d9…/45719`、`593c7a3e…/20271` 本会话实算）。**内容寻址才认得出来，路径寻址认不出来**。
+  L227   4. **变体短语靠人工列 + 无负控**：`「」` 与 `『』` 命中集合不同（本会话 16/41 vs 14/28 文件/行）；12+6 变体仍靠人工列。⇒ 必须有负控样本，否则漏了哪一类自己不知道。
+  L228   5. **同文去重按「文件」而非「出现点」**：`:123≡:25` 被当作「1 处」，于是「2 对同文重复 ⇒ 41 独立表述」。但组① 全 lead/ 有 10 份逐字同文、其中 6 份在可追加块内；按文件去重让「改 2 件就够」看似成立。
+  L229   
+  L230   ---
+  L231   
+  L232   ## 5 修正后的扫描规则、自检脚本、引用否定排除 + 分口径件数结论
+  L233   
+  L234   ### 5.1 可执行规则 R1–R6（实现于 `lead/refsync_scope_20261109/_rs_carrier_scan.py`）
+  L235   
+  L236   | 规则 | 内容 |
+  L237   |---|---|
+  L238   | **R1 内容寻址全集** | `U = { f \| f 在 ROOT=`整个 lead/` 下、深度**无上限**、扩展名白名单、非二进制 }`。禁止按 目录名 / 写域 / 成文日期 / 文件名模式 预过滤；**绝不拿 prior report 的文件列表当扫描全集**；先按内容过滤（`file_bytes` 含 needle 才入候选，副本自动入选）；逐文件登记 `sha256 + 字节数 + 命中行号` 与 `scanned-files` 计数，使重跑可复核。 |
+  L239   | **R2 以句为单位** | 唯一键 = `(abs_path, line_no)`；**文件只是派生分组**（先得 `(file,line,role,entry,risk)` 元组，再 `GROUP BY file` 出件数）。同哈希 sandbox 副本是**不同键**，单列 `SANDBOX_COPY` 组标「效力未验」，不合并、不静默丢弃。**以句为单位而非以件为单位**的理由：① 组① 整行 160 字符在 lead/ 有 10 份逐字同文 / 9 文件，按文件计会压成 9 个、按「同文去重」再压成 1 处；② **入账风险是行级属性**——同一 `LEDGER_APPENDIX_DRAFT.md` 的 `:123`（块内 HIGH）与 `:215`（§6.3 NONE）风险相反，`LEDGER_BOUND_VOLUME.md` 的 `:196`（块内过时断言）与 `:270`（块内否定句）风险相反，按文件判必然误…[TRUNC]
+  L240   | **R3 显式逐字比对** | 「同一句」必须打印 `EQUAL / NOT-EQUAL` + 首个差异字符的 `U+xxxx` 码位 + 整行 SHA256；不许肉眼判「一样」（§2.2 给足证据）。 |
+  L241   | **R4 转录区块判 HIGH** | START/END 正则**整行命中**锚定标记行；只认开区间 `start < line < end` ⇒ `HIGH: 随整段进台账`；`@@BODY_n@@` ⇒ `INDIRECT: 重建时由源件注入`；块外 / 无块 / 独立终件 ⇒ `NONE`；**标记不成对 ⇒ `UNKNOWN: 需人工复核`，绝不猜**（§3.2 的 `:66` 误判即反例）。 |
+  L242   | **R5 引用否定不删除，打 ROLE** | `needs_fix = (role == ASSERTION) AND (risk == HIGH)`；详见 §5.3。 |
+  L243   | **R6 负控自检** | 6 个已知肯定/否定样本必须分别判 `ASSERTION` / `REFUTING_QUOTE`，否则 `EXIT=1`。 |
+  L244   
+  L245   ### 5.2 可复用自检脚本（本会话实跑命令 + 输出）
+  L246   
+  L247   脚本：`lead/refsync_scope_20261109/_rs_carrier_scan.py`（只读、只打印 stdout，`validated_root()` 用 `os.path.commonpath` 把 root 限制在仓库内；不写任何文件，输出记录由调用方重定向到本写域）。
+  L248   
+  L249   | # | 本会话实跑命令（均 `python -I -X utf8` + 绝对路径，两句 needle） | 输出（本会话） |
+  L250   |---|---|---|
+  L251   | 1 | `python -I -X utf8 "…/_rs_carrier_scan.py" --needle "只能判「不可复现」" --needle "不能定位当年错误步骤" --max-depth 2 --ext .md > "…/_fix_d2_out.txt"` | `EXIT=0`；`scanned files = 627 ; carrier occurrences = 80 ; distinct files = 19`（现盘，含自引；撰写时点 622/73/18）；B 段 `occurrences = 4 ; distinct files = 4`；`SELF_TEST = PASS`（6/6，含 `:215 want=ASSERTION got=ASSERTION`、`_ve_DRAFT_S609.md:22 want=REFUTING_QUOTE got=REFUTING_QUOTE`） |
+  L252   | 2 | 同上，去 `--max-depth`（无深度上限 `--ext .md`）`> "…/_fix_md_out.txt"` | `EXIT=0`；`scanned files = 947 ; carrier occurrences = 86 ; distinct files = 23`（撰写时点 942/79/22）；B 段 `occurrences = 6 ; distinct files = 6`（+2 sandbox）；`SELF_TEST = PASS` |
+  L253   | 3 | 同上，默认全扩展名 `.md,.txt,.py,.json` 无深度上限 `> "…/_fix_all_out.txt"` | `EXIT=0`；`scanned files = 5500 ; carrier occurrences = 2429 ; distinct files = 81`（**仅供审计，不作施工数**；上一轮撰写时点 5442 / 1052 / 67，差值含本写域与并行新件）；B 段仍 `6 / 6`；`SELF_TEST = PASS` |
+  L254   | 4 | 负控探针 `python -I -X utf8 "…/_rs_carrier_scan.py" --needle "三选一不可定谳" --ext .md --max-depth 2 --no-self-test` | `scanned files = 627 ; carrier occurrences = 13 ; distinct files = 5` ⇒ 换 needle 结果随之变化，**脚本不硬编码结论**（【复核】⑦ 的复现） |
+  L255   
+  L256   全量逐行输出 A 段（每文件每行的 `role / risk / needs_fix / entry / verbatim(canonical==line) / 差异码位 / SHA256`）、B 段（严格交集）、C 段（非修复项 + 角色直方图）、D 段（排除逻辑）、E 段（负控）分别在 `_fix_d2_out.txt` / `_fix_md_out.txt` / `_fix_all_out.txt` 在盘。上一轮在盘输出另有 `_rs_carrier_scan_d2_out.txt`（3624 行）、`_rs_carrier_scan_md_out.txt`（528 行）、`_rs_carrier_scan_out.txt`（5929 行）。
+  L257   
+  L258   ### 5.3 如何排除「引用该句来否定它」的文件（R5，不是删掉，是打角色）
+  L259   
+  L260   实现在 `_rs_carrier_scan.py:164-189` 的 `classify_line()`：① 求 needle 在行内位置，再求成对引号跨度（`「」`/`『』`/反引号/`“”`）与 `>`、`|` 引用前缀；needle 落在引号跨度内 ⇒ 引文候选；② 同行含否定/更新词表（`不再成立 / 过时 / 已定谳 / 已定位 / 被推翻 / 取代 / 自本节起 / 改前 / 改后 / 逐字 / grep / 命中 / 验收 / 复核 / 未验项 / …`）⇒ `REFUTING_QUOTE` 或 `NEGATED_CITATION`；③ 「改后样例」无引号但含 `2026-11-09 更新 / 错误步骤已定谳为 / 改为：` ⇒ `UPDATED_SAMPLE`；④ 纯命令/校核行 ⇒ `ANALYSIS_MENTION`；⑤ **只有裸断言**（无引号包裹、无否定词）才是 `ASSERTION`；⑥ `need…[TRUNC]
+  L261   
+
+### RULING_D27.md  [lead/d27_ruling_20261106/RULING_D27.md]
+  L1     # D-27：重开 D-13b 离线设计裁决书
+  L2     
+  L3     依据：题给《裁决员结论》《事实核证》《裁决书事实核对意见》。本撰写阶段亲读 D-27 草案、D-26 裁决书及既有核证输出；其他来源行号按题给核证引用。本阶段未重跑统计、原探针、合成反例或门禁。文书承接给定裁决，不产生用户新增采样授权。
+  L4     
+  L5     ## 0 定谳
+  L6     main: B
+  L7     
+  L12    成立的是条件统计：当前97窗、当前标签规则下，1737个候选平台中1681个标为 isRealMatch=true、56个为false；true集合中 >=1s 为0，最长566.96ms，中位129.93ms。100<=d<200ms 有1520个，占90.42236763831053%；200<=d<500ms 有158个，500<=d<1000ms 有3个。这里的 true 是分类器保留标签，不等同已独立证明的真实对局语义。依据为题给独立核证F2及本阶段亲读 lead/d27_ruling_20261106/_d27_facts_out.txt:9，本阶段未重算。
+  L28    不选A所指定的理由，是因为“长停不存在、物理上永远采不到”没有证据；A的暂停本身可回退，但不能用不成立的普遍断言支撑。也不选C：彻底关闭会过早放弃栈级定位，目前没有不可行性证据，原报告仍明记可行性未验。原<=50ms指标也不能直接说不适用，真正未验的是端到端预算、覆盖和扰动。（出处：lead/control_20261106/D27_ENTRY_DRAFT.md:85；lead/control_20261106/D27_ENTRY_DRAFT.md:91；lead/control_20261106/D27_ENTRY_DRAFT.md:94；lead/control_20261106/D27_ENTRY_DRAFT.md:98；题给D4；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:218。）
+  L32    本次不授权编写真实采样候选或执行采样。D-13b的上限仅为离线设计、获准读取的既有离线材料分析和纯模型/合成数据单测；可以设计触发时序、预算、配额、停止回退及证据要求，不得用“单测”包装实际采样API调用。D-13采样实现与执行继续暂停，离线通过不预承诺执行放行。（出处：题给铁律第1、2、8条；题给《裁决员结论》bounds；lead/control_20261106/D27_ENTRY_DRAFT.md:92；lead/control_20261106/D27_ENTRY_DRAFT.md:124；lead/d26_ruling_20261106/RULING_D26.md:41。）
+  L42    后续论证须包括：从事件起点、100ms阈值累积、轮询/调度到拟定捕获时刻的完整预算，不能只报告“检测后<50ms”；用既有时序和合成时序检验100–200ms平台剩余覆盖、窗末截断、全窗后恢复、缺窗、回滚及未知状态；纯模型检验配额、冷却、停止和回退转换。系统时延、扰动、资源释放及真实栈可解析性中不能凭离线资料验证的部分必须列为未验。现成且获准读取的离线栈材料若存在，可用于格式/解析评估；本阶段未确认存在，不得为此采集。（出处：题给《裁决员结论》q4Answer；lead/d26_ruling_20261106/RULING_D26.md:17；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:218。）
+  L48    草案n=1681与n=1737不是两个同口径事件总数：1681是保留标签数，1737是full97全部候选数，含56个false；moving窗提取的平台也可能false。53条应写“>=1s恒帧候选平台，当前规则排除出真实对局事件集；排除原因标签如下，独立状态语义未全量核验”，按第1节32/15/4/1/1分组。不能统称“已证非真实停滞”，也不能不加限定称“真实对局停滞”；独立证据充分的个例才另标已确认结束/加载。（出处：lead/control_20261106/D27_ENTRY_DRAFT.md:117；题给《裁决员结论》q2Answer；lead/stall_event_def_20261106/_stall_probe.py:226；lead/stall_event_def_20261106/_stall_probe.py:242；lead/d27_ruling_20261106/_d27_facts_out.txt…[TRUNC]
+  L58    7. “Leader亲跑exit=0”和复核通过只能标来源声明或已有字段，不得签为本阶段执行通过。本阶段未运行check_stall_def.py、核证脚本、原探针或合成反例。（出处：lead/control_20261106/D27_ENTRY_DRAFT.md:26；lead/control_20261106/D27_ENTRY_DRAFT.md:28；lead/d27_ruling_20261106/_d27_facts_out.txt:86；本阶段工具记录。）
+  L69    - 不背书本阶段未执行的门禁、统计复算、合成单测、全量截图状态核验或可行性验证已通过。（出处：本阶段工具记录；lead/d27_ruling_20261106/_d27_facts_out.txt:86。）
+  L75    本阶段实际执行了目录定位和文件清单读取，亲读lead/control_20261106/D27_ENTRY_DRAFT.md、lead/d26_ruling_20261106/RULING_D26.md、lead/d27_ruling_20261106/_d27_facts_out.txt，并使用文件写入工具生成两份指定文件。统计、原探针重跑和合成反例的成功来自题给F1–F11与既有输出，本阶段未重跑，不签为本阶段检查通过。既有核证命令为 `python -I -X utf8 D:/Project/ra2-campaign-forge/lead/d27_ruling_20261106/_d27_facts.py > D:/Project/ra2-campaign-forge/lead/d27_ruling_20261106/_d27_facts_out.txt`，退出码0由题给F1提供，命令及结果内容见既有输出第1、9、26、2…[TRUNC]
+  L77    未验：全部53条独立状态真值、逐窗有效性和完整形式谓词、连续时序缺口、跨场景代表范围、系统时延与扰动、配额/回退模型验证、资源释放、栈解析、真实运行上界、机制定位及改善；未确认获准离线栈材料存在。本阶段未运行check_stall_def.py或其他门禁，未运行真机、活进程或采样操作，未改只读来源或门禁，未commit/push。（出处：题给D4–D6及《裁决员结论》q4Answer；本阶段工具记录。）
+
+### RULING_D29.md  [lead/d29_ruling_20261106/RULING_D29.md]
+  L1     # D-29 时序要求与口径 B 裁决
+  L2     
+  L3     ## 0 定谳
+  L4     q1: 丁
+  L5     
+  L6     保留发生后 50ms 捕获、检测后严格 <50ms 与安全裕量 ≤20ms、:191 拒止原则及口径 B；否决“等满 100ms 才触发、随后才捕获”的串行机制。允许在既定边界内继续离线论证提前保存与事后分类的独立方案，工程可达性未验，D-13 采样实现与执行继续 PAUSE。依据：题给裁决 q1、bounds；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:191；lead/d28_ruling_20261106/RULING_D28.md:28、lead/d28_ruling_20261106/RULING_D28.md:36…[TRUNC]
+  L19    
+  L20    提前候选与最终事件分类可以分开。在最终仍按原版 d≥100ms、原窗口与标签规则分类，候选不冒充已确认事件，且未捕获事件不被静默剔除而改变统计母体的前提下，提前保存与 D-12 不冲突。若最终阈值降为 30ms，或按捕获成功与否改写原集合，就不能宣称沿用不变的口径 B；修改只能建议，须用户另行裁定。依据：题给裁决 q2ConflictWithD12；lead/PENDING_DECISIONS.md:260；lead/stall_event_def_20261106/_stall_probe.py:96；lead/d28_ruling_20261106/RULING_D28.md:42。
+  L28    提前保存与事后筛选的逻辑相容不意味着 :177 自动满足。仍须证明正确事件、正确目标线程的原始上下文在物理起点 S 后 50ms 内实际保存，检测至生效满足 :190，并审查起点可观测性与误差、覆盖、假阳性、扰动、配额和回退。停滞结束后才取当前栈，不能替代停滞期间已保存的上下文。依据：lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190；lead/d28_ruling_20261106/RULING_D28.md:36；题给裁决 q2Bounds。
+  L47    下一步限于离线可审查的时间约束与假设矩阵，分列物理起点、触发、上下文保存、事件分类及离线解析，注明每段起止、并行/串行关系、证据等级、未知量与误差，分别验证 C−S≤50、C−T<50、安全裕量≤20、触发累计判定<100、最终 d≥100。纯数学与合成时序应覆盖短于100ms假阳性、恰好50/100ms边界、起点误差、周期相位、窗口切断和配额/回退，给出可行域与反例。优先补足物理起点可观测性和覆盖定义；实际耗时离线无法确认的继续标“未验”，不得倒推参数充作实测。提前或周期性保存须独立审查，不能称作调参，也不授权采样实现。依据：题给裁决 q3NextStep；lead/d28_ruling_20261106/RULING_D28.md:30、lead/d28_ruling_20261106/RULING_D28.md:36；本阶段命令输出 timeline 四类 verified 均 false。
+  L67    题给“裁决书事实核对意见”为 approved=true、blockers=[]、missing=[]、unverifiable=[]；没有输入 blocker 需要登记。这是题给核对意见，不是本撰写阶段门禁通过证明。依据：题给核对意见原字段。
+  L71    未运行原探针、门禁、历史语料重算或任何真机与采样实现，不记通过。来源原文部分由脚本读取并输出逐行摘录；草案措辞和历史统计的进一步核证归于题给 F/D 与裁决材料，未独立追查全部历史来源。作者复制动作、工程时延、起点可观测性及覆盖均未验。依据：本阶段工具记录；题给事实核证 D4、F14；上述命令输出 scope。
+
+### RULING_D30.md  [lead/d30_ruling_20261106/RULING_D30.md]
+  L1     # D30 裁决书：三档 k 的代价与离线论证资格
+  L2     
+  L3     ## 0 定谳
+  L4     q1: 戊
+  L5     
+  L6     裁定为“保留提前候选、事后分类的离线论证资格，现阶段不选定任何 k 档进入实现或执行”。优先以 k=10 检验高召回候选能否承受成本，以 k=25 作边界敏感性对照，不采纳 k=50 作为满足发生后50ms捕获要求的现行方案。D-13 实现与执行继续 PAUSE，目标①机制挂账不解除。依据：题给裁决员结论 q1、q1Rationale；lead/d29_ruling_20261106/RULING_D29.md:6；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177。
+  L20    表中数值由本次命令A全量复现；k点只有k−1个间隔，原判据为 length=j−i+1、length≥k。三档均有 realHits=1681、missedReal=0，另23条 d≥100ms 候选不属于保留真实标签集合；若按该集合计算，查准率分别为5.9412%、31.4617%、90.0857%。依据：题给核证 F3、F4、D2、D5；lead/early_trigger_feasibility_20261106/_feasibility_probe.py:499；lead/early_trigger_feasibility_20261106/_feasibility_probe.py:502；本次命令A输出 Q3。
+  L28    ## 2 选择与理由
+  L47    
+  L62    本次不授权修改题列只读路径、口径B、需求原文、门禁脚本；唯一写域为lead/d30_ruling_20261106/，不commit、不push。Python使用隔离模式、UTF-8、绝对脚本路径，指纹使用hashlib。本阶段仅在允许写域创建本书与FACTCHECK.md，并运行指定离线核证脚本；未改门禁。依据：本次题给铁律3—8及本阶段工具调用记录。
+  L76    裁决员阶段未运行核证脚本；本次撰写阶段实际执行命令A：`python -I -X utf8 D:/Project/ra2-campaign-forge/lead/d30_ruling_20261106/_d30_facts.py`，退出码0，输出 `corpus: {"files": 104, "samples": 1125992}`、`checks: "All numeric assertions passed"`。这是全量离线数值核证通过，不把上游运行冒充本阶段运行，也不把原探针、check_feasibility.py或原门禁计为通过；后三者本次未运行。依据：本阶段命令A工具返回；题给裁决 bounds 第4项；题给核证 F1。
+
+### RULING_D28.md  [lead/d28_ruling_20261106/RULING_D28.md]
+  L1     # D-28 两链路线裁决
+  L30    规格澄清必须分别列出事件离线分类时刻、在线触发时刻、原始上下文保存截止、离线解析完成时刻。停滞发生后 50ms 与检测后 <50ms 是两个起算点，安全裕量 ≤20ms 也须明确所处时间段。定义对累计判定 ≥100ms 的触发机制有拒止要求；等待满 100ms 才触发的方案与该规则存在待解决的规范冲突，不得静默删除规则。出处：lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:191；题给 F7、D8。
+  L32    现四段模型为 2.5+100+48+2=152.5ms。2.5ms 是代理估算，48ms 是名义预算拆分，2ms 是指标，均不是已证明的实现耗时下界。故只判该固定模型不满足在 129.93ms 代表性事件结束前完成在线快照的要求，不判当前口径下物理不可行，也不关闭整条路线。129.93ms 是保留标签集合中位数，不是每个事件的时长上界。出处：lead/d13b_design_20261106/BUDGET_MODEL.json:5、lead/d13b_design_20261106/BUDGET_MODEL.json:19、lead/d13b_design_20261106/BUDGET_MODEL.json:26、lead/d13b_design_20261106/BUDGET_MODEL.json:32；lead/d27_ruling_20261106/RULING_D27.md:12；题给 F6、D2、D7。
+  L34    预算注释中的条件反例 2.5+100+20=122.5ms，距 129.93ms 留有 7.43ms，只说明算术仍有研究空间；它不能消除定义第 191 行的规范冲突，不能证明真实时延、扰动、资源释放或栈解析可行。当前 152.5ms 若要严格小于 129.93ms，须削减严格超过 22.57ms，恰好削减 22.57ms 仅到相等。出处：lead/d13b_design_20261106/BUDGET_MODEL.json:34；题给 F6、D3、D9。
+  L36    下一阶段限于规格、假设矩阵和纯模型/合成时序论证。如提出提前或周期性保存历史上下文，须按新方案独立审查触发、覆盖、假阳性、扰动、配额及回退，不能称作调参，本次也不授权实施。停滞结束后才取当前栈，与解析停滞期间已经保存的原始上下文，应严格区分；现有设计区分在线保存和离线解析，但没有已验证可用的采样实现。出处：lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:200；lead/d27_ruling_20261106/RULING_D27.md:28、lead/d27_ruling_20261106/RULING_D27.md:32、lead/d27_ruling_20261106/RULING_D27.md:42；题给 D4—D6。
+  L42    口径 A 的历史引用及 occ_a/wait-trace 隔离继续遵守 lead/PENDING_DECISIONS.md:260、lead/PENDING_DECISIONS.md:261、lead/PENDING_DECISIONS.md:262。将来若另立提前/周期性捕获方案，而离线事件定义和标签规则不变，上述数字仍可作为原版本条件统计，不能直接当作新方案捕获覆盖率。若未来用户明确批准修改门槛、窗口或标签，须另建版本，独立计算新候选数、保留数及比例；旧 1737/1681/90.42% 保留为历史结果，禁止覆盖或跨版本直接比较。出处：题给 historyDisposal、D4；上述 D-12 与 D-27 引文。
+
+### check_d27.py 全文关键段  [lead/d27_ruling_20261106/check_d27.py]
+  L1     """Read-only D-27 gate. From the repository root: python -I <this script>."""
+  L8     DIRECTORY = Path("lead/d27_ruling_20261106")
+  L53    def main():
+  L54        paths = {name: DIRECTORY / name for name in ("RULING_D27.md", "FACTCHECK.md")}
+  L55        missing = [path for path in paths.values() if not path.is_file()]
+  L56        if missing:
+  L57            for path in missing:
+  L58                print(f"FAIL [1] 文件缺失或不是普通文件: {path.as_posix()}")
+  L59            return 2
+  L60    
+  L61        errors = []
+  L62        documents = {}
+  L63        for name, path in paths.items():
+  L64            try:
+  L65                documents[name] = path.read_text(encoding="utf-8-sig")
+  L66            except (OSError, UnicodeError) as exc:
+  L67                errors.append(f"[1] 无法读取 UTF-8 文件 {path.as_posix()}: {exc}")
+  L68                documents[name] = ""
+  L69            if not documents[name].strip():
+  L70                errors.append(f"[1] 文件为空或仅含空白: {path.as_posix()}")
+  L71    
+  L72        ruling = documents["RULING_D27.md"]
+  L73        if not re.search(r"^main:\s*(A|B|C)\s*$", ruling, re.MULTILINE):
+  L74            errors.append("[2] 裁决书须含匹配 ^main:\\s*(A|B|C)\\s*$ 的一行")
+  L75    
+  L76        bodies = sections(ruling)
+  L77        for title in REQUIRED_HEADINGS:
+  L78            if title not in bodies:
+  L79                errors.append(f"[3] 缺少二级标题: {title}")
+  L80    
+  L81        for number, title, keywords in (
+  L82            (4, "新证据是否成立", ("循环论证",)),
+  L83            (5, "授权边界", ("本次不授权",)),
+  L84            (6, "未背书", ("外推", "卡顿不存在")),
+  L85        ):
+  L86            if not any(keyword in body for body in bodies.get(title, [])
+  L87                       for keyword in keywords):
+  L88                errors.append(f"[{number}] {title}小节正文须包含: " + " 或 ".join(keywords))
+  L89    
+  L90        count = len(REFERENCE.findall(ruling))
+  L91        if count < 8:
+  L92            errors.append(f"[7] 裁决书引用须至少 8 处，实际 {count} 处")
+  L93        if "selfBias" not in documents["FACTCHECK.md"]:
+  L94            errors.append("[8] FACTCHECK.md 须包含 selfBias")
+  L95    
+  L96        if errors:
+  L97            for error in errors:
+  L98                print(f"FAIL {error}")
+  L99            return 1
+  L100       print(f"PASS: D-27 八项机械检查通过；裁决书引用 {count} 处")
+
+### check_d29.py  [lead/d29_ruling_20261106/check_d29.py]
+  L1     """Read-only D-29 format gate; run from the repository root with python -I."""
+  L50        directory = Path(__file__).resolve().parent
+  L75            requirements = (
+  L76                (4, "冲突是否成立", ("互斥", "前提"), False),
+  L77                (5, "授权边界", ("本次不授权",), True),
+  L78                (6, "未背书", ("口径 B", "外推", "191"), True),
+  L79            )
+  L80            for number, title, words, require_all in requirements:
+  L81                bodies = sections.get(title, [])
+  L82                matches = [
+  L83                    all(word in body for word in words) if require_all
+  L84                    else any(word in body for word in words)
+  L85                    for body in bodies
+  L86                ]
+  L87                if not any(matches):
+  L88                    operator = " AND " if require_all else " OR "
+  L89                    failures.append(f"[{number}] Section {title}: body must contain {operator.join(words)}")
+  L90            citations = re.findall(r"[A-Za-z0-9_./-]+\.(md|py|json):\d+", ruling)
+  L91            if len(citations) < 8:
+  L92                failures.append(f"[7] RULING_D29.md: found {len(citations)} citations; need at least 8")
+  L93    
+  L94        if "FACTCHECK.md" in texts and "selfBias" not in texts["FACTCHECK.md"]:
+  L95            failures.append("[8] FACTCHECK.md: missing selfBias")
+  L96    
+  L97        for reason in missing + failures:
+  L98            print(reason)
+  L99        if missing:
+  L100           print("FAIL (missing files)")
+  L101           return 2
+  L102       if failures:
+  L103           print("FAIL (content)")
+  L104           return 1
+  L105       print("PASS")
+
+### check_d30.py  [lead/d30_ruling_20261106/check_d30.py]
+  L1     """Read-only D-30 format gate; run from the repository root with python -I."""
+  L50        directory = Path(__file__).resolve().parent
+  L75            requirements = (
+  L76                (4, "三档权衡的实质", ("93.98", "误报率"), False),
+  L77                (5, "授权边界", ("本次不授权",), True),
+  L78                (6, "未背书", ("外推", "栈采样"), True),
+  L79            )
+  L80            for number, title, words, require_all in requirements:
+  L81                bodies = sections.get(title, [])
+  L82                matches = [
+  L83                    all(word in body for word in words) if require_all
+  L84                    else any(word in body for word in words)
+  L85                    for body in bodies
+  L86                ]
+  L87                if not any(matches):
+  L88                    operator = " AND " if require_all else " OR "
+  L89                    failures.append(f"[{number}] Section {title}: body must contain {operator.join(words)}")
+  L90            citations = re.findall(r"[A-Za-z0-9_./-]+\.(md|py|json):\d+", ruling)
+  L91            if len(citations) < 8:
+  L92                failures.append(f"[7] RULING_D30.md: found {len(citations)} citations; need at least 8")
+  L93    
+  L94        if "FACTCHECK.md" in texts and "selfBias" not in texts["FACTCHECK.md"]:
+  L95            failures.append("[8] FACTCHECK.md: missing selfBias")
+  L96    
+  L97        for reason in missing + failures:
+  L98            print(reason)
+  L99        if missing:
+  L100           print("FAIL (missing files)")
+  L101           return 2
+  L102       if failures:
+  L103           print("FAIL (content)")
+  L104           return 1
+  L105       print("PASS")
+
+### check_d28.py  [lead/d28_ruling_20261106/check_d28.py]
+  L1     """Read-only D-28 mechanical gate; run from the repository root with python -I."""
+  L54        root = Path(__file__).resolve().parents[2]
+  L55        directory = root / "lead" / "d28_ruling_20261106"
+  L90                (4, "D 链处置", ("历史数字", "1681"), False),
+  L91                (5, "授权边界", ("本次不授权",), True),
+  L92                (6, "未背书", ("外推", "口径 B"), True),
+  L93            )
+  L94            for number, title, words, require_all in requirements:
+  L95                body = "\n".join(bodies.get(title, []))
+  L96                present = [word in body for word in words]
+  L97                if not (all(present) if require_all else any(present)):
+  L98                    relation = "同时包含" if require_all else "至少包含其一"
+  L99                    failures.append(f"[{number}] {title} 小节正文须{relation}：{'、'.join(words)}")
+  L100           count = len(REFERENCE.findall(ruling))
+  L101           if count < 8:
+  L102               failures.append(f"[7] RULING_D28.md 全文引用须至少 8 处，实际 {count} 处")
+  L103   
+  L104       factcheck = texts.get("FACTCHECK.md")
+  L105       if factcheck is not None and "selfBias" not in factcheck:
+  L106           failures.append("[8] FACTCHECK.md 缺少 selfBias 字样")
+  L107       for reason in missing + failures:
+  L108           print(f"FAIL {reason}")
+  L109       if missing:
+  L110           print("RESULT: FILE MISSING (exit 2)")
+  L111           return 2
+  L112       if failures:
+  L113           print("RESULT: FAIL (exit 1)")
+  L114           return 1
+  L115       print("PASS: D-28 全部 8 项机械检查通过 (exit 0)")
+
+### check_d26.py  [lead/d26_ruling_20261106/check_d26.py]
+  L85        if not any("本次不授权" in body for body in bodies.get("授权边界", [])):
+  L86            errors.append("[4] 授权边界小节正文须包含「本次不授权」")
+  L87        if not any("勘误" in body and "挂账" in body
+  L88                   for body in bodies.get("执行顺序与后续", [])):
+  L89            errors.append("[5] 执行顺序与后续小节正文须同时包含「勘误」与「挂账」")
+  L90        if not any(bodies.get("未背书", [])):
+  L91            errors.append("[6] 未背书小节正文须非空")
+  L92        count = len(REFERENCE.findall(ruling))
+  L93        if count < 8:
+  L94            errors.append(f"[7] 裁决书引用须至少 8 处，实际 {count} 处")
+  L95        factcheck = documents["FACTCHECK.md"]
+  L96        if "selfBias" not in factcheck and "自省" not in factcheck:
+  L97            errors.append("[8] FACTCHECK.md 须包含 selfBias 或「自省」")
+
+### check_d25.py  [lead/d25_ruling_20261106/check_d25.py]
+  L58            if "本次不授权" not in section_body(ruling, HEADINGS[1]):
+  L59                errors.append("[4] 授权边界小节正文缺少「本次不授权」")
+  L60            if not section_body(ruling, HEADINGS[5]):
+  L61                errors.append("[5] 未背书小节正文为空或小节缺失")
+  L62            count = len(re.findall(r"[A-Za-z0-9_./-]+\.(md|py|json):\d+", ruling))
+  L63            if count < 8:
+  L64                errors.append(f"[6] RULING_D25.md 引用不足 8 处（实际 {count} 处）")
+  L65    
+  L66        factcheck = documents.get("FACTCHECK.md")
+  L67        if factcheck is not None:
+  L68            if not factcheck.strip() or not ("selfBias" in factcheck or "自省" in factcheck):
+  L69                errors.append("[7] FACTCHECK.md 必须非空且含「selfBias」或「自省」")
+
+### MASKING_EFFECT_AUDIT.md  [lead/masking_effect_20261109/MASKING_EFFECT_AUDIT.md]
+  L176   **统一 GATE（三方案共用）**：`AGGREGATE = AND_k( REAL per-needle self-test )`，其中每根 needle k **单独**跑未修改扫描器，要求 `EXIT=0 AND 6 条负控逐条匹配 WANT`；`HITSET / MASKED_LINES / EXCLUSIVE(k) / EXCLUSIVE_CONTROLS(k)` 一律**只报告、不门禁**（避免复核人指出的 k=1 平凡通过 / 语料漂移误判）。`PER_NEEDLE_SELFTEST` 必须来自**真实 k 次运行**，不得由语料推断。
+  L180   | **甲'（推荐、零侵入）** | 逐 needle 独立跑自检，k 次完整扫描各出 `EXIT/SELF_TEST/6-controls`，`AGGREGATE=AND_k` | **0 行**（外部新外壳 ~15–25 行，本写域 `_me_auditcheck_plan2.py:plan_a`） | **完全不破坏**：每次输出仍是原格式，只多一层汇总；既有 `_fix_*.txt` 解析不变 |
+  L181   | **乙'** | 同上，但把门禁写成「逐针负控表」：每根单独 6 条 `want/got` 逐条比对，任一 mismatch 即 FAIL | 0 行（外部预计算）或内嵌 ~20–30 行 | **弱破坏**：新增 `PER_NEEDLE` 行，A–E 段不变 |
+  L182   | **丙'（溯源台账）** | 一次扫描补 `hits=[命中针下标]`，打印 `HITSET` 直方图 + `MASKED_LINES` + **REAL** `PER_NEEDLE_SELFTEST`（由 k 次独立自检得出），`PASS` 仅在 `AND_k` 成立时给出 | ~30–50 行（`:238` 补 hits、`:282` 多打一行、新增 F 段、`:324` 把 AND 并入 ok） | **中等破坏**：A 段每 carrier 多一行 `hits=`、新增 F 段；`SELF_TEST` 语义扩为「负控全过 ∧ 逐针自检全过」，旧 PASS 可能变 FAIL（这正是目的） |
+  L202   # 判据（本件审定版；HITSET/EXCLUSIVE 为诊断量，AND_k 才是门禁）
+  L203   EXCLUSIVE(k)       = |{ line : hits(line) == {k} }|        # 独占语料行 = 38 / 43
+  L204   MASKED_LINES       = |{ line : |hits(line)| >= 2 }| = 41   # 41/122 = 33.6%
+  L205   MASKED_NEEDLES     = |{ k : EXCLUSIVE(k) == 0 }|    = 0
+  L206   EXCLUSIVE_CONTROLS = [0, 1]   # 6 条负控的逐针独占数（本会话 C4 实算）
+  L207   AGGREGATE          = AND_k( per_needle_SELF_TEST_k )       # = FAIL（N1 单跑 FAIL）
+  L208   DISTINGUISHABLE_PASS = (AGGREGATE == PASS) AND (SELF_TEST == PASS) AND (每针 6/6 逐条匹配)
+  L209   ```
+  L210   
+  L211   代入交付口径：**`DISTINGUISHABLE_PASS = FALSE`**——现行 `SELF_TEST` 不是由 `AND_k` 得出（`_me_design_out.txt:31-35`：E 段零 per-needle 行、零 hit-set 字段，「有几根被掩蔽」**UNKNOWABLE**，不是 0 也不是 1，是未报告）。**结果碰巧对（N1 在别处确实命中 79 行），这次 PASS 依然不可信。** 本会话当前语料下同一判据给 `MASKED_LINES=43/136`、`EXCLUSIVE_CONTROLS=[0,1]`（`_me_auditcheck_plan2_out.txt` 末段），结论不变。
+  L213   ### 4.4 可粘贴片段（方案甲' 核心，直接可跑；完整三方案见 `_me_auditcheck_plan2.py`）
+  L216   # 甲'：逐 needle 独立跑自检 + AND_k + 坏针注入。零改动上游脚本。
+  L217   import subprocess, sys
+  L218   SCANNER = r"D:/Project/ra2-campaign-forge/lead/refsync_scope_20261109/_rs_carrier_scan.py"
+  L219   NEEDLES = ["只能判「不可复现」", "不能定位当年错误步骤"]
+  L220   WANTS   = ["ASSERTION"] * 4 + ["REFUTING_QUOTE", "ASSERTION"]
+  L221   CONTROLS = [
+  L222       ("ledger_appendix_20261108/LEDGER_APPENDIX_DRAFT.md", 123),
+  L223       ("ledger_appendix_20261108/_la_draft3_s604_gapdiff.md", 25),
+  L224       ("ledger_bound_20261109/LEDGER_BOUND_VOLUME.md", 196),
+  L225       ("ledger_bound_20261109/_lb_BOUND_VOLUME.md", 129),
+  L226       ("s604_verdict_entry_20261109/_ve_DRAFT_S609.md", 22),
+  L227       ("ledger_appendix_20261108/LEDGER_APPENDIX_DRAFT.md", 215),
+  L228   ]
+  L229   def one(n):
+  L230       cmd = [sys.executable, "-I", "-X", "utf8", SCANNER,
+  L231              "--needle", n, "--include-refuting", "--max-depth", "2", "--ext", ".md"]
+  L232       cp = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+  L233       ls = cp.stdout.splitlines()
+  L234       st = next((l.split("=",1)[1].strip() for l in ls if l.startswith("SELF_TEST")), "<missing>")
+  L235       got = []
+  L236       for rel, no in CONTROLS:                       # 逐条负控比对，不只看总布尔
+  L237           key = "%s:%d want=" % (rel, no)
+  L238           L = next((l for l in ls if key in l), "")
+  L239           got.append(L.split("got=")[-1].strip() if "got=" in L else "<missing>")
+  L240       ok6 = all(g == w for g, w in zip(got, WANTS))
+  L241       return cp.returncode, st, ok6
+  L242   rows = [(n, *one(n)) for n in NEEDLES]
+  L243   for n, ec, st, ok6 in rows:
+  L244       print("NEEDLE %-24r EXIT=%d SELF_TEST=%-4s controls6=%s" % (n, ec, st, ok6))
+  L245   AGGREGATE = all(ec == 0 and st == "PASS" and ok6 for _, ec, st, ok6 in rows)
+  L246   print("AGGREGATE = %s  (AND_k over %d REAL per-needle self-tests)" %
+  L247         ("PASS" if AGGREGATE else "FAIL", len(rows)))
+  L248   print("DISTINGUISHABLE_PASS = %s" % AGGREGATE)
+  L249   sys.exit(0 if AGGREGATE else 1)
+  L250   # 代入 N1/N2 => AGGREGATE=FAIL（N1 SELF_TEST=FAIL, :22 <not-scanned>）
+  L251   # 代入 ["只能判","不能定位当年"] => AGGREGATE=PASS（真通过）
+  L252   # 把 N1 换成保证零命中的哨兵 => AGGREGATE=FAIL（坏针被捕获）
+  L253   ```
+  L335   > 两个附加形态：① **min/argmin 位置依赖**——若判定还依赖 `argmin_i pos_i`（`_rs_carrier_scan.py:165`），加输入会改变 `argmin`，使「已扫到」集合单调而「已判对」集合**不单调**（反向掩蔽，§3.3）；② **无独占见证 / 独占见证被误用**——`exclusive(i)=U_i \ ∪_{j≠i}U_j` 可作**诊断**，但复核人已证把「≥1 条独占负控」当**硬门禁**会在 k=1 平凡通过、并在真通过场景误伤（`_mev_step5_out.txt:20-22`；本会话 S3 `EXCLUSIVE_CONTROLS=[0,0]` 却两针都 6/6 PASS）。**唯一可靠的门禁是 `AND_k` 真实逐输入自检。**
+  L375   2. 6 条负控 5 条 `{N1,N2}`、`:22` 为 `{N2}`（本会话 C4）⇒ N2 一根即可 6/6（`_me_n2only_out.txt:546-552`）。
+  L376   3. N1 的客观缺陷（直角/弯引号不归一）存在：单 needle 下 `:22 got=<not-scanned>`、79 vs 122 漏 43 行。
+  L377   4. 【铁律】：被掩蔽的通过即使结果碰巧正确（N1 别处命中 79 行）也**必须标不可信**。
+  L379   **是否需加注 = 建议加注，本任务未执行**（`REFSYNC_SCOPE_FIX.md` 属绝对只读件）：
+  L380   - `REFSYNC_SCOPE_FIX.md:243`（R6 描述）、`:251`（登记双 needle 命令 + `SELF_TEST = PASS` 6/6）、`:252-253`（另两条 PASS）建议由台账所有者追加限定：「本 PASS 系 N1∪N2 并集口径，不构成逐 needle 有效性证据；`:22` 仅由第二 needle 命中；详见 `lead/masking_effect_20261109/MASKING_EFFECT_AUDIT.md`」。在盘 `_fix_d2_out.txt` 等建议加「口径限定」，不改写原数字。
+  L381   - 本会话/复核人直读确认：`REFSYNC_SCOPE_FIX.md` 全文无「掩盖/掩蔽/假 PASS/不可信」（`_mev_final_out.txt:2-6`）；而 `_nn_REPORT.md:90-100,365,400-402` 与 `NEEDLE_NORMALIZATION.md:91,293,364,393` **已登记「掩盖效应」并建议「每个 needle 单独跑一次自检」**（`:365` / `:364` 原文），`_nn_REPORT.md:402` 自认「本次 FAIL 之所以暴露，是编排方用单 needle 重跑了负控自检」——即下一轮已发现，但**上一轮交付件本身未加注**。建议补的正是这个缺口。
+  L384   - 暴露的方法论问题：把「多输入并集 + 单一布尔自检」当成「每个输入都有效」的证明；负控样本未做**逐输入覆盖度**设计；PASS 未绑定语料指纹；命令口径（单 vs 双 needle）与交付登记不一致却未标注。
+  L385   - 编排方「只跑单 needle 就报 FAIL」**算另一种偏差，但性质不同、不抵消原问题**：`REFSYNC_SCOPE_FIX.md:251` 登记正式命令是**双 needle**，编排方实跑**单 needle**（`--needle "只能判「不可复现」" --include-refuting`），差一个 `--needle`。按「报 FAIL 前须确认与登记口径一致」，该 FAIL **不能直接当交付件的验收结论**，应写「在单 needle 口径下 FAIL」。它**不是掩蔽**（没用另一输入掩盖失败），是**反向的口径错配**；但**碰巧是唯一发现通道**（`_nn_REPORT.md:402`）。如实评价：**结论方向对（N1 确有漏检），论证路径不严谨（口径与登记不符）**；若无本件的双/单对照 + 坏针注入，单靠那一条 FAIL 无法区分「N1 坏了」与「我少传了一个参数」。反过来说，「跑错口径反而暴露…[TRUNC]
+  L386   - 另如实登记：撰写人自己的「双针正式口径」也比 `:251` 多传 `--include-refuting`（复核人次要问题③），仅影响 C 段展开，不改五数字；未标注，属同类口径差。
+  L388   ### 6.4 报 PASS/FAIL 前清单（必做，逐条可执行）
+  L389   
+  L390   1. **核对命令与登记口径逐字一致**（每个 `--needle / --pattern / --ext / --max-depth / --include-refuting`），不一致即标「非登记口径」，不得据此下交付结论。
+  L391   2. **绑定**被核对象 SHA256 + 字节数 + 语料文件数（本件 §6.2 格式），PASS/FAIL 与指纹同发。
+  L392   3. **逐 needle 自检**：k 个输入出 k 个 `PASS/FAIL`（含 6 条 `want/got` 逐条比对），总判定 = `AND_k`；禁止只报一个 `SELF_TEST`。
+  L393   4. **门禁/诊断分离**：`EXCLUSIVE(k)`、`EXCLUSIVE_CONTROLS(k)`、`MASKED_LINES`、`MASKED_NEEDLES`、`HITSET` 只报告；**不得**用「语料独占行>0」或「独占负控≥1」替代 `AND_k`（复核 `partial` 教训）。
+  L394   5. **打印命中溯源**：`hits=[...]` / `HITSET` 直方图，算出 `MASKED_LINES` 与 `MASKED_NEEDLES`。
+  L395   6. **坏针注入**：每根依次换保证零命中的哨兵，确认 `AGGREGATE` 变 FAIL；若注入坏针仍 PASS，原 PASS 作废（本例实证作废）。
+  L396   7. **PASS/FAIL 双向对照**：既报正式口径，也报去掉一根输入的对照，差异可解释（本例 79 vs 122，差 43 = `|only2|`）。
+  L397   8. **stdout 原文落盘并算 sha256**（本件 4 份 `_me_auditcheck_*_out.txt` 已做），正文只引「命令 + 输出文件:行」。
+  L398   9. **单调性声明**：依赖 `min(pos)`/argmin 时额外跑「多加一根输入」对照，确认角色未改判（本例 `:22` 实测被改判为 `ANALYSIS_MENTION`）。
+  L399   10. **未验项显式写「未验」**：搜不全、跑不动、没实跑的对象一律标注，不用 plausible 值填空。
+  L403   - **全库非全**：撰写人 5847/4962、复核人 31418/19616、本会话 91359/52108 三次均为**有界扫描**（各自深度/长路径/跳过目录不同）；超长路径树 `lead/o1prime_reach_20261109/_o1_tmp/long_B3_longpath/` 未无界下钻（本会话显式跳过并打印 `_me_auditcheck_search_out.txt`）。A/B/C/D 是正则计数，**不是逐文件执行审计**。
+  L404   - **D 段 4110 个提及自检/负控的文件、B 段 1436 处 `any()/min()` 未逐个实跑**；§5.2 表内只对直读源码或做了最小复现的对象给判断，A 段本会话新发现的 `out/re_work/...` 多输入 CLI 一律**未验**，不补造风险等级。
+  L405   - **`_v12_rule.py` 词表存活率、其它 HIGH/MEDIUM 脚本的坏针注入**：本次**未逐词/逐脚本实跑**，标未验。
+
+### CHECK_MASKING_INJECT.md  [lead/check_masking_20261109/CHECK_MASKING_INJECT.md]
+  L25    **用语约定**：下文「压成 1 bit」一律指 `any()` / `ok &= good` / `min(pos)` 把 k≥2 个输入的存活情况合成单一布尔，最终只输出一行 `PASS`/`SELF_TEST = PASS`。
+  L124   本会话另实跑 `grep -n -c -F "SELF_TEST"` 得 **d27/d29/d30 = 0 / 0 / 0，scanner = 1**（§4 的 30 秒判据第 3 步输出），即：
+  L125   
+  L126   - **三件都没有字面 `SELF_TEST` 汇总行，也都没有 `min()`**；汇总就是末行 `print("PASS")`（d29/d30 `check_d29.py:105` / `check_d30.py:105`）或 `print("PASS: …")`（`check_d27.py:100`）+ `return 0` / `sys.exit(main())`。编排方的 `{}` 不是「无结构」，而是「无 `SELF_TEST` 记号」；本回件用「PASS 行」当等价汇总位。
+  L138   - 但每个 `require_all=False` 检查项内部把 k≥2 个词用 `any()` 合成 `covered = ∃w ∈ words: w in body`，只 append 一条「须包含 A 或 B」。**哪根词死了、哪根活着，输出里完全没有**。这就是「压成 1 bit」的有损压缩；与 `_rs_carrier_scan.py:229` 的 `any(n in txt …)` + `:343` `ok &= good` + `:346` 单 `SELF_TEST` 同形。
+  L154   - **d27 特有坑**：`check_d27.py:8` 用 CWD 相对 `DIRECTORY = Path("lead/d27_ruling_20261106")`，沙箱内须另建同名子目录放文档；`check_d29.py:50` / `check_d30.py:50` 用 `Path(__file__).resolve().parent`，副本同目录即命中。撰写人第一次驱动漏此点致 6 个 d27 场景 `EXIT=2 文件缺失`，**已判无效运行、作废重跑**（`_cm_AUDIT.md:143`，本会话直读）；结论只取第二次输出。
+  L179   | **无自检** | **结构类**：该件没有 `SELF_TEST` 行、没有负控表、没有逐输入打印行，其 PASS 只是一行裸布尔，无法从输出判断哪根输入死了 | 三 gate **全件**属于此类（§2.3 `grep -c` = 0/0/0）；scanner 有 1 个 `SELF_TEST` 行但 6 条负控压成同一布尔，属「有自检名、无逐输入自检实」 |
+  L211     SCRIPT check_d27.py: '"卡顿不存在"' -> '"TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ"'; occurrences 1 -> 0; bytes 3764 -> 3783; sha256 3b769d7c64c27251 -> f404f58783ab4da0
+  L231   **杀光 `卡顿不存在` 后输出一字不变**（连引用计数 71 都不漂移）。另 `_cm_injection_out.txt:20-25`（杀 `外推`）、`:43-49`（杀 `外推` 换哨兵）亦全 `EXIT = 0` / PASS。
+  L271     SCRIPT check_d29.py: '"前提"' -> '"TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ"'; occurrences 1 -> 0; bytes 3906 -> 3934; sha256 2a50b09adff555db -> 2399e95a43eaafa4
+  L331     SCRIPT check_d30.py: '"误报率"' -> '"TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ"'; occurrences 1 -> 0; bytes 3926 -> 3951; sha256 6cb737963fc62a0e -> b1670537e12a6d7c
+  L392   6 条负控全 PASS，`SELF_TEST = PASS`，`EXIT=0` —— 坏针完全被掩蔽。撰写人本次为 `6030/8998/222`（`_cm_rs_broken_out.txt:8,10`），复核人为 `6088/17843/230`，背景为 `638/84/20`（`REFSYNC_SCOPE_FIX.md:251`），本会话为 `6122/35152/236`：**三次数都不同，属 `--root` 默认语料/并行写入口径差，如实登记，不冒充复现同一数字**；只能判「坏针仍 `SELF_TEST=PASS`」这一性质。
+  L515   2. **`check_d27.py`** —— OR 词表落在「未背书」承重段；输出「八项机械检查通过；引用 71 处」最像逐项已验却最易误读，杀光一根词后输出一字不变；另有 `check_d27.py:8` CWD 相对路径的脆弱性。
+  L570   SENTINEL = "TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ"
+  L571   
+  L572   def run_once(inputs, workdir):
+  L573       # 适配器(b)：硬编码词表 -> 沙箱副本替换，绝不写回源
+  L574       # k==1 也必须保留尾逗号，否则元组退化为字符串
+  L575       dst = ", ".join('"%s"' % x for x in inputs) + ","
+  L576       sp.write_text(text.replace(ORIGINAL_TUPLE, dst, 1), encoding="utf-8")
+  L577       p = subprocess.run([sys.executable, "-I", "-X", "utf8", str(sp)],
+  L578                          cwd=str(sb), capture_output=True, text=True)
+  L579       return p.returncode, (p.stdout + p.stderr).splitlines()
+  L580   
+  L581   def parse(rc, lines):                    # 修正①：签名收 rc
+  L582       txt = "\n".join(lines)
+  L583       aggregate_pass = (rc == 0) and ("PASS" in txt) and ("FAIL" not in txt)
+  L584       controls = ["[4]" not in txt]      # 修正②：非空，由实现保证
+  L585       return aggregate_pass, controls
+  L586   
+  L587   def real_per_input_selftest(inputs, workdir):
+  L588       per = []
+  L589       for i, x in enumerate(inputs):
+  L590           rc, lines = run_once([x], workdir)          # 单输入，不是并集
+  L591           ok, controls = parse(rc, lines)
+  L592           per.append(ok and rc == 0 and all(controls))
+  L593           print("  input[%d] = %r: SELF_TEST=%s controls=%d/%d" %
+  L594                 (i, x, "PASS" if per[-1] else "FAIL", sum(controls), len(controls)))
+  L595       return all(per)                                  # AGGREGATE = AND_k
+  L596   
+  L597   def bad_needle_injection(inputs, workdir):
+  L598       # 修正③（根因）：不信任并集运行的 aggregate，要求 AND_k(broken) 变 FAIL
+  L599       results = []
+  L600       for i in range(len(inputs)):
+  L601           broken = list(inputs); broken[i] = SENTINEL
+  L602           caught = not real_per_input_selftest(broken, workdir)
+  L603           results.append(caught)
+  L604           print("  broken[%d] -> %s: caught=%s" % (i, SENTINEL, caught))
+  L605       return all(results)
+  L606   
+  L607   # main(): BASE_PASS + AND_k + BAD_NEEDLE_CAUGHT -> DISTINGUISHABLE_PASS
+  L608   ```
+  L609   
+  L610   **本会话实跑命令与输出原文**（`python -I -X utf8 D:/Project/ra2-campaign-forge/lead/check_masking_20261109/_cmd_template_fixed.py`，输出 `_cmd_template_fixed_out.txt`）：
+  L611   
+  L612   ```
+  L613   BASE CMD = C:\Users\Administrator\AppData\Local\Programs\Python\Python312\python.exe -I -X utf8 D:\Project\ra2-campaign-forge\lead\check_masking_20261109\_cmd_tmp\tmpot34mp6o\run_0001\check_d29.py
+  L614   BASE EXIT = 0 lines = ['PASS']
+  L615     input[0] = '互斥': SELF_TEST=PASS controls=1/1
+  L616     input[1] = '前提': SELF_TEST=PASS controls=1/1
+  L617     input[0] = 'TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ': SELF_TEST=FAIL controls=0/1
+  L618     input[1] = '前提': SELF_TEST=PASS controls=1/1
+  L619     broken[0] -> TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ: caught=True
+  L620     input[0] = '互斥': SELF_TEST=PASS controls=1/1
+  L621     input[1] = 'TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ': SELF_TEST=FAIL controls=0/1
+  L622     broken[1] -> TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ: caught=True
+  L623   BASE_PASS=True  AND_k=True  BAD_NEEDLE_CAUGHT=True
+  L624   DISTINGUISHABLE_PASS = True
+  L625   TEMPLATE_EXIT=0
+  L626   ```
+  L627   
+  L628   即：修正版甲' 外壳能同时给出「真通过放行」与「坏针被抓」。**边界如实**：这只是**演示外壳本会话实跑**，不是把它部署成门禁；**未在三 gate / scanner 上落地、未跑修复后回归**（本任务铁律只做注入审计）。三 gate 内嵌「逐词 HIT/DEAD 打印」最小改法见 `_cm_AUDIT.md:538-555`（对应审计 `:343` 第 5 条），本会话**未执行**。
+  L634   | **甲' 外部外壳（推荐）** | 外壳 ~15–25 行；被审脚本 **0 行** | **完全不破坏**（每次单跑输出仍是原格式，只多 `AND_k` 汇总） |
+  L635   | 逐词打印（内嵌，三 gate 专用） | 每 gate ~5–10 行 | 弱破坏：新增 `word …: HIT/DEAD` 行 |
+  L636   | 乙'（逐针负控表） | 0 行或内嵌 ~20–30 行 | 弱破坏：新增 `PER_NEEDLE` 行 |
+  L637   | 丙'（溯源台账） | ~30–50 行 | 中等破坏：A 段多 `hits=`、新增 F 段、旧 PASS 可能变 FAIL |
+  L638   | 三 gate 内嵌合计 | 3 × ~10 + 共用外壳 ~25 ≈ **55 行级** | 弱；但需改 3 处源码（本任务未做） |
+  L639   
+  L640   另需 ~10 行 `hashlib` 指纹绑定（审计 `:345` 第 7 条），防并行写入让计数漂移被误读为「测试变好」——§3.3.4 的四组不同计数正是实例。
+  L641   
+  L642   **修复建议一句话**：先给 `_rs_carrier_scan.py` 套甲' 外壳并把 `REFSYNC_SCOPE_FIX.md:251` 的旧 PASS 标不可信，再对三 gate 的 OR 项做逐词 HIT/DEAD 报告 + 同一 `AND_k` 门禁，最后把 `PENDING_DECISIONS.md:92,105,129` 三处 `exit=0` 换成「逐输入 PASS 表 + 指纹」。
+  L650   被核对象 SHA256 = 3b769d7c64c2725100186439725198dbc134a277914e2cb2e9b0af844fe7671c，字节数 = 3764
+  L651   被核对象 SHA256 = 2a50b09adff555dbce4c5740a2af78b779876cad771b6fdf887ba3c0dc780f14，字节数 = 3906
+  L652   被核对象 SHA256 = 6cb737963fc62a0e045f51247b4fa57ef190acb0b524da3aa6b7713fd05ee9fd，字节数 = 3926
+  L664   - **(A) 补丁模板不可用**：`_cm_AUDIT.md:469-536` 的「可粘贴」模板移植到 `check_d29.py` 后 `DISTINGUISHABLE_PASS = False` / `PORT_EXIT=1`；根因是 `bad_needle_injection()` 判 `caught` 用了被掩蔽的并集布尔。另 3 处接口不一致（`parse` 收不到 `rc`、`controls` 需凭空造、k=1 元组退化）。本会话 `_cmv_template_port.py` 与 `_cmv_template_3way.py` 实跑复现，并给出/实跑修正版（§5.3）。**审计 §4.2 的 `AND_k` 原则是对的，错的是那份外壳实现。**
+  L695   **判不了什么（如实列）**：① 判不了裁决书事实与推理（三件 docstring 自称 format gate，`check_d27.py:1` / `check_d29.py:1` / `check_d30.py:1`）；② 判不了「真实历史上是否真有死词」——本次是**主动注入**，三件原词在文档里都实际命中，故**结果碰巧对，判的是 PASS 不可信，不是结论错**；③ 判不了其它未点名脚本；④ 判不了修复后效果（模板未落地、未跑修复后回归）；⑤ 判不了 scanner 当时数字（口径差，§3.3.4）；⑥ 判不了 d27 CWD 依赖是否算 bug（跑法坑，非 k→1 bit）；⑦ 判不了 `require_all=True` 项是否也有 1-bit 问题（只证对「整词删光」敏感，未证会打印逐词存活状态，事实上不打印）。
+
+### _rs_carrier_scan.py  [lead/refsync_scope_20261109/_rs_carrier_scan.py]
+  L165       pos = min((line.find(n) for n in needles if n in line), default=-1)
+  L166       if pos < 0:
+  L167           return None
+  L194       ap.add_argument("--needle", action="append", required=True)
+  L195       ap.add_argument("--canonical", default="")
+  L196       ap.add_argument("--ext", default=".md,.txt,.py,.json")
+  L229           if not any(n in txt for n in a.needle):
+  L230               continue
+  L231           ls = txt.splitlines()
+  L343               ok &= good
+  L344               P("  %-5s %s:%d want=%-16s got=%s" %
+  L345                 ("PASS" if good else "FAIL", rel, n, want, got))
+  L346           P("SELF_TEST = %s" % ("PASS" if ok else "FAIL"))
+  L347   
+  L348       print("\n".join(out))
+  L349       return 0 if ok else 1
+  L350   
+  L351   if __name__ == "__main__":
+  L352       sys.exit(main())

@@ -1,0 +1,102 @@
+W63 · REAL_DIR_PROOF.txt  (真目录零改动自证 + 沙箱还原自证)
+============================================================
+执行者 Hy4 (W63) | 生成 2026-11-13T23:41:43+08:00
+全部数值由 out\real_pre.json / out\real_post.json / out\sandbox_pre.json /
+out\sandbox_post.json / out\FINALIZE.json / out\finalize.ndjson 实算，非自述。
+
+------------------------------------------------------------
+A. 真目录 ra2youli 零改动（本卡红线：绝不写真目录）
+------------------------------------------------------------
+REAL = D:\Project\ra2-campaign-forge\ra2youli
+PRE  : out\real_pre.json   (2026-11-13T23:35:25+08:00, 离线阶段、取锁之前)
+POST : out\real_post.json  (2026-11-13T23:41:42+08:00, 真机+卸载+清理之后)
+
+PRE  summary: file_count=647  total_bytes=1989215270  maplike_count=277
+POST summary: file_count=647  total_bytes=1989215270  maplike_count=277
+
+FULL-TREE DIFF (by rel + size + sha256):
+  added   = 0
+  removed = 0
+  changed = 0
+  mtime_diff = 0            <-- 连 mtime 都没变（真目录从未被打开写入）
+  IDENTICAL_TREE = True     <-- [本次实测]
+
+四项 + 一项锚哈希 PRE == POST（逐字节 SHA-256）:
+  RA2MD.INI            c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d  ==  c91c6a47...  True
+  gamemd.exe           73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  ==  73201cc0...  True
+  ddraw.dll            85e0f7d530dfda134793a57cb3e76b0287dcc96892ee57162dd68f47283b03a9  ==  85e0f7d5...  True
+  ra2forge_install.json fe3bdf62f4e871b61bf0d1b1d451b090af1c0b1804440c093089436253cc3914  ==  fe3bdf62...  True
+  BATTLEMD.INI         7e40691a3480b1e5ffe6d1cdfccb83f67da4447157607ec3ecb5d2278acf0791  ==  7e40691a...  True
+
+注：PRE 四项锚与 REVIEW\LEAD_VERDICT_C_line_E2E.md §3 中 W44 签发基线逐项吻合
+     (RA2MD.INI=c91c6a47…, gamemd.exe=73201cc0…, ddraw.dll=85e0f7d5…,
+      ra2forge_install.json=fe3bdf62…)。gamemd.exe 未改 => 路线 (c) 未触碰。
+
+------------------------------------------------------------
+B. 沙箱还原自证（sandbox_game\ 是真目录的 robocopy 副本，只写副本）
+------------------------------------------------------------
+GAME = D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W63_route_a_e2e\sandbox_game
+robocopy REAL -> GAME  rc=1 (成功码)  /E /COPY:DAT /DCOPY:DAT  [cmd_robocopy_sandbox.log]
+
+启动前基线：
+  sandbox_pre.json : 647 文件 / 1989215270 B（与 real_pre 一致）
+  out\pristine\*   : 20 个可写配置的逐字节副本 + 实算 SHA-256（21 项基线中
+                     ra2forge_install.json.seal 基线不存在，无副本）
+                     [offline.ndjson / pristine_saved]
+
+BATTLEMD.INI 就地改写与逐字节还原（v15 battlemd.mode=inplace）：
+  install 前     : 2733 B  sha=7e40691a3480b1e5ffe6d1cdfccb83f67da4447157607ec3ecb5d2278acf0791 (官方)
+  install 后     : 2732 B  sha=8fb51769216d36af88abb6960bff2310dc2126e407ffdecc91511e4d0ab1c907
+                    [SOV1] Scenario=RA2F_M1.MAP (1 行 diff, 145 CRLF, 0 bare LF)
+  .bak 在位      : BATTLEMD.INI.ra2forge.bak 2733 B sha=7e40691a... == 官方原件
+  清单记录        : original_sha256 = 7e40691a3480b1e5ffe6d1cdfccb83f67da4447157607ec3ecb5d2278acf0791
+                    original_size_bytes = 2733
+                    post_install_sha256 = 8fb51769... == 磁盘实算
+                    顶层嵌入 inplace_rewrite 预检报告
+  uninstall      : exit 0 [cmd_uninstall_final.log]
+  还原后实算     : 2733 B  sha=7e40691a3480b1e5ffe6d1cdfccb83f67da4447157607ec3ecb5d2278acf0791
+     sha == 清单 original_sha256            : True
+     sha == 官方样板 2733 B                 : True
+     bytes == out\pristine\BATTLEMD.INI     : True
+     bytes == REAL\BATTLEMD.INI (POST)      : True
+     sha  == real_pre BATTLEMD.INI          : True
+     Scenario=RA2F_M1.MAP 已消失            : True
+     Scenario=SOV01umd.MAP 已回归           : True
+  => BATTLEMD.INI 逐字节还原成立 [本次实测]
+
+配置基线逐字节还原（21 项处置：20 项 byte_identical=True + 1 项基线不存在删除现存；all_ok=21/21）：
+  BATTLEMD.INI, BATTLEMD98.INI, RA2MD.INI, RA2MD.INI.benchbak, ddraw.ini,
+  gamemd.exe, ddraw.dll, ra2md.lcf, expandmd98.mix,
+  expandmd98.mix.old-pre-migrate, ra2forge_install.json,
+  ra2forge_install.json.seal(基线不存在 => 删除现存), 
+  ra2forge_uninstall.txt.pre-migrate.bak, BATTLEMD.INI.ra2forge.bak(241 B 孤儿原件),
+  expandmd98.mix.ra2forge.bak, ECH01.MAP, ECH02.MAP, ECH03.MAP,
+  ECH01.MAP.ra2forge.bak, ECH02.MAP.ra2forge.bak, ECH03.MAP.ra2forge.bak
+
+游戏自生成的 3 个存档 RA2F_M1.sav / RA2F_M2.sav / RA2F_M3.sav（逐关进局旁证）已清除。
+沙箱 POST diff:
+  sandbox_diff (清理前)              added=['RA2F_M1.sav','RA2F_M2.sav','RA2F_M3.sav'] removed=[] changed=[]
+  sandbox_diff_after_extra_cleanup   added=[] removed=[] changed=[]  IDENTICAL_TREE=True  [本次实测]
+  还原态 verify --game sandbox --json : exit 0 [cmd_verify_post_restored_sandbox.log]
+沙箱目录清理: shutil.rmtree(sandbox_game) => exists=False, cleaned=True [本次实测]
+
+------------------------------------------------------------
+C. 锁 / 进程
+------------------------------------------------------------
+趟前  : .game_instance.lock owner=lead, gamemd 活体 0  => 允许取锁
+取锁  : owner=w63  2026-11-13T23:37:11.795+08:00
+放锁  : owner=lead 2026-11-13T23:39:42.496+08:00
+         purpose = "W63 route(a) trip FINISHED (ok=True, outcome=FULL_CHAIN_M1_M2_M3):
+                    self-launched gamemd closed, residual=0; restored owner=lead."
+收尾复核: owner=lead (未再改动), gamemd 残留 0。
+只关闭本卡 WMI 启动的 pid 34668：WM_CLOSE(hwnd=331606) 未关 ->
+         taskkill /PID 34668 -> taskkill /F /PID 34668；均为本卡自己的 pid，未碰用户进程。
+
+------------------------------------------------------------
+D. 结论
+------------------------------------------------------------
+[本次实测] 真目录 ra2youli 全程零写入：IDENTICAL_TREE=True，added/removed/changed/mtime_diff 全 0，
+         五项锚哈希 PRE==POST，gamemd.exe 基线 73201cc0... 不变。
+[本次实测] 沙箱副本已逐字节还原到 robocopy 后的原始状态并清理；
+         BATTLEMD.INI 还原 SHA 等于清单 original_sha256。
+[本次实测] 唯一真机写者是本卡（w63），锁已按「每趟」释放回 lead。

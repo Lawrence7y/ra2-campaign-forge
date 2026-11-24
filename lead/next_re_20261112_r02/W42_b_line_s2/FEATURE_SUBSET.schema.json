@@ -1,0 +1,447 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ra2-campaign-forge.local/schema/w42-s2/feature-subset.json",
+  "title": "W42-S2 Feature Set -> File Subset Contract",
+  "description": "Pure-contract schema. DATA / SPEC ONLY: it describes inputs and expected outputs of a resolver that does NOT exist yet (implementation belongs to S3+). Nothing here asserts any capability, any hash, or any engine behaviour. Consumes W38-S1 VERSION_GUARD_CONTRACT.md ($id .../w38-s1/version-guard.json) for guard_state / write entry enums; does NOT redefine them.",
+  "$defs": {
+    "sha256Hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "guardState": {
+      "description": "IMPORTED verbatim from W38-S1 guardVerdict.state (all four states, DIR_INVALID included -- verified against EVIDENCE/guard_contract_schema.json by s2_shape_check.py B17.2a). Not redefined.",
+      "enum": ["KNOWN_GOOD", "UNKNOWN", "MISMATCH", "DIR_INVALID"]
+    },
+    "writeEntry": {
+      "description": "IMPORTED from W38-S1 §1.2 / decisionTable.entries.",
+      "enum": ["E1", "E2a", "E2b", "E3", "E4", "E5", "E6"]
+    },
+    "featureName": {
+      "enum": ["maps", "battlemd", "mix", "csf", "mapselmd"]
+    },
+    "mapFileName": {
+      "type": "string",
+      "description": "Bare *.MAP name, no path separators. v11 package_files() globs '*.MAP' (install.py:719).",
+      "pattern": "^[^/\\\\]+\\.[Mm][Aa][Pp]$"
+    },
+    "csfLabel": {
+      "type": "string",
+      "description": "Stable label emitted by builder.csf_label_for() = RA2F:<8-hex-sha256-prefix> (builder.py:400-415).",
+      "pattern": "^RA2F:[0-9a-f]{8}$"
+    },
+
+    "mapsFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["off", "sideload"] },
+        "map_files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/mapFileName" },
+          "description": "Exact *.MAP set this campaign ships. Feeds mix.source_map_set and mapselmd Scenario= alignment."
+        },
+        "chain": {
+          "type": "array", "items": { "type": "string" },
+          "description": "NextScenario chain (W36 §3.3.3 G3). Referenced, not re-derived."
+        }
+      },
+      "allOf": [
+        { "if": { "properties": { "mode": { "const": "sideload" } }, "required": ["mode"] },
+          "then": { "required": ["map_files"], "properties": { "map_files": { "minItems": 1 } } } },
+        { "if": { "properties": { "mode": { "const": "off" } }, "required": ["mode"] },
+          "then": { "not": { "required": ["map_files"] } } }
+      ]
+    },
+
+    "battlemdFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "description": "MUTEX: 'append' (v11 BATTLEMD98.INI additive loose) vs 'inplace' (legacy BATTLEMD.INI overwrite) are mutually exclusive. A single value is the only legal form; an ARRAY of >=2 distinct modes is a legal INPUT SHAPE for rejection tests but MUST be refused by the resolver (reason_code BATTLEMD_MODE_CONFLICT). This is how the contract encodes 'inplace 与 append 不可同时'.",
+          "oneOf": [
+            { "type": "string", "enum": ["off", "append", "inplace"] },
+            { "type": "array", "items": { "type": "string", "enum": ["off", "append", "inplace"] }, "minItems": 2 }
+          ]
+        },
+        "ids": {
+          "type": "array", "items": { "type": "string" },
+          "description": "Battle IDs written into the INI. W36 §3.3.1 example field."
+        },
+        "description_ref": {
+          "enum": ["raw", "csf_label"],
+          "description": "raw = builder's raw-text Description=; csf_label = builder.py:131-137 rewrites Description= to RA2F:<8hex>. csf_label REQUIRES csf.mode=clone_append (G2 / W30 MISSING:RA2F:... )."
+        }
+      },
+      "allOf": [
+        { "if": { "properties": { "mode": { "const": "off" } } },
+          "then": { "not": { "required": ["ids", "description_ref"] } } },
+        { "if": { "properties": { "description_ref": { "const": "csf_label" } }, "required": ["description_ref"] },
+          "then": { "required": ["ids"] } }
+      ]
+    },
+
+    "mixFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["off", "repack"] },
+        "source_map_set": {
+          "type": "array", "items": { "$ref": "#/$defs/mapFileName" },
+          "description": "MUST be byte-identical (same ordered set) to maps.map_files. v11 builder.py:143-147 builds expandmd98.mix from the same map_texts; _verify_mix_contents forces exactly maps, 0 INI."
+        },
+        "target_name": { "const": "expandmd98.mix" }
+      },
+      "allOf": [
+        { "if": { "properties": { "mode": { "const": "repack" } }, "required": ["mode"] },
+          "then": { "required": ["source_map_set", "target_name"], "properties": { "source_map_set": { "minItems": 1 } } } }
+      ]
+    },
+
+    "csfFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "enum": ["off", "clone_append"],
+          "description": "'off' == the task-card example's 'none'. clone_append = clone the COMPLETE official ra2md.csf then append our label (W30 CSF_CAPABILITY.md:41-45)."
+        },
+        "base": {
+          "enum": ["official_full_clone", "minimal"],
+          "description": "FULL-CLONE INTEGRITY GATE. 'minimal' (only our label / few labels) MUST be refused: reason_code MINIMAL_CSF_REFUSED. v11 csf.py has NO such gate (append_or_set_label create_if_missing=True, csf.py:442-466) -- this is a NEW contract rule, not a present capability."
+        },
+        "official_label_count": {
+          "type": "integer", "minimum": 0,
+          "description": "Observed label count of the cloned base. W38 C10 / W36 §3.1.1 cite official ra2md.csf = 5211 labels [转引]. The contract threshold is >= official_full_min (5211 [转引·待运行验证]); a base with only our label fails."
+        },
+        "labels": {
+          "type": "array", "items": { "$ref": "#/$defs/csfLabel" },
+          "description": "Our appended labels only; must NOT be the whole file."
+        },
+        "target_name": { "const": "ra2md.csf" },
+        "official_full_min": { "type": "integer", "minimum": 1, "default": 5211 }
+      },
+      "allOf": [
+        { "if": { "properties": { "mode": { "const": "clone_append" } }, "required": ["mode"] },
+          "then": {
+            "required": ["base", "labels", "target_name"],
+            "properties": {
+              "labels": { "minItems": 1 }
+            },
+            "description": "SHAPE ONLY: base may be 'official_full_clone' OR 'minimal'. The resolver (couplingRuleSet K4) refuses 'minimal' with MINIMAL_CSF_REFUSED. Do NOT const-force base here."
+          } },
+        { "if": { "properties": { "mode": { "const": "off" } } },
+          "then": { "not": { "required": ["base", "labels", "official_label_count"] } } }
+      ]
+    },
+
+    "mapselmdFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "enum": ["off", "clone_append"],
+          "description": "'off' == task-card 'none'. clone_append = byte-exact clone of the COMPLETE official MAPSELMD.INI (14 stages, 5573 B) + appended stages (W34 D4)."
+        },
+        "base": {
+          "enum": ["official_full_clone", "partial_or_minimal"],
+          "description": "FULL-CLONE INTEGRITY GATE. 'partial_or_minimal' MUST be refused: reason_code MAPSELMD_NOT_FULL_CLONE. v11 mapselmd.validate_official_base() (mapselmd.py:142-184) already enforces 14 stages / 1..7 keys / Scenario= / >=1000 B."
+        },
+        "official_stage_count": { "type": "integer", "minimum": 0 },
+        "official_size_bytes": { "type": "integer", "minimum": 0 },
+        "official_sha256": { "$ref": "#/$defs/sha256Hex" },
+        "bundled_official_sha256": {
+          "const": "074ccccd9e156d586d0ed099ceab78b3d72384c808725d8b5bee2c9799691d52",
+          "description": "[本次读码] mapselmd.py:60-62 OFFICIAL_SHA256 of bundled MAPSELMD.OFFICIAL.INI. A base failing this (when the bundled clone is used) is refused."
+        },
+        "stages": {
+          "type": "array", "items": { "type": "string" },
+          "description": "Appended stage section names. Every stage's Scenario= MUST resolve to a name in maps.map_files (W36 §3.3.2 strong pair)."
+        },
+        "target_name": { "const": "MAPSELMD.INI" }
+      },
+      "allOf": [
+        { "if": { "properties": { "mode": { "const": "clone_append" } }, "required": ["mode"] },
+          "then": {
+            "required": ["base", "stages", "target_name"],
+            "properties": {
+              "stages": { "minItems": 1 }
+            },
+            "description": "SHAPE ONLY: base may be 'official_full_clone' OR 'partial_or_minimal'; counts/size may be off. The resolver (couplingRuleSet K5) refuses partial_or_minimal / wrong 14-stage-5573B-SHA with MAPSELMD_NOT_FULL_CLONE. Do NOT const-force them here."
+          } },
+        { "if": { "properties": { "mode": { "const": "off" } } },
+          "then": { "not": { "required": ["base", "stages"] } } }
+      ]
+    },
+
+    "featureSet": {
+      "type": "object",
+      "description": "SHAPE ONLY. This schema validates structure/types/enums; it deliberately does NOT enforce coupling, mutex or integrity constraints, so that NEGATIVE inputs (minimal CSF, partial MAPSELMD clone, csf-without-battlemd, dual battlemd modes) remain expressible as inputs and are REFUSED by the resolver per couplingRuleSet, not rejected by a JSON validator. Enforcing them here would make those negative acceptance cases unrepresentable.",
+      "additionalProperties": false,
+      "required": ["schema_version", "feature_set_id", "features"],
+      "properties": {
+        "schema_version": { "const": "w42-s2-1" },
+        "kind": { "const": "feature_set" },
+        "feature_set_id": {
+          "type": "string", "minLength": 1,
+          "description": "Stable id of THIS combination. Feeds W36 §3.3.3 G4: any subset change changes package_digest / seal / manifest / backup / uninstall -- a different feature_set_id."
+        },
+        "features": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maps", "battlemd", "mix", "csf", "mapselmd"],
+          "properties": {
+            "maps": { "$ref": "#/$defs/mapsFeature" },
+            "battlemd": { "$ref": "#/$defs/battlemdFeature" },
+            "mix": { "$ref": "#/$defs/mixFeature" },
+            "csf": { "$ref": "#/$defs/csfFeature" },
+            "mapselmd": { "$ref": "#/$defs/mapselmdFeature" }
+          }
+        },
+        "csf_out_path": {
+          "type": ["string", "null"],
+          "description": "E2b write point from 'build --csf-out PATH' (builder.py:434-437, WRITE_ENTRY_AUDIT.tsv rows 11-13/18-22). If realpath(PATH) resolves inside any game dir, W38-S1 §1.2 path-attribution rule reclassifies it as E1 (ACCEPTANCE A7)."
+        },
+        "defaults": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "all_off_by_default": { "const": true },
+            "closed_features_byte_identical_to": {
+              "type": "array", "items": { "enum": ["v10", "v11"] },
+              "description": "W36 §4-S2 acceptance #2: all-off build is byte-identical to the previous tool version."
+            }
+          }
+        }
+      }
+    },
+
+    "fileAction": {
+      "description": "CREATE = initial state ABSENT, our install creates it (original_absent=true) -> uninstall MUST DELETE, never restore. REPLACE = initial state PRESENT, install backs up to <name>.ra2forge.bak then atomically overwrites -> uninstall MUST RESTORE. LEAVE = not touched by this feature set at all: NO write, NO backup, NO delete. NOTE: LEAVE is NOT v11's action='unchanged' (install.py:1290-1301) which ADOPTS a byte-identical unregistered file and later DELETES it; LEAVE is strictly zero-touch.",
+      "enum": ["CREATE", "REPLACE", "LEAVE"]
+    },
+    "uninstallAction": { "enum": ["DELETE", "RESTORE", "NOOP"] },
+    "fileLayer": { "enum": ["game_dir", "package_dir", "game_dir_metadata", "external_csf_out"] },
+
+    "plannedFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "layer", "action", "original_absent", "produced_by_feature", "write_entry", "uninstall"],
+      "properties": {
+        "name": { "type": "string" },
+        "layer": { "$ref": "#/$defs/fileLayer" },
+        "action": { "$ref": "#/$defs/fileAction" },
+        "original_absent": {
+          "type": "boolean",
+          "description": "W21 ORPHAN-FIX01 / install.py:1360-1368, 2335-2370. true <=> sandbox initial state has NO original of this name. Drives DELETE-not-RESTORE."
+        },
+        "backup_slot": { "type": ["string", "null"] },
+        "produced_by_feature": { "$ref": "#/$defs/featureName" },
+        "write_entry": { "$ref": "#/$defs/writeEntry" },
+        "uninstall": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["action", "remove_backup_slot"],
+          "properties": {
+            "action": { "$ref": "#/$defs/uninstallAction" },
+            "remove_backup_slot": { "type": "boolean" },
+            "restore_from": { "type": ["string", "null"] }
+          }
+        }
+      },
+      "allOf": [
+        { "if": { "properties": { "action": { "const": "CREATE" } }, "required": ["action"] },
+          "then": { "properties": { "original_absent": { "const": true }, "backup_slot": { "type": "null" }, "uninstall": { "properties": { "action": { "const": "DELETE" } } } } } },
+        { "if": { "properties": { "action": { "const": "REPLACE" } }, "required": ["action"] },
+          "then": { "properties": { "original_absent": { "const": false }, "uninstall": { "properties": { "action": { "const": "RESTORE" } } } } } },
+        { "if": { "properties": { "action": { "const": "LEAVE" } }, "required": ["action"] },
+          "then": { "properties": { "uninstall": { "properties": { "action": { "const": "NOOP" }, "remove_backup_slot": { "const": false } } } } } }
+      ]
+    },
+
+    "couplingViolation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule_id", "reason_code", "detail"],
+      "properties": {
+        "rule_id": { "type": "string" },
+        "reason_code": { "$ref": "#/$defs/s2ReasonCode" },
+        "detail": { "type": "string" }
+      }
+    },
+    "s2ReasonCode": {
+      "description": "S2-specific reason codes. ORTHOGONAL to W38-S1 guardVerdict.reason_codes: these describe feature-set/coupling refusal, NOT build-identity refusal. A resolver may emit both sets; guard_state is unchanged by any of these.",
+      "enum": [
+        "BATTLEMD_MODE_CONFLICT",
+        "CSF_WITHOUT_BATTLEMD",
+        "CSF_LABEL_UNBOUND",
+        "MINIMAL_CSF_REFUSED",
+        "MAPS_WITHOUT_MIX",
+        "MIX_WITHOUT_MAPS",
+        "MIX_MAP_SET_MISMATCH",
+        "MAPSELMD_WITHOUT_MAPS",
+        "MAPSELMD_SCENARIO_UNRESOLVED",
+        "MAPSELMD_NOT_FULL_CLONE",
+        "CSF_OUT_INSIDE_GAME_DIR_DEFERRED_TO_S1",
+        "G4_METADATA_DESYNC"
+      ]
+    },
+
+    "couplingRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "antecedent", "consequent", "reason_code", "on_violation"],
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "enum": ["requires", "mutex", "integrity", "content_alignment"] },
+        "antecedent": { "type": "string" },
+        "consequent": { "type": "string" },
+        "reason_code": { "$ref": "#/$defs/s2ReasonCode" },
+        "on_violation": { "const": "REJECT_AND_EXPLAIN" },
+        "source": { "type": "string", "description": "W36 §3.3.2 cell / W34 D4 / W30 §1 / file:line this rule is derived from." }
+      }
+    },
+    "couplingRuleSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "kind", "rules"],
+      "properties": {
+        "schema_version": { "const": "w42-s2-1" },
+        "kind": { "const": "coupling_rule_set" },
+        "rules": { "type": "array", "items": { "$ref": "#/$defs/couplingRule" }, "minItems": 10 }
+      }
+    },
+
+    "sandboxInitialState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "kind", "sandbox_id", "game_dir", "present_files", "absent_files", "guard_state", "baseline_adjudicated"],
+      "properties": {
+        "schema_version": { "const": "w42-s2-1" },
+        "kind": { "const": "sandbox_initial_state" },
+        "sandbox_id": { "type": "string" },
+        "game_dir": { "type": "string" },
+        "present_files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "kind"],
+            "properties": {
+              "name": { "type": "string" },
+              "size_bytes": { "type": "integer", "minimum": 0 },
+              "sha256": { "$ref": "#/$defs/sha256Hex" },
+              "kind": { "enum": ["official_loose", "user_file", "our_previous", "bundled_in_mix"], "description": "official_loose e.g. BATTLEMD.INI 2733 B [转引·题面本次实测]; bundled_in_mix = same-named file inside ra2md.mix/langmd.mix, NOT a loose file (W38 C09/C10, W30/W34 UNCOVERED 散装 vs MIX 生效未真机定谳)." }
+            }
+          }
+        },
+        "absent_files": {
+          "type": "array", "items": { "type": "string" },
+          "description": "Names with NO loose original. Any feature shipping such a name yields CREATE + original_absent=true + uninstall DELETE."
+        },
+        "guard_state": { "$ref": "#/$defs/guardState" },
+        "baseline_adjudicated": { "type": "boolean" },
+        "game_process_count": { "const": 0, "description": "Pure-offline discipline: inert gamemd.exe placeholder only, never executed (W34 UNCOVERED U9)." }
+      }
+    },
+
+    "fileSubsetPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "kind", "feature_set_id", "guard_state", "sandbox_id",
+        "coupling_passed", "coupling_violations", "files",
+        "install_write_set", "backup_set", "uninstall_delete_set",
+        "uninstall_restore_set", "digest_inputs", "wrote_game_dir", "effective_game_dir_write_bytes"
+      ],
+      "properties": {
+        "schema_version": { "const": "w42-s2-1" },
+        "kind": { "const": "file_subset_plan" },
+        "feature_set_id": { "type": "string" },
+        "guard_state": { "$ref": "#/$defs/guardState" },
+        "sandbox_id": { "type": "string" },
+        "coupling_passed": { "type": "boolean" },
+        "coupling_violations": { "type": "array", "items": { "$ref": "#/$defs/couplingViolation" } },
+        "files": { "type": "array", "items": { "$ref": "#/$defs/plannedFile" } },
+        "install_write_set": { "type": "array", "items": { "type": "string" } },
+        "backup_set": { "type": "array", "items": { "type": "string" } },
+        "uninstall_delete_set": { "type": "array", "items": { "type": "string" } },
+        "uninstall_restore_set": { "type": "array", "items": { "type": "string" } },
+        "digest_inputs": {
+          "type": "array", "items": { "type": "string" },
+          "description": "W36 G4 / install.py:682-695 package_digest_from_steps(): one '<name> <sha256>' line per shipped file, sorted by name. Subset change => different line set => different digest => different seal/manifest/backup/uninstall."
+        },
+        "wrote_game_dir": { "type": "boolean" },
+        "effective_game_dir_write_bytes": { "type": "integer", "minimum": 0 },
+        "guard_report_written_to": { "type": "string" }
+      },
+      "allOf": [
+        { "if": { "properties": { "coupling_passed": { "const": false } } },
+          "then": { "properties": { "install_write_set": { "maxItems": 0 }, "effective_game_dir_write_bytes": { "const": 0 } } } },
+        { "if": { "properties": { "guard_state": { "enum": ["UNKNOWN", "MISMATCH", "DIR_INVALID"] } }, "required": ["guard_state"] },
+          "then": {
+            "properties": {
+              "wrote_game_dir": { "const": false },
+              "effective_game_dir_write_bytes": { "const": 0 }
+            },
+            "description": "W38-S1 §4 cross-state invariant + §6.1 invariant 1. Feature set changes the PLANNED write-point set ONLY; it never changes the guard verdict. Under UNKNOWN/MISMATCH the S1 decision table still forces zero game-dir writes."
+          } },
+        { "if": { "properties": { "guard_state": { "const": "KNOWN_GOOD" } }, "required": ["guard_state"] },
+          "then": { "properties": { "effective_game_dir_write_bytes": { "minimum": 0 } } } }
+      ]
+    },
+
+    "acceptanceCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "input", "expected", "on_failure"],
+      "properties": {
+        "schema_version": { "const": "w42-s2-1" },
+        "kind": { "const": "acceptance_case" },
+        "case_id": { "type": "string" },
+        "negative": { "type": "boolean" },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["feature_set", "sandbox_initial_state"],
+          "properties": {
+            "feature_set": { "$ref": "#/$defs/featureSet" },
+            "sandbox_initial_state": { "$ref": "#/$defs/sandboxInitialState" }
+          }
+        },
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rejected", "expected_files", "uninstall_final_state"],
+          "properties": {
+            "rejected": { "type": "boolean" },
+            "reason_codes": { "type": "array", "items": { "$ref": "#/$defs/s2ReasonCode" } },
+            "expected_files": { "type": "array", "items": { "$ref": "#/$defs/plannedFile" } },
+            "uninstall_final_state": {
+              "type": "object",
+              "properties": {
+                "byte_identical_to_initial": { "type": "boolean" },
+                "deleted": { "type": "array", "items": { "type": "string" } },
+                "restored": { "type": "array", "items": { "type": "string" } },
+                "untouched": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "zero_game_dir_writes": { "type": "boolean" },
+            "guard_state_unchanged": { "type": "boolean" }
+          }
+        },
+        "on_failure": { "type": "string", "description": "Exact FAIL message template (see ACCEPTANCE_S2.md)." }
+      }
+    }
+  },
+
+  "oneOf": [
+    { "$ref": "#/$defs/featureSet" },
+    { "$ref": "#/$defs/sandboxInitialState" },
+    { "$ref": "#/$defs/fileSubsetPlan" },
+    { "$ref": "#/$defs/couplingRuleSet" },
+    { "$ref": "#/$defs/acceptanceCase" }
+  ]
+}

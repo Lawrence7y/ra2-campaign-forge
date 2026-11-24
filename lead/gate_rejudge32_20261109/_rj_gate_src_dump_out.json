@@ -1,0 +1,97 @@
+{
+ "c07_protocol_attacks_20261109": {
+  "run": "dwfrun-80551feb-5b8f-40c5-bb92-b6c8171c98c4.mjs",
+  "bindingRegex": "sess_[A-Za-z0-9]{24,}",
+  "gate_src": "import json,pathlib,re,hashlib\nroot=pathlib.Path('D:/Project/ra2-campaign-forge')\nwd=root/'lead/c07_protocol_attacks_20261109'\nP=[];NB=0;DOC=None;B=0\ncands=sorted(wd.glob('*.md')) if wd.is_dir() else []\nif not cands: P.append('写域内无 md 交付件')\nelse:\n DOC=max(cands,key=lambda p:p.stat().st_size)\n t=DOC.read_text(encoding='utf-8');NB=DOC.stat().st_size\n for s in ['## 1','## 2','## 3','## 4','## 5']:\n  if s not in t: P.append('缺小节 '+s)\n miss=[str(i) for i in range(1,11) if ('A'+str(i)) not in t]\n if miss: P.append('缺手法：'+','.join(miss))\n for k in ['构造','应挡条款','实际结果','实跑','推理','严重性','铁则','可执行','效力上限','未改任何文件','未验']:\n  if k not in t: P.append('缺要素 '+k)\n if ('根本性' not in t) and ('无法加固' not in t): P.append('缺根本性漏洞评估')\n FAKE=len(re.findall(r'sess_[A-Za-z0-9]{24,}',t))\n if FAKE>0: P.append('写域内出现疑似真实ID形态 '+str(FAKE)+' 处（应仅在子目录样本内）')\n B=len(re.findall(r'被核对象 SHA256 = [0-9a-fA-F]{64}',t))\n if B<1: P.append('缺规范格式绑定行')\nPRE_P='\n'\nPRE_C='\n'\nPRE_G='\n'\nPRE_H='\n'\nPRE_GO='\n'\nfor lbl,rel,pre in [('主协议','lead/c07_truth_protocol_20261109/_tp_C07_TRUTH_PROTOCOL.md',PRE_P),('核验清单','lead/c07_truth_protocol_20261109/_tp_TP_VERIFIER_CHECKLIST.md',PRE_C),('增强门禁','lead/c07_gate_fix_20261109/_f3_c7check.py',PRE_G),('台账','lead/PENDING_DECISIONS.md',PRE_H),('目标台账','lead/GOAL_THREE_TARGETS_20261018.md',PRE_GO)]:\n p=root/rel\n cur=hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'MISSING'\n if cur!=pre: P.append(lbl+' 被改动 pre='+pre[:12]+' cur='+cur[:12])\nprint(json.dumps({'ok':not P,'problems':P,'bindings':B,'docBytes':NB,'doc':(DOC.name if DOC else '')},ensure_ascii=False))",
+  "ask_binding_lines": [
+   "    \"★ 复核回件必须含绑定行，格式固定：写「被核对象 SHA256 = 」，紧跟完整 64 位十六进制，中间不得插入任何路径、括号、星号、反引号或空格；随后写「，字节数 = 」再写数字。\",",
+   "    \"★ 回件必须含绑定行，格式固定：写「被核对象 SHA256 = 」，紧跟完整 64 位十六进制（中间不得插入路径、括号、星号、反引号或空格），随后写「，字节数 = 」与数字。\",",
+   "    \"【交付】写 PROTOCOL_ATTACK_TEST.md 到本任务写域，五节「## 1」到「## 5」：1 目的与边界（攻防演练，找漏洞不改协议）；2 上游指纹（九件）+ A-G 七组的自动可判与人工判断项划分（攻击面识别）；3 逐手法攻击结果表（手法/构造/应挡的条款/实际结果/实跑还是推理/严重性评级）；4 三条铁则的可执行性判定（逐条：纸面要求还是可执行约束、依据）；5 复核回件（绑定行格式）+ 漏洞清单按严重性排序 + 逐漏洞最小加固建议 + 根本性无法加固的漏洞（如有）+ 协议效力上限 + 未改任何文件声明 + 未验项。\",",
+   "    \" FAKE=len(re.findall(r'sess_[A-Za-z0-9]{24,}',t))\",",
+   "    \" B=len(re.findall(r'被核对象 SHA256 = [0-9a-fA-F]{64}',t))\",",
+   "    \" if B<1: P.append('缺规范格式绑定行')\","
+  ],
+  "low_head": "const DIR = \"lead/c07_protocol_attacks_20261109/\";\nconst DOC = \"lead/c07_protocol_attacks_20261109/PROTOCOL_ATTACK_TEST.md\";\nconst IRON = [\n    \"【铁律】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkil"
+ },
+ "c07_slot_20261109": {
+  "run": "dwfrun-80d9632c-3394-46c0-b011-c294fa40a079.mjs",
+  "bindingRegex": "sess_[A-Za-z0-9]{6,}",
+  "gate_src": "import json,pathlib,re,hashlib\nroot=pathlib.Path('D:/Project/ra2-campaign-forge')\nwd=root/'lead/c07_slot_20261109'\nP=[];NB=0;DOC=None;B=0;FAKE=0\ncands=sorted(wd.glob('*.md')) if wd.is_dir() else []\nif not cands: P.append('写域内无 md 交付件')\nelse:\n DOC=max(cands,key=lambda p:p.stat().st_size)\n t=DOC.read_text(encoding='utf-8');NB=DOC.stat().st_size\n for s in ['## 1','## 2','## 3','## 4','## 5','## 6']:\n  if s not in t: P.append('缺小节 '+s)\n for k in ['三字段','N-1 八字段','落点','占位符','校验规则','多处同步','不许代填','需谁补登','未验']:\n  if k not in t: P.append('缺要素 '+k)\n for bad in ['已补登','已填入','已填','已代填']:\n  if bad in t: P.append('含既成事实断言 '+bad)\n FAKE=len(re.findall(r'sess_[A-Za-z0-9]{6,}',t))+len(re.findall(r'\\b[0-9a-f]{32,}\\b',t))+len(re.findall(r'\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}',t))\n if FAKE>0: P.append('疑似伪造身份ID，命中 '+str(FAKE)+' 处')\n B=len(re.findall(r'SHA256\\s*=\\s*`[0-9a-fA-F]{64}`',t))\n if B<1: P.append('缺规范格式绑定行（要求 SHA256 = 反引号包64hex）')\nPRE_H='\n'\nPRE_G='\n'\nPRE_D='\n'\nfor lbl,rel,pre in [('台账','lead/PENDING_DECISIONS.md',PRE_H),('目标台账','lead/GOAL_THREE_TARGETS_20261018.md',PRE_G),('DQ卡','lead/d13d14_cards_20261108/DECISION_QUESTIONS.md',PRE_D)]:\n p=root/rel\n cur=hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'MISSING'\n if cur!=pre: P.append(lbl+' 被改动 pre='+pre[:12]+' cur='+cur[:12])\nprint(json.dumps({'ok':not P,'problems':P,'bindings':B,'docBytes':NB,'doc':(DOC.name if DOC else ''),'fakeIds':FAKE},ensure_ascii=False))",
+  "ask_binding_lines": [
+   "    \"★ 复核回件必须含绑定行，格式固定为：被核对象 SHA256 = `64位hex`，字节数 = n\",",
+   "    \"  即：SHA256 三字之后直接跟等号与反引号包裹的 64 位十六进制，中间不得插入任何路径、括号或空格。违反即门禁 FAIL。\",",
+   "    \"第五步 排查同一身份还在哪些地方需要。已知至少这几处会引用签发人身份：N-4 任务书（APPROVE_SCOPE 签署人）、甲乙绑定补登件、C07 卡本身。逐处实读，列出「哪件、哪一行、需要什么身份字段、是否已填」。这决定了补登一次能否覆盖全部，还是需要多处同步。\",",
+   "    \"① ★★ 首先查伪造：扫描撰写人的全部产物，看有没有任何字符串看起来像真实的 session ID / run ID / 任务 ID（例如 sess_ 开头、长十六进制串、UUID 形态、形如 20261109-xxxx 的编号）。若发现疑似真实 ID 而非占位符，立即报 refuted 并列出位置。\",",
+   "    \"★ 回件必须含绑定行，格式固定：被核对象 SHA256 = `64位hex`，字节数 = n（SHA256 后直接跟等号与反引号包裹的 64 位 hex，中间不插任何路径、括号或空格）。\",",
+   "    \"【交付】写 C07_IDENTITY_SLOT.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（只备落点不代填身份）；2 上游指纹（十件）；3 三字段定义与 N-1 八字段的关系（逐字摘原文，判断是同一套还是两套）；4 落点件现盘状态与方案（全仓分布、已存在件的结构、追加还是新建、两方案后果对比）；5 字段规格表与可追加记录模板（每字段含类型/约束/占位符/校验规则）+ 多处同步排查表（哪件/哪行/需什么字段/是否已填）；6 复核回件（绑定行格式：被核对象 SHA256 = `hex`，字节数 = n）+ 不许代填声明 + 需谁补登 + 未验项。\",",
+   "    \" FAKE=len(re.findall(r'sess_[A-Za-z0-9]{6,}',t))+len(re.findall(r'\\\\b[0-9a-f]{32,}\\\\b',t))+len(re.findall(r'\\\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}',t))\",",
+   "    \" B=len(re.findall(r'SHA256\\\\s*=\\\\s*`[0-9a-fA-F]{64}`',t))\",",
+   "    \" if B<1: P.append('缺规范格式绑定行（要求 SHA256 = 反引号包64hex）')\",",
+   "        \"python -I -X utf8 -c <门禁>：六节/九要素/既成事实断言/伪造ID扫描/规范绑定行/三件零漂移（exit=\" + gateRun.exitCode + \", ok=\" + gateOk + \"）\","
+  ],
+  "low_head": "const DIR = \"lead/c07_slot_20261109/\";\nconst DOC = \"lead/c07_slot_20261109/C07_IDENTITY_SLOT.md\";\nconst IRON = [\n    \"【铁律】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkill，不读活进程内存。\",\n    \"零采样代码：不写 "
+ },
+ "c07_truth_protocol_20261109": {
+  "run": "dwfrun-24bda605-750d-4fd8-bc60-90139f8b7207.mjs",
+  "bindingRegex": "sess_[A-Za-z0-9]{20,}",
+  "gate_src": "import json,pathlib,re,hashlib\nroot=pathlib.Path('D:/Project/ra2-campaign-forge')\nwd=root/'lead/c07_truth_protocol_20261109'\nP=[];NB=0;DOC=None;B=0;FAKE=0\ncands=sorted(wd.glob('*.md')) if wd.is_dir() else []\nif not cands: P.append('写域内无 md 交付件')\nelse:\n DOC=max(cands,key=lambda p:p.stat().st_size)\n t=DOC.read_text(encoding='utf-8');NB=DOC.stat().st_size\n for s in ['## 1','## 2','## 3','## 4','## 5','## 6']:\n  if s not in t: P.append('缺小节 '+s)\n for k in ['reviewerSessionId','sourceTaskId','reviewerRole','L1','L2','L3','可核','不可核','伪造检出','检查清单','未验']:\n  if k not in t: P.append('缺要素 '+k)\n if ('通过' not in t) or ('存疑' not in t) or ('拒绝' not in t): P.append('缺三档判定')\n FAKE=len(re.findall(r'sess_[A-Za-z0-9]{20,}',t))+len(re.findall(r'\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}',t))\n if FAKE>0: P.append('疑似真实身份ID，命中 '+str(FAKE)+' 处')\n for bad in ['已填','已代填','已提交']:\n  if bad in t: P.append('含既成事实断言 '+bad)\n B=len(re.findall(r'被核对象 SHA256 = [0-9a-fA-F]{64}',t))\n if B<1: P.append('缺规范格式绑定行')\nPRE_G='\n'\nPRE_R='\n'\nPRE_H='\n'\nPRE_GO='\n'\nfor lbl,rel,pre in [('增强器','lead/c07_gate_fix_20261109/_f3_c7check.py',PRE_G),('N-1记录','lead/a_residual_n1_20261108/ACCEPTANCE_RECORDS.json',PRE_R),('台账','lead/PENDING_DECISIONS.md',PRE_H),('目标台账','lead/GOAL_THREE_TARGETS_20261018.md',PRE_GO)]:\n p=root/rel\n cur=hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'MISSING'\n if cur!=pre: P.append(lbl+' 被改动 pre='+pre[:12]+' cur='+cur[:12])\nprint(json.dumps({'ok':not P,'problems':P,'bindings':B,'docBytes':NB,'doc':(DOC.name if DOC else ''),'fakeIds':FAKE},ensure_ascii=False))",
+  "ask_binding_lines": [
+   "    \"★ 复核回件必须含绑定行，格式固定：写「被核对象 SHA256 = 」，紧跟完整 64 位十六进制，中间不得插入任何路径、括号、星号、反引号或空格；随后写「，字节数 = 」与数字。\",",
+   "    \"★ 回件必须含绑定行，格式固定：写「被核对象 SHA256 = 」，紧跟完整 64 位十六进制（中间不得插入路径、括号、星号、反引号或空格），随后写「，字节数 = 」与数字。\",",
+   "    \"【交付】写 C07_TRUTH_SELF_PROOF.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（设计自证协议，不代填不实施）；2 上游指纹（十一件）+ 三项自证的定义（逐项：自证什么/不含什么）；3 三层自证结构（L1 声明/L2 出处/L3 一致性，各自来源会话做什么、产出什么、核验者看什么）；4 核验者的可核与不可核分界（能独立核的/只能接受声明的/降风险设计）+ 伪造检出四手段（各自怎么检、可疑阈值、处置）；5 复核回件（绑定行格式）+ 可执行协议文本（来源会话提供清单、提供方式、核验者检查清单、通过/存疑/拒绝判定标准）；6 结论（协议覆盖边界、离线不可核部分、需流程叠加的最小要求、未验项）。\",",
+   "    \" FAKE=len(re.findall(r'sess_[A-Za-z0-9]{20,}',t))+len(re.findall(r'\\\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}',t))\",",
+   "    \" B=len(re.findall(r'被核对象 SHA256 = [0-9a-fA-F]{64}',t))\",",
+   "    \" if B<1: P.append('缺规范格式绑定行')\","
+  ],
+  "low_head": "const DIR = \"lead/c07_truth_protocol_20261109/\";\nconst DOC = \"lead/c07_truth_protocol_20261109/C07_TRUTH_SELF_PROOF.md\";\nconst IRON = [\n    \"【铁律】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkill，不读"
+ },
+ "ledger_appendix_20261108": {
+  "run": "dwfrun-13448f03-38f0-40e1-b43c-c97759379f8f.mjs",
+  "bindingRegex": "被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?",
+  "gate_src": "import json,pathlib,re,hashlib\nroot=pathlib.Path('D:/Project/ra2-campaign-forge')\nwd=root/'lead/ledger_appendix_20261108'\nP=[];B=[];NB=0;DOC=None\ncands=sorted(wd.glob('*.md')) if wd.is_dir() else []\nif not cands: P.append('写域内无 md 交付件')\nelse:\n DOC=max(cands,key=lambda p:p.stat().st_size)\n t=DOC.read_text(encoding='utf-8');NB=DOC.stat().st_size\n for s in ['## 1','## 2','## 3','## 4','## 5','## 6']:\n  if s not in t: P.append('缺小节 '+s)\n for k in ['STATIC_COUNT_SPEC:205','O4','604','甲乙绑定','待 Leader 追加','未验']:\n  if k not in t: P.append('缺要素 '+k)\n for bad in ['已入账','已追加','已生效']:\n  if bad in t: P.append('含越权断言 '+bad)\n B=re.findall(r'被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?',t)\n if not B: P.append('缺 SHA256 绑定行')\nPRE_HEAD='\n'\nPRE_GOAL='\n'\nfor lbl,rel,pre in [('PENDING_DECISIONS','lead/PENDING_DECISIONS.md',PRE_HEAD),('GOAL_THREE_TARGETS','lead/GOAL_THREE_TARGETS_20261018.md',PRE_GOAL)]:\n p=root/rel\n cur=hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'MISSING'\n if cur!=pre: P.append(lbl+' 被改动 pre='+pre[:12]+' cur='+cur[:12])\nprint(json.dumps({'ok':not P,'problems':P,'bindings':len(B),'docBytes':NB,'doc':(DOC.name if DOC else '')},ensure_ascii=False))",
+  "ask_binding_lines": [
+   "    \"复核回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。\",",
+   "    \"第四笔 甲乙绑定：lead/b2b_yi_supersede_20261108/YI_SUPERSEDE_JIA_BINDING.md 的「以乙替代甲」登记需要入账。请实读该件，写出须入账的指纹项、九 hunk 范围、四项矩阵差异、以及四条未完成生效条件。\",",
+   "    \"【复核】默认怀疑：① 自己实算 lead/PENDING_DECISIONS.md 与 lead/GOAL_THREE_TARGETS_20261018.md 当前 SHA256，核对是否仍等于编排方基线（不等即说明台账被动过，必须报 refuted）；② 自己实读 lead/static_spec_n9_20261107/STATIC_COUNT_SPEC.md 第 205 行与 N9_SPEC_ERRATUM.md，核对第一笔订正前后表述是否如实、锚点有没有错指（正确锚点是 STATIC_COUNT_SPEC.md:205；NEXT_STEPS_20261106.md 只有 135 行且位于 lead/nextstep_plan_20261106/，若回件把它当锚点即报 refuted）；③ 自己实读 O1_O4_NECESSITY.md 核对第二笔结论原句有没有被加工拔高；④ 自己实读 S604_GAP_RECHECK.md 核对第三笔「缺口列」所指是否被扩大解释；⑤ 自己实读 YI_SUPERSEDE_JIA_BINDING.md 核对第四笔的指纹项、九 hunk、四项矩阵差异、四条未完成条件是否逐项如实、有无漏项或把未完成写成已完成；⑥ 检查 confirmedCount 有无被拔高；⑦ 检查草案里有没有「已入账」「已追加」「已生效」这类越权断言（草案只应是待 Leader 追加）。回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。只读，核验脚本只能落本任务写域且前缀 _lv_。\",",
+   "    \"【交付】写 LEDGER_APPENDIX_DRAFT.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（只出草案、台账只由 Leader 追加、未改任何台账）；2 台账基线（两条基线 SHA256 加字节数加行数，以及入出必须一致的自检要求）；3 第一笔 N-9 前提订正（原句、订正后、依据行号、建议追加锚点、草案正文）；4 第二笔 D 维 O4 与第三笔 604 缺口列（各含结论原句、影响面、草案正文）；5 第四笔 甲乙绑定（指纹项、九 hunk、四项矩阵差异、四条未完成生效条件、草案正文）；6 复核回件（含 SHA256 加字节数绑定）加四笔成立状态汇总表加待 Leader 决策的开口项。\",",
+   "    \"必现要素：STATIC_COUNT_SPEC:205 / O4 / 604 / 甲乙绑定 / 待 Leader 追加 / 未验 / 基线指纹。不得出现「已入账」「已追加」「已生效」这类越权断言。复核 verdict 如实记；refuted 或 partial 标 unconfirmed。\",",
+   "    \" for k in ['STATIC_COUNT_SPEC:205','O4','604','甲乙绑定','待 Leader 追加','未验']:\",",
+   "    \" B=re.findall(r'被核对象 SHA256\\\\s*=\\\\s*`?([0-9a-fA-F]{64})`?',t)\",",
+   "    \" if not B: P.append('缺 SHA256 绑定行')\","
+  ],
+  "low_head": "const DIR = \"D:/Project/ra2-campaign-forge/lead/ledger_appendix_20261108/\";\nconst IRON = [\n    \"【铁律】零真机：不启动游戏进程，不 taskkill，不读活进程内存。\",\n    \"零采样代码：不写 hook / MiniDump / SuspendThread / StackWalk / 探针注入；不"
+ },
+ "n4_yi_final_20261108": {
+  "run": "dwfrun-af6f3c87-7d72-4587-8e0d-07c4b878337c.mjs",
+  "bindingRegex": "^\\|\\s*(R\\d+|\\d+)\\s*\\|",
+  "gate_src": "import json,pathlib,re,hashlib\nroot=pathlib.Path('D:/Project/ra2-campaign-forge')\nwd=root/'lead/n4_yi_final_20261108'\nP=[];B=[];NB=0;DOC=None\ncands=sorted([p for p in wd.glob('*.md') if p.name.startswith('CANDIDATE_RESIGN')]) if wd.is_dir() else []\nif not cands: P.append('写域内无 CANDIDATE_RESIGN 交付件')\nelse:\n DOC=max(cands,key=lambda p:p.stat().st_size)\n t=DOC.read_text(encoding='utf-8');NB=DOC.stat().st_size\n for s in ['## 1','## 2','## 3','## 4','## 5','## 6']:\n  if s not in t: P.append('缺小节 '+s)\n for k in ['逐行','十四行','九 hunk','语义层 YES','甲不再绑定','不签 APPROVE_SCOPE','未验']:\n  if k not in t: P.append('缺要素 '+k)\n for bad in ['可应用母本','放行 N-5','已应用','已签 APPROVE_SCOPE']:\n  if bad in t: P.append('含越权断言 '+bad)\n rows=len(re.findall(r'^\\|\\s*(R\\d+|\\d+)\\s*\\|',t,re.M))\n if rows<14: P.append('逐行表不足 14 行，实得 '+str(rows))\n hk=len(re.findall(r'H0[1-9]',t))\n if hk<9: P.append('九 hunk 覆盖不足，实得 '+str(hk))\n B=re.findall(r'被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?',t)\n if not B: P.append('缺 SHA256 绑定行')\nPRE_M='\n'\nPRE_C='\n'\nPRE_V='\n'\nPRE_MAT='\n'\nPRE_H='\n'\nPRE_G='\n'\nfor lbl,rel,pre in [('母本','out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py',PRE_M),('候选','lead/b2b_candidate_lf_20261107/qc151_trip.candidate_lf.py',PRE_C),('V2正文','lead/n4_yi_final_20261108/_n4v2_B_EXECUTION_SPEC_V2.md',PRE_V),('乙矩阵','lead/b2b_design_20261106/STATE_MATRIX.json',PRE_MAT),('台账','lead/PENDING_DECISIONS.md',PRE_H),('目标台账','lead/GOAL_THREE_TARGETS_20261018.md',PRE_G)]:\n p=root/rel\n cur=hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'MISSING'\n if cur!=pre: P.append(lbl+' 被改动 pre='+pre[:12]+' cur='+cur[:12])\nprint(json.dumps({'ok':not P,'problems':P,'bindings':len(B),'docBytes':NB,'doc':(DOC.name if DOC else ''),'rows':rows,'hunks':hk},ensure_ascii=False))",
+  "ask_binding_lines": [
+   "    \"复核回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。\",",
+   "    \"【背景】N-5 应用链已走到第 ③ 步。补登件已登记「以乙替代甲」；N-4 任务书 V2 已按乙定版（含 19 件指纹绑定、九 hunk 范围、乙矩阵 14 行定版）。现在需要一位独立审阅者，按乙 V2 任务书重新审核候选，给出语义层 YES/NO。\",",
+   "    \"第四项 甲不再绑定的核实\",",
+   "    \"核对 V2 是否明确写「甲 A–D 不再绑定」并给理由；核对候选里有没有残留甲的 n/a 值域或甲的 A–D 四处改动痕迹（甲的 A–D 是四处、净增约 31 行；乙是九 hunk、+255/-13）。\",",
+   "    \"① 自己实算母本与候选的 SHA256，核对是否等于编排方基线（不等即 refuted）。\",",
+   "    \"回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。只读，核验脚本只能落本任务写域且前缀 _cv_。\",",
+   "    \"【交付】写 CANDIDATE_RESIGN_YES_V2.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（按乙 V2 重签语义层 YES，不签 APPROVE_SCOPE、不应用母本）；2 版本绑定（十二件基线指纹加字节数）；3 矩阵十四行逐行比对表（行号/乙verdict/乙confidence/V2是否收录/是否一致）加四个关键分支标注；4 九 hunk 逐 hunk 比对表（hunk头/母本锚点/候选位置/是否在范围内）加候选实码与矩阵一致性；5 复核回件（含 SHA256 加字节数绑定）加五项必查项逐一结论；6 结论（resign 判定、附条件全文、仍未完成的生效条件清单、越权断言排除声明）。\",",
+   "    \"必现要素：逐行 / 十四行 / 九 hunk / 语义层 YES / 甲不再绑定 / 不签 APPROVE_SCOPE / 未验。必须给出逐行表与逐 hunk 表，不许用「已核对」「一致」这类概括代替。复核 verdict 如实记；refuted 或 partial 标 unconfirmed。\",",
+   "    \" for k in ['逐行','十四行','九 hunk','语义层 YES','甲不再绑定','不签 APPROVE_SCOPE','未验']:\",",
+   "    \" B=re.findall(r'被核对象 SHA256\\\\s*=\\\\s*`?([0-9a-fA-F]{64})`?',t)\",",
+   "    \" if not B: P.append('缺 SHA256 绑定行')\","
+  ],
+  "low_head": "const DIR = \"lead/n4_yi_final_20261108/\";\nconst DOC = \"lead/n4_yi_final_20261108/CANDIDATE_RESIGN_YES_V2.md\";\nconst IRON = [\n    \"【铁律】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkill，不读活进程内存。\",\n  "
+ },
+ "s604_attribution_20261108": {
+  "run": "dwfrun-cec38f8b-6a40-4b41-b6b4-16da09b9d950.mjs",
+  "bindingRegex": "被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?",
+  "gate_src": "import json,pathlib,re,hashlib\nroot=pathlib.Path('D:/Project/ra2-campaign-forge')\nwd=root/'lead/s604_attribution_20261108'\nP=[];B=[];NB=0;DOC=None\ncands=sorted(wd.glob('*.md')) if wd.is_dir() else []\nif not cands: P.append('写域内无 md 交付件')\nelse:\n DOC=max(cands,key=lambda p:p.stat().st_size)\n t=DOC.read_text(encoding='utf-8');NB=DOC.stat().st_size\n for s in ['## 1','## 2','## 3','## 4','## 5','## 6']:\n  if s not in t: P.append('缺小节 '+s)\n for k in ['逐窗','对照表','口径差异','语料差异','台账记错','双锚点','无法归属','不改台账','未验']:\n  if k not in t: P.append('缺要素 '+k)\n for bad in ['台账应改为','建议修正台账','应修改台账','已修改台账','可应用母本']:\n  if bad in t: P.append('含越界断言 '+bad)\n B=re.findall(r'被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?',t)\n if not B: P.append('缺 SHA256 绑定行')\nPRE_L='\n'\nPRE_H='\n'\nfor lbl,rel,pre in [('台账','lead/GOAL_THREE_TARGETS_20261018.md',PRE_L),('PENDING','lead/PENDING_DECISIONS.md',PRE_H)]:\n p=root/rel\n cur=hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'MISSING'\n if cur!=pre: P.append(lbl+' 被改动 pre='+pre[:12]+' cur='+cur[:12])\nprint(json.dumps({'ok':not P,'problems':P,'bindings':len(B),'docBytes':NB,'doc':(DOC.name if DOC else '')},ensure_ascii=False))",
+  "ask_binding_lines": [
+   "    \"复核回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。\",",
+   "    \"① 自己实算台账与复算输出件的 SHA256，核对是否等于编排方基线。\",",
+   "    \"回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。只读，核验脚本只能落本任务写域且前缀 _sv_。\",",
+   "    \"【交付】写 S604_ATTRIBUTION.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（只做归属，不判台账该不该改、不改口径）；2 上游指纹（九件）；3 台账主张逐字摘录与独立复算逐窗数字；4 逐窗对照表（窗号/台账主张/复算值/偏离方向/偏离量）加三分类排除过程（(a) 口径 (b) 语料 (c) 台账记错，逐类给排除或成立的依据）；5 第五步交叉验证（双锚点 103.2/100.8 核实结果 + 帧时长对得上但空档差对不上的环节定位）加复核回件（含 SHA256 加字节数绑定）；6 结论（category 判定、主因、无法归属时的缺口、不改台账声明）。\",",
+   "    \" B=re.findall(r'被核对象 SHA256\\\\s*=\\\\s*`?([0-9a-fA-F]{64})`?',t)\",",
+   "    \" if not B: P.append('缺 SHA256 绑定行')\","
+  ],
+  "low_head": "const DIR = \"lead/s604_attribution_20261108/\";\nconst DOC = \"lead/s604_attribution_20261108/S604_ATTRIBUTION.md\";\nconst IRON = [\n    \"【铁律】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkill，不读活进程内存。\","
+ }
+}

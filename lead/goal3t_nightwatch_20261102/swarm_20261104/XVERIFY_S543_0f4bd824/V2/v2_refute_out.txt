@@ -1,0 +1,299 @@
+### Q1  在 ask 点名的 glob（BASE/*/measure_w*.json）下复现本线口径
+  文件 98 份 -> 参与分类 94 窗 / 36 趟目录 ；丢弃 4 份
+  ADV=63  FRZ=29  LOAD=1  BACK=1   （本线报：63 / 29 / 1 / 1，94 窗 / 36 趟）
+  结论：逐位复现
+
+### Q1b 被 frame_edges 判空而丢弃的 4 份（§538/§543 均未提）
+  l1_20261023c     w0 trip_id=QC161-U0800-L1-20261023C verdict='no_advance' span=4.0 n_samples_t=0 error='ReadProcessMemory 失败 2000 次（有效样本 0）' gate={"pre_fps15": null, "units0": null, "ok": false, "gate_fps15_min": 3.0, "gate_span_s": 1.5}
+       counters_n=4 首={"units": null, "infantry": null, "aircraft": null, "g": null, "b": null, "techno": null, "g_items": null, "b_items": null, "ws_kb": 20, "pf_kb": 64,  末={"units": null, "infantry": null, "aircraft": null, "g": null, "b": null, "techno": null, "g_items": null, "b_items": null, "ws_kb": 20, "pf_kb": 64, 
+  l3_1101v3c       w0 trip_id=QC161-U0800-L3-V3-20261101C verdict='frame_wait_timeout' span=0.0 n_samples_t=0 error='frame_wait_timeout: 等待 120.05s 未达 frame≥1200（最后读数 1058）⇒ 拒采' gate={"pre_fps15": null, "units0": null, "ok": false}
+       counters_n=0 首=None 末=None
+  l3_1101v4b       w0 trip_id=QC161-U0800-L3-V4-20261101B verdict='frame_wait_timeout' span=0.0 n_samples_t=0 error='frame_wait_timeout: 等待 120.013s 未达 frame≥800（最后读数 271）⇒ 拒采' gate={"pre_fps15": null, "units0": null, "ok": false}
+       counters_n=0 首=None 末=None
+  l3_20261023      w0 trip_id=QC161-U0800-L3-20261023 verdict='no_advance' span=4.0 n_samples_t=0 error='ReadProcessMemory 失败 2001 次（有效样本 0）' gate={"pre_fps15": null, "units0": null, "ok": false, "gate_fps15_min": 3.0, "gate_span_s": 1.5}
+       counters_n=4 首={"units": null, "infantry": null, "aircraft": null, "g": null, "b": null, "techno": null, "g_items": null, "b_items": null, "ws_kb": 20, "pf_kb": 64,  末={"units": null, "infantry": null, "aircraft": null, "g": null, "b": null, "techno": null, "g_items": null, "b_items": null, "ws_kb": 20, "pf_kb": 64, 
+
+### Q1c 根目录 3 份（本线 glob 漏）
+  measure_w0.json w0 trip_id=QC161-U0400-T55j f=3950->3950 span=4.0 pre_fps15=0.0 ok=False verdict='no_advance' samples=2002 error=None
+      t_abs0=1792420761.708  map=9e33585c  counters[0]=[{"units": 710, "infantry": 214, "aircraft": 0, "g": 931, "b": 0, "techno": 924, "g_items": 256219832, "b_items": 357810608, "ws_kb": 137928, "pf_kb": 123824, "shape": {"
+  measure_w1.json w1 trip_id=QC161-U0400-T55h f=373->373 span=25.0 pre_fps15=32.724 ok=True verdict='ok' samples=12501 error=None
+      t_abs0=1792409011.030  map=9e33585c  counters[0]=[{"units": 844, "infantry": 302, "aircraft": 0, "g": 1240, "b": 0, "techno": 1146, "g_items": 341326784, "b_items": 0, "ws_kb": 137212, "pf_kb": 123596, "shape": {"g_vali
+  measure_w2.json w2 trip_id=QC161-U0400-T55h f=373->373 span=25.0 pre_fps15=32.724 ok=True verdict='ok' samples=12502 error=None
+      t_abs0=1792409036.120  map=9e33585c  counters[0]=[{"units": 844, "infantry": 302, "aircraft": 0, "g": 1240, "b": 0, "techno": 1146, "g_items": 341326784, "b_items": 0, "ws_kb": 137308, "pf_kb": 123676, "shape": {"g_vali
+
+### Q2 冻结窗「对局已结束」的量级检验：游戏时长 = f/31.2，与场上单位数
+  dir                   w      f   秒@31.2     秒@30  units0  units冻 Δunits     g冻     b冻 units_uniq
+  archive_T32           1    778    24.94    25.93     241     240     -1    647     45        1
+  archive_T32           2    778    24.94    25.93     241     240     -1    647     45        1
+  archive_T33           1    738    23.65    24.60     241     240     -1    651     45        1
+  archive_T33           2    738    23.65    24.60     241     240     -1    651     45        1
+  archive_T34           1    302     9.68    10.07     242     241     -1    644     41        1
+  archive_T34           2    302     9.68    10.07     242     241     -1    644     41        1
+  archive_T36           1    310     9.94    10.33     242     241     -1    663     41        1
+  archive_T36           2    310     9.94    10.33     242     241     -1    663     41        1
+  archive_T38           2    940    30.13    31.33     242     241     -1    635     41        1
+  archive_T39           2    945    30.29    31.50     242     241     -1    635     41        1
+  archive_T40           1    908    29.10    30.27     242     241     -1    635     41        1
+  archive_T40           2    908    29.10    30.27     242     241     -1    635     41        1
+  archive_T41           1    860    27.56    28.67     242     241     -1    636     41        1
+  archive_T41           2    860    27.56    28.67     242     241     -1    636     41        1
+  archive_T42           1    883    28.30    29.43     242     241     -1    636     41        1
+  archive_T42           2    883    28.30    29.43     242     241     -1    636     41        1
+  archive_T43           1    314    10.06    10.47     242     241     -1    665     41        1
+  archive_T43           2    314    10.06    10.47     242     241     -1    665     41        1
+  archive_T44           1    883    28.30    29.43     242     241     -1    634     41        1
+  archive_T44           2    883    28.30    29.43     242     241     -1    634     41        1
+  archive_T45           1    845    27.08    28.17     242     240     -2    636     41        1
+  archive_T45           2    845    27.08    28.17     242     240     -2    636     41        1
+  archive_T47           1    708    22.69    23.60     251     243     -8    651     41        1
+  archive_T47           2    708    22.69    23.60     251     243     -8    651     41        1
+  archive_T49_u0800     1    448    14.36    14.93     491     484     -7    714      2        1
+  archive_T49_u0800     2    448    14.36    14.93     491     484     -7    714      2        1
+  l1_20261023           0   3514   112.63   117.13     672     672      0    900      0        1
+  l1_20261023b          0   3594   115.19   119.80     648     648      0    888      0        1
+  l3_20261023r          2   4367   139.97   145.57     941     828   -113   1008      0        1
+  游戏时长(秒@31.2) 分布: min=9.7 max=140.0 ；<=30s 的窗 24/29
+
+### Q2b 冻结时刻前一窗（同趟）末秒计数器 -> 冻结窗首秒计数器 是否连续
+  archive_T32          w1(冻 f=778) <- w0(末 f=778)  差异字段={}  本窗帧推进=482
+  archive_T32          w2(冻 f=778) <- w1(末 f=778)  差异字段={}  本窗帧推进=0
+  archive_T33          w1(冻 f=738) <- w0(末 f=738)  差异字段={}  本窗帧推进=444
+  archive_T33          w2(冻 f=738) <- w1(末 f=738)  差异字段={}  本窗帧推进=0
+  archive_T34          w1(冻 f=302) <- w0(末 f=302)  差异字段={}  本窗帧推进=9
+  archive_T34          w2(冻 f=302) <- w1(末 f=302)  差异字段={}  本窗帧推进=0
+  archive_T36          w1(冻 f=310) <- w0(末 f=310)  差异字段={}  本窗帧推进=178
+  archive_T36          w2(冻 f=310) <- w1(末 f=310)  差异字段={}  本窗帧推进=0
+  archive_T38          w2(冻 f=940) <- w1(末 f=940)  差异字段={}  本窗帧推进=29
+  archive_T39          w2(冻 f=945) <- w1(末 f=945)  差异字段={}  本窗帧推进=32
+  archive_T40          w1(冻 f=908) <- w0(末 f=908)  差异字段={}  本窗帧推进=775
+  archive_T40          w2(冻 f=908) <- w1(末 f=908)  差异字段={}  本窗帧推进=0
+  archive_T41          w1(冻 f=860) <- w0(末 f=860)  差异字段={}  本窗帧推进=728
+  archive_T41          w2(冻 f=860) <- w1(末 f=860)  差异字段={}  本窗帧推进=0
+  archive_T42          w1(冻 f=883) <- w0(末 f=883)  差异字段={}  本窗帧推进=752
+  archive_T42          w2(冻 f=883) <- w1(末 f=883)  差异字段={}  本窗帧推进=0
+  archive_T43          w1(冻 f=314) <- w0(末 f=314)  差异字段={}  本窗帧推进=182
+  archive_T43          w2(冻 f=314) <- w1(末 f=314)  差异字段={}  本窗帧推进=0
+  archive_T44          w1(冻 f=883) <- w0(末 f=883)  差异字段={}  本窗帧推进=751
+  archive_T44          w2(冻 f=883) <- w1(末 f=883)  差异字段={}  本窗帧推进=0
+  archive_T45          w1(冻 f=845) <- w0(末 f=845)  差异字段={}  本窗帧推进=713
+  archive_T45          w2(冻 f=845) <- w1(末 f=845)  差异字段={}  本窗帧推进=0
+  archive_T47          w1(冻 f=708) <- w0(末 f=708)  差异字段={}  本窗帧推进=575
+  archive_T47          w2(冻 f=708) <- w1(末 f=708)  差异字段={}  本窗帧推进=0
+  archive_T49_u0800    w1(冻 f=448) <- w0(末 f=448)  差异字段={}  本窗帧推进=317
+  archive_T49_u0800    w2(冻 f=448) <- w1(末 f=448)  差异字段={}  本窗帧推进=0
+  l3_20261023r         w2(冻 f=4367) <- w1(末 f=4367)  差异字段={}  本窗帧推进=484
+
+### Q3 连续性谱系：全部窗按 df 升序（df==0 与 df 小者之间有没有缝）
+  df= -3557  l1_20261023e4        w1  fps_avg=None  max_stall=15.732883  span=25.0  n_edges=113
+  df=     0  archive_T32          w1  fps_avg=None  max_stall=24.998919  span=25.0  n_edges=1
+  df=     0  archive_T32          w2  fps_avg=None  max_stall=24.999188  span=25.0  n_edges=1
+  df=     0  archive_T33          w1  fps_avg=None  max_stall=24.999194  span=25.0  n_edges=1
+  df=     0  archive_T33          w2  fps_avg=None  max_stall=24.999101  span=25.0  n_edges=1
+  df=     0  archive_T34          w1  fps_avg=None  max_stall=24.998614  span=25.0  n_edges=1
+  df=     0  archive_T34          w2  fps_avg=None  max_stall=24.999091  span=25.0  n_edges=1
+  df=     0  archive_T36          w1  fps_avg=None  max_stall=24.999382  span=25.0  n_edges=1
+  df=     0  archive_T36          w2  fps_avg=None  max_stall=24.998194  span=25.0  n_edges=1
+  df=     0  archive_T38          w2  fps_avg=None  max_stall=24.999047  span=25.0  n_edges=1
+  df=     0  archive_T39          w2  fps_avg=None  max_stall=24.999873  span=25.0  n_edges=1
+  df=     0  archive_T40          w1  fps_avg=None  max_stall=24.997908  span=25.0  n_edges=1
+  df=     0  archive_T40          w2  fps_avg=None  max_stall=24.998358  span=25.0  n_edges=1
+  df=     0  archive_T41          w1  fps_avg=None  max_stall=24.999933  span=25.0  n_edges=1
+  df=     0  archive_T41          w2  fps_avg=None  max_stall=24.997699  span=25.0  n_edges=1
+  df=     0  archive_T42          w1  fps_avg=None  max_stall=24.997711  span=25.0  n_edges=1
+  df=     0  archive_T42          w2  fps_avg=None  max_stall=24.999481  span=25.0  n_edges=1
+  df=     0  archive_T43          w1  fps_avg=None  max_stall=24.999916  span=25.0  n_edges=1
+  df=     0  archive_T43          w2  fps_avg=None  max_stall=24.999235  span=25.0  n_edges=1
+  df=     0  archive_T44          w1  fps_avg=None  max_stall=24.998637  span=25.0  n_edges=1
+  df=     0  archive_T44          w2  fps_avg=None  max_stall=24.999968  span=25.0  n_edges=1
+  df=     0  archive_T45          w1  fps_avg=None  max_stall=24.998449  span=25.0  n_edges=1
+  df=     0  archive_T45          w2  fps_avg=None  max_stall=24.997976  span=25.0  n_edges=1
+  df=     0  archive_T47          w1  fps_avg=None  max_stall=24.997962  span=25.0  n_edges=1
+  df=     0  archive_T47          w2  fps_avg=None  max_stall=24.997893  span=25.0  n_edges=1
+  df=     0  archive_T49_u0800    w1  fps_avg=None  max_stall=24.999092  span=25.0  n_edges=1
+  df=     0  archive_T49_u0800    w2  fps_avg=None  max_stall=24.999204  span=25.0  n_edges=1
+  df=     0  l1_20261023          w0  fps_avg=None  max_stall=3.999984  span=4.0  n_edges=1
+  df=     0  l1_20261023b         w0  fps_avg=None  max_stall=3.999877  span=4.0  n_edges=1
+  df=     0  l1_20261023e4        w2  fps_avg=None  max_stall=11.894575  span=25.0  n_edges=1
+  df=     0  l3_20261023r         w2  fps_avg=None  max_stall=24.997944  span=25.0  n_edges=1
+  df=     8  l1_20261023e1        w0  fps_avg=2.0007963669736997  max_stall=3.780845  span=4.0  n_edges=9
+  df=     9  archive_T34          w0  fps_avg=0.36000229681454066  max_stall=24.734761  span=25.0  n_edges=10
+  df=    12  l3_20261031ha        w0  fps_avg=3.0007471110078  max_stall=0.490684  span=4.0  n_edges=13
+  df=    18  l1_20261023k         w0  fps_avg=4.502089757513919  max_stall=3.266247  span=4.0  n_edges=13
+  df=    23  l1_20261023hc        w0  fps_avg=5.7501535290994275  max_stall=3.286867  span=4.0  n_edges=24
+  df=    29  archive_T38          w1  fps_avg=1.1600354785237839  max_stall=24.077365  span=25.0  n_edges=30
+  df=    32  archive_T39          w1  fps_avg=1.2800392204023243  max_stall=23.981746  span=25.0  n_edges=33
+  df=    40  l1_20261023hb        w0  fps_avg=10.002424587719968  max_stall=2.558256  span=4.0  n_edges=41
+
+  df 正数区间的最小值 / 最大值分布：
+   最小 12 个正 df: [8, 9, 12, 18, 23, 29, 32, 40, 118, 120, 147, 169]
+   df==0 窗数=30，df 在 1..40 的窗数=8，df>700 的窗数=25
+
+### Q4 慢窗（fps_avg<28 的 ADV 窗）独立性：同趟贡献几个窗
+  慢窗总数=38 ，来自 24 个趟目录
+     l1c_20261021         3 窗
+     l1d_20261021         3 窗
+     l1e_20261021         3 窗
+     l3_1101v3a           3 窗
+     l3_1101v3b           3 窗
+     l3_20261021          3 窗
+     l3_20261031hb        3 窗
+     archive_T32          1 窗
+     archive_T33          1 窗
+     archive_T34          1 窗
+     archive_T36          1 窗
+     archive_T38          1 窗
+     archive_T39          1 窗
+     archive_T43          1 窗
+     archive_T47          1 窗
+     archive_T49_u0800    1 窗
+     l1_20261023e1        1 窗
+     l1_20261023hb        1 窗
+     l1_20261023hc        1 窗
+     l1_20261023k         1 窗
+     l3_1101v4c           1 窗
+     l3_20261023q         1 窗
+     l3_20261023r         1 窗
+     l3_20261031ha        1 窗
+  同一 map_sha256 的慢窗分布：
+     map f3bb0a4e : 16 窗
+     map 0add791d : 13 窗
+     map 93c2974b : 2 窗
+     map 60cb0262 : 2 窗
+     map 6fac3a3e : 2 窗
+     map be07d2b4 : 1 窗
+     map e7dee568 : 1 窗
+     map e3acc130 : 1 窗
+
+### Q5 archive 系列冻结窗的 map 与「游戏时长」聚类
+  archive_T32          [[1, 778, "93c2974b", 241, 240, 25.0, 30.702, true], [2, 778, "93c2974b", 241, 240, 25.0, 30.702, true]]
+  archive_T33          [[1, 738, "93c2974b", 241, 240, 25.0, 31.348, true], [2, 738, "93c2974b", 241, 240, 25.0, 31.348, true]]
+  archive_T34          [[1, 302, "be07d2b4", 242, 241, 25.0, 31.383, true], [2, 302, "be07d2b4", 242, 241, 25.0, 31.383, true]]
+  archive_T36          [[1, 310, "60cb0262", 242, 241, 25.0, 30.707, true], [2, 310, "60cb0262", 242, 241, 25.0, 30.707, true]]
+  archive_T38          [[2, 940, "6fac3a3e", 242, 241, 25.0, 31.388, true]]
+  archive_T39          [[2, 945, "6fac3a3e", 242, 241, 25.0, 31.388, true]]
+  archive_T40          [[1, 908, "9a249526", 242, 241, 25.0, 30.712, true], [2, 908, "9a249526", 242, 241, 25.0, 30.712, true]]
+  archive_T41          [[1, 860, "9a249526", 242, 241, 25.0, 31.364, true], [2, 860, "9a249526", 242, 241, 25.0, 31.364, true]]
+  archive_T42          [[1, 883, "9a249526", 242, 241, 25.0, 31.38, true], [2, 883, "9a249526", 242, 241, 25.0, 31.38, true]]
+  archive_T43          [[1, 314, "60cb0262", 242, 241, 25.0, 31.4, true], [2, 314, "60cb0262", 242, 241, 25.0, 31.4, true]]
+  archive_T44          [[1, 883, "9a249526", 242, 241, 25.0, 31.407, true], [2, 883, "9a249526", 242, 241, 25.0, 31.407, true]]
+  archive_T45          [[1, 845, "e7dee568", 242, 240, 25.0, 31.394, true], [2, 845, "e7dee568", 242, 240, 25.0, 31.394, true]]
+  archive_T47          [[1, 708, "e7dee568", 251, 243, 25.0, 31.405, true], [2, 708, "e7dee568", 251, 243, 25.0, 31.405, true]]
+  archive_T49_u0800    [[1, 448, "e3acc130", 491, 484, 25.0, 31.396, true], [2, 448, "e3acc130", 491, 484, 25.0, 31.396, true]]
+  l1_20261023          [[0, 3514, "0add791d", 672, 672, 4.0, 0.0, false]]
+  l1_20261023b         [[0, 3594, "0add791d", 648, 648, 4.0, 0.0, false]]
+  l1_20261023e4        [[2, 0, "0add791d", 702, 640, 25.0, 30.692, true]]
+  l3_20261023r         [[2, 4367, "f3bb0a4e", 941, 828, 25.0, 30.716, true]]
+
+### Q6 l1_20261023e4 深查（唯一 df<0 与唯一 LOAD 窗）
+  w1: trip_id=QC161-U0800-L1-20261023E4 t_abs0=1793015998.161 span=25.0 hz=500
+  w1 frame_edges 前 3: [[3557, 17133.074818], [3558, 17133.084766], [3559, 17133.115485]]
+  w1 frame_edges 后 4: [[3666, 17136.708237], [3667, 17136.738677], [3668, 17136.768445], [0, 17142.340036]]
+  w1 最后一个非零边 t=17136.768 f=3668 ；随后第一个 0 边 t=17142.340 ；间隔 5.572 s
+  w1 samples: 最后一个非零帧的下标 4632 / 12501 ；其 t=17142.338 f=3668 ；此后到窗尾 15.735 s 全为 0
+  w1 samples: 第一个 0 的下标 4633 ，t=17142.340 ，相对最后非零 0.003 s
+  w1 counters 逐秒 units/g/ws_kb：
+     t=  0.000 units=642 g=886 b=0 techno=868 ws=135692 pf=121352
+     t=  1.001 units=640 g=878 b=0 techno=866 ws=135700 pf=121352
+     t=  2.002 units=640 g=875 b=0 techno=866 ws=135700 pf=121352
+     t=  3.002 units=640 g=873 b=0 techno=866 ws=135700 pf=121352
+     t=  4.003 units=640 g=873 b=0 techno=866 ws=135700 pf=121352
+     t=  5.005 units=640 g=873 b=0 techno=866 ws=137484 pf=123088
+     t=  6.005 units=640 g=873 b=0 techno=866 ws=137488 pf=123088
+     t=  7.006 units=640 g=873 b=0 techno=866 ws=137488 pf=123088
+     t=  8.006 units=640 g=873 b=0 techno=866 ws=137488 pf=123088
+     t=  9.007 units=640 g=873 b=0 techno=866 ws=137504 pf=123140
+     t= 10.009 units=640 g=873 b=0 techno=866 ws=136984 pf=122588
+     t= 11.009 units=640 g=873 b=0 techno=866 ws=136984 pf=122588
+     t= 12.010 units=640 g=873 b=0 techno=866 ws=138332 pf=123928
+     t= 13.011 units=640 g=873 b=0 techno=866 ws=138460 pf=124080
+     t= 14.014 units=640 g=873 b=0 techno=866 ws=138860 pf=124440
+     t= 15.016 units=640 g=873 b=0 techno=866 ws=139980 pf=125608
+     t= 16.016 units=640 g=873 b=0 techno=866 ws=139980 pf=125608
+     t= 17.017 units=640 g=873 b=0 techno=866 ws=139980 pf=125608
+     t= 18.018 units=640 g=873 b=0 techno=866 ws=139980 pf=125608
+     t= 19.019 units=640 g=873 b=0 techno=866 ws=139980 pf=125608
+     t= 20.021 units=640 g=873 b=0 techno=866 ws=139980 pf=125608
+     t= 21.022 units=640 g=873 b=0 techno=866 ws=139980 pf=125608
+     t= 22.023 units=640 g=873 b=0 techno=866 ws=139980 pf=125608
+     t= 23.023 units=640 g=873 b=0 techno=866 ws=139980 pf=125608
+     t= 24.024 units=640 g=873 b=0 techno=866 ws=139980 pf=125608
+  w2: error='ReadProcessMemory 失败 6190 次（有效样本 5949）' stats.samples=5949 n_edges=1 f 唯一值=[0]
+  w2 counters 逐秒（注意 null 与 ws_kb）：
+     t=  0.000 units=640 g=873 b=0 ws=139980 pf=125608
+     t=  1.002 units=640 g=873 b=0 ws=139980 pf=125608
+     t=  2.003 units=640 g=873 b=0 ws=139980 pf=125608
+     t=  3.004 units=640 g=873 b=0 ws=139980 pf=125608
+     t=  4.006 units=640 g=873 b=0 ws=139980 pf=125608
+     t=  5.007 units=640 g=873 b=0 ws=139980 pf=125608
+     t=  6.008 units=640 g=873 b=0 ws=139980 pf=125608
+     t=  7.009 units=640 g=873 b=0 ws=139980 pf=125608
+     t=  8.010 units=640 g=873 b=0 ws=139980 pf=125608
+     t=  9.011 units=640 g=873 b=0 ws=139980 pf=125608
+     t= 10.011 units=640 g=873 b=0 ws=138868 pf=124440
+     t= 11.012 units=640 g=873 b=0 ws=138904 pf=125608
+     t= 12.016 units=None g=None b=None ws=20 pf=64
+     t= 13.016 units=None g=None b=None ws=20 pf=64
+     t= 14.016 units=None g=None b=None ws=20 pf=64
+     t= 15.018 units=None g=None b=None ws=20 pf=64
+     t= 16.019 units=None g=None b=None ws=20 pf=64
+     t= 17.021 units=None g=None b=None ws=20 pf=64
+     t= 18.021 units=None g=None b=None ws=20 pf=64
+     t= 19.024 units=None g=None b=None ws=20 pf=64
+     t= 20.024 units=None g=None b=None ws=20 pf=64
+     t= 21.024 units=None g=None b=None ws=20 pf=64
+     t= 22.026 units=None g=None b=None ws=20 pf=64
+     t= 23.029 units=None g=None b=None ws=20 pf=64
+     t= 24.031 units=None g=None b=None ws=20 pf=64
+  w0: f=2821->3557 fps_avg=29.441409419151583 counters 末秒={"units": 644, "infantry": 226, "aircraft": 0, "g": 884, "b": 0, "techno": 870, "g_items": 366474080, "b_items": 362935296, "ws_kb": 135692, "pf_kb": 121352, "shape": {"g_valid": true, "b_valid": true}, "t_rel": 24.02816
+     measure_w0.json t_abs0=1793015973.139 verdict='ok'
+     measure_w1.json t_abs0=1793015998.161 verdict='ok'
+     measure_w2.json t_abs0=1793016023.182 verdict='ok'
+
+### Q7 archive_T42 深查（本线称无计分屏证据的 df==0 窗）
+  w0 f=131->883 fps_avg=30.081814174065407 max_stall=0.942842 samples=12501 n_edges=753 error=None t_abs0=1792311075.765
+  w1 f=883->883 fps_avg=None max_stall=24.997711 samples=12501 n_edges=1 error=None t_abs0=1792311100.778
+      ws_kb 逐秒: [127460, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976]
+      units 逐秒: [241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241]
+  w2 f=883->883 fps_avg=None max_stall=24.999481 samples=12501 n_edges=1 error=None t_abs0=1792311125.859
+      ws_kb 逐秒: [129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976, 129976]
+      units 逐秒: [241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241, 241]
+  T42 w0 与 w1 的绝对时间差 = 25.013 s（窗长 25.0 ⇒ 无空档）
+
+### Q8 窗末取证 PNG 的**文件字节**同一性（不解码；字节级指纹）
+  measure_w*_end_*.png 共 25 张
+  字节级不同的指纹 21 / 字节级相同的组 2
+   [f61c9808] 4 张：
+      archive_T33\measure_w2_end_x.png                                                                  275504 B  mtime=2026-10-18 11:46:35
+      archive_T42\measure_w1_end_x.png                                                                  275504 B  mtime=2026-10-18 16:12:05
+      archive_T42\measure_w2_end_x.png                                                                  275504 B  mtime=2026-10-18 16:12:30
+      archive_T45\measure_w2_end_x.png                                                                  275504 B  mtime=2026-10-18 17:48:34
+   [c1c1dbbd] 2 张：
+      archive_T36\measure_w1_end_x.png                                                                  269628 B  mtime=2026-10-18 12:53:27
+      archive_T38\measure_w1_end_x.png                                                                  269628 B  mtime=2026-10-18 12:53:27
+
+  全部窗末 PNG 清单（含 mtime，便于时序核对）：
+     archive_T33\measure_w1_end_x.png                                                              269658 B fd1378bb 10-18 11:46:10
+     archive_T33\measure_w2_end_x.png                                                              275504 B f61c9808 10-18 11:46:35
+     archive_T34\measure_w1_end_x.png                                                              269645 B f8290e34 10-18 12:18:32
+     archive_T34\measure_w2_end_x.png                                                              269509 B 83b6798e 10-18 12:18:57
+     archive_T36\measure_w1_end_x.png                                                              269628 B c1c1dbbd 10-18 12:53:27
+     archive_T36\measure_w2_end_x.png                                                              269506 B c76dab30 10-18 12:53:52
+     archive_T38\measure_w1_end_x.png                                                              269628 B c1c1dbbd 10-18 12:53:27
+     archive_T38\measure_w2_end_x.png                                                              269714 B 4bcbdc41 10-18 14:07:23
+     archive_T39\measure_w2_end_x.png                                                              268372 B 989a7fc7 10-18 15:51:55
+     archive_T40\measure_w1_end_x.png                                                              269636 B 35f98a5c 10-18 16:04:28
+     archive_T40\measure_w2_end_x.png                                                              269599 B e0b17ae3 10-18 16:04:53
+     archive_T41\measure_w1_end_x.png                                                              269705 B 39b78044 10-18 16:08:48
+     archive_T41\measure_w2_end_x.png                                                              269683 B 2b696222 10-18 16:09:13
+     archive_T42\measure_w1_end_x.png                                                              275504 B f61c9808 10-18 16:12:05
+     archive_T42\measure_w2_end_x.png                                                              275504 B f61c9808 10-18 16:12:30
+     archive_T43\measure_w1_end_x.png                                                              269625 B 1c627fcb 10-18 16:23:36
+     archive_T43\measure_w2_end_x.png                                                              269670 B 7e4245d0 10-18 16:24:01
+     archive_T44\measure_w1_end_x.png                                                              269697 B 8dd9b5e3 10-18 17:34:22
+     archive_T44\measure_w2_end_x.png                                                              269672 B 6444e4f9 10-18 17:34:47
+     archive_T45\measure_w1_end_x.png                                                              269702 B bc34f315 10-18 17:48:09
+     archive_T45\measure_w2_end_x.png                                                              275504 B f61c9808 10-18 17:48:34
+     archive_T49_u0800\measure_w1_end_x.png                                                        269546 B d23255ff 10-18 18:12:11
+     archive_T49_u0800\measure_w2_end_x.png                                                        269576 B 443e94b9 10-18 18:12:36
+     l1_20261023e4\measure_w2_end_x.png                                                             52833 B 942d6ca4 10-26 20:00:48
+     l3_20261023r\measure_w2_end_x.png                                                             269848 B 6877870d 10-30 21:02:34

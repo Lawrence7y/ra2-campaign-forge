@@ -1,0 +1,23 @@
+entry	old	new	理由(AUDIT-SEM-SELF 逐行字节证据)
+00407B40	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：单次写：mov eax,[ecx+0x14]; mov [eax+0x94],edx; ret = 单字段 setter，无输入判据/无返回约定；E 类「整体语义未定」自陈亦一致（只改第5列 grade，name/semantics/subsystem 不动）
+0041BEA0	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：线性定点→格坐标换算([ecx+0x9C]/[ecx+0xA0] 各 sar 8 后写 word)，无分支无错误码无循环；单一出口（只改第5列 grade，name/semantics/subsystem 不动）
+0044B760	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：纯转发桩：E9 EB 76 16 00 = jmp 0x5B2E50，体内无第二指令（只改第5列 grade，name/semantics/subsystem 不动）
+0044B770	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：纯转发桩：E9 1B 77 16 00 = jmp 0x5B2E90（只改第5列 grade，name/semantics/subsystem 不动）
+00459ED0	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：单路径取值：[ecx+0x520]→[+0x60] 二级解引用 ret，无分支（只改第5列 grade，name/semantics/subsystem 不动）
+00459EE0	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：单路径取值：mov eax,[ecx+0x520]; ret，无分支（只改第5列 grade，name/semantics/subsystem 不动）
+00473C00	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：lazy getter：[+0x58]!=0 则返 [+0x5C]，否则单次初始化转发；无循环/无多路结局/无哨兵约定（只改第5列 grade，name/semantics/subsystem 不动）
+00486840	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：格→像素线性换算((word[+0x24]<<8)+0x80 等)+单次调用 0x47B3A0，无分支（只改第5列 grade，name/semantics/subsystem 不动）
+00487E70	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：常量返回桩 B8 48 01 00 00 C3 = mov eax,0x148;ret；0x148 的 10 个 push 分配点无一写 CellClass vt 0x7E4EEC ⇒ GetSize 双点闭合不成立（只改第5列 grade，name/semantics/subsystem 不动）
+004D55C0	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：COM 空指针样板 + 单次虚转发 call [ecx+0x48]，随后 xor al,al 固定返回 false（只改第5列 grade，name/semantics/subsystem 不动）
+004D55F0	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：3 dword 结构体转发 + 单次虚调用 + 布尔化(neg/sbb/neg)，无自身状态转移（只改第5列 grade，name/semantics/subsystem 不动）
+004D9C10	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：COM 空指针样板 + 早退 0 + 单次虚转发 call [ecx+0x1c]（只改第5列 grade，name/semantics/subsystem 不动）
+004DA2B0	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：纯转发桩：E9 3B 8C 0D 00 = jmp 0x5B2EF0（只改第5列 grade，name/semantics/subsystem 不动）
+0051F620	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：单次调用 0x521320 + cmp eax,-1 则转发 0x4D5070；lazy 转发，无循环/无多路结局（只改第5列 grade，name/semantics/subsystem 不动）
+0051F640	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：同上形态：call 0x521320 + cmp -1 则转发 0x4D6AA0（只改第5列 grade，name/semantics/subsystem 不动）
+005B2E10	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：常量返回桩 B8 C2 01 00 00 C3(0x1c2)；0x1c2 全镜像无 push→operator new 见证，且该桩系 ICF 合并(I、+0x10 间距同值串)，GetSize 双点闭合不成立（只改第5列 grade，name/semantics/subsystem 不动）
+005B3040	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：纯读 getter：[+0xAC] 为 -1 时回落 [+0xB4]，两次读一次分支，无状态转移（只改第5列 grade，name/semantics/subsystem 不动）
+005C9470	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：构造器薄壳：单次基类调用 0x5D8C50 + 单张 vt 写 0x7EE6C8(0x5C94A8)；线性无分支。语义栏自陈「模块线索」属 D 类弱证据，N_FIX §964 仅凭「有 JMP_THIS 具名构造器」提级 = §8.1⑬ 入口已证≠语义已证（只改第5列 grade，name/semantics/subsystem 不动）
+005CAE10	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：构造器薄壳：单次基类调用 0x5D8C50 + 单张 vt 写 0x7EE7E4(0x5CAE48)；线性无分支。同上 N_FIX §964 提级失据（只改第5列 grade，name/semantics/subsystem 不动）
+005CAEB0	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：构造器薄壳：单次基类调用 0x5D8C50 + 单张 vt 写 0x7EE7F4(0x5CAEE8)；线性无分支。同上 N_FIX §964 提级失据（只改第5列 grade，name/semantics/subsystem 不动）
+005F6940	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：结构体拷贝：3 dword 由 [eax] 复制到 [ecx+0x9C..0xA4]，无分支（只改第5列 grade，name/semantics/subsystem 不动）
+0075AC80	[已证]	[静态推断]	AUDIT-SEM-SELF 判 P2/D-42 ③a：标志位夹单次调用：[+0x31]=1 → call 0x75AEC0 → [+0x31]=0 → 单次虚转发 [eax+0x10]（只改第5列 grade，name/semantics/subsystem 不动）

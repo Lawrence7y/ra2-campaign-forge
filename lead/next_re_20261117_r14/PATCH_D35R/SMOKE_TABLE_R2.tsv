@@ -1,0 +1,9 @@
+站点VA	NULL路径(this=[0x887368])	为什么会被NULL路径命中(静态依据)	复现方法(真机)	桩执行证据(只读可观测)	结果(崩/不崩)	except.txt	覆盖率备注
+0x6D1632	0x887368	host 0x6D1610 中 mov ecx,[0x887368] 紧接 push 后 call；reach=True、static-ref、路径11	副本启动+前台+GUI点击/按键扫描(enter/down/click 网格)	无法证明桩被执行：最终 build 连续采样641次 max_hit_count=2，distinct_last_rets 仅 0x4A8B7A(站点0x4A8B75)，未捕获该站点ret 0x6D1637；该站点为 in-game sidebar 函数，最小/菜单 GUI 未到达	不崩(进程存活或rc=0)	无变化(26272B,sha 6907F395…91094)	已接线/已冒烟；桩执行未确认
+0x6D09FA	0x887368	host 0x6D09C0 中 mov ecx,[0x887368] 无NULL守卫；reach=True、路径18	同上	无法证明桩被执行：未捕获 ret 0x6D09FF；in-game UI 未到达	不崩	无变化	已接线/已冒烟；桩执行未确认
+0x640427	0x887368	host 0x6403A0 中 mov ecx,[0x887368] 无NULL守卫；reach=True、路径31	副本启动+前台+GUI点击序列(click_1/2/enter/down/enter/click_3)	无法证明桩被执行(最终build)：最终build该场景 hit_count=2,last_ret=0x4A8B7A(站点0x4A8B75)；中间build(8站点含0x6D1308)曾观测到 last_ret=0x64042C=本站点+5、hit_count=0→1，但非最终build，按铁规不计入最终build证据	不崩	无变化	已接线/已冒烟；桩执行未在最终build确认
+0x6D059B	0x887368	host 0x6D04F0 中 mov ecx,[0x887368]；reach=True、static-ref、路径38	同上GUI扫描	无法证明桩被执行：未捕获 ret 0x6D05A0；in-game UI 未到达	不崩	无变化	已接线/已冒烟；桩执行未确认
+0x6D0634	0x887368	host 0x6D04F0 中 mov ecx,[0x887368]；reach=True、static-ref、路径39	同上GUI扫描	无法证明桩被执行：未捕获 ret 0x6D0639；in-game UI 未到达	不崩	无变化	已接线/已冒烟；桩执行未确认
+0x6D1293	0x887368	host 0x6D1200 中 mov ecx,[0x887368]；reach=True、static-ref、路径46	同上GUI扫描	无法证明桩被执行：未捕获 ret 0x6D1298；in-game UI 未到达	不崩	无变化	已接线/已冒烟；桩执行未确认
+0x6D0940	0x887368	host 0x6D0680 中 mov ecx,[0x887368]；reach=True、static-ref、路径47	同上GUI扫描	无法证明桩被执行：未捕获 ret 0x6D0945；in-game UI 未到达	不崩	无变化	已接线/已冒烟；桩执行未确认
+0x4A8B75	0x887368	host 0x4A8960 中 mov ecx,[0x887368] 紧接 call；reach=True、static-ref、路径50、PATCH_MAP首行	副本启动+前台+GUI点击/按键扫描(smoke_diag_sites.py 641次连续只读采样)	已确认桩被执行：hit_count 0→2、distinct_last_rets=[0x4A8B7A]，0x4A8B7A = 站点0x4A8B75+5(站点call压入的返回地址)；ReadProcessMemory 只读采样，证据 EVIDENCE/smoke_r2_diag_sites.json	不崩(进程存活，收尾由本卡关闭)	无变化(26272B,sha 6907F395…91094)	已接线/已冒烟；桩执行已确认(1/8)

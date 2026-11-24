@@ -1,0 +1,33 @@
+=== Q5-1: two independent counts ===
+[impl1/json module] keys=6728 pairs=68253 bounds=1392592
+[impl1/json module] file_bytes=17624355  total_records=1399320  avg_bytes=12.5949
+[impl2/regex     ] keys=6728 pairs=74972 bounds=1392591
+[impl2/regex     ] total_records=1399319  file_bytes=17624355  avg_bytes=12.5950
+agree = False
+
+=== Q5-2: positive controls for the return-to-origin search ===
+PC-1 record: target 00407100 (== the first key of every callmap in this tree), sites ['0040100A', '00401019', '00401028', '00406458']
+  gamemd.exe byte test: [(True, '00407100'), (True, '00407100'), (True, '00407100'), (True, '00407100')]
+  PC-1 found verbatim in S09_KPROVED7/_audit/EVIDENCE/e8_sites_audit.json : 4/4 pairs [(4198410, 4223232), (4198425, 4223232), (4198440, 4223232), (4219992, 4223232)]
+  PC-1 raw substring "[4198410, 4223232]" present in that file: True
+
+PC-2 record (wrapped call): target C0C5A07E site 00409FF2 -> byte test True (recomputed C0C5A07E)
+  naive in-text search: "C0C5A07E" present in a2_sites["bounds"] ? False
+  site "00409FF2" in bounds ? True
+  raw bytes @file_off 40946: E8870085C0
+
+=== PC-3: does a disassembly EVIDENCE text corroborate one of our call records? ===
+disasm files: 20
+a disasm file citing a call site VA 0x40100a: None
+calls whose site is 0040100A:  ['00407100']
+
+=== Q3: 3 sampled records, full trace ===
+REC target=00407100  n_sites=4  all_bytes_match=True
+    sites[:6]=['0040100A', '00401019', '00401028', '00406458']
+    verbatim in other EVIDENCE: {'S16_N1': 4, 'S09_KPROVED7': 4}
+REC target=007B6780  n_sites=2  all_bytes_match=True
+    sites[:6]=['005CD865', '005CDB9D']
+    verbatim in other EVIDENCE: {'S16_N1': 2, 'S09_KPROVED7': 2}
+REC target=007E01D2  n_sites=1  all_bytes_match=True
+    sites[:6]=['007E0266']
+    verbatim in other EVIDENCE: {'S16_N1': 1, 'S09_KPROVED7': 1}

@@ -1,0 +1,67 @@
+=== (1) 九件派发指纹自算 ===
+  MATCH lead/gate_rejudge32_20261109/GATE_REJUDGE_32.md              ed7e326d38a96730 51156
+  MATCH lead/matrix_ab_ruling_20261109/RULING_MATRIX_AB.md           0e817ebb8087141d 36851
+  MATCH lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md     cd03a91aac610cd0 27825
+  MATCH lead/n11_wording_fix_20261108/N11_WORDING_FIX.md             4ef31846050ef4e1 18966
+  MATCH lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md             593c7a3ed3b1d1d4 20271
+  MATCH lead/gate_fp7_20261108/_g7_predicates.py                     02c17e49764a6f87 11743
+  MATCH lead/gate_r9r12_20261109/_g9_gate.py                         a83081eeffc56e83 11623
+  MATCH lead/PENDING_DECISIONS.md                                    3765eddbe96deeb6 52419
+  MATCH lead/GOAL_THREE_TARGETS_20261018.md                          2baa0de45d412554 759518
+  all_match = True
+  binding_object: sha256 = 593c7a3ed3b1d1d47d6da5d8277f76c9323499aa04084a86e376ab5f9d2ab740 bytes = 20271
+
+=== (2) 5 处独立 R9 复现 ===
+  需谁批准       literal=False mine=(False, '')        g7=(False, '')        r9s=(True,semantic)
+     L108: ### 5.2 可执行改动清单（★ 处方，未实施；批准人一律 = **乙设计责任人**，pf2:200；改后立即做登记 7/8，顺序不可倒）
+  实跑输出       literal=False mine=(False, '')        g7=(False, '')        r9s=(True,semantic)
+     L65: - **构造输入 → 实跑返回**：classify 直调，pre 八变体（None/{}/缺state/脏值/显式unknown/absent_confirmed/present/error）× read_error 
+  改前改后       literal=False mine=(False, '')        g7=(False, '')        r9s=(True,semantic)
+     L76: ## 4 订正草案（改前/改后逐处对照）
+  脚本存在性      literal=False mine=(False, '')        g7=(False, '')        r9s=(True,semantic)
+     L32: ## 3 脚本搜索全结果与存在性判定（四路逐路）
+  可重建        literal=False mine=(False, '')        g7=(False, '')        r9s=(True,semantic)
+     L87: **判定：正确算法【可唯一重建】。** 已有四重独立实现逐位一致（N-8、R3 蓝本、`_verify_r3_gapdiff.py` 第三方、上轮探针 [0] 三窗逐位复现 R3 [B]，`_sg_probe_compr
+  all_false = True
+
+=== (3) 复核回件 7 条近似负样本复跑（期望全 False） ===
+  V1  实跑输出     r9=(False,(none)) r9s=(False,(none)) caught=True
+  V2  需谁批准     r9=(False,(none)) r9s=(True,semantic) caught=False
+     !! 漏抓 evidence = [{"role": "R1∧R2∧R3", "match": "批准人一律 = **见台账登记", "agent": "见台账登记", "line": 2}]
+  V3  改前改后     r9=(False,(none)) r9s=(True,semantic) caught=False
+     !! 漏抓 evidence = [{"role": "R1(BEFORE)∧R2(AFTER)∧R3(对照)", "section": "## 4 订正草案（改前/改后逐处对照）", "before": {"label": "【改前】", "value": "本件按 **13 项分写**，与裁决列名一一对应，无缺漏、无新增：拆分只改颗粒度、不改内容。", "line": 3}, "after": {"label": "【改后】", "value": "改后句见方案 B
+  V4  脚本存在性    r9=(False,(none)) r9s=(False,(none)) caught=True
+  V5  可重建      r9=(False,(none)) r9s=(True,semantic) caught=False
+     !! 漏抓 evidence = [{"role": "R1(重建)∧R2(肯定情态)∧R3(确定性证据)", "section": "## 4 重建可行性与单向压缩候选筛选", "modal": "【可唯一重建】", "evidence": "五项口径", "line": 6, "clause": "**待判：正确算法是否【可唯一重建】，尚需与台账逐位核对"}]
+  V6  可重建      r9=(False,(none)) r9s=(True,semantic) caught=False
+     !! 漏抓 evidence = [{"role": "R1(重建)∧R2(肯定情态)∧R3(确定性证据)", "section": "## 4 重建可行性与单向压缩候选筛选", "modal": "【可唯一重建】", "evidence": "五项口径", "line": 3, "clause": "**判定：正确算法并非【可唯一重建】"}]
+  V7  脚本存在性    r9=(True,raw) r9s=(True,raw) caught=False
+     !! 漏抓 evidence = []
+  V1..V5 caught = 2/5  all_7_caught = False
+
+=== (4) POS/NEG + 4 域 + 32 域不放松 ===
+  POS 20/20  NEG 24/24  all_pass=True
+  lead/matrix_ab_ruling_20261109/                R9缺=1 R9S缺=0 剩余=3 ["含越界断言 已改矩阵", "含越界断言 已收紧", "含越界断言 已施行"]
+  lead/matrix_reach_20261109/                    R9缺=1 R9S缺=0 剩余=0 []
+  lead/n11_wording_fix_20261108/                 R9缺=1 R9S缺=0 剩余=0 []
+  lead/s604_script_gap_20261109/                 R9缺=2 R9S缺=0 剩余=0 []
+  4 域剩余缺要素 = 0
+  n_domains=32 n_items=302 identical=297 changed=5 main_missing=[]
+  n_flips=5 outside_whitelist=0 n_tightens=0 no_relaxation=True
+     FLIP lead/matrix_ab_ruling_20261109/                需谁批准       whitelisted=True
+     FLIP lead/matrix_reach_20261109/                    实跑输出       whitelisted=True
+     FLIP lead/n11_wording_fix_20261108/                 改前改后       whitelisted=True
+     FLIP lead/s604_script_gap_20261109/                 脚本存在性      whitelisted=True
+     FLIP lead/s604_script_gap_20261109/                 可重建        whitelisted=True
+
+=== (5) 调用方 / 最小改动 / 绑定行格式 ===
+  g7_fp_pin_files(py+mjs,lead+.zcode) = 61 ; r9_element_present_lines=48 r9_check_lines=41 check_deliverable_lines=83
+  (reviewer口径, 排除写域) r9_element_present=14 r9_check=21 check_deliverable=43
+  (pin 46 复现口径, py+mjs, lead+.zcode) count = 61
+  minpatch unified_diff lines=25 hunks=2
+  design strict binding matches = 1 ['被核对象 SHA256 = 593c7a3ed3b1d1d47d6da5d8277f76c9323499aa04084a86e376ab5f9d2ab740，字节数 = 20271']
+
+=== (6) 收尾 ===
+  readonly_9_unchanged = True
+  stray_r9sd_files_outside_wdir = []
+wrote _r9sd_final_out.json

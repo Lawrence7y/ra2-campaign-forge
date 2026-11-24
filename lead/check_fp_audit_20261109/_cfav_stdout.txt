@@ -1,0 +1,77 @@
+=== STEP 1: 8 ORCHESTRATOR FINGERPRINTS (hashlib, independent) ===
+  _fnr_check.py                                                            94d89881f6a2e1afdea3ca78f56006ca27f1cabe1ec6384a9194718c327b00c2 bytes=28811 match=True
+  _fnr_check_out.json                                                      f3112b225b1de35183ad4604554cb25689ed252b6a5a95d96d17fce53c8c140e bytes=8733 match=True
+  _fnr_REPORT.md                                                           80641e7dcc0cc3ebc61c2c39afe6757814fc6eb694a9559c4903ab9241ee6f06 bytes=43390 match=True
+  _fnr_replay_out.json                                                     877f4ced0ab99562f776faa82015f742588c76fa9a63ee23b735f2fed61bd9fd bytes=27535 match=True
+  _WL_WHITELIST_AUDIT.md                                                   f9d00b7c9a12a996bac9d89b0bf5a948dfe026e21f472bd825d7924d35a47adc bytes=52705 match=True
+  _r9s_regress_out.json                                                    5bfb169acc58221ac74873dd99e1236931ac1b08d1eedc8dfb43076cc5b05e25 bytes=75673 match=True
+  PENDING_DECISIONS.md                                                     3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 bytes=52419 match=True
+  GOAL_THREE_TARGETS_20261018.md                                           2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede bytes=759518 match=True
+  _fnrd_verify_out.json                                                    c8d7b4ea521d12e9a60ced120de2b939c230e7c1a8f0c923a0422f9fd65fa263 bytes=1713 match=None
+  _r9s_predicates.py                                                       b0265fc57ef4facd06d92b4852344a80d983f14560a8521525ba18e533ae7034 bytes=23111 match=None
+  _r9s_regress.py                                                          16612625a7a5b11aba8b19c895a612f319bd4421c9c095b2ff8285be9214c4b4 bytes=11258 match=None
+  ALL_EIGHT_MATCH = True
+
+=== STEP 2: AST I/O AUDIT (which functions can read files / verify seals) ===
+  certificate_ok             line=95   opens_file=False computes_hash=False writes_file=False
+  check_l1                   line=127  opens_file=False computes_hash=False writes_file=False
+  check_l2                   line=161  opens_file=False computes_hash=False writes_file=False
+  check_l3                   line=179  opens_file=False computes_hash=False writes_file=False
+  no_relaxation_check        line=227  opens_file=False computes_hash=False writes_file=False
+  meta_test                  line=249  opens_file=False computes_hash=False writes_file=False
+  main                       line=354  opens_file=True  computes_hash=False writes_file=True
+  run                        line=255  opens_file=False computes_hash=False writes_file=False
+  cp                         line=382  opens_file=False computes_hash=False writes_file=False
+  w_all5_empty               line=385  opens_file=False computes_hash=False writes_file=False
+  w_3of5_empty               line=396  opens_file=False computes_hash=False writes_file=False
+  w_1_oracle_false           line=406  opens_file=False computes_hash=False writes_file=False
+  w_drop_cert                line=414  opens_file=False computes_hash=False writes_file=False
+  w_oracle_same_author       line=421  opens_file=False computes_hash=False writes_file=False
+  w_unsealed_whitelist       line=429  opens_file=False computes_hash=False writes_file=False
+  w_extra_true_flip          line=432  opens_file=False computes_hash=False writes_file=False
+  w_adversarial_leak         line=438  opens_file=False computes_hash=False writes_file=False
+  g_reworded_quote           line=449  opens_file=False computes_hash=False writes_file=False
+  g_extra_adversarial_caught line=458  opens_file=False computes_hash=False writes_file=False
+  repaired_predicate         line=471  opens_file=False computes_hash=False writes_file=False
+  leaky                      line=442  opens_file=False computes_hash=False writes_file=False
+
+=== STEP 2: SIGNATURES ===
+{"no_relaxation_check_params": ["items", "flips", "whitelist", "registered_tokens", "spec_keys", "certificates", "spec_roles", "predicate", "adversarial_corpus", "predicate_author", "whitelist_author", "whitelist_sealed", "mutation_payload"], "check_l1_params": ["items", "flips", "whitelist", "registered_tokens", "predicate_spec_keys", "whitelist_sealed", "whitelist_author"], "certificate_ok_params": ["cert", "required_roles"]}
+
+=== STEP 2: L1 RECOMPUTE ===
+{"rows": 32, "n_items": 302, "n_flips": 5, "n_whitelist": 5, "n_spec_keys": 5, "tested_token_counts": {"需谁批准": 6, "实跑输出": 1, "改前改后": 1, "脚本存在性": 1, "可重建": 1}, "n_tested": 10, "n_structurally_untested": 292, "coverage_ratio": 0.0331, "wl_tokens": ["可重建", "实跑输出", "改前改后", "脚本存在性", "需谁批准"], "spec_keys": ["可重建", "实跑输出", "改前改后", "脚本存在性", "需谁批准"], "wl_tokens_eq_spec_keys": true, "multiset_same_as_set_here": true}
+
+=== STEP 3: MY OWN 8 BENIGN + 3 HARDER WORLDS ===
+  B1  理想世界:满足检验自身(E)条件(第6个真实注册要素)                          VERDICT=PASS  L1=True  L2=True  L3=True  L1prob=[]
+  B2  合规同源:第三方封印独立白名单,token集=SPECS键                        VERDICT=ALARM L1=False L2=True  L3=True  L1prob=["L1: SELF_CERTIFIED -- whitelist token multiset == predicate spec keys; 'outside=0' is a design consequence, not evidence"]
+  B3  全覆盖:registered_tokens=全部item token                   VERDICT=PASS  L1=True  L2=True  L3=True  L1prob=[]
+  B4  第三方ORACLE真值表(真sha256封印)                              VERDICT=PASS  L1=True  L2=True  L3=True  L1prob=[]
+  B5  对抗样本全抓(13+3=16)                                      VERDICT=PASS  L1=True  L2=True  L3=True  L1prob=[]
+  B6  追加1条真语义等价翻案                                          VERDICT=PASS  L1=True  L2=True  L3=True  L1prob=[]
+  B7  良性引文改写                                               VERDICT=PASS  L1=True  L2=True  L3=True  L1prob=[]
+  B8  删1对白名单并同步删flip/证书                                    VERDICT=PASS  L1=True  L2=True  L3=True  L1prob=[]
+  H1  现盘真缺陷全修好且不加padding                                   VERDICT=ALARM L1=False L2=True  L3=True  L1prob=["L1: SELF_CERTIFIED -- whitelist token multiset == predicate spec keys; 'outside=0' is a design consequence, not evidence"]
+  H2  最大合规(真封印+全覆盖+独立ORACLE)仅余同源                           VERDICT=ALARM L1=False L2=True  L3=True  L1prob=["L1: SELF_CERTIFIED -- whitelist token multiset == predicate spec keys; 'outside=0' is a design consequence, not evidence"]
+  H3  已知错:5份证书全伪造锚点/引文(检验端不可见)                             VERDICT=PASS  L1=True  L2=True  L3=True  L1prob=[]
+  FP (my 8 benign)      : {"n": 8, "n_false_alarms": 1, "rate": 0.125, "wilson95": [0.022417, 0.470888], "false_alarm_ids": ["B2"]}
+  FP (spec-consistent 7): {"n": 7, "n_false_alarms": 0, "wilson95": [0.0, 0.35433]}
+  Reply's Wilson check  : {"wilson95_4_of_8": [0.215216, 0.784784], "wilson95_4_of_10": [0.16818, 0.687326], "wilson95_3_of_9": [0.120584, 0.645798]}
+
+=== STEP 4: PADDING / COVERAGE / META / FORGERY / GUARD / LEAKS ===
+P9  padding      : {"with_dummy_extra_key": {"VERDICT": "PASS", "L1_ok": true, "L2_ok": true, "L3_ok": true, "L1_problems": [], "L1_coverage": 0.0331, "L1_self_certified": false, "L3_caught": 13, "L3_total": 13}, "without_dummy_extra_key": {"VERDICT": "ALARM", "L1_ok": false, "L2_ok": true, "L3_ok": true, "L1_problems": ["L1: SELF_CERTIFIED -- whitelist token multiset == predicate spec keys; 'outside=0' is a design consequence, not evidence"], "L1_coverage": 0.0331, "L1_self_certified": true, "L3_caught": 13, "L3_total": 13}, "dummy_key": "额外预留要素"}
+P11 coverage 0.0 : {"VERDICT": "PASS", "L1_ok": true, "L2_ok": true, "L3_ok": true, "L1_problems": [], "L1_coverage": 0.0, "L1_self_certified": false, "L3_caught": 13, "L3_total": 13, "check_l1_problems": []}
+P3  meta empty   : {"baseline_VERDICT": "ALARM", "n_wrong": 0, "n_good": 0, "CHECKER_VALID": true}
+P4  wrong baseln : {"baseline_VERDICT": "ALARM", "n_false_alarms": 2, "CHECKER_VALID": false}
+P7  power bounds : {"sensitivity_lower_9of9": 0.716871, "fp_upper_0of2": 0.776393}
+P1  forged certs : {"VERDICT": "PASS", "L1_ok": true, "L2_ok": true, "L3_ok": true, "L1_problems": [], "L1_coverage": 0.0331, "L1_self_certified": false, "L3_caught": 13, "L3_total": 13, "anchor_files_exist": [false, false, false, false, false]}
+P2  guard fit    : 13/13 corpus items contain >=1 author guard word
+P2  novel        : [{"id": "N-EMPTY-1", "author_guard_hit": false, "my_guard_hit": true, "real_r9s_present": true, "my_robust_present": false}, {"id": "N-EMPTY-2", "author_guard_hit": false, "my_guard_hit": true, "real_r9s_present": true, "my_robust_present": false}, {"id": "N-EMPTY-3", "author_guard_hit": false, "my_guard_hit": true, "real_r9s_present": false, "my_robust_present": false}]
+P2  good+novel   : PASS caught=16/16
+P6  real leaks   : {"n": 13, "leaked_by_real_R9S": ["CF3", "CF5", "WCF5", "V2", "V3", "V6"], "leaked_by_MY_guard": []}
+P10 per-layer    : {"n_wrong": 9, "per_layer_alarm_counts": {"L1": 3, "L2": 6, "L3": 1}}
+    provenance   : {"ADVERSARIAL_defined_in_fnr_check_lines": "291-305", "author_guard_defined_in_fnr_check_lines": "471-483", "upstream_whitelist_audit_quotes_CF3": false, "upstream_whitelist_audit_quotes_WCF5": true, "note": "corpus text predates _fnr_check.py in upstream audit files; the 13 payloads are NOT all authored in _fnr_check.py"}
+
+=== STEP 6: READ-ONLY INPUTS UNCHANGED DURING MY RUN ===
+  ALL_UNCHANGED = True
+
+WROTE _cfav_out.json

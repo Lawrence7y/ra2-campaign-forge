@@ -1,0 +1,180 @@
+W7_C_PROBE_START 2026-11-06T00:05:52
+PYTHON 3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]
+
+==============================================================================
+0. 被核对象 SHA256 / 字节数（本次实算，二进制读流）
+==============================================================================
+card_0087E8E0.md           size= 44403 sha256=e3afe2abb9bcac4be6f7e9666a836c6dff3499e4be9796ab568c6347bd1534b8
+card_00A8EC34.md           size= 31647 sha256=6cde19c881ab09f6f7b1246fe75dbc41d7538d0dbba59c9b528db9b35d821b46
+card_00B0CE88.md           size= 32262 sha256=c16cf1f3a3e5c254f8c232534a738ca24ced23803051f0fdb1e6145fc33ea578
+card_00A8ED50.md           size= 37864 sha256=a5926b6398879f880c7fe0c1726fec4a29306c9670bfcc67dad67aca36f3325e
+Q2_ALPHA.md                size= 31712 sha256=27055e6b94f892c6a53facc07adf908688c151eca82cfe56da8133cee8507663
+Q3_FRAME_EDGE_SPEC.md      size= 38799 sha256=0d3e13875855ea4b5d36f22e6f622916ac15b479944767fe4d067aaee5639c5d
+Q4_REDLINE.md              size= 23037 sha256=2189d17a115249e20d9f31465d7ec38535b10c10904db5c32212a5ecc886c329
+TOTAL_BYTES_7 239724
+COMPOSITE_SHA256_of_concat_in_table_order f323f77dd0f64fc9c1a2edfb138ece70667418ed11bac0987ef1918e7ac0b579
+
+==============================================================================
+1. 目标镜像 Engine() 绑定与覆盖率
+==============================================================================
+EXE_SHA256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+EXPECT_SHA256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+EXE_SHA_MATCH True
+IMAGE_BASE 0x400000
+COVERAGE(pct,insns,resync) (99.99837567729335, 1394120, 66)
+SECTIONS [('.text', '0x401000', '0x3df38d', '0x1000', '0x3e0000'), ('.rdata', '0x7e1000', '0x30074', '0x3e1000', '0x31000'), ('.data', '0x812000', '0x367be4', '0x412000', '0x6c000'), ('.rsrc', '0xb7a000', '0x18128', '0x47e000', '0x19000'), ('.detour', '0xb93000', '0x2718', '0x497000', '0x3000')]
+-- building direct-call census over full stream (single pass) --
+  CALLERS 0x42A5B0 count=3 ['0x42c90d', '0x42cc80', '0x42d17d']
+  CALLERS 0x42C900 count=2 ['0x4cbc31', '0x504dae']
+  CALLERS 0x42D170 count=18 ['0x4d3c9c', '0x4d4401', '0x4d4727', '0x4d4828', '0x4d48e3', '0x4d4907', '0x4d4a5e', '0x4d679e', '0x4d684a', '0x4dcda8', '0x504b6a', '0x522314', '0x587e84', '0x587f0a', '0x587f7a', '0x587ff2', '0x64d64b', '0x7460dd']
+  CALLERS 0x6D2790 count=58 ['0x42428f', '0x442184', '0x445d70', '0x44e591', '0x4807b4', '0x480c8f', '0x480e0c', '0x485384', '0x485a0f', '0x485ad3', '0x486124', '0x486270', '0x486366', '0x486fd1', '0x48735d', '0x4875fd', '0x48a094', '0x48a20f', '0x4a1a78', '0x4a1bdc', '0x4d1338', '0x4d184b', '0x56c1c7', '0x56ea98', '0x56ec53']
+  CALLERS 0x6D3D10 count=3 ['0x4f44df', '0x4f44f4', '0x4f4515']
+  CALLERS 0x6F8DF0 count=2 ['0x445f68', '0x4d9942']
+
+==============================================================================
+2. 对① C1 判定：代际戳「尝试代理 / 不能说展开很多节点」的字节底座
+==============================================================================
+-- ResetWorkspace W1 自增/写回 + 回绕早退 jne : disasm(0x42A5F0, 0x20) --
+  0x0042a5f0 7497                     je       0x42a589
+  0x0042a5f2 fc                       cld      
+  0x0042a5f3 8b38                     mov      edi, dword ptr [eax]
+  0x0042a5f5 3bd7                     cmp      edx, edi
+  0x0042a5f7 7ef2                     jle      0x42a5eb
+  0x0042a5f9 8930                     mov      dword ptr [eax], esi
+  0x0042a5fb 8b4128                   mov      eax, dword ptr [ecx + 0x28]
+  0x0042a5fe 40                       inc      eax
+  0x0042a5ff 894128                   mov      dword ptr [ecx + 0x28], eax
+  0x0042a602 0f8580000000             jne      0x42a688
+  0x0042a608 a1dcc28900               mov      eax, dword ptr [0x89c2dc]
+  0x0042a60d 0fafc0                   imul     eax, eax
+-- 回绕全清分支尾部 W2 第二次自增（+2 跳 0） : disasm(0x42A67F, 0x10) --
+  0x0042a67f 8b4128                   mov      eax, dword ptr [ecx + 0x28]
+  0x0042a682 5d                       pop      ebp
+  0x0042a683 40                       inc      eax
+  0x0042a684 5b                       pop      ebx
+  0x0042a685 894128                   mov      dword ptr [ecx + 0x28], eax
+  0x0042a688 5f                       pop      edi
+  0x0042a689 5e                       pop      esi
+  0x0042a68a 83c408                   add      esp, 8
+  0x0042a68d c3                       ret      
+  0x0042a68e 90                       nop      
+-- 构造函数体：初值 -1 / W3 写 +0x28 : disasm(0x42A6D0, 0x38) --
+  0x0042a6d0 83ec0c                   sub      esp, 0xc
+  0x0042a6d3 b001                     mov      al, 1
+  0x0042a6d5 53                       push     ebx
+  0x0042a6d6 55                       push     ebp
+  0x0042a6d7 56                       push     esi
+  0x0042a6d8 8bf1                     mov      esi, ecx
+  0x0042a6da 33db                     xor      ebx, ebx
+  0x0042a6dc 83c9ff                   or       ecx, 0xffffffff
+  0x0042a6df 57                       push     edi
+  0x0042a6e0 881e                     mov      byte ptr [esi], bl
+  0x0042a6e2 885e01                   mov      byte ptr [esi + 1], bl
+  0x0042a6e5 885e02                   mov      byte ptr [esi + 2], bl
+  0x0042a6e8 884603                   mov      byte ptr [esi + 3], al
+  0x0042a6eb c746040000803f           mov      dword ptr [esi + 4], 0x3f800000
+  0x0042a6f2 884608                   mov      byte ptr [esi + 8], al
+  0x0042a6f5 895e18                   mov      dword ptr [esi + 0x18], ebx
+  0x0042a6f8 895e1c                   mov      dword ptr [esi + 0x1c], ebx
+  0x0042a6fb 895e20                   mov      dword ptr [esi + 0x20], ebx
+  0x0042a6fe 895e24                   mov      dword ptr [esi + 0x24], ebx
+  0x0042a701 894e28                   mov      dword ptr [esi + 0x28], ecx
+  0x0042a704 894e2c                   mov      dword ptr [esi + 0x2c], ecx
+-- 同步重试层 0x42CC80 再次 call 0x42A5B0 : disasm(0x42CC70, 0x30) --
+  0x0042cc70 3c56                     cmp      al, 0x56
+  0x0042cc72 47                       inc      edi
+  0x0042cc73 8bcd                     mov      ecx, ebp
+  0x0042cc75 897c2440                 mov      dword ptr [esp + 0x40], edi
+  0x0042cc79 e852000000               call     0x42ccd0
+  0x0042cc7e 8bcd                     mov      ecx, ebp
+  0x0042cc80 e82bd9ffff               call     0x42a5b0
+  0x0042cc85 8a5538                   mov      dl, byte ptr [ebp + 0x38]
+  0x0042cc88 8b4c241c                 mov      ecx, dword ptr [esp + 0x1c]
+  0x0042cc8c 84d2                     test     dl, dl
+  0x0042cc8e 0f95c0                   setne    al
+  0x0042cc91 3bf9                     cmp      edi, ecx
+  0x0042cc93 8844244c                 mov      byte ptr [esp + 0x4c], al
+  0x0042cc97 7d27                     jge      0x42ccc0
+  0x0042cc99 84c0                     test     al, al
+-- 另一入口 0x42D170 prologue : disasm(0x42D170, 0x14) --
+  0x0042d170 83ec08                   sub      esp, 8
+  0x0042d173 53                       push     ebx
+  0x0042d174 55                       push     ebp
+  0x0042d175 8bd9                     mov      ebx, ecx
+  0x0042d177 56                       push     esi
+  0x0042d178 57                       push     edi
+  0x0042d179 c6433801                 mov      byte ptr [ebx + 0x38], 1
+  0x0042d17d e82ed4ffff               call     0x42a5b0
+-- 另一入口：递增早于可能失败的检查 0x42D229 : disasm(0x42D220, 0x14) --
+  0x0042d220 8bcb                     mov      ecx, ebx
+  0x0042d222 e869f0ffff               call     0x42c290
+  0x0042d227 84c0                     test     al, al
+  0x0042d229 0f8423020000             je       0x42d452
+  0x0042d22f 8b7c241c                 mov      edi, dword ptr [esp + 0x1c]
+-- SearchCore 栈局部 [esp+0x28]（节点轮数，非本 VA） : disasm(0x429AB0, 0x10) --
+  0x00429ab0 00c1                     add      cl, al
+  0x00429ab2 e109                     loope    0x429abd
+  0x00429ab4 03ca                     add      ecx, edx
+  0x00429ab6 c744242800000000         mov      dword ptr [esp + 0x28], 0
+IMM_mov_ecx_0x87E8B8 count=28 ['0x40afa0', '0x40afc0', '0x4cbc2c', '0x4d3c97', '0x4d43fc', '0x4d4722', '0x4d4823', '0x4d48de', '0x4d48fe', '0x4d4a59', '0x4d6799', '0x4d6845', '0x4dcda3', '0x504b61', '0x504da9', '0x52230f', '0x5671a0', '0x56721a', '0x581f77', '0x584d86', '0x584e2b', '0x587e76', '0x587efc', '0x587f6c', '0x587fe4', '0x64d646', '0x68519c', '0x7460d8']
+RAW_E8_to_0x42A5B0 count=3 ['0x42c90d', '0x42cc80', '0x42d17d']
+C1_NOTE 节点展开量在 SearchCore 的 [esp+0x28]（见 0x429AB6/0x42A3D4），不是 [this+0x28]
+
+==============================================================================
+3. 对② C2 判定：脏矩形 Count 语义 + W3 抄录订正 + DrawIfVisible 零 call
+==============================================================================
+-- Render 判脏段：0x6D3DF0 读 Count / 0x6D3DF5 / 0x6D3DFF / 0x6D3E01 : disasm(0x6D3DE8, 0x28) --
+  0x006d3de8 8a857c0d0000             mov      al, byte ptr [ebp + 0xd7c]
+  0x006d3dee 84c0                     test     al, al
+  0x006d3df0 a188ceb000               mov      eax, dword ptr [0xb0ce88]
+  0x006d3df5 756e                     jne      0x6d3e65
+  0x006d3df7 84c9                     test     cl, cl
+  0x006d3df9 0f859c000000             jne      0x6d3e9b
+  0x006d3dff 85c0                     test     eax, eax
+  0x006d3e01 7566                     jne      0x6d3e69
+  0x006d3e03 8a8d7d0d0000             mov      cl, byte ptr [ebp + 0xd7d]
+  0x006d3e09 84c9                     test     cl, cl
+-- CRT 构造 0x6D1A60：Count 置 0、vptr 绝对地址 : disasm(0x6D1A60, 0x40) --
+  0x006d1a60 33c0                     xor      eax, eax
+  0x006d1a62 68a01a6d00               push     0x6d1aa0
+  0x006d1a67 a37cceb000               mov      dword ptr [0xb0ce7c], eax
+  0x006d1a6c a380ceb000               mov      dword ptr [0xb0ce80], eax
+  0x006d1a71 c60584ceb00001           mov      byte ptr [0xb0ce84], 1
+  0x006d1a78 a285ceb000               mov      byte ptr [0xb0ce85], al
+  0x006d1a7d c70578ceb0009c427f00     mov      dword ptr [0xb0ce78], 0x7f429c
+  0x006d1a87 c7058cceb0000a000000     mov      dword ptr [0xb0ce8c], 0xa
+  0x006d1a91 a388ceb000               mov      dword ptr [0xb0ce88], eax
+  0x006d1a96 e8ef7c0f00               call     0x7c978a
+  0x006d1a9b 59                       pop      ecx
+  0x006d1a9c c3                       ret      
+  0x006d1a9d 90                       nop      
+  0x006d1a9e 90                       nop      
+  0x006d1a9f 90                       nop      
+-- RegisterDirtyArea 序言：ecx 被绝对地址覆盖（证明非 TacticalClass 成员） : disasm(0x6D2790, 0x10) --
+  0x006d2790 83ec58                   sub      esp, 0x58
+  0x006d2793 8b0d88ceb000             mov      ecx, dword ptr [0xb0ce88]
+  0x006d2799 53                       push     ebx
+  0x006d279a 33c0                     xor      eax, eax
+  0x006d279c 55                       push     ebp
+  0x006d279d 56                       push     esi
+  0x006d279e 3bc8                     cmp      ecx, eax
+-- 追加新条目：读 Count / inc / 写回 W3 : disasm(0x6D2A90, 0x20) --
+  0x006d2a90 a4                       movsb    byte ptr es:[edi], byte ptr [esi]
+  0x006d2a91 0000                     add      byte ptr [eax], al
+  0x006d2a93 008b0d88ceb0             add      byte ptr [ebx - 0x4f3177f3], cl
+  0x006d2a99 008d7424548b             add      byte ptr [ebp - 0x74abdb8c], cl
+  0x006d2a9f c141890d                 rol      dword ptr [ecx - 0x77], 0xd
+  0x006d2aa3 88ce                     mov      dh, cl
+  0x006d2aa5 b000                     mov      al, 0
+  0x006d2aa7 8b0d7cceb000             mov      ecx, dword ptr [0xb0ce7c]
+  0x006d2aad 8d0480                   lea      eax, [eax + eax*4]
+-- 独立 Clear 例程 0x6DA980 : disasm(0x6DA980, 0x18) --
+  0x006da980 8b0d88ceb000             mov      ecx, dword ptr [0xb0ce88]
+  0x006da986 85c9                     test     ecx, ecx
+  0x006da988 7e3b                     jle      0x6da9c5
+  0x006da98a 56                       push     esi
+  0x006da98b 57                       push     edi
+  0x006da98c 7e35                     jle      0x6da9c3
+  0x006da98e 49                       dec      ecx
+  0x006da98f 33d2                     xor      edx, edx
+  0x006da991 85c9                     test     ecx, ecx

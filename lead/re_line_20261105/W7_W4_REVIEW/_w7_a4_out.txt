@@ -1,0 +1,337 @@
+
+==============================================================================
+S0  被核对象物理量 + 目标镜像绑定（全部本次实算/实读）
+==============================================================================
+CARD_PATH      = D:\Project\ra2-campaign-forge\lead\re_line_20261105\W4_FIELD_SPEC\sections\card_00A8ED50.md
+CARD_SIZE      = 37864
+CARD_SHA256    = a5926b6398879f880c7fe0c1726fec4a29306c9670bfcc67dad67aca36f3325e
+CARD_READ_AT   = 2026-11-05T23:05:48.636285
+EXE_PATH       = D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+EXE_SHA256     = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+IMAGE_BASE     = 0x400000
+COVERAGE       = (99.99837567729335, 1394120, 66)
+TEXT_RANGE     = 0x401000 .. 0x7e1000
+
+==============================================================================
+S1  ① +0x98 门控：0x55B954 / 0x55B95A / 0x55B95C（对象内 1 字节、无固定全局 VA）
+==============================================================================
+
+--- COUNT_LOOP_55B93F 0x55b93f + 0x30 ---
+  0x55b93f  a150eda800      mov      eax, dword ptr [0xa8ed50]
+  0x55b944  8d70ff          lea      esi, [eax - 1]
+  0x55b947  85f6            test     esi, esi
+  0x55b949  7c1b            jl       0x55b966
+  0x55b94b  8b0d44eda800    mov      ecx, dword ptr [0xa8ed44]
+  0x55b951  8b0cb1          mov      ecx, dword ptr [ecx + esi*4]
+  0x55b954  8a8198000000    mov      al, byte ptr [ecx + 0x98]
+  0x55b95a  84c0            test     al, al
+  0x55b95c  7405            je       0x55b963
+  0x55b95e  8b11            mov      edx, dword ptr [ecx]
+  0x55b960  ff525c          call     dword ptr [edx + 0x5c]
+  0x55b963  4e              dec      esi
+  0x55b964  79e5            jns      0x55b94b
+  0x55b966  a150eba800      mov      eax, dword ptr [0xa8eb50]
+  0x55b96b  8d70ff          lea      esi, [eax - 1]
+
+--- ITEMS_LOAD_AND_GATE_0x98 0x55b94b + 0x18 (operand detail) ---
+  RAW 0x55b94b = 8b0d44eda8008b0cb18a819800000084c074058b11ff525c
+  0x55b94b  mov      ecx, dword ptr [0xa8ed44]        op_sizes=[4, 4]
+      op0 REG ecx size=4 access=2
+      op1 MEM base=NONE index=NONE scale=1 disp=0xa8ed44 size=4 access=1
+  0x55b951  mov      ecx, dword ptr [ecx + esi*4]     op_sizes=[4, 4]
+      op0 REG ecx size=4 access=2
+      op1 MEM base=ecx index=esi scale=4 disp=0x0 size=4 access=1
+  0x55b954  mov      al, byte ptr [ecx + 0x98]        op_sizes=[1, 1]
+      op0 REG al size=1 access=2
+      op1 MEM base=ecx index=NONE scale=1 disp=0x98 size=1 access=1
+  0x55b95a  test     al, al                           op_sizes=[1, 1]
+      op0 REG al size=1 access=1
+      op1 REG al size=1 access=1
+  0x55b95c  je       0x55b963                         op_sizes=[4]
+      op0 IMM 0x55b963 size=4
+  0x55b95e  mov      edx, dword ptr [ecx]             op_sizes=[4, 4]
+      op0 REG edx size=4 access=2
+      op1 MEM base=ecx index=NONE scale=1 disp=0x0 size=4 access=1
+  0x55b960  call     dword ptr [edx + 0x5c]           op_sizes=[4]
+      op0 MEM base=edx index=NONE scale=1 disp=0x5c size=4 access=1
+
+--- CALL_AND_BACKEDGE 0x55b960 + 0x8 ---
+  0x55b960  ff525c          call     dword ptr [edx + 0x5c]
+  0x55b963  4e              dec      esi
+  0x55b964  79e5            jns      0x55b94b
+
+[S1.a] 0x55B954 处的访存操作数：mem.disp=0x98、base=ecx(寄存器)、size=1
+       上列 operand detail 中 op1 MEM 直接给出：base=ecx / disp=0x98 / size=1 / access=READ
+       ⇒ 不是 [absolute VA]，是 [obj+0x98]；obj 来自 0x55B94B 的 [0xA8ED44] (Items 堆指针)
+[S1.b] 0x55B95C 的 je 目标：0x55B95C+2 + 0x05 = 0x55b963
+       => 跳过 0x55B95E 的 mov edx,[ecx] 与 0x55B960 的 call，落到 dec esi
+[S1.c] disp_hits(0x98) 绝对地址访存（若存在固定全局 VA=0x98 会命中）: 0 处 []
+[S1.d] 循环体 0x55B93F..0x55B966 内全部「绝对地址访存」:
+        ('0x55b93f', 'mov', 'eax, dword ptr [0xa8ed50]')
+        ('0x55b94b', 'mov', 'ecx, dword ptr [0xa8ed44]')
+        ('0x55b966', 'mov', 'eax, dword ptr [0xa8eb50]')
+       ⇒ 仅 [0xA8ED50] (Count) 与 [0xA8ED44] (Items 指针)；+0x98 标志本身无绝对地址
+[S1.e] 全 .text 中 size==1 的 [reg+0x98] 访存: 44 处 (W=22 R=22)
+       0x55B8F0..0x55BB30 主更新循环块内命中:
+        0x55b906 R mov al, byte ptr [ecx + 0x98]
+        0x55b92d R mov al, byte ptr [ecx + 0x98]
+        0x55b954 R mov al, byte ptr [ecx + 0x98]
+        0x55b97b R mov al, byte ptr [ecx + 0x98]
+        0x55b9a2 R mov al, byte ptr [ecx + 0x98]
+        0x55b9c9 R mov al, byte ptr [ecx + 0x98]
+        0x55b9f0 R mov al, byte ptr [ecx + 0x98]
+        0x55ba17 R mov al, byte ptr [ecx + 0x98]
+        0x55ba3e R mov al, byte ptr [ecx + 0x98]
+        0x55ba65 R mov al, byte ptr [ecx + 0x98]
+        0x55ba8c R mov al, byte ptr [ecx + 0x98]
+        0x55baa5 R mov al, byte ptr [esi + 0x98]
+        0x55bac6 W mov byte ptr [esi + 0x98], al
+        0x55bae7 R mov cl, byte ptr [eax + 0x98]
+        0x55bb27 W mov byte ptr [eax + 0x98], 0
+       disp_hits_field(0x98) 全量(含非 byte 宽) = 610 处
+
+==============================================================================
+S2  ② 二道门 +0x90：0x4666F7 mov al,[ebp+0x90] / 0x4666FF je 0x467fee
+==============================================================================
+
+--- UPDATE_0x4666E0_HEAD 0x4666e0 + 0x48 ---
+  0x4666e0  55              push     ebp
+  0x4666e1  8bec            mov      ebp, esp
+  0x4666e3  83e4f8          and      esp, 0xfffffff8
+  0x4666e6  81ec98010000    sub      esp, 0x198
+  0x4666ec  53              push     ebx
+  0x4666ed  55              push     ebp
+  0x4666ee  56              push     esi
+  0x4666ef  57              push     edi
+  0x4666f0  8be9            mov      ebp, ecx
+  0x4666f2  e879d71800      call     0x5f3e70
+  0x4666f7  8a8590000000    mov      al, byte ptr [ebp + 0x90]
+  0x4666fd  84c0            test     al, al
+  0x4666ff  0f84e9180000    je       0x467fee
+  0x466705  8a8558010000    mov      al, byte ptr [ebp + 0x158]
+  0x46670b  84c0            test     al, al
+  0x46670d  747a            je       0x466789
+  0x46670f  8b8554010000    mov      eax, dword ptr [ebp + 0x154]
+  0x466715  85c0            test     eax, eax
+  0x466717  0f85d1180000    jne      0x467fee
+  0x46671d  8b15b8f5b000    mov      edx, dword ptr [0xb0f5b8]
+  0x466723  8d442410        lea      eax, [esp + 0x10]
+  0x466727  50              push     eax
+
+--- SECOND_GATE_0x90 0x4666f7 + 0x10 (operand detail) ---
+  RAW 0x4666f7 = 8a859000000084c00f84e91800008a85
+  0x4666f7  mov      al, byte ptr [ebp + 0x90]        op_sizes=[1, 1]
+      op0 REG al size=1 access=2
+      op1 MEM base=ebp index=NONE scale=1 disp=0x90 size=1 access=1
+  0x4666fd  test     al, al                           op_sizes=[1, 1]
+      op0 REG al size=1 access=1
+      op1 REG al size=1 access=1
+  0x4666ff  je       0x467fee                         op_sizes=[4]
+      op0 IMM 0x467fee size=4
+[S2.a] 0x4666FF 字节 = 0f84e9180000；rel32 = 0x18e9；目标 = 0x4666FF+6+0x18E9 = 0x467fee
+
+--- EARLY_EXIT_0x467FEE 0x467fee + 0x10 ---
+  0x467fee  5f              pop      edi
+  0x467fef  5e              pop      esi
+  0x467ff0  5d              pop      ebp
+  0x467ff1  5b              pop      ebx
+  0x467ff2  8be5            mov      esp, ebp
+  0x467ff4  5d              pop      ebp
+  0x467ff5  c3              ret      
+  0x467ff6  90              nop      
+  0x467ff7  90              nop      
+  0x467ff8  90              nop      
+  0x467ff9  90              nop      
+  0x467ffa  90              nop      
+  0x467ffb  90              nop      
+  0x467ffc  90              nop      
+  0x467ffd  90              nop      
+[S2.b] 0x4666E0..0x468000 内所有跳向 0x467FEE 的指令（证明它是共享早退/收尾点）:
+       0x4666ff je 0x467fee
+       0x466717 jne 0x467fee
+       ⇒ +0x90 与 +0x154 两个门都汇入同一 pop/ret 早退点，不是「只返回一次」
+
+[S2.c] 0x55B960 的 call [edx+0x5c] 到 0x4666E0 的 vtable 链（进 B 函数体核实）
+       0x55B95E bytes = 8b11ff525c
+       u32(0x7E46E0) COL            = 0x7fc7b0
+       u32(0x7E46E4) vptr[0]       = 0x410260
+       0x7E46E4 + 0x5C             = 0x7e4740
+       u32(0x7E4740) vptr[+0x5C]   = 0x4666e0
+       0x466425 bytes              = c706e4467e00 (ctor 写 vptr)
+
+--- CTOR_VPTR_WRITE_ALIGNED_0x466425 0x466425 + 0x10 ---
+  0x466425  c706e4467e00    mov      dword ptr [esi], 0x7e46e4
+  0x46642b  c700c8467e00    mov      dword ptr [eax], 0x7e46c8
+       u32(col+12)=u32(0x7fc7bc) = 0x81af70
+       RTTI name @0x81AF78      = b'.?AVBulletClass@@'
+       ⇒ [edx+0x5c] = 0x4666E0，且 RTTI 为 .?AVBulletClass@@
+
+==============================================================================
+S3  ③ 「Count ≥ 实际完成更新数」：循环结构与 ≤ 关系的字节依据
+==============================================================================
+[S3.a] 循环结构逐址（0x55B93F..0x55B966）：
+       0x55b93f  a150eda800   mov      eax, dword ptr [0xa8ed50]
+       0x55b944  8d70ff       lea      esi, [eax - 1]
+       0x55b947  85f6         test     esi, esi
+       0x55b949  7c1b         jl       0x55b966
+       0x55b94b  8b0d44eda800 mov      ecx, dword ptr [0xa8ed44]
+       0x55b951  8b0cb1       mov      ecx, dword ptr [ecx + esi*4]
+       0x55b954  8a8198000000 mov      al, byte ptr [ecx + 0x98]
+       0x55b95a  84c0         test     al, al
+       0x55b95c  7405         je       0x55b963
+       0x55b95e  8b11         mov      edx, dword ptr [ecx]
+       0x55b960  ff525c       call     dword ptr [edx + 0x5c]
+       0x55b963  4e           dec      esi
+       0x55b964  79e5         jns      0x55b94b
+[S3.b] 0x55B964 的 jns rel8 = 79e5；回边目标 = 0x55B964+2+(0xe5-0x100) = 0x55b94b
+       esi 初值 = Count-1 (0x55B944 lea esi,[eax-1])；0x55B949 jl 负数即空；
+       每轮 0x55B963 dec esi / 0x55B964 jns 回跳 ⇒ 迭代次数 ≤ 快照时的 Count
+[S3.c] 每轮至多 1 次 call [edx+0x5c]：0x55B95C je 跳过 ⇒ Update 调用数 ≤ 迭代数 ≤ Count
+[S3.c2] 循环体 0x55B94B..0x55B964 内是否重读 [0xA8ED50]？
+       Count 在循环体内的重读次数 = 0 ⇒ esi 初值由循环外一次快照决定
+[S3.c3] 该循环块内是否出现对 [reg+0x98] 的「写」（可能改变门控）？
+       = [] （空 ⇒ 本块内门控字节不被改写）
+[S3.d] Update 体内 +0x90 / +0x158 / +0x154 门跳 0x467FEE 早退 ⇒
+       「跑完实质体的更新数 ≤ 调用数 ≤ Count」在本条可见路径内成立
+
+[S3.e] 作用域边界核查：是否存在「其它」调用 0x4666E0 的路径？
+       全 .text 直接 `call 0x4666e0` 命中: 0 处 []
+       全 .text `call dword ptr [reg+0x5c]` 命中: 166 处（含其它类的同名虚槽，非全为 Bullet）
+        0x410d89 dword ptr [edi + 0x5c]
+        0x410dd9 dword ptr [edx + 0x5c]
+        0x41134a dword ptr [esi + 0x5c]
+        0x4114c3 dword ptr [eax + 0x5c]
+        0x414be7 dword ptr [edx + 0x5c]
+        0x426b19 dword ptr [edi + 0x5c]
+        0x432f9b dword ptr [edx + 0x5c]
+        0x4330c3 dword ptr [edx + 0x5c]
+        0x43311c dword ptr [edx + 0x5c]
+        0x433199 dword ptr [edx + 0x5c]
+        0x433211 dword ptr [edx + 0x5c]
+        0x4334b1 dword ptr [edx + 0x5c]
+        0x43350a dword ptr [edx + 0x5c]
+        0x434905 dword ptr [edx + 0x5c]
+        0x437b23 dword ptr [edx + 0x5c]
+        0x437c2d dword ptr [ebp + 0x5c]
+        0x437d33 dword ptr [edi + 0x5c]
+        0x43fd05 dword ptr [edx + 0x5c]
+        0x44c243 dword ptr [eax + 0x5c]
+        0x45512e dword ptr [edx + 0x5c]
+        0x455326 dword ptr [edx + 0x5c]
+        0x4a374f dword ptr [ecx + 0x5c]
+        0x4a3766 dword ptr [ecx + 0x5c]
+        0x4a377d dword ptr [edx + 0x5c]
+       全 .text 直接 `call 0x55b8f0`（更新循环块头）命中: 0 处 []
+
+[S3.f] 0xA8ED50 绝对写/读点复核（disp_hits；卡称 3 W / 12 R = 15）
+       disp_hits(0xA8ED50) total 15  W 3  R 12
+        0x46646d R mov ecx, dword ptr [0xa8ed50]
+        0x4664a2 R mov ecx, dword ptr [0xa8ed50]
+        0x4664ab W mov dword ptr [0xa8ed50], ecx
+        0x466623 R mov ecx, dword ptr [0xa8ed50]
+        0x466630 W mov dword ptr [0xa8ed50], ecx
+        0x466646 R mov ecx, dword ptr [0xa8ed50]
+        0x4e6891 W mov dword ptr [0xa8ed50], eax
+        0x5344cb R cmp dword ptr [0xa8ed50], ebx
+        0x5344e0 R cmp dword ptr [0xa8ed50], ebx
+        0x55b93f R mov eax, dword ptr [0xa8ed50]
+        0x650534 R mov eax, dword ptr [0xa8ed50]
+        0x650571 R mov eax, dword ptr [0xa8ed50]
+        0x67cc5f R mov eax, dword ptr [0xa8ed50]
+        0x67cc7d R mov eax, dword ptr [0xa8ed50]
+        0x7193cc R mov eax, dword ptr [0xa8ed50]
+
+[S3.g] 卡 §8.1 依赖的「其它遍历族无 +0x98 门」核查（关系到「Count 决定遍历规模」口径）
+       0x650534 遍历族A: [reg+0x98] = [] ; call 指令 = [('0x65054b', 'dword ptr [eax + 0x34]'), ('0x65056c', '0x7ca7d8')]
+       0x67CC5F 遍历族B: [reg+0x98] = [] ; call 指令 = [('0x67cc7a', 'dword ptr [edx + 0x34]')]
+       0x7193CC 遍历族C: [reg+0x98] = [] ; call 指令 = [('0x7193ee', '0x468430')]
+       0x5344CB 清场: [reg+0x98] = [] ; call 指令 = [('0x5344dd', 'dword ptr [ecx + 8]')]
+       ⇒ 四处均不读 [reg+0x98]；其 call 为 +0x34/+0x08 等其它虚槽，不是 0x4666E0 更新体
+
+[S3.h] 卡 §3 称「原始 LE 字节 50 ED A8 00 全镜像 15 处」：独立复算
+       occurrences = 15
+       落在 .text 原始区间内 = 15
+       ⇒ 与 disp_hits 的 15 处一一对应（口径：绝对 disp32 访存）
+
+[S3.i] 卡 §1/§5 称 CRT 静态构造 0x4E6860..0x4E689C 逐槽写 0xA8ED40 容器
+
+--- CRT_CTOR_4E6860 0x4e6860 + 0x40 ---
+  0x4e6860  33c0            xor      eax, eax
+  0x4e6862  68a0684e00      push     0x4e68a0
+  0x4e6867  a344eda800      mov      dword ptr [0xa8ed44], eax
+  0x4e686c  a348eda800      mov      dword ptr [0xa8ed48], eax
+  0x4e6871  c6054ceda80001  mov      byte ptr [0xa8ed4c], 1
+  0x4e6878  a24deda800      mov      byte ptr [0xa8ed4d], al
+  0x4e687d  c70540eda80078467e00  mov      dword ptr [0xa8ed40], 0x7e4678
+  0x4e6887  c70554eda8000a000000  mov      dword ptr [0xa8ed54], 0xa
+  0x4e6891  a350eda800      mov      dword ptr [0xa8ed50], eax
+  0x4e6896  e8ef2e2e00      call     0x7c978a
+  0x4e689b  59              pop      ecx
+  0x4e689c  c3              ret      
+  0x4e689d  90              nop      
+  0x4e689e  90              nop      
+  0x4e689f  90              nop      
+       0x4E6891 bytes = a350eda800 (mov [0xa8ed50], eax)
+
+==============================================================================
+S4  补充：+0x98 初值与 +0x90 初值（构造体字节）、向量自身标志区分
+==============================================================================
+
+--- BASE_CTOR_5F3900 0x5f3900 + 0x98 ---
+  0x5f3900  53              push     ebx
+  0x5f3901  56              push     esi
+  0x5f3902  8bf1            mov      esi, ecx
+  0x5f3904  e867c8e1ff      call     0x410170
+  0x5f3909  33db            xor      ebx, ebx
+  0x5f390b  b8ff000000      mov      eax, 0xff
+  0x5f3910  895e24          mov      dword ptr [esi + 0x24], ebx
+  0x5f3913  895e28          mov      dword ptr [esi + 0x28], ebx
+  0x5f3916  895e2c          mov      dword ptr [esi + 0x2c], ebx
+  0x5f3919  89466c          mov      dword ptr [esi + 0x6c], eax
+  0x5f391c  894670          mov      dword ptr [esi + 0x70], eax
+  0x5f391f  b801000000      mov      eax, 1
+  0x5f3924  83c9ff          or       ecx, 0xffffffff
+  0x5f3927  894678          mov      dword ptr [esi + 0x78], eax
+  0x5f392a  888681000000    mov      byte ptr [esi + 0x81], al
+  0x5f3930  888690000000    mov      byte ptr [esi + 0x90], al
+  0x5f3936  888699000000    mov      byte ptr [esi + 0x99], al
+  0x5f393c  895e30          mov      dword ptr [esi + 0x30], ebx
+  0x5f393f  895e34          mov      dword ptr [esi + 0x34], ebx
+  0x5f3942  895e38          mov      dword ptr [esi + 0x38], ebx
+  0x5f3945  894e64          mov      dword ptr [esi + 0x64], ecx
+  0x5f3948  885e68          mov      byte ptr [esi + 0x68], bl
+  0x5f394b  885e74          mov      byte ptr [esi + 0x74], bl
+  0x5f394e  895e7c          mov      dword ptr [esi + 0x7c], ebx
+  0x5f3951  889e80000000    mov      byte ptr [esi + 0x80], bl
+  0x5f3957  889e82000000    mov      byte ptr [esi + 0x82], bl
+  0x5f395d  889e83000000    mov      byte ptr [esi + 0x83], bl
+  0x5f3963  889e84000000    mov      byte ptr [esi + 0x84], bl
+  0x5f3969  899e88000000    mov      dword ptr [esi + 0x88], ebx
+  0x5f396f  889e8c000000    mov      byte ptr [esi + 0x8c], bl
+  0x5f3975  889e8d000000    mov      byte ptr [esi + 0x8d], bl
+  0x5f397b  889e8e000000    mov      byte ptr [esi + 0x8e], bl
+  0x5f3981  889e8f000000    mov      byte ptr [esi + 0x8f], bl
+  0x5f3987  898e94000000    mov      dword ptr [esi + 0x94], ecx
+  0x5f398d  889e98000000    mov      byte ptr [esi + 0x98], bl
+       0x5F3930 bytes = 888690000000 (mov byte [esi+0x90], al)
+       0x5F398D bytes = 889e98000000 (mov byte [esi+0x98], bl)
+       0x4E6871 bytes = c6054ceda80001 (mov byte [0xA8ED4C], 1) 向量自身标志
+       0x4E6878 bytes = a24deda800c7 (mov byte [0xA8ED4D], al) 向量自身标志
+
+==============================================================================
+S5  诚实账（本次确实未验 / 不能从字节推出的事项）
+==============================================================================
+1. 未启动 gamemd.exe / ra2loader / YURI.exe；未读活进程内存；未写 RPM/hook/注入/dump/挂线程实现。
+2. 只做了磁盘 PE 静态反汇编；未做运行期真值/分布/扰动/跨帧归属/读失败率验证。
+3. 0x55B8F0 更新循环块的上层调用链未闭合（直接 call 命中为 0，见 S3.e）；
+   未证明该循环「每帧恰执行一次」，也未证明它是 MainLogicFrame(0x55D360) 函数体内部。
+4. 全镜像 [reg+0x5c] 间接 call 有其它命中，未逐个判定所属类/是否 Bullet 派生；
+   未证明 0x4666E0 是 BulletClass::Update 的唯一入口，也未排除派生类覆写 +0x5C 槽。
+5. +0x98 / +0x90 的符号名、精确布尔语义未定名；22 个 +0x98 写点未逐个进函数体核实业务性质。
+6. 「无固定全局 VA」仅就本门控指令的寻址方式（[ecx+0x98]，ecx 来自堆上 Items[i]）成立；
+   未穷尽证明不存在某个全局镜像字节；其它对象数组复用同一模板见 S1.e。
+7. disp_hits 口径 = 重同步线性解码的绝对 disp32 访存；别名间接写/rep movsd/读档反序列化等未穷尽
+   （与卡 §3.3 及 RULING_D19.md:102 一致，本复核不销该项）。
+8. 未核本卡与 Q2_ALPHA.md 的量纲归类一致性（属 C 组，不在 A4 单项范围）。
+
+PROBE_DONE

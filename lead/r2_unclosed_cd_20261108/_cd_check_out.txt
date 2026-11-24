@@ -1,0 +1,190 @@
+====================================================================================================
+【_cd_check.py】C 崩点1/2 + D 独立证成/硬阻断解除条件 补证实跑（零真机 / 零采样 / 只读）
+====================================================================================================
+§0 被核对象指纹（hashlib.sha256，本脚本实算）
+  compare      SHA256 = 4a3424050125b98c0dd3a9a76ec6603fc03ad976e0b9fdecfb34d3b683b94726，字节数 = 48343  (D:/Project/ra2-campaign-forge/lead/dtrigger_compare_20261107/CRITERIA_COMPARE.md)
+  dC_out       SHA256 = a0deb34a4aed83efe3d0b80dfff4f05eb28eeec5fac5613ff49316fd8081337a，字节数 = 13473  (D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/_dC_out.txt)
+  dC_script    SHA256 = ec64adac558e87e5cdf53563368c7aacea712222e70f303ca85deb83eb08ee3a，字节数 = 23115  (D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/_dC_recompute.py)
+  dD_align     SHA256 = 446978109968bf3d9d3fab49a6a176c5f504ddfdc5d46e6f95c87c8b463dc6e6，字节数 = 18733  (D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/_dD_align.py)
+  dD_check     SHA256 = f2f3c561ded7b209f9206891e688642913ae15410fd2abbe8b075a0165f91907，字节数 = 7909  (D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/_dD_check.py)
+  dD_check_out SHA256 = 7cdfcf9efb76ddffec3a8ea68a536b28f0099d2d571fc18c64d52cf0a8c9491b，字节数 = 5117  (D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/_dD_check_out.txt)
+  dD_md        SHA256 = bb61eedbddea61e9ffcb1ac8981dadd8b3ee0fb12c715ccb3e600ca78c50fac1，字节数 = 18262  (D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/_dD_PHYSICAL_S_ALIGNMENT.md)
+  probe        SHA256 = 3be36ba259b50c88751d2c1fca73a242421671e27676f3b629e8f523b8383a51，字节数 = 17525  (D:/Project/ra2-campaign-forge/lead/dtrigger_compare_20261107/_dtrigger_probe_out.txt)
+  r2closure    SHA256 = bf426786db82c34dd6b6d21e3022678285e3e22f52dbdaa5085d85c3b6f8fbde，字节数 = 22351  (D:/Project/ra2-campaign-forge/lead/criteria_r3_verify_20261108/R2_BREAKPOINTS_CLOSURE.md)
+  round2       SHA256 = bcd7c8e53f6987a899f78fd1bd8ae90247193f1897aadf15cc58daa45211982a，字节数 = 49968  (D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/CRITERIA_ROUND2.md)
+  ruling_d30   SHA256 = d5afc90c50bbf57be1e58bf9000b1940392337b6c57a444e3b084fe57983d04f，字节数 = 13197  (D:/Project/ra2-campaign-forge/lead/d30_ruling_20261106/RULING_D30.md)
+  stall_def    SHA256 = ed8951e72bd61cd322b1687c4496ec9fc0e8a362c1425d4020901228d885a001，字节数 = 27271  (D:/Project/ra2-campaign-forge/lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md)
+  supp         SHA256 = f0177d2cbafdb4dbd388d6b38b97d14ae73688f36f58df4f0fff7edc31a59b66，字节数 = 5088  (D:/Project/ra2-campaign-forge/lead/dtrigger_compare_20261107/_dtrigger_supplement_out.txt)
+  vD_out3      SHA256 = 0e5e84331b2126bd487b526c71095f432303974cdc3960b28794c32807bef84a，字节数 = 3352  (D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/_verify_D_out3.txt)
+
+§1 C 崩点1：_dC_recompute.py 的 emit 文字是否硬编码常量、all_pass 是否覆盖全部子断言
+  1a) emit() 调用分类（行号 / 类型 / 源片段）——聚焦 :330-370 段：
+    :330  INTERP/FORMAT    emit(" within50 != 0 的判据 = %d / %d %s" % (len(bad_within50), len(zero_crit), "PASS" if not bad_within50 else "
+    :332  LITERAL          emit(" 7b _dtrigger_supplement_out.txt（>50 列；非 -clean 档）：")
+    :341  LITERAL          emit(" 7c _dtrigger_probe_out.txt 主表（>50ms 列，逐行解析；-clean 变体不在该表）：")
+    :354  INTERP/FORMAT    emit(" 主表可解析行中「并非全部 >50ms」的判据 = %d %s" % (len(probe_bad), "PASS" if not probe_bad else "FAIL"))
+    :356  LITERAL          emit(" 7c-2 probe 细部行：C2-P95x3:106, C2-P99x3:128, C3-r4:150, C3-r8:161, C3-r12:172 " "均为 nTriggersBeyond50ms=n
+    :358  LITERAL          emit(" 7d 判据 -clean 变体（C3-r4-clean / C3-r8-clean）在 supplement/probe 无独立明细行；" "仅 metrics_out.txt:28,30 的 latP50
+    :360  LITERAL          emit(" 7e C3-r12 特例：metrics_out.txt:31 因 realHits=0 记 latP50=0.000ms（非「不越线」）；" "probe_out.txt:171-172 记 15/15 
+    :362  LITERAL          emit(" 7f 门槛定义：STALL_EVENT_DEFINITION.md:190 端到端 <50ms；:191 累积判定 >=100ms 不合格；" "RULING_D30.md:26,52 不得以等待 P95 
+    :364  LITERAL          emit(" 7g 口径边界（如实登记）：supplement_out.txt:44-45 明写物理起点 S 不可测，" "现有 waitAfterS_hat 只是下界；因此「越线」为 S_hat 锚下的实测结论，" "
+    :367  LITERAL          emit(" 7h 锚语义差异：C2-abs-P95x2 / C3-r4 / r8 / r12 主探针为「上一帧沿锚」，" "C3-r4-clean / r8-clean 与 C3-r2 为 runStart 锚（met
+    :336  INTERP/FORMAT    emit(" %-24s 无此行（补算表未列该档，含 -clean 变体）" % c)
+    :338  INTERP/FORMAT    emit(" %-24s supplement_out.txt:%-3d nTrig=%3d >50=%3d（%s） >=100=%3d" % (c, r["line"], r["nTrig"], r["gt50"], 
+    :346  INTERP/FORMAT    emit(" %-24s 无此行（主探针表未列 -clean / N16 / -r2 变体）" % c)
+    :349  INTERP/FORMAT    emit(" %-24s probe_out.txt:%-3d nTrig=%3d >50=%3d %s waitMed=%sms" % (c, r["line"], r["nTrig"], r["gt50"], "全部
+  1a-结论) :356-:369 区间内 emit 共 6 处，其中纯字面串 6 处、含插值/格式化 0 处。
+  1b) all_pass（:391-401）AST 提取：
+      引用变量 = A, A_collapse_gt0, A_nf_eq_ideal, A_preempt0, A_recall0, B, B_preempt0, B_preempt0_and_upideal, B_up_eq_ideal, bad_within50, chain_fail, decomp_fail, len, n_cells, nonneg_fail, probe_bad
+      比较项（Compare 源片段，11 个）：
+        n_cells == 156
+        len(A) == 54
+        len(B) == 102
+        len(A) + len(B) == 156
+        len(A_nf_eq_ideal) == 54
+        len(A_recall0) == 54
+        len(A_preempt0) == 0
+        len(A_collapse_gt0) == 54
+        len(B_preempt0) == 71
+        len(B_preempt0_and_upideal) == 71
+        len(B_up_eq_ideal) == 73
+  1c) 检查型变量是否进 all_pass 门：
+    decomp_fail                IN gate
+    nonneg_fail                IN gate
+    chain_fail                 IN gate
+    cap_eq_ideal               NOT in gate
+    A_nf_eq_ideal              IN gate
+    A_recall0                  IN gate
+    A_preempt0                 IN gate
+    A_collapse_gt0             IN gate
+    A_cap_eq_up                NOT in gate
+    A_up_eq_ideal              NOT in gate
+    A_maxloss_eq               NOT in gate
+    B_preempt0                 IN gate
+    B_up_eq_ideal              IN gate
+    B_preempt0_and_upideal     IN gate
+    B_upideal_but_preempt_gt0  NOT in gate
+    B_preempt0_recall_gt0      NOT in gate
+    B_nf_eq_ideal              NOT in gate
+    B_recall0                  NOT in gate
+    named_set                  NOT in gate
+    not_named                  NOT in gate
+    bad_within50               IN gate
+    probe_bad                  IN gate
+  1d) 「ge100」在脚本中的全部出现行（判定是否参与任何门/比较）：
+    :297  ge100=int(f0[8]))
+    :340  "全部越 50ms" if r["gt50"] == r["nTrig"] else "非全部", r["ge100"]))
+  1e) 总判定行 :420  emit("  总判定 = %s" % ("PASS（上述 9.1–9.7 均按本轮实跑成立）" if all_pass else "FAIL"))
+  1f) 7b 段（supplement 逐行「全部越 50ms/非全部」）是否存在聚合变量并入 all_pass：
+      all_pass 引用变量中含 supp/7b 相关者 = 无
+
+§2 C 崩点2：实算 13 档中「全部触发 ≥100ms」的档数（_dC_out.txt 7b + supplement 原件双源）
+  2a) 13 档名单（_dC_out.txt:80）= ['C2-N16-P95x2', 'C2-P95x2', 'C2-P95x3', 'C2-P99x2', 'C2-P99x3', 'C2-abs-P95x2', 'C3-N16-r2', 'C3-r12', 'C3-r2', 'C3-r4', 'C3-r4-clean', 'C3-r8', 'C3-r8-clean']
+  2a-注) NAMED_HIGH（脚本 :39-42 定义，§9.6「括注高档」）= ['C2-P95x3', 'C2-P99x3', 'C3-r4', 'C3-r4-clean', 'C3-r8', 'C3-r8-clean', 'C3-r12']
+  2b) _dC_out.txt 7b 段解析：有行 9 档、无行 4 档
+  2c) supplement 原件独立解析（13 档）：
+    C2-N16-P95x2     supplement_out.txt:17  nTrig= 45 >50= 45 >=100= 18  PARTIAL   [7b 对账: nTrig/gt50/ge100 全等]
+    C2-P95x2         supplement_out.txt:11  nTrig= 27 >50= 27 >=100=  4  PARTIAL   [7b 对账: nTrig/gt50/ge100 全等]
+    C2-P95x3         supplement_out.txt:12  nTrig= 19 >50= 19 >=100= 19  ALL>=100   [7b 对账: nTrig/gt50/ge100 全等]
+    C2-P99x2         supplement_out.txt:13  nTrig= 24 >50= 24 >=100=  1  PARTIAL   [7b 对账: nTrig/gt50/ge100 全等]
+    C2-P99x3         supplement_out.txt:14  nTrig= 18 >50= 18 >=100= 18  ALL>=100   [7b 对账: nTrig/gt50/ge100 全等]
+    C2-abs-P95x2     supplement 无行（_dC_out 7b 标记=无此行）
+    C3-N16-r2        supplement_out.txt:24  nTrig=195 >50=195 >=100=156  PARTIAL   [7b 对账: nTrig/gt50/ge100 全等]
+    C3-r12           supplement 无行（_dC_out 7b 标记=无此行）
+    C3-r2            supplement_out.txt:20  nTrig=180 >50=180 >=100=148  PARTIAL   [7b 对账: nTrig/gt50/ge100 全等]
+    C3-r4            supplement_out.txt:21  nTrig= 24 >50= 24 >=100= 24  ALL>=100   [7b 对账: nTrig/gt50/ge100 全等]
+    C3-r4-clean      supplement 无行（_dC_out 7b 标记=无此行）
+    C3-r8            supplement_out.txt:22  nTrig= 16 >50= 16 >=100= 16  ALL>=100   [7b 对账: nTrig/gt50/ge100 全等]
+    C3-r8-clean      supplement 无行（_dC_out 7b 标记=无此行）
+  2c-结论) 13 档中「全部触发 ≥100ms」（ge100==nTrig）的档数 = 4
+          全部≥100：C2-P95x3, C2-P99x3, C3-r4, C3-r8
+          部分≥100（5 档）：C2-N16-P95x2, C2-P95x2, C2-P99x2, C3-N16-r2, C3-r2
+          supplement 无行（4 档）：C2-abs-P95x2, C3-r12, C3-r4-clean, C3-r8-clean
+          双源对账（7b 表 vs supplement 原件）一致 = True
+  2d) 括注 7 档（NAMED_HIGH）视角：
+    C2-P95x3         nTrig= 19 >=100= 19  ALL>=100
+    C2-P99x3         nTrig= 18 >=100= 18  ALL>=100
+    C3-r4            nTrig= 24 >=100= 24  ALL>=100
+    C3-r4-clean      supplement 无行（行级 ≥100 数据缺失于 supplement）
+    C3-r8            nTrig= 16 >=100= 16  ALL>=100
+    C3-r8-clean      supplement 无行（行级 ≥100 数据缺失于 supplement）
+    C3-r12           supplement 无行（行级 ≥100 数据缺失于 supplement）
+  2e) probe_out.txt 细部行核对（7c-2 硬编码串引用 :106/:128/:150/:161/:172；7e 引用 :171-172）：
+    probe:106  nTriggersBeyond50ms=19/19 (100.00%)  >=50ms含边界=19
+    probe:128  nTriggersBeyond50ms=18/18 (100.00%)  >=50ms含边界=18
+    probe:150  nTriggersBeyond50ms=24/24 (100.00%)  >=50ms含边界=24
+    probe:161  nTriggersBeyond50ms=16/16 (100.00%)  >=50ms含边界=16
+    probe:171  waitAfterS_hat(ms): min=377.385 med=385.601 P90=386.776 P99=387.774 max=387.990
+    probe:172  nTriggersBeyond50ms=15/15 (100.00%)  >=50ms含边界=15
+  2e-2) probe 主表表头与 13 档中可读行的原始行（7c 引用行号）：
+    probe:38   C2-P95x2          |     27|      4|  14.81%|       7| 1674|   73.378|  196.034|  331.407|       27| 100.00%
+    probe:39   C2-P95x3          |     19|      0|   0.00%|       3| 1678|  107.699|  131.120|  459.564|       19| 100.00%
+    probe:40   C2-P99x2          |     24|      4|  16.67%|       4| 1677|   75.441|   82.702|  463.197|       24| 100.00%
+    probe:41   C2-P99x3          |     18|      0|   0.00%|       2| 1679|  111.754|  121.146|  143.369|       18| 100.00%
+    probe:42   C2-abs-P95x2      |     29|      5|  17.24%|       8| 1673|   70.931|  181.578|  321.002|       29| 100.00%
+    probe:43   C3-r4             |     24|      0|   0.00%|       8| 1673|  127.491|  346.357|  440.389|       24| 100.00%
+    probe:44   C3-r8             |     16|      0|   0.00%|       1| 1680|  256.261|  257.453|  258.378|       16| 100.00%
+    probe:45   C3-r12            |     15|      0|   0.00%|       0| 1681|  385.601|  386.776|  387.990|       15| 100.00%
+  2f) 7f 引用核对（只读）STALL_EVENT_DEFINITION.md:190/:191：
+    stall_def:190  - **设计指标**：从帧停滞被检测到、到采样动作在目标线程生效的**端到端延迟必须 $< 50\text{ ms}$（安全裕量要求 $\le 20\text{ ms}$）**；
+    stall_def:191  - **拒止原则**：任何累积判定耗时 $\ge 100\text{ ms}$ 的触发机制均属不合格。若触发延迟过大，采样动作发生时真实停滞已然结束，采集到的栈将是下一帧正常运行时的代码，产生致命的因果倒错伪影。
+      RULING_D30.md:26/:52：
+    ruling_d30:26  k=50 的误触发占比最低，但名义98ms、语料中位97.7505ms明显不适合作为发生后50ms捕获的及时机制；不能为降低误报而牺牲:177。也不能把98ms写成必已过100ms。依据：题给裁决 q1Rationale、核证 D2；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177；本次命令A输出 Q3 k=50。
+    ruling_d30:52  要求重新设计并离线比较候选判据，不预定P95相对阈值胜出。早期连续k点同帧不足以确认最终d≥100ms，但D29允许提前候选、事后按口径B分类，故早期不要求零误报。相对帧间隔只能作为待验证候选，须审查历史基线可用性、抖动、阈值漂移、额外等待、边界事件及配额竞争；不得以等待P95突破时间约束。依据：题给裁决 q3Criterion；lead/control_20261106/D30_ENTRY_DRAFT.md:110；lead/control_20261106/D30_ENTRY_DRAFT.md:114；lead/d29_ruling_20261106/RULING_D29.md:20；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:191。
+
+§3 D 独立证成：B3/B4 块 computed=0 的独立复算 + _dD_ 脚本是否自行复算逐档越线数
+  3a) _dD_check.py B3 块（:114-125）out() 调用：computed(含插值)=0 literal_prose=12
+      _dD_check.py B4 块（:128-137）out() 调用：computed(含插值)=0 literal_prose=10
+      （对照 _verify_D_out3.txt:7-10 的 T3 = B4 computed=0/literal 10、B3 computed=0/literal 12）
+      对照 B1（:82-94）computed=2 literal=6；B2（:97-112）computed=3 literal=5
+  3b) _dD_check.py / _dD_align.py 是否解析/复算 _dtrigger_supplement_out.txt（逐档越线数）：
+    dD_check 命中 1 处：
+    dD_check:121  out("    该结论不依赖 S 的精确值；_dtrigger_supplement_out.txt:11-24,29 给出观测锚下已 >50ms 的触发数，")
+    dD_align 命中 4 处：
+    dD_align:66  "lead/dtrigger_compare_20261107/_dtrigger_supplement_out.txt",
+    dD_align:67  "lead/dtrigger_compare_20261107/_dtrigger_probe_out.txt",
+    dD_align:348  out("    _dtrigger_supplement_out.txt:11-24,29 与 CRITERIA_COMPARE.md:34-35,145-147；")
+    dD_align:362  out("      _dtrigger_analysis.py / _dtrigger_supplement.py 本轮未重跑（它们会覆写只读既有件，铁律禁止）；")
+  3c) D-2 前提件 _dtrigger_supplement_out.txt 的被引行（:10-24,29,33-34,44-45 原文直读）：
+    supp:10  C1-k50              |   1866|    8.68%|   97.750|   98.900|  417.556|   1811|    1813|      83|     4.45%|       97.16%|   1681
+    supp:11  C2-P95x2            |     27|   14.81%|   73.378|  196.034|  331.407|     27|      27|       4|    14.81%|      100.00%|      7
+    supp:12  C2-P95x3            |     19|    0.00%|  107.699|  131.120|  459.564|     19|      19|      19|   100.00%|      100.00%|      3
+    supp:13  C2-P99x2            |     24|   16.67%|   75.441|   82.702|  463.197|     24|      24|       1|     4.17%|      100.00%|      4
+    supp:14  C2-P99x3            |     18|    0.00%|  111.754|  121.146|  143.369|     18|      18|      18|   100.00%|      100.00%|      2
+    supp:20  C3-r2               |    180|    5.56%|  153.550|  221.393|  446.010|    180|     180|     148|    82.22%|      100.00%|    154
+    supp:21  C3-r4               |     24|    0.00%|  130.237|  348.141|  461.598|     24|      24|      24|   100.00%|      100.00%|      8
+    supp:22  C3-r8               |     16|    0.00%|  258.835|  260.038|  260.904|     16|      16|      16|   100.00%|      100.00%|      1
+    supp:24  C3-N16-r2           |    195|    6.15%|  138.027|  196.387|  428.250|    195|     195|     156|    80.00%|      100.00%|    164
+    supp:29  C4-t48              |   5168|   67.03%|   49.973|   50.448|  416.911|   2492|    5168|      15|     0.29%|      100.00%|   1681
+    supp:33  >50       = waitAfterS_hat 超过 50ms 的触发数（:177 的观测锚口径）
+    supp:34  >50+e     = 加上 onset 观测滞后中位 e=2.511ms 后超过 50ms 的触发数
+    supp:44  1. 相对「物理起点 S」的精确 waitAfterS：语料只有 (t,f)，物理 S 落在 (t[runStart-1], t[runStart]] 内，
+    supp:45  无法从语料测得；本报告全部 waitAfterSMs 只能给观测锚 S_hat 下的实测值，作为下界。缺：物理停滞起点的独立观测。
+  3d) CRITERIA_COMPARE.md:34-35,145-147「不合规方向」记载直读：
+    compare:34   - 本件**明写「比较未产生可批准的判据」**；同时也如实记录**某判据在某维度占优**的读数（例：`C1-k50` 在每窗 N=5 捕获维度占优 102/117；`C3-r2` 在每窗 N=1 占优 22/26），但该占优不等于工程可用：`C1-k50` 的 `latencyP50Ms=97.787ms` 已越过 :177 的 S+50ms 预算，`C3-r2` 的全部触发 >50ms（见 §5）。
+    compare:35   - 不改口径 B（D-12）；不改 :177 / :190 / :191（D-29 四条全保留）。不以「等 P95 突破」使触发晚于 :177 的 S+50ms 截止：C2/C3 族实测越线，明确记为**不合规方向**。
+    compare:145  越线事实：`_dtrigger_supplement_out.txt:11-24` 记 C2 未截断族全部触发 >50ms；
+    compare:146  `C2-P95x3` / `C2-P99x3` / `C3-r4/r8` 的补算行触发等待已 ≥100ms（同文件 :12,14,21-22，锚口径见 §3.2）；
+    compare:147  `C4-t48` 的 5168 次触发中 2492 次 >50ms、加 e 后 5168/5168 全越 50ms（同文件 :29）。
+
+§4 D 硬阻断解除条件：§4（O1–O5）清单形态核对 + O1 精度括注算术复核
+  4a) _dD_PHYSICAL_S_ALIGNMENT.md §4 关键行直读：
+    dD_md:118 ## 4 解除该阻断所需的最小新观测量清单
+    dD_md:120 **目标命题 P**：对声明覆盖的每条真实事件，`C − S ≤ 50.0 ms`，且保存的是 `STALL_EVENT_DEFINITION.md:177` 要求的上下文（主线程 EIP/RIP 虚拟地址、模块偏移、前 5 层调用栈指针）。
+    dD_md:122 **最小集 = O1–O4（缺一即 P 不可闭合）**，O5 为声明范围的条件项。逐项必要性见 `_dD_check_out.txt:46-55`。
+    dD_md:126 | **O1** | 逐事件物理停滞起点 `S` | 主逻辑帧推进停止的**第一时刻**，在统一单调时间坐标下的逐事件读数；须与既有 `(t, f)` 序列的观测首拍 `S_hat` 可逐事件配对，保留区间校验 `S ∈ (S_low, S_hat]`；覆盖声明母体内的每条事件 | 时间分辨率 ≤ 1 ms；逐事件不确定度上界 ≤ 1 ms（合计 ≤ :177 的 50 ms 预算的 2%，且 ≤ `STALL_EVENT_DEFINITION.md:190` 的 20 ms 安全裕量） |
+    dD_md:127 | **O2** | 逐事件现场快照**保存完成时刻** `C` | `:177` 要求的上下文已完整保存且可持久读取的完成时刻（不是触发时刻、不是检测时刻）；须与 O1 的 `S` 逐事件一一配对 | 时间分辨率 ≤ 1 ms；逐事件不确定度上界 ≤ 1 ms |
+    dD_md:128 | **O3** | `S` 与 `C` 的**时基一致性 / 同步残差上界** | 两类读数之间的最大系统偏差（同源性声明 + 漂移与换算残差上界），逐事件可核；这是关系量，不是独立数值通道 | 残差上界 ≤ 1 ms；若不满足，则 `C−S` 的差值本身不可判定，P 不闭合 |
+    dD_md:129 | **O4** | 目标线程上下文**归属与完整性标记** | 逐事件的确定性标记：该次保存是否确属目标主逻辑线程、是否含 `:177` 要求的 PC/RIP 与前 5 层调用栈、是否与该事件一一对应 | 布尔/枚举标记，无数值精度要求；覆盖母体内**缺失数 = 0、归属误配数 = 0**（否则「保存上下文」这一宾语未闭合） |
+    dD_md:130 | **O5**（条件项） | 窗首 / 跨窗**无断档前序连续时序** | 从对局初始化起至事件起点的连续 `(t, f)` 流（`STALL_EVENT_DEFINITION.md:178` 已登记该缺口），使窗首事件的 `S` 落在观测时间轴内 | 事件起点前 ≥ 50 ms（:177 预算）的连续覆盖，断档数 = 0，时间分辨率 ≤ 1 ms；**仅当 P 覆盖 4 条 `startTick=0` 事件时必需**（`_dD_align_out.txt:49`）；若只声明 1677 条窗内可还原事件，则非必需，但必须在结论中**显式声明覆盖母体** |
+    dD_md:132 **充分性与最小性**：O1–O4 到位后，逐事件直接计算 `C−S` 并与 50 ms 比较即可闭合 P；不再需要机制假说、内部状态旗标、跨硬件样本、栈符号解析等其它观测量 —— 那些属于目标①机制挂账（`RULING_D30.md:60`，D-13 保持 PAUSE），与本维度无关。O3 是使 `C−S` 有意义的必要关系量，O4 是使「保存上下文」这一宾语成立的必要标记，二者不可省。
+    dD_md:134 **纪律声明**：本清单只列**观测量名称、口径与精度要求**；不含任何真实采样 API、不含任何获取手段 / 探针设计 / 注入方案 / 代码；不触碰 D-13；本轮**未获取任何新观测量**。
+    dD_md:114 **一句话裁决**：`观测锚下界不足以证明合规` = 肯定性结论被硬阻断（证据不足，未验）；`已证明不合规` = 由下界越线独立证成，只对离线判据族成立。二者**不可互推、不可混写**；且解除前者至少需要同时补 S 与 C（见 §4）。
+  4b) O1 精度括注算术复核（实算）：1ms+1ms = 2ms；2/50 = 4.0%；1/50 = 2.0%；2/20 = 10.0%
+      对照 doc:126 原文「合计 ≤ :177 的 50 ms 预算的 2%，且 ≤ :190 的 20 ms 安全裕量」
+  4c) 必要性论证的形态：_dD_check_out.txt:46-55（B4 块）为字面串（§3a AST 实算 computed=0）
+      即「逐项缺一即不能闭合」是逐行断言文字，非构造性证明/反例计算。
+  4d) O5 条件项与覆盖母体声明：doc:130（T8 直读对照 _verify_D_out3.txt:28）+ doc:122「最小集 = O1–O4」
+
+§5 本脚本只产事实与计数；判定与闭合状态见 _cd_verdict.md（含指纹表）。
+运行环境：python -I -X utf8；本脚本未写任何被核对象、未启动进程、未采样。

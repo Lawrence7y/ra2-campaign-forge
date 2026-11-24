@@ -1,0 +1,142 @@
+{
+ "rows": [
+  {
+   "group": "A 同距~10字",
+   "text": "不得写成未入账的本笔已入账",
+   "token": "已入账",
+   "neg": "不得",
+   "neg_to_token_chars": 10,
+   "r10_neg_count": 2,
+   "r10_kind": "negation",
+   "r10_dbl": false,
+   "expect": "CATCH",
+   "old": "PASS",
+   "new": "CATCH",
+   "note": "禁止词在前且 <24 字，但它是「未入账」的定语；token 是后半句真断言",
+   "old_hard": [
+    "H5_否定禁止管辖"
+   ],
+   "new_override": "V2_OVERRIDE:已入账"
+  },
+  {
+   "group": "A 同距~10字",
+   "text": "不得宣告 N-4 正式绑定已生效",
+   "token": "已生效",
+   "neg": "不得",
+   "neg_to_token_chars": 13,
+   "r10_neg_count": 1,
+   "r10_kind": "negation",
+   "r10_dbl": false,
+   "expect": "PASS",
+   "old": "PASS",
+   "new": "PASS",
+   "note": "禁止词在前且 <24 字，真前向管辖",
+   "old_hard": [
+    "H5_否定禁止管辖"
+   ],
+   "new_override": ""
+  },
+  {
+   "group": "B 长距>24字",
+   "text": "不宣告 N-4 正式绑定已生效",
+   "token": "已生效",
+   "neg": "不",
+   "neg_to_token_chars": 12,
+   "r10_neg_count": 1,
+   "r10_kind": "negation",
+   "r10_dbl": false,
+   "expect": "PASS",
+   "old": "CATCH",
+   "new": "PASS",
+   "note": "距离短但需「宣告→已生效」辖域路径",
+   "old_hard": [],
+   "new_override": ""
+  },
+  {
+   "group": "B 长距>24字",
+   "text": "本笔已入账 0 命中不得写成未入账",
+   "token": "已入账",
+   "neg": "不得",
+   "neg_to_token_chars": -8,
+   "r10_neg_count": 0,
+   "r10_kind": "assertion",
+   "r10_dbl": false,
+   "expect": "CATCH",
+   "old": "PASS",
+   "new": "CATCH",
+   "note": "距离短，但禁止词在 token【之后】，纯距离法必然误豁免",
+   "old_hard": [
+    "H5_否定禁止管辖"
+   ],
+   "new_override": "V2_OVERRIDE:已入账"
+  },
+  {
+   "group": "C 跨子句",
+   "text": "不宣告 N-4 已生效，但本笔已入账",
+   "token": "已入账",
+   "neg": "不",
+   "neg_to_token_chars": 15,
+   "r10_neg_count": 1,
+   "r10_kind": "negation",
+   "r10_dbl": false,
+   "expect": "CATCH",
+   "old": "CATCH",
+   "new": "CATCH",
+   "note": "「不」距 token 约 13 字且在 24 字窗内，但已跨「，但」另起断言",
+   "old_hard": [],
+   "new_override": "V2_OVERRIDE:已入账"
+  },
+  {
+   "group": "C 跨子句",
+   "text": "不宣告 N-4 已生效；本笔已入账",
+   "token": "已入账",
+   "neg": "不",
+   "neg_to_token_chars": 14,
+   "r10_neg_count": 0,
+   "r10_kind": "assertion",
+   "r10_dbl": false,
+   "expect": "CATCH",
+   "old": "CATCH",
+   "new": "CATCH",
+   "note": "跨子句；R10 的 CLAUSE_BREAK 不含分号时同样污染",
+   "old_hard": [],
+   "new_override": "V2_OVERRIDE:已入账"
+  },
+  {
+   "group": "D 双重否定",
+   "text": "并非不宣告已生效",
+   "token": "已生效",
+   "neg": "不",
+   "neg_to_token_chars": 3,
+   "r10_neg_count": 2,
+   "r10_kind": "double_neg",
+   "r10_dbl": true,
+   "expect": "CATCH",
+   "old": "PASS",
+   "new": "CATCH",
+   "note": "距 token 极近、否定词计数=2（偶数），纯距离/奇偶法误豁免",
+   "old_hard": [
+    "H5_否定禁止管辖"
+   ],
+   "new_override": "H5_DOUBLE_NEG:并非不"
+  },
+  {
+   "group": "D 双重否定",
+   "text": "不宣告已生效",
+   "token": "已生效",
+   "neg": "不",
+   "neg_to_token_chars": 3,
+   "r10_neg_count": 1,
+   "r10_kind": "negation",
+   "r10_dbl": false,
+   "expect": "PASS",
+   "old": "PASS",
+   "new": "PASS",
+   "note": "同型单重否定，应豁免",
+   "old_hard": [
+    "H5_否定禁止管辖"
+   ],
+   "new_override": ""
+  }
+ ]
+}

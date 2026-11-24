@@ -1,0 +1,351 @@
+====================================================================================================
+R16-AUDIT-F1-B3 · 审计员独立复算（B3 = 派生集合第 37-54 行）
+====================================================================================================
+gamemd.exe sha256 : 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476
+  expect          : 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476  OK
+coverage 快照 sha : 95DFAC9E6CEC2D464691D84DF1EF64A0AD850C86500A4CD1348275F0FBC419D1  (4040803 B)
+coverage 现盘 sha : BB62A995447A5D87C9A03ADCAE99E348E08B480BCE6E9A368973543BA47F01F2  (4049509 B)  !! 与快照不同
+ImageBase         : 00400000（卡面 0x400000）OK
+.text             : [00401000,007E038D)  卡面 [0x401000,0x7E038D)
+
+--- 派生集合复现（卡面 §2 判据）---
+  S0 all F1 gap rows             : 122
+  S1 same_source==no             : 108
+  S2 +install decoded            : 76
+  S3 +install outside body       : 76
+  S4 +[已证] & no ④ witness       : 76  <== derived set
+  derived=76（卡面 76）  → B3 切片 = 第 37-54 行，共 18 行
+  B3 = 006C3890 006C3A10 006C3B90 006C5210 006C5390 006C5510 006C5690 006C5810 006C5990 006C5B10 006C5C90 006C5E10 006C5F90 006C6110 006DBD20 006DBE00 006E3E30 006E57A0
+
+delta.tsv         : 表头 ['entry', 'subsystem', 'name', 'one_line_semantics', 'grade', 'evidence_path', 'n_sources', 'conflict']
+                    数据行 18（应 18）
+  OK  delta entry 序列 == 派生集合第 37-54 行（顺序也一致）
+fields.tsv        : 14 列 ['entry', 'class', 'slot_no', 'vtaddr', 'source_of_vtaddr', 'coladdr', 'col_offset', 'rtti_addr', 'rtti_mangled', 'install_site', 'install_func', 'status(OK|SKIP)', 'same_source', 'note']
+  与 R16_F1_B1 fields entry 交集: 0（应 0）
+  与 R16_F1_B2 fields entry 交集: 0（应 0）
+
+--- 独立跑 capstone 全 .text 反汇编 ---
+  insn 1392527 / skip 65  (区间 [00401000,007E038D))
+  atlas 函数体 12916 个
+
+--- 独立口径 2：枚举 .rdata/.data 内全部表起点 ---
+  合法表起点 1218 个（t-4 均为自洽 COL）
+  建索引：1218 个表、6692 个不同槽值
+
+====================================================================================================
+逐行审计（18/18，不抽样）
+====================================================================================================
+
+#37 006C3890  T_TClassFactory_VInfantryClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3C00', 3)]；同槽=[('007F3C00', 3)]；活=[('007F3C00', 3)]；类一致=[('007F3C00', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3C00', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3C00 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加551B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3c00   imm=007F3C00  func=006C37C0  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#38 006C3A10  T_TClassFactory_VAnimClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3C18', 3)]；同槽=[('007F3C18', 3)]；活=[('007F3C18', 3)]；类一致=[('007F3C18', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3C18', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3C18 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加535B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3c18   imm=007F3C18  func=006C3940  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#39 006C3B90  T_TClassFactory_VAnimTypeClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3C30', 3)]；同槽=[('007F3C30', 3)]；活=[('007F3C30', 3)]；类一致=[('007F3C30', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3C30', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3C30 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加551B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3c30   imm=007F3C30  func=006C3AC0  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#40 006C5210  T_TClassFactory_VFactoryClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3D98', 3)]；同槽=[('007F3D98', 3)]；活=[('007F3D98', 3)]；类一致=[('007F3D98', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3D98', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3D98 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加547B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3d98   imm=007F3D98  func=006C5140  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#41 006C5390  T_TClassFactory_VWarheadTypeClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3DB0', 3)]；同槽=[('007F3DB0', 3)]；活=[('007F3DB0', 3)]；类一致=[('007F3DB0', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3DB0', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3DB0 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加563B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3db0   imm=007F3DB0  func=006C52C0  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#42 006C5510  T_TClassFactory_VWeaponTypeClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3DC8', 3)]；同槽=[('007F3DC8', 3)]；活=[('007F3DC8', 3)]；类一致=[('007F3DC8', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3DC8', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3DC8 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加559B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3dc8   imm=007F3DC8  func=006C5440  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#43 006C5690  T_TClassFactory_VParticleClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3DE0', 3)]；同槽=[('007F3DE0', 3)]；活=[('007F3DE0', 3)]；类一致=[('007F3DE0', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3DE0', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3DE0 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加551B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3de0   imm=007F3DE0  func=006C55C0  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#44 006C5810  T_TClassFactory_VParticleTypeClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3DF8', 3)]；同槽=[('007F3DF8', 3)]；活=[('007F3DF8', 3)]；类一致=[('007F3DF8', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3DF8', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3DF8 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加567B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3df8   imm=007F3DF8  func=006C5740  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#45 006C5990  T_TClassFactory_VParticleSystemClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3E10', 3)]；同槽=[('007F3E10', 3)]；活=[('007F3E10', 3)]；类一致=[('007F3E10', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3E10', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3E10 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加575B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3e10   imm=007F3E10  func=006C58C0  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#46 006C5B10  T_TClassFactory_VParticleSystemTypeClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3E28', 3)]；同槽=[('007F3E28', 3)]；活=[('007F3E28', 3)]；类一致=[('007F3E28', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3E28', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3E28 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加591B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3e28   imm=007F3E28  func=006C5A40  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#47 006C5C90  T_TClassFactory_VAITriggerTypeClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3E40', 3)]；同槽=[('007F3E40', 3)]；活=[('007F3E40', 3)]；类一致=[('007F3E40', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3E40', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3E40 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加571B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3e40   imm=007F3E40  func=006C5BC0  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#48 006C5E10  T_TClassFactory_VNeuronClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3E58', 3)]；同槽=[('007F3E58', 3)]；活=[('007F3E58', 3)]；类一致=[('007F3E58', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3E58', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3E58 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加543B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3e58   imm=007F3E58  func=006C5D40  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#49 006C5F90  T_TClassFactory_VFoggedObjectClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3E70', 3)]；同槽=[('007F3E70', 3)]；活=[('007F3E70', 3)]；类一致=[('007F3E70', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3E70', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3E70 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加567B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3e70   imm=007F3E70  func=006C5EC0  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#50 006C6110  T_TClassFactory_VAlphaShapeClass__::slot3  (same_source=no)
+   §C 口径1 命中=1  同槽(3)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F3E88', 3)]；同槽=[('007F3E88', 3)]；活=[('007F3E88', 3)]；类一致=[('007F3E88', 3)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F3E88', 3)]；同槽 1；超出口径2 的新增 无
+      table vt=007F3E88 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加559B 旧④=3
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3e88   imm=007F3E88  func=006C6040  体内self-install=[] 体外站点数=1
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=['is_caller_host']
+
+#51 006DBD20  Tactical::slot5  (same_source=no)
+   §C 口径1 命中=1  同槽(5)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F4348', 5)]；同槽=[('007F4348', 5)]；活=[('007F4348', 5)]；类一致=[('007F4348', 5)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F4348', 5)]；同槽 1；超出口径2 的新增 无
+      table vt=007F4348 slot=5 live=True sites=4 slots=26 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加455B 旧④=1
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7f4348   imm=007F4348  func=006D1C20  体内self-install=[] 体外站点数=4
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=[]
+
+#52 006DBE00  Tactical::slot6  (same_source=no)
+   §C 口径1 命中=1  同槽(6)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F4348', 6)]；同槽=[('007F4348', 6)]；活=[('007F4348', 6)]；类一致=[('007F4348', 6)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F4348', 6)]；同槽 1；超出口径2 的新增 无
+      table vt=007F4348 slot=6 live=True sites=4 slots=26 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加455B 旧④=1
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7f4348   imm=007F4348  func=006D1C20  体内self-install=[] 体外站点数=4
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=1 旧④与新事实矛盾项=无 旧④宿主=[]
+
+#53 006E3E30  TActionClass::slot6  (same_source=no)
+   §C 口径1 命中=1  同槽(6)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F443C', 6)]；同槽=[('007F443C', 6)]；活=[('007F443C', 6)]；类一致=[('007F443C', 6)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F443C', 6)]；同槽 1；超出口径2 的新增 无
+      table vt=007F443C slot=6 live=True sites=5 slots=26 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加471B 旧④=0
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7f443c   imm=007F443C  func=006DD000  体内self-install=[] 体外站点数=5
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=0 旧④与新事实矛盾项=无 旧④宿主=[]
+
+#54 006E57A0  TagClass::slot6  (same_source=no)
+   §C 口径1 命中=1  同槽(6)表=1 其中活=1 其中类一致=1(严=1)  → 唯一
+      §C 口径2 该 entry 全镜像表位=1 [('007F44E0', 6)]；同槽=[('007F44E0', 6)]；活=[('007F44E0', 6)]；类一致=[('007F44E0', 6)] → 与口径1 一致
+      §C 口径2b（每张表到下一个表起点全槽位，不因洞早停）：表位=1 [('007F44E0', 6)]；同槽 1；超出口径2 的新增 无
+      table vt=007F44E0 slot=6 live=True sites=3 slots=25 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加455B 旧④=0
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7f44e0   imm=007F44E0  func=006E4DE0  体内self-install=[] 体外站点数=3
+   §D parse=True d47=True no_124=True D_ALL=True
+   §C-c3 旧④语句=0 旧④与新事实矛盾项=无 旧④宿主=[]
+
+====================================================================================================
+§A 附加：并发写者判定（pin 快照 vs 现盘 coverage）
+====================================================================================================
+  pin entries 18498 / live entries 18498 ; 新增 0 / 消失 0
+  全盘内容变化 entry 18 个：00421730[3]; 00428EA0[3]; 004370C0[3]; 004684E0[3]; 00491210[3]; 004A7C90[3]; 004AF720[3]; 004B6470[3]; 004C5A30[3]; 004C5AC0[3]; 004F45B0[3]; 00524D70[3]; 0054DC60[3]; 005550C0[3]; 00555110[3]; 00555150[3]; 005F44A0[3]; 005F9950[3]
+  其中属于本批 18 行的：0 个 []
+  发生行号位移的：0 个（本批行号是否位移：否）
+  与现盘逐字节对照：仅第 4 列不同且以现盘原值为前缀 18/18；异常 无
+
+====================================================================================================
+§E 格式合先例（三条先例 00464AC0/004DE630/004F42F0 + 盘上已并表带 §12.6 行）
+====================================================================================================
+  盘上含「④ 活表槽位见证」行 134；其中带 §12.6 披露 43；三条先例取到 3
+  B3 18 行 ④ 段骨架种类 : 1（应 1）；解析失败 0
+    骨架×18  D-47=True  残留=''
+  三条先例骨架可解析 : True
+    先例骨架 == B3 骨架 : True（先例无 D-47 后缀）
+    先例 D-47 后缀       : [False, False, False]（应全 False）
+    先例骨架外残留       : {''}（应为空串）
+  盘上已并表 43 行 ④ 骨架种类 : 1
+    B3 骨架 ∩ 已并表骨架 : 1（应 1）
+  追加段以「；④ 活表槽位见证」起 : 18/18
+  ④ 段位于第 4 列末尾           : 18/18
+  字段齐全（10 个必需片段）      : 18/18
+
+====================================================================================================
+§D 汇总：披露指针
+====================================================================================================
+  含 §12.6 = 18/18 ; 含 §12.4 = 0/18 ; D-47 披露句逐字完整 = 18/18
+
+====================================================================================================
+§F 反抄袭（entry 归一为占位符后仍须两两不同）
+====================================================================================================
+  原文 18 行 set 大小       : 18
+  entry 归一后 set 大小     : 18
+  全地址归一后 set 大小     : 18
+  全地址归一重复文本        : 0 组
+  仅追加段 set 大小         : 18
+  仅追加段 entry 归一 set   : 18
+
+====================================================================================================
+汇总
+====================================================================================================
+  A_other7_bad         0
+  A_prefix_bad         0
+  A_grade_bad          0
+  A_cols8_bad          0
+  A_only_col4_bad      0
+  B_all8_bad           0
+  B1_bad               0
+  B2_bad               0
+  B3_bad               0
+  B4_bad               0
+  B5_bad               0
+  B6_bad               0
+  B7_bad               0
+  B8_bad               0
+  B8s_bad              0
+  D_parse_bad          0
+  D_all_bad            0
+  D_d47_bad            0
+  D_124_bad            0
+  C_not_unique         0
+  C_multi              0
+  C2_disagree          0
+  C2_multi             0
+  C_self_install       0
+  C_old_diamond        16
+  C_old_conflict       0
+  C_not_live_outside   0
+  B7_func_body_bad     0
+  C2b_extra            0
+  A_live_only_col4_bad 0
+
+  §C 同槽多表（>1 张类一致活表）的行：
+    （无）
+
+  体内 self-install 同表行：
+    （无）
+
+  旧第 4 列已含 ④ 语句的行（同格并存两条 ④）：
+    006C3890 T_TClassFactory_VInfantryClass__::slot3    旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C3A10 T_TClassFactory_VAnimClass__::slot3        旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C3B90 T_TClassFactory_VAnimTypeClass__::slot3    旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C5210 T_TClassFactory_VFactoryClass__::slot3     旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C5390 T_TClassFactory_VWarheadTypeClass__::slot3 旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C5510 T_TClassFactory_VWeaponTypeClass__::slot3  旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C5690 T_TClassFactory_VParticleClass__::slot3    旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C5810 T_TClassFactory_VParticleTypeClass__::slot3 旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C5990 T_TClassFactory_VParticleSystemClass__::slot3 旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C5B10 T_TClassFactory_VParticleSystemTypeClass__::slot3 旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C5C90 T_TClassFactory_VAITriggerTypeClass__::slot3 旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C5E10 T_TClassFactory_VNeuronClass__::slot3      旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C5F90 T_TClassFactory_VFoggedObjectClass__::slot3 旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006C6110 T_TClassFactory_VAlphaShapeClass__::slot3  旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006DBD20 Tactical::slot5                            旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006DBE00 Tactical::slot6                            旧④语句=1 新④语句=2 旧④与新事实矛盾项=无
+    006E3E30 TActionClass::slot6                        旧④语句=0 新④语句=1 旧④与新事实矛盾项=无
+    006E57A0 TagClass::slot6                            旧④语句=0 新④语句=1 旧④与新事实矛盾项=无
+
+====================================================================================================
+§C 四问四答汇总
+====================================================================================================
+  问1 同槽号类一致活表 == 1 的行 : 18/18
+  问1 附加：该 entry 在全镜像只落 1 个表位的行 : 18/18
+  问2 TD+8 类名与行名类一致（松+严）: 18/18
+  问3 采纳装表点 == ring4_at 首 token : 18/18
+  问4 另有一张类一致活表的行（同槽）: 0
+
+====================================================================================================
+第三口径（raw 文件偏移直读，不经虚拟缓冲）复核 6 项核心事实
+====================================================================================================
+  raw 口径不一致行数 : 0 （全部一致）
+
+wrote bytecheck.tsv / tables.md / verify_out.json  (D:\Project\ra2-campaign-forge\lead\next_re_20261117_r14\R16_AUDIT_F1_B3)

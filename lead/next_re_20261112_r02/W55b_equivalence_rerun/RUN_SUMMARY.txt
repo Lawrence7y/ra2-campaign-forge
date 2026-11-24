@@ -1,0 +1,59 @@
+W55b / B-line equivalence rerun - RUN SUMMARY
+=============================================
+card      : W55b_equivalence_rerun
+run_id    : NEXT_RE_20261112_R02
+model     : Hy4
+window    : 2026-11-13 22:30 - 23:20 (Asia/Shanghai), <50 min of 150 min budget
+real trips: 4 (A1,A2,B1,B2), each ~143-224 s, all phase_reached=true, errors=[]
+
+VERDICT   : 仍不可判 (undecidable; NOT equivalent, NOT inequivalent)
+
+W54 SAVE_DETERMINISM.md §5.3 FOUR PRECONDITIONS
+  P1 frame==N gate + aligned saves : 达成   (all 4 froze at frame_frozen=2408, spread 0 tick, tol 1)
+  P2 >=2 same-frame same-arm saves: 达成   (A1/A2, B1/B2; 4 distinct saves after sha256 dedup)
+  P3 CONTENTS comparison criterion: 部分   (10 block-walk attempts all failed; fell back to
+                                           frame-aligned rectified whole-stream sha256, as allowed)
+  P4 CFB named-stream comparison  : 达成   (FAT/DIFAT/miniFAT excluded by construction;
+                                           W54 4-reference validation reproduced: 0 masked diff)
+
+KEY NUMBERS (out/analysis.json, out/cfb_compare.json)
+  N (same-frame same-arm CONTENTS diff bytes) : N_A=1339784 (A1-A2), N_B=1316737 (B1-B2)
+  D (same-frame cross-arm CONTENTS diff)     : 1319300 .. 1321641
+  D <= N  => per W45 EQUIVALENCE_SPEC.md §2.4 no attribution to the package;
+             N>0 => spec §3.4 "equivalent" not satisfied => 仍不可判 (§3.7).
+
+SECONDARY FINDING
+  W54 flat metadata-plane whitelist leaves 67-176 unmasked bytes on the NEW saves.
+  Cause: variable-length Scenario Description / \x05SummaryInformation streams
+  (engine-generated save name) shift W54's concatenated 3576-byte view.
+  Per NAMED STREAM, 13/15 streams are 0 after masking; the 3 wall-clock FILETIME
+  streams are correctly masked. NOT whitelisted post-hoc (spec forbids).
+  See out/metadata_plane_residual_analysis.json, DISAGREE.md D-W55b-2.
+
+DISCIPLINE
+  desktop precheck  : PASS (WinSta0/Default/Default, EnumWindows 443/21, ImageGrab OK 2560x1440)
+  lock              : owner=lead -> w55b per trip -> owner=lead (final text includes
+                      所有实例已关闭、配置已逐字节还原、投放文件已清理)
+  gamemd.exe        : 0 residual; only the 4 pids this card launched were taskkill'd
+  ra2youli          : READ-ONLY robocopy source + hash target; never written
+  REAL_DIR_PROOF.txt: IDENTICAL_TREE=True, 647/1989215270/277 PRE==POST,
+                       13/13 configs byte_identical=True, ALL_TRIP_RESTORE_MATCH=True
+  write scope       : only W55b_equivalence_rerun/ (ONE documented exception: see D-W55b-3)
+  git               : read-only, no commit
+
+ONE DISCIPLINE DEVIATION (documented, not hidden)
+  First precheck was run via W45's w45_desktop_precheck.py, whose hardcoded OUT
+  wrote back into W45_b_line_equivalence/out/ (desktop_precheck.json 377/19 -> 353/19,
+  precheck_desktop.png 702860 -> 600971 B). Not git-tracked, no backup, cannot be
+  byte-restored. Corrected immediately by using the path-redirected
+  tools/w55b_desktop_precheck.py for all subsequent prechecks. W45 conclusion docs
+  were NOT modified. See DISAGREE.md D-W55b-3 / UNKNOWNS.md U-W55b-8.
+
+THREE KEY EVIDENCE PATHS
+  1. out/analysis.json                    (verdict, 4 preconditions, N/D, alignment)
+  2. out/cfb_compare.json + out/CFB_COMPARE_TABLE.md + out/stream_matrix.json
+                                         (per-stream sha256 + diff bytes, 4 saves)
+  3. out/A1_result.json .. B2_result.json + out/w55b_dual_track.ndjson (284 lines)
+                                         (raw real-machine frame_gate / frozen values)
+  plus REAL_DIR_PROOF.txt, out/save_*.SAV (8 files, 4 distinct), out/screen_*.png (20),
+       out/cmd_*.log (17), out/whitelist_crosscheck.json, out/contents_structure.json.

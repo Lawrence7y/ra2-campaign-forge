@@ -1,0 +1,73 @@
+common = 71 onlyA = ['GP-C03'] onlyB = ['GP-A1', 'GP-A2', 'GP-A3']
+s(74,all74) = 69 s(72,all72) = 48 total delta = 21
+flips = 3 ['GP-C05', 'GP-C06', 'GP-C07']
+n_frozen = 68
+strict all four single layers identical? True
+frozen: chain72 = 48 chain74 = 66 delta = 18
+paired b = 18 c = 0 n_discordant = 18
+b-c == frozen delta ? True
+paired accuracy diff = 9/34 = 0.2647058823529412
+gains = 18 losses = 0
+all gains expect == PASS ? True
+all gains 72chain CATCH -> 74chain PASS ? True
+all gains 72/74 expect same? True
+n_distinct_texts = 16 of 18
+dup_texts = [{'text': '### 1(c) 有没有已入账的？', 'count': 2}, {'text': '**已入账核查实跑命令**：', 'count': 2}]
+  dup ids for '### 1(c) 有没有已入账的？' = ['N13-P01', 'R10-CTX-10']
+  dup ids for '**已入账核查实跑命令**：' = ['N13-P05', 'R10-CTX-07']
+families = {'N13_POS': 12, 'R10_CTX': 5, 'REAL3': 1} n_families = 3
+72 FP in frozen = 20 74 still FP = 2 ['REAL-SLOT', 'REAL-TRUTH']
+repaired = 18
+gains set == repaired set ? True
+
+=== 三口径双侧 exact binomial（小 p 值法） ===
+all_units n=18 k=18 p_two exact = 1/131072 = 7.62939453125e-06   2^(1-n) = 7.62939453125e-06
+distinct_texts n=16 k=16 p_two exact = 1/32768 = 3.0517578125e-05   2^(1-n) = 3.0517578125e-05
+family_level n=3 k=3 p_two exact = 1/4 = 0.25   2^(1-n) = 0.25
+one-sided n=18 = 3.814697265625e-06
+
+=== Clopper-Pearson 95% 双侧（闭式 + 独立二分校验）===
+n=18 k=18 CP95 lower (closed) = 0.8146980318621477
+           CP95 lower (bisect) = 0.8146980318621477
+           check sf(n,n,lo_closed) = 0.02499999999999999 (target 0.025)
+           CP95 upper = 1.0 (k=n: cdf≡1.0, 无内点解)
+n=16 k=16 CP95 lower (closed) = 0.7940927857921772
+           CP95 lower (bisect) = 0.7940927857921773
+           check sf(n,n,lo_closed) = 0.024999999999999988 (target 0.025)
+           CP95 upper = 1.0 (k=n: cdf≡1.0, 无内点解)
+n=3 k=3 CP95 lower (closed) = 0.2924017738212866
+           CP95 lower (bisect) = 0.2924017738212866
+           check sf(n,n,lo_closed) = 0.025000000000000005 (target 0.025)
+           CP95 upper = 1.0 (k=n: cdf≡1.0, 无内点解)
+
+=== Wilson 95% ===
+z = 1.9599639845400536
+n=18 Wilson95 = [0.8241207763533425, 1.0]
+n=16 Wilson95 = [0.8063923194655636, 1.0]
+n=3 Wilson95 = [0.4385029682449546, 1.0]
+CP/Wilson lower contains 0.5 ? False
+
+=== 数量级 ===
+family/all ratio = 32768.0 = 2^ 15.0
+log10 diff = 4.515449934959718
+distinct/all ratio = 4.0
+log10(2^15) = 4.515449934959718
+
+=== 设计效应 n_eff = n/(1+(n-1)rho), n=18 ===
+rho=0.0 n_eff=18.0000000000 deff=1.0000000000 floor(n_eff)=18 p_two(floor)=7.62939453125e-06
+rho=0.3 n_eff=2.9508196721 deff=6.1000000000 floor(n_eff)=2 p_two(floor)=0.5
+rho=0.5 n_eff=1.8947368421 deff=9.5000000000 floor(n_eff)=1 p_two(floor)=1.0
+rho=0.8 n_eff=1.2328767123 deff=14.6000000000 floor(n_eff)=1 p_two(floor)=1.0
+rho=0.9 n_eff=1.1042944785 deff=16.3000000000 floor(n_eff)=1 p_two(floor)=1.0
+rho=1.0 n_eff=1.0000000000 deff=18.0000000000 floor(n_eff)=1 p_two(floor)=1.0
+rho=1 -> n_eff=1.0 p_two(n_eff=1,k=1)=1.0
+p from 7.62939453125e-06 to 1.0 ratio = 131072.0 log10 = 5.11750992628768
+2*2^-n_eff < 0.05 => n_eff > log2(40) = 5.321928094887363
+continuous: rho < 0.14013134380964332
+discrete n_eff>=6: rho <= 2/17 = 0.11764705882352941
+check n_eff at rho=2/17 = 6.0
+check n_eff at rho=0.14013134380964332 = 5.321928094887363
+
+=== bootstrap 配对正确率差（seed=20261109, 200000 次） ===
+len(pairs) = 68 counts = {(1, 1): 48, (0, 1): 18, (0, 0): 2}
+bootstrap 200000 percentile 95% CI = [ 0.16176470588235295 , 0.36764705882352944 ]

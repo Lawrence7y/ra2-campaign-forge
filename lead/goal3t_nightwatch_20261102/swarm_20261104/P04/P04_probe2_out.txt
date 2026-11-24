@@ -1,0 +1,80 @@
+== 1. coverage 自证
+eng.coverage = 100.00% / 1394120 insns / 66 resync
+sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+
+== 2. 0xA8ED80 引用普查
+总引用 46（基线 46）/ 写 1（基线 1）
+  W 007778CE  mov      byte ptr [0xa8ed80], al
+
+== 3. 0x55D360 头部门控（焦点旗标假说的机制字节）
+  0055D360  a0a0e9a800            mov      al, byte ptr [0xa8e9a0]
+  0055D365  81ecb4010000          sub      esp, 0x1b4
+  0055D36B  84c0                  test     al, al
+  0055D36D  53                    push     ebx
+  0055D36E  55                    push     ebp
+  0055D36F  56                    push     esi
+  0055D370  57                    push     edi
+  0055D371  0f84580b0000          je       0x55decf
+  0055D377  a080eda800            mov      al, byte ptr [0xa8ed80]
+  0055D37C  c60558cdab0001        mov      byte ptr [0xabcd58], 1
+  0055D383  84c0                  test     al, al
+  0055D385  7534                  jne      0x55d3bb
+  0055D387  8b35f0117e00          mov      esi, dword ptr [0x7e11f0]
+  0055D38D  a138b2a800            mov      eax, dword ptr [0xa8b238]
+  0055D392  85c0                  test     eax, eax
+  0055D394  7405                  je       0x55d39b
+  0055D396  83f805                cmp      eax, 5
+  0055D399  7517                  jne      0x55d3b2
+  0055D39B  68f4010000            push     0x1f4
+  0055D3A0  ffd6                  call     esi
+  0055D3A2  e8a9790700            call     0x5d4d50
+  0055D3A7  a080eda800            mov      al, byte ptr [0xa8ed80]
+  0055D3AC  84c0                  test     al, al
+  0055D3AE  74dd                  je       0x55d38d
+  0055D3B0  eb09                  jmp      0x55d3bb
+  0055D3B2  6a0a                  push     0xa
+  0055D3B4  ffd6                  call     esi
+  0055D3B6  e895790700            call     0x5d4d50
+  0055D3BB  a184eda800            mov      eax, dword ptr [0xa8ed84]
+
+== 4. IAT
+  [0x007E11F0] -> ('KERNEL32.dll', 'Sleep')
+  [0x007E1530] -> ('WINMM.dll', 'timeGetTime')
+
+== 5. 写者 0x7778CE 上下文
+  007778B0  33c9                  xor      ecx, ecx
+  007778B2  3bc3                  cmp      eax, ebx
+  007778B4  0f95c1                setne    cl
+  007778B7  33d2                  xor      edx, edx
+  007778B9  8a1580eda800          mov      dl, byte ptr [0xa8ed80]
+  007778BF  3bd1                  cmp      edx, ecx
+  007778C1  0f8482000000          je       0x777949
+  007778C7  3bc3                  cmp      eax, ebx
+  007778C9  0f95c0                setne    al
+  007778CC  3ac3                  cmp      al, bl
+  007778CE  a280eda800            mov      byte ptr [0xa8ed80], al
+  007778D3  755b                  jne      0x777930
+  007778D5  68949e8400            push     0x849e94
+  007778DA  e801f0c8ff            call     0x4068e0
+  007778DF  83c404                add      esp, 4
+  007778E2  b101                  mov      cl, 1
+  007778E4  e8177ce4ff            call     0x5bf500
+  007778E9  e832f7c8ff            call     0x407020
+
+== 6. frame 推进点 0x55DE7E / 写回 0x55DE81
+  0055DE70  c075558b              sal      byte ptr [ebp + 0x55], 0x8b
+  0055DE74  1584eda800            adc      eax, 0xa8ed84
+  0055DE79  a18477b000            mov      eax, dword ptr [0xb07784]
+  0055DE7E  42                    inc      edx
+  0055DE7F  3bc7                  cmp      eax, edi
+  0055DE81  891584eda800          mov      dword ptr [0xa8ed84], edx
+  0055DE87  7411                  je       0x55de9a
+  0055DE89  8bca                  mov      ecx, edx
+  0055DE8B  3bc1                  cmp      eax, ecx
+  0055DE8D  7d0b                  jge      0x55de9a
+
+== 7. 0xA8E9A0 在 0x55D360 头部的读（菜单停帧混杂的机制依据）
+0xA8E9A0 全镜像 123 处引用；0x55D360 头部 1 处
+  0055D360 R mov      al, byte ptr [0xa8e9a0]
+
+[P04 probe2 DONE]

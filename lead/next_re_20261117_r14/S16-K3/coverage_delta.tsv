@@ -1,0 +1,15 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+00539EB0	S16	LightningStorm::Start	闪电风暴启动: 比较云层中心全局 0xA9F9F8/FA, 两次 call RandomRanged(0x65C7E0), 写 0xA9F9CC/0xA9FACC; Launch case2(0x6CCD3F) 调用	[静态推断]	EVIDENCE/E04_t4_naming.txt; docs/re/superweapon_re.md:780,808
+0053A6C0	S16	LightningStorm::sub_0053A6C0	闪电风暴状态机 tick: 读状态 0xA9FABC, 计时器 0x827FCC/C8, 遍历 0xA9FA1C/28 与 0xA9FA64/70 对象数组按虚槽 +0x88/+0x9C 过滤后 call 0x53A300(Strike2); 唯一调用者 0x55B5C8	[静态推断]	EVIDENCE/E04_t4_naming.txt
+0053AE00	S16	LightningStorm::AnnounceActive	派发 LightningStormActive 消息: mov ecx,0x82809C('Msg:LightningStormActive') -> call 0x734E60 -> 0x5D3BA0; Ion.cpp 行 463	[静态推断]	EVIDENCE/E04_t4_naming.txt; EVIDENCE/E02_t2_bodies.txt
+0053B410	S16	PsychicDominator::AnnounceActive	派发 DominatorActive 消息: mov ecx,0x8280B8('Msg:DominatorActive') -> call 0x734E60 -> 0x5D3BA0; Ion.cpp 行 53B	[静态推断]	EVIDENCE/E04_t4_naming.txt; EVIDENCE/E02_t2_bodies.txt
+0053A0E0	S16	LightningStorm::sub_0053A0E0	状态谓词: 读 byte [0xA9FAB4] 与 dword [0xA9FAB8]>0, 任一满足返 1; 唯一调用者 0x6CBAA7(ClickFire+0x187); 无确定方法名	[未证]	EVIDENCE/E04_t4_naming.txt
+0053AE50	S16	LightningStorm::sub_0053AE50	落雷动画生成: Launch case2(0x6CCDE2) 调用; 取格(0x5657A0) -> [vptr+0x48] 坐标 -> alloc 0x1C8 -> AnimClass::Create_At(0x421EA0) -> 存 0xA9FAC4; 无确定方法名	[未证]	EVIDENCE/E04_t4_naming.txt
+00430BA0	S16	BeaconClass::sub_00430BA0	对象构造: thiscall, alloc 0x114(0x7C8E17) 后写 3 个 vptr(0x89C430/434/438 为运行时 BSS 指针), 引用 Beacon.CPP + EVA_BeaconPlaced; 类归属仅源串提示无 RTTI	[静态推断]	EVIDENCE/E04_t4_naming.txt; S16-K2/_audit/VERDICT.md ★C
+006CE280	S16	SuperClass::sub_006CE280	倒计时剩余帧: CurrentFrame(0xA8ED84) - [this] 与 [this+8] 比较夹取回写; 调用者 0x6CB560(Grant)+0x21C; 无确定方法名	[未证]	EVIDENCE/E04_t4_naming.txt
+006CE2C0	S16	SuperClass::sub_006CE2C0	计时起点初始化: 若 [this]==-1 写 CurrentFrame(0xA8ED84); 唯一调用者 0x6CB718(SetOnHold); 无确定方法名	[未证]	EVIDENCE/E04_t4_naming.txt
+006CE2D0	S16	SuperClass::sub_006CE2D0	按键向量删除: call [vptr+0x10] 取键, 左移 [this+4] 元素数组 Count--([this+0x10]); 5 调用者(Grant/SetOnHold/changed/Launch); 无确定方法名	[未证]	EVIDENCE/E04_t4_naming.txt
+006CDFD0	S16	SuperClass::Save	COM IPersistStream::Save 包装(v[6]): 3 栈参(this,pStm,fClearDirty) -> call 0x410320(共享 Save 包装器: pStm 空守卫返 E_POINTER + IStream::Write [vtable+0x10]) -> test eax;jl 归一 HRESULT -> ret 0xC。0x410320 非虚(.rdata 0 次)、非 AbstractClass::Save(后者=slot13 0x410410)	[已证]	EVIDENCE/E02_t2_bodies.txt; EVIDENCE/E03_forwarders.txt; EVIDENCE/E01_t1_slots.txt
+006CE220	S16	~SuperClass	标量删除析构(v[8]): push esi; call 0x6CB120(基类析构, 写 SuperClass 4 张 RTTI vtable); test byte [esp+8]&1 -> 条件 call operator delete 0x7C8B3D; ret 4	[已证]	EVIDENCE/E02_t2_bodies.txt; EVIDENCE/E01_t1_slots.txt
+006CE8D0	S16	SuperWeaponTypeClass::Save	COM IPersistStream::Save 包装(v[6]): 与 0x6CDFD0 同构, 3 栈参 -> call 0x410320(共享 Save 包装器) -> test eax;jl 归一 -> ret 0xC; 归属 SWT RTTI TD 0x842600	[已证]	EVIDENCE/E02_t2_bodies.txt; EVIDENCE/E03_forwarders.txt; EVIDENCE/E01_t1_slots.txt
+006CEFE0	S16	~SuperWeaponTypeClass	复杂标量删除析构(v[8]): 写 SWT 4 张 vtable(0x7F4090/74/6C/64); 从全局 0xA8E330 注册表注销; call 0x4109C0(~AbstractTypeClass); test byte [esp+0xC]&1 -> 条件 call 0x7C8B3D; ret 4	[已证]	EVIDENCE/E02_t2_bodies.txt; EVIDENCE/E01_t1_slots.txt

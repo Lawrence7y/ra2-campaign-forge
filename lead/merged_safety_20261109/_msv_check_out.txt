@@ -1,0 +1,147 @@
+=== A. 八件指纹首轮（本会话 hashlib 实算） ===
+A lead/r11_f2_fix_20261109/_f2v_verify9.py                               c22f28ad4228d028c16d8558a8dd9a0980947631ab5bcf5c9cd84e529cf439e3 1618 MATCH=True
+A lead/gate_r9r12_20261109/_g9_gate.py                                   a83081eeffc56e830c84ebcfe945114b5e2ac1082467ed04d97634912dacd2a6 11623 MATCH=True
+A lead/gate_fp7_20261108/_g7_predicates.py                               02c17e49764a6f87f2b0d26c6689f0cbeb96498509e5c75bf843104829c51120 11743 MATCH=True
+A lead/r33e_merge_20261109/_re_linked.py                                 7ca339c6beb728f488903e1b0c748708accf45cd5e3bce45d532290c0c755b52 19481 MATCH=True
+A lead/merged_consumer_audit_20261109/_mc_AUDIT.md                       8b0be4a59bd3e88ffd908a234e9c8382a724478d93409fddf3814d5bb5aa3367 33762 MATCH=True
+A lead/merged_consumer_audit_20261109/MERGED_CONSUMER_AUDIT.md           85de273758a6b87915f9735a07e1b9e1d11c594de50f41d83f5e70145257c263 40884 MATCH=True
+A lead/PENDING_DECISIONS.md                                              3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 52419 MATCH=True
+A lead/GOAL_THREE_TARGETS_20261018.md                                    2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede 759518 MATCH=True
+A_RESULT ALL_EIGHT_MATCH=True
+
+=== B. 自己造 merged rec（自己的夹具、自己的 hex、自己的文档） ===
+B1 link() verdict=merged problems=[] warnings_n=1
+B2 merged rec KEYS = ['decl_lines', 'declared', 'match', 'members', 'path', 'samedoc_link', 'tier']
+B3 merged rec KEY COUNT = 7
+B4 MISSING KEY verified_path  : True
+B4 MISSING KEY recomputed     : True
+B4 MISSING KEY bytes          : True
+B5 path=None match=True tier='SAMEDOC_LINK_EQ' members_n=2
+B6 members (sha12,bytes) = [('553f8577939f', 45), ('553f8577939f', 45)]
+B7 samedoc_link.reverify=None
+B8 declared==HEX? True ; 全体 member sha==declared? True
+B_RESULT MERGED_REC_ASSERTS_OK = True
+B9 unique rec KEYS = ['bytes', 'declared', 'match', 'path', 'recomputed', 'samedoc_link', 'tier', 'verified_path'] ; verdict=unique path='D:\\Project\\ra2-campaign-forge\\lead\\merged_safety_20261109\\_msv_fixtures\\_msv_uniq.dat' match=True tier='SAMEDOC_LINK'
+B10 unique 含 verified_path/recomputed/bytes = [True, True, True]
+B11 multi rec KEYS = ['declared', 'match', 'path', 'samedoc_link', 'tier'] ; verdict=multi path=None match=None tier='SAMEDOC_LINK'
+B_RESULT THREE_SHAPES_BUILT = True
+
+=== C. _f2v_verify9.py:21-29 逐行语义 + 真实注入原件 ===
+C0 :21 match is not True ? False （False ⇒ 不 continue）
+C1 :23 alt=None ; src is b = True
+C2 :24 TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+C3 :29 KeyError: KeyError('bytes')
+C4 :34 KeyError: KeyError('bytes')
+C5 :28 无异常（declared 存在）
+C6 绕过 :24 后单独求值 :29 → KeyError: KeyError('bytes')
+C7 HEAD_OLD 在原件 count=1 在候选 count=1
+C8 原件注入 merged EXIT=1 stdout='CASE 0 merged'
+C8stderr File "D:\Project\ra2-campaign-forge\lead\merged_safety_20261109\_msv_v9_orig_inject.py", line 24, in <module>
+C8stderr raise TypeError(
+C8stderr TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+C9 绕过 :24 后 EXIT=1 stdout=''
+C9stderr File "D:\Project\ra2-campaign-forge\lead\merged_safety_20261109\_msv_v9_orig_bypass24.py", line 7, in <module>
+C9stderr NameError: name 'Path' is not defined
+
+=== D. 改后 _f2v_verify9 三形态/缺键注射（注入候选副本真实代码） ===
+D0 原件/候选 ast.parse 均 OK
+D1 候选整件真实 30 件 EXIT=0 ; 末行='checked 9' ; sha_ok=True 计数=9 ; MISMATCH 计数=0
+D1b stderr=''
+D2 候选注入 8 例 EXIT=0 ; stderr=''
+D3 候选注入 8 例 CASE 行数=8 ; SKIP 行数=1 ; MATCH 行数=8 ; 末行='checked 9'
+    CASE 0 unique
+    mine   =ea6a4b5dfed7ce4acc639036ae54cc2b43b48f9d3f913fe3bb01f4111456f983 sha_ok=True
+    CASE 1 merged
+    mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=True
+    mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=True
+    CASE 2 multi(match=None)
+    CASE 3 multi(合成 match=True,无path,无members)
+    SKIP#4 #3 bind#1 tier=None 无单一回验路径且无 members（multi：不主张 path）
+    CASE 4 merged 缺 member.bytes
+    mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=True
+    mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=True
+    CASE 5 merged members=None
+    CASE 6 unique 缺 bytes
+    mine   =ea6a4b5dfed7ce4acc639036ae54cc2b43b48f9d3f913fe3bb01f4111456f983 sha_ok=True
+    CASE 7 merged 缺 declared
+    mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=False
+    mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=False
+D_RESULT ALL_EIGHT_NO_EXCEPTION = True
+
+=== E. 补丁后 check_deliverable 返回值结构（★硬要求：零键增删） ===
+E0 BEFORE 片段在原件 count=1
+E1 自造补丁副本（按 DESIGN §三(b) 自己写的 4 行）ast.parse=OK
+E2 difflib added lines = ['+    n_match_no_path = sum(1 for b in bindings', '+                          if b.get("match") is True and not b.get("path"))', '+    if n_match_no_path:', '+        r11_problems = list(r11_problems) + ["R11 回验缺口：%d 条绑定行 match=True 但无单一回验路径（merged 副本群不得默认放行），须人工锚定" % n_match_no_path]']
+E3 difflib added lines count=4
+E4 merged 夹具                    top=True predicates=True all_pred_keys=True types=True verdict old/new=PASS/PASS
+E4 unique 夹具                    top=True predicates=True all_pred_keys=True types=True verdict old/new=PASS/PASS
+E4 multi 夹具                     top=True predicates=True all_pred_keys=True types=True verdict old/new=PASS/PASS
+E4 真实件 B_EXECUTION_SPEC.md      top=True predicates=True all_pred_keys=True types=True verdict old/new=PASS/PASS
+E5 无注入 4 案：结构全同=True verdict 零漂移=True
+
+=== F. 反例：旧 PASS / 新 FAIL（自造交付件 + 自造注入，自己实跑） ===
+F1 OLD+  verdict=PASS R11=PASS reverified=0 match_true=1 R11 problems=[]
+F1 NEW+  verdict=FAIL R11=FAIL reverified=0 match_true=1 R11 problems=['R11 回验缺口：1 条绑定行 match=True 但无单一回验路径（merged 副本群不得默认放行），须人工锚定']
+F1 OWN+  verdict=FAIL R11=FAIL reverified=0 match_true=1 R11 problems=['R11 回验缺口：1 条绑定行 match=True 但无单一回验路径（merged 副本群不得默认放行），须人工锚定']
+F2 OLD+ overall problems=[]
+F3 NEW+ overall problems=['R11 回验缺口：1 条绑定行 match=True 但无单一回验路径（merged 副本群不得默认放行），须人工锚定']
+F4 注入后 TOP KEYS old=['bytes', 'checklist', 'file', 'old_gate', 'predicates', 'problems', 'sha256', 'utf8_strict', 'verdict', 'warnings']
+F5 注入后 R11 KEYS old=['binding_details', 'bindings', 'items', 'match_true', 'name', 'problems', 'reverified', 'rule_id', 'verdict', 'warnings']
+F6 top keys old==new==own : True
+F7 R11 keys old==new==own : True
+F8 全谓词 keys old==new==own : True
+F9 递归结构签名 old==new==own : False
+F10 JSON 可序列化 old/new/own : True
+F11 顶层逐键类型 = [('bytes', 'int', 'int', 'int'), ('checklist', 'dict', 'dict', 'dict'), ('file', 'str', 'str', 'str'), ('old_gate', 'dict', 'dict', 'dict'), ('predicates', 'dict', 'dict', 'dict'), ('problems', 'list', 'list', 'list'), ('sha256', 'str', 'str', 'str'), ('utf8_strict', 'bool', 'bool', 'bool'), ('verdict', 'str', 'str', 'str'), ('warnings', 'list', 'list', 'list')]
+F_RESULT COUNTEREXAMPLE_OK = True
+E_RESULT STRUCTURE_UNCHANGED = False
+F12 无注入 OLD verdict=PASS NEW verdict=PASS（缺陷属未来接入面）
+
+=== G. 安全集边界：崩 vs 静默错 + 汇聚点论断核对 ===
+G1 _f2w_checks.py:29 sha_ok=False（合法 match=True 被记 sha 不一致，静默）
+G2 _f2_compare.py:67-69 (plus_path,plus_match)=(0,1)
+G3 _f2v_final.py:54,57-58 collected=0 tiers={'SAMEDOC_LINK_EQ': 1}
+G4 _f2_selftest.py:110 endswith(...)=False
+G5 _f2w_extract.py:26-33 verified='' recomputed='-' bytes='-'
+G6 link_triple problems=[] ⇒ 门禁只读 problems 不会 FAIL
+G7 6 个静默表达式全部未抛异常（fail-open）；C2/C3/C4 抛异常（fail-closed）
+G8 _f2w_checks.py         读 _f2_compare_out.json=True  直接调 r11_scan_plus=False
+G8 _f2_selftest.py        读 _f2_compare_out.json=False 直接调 r11_scan_plus=True
+G8 _f2_compare.py         读 _f2_compare_out.json=True  直接调 r11_scan_plus=True
+G8 _f2v_final.py          读 _f2_compare_out.json=False 直接调 r11_scan_plus=True
+G8 _f2v_run.py            读 _f2_compare_out.json=False 直接调 r11_scan_plus=True
+G8 _f2w_dogfood.py        读 _f2_compare_out.json=False 直接调 r11_scan_plus=True
+G8 _f2w_extract.py        读 _f2_compare_out.json=True  直接调 r11_scan_plus=False
+G8 _f2w_pass.py           读 _f2_compare_out.json=True  直接调 r11_scan_plus=False
+G9 读 JSON 的件数=4 ['_f2w_checks.py', '_f2_compare.py', '_f2w_extract.py', '_f2w_pass.py']
+G10 直接调 r11_scan_plus 的件数=5 ['_f2_selftest.py', '_f2_compare.py', '_f2v_final.py', '_f2v_run.py', '_f2w_dogfood.py']
+G11 DESIGN 含『6 件静默误读全读 _f2_compare.py:100 写出的同一 JSON』: True
+G12 DESIGN 含『一处汇聚点覆盖 6 件静默误读』: True
+G13 AUDIT:79 原文『读者=这 3 件（加 _f2w_extract.py:13）』: True
+G14 AUDIT §5.2 六条计数=6 ; 含『1–3（代码必做）+ 5–6（治理/审计必做）』: True
+G15 DESIGN 含 '静默错比崩更该进安全集' : True
+G15 DESIGN 含 '崩 = **fail-closed**' : True
+G15 DESIGN 含 '静默错 = **fail-open**' : True
+G15 DESIGN 含 '两项不足以称「够」' : False
+G15 DESIGN 含 '结论：代码补丁 = 2 项' : True
+G15 DESIGN 含 'fail-open' : True
+G16 _mc_AUDIT.md 含『7 处静默误读』: False
+
+=== H. 越界检查：末轮指纹 / 只读域 .pyc / 既有件未改 ===
+H1 ALL_EIGHT_UNCHANGED = True
+    lead/r11_f2_fix_20261109/_f2v_verify9.py c22f28ad4228d028c16d8558a8dd9a0980947631ab5bcf5c9cd84e529cf439e3 1618
+    lead/gate_r9r12_20261109/_g9_gate.py a83081eeffc56e830c84ebcfe945114b5e2ac1082467ed04d97634912dacd2a6 11623
+    lead/gate_fp7_20261108/_g7_predicates.py 02c17e49764a6f87f2b0d26c6689f0cbeb96498509e5c75bf843104829c51120 11743
+    lead/r33e_merge_20261109/_re_linked.py 7ca339c6beb728f488903e1b0c748708accf45cd5e3bce45d532290c0c755b52 19481
+    lead/merged_consumer_audit_20261109/_mc_AUDIT.md 8b0be4a59bd3e88ffd908a234e9c8382a724478d93409fddf3814d5bb5aa3367 33762
+    lead/merged_consumer_audit_20261109/MERGED_CONSUMER_AUDIT.md 85de273758a6b87915f9735a07e1b9e1d11c594de50f41d83f5e70145257c263 40884
+    lead/PENDING_DECISIONS.md 3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 52419
+    lead/GOAL_THREE_TARGETS_20261018.md 2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede 759518
+H2 r11_f2_fix_20261109              *.pyc count=1 ['lead\\r11_f2_fix_20261109\\__pycache__\\_f2_r11plus.cpython-312.pyc']
+H2 gate_r9r12_20261109              *.pyc count=1 ['lead\\gate_r9r12_20261109\\__pycache__\\_g9_gate.cpython-312.pyc']
+H2 r33e_merge_20261109              *.pyc count=1 ['lead\\r33e_merge_20261109\\__pycache__\\_re_linked.cpython-312.pyc']
+H2 merged_consumer_audit_20261109   *.pyc count=0 []
+H3 原件仍含逐字 :24 = True
+H4 门禁原件仍含逐字 :160 = True
+H5 本复核员写域新增件 = ['_msv_check.py', '_msv_check_stdout.txt', '_msv_fixtures', '_msv_g9_own.py', '_msv_merged_doc.md', '_msv_multi_doc.md', '_msv_unique_doc.md', '_msv_v9_cand_inject.py', '_msv_v9_orig_bypass24.py', '_msv_v9_orig_inject.py']
+H_RESULT NO_TAMPER = True

@@ -1,0 +1,20 @@
+========================================================================================
+PHASE matrix · 离线合成单测（不启动真机、不读活进程内存、纯内存字典）
+========================================================================================
+  pre=None (未采集) + 跑后有历史件                -> verdict='unknown'                conf='none'   is_new=None  crash_ev=False
+  pre={} (空) + 跑后有历史件                    -> verdict='unknown'                conf='none'   is_new=None  crash_ev=False
+  pre={exists:False} 伪折叠 + 跑后有历史件        -> verdict='unknown'                conf='none'   is_new=None  crash_ev=False
+  pre 脏 state=zzz + 跑后有历史件               -> verdict='unknown'                conf='none'   is_new=None  crash_ev=False
+  pre.state=unknown + 跑后无件               -> verdict='unknown'                conf='none'   is_new=None  crash_ev=False
+  pre.state=error + 跑后有件                 -> verdict='error_pre_snapshot'     conf='none'   is_new=None  crash_ev=False
+  pre 确认无件 + 跑后有件                        -> verdict='new_first_appearance'   conf='high'   is_new=True  crash_ev=False
+  pre 确认无件 + 跑后无件                        -> verdict='absent_both'            conf='low'    is_new=False crash_ev=False
+  present + sha 不同                       -> verdict='new_write'              conf='high'   is_new=True  crash_ev=False
+  present + sha 同 + mtime 未变             -> verdict='leftover_unchanged'     conf='high'   is_new=False crash_ev=False
+  present + sha 同 + mtime 变大             -> verdict='rewritten_same_content' conf='medium' is_new=True  crash_ev=False
+  present + sha 同 + mtime 回拨             -> verdict='rewritten_same_content' conf='low'    is_new=True  crash_ev=False
+  present + 缺 sha                        -> verdict='error_pre_snapshot'     conf='none'   is_new=None  crash_ev=False
+  present + 跑后无件 (vanished)              -> verdict='vanished'               conf='none'   is_new=None  crash_ev=False
+  跑后读/复制失败                               -> verdict='post_read_error'        conf='none'   is_new=None  crash_ev=False
+ASSERT 通过：None/{}/缺state/脏值 ⇒ verdict=unknown 且 conf!=high 且 usable_as_crash_evidence=False（历史遗留件不再 new_first_appearance/high）
+MATRIX_ALL = PASS

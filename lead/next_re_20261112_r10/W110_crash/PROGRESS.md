@@ -1,0 +1,86 @@
+- 2026-11-14T21:21:02.535+08:00 trip=trip_crash_step2_r1 cell=crash_step2 outcome=BLOCKED: lock gate refused: session owner must be the W98 batch runner (owner=w110-batchrun, got 'w110-batchrun') ok=False
+- 2026-11-14T21:21:04.417+08:00 trip=trip_crash_step2_r2 cell=crash_step2 outcome=BLOCKED: lock gate refused: session owner must be the W98 batch runner (owner=w110-batchrun, got 'w110-batchrun') ok=False
+- 2026-11-14T21:21:06.216+08:00 trip=trip_crash_step2_r3 cell=crash_step2 outcome=BLOCKED: lock gate refused: session owner must be the W98 batch runner (owner=w110-batchrun, got 'w110-batchrun') ok=False
+- 2026-11-14T21:21:07.827+08:00 trip=trip_crash_step2_r4 cell=crash_step2 outcome=BLOCKED: lock gate refused: session owner must be the W98 batch runner (owner=w110-batchrun, got 'w110-batchrun') ok=False
+- 2026-11-14T21:41:56.297+08:00 trip=trip_crash_step2_r1 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-14T21:43:02.967+08:00 trip=trip_crash_step2_r2 cell=crash_step2 outcome=ABORTED_CRASH_AV_0xC0000005 ok=False
+- 2026-11-14T21:44:03.596+08:00 trip=trip_crash_step2_r3 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-14T21:45:04.337+08:00 trip=trip_crash_step2_r4 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-14T21:51:17.563+08:00 trip=trip_crash_step2_r1 cell=crash_step2 outcome=ABORTED_CRASH_AV_0xC0000005 ok=False
+- 2026-11-14T21:53:11.806+08:00 trip=trip_crash_step2_r2 cell=crash_step2 outcome=ABORTED_CRASH_AV_0xC0000005 ok=False
+- 2026-11-14T21:54:44.436+08:00 trip=trip_crash_step2_r3 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-14T22:14:13.585+08:00 trip=trip_crash_step2_r1 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-14T22:15:19.883+08:00 trip=trip_crash_step2_r2 cell=crash_step2 outcome=ABORTED_CRASH_AV_0xC0000005 ok=False
+- 2026-11-14T22:16:21.117+08:00 trip=trip_crash_step2_r3 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-14T22:17:19.751+08:00 trip=trip_crash_step2_r4 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:22:24.344+08:00 trip=trip_crash_step2_r1 cell=crash_step2 outcome=ABORTED_CRASH_AV_0xC0000005 ok=False
+- 2026-11-15T00:23:27.439+08:00 trip=trip_crash_step2_r2 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:24:25.362+08:00 trip=trip_crash_step2_r3 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:37:32.088+08:00 trip=trip_crash_step2_r1 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:38:32.014+08:00 trip=trip_crash_step2_r2 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:39:32.959+08:00 trip=trip_crash_step2_r3 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:40:35.150+08:00 trip=trip_crash_step2_r4 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:44:54.953+08:00 trip=trip_crash_step2_r1 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:45:53.891+08:00 trip=trip_crash_step2_r2 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:46:52.934+08:00 trip=trip_crash_step2_r3 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:47:54.251+08:00 trip=trip_crash_step2_r4 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:49:33.623+08:00 trip=trip_crash_step2_r1 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:50:32.261+08:00 trip=trip_crash_step2_r2 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:51:36.020+08:00 trip=trip_crash_step2_r3 cell=crash_step2 outcome=ABORTED_CRASH_AV_0xC0000005 ok=False
+- 2026-11-15T00:52:38.188+08:00 trip=trip_crash_step2_r4 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:56:06.917+08:00 trip=trip_crash_step2_r1 cell=crash_step2 outcome=ABORTED_CRASH_AV_0xC0000005 ok=False
+- 2026-11-15T00:57:05.689+08:00 trip=trip_crash_step2_r2 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:58:05.798+08:00 trip=trip_crash_step2_r3 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T00:59:05.090+08:00 trip=trip_crash_step2_r4 cell=crash_step2 outcome=ABORTED_ENGINE_ERROR ok=False
+- 2026-11-15T01:06:16.467+08:00 trip=trip_ctrl_step3_r1 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T01:09:30.595+08:00 trip=trip_ctrl_step3_r2 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T01:12:52.479+08:00 trip=trip_ctrl_step3_r3 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T01:16:06.419+08:00 trip=trip_ctrl_step3_r4 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:05:34.405+08:00 trip=trip_ctrl_step3_r1 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:08:47.362+08:00 trip=trip_ctrl_step3_r2 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:12:00.444+08:00 trip=trip_ctrl_step3_r3 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:15:13.588+08:00 trip=trip_ctrl_step3_r4 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:29:18.542+08:00 trip=trip_ctrl_step3_r1 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:32:32.258+08:00 trip=trip_ctrl_step3_r2 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:35:45.655+08:00 trip=trip_ctrl_step3_r3 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:38:58.889+08:00 trip=trip_ctrl_step3_r4 cell=ctrl_step3 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:45:09.954+08:00 trip=trip_us_lo_n1230_r1 cell=us_lo_n1230 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:48:23.169+08:00 trip=trip_us_lo_n1230_r2 cell=us_lo_n1230 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:51:36.074+08:00 trip=trip_us_lo_n1230_r3 cell=us_lo_n1230 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:54:49.504+08:00 trip=trip_us_hi_n1770_r1 cell=us_hi_n1770 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T02:58:02.428+08:00 trip=trip_us_hi_n1770_r2 cell=us_hi_n1770 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:01:15.208+08:00 trip=trip_us_hi_n1770_r3 cell=us_hi_n1770 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:05:52.733+08:00 trip=trip_ai_guard_r1 cell=ai_guard outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:09:04.662+08:00 trip=trip_ai_guard_r2 cell=ai_guard outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:12:16.595+08:00 trip=trip_ai_guard_r3 cell=ai_guard outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:15:30.070+08:00 trip=trip_ai_hunt_r1 cell=ai_hunt outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:18:43.086+08:00 trip=trip_ai_hunt_r2 cell=ai_hunt outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:21:54.881+08:00 trip=trip_ai_hunt_r3 cell=ai_hunt outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:41:18.121+08:00 trip=trip_hunt_near_r1 cell=hunt_near outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:44:32.972+08:00 trip=trip_hunt_near_r2 cell=hunt_near outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:47:47.861+08:00 trip=trip_hunt_near_r3 cell=hunt_near outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:51:16.393+08:00 trip=trip_hunt_partial_r1 cell=hunt_partial outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:54:28.178+08:00 trip=trip_hunt_partial_r2 cell=hunt_partial outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T03:57:40.211+08:00 trip=trip_hunt_partial_r3 cell=hunt_partial outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T04:07:10.571+08:00 trip=trip_c2_guard_r1 cell=c2_guard outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T04:10:22.536+08:00 trip=trip_c2_guard_r2 cell=c2_guard outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T04:13:38.793+08:00 trip=trip_c2_near_r1 cell=c2_near outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T04:16:54.799+08:00 trip=trip_c2_near_r2 cell=c2_near outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T04:33:13.496+08:00 trip=trip_rof_probe_r1 cell=rof_probe outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T04:40:49.918+08:00 trip=trip_burst1_r1 cell=burst1 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T04:48:59.628+08:00 trip=trip_rof2_r1 cell=rof2 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T04:59:11.307+08:00 trip=trip_carrier_r1 cell=carrier outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T05:04:47.884+08:00 trip=trip_carrier2_r1 cell=carrier2 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T05:10:55.909+08:00 trip=trip_mixrof_r1 cell=mixrof outcome=BLOCKED: timeout waiting to enter RA2F_M1.MAP ok=False
+- 2026-11-15T05:17:49.810+08:00 trip=trip_mixmin_r1 cell=mixmin outcome=BLOCKED: timeout waiting to enter RA2F_M1.MAP ok=False
+- 2026-11-15T05:23:56.551+08:00 trip=trip_ctrl_orig_r1 cell=ctrl_orig outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T05:30:11.058+08:00 trip=trip_mixfix_r1 cell=mixfix outcome=BLOCKED: timeout waiting to enter RA2F_M1.MAP ok=False
+- 2026-11-15T05:39:41.416+08:00 trip=trip_mixal4_r1 cell=mixal4 outcome=BLOCKED: timeout waiting to enter RA2F_M1.MAP ok=False
+- 2026-11-15T05:47:56.273+08:00 trip=trip_samesize_r1 cell=samesize outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T05:51:40.851+08:00 trip=trip_burst1mix_r1 cell=burst1mix outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T05:55:06.764+08:00 trip=trip_rof99_r1 cell=rof99 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T05:58:30.003+08:00 trip=trip_range1_r1 cell=range1 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T06:01:51.117+08:00 trip=trip_speed99_r1 cell=speed99 outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T08:22:04.194+08:00 trip=trip_dense_near_r1 cell=dense_near outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T08:25:19.192+08:00 trip=trip_dense_near_r2 cell=dense_near outcome=VALID_WINDOW_target_reached ok=True
+- 2026-11-15T09:06:19.364+08:00 trip=trip_scan_near_r1 cell=scan_near outcome=VALID_WINDOW_target_reached ok=True

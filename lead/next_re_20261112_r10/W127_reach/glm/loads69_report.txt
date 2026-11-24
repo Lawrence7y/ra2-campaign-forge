@@ -1,0 +1,982 @@
+=== 0. target ===
+exe: D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+sha256(exe) = 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476
+
+=== 1. mapping self-check (index = VA - 0x400000) ===
+rule: get_memory_mapped_image()[i] == VA(0x400000 + i)
+mapped image size: 0x796000 bytes ; img[0:2] = b'MZ'
+
+=== 2. FUN_00724730 / crash-site premise check ===
+  0x724730  sub    esp, 0xc                         [83ec0c]
+  0x724733  push   ebp                              [55]
+  0x724734  mov    ebp, ecx                         [8be9]
+  0x724736  push   esi                              [56]
+  0x724737  mov    eax, dword ptr [ebp + 0x250]     [8b8550020000]
+  0x72473d  lea    esi, [ebp + 0x24c]               [8db54c020000]
+  0x724743  test   eax, eax                         [85c0]
+  0x724745  je     0x7248a9                         [0f845e010000]
+  @0x724737 (recorded crash EIP): mov eax, dword ptr [ebp + 0x250] [8b8550020000]
+  OK: matches premise 'first real memory access mov eax,[ebp+0x250]'
+  OK: all 20 known load addresses contain bytes 8b 0d 68 73 88 00
+
+=== 3. sections ===
+  .text    VA 0x00401000 .. 0x007e038c (VirtualSize 0x3df38d)
+  .rdata   VA 0x007e1000 .. 0x00811073 (VirtualSize 0x30074)
+  .data    VA 0x00812000 .. 0x00b79be3 (VirtualSize 0x367be4)
+  .rsrc    VA 0x00b7a000 .. 0x00b92127 (VirtualSize 0x18128)
+  .detour  VA 0x00b93000 .. 0x00b95717 (VirtualSize 0x2718)
+
+=== 4. skipdata linear sweep of .text (method check) ===
+  .text bytes scanned: 0x3df38e ; decoded instructions (incl. skipdata): 1392593 ; coverage end: 0x7e038e (expected 0x7e038e)
+
+=== 5. byte-pattern scan: 8B 0D 68 73 88 00 in .text ===
+  found 69 occurrences (premise: 69)
+  known-20 all reproduced at exact addresses; remaining loads to classify: 49
+
+=== 6. classification of all 69 sites ===
+  A call_del: 28
+  B guarded : 19
+  C other   : 22
+  known-20 reproduced as A: 20/20
+  known-20 call distance (call_start - load_start): min 0x6, max 0x17 (premise: within 0x18)
+  !! NEW FINDING: 8 additional unconditional FUN_00724730 call sites outside the known-20 list (call distance 0x654446(+0x23), 0x6ac0ca(+0x23), 0x6ac120(+0x20), 0x6ac174(+0x1f), 0x6ac1cc(+0x1a), 0x6d057f(+0x1c), 0x6d15af(+0x1c), 0x6d1728(+0x1c)):
+
+=== 7. the remaining 49 loads (class / subkind / target) ===
+  0x48ce4c  B  guarded:cmp-reg-unproven:ebx:call:0x7241a0 call->0x7241a0
+  0x4a8b18  B  guarded:cmp-reg-unproven:ebx:use-beyond-window 
+  0x4a8b7a  C  call:0x724580                              call->0x724580
+  0x4f4562  B  guarded:null-check:deref-load              
+  0x4f4a01  B  guarded:null-check:call:0x724c00           call->0x724c00
+  0x52daf9  B  guarded:cmp-reg-unproven:ebx:call:0x7241a0 call->0x7241a0
+  0x55d0a0  B  guarded:cmp-reg-unproven:ebx:call:0x7241a0 call->0x7241a0
+  0x55d159  B  guarded:cmp-reg-unproven:ebx:call:0x7241a0 call->0x7241a0
+  0x55d1e7  B  guarded:cmp-reg-unproven:ebx:call:0x7241a0 call->0x7241a0
+  0x5c4bb8  C  call:0x7241a0                              call->0x7241a0
+  0x5d4dbc  B  guarded:null-check:call:0x724200           call->0x724200
+  0x6403a8  B  guarded:null-check:use-beyond-window       
+  0x640431  C  call:0x724580                              call->0x724580
+  0x654418  C  call:0x724580                              call->0x724580
+  0x654446  A  call_del                                   call->0x724730
+  0x654473  C  call:0x724580                              call->0x724580
+  0x683f54  B  guarded:null-check:call:0x7241a0           call->0x7241a0
+  0x684010  B  guarded:null-check:call:0x7241a0           call->0x7241a0
+  0x685d7f  B  guarded:null-check:call:0x7241a0           call->0x7241a0
+  0x68639f  B  guarded:cmp-reg-unproven:esi:call:0x7241a0 call->0x7241a0
+  0x686424  B  guarded:null-check:call:0x7241a0           call->0x7241a0
+  0x686541  B  guarded:null-check:call:0x7241a0           call->0x7241a0
+  0x69bb9c  B  guarded:null-check:call:0x7241a0           call->0x7241a0
+  0x6a707f  B  guarded:cmp-reg-unproven:ebx:deref-load    
+  0x6ab994  C  call:0x724530                              call->0x724530
+  0x6ab99f  C  call:0x724520                              call->0x724520
+  0x6ab9e3  C  call:0x724540                              call->0x724540
+  0x6ac015  C  call:0x724580                              call->0x724580
+  0x6ac07f  C  call:0x724580                              call->0x724580
+  0x6ac0ca  A  call_del                                   call->0x724730
+  0x6ac0f2  C  call:0x724580                              call->0x724580
+  0x6ac120  A  call_del                                   call->0x724730
+  0x6ac14a  C  call:0x724580                              call->0x724580
+  0x6ac174  A  call_del                                   call->0x724730
+  0x6ac198  C  call:0x724580                              call->0x724580
+  0x6ac1cc  A  call_del                                   call->0x724730
+  0x6ac1eb  C  call:0x724580                              call->0x724580
+  0x6d057f  A  call_del                                   call->0x724730
+  0x6d05a0  C  call:0x724580                              call->0x724580
+  0x6d09ff  C  call:0x724580                              call->0x724580
+  0x6d1298  C  call:0x724580                              call->0x724580
+  0x6d130d  C  call:0x724580                              call->0x724580
+  0x6d1383  C  call:0x724580                              call->0x724580
+  0x6d13f8  C  call:0x724580                              call->0x724580
+  0x6d15af  A  call_del                                   call->0x724730
+  0x6d15d0  C  call:0x724580                              call->0x724580
+  0x6d1728  A  call_del                                   call->0x724730
+  0x6d1749  C  call:0x724580                              call->0x724580
+  0x7777f3  B  guarded:cmp-reg-unproven:ebx:deref-load    
+
+=== 8. B (guarded) sites ===
+  --- 0x48ce4c  guarded:cmp-reg-unproven:ebx:call:0x7241a0
+      0x48ce4c  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x48ce52  cmp    ecx, ebx
+      0x48ce54  je     0x48ce62
+      0x48ce56  mov    dl, byte ptr [0xa8eb80]
+      0x48ce5c  push   edx
+      0x48ce5d  call   0x7241a0
+      0x48ce5d  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x48ce62  mov    eax, dword ptr [0xa8b230]
+      0x48ce67  mov    cl, byte ptr [eax + 0x35a2]
+      0x48ce6d  mov    dword ptr [0xa8eda0], ebx
+      0x48ce73  mov    byte ptr [0xa8ed9c], cl
+      0x48ce79  mov    ecx, 0xa8b238
+      0x48ce7e  mov    byte ptr [0x822cfc], 1
+      0x48ce85  call   0x69bab0
+      0x48ce8a  call   0x55d360
+      notes: guard compares value against register ebx -- not proven zero inside window; protective only if that register == 0
+  --- 0x4a8b18  guarded:cmp-reg-unproven:ebx:use-beyond-window
+      0x4a8b18  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x4a8b1e  mov    edx, dword ptr [0x886fa0]
+      0x4a8b24  mov    eax, dword ptr [0x886fa4]
+      0x4a8b29  mov    esi, dword ptr [0x886fa8]
+      0x4a8b2f  mov    edi, dword ptr [0x886fac]
+      0x4a8b35  cmp    ecx, ebx
+      0x4a8b37  mov    dword ptr [0x8a0704], edx
+      0x4a8b3d  mov    dword ptr [0x8a0708], eax
+      0x4a8b42  mov    dword ptr [0x8a070c], esi
+      0x4a8b48  mov    dword ptr [0x8a0710], edi
+      0x4a8b4e  je     0x4a8b9b
+      0x4a8b50  push   0x1f4
+      0x4a8b55  mov    byte ptr [esp + 0x28], bl
+      notes: guard compares value against register ebx -- not proven zero inside window; no use inside window either
+  --- 0x4f4562  guarded:null-check:deref-load
+      0x4f4562  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x4f4568  test   ecx, ecx
+      0x4f456a  je     0x4f4573
+      0x4f456c  mov    eax, dword ptr [ecx]
+      0x4f456c  mov eax, dword ptr [ecx]   <-- deref through ptr   <== FIRST USE (decides class)
+      0x4f456e  push   0
+      0x4f4570  call   dword ptr [eax + 0xc]
+      0x4f4570  call dword ptr [eax + 0xc]   <-- loaded ptr passed as this
+      0x4f4573  mov    al, byte ptr [0xa8b8b4]
+      0x4f4578  test   al, al
+      0x4f457a  je     0x4f4583
+      0x4f457c  xor    cl, cl
+      0x4f457e  call   0x55f1e0
+      0x4f4583  mov    ecx, dword ptr [0x887640]
+      0x4f4589  mov    eax, dword ptr [0x88731c]
+      0x4f458e  push   0
+      0x4f4590  push   eax
+      0x4f4591  mov    edx, dword ptr [ecx]
+      0x4f4593  call   dword ptr [edx + 0x3c]
+      0x4f4596  mov    edx, dword ptr [esi]
+      0x4f4598  mov    ecx, esi
+      0x4f459a  call   dword ptr [edx + 0x44]
+      0x4f459d  mov    dword ptr [0x887314], ebp
+  --- 0x4f4a01  guarded:null-check:call:0x724c00
+      0x4f4a01  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x4f4a07  test   ecx, ecx
+      0x4f4a09  je     0x4f4a24
+      0x4f4a0b  call   0x724c00
+      0x4f4a0b  call 0x724c00   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x4f4a10  test   al, al
+      0x4f4a12  je     0x4f4a1e
+      0x4f4a14  mov    edx, dword ptr [0x87f7f0]
+      0x4f4a1a  mov    al, 1
+      0x4f4a1c  jmp    0x4f4a26
+  --- 0x52daf9  guarded:cmp-reg-unproven:ebx:call:0x7241a0
+      0x52daf9  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x52daff  cmp    ecx, ebx
+      0x52db01  je     0x52db09
+      0x52db03  push   ebx
+      0x52db04  call   0x7241a0
+      0x52db04  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x52db09  mov    eax, dword ptr [0xa8b238]
+      0x52db0e  cmp    eax, ebx
+      0x52db10  jne    0x52db19
+      0x52db12  mov    esi, 0x12
+      0x52db17  jmp    0x52db26
+      notes: guard compares value against register ebx -- not proven zero inside window; protective only if that register == 0
+  --- 0x55d0a0  guarded:cmp-reg-unproven:ebx:call:0x7241a0
+      0x55d0a0  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x55d0a6  cmp    ecx, ebx
+      0x55d0a8  je     0x55d0b5
+      0x55d0aa  push   ebx
+      0x55d0ab  call   0x7241a0
+      0x55d0ab  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x55d0b0  mov    al, byte ptr [0xa83d49]
+      0x55d0b5  cmp    al, bl
+      0x55d0b7  jne    0x55d0c5
+      0x55d0b9  cmp    byte ptr [0xa8ecd0], bl
+      0x55d0bf  je     0x55d20c
+      0x55d0c5  mov    ecx, dword ptr [0xa8b23c]
+      0x55d0cb  mov    edx, dword ptr [0xa8b238]
+      0x55d0d1  cmp    ecx, ebx
+      0x55d0d3  je     0x55d0f3
+      0x55d0d5  cmp    edx, 3
+      0x55d0d8  je     0x55d0df
+      0x55d0da  cmp    edx, 4
+      0x55d0dd  jne    0x55d0f3
+      0x55d0df  mov    edx, dword ptr [ecx]
+      notes: guard compares value against register ebx -- not proven zero inside window; protective only if that register == 0
+  --- 0x55d159  guarded:cmp-reg-unproven:ebx:call:0x7241a0
+      0x55d159  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x55d15f  mov    byte ptr [0xabcd58], bl
+      0x55d165  cmp    ecx, ebx
+      0x55d167  je     0x55d341
+      0x55d16d  mov    al, byte ptr [0xa8eb80]
+      0x55d172  push   eax
+      0x55d173  call   0x7241a0
+      0x55d173  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x55d178  jmp    0x55d341
+      notes: guard compares value against register ebx -- not proven zero inside window; protective only if that register == 0
+  --- 0x55d1e7  guarded:cmp-reg-unproven:ebx:call:0x7241a0
+      0x55d1e7  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x55d1ed  mov    byte ptr [0xabcd58], bl
+      0x55d1f3  cmp    ecx, ebx
+      0x55d1f5  je     0x55d341
+      0x55d1fb  mov    dl, byte ptr [0xa8eb80]
+      0x55d201  push   edx
+      0x55d202  call   0x7241a0
+      0x55d202  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x55d207  jmp    0x55d341
+      notes: guard compares value against register ebx -- not proven zero inside window; protective only if that register == 0
+  --- 0x5d4dbc  guarded:null-check:call:0x724200
+      0x5d4dbc  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x5d4dc2  test   ecx, ecx
+      0x5d4dc4  je     0x5d4dd0
+      0x5d4dc6  lea    eax, [esp + 0x10]
+      0x5d4dca  push   eax
+      0x5d4dcb  call   0x724200
+      0x5d4dcb  call 0x724200   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x5d4dd0  mov    eax, dword ptr [0xabfca0]
+      0x5d4dd5  xor    esi, esi
+      0x5d4dd7  test   eax, eax
+      0x5d4dd9  jle    0x5d4dfa
+      0x5d4ddb  mov    edx, dword ptr [0xabfc94]
+      0x5d4de1  lea    ecx, [esp + 0x10]
+      0x5d4de5  push   ecx
+      0x5d4de6  mov    eax, dword ptr [edx + esi*4]
+      0x5d4de9  push   eax
+      0x5d4dea  call   ebx
+      0x5d4dec  test   eax, eax
+      0x5d4dee  jne    0x5d4e4d
+      0x5d4df0  mov    eax, dword ptr [0xabfca0]
+      0x5d4df5  inc    esi
+      0x5d4df6  cmp    esi, eax
+      0x5d4df8  jl     0x5d4ddb
+      0x5d4dfa  mov    eax, dword ptr [0xabfcc8]
+  --- 0x6403a8  guarded:null-check:use-beyond-window
+      0x6403a8  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6403ae  xor    eax, eax
+      0x6403b0  cmp    ecx, eax
+      0x6403b2  je     0x64043d
+      0x6403b8  mov    edx, dword ptr [0xa8b230]
+      0x6403be  push   esi
+      0x6403bf  mov    dword ptr [esp + 0xc], eax
+      0x6403c3  mov    dword ptr [esp + 0x10], eax
+      0x6403c7  mov    dword ptr [esp + 0x14], eax
+      0x6403cb  mov    dword ptr [esp + 0x18], eax
+      0x6403cf  mov    byte ptr [esp + 0x20], al
+      0x6403d3  mov    dword ptr [esp + 8], 0x3e7
+      0x6403db  mov    dword ptr [esp + 0x1c], eax
+      0x6403df  mov    esi, dword ptr [edx + 0x34b8]
+      0x6403e5  cmp    esi, eax
+      0x6403e7  jne    0x6403ee
+      notes: test/jz-style guard @0x6403b2; no use inside window; any later fallthrough use is behind the guard
+  --- 0x683f54  guarded:null-check:call:0x7241a0
+      0x683f54  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x683f5a  test   ecx, ecx
+      0x683f5c  pop    esi
+      0x683f5d  je     0x683f66
+      0x683f5f  push   0
+      0x683f61  call   0x7241a0
+      0x683f61  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x683f66  mov    ecx, 0x87f7e8
+      0x683f6b  call   0x6938c0
+      0x683f70  mov    ecx, 0x87f7e8
+      0x683f75  push   0
+      0x683f77  push   0
+      0x683f79  call   0x5bdc80
+      0x683f7e  mov    ecx, dword ptr [0x887640]
+      0x683f84  mov    edx, dword ptr [ecx]
+      0x683f86  call   dword ptr [edx + 0xc]
+      0x683f89  mov    ecx, 0x87f7e8
+      0x683f8e  push   2
+      0x683f90  call   0x4f42f0
+  --- 0x684010  guarded:null-check:call:0x7241a0
+      0x684010  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x684016  add    esp, 8
+      0x684019  test   ecx, ecx
+      0x68401b  pop    edi
+      0x68401c  pop    esi
+      0x68401d  je     0x68402b
+      0x68401f  mov    dl, byte ptr [0xa8eb80]
+      0x684025  push   edx
+      0x684026  call   0x7241a0
+      0x684026  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x68402b  mov    edx, dword ptr [0x83d834]
+      0x684031  mov    ecx, dword ptr [0x87e758]
+      0x684037  call   0x407150
+      0x68403c  xor    cl, cl
+      0x68403e  mov    dword ptr [0x83d834], 0x4000
+      0x684048  call   0x5bf500
+      0x68404d  jmp    0x406f40
+  --- 0x685d7f  guarded:null-check:call:0x7241a0
+      0x685d7f  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x685d85  test   ecx, ecx
+      0x685d87  je     0x685d95
+      0x685d89  mov    dl, byte ptr [0xa8eb80]
+      0x685d8f  push   edx
+      0x685d90  call   0x7241a0
+      0x685d90  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x685d95  mov    ecx, 0x87f7e8
+      0x685d9a  call   0x4f4480
+      0x685d9f  mov    edx, 7
+      0x685da4  mov    ecx, 0x885780
+      0x685da9  push   0x48d080
+      0x685dae  call   0x4a3c30
+      0x685db3  pop    edi
+      0x685db4  pop    esi
+      0x685db5  pop    ebp
+      0x685db6  pop    ebx
+      0x685db7  add    esp, 0x84
+      0x685dbd  ret    
+  --- 0x68639f  guarded:cmp-reg-unproven:esi:call:0x7241a0
+      0x68639f  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6863a5  cmp    ecx, esi
+      0x6863a7  je     0x6863b4
+      0x6863a9  mov    al, byte ptr [0xa8eb80]
+      0x6863ae  push   eax
+      0x6863af  call   0x7241a0
+      0x6863af  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6863b4  mov    ecx, 0x87f7e8
+      0x6863b9  call   0x4f4480
+      0x6863be  jmp    0x686216
+      notes: guard compares value against register esi -- not proven zero inside window; protective only if that register == 0
+  --- 0x686424  guarded:null-check:call:0x7241a0
+      0x686424  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x68642a  mov    byte ptr [0xa8ed5c], 0
+      0x686431  test   ecx, ecx
+      0x686433  mov    byte ptr [0xa8e378], 0
+      0x68643a  je     0x686443
+      0x68643c  push   0
+      0x68643e  call   0x7241a0
+      0x68643e  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x686443  mov    edx, dword ptr [0xa8b230]
+      0x686449  push   esi
+      0x68644a  mov    eax, dword ptr [edx + 0x614]
+      0x686450  lea    esi, [edx + 0x614]
+      0x686456  cmp    eax, -1
+      0x686459  je     0x686475
+      0x68645b  lea    ecx, [esi + 4]
+      0x68645e  call   0x6c8c40
+      0x686463  mov    edx, dword ptr [esi]
+  --- 0x686541  guarded:null-check:call:0x7241a0
+      0x686541  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x686547  test   ecx, ecx
+      0x686549  pop    esi
+      0x68654a  je     0x686558
+      0x68654c  mov    dl, byte ptr [0xa8eb80]
+      0x686552  push   edx
+      0x686553  call   0x7241a0
+      0x686553  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x686558  mov    ecx, 0x87f7e8
+      0x68655d  call   0x4f4480
+      0x686562  add    esp, 0x18
+      0x686565  ret    
+  --- 0x69bb9c  guarded:null-check:call:0x7241a0
+      0x69bb9c  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x69bba2  test   ecx, ecx
+      0x69bba4  je     0x69bbad
+      0x69bba6  push   0
+      0x69bba8  call   0x7241a0
+      0x69bba8  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x69bbad  mov    ecx, dword ptr [0x887640]
+      0x69bbb3  mov    eax, dword ptr [ecx]
+      0x69bbb5  call   dword ptr [eax + 0x1c]
+      0x69bbb8  test   al, al
+      0x69bbba  je     0x69bbc7
+      0x69bbbc  mov    ecx, dword ptr [0x887640]
+      0x69bbc2  mov    edx, dword ptr [ecx]
+      0x69bbc4  call   dword ptr [edx + 0x14]
+      0x69bbc7  mov    ecx, dword ptr [0x887640]
+      0x69bbcd  mov    eax, dword ptr [ecx]
+      0x69bbcf  call   dword ptr [eax + 0xc]
+      0x69bbd2  mov    dword ptr [0xb07784], 0
+  --- 0x6a707f  guarded:cmp-reg-unproven:ebx:deref-load
+      0x6a707f  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6a7085  cmp    ecx, ebx
+      0x6a7087  je     0x6a7096
+      0x6a7089  mov    edx, dword ptr [ecx]
+      0x6a7089  mov edx, dword ptr [ecx]   <-- deref through ptr   <== FIRST USE (decides class)
+      0x6a708b  push   1
+      0x6a708d  call   dword ptr [edx + 0xc]
+      0x6a708d  call dword ptr [edx + 0xc]   <-- loaded ptr passed as this
+      0x6a7090  mov    dl, byte ptr [0xb0b518]
+      0x6a7096  cmp    dl, bl
+      0x6a7098  jne    0x6a70a6
+      0x6a709a  cmp    byte ptr [edi + 0x53a7], bl
+      0x6a70a0  jne    0x6a70a6
+      0x6a70a2  xor    eax, eax
+      0x6a70a4  jmp    0x6a70ab
+      notes: guard compares value against register ebx -- not proven zero inside window; protective only if that register == 0
+  --- 0x7777f3  guarded:cmp-reg-unproven:ebx:deref-load
+      0x7777f3  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x7777f9  cmp    ecx, ebx
+      0x7777fb  je     0x777809
+      0x7777fd  mov    eax, dword ptr [ecx]
+      0x7777fd  mov eax, dword ptr [ecx]   <-- deref through ptr   <== FIRST USE (decides class)
+      0x7777ff  push   1
+      0x777801  call   dword ptr [eax]
+      0x777801  call dword ptr [eax]   <-- loaded ptr passed as this
+      0x777803  mov    dword ptr [0x887368], ebx
+      0x777809  mov    eax, dword ptr [0xa8edd8]
+      0x77780e  mov    dword ptr [0xb73550], ebx
+      0x777814  cmp    eax, ebx
+      0x777816  je     0x777822
+      0x777818  mov    dword ptr [0xa8edd8], 2
+      0x777822  pop    edi
+      0x777823  pop    esi
+      0x777824  xor    eax, eax
+      0x777826  pop    ebx
+      0x777827  pop    ecx
+      0x777828  ret    0x10
+      notes: guard compares value against register ebx -- not proven zero inside window; protective only if that register == 0 | window re-references global 0x887368 directly: mov dword ptr [0x887368], ebx
+
+=== 9. C (other) sites: 22 -- full windows ===
+
+  --- load 0x4a8b7a   sub=call:0x724580   call_target=0x724580
+      0x4a8b7a  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x4a8b80  lea    eax, [esp + 0xc]
+      0x4a8b84  push   eax
+      0x4a8b85  call   0x724580
+      0x4a8b85  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x4a8b8a  mov    eax, dword ptr [0x886fa4]
+      0x4a8b8f  mov    edx, dword ptr [0x886fa0]
+      0x4a8b95  mov    esi, dword ptr [0x886fa8]
+      0x4a8b9b  add    esi, -6
+      0x4a8b9e  add    edx, 3
+      0x4a8ba1  push   esi
+      0x4a8ba2  push   0x62
+      0x4a8ba4  push   0x14
+      0x4a8ba6  push   ebx
+      0x4a8ba7  push   -1
+      0x4a8ba9  push   -1
+      0x4a8bab  push   0xe
+      0x4a8bad  push   0x62
+      0x4a8baf  push   6
+      0x4a8bb1  push   eax
+      0x4a8bb2  push   edx
+      0x4a8bb3  mov    ecx, 0xa8bc60
+      0x4a8bb8  call   0x5d3a60
+
+  --- load 0x5c4bb8   sub=call:0x7241a0   call_target=0x7241a0
+      0x5c4bb8  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x5c4bbe  push   ebx
+      0x5c4bbf  mov    dword ptr [0x8b41f8], ebx
+      0x5c4bc5  mov    dword ptr [0x8b41fc], ebx
+      0x5c4bcb  mov    dword ptr [0x8b4200], ebx
+      0x5c4bd1  mov    dword ptr [0xa802c8], ebx
+      0x5c4bd7  mov    dword ptr [0xa802cc], ebx
+      0x5c4bdd  mov    dword ptr [0xa802d0], ebx
+      0x5c4be3  call   0x7241a0
+      0x5c4be3  call 0x7241a0   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x5c4be8  mov    edx, dword ptr [0xa8da84]
+      0x5c4bee  push   edx
+      0x5c4bef  push   0x82e078
+      0x5c4bf4  call   0x4068e0
+
+  --- load 0x640431   sub=call:0x724580   call_target=0x724580
+      0x640431  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x640437  call   0x724580
+      0x640437  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x64043c  pop    esi
+      0x64043d  add    esp, 0x20
+      0x640440  ret    
+
+  --- load 0x654418   sub=call:0x724580   call_target=0x724580
+      0x654418  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x65441e  lea    edx, [esp + 0xc]
+      0x654422  push   edx
+      0x654423  call   0x724580
+      0x654423  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x654428  mov    eax, dword ptr [0xb0491c]
+      0x65442d  mov    ecx, dword ptr [0xb04920]
+      0x654433  mov    edx, dword ptr [0xb04924]
+      0x654439  mov    dword ptr [esp + 0x10], eax
+      0x65443d  mov    eax, dword ptr [0xb04928]
+      0x654442  mov    dword ptr [esp + 0x14], ecx
+      0x654446  mov    ecx, dword ptr [0x887368]
+      0x65444c  push   0xf3
+      0x654451  mov    dword ptr [esp + 0x10], 0xf3
+      notes: window re-references global 0x887368 directly: mov ecx, dword ptr [0x887368]
+
+  --- load 0x654473   sub=call:0x724580   call_target=0x724580
+      0x654473  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x654479  call   0x724580
+      0x654479  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x65447e  mov    byte ptr [edi + 0x14da], 1
+      0x654485  pop    edi
+      0x654486  pop    esi
+      0x654487  pop    ebx
+      0x654488  add    esp, 0x1c
+      0x65448b  ret    
+
+  --- load 0x6ab994   sub=call:0x724530   call_target=0x724530
+      0x6ab994  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6ab99a  call   0x724530
+      0x6ab99a  call 0x724530   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6ab99f  mov    ecx, dword ptr [0x887368]
+      0x6ab9a5  push   0
+      0x6ab9a7  call   0x724520
+      0x6ab9ac  mov    eax, dword ptr [esi + 0x2c]
+      0x6ab9af  mov    bl, 1
+      0x6ab9b1  mov    byte ptr [esi + 0x34], bl
+      0x6ab9b4  push   0
+      0x6ab9b6  mov    ecx, 0x87f7e8
+      0x6ab9bb  mov    byte ptr [eax + 0x3c], bl
+      0x6ab9be  call   0x4f42f0
+      0x6ab9c3  mov    byte ptr [0x884b8f], bl
+      0x6ab9c9  mov    byte ptr [0xb0b518], bl
+      0x6ab9cf  pop    esi
+      0x6ab9d0  pop    ebx
+      0x6ab9d1  ret    
+      notes: window re-references global 0x887368 directly: mov ecx, dword ptr [0x887368]
+
+  --- load 0x6ab99f   sub=call:0x724520   call_target=0x724520
+      0x6ab99f  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6ab9a5  push   0
+      0x6ab9a7  call   0x724520
+      0x6ab9a7  call 0x724520   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6ab9ac  mov    eax, dword ptr [esi + 0x2c]
+      0x6ab9af  mov    bl, 1
+      0x6ab9b1  mov    byte ptr [esi + 0x34], bl
+      0x6ab9b4  push   0
+      0x6ab9b6  mov    ecx, 0x87f7e8
+      0x6ab9bb  mov    byte ptr [eax + 0x3c], bl
+      0x6ab9be  call   0x4f42f0
+      0x6ab9c3  mov    byte ptr [0x884b8f], bl
+      0x6ab9c9  mov    byte ptr [0xb0b518], bl
+      0x6ab9cf  pop    esi
+      0x6ab9d0  pop    ebx
+      0x6ab9d1  ret    
+
+  --- load 0x6ab9e3   sub=call:0x724540   call_target=0x724540
+      0x6ab9e3  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6ab9e9  call   0x724540
+      0x6ab9e9  call 0x724540   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6ab9ee  mov    eax, dword ptr [esi + 0x2c]
+      0x6ab9f1  mov    byte ptr [esi + 0x34], 0
+      0x6ab9f5  push   0
+      0x6ab9f7  mov    ecx, 0x87f7e8
+      0x6ab9fc  mov    byte ptr [eax + 0x3c], 1
+      0x6aba00  call   0x4f42f0
+      0x6aba05  mov    byte ptr [0x884b8f], 1
+      0x6aba0c  mov    byte ptr [0xb0b518], 1
+      0x6aba13  pop    esi
+      0x6aba14  ret    
+
+  --- load 0x6ac015   sub=call:0x724580   call_target=0x724580
+      0x6ac015  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6ac01b  call   0x724580
+      0x6ac01b  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6ac020  inc    edi
+      0x6ac021  add    esi, 0x60
+      0x6ac024  lea    edx, [edi - 0xcb]
+      0x6ac02a  cmp    edx, 4
+      0x6ac02d  jl     0x6abfe1
+      0x6ac02f  xor    esi, esi
+      0x6ac031  mov    ecx, dword ptr [0x887368]
+      0x6ac037  lea    eax, [esi + 0x3e8]
+      0x6ac03d  push   eax
+      0x6ac03e  call   0x724730
+      0x6ac043  inc    esi
+      0x6ac044  cmp    esi, 0x3c
+      0x6ac047  jl     0x6ac031
+      0x6ac049  mov    eax, dword ptr [esp + 0x14]
+      0x6ac04d  xor    edi, edi
+      0x6ac04f  cmp    eax, ebx
+      0x6ac051  jle    0x6ac0a9
+      0x6ac053  mov    esi, 0xb07e90
+      notes: window re-references global 0x887368 directly: mov ecx, dword ptr [0x887368] | call FUN_00724730 @0x6ac03e while ecx NO LONGER holds the loaded value (reloaded/clobbered earlier) -- second-order path | window contains call(s) to FUN_00724730: @0x6ac03e(ecx_live=False)
+
+  --- load 0x6ac07f   sub=call:0x724580   call_target=0x724580
+      0x6ac07f  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6ac085  push   eax
+      0x6ac086  mov    dword ptr [esp + 0x30], 0
+      0x6ac08e  mov    dword ptr [esp + 0x2c], edx
+      0x6ac092  mov    byte ptr [esp + 0x34], bl
+      0x6ac096  call   0x724580
+      0x6ac096  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6ac09b  mov    eax, dword ptr [esp + 0x14]
+      0x6ac09f  inc    edi
+      0x6ac0a0  add    esi, 0x38
+      0x6ac0a3  cmp    edi, eax
+      0x6ac0a5  jl     0x6ac05a
+      0x6ac0a7  xor    ebx, ebx
+      0x6ac0a9  mov    ecx, dword ptr [0xb07e04]
+      0x6ac0af  mov    edx, dword ptr [0xb07e08]
+      0x6ac0b5  mov    eax, dword ptr [0xb07e0c]
+      0x6ac0ba  mov    dword ptr [esp + 0x1c], ecx
+      0x6ac0be  mov    ecx, dword ptr [0xb07e10]
+
+  --- load 0x6ac0f2   sub=call:0x724580   call_target=0x724580
+      0x6ac0f2  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6ac0f8  lea    edx, [esp + 0x18]
+      0x6ac0fc  push   edx
+      0x6ac0fd  call   0x724580
+      0x6ac0fd  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6ac102  mov    eax, dword ptr [0xb0b3ac]
+      0x6ac107  mov    ecx, dword ptr [0xb0b3b0]
+      0x6ac10d  mov    edx, dword ptr [0xb0b3b4]
+      0x6ac113  mov    dword ptr [esp + 0x1c], eax
+      0x6ac117  mov    eax, dword ptr [0xb0b3b8]
+      0x6ac11c  mov    dword ptr [esp + 0x20], ecx
+      0x6ac120  mov    ecx, dword ptr [0x887368]
+      0x6ac126  push   0x65
+      0x6ac128  mov    dword ptr [esp + 0x1c], 0x65
+      0x6ac130  mov    dword ptr [esp + 0x30], 0x82758c
+      notes: window re-references global 0x887368 directly: mov ecx, dword ptr [0x887368]
+
+  --- load 0x6ac14a   sub=call:0x724580   call_target=0x724580
+      0x6ac14a  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6ac150  call   0x724580
+      0x6ac150  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6ac155  mov    edx, dword ptr [0xb0b414]
+      0x6ac15b  mov    ecx, dword ptr [0xb0b41c]
+      0x6ac161  mov    eax, dword ptr [0xb0b418]
+      0x6ac166  mov    dword ptr [esp + 0x1c], edx
+      0x6ac16a  mov    edx, dword ptr [0xb0b420]
+      0x6ac170  mov    dword ptr [esp + 0x24], ecx
+      0x6ac174  mov    ecx, dword ptr [0x887368]
+      0x6ac17a  push   0xc8
+      0x6ac17f  mov    dword ptr [esp + 0x1c], 0xc8
+      0x6ac187  mov    dword ptr [esp + 0x30], ebx
+      notes: window re-references global 0x887368 directly: mov ecx, dword ptr [0x887368]
+
+  --- load 0x6ac198   sub=call:0x724580   call_target=0x724580
+      0x6ac198  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6ac19e  lea    eax, [esp + 0x18]
+      0x6ac1a2  push   eax
+      0x6ac1a3  call   0x724580
+      0x6ac1a3  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6ac1a8  mov    ecx, dword ptr [0xb0b334]
+      0x6ac1ae  mov    edx, dword ptr [0xb0b338]
+      0x6ac1b4  mov    eax, dword ptr [0xb0b33c]
+      0x6ac1b9  mov    dword ptr [esp + 0x1c], ecx
+      0x6ac1bd  mov    ecx, dword ptr [0xb0b340]
+      0x6ac1c3  push   0xc9
+      0x6ac1c8  mov    dword ptr [esp + 0x2c], ecx
+      0x6ac1cc  mov    ecx, dword ptr [0x887368]
+      0x6ac1d2  mov    dword ptr [esp + 0x1c], 0xc9
+      notes: window re-references global 0x887368 directly: mov ecx, dword ptr [0x887368]
+
+  --- load 0x6ac1eb   sub=call:0x724580   call_target=0x724580
+      0x6ac1eb  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6ac1f1  lea    edx, [esp + 0x18]
+      0x6ac1f5  push   edx
+      0x6ac1f6  call   0x724580
+      0x6ac1f6  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6ac1fb  pop    edi
+      0x6ac1fc  pop    esi
+      0x6ac1fd  pop    ebp
+      0x6ac1fe  pop    ebx
+      0x6ac1ff  add    esp, 0x24
+      0x6ac202  ret    
+
+  --- load 0x6d05a0   sub=call:0x724580   call_target=0x724580
+      0x6d05a0  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6d05a6  lea    eax, [esp + 8]
+      0x6d05aa  push   eax
+      0x6d05ab  call   0x724580
+      0x6d05ab  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6d05b0  mov    eax, dword ptr [esi]
+      0x6d05b2  push   2
+      0x6d05b4  mov    ecx, esi
+      0x6d05b6  call   dword ptr [eax + 0x38]
+      0x6d05b9  mov    al, bl
+      0x6d05bb  pop    esi
+      0x6d05bc  pop    ebx
+      0x6d05bd  add    esp, 0x1c
+      0x6d05c0  ret    4
+
+  --- load 0x6d09ff   sub=call:0x724580   call_target=0x724580
+      0x6d09ff  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6d0a05  lea    edx, [esp]
+      0x6d0a09  push   edx
+      0x6d0a0a  call   0x724580
+      0x6d0a0a  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6d0a0f  add    esp, 0x1c
+      0x6d0a12  ret    
+
+  --- load 0x6d1298   sub=call:0x724580   call_target=0x724580
+      0x6d1298  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6d129e  lea    edx, [esp + 8]
+      0x6d12a2  push   edx
+      0x6d12a3  call   0x724580
+      0x6d12a3  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6d12a8  mov    eax, dword ptr [0xb0cb3c]
+      0x6d12ad  mov    eax, dword ptr [eax*4 + 0xb0cb78]
+      0x6d12b4  test   eax, eax
+      0x6d12b6  jl     0x6d131d
+      0x6d12b8  cmp    eax, 0x19
+      0x6d12bb  jge    0x6d131d
+      0x6d12bd  lea    esi, [eax + eax*2]
+      0x6d12c0  shl    esi, 5
+      0x6d12c3  add    esi, 0xb0c1c0
+      0x6d12c9  test   esi, esi
+      0x6d12cb  je     0x6d131d
+      0x6d12cd  lea    ecx, [esp + 8]
+      0x6d12d1  call   0x6d1810
+      0x6d12d6  mov    ecx, dword ptr [esi + 0xc]
+
+  --- load 0x6d130d   sub=call:0x724580   call_target=0x724580
+      0x6d130d  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6d1313  lea    eax, [esp + 8]
+      0x6d1317  push   eax
+      0x6d1318  call   0x724580
+      0x6d1318  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6d131d  mov    ecx, dword ptr [0xb0c1b8]
+      0x6d1323  mov    eax, dword ptr [ecx*4 + 0xb0cb78]
+      0x6d132a  test   eax, eax
+      0x6d132c  jl     0x6d1393
+      0x6d132e  cmp    eax, 0x19
+      0x6d1331  jge    0x6d1393
+      0x6d1333  lea    esi, [eax + eax*2]
+      0x6d1336  shl    esi, 5
+      0x6d1339  add    esi, 0xb0c1c0
+      0x6d133f  test   esi, esi
+      0x6d1341  je     0x6d1393
+      0x6d1343  lea    ecx, [esp + 8]
+      0x6d1347  call   0x6d1810
+      0x6d134c  mov    ecx, dword ptr [esi + 0x10]
+
+  --- load 0x6d1383   sub=call:0x724580   call_target=0x724580
+      0x6d1383  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6d1389  lea    edx, [esp + 8]
+      0x6d138d  push   edx
+      0x6d138e  call   0x724580
+      0x6d138e  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6d1393  mov    eax, dword ptr [0xb0cb20]
+      0x6d1398  mov    eax, dword ptr [eax*4 + 0xb0cb78]
+      0x6d139f  test   eax, eax
+      0x6d13a1  jl     0x6d1408
+      0x6d13a3  cmp    eax, 0x19
+      0x6d13a6  jge    0x6d1408
+      0x6d13a8  lea    esi, [eax + eax*2]
+      0x6d13ab  shl    esi, 5
+      0x6d13ae  add    esi, 0xb0c1c0
+      0x6d13b4  test   esi, esi
+      0x6d13b6  je     0x6d1408
+      0x6d13b8  lea    ecx, [esp + 8]
+      0x6d13bc  call   0x6d1810
+      0x6d13c1  mov    ecx, dword ptr [esi + 0xc]
+
+  --- load 0x6d13f8   sub=call:0x724580   call_target=0x724580
+      0x6d13f8  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6d13fe  lea    eax, [esp + 8]
+      0x6d1402  push   eax
+      0x6d1403  call   0x724580
+      0x6d1403  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6d1408  mov    ecx, dword ptr [0xb0cb68]
+      0x6d140e  pop    edi
+      0x6d140f  pop    esi
+      0x6d1410  mov    eax, dword ptr [ecx*4 + 0xb0cb78]
+      0x6d1417  test   eax, eax
+      0x6d1419  jl     0x6d142e
+      0x6d141b  cmp    eax, 0x19
+      0x6d141e  jge    0x6d142e
+      0x6d1420  lea    ecx, [eax + eax*2]
+      0x6d1423  shl    ecx, 5
+      0x6d1426  add    ecx, 0xb0c1c0
+      0x6d142c  jmp    0x6d1430
+
+  --- load 0x6d15d0   sub=call:0x724580   call_target=0x724580
+      0x6d15d0  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6d15d6  lea    edx, [esp]
+      0x6d15da  push   edx
+      0x6d15db  call   0x724580
+      0x6d15db  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6d15e0  add    esp, 0x1c
+      0x6d15e3  ret    
+
+  --- load 0x6d1749   sub=call:0x724580   call_target=0x724580
+      0x6d1749  mov ecx, dword ptr [0x887368]   <-- LOAD (8b 0d 68 73 88 00)
+      0x6d174f  lea    eax, [esp + 4]
+      0x6d1753  push   eax
+      0x6d1754  call   0x724580
+      0x6d1754  call 0x724580   <-- loaded ptr passed as this   <== FIRST USE (decides class)
+      0x6d1759  mov    edx, dword ptr [edi]
+      0x6d175b  push   0
+      0x6d175d  mov    ecx, edi
+      0x6d175f  mov    byte ptr [edi + 0x5545], 1
+      0x6d1766  call   dword ptr [edx + 0x38]
+      0x6d1769  pop    edi
+      0x6d176a  add    esp, 0x1c
+      0x6d176d  ret    
+
+=== 10. C subkind breakdown ===
+  call:0x724580                                  18
+  call:0x7241a0                                  1
+  call:0x724520                                  1
+  call:0x724530                                  1
+  call:0x724540                                  1
+
+=== 11. C-call targets (loaded ptr passed as this, unchecked) ===
+  0x724580  x18
+  0x7241a0  x1
+  0x724520  x1
+  0x724530  x1
+  0x724540  x1
+
+=== 12. supplementary: prologue peek of each C-call target (heuristic) ===
+  target 0x7241a0 (used by 1 site(s)):
+      0x7241a0  mov    al, byte ptr [esp + 4]
+      0x7241a4  push   esi
+      0x7241a5  mov    esi, ecx
+      0x7241a7  cmp    byte ptr [esi + 0xc], al
+      0x7241aa  je     0x7241f3
+      0x7241ac  test   al, al
+      0x7241ae  mov    byte ptr [esi + 0xc], al
+      0x7241b1  jne    0x7241d4
+      0x7241b3  mov    eax, dword ptr [esi + 8]
+      0x7241b6  push   0x54544950
+  target 0x724520 (used by 1 site(s)):
+      0x724520  mov    eax, dword ptr [esp + 4]
+      0x724524  mov    dword ptr [ecx + 0x228], eax
+      0x72452a  ret    4
+      0x72452d  nop    
+      0x72452e  nop    
+      0x72452f  nop    
+      0x724530  mov    eax, dword ptr [ecx + 0x228]
+      0x724536  mov    dword ptr [ecx + 0x22c], eax
+      0x72453c  ret    
+      0x72453d  nop    
+  target 0x724530 (used by 1 site(s)):
+      0x724530  mov    eax, dword ptr [ecx + 0x228]
+      0x724536  mov    dword ptr [ecx + 0x22c], eax
+      0x72453c  ret    
+      0x72453d  nop    
+      0x72453e  nop    
+      0x72453f  nop    
+      0x724540  mov    eax, dword ptr [ecx + 0x22c]
+      0x724546  mov    dword ptr [ecx + 0x228], eax
+      0x72454c  ret    
+      0x72454d  nop    
+  target 0x724540 (used by 1 site(s)):
+      0x724540  mov    eax, dword ptr [ecx + 0x22c]
+      0x724546  mov    dword ptr [ecx + 0x228], eax
+      0x72454c  ret    
+      0x72454d  nop    
+      0x72454e  nop    
+      0x72454f  nop    
+      0x724550  mov    eax, dword ptr [ecx + 0x230]
+      0x724556  ret    
+      0x724557  nop    
+      0x724558  nop    
+  target 0x724580 (used by 18 site(s)):
+      0x724580  push   ebx
+      0x724581  push   ebp
+      0x724582  push   esi
+      0x724583  push   edi
+      0x724584  mov    edi, dword ptr [esp + 0x14]
+      0x724588  mov    ebx, ecx
+      0x72458a  mov    eax, dword ptr [edi]
+      0x72458c  lea    esi, [ebx + 0x24c]
+      0x724592  mov    dword ptr [esp + 0x14], eax
+      0x724596  mov    eax, dword ptr [esi + 4]
+
+=== 13. supplementary census: other references to 0x887368 in .text ===
+  raw occurrences of disp32 bytes 68 73 88 00: 74
+  8B 0D       mov ecx,[0x887368] (the 69)  69
+  A1          mov eax,[0x887368]           1
+  8B 35       mov esi,[0x887368]           1
+  89 1D       mov [0x887368],ebx           2
+  89 35       mov [0x887368],esi           1
+  (indicative only; disp bytes can coincide with other instruction operands)
+
+  -- windows for non-ecx references (read/write of the global outside the 69) --
+    [A1          mov eax,[0x887368]] @ 0x6abfc4:
+        0x6abfc4  mov    eax, dword ptr [0x887368]
+        0x6abfc9  xor    ebx, ebx
+        0x6abfcb  cmp    eax, ebx
+        0x6abfcd  je     0x6ac1fb
+        0x6abfd3  mov    byte ptr [esp + 0x30], bl
+        0x6abfd7  mov    edi, 0xcb
+    [8B 35       mov esi,[0x887368]] @ 0x4e1f88:
+        0x4e1f88  mov    esi, dword ptr [0x887368]
+        0x4e1f8e  cmp    eax, 1
+        0x4e1f91  sete   al
+        0x4e1f94  test   esi, esi
+        0x4e1f96  mov    byte ptr [0xa8eb80], al
+        0x4e1f9b  je     0x4e1fae
+    [89 1D       mov [0x887368],ebx] @ 0x7777c3:
+        0x7777c3  mov    dword ptr [0x887368], ebx
+        0x7777c9  jmp    0x7779b5
+        0x7777ce  cmp    byte ptr [0x89f978], 1
+        0x7777d5  jne    0x7779b9
+    [89 1D       mov [0x887368],ebx] @ 0x777803:
+        0x777803  mov    dword ptr [0x887368], ebx
+        0x777809  mov    eax, dword ptr [0xa8edd8]
+        0x77780e  mov    dword ptr [0xb73550], ebx
+        0x777814  cmp    eax, ebx
+        0x777816  je     0x777822
+        0x777818  .byte  0xc7
+    [89 35       mov [0x887368],esi] @ 0x7777b8:
+        0x7777b8  mov    dword ptr [0x887368], esi
+        0x7777be  jmp    0x7779b5
+        0x7777c3  mov    dword ptr [0x887368], ebx
+        0x7777c9  jmp    0x7779b5
+        0x7777ce  .byte  0x80
+        0x7777cf  .byte  0x3d
+
+=== 14. in-window FUN_00724730 calls outside the known-20 (second-order) ===
+  0x654446  cls=A sub=call_del  del_calls=['@0x654469(ecx_live=True)']
+  0x6ac015  cls=C sub=call:0x724580  del_calls=['@0x6ac03e(ecx_live=False)']
+  0x6ac0ca  cls=A sub=call_del  del_calls=['@0x6ac0ed(ecx_live=True)']
+  0x6ac120  cls=A sub=call_del  del_calls=['@0x6ac140(ecx_live=True)']
+  0x6ac174  cls=A sub=call_del  del_calls=['@0x6ac193(ecx_live=True)']
+  0x6ac1cc  cls=A sub=call_del  del_calls=['@0x6ac1e6(ecx_live=True)']
+  0x6d057f  cls=A sub=call_del  del_calls=['@0x6d059b(ecx_live=True)']
+  0x6d15af  cls=A sub=call_del  del_calls=['@0x6d15cb(ecx_live=True)']
+  0x6d1728  cls=A sub=call_del  del_calls=['@0x6d1744(ecx_live=True)']
+
+=== 15. supplementary extended probe (160B) for sites whose use/guard target lies beyond the 64B window ===
+  --- site 0x4a8b18 (cls=B sub=guarded:cmp-reg-unproven:ebx:use-beyond-window), 160B window from load:
+      0x4a8b18  mov    ecx, dword ptr [0x887368]
+      0x4a8b1e  mov    edx, dword ptr [0x886fa0]
+      0x4a8b24  mov    eax, dword ptr [0x886fa4]
+      0x4a8b29  mov    esi, dword ptr [0x886fa8]
+      0x4a8b2f  mov    edi, dword ptr [0x886fac]
+      0x4a8b35  cmp    ecx, ebx
+      0x4a8b37  mov    dword ptr [0x8a0704], edx
+      0x4a8b3d  mov    dword ptr [0x8a0708], eax
+      0x4a8b42  mov    dword ptr [0x8a070c], esi
+      0x4a8b48  mov    dword ptr [0x8a0710], edi
+      0x4a8b4e  je     0x4a8b9b
+      0x4a8b50  push   0x1f4
+      0x4a8b55  mov    byte ptr [esp + 0x28], bl
+      0x4a8b59  mov    dword ptr [esp + 0x10], 0x1f4
+      0x4a8b61  mov    dword ptr [esp + 0x24], ebx
+      0x4a8b65  mov    dword ptr [esp + 0x14], edx
+      0x4a8b69  mov    dword ptr [esp + 0x18], eax
+      0x4a8b6d  mov    dword ptr [esp + 0x1c], esi
+      0x4a8b71  mov    dword ptr [esp + 0x20], edi
+      0x4a8b75  call   0x724730
+      0x4a8b7a  mov    ecx, dword ptr [0x887368]
+      0x4a8b80  lea    eax, [esp + 0xc]
+      0x4a8b84  push   eax
+      0x4a8b85  call   0x724580
+      0x4a8b8a  mov    eax, dword ptr [0x886fa4]
+      0x4a8b8f  mov    edx, dword ptr [0x886fa0]
+      0x4a8b95  mov    esi, dword ptr [0x886fa8]
+      0x4a8b9b  add    esi, -6
+  --- site 0x6403a8 (cls=B sub=guarded:null-check:use-beyond-window), 160B window from load:
+      0x6403a8  mov    ecx, dword ptr [0x887368]
+      0x6403ae  xor    eax, eax
+      0x6403b0  cmp    ecx, eax
+      0x6403b2  je     0x64043d
+      0x6403b8  mov    edx, dword ptr [0xa8b230]
+      0x6403be  push   esi
+      0x6403bf  mov    dword ptr [esp + 0xc], eax
+      0x6403c3  mov    dword ptr [esp + 0x10], eax
+      0x6403c7  mov    dword ptr [esp + 0x14], eax
+      0x6403cb  mov    dword ptr [esp + 0x18], eax
+      0x6403cf  mov    byte ptr [esp + 0x20], al
+      0x6403d3  mov    dword ptr [esp + 8], 0x3e7
+      0x6403db  mov    dword ptr [esp + 0x1c], eax
+      0x6403df  mov    esi, dword ptr [edx + 0x34b8]
+      0x6403e5  cmp    esi, eax
+      0x6403e7  jne    0x6403ee
+      0x6403e9  mov    eax, 5
+      0x6403ee  mov    esi, dword ptr [0x886f90]
+      0x6403f4  push   0x3e7
+      0x6403f9  add    esi, eax
+      0x6403fb  mov    dword ptr [esp + 0x10], esi
+      0x6403ff  mov    eax, dword ptr [edx + 0x34b8]
+      0x640405  mov    edx, dword ptr [0x886f94]
+      0x64040b  mov    dword ptr [esp + 8], eax
+      0x64040f  mov    eax, dword ptr [0xb0b504]
+      0x640414  add    edx, 0x45
+      0x640417  mov    dword ptr [esp + 0x14], edx
+      0x64041b  mov    dword ptr [esp + 0x18], 8
+
+TSV written : D:\Project\ra2-campaign-forge\lead\next_re_20261112_r10\W127_reach\glm\loads69.tsv
+next_48_bytes_hex = 48 raw bytes starting AT the load instruction (load included)

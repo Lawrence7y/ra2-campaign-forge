@@ -1,0 +1,36 @@
+R16-D1-FINAL 派生过程（逐阶段实测）
+======================================================================
+输入：R16_PROBE_4FINAL/final.tsv（1279 数据行，10 列）
+阶段1 筛 has_ring4==D1：实测 317 行（卡面预期 317，一致）
+  D1 distinct entries = 317
+阶段2 join 来源类别（D47_SURFACE.classify，只读）与 scan_F1_audit.tsv/matrix.tsv：
+  F1=12 F2=5 F3=1 F4=299（合计 317）
+  细分：F1={'sem_virtual_witness_only': 12}
+        F2={'sem_call_mem_anchor': 4, 'audit_ring4_dispatch': 1}
+阶段3 口径二筛（② 有独立审计链）：保留 F1+F2 ⇒ 12 + 5 = 17 行（卡面预期 17，一致）
+  注：严格『entry 出现在 NAMED_PUSH_AUDIT*/verdict.tsv 的 entry 列』仅 1 行（00748190）；
+      探针口径中 F1 的 ② 审计链来自 S13_K8RECHK/_audit/VERDICT.md:37（11 行）与
+      S20-K1/EVIDENCE/T4_vtable_slots.tsv:71（1 行）；F2 的 ② 来自 S10_K12/EVIDENCE/ROW_PROOFS.txt
+      与 S10_K16/EVIDENCE/PROOF_0070B570.txt（4 行）及 NAMED_PUSH_AUDIT3/verdict.tsv（1 行），
+      均非 YRpp 知识库代理，故按口径二全部保留。
+阶段4 盘态复核（coverage.tsv live，sha=E4F111B6643661D01C66DB1889172437A06A563233F0A252AD0DB4A54FD51C8A）：
+  17 行中改前第4列已含 ④ = 12 行（R16_F1_OTHER14 于 09:11 已并表）；
+  改前无 ④ = 5 行 ⇒ delta.tsv 只放这 5 个净新增成功行。
+最终清单（17 行，按 entry）：
+  0040BC10 S13 DynamicVectorClass<BombClass*>::scalar_delet src=F1 vt=007E17CC slot=0 site=0040B563 host=0040B540 form=mov_abs pre4=True status=SKIP
+  0040F8F0 S13 DynamicVectorClass<WarheadTypeClass*>::scala src=F1 vt=007E1E84 slot=0 site=0040F4AD host=0040F490 form=mov_abs pre4=True status=SKIP
+  0040FEC0 S13 DynamicVectorClass<WeaponTypeClass*>::scalar src=F1 vt=007E1ED4 slot=0 site=0040FB4D host=0040FB30 form=mov_abs pre4=True status=SKIP
+  00422CA0 S20 AnimClass::Draw src=F1 vt=007E3354 slot=69 site=0042201C host=00421EA0 form=ctor_body pre4=True status=SKIP
+  0046B910 S13 DynamicVectorClass<BulletClass*>::scalar_del src=F1 vt=007E4678 slot=0 site=004662FD host=004662E0 form=mov_abs pre4=True status=SKIP
+  0048AFD0 S13 VectorClass<DamageGroup*>::scalar_deleting_d src=F1 vt=007E5144 slot=0 site=00489B1E host=00489280 form=ctor_body pre4=True status=SKIP
+  0048B020 S13 DynamicVectorClass<DamageGroup*>::scalar_del src=F1 vt=007E5170 slot=0 site=004892AA host=00489280 form=ctor_body pre4=True status=SKIP
+  0054EBA0 S13 DynamicVectorClass<KamikazeControl*>::scalar src=F1 vt=007ECE7C slot=0 site=0054E298 host=0054E260 form=mov_abs pre4=True status=SKIP
+  0062B380 S13 DynamicVectorClass<ParasiteClass*>::scalar_d src=F1 vt=007EF824 slot=0 site=006291AD host=00629190 form=mov_abs pre4=True status=SKIP
+  0065BED0 S13 RadSiteClass::scalar_deleting_dtor src=F1 vt=007F0810 slot=8 site=0065B228 host=0065B1E0 form=ctor_body pre4=True status=SKIP
+  0065C200 S13 DynamicVectorClass<RadSiteClass*>::scalar_de src=F1 vt=007F07A4 slot=0 site=0065B17D host=0065B160 form=mov_abs pre4=True status=SKIP
+  0075E510 S13 WarheadTypeClass::scalar_deleting_dtor src=F1 vt=007F6B30 slot=8 site=0075D0BA host=0075CEC0 form=ctor_body pre4=True status=SKIP
+  0051B1F0 S10 InfantryClass::RetargetWithMissionFallback_b src=F2 vt=007EB058 slot=242 site=00517ACC host=00517A50 form=ctor_body pre4=False status=OK
+  0051DAF0 S10 InfantryClass::StopAfterAirborneMissionState src=F2 vt=007EB058 slot=320 site=00517ACC host=00517A50 form=ctor_body pre4=False status=OK
+  00522340 S10 InfantryClass::ApplyOccupantTargetMissionFal src=F2 vt=007EB058 slot=335 site=00517ACC host=00517A50 form=ctor_body pre4=False status=OK
+  0070B570 S10 TechnoClass::ClampAndAdvancePairedFloatState src=F2 vt=007F4960 slot=263 site=006F3130 host=006F2B40 form=ctor_body pre4=False status=OK
+  00748190 S05 UnitTypeClass::slot8 src=F2 vt=007F6218 slot=8 site=007471BF host=007470D0 form=ctor_body pre4=False status=OK

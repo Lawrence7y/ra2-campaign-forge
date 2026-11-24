@@ -1,0 +1,224 @@
+# ④ 独立见证终检
+## A) entry VA 作为立即数/位移在 .text 被引用（除虚表外的直接证据）
+  004D8560 : 0 处 []
+  004D9720 : 0 处 []
+  004D9E70 : 0 处 []
+  004DA1D0 : 0 处 []
+  004DA4E0 : 0 处 []
+  004DE7B0 : 0 处 []
+  004DE940 : 0 处 []
+  004DEBB0 : 0 处 []
+  004DEE80 : 0 处 []
+  004DF7F0 : 0 处 []
+  004DFF40 : 0 处 []
+  00517FA0 : 0 处 []
+  00518F90 : 0 处 []
+  00519630 : 0 处 []
+  0051AA40 : 0 处 []
+  0051BAB0 : 0 处 []
+  0051BF90 : 0 处 []
+  0051C8B0 : 0 处 []
+## B) entry VA 全镜像 4字节出现次数（.rdata/.data 虚表槽为主）
+  004D8560 : dword出现 4 次, .text内 []
+  004D9720 : dword出现 4 次, .text内 []
+  004D9E70 : dword出现 4 次, .text内 []
+  004DA1D0 : dword出现 4 次, .text内 []
+  004DA4E0 : dword出现 4 次, .text内 []
+  004DE7B0 : dword出现 4 次, .text内 []
+  004DE940 : dword出现 4 次, .text内 []
+  004DEBB0 : dword出现 4 次, .text内 []
+  004DEE80 : dword出现 4 次, .text内 []
+  004DF7F0 : dword出现 3 次, .text内 []
+  004DFF40 : dword出现 4 次, .text内 []
+  00517FA0 : dword出现 1 次, .text内 []
+  00518F90 : dword出现 1 次, .text内 []
+  00519630 : dword出现 1 次, .text内 []
+  0051AA40 : dword出现 1 次, .text内 []
+  0051BAB0 : dword出现 1 次, .text内 []
+  0051BF90 : dword出现 1 次, .text内 []
+  0051C8B0 : dword出现 1 次, .text内 []
+## C) 4 张类虚表 vptr 安装点上下文（是否静态 global 接收者）
+  vt=007E22A4
+    near 00413D87:
+      00413D77 06                     push es
+      00413D78 00 00                  add byte ptr [eax], al
+      00413D7A 05 88 86 d4 06         add eax, 0x6d48688
+      00413D7F 00 00                  add byte ptr [eax], al
+      00413D81 88 86 d5 06 00 00      mov byte ptr [esi + 0x6d5], al
+      00413D87 c7 06 a4 22 7e 00      mov dword ptr [esi], 0x7e22a4
+      00413D8D c7 45 00 88 22 7e 00   mov dword ptr [ebp], 0x7e2288
+      00413D94 c7 46 08 80 22 7e 00   mov dword ptr [esi + 8], 0x7e2280
+      00413D9B c7 46 0c 78 22 7e 00   mov dword ptr [esi + 0xc], 0x7e2278
+      00413DA2 c7                     .byte 0xc7
+      00413DA3 86 c0                  xchg al, al
+      00413DA5 06                     push es
+      00413DA6 00                     .byte 0x00
+    near 0041408A:
+      0041407A 90                     nop 
+      0041407B 90                     nop 
+      0041407C 90                     nop 
+      0041407D 90                     nop 
+      0041407E 90                     nop 
+      0041407F 90                     nop 
+      00414080 51                     push ecx
+      00414081 53                     push ebx
+      00414082 55                     push ebp
+      00414083 56                     push esi
+      00414084 57                     push edi
+      00414085 8b f9                  mov edi, ecx
+      00414087 8d 77 04               lea esi, [edi + 4]
+      0041408A c7 07 a4 22 7e 00      mov dword ptr [edi], 0x7e22a4
+      00414090 c7 47 08 80 22 7e 00   mov dword ptr [edi + 8], 0x7e2280
+      00414097 c7 47 0c 78 22 7e 00   mov dword ptr [edi + 0xc], 0x7e2278
+      0041409E c7 06 88 22 7e 00      mov dword ptr [esi], 0x7e2288
+      004140A4 c7                     .byte 0xc7
+      004140A5 87 c0                  xchg eax, eax
+      004140A7 06                     push es
+      004140A8 00 00                  add byte ptr [eax], al
+    near 0041B4E1:
+      0041B4D1 85 f6                  test esi, esi
+      0041B4D3 74 30                  je 0x41b505
+      0041B4D5 8d 44 24 10            lea eax, [esp + 0x10]
+      0041B4D9 8b ce                  mov ecx, esi
+      0041B4DB 50                     push eax
+      0041B4DC e8 5f 80 0b 00         call 0x4d3540
+      0041B4E1 c7 06 a4 22 7e 00      mov dword ptr [esi], 0x7e22a4
+      0041B4E7 c7 03 88 22 7e 00      mov dword ptr [ebx], 0x7e2288
+      0041B4ED c7 46 08 80 22 7e 00   mov dword ptr [esi + 8], 0x7e2280
+      0041B4F4 c7 46 0c 78 22 7e 00   mov dword ptr [esi + 0xc], 0x7e2278
+      0041B4FB c7                     .byte 0xc7
+      0041B4FC 86 c0                  xchg al, al
+      0041B4FE 06                     push es
+      0041B4FF 00 00                  add byte ptr [eax], al
+  vt=007E8C94
+    near 004D345D:
+      004D344D 06                     push es
+      004D344E 00 00                  add byte ptr [eax], al
+      004D3450 01 88 9e b7 06 00      add dword ptr [eax + 0x6b79e], ecx
+      004D3456 00 88 9e b8 06 00      add byte ptr [eax + 0x6b89e], cl
+      004D345C 00 c7                  add bh, al
+      004D345E 06                     push es
+      004D345F 94                     xchg esp, eax
+      004D3460 8c                     .byte 0x8c
+      004D3461 7e 00                  jle 0x4d3463
+      004D3463 c7 46 04 78 8c 7e 00   mov dword ptr [esi + 4], 0x7e8c78
+      004D346A c7 46 08 70 8c 7e 00   mov dword ptr [esi + 8], 0x7e8c70
+      004D3471 c7 46 0c 68 8c 7e 00   mov dword ptr [esi + 0xc], 0x7e8c68
+      004D3478 c7                     .byte 0xc7
+      004D3479 86 e0                  xchg al, ah
+      004D347B 05                     .byte 0x05
+      004D347C 00                     .byte 0x00
+    near 004D3568:
+      004D3558 89 86 ac 05 00 00      mov dword ptr [esi + 0x5ac], eax
+      004D355E c7 86 74 06 00 00 00 00 00 00 mov dword ptr [esi + 0x674], 0
+      004D3568 c7 06 94 8c 7e 00      mov dword ptr [esi], 0x7e8c94
+      004D356E c7 46 04 78 8c 7e 00   mov dword ptr [esi + 4], 0x7e8c78
+      004D3575 c7 46 08 70 8c 7e 00   mov dword ptr [esi + 8], 0x7e8c70
+      004D357C c7 46 0c 68 8c 7e 00   mov dword ptr [esi + 0xc], 0x7e8c68
+      004D3583 8b c6                  mov eax, esi
+      004D3585 5e                     pop esi
+      004D3586 c2                     .byte 0xc2
+      004D3587 04                     .byte 0x04
+    near 004D359D:
+      004D358D 90                     nop 
+      004D358E 90                     nop 
+      004D358F 90                     nop 
+      004D3590 51                     push ecx
+      004D3591 53                     push ebx
+      004D3592 56                     push esi
+      004D3593 8b f1                  mov esi, ecx
+      004D3595 33 db                  xor ebx, ebx
+      004D3597 8b 8e d4 05 00 00      mov ecx, dword ptr [esi + 0x5d4]
+      004D359D c7 06 94 8c 7e 00      mov dword ptr [esi], 0x7e8c94
+      004D35A3 3b cb                  cmp ecx, ebx
+      004D35A5 c7 46 04 78 8c 7e 00   mov dword ptr [esi + 4], 0x7e8c78
+      004D35AC c7 46 08 70 8c 7e 00   mov dword ptr [esi + 8], 0x7e8c70
+      004D35B3 c7 46 0c 68 8c 7e 00   mov dword ptr [esi + 0xc], 0x7e8c68
+      004D35BA 74 11                  je 0x4d35cd
+      004D35BC 38                     .byte 0x38
+  vt=007EB058
+    near 00517ACC:
+      00517ABC 88 9e e4 06 00 00      mov byte ptr [esi + 0x6e4], bl
+      00517AC2 c7 86 e8 06 00 00 02 00 00 00 mov dword ptr [esi + 0x6e8], 2
+      00517ACC c7 06 58 b0 7e 00      mov dword ptr [esi], 0x7eb058
+      00517AD2 c7 00 3c b0 7e 00      mov dword ptr [eax], 0x7eb03c
+      00517AD8 c7 46 08 34 b0 7e 00   mov dword ptr [esi + 8], 0x7eb034
+      00517ADF c7 46 0c 2c b0 7e 00   mov dword ptr [esi + 0xc], 0x7eb02c
+      00517AE6 e8 45 87 ef ff         call 0x410230
+      00517AEB a1                     .byte 0xa1
+    near 00517D9D:
+      00517D8D 5e                     pop esi
+      00517D8E c3                     ret 
+      00517D8F 90                     nop 
+      00517D90 83 ec 08               sub esp, 8
+      00517D93 53                     push ebx
+      00517D94 56                     push esi
+      00517D95 8b f1                  mov esi, ecx
+      00517D97 57                     push edi
+      00517D98 33 db                  xor ebx, ebx
+      00517D9A 8d 7e 04               lea edi, [esi + 4]
+      00517D9D c7 06 58 b0 7e 00      mov dword ptr [esi], 0x7eb058
+      00517DA3 c7 46 08 34 b0 7e 00   mov dword ptr [esi + 8], 0x7eb034
+      00517DAA c7 46 0c 2c b0 7e 00   mov dword ptr [esi + 0xc], 0x7eb02c
+      00517DB1 c7 07 3c b0 7e 00      mov dword ptr [edi], 0x7eb03c
+      00517DB7 a0 a0 e9 a8 00         mov al, byte ptr [0xa8e9a0]
+      00517DBC 3a                     .byte 0x3a
+    near 00521A11:
+      00521A01 85 f6                  test esi, esi
+      00521A03 74 26                  je 0x521a2b
+      00521A05 8d 44 24 10            lea eax, [esp + 0x10]
+      00521A09 8b ce                  mov ecx, esi
+      00521A0B 50                     push eax
+      00521A0C e8 2f 1b fb ff         call 0x4d3540
+      00521A11 c7 06 58 b0 7e 00      mov dword ptr [esi], 0x7eb058
+      00521A17 c7 03 3c b0 7e 00      mov dword ptr [ebx], 0x7eb03c
+      00521A1D c7 46 08 34 b0 7e 00   mov dword ptr [esi + 8], 0x7eb034
+      00521A24 c7 46 0c 2c b0 7e 00   mov dword ptr [esi + 0xc], 0x7eb02c
+      00521A2B 55                     push ebp
+      00521A2C 8b                     .byte 0x8b
+      00521A2D ae                     scasb al, byte ptr es:[edi]
+      00521A2E 74 06                  je 0x521a36
+      00521A30 00                     .byte 0x00
+  vt=007F5C70
+    near 0073543A:
+      0073542A e1 06                  loope 0x735432
+      0073542C 00 00                  add byte ptr [eax], al
+      0073542E 88 9e e2 06 00 00      mov byte ptr [esi + 0x6e2], bl
+      00735434 89 9e e4 06 00 00      mov dword ptr [esi + 0x6e4], ebx
+      0073543A c7 06 70 5c 7f 00      mov dword ptr [esi], 0x7f5c70
+      00735440 c7 00 54 5c 7f 00      mov dword ptr [eax], 0x7f5c54
+      00735446 c7 46 08 4c 5c 7f 00   mov dword ptr [esi + 8], 0x7f5c4c
+      0073544D c7 46 0c 44 5c 7f 00   mov dword ptr [esi + 0xc], 0x7f5c44
+      00735454 e8 d7 ad cd ff         call 0x410230
+      00735459 a1                     .byte 0xa1
+    near 00735794:
+      00735784 8b f1                  mov esi, ecx
+      00735786 33 ed                  xor ebp, ebp
+      00735788 57                     push edi
+      00735789 8b 8e dc 06 00 00      mov ecx, dword ptr [esi + 0x6dc]
+      0073578F 8d 5e 04               lea ebx, [esi + 4]
+      00735792 3b cd                  cmp ecx, ebp
+      00735794 c7 06 70 5c 7f 00      mov dword ptr [esi], 0x7f5c70
+      0073579A c7 03 54 5c 7f 00      mov dword ptr [ebx], 0x7f5c54
+      007357A0 c7 46 08 4c 5c 7f 00   mov dword ptr [esi + 8], 0x7f5c4c
+      007357A7 c7 46 0c 44 5c 7f 00   mov dword ptr [esi + 0xc], 0x7f5c44
+      007357AE 74 0b                  je 0x7357bb
+      007357B0 e8                     .byte 0xe8
+      007357B1 5b                     pop ebx
+      007357B2 d4 d8                  aam 0xd8
+    near 00744521:
+      00744511 85 f6                  test esi, esi
+      00744513 74 26                  je 0x74453b
+      00744515 8d 44 24 10            lea eax, [esp + 0x10]
+      00744519 8b ce                  mov ecx, esi
+      0074451B 50                     push eax
+      0074451C e8 1f f0 d8 ff         call 0x4d3540
+      00744521 c7 06 70 5c 7f 00      mov dword ptr [esi], 0x7f5c70
+      00744527 c7 03 54 5c 7f 00      mov dword ptr [ebx], 0x7f5c54
+      0074452D c7 46 08 4c 5c 7f 00   mov dword ptr [esi + 8], 0x7f5c4c
+      00744534 c7 46 0c 44 5c 7f 00   mov dword ptr [esi + 0xc], 0x7f5c44
+      0074453B 55                     push ebp
+      0074453C 8b                     .byte 0x8b
+      0074453D ae                     scasb al, byte ptr es:[edi]
+      0074453E 74 06                  je 0x744546
+      00744540 00                     .byte 0x00

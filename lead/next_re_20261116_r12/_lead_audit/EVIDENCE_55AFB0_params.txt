@@ -1,0 +1,55 @@
+=== 0x55AFB0 prologue: how many params / how is edi derived? ===
+   0055AFB0  sub      esp, 0x28
+   0055AFB3  mov      edx, dword ptr [0xabcd40]
+   0055AFB9  mov      dword ptr [esp], ecx
+   0055AFBD  mov      ecx, dword ptr [0x8b40d8]
+   0055AFC3  push     ebx
+   0055AFC4  push     ebp
+   0055AFC5  push     esi
+   0055AFC6  inc      edx
+   0055AFC7  xor      eax, eax
+   0055AFC9  or       ebx, 0xffffffff
+   0055AFCC  push     edi
+   0055AFCD  mov      edi, dword ptr [0xa8b230]
+   0055AFD3  mov      dword ptr [0xabcd40], edx
+   0055AFD9  test     ecx, ecx
+   0055AFDB  mov      dword ptr [0xa83cdc], eax
+   0055AFE0  jle      0x55b17d
+
+=== where is [esp+0x10] (edi) read, and what loop uses [edi+4]/[edi+0x10] ===
+   0055B5F1  call     0x554d50                             
+   0055B5F6  call     0x4c54a0                             
+   0055B5FB  mov      edi, dword ptr [esp + 0x10]             <== edi
+   0055B5FF  xor      esi, esi                             
+   0055B601  mov      eax, dword ptr [edi + 0x10]             <== edi
+   0055B604  test     eax, eax                             
+   0055B606  jle      0x55b61b                             
+   0055B608  mov      eax, dword ptr [edi + 4]                <== edi
+   0055B60B  mov      ecx, dword ptr [eax + esi*4]         
+   0055B60E  mov      edx, dword ptr [ecx]                 
+   0055B610  call     dword ptr [edx + 0x5c]               
+   0055B613  mov      eax, dword ptr [edi + 0x10]             <== edi
+   0055B616  inc      esi                                  
+   0055B617  cmp      esi, eax                             
+   0055B619  jl       0x55b608                             
+   0055B61B  mov      eax, dword ptr [0xa8b238]            
+   0055B620  test     eax, eax                             
+   0055B622  je       0x55b64b                             
+   0055B624  cmp      eax, 5                               
+   0055B627  je       0x55b64b                             
+
+=== call site args: disassemble 0x55DC80..0x55DCA2 from fn entry ===
+   0055DC6F  push     eax
+   0055DC70  lea      ecx, [esp + 0x158]
+   0055DC77  push     0x82a05c
+   0055DC7C  push     ecx
+   0055DC7D  call     0x7ca564
+   0055DC82  add      esp, 0xc
+   0055DC85  lea      edx, [esp + 0x154]
+   0055DC8C  lea      ecx, [esp + 0x4c]
+   0055DC90  push     0
+   0055DC92  call     0x67cef0
+   0055DC97  xor      edi, edi
+   0055DC99  mov      ecx, 0x87f778
+   0055DC9E  call     0x55afb0
+   0055DCA3  mov      eax, dword ptr [0xa8ec08]

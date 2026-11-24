@@ -1,0 +1,48 @@
+=== 1 决定性返回值结构：仅比对每层 dict 的键集 ===
+1.1 keyset(old) == keyset(new) : True
+1.2 keyset(old) == keyset(own) : True
+1.3 顶层键集 = ['bytes', 'checklist', 'file', 'old_gate', 'predicates', 'problems', 'sha256', 'utf8_strict', 'verdict', 'warnings']
+1.4 R11 键集 = ['binding_details', 'bindings', 'items', 'match_true', 'name', 'problems', 'reverified', 'rule_id', 'verdict', 'warnings']
+1.5 合并视图 problems 元素键集 old=[] new=[['msg', 'rule_id']]
+1.6 OLD+ verdict=PASS NEW+ verdict=FAIL OWN+ verdict=FAIL
+1_RESULT STRUCTURE_UNCHANGED_DECISIVE = True
+
+=== 2 三形态 + 缺键注射：候选副本完整 stdout ===
+2.1 EXIT=0 stderr=''
+2.2 CASE 0 unique                                  输出行数=4 关键行=['mine   =ea6a4b5dfed7ce4acc639036ae54cc2b43b48f9d3f913fe3bb01f4111456f983 sha_ok=True']
+2.2 CASE 1 merged                                  输出行数=8 关键行=['mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=True', 'mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=True']
+2.2 CASE 2 multi(match=None)                       输出行数=0 关键行=[]
+2.2 CASE 3 multi(合成 match=True,无path,无members)     输出行数=1 关键行=['SKIP#4 #3 bind#1 tier=None 无单一回验路径且无 members（multi：不主张 path）']
+2.2 CASE 4 merged 缺 member.bytes                   输出行数=9 关键行=['mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=True', 'mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=True', '*** MISMATCH ***']
+2.2 CASE 5 merged members=None                     输出行数=0 关键行=[]
+2.2 CASE 6 unique 缺 bytes                          输出行数=5 关键行=['mine   =ea6a4b5dfed7ce4acc639036ae54cc2b43b48f9d3f913fe3bb01f4111456f983 sha_ok=True', '*** MISMATCH ***']
+2.2 CASE 7 merged 缺 declared                       输出行数=11 关键行=['mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=False', '*** MISMATCH ***', 'mine   =553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2 sha_ok=False', '*** MISMATCH ***']
+2.3 全局：TypeError/KeyError/Traceback 出现 = False
+2.4 注意：『merged members=None』与『multi(match=None)』两例无任何输出行（前者静默空跑、后者由 :21 match 守卫跳过），DESIGN §二(d) 称『merged members=None → SKIP』与实跑不符
+
+=== 3 两缺陷是否当下可达 ===
+3.1 对我的 merged 交付件跑 g7.r11_scan : bindings=[{'declared': '553f8577939f2d4350cf8c898b25f4dc201857bebf3bad0a0d3312c3968020d2', 'path': None, 'match': None}]
+3.2 r11_scan 是否产 merged rec = False
+3.3 problems=[] warnings=['绑定行缺显式路径，需人工锚定（R11/R3-3b）']（R3-3b 只 warning）
+3.4 _g9_gate.py 含 'r11_scan_plus' / 'link_triple' / '_re_linked' : [False, False, False]
+3.5 _f2_r11plus.py 含 'link_triple' / '_re_linked' : [False, False]
+3.6 _f2_r11plus.py:303-305 现仍是 rec['tier']=None + R3-3b warning : True
+3.7 原件 _f2v_verify9.py 原样基线：
+    EXIT=0 末行='checked 9' MATCH 行数=9
+
+=== 4 被核对象回件『what』字段所称尺寸与实盘核对 ===
+4.1 _ms_DESIGN.md                bytes=34299 sha256=bc5eb5d0d13e1fbe
+4.1 _ms_probe.py                 bytes=25283 sha256=03fafd6063773a1a
+4.1 _ms_regress.py               bytes=2775 sha256=272d10818866d15b
+4.1 _ms_tight.py                 bytes=11120 sha256=60dc39bbb3584747
+4.1 _ms_counterexample.py        bytes=5123 sha256=1175c6b3abd99d84
+4.1 _ms_v9_candidate.py          bytes=3051 sha256=fa66843908e145e5
+4.1 _ms_v9_candidate_v2.py       bytes=2279 sha256=90e8092f6d7cf8a2
+4.1 _ms_g9_candidate.py          bytes=12205 sha256=2ab74fbcbaf072f2
+4.2 回件 what 字段称 _ms_DESIGN.md = 34021 B；实盘 = 34299 B ⇒ MISMATCH
+
+=== 5 末轮八件指纹（本次会话第 3 次实算） ===
+5.1 ALL_EIGHT_UNCHANGED = True
+5.2 未 commit / 未 push：本会话未执行 git commit / git push（工具调用记录）
+
+WROTE D:\Project\ra2-campaign-forge\lead\merged_safety_20261109\_msv_final_out.txt

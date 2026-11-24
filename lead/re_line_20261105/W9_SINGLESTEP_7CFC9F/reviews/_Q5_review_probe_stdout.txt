@@ -1,0 +1,49 @@
+[1] hashlib SHA256 (independent read)
+  exe sha    = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+  exe bytes  = 4825360
+  EXC sha    = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251
+  EXC bytes  = 26405
+  AV  sha    = b42c7014c96cadcb2da86327ca6a62e302a043283238531880325809d7d35870
+  AV  bytes  = 26830
+[2] Engine() real run
+  e.sha == self-computed exe sha : True
+  IB = 0x400000
+  COVERAGE = 99.998375677293% / 1394120 insns / 66 resync-fails
+  fo(VA)=0x3CFC9F ; VA-IB=0x3CFC9F
+  e.rd(VA,32) = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+  EXCEPT L17 = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+  rd==L17 : True ; diff idx=[]
+[3] instruction start / disasm
+  VA in e.by() = True
+  by()[VA] bytes=8b0a size=2 mov ecx, dword ptr [edx]
+  disasm(VA,0x30) count = 18
+    #1 0x7CFC9F 8b0a       mov ecx, dword ptr [edx]
+    #2 0x7CFCA1 2b4df0     sub ecx, dword ptr [ebp - 0x10]
+    #3 0x7CFCA4 8bf1       mov esi, ecx
+    #4 0x7CFCA6 894df8     mov dword ptr [ebp - 8], ecx
+    #5 0x7CFCA9 c1fe04     sar esi, 4
+    #6 0x7CFCAC 4e         dec esi
+    #7 0x7CFCAD 83fe3f     cmp esi, 0x3f
+    #8 0x7CFCB0 7e03       jle 0x7cfcb5
+  --- predecessor window 0x7CFC98 ---
+    0x7CFC98 8b4df4     mov ecx, dword ptr [ebp - 0xc]
+    0x7CFC9B 8b54f904   mov edx, dword ptr [ecx + edi*8 + 4]
+    0x7CFC9F 8b0a       mov ecx, dword ptr [edx]
+    0x7CFCA1 2b4df0     sub ecx, dword ptr [ebp - 0x10]
+    0x7CFCA4 8bf1       mov esi, ecx
+[4] function boundary
+  e.rd(0x7CFB13,5) = 558bec83ec
+  e.rd(0x7CFB12,1) = c3
+  func_rets count=1 addrs=['0x7CFE1B']
+  e.rd(0x7CFE1B,1) = c3
+  length incl ret = 0x309 / excl = 0x308
+[5] RC-1 AV bytes line vs EXCEPT L17 (independent read)
+  AV total lines = 1047
+  AV 'Bytes at CS:EIP' line numbers = [19]
+  AV L19 bytes == EXCEPT L17 bytes : True
+  AV L19 bytes = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+  AV L1 = Error code: EXCEPTION_ACCESS_VIOLATION
+  AV L3 = Description: The thread tried to read from or write to a virtual address for which it does not have the appropriate access.
+  AV L14 = Eax:1498EC08	Ebx:14830AA8	Ecx:1498FB68
+PROBE DONE
+PROBE DONE -- exit 0 -> D:\Project\ra2-campaign-forge\lead\re_line_20261105\W9_SINGLESTEP_7CFC9F\reviews\_Q5_review_probe_out.txt

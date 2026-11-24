@@ -1,0 +1,33 @@
+import io,json,statistics,collections,glob,os
+rows_all=[]
+for p in sorted(glob.glob('lead/**/measure_w*.json',recursive=True)):
+    try: d=json.load(io.open(p,encoding='utf-8'))
+    except: continue
+    if d.get('verdict')!='ok': continue
+    hz=(d.get('stats') or {}).get('hz_effective')
+    if not hz or hz<100: continue
+    fe=d['frame_edges']
+    dur={fe[i][0]:(fe[i][1]-fe[i-1][1])*1000.0 for i in range(1,len(fe))}
+    s=d['samples']; f,t=s['f'],s['t']
+    g=collections.defaultdict(list)
+    for fi,ti in zip(f,t): g[fi].append(ti)
+    rec=[]
+    for fi,ts in g.items():
+        if len(ts)<4 or fi not in dur: continue
+        ts=sorted(ts); gaps=[ts[i+1]-ts[i] for i in range(len(ts)-1)]
+        rec.append((fi,dur[fi],max(gaps)*1000.0))
+    if len(rec)<30: continue
+    rec.sort(key=lambda r:r[1])
+    k=len(rec)//3
+    fast=rec[:k]; slow=rec[-k:]
+    rows_all.append((p.split(os.sep)[-2],
+        statistics.median([r[1] for r in fast]), statistics.median([r[2] for r in fast]),
+        statistics.median([r[1] for r in slow]), statistics.median([r[2] for r in slow]), k))
+print('%-18s %8s %8s %8s %8s %8s'%('window','快1/3时长','快1/3空档','慢1/3时长','慢1/3空档','空档差'))
+for w,fd,fg,sd_,sg,k in rows_all:
+    print('%-18s %8.1f %8.2f %8.1f %8.2f %+8.3f'%(w,fd,fg,sd_,sg,sg-fg))
+import statistics as st
+diffs=[x[4]-x[3] for x in rows_all]
+print()
+print('15 窗：帧内最大空档「慢1/3 − 快1/3」的差 = 中位 %+.3f ms，范围 %+.3f .. %+.3f ms'%(st.median(diffs),min(diffs),max(diffs)))
+print('15 窗：慢1/3 帧时长 / 快1/3 帧时长 = 中位 %.2f 倍'%st.median([x[3]/x[1] for x in rows_all]))

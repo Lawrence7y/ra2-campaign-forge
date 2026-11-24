@@ -1,0 +1,20 @@
+{
+  "006E6470": "TagTypeClass 流写出（Save）：三参转交 00410320 写包装，包装对空流入参返回 E_POINTER 0x80004003；本行 test eax,eax + jl 让负码原样返回、成功路 xor eax,eax 返回 S_OK ⇒ 多值错误码被本行分支消费（③b②）。",
+  "0071CDA0": "TerrainClass 虚槽5（流读入）：以 0x5f5e80→0x410380 校验流并整体读入 Terrain；失败返负 HRESULT 原样早退，成功装 vt 0x7f522c、ff 51 10 成员容器 slot4 下标查询（非读入）并登记全局表后返 0。",
+  "0071E1D0": "TerrainTypeClass 虚槽5（流读入）：以 0x5f9720→0x410380 校验流并整体读入 TerrainType；空/失败返负 HRESULT 原样早退，成功则装 vt 0x7f5458 并逐字段读入后返 0。",
+  "0071F8C0": "TEventClass 构造: 调 0x410380 初始化，失败返回 E_POINTER(0x80004003) 经 jl 分支提前返回，成功路安装 TEventClass vtable 并构造子对象(③b②)",
+  "0071F930": "TEventClass 流写出（Save）：三参转交 00410320 写包装，包装对空流入参返回 E_POINTER 0x80004003；本行 test eax,eax + jl 让负码原样返回、成功路 xor eax,eax 返回 S_OK ⇒ 多值错误码被本行分支消费（③b②）。",
+  "0071FA80": "TEventClass 删除析构器（slot8，含 test byte[esp+0xc],1 → call 0x7C8B3D 释放路）：装 4 张 vt 并调基类析构 007258D0 后，对 3 个全局容器做「虚表 +0x10 的 Find → 摘除并前移压缩」；Find 未命中返 -1（004E056F or eax,-1）即跳过，命中则 dec Count 并 [ecx+eax*4-4]=edx 压缩 ⇒ -1 下标哨兵被本行 cmp/je 消费（③b②）。",
+  "007220A0": "TiberiumClass 虚槽7（类型数组指针获取，非流 I/O）：以 0x4103E0 经 [vt+0x30] 取指针，空出参返 E_POINTER 原样早退，成功则指针 +4 前移并返 0。",
+  "007220D0": "TiberiumClass 虚槽6（流写出）：以 0x410320→Write 槽校验流并写出计数，失败返负 HRESULT 原样早退，成功则写计数 + 逐元素写数组后返 0。",
+  "00726860": "TriggerClass 流读入并就地构造（slot5）：先经 00410380 读包装读基类部分，空流返回 E_POINTER 0x80004003，本行 test eax,eax + jl 负码跳收尾原样返回；成功则构造基类、装 4 张 vt、逐字段读入，末尾返回 S_OK ⇒ 多值错误码被分支消费（③b②）。",
+  "007268D0": "TriggerClass 流写出（Save）：三参转交 00410320 写包装，包装对空流入参返回 E_POINTER 0x80004003；本行 test eax,eax + jl 让负码原样返回、成功路 xor eax,eax 返回 S_OK ⇒ 多值错误码被本行分支消费（③b②）。",
+  "00726950": "TriggerClass 删除析构器（slot8，含 test byte[esp+0xc],1 → call 0x7C8B3D 释放路）：装 4 张 vt 并调基类析构 007258D0 后，对 3 个全局容器（0xa8eae8 / 0xb0f670 / 0xb0f708）做 Find → 摘除压缩；Find 未命中返 -1（004EA66F 等 or eax,-1）即跳过，命中则 dec Count 并前移压缩 ⇒ -1 下标哨兵被本行 cmp/je 消费（③b②）。",
+  "00727BF0": "TriggerTypeClass 流读入并就地构造（slot5）：先经 00410380 读包装读基类部分，空流返回 E_POINTER 0x80004003，本行 test eax,eax + jl 负码跳收尾原样返回；成功则构造基类、装 4 张 vt、逐字段读入，末尾返回 S_OK ⇒ 多值错误码被分支消费（③b②）。",
+  "00727C80": "TriggerTypeClass 流写出（Save）：三参转交 00410320 写包装，包装对空流入参返回 E_POINTER 0x80004003；本行 test eax,eax + jl 让负码原样返回、成功路 xor eax,eax 返回 S_OK ⇒ 多值错误码被本行分支消费（③b②）。",
+  "007281A0": "TubeClass 虚槽5（流读入）：以 0x410380→Read 槽校验流并读入 Tube；失败返负 HRESULT 原样早退，成功则装 vt 0x7f59b0 后返 0。",
+  "00749F30": "VoxelAnimClass::slot23 —— ③b④ 8 邻域扫描：当 [Type+0x300] 标志置位且本帧未处理时，从 edi=0 遍历 8 个方向偏移（[edx*4+0x89F688]），每格用 0x5657A0 取对象（读）、0x4838E0 测格内标志（判），命中格 new 0xB0 对象 + 0x5FC380 构造后，用 `c6861e01000000 mov byte [esi+0x11E],0` 写回堆对象（循环体内非栈写），再 `inc edi`/`cmp edi,8`/`jl 0x74A329` 带边界检查推进。读→判→写→推进齐备。② 槽 007F6374（vt 007F6318+0x5C，slot#23）4B 值=本 entry，COL=0080CDF8→TD=00845E50→`.?AVVoxelAnimClass@@`；④ 00749434（构造器 007493B0，首条 007493BE call 0x5F3900 基类构造后装表，atexit=False、行外）。",
+  "0074BA30": "VoxelAnimTypeClass::slot8 —— ③b② 标量删除析构（双注册表）：复位 4 表、call 0x7258D0 解引用后，在 DynamicVectorClass<VoxelAnimTypeClass*>（0xB0F670，计数 0xB0F680/数组 0xB0F674）与（0xA8EB28，计数 0xA8EB38/数组 0xA8EB2C）两个注册表各 Find 自身——未命中 -1 跳过、命中则计数减一并前移压缩数组摘链（各自 jl 回边）；随后按 [this+0x296] 清 [this+0xB0]/[this+0xB4]，call 0x5F7400 基类析构，按 delete 标志 call 0x7C8B3D 释放。② 槽 007F6568（vt 007F6548+0x20，slot#8）4B 值=本 entry，COL=0080CEB0→TD=00845E70→`.?AVVoxelAnimTypeClass@@`；④ 0074AE6B（构造器 0074AD80，首条 0074AD89 call 0x5F7090 基类构造后装表，atexit=False、行外；行内 0074BA36 已排除）。",
+  "0075E0C0": "WarheadTypeClass 流读入（Load）：经 00410380 读包装读 HRESULT，失败 E_POINTER 负码跳收尾、成功继续构造并写回；③b② 可伪证错误码由 test/jl 分支消费。",
+  "0075E2C0": "WarheadTypeClass 流写出（Save）：经 00410320 写包装写 HRESULT，失败 E_POINTER 负码跳收尾、成功继续；③b② 可伪证错误码由 test/jl 分支消费。"
+}

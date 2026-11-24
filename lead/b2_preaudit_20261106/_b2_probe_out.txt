@@ -1,0 +1,200 @@
+==============================================================================
+[0] 指纹（实算）
+  MOTHER  sha256=517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636 bytes=399508 lines=7291  path=D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\qc151_u0400_trip\qc151_trip.py
+  B2      sha256=deacab49b2bc02f44ecf629036427153affee422c2059c31ecc1471b1f311a5f bytes=11638 lines=236  path=D:\Project\ra2-campaign-forge\lead\re_line_20261105\B1_HARNESS_PATCH\B2_FIX_DESIGN.md
+  TASK    sha256=83159845cc210ba5aac28f4ad989f1017ce221b9afcc6356f411edf5a601d095 bytes=8606 lines=134  path=D:\Project\ra2-campaign-forge\lead\re_line_20261105\B1_HARNESS_PATCH\TASK.md
+  .gitignore:33 = 'out/'
+==============================================================================
+[1] 母本 AST 静态解析（不执行 qc151_trip.py）
+  def backup_carrier               -> lines [4447]
+  def copy_post_except_evidence    -> lines [4561]
+  def except_set_diff              -> lines [672]
+  def finalize_trip                -> lines [5900]
+  def main                         -> lines [6185]
+  def _except_evidence_copy (nested in finalize_trip) -> line 5938
+    call copy_post_except_evidence at :5939 nargs=3 nkwargs=0
+    SOURCE :5939: copy_post_except_evidence(rec, carrier_dir, out_dir)
+  ALL CALL SITES of finalize_trip                -> lines [7117]
+  ALL CALL SITES of copy_post_except_evidence    -> lines [5939]
+  ALL CALL SITES of backup_carrier               -> lines [6387]
+  copy_post_except_evidence 现有形参 (3): ['rec', 'carrier_dir', 'out_dir']
+  finalize_trip 现有形参 (13): ['rec', 'carrier_dir', 'bak', 't0', 'pre_except_txt', 'out_dir', 'ownership', 'terminated_ok', 'main_return_code', 'mother_baseline', 'carrier_identity', 'handover', 'created_receipt']
+  finalize_trip 末行(签名) = :5909 -> 'created_receipt: dict | None = None) -> int:'
+  -- bak[name] 写入侧键名（母本 :4460） --
+    :4460 bak[name] keys = ['path', 'size', 'sha256']
+    SOURCE :4460: bak[name] = {"path": str(dst), "size": dst.stat().st_size, "sha256": h}
+  -- backup_carrier 源不存在分支 --
+    :4450:     bak: dict = {}
+    :4451:     for name in CARRIER_FILES:
+    :4452:         src = carrier_dir / name
+    :4453:         if not src.exists():
+    :4454:             rec.add("RESTORE", f"backup_missing:{name}", None, f"{src}:path",
+    :4455:                     note="★ 未测（源不存在）")
+    :4456:             continue
+    :4457:         dst = BACKUP_DIR / name
+    :4458:         dst.write_bytes(src.read_bytes())
+    :4459:         h = sha256_file(dst)
+    :4460:         bak[name] = {"path": str(dst), "size": dst.stat().st_size, "sha256": h}
+    :4461:         rec.add("RESTORE", f"backup_sha256:{name}", h, f"{dst}:file")
+  -- CARRIER_FILES --
+    :213: CARRIER_FILES = ("gamemd.exe", "ra2loader.exe", "ra2render.dll",
+    :214:                  "ra2opt_play.bat", "except.txt")
+  -- main 初始化 / 早退（相对 bak=backup_carrier :6387） --
+    :6293:     # ★ 收尾所需的跑前状态（★ `finally` 里读；★ **未取到即 None/空**）
+    :6294:     bak: dict = {}
+    :6295:     t0: list = []
+    :6296:     pre_except_txt = None
+    :6313:     try:
+    :6387:         bak = backup_carrier(rec, carrier_dir)
+    :6388:         budget.end_stage("backup")
+    :7038:     finally:
+    :7093:         try:
+    :7117:             FINALIZE_CODE[0] = finalize_trip(
+    :7125:                 created_receipt=(TRIP_CARRIER.get("receipt") or created_receipt))
+  main 中 :6313..:6387 之间的 return（早退，bak 尚未赋值）-> [6340, 6349, 6361, 6374, 6377]
+  main finally 起始行 -> :7038 ; finalize_trip 调用 -> :7117
+==============================================================================
+[2] B2 键名逐键核验（写入侧 vs 判定侧）
+  B2 写入侧候选键名（含 "xxx": 形式的行）:
+    B2:72: key='exists'             **修法**：`backup_carrier` 里显式写 `"exists": True`（能进到那一行的件必然存在）。
+    B2:79: key='path'               -        bak[name] = {"path": str(dst), "size": dst.stat().st_size, "sha256": h}
+    B2:79: key='size'               -        bak[name] = {"path": str(dst), "size": dst.stat().st_size, "sha256": h}
+    B2:79: key='sha256'             -        bak[name] = {"path": str(dst), "size": dst.stat().st_size, "sha256": h}
+    B2:81: key='path'               +        bak[name] = {"path": str(dst), "size": dst.stat().st_size, "sha256": h,
+    B2:81: key='size'               +        bak[name] = {"path": str(dst), "size": dst.stat().st_size, "sha256": h,
+    B2:81: key='sha256'             +        bak[name] = {"path": str(dst), "size": dst.stat().st_size, "sha256": h,
+    B2:82: key='exists'             +                     "exists": True,
+    B2:83: key='mtime_pre'          +                     "mtime_pre": _st_pre.st_mtime,
+    B2:84: key='captured_at_epoch'  +                     "captured_at_epoch": time.time()}
+    B2:202: key='exists'             （用合成字典单测：`{}` / `{"exists": True, "sha256": X, "mtime_pre": T}`）
+    B2:202: key='sha256'             （用合成字典单测：`{}` / `{"exists": True, "sha256": X, "mtime_pre": T}`）
+    B2:202: key='mtime_pre'          （用合成字典单测：`{}` / `{"exists": True, "sha256": X, "mtime_pre": T}`）
+    B2:203: key='exists'             3. **早退分支**：`pre={"exists": False}` + 跑后无件 → 应得 `absent_both`；
+    B2:204: key='exists'             `pre={"exists": True}` + 跑后无件 → 应得 `vanished`
+    B2:207: key='exists'             若不在则 `bak` 里根本没这个键，快照会走 `{"exists": False}` 分支 —— **这条必须核**
+    B2:223: key='exists'             - `bak` 里**没有** `except.txt` 键（跑前该件不存在）⇒ 快照 = `{"exists": False}`
+  B2 判定侧 _pre.get(...) 读取键名:
+    B2:70: key='exists'             **错误**：`bak[name]` 没有 `exists` 键，`_pre.get("exists")` 返回 `None`，`not None` 恒真。
+    B2:99: key='sha256'             -    _pre_sha, _pre_mtime = _pre.get("sha256"), _pre.get("mtime")
+    B2:99: key='mtime'              -    _pre_sha, _pre_mtime = _pre.get("sha256"), _pre.get("mtime")
+    B2:100: key='sha256'             +    _pre_sha, _pre_mtime = _pre.get("sha256"), _pre.get("mtime_pre")
+    B2:100: key='mtime_pre'          +    _pre_sha, _pre_mtime = _pre.get("sha256"), _pre.get("mtime_pre")
+    B2:134: key='exists'             +    _pre_exists = bool(_pre.get("exists"))
+    B2:146: key='sha256'             +            _pre_sha = _pre.get("sha256")
+    B2:147: key='mtime_pre'          +            _pre_mtime = _pre.get("mtime_pre")
+  B2 中 'captured_at_iso' 出现次数 = 0
+  B2 中 'captured_at_epoch' 出现次数 = 2
+  B2 中 'git diff' 出现行 = [24, 171, 173, 175]
+  TASK.md 中 'git diff' 出现行 = [83, 94, 134]
+  TASK.md 中 '三处' 出现行 = [94, 115]
+  TASK.md 中 '不许扩大' 出现行 = [42]
+  W11 candidate 中 '"mtime"' 出现行 = [78, 90, 130, 166, 177, 179, 183, 216, 223, 231, 232]
+  W11 candidate 中 'captured_at_iso' 出现行 = [80, 256]
+==============================================================================
+[3] B2 作用域链：_pre_freshness_snapshot 定义 / 使用 / diff hunk 覆盖
+  _pre_freshness_snapshot 全部出现 (3 处):
+    B2:35: **错误**：`_pre_freshness_snapshot` 建在 `main`（`:6387` 附近），却要在
+    B2:63: +                pre_freshness_snapshot=_pre_freshness_snapshot)
+    B2:200: 1. **作用域链闭合**：`_pre_freshness_snapshot` → `finalize_trip(pre_freshness_snapshot=...)` → `_except_evidence_copy` 能否真的传到
+  其中「赋值定义」形式的行 = []  (空 ⇒ 该名字在 B2 中从未被绑定)
+  B2 全部 diff hunk 头（@@ 行）:
+    B2:43: @@ def finalize_trip(rec: Recorder, carrier_dir: Path, bak: dict,
+    B2:52: @@ main，:7117-7125 调用点
+    B2:75: @@ def backup_carrier(rec: Recorder, carrier_dir: Path) -> dict:
+    B2:128: @@ def copy_post_except_evidence(rec: Recorder, carrier_dir: Path,
+  hunk 总数 = 4
+  B2 §2 表格声称的 8 个物理改动行（:181-190）:
+    B2:181: | 位置 | 行号 | 改动 | 是否新增行 |
+    B2:182: |---|---|---|---|
+    B2:183: | **A** `backup_carrier` | `:4460` | `bak[name]` 加 3 个键 | 改 1 行 → 4 行 |
+    B2:184: | **B** `copy_post_except_evidence` 签名 | `:4561-4562` | 加 `pre_snapshot` 形参 | +1 行 |
+    B2:185: | **B** 判定块 | `:4574` 之后 | 插 ~22 行判定 | +22 行 |
+    B2:186: | **B** info 字段 | `:4583-4586` | 加 4 个键 | +4 行 |
+    B2:187: | **C** `finalize_trip` 签名 | `:5909` | 加形参 | +1 行 |
+    B2:188: | **D** `_except_evidence_copy` | `:5939` | 传参 | 改 1 行 |
+    B2:189: | **D** `finalize_trip` 调用点 | `:7125` | 传参 | +1 行 |
+    B2:190: | **D** `main` 基线 | `:6388` 后 | 构造快照 | +2 行 |
+  检查：是否有 hunk 涉及 :5939 / :6388 / info 字段（:4583-4586）:
+    5939                   -> B2 出现行 [116, 188]
+    6388                   -> B2 出现行 [190]
+    4583                   -> B2 出现行 [114, 186]
+    freshness_verdict      -> B2 出现行 [205]
+    freshness_confidence   -> B2 出现行 []
+    freshness_note         -> B2 出现行 []
+    mtime_post             -> B2 出现行 [140, 150, 152]
+  B2 关于「删 TASK 里 git diff」/「本文件不改任何文件」的两处原文:
+    B2:175: **修法**：**只用文件级 `diff -u` 备份对比 + SHA256**。TASK 里彻底删掉 `git diff` 字样。
+    B2:234: - **本文件不改任何文件**，只做设计。
+==============================================================================
+[4] 把 B2 :133-154 的判定算法逐字转写后实跑（合成输入，不碰真机/不读载体）
+  E2/E3 修好?: 正常遗留(有exists/mtime_pre)         got=('leftover_unchanged', 'high')                expect=('leftover_unchanged', 'high')  -> MATCH
+  错误3 A旁证可达?: 同sha+mtime变                    got=('rewritten_same_content', 'medium')          expect=('rewritten_same_content', 'medium')  -> MATCH
+  new_write 分支                               got=('new_write', 'high')                         expect=('new_write', 'high')  -> MATCH
+  B2 :203 早退 absent_both                     got=('absent_both', 'n/a')                        expect=('absent_both', 'n/a')  -> MATCH
+  B2 :204 早退 vanished                        got=('vanished', 'high')                          expect=('vanished', 'high')  -> MATCH
+  空快照 {} vs 显式 exists=False                  got=('new_first_appearance', 'high')              expect=('new_first_appearance', 'high')  -> MATCH
+  ★ N2: 未接线 pre_snapshot=None + 遗留件          got=('new_first_appearance', 'high')              expect=('new_first_appearance', 'high')  -> MATCH
+  NOTE: 最后一行即「pre_snapshot 未传 ⇒ None ⇒ dict({}) ⇒ _pre_exists=False」
+        ⇒ 跑前原样遗留的历史 except.txt 被判 new_first_appearance/high（错误 2 的危害重现）
+  -- N3 专项：空快照 {} vs 显式 exists=False 是否语义等价 --
+    跑后无件       pre={}                     -> ('absent_both', 'n/a')
+    跑后无件       pre={'exists': False}      -> ('absent_both', 'n/a')
+    跑后有件       pre={}                     -> ('new_first_appearance', 'high')
+    跑后有件       pre={'exists': False}      -> ('new_first_appearance', 'high')
+    ⇒ 在 B2 :133-154 算法下二者等价（都走 _pre_exists=False）；但 B2 :223-224 声称
+      「无键 ⇒ 快照={exists:False}」，而 :130/:133 又用 None⇒{}，二者语义未统一。
+  -- N1 专项：main 早退（:6340/:6349/:6361/:6374/:6377 均早于 bak=:6387） --
+    这些 return 会进入 finally(:7038) 并调 finalize_trip(:7117)，此时 bak={}（:6294）。
+    按 B2 :190「main 基线 :6388 后构造快照」，这些路径上 _pre_freshness_snapshot 从未被绑定
+    ⇒ :63 的 `pre_freshness_snapshot=_pre_freshness_snapshot` 会抛 NameError（与错误 1 同类）。
+    B2 :66 声称「默认值 None ⇒ 任何其他调用方不受影响」仅在调用方不传该实参时成立；
+    :63 明确传了实参，故默认值不提供任何保护。
+  -- 既有收尾惯例对照（母本） --
+    :5951 _restore  : 未备份 ⇒ 记 null（区分「未测」与「已测」）
+    :5963 _t0t1     : 无 T0 ⇒ 记 null
+    :5976 _except_diff: 无跑前基线 ⇒ 记 null
+    ⇒ B2 的 _pre=dict(pre_snapshot or {}) 把 None/{} 折叠成「跑前不存在」，无法表达「未测」
+  -- B2 §2 声称 vs 4 个 diff hunk 的覆盖差 --
+    hunk 覆盖: finalize_trip 签名(:43) / main 调用点(:52) / backup_carrier(:75) / copy_post(:128)
+    未覆盖但 §2:188-190 声称要改: :5939 传参、:6388 后构造快照（+2 行）
+    未覆盖但 §2:186 声称要改: :4583-4586 info +4 键
+    ⇒ 四处改动表本身含 3 个无 diff 的「口头改动」，这是第五/第六/第七处该改而没给改法
+  -- N5 专项：B2 :43-48 finalize_trip 签名 hunk 的上下文是否与母本 :5900-5909 相符 --
+    B2 hunk 声称的现有签名上下文:
+      '@@ def finalize_trip(rec: Recorder, carrier_dir: Path, bak: dict,'
+      '                   carrier_identity: dict | None = None,'
+      '                   handover: Path | None = None,'
+      '-                  created_receipt: dict | None = None) -> int:'
+    母本真实签名 :5900-5909:
+      :5900: 'def finalize_trip(rec: Recorder, carrier_dir: Path, bak: dict,'
+      :5901: '                  t0: list, pre_except_txt: str,'
+      :5902: '                  out_dir: Path | None = None,'
+      :5903: '                  ownership: dict | None = None,'
+      :5904: '                  terminated_ok: bool = False,'
+      :5905: '                  main_return_code: int = EXIT_OK,'
+      :5906: '                  mother_baseline: dict | None = None,'
+      :5907: '                  carrier_identity: dict | None = None,'
+      :5908: '                  handover: Path | None = None,'
+      :5909: '                  created_receipt: dict | None = None) -> int:'
+    B2 hunk 上下文缺失的母本形参 = ['t0', 'pre_except_txt', 'out_dir', 'ownership', 'terminated_ok', 'main_return_code', 'mother_baseline']
+    ⇒ 该 hunk 的 context 与母本不符（7 个形参被跳过），无法原样套用。
+  -- N6 专项：captured_at_iso 是否被静默丢弃 --
+    TASK.md §3.1 要求三键原文 :47 -> '要加：`mtime_pre` / `captured_at_epoch` / `captured_at_iso` 三个键（**只增不改**，历史可比性不断）。'
+    W11 candidate :80 -> '"captured_at_iso": _now_iso(),'
+    B2 :81-84 写入的键 -> exists / mtime_pre / captured_at_epoch（共 3 个，无 captured_at_iso）
+    B2 全文 'captured_at_iso' 出现次数 = 0
+  -- N3 补充：正常路径（src.exists()==True）是否落任何 _fresh --
+    B2 :137-154 计算 _fresh（4 个分支），:155-162 只在 `if not _now_exists` 分支 rec.add。
+    :163 之后（blob = src.read_bytes() ... 到 :165 hunk 结束）无任何 rec.add / info 写入；
+    B2 全文 'freshness_verdict' 出现行 = [205]
+    B2 全文 'freshness_confidence'/'freshness_note' 出现次数 = 0
+    ⇒ 正常路径（W11 陈旧 except.txt 场景）算出的 _fresh 从未输出。
+==============================================================================
+[5] 机械核验摘要
+  mother finalize_trip 定义 :5900 / 单一调用点 :7117 / main 定义 :6185
+  copy_post_except_evidence 定义 :4561 / 单一调用点 :5939（在 finalize_trip 内嵌函数中）
+  mother bak[name] :4460 现有键 = ['path','size','sha256']（无 exists / 无 mtime_pre）
+  B2 写入侧 :82-84 新增 exists / mtime_pre / captured_at_epoch；判定侧 :146-147 读 sha256 / mtime_pre
+  B2 _pre_freshness_snapshot 有使用(:63) 无定义；B2 无 :5939 传参 hunk、无 :6388 构造 hunk
+  B2 §2 :186 声称 info +4 键，无对应 diff hunk
+==============================================================================

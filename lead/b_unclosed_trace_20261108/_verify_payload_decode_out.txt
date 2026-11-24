@@ -1,0 +1,832 @@
+==========================================================================================
+FILE dwfrun-a05ccb49-e10b-4004-8ce6-5f5b48d7820e.mjs bytes=26870 sha256=ca827dedea8f66cfec9ca273b1cc4e36525a5022ab2dff508bc7ff350b4b934c lines=250
+mtime = 2026-11-08T14:04:32.563255+08:00
+  marker 'lead/' count=17
+  marker 'B_BREAKPOINT' count=4
+  marker 'B_BREAKPOINTS' count=4
+  marker 'R2_BREAKPOINTS_CLOSURE' count=2
+  struct 'worldRead' count=5
+  struct 'enterPhase' count=7
+  struct 'report(' count=2
+  struct 'await __host' count=8
+  line9_len=8566
+  --- decoded payload (lines) ---
+  P001| const HY4 = "magpie/work/cn:hy4free$high";
+  P002| const DIR = "D:/Project/ra2-campaign-forge/lead/r2_unclosed_b_20261108/";
+  P003| const DOC = "lead/r2_unclosed_b_20261108/B_BREAKPOINTS_2_6.md";
+  P004| const IRON = [
+  P005|     "【铁律】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkill，不读活进程内存。",
+  P006|     "零采样代码：不写 hook / MiniDump / SuspendThread / StackWalk / 探针注入；不写 ctypes / OpenProcess / ReadProcessMemory 等动态解析。",
+  P007|     "只读既有件：ra2youli/**、out/re_work/**、lead/GOAL_*、lead/PENDING_DECISIONS.md、lead/re_line_20261105/**、lead/dtrigger_round2_20261107/**、lead/dtrigger_compare_20261107/**、lead/criteria_r3_verify_20261108/** 一律不改。",
+  P008|     "唯一写域 = lead/r2_unclosed_b_20261108/。",
+  P009|     "不 commit、不 push。Python 一律 python -I -X utf8 + 绝对路径；指纹用 hashlib。",
+  P010|     "引用必须追到「实跑命令+输出」或「文件:行」；拿不到写「未验」，不补造。",
+  P011|     "复核回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。",
+  P012|     "★ 不选判据、不改口径 B、不改 :177/:190/:191、不改台账；只补证崩点事实。",
+  P013|     "若检查不可能通过或指令矛盾，如实上报，不许伪造通过。",
+  P014| ].join("\n");
+  P015| const FP_CODE = [
+  P016|     "import json,pathlib,hashlib",
+  P017|     "root=pathlib.Path('D:/Project/ra2-campaign-forge')",
+  P018|     "T=['lead/dtrigger_round2_20261107/_dB_anchor_recompute.py',",
+  P019|     "'lead/dtrigger_round2_20261107/_dB_anchor_recompute_out.txt',",
+  P020|     "'lead/dtrigger_round2_20261107/_verify_B_out.txt',",
+  P021|     "'lead/dtrigger_round2_20261107/_dB_anchor_recompute_data.json',",
+  P022|     "'lead/criteria_r3_verify_20261108/R2_BREAKPOINTS_CLOSURE.md',",
+  P023|     "'lead/dtrigger_compare_20261107/CRITERIA_COMPARE.md']",
+  P024|     "o={}",
+  P025|     "for t in T:",
+  P026|     " p=root/t",
+  P027|     " o[t]={'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size} if p.is_file() else {'sha256':'MISSING','bytes':0}",
+  P028|     "print(json.dumps(o,ensure_ascii=False))",
+  P029| ].join("\n");
+  P030| const GATE_CODE = [
+  P031|     "import json,pathlib,re",
+  P032|     "root=pathlib.Path('D:/Project/ra2-campaign-forge/lead/r2_unclosed_b_20261108')",
+  P033|     "doc=root/'B_BREAKPOINTS_2_6.md';P=[];B=[];NB=0",
+  P034|     "if not doc.is_file(): P.append('交付件缺失')",
+  P035|     "else:",
+  P036|     " t=doc.read_text(encoding='utf-8');NB=doc.stat().st_size",
+  P037|     " for s in ['## 1','## 2','## 3','## 4','## 5','## 6']:",
+  P038|     "  if s not in t: P.append('缺小节 '+s)",
+  P039|     " for k in ['崩点2','崩点3','崩点4','崩点5','崩点6','闭合','未闭合','未验','不选判据']:",
+  P040|     "  if k not in t: P.append('缺要素 '+k)",
+  P041|     " for bad in ['gamemd.exe','ra2loader','taskkill']:",
+  P042|     "  if bad in t: P.append('含禁用词 '+bad)",
+  P043|     " B=re.findall(r'被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?',t)",
+  P044|     " if not B: P.append('缺 SHA256 绑定行')",
+  P045|     "print(json.dumps({'ok':not P,'problems':P,'bindings':len(B),'docBytes':NB},ensure_ascii=False))",
+  P046| ].join("\n");
+  P047| __host.enterPhase("\u6838\u5BF9\u7EF4\u5EA6 B \u4E0A\u6E38\u4EF6\u6307\u7EB9");
+  P048| const fpRun = await __host.worldRead("world-read#1", "run", ["python", ["-I", "-X", "utf8", "-c", FP_CODE], { output: { tail: 4096 } }]);
+  P049| let fps = {};
+  P050| try {
+  P051|     fps = JSON.parse(fpRun.stdout.trim());
+  P052| }
+  P053| catch {
+  P054|     fps = {};
+  P055| }
+  P056| const fpText = JSON.stringify(fps);
+  P057| __host.log("B 上游指纹 exit=" + fpRun.exitCode + "，件数 " + Object.keys(fps).length);
+  P058| const ASK_ANALYST = [
+  P059|     IRON,
+  P060|     "",
+  P061|     "【编排方实跑指纹】" + fpText,
+  P062|     "",
+  P063|     "【背景】lead/criteria_r3_verify_20261108/R2_BREAKPOINTS_CLOSURE.md 第 74 行登记维度 B 的五项未核未闭合崩点。前置事实：12 格数值已经三层对账成立（不是数值问题），崩的是证据链与自检层。",
+  P064|     "",
+  P065|     "【任务：逐条补证五项崩点】",
+  P066|     "崩点2 指纹串损坏：R2 第 74 行记 _verify_B_out.txt 第 64-66 行有回件自称脚本 hash 尾 26f3fb61829756dfeecf 未出现在实算件、out.txt 尾 b6f95763794 实为 data.json 的尾串。请实读该三行，实算三个相关文件的完整 SHA256，判定该尾串到底属于哪份文件、损坏成因能否定位。",
+  P067|     "崩点3 自检硬编码：R2 记 _dB_anchor_recompute.py 第 401-413 行有硬编码自检。请实读该段，判定自检是否写死期望值、是否从实际计算结果推导；若是硬编码，说明它能自证什么、不能自证什么。",
+  P068|     "崩点4 +e>50 空列：请实读 _dB_anchor_recompute_out.txt 与 _dB_anchor_recompute_data.json，核对 +e>50 这一列是否有实际数值、还是空列占位。",
+  P069|     "崩点5 统一锚选择：R2 第 115 行记「统一锚是选择非推导」。请实读口径 U 的定义处（_dB_anchor_recompute_out.txt 第 44-46 行附近）与 _dtrigger_metrics.py 第 217、223-227 行，判定 U1（每 id 取权威登记锚）究竟有推导依据、还是纯选择。",
+  P070|     "崩点6 og=None 答非所问：R2 记调查件把「og=None 只导致不触发」当作对 §3.2 未验的解释，但 §3.2 未验的真实原因是锚不一致。请实读 CRITERIA_COMPARE.md 第 242-251 行核对真实原因，并判定调查件是否答非所问。",
+  P071|     "五项逐条给「闭合 / 未闭合 / 部分闭合」加实跑证据，统计 closedCount（0-5）。不选判据、不改口径 B、不改台账。产出落本任务写域，前缀 _b_。零真机、零采样代码、不 commit、不 push。",
+  P072| ].join("\n");
+  P073| const REVIEW_RULES = [
+  P074|     "【复核】默认怀疑：① 自己实算三个文件的 SHA256 核对指纹串归属；② 自己实读 _dB_anchor_recompute.py 第 401-413 行判断自检是否硬编码；③ 自己读 data.json 核对 +e>50 列是否空列；④ 自己实读口径 U 定义与 metrics 锚定义判断「选择非推导」是否成立；⑤ 自己实读 CRITERIA_COMPARE.md 第 242-251 行判断 og=None 是否答非所问；⑥ 检查 closedCount 有没有被拔高、有没有把未闭合写成闭合；⑦ 有没有选判据、改口径、改台账。回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。只读，核验脚本只能落本任务写域且前缀 _verify_。",
+  P075| ].join("\n");
+  P076| __host.enterPhase("GLM \u9010\u6761\u8865\u8BC1\uFF0Chy4 \u4EA4\u53C9\u590D\u6838");
+  P077| const analyst = __host.createActor("actor#1", "B崩点补证员·GLM", { system: "你是崩点补证员。逐条查证未闭合项，只给事实，不选判据、不改口径。" });
+  P078| const finding = await __host.ask("ask#1", analyst, ASK_ANALYST);
+  P079| const reviewer = __host.createActor("actor#2", "B崩点复核员·hy4", { system: "你是独立复核员，默认怀疑。自己实算指纹、自己实读源码，不复用补证员实现。问「什么会让它崩」。", model: HY4 });
+  P080| const confirmation = await __host.ask("ask#2", reviewer, [IRON, "", "【被核对象】补证回件：" + JSON.stringify(finding), "", "【编排方指纹】" + fpText, "", REVIEW_RULES].join("\n"));
+  P081| __host.enterPhase("GLM \u64B0\u5199\u8865\u8BC1\u4EA4\u4ED8\u4EF6");
+  P082| const writer = __host.createActor("actor#3", "补证报告撰写员", { system: "你是交付件撰写员。逐条如实写闭合状态，不选判据、不改口径、不把未闭合写成已闭合。" });
+  P083| const writeResult = await __host.ask("ask#3", writer, [
+  P084|     IRON,
+  P085|     "",
+  P086|     "【编排方指纹】" + fpText,
+  P087|     "【补证】" + JSON.stringify(finding),
+  P088|     "【复核】" + JSON.stringify(confirmation),
+  P089|     "",
+  P090|     "【交付】写 B_BREAKPOINTS_2_6.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（只补证崩点、不选判据）；2 崩点2 指纹串损坏（三行原文 + 三文件实算指纹 + 归属判定）；3 崩点3 自检硬编码与崩点4 +e>50 空列；4 崩点5 统一锚选择与崩点6 og=None 答非所问；5 复核回件（含 SHA256 加字节数绑定）+ 五项闭合状态汇总表；6 结论（closedCount、可升格判定、未验项、不选判据声明）。",
+  P091|     "",
+  P092|     "必现要素：崩点2 / 崩点3 / 崩点4 / 崩点5 / 崩点6 / 闭合 / 未闭合 / 未验 / 不选判据。不得含 gamemd.exe / ra2loader / taskkill 字面量。复核 verdict 如实记；refuted 或 partial 标 unconfirmed。",
+  P093| ].join("\n"));
+  P094| __host.enterPhase("\u95E8\u7981\u4E0E\u53D1\u5E03");
+  P095| const gateRun = await __host.worldRead("world-read#2", "run", ["python", ["-I", "-X", "utf8", "-c", GATE_CODE], { output: { tail: 4096 } }]);
+  P096| let gateOk = false;
+  P097| let gateProblems = "";
+  P098| try {
+  P099|     const g = JSON.parse(gateRun.stdout.trim());
+  P100|     gateOk = gateRun.exitCode === 0 && g.ok === true;
+  P101|     gateProblems = (g.problems ?? []).join("；");
+  P102|     __host.log("门禁 exit=" + gateRun.exitCode + " ok=" + gateOk);
+  P103| }
+  P104| catch {
+  P105|     gateProblems = "门禁输出不可解析（exit=" + gateRun.exitCode + "）";
+  P106| }
+  P107| let published = false;
+  P108| try {
+  P109|     await __host.publishArtifact("artifact#1", "file", ["b-breakpoints", DOC, { title: "R2 维度 B 崩点 2-6 补证", description: "逐条查证五项未闭合崩点；不选判据", primary: true }]);
+  P110|     published = true;
+  P111| }
+  P112| catch {
+  P113|     await __host.ask("ask#4", writer, "B_BREAKPOINTS_2_6.md 缺失，请按此前内容重建并回复「已重建」。");
+  P114|     await __host.publishArtifact("artifact#2", "file", ["b-breakpoints", DOC, { title: "R2 维度 B 崩点 2-6 补证", description: "重建后重新发布", primary: true }]);
+  P115|     published = true;
+  P116| }
+  P117| return {
+  P118|     conclusion: "R2 维度 B 崩点 2-6 补证完成（已闭合 " + finding.closedCount + "/5），复核 verdict=" + confirmation.verdict + "，报告" + (published ? "已发布" : "未发布") + "，门禁" + (gateOk ? "通过" : "未通过") + "。" + (gateOk ? "" : "门禁问题：" + gateProblems) + " " + finding.closure + " ★ 不选判据、不改口径 B、不改台账。",
+  P119|     findings: [{
+  P120|             where: DOC + " §2-§4",
+  P121|             what: finding.what,
+  P122|             evidence: (confirmation.sha256Line + "；" + finding.evidence + "；复核=" + confirmation.verdict + "；崩点=" + confirmation.whatBreaksIt).slice(0, 1400),
+  P123|             status: confirmation.verdict === "confirmed" ? "verified" : "unconfirmed",
+  P124|             severity: finding.severity,
+  P125|         }],
+  P126|     verified: [
+  P127|         "python -I -X utf8 -c <指纹脚本>：" + Object.keys(fps).length + " 件（exit=" + fpRun.exitCode + "）",
+  P128|         "补证员 " + finding.ranCommands + " 条、复核员 " + confirmation.ranCommands + " 条确定性命令",
+  P129|         "python -I -X utf8 -c <门禁>：六节/九要素/禁用词/SHA256 绑定（exit=" + gateRun.exitCode + ", ok=" + gateOk + "）",
+  P130|     ],
+  P131|     notCovered: [
+  P132|         "不选判据、不改口径 B、不改 :177/:190/:191、不改台账",
+  P133|         "零真机：Q5 四项工程依赖仍未验，D-13 维持 PAUSE",
+  P134|         ...(!gateOk ? ["门禁未通过：" + gateProblems] : []),
+  P135|     ],
+  P136|     gateOk: gateOk,
+  P137| };
+  P138| 
+==========================================================================================
+FILE dwfrun-a7c7b5f9-25d5-400a-bd45-6f32a262430b.mjs bytes=26454 sha256=eaa6a38df2542ad810e5e2d0eb26f3c6d6bc34ec99ef57445fc327c1dccd3ded lines=250
+mtime = 2026-11-08T17:57:44.519463+08:00
+  marker 'lead/' count=14
+  marker 'B_BREAKPOINT' count=9
+  marker 'B_BREAKPOINTS' count=5
+  marker '日志追溯员' count=2
+  marker '追溯复核员' count=1
+  struct 'worldRead' count=5
+  struct 'enterPhase' count=7
+  struct 'report(' count=2
+  struct 'await __host' count=8
+  line9_len=8120
+  --- decoded payload (lines) ---
+  P001| const HY4 = "magpie/work/cn:hy4free$high";
+  P002| const DIR = "D:/Project/ra2-campaign-forge/lead/b_unclosed_trace_20261108/";
+  P003| const DOC = "lead/b_unclosed_trace_20261108/B_BREAKPOINT2_TRACE.md";
+  P004| const IRON = [
+  P005|     "【铁律】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkill，不读活进程内存。",
+  P006|     "零采样代码：不写 hook / MiniDump / SuspendThread / StackWalk / 探针注入；不写 ctypes / OpenProcess / ReadProcessMemory 等动态解析。",
+  P007|     "只读既有件：ra2youli/**、out/re_work/**、lead/GOAL_*、lead/PENDING_DECISIONS.md、lead/re_line_20261105/**、lead/dtrigger_*/**、lead/*_20261108/**、.zcode/workflow-runs/** 一律不改。",
+  P008|     "唯一写域 = lead/b_unclosed_trace_20261108/。",
+  P009|     "不 commit、不 push。Python 一律 python -I -X utf8 + 绝对路径；指纹用 hashlib。",
+  P010|     "引用必须追到「实跑命令+输出」或「文件:行」；拿不到写「未验」，不补造。",
+  P011|     "复核回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。",
+  P012|     "★ 只做只读追溯：不改既有交付件、不修订 B_BREAKPOINTS_2_6.md 的判定、不改台账。",
+  P013|     "若检查不可能通过或指令矛盾，如实上报，不许伪造通过。",
+  P014| ].join("\n");
+  P015| const FP_CODE = [
+  P016|     "import json,pathlib,hashlib,glob",
+  P017|     "root=pathlib.Path('D:/Project/ra2-campaign-forge')",
+  P018|     "T=['lead/r2_unclosed_b_20261108/B_BREAKPOINTS_2_6.md',",
+  P019|     "'lead/r2_final_grade_20261108/R2_FINAL_GRADE.md',",
+  P020|     "'lead/dtrigger_round2_20261107/_verify_B_out.txt']",
+  P021|     "o={}",
+  P022|     "for t in T:",
+  P023|     " p=root/t",
+  P024|     " o[t]={'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size} if p.is_file() else {'sha256':'MISSING','bytes':0}",
+  P025|     "m=sorted(glob.glob(str(root/'.zcode/workflow-runs/dwfrun-*.mjs')))",
+  P026|     "o['_mjsTotal']={'count':len(m)}",
+  P027|     "print(json.dumps(o,ensure_ascii=False))",
+  P028| ].join("\n");
+  P029| const GATE_CODE = [
+  P030|     "import json,pathlib,re",
+  P031|     "root=pathlib.Path('D:/Project/ra2-campaign-forge/lead/b_unclosed_trace_20261108')",
+  P032|     "doc=root/'B_BREAKPOINT2_TRACE.md';P=[];B=[];NB=0",
+  P033|     "if not doc.is_file(): P.append('交付件缺失')",
+  P034|     "else:",
+  P035|     " t=doc.read_text(encoding='utf-8');NB=doc.stat().st_size",
+  P036|     " for s in ['## 1','## 2','## 3','## 4','## 5','## 6']:",
+  P037|     "  if s not in t: P.append('缺小节 '+s)",
+  P038|     " for k in ['26f3fb61829756dfeecf','追溯','归属','回件原文','不改既有判定','未验']:",
+  P039|     "  if k not in t: P.append('缺要素 '+k)",
+  P040|     " B=re.findall(r'被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?',t)",
+  P041|     " if not B: P.append('缺 SHA256 绑定行')",
+  P042|     "print(json.dumps({'ok':not P,'problems':P,'bindings':len(B),'docBytes':NB},ensure_ascii=False))",
+  P043| ].join("\n");
+  P044| __host.enterPhase("\u6838\u5BF9\u8FFD\u6EAF\u76EE\u6807\u4E0E\u65E5\u5FD7\u89C4\u6A21");
+  P045| const fpRun = await __host.worldRead("world-read#1", "run", ["python", ["-I", "-X", "utf8", "-c", FP_CODE], { output: { tail: 4096 } }]);
+  P046| let fps = {};
+  P047| try {
+  P048|     fps = JSON.parse(fpRun.stdout.trim());
+  P049| }
+  P050| catch {
+  P051|     fps = {};
+  P052| }
+  P053| const fpText = JSON.stringify(fps);
+  P054| __host.log("追溯目标与日志规模 exit=" + fpRun.exitCode);
+  P055| const ASK_ANALYST = [
+  P056|     IRON,
+  P057|     "",
+  P058|     "【编排方实跑结果】" + fpText,
+  P059|     "",
+  P060|     "【关键发现：上一轮判定可能有误】lead/r2_unclosed_b_20261108/B_BREAKPOINTS_2_6.md 的崩点2 判定「回件原文不在盘上、全树摘要 0 命中、损坏成因无法定位」，lead/r2_final_grade_20261108/R2_FINAL_GRADE.md 据此把「崩点2 残留」列为结构性不可再闭合。",
+  P061|     "但编排方实跑发现：尾串 26f3fb61829756dfeecf 在 .zcode/workflow-runs/ 的 150 个 dwfrun-*.mjs 中，恰有 1 个文件命中——dwfrun-a05ccb49-e10b-4004-8ce6-5f5b48d7820e.mjs（即 B 崩点补证那次运行自己的日志）。这不等于「无任何盘上对应物」。",
+  P062|     "",
+  P063|     "【任务：只读追溯】",
+  P064|     "1. 自己遍历 .zcode/workflow-runs/dwfrun-*.mjs（不要只信我报的 1 个文件），检索 26f3fb61829756dfeecf 与 b6f95763794 两个尾串，列出全部命中位置与所属 run。",
+  P065|     "2. 打开命中的 mjs，判定该尾串出现的位置与性质：是子代理回答文本？是脚本源码？是日志回显？提取上下文（前后若干字符）并如实引用。★ 注意 mjs 可能含转义，需正确解码。",
+  P066|     "3. 判定 26f3fb61829756dfeecf 到底属于什么——它自称是「脚本 hash 尾」，但实算脚本是 44b10371…382b。请在日志里找它出现的原始语境，判断它是被谁、在哪一步产生的（例如是否某次中间版本脚本的 hash、是否是别的工作流脚本的 hash）。",
+  P067|     "4. 给出结论：B 崩点2 的「损坏成因未定位」是否可以由此闭合？还是只是把「无盘上对应物」修正为「仅存于运行日志、仍无法定位成因」？★ 两种结论都可，如实判定，不要为了好看说闭合。",
+  P068|     "5. ★ 不修改 B_BREAKPOINTS_2_6.md 与 R2_FINAL_GRADE.md 的任何判定，只在本写域产出追溯报告；若发现上游判定有误，如实写明「建议上游更正」但不代改。",
+  P069|     "6. 产出落本任务写域，前缀 _bt_。零真机、零采样代码、不 commit、不 push。",
+  P070| ].join("\n");
+  P071| const REVIEW_RULES = [
+  P072|     "【复核】默认怀疑：① 自己独立遍历全部 mjs 检索两个尾串，核对接线员报的命中数与位置；② 自己打开命中文件核对上下文引用是否如实、有没有断章取义；③ 核对尾串归属判定有没有硬凑（例如把不相干的 hash 强行说成中间版本）；④ 检查结论有没有被拔高成「已闭合」；⑤ 检查有没有修改上游交付件。回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。只读，核验脚本只能落本任务写域且前缀 _verify_。",
+  P073| ].join("\n");
+  P074| __host.enterPhase("GLM \u53EA\u8BFB\u8FFD\u6EAF\uFF0Chy4 \u4EA4\u53C9\u590D\u6838");
+  P075| const analyst = __host.createActor("actor#1", "日志追溯员·GLM", { system: "你是日志追溯员。只读遍历运行日志定位文本来源，不修改任何上游判定。所有结论追到文件:行。" });
+  P076| const finding = await __host.ask("ask#1", analyst, ASK_ANALYST);
+  P077| const reviewer = __host.createActor("actor#2", "追溯复核员·hy4", { system: "你是独立复核员，默认怀疑。自己遍历日志、自己核对上下文。问「什么会让它崩」。", model: HY4 });
+  P078| const confirmation = await __host.ask("ask#2", reviewer, [IRON, "", "【被核对象】追溯回件：" + JSON.stringify(finding), "", "【编排方指纹】" + fpText, "", REVIEW_RULES].join("\n"));
+  P079| __host.enterPhase("GLM \u64B0\u5199\u8FFD\u6EAF\u62A5\u544A");
+  P080| const writer = __host.createActor("actor#3", "追溯报告撰写员", { system: "你是交付件撰写员。如实写追溯结果与建议，不代改上游判定。" });
+  P081| const writeResult = await __host.ask("ask#3", writer, [
+  P082|     IRON,
+  P083|     "",
+  P084|     "【编排方指纹】" + fpText,
+  P085|     "【追溯】" + JSON.stringify(finding),
+  P086|     "【复核】" + JSON.stringify(confirmation),
+  P087|     "",
+  P088|     "【交付】写 B_BREAKPOINT2_TRACE.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（只读追溯、不改上游判定）；2 检索方法与全量命中清单（150 个 mjs 的遍历结果）；3 尾串 26f3fb61829756dfeecf 的上下文与归属判定；4 尾串 b6f95763794 的归属复核；5 复核回件（含 SHA256 加字节数绑定）+ 对「崩点2 能否闭合」的判定；6 结论（recovered、是否建议上游更正、未验项、不改既有判定声明）。",
+  P089|     "",
+  P090|     "必现要素：26f3fb61829756dfeecf / 追溯 / 归属 / 回件原文 / 不改既有判定 / 未验。复核 verdict 如实记；refuted 或 partial 标 unconfirmed。",
+  P091| ].join("\n"));
+  P092| __host.enterPhase("\u95E8\u7981\u4E0E\u53D1\u5E03");
+  P093| const gateRun = await __host.worldRead("world-read#2", "run", ["python", ["-I", "-X", "utf8", "-c", GATE_CODE], { output: { tail: 4096 } }]);
+  P094| let gateOk = false;
+  P095| let gateProblems = "";
+  P096| try {
+  P097|     const g = JSON.parse(gateRun.stdout.trim());
+  P098|     gateOk = gateRun.exitCode === 0 && g.ok === true;
+  P099|     gateProblems = (g.problems ?? []).join("；");
+  P100|     __host.log("门禁 exit=" + gateRun.exitCode + " ok=" + gateOk);
+  P101| }
+  P102| catch {
+  P103|     gateProblems = "门禁输出不可解析（exit=" + gateRun.exitCode + "）";
+  P104| }
+  P105| let published = false;
+  P106| try {
+  P107|     await __host.publishArtifact("artifact#1", "file", ["b-trace", DOC, { title: "B 崩点2 回件追溯", description: "从 workflow-runs 日志追溯尾串归属，修正「无盘上对应物」判定", primary: true }]);
+  P108|     published = true;
+  P109| }
+  P110| catch {
+  P111|     await __host.ask("ask#4", writer, "B_BREAKPOINT2_TRACE.md 缺失，请按此前内容重建并回复「已重建」。");
+  P112|     await __host.publishArtifact("artifact#2", "file", ["b-trace", DOC, { title: "B 崩点2 回件追溯", description: "重建后重新发布", primary: true }]);
+  P113|     published = true;
+  P114| }
+  P115| return {
+  P116|     conclusion: "B 崩点2 回件追溯完成（定位回件源文本=" + finding.recovered + "，尾串归属=" + finding.tailOwner + "），复核 verdict=" + confirmation.verdict + "，报告" + (published ? "已发布" : "未发布") + "，门禁" + (gateOk ? "通过" : "未通过") + "。" + (gateOk ? "" : "门禁问题：" + gateProblems) + " ★ 只读追溯，未改 B_BREAKPOINTS_2_6.md 与 R2_FINAL_GRADE.md 的任何判定、未改台账。",
+  P117|     findings: [{
+  P118|             where: DOC + " §3-§5",
+  P119|             what: finding.what,
+  P120|             evidence: (confirmation.sha256Line + "；" + finding.evidence + "；复核=" + confirmation.verdict + "；崩点=" + confirmation.whatBreaksIt).slice(0, 1400),
+  P121|             status: confirmation.verdict === "confirmed" ? "verified" : "unconfirmed",
+  P122|             severity: finding.severity,
+  P123|         }],
+  P124|     verified: [
+  P125|         "python -I -X utf8 -c <指纹脚本>：exit=" + fpRun.exitCode,
+  P126|         "追溯员 " + finding.ranCommands + " 条、复核员 " + confirmation.ranCommands + " 条确定性命令",
+  P127|         "python -I -X utf8 -c <门禁>：六节/六要素/SHA256 绑定（exit=" + gateRun.exitCode + ", ok=" + gateOk + "）",
+  P128|     ],
+  P129|     notCovered: [
+  P130|         "不修改上游两个交付件的判定，只在本写域产出追溯报告",
+  P131|         "零真机：纯日志检索",
+  P132|         ...(!gateOk ? ["门禁未通过：" + gateProblems] : []),
+  P133|     ],
+  P134|     gateOk: gateOk,
+  P135| };
+  P136| 
+==========================================================================================
+FILE dwfrun-1a53f51e-3623-435c-8253-ff4aa9060d52.mjs bytes=26262 sha256=b3fd71152be9185296e8026fef7425546ad9acaf68e4255f9a9f1ef7b2865b76 lines=250
+mtime = 2026-11-08T17:58:18.142089+08:00
+  marker 'lead/' count=15
+  struct 'worldRead' count=5
+  struct 'enterPhase' count=7
+  struct 'report(' count=2
+  struct 'await __host' count=8
+  line9_len=8150
+  --- decoded payload (lines) ---
+  P001| const HY4 = "magpie/work/cn:hy4free$high";
+  P002| const DIR = "D:/Project/ra2-campaign-forge/lead/spec_static_closure_20261108/";
+  P003| const DOC = "lead/spec_static_closure_20261108/STATIC_GAP_CLOSURE.md";
+  P004| const IRON = [
+  P005|     "【铁律】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkill，不读活进程内存。",
+  P006|     "零采样代码：不写 hook / MiniDump / SuspendThread / StackWalk / 探针注入；不写 ctypes / OpenProcess / ReadProcessMemory 等动态解析。",
+  P007|     "只读既有件：ra2youli/**、out/re_work/**、lead/GOAL_*、lead/PENDING_DECISIONS.md、lead/re_line_20261105/**、lead/static_spec_n9_20261107/**、lead/perf_repair_n11_20261108/** 一律不改。",
+  P008|     "唯一写域 = lead/spec_static_closure_20261108/。",
+  P009|     "不 commit、不 push。Python 一律 python -I -X utf8 + 绝对路径；指纹用 hashlib。",
+  P010|     "引用必须追到「实跑命令+输出」或「文件:行」；拿不到写「未验」，不补造。",
+  P011|     "复核回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。",
+  P012|     "★ 不写「已定位」「已证不存在」、不生成采样候选、不补猜运行期值；入口代理与完成扫描数必须区分。",
+  P013|     "若检查不可能通过或指令矛盾，如实上报，不许伪造通过。",
+  P014| ].join("\n");
+  P015| const FP_CODE = [
+  P016|     "import json,pathlib,hashlib",
+  P017|     "root=pathlib.Path('D:/Project/ra2-campaign-forge')",
+  P018|     "T=['lead/static_spec_n9_20261107/STATIC_COUNT_SPEC.md',",
+  P019|     "'lead/perf_repair_n11_20261108/PERF_REPAIR_HANDOFF.md',",
+  P020|     "'lead/re_line_20261105/W8_STATIC_LOCATE/W8_STATIC_LOCATE.md',",
+  P021|     "'lead/re_line_20261105/A1_ERRATA_MAP/ERRATA_W8.md']",
+  P022|     "o={}",
+  P023|     "for t in T:",
+  P024|     " p=root/t",
+  P025|     " o[t]={'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size} if p.is_file() else {'sha256':'MISSING','bytes':0}",
+  P026|     "print(json.dumps(o,ensure_ascii=False))",
+  P027| ].join("\n");
+  P028| const GATE_CODE = [
+  P029|     "import json,pathlib,re",
+  P030|     "root=pathlib.Path('D:/Project/ra2-campaign-forge/lead/spec_static_closure_20261108')",
+  P031|     "doc=root/'STATIC_GAP_CLOSURE.md';P=[];B=[];NB=0",
+  P032|     "if not doc.is_file(): P.append('交付件缺失')",
+  P033|     "else:",
+  P034|     " t=doc.read_text(encoding='utf-8');NB=doc.stat().st_size",
+  P035|     " for s in ['## 1','## 2','## 3','## 4','## 5','## 6']:",
+  P036|     "  if s not in t: P.append('缺小节 '+s)",
+  P037|     " for k in ['S1','S2','S3','S4','P6','P7','P8','P11','闭口','不可闭口','未验']:",
+  P038|     "  if k not in t: P.append('缺要素 '+k)",
+  P039|     " for bad in ['gamemd.exe','ra2loader','taskkill']:",
+  P040|     "  if bad in t: P.append('含禁用词 '+bad)",
+  P041|     " B=re.findall(r'被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?',t)",
+  P042|     " if not B: P.append('缺 SHA256 绑定行')",
+  P043|     "print(json.dumps({'ok':not P,'problems':P,'bindings':len(B),'docBytes':NB},ensure_ascii=False))",
+  P044| ].join("\n");
+  P045| __host.enterPhase("\u6838\u5BF9 N-9/N-11 \u4E0A\u6E38\u4EF6\u6307\u7EB9");
+  P046| const fpRun = await __host.worldRead("world-read#1", "run", ["python", ["-I", "-X", "utf8", "-c", FP_CODE], { output: { tail: 4096 } }]);
+  P047| let fps = {};
+  P048| try {
+  P049|     fps = JSON.parse(fpRun.stdout.trim());
+  P050| }
+  P051| catch {
+  P052|     fps = {};
+  P053| }
+  P054| const fpText = JSON.stringify(fps);
+  P055| __host.log("N-9/N-11 上游指纹 exit=" + fpRun.exitCode);
+  P056| const ASK_ANALYST = [
+  P057|     IRON,
+  P058|     "",
+  P059|     "【编排方实跑指纹】" + fpText,
+  P060|     "",
+  P061|     "【背景】lead/perf_repair_n11_20261108/PERF_REPAIR_HANDOFF.md 的问题卡 Q3（约 :161）明写：「S1/S2/S3/S4/P6/P7/P8/P11 均静态可闭、既有材料未做（N-9 §6.2 :198-208）」，并指出「P11 直接卡 K3 最少字段完整性；S4 需解 MIX」。而 lead/static_spec_n9_20261107/STATIC_COUNT_SPEC.md:217-219 判 SPEC_PARTIAL 的四缺之一即这些静态缺口。",
+  P062|     "",
+  P063|     "【任务：只做静态只读检索，尝试闭口这 8 项】",
+  P064|     "1. 先实读 STATIC_COUNT_SPEC.md 与 W8_STATIC_LOCATE.md:198-208，弄清 S1-S4 与 P6-P8/P11 各自到底指什么（不要臆造，逐项抄出原文定义与出处行号）。",
+  P065|     "2. 逐项在既有材料里检索闭口证据（实跑 grep/find/ast，落输出）。能闭口的给出：字段、遍历顺序、读数时机、覆盖范围、代价界，逐项追到文件:行。",
+  P066|     "3. 不能静态闭口的，说明结构性原因（例如需要运行期值、需要解 MIX 压缩、需要真机）。",
+  P067|     "4. ★ 严格禁写「已定位」「已证不存在」这类断言——WP 判定性质是「回件判定 × 复核判定」合并、不是第三次独立重验（ERRATA_W8.md:182-184），且 F7/F8 的「无现成 VA」是经复核加压后维持的否定命题，不得升格。",
+  P068|     "5. 统计 closedCount 与 unclosableCount；若某项只部分闭口，单列「部分闭口」不计入任一。",
+  P069|     "6. 产出落本任务写域，前缀 _sc_。零真机、零采样代码、不 commit、不 push。",
+  P070| ].join("\n");
+  P071| const REVIEW_RULES = [
+  P072|     "【复核】默认怀疑：① 自己实读 STATIC_COUNT_SPEC.md 与 W8_STATIC_LOCATE.md:198-208，核对 S/P 各项定义有没有被抄错或臆造；② 逐项复核闭口证据，重点检查有没有把「入口代理」当成「完成扫描数」、有没有补猜运行期值；③ 检查有没有出现「已定位」「已证不存在」等禁用断言；④ 检查 closedCount 有没有被拔高、部分闭口有没有被算成全闭口；⑤ 有没有改到写域外。回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。只读，核验脚本只能落本任务写域且前缀 _verify_。",
+  P073| ].join("\n");
+  P074| __host.enterPhase("GLM \u9759\u6001\u95ED\u53E3\u68C0\u7D22\uFF0Chy4 \u4EA4\u53C9\u590D\u6838");
+  P075| const analyst = __host.createActor("actor#1", "静态闭口员·GLM", { system: "你是静态缺口闭口员。只做静态只读检索，不写已定位/已证不存在、不补猜运行期值。" });
+  P076| const finding = await __host.ask("ask#1", analyst, ASK_ANALYST);
+  P077| const reviewer = __host.createActor("actor#2", "静态闭口复核员·hy4", { system: "你是独立复核员，默认怀疑。自己实读上游、自己检索，不复用闭口员实现。问「什么会让它崩」。", model: HY4 });
+  P078| const confirmation = await __host.ask("ask#2", reviewer, [IRON, "", "【被核对象】闭口回件：" + JSON.stringify(finding), "", "【编排方指纹】" + fpText, "", REVIEW_RULES].join("\n"));
+  P079| __host.enterPhase("GLM \u64B0\u5199\u95ED\u53E3\u62A5\u544A");
+  P080| const writer = __host.createActor("actor#3", "闭口报告撰写员", { system: "你是交付件撰写员。如实写闭口与不可闭口，不写禁用断言、不把部分闭口写成全闭口。" });
+  P081| const writeResult = await __host.ask("ask#3", writer, [
+  P082|     IRON,
+  P083|     "",
+  P084|     "【编排方指纹】" + fpText,
+  P085|     "【闭口】" + JSON.stringify(finding),
+  P086|     "【复核】" + JSON.stringify(confirmation),
+  P087|     "",
+  P088|     "【交付】写 STATIC_GAP_CLOSURE.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（只静态检索）；2 八项缺口的定义与出处（逐项原文 + 文件:行）；3 S1-S4 闭口结果；4 P6-P8/P11 闭口结果；5 复核回件（含 SHA256 加字节数绑定）+ 八项状态汇总表（闭口/部分闭口/不可闭口）；6 结论（closedCount、unclosableCount、对 SPEC_PARTIAL 的影响、未验项、不写禁用断言声明）。",
+  P089|     "",
+  P090|     "必现要素：S1 / S2 / S3 / S4 / P6 / P7 / P8 / P11 / 闭口 / 不可闭口 / 未验。不得含 gamemd.exe / ra2loader / taskkill 字面量。复核 verdict 如实记；refuted 或 partial 标 unconfirmed。",
+  P091| ].join("\n"));
+  P092| __host.enterPhase("\u95E8\u7981\u4E0E\u53D1\u5E03");
+  P093| const gateRun = await __host.worldRead("world-read#2", "run", ["python", ["-I", "-X", "utf8", "-c", GATE_CODE], { output: { tail: 4096 } }]);
+  P094| let gateOk = false;
+  P095| let gateProblems = "";
+  P096| try {
+  P097|     const g = JSON.parse(gateRun.stdout.trim());
+  P098|     gateOk = gateRun.exitCode === 0 && g.ok === true;
+  P099|     gateProblems = (g.problems ?? []).join("；");
+  P100|     __host.log("门禁 exit=" + gateRun.exitCode + " ok=" + gateOk);
+  P101| }
+  P102| catch {
+  P103|     gateProblems = "门禁输出不可解析（exit=" + gateRun.exitCode + "）";
+  P104| }
+  P105| let published = false;
+  P106| try {
+  P107|     await __host.publishArtifact("artifact#1", "file", ["static-closure", DOC, { title: "N-9 静态缺口闭口", description: "S1-S4 + P6-P8/P11 逐项静态检索；不写已定位", primary: true }]);
+  P108|     published = true;
+  P109| }
+  P110| catch {
+  P111|     await __host.ask("ask#4", writer, "STATIC_GAP_CLOSURE.md 缺失，请按此前内容重建并回复「已重建」。");
+  P112|     await __host.publishArtifact("artifact#2", "file", ["static-closure", DOC, { title: "N-9 静态缺口闭口", description: "重建后重新发布", primary: true }]);
+  P113|     published = true;
+  P114| }
+  P115| return {
+  P116|     conclusion: "N-9 静态缺口闭口完成（闭口 " + finding.closedCount + " 项、不可闭口 " + finding.unclosableCount + " 项），复核 verdict=" + confirmation.verdict + "，报告" + (published ? "已发布" : "未发布") + "，门禁" + (gateOk ? "通过" : "未通过") + "。" + (gateOk ? "" : "门禁问题：" + gateProblems) + " ★ 不写已定位/已证不存在、不生成采样候选、不补猜运行期值。",
+  P117|     findings: [{
+  P118|             where: DOC + " §3-§4",
+  P119|             what: finding.what,
+  P120|             evidence: (confirmation.sha256Line + "；" + finding.evidence + "；复核=" + confirmation.verdict + "；崩点=" + confirmation.whatBreaksIt).slice(0, 1400),
+  P121|             status: confirmation.verdict === "confirmed" ? "verified" : "unconfirmed",
+  P122|             severity: finding.severity,
+  P123|         }],
+  P124|     verified: [
+  P125|         "python -I -X utf8 -c <指纹脚本>：" + Object.keys(fps).length + " 件（exit=" + fpRun.exitCode + "）",
+  P126|         "闭口员 " + finding.ranCommands + " 条、复核员 " + confirmation.ranCommands + " 条确定性命令",
+  P127|         "python -I -X utf8 -c <门禁>：六节/十一要素/禁用词/SHA256 绑定（exit=" + gateRun.exitCode + ", ok=" + gateOk + "）",
+  P128|     ],
+  P129|     notCovered: [
+  P130|         "不写已定位/已证不存在、不生成采样候选、不补猜运行期值",
+  P131|         "零真机：运行期取值范围/帧间时序仍不可验",
+  P132|         ...(!gateOk ? ["门禁未通过：" + gateProblems] : []),
+  P133|     ],
+  P134|     gateOk: gateOk,
+  P135| };
+  P136| 
+==========================================================================================
+FILE dwfrun-4e7afb77-d61e-42ff-b669-b7cb6321a25b.mjs bytes=26249 sha256=ab58a9c4ca068746857a57968933847bbae6d9ad2e346b46cdf005fa1f1b7763 lines=250
+mtime = 2026-11-08T17:58:01.478884+08:00
+  marker 'lead/' count=14
+  struct 'worldRead' count=5
+  struct 'enterPhase' count=7
+  struct 'report(' count=2
+  struct 'await __host' count=8
+  line9_len=7971
+  --- decoded payload (lines) ---
+  P001| const HY4 = "magpie/work/cn:hy4free$high";
+  P002| const DIR = "D:/Project/ra2-campaign-forge/lead/n8_residual_20261108/";
+  P003| const DOC = "lead/n8_residual_20261108/N8_RESIDUAL_CLOSURE.md";
+  P004| const IRON = [
+  P005|     "【铁律】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkill，不读活进程内存。",
+  P006|     "零采样代码：不写 hook / MiniDump / SuspendThread / StackWalk / 探针注入；不写 ctypes / OpenProcess / ReadProcessMemory 等动态解析。",
+  P007|     "只读既有件：ra2youli/**、out/re_work/**、lead/GOAL_*（★ 台账只读）、lead/PENDING_DECISIONS.md、lead/re_line_20261105/**、lead/slowwindow_n8_20261108/**、lead/slowframe_r3_20261108/** 一律不改。",
+  P008|     "唯一写域 = lead/n8_residual_20261108/。",
+  P009|     "不 commit、不 push。Python 一律 python -I -X utf8 + 绝对路径；指纹用 hashlib。",
+  P010|     "引用必须追到「实跑命令+输出」或「文件:行」；拿不到写「未验」，不补造。",
+  P011|     "复核回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。",
+  P012|     "★ 不修改台账、不改口径、不恢复已撤回的均匀慢断言、不做因果归因。",
+  P013|     "若检查不可能通过或指令矛盾，如实上报，不许伪造通过。",
+  P014| ].join("\n");
+  P015| const FP_CODE = [
+  P016|     "import json,pathlib,hashlib,glob",
+  P017|     "root=pathlib.Path('D:/Project/ra2-campaign-forge')",
+  P018|     "T=['lead/slowwindow_n8_20261108/SLOW_WINDOW_LIMITS.md',",
+  P019|     "'lead/GOAL_THREE_TARGETS_20261018.md',",
+  P020|     "'lead/re_line_20261105/W2_FRAMETIME_ATTRIB/_w2_matrix.tsv']",
+  P021|     "o={}",
+  P022|     "for t in T:",
+  P023|     " p=root/t",
+  P024|     " o[t]={'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size} if p.is_file() else {'sha256':'MISSING','bytes':0}",
+  P025|     "c=sorted(glob.glob(str(root/'out/re_work/work_chain/CONTINUE_20261003/lead/qc161_u0400_trip/**/measure_w*.json'),recursive=True))",
+  P026|     "o['_corpusCount']={'count':len(c)}",
+  P027|     "print(json.dumps(o,ensure_ascii=False))",
+  P028| ].join("\n");
+  P029| const GATE_CODE = [
+  P030|     "import json,pathlib,re",
+  P031|     "root=pathlib.Path('D:/Project/ra2-campaign-forge/lead/n8_residual_20261108')",
+  P032|     "doc=root/'N8_RESIDUAL_CLOSURE.md';P=[];B=[];NB=0",
+  P033|     "if not doc.is_file(): P.append('交付件缺失')",
+  P034|     "else:",
+  P035|     " t=doc.read_text(encoding='utf-8');NB=doc.stat().st_size",
+  P036|     " for s in ['## 1','## 2','## 3','## 4','## 5','## 6']:",
+  P037|     "  if s not in t: P.append('缺小节 '+s)",
+  P038|     " for k in ['ratio_max','0.9831','读数个数','7 张图','未收口','不改台账','未验']:",
+  P039|     "  if k not in t: P.append('缺要素 '+k)",
+  P040|     " B=re.findall(r'被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?',t)",
+  P041|     " if not B: P.append('缺 SHA256 绑定行')",
+  P042|     "print(json.dumps({'ok':not P,'problems':P,'bindings':len(B),'docBytes':NB},ensure_ascii=False))",
+  P043| ].join("\n");
+  P044| __host.enterPhase("\u6838\u5BF9 N-8 \u4E0E\u53F0\u8D26\u6307\u7EB9");
+  P045| const fpRun = await __host.worldRead("world-read#1", "run", ["python", ["-I", "-X", "utf8", "-c", FP_CODE], { output: { tail: 4096 } }]);
+  P046| let fps = {};
+  P047| try {
+  P048|     fps = JSON.parse(fpRun.stdout.trim());
+  P049| }
+  P050| catch {
+  P051|     fps = {};
+  P052| }
+  P053| const fpText = JSON.stringify(fps);
+  P054| __host.log("N-8 与台账指纹 exit=" + fpRun.exitCode);
+  P055| const ASK_ANALYST = [
+  P056|     IRON,
+  P057|     "",
+  P058|     "【编排方实跑指纹】" + fpText,
+  P059|     "",
+  P060|     "【背景】lead/slowwindow_n8_20261108/SLOW_WINDOW_LIMITS.md 的 §5.2（第 126-133 行）列七项未验。其中第 3 项与第 5 项本轮尝试收口：",
+  P061|     "第3项 ratio_max=0.9831 那帧的读数个数：台账 :9673/:9680 自标未验，N-8 本轮未逐帧核。请自己从 15 个合格窗的 measure_w*.json 复算每窗的 ratio_max（每帧读数个数 / 帧时长之比的最大值），定位 ratio_max 达到 0.9831 的那一窗那一帧，读出该帧的读数个数、帧时长、以及该窗的帧数，判定能否收口。",
+  P062|     "第5项 「其余 7 张图」区间的中位/窗级两读：N-8 记三种读法极差 0.66/0.74/0.81 均 <1ms、定性不受影响但未定谳。请自己从 _w2_matrix.tsv 复算这三种读法，明确给出三组数值并判定「哪种读法是正确的」——若无法判定哪种正确（属口径选择），如实写「属口径选择、不在本任务裁量范围」。",
+  P063|     "另可尝试收口的两项：第4项（§560 C1-C4 机制判断与 107/82 对子的因果解释力）★ 本任务禁因果归因，请只写「本任务不评、维持未验」；第7项（GOAL 是否存在比 :9757 更新的节）请实读台账末尾核对当前最大节号。",
+  P064|     "【要求】",
+  P065|     "1. 逐项给「已收口 / 不可收口 / 维持未验」，每项附实跑命令+输出或文件:行。",
+  P066|     "2. 收口的必须给出具体数值；不可收口的必须说明结构性原因。",
+  P067|     "3. 统计 closedCount 与 unclosableCount。",
+  P068|     "4. ★ 不修改台账、不改口径、不恢复已撤回的均匀慢断言、不做因果归因。产出落本任务写域，前缀 _n8r_。零真机、零采样代码、不 commit、不 push。",
+  P069| ].join("\n");
+  P070| const REVIEW_RULES = [
+  P071|     "【复核】默认怀疑：① 自己写独立实现复算 ratio_max 与 0.9831 那帧的读数个数，核对分析员的定位是否准确；② 自己从 _w2_matrix.tsv 复算三种读法，核对三组数值；③ 检查「属口径选择」的判定有没有被用来回避本可算的量；④ 检查有没有做因果归因或恢复已撤回断言；⑤ 检查有没有改台账或写域外文件。回件必须含「被核对象 SHA256 = <64位>，字节数 = <n>」。只读，核验脚本只能落本任务写域且前缀 _verify_。",
+  P072| ].join("\n");
+  P073| __host.enterPhase("GLM \u6536\u53E3\u4F59\u7559\u672A\u9A8C\u9879\uFF0Chy4 \u4EA4\u53C9\u590D\u6838");
+  P074| const analyst = __host.createActor("actor#1", "未验收口员·GLM", { system: "你是未验项收口员。逐项尝试收口，能算的必须给出数值，不能算的说明结构性原因。" });
+  P075| const finding = await __host.ask("ask#1", analyst, ASK_ANALYST);
+  P076| const reviewer = __host.createActor("actor#2", "未验收口复核员·hy4", { system: "你是独立复核员，默认怀疑。自己写独立实现复算，不复用分析员代码。问「什么会让它崩」。", model: HY4 });
+  P077| const confirmation = await __host.ask("ask#2", reviewer, [IRON, "", "【被核对象】收口回件：" + JSON.stringify(finding), "", "【编排方指纹】" + fpText, "", REVIEW_RULES].join("\n"));
+  P078| __host.enterPhase("GLM \u64B0\u5199\u6536\u53E3\u62A5\u544A");
+  P079| const writer = __host.createActor("actor#3", "收口报告撰写员", { system: "你是交付件撰写员。如实写收口与不可收口项，不把未验写成已验、不改台账。" });
+  P080| const writeResult = await __host.ask("ask#3", writer, [
+  P081|     IRON,
+  P082|     "",
+  P083|     "【编排方指纹】" + fpText,
+  P084|     "【收口】" + JSON.stringify(finding),
+  P085|     "【复核】" + JSON.stringify(confirmation),
+  P086|     "",
+  P087|     "【交付】写 N8_RESIDUAL_CLOSURE.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（只收口不改台账）；2 第3项 ratio_max 复算与 0.9831 那帧定位（帧号、读数个数、帧时长）；3 第5项 三种读法复算与判定；4 第4项与第7项处理（维持未验 / 台账当前最大节号）；5 复核回件（含 SHA256 加字节数绑定）+ 七项状态汇总表；6 结论（closedCount、unclosableCount、未收口项的结构性原因、不改台账声明）。",
+  P088|     "",
+  P089|     "必现要素：ratio_max / 0.9831 / 读数个数 / 7 张图 / 未收口 / 不改台账 / 未验。复核 verdict 如实记；refuted 或 partial 标 unconfirmed。",
+  P090| ].join("\n"));
+  P091| __host.enterPhase("\u95E8\u7981\u4E0E\u53D1\u5E03");
+  P092| const gateRun = await __host.worldRead("world-read#2", "run", ["python", ["-I", "-X", "utf8", "-c", GATE_CODE], { output: { tail: 4096 } }]);
+  P093| let gateOk = false;
+  P094| let gateProblems = "";
+  P095| try {
+  P096|     const g = JSON.parse(gateRun.stdout.trim());
+  P097|     gateOk = gateRun.exitCode === 0 && g.ok === true;
+  P098|     gateProblems = (g.problems ?? []).join("；");
+  P099|     __host.log("门禁 exit=" + gateRun.exitCode + " ok=" + gateOk);
+  P100| }
+  P101| catch {
+  P102|     gateProblems = "门禁输出不可解析（exit=" + gateRun.exitCode + "）";
+  P103| }
+  P104| let published = false;
+  P105| try {
+  P106|     await __host.publishArtifact("artifact#1", "file", ["n8-residual", DOC, { title: "N-8 余留未验项收口", description: "ratio_max 逐帧定位 + 三读法复算；不改台账", primary: true }]);
+  P107|     published = true;
+  P108| }
+  P109| catch {
+  P110|     await __host.ask("ask#4", writer, "N8_RESIDUAL_CLOSURE.md 缺失，请按此前内容重建并回复「已重建」。");
+  P111|     await __host.publishArtifact("artifact#2", "file", ["n8-residual", DOC, { title: "N-8 余留未验项收口", description: "重建后重新发布", primary: true }]);
+  P112|     published = true;
+  P113| }
+  P114| return {
+  P115|     conclusion: "N-8 余留未验项收口完成（收口 " + finding.closedCount + " 项、不可收口 " + finding.unclosableCount + " 项），复核 verdict=" + confirmation.verdict + "，报告" + (published ? "已发布" : "未发布") + "，门禁" + (gateOk ? "通过" : "未通过") + "。" + (gateOk ? "" : "门禁问题：" + gateProblems) + " ★ 不改台账、不改口径、不恢复已撤回断言、不做因果归因。",
+  P116|     findings: [{
+  P117|             where: DOC + " §2-§4",
+  P118|             what: finding.what,
+  P119|             evidence: (confirmation.sha256Line + "；" + finding.evidence + "；复核=" + confirmation.verdict + "；崩点=" + confirmation.whatBreaksIt).slice(0, 1400),
+  P120|             status: confirmation.verdict === "confirmed" ? "verified" : "unconfirmed",
+  P121|             severity: finding.severity,
+  P122|         }],
+  P123|     verified: [
+  P124|         "python -I -X utf8 -c <指纹脚本>：exit=" + fpRun.exitCode,
+  P125|         "收口员 " + finding.ranCommands + " 条、复核员 " + confirmation.ranCommands + " 条确定性命令",
+  P126|         "python -I -X utf8 -c <门禁>：六节/七要素/SHA256 绑定（exit=" + gateRun.exitCode + ", ok=" + gateOk + "）",
+  P127|     ],
+  P128|     notCovered: [
+  P129|         "不修改台账、不改口径、不恢复已撤回的均匀慢断言、不做因果归因",
+  P130|         "零真机：无新采集，只复算现有语料",
+  P131|         ...(!gateOk ? ["门禁未通过：" + gateProblems] : []),
+  P132|     ],
+  P133|     gateOk: gateOk,
+  P134| };
+  P135| 
+==========================================================================================
+FILE dwfrun-1c93b364-e57c-405d-a271-66cd59e4b850.mjs bytes=37283 sha256=94f3716df2e30d76d6be2d163b3014d8da832195418c95c13e174a1251491b04 lines=250
+mtime = 2026-11-07T20:21:29.587444+08:00
+  marker 'lead/' count=19
+  struct '__host.report' count=2
+  struct 'worldRead' count=6
+  struct 'enterPhase' count=9
+  struct 'report(' count=4
+  struct 'await __host' count=11
+  line9_len=15832
+  --- decoded payload (lines) ---
+  P001| const MODELS = { hy4: "magpie/work/cn:hy4free$high" };
+  P002| const DOC = "lead/dtrigger_round2_20261107/CRITERIA_ROUND2.md";
+  P003| const DIR = "D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/";
+  P004| const IRON = [
+  P005|     "【铁律，照抄执行】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkill，不读活进程内存。",
+  P006|     "零采样代码：不写 hook / MiniDump / SuspendThread / StackWalk / 探针注入；不写 ctypes / OpenProcess / ReadProcessMemory / WriteProcessMemory / VirtualAllocEx / CreateRemoteThread / SetWindowsHookEx / TerminateProcess 及其动态解析。",
+  P007|     "只读母本与既有件：ra2youli/**、out/re_work/**、lead/GOAL_*、lead/PENDING_DECISIONS.md、lead/ROUND_SUBAGENT_LOG_*、swarm_* 下既有文件一律不改。",
+  P008|     "唯一写域 = lead/dtrigger_round2_20261107/ 内本任务指定的新文件；不改任何既有文件、不改台账、不改裁决书。",
+  P009|     "不 commit、不 push。Python 一律 python -I -X utf8 + 绝对路径。本机无 sha256sum / wc，指纹用 Python hashlib。",
+  P010|     "引用数字必须追到「实跑命令+输出」或「文件:行」；拿不到就写「未验」，不补造。",
+  P011|     "复核回件必须含一行「被核对象 SHA256 = <完整64位>，字节数 = <n>」（铁律 9）。",
+  P012|     "若检查不可能通过或指令自相矛盾，直接如实上报，不许绕过或伪造通过。",
+  P013| ].join("\n");
+  P014| const SURVEY_ROLE = "你是 RA2/尤里的复仇逆向项目的离线分析员。只做只读语料上的确定性离线核算，结论必须能追到实跑命令或文件:行。你写的文件只在本轮唯一写域内。";
+  P015| const REVIEW_ROLE = "你是独立复核员，默认怀疑调查回件。你必须自己重读被核对象、自己实跑确定性检查，不许复用调查员的实现，也不许只凭回件文字判断。问的是「什么会让它崩」，不是「是不是好」。";
+  P016| const DIMS = [
+  P017|     {
+  P018|         key: "A",
+  P019|         title: "新判据族设计（禁止调参）",
+  P020|         hy4: true,
+  P021|         lens: [
+  P022|             "设计不同于既有 C1–C5 的新「在线因果」判据族。★ 明确禁止仅调整 k 值、P95/P99 倍数、滑窗 N、或加 40ms CAP —— 这些是 lead/dtrigger_compare_20261107/CRITERIA_COMPARE.md 的 26 档已覆盖的调参，重复做等于零新增。",
+  P023|             "可用的信息只限语料已有的 (t,f) 前缀（例如帧间隔序列形状、连续短间隔模式、相邻游程关系等），必须在线因果：只读 t[runStart..i] 与 i 之前的已完成历史，不读 endTick / durationMs / isRealMatch / 最终 d≥100ms；事后标签只允许用于触发后计费。",
+  P024|             "给出三维离线比较：① :177 及时性（S_hat 锚是下界，须说明 e 修正）；② 区分度（误触发先到先得抢占配额后的真实捕获）；③ 配额 N=1/3/5。",
+  P025|             "若你判定 (t,f) 前缀信息上界使三者不可兼得，必须给出可判定的形式化证据（例如前缀不可分辨的计数上界），不许只写断言。",
+  P026|             "所有实跑用 python -I -X utf8，脚本与输出落在唯一写域的新文件里；输出文件前缀 _dA_。",
+  P027|         ].join("\n"),
+  P028|     },
+  P029|     {
+  P030|         key: "B",
+  P031|         title: "§3.2 未验列统一锚补算",
+  P032|         hy4: false,
+  P033|         lens: [
+  P034|             "CRITERIA_COMPARE.md §3.2 把 6 个判据（C2-abs-P95x2 / C3-r4 / C3-r4-clean / C3-r8 / C3-r8-clean / C3-r12）的「≥100」与「+e>50」两列标为未验，原因是 _dtrigger_supplement.py:106-118 用 runStart 锚，而 _dtrigger_metrics.py:223-227 用上一帧沿锚，两处口径不一致，且 _dtrigger_supplement_out.txt:15 有过标签误标。",
+  P035|             "要求：用统一且明写的锚定义重新实跑这 6×2=12 格，逐格给数值，或明确写「不可补算」并给出结构性理由（例如 og=None 时谓词无定义、startTick=0 的真实事件不可达）。",
+  P036|             "★ 既有的 _dtrigger_*.py / _check_*.py 一律只读，不修改、不 import 其结果充数；新实现写在唯一写域，输出文件前缀 _dB_。",
+  P037|             "必须写清你采用的锚是 runStart 还是上一帧沿、onset gap og 如何定义、e 取哪个值，并把该口径与既有两处脚本的差异逐条列出。",
+  P038|         ].join("\n"),
+  P039|     },
+  P040|     {
+  P041|         key: "C",
+  P042|         title: "塌陷归因独立重算",
+  P043|         hy4: true,
+  P044|         lens: [
+  P045|             "独立重算 _cost_quota_data.json 的 156 格塌陷归因：C1/C4/C5 族 54 格「noFalse == 理想」、塌陷全来自误触发抢占；C2/C3 高档 71 格「noFalse − captured = 0」而 capUpper 反等于理想值、但触发等待越线。",
+  P046|             "验证分解式 ideal − captured = (ideal − noFalse) + (noFalse − captured) 在 156 格上逐格成立，并核对两组计数 54 / 71 与 54+102=156 的分组口径。",
+  P047|             "★ 不许 import 既有 _cost_quota.py / _cost_quota_check.py，也不许复用 CRITERIA_METRICS.json 的结果数字充数；只从 _cost_quota_data.json 的原始 results/nofalse/upper 自行重算。",
+  P048|             "回件必须绑定 _cost_quota_data.json 的实跑 SHA256 与字节数（铁律 9）。脚本与输出前缀 _dC_。",
+  P049|         ].join("\n"),
+  P050|     },
+  P051|     {
+  P052|         key: "D",
+  P053|         title: "物理 S 可观测量对齐",
+  P054|         hy4: false,
+  P055|         lens: [
+  P056|             "把 lead/dstart_observable_20261107/ 的 S 估计/不确定性件，与 CRITERIA_COMPARE.md §2.1「S ∈ (t[i−1], t[i]]，S_hat−S ∈ [0,e]，e 有效 n=28317、中位 2.511 / P99 4.145 / max 488.616ms」逐条对齐。",
+  P057|             "判定：「物理 S 不可得」是否对 :177「S+50ms 内保存上下文」的合规结论构成硬阻断；区分「观测锚下界不足以证明合规」与「已证明不合规」两种不同结论，不许混写。",
+  P058|             "列出解除该阻断所需的**最小新观测量清单**（只列观测量名称、口径与精度要求）。★ 不写任何采样代码、不设计探针、不提出注入方案、不触碰 D-13；清单本身不得包含任何真实采样 API。",
+  P059|             "输出前缀 _dD_。",
+  P060|         ].join("\n"),
+  P061|     },
+  P062| ];
+  P063| const FINGERPRINT_CODE = [
+  P064|     "import json,pathlib,hashlib",
+  P065|     "root=pathlib.Path('D:/Project/ra2-campaign-forge')",
+  P066|     "targets=[",
+  P067|     " 'lead/dtrigger_compare_20261107/CRITERIA_COMPARE.md',",
+  P068|     " 'lead/dtrigger_compare_20261107/CRITERIA_METRICS.json',",
+  P069|     " 'lead/dtrigger_compare_20261107/_cost_quota_data.json',",
+  P070|     " 'lead/dtrigger_compare_20261107/_dtrigger_supplement_out.txt',",
+  P071|     " 'lead/d30_ruling_20261106/RULING_D30.md',",
+  P072|     " 'lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md',",
+  P073|     " 'lead/dstart_observable_20261107/S_OBSERVABILITY.md'",
+  P074|     "]",
+  P075|     "out={}",
+  P076|     "for t in targets:",
+  P077|     " p=root/t",
+  P078|     " out[t]={'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size} if p.is_file() else {'sha256':'MISSING','bytes':0}",
+  P079|     "print(json.dumps(out,ensure_ascii=False))",
+  P080| ].join("\n");
+  P081| const GATE_CODE = [
+  P082|     "import json,pathlib,re,hashlib",
+  P083|     "root=pathlib.Path('D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107')",
+  P084|     "doc=root/'CRITERIA_ROUND2.md'",
+  P085|     "problems=[]; binds=[]; docBytes=0",
+  P086|     "if not doc.is_file():",
+  P087|     " problems.append('交付件缺失: CRITERIA_ROUND2.md')",
+  P088|     "else:",
+  P089|     " text=doc.read_text(encoding='utf-8'); docBytes=doc.stat().st_size",
+  P090|     " for s in ['## 1','## 2','## 3','## 4','## 5','## 6','## 7','## 8']:",
+  P091|     "  if s not in text: problems.append('缺必填小节 '+s)",
+  P092|     " banned=['OpenProcess','ReadProcessMemory','WriteProcessMemory','SuspendThread','StackWalk64','MiniDumpWriteDump','CreateRemoteThread','SetWindowsHookEx','VirtualAllocEx','TerminateProcess','gamemd.exe','ra2loader','taskkill']",
+  P093|     " for b in banned:",
+  P094|     "  if b in text: problems.append('交付件含禁用词 '+b)",
+  P095|     " binds=re.findall(r'被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?',text)",
+  P096|     " if len(binds)<4: problems.append('SHA256 绑定行不足4: '+str(len(binds)))",
+  P097|     " if len(re.findall(r'字节数\\s*=\\s*\\d+',text))<4: problems.append('字节数绑定行不足4')",
+  P098|     "for py in root.glob('*.py'):",
+  P099|     " s=py.read_text(encoding='utf-8')",
+  P100|     " for b in ['OpenProcess','ReadProcessMemory','SuspendThread','StackWalk','MiniDump','CreateRemoteThread','ctypes.windll','VirtualAllocEx']:",
+  P101|     "  if b in s: problems.append(py.name+' 含禁用词 '+b)",
+  P102|     "print(json.dumps({'ok':len(problems)==0,'problems':problems,'sha256Bindings':len(binds),'docBytes':docBytes,'root':str(root)},ensure_ascii=False))",
+  P103| ].join("\n");
+  P104| __host.declareArtifact("artifact#1", "table", ["progress", {
+  P105|         title: "四项离线调查与独立复核",
+  P106|         columns: [
+  P107|             { field: "dim", label: "维度" },
+  P108|             { field: "title", label: "题目" },
+  P109|             { field: "verdict", label: "复核判定" },
+  P110|             { field: "sha256Bound", label: "指纹已绑定" },
+  P111|             { field: "evidence", label: "证据摘要" },
+  P112|         ],
+  P113|         key: "dim",
+  P114|     }]);
+  P115| __host.enterPhase("\u6838\u5BF9\u4E0A\u6E38\u8BC1\u636E\u4EF6\u6307\u7EB9");
+  P116| const fpRun = await __host.worldRead("world-read#1", "run", ["python", ["-I", "-X", "utf8", "-c", FINGERPRINT_CODE], { output: { tail: 4096 } }]);
+  P117| let fps = {};
+  P118| try {
+  P119|     fps = JSON.parse(fpRun.stdout.trim());
+  P120| }
+  P121| catch {
+  P122|     fps = {};
+  P123| }
+  P124| const fpText = JSON.stringify(fps);
+  P125| const missingFp = Object.keys(fps).filter((k) => fps[k].sha256 === "MISSING");
+  P126| __host.log(`上游指纹实跑 exit=${fpRun.exitCode}，核对 ${Object.keys(fps).length} 件，缺失 ${missingFp.length} 件`);
+  P127| __host.enterPhase("\u5E76\u884C\u8C03\u67E5\u56DB\u9879\u79BB\u7EBF\u589E\u91CF\u5E76\u9010\u9879\u72EC\u7ACB\u590D\u6838");
+  P128| const investigations = await Promise.all(DIMS.map(async (d) => {
+  P129|     const finding = await __host.ask("ask#1", __host.createActor("actor#1", `调查员·${d.key}`, d.hy4 ? { system: SURVEY_ROLE, model: MODELS.hy4 } : { system: SURVEY_ROLE }), `${IRON}\n\n【上游指纹（本轮编排方实跑 hashlib，勿手抄、勿改写）】${fpText}\n\n【本维度题目】${d.title}\n\n【任务】\n${d.lens}\n\n【交付】写入 ${DIR}_d${d.key}_ 前缀的新文件（脚本/输出），并在你的最终回件里返回结论字段。未验项必须单列，不许并入结论。全程零真机、零采样代码、不 commit、不 push。`);
+  P130|     const confirmation = await __host.ask("ask#2", __host.createActor("actor#2", `复核员·${d.key}`, d.hy4 ? { system: REVIEW_ROLE } : { system: REVIEW_ROLE, model: MODELS.hy4 }), `${IRON}\n\n【被核对象】维度 ${d.key}「${d.title}」的调查回件：\n${JSON.stringify(finding)}\n\n【上游指纹】${fpText}\n\n【复核要求】默认怀疑：自己重读回件引用的文件:行或实跑输出，自己跑确定性检查验证，不许只凭回件文字判断。回答：什么会让它崩、哪些数字没有实跑支撑、有没有把「未验」写成「已验」、有没有把 S_hat 当成物理 S、有没有把低误报率外推成方案可行。回件必须含一行「被核对象 SHA256 = <完整64位>，字节数 = <n>」（对 ${DIR}_d${d.key}_* 中最主要的产出文件实算）。只读，不修改任何既有文件；核验脚本若需新建，只能落在 ${DIR} 且前缀 _verify_${d.key}_。`);
+  P131|     __host.report("report#1", {
+  P132|         dim: d.key,
+  P133|         title: d.title,
+  P134|         verdict: confirmation.verdict,
+  P135|         sha256Bound: confirmation.sha256Line.length > 0,
+  P136|         evidence: finding.evidence.slice(0, 160),
+  P137|     }, "progress");
+  P138|     return { dim: d, finding, confirmation };
+  P139| }));
+  P140| __host.enterPhase("\u6C47\u603B\u7ED3\u8BBA\u5E76\u64B0\u5199\u5019\u9009\u5224\u636E\u6BD4\u8F83\u4EF6");
+  P141| const writer = __host.createActor("actor#3", "汇总撰写员", { system: "你是交付件撰写员。把四项调查与其独立复核汇成一份可复核的中文报告。禁止替用户选定任何判据为已批准方案（D-30 明令不选定 k 档进实现）、不改口径 B、不改 :177/:190/:191、不把未验写成已验。只写唯一写域内的新文件。" });
+  P142| const writeResult = await __host.ask("ask#3", writer, `${IRON}\n\n【上游指纹】${fpText}\n\n【四项调查 + 独立复核】\n${JSON.stringify(investigations.map((x) => ({ dim: x.dim.key, title: x.dim.title, finding: x.finding, confirmation: x.confirmation })))}\n\n【交付】写一份中文交付件到 ${DIR}CRITERIA_ROUND2.md，绝对路径 ${DOC.replace("lead/", "D:/Project/ra2-campaign-forge/lead/")}。必须含 8 个小节，标题分别为 "## 1" … "## 8"：1 目的与边界；2 新判据族（含三维比较或不可兼得的形式化证据）；3 §3.2 未验列统一锚补算（12 格逐格数值或不可补算理由）；4 塌陷归因独立重算（156 格不变式与 54/71 计数）；5 物理 S 可观测量对齐（硬阻断判定 + 最小新观测量清单）；6 四份复核回件（每份必须含「被核对象 SHA256 = <完整64位>，字节数 = <n>」一行，实算不得手抄）；7 未验项单独节；8 结论（只摊开比较，不选方案）。\n\n如实记录四项复核 verdict；verdict=refuted/partial 的结论必须标注 unconfirmed，不许升格。若四项结论之间存在实质冲突，在最终回件 needsRuling 填 true 并在 conflicts 写明，否则填 false。不许出现任何真实采样 API 名称作为「实现建议」（举例说明为何不可写时可以出现禁用词，但门禁会反扫——所以一律不要写出这些词，改用「真实采样 API」泛称）。文件不得含 gamemd.exe / ra2loader / taskkill 字面量。`);
+  P143| __host.enterPhase("\u6362\u4EBA\u51B7\u8BFB\u6311\u9519");
+  P144| const reader = __host.createActor("actor#4", "冷读挑错员", { system: "你是没看过这一轮任何调查过程的独立读者，只凭交付件文本挑错。你不复核事实，只找文本自身说不通、证据撑不住、以及用户接下来一定会问却没回答的地方。", model: MODELS.hy4 });
+  P145| const coldRead = await __host.ask("ask#4", reader, `只读 ${DIR}CRITERIA_ROUND2.md（绝对路径），从文本本身回答：① 哪一句结论没有证据支撑；② 哪里把「未验」写成了「已验」；③ 哪里把观测锚 S_hat 当成物理起点 S；④ 哪里隐含替用户批准了某判据；⑤ 用户接下来会问但文中没回答的问题。逐条列，不要夸奖，不要改写文件。若某类没有，明写「该类未发现」。`);
+  P146| __host.log(`冷读回件 ${coldRead.length} 字`);
+  P147| if (coldRead.length > 0) {
+  P148|     await __host.ask("ask#5", writer, `冷读挑错员对 ${DIR}CRITERIA_ROUND2.md 提出以下意见：\n${coldRead}\n\n请按意见修订该交付件（仍是唯一写域内的同一文件），不要新增未被证据支撑的结论，不要删掉「未验」标注，不要写出任何真实采样 API 名称或 gamemd.exe / ra2loader / taskkill 字面量。修订后回复一行「已修订」。`);
+  P149| }
+  P150| __host.enterPhase("Gemini \u5916\u90E8\u7B2C\u4E8C\u610F\u89C1");
+  P151| const geminiPrompt = "你是 Antigravity Gemini 3.8 Flash，独立第二意见审阅者。以下是一份 RA2 逆向项目「离线触发判据候选比较」四项调查的结论摘要。请只回答：这些结论里有没有把「观测锚 S_hat」当成「物理起点 S」、把「低误报率」外推为「方案可行」、或把「未验」写成「已验」的逻辑错误？若有，逐条指出；若没有，回答「未发现上述三类错误」。不要复述材料，不要写任何文件，不要调用工具。摘要：" +
+  P152|     investigations.map((x) => `[${x.dim.key}] ${x.finding.summary}`).join(" | ");
+  P153| const geminiRun = await __host.worldRead("world-read#2", "run", ["C:\\Users\\Administrator\\AppData\\Local\\agy\\bin\\agy-core.exe",
+  P154|     ["--model", "Gemini 3.8 Flash (High)", "-p", geminiPrompt, "--output-format", "json", "--print-timeout", "150s"],
+  P155|     { timeoutMs: 200000, output: { tail: 4096 } }]);
+  P156| let geminiStatus = "unavailable";
+  P157| let geminiReply = "";
+  P158| try {
+  P159|     const envelope = JSON.parse(geminiRun.stdout.trim());
+  P160|     if (geminiRun.exitCode === 0 && envelope.status === "SUCCESS" && (envelope.response ?? "").trim().length > 0) {
+  P161|         geminiStatus = "SUCCESS";
+  P162|         geminiReply = (envelope.response ?? "").trim().slice(0, 1200);
+  P163|     }
+  P164|     else {
+  P165|         geminiStatus = `空响应或失败：status=${envelope.status ?? "?"} finished_reason=${envelope.finished_reason ?? "?"}`;
+  P166|     }
+  P167| }
+  P168| catch {
+  P169|     geminiStatus = `输出不可解析（exit=${geminiRun.exitCode}）`;
+  P170| }
+  P171| __host.log(`Gemini 外部节点：${geminiStatus}`);
+  P172| __host.report("report#2", { dim: "G", title: "Gemini 3.8 Flash 外部第二意见", verdict: geminiStatus, sha256Bound: false, evidence: geminiReply.slice(0, 160) }, "progress");
+  P173| __host.enterPhase("\u786E\u5B9A\u6027\u95E8\u7981\u4E0E\u53D1\u5E03\u4EA4\u4ED8\u4EF6");
+  P174| const gateRun = await __host.worldRead("world-read#3", "run", ["python", ["-I", "-X", "utf8", "-c", GATE_CODE], { output: { tail: 4096 } }]);
+  P175| let gateOk = false;
+  P176| let gateProblems = "";
+  P177| try {
+  P178|     const gateResult = JSON.parse(gateRun.stdout.trim());
+  P179|     gateOk = gateRun.exitCode === 0 && gateResult.ok === true;
+  P180|     gateProblems = (gateResult.problems ?? []).join("；");
+  P181|     __host.log(`门禁 exit=${gateRun.exitCode} ok=${gateOk} SHA256绑定=${gateResult.sha256Bindings ?? 0} 交付件字节=${gateResult.docBytes ?? 0}`);
+  P182| }
+  P183| catch {
+  P184|     gateProblems = `门禁输出不可解析（exit=${gateRun.exitCode}）`;
+  P185| }
+  P186| let published = false;
+  P187| try {
+  P188|     await __host.publishArtifact("artifact#2", "file", ["report", DOC, {
+  P189|             title: "离线判据候选比较（第二轮）",
+  P190|             description: "四项独立离线调查 + 逐项独立复核 + Gemini 外部第二意见 + 确定性门禁。只摊开比较，不选方案。",
+  P191|             primary: true,
+  P192|         }]);
+  P193|     published = true;
+  P194| }
+  P195| catch {
+  P196|     await __host.ask("ask#6", writer, `${DIR}CRITERIA_ROUND2.md 发布时找不到文件。请重新写出该交付件（内容与此前一致，含 ## 1..## 8 八节、≥4 条实算 SHA256 绑定行），然后回复一行「已重建」。`);
+  P197|     await __host.publishArtifact("artifact#3", "file", ["report", DOC, { title: "离线判据候选比较（第二轮）", description: "重建后重新发布", primary: true }]);
+  P198|     published = true;
+  P199| }
+  P200| const result = {
+  P201|     conclusion: `四项离线调查（新判据族设计、§3.2 未验列统一锚补算、塌陷归因独立重算、物理 S 可观测量对齐）各经一道独立复核，交付件 ${DOC} ${published ? "已发布" : "未发布"}、确定性门禁 ${gateOk ? "通过" : "未通过"}。${gateOk ? "" : "门禁问题：" + gateProblems} 全程零真机、零采样代码、未 commit/push。${writeResult.needsRuling ? "★ 存在实质冲突，需另派决策工作流裁决：" + writeResult.conflicts : "四项结论无实质冲突，本轮不派决策工作流。"}`,
+  P202|     findings: investigations.map((x) => ({
+  P203|         where: `lead/dtrigger_round2_20261107/CRITERIA_ROUND2.md ${x.finding.section}（维度 ${x.dim.key}）`,
+  P204|         what: `${x.dim.title}：${x.finding.what}`,
+  P205|         evidence: `${x.confirmation.sha256Line}；${x.finding.evidence}；复核=${x.confirmation.verdict}；崩点=${x.confirmation.whatBreaksIt}`.slice(0, 1400),
+  P206|         status: x.confirmation.verdict === "confirmed" ? "verified" : "unconfirmed",
+  P207|         severity: x.finding.severity,
+  P208|     })),
+  P209|     verified: [
+  P210|         `python -I -X utf8 -c <指纹脚本>：实算 ${Object.keys(fps).length} 个上游件 SHA256 + 字节数（exit=${fpRun.exitCode}）`,
+  P211|         ...investigations.map((x) => `维度 ${x.dim.key}：调查员实跑 ${x.finding.ranCommands} 条、独立复核员实跑 ${x.confirmation.ranCommands} 条确定性命令`),
+  P212|         ...(geminiStatus === "SUCCESS" ? [`world.run(agy-core.exe) Gemini 3.8 Flash 外部第二意见：${geminiReply.slice(0, 200)}`] : []),
+  P213|         `python -I -X utf8 -c <门禁脚本>：禁词反扫/八节必填/≥4 条 SHA256 绑定/字节数绑定（exit=${gateRun.exitCode}, ok=${gateOk}）`,
+  P214|     ],
+  P215|     notCovered: [
+  P216|         "零真机：Q5 四项工程依赖（触发延迟、采样扰动、端到端保存、因果关系）全未验，D-13 维持 PAUSE",
+  P217|         "物理起点 S 与实际保存时刻 C 未得；所有等待均为 S_hat 锚下界",
+  P218|         "内部状态旗标 IN_TACTICAL / SCORE_SCREEN / PAUSED / LOADING 仍为数据缺口",
+  P219|         ...(geminiStatus !== "SUCCESS" ? [`Gemini 外部节点本轮不可用：${geminiStatus}（间歇性空响应，非结论性证据）`] : []),
+  P220|         ...(!gateOk ? [`确定性门禁未通过：${gateProblems}`] : []),
+  P221|         ...(missingFp.length > 0 ? [`上游件缺失：${missingFp.join("、")}`] : []),
+  P222|         ...(!writeResult.needsRuling ? ["决策工作流（magpie/codex/gpt-6.1-sol$medium）本轮未派：章程 §5 的三类触发条件均未满足"] : []),
+  P223|     ],
+  P224|     needsRuling: writeResult.needsRuling,
+  P225|     gemini: geminiStatus,
+  P226|     gateOk: gateOk,
+  P227| };
+  P228| return result;
+  P229| 

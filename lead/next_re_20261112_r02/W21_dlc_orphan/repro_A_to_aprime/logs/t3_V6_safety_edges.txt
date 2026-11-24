@@ -1,0 +1,33 @@
+### V6a: target is NOT a game directory (no gamemd.exe) ###
+CMD: python -m ra2forge install --package <pkgs\ORPHAN PROBE> --game <sandbox\empty_dir>
+error: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\sandbox\empty_dir does not look like a Yuri's Revenge directory (gamemd.exe not found)
+EXIT CODE: 1 (expect 1)
+CHECK: empty_dir still empty? True
+### V6b: destination slot is a DIRECTORY (game\Z.MAP is a directory) ###
+CMD: python -m ra2forge install --package <pkgs\ORPHAN PROBE TWO> --game <game>
+error: install blocked by preflight - no file has been written:
+  hard blockers (never bypassable: path safety / corrupt install record / backup protection):
+    - path-safety: Z.MAP exists in the game directory but is not a regular file - refusing to write over or under it
+  notices (do not block):
+    - BATTLEMD.INI present (normal install state) and left untouched; the campaign is appended by BATTLEMD98.INI (the engine merges both by battle id). This is NOT a conflict.
+EXIT CODE: 1 (expect 1)
+CHECK: Z.MAP still a directory? True
+### V6c: hand-forged manifest with a path-traversal entry -> uninstall must refuse and keep the record ###
+CMD: python -m ra2forge uninstall --game <game>   (forged record: ..\\evil.MAP + USERMAP1.MAP)
+uninstalled from D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\sandbox\game:
+  removed    USERMAP1.MAP
+  warning: manifest entry '..\\evil.MAP' is not a plain file name inside the game directory - refusing to touch it (the record may be corrupted or foreign); ra2forge_install.json is kept
+  warning: ra2forge_install.json is KEPT: at least one entry above was refused, so the install record stays for a later 'uninstall' to retry once the refused slots are resolved manually
+EXIT CODE: 0
+CHECK: canary evil.MAP sha unchanged: 239293d66872bab0d9c815e51232cb41775065c9f44d8c638216cc9153d97090 -eq 239293d66872bab0d9c815e51232cb41775065c9f44d8c638216cc9153d97090 -> True
+CHECK: forged manifest kept (refused entry)? True
+CHECK: USERMAP1.MAP (forged entry claimed it) still present? False
+### V6d: legacy ra2forge_uninstall.txt present -> install refuses with the SAME warning policy as before (backward compat) ###
+CMD: python -m ra2forge install --package <pkgs\ORPHAN PROBE> --game <game>
+error: install blocked by preflight - no file has been written:
+  unresolvable risks (state cannot be judged reliably; strict mode refuses; resolve the state instead):
+    - legacy ra2forge_uninstall.txt found (placed by an older ra2forge); stale legacy artefacts may collide with this install. Run 'python -m ra2forge uninstall --game <dir> --legacy' first.
+  notices (do not block):
+    - BATTLEMD.INI present (normal install state) and left untouched; the campaign is appended by BATTLEMD98.INI (the engine merges both by battle id). This is NOT a conflict.
+EXIT CODE: 1 (expect 1, unresolvable-risk refusal, unchanged legacy behaviour)
+CHECK: nothing written? True

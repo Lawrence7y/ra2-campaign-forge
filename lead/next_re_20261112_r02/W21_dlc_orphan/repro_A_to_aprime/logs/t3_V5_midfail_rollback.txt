@@ -1,0 +1,45 @@
+### V5a: fresh -> install A-prime with injected failure at Z.MAP copy -> rollback -> exact initial ###
+CMD: python tools/v5_fail_driver.py <pkgs\ORPHAN PROBE TWO> <game> Z.MAP
+using install module: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\ra2forge_patched\ra2forge\install.py
+install failed as expected (exit 1). exception type: OSError
+--- exception message ---
+simulated mid-install write failure (injected at copy #3: Z.MAP)
+  install aborted mid-write; best-effort rollback of what this run wrote:
+    rolled back Z.MAP (created file removed)
+    rolled back Y.MAP (created file removed)
+    rolled back BATTLEMD98.INI (created file removed)
+--- end exception message ---
+EXIT CODE: 1 (expect 1)
+CHECK: manifest present? False (expect False - old state intact)
+CMD: diffsnap v5a_00_initial vs v5a_31_after_rollback
+IDENTICAL: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v5a_00_initial.sha.txt == D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v5a_31_after_rollback.sha.txt
+DIFF EXIT CODE: 0 (0 = rollback exact)
+### V5b: install A -> install A-prime with injected failure at expandmd98.mix copy -> rollback -> exact post-A state (orphan removal undone via old package) ###
+  notice (does not block): BATTLEMD.INI present (normal install state) and left untouched; the campaign is appended by BATTLEMD98.INI (the engine merges both by battle id). This is NOT a conflict.
+install A EXIT CODE: 0
+CMD: python tools/v5_fail_driver.py <pkgs\ORPHAN PROBE TWO> <game> expandmd98.mix
+using install module: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\ra2forge_patched\ra2forge\install.py
+install failed as expected (exit 1). exception type: OSError
+--- exception message ---
+simulated mid-install write failure (injected at copy #4: expandmd98.mix)
+  install aborted mid-write; best-effort rollback of what this run wrote:
+    rolled back expandmd98.mix (restored from expandmd98.mix.ra2forge.bak)
+    rolled back Z.MAP (created file removed)
+    rolled back Y.MAP (restored from Y.MAP.ra2forge.bak)
+    rolled back BATTLEMD98.INI (restored from BATTLEMD98.INI.ra2forge.bak)
+--- end exception message ---
+EXIT CODE: 1 (expect 1)
+CHECK: old manifest (package A) still present? True
+CMD: diffsnap v5b_11_after_install_A vs v5b_31_after_rollback
+IDENTICAL: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v5b_11_after_install_A.sha.txt == D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v5b_31_after_rollback.sha.txt
+DIFF EXIT CODE: 0 (0 = rolled back to exact post-A state)
+CMD: python -m ra2forge uninstall --game <game>   (old manifest still valid?)
+uninstalled from D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\sandbox\game:
+  removed    expandmd98.mix
+  removed    Y.MAP
+  removed    X.MAP
+  removed    BATTLEMD98.INI
+  removed    ra2forge_install.json
+EXIT CODE: 0
+IDENTICAL: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v3_00_initial.sha.txt == D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v5b_41_final.sha.txt
+DIFF EXIT CODE: 0 (0 = back to pre-everything state)

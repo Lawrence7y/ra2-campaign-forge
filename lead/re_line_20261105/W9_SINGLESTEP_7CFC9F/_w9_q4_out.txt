@@ -1,0 +1,113 @@
+==============================================================================
+W9 / Q4 PROBE -- EXCEPT 件与「主崩溃」的关系（只读 / 真反汇编 + 真读字节）
+run command = python -I -X utf8 D:\Project\ra2-campaign-forge\lead\re_line_20261105\W9_SINGLESTEP_7CFC9F\_w9_q4.py
+回件时刻 = 2026-11-06 02:10:46
+==============================================================================
+
+[A] 强制头部（自己实算，非引用任何旧结论）
+被核对象 = gamemd.exe + EXCEPT_SINGLESTEP_0x7CFC9F_20261019T1352.txt
+gamemd.exe SHA256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+gamemd.exe 字节数 = 4825360
+EXCEPT 件 SHA256 = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251
+EXCEPT 件 字节数 = 26405
+EXCEPT 首行 = 'Error code: EXCEPTION_SINGLE_STEP'
+EXCEPT 'Exception occurred at' 行 = 'Exception occurred at 007CFC9F'
+EXCEPT mtime = 2026-10-19 13:54:38
+
+[B] Engine 自证（自己实例化 ra2tool.Engine）
+Engine.sha = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  (== 自算: True)
+IMAGEBASE = 0x400000
+SECTIONS  = [('.text', '0x401000', '0x3df38d', '0x1000', '0x3e0000'), ('.rdata', '0x7e1000', '0x30074', '0x3e1000', '0x31000'), ('.data', '0x812000', '0x367be4', '0x412000', '0x6c000'), ('.rsrc', '0xb7a000', '0x18128', '0x47e000', '0x19000'), ('.detour', '0xb93000', '0x2718', '0x497000', '0x3000')]
+fo(0x007CFC9F) = 0x3cfc9f (VA-0x400000=0x3cfc9f, 相等=True)
+COVERAGE = 99.998375677293% / decoded insns = 1394120 / resync fails = 66
+Engine 自证 = COVERAGE 99.998375677293% (1394120 insns, 66 resync-fails) / IMAGEBASE 0x400000
+
+[C] 真读字节 / 真反汇编（Q4 需要：确认这份 EXCEPT 文本确实描述镜像里 0x7CFC9F 的真实字节）
+type(e.rd(VA,32)) = bytes ; len = 32
+e.rd(0x7CFC9F, 32) = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+EXCEPT L17 'Bytes at CS:EIP' 解析字节数 = 32
+EXCEPT L17 字节 = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+磁盘 rd[0:32] vs EXCEPT L17 逐字节差异索引 = []
+磁盘 rd[0:32] == EXCEPT L17[0:32] : True
+va 0x007CFC9F in e.by() = True （是不是合法指令起始 / 重同步流里）
+e.disasm(VA,32) 条数 = 12（disasm 可能吞异常返回空，故用 by() 复核）
+  [0] 0x007CFC9F  8B0A           mov     ecx, dword ptr [edx]
+  [1] 0x007CFCA1  2B4DF0         sub     ecx, dword ptr [ebp - 0x10]
+  [2] 0x007CFCA4  8BF1           mov     esi, ecx
+  [3] 0x007CFCA6  894DF8         mov     dword ptr [ebp - 8], ecx
+  [4] 0x007CFCA9  C1FE04         sar     esi, 4
+  [5] 0x007CFCAC  4E             dec     esi
+  [6] 0x007CFCAD  83FE3F         cmp     esi, 0x3f
+  [7] 0x007CFCB0  7E03           jle     0x7cfcb5
+by()[0x7CFC9F] = mov ecx, dword ptr [edx]  (bytes=8B0A)
+⇒ 这份 EXCEPT 文本的字节串与 gamemd.exe 磁盘镜像 0x7CFC9F 处一致；
+  但这只证明「文本抄的是真实代码」，不等于「这一趟真的在该处崩溃」（见 D/E/F）。
+
+[D] 全仓 find('except_post_*.txt') → 逐份 sha256 → 与 EXCEPT 哈希逐一比对
+  [find] rc=0 stderr='' 命中行数=561979
+find 命中总数 = 113  （口径 = 整仓，剪枝仅排除 .git）
+比对份数 = 113
+同哈希份数 = 113
+不同哈希份数 = 0
+EXCEPT 目标哈希 = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251
+distinct 哈希数 = 1
+  6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251  x113  sizes=[26405]  <== 与 EXCEPT 相同
+
+-- D2: 直接字节比对（不依赖哈希）EXCEPT 全文 vs 每份 except_post
+  逐字节 == EXCEPT 全文 的份数 = 113 / 113
+
+-- D3: 尺寸 / mtime / 文件名时间戳 分布
+  尺寸分布 = {26405: 113}
+  mtime 最早 = 2026-10-17 08:14:58
+  mtime 最晚 = 2026-11-04 18:26:58
+  文件名时间戳范围 = 20261017T081458810997 .. 20261104T182658693950
+  文件名时间戳 < 声称崩溃时刻 20261019T1352 的份数 = 58
+  文件名时间戳 >= 声称崩溃时刻 20261019T1352 的份数 = 55
+  EXCEPT 件自身 mtime = 2026-10-19 13:54:38（早于此的快照已存在 ⇒ 内容不是 13:52 新产生）
+
+-- D4: 最早 / 最晚 / 不同树的代表件（逐一列出哈希与 mtime）
+  EARLIEST 6694b75e46a6e773...  size=26405  mtime=2026-10-17 08:14:58  path=out\re_work\work_chain\CONTINUE_20261003\lead\qc161_u0400_trip\archive_T5\except_post_20261017T081458810997.txt
+  LATEST   6694b75e46a6e773...  size=26405  mtime=2026-11-04 18:26:58  path=out\re_work\work_chain\CONTINUE_20261003\lead\qc161_u0400_trip\l3_1101v4h\except_post_20261104T182658693950.txt
+  OUTSIDE  6694b75e46a6e773...  size=26405  mtime=2026-10-21 22:11:08  path=lead\qc161_u0400_trip\l1b_20261021\except_post_20261021T184518530551.txt
+
+[E] 上游源文件 find('except.txt') → 逐份 sha256（机制旁证，非二选一判据）
+  except.txt 总数 = 102
+  与 EXCEPT 同哈希 = 91
+  distinct 哈希数 = 8
+    6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251 x91 <== 7CFC9F 基线
+    584069adfe5b4a5b7587a383620f716edbe79c52cf899b43038d599d4ed52cfa x3 
+    e369a911f012ce94480e21e42a19c9a4e785c786a4060c1a2f8be5037aa67cbc x3 
+    77f5a4cb1350ccc3e75bc375eb8cfa953906a59e84930479e1faec6ff4cb822f x1 
+    27eef06bca05fa7d4aeecf3d63b291265e3250d0d9672544eea4e10e47778ce0 x1 
+    ca1acc378bf6cee0e3fe056842c8a40aeeabbfb9d57703433290b7a98c1ed05f x1 
+    94656085fbd0ef81a730d5258307c8af76fd92cdfcc10dcd3eddd6c6277e5d33 x1 
+    ca175a71c8a25228685d28bf5b3a9d883665aec429dc03c46478cf486672f39d x1 
+  harness 声明的 EXCEPT_MASTER = D:\Project\ra2-campaign-forge\ra2bench\except.txt
+    其 sha256 = ca175a71c8a25228685d28bf5b3a9d883665aec429dc03c46478cf486672f39d ; size = 26515
+    首行 = 'Error code: EXCEPTION_ACCESS_VIOLATION'
+    ⇒ 母本其实是一份 ACCESS_VIOLATION 基线（≠ 7CFC9F 件）；
+      7CFC9F 件来自另一条载体模板基线（_src_L3_sf10c_20261021 等）。
+
+-- E2: 其他可携该哈希的 odd-named except*.txt（逐一算，不靠猜测）
+  odd-named except_*.txt 总数（不含 except_post_*） = 15
+  其中与 EXCEPT 同哈希 = 3
+    6694b75e46a6e773...  size=26405  path=lead\l1_u0800_20261020\evidence_r2\except_carrier_6694b75e.txt
+    6694b75e46a6e773...  size=26405  path=out\re_work\work_chain\CONTINUE_20261003\lead\boot_hang_triage_20261018\EXCEPT_SINGLESTEP_0x7CFC9F_20261019T1352.txt
+    6694b75e46a6e773...  size=26405  path=out\re_work\work_chain\CONTINUE_20261003\lead\qc161_u0400_trip\l1_u0800_20261020\_r2_singlestep\except_r2.txt
+
+[F] 明确二选一（Q4 定谳）
+  EXCEPT 件 SHA256          = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251
+  except_post_*.txt 比对份数 = 113
+  同哈希份数                 = 113
+  不同哈希份数               = 0
+  ★ 结论 = 同哈希（SAME-HASH）
+    ⇒ 这件 EXCEPT 不是任何一趟的崩溃：它是被 §555 判为「历史基线残件」的同一份字节，
+      被 harness 以时间戳文件名反复快照了 113 次。
+    ⇒ 目标② 的「主崩溃」叙事必须重新定位：仓内 except_post 语料对判定崩溃无信息量。
+
+[G] 诚实账 / 边界
+  1. 口径 = 整仓 find（剪枝仅 .git）；§555/§590 的 107 是单一子树 qc161_u0400_trip 的口径，本探针整仓为 113。
+  2. 本探针亲验：两份 SHA256/字节数、Engine 自证、rd/by/disasm、113 份逐份哈希、逐字节全文比对、尺寸/mtime。
+  3. 机制（harness copy_post_except_evidence 复制载体 except.txt）来自读源码，非运行复现；属静态代码事实。
+  4. 未验：37 个 archive 逐趟 console（§555 诚实账第 3 条仍未闭）；「游戏是否会崩」不能由本结论推出。
+  5. 零真机 / 零采样注入 / 零活进程读取 / 未改任何既有文件 / 未 commit。

@@ -1,0 +1,2354 @@
+
+===== [01] control_20261106/backup/PHASE_BY_BOOT.before_erratum_164434.md | 5426 B | read=OK len=5426 =====
+# 按真实 BOOT 重算时间相位（2026-11-04，纯离线）
+
+- **性质**：纯离线、只读 97 窗、零真机、零部署、冻结件零字节改动
+- **写域**：`lead/goal3t_nightwatch_20261102/`
+- **口径**：D-12② 已裁 **B 为准**（T=0.1s）
+- **族属**：Leader 会话（DeepSeek-V4.1-flash）实算；**未经异族核验**
+- **承**：§533（BOOT 谱系 = 11 个）、§522（相位假设）、§528（异族指出窗口集口径缺陷）
+
+---
+
+## §0 结论
+
+1. **§522 的数值逐位复现**：64 moving 窗 `ρ(uptime,B)=+0.0395`、`ρ(window,B)=−0.0403`。
+2. **§528 异族指出的 97 全量口径也逐位复现**：`ρ(uptime,B)=+0.3461`、`ρ(window,B)=+0.3474`。
+3. **⇒ §522 与 §528 的矛盾源于「窗口集选择」，不是 BOOT 混杂。**
+   按真实 BOOT 重算**没有改变任何一个数值**——因为原计算本来就没按 BOOT 分组。
+4. **★ BOOT 内相位方向混乱**：可算的 8 个 BOOT 中 **4 负 / 2 正**，中位 +0.4472。
+   **没有任何一致的时间相位效应。**
+5. **BOOT 间** `ρ = −0.2369`（n=11）——弱负相关，样本仅 11，不足以下结论。
+
+---
+
+## §1 方法
+
+- BOOT 反推：`boot = round(t_abs0 − samples.t[0])`，**先取整再聚类**（避免浮点边界误差）。
+- 聚类容差 ±2s（链式比较，与组内最后加入者比，避免累积漂移）。
+- 三个层次分别算：
+  - **P1 全量**（不控 BOOT）→ 复现原值
+  - **P2 BOOT 内**（每个 BOOT 单独算）→ 看相位效应是否在 BOOT 内也存在
+  - **P3 BOOT 间**（用每个 BOOT 的均值）→ 看是否只是 BOOT 层面的差异
+
+探针：`_phase_recompute.py` → `_phase_recompute_out.txt`。
+
+---
+
+## §2 枚举核对（本轮又差点犯枚举错误）
+
+初版脚本只遍历趟子目录，得 **94 窗**；补入数据根 3 散件后为 **97 窗**，与 §518/§525 一致。
+
+**这是同一类错误的第四次出现**（§515 散件、§517 同类、§533 同类、本件初版）。
+**说明「枚举必须含数据根散件」这条纪律还没有真正固化到习惯里。**
+
+---
+
+## §3 P1：全量复现
+
+| 口径 | n | ρ(uptime, B%) | ρ(window, B%) |
+|---|---|---|---|
+| **64 moving 窗**（§522 口径） | 64 | **+0.0395** | **−0.0403** |
+| **97 全量**（§528 异族口径） | 97 | **+0.3461** | **+0.3474** |
+
+两组数值**与各自来源逐位吻合**（§522 报 +0.0395/−0.0403；§528 异族报 +0.346119/+0.347432）。
+
+**⇒ 矛盾的真实来源是「窗口集选择」，与本件要验的 BOOT 混杂无关。**
+
+---
+
+## §4 ★ P2：BOOT 内相位（关键结果）
+
+| BOOT | n | ρ(uptime, B%) | ρ(window, B%) |
+|---|---|---|---|
+| 10-16 12:10 | 16 | **−0.2176** | +0.4920 |
+| 10-19 14:31 | 6 | **+0.6547** | +0.5477 |
+| 10-21 09:45 | 12 | **−0.4685** | −0.3844 |
+| 10-26 15:14 | 3 | **−0.5000** | 0.0000 |
+| 10-30 13:10 | 5 | **+0.4472** | +0.8250 |
+| 10-31 08:26 | 13 | **−0.8061** | +0.0058 |
+| 11-01 15:51 | 3 | nan（零方差） | nan |
+| 11-03 08:54 | 3 | nan（零方差） | nan |
+
+**汇总：可算 8 个 BOOT，负 4 / 正 2（另 2 个 nan），中位 +0.4472。**
+
+⇒ **没有任何一致方向。** 若「时间相位」是真实效应，多数 BOOT 内应同号；实测方向混乱。
+
+**⇒ 这支持 §522 的「相位不驱动」结论，但用了一个更强的证据形式：
+不是靠一个全局 ρ，而是「BOOT 内方向不一致」。**
+
+---
+
+## §5 P3：BOOT 间
+
+| BOOT | n | uptime 均值(h) | B% 均值 |
+|---|---|---|---|
+| 10-16 12:10 | 42 | 50.99 | **77.09** |
+| 10-19 14:31 | 9 | 18.16 | 34.13 |
+| 10-21 09:45 | 12 | 10.34 | 48.81 |
+| 10-23 09:48 | 2 | 0.37 | 100.00 |
+| 10-24 10:36 | 2 | 0.59 | 73.04 |
+| 10-25 08:36 | 1 | 2.13 | 88.57 |
+| 10-26 15:14 | 4 | 4.68 | 69.93 |
+| 10-30 13:10 | 6 | 7.75 | 37.06 |
+| 10-31 08:26 | 13 | 19.95 | 35.82 |
+| 11-01 15:51 | 3 | 0.96 | **0.00** |
+| 11-03 08:54 | 3 | 2.44 | **0.00** |
+
+`ρ(BOOT均值 uptime, BOOT均值 B%) = **−0.2369**`（n=11）。
+
+**弱负相关，且样本仅 11 个 BOOT，不足以下结论。**
+注意最两端的异常：`10-16`（uptime 51h、B 77%）与 `11-01/11-03`（uptime ~1-2.4h、B 0%）
+——若只看这两端，会误以为「BOOT 越久越卡」，但中间 8 个 BOOT 完全不支持。
+
+---
+
+## §6 对既有结论的影响
+
+| 结论 | 状态 |
+|---|---|
+| §522「时间相位不驱动」 | **强化**。BOOT 内方向不一致（4 负 2 正）是有力证据 |
+| §522/§528 的口径矛盾 | **定位到「窗口集选择」**，非 BOOT 混杂 |
+| §533「死结 A 解开」 | 不变 |
+| §521「units0 不驱动」 | 不变 |
+
+**仍未解决**：64 与 97 两个窗口集哪个才对——**这是口径裁决，属 D-12 范围，须用户明示。**
+
+---
+
+## §7 诚实账
+
+1. **本件未经异族核验**。
+2. BOOT 反推的绝对时刻**只有 BOOT#6/#8 与台账对得上**，其余为本线反推值。
+3. **单 BOOT 内样本极小**（多数 BOOT 只有 1–5 个「有推进」窗）⇒ BOOT 内 ρ 检验力极弱。
+   例：`10-26` 只有 3 个窗、`10-30` 只有 5 个——它们的 ρ 值**基本没有统计意义**。
+4. **两个 BOOT 因零方差返回 nan**（`11-01`/`11-03` 全是 B=0%），不计入汇总。
+5. **本件只并列报告 64/97 两口径，不裁决**。
+6. 本件**不做因果推断**。
+7. 本件**第四次**差点重犯「枚举漏数据根散件」——纪律尚未内化，须持续自查。
+
+===== [02] control_20261106/backup/TASK_b2b_review.before_verdict_fix_201508.md | 9237 B | read=OK len=8192 =====
+# TASK · B2b 独立候选复审（D-25 第 5 步 · D-28 问一 = A）
+
+**派发**：2026-11-06 18:4x，总控会话。**模型**：`magpie/work/cn:hy4free$high`（**不同于候选作者 gemini-3.8-flash**，D-28 明文要求）。**max_concurrency=2**。
+**授权依据**：**D-28 裁决书**（`lead/d28_ruling_20261106/RULING_D28.md`）§0 `q1: A` ——
+「立即安排独立候选复审及独立复核，复审模型必须不同于候选作者…这是**补齐既定下一门，而非签候选通过**」；
+**D-25 裁决书**（`lead/d25_ruling_20261106/RULING_D25.md`）order 第 5 步。
+**唯一写域**：`lead/b2b_candidate_review_20261106/`（新建目录，只写此目录内的新文件）。
+
+---
+
+## 0 一句话
+
+候选已过机械门禁，**但还没人独立审过它的语义**。
+
+你的任务是**逐项对照批准设计，判断这个候选是不是真的实现了设计**。
+**不是重跑门禁，是审它「做对了没有」。**
+
+## 1 上游绑定（开工先实算，不符就停）
+
+| 对象 | 路径 | 必须等于 |
+|:--|:--|:--|
+| 正式母本 | `out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py` | `517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636` / **399,508 B** |
+| 被审候选 | `lead/b2b_candidate_20261106/qc151_trip.candidate.py` | `9656e432f5b571590b757bb78869c274fba40220ce57b7a70da9b4a987b967cc` / **420,292 B** |
+| 批准设计 | `lead/b2b_design_20261106/B2B_DESIGN.md` | `565771d8b31c516dc7a1e0100ea047484406a203390492df9f57170a6532feaf` / **66,735 B** |
+| 设计预审 | `lead/b2b_preaudit_20261106/B2B_PREAUDIT.md` | `3f97f3a4664981961b72a91a60053fe8c867fa9d8e25442e7159c3046ccbf69f` / **20,615 B** |
+
+**任一不符 ⇒ 立即停**，写 `STOP_UPSTREAM_DRIFT.md`。
+（本机没有 `sha256sum`/`wc`，用 Python hashlib。）
+
+## 2 ★ 证据等级纪律（D-28 明文要求，违反即废）
+
+D-28 裁决书明确要求：
+
+> 「候选『全绿』**限于机械门禁和报告字段**」
+
+⇒ **你的结论里必须严格区分这三档，不许混用**：
+
+| 档 | 含义 | 能写成什么 |
+|:--|:--|:--|
+| **机械门禁通过** | `check_candidate.py` 9/9 PASS | 只能说「门禁通过」 |
+| **报告字段为 true** | `CANDIDATE_REVIEW.md` 里那五个字段值为 true | 只能说「报告字段声明为 true」 |
+| **语义已独立复核** | **你这次做的事** | 只有你逐项核过才能说 |
+
+**★ 严禁写「候选全绿」「候选已验证」「候选可用」** —— 除非你逐项核过并给出证据。
+**★ 严禁把「报告字段说 testsActuallyRun=true」当成「测试真跑过」** —— 你自己重跑才算。
+
+## 3 必须逐项对照的五件事（D-25 第 5 步原文）
+
+### 3.1 状态矩阵
+对照 `lead/b2b_design_20261106/STATE_MATRIX.json`（14 条）与候选里 `classify_except_freshness` 的实现：
+- 14 个状态是否**全部**在代码里有对应分支？
+- `unknown` 的置信是否真的是 `none`（不是 `high`）？
+- `None` / `{}` / `{"exists": False}` 三态是否**真的输出不同**？
+
+### 3.2 调用传参
+- `:5939`（母本行号）对应到候选是 `:6167-6168`，是否真的传了 `pre_freshness_snapshot`？
+- `finalize_trip` 签名（候选 `:6528` 附近）与 `copy_post_except_evidence` 签名（候选 `:4701-4704`）是否与设计一致？
+- **有没有别的地方**还有一个 `copy_post_except_evidence(...)` 调用没传参？（用 AST 全量扫）
+- `finalize_trip` 在候选里的**所有**调用点是否都兼容新形参（默认值语义）？
+
+### 3.3 输出字段
+- 7 个 `FRESHNESS` 字段 + 12 键 `info` 是否**在早退 / 正常 / 异常三条路径上都落盘**？
+- 字段名是否与设计 `## 5 字段契约` 逐个一致？
+- 有没有字段只在某一条路径上有、另两条没有？
+
+### 3.4 F/E 分离
+- 设计 `## 6 F/E 分离的实现级约束` 是否在代码里**有具体落点**（不只是注释）？
+- `freshness_*` 字段是否会**影响退出码**？（母本 `:5985-5990` 是唯一影响退出码处，`:677` 明令「不得用 sha 变化判 crash」）
+- 用 AST 核：退出码判据的代码路径里**有没有读到** `freshness_*`？
+
+### 3.5 范围限制
+- 候选相对母本的 diff，是否**只在**九个 hunk 的范围内？
+- 有没有**夹带**设计外的改动？（用 `difflib` 全量比对，逐 hunk 归因到 H1–H9）
+
+## 4 必须亲自重跑（不许信报告）
+
+D-28 原话：「历史 29 项和 43 项测试本裁决阶段均未运行，不能记为本阶段通过」。
+
+你要：
+1. **亲自跑一次候选的测试**（`lead/b2b_candidate_20261106/tests/test_candidate.py`），记录命令、输出的 PASS/FAIL 数、退出码；
+2. **亲自跑一次 `check_candidate.py`**，核是否 9/9；
+3. 把两次的**真实输出**存成本地文件（你的写域内），不要引用旧输出。
+
+**★ 若测试失败，如实报，不许改测试。**
+
+## 5 交付物（写进 `lead/b2b_candidate_review_20261106/`）
+
+### 5.1 `CANDIDATE_SEMANTIC_REVIEW.md` —— 主判定书
+
+必须含：
+- 头部：四件实算 SHA256 + 字节数；
+- 一行 `verdict: PASS` 或 `verdict: BLOCKED`（独立成行）；
+- **五节**（标题一字不差）：
+  - `## 1 状态矩阵对照`
+  - `## 2 调用传参核对`
+  - `## 3 输出字段核对`
+  - `## 4 F/E 分离核对`
+  - `## 5 范围限制核对`
+- 「## 阻断项」小节：逐条列 `BLOCKED` 项，每条带 `文件:行` + 后果 + **关闭所需证据**；
+- 「## 未验」小节（非空）；
+- 「## 证据等级说明」小节：明确写出「机械门禁通过 / 报告字段为 true / 语义已独立复核」三档各自对应什么，**并声明本判定书属于哪一档**。
+
+### 5.2 `_review_probe.py` + `_review_probe_out.txt`
+
+你实际用的验证脚本与真实输出。必须包含：
+- 四件指纹实算；
+- AST 全量扫 `copy_post_except_evidence` 所有调用点及参数；
+- AST 扫退出码判据路径是否读 `freshness_*`；
+- `difflib` 全量 diff 并逐 hunk 归因到 H1–H9。
+
+### 5.3 `_test_rerun_out.txt` 与 `_gate_rerun_out.txt`
+
+你**亲自重跑**的测试与门禁的真实输出。
+
+### 5.4 `review/SEMANTIC_REVIEW_AUDIT.md`
+
+独立复核（见 §7）。
+
+## 6 硬性纪律
+
+1. **零真机、零采样代码**、不 commit、不 push。
+2. **只读**：`ra2youli/**`、`out/re_work/**`、`lead/re_line_20261105/**`、`lead/GOAL_*`、`lead/PENDING_DECISIONS.md`、
+   `lead/b2b_design_*/**`、`lead/b2b_preaudit_*/**`、`lead/b2b_candidate_*/**`（**被审对象也不许改**）一律不改。
+3. `python -I -X utf8`，绝对路径；算指纹用 Python hashlib。
+4. 引用追到「文件:行」或「实跑输出」；拿不到写「未验」。
+5. **★ 不许因为门禁过了就判 PASS** —— 门禁只验格式，你验的是语义。
+6. **★ 不许修改候选、测试或门禁来让结论好看。**
+
+## 7 判定规则（硬性）
+
+**只要满足任一条，`verdict` 必须是 `BLOCKED`：**
+- 14 个状态里有任何一个在代码里**找不到**对应分支；
+- `unknown` 在代码里给了 `high` 置信；
+- `None` / `{}` / `{"exists": False}` 三种输入有任意两种**输出相同**；
+- 存在**另一个** `copy_post_except_evidence` 调用点没传 `pre_freshness_snapshot`；
+- 存在 `finalize_trip` 调用点因新形参而不兼容（会抛 TypeError）；
+- 7 个 FRESHNESS 字段或 12 键 info 在**某条路径上缺失**；
+- `freshness_*` 被退出码判据读取；
+- 候选 diff 里有**超出 H1–H9 范围**的改动；
+- 你亲自重跑的测试**有 FAIL**。
+
+**`verdict: PASS` 的准确含义**：候选**语义上**实现了批准设计；**不等于可以应用到母本**（D-25 第 6 步隔离副本集成还没做）。
+
+## 8 独立复核（必做）
+
+另起**新上下文**复核员：
+- 逐条打开主判定书每个 `文件:行`，核是否真说了那句话；
+- 亲自重跑 `_review_probe.py`，核输出一致；
+- **专项 A**：判定书有没有把 `BLOCKED` 写成 `PASS`；
+- **专项 B**：有没有把「门禁通过」或「报告字段为 true」写成「语义已复核」；
+- **专项 C**：有没有把「语义 PASS」写成「可应用到母本」。
+
+�
+
+===== [03] next_re_20261112_r10/W127_reach/GOAL_backup_before_825.md | 1586170 B | read=OK len=8192 =====
+# GOAL-3T · 三目标持续推进（2026-10-18 立项）
+
+> ★ 本文件为持续推进 goal 的锚点：状态每轮更新；执行纪律以 `cards/QC161.md`、`ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md`、`LEAD_STOP_HARD.md`（如触发）为准。
+
+## 目标（用户口径）
+
+1. **① 修真实多单位卡顿**（数百单位）——修复迭代战役
+2. **② 修主崩溃**（保留「在现有低负载语料内」）——诊断 → 修复
+3. **③ 建立安全改动能力**——已成立，持续保持（防回退）
+
+## 供应商路由（★ 2026-10-20 12:2x 用户令：**只有 buddy switch 与 MUZE**；旧供应商全部废弃）
+
+**派发优先序**：模型家族 DeepSeek > Qwen > GLM 5.3 > Step。**dfmodel=DeepSeek V4.1 flash；qfmodel=Qwen 3.8 flash**。同族内 buddy switch 的 cn 变体优先于 global 变体。
+
+| 家族 | 供应商/模型（按优先序） | 用途 |
+|:--|:--|:--|
+| DeepSeek V4.1 flash | `new-provider-3/qoder-cn:dfmodel` → `new-provider-3/qoder-global:dfmodel` → `new-provider-3/wb-cn:deepseek-v4.1-flash` → `new-provider-3/wb-global:deepseek-v4.1-flash`（均 buddy switch） | 执行/构建/核验首选 |
+| Qwen 3.8 flash | `new-provider-3/qoder-cn:qfmodel` → `new-provider-3/qoder-global:qfmodel`（buddy switch） | 单轮快问/探针/第二意见 |
+| GLM 5.3 flash | `new-provider-2/glm-5.3-flash`（MUZE） | 第三档，正常可用 |
+| Step | `new-provider-3/wb-cn:step-5-preview` → `new-provider-3/wb-global:step-5-preview`（buddy switch） | 末档；**2026-10-20 10:0x 用户令禁用（太慢），非经明示不得启用** |
+
+- **废弃**：`new-provider/dfmodel`、`new-provider/qfmodel`、`new-provider-4/*`、`new-provider-5/*` 一律不再派发。
+- 未知/未在册 id（如 opencode 兜底档）不再作为兜底；四档全不可用时停下报用户。
+- 串行单位=供应商+模型；同一模型同时只跑一件，不同模型可并行。
+- 执行者≠核验者：核验须不同模型家族。
+- Agent 类型缓存钉旧通道时，用 `CreateWorkflow subagent_model` 直指上表当前档位（**含括号的 id 必须原样传**，如 `new-provider-3/qoder-cn:qfmodel`）。
+
+**★ 可复用子代理（`.zcode/agents/`）**：`ra2-patch-verifier`（独立补丁核验）· `ra2-re-analyst`（逆向机制分析；原钉 step-5，**Step 已禁用 ⇒ 改经 CreateWorkflow + subagent_model 直指当前档**）· `ra2-quick-consult`（单轮顾问；原钉 qfmodel，**旧 id 已废弃 ⇒ 改用 `new-provider-3/qoder-cn:qfmodel`**）。
+
+**纪律**：真机趟一律指挥官亲执或既有可靠通道，串行（同一时刻一个）；执行者与核验者必须不同上下文；"派发回执"≠"已启动"，以盘面产物为准。
+
+## 阶段与门（状态：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 完成 / `[!]` 阻塞）
+
+### ② 主崩溃（先行——手段已证立）
+- [x] A4 P0 链路证立（qc169，RAN/NO_STOP/exit0）
+- [~] A5 重定位链：L1/L2 成功、L3 多义（exit 31）——收敛中
+  - [x] P3 静态硬约束过滤（离线，deepseek v2 收敛完成 dwfrun-c32a3245；12 候选组 P3 过滤）
+  - [~] P1 毒值事件捕获：QC198 实现→QC204 核验 13/3/2 揪三阻断→QC205 修复+独立核验 **7/0/0 全 CONFIRMED 放行真机**（锚 1355dead/299,887B；验件 `qc161_patch_QC205_verify_20261018\QC205_VERIFY.md`）——待真机 B 臂七连标定趟
+  - [x] P2 活性差分（A4 附加只读双时刻快照）：**全链闭环进入待真机终态**——设计件 ✓ → P05 实现（10f8f086，870 行纯插入）→ 核验 7/1-partial（三小疵点名）→ QC209 修复（F1 守卫/F2 in_domain，新锚 **6378b538**/237,098B，双向直证）→ 紧凑核验 5C+1partial（151/152，验件 QC209_VERIFY.md）——**A4 链下次真机排期搭车首跑**；残差=勘误文档数字 670→680——已闭（日志 §54）
+- [x] QC196b 真机执行验证（A5 第五趟 00:46：taskkill rc=0、收尾链 0 失败首次全绿；载体按设计消费，重建程序见 ERRATA_CARRIER_REBUILD.md）
+- [x] 事故处置：交接载体被清空（归因 UNRESOLVED）→ 按 HANDOVER_SHA 86/86 重建（ERRATA_CARRIER_REBUILD.md）
+- [x] crashspec_v4 15 开放项逐条分诊（GLM 兜底件交付 `qc170_spec_triage_20261018\SPEC_TRIAGE.md`：15 条定位、#11 实质已闭未同步→有效 14、账外 5 条登记；(a)=2/(b)=1/(c)=10/(d)=6+2）
+- [x] 离线静态批（#14 领队 + #7/#8/#13/#15/#16）→ GLM 兜底交付 `qc171_offline_batch_20261018\OFFLINE_BATCH_VERDICT.md`：**4 全闭合（#14/#7/#8/#16）+ #13 实质闭合（欠一行写域外断言）+ #15 证实待建（骨架已附）**；#14 双子项定谳=堆锁无旁路（xref 恰 3 点全在锁括号内）+ 哨兵短路为必须项（腐化堆可达）——P1/P2 捕获方案的语义保障；#7 揪出 SOV01UMD.MAP 对 :646 的真实反证（勘误提案在报告）
+  - [~] #1 UAF 写者指认（排期第一优先）：**A5 八跑完（§T33）**——QC207 三修复真机实证（focus 1 中/光标零偏移/21 脉冲送达、相位相关 0.463 首次非零），但判词仍 PROBE_CONTROL_DIRTY（负控同域抖动）⇒ **悬停标定臂完成使命，判别升级=#4 图内高负载臂（前提=① 长战局）或 P2 附加态差分（P05 待真机 6378b538）**；exit=71 良性残留（grace 步生效、rmdir 句柄延迟、residue=0）
+- [ ] #4 A/B 协议执行（毒值事件发生器；P1/P2 无事件则启动）
+- [x] #13 收尾 + #15 骨架落地 + #7 勘误同步回 SPEC（**QC 离线收尾件 CONFIRMED 第 1 轮**：三套补丁副本+diff 在 `crashspec_offline_close_20261018\`，冻结四件零改动 sha 双自证；#13 现状=断言行已在 claims 但待解析器扩展[补丁已拟]；**施用+门禁复跑=独立施用步待主会话**；卡面/日志 §126B；2026-10-18 翻 [x]）
+
+### ① 卡顿（测量装置就绪 · 负荷档裁决完成）
+- [x] **进图达成（T24）** + **测量基线首次采集（T25，`--measure 1`）**：MEASURE.verdict=ok、三窗 `fps_avg=31.24/31.24/31.28`（方差 0.04 可复现）、frame_ms p50=2.51ms——**测量装置实证稳定可复用**（证据：`qc161_u0400_trip\qc151_fields.json` MEASURE 组 + archive_T25）
+- [x] **T25/T27/T28 三趟定谳（选图机制）**：遭遇战地图选择=**ScenIndex 进「游戏枚举的地图列表」索引**；列表随游戏目录松散文件集变化 ⇒ 6 图小载体下 ScenIndex=166 命中官方 MP29U2（41 默认兵力）——**T24/T25/T27 的「进图」实为进了官方图而非目标图**（导航链/测量装置的验证不受影响——它们与选图正交）；H1 时代 166→U0200 靠其完整松散图集
+- [x] **U0400 档解法定谳（MIX 松散补缺）——✅ T32 真机实证闭环**：Scenario= 旋钮 REFUTED；MIX 分析破案（XMP29U2.MAP 全安装缺失）→ U0400 字节以该名松散补缺（93c2974b）→ **T32 units0=41→241 真实例化、in_tactical 真进图**（证据：`qc161_u0400_trip\archive_T32\` 61 件 + GOAL 日志 10:0x 里程碑轮；2026-10-18 节拍轮翻 [x]）
+- [x] 测量装置（QC202+QC203 沿差分）跨图跨趟稳定可复用——选图解决后直接复用
+- [~] **① 主线（T50 后修正 ★★ 里程碑）**：**971 单位真机长战局环境建成（T50）**——spawnfix7 链（出生点 6 值→安全格→彩票）+ **spawnfix8 Owner 令牌替换 800 行**（七轮分析员定谳：FindIndexByName PlainName strcmp/无回退/瞬态房分桶/遭遇战不读 [Houses]）后 units0=41→**971**（23.7×）、def1F5 四屋全程 0、h0↔h1 同盟成立、三窗全活跃（f886→2449，harness 主动终断非游戏终局）。**① 基线定谳：971 单位四方大战下帧率贴 31 帽**（W0-W2 fps_avg 30.80/31.24/31.24、p90=35.2-37.4ms 浅越、唯一 110.7ms 深停顿@W0/5 tick_miss）——「数百单位卡顿」在 800×600/speed2 原版二进制未复现；**三岔已裁定（§T56 备忘录 ac0dc61d）：B>A>C——A 当场定谳（2332 帧沿全量：>34ms 24.96%/>40ms 1.84%/>50ms 0.30%，浅越随单位数单调缓升无塌方、C1/C2 复活判据三条全不满足继续挂起）→ B
+
+===== [04] next_re_20261112_r10/W127_reach/GOAL_backup_before_825_9.md | 1602572 B | read=OK len=8192 =====
+# GOAL-3T · 三目标持续推进（2026-10-18 立项）
+
+> ★ 本文件为持续推进 goal 的锚点：状态每轮更新；执行纪律以 `cards/QC161.md`、`ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md`、`LEAD_STOP_HARD.md`（如触发）为准。
+
+## 目标（用户口径）
+
+1. **① 修真实多单位卡顿**（数百单位）——修复迭代战役
+2. **② 修主崩溃**（保留「在现有低负载语料内」）——诊断 → 修复
+3. **③ 建立安全改动能力**——已成立，持续保持（防回退）
+
+## 供应商路由（★ 2026-10-20 12:2x 用户令：**只有 buddy switch 与 MUZE**；旧供应商全部废弃）
+
+**派发优先序**：模型家族 DeepSeek > Qwen > GLM 5.3 > Step。**dfmodel=DeepSeek V4.1 flash；qfmodel=Qwen 3.8 flash**。同族内 buddy switch 的 cn 变体优先于 global 变体。
+
+| 家族 | 供应商/模型（按优先序） | 用途 |
+|:--|:--|:--|
+| DeepSeek V4.1 flash | `new-provider-3/qoder-cn:dfmodel` → `new-provider-3/qoder-global:dfmodel` → `new-provider-3/wb-cn:deepseek-v4.1-flash` → `new-provider-3/wb-global:deepseek-v4.1-flash`（均 buddy switch） | 执行/构建/核验首选 |
+| Qwen 3.8 flash | `new-provider-3/qoder-cn:qfmodel` → `new-provider-3/qoder-global:qfmodel`（buddy switch） | 单轮快问/探针/第二意见 |
+| GLM 5.3 flash | `new-provider-2/glm-5.3-flash`（MUZE） | 第三档，正常可用 |
+| Step | `new-provider-3/wb-cn:step-5-preview` → `new-provider-3/wb-global:step-5-preview`（buddy switch） | 末档；**2026-10-20 10:0x 用户令禁用（太慢），非经明示不得启用** |
+
+- **废弃**：`new-provider/dfmodel`、`new-provider/qfmodel`、`new-provider-4/*`、`new-provider-5/*` 一律不再派发。
+- 未知/未在册 id（如 opencode 兜底档）不再作为兜底；四档全不可用时停下报用户。
+- 串行单位=供应商+模型；同一模型同时只跑一件，不同模型可并行。
+- 执行者≠核验者：核验须不同模型家族。
+- Agent 类型缓存钉旧通道时，用 `CreateWorkflow subagent_model` 直指上表当前档位（**含括号的 id 必须原样传**，如 `new-provider-3/qoder-cn:qfmodel`）。
+
+**★ 可复用子代理（`.zcode/agents/`）**：`ra2-patch-verifier`（独立补丁核验）· `ra2-re-analyst`（逆向机制分析；原钉 step-5，**Step 已禁用 ⇒ 改经 CreateWorkflow + subagent_model 直指当前档**）· `ra2-quick-consult`（单轮顾问；原钉 qfmodel，**旧 id 已废弃 ⇒ 改用 `new-provider-3/qoder-cn:qfmodel`**）。
+
+**纪律**：真机趟一律指挥官亲执或既有可靠通道，串行（同一时刻一个）；执行者与核验者必须不同上下文；"派发回执"≠"已启动"，以盘面产物为准。
+
+## 阶段与门（状态：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 完成 / `[!]` 阻塞）
+
+### ② 主崩溃（先行——手段已证立）
+- [x] A4 P0 链路证立（qc169，RAN/NO_STOP/exit0）
+- [~] A5 重定位链：L1/L2 成功、L3 多义（exit 31）——收敛中
+  - [x] P3 静态硬约束过滤（离线，deepseek v2 收敛完成 dwfrun-c32a3245；12 候选组 P3 过滤）
+  - [~] P1 毒值事件捕获：QC198 实现→QC204 核验 13/3/2 揪三阻断→QC205 修复+独立核验 **7/0/0 全 CONFIRMED 放行真机**（锚 1355dead/299,887B；验件 `qc161_patch_QC205_verify_20261018\QC205_VERIFY.md`）——待真机 B 臂七连标定趟
+  - [x] P2 活性差分（A4 附加只读双时刻快照）：**全链闭环进入待真机终态**——设计件 ✓ → P05 实现（10f8f086，870 行纯插入）→ 核验 7/1-partial（三小疵点名）→ QC209 修复（F1 守卫/F2 in_domain，新锚 **6378b538**/237,098B，双向直证）→ 紧凑核验 5C+1partial（151/152，验件 QC209_VERIFY.md）——**A4 链下次真机排期搭车首跑**；残差=勘误文档数字 670→680——已闭（日志 §54）
+- [x] QC196b 真机执行验证（A5 第五趟 00:46：taskkill rc=0、收尾链 0 失败首次全绿；载体按设计消费，重建程序见 ERRATA_CARRIER_REBUILD.md）
+- [x] 事故处置：交接载体被清空（归因 UNRESOLVED）→ 按 HANDOVER_SHA 86/86 重建（ERRATA_CARRIER_REBUILD.md）
+- [x] crashspec_v4 15 开放项逐条分诊（GLM 兜底件交付 `qc170_spec_triage_20261018\SPEC_TRIAGE.md`：15 条定位、#11 实质已闭未同步→有效 14、账外 5 条登记；(a)=2/(b)=1/(c)=10/(d)=6+2）
+- [x] 离线静态批（#14 领队 + #7/#8/#13/#15/#16）→ GLM 兜底交付 `qc171_offline_batch_20261018\OFFLINE_BATCH_VERDICT.md`：**4 全闭合（#14/#7/#8/#16）+ #13 实质闭合（欠一行写域外断言）+ #15 证实待建（骨架已附）**；#14 双子项定谳=堆锁无旁路（xref 恰 3 点全在锁括号内）+ 哨兵短路为必须项（腐化堆可达）——P1/P2 捕获方案的语义保障；#7 揪出 SOV01UMD.MAP 对 :646 的真实反证（勘误提案在报告）
+  - [~] #1 UAF 写者指认（排期第一优先）：**A5 八跑完（§T33）**——QC207 三修复真机实证（focus 1 中/光标零偏移/21 脉冲送达、相位相关 0.463 首次非零），但判词仍 PROBE_CONTROL_DIRTY（负控同域抖动）⇒ **悬停标定臂完成使命，判别升级=#4 图内高负载臂（前提=① 长战局）或 P2 附加态差分（P05 待真机 6378b538）**；exit=71 良性残留（grace 步生效、rmdir 句柄延迟、residue=0）
+- [ ] #4 A/B 协议执行（毒值事件发生器；P1/P2 无事件则启动）
+- [x] #13 收尾 + #15 骨架落地 + #7 勘误同步回 SPEC（**QC 离线收尾件 CONFIRMED 第 1 轮**：三套补丁副本+diff 在 `crashspec_offline_close_20261018\`，冻结四件零改动 sha 双自证；#13 现状=断言行已在 claims 但待解析器扩展[补丁已拟]；**施用+门禁复跑=独立施用步待主会话**；卡面/日志 §126B；2026-10-18 翻 [x]）
+
+### ① 卡顿（测量装置就绪 · 负荷档裁决完成）
+- [x] **进图达成（T24）** + **测量基线首次采集（T25，`--measure 1`）**：MEASURE.verdict=ok、三窗 `fps_avg=31.24/31.24/31.28`（方差 0.04 可复现）、frame_ms p50=2.51ms——**测量装置实证稳定可复用**（证据：`qc161_u0400_trip\qc151_fields.json` MEASURE 组 + archive_T25）
+- [x] **T25/T27/T28 三趟定谳（选图机制）**：遭遇战地图选择=**ScenIndex 进「游戏枚举的地图列表」索引**；列表随游戏目录松散文件集变化 ⇒ 6 图小载体下 ScenIndex=166 命中官方 MP29U2（41 默认兵力）——**T24/T25/T27 的「进图」实为进了官方图而非目标图**（导航链/测量装置的验证不受影响——它们与选图正交）；H1 时代 166→U0200 靠其完整松散图集
+- [x] **U0400 档解法定谳（MIX 松散补缺）——✅ T32 真机实证闭环**：Scenario= 旋钮 REFUTED；MIX 分析破案（XMP29U2.MAP 全安装缺失）→ U0400 字节以该名松散补缺（93c2974b）→ **T32 units0=41→241 真实例化、in_tactical 真进图**（证据：`qc161_u0400_trip\archive_T32\` 61 件 + GOAL 日志 10:0x 里程碑轮；2026-10-18 节拍轮翻 [x]）
+- [x] 测量装置（QC202+QC203 沿差分）跨图跨趟稳定可复用——选图解决后直接复用
+- [~] **① 主线（T50 后修正 ★★ 里程碑）**：**971 单位真机长战局环境建成（T50）**——spawnfix7 链（出生点 6 值→安全格→彩票）+ **spawnfix8 Owner 令牌替换 800 行**（七轮分析员定谳：FindIndexByName PlainName strcmp/无回退/瞬态房分桶/遭遇战不读 [Houses]）后 units0=41→**971**（23.7×）、def1F5 四屋全程 0、h0↔h1 同盟成立、三窗全活跃（f886→2449，harness 主动终断非游戏终局）。**① 基线定谳：971 单位四方大战下帧率贴 31 帽**（W0-W2 fps_avg 30.80/31.24/31.24、p90=35.2-37.4ms 浅越、唯一 110.7ms 深停顿@W0/5 tick_miss）——「数百单位卡顿」在 800×600/speed2 原版二进制未复现；**三岔已裁定（§T56 备忘录 ac0dc61d）：B>A>C——A 当场定谳（2332 帧沿全量：>34ms 24.96%/>40ms 1.84%/>50ms 0.30%，浅越随单位数单调缓升无塌方、C1/C2 复活判据三条全不满足继续挂起）→ B
+
+===== [05] next_re_20261117_r14/MERGE_M73/_before_PANEL.md | 138230 B | read=OK len=8192 =====
+# PANEL — R14 coverageM72 并表 11 行（NAMED_PUSH_AUDIT13 PASS 7 行（S07）+ NAMED_PUSH_AUDIT14 PASS 4 行（S11），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,602→1,613、atlas 内 1,596→1,607、atlas 外仍 6；面板 S07 proved 67→74、strict 44→51，S11 proved 28→32、strict 27→31；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；M72 并表 NAMED_PUSH_AUDIT13 PASS 7 行（S07）+ NAMED_PUSH_AUDIT14 PASS 4 行（S11），evidence_path 分别改指两审计 VERDICT；S09_B1 的 1 行未审不并；不 git commit）；M71 并表 11 行（NAMED_PUSH_AUDIT12 PASS 11 行（S22_B4 工厂族），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,591→1,602、atlas 内 1,585→1,596、atlas 外仍 6；面板 S22 proved 98→109、strict 55→66；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；M71 并表 NAMED_PUSH_AUDIT12 PASS 11 行（S22_B4 工厂族）；S22 named 池至此清空（B1 18 + B2 18 + B3 13 + B4 13 + B5 9 = 71 = 全池），B5 的 9 行 vector 族四环齐全 0（③b 全败于 {0,1} AL 布尔）；evidence_path 改指 NAMED_PUSH_AUDIT12/VERDICT.md；④ 严格读法收紧将翻转 ≥21 行已披露未执行、待成文规则；不 git commit）；M70 并表 11 行（NAMED_PUSH_AUDIT11 PASS 11 行（S22 TClassFactory 同族），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,580→1,591、atlas 内 1,574→1,585、atlas 外仍 6；面板 S22 proved 87→98、strict 44→55；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；不 git commit）；M69 并表 7 行（NAMED_PUSH_AUDIT9 PASS 6 行（S12_B2）+ NAMED_PUSH_AUDIT10 PASS 1 行（S20_B3 00763200），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,573→1,580、atlas 内 1,567→1,574、atlas 外仍 6；面板 S12 proved 59→65、strict 44→50，S20 proved 61→62、strict 49→50；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；不 git commit）；M68 并表 4 行（NAMED_PUSH_AUDIT8 PASS 4 行 S12 00442230/00447210/00447F10/0044E8F0，均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,569→1,573、atlas 内 1,563→1,567、atlas 外仍 6；面板 S12 proved 55→59、strict 40→44；00447210/00447F10 ③ 站点多值状态码非布尔，审计独立枚举被调全部 ret 确认；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；不 git commit）；M67 并表 13 行（NAMED_PUSH_AUDIT7 PASS 13 行 S20 8 + S06 5，均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,556→1,569、atlas 内 1,550→1,563、atlas 外仍 6；面板 S20 proved 53→61、S06 130→135；0062FE90 表址按审计勘误改 007E9D84→007E9D64；S06 五行 ④ 由审计补证；S12_B1 四行审计代理失败未审不并；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；不 git commit）； 覆盖面板（M66 并表 29 行（NAMED_PUSH_AUDIT6 PASS 18 行 S22 TClassFactory 同族 + NAMED_PUSH_AUDIT5 PASS 11 行 S06 4/S20 7，均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,527→1,556、atlas 内 1,521→1,550、atlas 外仍 6；面板 S22 proved 69→87、S06 126→130、S20 46→53；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；不 git commit）；M65 并表 NAMED_PUSH_AUDIT4 审计 PASS 14 行（S22 TClassFactory 同族工厂，006BF810/006BF990/006BFB10/006BFC90/006BFE10/006C0110/006C0290/006C0410/006C0590/006C0710/006C0890/006C0B90/006C0D10/006C0E90，均 atlas 内）+ NAMED_PUSH_AUDIT3 PASS 1 行（S05 00748190），共 15 行 grade→[已证]（仅改 coverage 第 4/5/6 列，第 1/2/3/7/8 列不动）；同卡 S22 006BFF90/006C0A10 审计 FAIL 整行拒绝（内嵌成员表误当主虚表、grade 未变）；coverage 18,498 行不变，全表 [已证] 1,512→1,527、atlas 内 1,506→1,521、atlas 外仍 6；面板 S22 proved 55→69、S05 170→171；严格双列表按盘上实算（S22 strict 2→26 含 M60 旧截面差 10 修正）；达标判定不变（严格仍仅 S17）；不 git commit）；M56 并表 S17-PADD 2 行（006CF430/004A2990，[静态推断]→[已证]，第 4 列语义取 B 线 delta 原文、evidence_path 改指 S17_PADD/_audit/VERDICT.md#49；006CF240 黑名单整行不动、待更正后可补入第 3 行）；R14_COMMON §8.5 条 2 后增 R15 更正段（只增不改）；面板 S17 proved 54→56、proved_strict 53→55、named 维持 94；coverage 18,498 行不变；不 git commit）；M55 并表 S13_K8RECHK 11 行 + D41_SUBST 8 行共 19 行 [静态推断]→[已证]（S13 11 行语义均含「无直接调用者，仅虚派发见证」、D41 8 行均含「② 走身份替代」，00405BE0 黑名单剔除；D41 4 行按 a-D41-SUBST VERDICT §4/§5 改正偏移与派生指针来源、00401F90 ③b② 改标「状态不变量」）；原地升格不新增行，coverage 18,498 数据行不变；全表 [已证] 1,460→1,479、atlas 内 1,455→1,474；面板 S13 proved 89→100、S02 34→35、S19 20→27、TOTAL 1,455→1,474；RULING-R15 D-39 实际落地已补记；未改其它文件、不 git commit）；M53 PANEL 全表同步（本卡接管 COVERAGE 独占写权；三行语义栏标「③b 细则#1 级」（006C9890/00631CC0 去 ③b① 混写、004AB9B0 补标）；named 排除规则明确为 `::sub_[0-9A-Fa-f]+$`（任意长度十六进制），不用字面 8 位量；按此重算 21 行+TOTAL 的 named_S 全部与现值一致、面板行值改动 0 行；coverage.tsv 行数 18,498 不变、仅第 4 列 3 行语义改动；新增「RULING-R15 生效声明」节；不改其它文件、不 git commit）；M52 PANEL 全表同步（对齐 M51 后现态；不改 coverage.tsv、不做新裁决；按盘上重算 coverage 18,498 / 全表 [已证] 1,460 / atlas 内 [已证] 1,455 / conflict==1 254；C 18,431→18,498（+67=M50 48+M51 19，67 行全 atlas 外/S22/P0 入口闭合用）；三分母 A/B/C=12,916/14,554/18,498（B 按 §9.1 coverage∖initterm 3,944 =18,498−3,944=14,554，随 C 同增 67；PANEL M50 旧记 14,535 为仅含 M50 的截面）；面板 21 行+TOTAL 逐行核对改动 0，达标仍 S15/S16/S17）；M50 并表 P0-ADJ4 去重后净新入口 48 行（95 行 delta 中 47 行已在 coverage 跳过）：subsystem 暂填 S22、grade 全 [静态推断]、不计入任何子系统百分比、不进 atlas/A 分母；coverage 18,431→18,479、三分母 A/B/C=12,916/14,535/18,479；M48 并表 0 行：白名单 7 行 coverage 第 4 列全含「槽语义未证」、按判据 8 全部拦下，coverage.tsv 未改；S16 006CE800 + S09 6 行 004E2580/004E1530/004E1550/004F4450/00557AC0/00557AE0 均保持 [静态推断]；006CDEB0/006CE7C0 及 S09 被剔 0048E5A0/004E19F0 整行不动；盘上重算全表 [已证] 1,460、atlas 内 [已证] 1,455、conflict==1 254，三分母 A/B/C=12,916/14,487/18,431 不变；M47 PANEL 全表同步（对齐 M46 后现态；不改 coverage.tsv、不做新裁决；按盘上重算全表 [已证] 1,460、atlas 内 [已证] 1,455、conflict==1 254，面板 21 行+TOTAL 中仅 S05 proved 157→165/643=25.66%；三分母 A/B/C=12,916/14,487/18,431 不变）；M46 并表 S03_C7 3 行 + S09_KPROVED6 7 行共 10 行 [静态推断]→[已证]（第 4 列语义补 ③b 整体合同、evidence_path 改指 S09_KPROVED6/_audit/VERDICT.md；S03 三行尚未审计改指 S03_C7/PROGRESS.md，MERGE_LOG 注明「待审计」；006A5030 黑名单整行不动）；M45 并表 SEMFIX-SLOTS3 15 行 [静态推断]→[已证]（S05 7 行 + S09 8 行，第 4 列语义补 ③b 整体合同、evidence_path 改指各自 _audit/VERDICT.md）；M44 并�
+
+===== [06] next_re_20261117_r14/R16_MERGE_PIVOT32/_before_col4.json | 56926 B | read=OK len=8192 =====
+{
+ "9050": {
+  "entry": "006BF810",
+  "col4": "S22 T_TClassFactory_VTactical__::slot3（IClassFactory::CreateInstance）—— ③b② 成立：入口三道 imm 错误码守卫（ppvOut 空→E_INVALIDARG 0x80070057；pUnkOuter 非空→CLASS_E_NOAGGREGATION 0x80040110；operator new/ctor 空→E_OUTOFMEMORY 0x8007000e）。主站点 @006BF86D `call dword ptr [eax]`（新建 Tactical 对象主 vt 007F4348 的 slot0=QueryInterface 00410260），@006BF86F `mov edi,eax` / `test edi,edi` / `jge`：失败返 0x80004002(E_NOINTERFACE)/0x80004003(E_POINTER)、成功返 0，被调返回约定由字节可伪证（常量 00000000,80004002,80004003、3 处 ret）；调用方真拿它分支且两路动作不同——失败路 @006BF87B `call [edx+0x20]` 带 delete 标志=1 释放新建对象，成功路直接回传 HRESULT。返回值在 edi，test 与 jcc 零间隔无 eax 覆写；唯一路径进 QI call 非多路同一 call；非 ③a/模板假句。语义：为 Tactical 类工厂的 CreateInstance——校验输出指针与聚合参数→分配并构造一个 Tactical 对象→对其做 QueryInterface 取接口：失败则 Release 新建对象并回传负 HRESULT，成功则回传 S_OK 与接口指针（流方向：写出接口指针到 ppvOut，非读入）。② 槽 007F3804(vt 007F37F8 +0xC，slot#3) 的 4B 值即本 entry，RTTI COL=00809E48→TD=00841098→名=.?AV?$TClassFactory@VTactical@@@@，槽号自洽；④ 活 COM 类对象：堆分配 8B 工厂实例(006BC5C6)→ctor 006BF740 装 vt 007F37F8→以 CLSID 7E9580 经 ole32!CoRegisterClassObject 注册为活类对象，宿主 006BB9A0 非 atexit 非析构（㉓ 已排除），direct 调用者=0（纯虚派发非 direct-only），②④ 不同源(.rdata RTTI vs .text 分配/装表/注册)。"
+ },
+ "9055": {
+  "entry": "006BF990",
+  "col4": "S22 T_TClassFactory_VCellClass__::slot3（IClassFactory::CreateInstance）—— ③b② 成立：入口三道 imm 错误码守卫（ppvOut 空→E_INVALIDARG 0x80070057；pUnkOuter 非空→CLASS_E_NOAGGREGATION 0x80040110；operator new/ctor 空→E_OUTOFMEMORY 0x8007000e）。主站点 @006BF9ED `call dword ptr [eax]`（新建 CellClass 对象主 vt 007E4EEC 的 slot0=QueryInterface 00410260），@006BF9EF `mov edi,eax` / `test edi,edi` / `jge`：失败返 0x80004002(E_NOINTERFACE)/0x80004003(E_POINTER)、成功返 0，被调返回约定由字节可伪证（常量 00000000,80004002,80004003、3 处 ret）；调用方真拿它分支且两路动作不同——失败路 @006BF9FB `call [edx+0x20]` 带 delete 标志=1 释放新建对象，成功路直接回传 HRESULT。返回值在 edi，test 与 jcc 零间隔无 eax 覆写；唯一路径进 QI call 非多路同一 call；非 ③a/模板假句。语义：为 CellClass 类工厂的 CreateInstance——校验输出指针与聚合参数→分配并构造一个 CellClass 对象→对其做 QueryInterface 取接口：失败则 Release 新建对象并回传负 HRESULT，成功则回传 S_OK 与接口指针（流方向：写出接口指针到 ppvOut，非读入）。② 槽 007F381C(vt 007F3810 +0xC，slot#3) 的 4B 值即本 entry，RTTI COL=00809E98→TD=008410C8→名=.?AV?$TClassFactory@VCellClass@@@@，槽号自洽；④ 活 COM 类对象：堆分配 8B 工厂实例(006BC603)→ctor 006BF8C0 装 vt 007F3810→以 CLSID 7E9930 经 ole32!CoRegisterClassObject 注册为活类对象，宿主 006BB9A0 非 atexit 非析构（㉓ 已排除），direct 调用者=0（纯虚派发非 direct-only），②④ 不同源(.rdata RTTI vs .text 分配/装表/注册)。"
+ },
+ "9060": {
+  "entry": "006BFB10",
+  "col4": "S22 T_TClassFactory_VEMPulseClass__::slot3（IClassFactory::CreateInstance）—— ③b② 成立：入口三道 imm 错误码守卫（ppvOut 空→E_INVALIDARG 0x80070057；pUnkOuter 非空→CLASS_E_NOAGGREGATION 0x80040110；operator new/ctor 空→E_OUTOFMEMORY 0x8007000e）。主站点 @006BFB6A `call dword ptr [eax]`（新建 EMPulseClass 对象主 vt 007E87A8 的 slot0=QueryInterface 00410260），@006BFB6C `mov edi,eax` / `test edi,edi` / `jge`：失败返 0x80004002(E_NOINTERFACE)/0x80004003(E_POINTER)、成功返 0，被调返回约定由字节可伪证（常量 00000000,80004002,80004003、3 处 ret）；调用方真拿它分支且两路动作不同——失败路 @006BFB78 `call [edx+0x20]` 带 delete 标志=1 释放新建对象，成功路直接回传 HRESULT。返回值在 edi，test 与 jcc 零间隔无 eax 覆写；唯一路径进 QI call 非多路同一 call；非 ③a/模板假句。语义：为 EMPulseClass 类工厂的 CreateInstance——校验输出指针与聚合参数→分配并构造一个 EMPulseClass 对象→对其做 QueryInterface 取接口：失败则 Release 新建对象并回传负 HRESULT，成功则回传 S_OK 与接口指针（流方向：写出接口指针到 ppvOut，非读入）。② 槽 007F3834(vt 007F3828 +0xC，slot#3) 的 4B 值即本 entry，RTTI COL=00809EE8→TD=008410F8→名=.?AV?$TClassFactory@VEMPulseClass@@@@，槽号自洽；④ 活 COM 类对象：堆分配 8B 工厂实例(006BC640)→ctor 006BFA40 装 vt 007F3828→以 CLSID 7E9940 经 ole32!CoRegisterClassObject 注册为活类对象，宿主 006BB9A0 非 atexit 非析构（㉓ 已排除），direct 调用者=0（纯虚派发非 direct-only），②④ 不同源(.rdata RTTI vs .text 分配/装表/注册)。"
+ },
+ "9065": {
+  "entry": "006BFC90",
+  "col4": "S22 T_TClassFactory_VLightSourceClass__::slot3（IClassFactory::CreateInstance）—— ③b② 成立：入口三道 imm 错误码守卫（ppvOut 空→E_INVALIDARG 0x80070057；pUnkOuter 非空→CLASS_E_NOAGGREGATION 0x80040110；operator new/ctor 空→E_OUTOFMEMORY 0x8007000e）。主站点 @006BFCEA `call dword ptr [eax]`（新建 LightSourceClass 对象主 vt 007ED028 的 slot0=QueryInterface 00410260），@006BFCEC `mov edi,eax` / `test edi,edi` / `jge`：失败返 0x80004002(E_NOINTERFACE)/0x80004003(E_POINTER)、成功返 0，被调返回约定由字节可伪证（常量 00000000,80004002,80004003、3 处 ret）；调用方真拿它分支且两路动作不同——失败路 @006BFCF8 `call [edx+0x20]` 带 delete 标志=1 释放新建对象，成功路直接回传 HRESULT。返回值在 edi，test 与 jcc 零间隔无 eax 覆写；唯一路径进 QI call 非多路同一 call；非 ③a/模板假句。语义：为 LightSourceClass 类工厂的 CreateInstance——校验输出指针与聚合参数→分配并构造一个 LightSourceClass 对象→对其做 QueryInterface 取接口：失败则 Release 新建对象并回传负 HRESULT，成功则回传 S_OK 与接口指针（流方向：写出接口指针到 ppvOut，非读入）。② 槽 007F384C(vt 007F3840 +0xC，slot#3) 的 4B 值即本 entry，RTTI COL=00809F38→TD=00841128→名=.?AV?$TClassFactory@VLightSourceClass@@@@，槽号自洽；④ 活 COM 类对象：堆分配 8B 工厂实例(006BC67D)→ctor 006BFBC0 装 vt 007F3840→以 CLSID 7E98F0 经 ole32!CoRegisterClassObject 注册为活类对象，宿主 006BB9A0 非 atexit 非析构（㉓ 已排除），direct 调用者=0（纯虚派发非 direct-only），②④ 不同源(.rdata RTTI vs .text 分配/装表/注册)。"
+ },
+ "9070": {
+  "entry": "006BFE10",
+  "col4": "S22 T_TClassFactory_VSideClass__::slot3（IClassFactory::CreateInstance）—— ③b② 成立：入口三道 imm 错误码守卫（ppvOut 空→E_INVALIDARG 0x80070057；pUnkOuter 非空→CLASS_E_NOAGGREGATION 0x80040110；operator new/ctor 空→E_OUTOFMEMORY 0x8007000e）。主站点 @006BFE6F `call dword ptr [eax]`（新建 SideClass 对象主 vt 007F2EC0 的 slot0=QueryInterface 00410260），@006BFE71 `mov edi,eax` / `test edi,edi` / `jge`：失败返 0x80004002(E_NOINTERFACE)/0x80004003(E_POINTER)、成功返 0，被调返回约定由字节可伪证（常量 00000000,80004002,80004003、3 处 ret）；调用方真拿它分支且两路动作不同——失败路 @006BFE7D `call [edx+0x20]` 带 delete 标志=1 释放新建对象，成功路直接回传 HRESULT。返回值在 edi，test 与 jcc 零间隔无 eax 覆写；唯一路径进 QI call 非多路同一 call；非 ③a/模板假句。语义：为 SideClass 类工厂的 CreateInstance�
+
+===== [07] next_re_20261117_r14/R16_MERGE_PIVOT32/_before_exact_PANEL.md | 183204 B | read=OK len=8192 =====
+# PANEL — R14 coverageM77 并表 4 行（NAMED_PUSH_AUDIT20 PASS 4 行（S07 006DBE00 + S11 0069EE30/00719E30/0075C7F0），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,650→1,654、atlas 内 1,644→1,648、atlas 外仍 6；面板 S07 proved 74→75、strict 51→52，S11 proved 32→35、strict 31→34；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17，名义仍 S15/S16/S17）；M77 并表 NAMED_PUSH_AUDIT20 PASS 4 行（S07 006DBE00 + S11 0069EE30/00719E30/0075C7F0，evidence_path 改指 NAMED_PUSH_AUDIT20/VERDICT.md）；具名通道至此收口（剩余预期 < 3 行）；不 git commit）；M76 并表 7 行（NAMED_PUSH_AUDIT19 PASS 7 行（S06_B2 3 + S01S03_B1 1 + S16S21_B1 3），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,643→1,650、atlas 内 1,637→1,644、atlas 外仍 6；面板 S03 proved 38→39、strict 36→37，S06 proved 135→138、strict 120→123，S16 proved 47→48、strict 21→22，S21 proved 28→30、strict 28→30；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17，名义仍 S15/S16/S17）；0071B1B0 槽址按审计勘误改 007F51A0、0071CDA0 的 ff 51 10 改称成员容器 slot4 下标查询（非读入）均已在第 4 列落实；NAMED_PUSH_S07S11_B2 的 4 行未审不并；M76 并表 NAMED_PUSH_AUDIT19 PASS 7 行（S06_B2 3 + S01S03 1 + S16S21 3，evidence_path 改指 NAMED_PUSH_AUDIT19/VERDICT.md；0071B1B0 槽址按勘误改 007F51A0、0071CDA0 的 ff 51 10 改称成员容器 slot4 下标查询）；NAMED_PUSH_S07S11_B2 的 4 行未审不并；不 git commit）；M75 并表 22 行（NAMED_PUSH_AUDIT17 PASS 12 行（S18_B5 9 + S17_B1 3）+ NAMED_PUSH_AUDIT18 PASS 10 行（S15_B1），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,621→1,643、atlas 内 1,615→1,637、atlas 外仍 6；面板 S18 proved 57→66、strict 47→56，S15 proved 106→116、strict 53→63，S17 proved 56→59、strict 55→58；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17，名义仍 S15/S16/S17）；007B26D0 为 ④ 最弱行（仅构造器安装点、无可证派发），006E3E30/006E57A0 旧 FAIL 换 ③ 依据后过审，均已披露；M75 并表 NAMED_PUSH_AUDIT17 PASS 12 行（S18_B5 9 + S17_B1 3）+ NAMED_PUSH_AUDIT18 PASS 10 行（S15_B1），evidence_path 分别改指两审计 VERDICT；006E3E30/006E57A0 两行早先 a-S15S16-3B2 判 FAIL，本批换 ③ 依据后过审；不 git commit）；M74 并表 6 行（NAMED_PUSH_AUDIT16 PASS 6 行（S13 004684E0/00629FD0/0075E0C0/0075E2C0/00772CD0/00772EB0），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,615→1,621、atlas 内 1,609→1,615、atlas 外仍 6；面板 S13 proved 100→106、strict 99→105；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；D-43(A) 与 §12.3 正面冲突列为待裁项 D-47 并披露；M74 并表 NAMED_PUSH_AUDIT16 PASS 6 行（S13 004684E0/00629FD0/0075E0C0/0075E2C0/00772CD0/00772EB0，evidence_path 改指 NAMED_PUSH_AUDIT16/VERDICT.md；这 6 行曾被 S13-PUSH 否决，本批 ④ 改锚行外构造器写点后过审；PASS 依据为 D-43(A) 口径 + M69 整批裁定，非「④ 已独立」）；不 git commit）；M73 并表 2 行（NAMED_PUSH_AUDIT15 PASS 2 行（S18 007B10C0 / S09 004F45B0），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,613→1,615、atlas 内 1,607→1,609、atlas 外仍 6；面板 S18 proved 56→57、strict 46→47，S09 proved 114→115、strict 97→98；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；M73 并表 NAMED_PUSH_AUDIT15 PASS 2 行（S18 007B10C0 / S09 004F45B0，evidence_path 改指 NAMED_PUSH_AUDIT15/VERDICT.md；审计补证了 delta 缺失的 ②/④ 地址，并纠 004F45B0 的成功返回地址应为 0x4A3592）；不 git commit）；M72 并表 11 行（NAMED_PUSH_AUDIT13 PASS 7 行（S07）+ NAMED_PUSH_AUDIT14 PASS 4 行（S11），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,602→1,613、atlas 内 1,596→1,607、atlas 外仍 6；面板 S07 proved 67→74、strict 44→51，S11 proved 28→32、strict 27→31；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；M72 并表 NAMED_PUSH_AUDIT13 PASS 7 行（S07）+ NAMED_PUSH_AUDIT14 PASS 4 行（S11），evidence_path 分别改指两审计 VERDICT；S09_B1 的 1 行未审不并；不 git commit）；M71 并表 11 行（NAMED_PUSH_AUDIT12 PASS 11 行（S22_B4 工厂族），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,591→1,602、atlas 内 1,585→1,596、atlas 外仍 6；面板 S22 proved 98→109、strict 55→66；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；M71 并表 NAMED_PUSH_AUDIT12 PASS 11 行（S22_B4 工厂族）；S22 named 池至此清空（B1 18 + B2 18 + B3 13 + B4 13 + B5 9 = 71 = 全池），B5 的 9 行 vector 族四环齐全 0（③b 全败于 {0,1} AL 布尔）；evidence_path 改指 NAMED_PUSH_AUDIT12/VERDICT.md；④ 严格读法收紧将翻转 ≥21 行已披露未执行、待成文规则；不 git commit）；M70 并表 11 行（NAMED_PUSH_AUDIT11 PASS 11 行（S22 TClassFactory 同族），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,580→1,591、atlas 内 1,574→1,585、atlas 外仍 6；面板 S22 proved 87→98、strict 44→55；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；不 git commit）；M69 并表 7 行（NAMED_PUSH_AUDIT9 PASS 6 行（S12_B2）+ NAMED_PUSH_AUDIT10 PASS 1 行（S20_B3 00763200），均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,573→1,580、atlas 内 1,567→1,574、atlas 外仍 6；面板 S12 proved 59→65、strict 44→50，S20 proved 61→62、strict 49→50；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；不 git commit）；M68 并表 4 行（NAMED_PUSH_AUDIT8 PASS 4 行 S12 00442230/00447210/00447F10/0044E8F0，均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,569→1,573、atlas 内 1,563→1,567、atlas 外仍 6；面板 S12 proved 55→59、strict 40→44；00447210/00447F10 ③ 站点多值状态码非布尔，审计独立枚举被调全部 ret 确认；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；不 git commit）；M67 并表 13 行（NAMED_PUSH_AUDIT7 PASS 13 行 S20 8 + S06 5，均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,556→1,569、atlas 内 1,550→1,563、atlas 外仍 6；面板 S20 proved 53→61、S06 130→135；0062FE90 表址按审计勘误改 007E9D84→007E9D64；S06 五行 ④ 由审计补证；S12_B1 四行审计代理失败未审不并；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；不 git commit）； 覆盖面板（M66 并表 29 行（NAMED_PUSH_AUDIT6 PASS 18 行 S22 TClassFactory 同族 + NAMED_PUSH_AUDIT5 PASS 11 行 S06 4/S20 7，均 atlas 内，仅改 coverage 第 4/5/6 列、第 1/2/3/7/8 列不动；coverage 18,498 行不变；全表 [已证] 1,527→1,556、atlas 内 1,521→1,550、atlas 外仍 6；面板 S22 proved 69→87、S06 126→130、S20 46→53；strict 按权威口径 [未证] 字面重算，达标判定不变（严格仍仅 S17）；不 git commit）；M65 并表 NAMED_PUSH_AUDIT4 审计 PASS 14 行（S22 TClassFactory 同族工厂，006BF810/006BF990/006BFB10/006BFC90/006BFE10/00
+
+===== [08] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v52/R17_R34_FACT_INDEX.SUPERSEDED.before.md | 1162 B | read=OK len=1162 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 v1（16 条），**已被 `R17_R47_GRADE_NORM`（v5.1，49 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R47_GRADE_NORM\FACT_INDEX.tsv`（v5.1，49 条，grade 四档）
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 作废原因 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 被 v2 取代（内容审计后新增 M1/M2 等条目） |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 被 v3 取代（补 coverage 头条数字 F22–F26） |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 被 v3.1 取代（F23 的宽松正则口径未钉死） |
+| v3.1 | R17_R42_F23_FIX | 26 | 被 v3.2 取代（路径基准混用 + 行号锚腐烂） |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 被 v4.0 取代（补技术条/方法学 F27–F38） |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 被 v5.0 取代（补完 U13–U23 → F39–F49） |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 被 v5.1 取代（grade 列被污染成 10 种取值，规范化为 4 档） |
+| **v5.1** | **R17_R47_GRADE_NORM** | **49** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.1 为准。**
+
+===== [09] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v52/R17_R42_F23_FIX.SUPERSEDED.before.md | 1164 B | read=OK len=1164 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 v3.1（26 条），**已被 `R17_R47_GRADE_NORM`（v5.1，49 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R47_GRADE_NORM\FACT_INDEX.tsv`（v5.1，49 条，grade 四档）
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 作废原因 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 被 v2 取代（内容审计后新增 M1/M2 等条目） |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 被 v3 取代（补 coverage 头条数字 F22–F26） |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 被 v3.1 取代（F23 的宽松正则口径未钉死） |
+| v3.1 | R17_R42_F23_FIX | 26 | 被 v3.2 取代（路径基准混用 + 行号锚腐烂） |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 被 v4.0 取代（补技术条/方法学 F27–F38） |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 被 v5.0 取代（补完 U13–U23 → F39–F49） |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 被 v5.1 取代（grade 列被污染成 10 种取值，规范化为 4 档） |
+| **v5.1** | **R17_R47_GRADE_NORM** | **49** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.1 为准。**
+
+===== [10] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v53/R17_R34_FACT_INDEX.SUPERSEDED.before.md | 1217 B | read=OK len=1217 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 v1（16 条），**已被 `R17_R51_FACTINDEX_V52`（v5.2，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R51_FACTINDEX_V52\FACT_INDEX.tsv`（v5.2，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 作废原因 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 被 v2 取代（内容审计后新增 M1/M2 等条目） |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 被 v3 取代（补 coverage 头条数字 F22–F26） |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 被 v3.1 取代（F23 的宽松正则口径未钉死） |
+| v3.1 | R17_R42_F23_FIX | 26 | 被 v3.2 取代（路径基准混用 + 行号锚腐烂） |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 被 v4.0 取代（补技术条/方法学 F27–F38） |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 被 v5.0 取代（补完 U13–U23 → F39–F49） |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 被 v5.1 取代（grade 列被污染成 10 种取值，规范化为 4 档） |
+| **v5.1** | **R17_R47_GRADE_NORM** | **49** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.1 为准。**
+
+===== [11] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v53/R17_R42_F23_FIX.SUPERSEDED.before.md | 1219 B | read=OK len=1219 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 v3.1（26 条），**已被 `R17_R51_FACTINDEX_V52`（v5.2，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R51_FACTINDEX_V52\FACT_INDEX.tsv`（v5.2，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 作废原因 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 被 v2 取代（内容审计后新增 M1/M2 等条目） |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 被 v3 取代（补 coverage 头条数字 F22–F26） |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 被 v3.1 取代（F23 的宽松正则口径未钉死） |
+| v3.1 | R17_R42_F23_FIX | 26 | 被 v3.2 取代（路径基准混用 + 行号锚腐烂） |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 被 v4.0 取代（补技术条/方法学 F27–F38） |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 被 v5.0 取代（补完 U13–U23 → F39–F49） |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 被 v5.1 取代（grade 列被污染成 10 种取值，规范化为 4 档） |
+| **v5.1** | **R17_R47_GRADE_NORM** | **49** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.1 为准。**
+
+===== [12] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v53/R17_R47_GRADE_NORM.SUPERSEDED.before.md | 1668 B | read=OK len=1668 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.1**（49 条，`grade` 已规范化为 4 档），**已被 `R17_R51_FACTINDEX_V52`（v5.2，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R51_FACTINDEX_V52\FACT_INDEX.tsv`（v5.2，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.2 在 v5.1 基础上应用了两审结果：
+- **`C-1` 字节裁决**：本镜像 `COL` 结构内**无 `pSelf` 字段**（COL 恰 5 dword；6 dword 读法需 `+0x10` 有合法 pTD，实测 0/1211）⇒ `F01` 删除 `pSelf=COL−0x10`、`F31` 理由改为「COL 无 self 字段」（结论保留）；
+- **跨家族审计 33 条的必改项**：`F25` 改 `[流程]`、`F24` 加单源归因限定、`F17/F18/F19/F21/F36` 补「定谳句+a–e+(a′)」、重复对加交叉引用、`D-4` 并列两读法；
+- **新增 `F50`–`F54`**（PE 节表三步 / `E8` 原始命中≠严格形态 / 删除析构三件齐 / 活表判据顺序与 `0x007E88D0` 反例 / `PEFormatError` 是读法错症状）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | **本目录，作废** |
+| **v5.2** | **R17_R51_FACTINDEX_V52** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.2 为准。**
+
+===== [13] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v54/R17_R34_FACT_INDEX.SUPERSEDED.before.md | 1489 B | read=OK len=1489 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v1**（16 条）**，已被 `R17_R56_FACTINDEX_V53`（v5.3，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R56_FACTINDEX_V53\FACT_INDEX.tsv`（v5.3，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.3 在 v5.2 基础上做了 7 行修正（其余 47 行逐字节未动）：
+- **失效指针修复**：`F29`/`F49` 原写「口径待裁，不得单引其一」，而 `D-4` 已于 2026-11-21 裁定 **① 两者可并存** ⇒ 该表述已失效；
+- **字节层精度**：`F50` 原把「`.data` 未初始化尾段无文件映射」误说成「`.data` 被错映射到 `.rsrc`」；
+- **锚失效**：`F50` 第二锚 `§13.1`、`F53` 第二锚「看板第 16 轮 段」均不承载各自条目的事实。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | **本目录，作废** |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| **v5.3** | **R17_R56_FACTINDEX_V53** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.3 为准。**
+
+===== [14] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v54/R17_R38_FACTINDEX_FIX.SUPERSEDED.before.md | 1489 B | read=OK len=1489 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v2**（21 条）**，已被 `R17_R56_FACTINDEX_V53`（v5.3，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R56_FACTINDEX_V53\FACT_INDEX.tsv`（v5.3，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.3 在 v5.2 基础上做了 7 行修正（其余 47 行逐字节未动）：
+- **失效指针修复**：`F29`/`F49` 原写「口径待裁，不得单引其一」，而 `D-4` 已于 2026-11-21 裁定 **① 两者可并存** ⇒ 该表述已失效；
+- **字节层精度**：`F50` 原把「`.data` 未初始化尾段无文件映射」误说成「`.data` 被错映射到 `.rsrc`」；
+- **锚失效**：`F50` 第二锚 `§13.1`、`F53` 第二锚「看板第 16 轮 段」均不承载各自条目的事实。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | **本目录，作废** |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| **v5.3** | **R17_R56_FACTINDEX_V53** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.3 为准。**
+
+===== [15] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v54/R17_R40_FACTINDEX_V3.SUPERSEDED.before.md | 1489 B | read=OK len=1489 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3**（26 条）**，已被 `R17_R56_FACTINDEX_V53`（v5.3，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R56_FACTINDEX_V53\FACT_INDEX.tsv`（v5.3，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.3 在 v5.2 基础上做了 7 行修正（其余 47 行逐字节未动）：
+- **失效指针修复**：`F29`/`F49` 原写「口径待裁，不得单引其一」，而 `D-4` 已于 2026-11-21 裁定 **① 两者可并存** ⇒ 该表述已失效；
+- **字节层精度**：`F50` 原把「`.data` 未初始化尾段无文件映射」误说成「`.data` 被错映射到 `.rsrc`」；
+- **锚失效**：`F50` 第二锚 `§13.1`、`F53` 第二锚「看板第 16 轮 段」均不承载各自条目的事实。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | **本目录，作废** |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| **v5.3** | **R17_R56_FACTINDEX_V53** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.3 为准。**
+
+===== [16] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v54/R17_R42_F23_FIX.SUPERSEDED.before.md | 1491 B | read=OK len=1491 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3.1**（26 条）**，已被 `R17_R56_FACTINDEX_V53`（v5.3，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R56_FACTINDEX_V53\FACT_INDEX.tsv`（v5.3，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.3 在 v5.2 基础上做了 7 行修正（其余 47 行逐字节未动）：
+- **失效指针修复**：`F29`/`F49` 原写「口径待裁，不得单引其一」，而 `D-4` 已于 2026-11-21 裁定 **① 两者可并存** ⇒ 该表述已失效；
+- **字节层精度**：`F50` 原把「`.data` 未初始化尾段无文件映射」误说成「`.data` 被错映射到 `.rsrc`」；
+- **锚失效**：`F50` 第二锚 `§13.1`、`F53` 第二锚「看板第 16 轮 段」均不承载各自条目的事实。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | **本目录，作废** |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| **v5.3** | **R17_R56_FACTINDEX_V53** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.3 为准。**
+
+===== [17] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v54/R17_R44_FACTINDEX_V32.SUPERSEDED.before.md | 1491 B | read=OK len=1491 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3.2**（26 条）**，已被 `R17_R56_FACTINDEX_V53`（v5.3，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R56_FACTINDEX_V53\FACT_INDEX.tsv`（v5.3，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.3 在 v5.2 基础上做了 7 行修正（其余 47 行逐字节未动）：
+- **失效指针修复**：`F29`/`F49` 原写「口径待裁，不得单引其一」，而 `D-4` 已于 2026-11-21 裁定 **① 两者可并存** ⇒ 该表述已失效；
+- **字节层精度**：`F50` 原把「`.data` 未初始化尾段无文件映射」误说成「`.data` 被错映射到 `.rsrc`」；
+- **锚失效**：`F50` 第二锚 `§13.1`、`F53` 第二锚「看板第 16 轮 段」均不承载各自条目的事实。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | **本目录，作废** |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| **v5.3** | **R17_R56_FACTINDEX_V53** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.3 为准。**
+
+===== [18] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v54/R17_R45_FACTINDEX_V4.SUPERSEDED.before.md | 1491 B | read=OK len=1491 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v4.0**（38 条）**，已被 `R17_R56_FACTINDEX_V53`（v5.3，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R56_FACTINDEX_V53\FACT_INDEX.tsv`（v5.3，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.3 在 v5.2 基础上做了 7 行修正（其余 47 行逐字节未动）：
+- **失效指针修复**：`F29`/`F49` 原写「口径待裁，不得单引其一」，而 `D-4` 已于 2026-11-21 裁定 **① 两者可并存** ⇒ 该表述已失效；
+- **字节层精度**：`F50` 原把「`.data` 未初始化尾段无文件映射」误说成「`.data` 被错映射到 `.rsrc`」；
+- **锚失效**：`F50` 第二锚 `§13.1`、`F53` 第二锚「看板第 16 轮 段」均不承载各自条目的事实。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | **本目录，作废** |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| **v5.3** | **R17_R56_FACTINDEX_V53** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.3 为准。**
+
+===== [19] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v54/R17_R46_FACTINDEX_V5.SUPERSEDED.before.md | 1491 B | read=OK len=1491 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.0**（49 条）**，已被 `R17_R56_FACTINDEX_V53`（v5.3，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R56_FACTINDEX_V53\FACT_INDEX.tsv`（v5.3，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.3 在 v5.2 基础上做了 7 行修正（其余 47 行逐字节未动）：
+- **失效指针修复**：`F29`/`F49` 原写「口径待裁，不得单引其一」，而 `D-4` 已于 2026-11-21 裁定 **① 两者可并存** ⇒ 该表述已失效；
+- **字节层精度**：`F50` 原把「`.data` 未初始化尾段无文件映射」误说成「`.data` 被错映射到 `.rsrc`」；
+- **锚失效**：`F50` 第二锚 `§13.1`、`F53` 第二锚「看板第 16 轮 段」均不承载各自条目的事实。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | **本目录，作废** |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| **v5.3** | **R17_R56_FACTINDEX_V53** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.3 为准。**
+
+===== [20] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v54/R17_R47_GRADE_NORM.SUPERSEDED.before.md | 1491 B | read=OK len=1491 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.1**（49 条）**，已被 `R17_R56_FACTINDEX_V53`（v5.3，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R56_FACTINDEX_V53\FACT_INDEX.tsv`（v5.3，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.3 在 v5.2 基础上做了 7 行修正（其余 47 行逐字节未动）：
+- **失效指针修复**：`F29`/`F49` 原写「口径待裁，不得单引其一」，而 `D-4` 已于 2026-11-21 裁定 **① 两者可并存** ⇒ 该表述已失效；
+- **字节层精度**：`F50` 原把「`.data` 未初始化尾段无文件映射」误说成「`.data` 被错映射到 `.rsrc`」；
+- **锚失效**：`F50` 第二锚 `§13.1`、`F53` 第二锚「看板第 16 轮 段」均不承载各自条目的事实。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | **本目录，作废** |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| **v5.3** | **R17_R56_FACTINDEX_V53** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.3 为准。**
+
+===== [21] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v54/R17_R51_FACTINDEX_V52.SUPERSEDED.before.md | 1491 B | read=OK len=1491 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.2**（54 条）**，已被 `R17_R56_FACTINDEX_V53`（v5.3，54 条）取代**。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R56_FACTINDEX_V53\FACT_INDEX.tsv`（v5.3，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.3 在 v5.2 基础上做了 7 行修正（其余 47 行逐字节未动）：
+- **失效指针修复**：`F29`/`F49` 原写「口径待裁，不得单引其一」，而 `D-4` 已于 2026-11-21 裁定 **① 两者可并存** ⇒ 该表述已失效；
+- **字节层精度**：`F50` 原把「`.data` 未初始化尾段无文件映射」误说成「`.data` 被错映射到 `.rsrc`」；
+- **锚失效**：`F50` 第二锚 `§13.1`、`F53` 第二锚「看板第 16 轮 段」均不承载各自条目的事实。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | **本目录，作废** |
+| **v5.3** | **R17_R56_FACTINDEX_V53** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.3 为准。**
+
+===== [22] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v55/R17_R34_FACT_INDEX.SUPERSEDED.before.md | 1532 B | read=OK len=1532 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v1**（16 条），已被 `R17_R57_FACTINDEX_V54`（v5.4，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R57_FACTINDEX_V54\FACT_INDEX.tsv`（v5.4，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.4 只做一件事：把 **16 条已随归档失效的看板段锚**改指 `BOARD_ARCHIVE.md`。
+
+- 根因：H50/H51/H52 把看板第 11–16 轮段搬进 archive，看板里只剩 `📦` 指针行 ⇒ `STATUS_BOARD.md(R17 第 N 轮 段)` 指向的正文已不在看板；
+- 隐蔽假通过：指针行**仍写着段标题**，故「看板里能搜到段名」的朴素检查会通过，但搜到的是指针不是正文；
+- `statement` / `grade` / `limitations` 三列**一字未动**；条数仍 54。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | **本目录，作废** |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| **v5.4** | **R17_R57_FACTINDEX_V54** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.4 为准。**
+
+===== [23] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v55/R17_R38_FACTINDEX_FIX.SUPERSEDED.before.md | 1532 B | read=OK len=1532 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v2**（21 条），已被 `R17_R57_FACTINDEX_V54`（v5.4，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R57_FACTINDEX_V54\FACT_INDEX.tsv`（v5.4，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.4 只做一件事：把 **16 条已随归档失效的看板段锚**改指 `BOARD_ARCHIVE.md`。
+
+- 根因：H50/H51/H52 把看板第 11–16 轮段搬进 archive，看板里只剩 `📦` 指针行 ⇒ `STATUS_BOARD.md(R17 第 N 轮 段)` 指向的正文已不在看板；
+- 隐蔽假通过：指针行**仍写着段标题**，故「看板里能搜到段名」的朴素检查会通过，但搜到的是指针不是正文；
+- `statement` / `grade` / `limitations` 三列**一字未动**；条数仍 54。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | **本目录，作废** |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| **v5.4** | **R17_R57_FACTINDEX_V54** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.4 为准。**
+
+===== [24] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v55/R17_R40_FACTINDEX_V3.SUPERSEDED.before.md | 1532 B | read=OK len=1532 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3**（26 条），已被 `R17_R57_FACTINDEX_V54`（v5.4，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R57_FACTINDEX_V54\FACT_INDEX.tsv`（v5.4，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.4 只做一件事：把 **16 条已随归档失效的看板段锚**改指 `BOARD_ARCHIVE.md`。
+
+- 根因：H50/H51/H52 把看板第 11–16 轮段搬进 archive，看板里只剩 `📦` 指针行 ⇒ `STATUS_BOARD.md(R17 第 N 轮 段)` 指向的正文已不在看板；
+- 隐蔽假通过：指针行**仍写着段标题**，故「看板里能搜到段名」的朴素检查会通过，但搜到的是指针不是正文；
+- `statement` / `grade` / `limitations` 三列**一字未动**；条数仍 54。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | **本目录，作废** |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| **v5.4** | **R17_R57_FACTINDEX_V54** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.4 为准。**
+
+===== [25] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v55/R17_R42_F23_FIX.SUPERSEDED.before.md | 1534 B | read=OK len=1534 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3.1**（26 条），已被 `R17_R57_FACTINDEX_V54`（v5.4，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R57_FACTINDEX_V54\FACT_INDEX.tsv`（v5.4，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.4 只做一件事：把 **16 条已随归档失效的看板段锚**改指 `BOARD_ARCHIVE.md`。
+
+- 根因：H50/H51/H52 把看板第 11–16 轮段搬进 archive，看板里只剩 `📦` 指针行 ⇒ `STATUS_BOARD.md(R17 第 N 轮 段)` 指向的正文已不在看板；
+- 隐蔽假通过：指针行**仍写着段标题**，故「看板里能搜到段名」的朴素检查会通过，但搜到的是指针不是正文；
+- `statement` / `grade` / `limitations` 三列**一字未动**；条数仍 54。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | **本目录，作废** |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| **v5.4** | **R17_R57_FACTINDEX_V54** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.4 为准。**
+
+===== [26] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v55/R17_R44_FACTINDEX_V32.SUPERSEDED.before.md | 1534 B | read=OK len=1534 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3.2**（26 条），已被 `R17_R57_FACTINDEX_V54`（v5.4，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R57_FACTINDEX_V54\FACT_INDEX.tsv`（v5.4，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.4 只做一件事：把 **16 条已随归档失效的看板段锚**改指 `BOARD_ARCHIVE.md`。
+
+- 根因：H50/H51/H52 把看板第 11–16 轮段搬进 archive，看板里只剩 `📦` 指针行 ⇒ `STATUS_BOARD.md(R17 第 N 轮 段)` 指向的正文已不在看板；
+- 隐蔽假通过：指针行**仍写着段标题**，故「看板里能搜到段名」的朴素检查会通过，但搜到的是指针不是正文；
+- `statement` / `grade` / `limitations` 三列**一字未动**；条数仍 54。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | **本目录，作废** |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| **v5.4** | **R17_R57_FACTINDEX_V54** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.4 为准。**
+
+===== [27] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v55/R17_R45_FACTINDEX_V4.SUPERSEDED.before.md | 1534 B | read=OK len=1534 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v4.0**（38 条），已被 `R17_R57_FACTINDEX_V54`（v5.4，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R57_FACTINDEX_V54\FACT_INDEX.tsv`（v5.4，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.4 只做一件事：把 **16 条已随归档失效的看板段锚**改指 `BOARD_ARCHIVE.md`。
+
+- 根因：H50/H51/H52 把看板第 11–16 轮段搬进 archive，看板里只剩 `📦` 指针行 ⇒ `STATUS_BOARD.md(R17 第 N 轮 段)` 指向的正文已不在看板；
+- 隐蔽假通过：指针行**仍写着段标题**，故「看板里能搜到段名」的朴素检查会通过，但搜到的是指针不是正文；
+- `statement` / `grade` / `limitations` 三列**一字未动**；条数仍 54。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | **本目录，作废** |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| **v5.4** | **R17_R57_FACTINDEX_V54** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.4 为准。**
+
+===== [28] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v55/R17_R46_FACTINDEX_V5.SUPERSEDED.before.md | 1534 B | read=OK len=1534 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.0**（49 条），已被 `R17_R57_FACTINDEX_V54`（v5.4，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R57_FACTINDEX_V54\FACT_INDEX.tsv`（v5.4，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.4 只做一件事：把 **16 条已随归档失效的看板段锚**改指 `BOARD_ARCHIVE.md`。
+
+- 根因：H50/H51/H52 把看板第 11–16 轮段搬进 archive，看板里只剩 `📦` 指针行 ⇒ `STATUS_BOARD.md(R17 第 N 轮 段)` 指向的正文已不在看板；
+- 隐蔽假通过：指针行**仍写着段标题**，故「看板里能搜到段名」的朴素检查会通过，但搜到的是指针不是正文；
+- `statement` / `grade` / `limitations` 三列**一字未动**；条数仍 54。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | **本目录，作废** |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| **v5.4** | **R17_R57_FACTINDEX_V54** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.4 为准。**
+
+===== [29] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v55/R17_R47_GRADE_NORM.SUPERSEDED.before.md | 1534 B | read=OK len=1534 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.1**（49 条），已被 `R17_R57_FACTINDEX_V54`（v5.4，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R57_FACTINDEX_V54\FACT_INDEX.tsv`（v5.4，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.4 只做一件事：把 **16 条已随归档失效的看板段锚**改指 `BOARD_ARCHIVE.md`。
+
+- 根因：H50/H51/H52 把看板第 11–16 轮段搬进 archive，看板里只剩 `📦` 指针行 ⇒ `STATUS_BOARD.md(R17 第 N 轮 段)` 指向的正文已不在看板；
+- 隐蔽假通过：指针行**仍写着段标题**，故「看板里能搜到段名」的朴素检查会通过，但搜到的是指针不是正文；
+- `statement` / `grade` / `limitations` 三列**一字未动**；条数仍 54。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | **本目录，作废** |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| **v5.4** | **R17_R57_FACTINDEX_V54** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.4 为准。**
+
+===== [30] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v55/R17_R51_FACTINDEX_V52.SUPERSEDED.before.md | 1534 B | read=OK len=1534 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.2**（54 条），已被 `R17_R57_FACTINDEX_V54`（v5.4，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R57_FACTINDEX_V54\FACT_INDEX.tsv`（v5.4，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.4 只做一件事：把 **16 条已随归档失效的看板段锚**改指 `BOARD_ARCHIVE.md`。
+
+- 根因：H50/H51/H52 把看板第 11–16 轮段搬进 archive，看板里只剩 `📦` 指针行 ⇒ `STATUS_BOARD.md(R17 第 N 轮 段)` 指向的正文已不在看板；
+- 隐蔽假通过：指针行**仍写着段标题**，故「看板里能搜到段名」的朴素检查会通过，但搜到的是指针不是正文；
+- `statement` / `grade` / `limitations` 三列**一字未动**；条数仍 54。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | **本目录，作废** |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| **v5.4** | **R17_R57_FACTINDEX_V54** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.4 为准。**
+
+===== [31] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v55/R17_R56_FACTINDEX_V53.SUPERSEDED.before.md | 1534 B | read=OK len=1534 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.3**（54 条），已被 `R17_R57_FACTINDEX_V54`（v5.4，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R57_FACTINDEX_V54\FACT_INDEX.tsv`（v5.4，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.4 只做一件事：把 **16 条已随归档失效的看板段锚**改指 `BOARD_ARCHIVE.md`。
+
+- 根因：H50/H51/H52 把看板第 11–16 轮段搬进 archive，看板里只剩 `📦` 指针行 ⇒ `STATUS_BOARD.md(R17 第 N 轮 段)` 指向的正文已不在看板；
+- 隐蔽假通过：指针行**仍写着段标题**，故「看板里能搜到段名」的朴素检查会通过，但搜到的是指针不是正文；
+- `statement` / `grade` / `limitations` 三列**一字未动**；条数仍 54。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | **本目录，作废** |
+| **v5.4** | **R17_R57_FACTINDEX_V54** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.4 为准。**
+
+===== [32] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R34_FACT_INDEX.SUPERSEDED.before.md | 1618 B | read=OK len=1618 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v1**（16 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | **本目录，作废** |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [33] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R38_FACTINDEX_FIX.SUPERSEDED.before.md | 1618 B | read=OK len=1618 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v2**（21 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | **本目录，作废** |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [34] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R40_FACTINDEX_V3.SUPERSEDED.before.md | 1618 B | read=OK len=1618 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3**（26 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | **本目录，作废** |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [35] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R42_F23_FIX.SUPERSEDED.before.md | 1620 B | read=OK len=1620 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3.1**（26 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | **本目录，作废** |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [36] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R44_FACTINDEX_V32.SUPERSEDED.before.md | 1620 B | read=OK len=1620 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3.2**（26 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | **本目录，作废** |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [37] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R45_FACTINDEX_V4.SUPERSEDED.before.md | 1620 B | read=OK len=1620 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v4.0**（38 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | **本目录，作废** |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [38] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R46_FACTINDEX_V5.SUPERSEDED.before.md | 1620 B | read=OK len=1620 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.0**（49 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | **本目录，作废** |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [39] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R47_GRADE_NORM.SUPERSEDED.before.md | 1620 B | read=OK len=1620 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.1**（49 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | **本目录，作废** |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [40] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R51_FACTINDEX_V52.SUPERSEDED.before.md | 1620 B | read=OK len=1620 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.2**（54 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | **本目录，作废** |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [41] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R56_FACTINDEX_V53.SUPERSEDED.before.md | 1620 B | read=OK len=1620 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.3**（54 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | **本目录，作废** |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [42] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v56/R17_R57_FACTINDEX_V54.SUPERSEDED.before.md | 1620 B | read=OK len=1620 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.4**（54 条），已被 `R17_R58_FACTINDEX_V55`（v5.5，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R58_FACTINDEX_V55\FACT_INDEX.tsv`（v5.5，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.5 只做锚的「可核验性」，技术结论一字未动：
+
+- **删 1 处错指锚**：`F32` 的 `§8.1 错源19` 指向 capstone `op.index` 陷阱，与该条「`lea` 中介 0 处」无关（`lea`+`中介` 在全库 0 命中）；
+- **改 5 处锚写法**：`§8.1 错源⑳` 这类连写在正文不存在（§8.1 是表格，单元格为 `| **⑳（…）** |`），改为正文唯一存在的判别句；
+- **6 处节号粘连改成分段**（`§2.6:…` / `§2.10一(a′)` / `§12.6, §16.1` / `技术④`），使其机器可核。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | **本目录，作废** |
+| **v5.5** | **R17_R58_FACTINDEX_V55** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.5 为准。**
+
+===== [43] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R34_FACT_INDEX.SUPERSEDED.before.md | 1488 B | read=OK len=1488 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v1**（16 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | **本目录，作废** |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [44] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R38_FACTINDEX_FIX.SUPERSEDED.before.md | 1488 B | read=OK len=1488 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v2**（21 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | **本目录，作废** |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [45] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R40_FACTINDEX_V3.SUPERSEDED.before.md | 1488 B | read=OK len=1488 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3**（26 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | **本目录，作废** |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [46] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R42_F23_FIX.SUPERSEDED.before.md | 1490 B | read=OK len=1490 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3.1**（26 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | **本目录，作废** |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [47] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R44_FACTINDEX_V32.SUPERSEDED.before.md | 1490 B | read=OK len=1490 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3.2**（26 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | **本目录，作废** |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [48] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R45_FACTINDEX_V4.SUPERSEDED.before.md | 1490 B | read=OK len=1490 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v4.0**（38 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | **本目录，作废** |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [49] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R46_FACTINDEX_V5.SUPERSEDED.before.md | 1490 B | read=OK len=1490 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.0**（49 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | **本目录，作废** |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [50] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R47_GRADE_NORM.SUPERSEDED.before.md | 1490 B | read=OK len=1490 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.1**（49 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | **本目录，作废** |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [51] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R51_FACTINDEX_V52.SUPERSEDED.before.md | 1490 B | read=OK len=1490 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.2**（54 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | **本目录，作废** |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [52] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R56_FACTINDEX_V53.SUPERSEDED.before.md | 1490 B | read=OK len=1490 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.3**（54 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | **本目录，作废** |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [53] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R57_FACTINDEX_V54.SUPERSEDED.before.md | 1490 B | read=OK len=1490 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.4**（54 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | **本目录，作废** |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [54] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v57/R17_R58_FACTINDEX_V55.SUPERSEDED.before.md | 1490 B | read=OK len=1490 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.5**（54 条），已被 `R17_R59_FACTINDEX_V56`（v5.6，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R59_FACTINDEX_V56\FACT_INDEX.tsv`（v5.6，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.6 只改 2 处锚，技术结论一字未动：
+
+- `F19`：`R17_AUDIT_R9(B1)` → `R17_AUDIT_R9\VERDICT.md(B1)` —— **锚不能挂在目录上**；
+- `F48`：`(头部/§1–2)` → `(§1 / §2)` —— 原锚是位置表述，不可核；
+- 并把 v5.5 遗留的「未核验 40 项」压到 **0**（根因：核验器加载池时丢了路径的目录部分）。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | **本目录，作废** |
+| **v5.6** | **R17_R59_FACTINDEX_V56** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.6 为准。**
+
+===== [55] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R34_FACT_INDEX.SUPERSEDED.before.md | 1735 B | read=OK len=1735 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v1**（16 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | **本目录，作废** |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [56] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R38_FACTINDEX_FIX.SUPERSEDED.before.md | 1735 B | read=OK len=1735 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v2**（21 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | **本目录，作废** |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [57] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R40_FACTINDEX_V3.SUPERSEDED.before.md | 1735 B | read=OK len=1735 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3**（26 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | **本目录，作废** |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [58] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R42_F23_FIX.SUPERSEDED.before.md | 1737 B | read=OK len=1737 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3.1**（26 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | **本目录，作废** |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [59] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R44_FACTINDEX_V32.SUPERSEDED.before.md | 1737 B | read=OK len=1737 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v3.2**（26 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | **本目录，作废** |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [60] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R45_FACTINDEX_V4.SUPERSEDED.before.md | 1737 B | read=OK len=1737 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v4.0**（38 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | **本目录，作废** |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [61] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R46_FACTINDEX_V5.SUPERSEDED.before.md | 1737 B | read=OK len=1737 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.0**（49 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | **本目录，作废** |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [62] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R47_GRADE_NORM.SUPERSEDED.before.md | 1737 B | read=OK len=1737 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.1**（49 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | **本目录，作废** |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [63] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R51_FACTINDEX_V52.SUPERSEDED.before.md | 1737 B | read=OK len=1737 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.2**（54 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | **本目录，作废** |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [64] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R56_FACTINDEX_V53.SUPERSEDED.before.md | 1737 B | read=OK len=1737 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.3**（54 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | **本目录，作废** |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [65] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R57_FACTINDEX_V54.SUPERSEDED.before.md | 1737 B | read=OK len=1737 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.4**（54 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | **本目录，作废** |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [66] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R58_FACTINDEX_V55.SUPERSEDED.before.md | 1737 B | read=OK len=1737 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.5**（54 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | **本目录，作废** |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | 作废 |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**
+
+===== [67] next_re_20261117_r14/R17_LEAD_BASELINE/markers_before_v58/R17_R59_FACTINDEX_V56.SUPERSEDED.before.md | 1737 B | read=OK len=1737 =====
+# 本目录已作废 —— 请勿引用
+
+本目录是 `FACT_INDEX` 的 **v5.6**（54 条），已被 `R17_R60_FACTINDEX_V57`（v5.7，54 条）取代。
+
+## 当前权威版本
+`lead\next_re_20261117_r14\R17_R60_FACTINDEX_V57\FACT_INDEX.tsv`（v5.7，54 条，grade 四档 [已证]27/[静态推断]1/[流程]24/未取得2）
+
+## 作废原因
+v5.7 把 **13 处裸目录锚全部钉到承载文件**，技术结论一字未动：
+
+- 裸目录只证明「卡存在」，不证明「证据在卡内某处」，已改为 `\REPORT.md` 或 `\VERDICT.md`；
+- 其中 **2 处是换卡**（原锚指错了卡）：`F20` 的 `R17_AUDIT_R30`（内容是 `0x449440` 审计）→ `R17_AUDIT_FACTINDEX\VERDICT.md`；`F54` 的 `R17_R36_VERIFY_TABLEBASE`（内容是 `dword[0x87F924]`）→ `NAMED_PUSH_AUDIT15\VERDICT.md`；
+- 并**更正 §2.15 的判断**：裸目录不是「可接受」，而是与前一种同样是 NG。
+
+## 版本沿革
+| 版本 | 目录 | 条数 | 状态 |
+|---|---|---|---|
+| v1 | R17_R34_FACT_INDEX | 16 | 作废 |
+| v2 | R17_R38_FACTINDEX_FIX | 21 | 作废 |
+| v3 | R17_R40_FACTINDEX_V3 | 26 | 作废 |
+| v3.1 | R17_R42_F23_FIX | 26 | 作废 |
+| v3.2 | R17_R44_FACTINDEX_V32 | 26 | 作废 |
+| v4.0 | R17_R45_FACTINDEX_V4 | 38 | 作废 |
+| v5.0 | R17_R46_FACTINDEX_V5 | 49 | 作废 |
+| v5.1 | R17_R47_GRADE_NORM | 49 | 作废 |
+| v5.2 | R17_R51_FACTINDEX_V52 | 54 | 作废 |
+| v5.3 | R17_R56_FACTINDEX_V53 | 54 | 作废 |
+| v5.4 | R17_R57_FACTINDEX_V54 | 54 | 作废 |
+| v5.5 | R17_R58_FACTINDEX_V55 | 54 | 作废 |
+| v5.6 | R17_R59_FACTINDEX_V56 | 54 | **本目录，作废** |
+| **v5.7** | **R17_R60_FACTINDEX_V57** | **54** | **★ 当前权威** |
+
+⇒ **凡在本目录看到的条目/数字，一律以 v5.7 为准。**

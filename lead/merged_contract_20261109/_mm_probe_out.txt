@@ -1,0 +1,52 @@
+== §S4 真实路径对跑（_f2_selftest.py:105-111 原用例，orig vs candidate）==
+  ORIG tier='T2' match=True verified='D:\\Project\\ra2-campaign-forge\\lead\\r11_f2_fix_20261109\\_f2_r11plus.py' problems_n=0 warnings_n=0 S4_assert=True
+  ORIG reached_303_305_else=False
+  CAND tier='T2' match=True verified='D:\\Project\\ra2-campaign-forge\\lead\\r11_f2_fix_20261109\\_f2_r11plus.py' problems_n=0 warnings_n=0 S4_assert=True
+  CAND reached_303_305_else=False
+  [复核口径] C8 是把单条 merged rec M 手工喂进 :110 的表达式，不是 S4 路径； _mk_project.py:105-106 实读为 M.get('verified_path','').endswith(...)
+
+== §FP r11plus 指纹锁 19 件分类（全仓 --include='*.py' 实 grep 结果）==
+  enumerate=19  PROD/AUDIT=8  (其余=沙箱/上轮审计/写域探针)
+     lead/equiv_class_20261109/_eqv_fp.py
+     lead/f2d_rootcause_20261109/_f2d_fpcheck.py
+     lead/f2d_rootcause_20261109/_f2dv_fpcheck.py
+     lead/f2d_rootcause_20261109/_f2dw_fpcheck.py
+     lead/r11_f2_fix_20261109/_f2v_fp.py
+     lead/r33e_merge_20261109/_re_fp_check.py
+     lead/r33e_merge_20261109/_rev_core.py
+     lead/samedoc_link_20261109/_slw_hashes.py
+  _f2_selftest.py 用 sha_of(F2PLUS) 动态取值，不硬编码 → 不受 ③ 指纹重算影响（_f2_selftest.py:60 实读）
+
+== §OW _ow_raw_hits.json fileMeta 四件快照（实读）==
+  r11_f2_fix_20261109/_f2_compare_out.json -> {'sha256': '148ea8d689eaaf582af05ea1bf4650605e104d6d74f8c7765e75a6eec662c7b1', 'bytes': 44958}
+  r11_f2_fix_20261109/_f2_compare.py -> {'sha256': '12e55acf42441aca846986a2447abffef77d774ee694cedf56a012c1c8907106', 'bytes': 4821}
+  r11_f2_fix_20261109/_f2_r11plus.py -> {'sha256': '83f8217fb9a194befdd389f0fd9e699660d3240f0cf1eec365cc3d612fdf8f75', 'bytes': 15723}
+  r11_f2_fix_20261109/_f2v_run_out.json -> {'sha256': 'a62ee13e3afe88a421d31859c8f11c11e95b78b9b6b5d362807b6ba990c50905', 'bytes': 25200}
+
+== §CMP ④ totals 现状（由 results[] 重算 7/7）+ results schema ==
+  stored    = {"bindings": 19, "orig_match": 0, "orig_path": 1, "orig_problems": 24, "plus_match": 9, "plus_path": 9, "plus_problems": 23}
+  recomputed= {"bindings": 19, "orig_match": 0, "orig_path": 1, "orig_problems": 24, "plus_match": 9, "plus_path": 9, "plus_problems": 23}
+  EQUALS    = True
+  plus_path_set == plus_match_set : True
+  plus_path tier分布 = ['T1', 'T2', 'T2N', 'T3']
+  result_keys = ['file', 'orig', 'orig_overall', 'other_predicates_fail', 'plus', 'plus_overall']
+  plus_keys   = ['bindings', 'problems', 'verdict', 'warnings']
+  plus.bindings 全量键集 = ['alt', 'bytes', 'citation', 'declared', 'match', 'path', 'recomputed', 'suffix_stripped', 'tier', 'tried', 'verified_path']
+  含 merged 字段 = {'members': False, 'decl_lines': False, 'samedoc_link': False}
+
+== §JSONREAD 4 个 JSON 读者 totals/results 字面 ==
+  _f2w_checks.py       totals_lit=False d_results=True
+  _f2w_extract.py      totals_lit=False d_results=True
+  _f2w_pass.py         totals_lit=False d_results=True
+  _f2w_final.py        totals_lit=False d_results=True
+
+== §RUN 第二件带 totals 的机读件 ==
+  top_keys = ['declared_mismatch_files', 'results', 'totals']
+  totals   = {"bindings": 19, "orig_collected": 1, "orig_match": 0, "orig_problems": 24, "orig_warnings": 18, "plus_collected": 9, "plus_match": 9, "plus_problems": 23, "plus_warnings": 11}
+
+== §PROB _re_linked.py problems 写入语句（grep 结构）==
+  write-statements count = 0 []
+  :177 init = out = {"scope": "same-document", "problems": [], "binding_hex": binding_hex,
+  :330 exit = return r["problems"], [r["warning"]] + (
+
+== §END ==

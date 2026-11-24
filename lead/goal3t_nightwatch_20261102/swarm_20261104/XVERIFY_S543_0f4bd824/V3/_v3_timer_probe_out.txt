@@ -1,0 +1,64 @@
+=== 1. 计时器区域像素指纹分组（11 组 / 25 张）===
+  timer=792a1a6bb9 n=7  frames=['302', '310', '314', '940']  ->  archive_T34/w1,archive_T34/w2,archive_T36/w1,archive_T36/w2,archive_T38/w1,archive_T43/w1,archive_T43/w2
+  timer=d16d4792ed n=4  frames=['738', '845', '883']  ->  archive_T33/w2,archive_T42/w1,archive_T42/w2,archive_T45/w2
+  timer=30a35c23c3 n=3  frames=['845', '860']  ->  archive_T41/w1,archive_T41/w2,archive_T45/w1
+  timer=093a67f02e n=2  frames=['908']  ->  archive_T40/w1,archive_T40/w2
+  timer=8ee0927dc8 n=2  frames=['883']  ->  archive_T44/w1,archive_T44/w2
+  timer=d001c55ca8 n=2  frames=['448']  ->  archive_T49_u0800/w1,archive_T49_u0800/w2
+  timer=6bf6f55da7 n=1  frames=['738']  ->  archive_T33/w1
+  timer=5ac718b961 n=1  frames=['940']  ->  archive_T38/w2
+  timer=ff51a638e7 n=1  frames=['945']  ->  archive_T39/w2
+  timer=cd866a1111 n=1  frames=['0']  ->  l1_20261023e4/w2
+  timer=0f9e9a50cc n=1  frames=['4367']  ->  l3_20261023r/w2
+
+=== 2. 整幅 / 文件级 指纹重复组（跨趟相同 = 不是各自独立采集）===
+  ph=2f5ddc609b n=4 trips=3 archive_T33/w2 f1=738 mtime=10-18 11:46:35 | archive_T42/w1 f1=883 mtime=10-18 16:12:05 | archive_T42/w2 f1=883 mtime=10-18 16:12:30 | archive_T45/w2 f1=845 mtime=10-18 17:48:34
+  ph=7c25f7e9a5 n=2 trips=2 archive_T36/w1 f1=310 mtime=10-18 12:53:27 | archive_T38/w1 f1=940 mtime=10-18 12:53:27
+  fh=f61c9808da n=4 trips=3 archive_T33/w2 f1=738 mtime=10-18 11:46:35 | archive_T42/w1 f1=883 mtime=10-18 16:12:05 | archive_T42/w2 f1=883 mtime=10-18 16:12:30 | archive_T45/w2 f1=845 mtime=10-18 17:48:34
+  fh=c1c1dbbd08 n=2 trips=2 archive_T36/w1 f1=310 mtime=10-18 12:53:27 | archive_T38/w1 f1=940 mtime=10-18 12:53:27
+
+=== 3. 同趟 w1 vs w2：计时器区域是否逐像素相同 ===
+  archive_T33        f1(w1)=738    f1(w2)=738    TIMER_SAME=False (6bf6f55da7 vs d16d4792ed)
+  archive_T34        f1(w1)=302    f1(w2)=302    TIMER_SAME=True  (792a1a6bb9 vs 792a1a6bb9)
+  archive_T36        f1(w1)=310    f1(w2)=310    TIMER_SAME=True  (792a1a6bb9 vs 792a1a6bb9)
+  archive_T38        f1(w1)=940    f1(w2)=940    TIMER_SAME=False (792a1a6bb9 vs 5ac718b961)
+  archive_T40        f1(w1)=908    f1(w2)=908    TIMER_SAME=True  (093a67f02e vs 093a67f02e)
+  archive_T41        f1(w1)=860    f1(w2)=860    TIMER_SAME=True  (30a35c23c3 vs 30a35c23c3)
+  archive_T42        f1(w1)=883    f1(w2)=883    TIMER_SAME=True  (d16d4792ed vs d16d4792ed)
+  archive_T43        f1(w1)=314    f1(w2)=314    TIMER_SAME=True  (792a1a6bb9 vs 792a1a6bb9)
+  archive_T44        f1(w1)=883    f1(w2)=883    TIMER_SAME=True  (8ee0927dc8 vs 8ee0927dc8)
+  archive_T45        f1(w1)=845    f1(w2)=845    TIMER_SAME=False (30a35c23c3 vs d16d4792ed)
+  archive_T49_u0800  f1(w1)=448    f1(w2)=448    TIMER_SAME=True  (d001c55ca8 vs d001c55ca8)
+  => 相同 8 / 不同 3
+
+=== 4. 帧号 -> 计时器指纹 的单调性（同一 timer 组内帧号跨度）===
+  timer=30a35c23c3 帧号集合 [845, 860] 跨度 15 -> 若 fps=31.2 则秒跨度 0.5s
+  timer=792a1a6bb9 帧号集合 [302, 310, 314, 940] 跨度 638 -> 若 fps=31.2 则秒跨度 20.4s
+  timer=d16d4792ed 帧号集合 [738, 845, 883] 跨度 145 -> 若 fps=31.2 则秒跨度 4.6s
+
+=== 5. 各趟 f1 与 timer 指纹一表（供逐条核对）===
+  f1=0      l1_20261023e4      w2  timer=cd866a1111 full=a05e160da3
+  f1=302    archive_T34        w1  timer=792a1a6bb9 full=e9f763e29a
+  f1=302    archive_T34        w2  timer=792a1a6bb9 full=533e83ba03
+  f1=310    archive_T36        w1  timer=792a1a6bb9 full=7c25f7e9a5
+  f1=310    archive_T36        w2  timer=792a1a6bb9 full=7ef0d9267d
+  f1=314    archive_T43        w1  timer=792a1a6bb9 full=37151c8261
+  f1=314    archive_T43        w2  timer=792a1a6bb9 full=b917b27e95
+  f1=448    archive_T49_u0800  w1  timer=d001c55ca8 full=f75e7ff1b1
+  f1=448    archive_T49_u0800  w2  timer=d001c55ca8 full=ca239ea070
+  f1=738    archive_T33        w1  timer=6bf6f55da7 full=3c55bc86b7
+  f1=738    archive_T33        w2  timer=d16d4792ed full=2f5ddc609b
+  f1=845    archive_T45        w1  timer=30a35c23c3 full=e926cda13e
+  f1=845    archive_T45        w2  timer=d16d4792ed full=2f5ddc609b
+  f1=860    archive_T41        w1  timer=30a35c23c3 full=73724b7347
+  f1=860    archive_T41        w2  timer=30a35c23c3 full=e47501390f
+  f1=883    archive_T42        w1  timer=d16d4792ed full=2f5ddc609b
+  f1=883    archive_T42        w2  timer=d16d4792ed full=2f5ddc609b
+  f1=883    archive_T44        w1  timer=8ee0927dc8 full=7f47facacd
+  f1=883    archive_T44        w2  timer=8ee0927dc8 full=3a29c6428e
+  f1=908    archive_T40        w1  timer=093a67f02e full=53e57ffb86
+  f1=908    archive_T40        w2  timer=093a67f02e full=ea57658a3d
+  f1=940    archive_T38        w1  timer=792a1a6bb9 full=7c25f7e9a5
+  f1=940    archive_T38        w2  timer=5ac718b961 full=a7ca013481
+  f1=945    archive_T39        w2  timer=ff51a638e7 full=253956a689
+  f1=4367   l3_20261023r       w2  timer=0f9e9a50cc full=7045326f80

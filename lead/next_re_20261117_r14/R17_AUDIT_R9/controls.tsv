@@ -1,0 +1,25 @@
+class	target	expected_hits	measured_hits	conclusion	evidence
+POS-RAW	push_imm32 0x5A9940	>=54 (54 push opcode sites decoded)	54	PASS	raw dword scan over .text 4063232 B; example site 0x5A9C83
+POS-RAW	push_imm32 0x77D710	>=50	56	PASS	example site 0x77DD2D
+POS-RAW	mov r32,imm32 0x6A00A8	>=6	126	PASS	example site 0x648DDB
+POS-E8	E8 rel32 reverse -> 0x47C620	10 (card-cited)	10	PASS	sites 0x43F2AE,0x449482,0x47EE93,0x58865F,0x58886E,0x5FC6FA,0x6D5A98,0x6D5D33,0x716209,0x71C554
+NEG-B1	0x7E3FDC	0	0	PASS	12-candidate raw dword scan, .text 0x401000..0x7E038D (rsize 0x3E0000 = 4063232 B)
+NEG-B1	0x7E3FE0	0	0	PASS	same
+NEG-B1	0x7E3FE4	0	0	PASS	same
+NEG-B1	0x7E3FE8	0	0	PASS	same
+NEG-B1	0x7E4050	0	0	PASS	same
+NEG-B1	0x7E4054	0	0	PASS	same
+NEG-B1	0x7E4058	0	0	PASS	same
+NEG-B1	0x7E405C	0	0	PASS	same
+NEG-B1	0x7E4060	0	0	PASS	same
+NEG-B1	0x7E4064	0	0	PASS	same
+NEG-B1	0x7E4068	0	0	PASS	same
+NEG-B1	0x7E406C (12th; report enumerates only 11)	0	0	PASS	added by auditor to make 12
+ANTI-ALIGN	synthetic pattern at offsets 0,1,2,3	4/4 found	4/4 found	PASS	scanner uses byte-wise find, no 4-byte alignment gating
+ANTI-BOUND	synthetic full 4 B at buffer offset 76 of 80	1	1	PASS	end-offset detection
+ANTI-TRUNC	synthetic truncated 3 B at buffer offset 77	0	0	PASS	no false positive on truncation
+ANTI-FILE	real .text raddr+rsize <= file size	true	true (4063232 B scanned)	PASS	no file truncation
+ANTI-INJ	inject target at .text raw offset 0	found	found	PASS	start boundary
+ANTI-INJ	inject target at .text raw last 4 B	found	found	PASS	end boundary
+POS-B3	0x7E3EBC == slot addr, slot content 0x410260 (.text ptr)	>=1 immediate ref	3	PASS (R9 assertion FALSE)	mov dword ptr [esi],0x7E3EBC at 0x43B721/0x43B9FC/0x43BCFF
+POS-B3	0x7E3E90/98/A0 slot contents 0x410590/0x410580/0x4105E0 (.text ptr)	>=1 immediate ref	3 each	PASS (R9 assertion FALSE)	ctor-style mov [obj+off],imm32; see VERDICT

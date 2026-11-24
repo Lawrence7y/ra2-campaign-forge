@@ -1,0 +1,168 @@
+
+============================================================================
+R0 绑定
+============================================================================
+[bind] candidate sha256 = ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2
+[bind] candidate bytes  = 412759
+[bind] MATCH = True
+
+============================================================================
+R1 静态装载 importlib（副作用仅候选:182 SetProcessDPIAware，已声明）
+============================================================================
+[load] ok: mrv_candidate_probe
+[load] FRESHNESS_SNAPSHOT_STATES = ('unknown', 'absent_confirmed', 'present', 'error')
+[load] CARRIER_FILES = ('gamemd.exe', 'ra2loader.exe', 'ra2render.dll', 'ra2opt_play.bat', 'except.txt')
+
+============================================================================
+R2 AST-A：make_pre 全路径枚举——无返回路径保持初值 unknown；present 返回路径必经 sha256
+============================================================================
+[struct] 初值赋值 @:4589  初始 state = 'unknown'
+[enum] 封闭路径总数 = 3
+[proof] 各 return 行的终态取值域: {4601: {'absent_confirmed'}, 4613: {'present', 'error'}}
+[proof] 保持初值 'unknown' 返回的路径数 = 0（须为 0）
+[proof] 终态 present 但缺 sha256 事件的路径数 = 0（须为 0）
+[proof] except handler 顶层 state 事件 = [('state', 'error', 4610)]（无条件 error）
+
+============================================================================
+R3 AST-B：classify 分支序 · read_error 写点 · pre 快照全模块写点
+============================================================================
+  if @:4637  st not in FRESHNESS_SNAPSHOT_STATES
+  if @:4643  post.get("read_error")
+  if @:4648  st == "unknown"
+  if @:4652  st == "error"
+  if @:4657  not post_exists
+  if @:4666  st == "absent_confirmed"
+  if @:4673  not pre_sha
+  if @:4678  not post_sha
+  if @:4681  post_sha != pre_sha
+  if @:4686  pre_mt is None or post_mt is None
+  if @:4690  abs(float(post_mt) - float(pre_mt)) <= 0.0
+  if @:4693  float(post_mt) < float(pre_mt)
+[order] read_error@:4643 < unknown@:4648 < error@:4652 < not post_exists < absent_confirmed@:4666 < 缺pre_sha@:4673
+  read_error 写点: [(4786, 'post_observed["read_error"] = f"{type(exc).__name__}: {exc}"')]
+  exists 写点: [(4769, 'post_observed.update({...})'), (4757, 'post_observed["exists"] = False')]
+  pre 快照变量写点: [(6528, 'AnnAssign'), (6623, 'Assign')]
+  pre 快照字段级改写点: []
+
+============================================================================
+R4 make_pre sweep（8 类输入；含「在场但 sha 必炸」目录）
+============================================================================
+  [present·候选本体(在场)] -> state='present' exists=True error=''
+  [absent·写域不存在件] -> state='absent_confirmed' exists=False error=''
+  [absent·非法字符路径] -> state='absent_confirmed' exists=False error=''
+  [absent·ENOTDIR子路径] -> state='absent_confirmed' exists=False error=''
+  [error·写域目录(sha必炸)] -> state='error' exists=True error="PermissionError: [Errno 13] Permission denied: 'D:\\\\Projec"
+  [error·None] -> state='error' exists=None error='TypeError: argument should be a str or an os.PathLike obje'
+  [error·整数3] -> state='error' exists=None error='TypeError: argument should be a str or an os.PathLike obje'
+  [error·空串] -> state='error' exists=True error="PermissionError: [Errno 13] Permission denied: '.'"
+  states_seen = {'present': 1, 'absent_confirmed': 3, 'error': 4}
+  ★ 'unknown' in states_seen = False（须 False）
+  交叉验证: make_pre(候选本体).sha256 == hashlib 直算 → True
+  present 件 sha 长度 = 64（64 位非空）
+  目录(在场但不可哈希) → state='error' error="PermissionError: [Errno 13] Permission denied: 'D:\\\\"
+
+============================================================================
+R5 classify 9 pre × 5 post 全格（45 格实跑）
+============================================================================
+  None           × re·ex=None     -> 'post_read_error'/'none'/is_new=None pre_state='unknown'
+  None           × re·ex=True     -> 'post_read_error'/'none'/is_new=None pre_state='unknown'
+  None           × 跑后无件           -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  None           × 跑后在·全          -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  None           × 跑后在·缺post.sha  -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  {}             × re·ex=None     -> 'post_read_error'/'none'/is_new=None pre_state='unknown'
+  {}             × re·ex=True     -> 'post_read_error'/'none'/is_new=None pre_state='unknown'
+  {}             × 跑后无件           -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  {}             × 跑后在·全          -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  {}             × 跑后在·缺post.sha  -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  缺state         × re·ex=None     -> 'post_read_error'/'none'/is_new=None pre_state='unknown'
+  缺state         × re·ex=True     -> 'post_read_error'/'none'/is_new=None pre_state='unknown'
+  缺state         × 跑后无件           -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  缺state         × 跑后在·全          -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  缺state         × 跑后在·缺post.sha  -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  脏值             × re·ex=None     -> 'post_read_error'/'none'/is_new=None pre_state='unknown'
+  脏值             × re·ex=True     -> 'post_read_error'/'none'/is_new=None pre_state='unknown'
+  脏值             × 跑后无件           -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  脏值             × 跑后在·全          -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  脏值             × 跑后在·缺post.sha  -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  显式unknown      × re·ex=None     -> 'post_read_error'/'none'/is_new=None pre_state='unknown'
+  显式unknown      × re·ex=True     -> 'post_read_error'/'none'/is_new=None pre_state='unknown'
+  显式unknown      × 跑后无件           -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  显式unknown      × 跑后在·全          -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  显式unknown      × 跑后在·缺post.sha  -> 'unknown'/'none'/is_new=None pre_state='unknown'
+  absent_confirmed × re·ex=None     -> 'post_read_error'/'none'/is_new=None pre_state='absent_confirmed'
+  absent_confirmed × re·ex=True     -> 'post_read_error'/'none'/is_new=None pre_state='absent_confirmed'
+  absent_confirmed × 跑后无件           -> 'absent_both'/'low'/is_new=False pre_state='absent_confirmed'
+  absent_confirmed × 跑后在·全          -> 'new_first_appearance'/'high'/is_new=True pre_state='absent_confirmed'
+  absent_confirmed × 跑后在·缺post.sha  -> 'new_first_appearance'/'high'/is_new=True pre_state='absent_confirmed'
+  present带sha    × re·ex=None     -> 'post_read_error'/'none'/is_new=None pre_state='present'
+  present带sha    × re·ex=True     -> 'post_read_error'/'none'/is_new=None pre_state='present'
+  present带sha    × 跑后无件           -> 'vanished'/'none'/is_new=None pre_state='present'
+  present带sha    × 跑后在·全          -> 'new_write'/'high'/is_new=True pre_state='present'
+  present带sha    × 跑后在·缺post.sha  -> 'post_read_error'/'none'/is_new=None pre_state='present'
+  present缺pre.sha × re·ex=None     -> 'post_read_error'/'none'/is_new=None pre_state='present'
+  present缺pre.sha × re·ex=True     -> 'post_read_error'/'none'/is_new=None pre_state='present'
+  present缺pre.sha × 跑后无件           -> 'vanished'/'none'/is_new=None pre_state='present'
+  present缺pre.sha × 跑后在·全          -> 'error_pre_snapshot'/'none'/is_new=None pre_state='present'
+  present缺pre.sha × 跑后在·缺post.sha  -> 'error_pre_snapshot'/'none'/is_new=None pre_state='present'
+  error          × re·ex=None     -> 'post_read_error'/'none'/is_new=None pre_state='error'
+  error          × re·ex=True     -> 'post_read_error'/'none'/is_new=None pre_state='error'
+  error          × 跑后无件           -> 'error_pre_snapshot'/'none'/is_new=None pre_state='error'
+  error          × 跑后在·全          -> 'error_pre_snapshot'/'none'/is_new=None pre_state='error'
+  error          × 跑后在·缺post.sha  -> 'error_pre_snapshot'/'none'/is_new=None pre_state='error'
+  ★ W1/W1'/O1/O1'/W2/W3-fixture：read_error 两型 × 9 pre = 18 格全部 post_read_error
+  ★ 断言全过：:4✓ :7✓ :6✓；显式unknown×跑后在=unknown（O2 仅 fixture）；None×跑后在=unknown（撰写人未测格，复核补测）；缺pre.sha 域内 :13✓
+
+============================================================================
+R5b classify 出口域补全：leftover/rewritten 四支 + usable 恒 False
+============================================================================
+  present带sha × mt 同 -> ('leftover_unchanged', 'high', False)  (期望 ('leftover_unchanged', 'high', False)) usable=False
+  present带sha × mt 侧缺 -> ('leftover_unchanged', 'medium', False)  (期望 ('leftover_unchanged', 'medium', False)) usable=False
+  present带sha × mt 升 -> ('rewritten_same_content', 'medium', True)  (期望 ('rewritten_same_content', 'medium', True)) usable=False
+  present带sha × mt 降 -> ('rewritten_same_content', 'low', True)  (期望 ('rewritten_same_content', 'low', True)) usable=False
+  usable_as_crash_evidence=False 计数 = 49/49（49=45+4，须全 False）
+
+============================================================================
+R6 copy_post 假对象实跑 C1-C5（全部写入落内存 sink）
+============================================================================
+
+  --- C5 对照: 全成功整链（含 :4816-4825 尾段） ---
+  返回: info dict
+  info.freshness_verdict='new_first_appearance' conf='high' pre_state='absent_confirmed'
+  ERROR 行数=0 keys=[]
+  FRESHNESS verdict='new_first_appearance' conf='high' is_new=True
+  ★ C5 整链跑完（撰写人 C5 在 :4821 因脚手架 TypeError 截断；本探针以 __fspath__ 指向只读真实文件走完全函数，无异常，结论一致：NFA/high/True）
+
+  --- C1 O1主子格: absent + 读锁 PermissionError ---
+  返回: 外抛 PermissionError: [Errno 13] 句柄被占(复核探针)
+  ERROR 行数=3 keys=['freshness_copy_failed', 'freshness_copy_stage', 'freshness_copy_traceback']
+  FRESHNESS verdict='post_read_error' conf='none' is_new=None
+
+  --- C2 O1'子格: 读成功 + dst.write_bytes 磁盘满 ---
+  外抛 OSError: [Errno 28] 磁盘满(复核探针) | FRESHNESS='post_read_error'/'none'
+
+  --- C3 O1变体: src.exists() 自身炸 ---
+  返回: 外抛 OSError: [Errno 5] ACL 拒绝(复核探针)
+  ERROR 行数=3 keys=['freshness_copy_failed', 'freshness_copy_stage', 'freshness_copy_traceback']
+  FRESHNESS verdict='post_read_error' conf='none' is_new=None
+
+  --- C4 对照: absent + 跑后无件 → src_missing ---
+  返回: None(早退)
+  ERROR 行数=0 keys=[]
+  FRESHNESS verdict='absent_both' conf='low' is_new=False
+
+  --- W1 组合: pre=None(实流 :6528 态) × C1 读锁 ---
+  外抛 PermissionError | FRESHNESS='post_read_error'
+
+  Recorder.__init__/add 无 open/write（inspect 源码核）→ 内存态
+  假对象写入调用 3 次全部落内存 sink（CALL_LOG 可查）；本探针除 stdout 外零文件写
+  CALL_LOG 总数=21
+
+============================================================================
+R7 汇总
+============================================================================
+  [O2 不可达三重] ①路径枚举 0 路径保持 unknown；②运行期 8 类输入无 unknown；③pre 写点仅 :6528/:6623 且无字段级改写 → 实流 pre ∈ {None, make_pre 三态}
+  [W3 不可达三重] ①present 终态路径 100% 含 :4607 sha 事件；②在场不可哈希（目录）→ 整体 error 而非 present缺sha；③写点封闭无人清 sha
+  [W1] read_error 18 格全 PRE；pre=None×read_error 经 copy_post 实跑落地；实流收窄 = (None × read_error)
+  [W2] error×read_error → PRE（真 make_pre error 件 + 假对象 read_error）；error×无件 → EPS 对照
+  [O1] C1/C2/C3 经 copy_post 实跑全产 read_error → PRE；C4/C5 对照 :7/:6 ✓
+PROBE_DONE

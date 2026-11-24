@@ -1,0 +1,83 @@
+======================================================================
+A1_REVIEW 独立实跑探针输出 (R4, R5, R6)
+======================================================================
+
+############################################################
+### PROBE R4: 首样本 vs unjudgeable 区分与中途读失败边界 ###
+############################################################
+
+--- R4.1 反例 1 实跑: [100, None, 100] ---
+  Step 1: t=0.00, f=100 -> event=None
+          tracker state: prev_f=100, freeze_start_t=None, freeze_max_s=0.0000
+  Step 2: t=0.01, f=None -> event=None
+          tracker state: prev_f=100, freeze_start_t=None, freeze_max_s=0.0000
+  Step 3: t=0.02, f=100 -> event=None
+          tracker state: prev_f=100, freeze_start_t=0.0, freeze_max_s=0.0200
+  Final Stats [100, None, 100]:
+    {"schema": "FRAME_EDGE_V1", "markers": ["alpha_uncalibrated", "sampling_sufficiency_unproven"], "counts": {"samples": 3, "first": 1, "edge": 0, "edge_missed": 0, "unjudgeable": 0, "null_frames": 1, "null_fields": 0, "cross_frame": 0}, "missed_frames_lower_bound": 0, "freeze_max_s": 0.02, "note": "freeze_max_s 只说明【帧号】连续未变的最长时段；不得据此宣称业务字段冻结（D-19 F5/F11）。"}
+
+--- R4.2 反例 2 实跑: [100, None, 150] ---
+  Step 1: t=0.00, f=100 -> event=None
+          tracker state: prev_f=100, missed_frames=0, edge_missed_count=0
+  Step 2: t=0.01, f=None -> event=None
+          tracker state: prev_f=100, missed_frames=0, edge_missed_count=0
+  Step 3: t=0.02, f=150 -> event={'schema': 'FRAME_EDGE_V1', 'markers': ['alpha_uncalibrated', 'sampling_sufficiency_unproven'], 't': 0.02, 'f': 150, 'kind': 'edge_missed', 'df': 50, 'attribution': 'aggregate_over_50_frames'}
+          tracker state: prev_f=150, missed_frames=49, edge_missed_count=1
+  Final Stats [100, None, 150]:
+    {"schema": "FRAME_EDGE_V1", "markers": ["alpha_uncalibrated", "sampling_sufficiency_unproven"], "counts": {"samples": 3, "first": 1, "edge": 0, "edge_missed": 1, "unjudgeable": 0, "null_frames": 1, "null_fields": 0, "cross_frame": 0}, "missed_frames_lower_bound": 49, "freeze_max_s": 0.0, "note": "freeze_max_s 只说明【帧号】连续未变的最长时段；不得据此宣称业务字段冻结（D-19 F5/F11）。"}
+
+--- R4.3 扩展反例: 读失败持续长时段 [100, None * 5, 100] ---
+  持续 5s 读失败后恢复 100 -> freeze_max_s=6.0000s (虚增冻结时长！)
+
+--- R4.4 天真修复验证: 读失败时若仅置 prev_f = None ---
+  置 prev_f=None 导致: counts['first']=2 (首样本误判增为2!), event=None
+
+--- R4.5 推荐最小修复方案实跑对比 ---
+  FixedTracker on [100, None, 100]: unjudgeable=1, freeze_max_s=0.0000
+  FixedTracker on [100, None, 150]: unjudgeable=1, edge_missed=0, missed_frames=0
+
+############################################################
+### PROBE R5: freeze_max_s 命名与「不得宣称业务字段冻结」防线有效性 ###
+############################################################
+  stats() 暴露的所有顶层键: ['schema', 'markers', 'counts', 'missed_frames_lower_bound', 'freeze_max_s', 'note']
+  数值指标键名: 'freeze_max_s' = 0.02
+  文本免责说明: 'note' = 'freeze_max_s 只说明【帧号】连续未变的最长时段；不得据此宣称业务字段冻结（D-19 F5/F11）。'
+  模拟下游自动分析提取 (只读数值键):
+  提取到的指标字典: {'missed_frames_lower_bound': 0, 'freeze_max_s': 0.02}
+  结论: 下游提取数值指标时直接穿透 'note'，无任何代码级约束阻止其将 freeze_max_s 误认作业务冻结。
+
+############################################################
+### PROBE R6: 铁律合规、受禁 API 静态全量扫描与 RpmReader 防护 ###
+############################################################
+--- R6.1 源码违规 API 字符串审计 ---
+  API 'CreateRemoteThread': 出现次数 = 0
+  API 'WriteProcessMemory': 出现次数 = 0
+  API 'SuspendThread': 出现次数 = 0
+  API 'MiniDumpWriteDump': 出现次数 = 0
+  API 'StackWalk': 出现次数 = 0
+  API 'SetWindowsHookEx': 出现次数 = 0
+  审计结论: 100% 干净，未发现任何受禁 API 调用/字符串！
+
+--- R6.2 RpmReader 默认参数与未启用状态验证 ---
+  RpmReader 实例化 (未指定 enable):
+    pid = 99999
+    enable = False (必须为 False)
+    handle = None (必须为 None)
+    err = None (必须为 None)
+  调用 open() (enable=False):
+    open() 返回值 = False (必须为 False)
+    handle 状态 = None (必须为 None)
+    err 状态 = 'RpmReader disabled (enable=False)' (明确提示 disabled)
+  调用 read_u32(0x00A8ED84) (未开句柄):
+    read_u32() 返回值 = None (必须为 None)
+  调用 close():
+    close() 执行正常，无异常抛出。
+
+--- R6.3 模块导入副作用与顶层 AST 检查 ---
+  顶层 AST 节点类型统计: {'ClassDef', 'Expr', 'ImportFrom', 'FunctionDef', 'Import', 'Assign'}
+  子进程独立导入测试: returncode = 0 stdout = IMPORT_OK
+  审计结论: 模块无自动执行脚本块，无顶层系统调用，import 零副作用。
+
+======================================================================
+所有探针执行完毕。
+======================================================================

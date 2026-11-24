@@ -1,0 +1,178 @@
+=== 0 指纹（hashlib，逐件）===
+  lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md                  sha256=aeab4fc30822dfde9c21489aef9a42a1558dde1f21f091f486bbd94453f7a523 bytes=36194 match=True
+  lead/evidence_indep_20261109/_ei_04_v12_layer_out.json                 sha256=3253eb8456ceab54df1b41629caa4eaee8fcabff5e016e18fd71a3a3606b4546 bytes=51602 match=True
+  lead/gate_pipeline_20261109/_gp_regression_out.json                    sha256=d3543657aa4f9914c9023710f6daef8348a12ca0aa11957110e8b7c45baec6fe bytes=38575 match=True
+  lead/gate_n13_20261109/_n13_predicates.py                              sha256=e1195b3b220ad97b5b91b8746a24e332b02ce28085452e947554f99b7f2f3079 bytes=16649 match=True
+  lead/gate_v1v2_20261109/_v12_rule.py                                   sha256=15e4211ffe8397027757aa4d0fb9b9cc5dc41126a08024b9f6cb5bbd8be4a1c0 bytes=9148 match=True
+  lead/gate_fp7_20261108/_g7_predicates.py                               sha256=02c17e49764a6f87f2b0d26c6689f0cbeb96498509e5c75bf843104829c51120 bytes=11743 match=True
+  lead/falsifiable_no_relax_20261109/_fnr_check_out.json                 sha256=f3112b225b1de35183ad4604554cb25689ed252b6a5a95d96d17fce53c8c140e bytes=8733 match=True
+  lead/PENDING_DECISIONS.md                                              sha256=3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 bytes=52419 match=True
+  lead/GOAL_THREE_TARGETS_20261018.md                                    sha256=2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede bytes=759518 match=True
+  lead/evidence_indep_20261109/_ei_n13_predicates_src.py                 sha256=e1195b3b220ad97b5b91b8746a24e332b02ce28085452e947554f99b7f2f3079 bytes=16649 match=True
+=== 1 数据一致性 ===
+  _gp_regression_out.json rows = 74；_ei_04_v12_layer_out.json rows id 序列全等，5 列判定逐行全等
+  expect=CATCH(真断言类) = 39，expect=PASS(非断言类) = 35，pi=P(E)=0.527027027
+=== 2 第一步(a) 逐层 fp/fn/rate 复现 ===
+  r10   CATCH=40 PASS=34  fp=20/35=0.571429  fn=19/39=0.487179  q_i=0.487179487 c_i=0.428571429
+  r12   CATCH= 4 PASS=70  fp= 0/35=0.000000  fn=35/39=0.897436  q_i=0.897435897 c_i=1.000000000
+  n13   CATCH=36 PASS=38  fp= 0/35=0.000000  fn= 3/39=0.076923  q_i=0.076923077 c_i=1.000000000
+  chain CATCH=38 PASS=36  fp= 2/35=0.057143  fn= 3/39=0.076923  q_i=0.076923077 c_i=0.942857143
+  与编排方基线逐项对照（fp/fn/rate 四舍五入到 4 位）:
+    r10  fp 20==20 True | fn 19==19 True | fp_rate 0.5714==0.5714 True | miss_rate 0.4872==0.4872 True
+    r12  fp 0==0 True | fn 35==35 True | fp_rate 0.0000==0.0000 True | miss_rate 0.8974==0.8974 True
+    n13  fp 0==0 True | fn 3==3 True | fp_rate 0.0000==0.0000 True | miss_rate 0.0769==0.0769 True
+    layer_r10   CATCH 40==40 True | PASS 34==34 True
+    layer_r12   CATCH 4==4 True | PASS 70==70 True
+    layer_n13   CATCH 36==36 True | PASS 38==38 True
+    layer_chain CATCH 38==38 True | PASS 36==36 True
+  ★ 标签口径：编排方 n_pos=35 / n_neg=39 与文件里的 expect 计数相反（文件 expect=CATCH=39、PASS=35）。
+    fp_rate 用的是 35 作分母（真非断言），miss_rate 用的是 39 作分母（真断言）。数字可复现，标签须纠正。
+=== 3 第一步(b) 三层全过 ===
+  all3_pass = 18（编排 18）；wrong = 3（编排 3）；错 ids = ['GP-A1', 'GP-A2', 'GP-A3']
+  条件错误率 P(E|all3 PASS) = 3/18 = 0.166666667（编排 0.1667）
+  条件正确率 P(¬E|all3 PASS) = 15/18 = 0.833333333
+  18 行明细（id / expect / family）:
+    N13-P08                                    PASS  N13_POS
+    N13-P09                                    PASS  N13_POS
+    N13-P10                                    PASS  N13_POS
+    N13-P13                                    PASS  N13_POS
+    R10-REAL-CANDIDATE_RESIGN_YES_V2           PASS  R10_REAL
+    R10-REAL-LEDGER_APPENDIX_DRAFT             PASS  R10_REAL
+    R10-REAL-OBSERVATION_PROTOCOL_SPEC         PASS  R10_REAL
+    R10-REAL-C97_SCOPE_RECHECK                 PASS  R10_REAL
+    R10-CTX-01                                 PASS  R10_CTX
+    R10-CTX-02                                 PASS  R10_CTX
+    R10-CTX-03                                 PASS  R10_CTX
+    R10-CTX-04                                 PASS  R10_CTX
+    GP-C05                                     PASS  GP_CONFLICT
+    GP-C06                                     PASS  GP_CONFLICT
+    GP-C07                                     PASS  GP_CONFLICT
+    GP-A1                                      CATCH GP_ALLPASS_TRUE_ASSERTION
+    GP-A2                                      CATCH GP_ALLPASS_TRUE_ASSERTION
+    GP-A3                                      CATCH GP_ALLPASS_TRUE_ASSERTION
+=== 4 第一步(d) r10×n13 交叉表 / 一致率 ===
+  r10\n13   CATCH  PASS | CATCH=40 PASS=34
+    CATCH     20    20 | n13 CATCH=36 PASS=38
+    PASS      16    18 | n13 CATCH=36 PASS=38
+  一致率 = 38/74 = 0.513513514（编排 38 / 0.5135）
+=== 5 第一步(c) 独立假设下 3.75% 的算式 ===
+  q_i = P(layer=PASS | E) = fn_i/39：q_r10=19/39=0.487179487  q_r12=35/39=0.897435897  q_n13=3/39=0.076923077
+  c_i = P(layer=PASS | ¬E) = (35-fp_i)/35：c_r10=0.428571429 c_r12=1.000000000 c_n13=1.000000000
+  ★ 3.75% 不是 q_r10×q_r12×q_n13：它是 q_r10×q_n13 = 0.487179487×0.076923077 = 0.037475345
+    因为 R12 是 R10 的确定性子集、对『全 PASS』零增量，上游只按两层（R10|N13）算联合漏报期望。
+  若硬乘三层：q_r10×q_r12×q_n13 = 0.033631720（3.3632%）；与 3.75% 相差 0.3844%（绝对）
+  ★ 编排方 indep_wrong_prob=0.0 的来源（本会话复算）：把 fp_rate 当误差率相乘
+    fp_rate(r10)×fp_rate(r12)×fp_rate(n13) = 0.571429×0.000000×0.000000 = 0.000000000 → 0.0
+    这是口径错置（fp_rate 是『非断言被误拦率』，不是『真断言被放过率』），不能当独立假设错率。
+  P(all3 PASS|E) 实测 = 3/39 = 0.076923077（7.69%）；风险放大 = 0.076923077/0.037475345 = 2.052631579（2.05 倍）
+  ★ 3/18=16.67% 是后验 P(E|all3 PASS)；3/39=7.69% 是似然 P(all3 PASS|E)。2.05 倍用的是后者。
+    16.67%/3.75% = 4.4474 是把后验除似然，属类别错误，不得使用。
+  Bayes 后验（π=39/74，§5.3 公式）：
+    P(E|2 独立层全 PASS) = π·0.037475345/[π·0.037475345+(1-π)·0.428571429] = 0.088785047 → 独立宣称正确率 91.1215%
+    P(E|3 独立层全 PASS) = π·0.033631720/[π·0.033631720+(1-π)·0.428571429] = 0.080411125 → 独立宣称正确率 91.9589%
+    实测正确率 83.3333%；误差放大（后验口径）= 0.1667 / 0.0888 = 1.8772 倍（2 层）/ 2.0727 倍（3 层）
+=== 7 第二步(a)(b) k_eff 三口径公式与点值 ===
+  阶梯：π=0.527027027 → p1=P(E|n13 PASS)=3/38=0.078947368 → p2=P(E|n13&r10 PASS)=3/18=0.166666667 → p3=P(E|三层全 PASS)=3/18=0.166666667
+  (1) 上游概率比 k_prob = ln(p3/π)/ln(p1/π) = ln(0.316239316)/ln(0.149797571) = 0.606412408（≈0.61）
+  (2) 后验几率比 k_odds = ln[odds(p3)/odds(π)] / ln[odds(p1)/odds(π)] = ln(0.179487179)/ln(0.076923077) = 0.669662928（≈0.670）
+  (3) 信息增益比 k_info = I3/I1 = (π−p3)/(π−p1) = 0.360360360/0.448079659 = 0.804232804（≈0.804）
+  ★ 注意：I=π−p 是线性概率差的『信息增量』代理，不是 bit；I3/I1 随先验与 p 的单调变换而变，
+    不是信息论里的互信息/似然比，也不能解释为『层数』。R12 增量（真 bit）= log2(odds(p3)/odds(p2)) = 0.000000000
+  ★ 三者不同主因是【口径不同】而非抽样噪声：分母分别取概率比 / 几率比 / 线性差，
+    同一个 p1、p3 下三者的函数形式不同，必然给不同值；它们共用同一 3 个错例，所以不是三个独立估计，
+    取平均或取并集都没有统计意义。三者同向（都 <1）只说明『三层合成弱于 N13 单层』这一方向稳健。
+=== 8 第二步(d) 小样本区间：3 个错例能撑起 k_eff 吗 ===
+  P(E|all3 PASS)=3/18：Wilson95=[0.058365, 0.392225]；Clopper-Pearson 精确95=[0.035785, 0.414177]
+  → P(结论正确)=15/18=0.833333：Wilson95=[0.607775, 0.941635]；CP95=[0.585823, 0.964215]
+  q_n13=3/39：Wilson95=[0.026507, 0.203214]；CP95=[0.016153, 0.208702]（与 EVIDENCE_INDEPENDENCE.md:252 的 [0.026507,0.203214] 对照）
+  ★ 结论：18 行里只有 3 个错例，正确率 95% 区间宽度约 37.8 个百分点；任一条样本增删都显著改写比率。
+  -- k_eff 对 3 个错例的敏感性（固定 18 行分母，仅改错例数 k）--
+    k=1 → p3=0.055556  k_prob=1.1851  k_odds=1.1468  k_info=1.052205
+    k=2 → p3=0.111111  k_prob=0.8200  k_odds=0.8529  k_info=0.928219
+    k=3 → p3=0.166667  k_prob=0.6064  k_odds=0.6697  k_info=0.804233
+    k=4 → p3=0.222222  k_prob=0.4549  k_odds=0.5306  k_info=0.680247
+    k=5 → p3=0.277778  k_prob=0.3373  k_odds=0.4147  k_info=0.556261
+    k=6 → p3=0.333333  k_prob=0.2413  k_odds=0.3124  k_info=0.432275
+  -- 保留 3 个错例、但删掉 1 个错例（LOO，分母 17）--
+    删任一错例 → p3=2/17=0.117647，k_prob=0.7899，k_odds=0.8277，k_info=0.9136
+  -- 非参数 bootstrap（74 行有放回重抽，B=10000；确定性 LCG 算术发生器 seed=20261109，无随机模块/无加密用途）--
+    k_prob  valid= 9544  95% bootstrap=[0.3417, 0.7922]  median=0.6097  range=[0.0383, 0.8768]
+    k_odds  valid= 9545  95% bootstrap=[0.4139, 0.8280]  median=0.6741  range=[-0.0202, 0.8998]
+    k_info  valid= 9545  95% bootstrap=[0.4979, 0.9499]  median=0.8091  range=[-0.0212, 0.9755]
+    p3      valid= 9545  95% bootstrap=[0.0500, 0.3571]  median=0.1667  range=[0.0345, 0.5882]
+    bootstrap 无效/越域计数 = {'boundary_p': 455, 'prob_ratio_out_of_domain': 1}
+  ★ 判定：k_eff 的 95% bootstrap 上限逼近 1（k_info 达 0.95），全距含负值，455/10000 次重抽越域，
+    且错例数 k=1 的反事实就给出 k_eff>1。点值 0.61/0.670/0.804 都不是可用估计量；
+    这 74 行（且 train=test）不能支撑 k_eff 的估计，只能给『方向：≤1 层』的描述性结论。
+=== 9 第二步(e) 需要多少样本 ===
+  正态近似 n ≈ z²p(1−p)/w²（绝对半宽 w），或 n ≈ z²(1−p)/(r²p)（相对半宽 r）：
+    joint_miss_p=3/39_w=0.02         n_E ≈ 682 条【真断言类】→ 按 39/74 配比换算总行 ≈ 1294
+    joint_miss_p=3/39_w=0.01         n_E ≈ 2728 条【真断言类】→ 按 39/74 配比换算总行 ≈ 5176
+    posterior_p=3/18_w=0.05          n_E ≈ 213 条【真断言类】→ 按 39/74 配比换算总行 ≈ 405
+    posterior_p=3/18_w=0.02          n_E ≈ 1334 条【真断言类】→ 按 39/74 配比换算总行 ≈ 2531
+    joint_miss_rel10pct              n_E ≈ 4610 条【真断言类】→ 按 39/74 配比换算总行 ≈ 8747
+    joint_miss_rel5pct               n_E ≈ 18440 条【真断言类】→ 按 39/74 配比换算总行 ≈ 34988
+  另按『三层全 PASS 事件』计数：当前 18 行全 PASS 里 3 错（16.7%）。要拿到 100 个错例需 ≈ 600 个全 PASS 行 ≈ 2467 总行。
+  ★ 数量级：把 k_eff 当可用比率估计，需 10³ 量级真断言类样本（±2pp 绝对精度），
+    若要窄到 ±10% 相对精度或让 k_eff 的 log 比值稳定，需 10⁴–10⁵ 量级。
+  ★ 前提：盲留出集、含 r10/r12/n13 全部判定列、无 train=test 泄漏、无定向构造对抗样本混入测试集；
+    单纯加样本不能把『确定性依赖』变成独立层，n→∞ 只是让一个无层数含义的数收敛得更稳。
+=== 10 第三步(a)(b)(c) 三层全过的真实置信度 ===
+  (a) 按 k_eff：三层全过 ≈ 0.606–0.804 个『N13 等效独立层』，即 <1 层；
+      结构层面独立证据根 = 1（R10 → {R12, N13.C}，见 EVIDENCE_INDEPENDENCE.md:301）。
+      上游报告 numeric=1（:299）是【保守取整的工程约定】，不是 k_eff 的测量值，且比 k_eff 点值更乐观。
+  (b) 实测 P(结论正确|all3 PASS) = 15/18 = 0.833333
+      Wilson95 = [0.607775, 0.941635]；CP 精确95 = [0.585823, 0.964215]（对应错误率 [0.035785, 0.414177]）
+      ★ 这是 train=test 上的描述性区间，不是生产置信界；先验 π 若变，后验随之变。
+  (c) 『三层独立』宣称值：
+      两层独立 q10·q13 → 错误率 0.088785 / 正确率 91.121495%；三层独立 q10·q12·q13 → 错误率 0.080411 / 正确率 91.958888%
+      与实测 83.3333% 的差：正确率低 7.7882 pp（2 层口径）/ 8.6256 pp（3 层口径）；
+      错误率放大 1.8772 倍 / 2.0727 倍；若按编排方 indep_wrong_prob=0.0（错置口径）则宣称 100%，差 16.6667 pp。
+      另有 2.0526 倍那个数：它比较的是似然 P(all3 PASS|E) 7.69% 与独立期望 3.75%，不是正确率。
+=== 11 第三步(d) Fréchet 上界能不能用 ===
+  min q_i = min(0.487179, 0.897436, 0.076923) = 0.076923077；恰等于实测 P(all3 PASS|E)=3/39=0.076923077 → 上界已被数据【饱和/取等】
+  用训练上的 c_i 换成后验：P(E|all3 PASS) ≤ π·0.076923/[π·0.076923+(1-π)·0.428571] = 0.166667 → 正确率 ≥ 0.833333
+  但 q_n13=3/39 的 Wilson95 上界是 0.203214；若用它当 q 的分布无关上界，min q_i 上界升到 0.203214，后验正确率只 ≥ 0.654298
+  ★ 评估：作为【本 74 行内的描述性天花板】可用且逻辑正确（不得用 Πq 当上界）；
+    作为【生产置信下界】不可用：①q_i 来自 train=test 点估计，本身有 [0.0265, 0.2032] 的区间；
+    ②上界已被实测取等，零余量；③它约束的是 P(allPASS|E) 似然，换到后验还必须借 c_i 与 π（同为训练值）；
+    ④共同盲区子总体（词表外形态）上 q_i 可等于 1，Fréchet 此时平凡成立却毫无安全含义；
+    ⑤ABSENT 被折成 PASS（H3 被违反）使模型本身不成立。
+=== 12 第四步 R12 增量 ===
+  (a) P(r12=PASS|n13=PASS) = 38/38 = 1.000000000 —— 这是 74 行上的【观测】，不是精确 1.000
+      零命中 38 次的 95% 上界（rule of three）= 3/38 = 0.078947；Wilson95 上界 = 0.091813；CP 精确上界 = 0.092513
+      即『r12=CATCH 且 n13=PASS』的真比例在 95% 水平上仍可高达 9.3%，1.000 不能当定理。
+  (b) R12 命中 4 行明细：
+    R10-TV3                                    expect=CATCH r10=PASS  n13=CATCH chain=CATCH tokens=['已生效', '可应用母本', '放行 N-5', '已入账', '已追加']
+    R10-CTX-05                                 expect=CATCH r10=PASS  n13=CATCH chain=CATCH tokens=['已生效', '可应用母本', '放行 N-5', '已入账', '已追加']
+    R10-CTX-06                                 expect=CATCH r10=PASS  n13=CATCH chain=CATCH tokens=['已生效', '可应用母本', '放行 N-5', '已入账', '已追加']
+    GP-C04                                     expect=CATCH r10=PASS  n13=CATCH chain=CATCH tokens=['已入账', '已追加', '已生效']
+      结构性破 1.000 的两条路：①采样——更多语料出现反例（上界 9.2%）；
+      ②★ 确定性——R12 判定用【该行 tokens】（_gp_regression.py:141），N13 用【固定 T】（:143），
+      74 行里 tokens≠T3 的有 19 行（其中 17 行是三词超集、2 行是 C07 另一套词表）。
+      N13 内部回调 r12_scan 时用的是它自己的 T（_ei_n13_predicates_src.py:200），
+      故 N13 的『R12⇒D⇒CATCH』蕴含（:242-243）只在其内部同一 tokens 上成立；
+      一旦某行在【行 tokens】上命中双重否定、而 T 里无该 token，记录列的 r12=CATCH 完全可能与 n13=PASS 共存。
+      本 74 行内未出现（0 行），但机制存在 ⇒ 1.000 是样本巧合 + 契约巧合，不是恒等式。
+  (c) GP-A1 明细：
+    GP-A1    expect=CATCH r10=PASS  r12=PASS  n13=PASS  family=GP_ALLPASS_TRUE_ASSERTION
+    GP-A2    expect=CATCH r10=PASS  r12=PASS  n13=PASS  family=GP_ALLPASS_TRUE_ASSERTION
+    GP-A3    expect=CATCH r10=PASS  r12=PASS  n13=PASS  family=GP_ALLPASS_TRUE_ASSERTION
+      GP-A1 三层全 PASS、r12=PASS；其构式『亦非不』不在 DOUBLE_NEG_RE 枚举（_g7_predicates.py:76），
+      ⇒ 在 GP-A1 上 R12 零增量。R12 有增量的场景是枚举内的双重否定（如 GATE_PIPELINE_COMPOSE.md:215 C3）：
+      本 74 行 r12=CATCH 的 4 行全部 expect=CATCH、n13=CATCH，即 R12 的 4 次正确命中都被 N13 覆盖；
+      相对【最终合成判定】增量 0，但相对【构式标注/归因】与 N13 内部 D 类有非零作用。
+  (d) 若真零增量仍有存在价值：①诊断/归因（把 double_neg 从 R10 的 negation 豁免里捞回来）；
+      ②它是 N13 的输入（:199-202/:242-243），删掉会改变 N13 行为，『边际为 0』≠『因果上无用』；
+      ③fail-safe：在 R10 宽进豁免路径上提供反向证据。但【绝不可计为独立证据层】，
+      标签应写『R10 派生守卫』而非『第 2 个独立证人』。
+=== 13 第五步素材：冲突信号 ===
+  layer_conflicts>0 的行 = 25；其中 chain 判对 = 25、判错 = 0
+  layer_conflicts==0 的行 = 49；其中 chain 判错 = 5，ids=['REAL-SLOT', 'REAL-TRUTH', 'GP-A1', 'GP-A2', 'GP-A3']
+  chain 合计：correct=69/74，fp=2，fn=3
+
+=== 14 写盘完成 ===
+  _ke_calc.py bytes=47757 sha256=9c0669343e4b32fab30d29471a25f1855f861eeec0c585f7a4b19b949316f3cd
+  _ke_calc_out.json bytes=10919 sha256=a231b4091619566b9a11f93aaf9f8ee60ccc7ec38d921b2bb003cf794e17ab60
+  _ke_calc_stdout.txt bytes=17397 sha256=76cc3f5e60c63b9c2d7a7c6e25a6a6fb0352a5223821fad8ef27441786108d78
+  _ke_REPORT.md bytes=14609 sha256=a56c9b2aa478ab2fd1ef425f39fecf1b5d933ebe65869d142c0ff9c12aacc042

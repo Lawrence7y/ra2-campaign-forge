@@ -1,0 +1,42 @@
+TEMP DIR: C:\Users\Administrator\AppData\Local\Temp\_ci_ce_9u1b5yza
+[PASS] CE-01  alerts=2  INV-01_hit=1  temp=CE01_hardcode_plus_match_8.json
+       INV-01 totals.plus_match=8 != recomputed=9
+       INV-06 plus_path=9 != plus_match=8 (baseline identity broken; must reconcile with plus_match_by_kind)
+[PASS] CE-02  alerts=3  INV-02_hit=1  temp=CE02_plus_path_20_gt_bindings.json
+       INV-01 totals.plus_path=20 != recomputed=9
+       INV-02 plus_path=20 > bindings=19
+       INV-06 plus_path=20 != plus_match=9 (baseline identity broken; must reconcile with plus_match_by_kind)
+[PASS] CE-03  alerts=2  INV-03_hit=1  temp=CE03_orig_path_12.json
+       INV-01 totals.orig_path=12 != recomputed=1
+       INV-03 orig_path=12 > plus_path=9
+[PASS] CE-04  alerts=2  INV-04_hit=1  temp=CE04_neg_problems_and_verdict.json
+       INV-01 totals.plus_problems=-1 != recomputed=23
+       INV-04 plus_problems=-1 is negative/non-int
+[PASS] CE-05  alerts=1  INV-05_hit=1  temp=CE05_drop_one_tier_key.json
+       INV-05 binding (3,0) missing explicit tier key
+[PASS] CE-06  alerts=1  INV-06_hit=1  temp=CE06_break_baseline_identity.json
+       INV-06 plus_path=9 != plus_match=8 (baseline identity broken; must reconcile with plus_match_by_kind)
+[PASS] CE-07  alerts=2  INV-07_hit=1  temp=CE07_merged_semantics_without_merged_tier.json
+       INV-06 plus_path=8 != plus_match=9 (baseline identity broken; must reconcile with plus_match_by_kind)
+       INV-07 M(match_no_path)=1 != E(merged_tier)=0 => non-merged cause of plus_match>plus_path OR missing merged dimension
+[PASS] CE-08  alerts=2  INV-08_hit=1  temp=CE08_numeric_equal_set_differs.json
+       INV-07 M(match_no_path)=1 != E(merged_tier)=0 => non-merged cause of plus_match>plus_path OR missing merged dimension
+       INV-08 plus_path==plus_match numerically but SET differs: path\match=[(3, 0)] match\path=[(6, 0)]
+[PASS] CE-09  alerts=2  INV-09_hit=2  temp=CE09_v2_without_policy.json
+       INV-09 schema_version>=2 but no counting_policy
+       INV-09 schema_version>=2 but no plus_match_by_kind
+[PASS] CE-09b  alerts=1  INV-09_hit=1  temp=CE09b_v2_bykind_inconsistent.json
+       INV-09 single_path+merged_eq=10 != plus_match=9
+
+== SUMMARY ==
+  OK    CE-01 (totals.plus_match=8)
+  OK    CE-02 (plus_path=20>19)
+  OK    CE-03 (orig_path=12>plus_path=9)
+  OK    CE-04 (plus_problems=-1, verdict lie)
+  OK    CE-05 (drop one tier key)
+  OK    CE-06 (plus_path=9,plus_match=8)
+  OK    CE-07 (M=1,E=0: 维度缺失)
+  OK    CE-08 (9==9 but SET differs)
+  OK    CE-09 (v2 but no policy)
+  OK    CE-09b (v2 by_kind 9+1!=9)
+ALL_ALERT = True  COUNT = 10

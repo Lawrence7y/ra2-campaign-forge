@@ -1,0 +1,207 @@
+========================================================================================================
+【_verify_cd.py】CD 崩点复核员 · 独立实跑核验（不复用 _cd_check.py 实现）
+========================================================================================================
+§0 hashlib 实算指纹（本脚本独立执行）
+  cd_check_err   SHA256 = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855，字节数 = 0
+  cd_check_out   SHA256 = 310c31600f1fd39b782d8976c57d2e048336d18951f71a07199adda59c1cd673，字节数 = 22652
+  cd_check_py    SHA256 = 7fbb9a574d576ecbe83226a24190e3a8f2e5b0114ee947e1a1b8a3ce4b326764，字节数 = 15031
+  cd_verdict     SHA256 = 2b51dfe9c1cacaec631b7df92d53aa7db0a4ad6ce0a8e732cdacff3043557338，字节数 = 14604
+  compare        SHA256 = 4a3424050125b98c0dd3a9a76ec6603fc03ad976e0b9fdecfb34d3b683b94726，字节数 = 48343
+  dC_out         SHA256 = a0deb34a4aed83efe3d0b80dfff4f05eb28eeec5fac5613ff49316fd8081337a，字节数 = 13473
+  dC_script      SHA256 = ec64adac558e87e5cdf53563368c7aacea712222e70f303ca85deb83eb08ee3a，字节数 = 23115
+  dD_align       SHA256 = 446978109968bf3d9d3fab49a6a176c5f504ddfdc5d46e6f95c87c8b463dc6e6，字节数 = 18733
+  dD_align_out   SHA256 = 4fd5a8a193cfb6661b061d5bc2fe6a24163fee564fde44baba058944742f129b，字节数 = 9088
+  dD_check       SHA256 = f2f3c561ded7b209f9206891e688642913ae15410fd2abbe8b075a0165f91907，字节数 = 7909
+  dD_check_out   SHA256 = 7cdfcf9efb76ddffec3a8ea68a536b28f0099d2d571fc18c64d52cf0a8c9491b，字节数 = 5117
+  dD_md          SHA256 = bb61eedbddea61e9ffcb1ac8981dadd8b3ee0fb12c715ccb3e600ca78c50fac1，字节数 = 18262
+  goal           SHA256 = 2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede，字节数 = 759518
+  pending        SHA256 = 7f68fc6c6ed1ab6ba16210b611906c6189ad0af90a84b46b263a19379fbfcd48，字节数 = 50194
+  probe          SHA256 = 3be36ba259b50c88751d2c1fca73a242421671e27676f3b629e8f523b8383a51，字节数 = 17525
+  r2closure      SHA256 = bf426786db82c34dd6b6d21e3022678285e3e22f52dbdaa5085d85c3b6f8fbde，字节数 = 22351
+  round2         SHA256 = bcd7c8e53f6987a899f78fd1bd8ae90247193f1897aadf15cc58daa45211982a，字节数 = 49968
+  stall_def      SHA256 = ed8951e72bd61cd322b1687c4496ec9fc0e8a362c1425d4020901228d885a001，字节数 = 27271
+  supp           SHA256 = f0177d2cbafdb4dbd388d6b38b97d14ae73688f36f58df4f0fff7edc31a59b66，字节数 = 5088
+
+§0a 编排方 6 项指纹逐位比对（独立实算 vs 题给）
+  compare        sha=MATCH bytes=MATCH  MATCH
+  dC_out         sha=MATCH bytes=MATCH  MATCH
+  dC_script      sha=MATCH bytes=MATCH  MATCH
+  dD_align_out   sha=MATCH bytes=MATCH  MATCH
+  dD_md          sha=MATCH bytes=MATCH  MATCH
+  r2closure      sha=MATCH bytes=MATCH  MATCH
+
+§0b 补证员 evidence 自报产出指纹逐位比对（独立实算 vs 自报）
+  cd_check_out   sha=MATCH bytes=MATCH  MATCH
+  cd_check_py    sha=MATCH bytes=MATCH  MATCH
+  cd_verdict     sha=MATCH bytes=MATCH  MATCH
+  cd_check_err   字节数 = 0（补证员声称 = 0）MATCH
+
+§0c 被核对象（落盘的回件主体）指纹 —— 复核回件绑定值
+  被核对象 = D:/Project/ra2-campaign-forge/lead/r2_unclosed_cd_20261108/_cd_verdict.md
+  被核对象 SHA256 = 2b51dfe9c1cacaec631b7df92d53aa7db0a4ad6ce0a8e732cdacff3043557338，字节数 = 14604
+  注：编排方内联的回件 JSON 文本未落盘（全仓 grep '四项崩点补证完成' 仅命中 _cd_verdict.md 的转述），
+      无磁盘文件可哈希；按铁律不对未落盘实体编造指纹，改以落盘回件主体 _cd_verdict.md 作为被核对象。
+
+§0d 疑点核查：编排方 6 项指纹是否都在 _cd_check.py 的本轮实算清单里？
+  _cd_check.py 的 P 字典键（14 个）= ['compare', 'dC_out', 'dC_script', 'dD_align', 'dD_check', 'dD_check_out', 'dD_md', 'probe', 'r2closure', 'round2', 'ruling_d30', 'stall_def', 'supp', 'vD_out3']
+  _cd_check_out.txt §0 实算行名（14 个）= ['compare', 'dC_out', 'dC_script', 'dD_align', 'dD_check', 'dD_check_out', 'dD_md', 'probe', 'r2closure', 'round2', 'ruling_d30', 'stall_def', 'supp', 'vD_out3']
+  _dD_align_out.txt 是否在 P 字典 = False；是否在 §0 输出 = False
+  => 编排方 6 项中 _dD_align_out.txt 的指纹未出现在 _cd_check.py 的任何本轮实算输出里；
+     evidence 仍将其列入「本轮 hashlib 实算」清单（该值只能来自题给指纹抄录，非本轮脚本实算）。
+
+§1 C 崩点1 独立 AST 复核（_dC_recompute.py）
+  1a) :356-369 emit 调用 = 6；纯字面串 = 6；含插值/格式化 = 0
+      :356 LITERAL "  7c-2 probe 细部行：C2-P95x3:106, C2-P99x3:128, C3-r4:150, C3-
+      :358 LITERAL "  7d 判据 -clean 变体（C3-r4-clean / C3-r8-clean）在 supplement/pr
+      :360 LITERAL "  7e C3-r12 特例：metrics_out.txt:31 因 realHits=0 记 latP50=0.0
+      :362 LITERAL "  7f 门槛定义：STALL_EVENT_DEFINITION.md:190 端到端 <50ms；:191 累积判定
+      :364 LITERAL "  7g 口径边界（如实登记）：supplement_out.txt:44-45 明写物理起点 S 不可测，"    
+      :367 LITERAL "  7h 锚语义差异：C2-abs-P95x2 / C3-r4 / r8 / r12 主探针为「上一帧沿锚」，"   
+  1b) all_pass 引用 Name = A, A_collapse_gt0, A_nf_eq_ideal, A_preempt0, A_recall0, B, B_preempt0, B_preempt0_and_upideal, B_up_eq_ideal, bad_within50, chain_fail, decomp_fail, len, n_cells, nonneg_fail, probe_bad
+      Compare 项数 = 11：
+        n_cells == 156
+        len(A) == 54
+        len(B) == 102
+        len(A) + len(B) == 156
+        len(A_nf_eq_ideal) == 54
+        len(A_recall0) == 54
+        len(A_preempt0) == 0
+        len(A_collapse_gt0) == 54
+        len(B_preempt0) == 71
+        len(B_preempt0_and_upideal) == 71
+        len(B_up_eq_ideal) == 73
+  1c) 检查型变量 22 个，其中 NOT in gate = 10 个：cap_eq_ideal, A_cap_eq_up, A_up_eq_ideal, A_maxloss_eq, B_upideal_but_preempt_gt0, B_preempt0_recall_gt0, B_nf_eq_ideal, B_recall0, named_set, not_named
+      其中在 §9.3/§9.4/§9.5 被写为结论断言的 = 5 个：A_cap_eq_up, A_up_eq_ideal, A_maxloss_eq, B_preempt0_recall_gt0, B_upideal_but_preempt_gt0
+      余下 5 个为展示计数/口径登记变量（§3/§6 只 emit 数字不带 PASS/FAIL），非「漏门断言」。
+  1d) ge100 全部出现行 = 2：[297, 340]
+      :297 ge100=int(f0[8]))
+      :340 "全部越 50ms" if r["gt50"] == r["nTrig"] else "非全部", r["ge100"]))
+      其中含比较运算（==/>=/!=）的行 = 0
+  1e) 总判定行 :420 = emit("  总判定 = %s" % ("PASS（上述 9.1–9.7 均按本轮实跑成立）" if all_pass else "FAIL"))
+      PASS 分支文案硬编码 = True
+  1f) all_pass 引用中含 7b/supp 相关变量 = 无
+
+§2 C 崩点2 独立实算：13 档「全部触发 ≥100ms」及三种辖域读法
+  2a) supplement 原件独立解析：可解析档数 = 23
+  2b) 13 档名单（_dC_out.txt:80）= ['C2-N16-P95x2', 'C2-P95x2', 'C2-P95x3', 'C2-P99x2', 'C2-P99x3', 'C2-abs-P95x2', 'C3-N16-r2', 'C3-r12', 'C3-r2', 'C3-r4', 'C3-r4-clean', 'C3-r8', 'C3-r8-clean']
+      C2-N16-P95x2     supp:17  nTrig= 45 >50= 45 >=100= 18  PARTIAL
+      C2-P95x2         supp:11  nTrig= 27 >50= 27 >=100=  4  PARTIAL
+      C2-P95x3         supp:12  nTrig= 19 >50= 19 >=100= 19  ALL>=100
+      C2-P99x2         supp:13  nTrig= 24 >50= 24 >=100=  1  PARTIAL
+      C2-P99x3         supp:14  nTrig= 18 >50= 18 >=100= 18  ALL>=100
+      C3-N16-r2        supp:24  nTrig=195 >50=195 >=100=156  PARTIAL
+      C3-r2            supp:20  nTrig=180 >50=180 >=100=148  PARTIAL
+      C3-r4            supp:21  nTrig= 24 >50= 24 >=100= 24  ALL>=100
+      C3-r8            supp:22  nTrig= 16 >50= 16 >=100= 16  ALL>=100
+  2c) 13 档：全部≥100 = 4 档 ['C2-P95x3', 'C2-P99x3', 'C3-r4', 'C3-r8']；部分 = 5 档 ['C2-N16-P95x2', 'C2-P95x2', 'C2-P99x2', 'C3-N16-r2', 'C3-r2']；supplement 无行 = 4 档 ['C2-abs-P95x2', 'C3-r12', 'C3-r4-clean', 'C3-r8-clean']
+  2d) 7b 表 vs supplement 原件双源对账：有行档 9，不一致 = 0 （全等）
+  2e) probe:171 独立读回 min=377.385（C3-r12 行级 min≥100 证据）
+  2f) 三种「高档」辖域读法下的无行级支撑档数（独立实算）：
+      (i)   上游 CRITERIA_COMPARE.md:146 登记的 4 档读法：无支撑 = 0 / 4 []
+      (ii)  §9.6 NAMED_HIGH 7 档读法（C3-r12 用 probe:171 min 证据）：无支撑 = 2 / 7 ['C3-r4-clean', 'C3-r8-clean']
+      (iii) 13 档读法：无支撑 = 8 / 13 ['C2-N16-P95x2', 'C2-P95x2', 'C2-P99x2', 'C2-abs-P95x2', 'C3-N16-r2', 'C3-r2', 'C3-r4-clean', 'C3-r8-clean']
+  2g) §9.7 原文（_dC_out.txt:147）独立读回：
+      _dC_out.txt:146 9.6 CRITERIA_COMPARE.md:338 括注的 7 档「高档」只覆盖 71 格中的 42 格；71 是 C2/C3 全族零抢占格数，口径须写清，否则计数不可复现。
+      _dC_out.txt:147 9.7 「触发等待越线」经既有实跑输出交叉核对：71 格涉及的 13 档判据在 metrics_out.txt 中 within50 全为 0.000000；supplement/probe 中可逐行读回的档全部触发 >50ms、高档 ≥100ms；但这是既有输出的读回，不是从 _cost_quota_data.json 重算。
+      _dC_out.txt:148 总判定 = PASS（上述 9.1–9.7 均按本轮实跑成立）
+  2h) 上游 CRITERIA_COMPARE.md:146 独立读回：
+      compare:145 越线事实：`_dtrigger_supplement_out.txt:11-24` 记 C2 未截断族全部触发 >50ms；
+      compare:146 `C2-P95x3` / `C2-P99x3` / `C3-r4/r8` 的补算行触发等待已 ≥100ms（同文件 :12,14,21-22，锚口径见 §3.2）；
+      compare:147 `C4-t48` 的 5168 次触发中 2492 次 >50ms、加 e 后 5168/5168 全越 50ms（同文件 :29）。
+  => 疑点：补证回件判「越界成立」，但 (i) 4 档读法（上游文档自身登记、且与 §9.7『可逐行读回的档』措辞相容）下越界不成立；
+     回件 _cd_verdict.md:52 亦承认上游 :146 把 ≥100 限定在恰这 4 档，却未排除该读法即判闭合。
+
+§3 D 独立证成：B3/B4 独立 AST 复算 + _dD_ 脚本是否解析 supplement 表行
+  3a) B1 块 :82-94 out() 调用：computed(含插值)=2 literal_prose=6
+  3a) B2 块 :97-112 out() 调用：computed(含插值)=3 literal_prose=5
+  3a) B3 块 :114-125 out() 调用：computed(含插值)=0 literal_prose=12
+  3a) B4 块 :128-137 out() 调用：computed(含插值)=0 literal_prose=10
+  3b) _dD_check.py / _dD_align.py 中提到 supplement/probe/metrics 的行（独立 grep）：
+      dD_check 命中 1 处：
+        dD_check:121  out("    该结论不依赖 S 的精确值；_dtrigger_supplement_out.txt:11-24,29 给出观测锚下已 >50ms 的触发数，")
+      dD_align 命中 4 处：
+        dD_align:66  "lead/dtrigger_compare_20261107/_dtrigger_supplement_out.txt",
+        dD_align:67  "lead/dtrigger_compare_20261107/_dtrigger_probe_out.txt",
+        dD_align:348  out("    _dtrigger_supplement_out.txt:11-24,29 与 CRITERIA_COMPARE.md:34-35,145-147；")
+        dD_align:362  out("      _dtrigger_analysis.py / _dtrigger_supplement.py 本轮未重跑（它们会覆写只读既有件，铁律禁止）；")
+  3c) 两脚本中「读取/解析 supplement 表行」的代码行 = 0 []
+  => 独立确认：D 自身无逐档越线数的确定性复算；逐档数据为外部单源读回。
+
+§4 D 硬阻断解除条件独立核对
+  dD_md:118 ## 4 解除该阻断所需的最小新观测量清单
+  dD_md:120 **目标命题 P**：对声明覆盖的每条真实事件，`C − S ≤ 50.0 ms`，且保存的是 `STALL_EVENT_DEFINITION.md:177` 要求的上下文（主线程 EIP/RIP 虚拟地址、模块偏移、前 5 层调用栈指针）。
+  dD_md:122 **最小集 = O1–O4（缺一即 P 不可闭合）**，O5 为声明范围的条件项。逐项必要性见 `_dD_check_out.txt:46-55`。
+  dD_md:126 | **O1** | 逐事件物理停滞起点 `S` | 主逻辑帧推进停止的**第一时刻**，在统一单调时间坐标下的逐事件读数；须与既有 `(t, f)` 序列的观测首拍 `S_hat` 可逐事件配对，保留区间校验 `S ∈ (S_low, S_hat]`；覆盖声明母体内的每条事件 | 时间分辨率 ≤ 1 ms；逐事件不确定度上界 ≤ 1 ms（合计 ≤ :177 的 50 ms 预算的 2%，且 ≤ `STALL_EVENT_DEFINITION.md:190` 的 20 ms 安全裕量） |
+  dD_md:127 | **O2** | 逐事件现场快照**保存完成时刻** `C` | `:177` 要求的上下文已完整保存且可持久读取的完成时刻（不是触发时刻、不是检测时刻）；须与 O1 的 `S` 逐事件一一配对 | 时间分辨率 ≤ 1 ms；逐事件不确定度上界 ≤ 1 ms |
+  dD_md:128 | **O3** | `S` 与 `C` 的**时基一致性 / 同步残差上界** | 两类读数之间的最大系统偏差（同源性声明 + 漂移与换算残差上界），逐事件可核；这是关系量，不是独立数值通道 | 残差上界 ≤ 1 ms；若不满足，则 `C−S` 的差值本身不可判定，P 不闭合 |
+  dD_md:129 | **O4** | 目标线程上下文**归属与完整性标记** | 逐事件的确定性标记：该次保存是否确属目标主逻辑线程、是否含 `:177` 要求的 PC/RIP 与前 5 层调用栈、是否与该事件一一对应 | 布尔/枚举标记，无数值精度要求；覆盖母体内**缺失数 = 0、归属误配数 = 0**（否则「保存上下文」这一宾语未闭合） |
+  dD_md:130 | **O5**（条件项） | 窗首 / 跨窗**无断档前序连续时序** | 从对局初始化起至事件起点的连续 `(t, f)` 流（`STALL_EVENT_DEFINITION.md:178` 已登记该缺口），使窗首事件的 `S` 落在观测时间轴内 | 事件起点前 ≥ 50 ms（:177 预算）的连续覆盖，断档数 = 0，时间分辨率 ≤ 1 ms；**仅当 P 覆盖 4 条 `startTick=0` 事件时必需**（`_dD_align_out.txt:49`）；若只声明 1677 条窗内可还原事件，则非必需，但必须在结论中**显式声明覆盖母体** |
+  dD_md:132 **充分性与最小性**：O1–O4 到位后，逐事件直接计算 `C−S` 并与 50 ms 比较即可闭合 P；不再需要机制假说、内部状态旗标、跨硬件样本、栈符号解析等其它观测量 —— 那些属于目标①机制挂账（`RULING_D30.md:60`，D-13 保持 PAUSE），与本维度无关。O3 是使 `C−S` 有意义的必要关系量，O4 是使「保存上下文」这一宾语成立的必要标记，二者不可省。
+  dD_md:134 **纪律声明**：本清单只列**观测量名称、口径与精度要求**；不含任何真实采样 API、不含任何获取手段 / 探针设计 / 注入方案 / 代码；不触碰 D-13；本轮**未获取任何新观测量**。
+  dD_md:114 **一句话裁决**：`观测锚下界不足以证明合规` = 肯定性结论被硬阻断（证据不足，未验）；`已证明不合规` = 由下界越线独立证成，只对离线判据族成立。二者**不可互推、不可混写**；且解除前者至少需要同时补 S 与 C（见 §4）。
+  4b) O1 精度括注独立算术：1+1=2ms；2/50=4.0%；1/50=2.0%；2/20=10.0%
+      doc:126 含「合计」= True；含「2%」= True → 求和读法下 4.0% ≠ 2% 成立
+  4c) 必要性指针 doc:122 → _dD_check_out.txt:46-55（B4 块）；其 computed=0（见 §3a）
+  4d) doc:134 自述「不含任何获取手段」「本轮未获取任何新观测量」= True
+  4e) §4 清单是否含可检验谓词（精度/配对/覆盖/充分性）独立计数：
+      时间分辨率        在 §4 行 118-134 出现 = 3
+      不确定度上界       在 §4 行 118-134 出现 = 2
+      逐事件          在 §4 行 118-134 出现 = 5
+      配对           在 §4 行 118-134 出现 = 2
+      覆盖           在 §4 行 118-134 出现 = 4
+      缺失数          在 §4 行 118-134 出现 = 1
+      误配数          在 §4 行 118-134 出现 = 1
+      残差上界         在 §4 行 118-134 出现 = 1
+      断档数          在 §4 行 118-134 出现 = 1
+      充分性          在 §4 行 118-134 出现 = 1
+      最小集          在 §4 行 118-134 出现 = 1
+
+§5 铁律合规独立扫描（只读件 / 写域 / 禁词 / 台账 / :177/:190/:191）
+  5a) 写域 lead/r2_unclosed_cd_20261108/ 文件清单：
+      _cd_check.py                 15031 字节  7fbb9a574d576ecbe83226a24190e3a8f2e5b0114ee947e1a1b8a3ce4b326764
+      _cd_check_err.txt                0 字节  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      _cd_check_out.txt            22652 字节  310c31600f1fd39b782d8976c57d2e048336d18951f71a07199adda59c1cd673
+      _cd_verdict.md               14604 字节  2b51dfe9c1cacaec631b7df92d53aa7db0a4ad6ce0a8e732cdacff3043557338
+      _verify_cd.py                21038 字节  81903652cb2e176250095ff3327f17f09780b165e11b3d8e3334b897ba799c09
+      _verify_cd_err.txt               0 字节  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      _verify_cd_out.txt               0 字节  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  5b) 补证产出脚本/判定件禁词扫描：
+      cd_check_py    命中 = 无
+      cd_verdict     命中 = 无
+  5c) _cd_check.py 中 open(...) 模式实参（独立 AST）：
+      :32 open(P[key], "r")
+      :36 open(P[key], "r")
+      :50 open(P[k], "rb")
+      sys.stdout.write 调用 = 1（脚本只写 stdout）
+  5d) 只读件 mtime（本轮补证脚本落盘 = 2026-11-08 14:24~14:37；mtime 早于该窗口即本轮未改）：
+      goal           mtime=2026-11-06T06:53:04.100348 size=759518
+      pending        mtime=2026-11-07T13:58:51.920537 size=50194
+      stall_def      mtime=2026-11-06T16:03:30.294057 size=27271
+      dC_script      mtime=2026-11-07T20:35:12.182592 size=23115
+      dD_md          mtime=2026-11-07T20:36:40.129353 size=18262
+      cd_check_py    mtime=2026-11-08T14:24:25.823561 size=15031
+      cd_check_out   mtime=2026-11-08T14:25:48.550950 size=22652
+      cd_verdict     mtime=2026-11-08T14:37:52.323685 size=14604
+  5e) STALL_EVENT_DEFINITION.md :177/:190/:191 当前原文（与历史记录比对）：
+      :177 | 2 | **阻塞点程序计数器 (PC) / 调用栈地址** | 语料中只有时间戳 `t` 与帧号 `f`，完全不知道逻辑帧停滞的 100–200ms 内，主逻辑线程是在执行密集循环（如容器遍历）、还是卡在 DirectDraw 翻页等待、还是在 Windows 消息泵中挂起 | 需要**停滞瞬间的程序执行位置数据**：包含停滞发生时主线程的 EIP/RIP 内存虚拟地址（VA）、模块偏移量及前 5 层调用函数栈指针（且必须在停滞发生后 50ms 内捕获）。 |
+      :190 - **设计指标**：从帧停滞被检测到、到采样动作在目标线程生效的**端到端延迟必须 $< 50\text{ ms}$（安全裕量要求 $\le 20\text{ ms}$）**；
+      :191 - **拒止原则**：任何累积判定耗时 $\ge 100\text{ ms}$ 的触发机制均属不合格。若触发延迟过大，采样动作发生时真实停滞已然结束，采集到的栈将是下一帧正常运行时的代码，产生致命的因果倒错伪影。
+      _cd_check_out.txt 记录的 :190 = stall_def:190  - **设计指标**：从帧停滞被检测到、到采样动作在目标线程生效的**端到端延迟必须 $< 50\text{ ms}$（安全裕量要求 $\le 20\text{ ms}$）**；
+      当前 :190 文本是否出现在该记录中 = True
+  5f) 口径/判据/台账/红线声明（_cd_verdict.md 独立读回）：
+      _cd_verdict.md:4   任务：逐条补证 `lead/criteria_r3_verify_20261108/R2_BREAKPOINTS_CLOSURE.md` 记录的四项未闭合崩点（:81-82 C 证据链两项、:90-94/:108/:115 D 两项）。只补证崩点事实，不选判据、不改口径 B、不改 STALL_EVENT_DEFINITION.md:177/:190/:191、不改台账、不 commit、不 push；零真机、零采样代码；唯一写域 = `lead/r2_unclosed_cd_20261108/`。
+      _cd_verdict.md:48  - **指称澄清**：CRITERIA_ROUND2.md 本身无 §9.7 节（其标题仅 §1–§8，本轮 grep 实证）；§9.7 位于 `_dC_out.txt:147`（= 脚本 `:417-419` 的输出），由 CRITERIA_ROUND2.md:98/:387 以「`:147` §9.7」转引。本轮两处均已实读。
+      _cd_verdict.md:52  - **不裁部分**：「高档」指括注 7 档还是 13 档 = CRITERIA_ROUND2.md:98/:387 已登记的待裁决项②，本件不裁定；上游 CRITERIA_COMPARE.md:146（本轮直读，`_cd_check_out.txt:167`）本就把「≥100ms」限定在恰这 4 档（C2-P95x3/C2-P99x3/C3-r4/r8）。本轮 4/5/4 计数对任一裁决均可用。
+      _cd_verdict.md:84  **closedCount = 3 / 4。** 未重跑任何调查/复核脚本；未改任何只读件；未 commit、未 push；零真机、零采样代码。
+
+§6 复核员结论（只列事实，判定见回件 whatBreaksIt）
+  - 编排方 6 项指纹：本脚本独立实算全部 MATCH（§0a）。
+  - 但 _dD_align_out.txt 指纹未进入 _cd_check.py 的 P 字典 / _cd_check_out.txt §0 输出（§0d）。
+  - 崩点1 结构性缺陷：6/6 字面、11 Compare、10 变量 NOT in gate（其中仅 5 个为真正的结论断言）、
+    ge100 无比较、:420 PASS 文案硬编码——独立实算全部复现。
+  - 崩点2：13 档 4/5/4 分解与双源对账属实；但 4 档读法下无支撑=0，越界判定具辖域条件性。
+  - 崩点3：B3/B4 computed=0 literal 12/10、B1=2/B2=3、D 无 supplement 表行解析——独立复算复现。
+  - 崩点4：O1–O5 含谓词；2ms/50ms=4.0%≠2%；必要性纯断言；验收程序缺席——复现。
+  - 铁律：写域仅 4 文件（+本轮 _verify_*）、禁词 0、_cd_check.py 无写文件 open、
+    台账/stall_def mtime 均早于本轮、:190 原文与历史记录一致。
+  - 运行时：python -I -X utf8 + 绝对路径；零真机、零采样代码；本脚本只写 stdout。

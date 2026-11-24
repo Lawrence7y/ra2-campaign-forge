@@ -1,0 +1,47 @@
+M76 VERIFY — 全量复算（改后盘上状态，口径：strict 带方括号字面 [未证]）
+========================================================================
+
+一、并行数（交集，HARD GATE）
+  A 组 = NAMED_PUSH_AUDIT19/verdict.tsv ∩ (S06_B2 3 + S01S03_B1 1 + S16S21_B1 3) : 7  （须 7）
+  B 组 = NAMED_PUSH_S07S11_B2 4 行未审不并（无独立异族审计表 NAMED_PUSH_AUDIT20，work/verdicts.json 为产出方自产物非异族审计）
+  本轮并入 = 7；delta 全 6 列、entry 8 位大写十六进制、grade=[已证]、verdict 全 PASS；A/B 未混
+
+二、数据行与列结构
+  coverage.tsv 数据行 = 18498（须 18,498）；数据行 8 列 TAB 分隔 = 18498/18498
+
+三、[已证] 全表 / atlas 内 / atlas 外
+  全表 [已证]      = 1650   （1,643 → 1,650）
+  atlas 内 [已证]  = 1644  （1,637 → 1,644）
+  atlas 外 [已证]  = 6   （6 不变）
+
+四、S03 / S06 / S16 / S21 的 proved 与 strict（atlas 分母内；严格 = [已证] 且语义栏无字面 [未证]）
+  S03: atlas_n= 194  proved= 39  strict= 37  named_S(R14)=125  proved%=20.10  strict%=19.07
+  S06: atlas_n= 847  proved=138  strict=123  named_S(R14)=388  proved%=16.29  strict%=14.52
+  S16: atlas_n=  90  proved= 48  strict= 22  named_S(R14)= 81  proved%=53.33  strict%=24.44
+  S21: atlas_n= 129  proved= 30  strict= 30  named_S(R14)= 91  proved%=23.26  strict%=23.26
+  TOTAL: atlas_n=12916  proved=1644  strict=1327  proved%=12.73  strict%=10.27
+  （改前：S03 38/36、S06 135/120、S16 47/21、S21 28/28、TOTAL 1,637/1,320）
+
+五、达标判定有无翻转
+  名义达标（proved 口径）: S15,S16,S17   （改前 S15,S16,S17；无翻转）
+  严格达标（strict 口径）: S17          （改前 S17；无翻转）
+  ⇒ 有无达标翻转：无（名义仍 S15/S16/S17 3/22，严格仍仅 S17 1/22）
+  判据：named_n_S(R14) >= ceil(0.9*n) 且 proved/strict_n >= ceil(0.5*n)；本次只改第 4/5/6 列，named 三列不变
+
+六、M76 披露段落行号（COVERAGE/PANEL.md，1-based）
+  M76 披露起止行：169 - 172（共 4 行，原样写入）
+  紧接 M75 披露（行 165-168）之后，起始行 = M75 起始 + 4 = 169
+
+七、两处改字已生效的证据
+  改字(1) 0071B1B0 槽址：delta 源 col4 已为 007F51A0（0071B1A0 出现 0 次）；apply 再显式 replace('0071B1A0','007F51A0')（0 次命中，幂等）；盘上 col4 含 007F51A0=True、含 0071B1A0=False ⇒ 勘误落实
+  改字(2) 0071CDA0：delta 源 col4 含 'ff 51 10 读入'（1 次）；apply 改为 'ff 51 10 成员容器 slot4 下标查询（非读入）'；盘上 col4 含 '成员容器 slot4 下标查询（非读入）'=True、含 'ff 51 10 读入'=False ⇒ 改称落实
+
+八、逐项检查
+  检查通过：111/111
+
+九、改后 sha256
+  coverage.tsv : 22cde4b82a161c41004247c5a78f7ca5e8065371aa16c32bae5f95349ce4ba27
+  PANEL.md     : 2a9cdb96cc47780f49822fee0b90e82e86fe730d9d9bb860cf3d5d749fad3a1e
+  （改前 sha256 / mtime / 字节见 MERGE_M76\BEFORE_AFTER.txt）
+
+OVERALL: ALL PASS

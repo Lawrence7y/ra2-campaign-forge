@@ -1,0 +1,37 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+5b2e10	S10	MissionClass::Mission_DefaultHandler	[已证] Base mission handler: mov eax,0x1C2; ret (no-op); 28 such stubs at 0x5B2E10..0x5B2FC0	[已证]	EVIDENCE/mission_dispatch_map.txt
+5b2fd0	S10	MissionClass::SetMission	v[124]: set current mission (+0xAC), reset queued(+0xB4)=-1 & timers (+0xBC/+0xC0/+0xC4)	[已证]	EVIDENCE/field_trace.txt
+5b3040	S10	MissionClass::GetCurrentMission	v[97]: return [this+0xAC], fallback [this+0xB4] if -1	[已证]	EVIDENCE/find_mission_dispatch.txt
+5b3060	S10	MissionClass::AI	v[23]: mission dispatch; gate [+0x90]/[+0x6C]/timer, jmp [eax*4+0x5B34E8] @0x5B30C1	[已证]	EVIDENCE/dump_ai_dispatch.txt
+5b3570	S10	MissionClass::SetMission2	v[123]: promote queued mission [+0xB4] to current [+0xAC], clear queued	[已证]	EVIDENCE/field_trace.txt
+5b35e0	S10	MissionClass::QueueMission	v[122]: queue mission into [+0xB4] (with current/queued guards), clear flag [+0xB8]	[已证]	EVIDENCE/field_trace.txt
+5b3650	S10	MissionClass::SetMission3	v[125]: set current [+0xAC]=arg, stash prior [+0xB4] to [+0xB0], reset flag	[已证]	EVIDENCE/field_trace.txt
+5b36b0	S10	MissionClass::RevertMission	v[121]: revert current [+0xAC] to [+0xB0], set [+0xB0]=-1	[已证]	EVIDENCE/field_trace.txt
+5b3910	S10	MissionClass::MissionNameToIndex	loop table 0x816CAC..0x816D2C (32 entries), strcmp arg, return index (else -1)	[已证]	EVIDENCE/find_mission_xrefs.txt
+5b3740	S10	MissionClass::GetMissionName(idx)	indexed string lookup: mov eax,[eax*4+0x816CAC] (one of 10 such sites)	[已证]	EVIDENCE/find_mission_xrefs.txt
+4da530	S10	FootClass::AI	v[23]; calls TechnoClass::AI @0x4DA539 first; locomotion dispatch @0x4DA877; every frame	[已证]	EVIDENCE/footai_tail.txt
+6f9e50	S10	TechnoClass::AI	v[23] base; calls MissionClass::AI @0x6FA655 after inc [+0xC4]; mission gate 2/10/5 @0x6FA697	[已证]	EVIDENCE/mission_call_sites.txt
+4d4dc0	S10	FootClass::Mission_Attack	v[132] handler: target acquisition, fire/attack sequencing	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4d4200	S10	FootClass::Mission_Move	v[139] handler: locomotive move to [+0xB4] target, uses loco [+0x674]	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4d5070	S10	FootClass::Mission_Guard	v[135] handler (also mission 6 Sticky): guard flags [+0x68F/690/691]	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4d6aa0	S10	FootClass::Mission_AreaGuard	v[136] handler: area guard, queues mission 5 @0x4D6AB7	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4d5350	S10	FootClass::Mission_Hunt	v[138] handler: hunt enemy, checks target flags [+0x6D4]	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4da2c0	S10	FootClass::Mission_Retreat	v[140] handler: retreat using substate [+0xBC]	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4d9290	S10	FootClass::Mission_Enter	v[144] handler: enter transport/building	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4d4b20	S10	FootClass::Mission_Capture	v[133] handler (also mission 17 Sabotage): capture building checks	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4d4cb0	S10	FootClass::Mission_Eaten	v[134] handler	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4da2b0	S10	FootClass::Mission_Unload	v[143] handler: unload passengers	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4ddf90	S10	FootClass::Mission_Rescue	v[150] handler	[已证]	EVIDENCE/disasm_mission_handlers.txt
+4d4280	S10	FootClass::Mission_Patrol	v[151] handler	[已证]	EVIDENCE/disasm_mission_handlers.txt
+51f3e0	S10	InfantryClass::Mission_Attack	v[132] infantry override	[已证]	EVIDENCE/mission_dispatch_map.txt
+51f620	S10	InfantryClass::Mission_Guard	v[135] infantry override	[已证]	EVIDENCE/mission_dispatch_map.txt
+51f640	S10	InfantryClass::Mission_AreaGuard	v[136] infantry override	[已证]	EVIDENCE/mission_dispatch_map.txt
+522e70	S10	InfantryClass::Mission_Harvest	v[137] harvest handler (harvester)	[静态推断]	EVIDENCE/mission_dispatch_map.txt
+417fe0	S10	AircraftClass::Mission_Attack	v[132] aircraft override	[已证]	EVIDENCE/mission_dispatch_map.txt
+41a5c0	S10	AircraftClass::Mission_Guard	v[135] aircraft override	[已证]	EVIDENCE/mission_dispatch_map.txt
+44acf0	S10	BuildingClass::Mission_Attack	v[132] building override	[已证]	EVIDENCE/mission_dispatch_map.txt
+44b770	S10	BuildingClass::Mission_Harvest	v[137] building harvest handler	[已证]	EVIDENCE/mission_dispatch_map.txt
+44b760	S10	BuildingClass::Mission_Capture	v[133] building capture/sabotage handler	[已证]	EVIDENCE/mission_dispatch_map.txt
+709290	S10	TechnoClass::AutoAcquireCheck	guard/move/harvest mission target-acquisition predicate for Guard->Attack	[静态推断]	EVIDENCE/ga_final.txt
+709480	S10	TechnoClass::AutoAcquireWrapper	calls 0x709290, sets new target & flag [+0x50C] on acquire	[静态推断]	EVIDENCE/ga_final.txt
+414b9e	S10	AircraftClass::QueueAttackMission	call [vptr+0x1E8]=QueueMission(1,0): Guard->Attack switch site (has target [+0x2B4])	[已证]	EVIDENCE/mission_call_sites.txt

@@ -1,0 +1,8 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+00431F70	S03	BufferIOFileClass::vslot7	[已证] BufferIOFileClass 切换缓冲读/写模式：先按 [esi+0x29]/[esi+0x26]/[esi+0x50] 三态闸分别复位缓冲或清标志，未开则补开；再按 mode 参数三路分派——mode1 读窗夹紧、mode2 调 open 重开并清 [esi+0x50]、其余路径按缓冲有无选择 seek 或 open；末尾将 5 个缓冲字段置 -1、置 dirty 标志返回 1。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#00431F70
+00432050	S03	BufferIOFileClass::vslot12	[已证] BufferIOFileClass 缓冲读(buffer,count)：未开先 seek 补开，非缓冲态委托 WriteFile；count 与可用量夹紧后进入读循环——按缓冲窗 memmove 拷出、推进目的/源指针与剩余量、回跳至 count 用尽，缓冲耗尽则 flush 并经 seek+ReadFile 重建；mode 冲突或读失败经虚错误报告器报错误码 13。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#00432050
+004322A0	S03	BufferIOFileClass::vslot9	[已证] BufferIOFileClass 缓冲读(buffer,count)（slot9 变体）：未开先 seek 补开、非缓冲态委托；count 夹紧后循环 memmove 拷出并推进读位/剩余量，缓冲空则 flush 后 seek+ReadFile 回填，回跳至 count 用尽；mode 冲突经虚错误报告器报错误码 13，末了按标志决定是否提交。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#004322A0
+0047AE10	S03	CDFileClass::slot2	[已证] CDFileClass 按全局 CD 搜索路径链打开目标文件：先查 [ebx+0x54] 与路径表全局非空、当前未开；随后遍历路径节点，每段将路径与文件名拼入栈缓冲、设全名并尝试打开，成功则停、失败推进到下一节点回跳；链尾恢复原名，成功与否都经虚方法 close/通知。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#0047AE10
+0065CDD0	S03	RawFileClass::slot12	[已证] RawFileClass 写(buffer,count)：未开先 seek 补开；WriteFile 失败取 GetLastError 经虚错误报告器上报，句柄为 -1 或未开分别走错误码 9 路径；写后两处 SetFilePointer 返回 -1 同样经 GetLastError 虚报错，最后按基址回算并写回缓存大小。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#0065CDD0
+0065D0D0	S03	RawFileClass::slot11	[已证] RawFileClass 取文件大小：缓存有效直接返回；否则未开走 seek-to-end 取当前位，已调 GetFileSize，返回 -1 时取 GetLastError 经虚错误报告器上报，成功则减去基址后写回长度缓存并返回。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#0065D0D0
+0065D190	S03	RawFileClass::slot4	[已证] RawFileClass 删除当前文件：先 flush；文件名空经虚错误报告器报错误码 2 返回 0；文件未开静默返回 0；DeleteFileA 成功返回 1、失败取 GetLastError 经虚错误报告器上报后返回 0。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#0065D190

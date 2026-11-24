@@ -1,0 +1,21 @@
+TEMP: C:\Users\Administrator\AppData\Local\Temp\_cii_hard_w6r3r1fh
+
+=== CASE A: baseline 副本，plus_match=9（等于真值） ===
+  _f2w_checks.py rc=0 output_has_totals=False notable=['sha 逐字一致条数 = 8']
+  _f2w_pass.py rc=0 output_has_totals=False notable=['R11 PASS: orig=6 plus=7 | overall PASS: orig=6 plus=7']
+  _f2w_extract.py rc=0 output_has_totals=False notable=['rows=19 plus_bindings=19 orig_bindings=19']
+  _f2w_final.py rc=0 output_has_totals=False notable=[]
+  gate rc/alerts = (0, ['OK violations=0 (all 5 invariants hold)'])
+
+=== CASE B: merged 投影（真值 18）硬编码 totals.plus_match=9 ===
+  _f2w_checks.py rc=0 output_has_totals=False notable=['sha 逐字一致条数 = 8']
+  _f2w_pass.py rc=0 output_has_totals=False notable=['R11 PASS: orig=6 plus=7 | overall PASS: orig=6 plus=7']
+  _f2w_extract.py rc=0 output_has_totals=False notable=['rows=19 plus_bindings=19 orig_bindings=19']
+  _f2w_final.py rc=0 output_has_totals=False notable=[]
+  _cii_checks --expect-merged rc=1 alerts=['ALERT violations=1', '- INV-1 totals.plus_match=9 != recomputed=18']
+  _cii_checks (baseline mode) rc=1 alerts=['ALERT violations=2', '- INV-1 totals.plus_match=9 != recomputed=18', '- INV-4 merged_present=True != expected=False']
+
+=== CASE C: merged 投影 totals 写回正确 18 ===
+  _f2w_checks.py rc=0 output_has_totals=False notable=['sha 逐字一致条数 = 8']
+  _f2w_pass.py rc=0 output_has_totals=False notable=['R11 PASS: orig=6 plus=7 | overall PASS: orig=6 plus=7']
+  gate --expect-merged rc/alerts = (0, ['OK violations=0 (all 5 invariants hold)'])

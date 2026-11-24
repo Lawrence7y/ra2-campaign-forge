@@ -1,0 +1,59 @@
+== Q2 分布（类 / 件数 / 字节 / 代表例）==
+①空/仅表头                       0 件 /        0 B
+②纯JSON(无地址)                 38 件 /  1260606 B
+    代表: next_re_20261117_r14/S09_KPROVED7/_audit/EVIDENCE/feat_pool642.json
+          bytes=369871 nlines=24760 addr_lines=0 首行=[
+③纯日志(无地址无对象帧)               10 件 /    29405 B
+    代表: next_re_20261112_r02/W54_save_determinism/EVIDENCE/step3_streamdiff.stdout.txt
+          bytes=18909 nlines=187 addr_lines=0 首行=################################################################################
+④含地址<60%                    74 件 /   320160 B
+    代表: next_re_20261117_r14/RECON_UNMERGED/EVIDENCE/merge_records.txt
+          bytes=57586 nlines=415 addr_lines=12 首行=# 9 张 A 类卡的逐行并表登记（来源：各 M 卡 MERGE_LOG.tsv，未改动任何文件）
+⑤其他                         30 件 /  1359078 B
+    代表: next_re_20261117_r14/S05_KPROVED3/_audit/EVIDENCE/q3_cfg.json
+          bytes=846854 nlines=1 addr_lines=1 首行=[{"entry": "006F3330", "aligned16": true, "nins": 429, "lo": "006F3330", "hi": "
+
+== Q3/Q4 裁决汇总 ==
+应排      50 件 /   427175 B
+应留      91 件 /  2442881 B
+混合       1 件 /    57586 B
+判不了     10 件 /    41607 B
+合计   2969249 B / 152 件
+
+== 类 x 裁决 ==
+①空/仅表头                     
+②纯JSON(无地址)                应排=19件/356461B  应留=19件/904145B
+③纯日志(无地址无对象帧)              应排=6件/5473B  应留=3件/5023B  判不了=1件/18909B
+④含地址<60%                   应排=10件/39717B  应留=57件/212527B  混合=1件/57586B  判不了=6件/10330B
+⑤其他                        应排=15件/25524B  应留=12件/1321186B  判不了=3件/12368B
+
+== 判不了 逐件（凭什么判不了）==
+  18909 B  next_re_20261112_r02/W54_save_determinism/EVIDENCE/step3_streamdiff.stdout.txt
+         内容是 OLE 复合文档 A1/A2/B1/B2 四份的**字节差分**（dirEntry id/off/mtime、stream 偏移区间、LCP/LCS）。差分结果本身是「被测对象的文件字节事实」，但同一件里也含 equal=False/idxDiff 这类运行期比较结论与 4 个时间戳；缺「差分产物算对象记录还是过程记录」的口径
+  11595 B  next_re_20261112_r02/W61_third_badge_route/EVIDENCE/dialog_bytes_diff.txt
+         内容是 RT_DIALOG 148 的逐字节 before/after 标记（0x000 N 01 …），既是被测资源的字节事实，又只以「前后对照」形式存在；缺「patch 前后 diff 是否计对象抄本」的口径
+    351 B  next_re_20261112_r02/W61_third_badge_route/EVIDENCE/resource_integrity_stdout.txt
+         内容是全资源完整性核对（每资源 len/sha256/identical=True/False 判定），断言结论与对象哈希混编；缺「哈希核对表是否算对象记录」的口径
+   2516 B  next_re_20261112_r02/W64_bootcamp_inventory/EVIDENCE/S4_only_stdout.txt
+         内容是 MAPSELMD.INI 提取核对（mix 偏移 0x71D050 length 5573 sha256 identical=True + 节清单），提取校验结论与对象哈希混编；缺口径
+   2265 B  next_re_20261112_r02/W64_bootcamp_inventory/EVIDENCE/S4_q4_stdout.txt
+         内容是 MAPSELMD.INI 节/阶段名清单（[GDI] stage 1=ALL01 …）+ 提取校验头，是被测数据的内容记录，但以「核对报告」形式给出；缺「数据内容清单是否计对象记录」的口径
+   1510 B  next_re_20261112_r07/W97_artmd/EVIDENCE/probe04_stdout.txt
+         内容是 artmd.ini 的逐条核对（KEY 名 Foundation=/VERIFIED in file/计数断言），数据事实与核对结论混编；缺「INI 字段核对表算对象记录还是过程记录」的口径
+    658 B  next_re_20261112_r07/W97_artmd/EVIDENCE/probe17_stdout.txt
+         内容是 artmd.ini 的规则字段实读结果（artmd.ini 336,535 B sha256 + NAPOWR/TESLA Foundation=3x2 line 3262 VERIFIED + ALL ASSERTIONS PASSED），数据事实与断言结论混编；缺口径
+    115 B  next_re_20261116_r11/W154_live/EVIDENCE/verify_w151b.log
+         仅 2 行：一句计数断言（targeting 0x55B8F0 : 0）+ 一句反汇编区间标题，对象事实只有 1 个地址、正文缺失（文件里没有反汇编体）；缺内容无法补
+   1595 B  next_re_20261117_r14/S10_K11/EVIDENCE/disk_read_snapshot.tsv
+         内容是某次读取的现场（# read_at=…# sha256=… 头 + 逐行 entry/subsystem/name/语义文本），现场头使它是过程记录，正文是对象清单；缺口径
+   2093 B  next_re_20261117_r14/S18-K2/EVIDENCE/event_names.txt
+         内容是事件名字符串表（name[i] @地址 -> 地址 : POWERON/POWEROFF/…），属 .rdata 数据对象的内容记录，但不含函数体/槽归属；缺「数据字符串表算不算对象抄本」的口径
+
+== 判不了 缺失口径分组 ==
+  A 差分/前后对照产物是否计对象记录（对象字节事实 vs 比对结论混编）: 2 件
+  B 哈希/完整性核对表是否计对象记录（断言 identical=True/False 与对象哈希同件）: 1 件
+  B' 提取校验（mix 偏移/sha256+节清单）是否计对象记录: 1 件
+  C 被测数据内容清单/逐项核对（.ini 节表、artmd.ini 字段）是否计对象记录: 2 件
+  C' 被测数据内容清单（.ini 节表 / .rdata 字符串表）是否计对象记录: 2 件
+  D 带运行现场头（read_at/sha256）的对象清单如何归属: 1 件
+  E 内容本身缺失（只剩 1 个地址，反汇编体不在文件里）: 1 件

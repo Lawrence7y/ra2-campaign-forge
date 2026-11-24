@@ -1,0 +1,178 @@
+{
+ "coverage": {
+  "before_sha": "65e9cf2b3e778e98ef929d00f83be61a4ff111d4e1c028dd26809b557f67d8a7",
+  "after_sha": "89edbd91e5ec5d4d72954cbc2251df5292090d624137dfd3c193abe5e260d919",
+  "before_bytes": 4108800,
+  "after_bytes": 4119324
+ },
+ "panel": {
+  "before_sha": "e5e3e31a99a5c723f649839e9fd8d5d82e2733a90c2cbddfb05ddf628733625e",
+  "after_sha": "f069339cd29c1e50cbc0b44795640752b21c63a1cf82092002599ba82e2677f9",
+  "before_bytes": 193197,
+  "after_bytes": 196867,
+  "inserted_after_line": 304,
+  "inserted_before_line": 305,
+  "inserted_lines": 9,
+  "m100_text": [
+   "> ✅ **M100 补记：R16-D1-WIDE-B2 并入 18 行（D-52 宽读集合 65 行待做部分的第 19–36 行；含 1 行修复）**",
+   "> 本批 18 行取自 `R16_SIEVE_D1_WIDE` 按用户 D-52 宽读口径筛出的 81 行集合：其中 has_ring4_on_disk==是 16 行跳过，待做 65 行；本批为按 entry 升序第 19–36 行（`no_rows[18:36]`，与 B1 前 18 行 entry 集合交集为 0）。17 行第 4 列取 `R16_D1_WIDE_B2/delta.tsv`，1 行（`00473B10`）第 4 列取 `R16_FIX_B2_1ROW/delta.tsv`（修复版，替换 B2 旧 ④）；18/18 严格前缀（新第 4 列 = 原第 4 列 + `；④ 活表槽位见证：…`），只改 coverage 第 4 列，第 1/2/3/5/6/7/8 列逐字节相同、grade 未改 `[已证]`。",
+   "> ① **异族审计 `R16_AUDIT_D1_WIDE_B2/AUDIT_REPORT.md` 判 17 PASS / 1 FAIL**：A 原文保全（严格前缀 + 其余列逐字节 + grade 未变）0/18 不合格、B 字节事实 18/18 × 6 项全真 0/18 不合格、E 反抄袭 0/18 不合格、F 清单一致性（sieve 81 → 是 16 / 否 65 → 按 entry 升序第 19–36 行，顺序完全一致）0/18 不合格；唯一 FAIL 行 `00473B10`（`CCFileClass::slot9`），C 装配方式标注与 D 文本一致两项同时不过，与 B1 翻车同一形态（栈临时对象被标成 `ctor_body`）。",
+   "> ② **1 行 FAIL 的真相与修复（如实披露）**：`00473B10` 旧版把栈临时写 `mov dword ptr [esp+0x20],0x7e16b0`（装表点 `004014AC`，宿主 `004011C0`）当成构造器装表；审计实测宿主 `004011C0` 是 1729 条指令的无关函数，写在栈临时对象上（`lea ecx,[esp+0x20]` 取该临时对象作 thiscall 实参），并非 this。`R16_FIX_B2_1ROW` 已改取真构造器 `00473A80` 里的 `00473A9B`（指令 `mov [esi],0x7e16b0`）替换 B2 旧 ④ 后并入，其余 17 行审计无同类可疑。",
+   "> ③ **「最低地址命中」启发式的典型风险（已入账）**：同一 vt `007E16B0` 共 **185 个装表点**、其中仅 **5 个真 `this` 目标**（`004019A6`/`00473A12`/`00473A4F`/`00473A9B`/`00535A76`）；旧取法 `derive_raw.py:160` 的 `site = es[0]`（最低地址命中）恰好落在栈临时写 `004014AC`，5 个真 `this` 目标被最低地址命中丢弃。这是该启发式的典型风险，已入账；`R16_FIX_B2_1ROW/host_rule.py` 的可执行 G1–G5 宿主身份校验规则（G1 非栈 / G2 this 对象 / G3 非析构 / G4 基类构造前序 / G5 返回 this）已落实。",
+   "> ④ **审计另确认本批 5 行 CLASS_FIX 全部成立（5/5）**：`004A8960`/`004A9840`/`004AAD30`/`004AAE90`（TabClass 改取 `007EDFB4`）、`004AB9B0`（DisplayClass 改取 `007E6114`），均严格类一致、同址持有该 entry、COL offset=0、有体外装表点且 6 项字节复核全真（`R16_AUDIT_D1_WIDE_B2/AUDIT_REPORT.md` §4）。",
+   "> 数字（口径 A/B 实测，改前→改后）：口径 A（`[已证]` 且第 4 列含字符 `④`）由 **412 / 1,654（24.91%）**升至 **430 / 1,654（26.00%）**，本批净增 **18 行**（18 行改前 `④` 计数全 0，N_pre_A=0）；口径 B（`[已证]` 且第 4 列含 `④ 活表槽位见证`）由 **245 / 1,654（14.81%）**升至 **263 / 1,654（15.90%）**，净增 **18 行**（18 行均写入 `④ 活表槽位见证` 子串，实测非推算）。",
+   "> §12.6 命中（第 4 列字面 `§12.6`）：命中行数 **188 → 206（+18）**、命中次数 **220 → 238（+18）**；18 行各追加 1 处 D-47 披露指向 §12.6（实测非推算）。",
+   "> 判定与计数均未变：coverage 18,498 数据行、列分布 `{8:18498}`、全表 `[已证]` 1,654、atlas 内 1,648、atlas 外 6；名义仍 S15/S16/S17、严格仍 S17，**达标判定未翻转**。"
+  ]
+ },
+ "measure_before": {
+  "rows": 18498,
+  "col_dist": "[8]",
+  "proved": 1654,
+  "atlas_in": 1648,
+  "atlas_out": 6,
+  "cal_A": 412,
+  "cal_B": 245,
+  "sec126_lines": 188,
+  "sec126_occ": 220
+ },
+ "measure_after": {
+  "rows": 18498,
+  "col_dist": "[8]",
+  "proved": 1654,
+  "atlas_in": 1648,
+  "atlas_out": 6,
+  "cal_A": 430,
+  "cal_B": 263,
+  "sec126_lines": 206,
+  "sec126_occ": 238
+ },
+ "changed_rows": {
+  "0046C890": {
+   "line": 1541,
+   "src": "B2",
+   "old_col4_sha": "2d440cbdfc897a4061cc5f03d0fbf0c9e55eaa032dd7a9b924416a35e324e04c",
+   "new_col4_len": 807,
+   "old_col4_len": 219
+  },
+  "00473B10": {
+   "line": 1632,
+   "src": "FIX",
+   "old_col4_sha": "7c047403f17be1bf24888eaa48029ddee824f5c43299c826f32a30f1e4810fcf",
+   "new_col4_len": 764,
+   "old_col4_len": 192
+  },
+  "004A2990": {
+   "line": 2507,
+   "src": "B2",
+   "old_col4_sha": "4a5c55a28b845b40c8e179a3c09af0d3268982e0959caa7b940013b0c804b40b",
+   "new_col4_len": 967,
+   "old_col4_len": 391
+  },
+  "004A8960": {
+   "line": 2625,
+   "src": "B2",
+   "old_col4_sha": "062fe01c24d4985ca12f0d6ee3796a3850f068c019d7f6c62ae75ef4c4677715",
+   "new_col4_len": 1014,
+   "old_col4_len": 450
+  },
+  "004A9840": {
+   "line": 2637,
+   "src": "B2",
+   "old_col4_sha": "5b79069c920a1497189f5f4c6026d3aceef67fa47ef67899bf16174b7ca92bf3",
+   "new_col4_len": 809,
+   "old_col4_len": 245
+  },
+  "004AAD30": {
+   "line": 2649,
+   "src": "B2",
+   "old_col4_sha": "d77dceb52efb0c9d9bc2da22b3fd75567747ff81014d1206b54b645812872dc4",
+   "new_col4_len": 863,
+   "old_col4_len": 299
+  },
+  "004AAE90": {
+   "line": 2650,
+   "src": "B2",
+   "old_col4_sha": "1c7fba4aa8031b9dfad4b0f95e44582e927eb3810631aed2001519d560d70803",
+   "new_col4_len": 839,
+   "old_col4_len": 275
+  },
+  "004AB9B0": {
+   "line": 2651,
+   "src": "B2",
+   "old_col4_sha": "a9dab16e18641aae7722ffc8d2a0100fe5bb6acc317cc73617752cba28eec4f9",
+   "new_col4_len": 862,
+   "old_col4_len": 282
+  },
+  "004D7330": {
+   "line": 3154,
+   "src": "B2",
+   "old_col4_sha": "e7e14d9e0e79486edd589d04208841068ead6972ac220fad96ca93a6a9ae1909",
+   "new_col4_len": 1356,
+   "old_col4_len": 788
+  },
+  "004D94B0": {
+   "line": 3165,
+   "src": "B2",
+   "old_col4_sha": "f1c0eb1518830a590995fa4425387d5e537c1e0f45e4496df477c530ad3f8084",
+   "new_col4_len": 835,
+   "old_col4_len": 263
+  },
+  "004DFB70": {
+   "line": 3259,
+   "src": "B2",
+   "old_col4_sha": "db67a28fec421ebfbefd3eb226438903b3dac7494c087bcf1c61acb693149fb9",
+   "new_col4_len": 1042,
+   "old_col4_len": 454
+  },
+  "004F4320": {
+   "line": 3943,
+   "src": "B2",
+   "old_col4_sha": "0b3e62e40c48339dd5da100272d1fb56dd02080718a62c1f01e531dacacd9cb0",
+   "new_col4_len": 1004,
+   "old_col4_len": 449
+  },
+  "004F4480": {
+   "line": 3947,
+   "src": "B2",
+   "old_col4_sha": "87a2ab74e6df1dd01563c87657be7b817da20e165d86046c102682f171deaccd",
+   "new_col4_len": 1031,
+   "old_col4_len": 472
+  },
+  "0051D6F0": {
+   "line": 4434,
+   "src": "B2",
+   "old_col4_sha": "0168edc29e63f30abe825449ff4ced7475a70d2b0f0f3ed044e2f69e69834724",
+   "new_col4_len": 1061,
+   "old_col4_len": 473
+  },
+  "00523340": {
+   "line": 4513,
+   "src": "B2",
+   "old_col4_sha": "32ad56ba10a90aba5fc510696c5820a1b40920a4afabd7e2b90eba836d83866a",
+   "new_col4_len": 625,
+   "old_col4_len": 41
+  },
+  "0054E890": {
+   "line": 5243,
+   "src": "B2",
+   "old_col4_sha": "0108eee0f9d89e0609091e7dfa1c7572ad48f54dae4d77e063ad9938d522f272",
+   "new_col4_len": 731,
+   "old_col4_len": 52
+  },
+  "0054EA70": {
+   "line": 5251,
+   "src": "B2",
+   "old_col4_sha": "d7c4a5732bd8e5ab798b14329a27bc72cab9a377565cf1d1bdd4e903b752e9f8",
+   "new_col4_len": 730,
+   "old_col4_len": 51
+  },
+  "005B3970": {
+   "line": 6130,
+   "src": "B2",
+   "old_col4_sha": "1f417797d71b9f6200d065529b0663c05f4768107a2a5de27b8bbc4cf354e44d",
+   "new_col4_len": 765,
+   "old_col4_len": 185
+  }
+ }
+}

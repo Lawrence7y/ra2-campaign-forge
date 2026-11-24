@@ -1,0 +1,85 @@
+================================================================================================
+1) all absolute references to 0xA8EB50 (BuildingClass::Array.Count)
+================================================================================================
+total refs = 73
+  writes = 2, reads = 71
+    WRITE 0043BB18  mov dword ptr [0xa8eb50], ecx      bytes=89 0d 50 eb a8 00    fn=0043B740 boundary=True
+    WRITE 004E6B91  mov dword ptr [0xa8eb50], eax      bytes=a3 50 eb a8 00       fn=004E62B0 boundary=True
+  distinct functions = 32
+    fn 0043B740  W=1 R=2
+    fn 0044FE60  W=0 R=2
+    fn 00452D40  W=0 R=2
+    fn 00454DB0  W=0 R=2
+    fn 0047D210  W=0 R=2
+    fn 004DFE00  W=0 R=1
+    fn 004E62B0  W=1 R=0
+    fn 004FAA10  W=0 R=2
+    fn 00506B90  W=0 R=2
+    fn 0050A150  W=0 R=1
+    fn 0050A5C0  W=0 R=1
+    fn 0050AF10  W=0 R=2
+    fn 0055B880  W=0 R=1
+    fn 005851B0  W=0 R=2
+    fn 00599650  W=0 R=2
+    fn 0064DAB0  W=0 R=2
+    fn 0064DEA0  W=0 R=4
+    fn 00650A90  W=0 R=4
+    fn 0067C690  W=0 R=2
+    fn 0067D300  W=0 R=1
+    fn 00684C30  W=0 R=2
+    fn 006CC390  W=0 R=1
+    fn 006D8DB0  W=0 R=2
+    fn 006D9B50  W=0 R=2
+    fn 006D9CE0  W=0 R=2
+    fn 006DD8B0  W=0 R=10
+    fn 006E0490  W=0 R=6
+    fn 006E21E0  W=0 R=1
+    fn 006E2600  W=0 R=2
+    fn 006E4040  W=0 R=2
+    fn 006EE800  W=0 R=2
+    fn 006EEBD0  W=0 R=2
+
+================================================================================================
+2) HeapFree / HeapAlloc IAT call sites
+================================================================================================
+  HeapFree IAT 007E127C call sites = 4
+    007C9428  bytes=ff 15 7c 12 7e 00
+    007CFAAC  bytes=ff 15 7c 12 7e 00
+    007CFEA9  bytes=ff 15 7c 12 7e 00
+    007D034F  bytes=ff 15 7c 12 7e 00
+  --- 用 pefile 取导入名核对 ---
+    HeapAlloc    IAT=007E1278  call sites=5 : ['0x7c94b3', '0x7cf78c', '0x7cfe78', '0x7d0ffa', '0x7d33c9']
+    HeapFree     IAT=007E127C  call sites=4 : ['0x7c9428', '0x7cfaac', '0x7cfea9', '0x7d034f']
+    HeapReAlloc  IAT=007E12A4  call sites=2 : ['0x7cfe44', '0x7d104d']
+
+================================================================================================
+3) 注销原语 0x45AE10 与 0x43BCF0
+================================================================================================
+  0x45AE10 head:
+     0045AE10  mov      edx, dword ptr [ecx + 0x10]        8b 51 10
+     0045AE13  mov      eax, dword ptr [esp + 4]           8b 44 24 04
+     0045AE17  cmp      eax, edx                           3b c2
+     0045AE19  jge      0x45ae3c                           7d 21
+     0045AE1B  dec      edx                                4a
+     0045AE1C  cmp      eax, edx                           3b c2
+     0045AE1E  mov      dword ptr [ecx + 0x10], edx        89 51 10
+     0045AE21  jge      0x45ae37                           7d 14
+  0x43BCF0 head:
+     0043BCF0  push     ecx                                51
+     0043BCF1  push     ebx                                53
+     0043BCF2  push     ebp                                55
+     0043BCF3  push     esi                                56
+     0043BCF4  mov      esi, ecx                           8b f1
+     0043BCF6  push     edi                                57
+     0043BCF7  lea      edi, [esi + 0x6b4]                 8d be b4 06 00 00
+     0043BCFD  mov      dword ptr [esi], 0x7e3ebc          c7 06 bc 3e 7e 00
+  0x43BCF0 atlas size = 986
+  refs to 0x5687F0 inside = 0 ; mem [reg+0x124] = 0
+  calls of interest:
+     0043BD95  call 0x45ae10
+     0043BDBC  call 0x45ae10
+     0043BF78  call 0x45add0
+     0043BF9E  call 0x45add0
+     0043C083  call 0x7c8b3d
+     0043C0AB  call 0x7c8b3d
+  0x45AE10 bytes @ +0x0 = 8b 51 10 8b 44 24 04 3b c2 7d 21 4a

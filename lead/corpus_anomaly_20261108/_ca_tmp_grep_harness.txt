@@ -1,0 +1,101 @@
+0180: #   模块导入即生效 ⇒ 此后 find_main_window/rect_of/click_*/capture_frame
+0342: # ★★ QC151FS 全屏模式适配状态容器（cnc-ddraw `windowed=false` ⇒ 独占/边框全屏）。
+2149:     hwnd, _info = find_main_window(int(pid))
+2151:     out["hwnd_source"] = "find_main_window"
+2154:         out["error"] = "no_main_window"
+2155:         rec.add("CLOSE", "close_hwnd", None, "script:find_main_window",
+2163:     rec.add("CLOSE", "close_hwnd", hwnd, "script:find_main_window",
+2228: def find_main_window(pid: int) -> tuple:
+2282:     # ★ QC183：自声明 argtypes（★ 不依赖 find_main_window 已设置）。
+2604:     """★ QC151FS：全屏到达判据单轮轮询（window 稳定循环内每 ~0.5 s 一轮）。
+3856: #   - 实测（2026-10-21 四趟，`nav_end=stage_begin:frame`，`w0=stage_begin:measure_w0`）：
+3973: def _measure_poll_span(handle, span_s: float, hz: int):
+3987:     t_end = t0 + span_s
+4790: def _measure_write_json(out_dir: Path, k: int, payload: dict) -> Path:
+4792:     p = out_dir / f"measure_w{k}.json"
+4799:     return {"schema": "MEASURE_V1", "trip_id": trip_id,
+4801:             "window": k, "hz": MEASURE_HZ, "t_clock": "time.perf_counter",
+4802:             "t_abs0": time.time(), "span_s": 0.0, "settle_s": 0.0,
+4846: def _measure_window_forensics(rec: Recorder, handle, hwnd, k: int,
+4856:       `stats=None`）⇒ 另存截图 `measure_w{k}_end_x.png`（复用既有
+4873:         payload = {"window": k, "game_hwnd": hwnd, "game_title": _tg.value,
+4882:         payload["empty_window"] = _empty
+4884:             _png = out_dir / f"measure_w{k}_end_x.png"
+4893:                      "measure_w{k}_end_x.png）")
+4896:                 "script:_measure_window_forensics",
+4912:       测窗末取证（`_measure_window_forensics`；空窗另存
+4913:       `measure_w{k}_end_x.png`）；① 阶段 verdict 空窗降级（采样窗
+4918:     ★ 落盘：仅 `WORKDIR\\measure_w{k}.json`（运行期写域，QC162:W1）；
+4923:         "schema": "MEASURE_V1", "hz": MEASURE_HZ, "windows": MEASURE_WINDOWS,
+4924:         "window_s": MEASURE_WINDOW_S, "settle_s": MEASURE_SETTLE_S,
+4948:         _p = _measure_write_json(out_dir, 0, payload)
+4949:         rec.add("MEASURE", "window_0_stats", payload["stats"],
+4997:                 _h7_p = _measure_write_json(out_dir, 0, _h7_payload)
+4998:                 rec.add("MEASURE", "window_0_stats", _h7_payload["stats"],
+5037:                       "gate_span_s": MEASURE_GATE_SPAN_S}
+5057:             payload = {"schema": "MEASURE_V1", "trip_id": TRIP_ID,
+5059:                        "window": 0, "hz": MEASURE_HZ,
+5061:                        "t_abs0": _settle_wall0, "span_s": MEASURE_SETTLE_S,
+5070:             _p = _measure_write_json(out_dir, 0, payload)
+5071:             rec.add("MEASURE", "window_0_stats", stats, "script:_measure_stats",
+5084:             payload = {"schema": "MEASURE_V1", "trip_id": TRIP_ID,
+5086:                        "window": 0, "hz": MEASURE_HZ,
+5088:                        "t_abs0": _settle_wall0, "span_s": MEASURE_SETTLE_S,
+5097:             _p = _measure_write_json(out_dir, 0, payload)
+5098:             rec.add("MEASURE", "window_0_stats", stats, "script:_measure_stats",
+5113:             budget.begin_stage(f"measure_w{k}")
+5130:                 payload = {"schema": "MEASURE_V1", "trip_id": TRIP_ID,
+5133:                            "window": k, "hz": MEASURE_HZ,
+5135:                            "t_abs0": _win_wall0, "span_s": MEASURE_WINDOW_S,
+5147:                 _p = _measure_write_json(out_dir, k, payload)
+5148:                 rec.add("MEASURE", f"window_{k}_stats", stats,
+5159:                     payload["span_s"] = MEASURE_WINDOW_S
+5162:                     _p = _measure_write_json(out_dir, k, payload)
+5163:                     rec.add("MEASURE", f"window_{k}_stats", payload["stats"],
+5167:                     rec.add("MEASURE", f"window_{k}_error_payload_failed",
+5174:                 budget.end_stage(f"measure_w{k}")
+5176:             _measure_window_forensics(rec, handle, hwnd, k, out_dir, w_stats)
+5195:                       f"window_k_stats 与 measure_w{{k}}.json；异常窗 {n_err}）"
+5305:     res["F-9"] = {"name": "window_geometry", "rect": None, "wh": None,
+5306:                   "note": "★ 由 collect_window_fields() 在主窗取得（D-59）"}
+5310: def collect_window_fields(rec: Recorder, hwnd) -> dict:
+5319:         rec.add("F", "F-9", f9, "script:collect_window_fields")
+5339:         f9["coordinate_mapping"] = "screen = window_origin + game_xy × 1.0"
+5430: def _sys_window_scan():
+7208:     # ★★ QC151FS：全屏模式适配（cnc-ddraw ddraw.ini windowed=false ⇒ 独占/
+7383:                 note="★ QC151FS：全屏模式（cnc-ddraw windowed=false）⇒ 抓帧="
+7639:         budget.begin_stage("window")
+7643:             hwnd, win_info = find_main_window(pid)
+7647:         rec.add("WIN", "windows", win_info, "script:find_main_window")
+7649:             rec.add("WIN", "main_window_found", False,
+7650:                     "script:find_main_window",
+7655:         #   连续 3 次读矩形（≈1.5s）不变才算稳定；上限 = window 阶段 deadline；
+7667:         # ★★ QC191/T13：诊断采集用 argtypes（★ 不改 rect_of / find_main_window）。
+7689:         #   与“等窗口达 800×600”使用，而 `:3390 budget.end_stage("window")` 在
+7693:         #   留出余量让 `end_stage("window")` 仍可**正常**通过并继续（★ 不改
+7792:                                 note="QC192/T14-D-a: first frame while window alive")
+7795:             # QC192/T14-D-c: full system window scan on first win_ok true->false.
+7800:                     _win_boundary_data = _sys_window_scan()
+7812:         _reenum_hwnd, _reenum_info = find_main_window(pid)
+7823:         }, "script:find_main_window",
+7825:         rec.add("WIN", "window_stable_rect", list(_stab_rect), "script:rect_of",
+7827:         rec.add("WIN", "window_stabilize_seconds", round(time.monotonic() - _stab_t0, 3),
+7837:         rec.add("WIN", "main_window_hwnd", hwnd, "script:find_main_window",
+7839:         rec.add("WIN", "main_window_found", True, "script:find_main_window")
+7840:         rec.add("WIN", "main_window_title", title, "user32:GetWindowTextW",
+7851:         rec.add("WIN", "main_window_pick", {
+7857:         }, "script:find_main_window",
+7859:         f9 = collect_window_fields(rec, hwnd)
+7860:         rec.add("WIN", "seconds_to_window", round(budget.elapsed(), 3),
+7862:         # QC192/T14-D-c: window stage end full system window scan.
+7865:             _win_end_scan_data = _sys_window_scan()
+7869:                 "script:_sys_window_scan",
+7872:                 "script:_sys_window_scan",
+7873:                 note="QC192/T14-D-c: full system scan at window stage end")
+7906:         budget.end_stage("window")
+7995:             #   window 阶段 `_stab_deadline` 口径；帽值本身**不改**）。
+8068:         # ★★ QC187/T7 补丁：采帧前二次稳定确认（连续 2 次矩形不变 ≈1s；上限=window deadline 余量）。
+8080:         #     它此前唯一用途是「等主窗出现」（副本 `:7641`）与 window 稳定循环
+8100:         #   本循环在 `begin_stage("frame")` 之后，阶段计时已重置，不受 window 阶段
+8179:                     "windows_run": 0}, "script:main",
+8230:         rec.add("F", "F-9", fp["F-9"], "script:collect_window_fields")

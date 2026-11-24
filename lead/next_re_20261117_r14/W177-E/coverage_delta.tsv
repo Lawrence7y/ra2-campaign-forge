@@ -1,0 +1,5 @@
+entry(hex8)	subsystem(S12)	name	one_line_semantics	grade	evidence_path
+0x0047C620	S12	BuildingClass::CanPlace_occupancy_scan	逐格占用校验：读headA(+0xE4)链走WhatAmI(vtable+0x2C)，只拒6(Building)/0x24(Terrain)，A8E7AC!=0早放行/A8E9A0==0跳扫；步兵15与单位1放行	[静态推断]	EVIDENCE/static_verify.txt
+0x0047E8A0	S12	CellClass::AttachObject_worker	挂对象到格链：[esp+8]选head(+0xE8若非0否则+0xE4)，WhatAmI==6且链非空则走链尾append，否则头插	[静态推断]	EVIDENCE/static_verify.txt
+0x00459EC0	S12	BuildingClass::WhatAmI	BuildingClass虚表+0x2C槽：mov eax,6;ret → 占用校验拒绝集之一	[静态推断]	EVIDENCE/static_verify.txt
+0x00523340	S12	InfantryClass::WhatAmI	InfantryClass虚表+0x2C槽：mov eax,15;ret → 不在0x47C620拒绝集，占用校验放行	[静态推断]	EVIDENCE/static_verify.txt

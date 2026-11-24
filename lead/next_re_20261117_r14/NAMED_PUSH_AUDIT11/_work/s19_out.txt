@@ -1,0 +1,77 @@
+### factory slot0 = 006C2A50 (QI?) full
+   006C2A50  8b 44 24 0c              mov eax, dword ptr [esp + 0xc]
+   006C2A54  53                       push ebx
+   006C2A55  85 c0                    test eax, eax
+   006C2A57  75 09                    jne 0x6c2a62
+   006C2A59  b8 03 40 00 80           mov eax, 0x80004003
+   006C2A5E  5b                       pop ebx
+   006C2A5F  c2 0c 00                 ret 0xc
+
+### imm refs inside 006C2A50..006C2AC0 (IIDs?)
+   006C2A50  8b 44 24 0c              mov eax, dword ptr [esp + 0xc]
+   006C2A59  b8 03 40 00 80           mov eax, 0x80004003
+   006C2A62  8b 54 24 0c              mov edx, dword ptr [esp + 0xc]
+   006C2A6D  bf 90 7c 7f 00           mov edi, 0x7f7c90
+   006C2A7C  8b 5c 24 10              mov ebx, dword ptr [esp + 0x10]
+   006C2A8B  bf a0 7c 7f 00           mov edi, 0x7f7ca0
+   006C2AA0  b8 02 40 00 80           mov eax, 0x80004002
+
+### 0041CFFE.. object deleting dtor 0041CFE0 tail
+   0041CFE0  51                       push ecx
+   0041CFE1  56                       push esi
+   0041CFE2  8b f1                    mov esi, ecx
+   0041CFE4  b2 01                    mov dl, 1
+   0041CFE6  c7 06 68 28 7e 00        mov dword ptr [esi], 0x7e2868
+   0041CFEC  c7 46 04 4c 28 7e 00     mov dword ptr [esi + 4], 0x7e284c
+   0041CFF3  c7 46 08 44 28 7e 00     mov dword ptr [esi + 8], 0x7e2844
+   0041CFFA  c7 46 0c 3c 28 7e 00     mov dword ptr [esi + 0xc], 0x7e283c
+   0041D001  e8 ca 88 30 00           call 0x7258d0
+   0041D006  8b 15 18 b2 a8 00        mov edx, dword ptr [0xa8b218]
+   0041D00C  8d 44 24 04              lea eax, [esp + 4]
+   0041D010  50                       push eax
+   0041D011  b9 18 b2 a8 00           mov ecx, 0xa8b218
+   0041D016  89 74 24 08              mov dword ptr [esp + 8], esi
+   0041D01A  ff 52 10                 call dword ptr [edx + 0x10]
+   0041D01D  83 f8 ff                 cmp eax, -1
+   0041D020  74 2d                    je 0x41d04f
+   0041D022  8b 0d 28 b2 a8 00        mov ecx, dword ptr [0xa8b228]
+   0041D028  3b c1                    cmp eax, ecx
+   0041D02A  7d 23                    jge 0x41d04f
+   0041D02C  49                       dec ecx
+   0041D02D  3b c1                    cmp eax, ecx
+   0041D02F  89 0d 28 b2 a8 00        mov dword ptr [0xa8b228], ecx
+   0041D035  7d 18                    jge 0x41d04f
+   0041D037  8b 0d 1c b2 a8 00        mov ecx, dword ptr [0xa8b21c]
+   0041D03D  40                       inc eax
+   0041D03E  8b 14 81                 mov edx, dword ptr [ecx + eax*4]
+   0041D041  89 54 81 fc              mov dword ptr [ecx + eax*4 - 4], edx
+   0041D045  8b 0d 28 b2 a8 00        mov ecx, dword ptr [0xa8b228]
+   0041D04B  3b c1                    cmp eax, ecx
+   0041D04D  7c e8                    jl 0x41d037
+   0041D04F  8b ce                    mov ecx, esi
+   0041D051  e8 8a 4a 2f 00           call 0x711ae0
+   0041D056  f6 44 24 0c 01           test byte ptr [esp + 0xc], 1
+   0041D05B  74 09                    je 0x41d066
+   0041D05D  56                       push esi
+   0041D05E  e8 da ba 3a 00           call 0x7c8b3d
+   0041D063  83 c4 04                 add esp, 4
+   0041D066  8b c6                    mov eax, esi
+   0041D068  5e                       pop esi
+   0041D069  59                       pop ecx
+   0041D06A  c2 04 00                 ret 4
+
+### 007258D0
+   007258D0  51                       push ecx
+   007258D1  53                       push ebx
+   007258D2  55                       push ebp
+   007258D3  56                       push esi
+   007258D4  8b f1                    mov esi, ecx
+   007258D6  57                       push edi
+   007258D7  8b fa                    mov edi, edx
+   007258D9  8b 06                    mov eax, dword ptr [esi]
+   007258DB  ff 50 2c                 call dword ptr [eax + 0x2c]
+   007258DE  8b d8                    mov ebx, eax
+   007258E0  a1 8c 09 88 00           mov eax, dword ptr [0x88098c]
+   007258E5  3b c6                    cmp eax, esi
+   007258E7  75 0a                    jne 0x7258f3
+   007258E9  33 ed                    xor ebp, ebp

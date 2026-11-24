@@ -1,0 +1,10 @@
+[impl1 json]  keys=6728 sites=68253 bounds=1392592 total=1467573 avg=12.009185
+[impl1 json]  bounds_avg=12.655792 calls_kv_avg=135.736772
+[impl2 regex] keys=6728 sites=68253 bounds=1392591 total=1467572 avg=12.009193
+[impl2 regex] bounds_avg=12.000007
+agree: keys True sites True total False avg False
+
+bounds count discrepancy (json=1392592 regex=1392591) explanation:
+  last bound = 007E038C ; its quoted occurrence inside the tail slice at 16711091 ; tail len 16711101
+  re.findall on tail: need closing quote after token -> last token is cut by the -2 slice for the closing "]}", so regex needs [:-2] -> count 1392591
+  recomputed with re-closed tail: 1392591 (== json 1392592 ? False)

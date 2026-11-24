@@ -1,0 +1,114 @@
+M73 VERIFY — 并表 NAMED_PUSH_AUDIT15 PASS 2 行（S18 007B10C0 / S09 004F45B0）
+复算时间：2026-11-20T15:59:27+08:00
+复算脚本：MERGE_M73\verify.py；apply_coverage.py / apply_panel.py（含前置断言）
+
+=====================================================================
+一、卡片硬指标（两行并行数必须 1 与 1，合计 2，不符即停）
+=====================================================================
+组 1 并行数                    : 1（NAMED_PUSH_AUDIT15 verdict 2 行 ∩ NAMED_PUSH_S18_B4 delta 1 行 → 007B10C0）
+组 2 并行数                    : 1（NAMED_PUSH_AUDIT15 verdict 2 行 ∩ NAMED_PUSH_S09_B1 delta 1 行 → 004F45B0）
+审计 verdict                  : 2/2 全 PASS（007B10C0 S18 PASS、004F45B0 S09 PASS）
+交集                          : 正好 2（007B10C0、004F45B0）；每 entry 在 coverage 恰好出现 1 次
+atlas 内（entry 归一）         : 2/2 全在 atlas 内（function_atlas.tsv 数据行 12,916）
+delta 第 4 列                  : 两行均不含字面 [未证]，strict 随 proved 同增
+
+=====================================================================
+二、coverage.tsv 行数与列
+=====================================================================
+数据行数                      : 18,498（不增不减）
+总行数（含表头 1 行）          : 18,499
+列结构                        : 数据行均 8 列、TAB 分隔（表头 1 行逗号）
+2 行改动                      : 仅第 4/5/6 列（文件行号 3948=004F45B0、12026=007B10C0）
+  第 4 列 one_line_semantics   ← 对应 delta.tsv 第 4 列原文照抄（逐字节一致）
+  第 5 列 grade                → [已证]（原均 [静态推断]）
+  第 6 列 evidence_path        → NAMED_PUSH_AUDIT15/VERDICT.md（两行统一）
+  第 1/2/3/7/8 列              : 逐字节不动（apply_coverage.py 逐行断言 + 本脚本复核）
+
+=====================================================================
+三、全表 / atlas 内 / atlas 外 [已证]（盘上实算）
+=====================================================================
+全表 [已证]                   : 1615（改前 1,613 → +2）
+atlas 内 [已证]               : 1609（改前 1,607 → +2）
+atlas 外 [已证]               : 6（改前 6 → 不变，两行均 atlas 内）
+
+=====================================================================
+四、S18 / S09 的 atlas 内 proved 与 strict（strict 用带方括号字面 [未证] 口径）
+=====================================================================
+S18 proved                    : 57（改前 56 → +1）= 57/659 = 8.65%
+S18 strict                    : 47（改前 46 → +1）= 47/659 = 7.13%
+S09 proved                    : 115（改前 114 → +1）= 115/1051 = 10.94%
+S09 strict                    : 98（改前 97 → +1）= 98/1051 = 9.32%
+  strict 口径                 : `if "[未证]" not in sem:` 带方括号字面 [未证]（strict_panel.py 第 78 行）；
+                                2 行新语义逐行核两 delta 第 4 列均不含字面 [未证]，strict 随 proved 同增。
+TOTAL atlas 内 proved         : 1609（1,607 → +2）= 1609/12,916 = 12.46%
+TOTAL atlas 内 strict         : 1292（1,290 → +2）= 1292/12,916 = 10.00%
+
+=====================================================================
+五、有无达标翻转（不得改变；若翻转须停下报告）
+=====================================================================
+有无达标翻转                  : 无
+名义达标（named_S(R14)∧proved）：3/22 = S15 / S16 / S17（未变）
+严格达标（named_S(R14)∧strict）：1/22 = S17（未变）
+S18：named 497/659 未过门槛 594、proved 57 远低于门槛 330；
+S09：named 681/1051 未过门槛 946、proved 115 远低于门槛 526；
+两行虽各 +1 proved，但 named 门槛远未达标，均不参与达标排名。
+
+=====================================================================
+六、备注列追加（PANEL.md）
+=====================================================================
+追加串                        : M73 并表 NAMED_PUSH_AUDIT15 PASS 2 行（S18 007B10C0 / S09 004F45B0，evidence_path 改指 NAMED_PUSH_AUDIT15/VERDICT.md；审计补证了 delta 缺失的 ②/④ 地址，并纠 004F45B0 的成功返回地址应为 0x4A3592）
+落点                          : S18/S09/TOTAL 备注首部、全表/atlas 单元格备注、标题行首（M73 摘要）
+审计补证说明落点              : 严格口径双列表区「M73 并表实算说明」（第 162 行）
+第 4 列处理                   : 按卡片「语义取 delta 原文」保留 delta 原文；004F45B0 成功返回地址更正（真值 0x4A3592）只入备注，不改写 coverage 第 4 列
+
+=====================================================================
+七、strict 口径字面
+=====================================================================
+全程使用带方括号字面 [未证]（proved_strict = atlas 内 [已证] 且语义栏不含 [未证]）。
+strict_panel.py 第 78 行原文核对：if "[未证]" not in sem:
+
+=====================================================================
+八、两文件 sha256（改后）
+=====================================================================
+coverage.tsv sha256           : 6a8085f91f0c5a68cdd2840f60d0922a2496a1afbce602f5e5a56f6c851f2396
+PANEL.md sha256               : ddfbaff78ba3c5774e305d727cfb6dc18aaacde747884c4f307fdb52436343f5
+
+=====================================================================
+九、verify.py 全量 PASS 输出（python verify.py after）
+=====================================================================
+PASS coverage header present (comma-separated, 1 tab-field)
+PASS coverage data rows 18,498
+PASS all data rows exactly 8 cols
+PASS full [已证]
+PASS atlas-in [已证]
+PASS atlas-out [已证]
+PASS S18 atlas-in proved
+PASS S18 atlas-in strict
+PASS S09 atlas-in proved
+PASS S09 atlas-in strict
+PASS TOTAL atlas-in proved
+PASS TOTAL atlas-in strict
+PASS nominal 达标 set
+PASS strict 达标 set
+PASS 007B10C0 appears exactly once in coverage
+PASS 007B10C0 after grade [已证]
+PASS 007B10C0 after evidence NAMED_PUSH_AUDIT15/VERDICT.md
+PASS 004F45B0 appears exactly once in coverage
+PASS 004F45B0 after grade [已证]
+PASS 004F45B0 after evidence NAMED_PUSH_AUDIT15/VERDICT.md
+PASS PANEL contains: M73 并表 NAMED_PUSH_AUDIT15 PASS 2 行
+PASS PANEL contains: | 全表 `[已证]` / atlas 内 `[已证]` | **1,615 / 1,609**
+PASS PANEL contains: | S18 | 659 | 497 | 75.42 | 497 | 75.42 | 57 | 8
+PASS PANEL contains: | S09 | 1051 | 681 | 64.80 | 681 | 64.80 | 82 |
+PASS PANEL contains: | **TOTAL** | **12,916** | **7210** | **55.82**
+PASS PANEL contains: | S18 | 659 | 57 | 8.65 | **47** | **7.13** | 33
+PASS PANEL contains: | S09 | 1051 | 115 | 10.94 | **98** | **9.32** |
+PASS PANEL contains: | **TOTAL** | **12916** | **1609** | **12.46** |
+PASS PANEL old gone: | 全表 `[已证]` / atlas 内 `[已证]` | **1,613 / 1,607**
+PASS PANEL old gone: | S18 | 659 | 497 | 75.42 | 497 | 75.42 | 57 | 8
+PASS PANEL old gone: | S09 | 1051 | 681 | 64.80 | 681 | 64.80 | 82 |
+PASS PANEL old gone: | **TOTAL** | **12,916** | **7210** | **55.82**
+PASS PANEL old gone: | S18 | 659 | 56 | 8.50 | **46** | **6.98** | 33
+PASS PANEL old gone: | S09 | 1051 | 114 | 10.85 | **97** | **9.23** |
+PASS PANEL old gone: | **TOTAL** | **12916** | **1607** | **12.44** |
+OVERALL: ALL PASS (35/35 checks)

@@ -1,0 +1,119 @@
+=== A 指纹（hashlib 现盘重算，9 件只读件）===
+  True sha256=aeab4fc30822dfde9c21489aef9a42a1558dde1f21f091f486bbd94453f7a523 bytes=36194 lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md
+  True sha256=d3543657aa4f9914c9023710f6daef8348a12ca0aa11957110e8b7c45baec6fe bytes=38575 lead/gate_pipeline_20261109/_gp_regression_out.json
+  True sha256=3253eb8456ceab54df1b41629caa4eaee8fcabff5e016e18fd71a3a3606b4546 bytes=51602 lead/evidence_indep_20261109/_ei_04_v12_layer_out.json
+  True sha256=e1195b3b220ad97b5b91b8746a24e332b02ce28085452e947554f99b7f2f3079 bytes=16649 lead/evidence_indep_20261109/_ei_n13_predicates_src.py
+  True sha256=15e4211ffe8397027757aa4d0fb9b9cc5dc41126a08024b9f6cb5bbd8be4a1c0 bytes=9148 lead/gate_v1v2_20261109/_v12_rule.py
+  True sha256=02c17e49764a6f87f2b0d26c6689f0cbeb96498509e5c75bf843104829c51120 bytes=11743 lead/gate_fp7_20261108/_g7_predicates.py
+  True sha256=f3112b225b1de35183ad4604554cb25689ed252b6a5a95d96d17fce53c8c140e bytes=8733 lead/falsifiable_no_relax_20261109/_fnr_check_out.json
+  True sha256=3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 bytes=52419 lead/PENDING_DECISIONS.md
+  True sha256=2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede bytes=759518 lead/GOAL_THREE_TARGETS_20261018.md
+FP_ALL_MATCH True count 9
+
+=== B 数据一致性 ===
+  GP rows=74 EI rows=74
+  id 序列全等=True 5 列逐行全等=True
+  expect=CATCH(真断言类)=39 PASS(非断言类)=35 pi=0.527027027
+
+=== C 逐层 fp/fn/rate（fp 分母=35 非断言，fn 分母=39 真断言）===
+  r10   CATCH=40 PASS=34 fp=20/35=0.571429 fn=19/39=0.487179 q=0.487179 c=0.428571
+  r12   CATCH= 4 PASS=70 fp= 0/35=0.000000 fn=35/39=0.897436 q=0.897436 c=1.000000
+  n13   CATCH=36 PASS=38 fp= 0/35=0.000000 fn= 3/39=0.076923 q=0.076923 c=1.000000
+  chain CATCH=38 PASS=36 fp= 2/35=0.057143 fn= 3/39=0.076923 q=0.076923 c=0.942857
+  对照编排方 per_layer：
+    r10   fp 20==20 True | fn 19==19 True | fp_rate 0.5714==0.5714 True | miss_rate 0.4872==0.4872 True
+    r12   fp 0==0 True | fn 35==35 True | fp_rate 0.0000==0.0000 True | miss_rate 0.8974==0.8974 True
+    n13   fp 0==0 True | fn 3==3 True | fp_rate 0.0000==0.0000 True | miss_rate 0.0769==0.0769 True
+
+=== D 三层全过 ===
+  all3_pass=18 wrong=3 ids=['GP-A1', 'GP-A2', 'GP-A3']
+  P(E|all3 PASS)=3/18=0.166666667  P(正确|all3 PASS)=15/18=0.833333333
+  18 行 chain 是否全 PASS=True
+
+=== E 独立假设错率算式 ===
+  q10=0.487179487 q12=0.897435897 q13=0.076923077
+  3.75% = q10*q13 = 0.037475345 ; 硬乘三层 q10*q12*q13 = 0.033631720
+  编排 indep_wrong_prob=0.0 来源 fp_rate 乘积 = 0.571428571*0.000000000*0.000000000 = 0.000000000 （口径错置：非断言被误拦率，非真断言被放过率）
+  P(all3 PASS|E) 实测=3/39=0.076923077 ; 放大 0.076923/0.037475=2.052631579（2.05 倍，似然口径）
+  3/18 / 3.75% = 4.447368 （后验÷似然，类别错误，不得用）
+  Bayes 2 层独立 P(E|全PASS)=0.088785047 宣称正确=91.121495%
+  Bayes 3 层独立 P(E|全PASS)=0.080411125 宣称正确=91.958888%
+  实测正确=83.333333% → 低 7.7882 pp(2层)/8.6256 pp(3层) ; 后验错误率放大 1.8772×/2.0727×
+
+=== F r10×n13 交叉表 / 一致率 / k_eff 自洽 ===
+  交叉 (r10,n13): CATCH/CATCH=20 CATCH/PASS=20 PASS/CATCH=16 PASS/PASS=18
+  一致率 = 38/74 = 0.513513514（51.35%）；低标签一致 ≠ 误差独立，3 错 100% 落在共同盲区
+
+=== G k_eff 三口径 ===
+  pi=0.527027027 p1=P(E|n13 PASS)=0.078947368 p2=P(E|n13&r10 PASS)=0.166666667 p3=P(E|三层全PASS)=0.166666667
+  (1) 概率比 k_prob  = ln(p3/pi)/ln(p1/pi) = 0.606412408 (≈0.61)
+  (2) 后验几率比 k_odds = ln[odds(p3)/odds(pi)]/ln[odds(p1)/odds(pi)] = 0.669662928 (≈0.670)
+  (3) 信息增益比 k_info = (pi-p3)/(pi-p1) = 0.804232804 (≈0.804)
+  R12 真 bit 增量 log2(odds(p3)/odds(p2)) = 0.000000000
+
+=== H 小样本区间（scipy norm.ppf / beta.ppf，独立实现）===
+  z=norm.ppf(0.975)=1.959963985
+  P(E|全PASS)=3/18      Wilson95=[0.058366, 0.392220] CP95=[0.035785, 0.414177] 宽度=33.39 pp / 37.84 pp
+  P(正确)=15/18          Wilson95=[0.607780, 0.941634] CP95=[0.585823, 0.964215] 宽度=33.39 pp / 37.84 pp
+  q_n13=3/39           Wilson95=[0.026507, 0.203211] CP95=[0.016153, 0.208702] 宽度=17.67 pp / 19.25 pp
+  补集核对 P(正确) CP95=[1-0.414177, 1-0.035785]=[0.585823, 0.964215]
+
+=== I 敏感性（固定 18 行分母，仅改错例数 k）===
+  k=1 p3=0.055556 k_prob=1.1851 k_odds=1.1468 k_info=1.052205
+  k=2 p3=0.111111 k_prob=0.8200 k_odds=0.8529 k_info=0.928219
+  k=3 p3=0.166667 k_prob=0.6064 k_odds=0.6697 k_info=0.804233
+  k=4 p3=0.222222 k_prob=0.4549 k_odds=0.5306 k_info=0.680247
+  k=5 p3=0.277778 k_prob=0.3373 k_odds=0.4147 k_info=0.556261
+  k=6 p3=0.333333 k_prob=0.2413 k_odds=0.3124 k_info=0.432275
+  LOO 删任一错例 → 2/17=0.117647 k_prob=0.7899
+
+=== J 独立 bootstrap（numpy PCG64 seed=90210, B=10000，与作者 LCG 不同实现）===
+  k_prob  valid=9538 95%=[0.3360, 0.7905] median=0.6100 range=[-0.0890, 0.8894]
+  k_odds  valid=9538 95%=[0.4132, 0.8263] median=0.6743 range=[-0.1271, 0.9121]
+  k_info  valid=10000 95%=[0.5025, 1.0000] median=0.8169 range=[-0.1571, 1.0000]
+  p3      valid=10000 95%=[0.0000, 0.3600] median=0.1579 range=[0.0000, 0.6000]
+  ★ 点值 0.61/0.670/0.804 共用同一 3 错例，上限逼近 1、全距含负值 → 描述性、不可靠、不可用于放行
+
+=== K 样本量（正态近似）===
+  joint_miss 3/39 ±2pp     n_E≈682 条真断言类 → 总行≈1294
+  joint_miss 3/39 ±1pp     n_E≈2728 条真断言类 → 总行≈5176
+  posterior 3/18 ±5pp      n_E≈214 条真断言类 → 总行≈405
+  posterior 3/18 ±2pp      n_E≈1334 条真断言类 → 总行≈2531
+  joint_miss 相对 ±10%       n_E≈4610 条真断言类 → 总行≈8747
+  joint_miss 相对 ±5%        n_E≈18440 条真断言类 → 总行≈34987
+  100 个全PASS错例需 ≈600 全PASS行 ≈2467 总行
+
+=== L R12 零增量 ===
+  n13=PASS 行数=38 其中 r12=CATCH 行数=0 → P(r12=PASS|n13=PASS)=38/38=1.000（观测，非定理）
+  零命中 38 次单侧精确 95% 上界 1-0.05^(1/38)=0.075808 ; 双侧 1-0.025^(1/38)=0.092513
+  Wilson 双侧 95% 上界=0.091810 ; rule-of-three 单侧近似 3/38=0.078947（口径须标注，不可混列）
+  tokens≠T3 行数=19 其中三词超集=17 其它=2
+  r12=CATCH 的 4 行 id=['R10-TV3', 'R10-CTX-05', 'R10-CTX-06', 'GP-C04'] ; 全部 expect=CATCH 且 n13=CATCH = True
+  GP-A1/A2/A3 三层全 PASS 且 r12=PASS = True
+
+=== M 冲突信号 ===
+  conflicts>0 行=25 chain 判错=[] ; conflicts==0 行=49 chain 判错=5 ids=['REAL-SLOT', 'REAL-TRUTH', 'GP-A1', 'GP-A2', 'GP-A3']
+  chain 合计 correct=69/74 fp=2 fn=3
+
+=== N Fréchet 上界 ===
+  min q_i = 0.076923077 ; 实测 P(allPASS|E)=0.076923077 → 上界被取等（饱和、零余量）
+  借 c_i,pi 换后验 P(E|全PASS)≤0.166666667 → 正确率≥0.833333333（样本内）
+  若用 q_n13 Wilson95 上界 0.203211 → 后验正确率仅 ≥0.654301（生产置信下界不可用）
+
+=== O 必现要素自检 ===
+  key k_eff    present-in-doc-check = (交付文档自行核对)
+  key 0.61     present-in-doc-check = (交付文档自行核对)
+  key 0.670    present-in-doc-check = (交付文档自行核对)
+  key 0.804    present-in-doc-check = (交付文档自行核对)
+  key 16.7%    present-in-doc-check = (交付文档自行核对)
+  key 3.75%    present-in-doc-check = (交付文档自行核对)
+  key 2.05     present-in-doc-check = (交付文档自行核对)
+  key 51.35%   present-in-doc-check = (交付文档自行核对)
+  key 区间       present-in-doc-check = (交付文档自行核对)
+  key 样本量      present-in-doc-check = (交付文档自行核对)
+  key 零增量      present-in-doc-check = (交付文档自行核对)
+  key Fréchet  present-in-doc-check = (交付文档自行核对)
+  key 置信度声明    present-in-doc-check = (交付文档自行核对)
+  key 精确表述     present-in-doc-check = (交付文档自行核对)
+  key 未验       present-in-doc-check = (交付文档自行核对)
+

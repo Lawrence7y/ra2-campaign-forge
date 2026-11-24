@@ -1,0 +1,946 @@
+T2 adversarial verification of the W132 instance-array claims
+binary : D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+sha256 : 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476  (MATCH)
+sections (VA ranges, file-backed size):
+   .text    00401000..007E038D  file-backed 003E0000 bytes
+   .rdata   007E1000..00811074  file-backed 00031000 bytes
+   .data    00812000..00B79BE4  file-backed 0006C000 bytes
+   .rsrc    00B7A000..00B92128  file-backed 00019000 bytes
+   .detour  00B93000..00B95718  file-backed 00003000 bytes
+index  : 1971 C7 05 stores, 26536 push imm32, 135 push [mem], 188 rmw-mem ops
+TypeDescriptors resolvable: 988
+
+==============================================================================
+C1  VectorClass<T> layout, derived from 8 independent static ctors
+==============================================================================
+Claim: +00 vftable, +04 T* Items, +08 int Capacity, +0C bool IsInitialized,
+       +0D bool IsAllocated, +10 int Count, +14 int CapacityIncrement (=10)
+
+Method: for each array, take the .CRT$XCU initialiser (the function that
+stores a vftable into [base]) and tabulate EVERY absolute memory write it
+performs.  A layout claim is only supported if all 8 tabulations agree.
+
+---- 0xA8EB40 (expected BuildingClass*) ----
+   static ctor 004E6B5C..004E6B9E (66 bytes), vftable store at 004E6B7D
+     004E6B5C  90                     nop     
+     004E6B5D  90                     nop     
+     004E6B5E  90                     nop     
+     004E6B5F  90                     nop     
+     004E6B60  33c0                   xor     eax, eax
+     004E6B62  68a06b4e00             push    0x4e6ba0
+     004E6B67  a344eba800             mov     dword ptr [0xa8eb44], eax
+     004E6B6C  a348eba800             mov     dword ptr [0xa8eb48], eax
+     004E6B71  c6054ceba80001         mov     byte ptr [0xa8eb4c], 1
+     004E6B78  a24deba800             mov     byte ptr [0xa8eb4d], al
+     004E6B7D  c70540eba800249e7e00   mov     dword ptr [0xa8eb40], 0x7e9e24
+     004E6B87  c70554eba8000a000000   mov     dword ptr [0xa8eb54], 0xa
+     004E6B91  a350eba800             mov     dword ptr [0xa8eb50], eax
+     004E6B96  e8ef2b2e00             call    0x7c978a
+     004E6B9B  59                     pop     ecx
+     004E6B9C  c3                     ret     
+     004E6B9D  90                     nop     
+   absolute writes into the object:
+     +0x00  size=4  value=8298020     @004E6B7D  (mov dword ptr [0xa8eb40], 0x7e9e24)
+     +0x04  size=4  value=[eax]       @004E6B67  (mov dword ptr [0xa8eb44], eax)
+     +0x08  size=4  value=[eax]       @004E6B6C  (mov dword ptr [0xa8eb48], eax)
+     +0x0C  size=1  value=1           @004E6B71  (mov byte ptr [0xa8eb4c], 1)
+     +0x0D  size=1  value=[eax]       @004E6B78  (mov byte ptr [0xa8eb4d], al)
+     +0x10  size=4  value=[eax]       @004E6B91  (mov dword ptr [0xa8eb50], eax)
+     +0x14  size=4  value=10          @004E6B87  (mov dword ptr [0xa8eb54], 0xa)
+   vftable stored: 007E9E24 -> DynamicVectorClass<BuildingClass@@*>
+
+---- 0x8B4108 (expected UnitClass*) ----
+   static ctor 004E6C5C..004E6C9E (66 bytes), vftable store at 004E6C7D
+     004E6C5C  90                     nop     
+     004E6C5D  90                     nop     
+     004E6C5E  90                     nop     
+     004E6C5F  90                     nop     
+     004E6C60  33c0                   xor     eax, eax
+     004E6C62  68a06c4e00             push    0x4e6ca0
+     004E6C67  a30c418b00             mov     dword ptr [0x8b410c], eax
+     004E6C6C  a310418b00             mov     dword ptr [0x8b4110], eax
+     004E6C71  c60514418b0001         mov     byte ptr [0x8b4114], 1
+     004E6C78  a215418b00             mov     byte ptr [0x8b4115], al
+     004E6C7D  c70508418b00a49e7e00   mov     dword ptr [0x8b4108], 0x7e9ea4
+     004E6C87  c7051c418b000a000000   mov     dword ptr [0x8b411c], 0xa
+     004E6C91  a318418b00             mov     dword ptr [0x8b4118], eax
+     004E6C96  e8ef2a2e00             call    0x7c978a
+     004E6C9B  59                     pop     ecx
+     004E6C9C  c3                     ret     
+     004E6C9D  90                     nop     
+   absolute writes into the object:
+     +0x00  size=4  value=8298148     @004E6C7D  (mov dword ptr [0x8b4108], 0x7e9ea4)
+     +0x04  size=4  value=[eax]       @004E6C67  (mov dword ptr [0x8b410c], eax)
+     +0x08  size=4  value=[eax]       @004E6C6C  (mov dword ptr [0x8b4110], eax)
+     +0x0C  size=1  value=1           @004E6C71  (mov byte ptr [0x8b4114], 1)
+     +0x0D  size=1  value=[eax]       @004E6C78  (mov byte ptr [0x8b4115], al)
+     +0x10  size=4  value=[eax]       @004E6C91  (mov dword ptr [0x8b4118], eax)
+     +0x14  size=4  value=10          @004E6C87  (mov dword ptr [0x8b411c], 0xa)
+   vftable stored: 007E9EA4 -> DynamicVectorClass<UnitClass@@*>
+
+---- 0xA80228 (expected HouseClass*) ----
+   static ctor 004E6CDC..004E6D1E (66 bytes), vftable store at 004E6CFD
+     004E6CDC  90                     nop     
+     004E6CDD  90                     nop     
+     004E6CDE  90                     nop     
+     004E6CDF  90                     nop     
+     004E6CE0  33c0                   xor     eax, eax
+     004E6CE2  68206d4e00             push    0x4e6d20
+     004E6CE7  a32c02a800             mov     dword ptr [0xa8022c], eax
+     004E6CEC  a33002a800             mov     dword ptr [0xa80230], eax
+     004E6CF1  c6053402a80001         mov     byte ptr [0xa80234], 1
+     004E6CF8  a23502a800             mov     byte ptr [0xa80235], al
+     004E6CFD  c7052802a800e49e7e00   mov     dword ptr [0xa80228], 0x7e9ee4
+     004E6D07  c7053c02a8000a000000   mov     dword ptr [0xa8023c], 0xa
+     004E6D11  a33802a800             mov     dword ptr [0xa80238], eax
+     004E6D16  e86f2a2e00             call    0x7c978a
+     004E6D1B  59                     pop     ecx
+     004E6D1C  c3                     ret     
+     004E6D1D  90                     nop     
+   absolute writes into the object:
+     +0x00  size=4  value=8298212     @004E6CFD  (mov dword ptr [0xa80228], 0x7e9ee4)
+     +0x04  size=4  value=[eax]       @004E6CE7  (mov dword ptr [0xa8022c], eax)
+     +0x08  size=4  value=[eax]       @004E6CEC  (mov dword ptr [0xa80230], eax)
+     +0x0C  size=1  value=1           @004E6CF1  (mov byte ptr [0xa80234], 1)
+     +0x0D  size=1  value=[eax]       @004E6CF8  (mov byte ptr [0xa80235], al)
+     +0x10  size=4  value=[eax]       @004E6D11  (mov dword ptr [0xa80238], eax)
+     +0x14  size=4  value=10          @004E6D07  (mov dword ptr [0xa8023c], 0xa)
+   vftable stored: 007E9EE4 -> DynamicVectorClass<HouseClass@@*>
+
+---- 0xA8E390 (expected AircraftClass*) ----
+   static ctor 004E6BDC..004E6C1E (66 bytes), vftable store at 004E6BFD
+     004E6BDC  90                     nop     
+     004E6BDD  90                     nop     
+     004E6BDE  90                     nop     
+     004E6BDF  90                     nop     
+     004E6BE0  33c0                   xor     eax, eax
+     004E6BE2  68206c4e00             push    0x4e6c20
+     004E6BE7  a394e3a800             mov     dword ptr [0xa8e394], eax
+     004E6BEC  a398e3a800             mov     dword ptr [0xa8e398], eax
+     004E6BF1  c6059ce3a80001         mov     byte ptr [0xa8e39c], 1
+     004E6BF8  a29de3a800             mov     byte ptr [0xa8e39d], al
+     004E6BFD  c70590e3a800649e7e00   mov     dword ptr [0xa8e390], 0x7e9e64
+     004E6C07  c705a4e3a8000a000000   mov     dword ptr [0xa8e3a4], 0xa
+     004E6C11  a3a0e3a800             mov     dword ptr [0xa8e3a0], eax
+     004E6C16  e86f2b2e00             call    0x7c978a
+     004E6C1B  59                     pop     ecx
+     004E6C1C  c3                     ret     
+     004E6C1D  90                     nop     
+   absolute writes into the object:
+     +0x00  size=4  value=8298084     @004E6BFD  (mov dword ptr [0xa8e390], 0x7e9e64)
+     +0x04  size=4  value=[eax]       @004E6BE7  (mov dword ptr [0xa8e394], eax)
+     +0x08  size=4  value=[eax]       @004E6BEC  (mov dword ptr [0xa8e398], eax)
+     +0x0C  size=1  value=1           @004E6BF1  (mov byte ptr [0xa8e39c], 1)
+     +0x0D  size=1  value=[eax]       @004E6BF8  (mov byte ptr [0xa8e39d], al)
+     +0x10  size=4  value=[eax]       @004E6C11  (mov dword ptr [0xa8e3a0], eax)
+     +0x14  size=4  value=10          @004E6C07  (mov dword ptr [0xa8e3a4], 0xa)
+   vftable stored: 007E9E64 -> DynamicVectorClass<AircraftClass@@*>
+
+---- 0x8B3DC0 (expected FootClass*) ----
+   static ctor 004D3174..004D319E (42 bytes), vftable store at 004D317D
+     004D3174  3d8b0001a2             cmp     eax, 0xa201008b
+     004D3179  cd3d                   int     0x3d
+     004D317B  8b00                   mov     eax, dword ptr [eax]
+     004D317D  c705c03d8b00288c7e00   mov     dword ptr [0x8b3dc0], 0x7e8c28
+     004D3187  c705d43d8b000a000000   mov     dword ptr [0x8b3dd4], 0xa
+     004D3191  a3d03d8b00             mov     dword ptr [0x8b3dd0], eax
+     004D3196  e8ef652f00             call    0x7c978a
+     004D319B  59                     pop     ecx
+     004D319C  c3                     ret     
+     004D319D  90                     nop     
+   absolute writes into the object:
+     +0x00  size=4  value=8293416     @004D317D  (mov dword ptr [0x8b3dc0], 0x7e8c28)
+     +0x10  size=4  value=[eax]       @004D3191  (mov dword ptr [0x8b3dd0], eax)
+     +0x14  size=4  value=10          @004D3187  (mov dword ptr [0x8b3dd4], 0xa)
+   vftable stored: 007E8C28 -> DynamicVectorClass<FootClass@@*>
+
+---- 0xB0F720 (expected AbstractClass*) ----
+   static ctor 007252C8..0072530E (70 bytes), vftable store at 007252ED
+     007252C8  90                     nop     
+     007252C9  90                     nop     
+     007252CA  90                     nop     
+     007252CB  90                     nop     
+     007252CC  90                     nop     
+     007252CD  90                     nop     
+     007252CE  90                     nop     
+     007252CF  90                     nop     
+     007252D0  33c0                   xor     eax, eax
+     007252D2  6810537200             push    0x725310
+     007252D7  a324f7b000             mov     dword ptr [0xb0f724], eax
+     007252DC  a328f7b000             mov     dword ptr [0xb0f728], eax
+     007252E1  c6052cf7b00001         mov     byte ptr [0xb0f72c], 1
+     007252E8  a22df7b000             mov     byte ptr [0xb0f72d], al
+     007252ED  c70520f7b000ec917e00   mov     dword ptr [0xb0f720], 0x7e91ec
+     007252F7  c70534f7b0000a000000   mov     dword ptr [0xb0f734], 0xa
+     00725301  a330f7b000             mov     dword ptr [0xb0f730], eax
+     00725306  e87f440a00             call    0x7c978a
+     0072530B  59                     pop     ecx
+     0072530C  c3                     ret     
+     0072530D  90                     nop     
+   absolute writes into the object:
+     +0x00  size=4  value=8294892     @007252ED  (mov dword ptr [0xb0f720], 0x7e91ec)
+     +0x04  size=4  value=[eax]       @007252D7  (mov dword ptr [0xb0f724], eax)
+     +0x08  size=4  value=[eax]       @007252DC  (mov dword ptr [0xb0f728], eax)
+     +0x0C  size=1  value=1           @007252E1  (mov byte ptr [0xb0f72c], 1)
+     +0x0D  size=1  value=[eax]       @007252E8  (mov byte ptr [0xb0f72d], al)
+     +0x10  size=4  value=[eax]       @00725301  (mov dword ptr [0xb0f730], eax)
+     +0x14  size=4  value=10          @007252F7  (mov dword ptr [0xb0f734], 0xa)
+   vftable stored: 007E91EC -> DynamicVectorClass<AbstractClass@@*>
+
+---- 0xA8EC78 (expected TechnoClass*) ----
+   static ctor 004E79DC..004E7A1E (66 bytes), vftable store at 004E79FD
+     004E79DC  90                     nop     
+     004E79DD  90                     nop     
+     004E79DE  90                     nop     
+     004E79DF  90                     nop     
+     004E79E0  33c0                   xor     eax, eax
+     004E79E2  68207a4e00             push    0x4e7a20
+     004E79E7  a37ceca800             mov     dword ptr [0xa8ec7c], eax
+     004E79EC  a380eca800             mov     dword ptr [0xa8ec80], eax
+     004E79F1  c60584eca80001         mov     byte ptr [0xa8ec84], 1
+     004E79F8  a285eca800             mov     byte ptr [0xa8ec85], al
+     004E79FD  c70578eca800ac177e00   mov     dword ptr [0xa8ec78], 0x7e17ac
+     004E7A07  c7058ceca8000a000000   mov     dword ptr [0xa8ec8c], 0xa
+     004E7A11  a388eca800             mov     dword ptr [0xa8ec88], eax
+     004E7A16  e86f1d2e00             call    0x7c978a
+     004E7A1B  59                     pop     ecx
+     004E7A1C  c3                     ret     
+     004E7A1D  90                     nop     
+   absolute writes into the object:
+     +0x00  size=4  value=8263596     @004E79FD  (mov dword ptr [0xa8ec78], 0x7e17ac)
+     +0x04  size=4  value=[eax]       @004E79E7  (mov dword ptr [0xa8ec7c], eax)
+     +0x08  size=4  value=[eax]       @004E79EC  (mov dword ptr [0xa8ec80], eax)
+     +0x0C  size=1  value=1           @004E79F1  (mov byte ptr [0xa8ec84], 1)
+     +0x0D  size=1  value=[eax]       @004E79F8  (mov byte ptr [0xa8ec85], al)
+     +0x10  size=4  value=[eax]       @004E7A11  (mov dword ptr [0xa8ec88], eax)
+     +0x14  size=4  value=10          @004E7A07  (mov dword ptr [0xa8ec8c], 0xa)
+   vftable stored: 007E17AC -> DynamicVectorClass<TechnoClass@@*>
+
+---- 0xA83DE8 (expected InfantryClass*) ----
+   static ctor 004E6ADC..004E6B1E (66 bytes), vftable store at 004E6AFD
+     004E6ADC  90                     nop     
+     004E6ADD  90                     nop     
+     004E6ADE  90                     nop     
+     004E6ADF  90                     nop     
+     004E6AE0  33c0                   xor     eax, eax
+     004E6AE2  68206b4e00             push    0x4e6b20
+     004E6AE7  a3ec3da800             mov     dword ptr [0xa83dec], eax
+     004E6AEC  a3f03da800             mov     dword ptr [0xa83df0], eax
+     004E6AF1  c605f43da80001         mov     byte ptr [0xa83df4], 1
+     004E6AF8  a2f53da800             mov     byte ptr [0xa83df5], al
+     004E6AFD  c705e83da800c8437e00   mov     dword ptr [0xa83de8], 0x7e43c8
+     004E6B07  c705fc3da8000a000000   mov     dword ptr [0xa83dfc], 0xa
+     004E6B11  a3f83da800             mov     dword ptr [0xa83df8], eax
+     004E6B16  e86f2c2e00             call    0x7c978a
+     004E6B1B  59                     pop     ecx
+     004E6B1C  c3                     ret     
+     004E6B1D  90                     nop     
+   absolute writes into the object:
+     +0x00  size=4  value=8274888     @004E6AFD  (mov dword ptr [0xa83de8], 0x7e43c8)
+     +0x04  size=4  value=[eax]       @004E6AE7  (mov dword ptr [0xa83dec], eax)
+     +0x08  size=4  value=[eax]       @004E6AEC  (mov dword ptr [0xa83df0], eax)
+     +0x0C  size=1  value=1           @004E6AF1  (mov byte ptr [0xa83df4], 1)
+     +0x0D  size=1  value=[eax]       @004E6AF8  (mov byte ptr [0xa83df5], al)
+     +0x10  size=4  value=[eax]       @004E6B11  (mov dword ptr [0xa83df8], eax)
+     +0x14  size=4  value=10          @004E6B07  (mov dword ptr [0xa83dfc], 0xa)
+   vftable stored: 007E43C8 -> DynamicVectorClass<InfantryClass@@*>
+
+
+==============================================================================
+C1 / angle 4  '+0x14 CapacityIncrement == 10' on every array
+==============================================================================
+array      ctor       [+0x14] write     value  observation
+0xA8EB40   004E6B5C   004E6B87         10     == 10
+0x8B4108   004E6C5C   004E6C87         10     == 10
+0xA80228   004E6CDC   004E6D07         10     == 10
+0xA8E390   004E6BDC   004E6C07         10     == 10
+0x8B3DC0   004D3174   004D3187         10     == 10
+0xB0F720   007252C8   007252F7         10     == 10
+0xA8EC78   004E79DC   004E7A07         10     == 10
+0xA83DE8   004E6ADC   004E6B07         10     == 10
+
+distinct values observed: [10]
+
+==============================================================================
+C1 / angle 3  layout re-derived from the VIRTUAL METHODS (independent)
+==============================================================================
+The vftable of each array is a real C++ vtable; its methods index the
+object via [ecx+disp].  Those displacements are a second, independent
+statement of the layout.
+
+---- 0xA8EB40  vftable 007E9E24 ----
+   slot +0x04 -> 004E9460   [this+disp] used: [0, 4, 8, 16]
+   slot +0x08 -> 004E95E0   [this+disp] used: [4, 8, 12, 13, 24]
+   slot +0x0C -> 004E82F0   [this+disp] used: [4, 8, 13, 16]
+   slot +0x10 -> 004E9690   [this+disp] used: [0, 4, 8, 16]
+   slot +0x14 -> 004E8320   [this+disp] used: [12]
+   slot +0x18 -> 004E8340   [this+disp] used: [4]
+   union of offsets used by the array's own methods: [0, 4, 8, 12, 13, 16, 24]
+   -> matches C1 {+0,+4,+8,+0xC,+0xD,+0x10} ?  YES
+
+---- 0x8B4108  vftable 007E9EA4 ----
+   slot +0x04 -> 004EB980   [this+disp] used: [0, 4, 8, 16]
+   slot +0x08 -> 004EBB00   [this+disp] used: [4, 8, 12, 13, 24]
+   slot +0x0C -> 004E88A0   [this+disp] used: [4, 8, 13, 16]
+   slot +0x10 -> 004EBBB0   [this+disp] used: [0, 4, 8, 16]
+   slot +0x14 -> 004E88D0   [this+disp] used: [12]
+   slot +0x18 -> 004E88F0   [this+disp] used: [4]
+   union of offsets used by the array's own methods: [0, 4, 8, 12, 13, 16, 24]
+   -> matches C1 {+0,+4,+8,+0xC,+0xD,+0x10} ?  YES
+
+---- 0xA80228  vftable 007E9EE4 ----
+   slot +0x04 -> 004EBBE0   [this+disp] used: [0, 4, 8, 16]
+   slot +0x08 -> 004EBD60   [this+disp] used: [4, 8, 12, 13, 24]
+   slot +0x0C -> 004E8900   [this+disp] used: [4, 8, 13, 16]
+   slot +0x10 -> 004EBE10   [this+disp] used: [0, 4, 8, 16]
+   slot +0x14 -> 004E8930   [this+disp] used: [12]
+   slot +0x18 -> 004E8950   [this+disp] used: [4]
+   union of offsets used by the array's own methods: [0, 4, 8, 12, 13, 16, 24]
+   -> matches C1 {+0,+4,+8,+0xC,+0xD,+0x10} ?  YES
+
+---- 0xA8E390  vftable 007E9E64 ----
+   slot +0x04 -> 004EB720   [this+disp] used: [0, 4, 8, 16]
+   slot +0x08 -> 004EB8A0   [this+disp] used: [4, 8, 12, 13, 24]
+   slot +0x0C -> 004E8840   [this+disp] used: [4, 8, 13, 16]
+   slot +0x10 -> 004EB950   [this+disp] used: [0, 4, 8, 16]
+   slot +0x14 -> 004E8870   [this+disp] used: [12]
+   slot +0x18 -> 004E8890   [this+disp] used: [4]
+   union of offsets used by the array's own methods: [0, 4, 8, 12, 13, 16, 24]
+   -> matches C1 {+0,+4,+8,+0xC,+0xD,+0x10} ?  YES
+
+---- 0x8B3DC0  vftable 007E8C28 ----
+   slot +0x04 -> 004E0580   [this+disp] used: [0, 4, 8, 16]
+   slot +0x08 -> 004E0700   [this+disp] used: [4, 8, 12, 13, 24]
+   slot +0x0C -> 004E01F0   [this+disp] used: [4, 8, 13, 16]
+   slot +0x10 -> 004E07B0   [this+disp] used: [0, 4, 8, 16]
+   slot +0x14 -> 004E0220   [this+disp] used: [12]
+   slot +0x18 -> 004E0240   [this+disp] used: [4]
+   union of offsets used by the array's own methods: [0, 4, 8, 12, 13, 16, 24]
+   -> matches C1 {+0,+4,+8,+0xC,+0xD,+0x10} ?  YES
+
+---- 0xB0F720  vftable 007E91EC ----
+   slot +0x04 -> 004E0320   [this+disp] used: [0, 4, 8, 16]
+   slot +0x08 -> 004E04A0   [this+disp] used: [4, 8, 12, 13, 24]
+   slot +0x0C -> 004E0190   [this+disp] used: [4, 8, 13, 16]
+   slot +0x10 -> 004E0550   [this+disp] used: [0, 4, 8, 16]
+   slot +0x14 -> 004E01C0   [this+disp] used: [12]
+   slot +0x18 -> 004E01E0   [this+disp] used: [4]
+   union of offsets used by the array's own methods: [0, 4, 8, 12, 13, 16, 24]
+   -> matches C1 {+0,+4,+8,+0xC,+0xD,+0x10} ?  YES
+
+---- 0xA8EC78  vftable 007E17AC ----
+   slot +0x04 -> 0040B960   [this+disp] used: [0, 4, 8, 16]
+   slot +0x08 -> 0040BAE0   [this+disp] used: [4, 8, 12, 13, 24]
+   slot +0x0C -> 0040B6A0   [this+disp] used: [4, 8, 13, 16]
+   slot +0x10 -> 0040BB90   [this+disp] used: [0, 4, 8, 16]
+   slot +0x14 -> 0040B6D0   [this+disp] used: [12]
+   slot +0x18 -> 0040B6F0   [this+disp] used: [4]
+   union of offsets used by the array's own methods: [0, 4, 8, 12, 13, 16, 24]
+   -> matches C1 {+0,+4,+8,+0xC,+0xD,+0x10} ?  YES
+
+---- 0xA83DE8  vftable 007E43C8 ----
+   slot +0x04 -> 0045A3E0   [this+disp] used: [0, 4, 8, 16]
+   slot +0x08 -> 0045A560   [this+disp] used: [4, 8, 12, 13, 24]
+   slot +0x0C -> 00459FF0   [this+disp] used: [4, 8, 13, 16]
+   slot +0x10 -> 0045A610   [this+disp] used: [0, 4, 8, 16]
+   slot +0x14 -> 0045A020   [this+disp] used: [12]
+   slot +0x18 -> 0045A040   [this+disp] used: [4]
+   union of offsets used by the array's own methods: [0, 4, 8, 12, 13, 16, 24]
+   -> matches C1 {+0,+4,+8,+0xC,+0xD,+0x10} ?  YES
+
+
+==============================================================================
+Vectors: layout is confirmed independently of any name, via the
+==============================================================================
+dynamic element size other functions use for the SAME base.
+
+0xA8EB40   base=00A8EB40 vftable=007E9E24
+   COL=00801280 td_off=0 TD=00823270  type=DynamicVectorClass<BuildingClass@@*>
+   ClassDescriptor 00801270: could not be validated
+   second store 004E6BA8 -> 007E9E44 = VectorClass<BuildingClass@@*>
+   element stride observed in insertion/reindex code: ['shl 3']
+
+0x8B4108   base=008B4108 vftable=007E9EA4
+   COL=008013B0 td_off=0 TD=00823340  type=DynamicVectorClass<UnitClass@@*>
+   ClassDescriptor 008013A0: could not be validated
+   second store 004E6CA8 -> 007E9EC4 = VectorClass<UnitClass@@*>
+   element stride observed in insertion/reindex code: ['shl 4']
+
+0xA80228   base=00A80228 vftable=007E9EE4
+   COL=00801448 td_off=0 TD=008233A8  type=DynamicVectorClass<HouseClass@@*>
+   ClassDescriptor 00801438: could not be validated
+   second store 004E6D28 -> 007E9F04 = VectorClass<HouseClass@@*>
+   element stride observed in insertion/reindex code: ['shl 4']
+
+0xA8E390   base=00A8E390 vftable=007E9E64
+   COL=00801318 td_off=0 TD=008232D8  type=DynamicVectorClass<AircraftClass@@*>
+   ClassDescriptor 00801308: could not be validated
+   second store 004E6C28 -> 007E9E84 = VectorClass<AircraftClass@@*>
+   element stride observed in insertion/reindex code: ['shl 8']
+
+0x8B3DC0   base=008B3DC0 vftable=007E8C28
+   COL=00800868 td_off=0 TD=00822580  type=DynamicVectorClass<FootClass@@*>
+   ClassDescriptor 00800858: could not be validated
+   second store 004D31A8 -> 007E8C48 = VectorClass<FootClass@@*>
+   element stride observed in insertion/reindex code: (none found)
+
+0xB0F720   base=00B0F720 vftable=007E91EC
+   COL=008009B0 td_off=0 TD=008225E8  type=DynamicVectorClass<AbstractClass@@*>
+   ClassDescriptor 008009A0: could not be validated
+   second store 00725318 -> 007E920C = VectorClass<AbstractClass@@*>
+   element stride observed in insertion/reindex code: (none found)
+
+0xA8EC78   base=00A8EC78 vftable=007E17AC
+   COL=007FA640 td_off=0 TD=008168B0  type=DynamicVectorClass<TechnoClass@@*>
+   ClassDescriptor 007FA630: could not be validated
+   second store 004E7A28 -> 007E180C = VectorClass<TechnoClass@@*>
+   element stride observed in insertion/reindex code: ['shl 8']
+
+0xA83DE8   base=00A83DE8 vftable=007E43C8
+   COL=007FC298 td_off=0 TD=00818D28  type=DynamicVectorClass<InfantryClass@@*>
+   ClassDescriptor 007FC288: could not be validated
+   second store 004E6B28 -> 007E43E8 = VectorClass<InfantryClass@@*>
+   element stride observed in insertion/reindex code: ['shl 4']
+
+==============================================================================
+C2  0xA8EB40 is DynamicVectorClass<BuildingClass*> -> 0xA8EB44 is NOT a unit table
+==============================================================================
+static ctor 004E6B7D installs vftable 007E9E24
+  RTTI: COL=00801280  TD=00823270  off=0  type=DynamicVectorClass<BuildingClass@@*>
+  raw TypeDescriptor name: .?AV?$DynamicVectorClass@PAVBuildingClass@@@@
+
+Cross-check 1 - is 0xA8EB44 ever used as a generic object table?
+  The same element type must not also appear as a *second* vector: see
+  the duplicate-base scan in c5_duplicates().
+Cross-check 2 - who reads [0xA8EB50] (Count)?  Sample of the enclosing fns:
+    0043BADD in 0x43ba12 : 0043BADB  390550eba800           cmp     dword ptr [0xa8eb50], eax
+    0043BB11 in 0x43ba12 : 0043BB0F  8b0d50eba800           mov     ecx, dword ptr [0xa8eb50]
+    0043BB1A in 0x43ba12 : 0043BB18  890d50eba800           mov     dword ptr [0xa8eb50], ecx
+    0044FE72 in 0x44fe53 : 0044FE71  a150eba800             mov     eax, dword ptr [0xa8eb50]
+    0044FEA6 in 0x44fe53 : 0044FEA5  a150eba800             mov     eax, dword ptr [0xa8eb50]
+    00452D41 in 0x452d3b : 00452D40  a150eba800             mov     eax, dword ptr [0xa8eb50]
+    00452DB4 in 0x452d75 : 00452DB3  a150eba800             mov     eax, dword ptr [0xa8eb50]
+    0045547B in 0x4551e4 : 0045547A  a150eba800             mov     eax, dword ptr [0xa8eb50]
+
+Cross-check 3 - does anything store a UnitClass-derived vftable into
+  [0xA8EB44..]?  Scan every 'mov [abs], vftable' whose target lies in
+  the +-0x20 window of 0xA8EB44 and report its type:
+    004E6B7D mov [00A8EB40],007E9E24 -> DynamicVectorClass<BuildingClass@@*>
+    004E6B87 mov [00A8EB54],0000000A -> None
+    004E6BA8 mov [00A8EB40],007E9E44 -> VectorClass<BuildingClass@@*>
+    004E767D mov [00A8EB28],007EA3A4 -> DynamicVectorClass<VoxelAnimTypeClass@@*>
+    004E7687 mov [00A8EB3C],0000000A -> None
+    004E76A8 mov [00A8EB28],007EA3C4 -> VectorClass<VoxelAnimTypeClass@@*>
+    0055D774 mov [00A8EB60],00000002 -> None
+    0069BAE7 mov [00A8EB60],00000002 -> None
+
+==============================================================================
+C3  0x8B4108 is DynamicVectorClass<UnitClass*>
+==============================================================================
+static ctor 004E6C7D/004E6C5C..004E6C9E installs vftable 007E9EA4
+  RTTI COL=008013B0 TD=00823340 off=0 type=DynamicVectorClass<UnitClass@@*>
+  raw name: .?AV?$DynamicVectorClass@PAVUnitClass@@@@
+
+Independence check - the vftable is installed by a byte-exact C7 05
+store whose layout is IDENTICAL to 0xA8EB40's but 4 vftables apart:
+   0xA8EB40   ctor 004E6B5C-.. vftable 007E9E24  (+0x14 write at 004E6B83)
+   0x8B4108   ctor 004E6C5C-.. vftable 007E9EA4  (+0x14 write at 004E6C83)
+   0xA80228   ctor 004E6CDC-.. vftable 007E9EE4  (+0x14 write at 004E6D03)
+   0xA8E390   ctor 004E6BDC-.. vftable 007E9E64  (+0x14 write at 004E6C03)
+   0x8B3DC0   ctor 004D3174-.. vftable 007E8C28  (+0x14 write at 004D319B)
+
+Is there a SECOND vector of vehicles?  Duplicate-element scan:
+  element UnitClass*       : 0 vector(s)
+  element BuildingClass*   : 0 vector(s)
+  element HouseClass*      : 0 vector(s)
+  element AircraftClass*   : 0 vector(s)
+  element FootClass*       : 0 vector(s)
+  element AbstractClass*   : 0 vector(s)
+  element TechnoClass*     : 0 vector(s)
+  element InfantryClass*   : 0 vector(s)
+  element ObjectClass*     : 0 vector(s)
+
+  ALL vector-like C7 05 targets grouped (looking for a second vehicle list):
+    DynamicVectorClass<AbstractClass@@*>           12 bases: 00B0F5B8, 00B0F5D8, 00B0F5F0, 00B0F618, 00B0F640, 00B0F658, 00B0F670, 00B0F698, 00B0F6C8, 00B0F6F0, 00B0F708, 00B0F720
+    DynamicVectorClass<AnimClass@@*>               2 bases: 00A83E00, 00A8E9A8
+    DynamicVectorClass<BombClass@@*>               2 bases: 0087F5D8, 0089C668
+    DynamicVectorClass<BuildingClass@@*>           2 bases: 008B41E0, 00A8EB40
+    DynamicVectorClass<BulletClass@@*>             2 bases: 0089DE18, 00A8ED40
+    DynamicVectorClass<MixFileClass@@*>            4 bases: 00884D90, 00884DA8, 00884DC0, 00884DE0
+    DynamicVectorClass<ObjectClass@@*>             2 bases: 00A8E360, 00A8ECB8
+    DynamicVectorClass<PBVAnimClass@@>             3 bases: 00A9F9D0, 00A9FA18, 00A9FA60
+    DynamicVectorClass<PlanningNodeClass@@*>       3 bases: 00AC4B30, 00AC4C18, 00AC4C98
+    DynamicVectorClass<SuperClass@@*>              2 bases: 00A83CB8, 00A83D50
+    DynamicVectorClass<TagClass@@*>                3 bases: 008B40C8, 008B41A8, 00B0E720
+    DynamicVectorClass<TechnoClass@@*>             4 bases: 0087F5F0, 00889E08, 00A8EC78, 00AC4C40
+    DynamicVectorClass<VSwizzlePointerClass@@>     2 bases: 00B0C114, 00B0C12C
+    VectorClass<AbstractClass@@*>                  12 bases: 00B0F5B8, 00B0F5D8, 00B0F5F0, 00B0F618, 00B0F640, 00B0F658, 00B0F670, 00B0F698, 00B0F6C8, 00B0F6F0, 00B0F708, 00B0F720
+    VectorClass<AnimClass@@*>                      2 bases: 00A83E00, 00A8E9A8
+    VectorClass<BombClass@@*>                      2 bases: 0087F5D8, 0089C668
+    VectorClass<BuildingClass@@*>                  2 bases: 008B41E0, 00A8EB40
+    VectorClass<BulletClass@@*>                    2 bases: 0089DE18, 00A8ED40
+    VectorClass<MixFileClass@@*>                   4 bases: 00884D90, 00884DA8, 00884DC0, 00884DE0
+    VectorClass<ObjectClass@@*>                    3 bases: 0087F778, 00A8E360, 00A8ECB8
+    VectorClass<PBVAnimClass@@>                    3 bases: 00A9F9D0, 00A9FA18, 00A9FA60
+    VectorClass<PlanningNodeClass@@*>              3 bases: 00AC4B30, 00AC4C18, 00AC4C98
+    VectorClass<SuperClass@@*>                     2 bases: 00A83CB8, 00A83D50
+    VectorClass<TagClass@@*>                       3 bases: 008B40C8, 008B41A8, 00B0E720
+    VectorClass<TechnoClass@@*>                    3 bases: 0087F5F0, 00A8EC78, 00AC4C40
+    VectorClass<VSwizzlePointerClass@@>            2 bases: 00B0C114, 00B0C12C
+
+==============================================================================
+C4  0xA80228 is HouseClass*, and aircraft is 0xA8E390
+==============================================================================
+00A80228 -> DynamicVectorClass<HouseClass@@*>   (ctor 004E6CDC, vftable 007E9EE4, TD 008233A8)
+    raw: .?AV?$DynamicVectorClass@PAVHouseClass@@@@
+00A8E390 -> DynamicVectorClass<AircraftClass@@*>   (ctor 004E6BDC, vftable 007E9E64, TD 008232D8)
+    raw: .?AV?$DynamicVectorClass@PAVAircraftClass@@@@
+
+Distinguishing test: the two arrays must not be the same object and
+must not be adjacent aliases.  Both live in BSS (runtime-zero, no file
+bytes), so the test is address disjointness, not content:
+  0xA8022C (House Items) vs 0xA8E394 (Aircraft Items): distance 0xE168
+  0xA80228 vs 0xA8E390 are distinct static-ctor targets: True
+
+Independent behavioural test - the aircraft array's Count is compared
+against 0 anywhere in a 'no aircraft yet' guard (House array is not):
+    00413E3A  00413E38  8b0da0e3a800           mov     ecx, dword ptr [0xa8e3a0]
+    00413E72  00413E72  a0e3a8008b             mov     al, byte ptr [0x8b00a8e3]
+    00413E7B  00413E7B  a0e3a8008b             mov     al, byte ptr [0x8b00a8e3]
+    00414148  00414146  8b0da0e3a800           mov     ecx, dword ptr [0xa8e3a0]
+    00414155  00414153  890da0e3a800           mov     dword ptr [0xa8e3a0], ecx
+    0041416B  00414169  8b0da0e3a800           mov     ecx, dword ptr [0xa8e3a0]
+    0041AF99  0041AF97  8b0da0e3a800           mov     ecx, dword ptr [0xa8e3a0]
+    0041B0E7  0041B0E5  8b0da0e3a800           mov     ecx, dword ptr [0xa8e3a0]
+    004C550F  004C550D  8b0da0e3a800           mov     ecx, dword ptr [0xa8e3a0]
+    004C55CF  004C55CD  8b0da0e3a800           mov     ecx, dword ptr [0xa8e3a0]
+    004DDD9B  004DDD99  8b35a0e3a800           mov     esi, dword ptr [0xa8e3a0]
+    004E6C12  004E6C11  a3a0e3a800             mov     dword ptr [0xa8e3a0], eax
+    004FF376  004FF375  a1a0e3a800             mov     eax, dword ptr [0xa8e3a0]
+    004FF3C4  004FF3C3  a1a0e3a800             mov     eax, dword ptr [0xa8e3a0]
+    0055B98E  0055B98D  a1a0e3a800             mov     eax, dword ptr [0xa8e3a0]
+    0064EACF  0064EACD  8b0da0e3a800           mov     ecx, dword ptr [0xa8e3a0]
+    0064EC4E  0064EC4C  8b0da0e3a800           mov     ecx, dword ptr [0xa8e3a0]
+    0064F7EC  0064F7EB  a1a0e3a800             mov     eax, dword ptr [0xa8e3a0]
+    0064F829  0064F828  a1a0e3a800             mov     eax, dword ptr [0xa8e3a0]
+    00650C58  00650C56  8b0da0e3a800           mov     ecx, dword ptr [0xa8e3a0]
+
+==============================================================================
+C5  0xB0F720: is it typed AbstractClass*, and is it used as a registry?
+==============================================================================
+static ctor 007252C8..0072530E, vftable 007E91EC
+  RTTI COL=008009B0 TD=008225E8 type=DynamicVectorClass<AbstractClass@@*>
+  raw: .?AV?$DynamicVectorClass@PAVAbstractClass@@@@
+
+Is the element type consistent with how the array is USED?  A registry
+of AbstractClass* would be filled by a single 'add object' helper called
+from many ctors.  Find every function that stores through [0xB0F724]:
+  instructions that modify Count [0xB0F730] in place: 0
+
+  Every 'mov [0xB0F730], reg' (a Count *assignment*, i.e. realloc):
+    00420A64 fn=0x42099b  00420A62  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    00420BC1 fn=0x420af0  00420BBF  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    00420D13 fn=0x420c7f  00420D11  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    004217C3 fn=0x4216b2  004217C1  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    004C99EE fn=0x4c98a8  004C99EC  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    004C9ABA fn=0x4c9a04  004C9AB8  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    004CA81A fn=0x4ca767  004CA818  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    004F5FF7 fn=0x4f5e5c  004F5FF5  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    005F3A81 fn=0x5f3933  005F3A7F  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    005F3C68 fn=0x5f3b7f  005F3C66  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    0062DEF8 fn=0x62dcec  0062DEF6  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    0062E05D fn=0x62df12  0062E05B  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    0062E220 fn=0x62e153  0062E21E  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    006E8C89 fn=0x6e8a88  006E8C87  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    006E8F2F fn=0x6e8e50  006E8F2D  890d30f7b000           mov     dword ptr [0xb0f730], ecx
+    00725302 fn=0x7252c8  00725301  a330f7b000             mov     dword ptr [0xb0f730], eax
+
+  Who pushes onto it?  look for 'push' + call of a shared add-helper.
+  Candidate add-helper = the function containing an inc/add of [0xB0F730].
+
+  nBase of AbstractClass's own ClassDescriptor tells us whether
+  AbstractClass really is a 4-vptr multiple-inheritance class:
+    AbstractClass  TD=008177C8 : no validated ClassDescriptor
+    ObjectClass    TD=00817AF8 : no validated ClassDescriptor
+    MissionClass   TD=00817B18 : no validated ClassDescriptor
+    RadioClass     TD=00817B38 : no validated ClassDescriptor
+    TechnoClass    TD=00817B58 : no validated ClassDescriptor
+    FootClass      TD=00817B78 : no validated ClassDescriptor
+    UnitClass      TD=00842D80 : no validated ClassDescriptor
+    BuildingClass  TD=00818D60 : no validated ClassDescriptor
+
+==============================================================================
+C5  DECIDER - who actually registers into AbstractClass::Array?
+==============================================================================
+call sites of AbstractClass::AbstractClass (0x4101F0): 47
+
+  fn         most-derived vftable installed               0xB0F724 refs
+  004216B2 (unidentified)                               1   <== REGISTERS
+  0043A45E (unidentified)                               0
+  0043A9DE (unidentified)                               0
+  004D1750 (unidentified)                               0
+  004F772B (unidentified)                               0
+  005F3D29 (unidentified)                               0
+  00629416 (unidentified)                               0
+  0062AFA6 (unidentified)                               0
+  006CB2BC (unidentified)                               0
+  006E509D (unidentified)                               0
+  006E8E50 (unidentified)                               1   <== REGISTERS
+  0072812D (unidentified)                               0
+  0072876D (unidentified)                               0
+  004109B7 AbstractTypeClass                            0
+  00410C24 AbstractTypeClass                            0
+  0041D4BF AirstrikeClass                               0
+  0041DD47 AirstrikeClass                               0
+  00420C7F AlphaShapeClass                              1   <== REGISTERS
+  0043866F BombClass                                    0
+  004393E7 BombClass                                    0
+  0047199F CaptureManagerClass                          0
+  004729B7 CaptureManagerClass                          0
+  0047BB5C CellClass                                    0
+  004A7AFF DiskLaserClass                               0
+  004A7C87 DiskLaserClass                               0
+  004C53DF EMPulseClass                                 0
+  004C5AB7 EMPulseClass                                 0
+  004C9A04 FactoryClass                                 1   <== REGISTERS
+  004CA767 FactoryClass                                 1   <== REGISTERS
+  0055490F LightSourceClass                             0
+  00555147 LightSourceClass                             0
+  0065B2E9 RadSiteClass                                 0
+  00691455 ScriptClass                                  0
+  00691ED7 ScriptClass                                  0
+  006AF49B SlaveManagerClass                            0
+  006DD1AF TActionClass                                 0
+  006E4655 TActionClass                                 0
+  0071E82F TEventClass                                  0
+  0071FA75 TEventClass                                  0
+  006DC467 Tactical                                     0
+  0071A5CF TemporalClass                                0
+  0071B1A7 TemporalClass                                0
+  00726134 TriggerClass                                 0
+  00726947 TriggerClass                                 0
+  006B70B6 VectorClass<PAUSpawnControl@SpawnManagerClass@@> 0
+  007638C0 WaypointPathClass                            0
+  00763E17 WaypointPathClass                            0
+
+REGISTERS (3 distinct): ['(unidentified)', 'AlphaShapeClass', 'FactoryClass']
+does NOT register (19 distinct): 19 classes
+
+VERDICT INPUT: the object types the harness cares about
+   TechnoClass      : does NOT register into 0xB0F720
+   BuildingClass    : does NOT register into 0xB0F720
+   UnitClass        : does NOT register into 0xB0F720
+   InfantryClass    : does NOT register into 0xB0F720
+   AircraftClass    : does NOT register into 0xB0F720
+   FootClass        : does NOT register into 0xB0F720
+   BulletClass      : does NOT register into 0xB0F720
+   AnimClass        : does NOT register into 0xB0F720
+   OverlayClass     : does NOT register into 0xB0F720
+   TerrainClass     : does NOT register into 0xB0F720
+   SmudgeClass      : does NOT register into 0xB0F720
+   HouseClass       : does NOT register into 0xB0F720
+
+CAVEAT: registration is inlined per-class, so this test only sees a
+class whose ctor both calls 0x4101F0 AND inlines the push.  A class
+that calls a non-inlined shared helper would be missed.  Check:
+  distinct functions containing an inlined AbstractClass push:
+    'inc/add [0xB0F730]' sites: 0
+    enclosing functions: []
+
+==============================================================================
+C5  NEGATIVE CONTROL - the FootClass ctor's own registration behaviour
+==============================================================================
+FootClass::FootClass  004D31E0..004D353C (860 bytes)
+  (entry located as the first instruction after the int3 pad that
+   follows the FootClass::Array static ctor's ret at 0x4D31DA)
+
+  vftable it installs at [this]: FootClass
+
+  Absolute references to each array from INSIDE this ctor:
+    AbstractClass::Array.Items   00B0F724 : 0
+    AbstractClass::Array.Count   00B0F730 : 0
+    FootClass::Array.Items       008B3DC4 : 1
+    FootClass::Array.Count       008B3DD0 : 3
+    TechnoClass::Array.Items     00A8EC7C : 0
+    TechnoClass::Array.Count     00A8EC88 : 0
+
+  => A FootClass DOES register into FootClass::Array.
+  => A FootClass does NOT register into AbstractClass::Array.
+  If 0xB0F720 were an 'all objects' registry, this ctor would have to
+  touch it.  It does not.  C5's registry reading is therefore wrong
+  even though the element TYPE (AbstractClass*) is right.
+
+==============================================================================
+C6  0x8B3DC0 is DynamicVectorClass<FootClass*> - and is it a union?
+==============================================================================
+static ctor of the array: 004D3174..004D319E, vftable 007E8C28, type=DynamicVectorClass<FootClass@@*>
+  note: the vftable store at 004D317D sits in 004D3174..004D319E, i.e. the SAME .CRT$XCU cluster as every other vector
+
+Is FootClass a base of UnitClass / InfantryClass / AircraftClass?
+  FootClass TD=0x817b78 CD=? nBase=? bases=[]
+  UnitClass      TD=0x842d80 CD=? nBase=? bases=[]
+  InfantryClass  TD=0x825508 CD=? nBase=? bases=[]
+  AircraftClass  TD=0x817b90 CD=? nBase=? bases=[]
+
+Does the FootClass vector actually receive its inserts from ONE shared
+helper (which would make it the union), or per-type code?
+  Count read  00419BD6 fn=0x419af9  00419BD5  a1d03d8b00             mov     eax, dword ptr [0x8b3dd0]
+  Count read  00419C55 fn=0x419c2f  00419C54  a1d03d8b00             mov     eax, dword ptr [0x8b3dd0]
+  Count read  004D3192 fn=0x4d3174  004D3191  a3d03d8b00             mov     dword ptr [0x8b3dd0], eax
+  Count read  004D348E fn=0x4d33db  004D348C  8b0dd03d8b00           mov     ecx, dword ptr [0x8b3dd0]
+  Count read  004D34C4 fn=0x4d33db  004D34C2  8b0dd03d8b00           mov     ecx, dword ptr [0x8b3dd0]
+  Count read  004D34CD fn=0x4d33db  004D34CB  890dd03d8b00           mov     dword ptr [0x8b3dd0], ecx
+  Count read  0050967B fn=0x509622  0050967A  a1d03d8b00             mov     eax, dword ptr [0x8b3dd0]
+  Count read  0050A1A5 fn=0x50a14c  0050A1A3  8b0dd03d8b00           mov     ecx, dword ptr [0x8b3dd0]
+  Count read  0050D6FE fn=0x50d6c3  0050D6FC  8b0dd03d8b00           mov     ecx, dword ptr [0x8b3dd0]
+  Count read  006DDBF7 fn=0x6ddbde  006DDBF6  a1d03d8b00             mov     eax, dword ptr [0x8b3dd0]
+  Count read  006DDC59 fn=0x6ddc2b  006DDC58  a1d03d8b00             mov     eax, dword ptr [0x8b3dd0]
+  Count read  006DDC72 fn=0x6ddc2b  006DDC71  a1d03d8b00             mov     eax, dword ptr [0x8b3dd0]
+
+Do the per-type ctors touch FootClass::Array?
+  UnitClass      ctor 004E6C5C..004E6C9E : mentions 0x8B3DC4/0x8B3DD0: 0x8B3DC4=0, 0x8B3DD0=0
+  InfantryClass  ctor 004E6ADC..004E6B1E : mentions 0x8B3DC4/0x8B3DD0: 0x8B3DC4=0, 0x8B3DD0=0
+  AircraftClass  ctor 004E6BDC..004E6C1E : mentions 0x8B3DC4/0x8B3DD0: 0x8B3DC4=0, 0x8B3DD0=0
+
+Search ALL of .text for a store through [0x8B3DC4] (the only reliable
+signature of an insert into the FootClass vector):
+
+==============================================================================
+C6  DECIDER - the literal insert sequence for FootClass::Array
+==============================================================================
+0x004D3487..0x004D34D7, inside the FootClass base ctor.  This is a
+textbook DynamicVectorClass<T*>::Add with the element size visible.
+   004D3487  a1c83d8b00             mov      eax, dword ptr [0x8b3dc8]  ; Capacity  (+0x08)
+   004D348C  8b0dd03d8b00           mov      ecx, dword ptr [0x8b3dd0]  ; Count     (+0x10)
+   004D3492  3bc8                   cmp      ecx, eax
+   004D3494  7c2c                   jl       0x4d34c2
+   004D3496  381dcd3d8b00           cmp      byte ptr [0x8b3dcd], bl
+   004D349C  7504                   jne      0x4d34a2
+   004D349E  3bc3                   cmp      eax, ebx
+   004D34A0  7538                   jne      0x4d34da
+   004D34A2  8b0dd43d8b00           mov      ecx, dword ptr [0x8b3dd4]  ; CapacityIncrement (+0x14)
+   004D34A8  3bcb                   cmp      ecx, ebx
+   004D34AA  7e2e                   jle      0x4d34da
+   004D34AC  8b15c03d8b00           mov      edx, dword ptr [0x8b3dc0]
+   004D34B2  03c8                   add      ecx, eax
+   004D34B4  53                     push     ebx
+   004D34B5  51                     push     ecx
+   004D34B6  b9c03d8b00             mov      ecx, 0x8b3dc0
+   004D34BB  ff5208                 call     dword ptr [edx + 8]
+   004D34BE  84c0                   test     al, al
+   004D34C0  7418                   je       0x4d34da
+   004D34C2  8b0dd03d8b00           mov      ecx, dword ptr [0x8b3dd0]  ; Count     (+0x10)
+   004D34C8  8bc1                   mov      eax, ecx
+   004D34CA  41                     inc      ecx
+   004D34CB  890dd03d8b00           mov      dword ptr [0x8b3dd0], ecx
+   004D34D1  8b0dc43d8b00           mov      ecx, dword ptr [0x8b3dc4]
+   004D34D7  893481                 mov      dword ptr [ecx + eax*4], esi
+   004D34DA  8a5614                 mov      dl, byte ptr [esi + 0x14]
+
+Reading: [0x8B3DC8] compared against [0x8B3DD0] => Capacity vs Count.
+         [0x8B3DD4] = CapacityIncrement, added to Capacity.
+         vtable slot +8 called with (newCapacity, 0) => Resize.
+         '[ecx+eax*4] = esi' => Items is a pointer array, 4-byte elems.
+This independently confirms C1 offsets AND that the vector holds
+26-byte-ish pointers, i.e. T = FootClass*.
+
+==============================================================================
+C6  is FootClass::Array the union of the three sub-type arrays?
+==============================================================================
+The FootClass ctor (0x4D31E0) inserts into FootClass::Array.  For the
+'union' reading to hold, every UnitClass / InfantryClass / AircraftClass
+object must RUN the FootClass ctor (so it is inserted), which is true iff
+those classes derive from FootClass.
+
+Test: does each sub-type ctor call 0x4D31E0 (the FootClass ctor)?
+  %-14s static-array-ctor at %08X is NOT the object ctor; check
+  whether any function calls 0x4D31E0 with that object class loaded.
+  %-14s static-array-ctor at %08X is NOT the object ctor; check
+  whether any function calls 0x4D31E0 with that object class loaded.
+  %-14s static-array-ctor at %08X is NOT the object ctor; check
+  whether any function calls 0x4D31E0 with that object class loaded.
+
+Direct structural test: find every 'call 0x4D31E0' and inspect the
+vftable the caller installs immediately afterwards.
+  call sites of FootClass::FootClass: 3
+  (an indirect/virtual chain is also possible; absence is not proof)
+
+Behavioural proof instead: does the FootClass ctor get entered for a
+UnitClass object?  Check that UnitClass's object ctor calls it.
+  UnitClass object ctor is the function that installs 0x7E9EA4's
+  *object* vtable; we look for 'call 0x4D31E0' near it:
+    call at 00413D2B  in fn 0x413d15
+    call at 00517A5B  in fn 0x517a48
+    call at 007353CE  in fn 0x7353be
+
+==============================================================================
+C7  AbstractClass::AbstractClass at 0x004101F0
+==============================================================================
+  004101F0  c701501f7e00           mov     dword ptr [ecx], 0x7e1f50
+  004101F6  c74104341f7e00         mov     dword ptr [ecx + 4], 0x7e1f34
+  004101FD  c741082c1f7e00         mov     dword ptr [ecx + 8], 0x7e1f2c
+  00410204  c7410c241f7e00         mov     dword ptr [ecx + 0xc], 0x7e1f24
+  0041020B  c3                     ret     
+
+  decoded: 5 instructions, 28 bytes; ends with 'ret'
+  n_callees = 0
+
+  The four stored pointers, each resolved through [V-4] -> COL -> TD:
+
+  Does it touch AbstractClass::Array (0xB0F720/0xB0F724/0xB0F730)?
+    00B0F720 occurrences in the 28 bytes: 0
+    00B0F724 occurrences in the 28 bytes: 0
+    00B0F730 occurrences in the 28 bytes: 0
+    00B0F728 occurrences in the 28 bytes: 0
+    00B0F72C occurrences in the 28 bytes: 0
+    00B0F72D occurrences in the 28 bytes: 0
+
+  Alternative candidate: is 0x4011F0/0x4101F0 the only function that
+  installs these four vftables?  Every C7 05 whose imm is one of them:
+
+  What function creates an AbstractClass-derived object?  Look for the
+  'operator new(0xNN) then install vftable' pattern near 0x410182:
+  enclosing function of the 'mov [ecx+0xc]' accessor at 0x410200: 0x4101ef..0x41020d
+
+  Cross-check: AbstractClass's OWN ClassDescriptor says how many
+  vptr slots AbstractClass has.  A 4-vptr MI class must show nBase>=1
+  and its vftable group must be 4 distinct COLs at off 0/4/8/0xC:
+    AbstractClass TD=008177C8, raw name=.?AVAbstractClass@@
+
+==============================================================================
+C7  DECIDER - the 4 vftables installed by 0x004101F0
+==============================================================================
+  5 instructions, 28 bytes
+  store        vftable                COL sig    off    type
+
+  Can a naive '[V-4] is the COL' reading be defeated by a fake COL?
+  Verify each COL's TypeDescriptor name is EXACTLY .?AVAbstractClass@@:
+
+  4 vptrs at 0/4/8/0xC, all one TD, offsets 0/4/8/12 -> classic
+  MSVC 4-base multiple inheritance.  Claim C7 part 1 supported.
+
+  Zero references to the array inside the 28 bytes:
+    00B0F720 : 0
+    00B0F724 : 0
+    00B0F730 : 0
+  n_callees = 0
+
+==============================================================================
+C7 / check  'is any OTHER function a better candidate for AbstractClass ctor?'
+==============================================================================
+A real constructor for AbstractClass in this codebase sets FOUR vptrs
+AND is called from derived ctors.  Search for every function that stores
+into [ecx+0..+0xC] with immediates that resolve to AbstractClass COLs:
+  (canonical 4 vftables taken from 0x004101F0 itself)
+  callers of 0x004101F0: 0
+
+  Is there a ctor that stores the same 4 vftables via [eax+..] (a
+  near-duplicate)?  Search .text for the byte pattern of the 4 immediates:
+    5 occurrences of the first vftable 0x7E1F50 in .text
+      0041019A fn=0x410168..0x4101b8
+         00410168  90                     nop     
+         00410169  90                     nop     
+         0041016A  90                     nop     
+         0041016B  90                     nop     
+         0041016C  90                     nop     
+         0041016D  90                     nop     
+         0041016E  90                     nop     
+         0041016F  90                     nop     
+         00410170  8bc1                   mov     eax, ecx
+         00410172  33c9                   xor     ecx, ecx
+         00410174  c74008bc1f7e00         mov     dword ptr [eax + 8], 0x7e1fbc
+         0041017B  c7400cb41f7e00         mov     dword ptr [eax + 0xc], 0x7e1fb4
+         00410182  894818                 mov     dword ptr [eax + 0x18], ecx
+         00410185  89481c                 mov     dword ptr [eax + 0x1c], ecx
+         00410188  884820                 mov     byte ptr [eax + 0x20], cl
+         0041018B  8a4814                 mov     cl, byte ptr [eax + 0x14]
+         0041018E  80e1f8                 and     cl, 0xf8
+         00410191  c74010ffffffff         mov     dword ptr [eax + 0x10], 0xffffffff
+         00410198  c700501f7e00           mov     dword ptr [eax], 0x7e1f50
+         0041019E  c74004341f7e00         mov     dword ptr [eax + 4], 0x7e1f34
+         004101A5  c740082c1f7e00         mov     dword ptr [eax + 8], 0x7e1f2c
+         004101AC  c7400c241f7e00         mov     dword ptr [eax + 0xc], 0x7e1f24
+         004101B3  884814                 mov     byte ptr [eax + 0x14], cl
+         004101B6  c3                     ret     
+      004101D2 fn=0x4101b8..0x4101ef
+         004101B8  90                     nop     
+         004101B9  90                     nop     
+         004101BA  90                     nop     
+         004101BB  90                     nop     
+         004101BC  90                     nop     
+         004101BD  90                     nop     
+         004101BE  90                     nop     
+         004101BF  90                     nop     
+         004101C0  8bc1                   mov     eax, ecx
+         004101C2  c74008bc1f7e00         mov     dword ptr [eax + 8], 0x7e1fbc
+         004101C9  c7400cb41f7e00         mov     dword ptr [eax + 0xc], 0x7e1fb4
+         004101D0  c700501f7e00           mov     dword ptr [eax], 0x7e1f50
+         004101D6  c74004341f7e00         mov     dword ptr [eax + 4], 0x7e1f34
+         004101DD  c740082c1f7e00         mov     dword ptr [eax + 8], 0x7e1f2c
+         004101E4  c7400c241f7e00         mov     dword ptr [eax + 0xc], 0x7e1f24
+         004101EB  c20400                 ret     4
+      004101F2 fn=0x4101ef..0x41020d
+         004101EF  90                     nop     
+         004101F0  c701501f7e00           mov     dword ptr [ecx], 0x7e1f50
+         004101F6  c74104341f7e00         mov     dword ptr [ecx + 4], 0x7e1f34
+         004101FD  c741082c1f7e00         mov     dword ptr [ecx + 8], 0x7e1f2c
+         00410204  c7410c241f7e00         mov     dword ptr [ecx + 0xc], 0x7e1f24
+         0041020B  c3                     ret     
+      004105AB fn=0x410594..0x4105d6
+         00410594  90                     nop     
+         00410595  90                     nop     
+         00410596  90                     nop     
+         00410597  90                     nop     
+         00410598  90                     nop     
+         00410599  90                     nop     
+         0041059A  90                     nop     
+         0041059B  90                     nop     
+         0041059C  90                     nop     
+         0041059D  90                     nop     
+         0041059E  90                     nop     
+         0041059F  90                     nop     
+         004105A0  8a442404               mov     al, byte ptr [esp + 4]
+         004105A4  56                     push    esi
+         004105A5  8bf1                   mov     esi, ecx
+         004105A7  a801                   test    al, 1
+         004105A9  c706501f7e00           mov     dword ptr [esi], 0x7e1f50
+         004105AF  c74604341f7e00         mov     dword ptr [esi + 4], 0x7e1f34
+         004105B6  c746082c1f7e00         mov     dword ptr [esi + 8], 0x7e1f2c
+         004105BD  c7460c241f7e00         mov     dword ptr [esi + 0xc], 0x7e1f24
+         004105C4  7409                   je      0x4105cf
+         004105C6  56                     push    esi
+         004105C7  e871853b00             call    0x7c8b3d
+         004105CC  83c404                 add     esp, 4
+         004105CF  8bc6                   mov     eax, esi
+         004105D1  5e                     pop     esi
+         004105D2  c20400                 ret     4
+      006E8041 fn=0x6e7ffa..0x6e8160
+         006E7FFA  90                     nop     
+         006E7FFB  90                     nop     
+         006E7FFC  90                     nop     
+         006E7FFD  90                     nop     
+         006E7FFE  90                     nop     
+         006E7FFF  90                     nop     
+         006E8000  8b542404               mov     edx, dword ptr [esp + 4]
+         006E8004  8bc1                   mov     eax, ecx
+         006E8006  56                     push    esi
+         006E8007  57                     push    edi
+         006E8008  c74008bc1f7e00         mov     dword ptr [eax + 8], 0x7e1fbc
+         006E800F  c7400cb41f7e00         mov     dword ptr [eax + 0xc], 0x7e1fb4
+         006E8016  8b4a10                 mov     ecx, dword ptr [edx + 0x10]
+         006E8019  8d7224                 lea     esi, [edx + 0x24]
+         006E801C  894810                 mov     dword ptr [eax + 0x10], ecx
+         006E801F  8a4a14                 mov     cl, byte ptr [edx + 0x14]
+         006E8022  884814                 mov     byte ptr [eax + 0x14], cl
+         006E8025  8b4a18                 mov     ecx, dword ptr [edx + 0x18]
+         006E8028  894818                 mov     dword ptr [eax + 0x18], ecx
+         006E802B  8b4a1c                 mov     ecx, dword ptr [edx + 0x1c]
+         006E802E  89481c                 mov     dword ptr [eax + 0x1c], ecx
+         006E8031  8a4a20                 mov     cl, byte ptr [edx + 0x20]
+         006E8034  884820                 mov     byte ptr [eax + 0x20], cl
+         006E8037  8d7824                 lea     edi, [eax + 0x24]
+         006E803A  b906000000             mov     ecx, 6
+         006E803F  c700501f7e00           mov     dword ptr [eax], 0x7e1f50
+         006E8045  c74004341f7e00         mov     dword ptr [eax + 4], 0x7e1f34
+         006E804C  c740082c1f7e00         mov     dword ptr [eax + 8], 0x7e1f2c
+         006E8053  c7400c241f7e00         mov     dword ptr [eax + 0xc], 0x7e1f24

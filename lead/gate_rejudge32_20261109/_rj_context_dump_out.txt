@@ -1,0 +1,355 @@
+====================================================================================================
+DOMAIN lead/c07_gate_audit_20261109/  MAIN C07_SELFCHECK_AUDIT.md  bytes=33459
+gateProblems = ["缺要素 未改 _c7_selfcheck.py"]
+bindings(baseline)=2 bindingRegex='被核对象 SHA256 = [0-9a-fA-F]{64}'
+banned = ["已改门禁", "已修补", "已加固"]
+required_elements = ["15 项校验", "攻样本", "T4", "T6", "拦住", "漏过", "冒签", "严重性", "保证边界", "未改 _c7_selfcheck.py", "未验"]
+   elem '15 项校验'                       raw_present=True
+   elem '攻样本'                          raw_present=True
+   elem 'T4'                           raw_present=True
+   elem 'T6'                           raw_present=True
+   elem '拦住'                           raw_present=True
+   elem '漏过'                           raw_present=True
+   elem '冒签'                           raw_present=True
+   elem '严重性'                          raw_present=True
+   elem '保证边界'                         raw_present=True
+   elem '未改 _c7_selfcheck.py'          raw_present=False
+   elem '未验'                           raw_present=True
+   --- lines containing SHA256/字节数 (5) ---
+   L3    被核对象 SHA256 = 74bec4d48498903df08dbf3a56ba942e74b58f5b4a7940c094eafdeb03adbf2e，字节数 = 9961
+   L38   | # | 文件 | SHA256 | 字节数 | 一致 |
+   L78   另（门禁自身文书形制，非绕过面）：门禁打印的绑定行 `_c7_selfcheck.py:181` 为 `print("被核对象 SHA256 = \`%s\`，字节数 = %d"…)`，hex 两侧带反引号，不符合「绑定行中间不得插入反引号」的复核格式要求 → G13（low）。
+   L152  | 21 | T12b_hash_wrong_bytes | 字节数改 27173 | FAIL failed=1（H11 复算不符）/ 1 | 拦住 | 1（I13） | 无 |
+   L218  被核对象 SHA256 = 74bec4d48498903df08dbf3a56ba942e74b58f5b4a7940c094eafdeb03adbf2e，字节数 = 9961
+
+====================================================================================================
+DOMAIN lead/c07_protocol_attacks_20261109/  MAIN PROTOCOL_ATTACK_TEST.md  bytes=32131
+gateProblems = ["缺规范格式绑定行"]
+bindings(baseline)=0 bindingRegex='sess_[A-Za-z0-9]{24,}'
+banned = []
+required_elements = ["构造", "应挡条款", "实际结果", "实跑", "推理", "严重性", "铁则", "可执行", "效力上限", "未改任何文件", "未验"]
+   elem '构造'                           raw_present=True
+   elem '应挡条款'                         raw_present=True
+   elem '实际结果'                         raw_present=True
+   elem '实跑'                           raw_present=True
+   elem '推理'                           raw_present=True
+   elem '严重性'                          raw_present=True
+   elem '铁则'                           raw_present=True
+   elem '可执行'                          raw_present=True
+   elem '效力上限'                         raw_present=True
+   elem '未改任何文件'                       raw_present=True
+   elem '未验'                           raw_present=True
+   --- lines containing SHA256/字节数 (4) ---
+   L8    被核对象 SHA256 = 68395681bbfd6b348a91664ec8c0dfafe1b9aa22a939691d0683414071f96547，字节数 = 25630
+   L34   | # | 文件 | SHA256 | 字节数 | 本会话复算 |
+   L102  被核对象 SHA256 = 4a2f0e860179e4dfd58d26535f09b327481831e31baa2757604b91fb0f1a38e7，字节数 = 20048
+   L133  - **P3 加固**：B1.2「逐字输出」改为核验者可重算的确定性绑定（如命令实跑时同步写入输出 SHA256 到登记件可绑定槽——承认仍非终证）；B1.2 声明与 F1 重放输出做逐字段结构比对并如实登记残余；仅机制证据的件通过档降为 PARTIAL。
+
+====================================================================================================
+DOMAIN lead/c07_slot_20261109/  MAIN C07_IDENTITY_SLOT.md  bytes=20651
+gateProblems = ["含越界断言 已填", "缺规范格式绑定行"]
+bindings(baseline)=0 bindingRegex='sess_[A-Za-z0-9]{6,}'
+banned = ["已补登", "已填入", "已填", "已代填"]
+required_elements = ["三字段", "N-1 八字段", "落点", "占位符", "校验规则", "多处同步", "不许代填", "需谁补登", "未验"]
+   elem '三字段'                          raw_present=True
+   elem 'N-1 八字段'                      raw_present=True
+   elem '落点'                           raw_present=True
+   elem '占位符'                          raw_present=True
+   elem '校验规则'                         raw_present=True
+   elem '多处同步'                         raw_present=True
+   elem '不许代填'                         raw_present=True
+   elem '需谁补登'                         raw_present=True
+   elem '未验'                           raw_present=True
+   HIT '已填'           line=79   pos=6240   :: **填用流程**：① 复制 `_c7_record_template.json` 到落点名 `ACCEPTANCE_RECORDS_C07.json`；② 仅替换 `<…>` 占位符与定档字段（grade/decision/independentReview/writeDomain）；③ `python -I -X utf8 _c7_selfcheck.py <已填件路径>` 须 GATE PASS exit 0；④ 回件含绑定行（§6.2 格式）。
+   HIT '已填'           line=103  pos=7722   :: 1. 三个身份字段已填、全件无 `<` 占位残留（含容器层）；2. `reviewerSessionId` 是**本会话**运行态 ID，非他件 ID；3. `sourceTaskId` 若只能给计划号 → `unresolved` 已如实登记「正式任务书编号未落实」；4. 9 字段名与顺序 == NEXT:23 实文 == r2 schemaNote；5. `inputHashes` 四件为填时实算（python -I -X utf8 + hashlib）；6. `timestamp` 为填时实生成；7. 填用过程零改动既有件；8. 回件含绑定行（§6.2 格式）；9. `reviewerRole` 与 PERF:151 内部三角色逐字不同（签发方≠被派方）；10. **多处同步**：同一值已在 N-4 任务书签署动作复用（§5.4），只填登记件不满足 NEXT:119。
+   HIT '已填'           line=110  pos=8315   :: ### 5.4 多处同步排查表（哪件/哪行/需什么字段/是否已填）
+   HIT '已填'           line=112  pos=8344   :: | # | 件 | 行 | 需什么字段 | 是否已填 |
+   HIT '已填'           line=120  pos=9417   :: | 7 | `a_residual_n1_20261108/ACCEPTANCE_RECORDS.json`（先例件，非 C07 落点） | 7 条 `sourceTaskId` 全 = `N-1`（计划号）；`reviewerSessionId` 已填 | 其自身任务的签发身份（非 C07 主体） | 部分（session 已填、任务号仍计划号——先例与反例） |
+   HIT '已填'           line=120  pos=9456   :: | 7 | `a_residual_n1_20261108/ACCEPTANCE_RECORDS.json`（先例件，非 C07 落点） | 7 条 `sourceTaskId` 全 = `N-1`（计划号）；`reviewerSessionId` 已填 | 其自身任务的签发身份（非 C07 主体） | 部分（session 已填、任务号仍计划号——先例与反例） |
+   --- lines containing SHA256/字节数 (9) ---
+   L21   | # | 件 | 字节数 | SHA256 | MATCH |
+   L58   | 件 | 字节数 | SHA256 |
+   L93   | `inputHashes` | dict 非空；四件必绑，值为 `64hex/字节数` | `<SHA256/字节数，填时实算>` | H11：门禁对 DQ 件、factpack 件、PERF 件、NEXT 件四路 SHA256+字节数**实算复核**，错一字符即 FAIL |
+   L136  被核对象 SHA256 = `084158116dde618cdb0588970305f533f7c6d532aebcc44bb1529d97f2aeabd5`，字节数 = 17233
+   L137  被核对象 SHA256 = `3d763a8b679370ade8999a23a18679c7296909bf8a020b71694c0ccca7e8b062`，字节数 = 3812
+   L138  被核对象 SHA256 = `74bec4d48498903df08dbf3a56ba942e74b58f5b4a7940c094eafdeb03adbf2e`，字节数 = 9961
+   L139  被核对象 SHA256 = `d421f8bc5cc02eee2a0ea908a60477cdb313541cbff3cfd96a65728528d0efda`，字节数 = 37517
+   L140  被核对象 SHA256 = `d847de88bb0c0c04290c877180a9c45c502df773ba297a36406bffecbe66796b`，字节数 = 27965
+   L157  4. **全仓计数口径不可比**——本 walk dirsVisited=16630、准备件 walk=16624、编排方 rglob=2460（walk 语义与剪枝不同）；但决定性事实（恰 2 件、同路径、同字节数、同哈希）三种方法一致。
+
+====================================================================================================
+DOMAIN lead/c07_truth_protocol_20261109/  MAIN C07_TRUTH_SELF_PROOF.md  bytes=38232
+gateProblems = ["含越界断言 已填", "缺规范格式绑定行"]
+bindings(baseline)=0 bindingRegex='sess_[A-Za-z0-9]{20,}'
+banned = ["已填", "已代填", "已提交"]
+required_elements = ["reviewerSessionId", "sourceTaskId", "reviewerRole", "L1", "L2", "L3", "可核", "不可核", "伪造检出", "检查清单", "未验"]
+   elem 'reviewerSessionId'            raw_present=True
+   elem 'sourceTaskId'                 raw_present=True
+   elem 'reviewerRole'                 raw_present=True
+   elem 'L1'                           raw_present=True
+   elem 'L2'                           raw_present=True
+   elem 'L3'                           raw_present=True
+   elem '可核'                           raw_present=True
+   elem '不可核'                          raw_present=True
+   elem '伪造检出'                         raw_present=True
+   elem '检查清单'                         raw_present=True
+   elem '未验'                           raw_present=True
+   HIT '已填'           line=151  pos=10460  :: - 处置：已填 → 见证同为声明、非密码学证明，但其价值在独立性（记账方 ≠ 值的主张方，满足 NEXT:23「验收者与作者不得相同」）与可交叉检索性——伪造从「单方改文本」变成「两方合谋 + 两处可互查痕迹」；未填且缺席声明如实 → 通过档不可达，登记最高 PARTIAL + unresolved「运行标识无独立见证/独立记载」。
+   HIT '已填'           line=228  pos=16839  :: | G 见证与两处落笔 | 3 | 见证槽已填（见证人≠来源会话≠核验者）；见证缺席处置；两处落笔同值复用 | 代填见证→**拒绝**；N-4 同值复用失败→**拒绝** |
+   HIT '已填'           line=240  pos=17175  :: | **通过** | A-G 全部可核项 PASS、无未验残留、（G1 见证已填 或 S1 有 ≥1 处先于补登的外部独立记载）、无存疑项 | C07 行政登记完成（Q6 补登动作闭合）；不升格技术结论、不构成 APPROVE_SCOPE 签署或 N-5 放行 |
+   --- lines containing SHA256/字节数 (19) ---
+   L6    - 本件不含任何真实身份值：reviewerSessionId / sourceTaskId / reviewerRole 三值全文只以「S1 / S2 / S3」与占位符指称；文中全部 SHA256 为文件指纹（非身份值），均由本会话实算（`_tsp_fp_check.py`）。
+   L29   被核对象 SHA256 = fd1ada2fc74afb0fb2aefa9443c45f7ac2c9371594ff60ad39729be5767de4cf，字节数 = 25770
+   L33   被核对象 SHA256 = 3ddddc60fca034fe2b6434e0d8baf38c7bc79966342cf287e8521070b2553600，字节数 = 33118
+   L37   被核对象 SHA256 = 57706012fde569c84aaec4eefe36e5c46327ace964bc97a746ca7960bb28e760，字节数 = 3232
+   L41   被核对象 SHA256 = e45fa323b293d07de2416a0392d3cbb618121d45baeed091f678832a34bf35ab，字节数 = 33459
+   L45   被核对象 SHA256 = 05ecdfca451476bb80d84281068fcd9c59d1364b2247cb5482943de6417781fc，字节数 = 20651
+   L49   被核对象 SHA256 = 3d763a8b679370ade8999a23a18679c7296909bf8a020b71694c0ccca7e8b062，字节数 = 3812
+   L53   被核对象 SHA256 = c364467dea909da66bca16b98d12d1d625edb80dfbf831ea9e8a1077e9dad24c，字节数 = 27225
+   L57   被核对象 SHA256 = 0a709f2da12e0234cd94ff0baf521652e7d1aed6cfd04929b9728adbfd85bf5f，字节数 = 27172
+   L61   被核对象 SHA256 = d847de88bb0c0c04290c877180a9c45c502df773ba297a36406bffecbe66796b，字节数 = 27965
+   L65   被核对象 SHA256 = 3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7，字节数 = 52419
+   L69   被核对象 SHA256 = 2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede，字节数 = 759518
+   L75   被核对象 SHA256 = 68395681bbfd6b348a91664ec8c0dfafe1b9aa22a939691d0683414071f96547，字节数 = 25630
+   L79   被核对象 SHA256 = 5ae6f5230782596ab93a2e85d06f6bf00190f97e8cad57b78904a42bc6acdaf2，字节数 = 7873
+   L83   被核对象 SHA256 = fe0d6909c49aa6ee30775d77304da88eac924acaab2d13ccbb858c99bf6136b7，字节数 = 8599
+   L173  | D7 登记件事后改动 | 声明件 §A2 绑定行 vs 现盘复算 | 指纹或字节数任何一位不符 | 拒绝；改动须重新补登全套证据（声明件 A2 同步更新且更新序列可追溯） |
+   L182  被核对象 SHA256 = 68395681bbfd6b348a91664ec8c0dfafe1b9aa22a939691d0683414071f96547，字节数 = 25630
+   L231  - 固定前缀：被核对象 SHA256 = （等号后恰一个空格）；
+   L233  - 随后固定连接：，字节数 = （等号后恰一个空格）与十进制数字；
+
+====================================================================================================
+DOMAIN lead/ledger_appendix_20261108/  MAIN LEDGER_APPENDIX_DRAFT.md  bytes=45719
+gateProblems = ["含越界断言 已生效", "缺规范格式绑定行"]
+bindings(baseline)=0 bindingRegex='被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?'
+banned = ["已入账", "已追加", "已生效"]
+required_elements = ["STATIC_COUNT_SPEC:205", "O4", "604", "甲乙绑定", "待 Leader 追加", "未验"]
+   elem 'STATIC_COUNT_SPEC:205'        raw_present=True
+   elem 'O4'                           raw_present=True
+   elem '604'                          raw_present=True
+   elem '甲乙绑定'                         raw_present=True
+   elem '待 Leader 追加'                  raw_present=True
+   elem '未验'                           raw_present=True
+   HIT '已生效'          line=146  pos=18495  ::   2. `RULING_DIRECTION.md` 整体状态 **unconfirmed**（:5、:77 本会话亲读）——**登记 ≠ 绑定生效**：草案正文明写「不宣告 N-4 正式绑定已生效」（否定句）。
+   HIT '已生效'          line=177  pos=22852  :: - **引用限定（本会话如实登记两点，引用本节者须连带）**：① YI §1「裁决原文（Q1 摘录）」引文在裁决书中 grep（「先补登再应用」「必须由有权来源会话补登」「矩阵选择无需新增实施授权」）= **0 逐字命中**——引文可能转引题给裁决原文而非汇编件自身措辞，逐字出处**未验**；实质内容（技术方向采乙、禁止混用甲预期、不代签 APPROVE_SCOPE、N-5 正式应用须用户当轮明示）在 RULING_DIRECTION.md:23/:62/:66 有对应裁定，**引用时以 :23/:66 原句为准**。② RULING_DIRECTION.md 整体状态 **unconfirmed**（:5/:77），Q1 为「待有权签发人确认的方向意见」（:23）、MATRIX_BINDING_FACTS.md:98 四项决断留白待签发人（:102「建议绑乙」非裁决）——**本节登记「以乙替代甲」是登记动作，不宣告 N-4 正
+   HIT '已生效'          line=194  pos=24175  ::   6. 四草案 + SUMMARY 越权词族 grep 唯一命中 = 草案 4 正文否定句「不宣告 N-4 正式绑定已生效」，无正面完成时断言；
+   --- lines containing SHA256/字节数 (14) ---
+   L20   | 台账 | SHA256 | 字节数 | 行数（含末尾空段口径） | 行数（splitlines 口径） |
+   L25   - 两值与编排方基线指纹**逐位一致**；行数差系「含末尾空段」计数口径（文件末尾带换行），字节与 SHA256 两口径完全一致。
+   L40     - `lead/n9_erratum_20261108/N9_SPEC_ERRATUM.md`（SHA256 = `61446db581a273725010e9b09cf3ebeba0d1412fc8666c0c6b8c660e4f7d22b4` / 20630 B，本会话实算与编排方指纹一致）：§4.1 判定（:63）、§4.2 下游九行清单（:65-77）、§5.1 复核转录（:83-86，**该登记包自身状态 unconfirmed**——partial 仅因下游清单漏 3 件、已由其 §4.2 补全为九行；反驳主结论复核判 confirmed）、§5.2 E-1（:98）、§6.1
+   L49   - **勘误对象**：`lead/static_spec_n9_20261107/STATIC_COUNT_SPEC.md:205`（N-9 复核件，SHA256 = `5b933fe2fcb3cc35c5026cb57b45f29da29c90b67a618346af248744ed3ccdb9` / 32281 B，本会话实算与编排方指纹一致）P6 行原文：
+   L55   - **依据件**：`lead/n9_erratum_20261108/N9_SPEC_ERRATUM.md`（SHA256 = `61446db581a273725010e9b09cf3ebeba0d1412fc8666c0c6b8c660e4f7d22b4` / 20630 B，本会话实算同值；其自身状态 **unconfirmed**——独立复核 verdict=partial，partial 仅因下游影响清单漏登记 3 件，已由其 §4.2 补全为九行；反驳主结论本身复核判 confirmed）+ 勘误登记件 `lead/n9_erratum_20261108/_er_N9_205_P
+   L56   - **本会话独立复跑**（零真机、纯磁盘只读 + struct 解析）：`python -I -X utf8 "D:/Project/ra2-campaign-forge/lead/n9_erratum_20261108/_er_report_pe.py"` EXIT=0，输出与该件存档**逐字节同哈希**（`ac2d247600ab098c98e042359353e29978cf711f4c83a85881ec472c2bcb1a58` / 6908 B）；镜像同一性：ra2youli/gamemd.exe 与 ra2bench/gamemd.exe SHA256 = `73201cc02
+   L83   - **补证件**：`lead/d_o1o4_necessity_20261108/O1_O4_NECESSITY.md`（SHA256 = `d4ac0f28c108986b7037b2315a796766d7ed5d8212bce6f3c08af815310b1661` / 35637 B，本会话实算与编排方指纹一致）。独立复核 verdict = **confirmed**（无 refuted/partial 项），复核指认的解释依赖与证据质量瑕疵 (a)–(f) 已在该件 §5.2 如实登记，本节随登不隐。被核对象 `lead/dtrigger_round2_20261107/_dD_
+   L121  - **依据件**：`lead/slowframe_r3_20261108/S604_GAP_RECHECK.md`（SHA256 = `5d1b0ecc9f0e21ddecc38584c363afa0c758f40089ccc57749f237aeffbdf726` / 19291 B，本会话实算与编排方指纹一致；复核 verdict = **confirmed**，编排方登记 severity = high）+ 第二方复算件 `_r3_GAPDIFF_RECHECK.md`（`98cd612f63210182f1f6aa9f1c4d664e711d7616e79bc9805d450695a
+   L129  - **性质**：**登记而非放行**——补登件 `lead/b2b_yi_supersede_20261108/YI_SUPERSEDE_JIA_BINDING.md`（SHA256 = `255356ca789955cc2c084388f547a1435feb310f210617b988f761e7ff331c7b` / 7344 B，本会话实算）:5-6 明写「**补登件（登记而非放行）**……不构成 `APPROVE_SCOPE` 签署、不构成 N-5 应用放行」（本会话亲读）。
+   L130  - **指纹项（11 件版本绑定，YI §4 :43-55，本会话亲读表体）**：本会话撰写轮独立实算 **11/11 MATCH**（hashlib，逐件 SHA256+字节数与 YI §4 表逐位一致）：
+   L152  - **性质与依据**：补登件 = `lead/b2b_yi_supersede_20261108/YI_SUPERSEDE_JIA_BINDING.md`（SHA256 = `255356ca789955cc2c084388f547a1435feb310f210617b988f761e7ff331c7b` / 7344 B，本会话实算与编排方指纹一致）。依据 = D-31 方向裁决 Q1（`lead/direction_ruling_20261108/RULING_DIRECTION.md`）；用户当轮明示「先补登再应用」——即补登先行、N-5 应用另批。**本节只完成登记，不构成 `APP
+   L186  - **被核对象绑定**：被核对象 = 核对回件文本（复核会话收件逐字转写、UTF-8 无尾换行、存本写域 `_lv_subject_reply.txt`）——**SHA256 = `6888379ac7297758fdbdf4f839b417cd68cc19e1213a030c61606754f8c63227`，字节数 = 5592**（复核轮绑定行转录；本会话撰写轮对 `_lv_subject_reply.txt` hashlib 实算**同值**）。
+   L202  | 笔 | 对象（订正 / 登记内容） | 核对结论 | 复核 verdict | severity | 草案件（SHA256 前 8 / 字节，本会话实算） | 建议追加位置（Leader 可重排） |
+   L236  - 本文件自身指纹不自载（自引用）；以工作流回件所报 SHA256 / 字节数为准。
+
+====================================================================================================
+DOMAIN lead/matrix_ab_ruling_20261109/  MAIN RULING_MATRIX_AB.md  bytes=36851
+gateProblems = ["缺要素 需谁批准", "含越界断言 已改矩阵", "含越界断言 已收紧", "含越界断言 已施行"]
+bindings(baseline)=1 bindingRegex='被核对象 SHA256 = [0-9a-fA-F]{64}'
+banned = ["已改矩阵", "已收紧", "已施行", "已改设计"]
+required_elements = ["A", "B", "W1", "W2", "O1", "改动清单", "需谁批准", "V2:120", "不施行", "未验"]
+   elem 'A'                            raw_present=True
+   elem 'B'                            raw_present=True
+   elem 'W1'                           raw_present=True
+   elem 'W2'                           raw_present=True
+   elem 'O1'                           raw_present=True
+   elem '改动清单'                         raw_present=True
+   elem '需谁批准'                         raw_present=False
+   elem 'V2:120'                       raw_present=True
+   elem '不施行'                          raw_present=True
+   elem '未验'                           raw_present=True
+   HIT '已改矩阵'         line=4    pos=156    :: - 性质：**只裁决、不施行**。本件通篇为方案与处方，不含任何「已改矩阵 / 已收紧 / 已施行」既成事实断言；全部被核件零改动（§2.1 指纹逐一与编排方基线一致即证）。
+   HIT '已收紧'          line=4    pos=163    :: - 性质：**只裁决、不施行**。本件通篇为方案与处方，不含任何「已改矩阵 / 已收紧 / 已施行」既成事实断言；全部被核件零改动（§2.1 指纹逐一与编排方基线一致即证）。
+   HIT '已施行'          line=4    pos=169    :: - 性质：**只裁决、不施行**。本件通篇为方案与处方，不含任何「已改矩阵 / 已收紧 / 已施行」既成事实断言；全部被核件零改动（§2.1 指纹逐一与编排方基线一致即证）。
+   --- lines containing SHA256/字节数 (8) ---
+   L19   | # | 文件 | SHA256 | 字节数 |
+   L175  | 7.1 | V2 `:45` | `| **乙设计（绑定对象）** | `lead/b2b_design_20261106/B2B_DESIGN.md` | `565771d8…feaf` | 66,735 |`（完整 64 位在盘） | B2B_DESIGN 改后实算 SHA256/字节数 |
+   L176  | 7.2 | V2 `:46` | `| **乙矩阵（绑定对象）** | `lead/b2b_design_20261106/STATE_MATRIX.json` | `1d4ccc93…e016` | 3,558 |`（完整在盘） | STATE_MATRIX.json 改后实算 SHA256/字节数 |
+   L177  | 7.3 | V2 `:66` | `- **被核对象 SHA256 = 565771d8…feaf，字节数 = 66735**（乙设计）。`（完整在盘） | 同 7.1 新值 |
+   L178  | 7.4 | V2 `:67` | `- **被核对象 SHA256 = 1d4ccc93…e016，字节数 = 3558**（乙矩阵）。`（完整在盘） | 同 7.2 新值 |
+   L179  | 7.5 | V2 `:110` | `- **乙矩阵**：`lead/b2b_design_20261106/STATE_MATRIX.json`（`1d4ccc93…`/3,558 B）14 数据行（:2-15，本轮全文实读）为机器可读唯一口径。` | 短指纹/字节数同步为改后实算值；「14 数据行」措辞不动（反对意见 7(a) 第二半，采纳；7.3/7.4 为本稿 grep 新发现，比反对意见再多两处） |
+   L182  | 7.8 | 重签件 `:35` | §2 表第 6 行（V2 正文自身，`c7bcf035…`/28,897，完整在盘） | **V2 五处变更定稿后**实算 V2 新完整 SHA256/字节数填入——反对意见 7(a) 第一半采纳；漏改即 :153 条件 1 自动作废 |
+   L198  被核对象 SHA256 = a7211b32b1f8b06e9ec34da06257ab9e86b7d0259d9ef8d9d3697a8d79096935，字节数 = 25984
+
+====================================================================================================
+DOMAIN lead/matrix_reach_20261109/  MAIN MATRIX_DEFECT_REACHABILITY.md  bytes=27825
+gateProblems = ["缺要素 实跑输出"]
+bindings(baseline)=8 bindingRegex='被核对象 SHA256 = [0-9a-fA-F]{64}'
+banned = ["已改矩阵", "已收紧", "应改为", "建议修改矩阵"]
+required_elements = ["W1", "W2", "O1", "O2", "W3", "可达", "不可达", "实跑输出", "触发条件", "已实证", "未验", "未改任何文件"]
+   elem 'W1'                           raw_present=True
+   elem 'W2'                           raw_present=True
+   elem 'O1'                           raw_present=True
+   elem 'O2'                           raw_present=True
+   elem 'W3'                           raw_present=True
+   elem '可达'                           raw_present=True
+   elem '不可达'                          raw_present=True
+   elem '实跑输出'                         raw_present=False
+   elem '触发条件'                         raw_present=True
+   elem '已实证'                          raw_present=True
+   elem '未验'                           raw_present=True
+   elem '未改任何文件'                       raw_present=True
+   --- lines containing SHA256/字节数 (8) ---
+   L32   被核对象 SHA256 = ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2，字节数 = 412759
+   L33   被核对象 SHA256 = 6f2b3009b0de33bbe6a3f61e7a0e1c9b6e7e20215ea9c94a45f4c52479811ae8，字节数 = 29818
+   L34   被核对象 SHA256 = 1d4ccc937cfa78f1ac5144c15fd3e87152e45d41565bf5031bde53202667e016，字节数 = 3558
+   L35   被核对象 SHA256 = 517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636，字节数 = 399508
+   L36   被核对象 SHA256 = 3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7，字节数 = 52419
+   L37   被核对象 SHA256 = 2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede，字节数 = 759518
+   L38   被核对象 SHA256 = ce84dbd5c8f3eb4386737e994447414a137ed2513d53ef977451f7700ff089c1，字节数 = 12979
+   L164  被核对象 SHA256 = ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2，字节数 = 412759
+
+====================================================================================================
+DOMAIN lead/n10c04_ruling_20261108/  MAIN RULING_STATIC_ORDER.md  bytes=45070
+gateProblems = ["含越界断言 授实施权", "含越界断言 解除 PAUSE"]
+bindings(baseline)=2 bindingRegex='被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?'
+banned = ["授实施权", "解除 PAUSE", "可应用母本", "已应用", "已签 APPROVE_SCOPE"]
+required_elements = ["Q3", "顺序", "写域", "P11", "S4", "S1", "P6 半闭半开", "条件性", "不授实施权", "未验"]
+   elem 'Q3'                           raw_present=True
+   elem '顺序'                           raw_present=True
+   elem '写域'                           raw_present=True
+   elem 'P11'                          raw_present=True
+   elem 'S4'                           raw_present=True
+   elem 'S1'                           raw_present=True
+   elem 'P6 半闭半开'                      raw_present=True
+   elem '条件性'                          raw_present=True
+   elem '不授实施权'                        raw_present=True
+   elem '未验'                           raw_present=True
+   HIT '授实施权'         line=5    pos=153    ::            本裁决只定次序与写域：不授实施权、不解除 D-13 PAUSE、不代签 APPROVE_SCOPE、
+   HIT '授实施权'         line=44   pos=2211   :: 2. **不授实施权**：T1-T4 的实施以来源会话任务书为准；任务书未发 = 不实施。
+   HIT '授实施权'         line=348  pos=18495  :: - 意见要点：全文未见「授实施权/解除 PAUSE/应用母本」类越权断言（R:5-6/:231-233/:244-252 均为禁止或
+   HIT '授实施权'         line=425  pos=22923  :: 1. 本件**不授实施权**：T1-T4 实施以来源会话任务书（含写域、身份、纪律条款）为准；任务书未发 = 不实施。
+   HIT '解除 PAUSE'     line=348  pos=18500  :: - 意见要点：全文未见「授实施权/解除 PAUSE/应用母本」类越权断言（R:5-6/:231-233/:244-252 均为禁止或
+   --- lines containing SHA256/字节数 (11) ---
+   L11              （被核对象 SHA256 = f71d5a4ed4e3808e4475c438e3e15ea84b72a13d43fb266fa385ed32d05f6740，
+   L12                字节数 = 27076，本会话 hashlib 重放实算同值，见 §2）
+   L87   | # | 件 | SHA256（本会话实算） | 字节数 | 对照 |
+   L103  | 件 | SHA256（本会话实算） | 字节数 | 对照 |
+   L106  | lead/re_line_20261105/W8_STATIC_LOCATE/F8_VISIBILITY.md（F8V） | ebacbfcae71c0de3c65d6a0cb573cc9467366f0ecc6bcb8bc570e018c3255bd0 | 19335 | 上游仅记 8 位前缀+字节数（ERRATUM §4.2 行 7），前缀 MATCH，不补造全串 |
+   L113  382、DQ 187 vs 188）——系末尾换行计数法差异，非内容差异；全部字节数与 SHA256 同值。
+   L285  - **反对者绑定行（自报，本会话独立实算核中）**：「被核对象 SHA256 = f71d5a4ed4e3808e4475c438e3e15ea84b72a13d43fb266fa385ed32d05f6740，
+   L286    字节数 = 27076（lead/n10c04_ruling_20261108/_ro_RULING_N10C04_Q3.md）」——本会话重放
+   L288  - 反对意见本体 = 编排方任务材料**内联 JSON**，无落盘件，其自身 SHA256 无法实算——如实记，不补造。
+   L449    使用）；反对意见本体无落盘件、SHA256 无法实算；草案 R:182 建域前检查不可重演（§4.1 已标注）；
+   L451  - 本件自身指纹（写后实算）：**被核对象 SHA256 = 见 _fw_selfhash_out.txt（本件落盘后实算登记）**；
+
+====================================================================================================
+DOMAIN lead/n11_wording_fix_20261108/  MAIN N11_WORDING_FIX.md  bytes=18966
+gateProblems = ["缺要素 改前改后"]
+bindings(baseline)=1 bindingRegex='SHA256\\s*=\\s*`?[0-9a-fA-F]{64}'
+banned = ["已修改", "已订正", "已改首件"]
+required_elements = ["一一对应", "11 裁决项", "13 维", "拆分", "最小改动", "改前改后", "承接件", "需谁批准", "未改任何文件", "未验"]
+   elem '一一对应'                         raw_present=True
+   elem '11 裁决项'                       raw_present=True
+   elem '13 维'                         raw_present=True
+   elem '拆分'                           raw_present=True
+   elem '最小改动'                         raw_present=True
+   elem '改前改后'                         raw_present=False
+   elem '承接件'                          raw_present=True
+   elem '需谁批准'                         raw_present=True
+   elem '未改任何文件'                       raw_present=True
+   elem '未验'                           raw_present=True
+   --- lines containing SHA256/字节数 (3) ---
+   L25   | 件 | 字节数 | SHA256 | 判定 |
+   L148  > 被核对象 SHA256 = `3d463483ad0d53d048a9cad9990b6c0e8b72485ef20eeaa8c519074ebdf94bda`，字节数 = 44300
+   L168  本任务全程**未修改、未追加、未覆盖任何既有文件**；唯一写入 = 本写域新建 `N11_WORDING_FIX.md`（本件）。凭据：8 件受保护件指纹写入前（§2 实跑）与本件落盘后收尾复跑逐件相等；写域既有件（前件草案件 10500 B、_wv_fp_check.py、_wv_scan_out.txt、_wv_scan_ps.py）字节数未变。规格件、dimmap 两件、direction_ruling、nextstep、perf_repair、两台账均未动一字。
+
+====================================================================================================
+DOMAIN lead/n4_yi_final_20261108/  MAIN CANDIDATE_RESIGN_YES_V2.md  bytes=23129
+gateProblems = ["缺要素 不签 APPROVE_SCOPE", "含越界断言 可应用母本", "含越界断言 放行 N-5", "缺规范格式绑定行"]
+bindings(baseline)=0 bindingRegex='^\\|\\s*(R\\d+|\\d+)\\s*\\|'
+banned = ["可应用母本", "放行 N-5", "已应用", "已签 APPROVE_SCOPE"]
+required_elements = ["逐行", "十四行", "九 hunk", "语义层 YES", "甲不再绑定", "不签 APPROVE_SCOPE", "未验"]
+   elem '逐行'                           raw_present=True
+   elem '十四行'                          raw_present=True
+   elem '九 hunk'                       raw_present=True
+   elem '语义层 YES'                      raw_present=True
+   elem '甲不再绑定'                        raw_present=True
+   elem '不签 APPROVE_SCOPE'             raw_present=False
+   elem '未验'                           raw_present=True
+   HIT '可应用母本'        line=155  pos=14127  :: 3. **无越权断言**：审阅/复核回件不出现「可应用母本 / 放行 N-5 / APPROVE_SCOPE 已签」类断言；
+   HIT '放行 N-5'       line=17   pos=1150   :: 3. **不放行 N-5**——N-5 需有权来源会话派发新任务书（N-4 原文 :53-58，本轮实读）。
+   HIT '放行 N-5'       line=130  pos=10932  :: - **翻案条款（复核回件原文）**：若上述任一实体件（母本/候选/矩阵/V2/台账）指纹漂移、或矩阵↔V2↔实码三方出现取值分叉、或回件出现「可应用/放行 N-5」断言，本 confirmed 即翻。
+   HIT '放行 N-5'       line=150  pos=13617  :: **性质限定（越权断言排除声明）**：本 YES **不签 `APPROVE_SCOPE`**（属来源会话签发人）；**不应用母本**（母本指纹 517889c6…/399,508 本轮零改动）；**不放行 N-5**；不断言运行时行为、整趟行为或崩溃修复效果；不签真机验收。`RULING_DIRECTION.md:23` 本轮实读：Q1「采用乙、禁止混用甲预期」仅为**待有权签发人确认的方向意见**，不宣告 N-4 正式绑定已生效，且「本次不补登、不签署、不应用」（:25）——本文同此限定。未 commit、未 push；除本文与 `_rw_fpcheck_20261108.py`、`_rw_struct_20261108.py` 两个取证脚本外未写任何文件，全部在唯一写域 `lead/n4_yi_final_20261108/` 内。
+   HIT '放行 N-5'       line=155  pos=14135  :: 3. **无越权断言**：审阅/复核回件不出现「可应用母本 / 放行 N-5 / APPROVE_SCOPE 已签」类断言；
+   --- lines containing SHA256/字节数 (3) ---
+   L28   | # | 路径 | SHA256 | 字节数 | 实算 |
+   L45   | 路径 | SHA256 | 字节数 | 用途 |
+   L122  **被核对象（审阅回件 `lead/n4_yi_final_20261108/_cs_semantic_review_GLM_20261108.md`）SHA256 = `ee27b4caf4faa7920b602636bc0f43c1a265554fe6354659c59323fc11e3102e`，字节数 = 11948**——复核回件绑定值，撰写员本轮 hashlib 实算相符（`_rw_fpcheck` MATCH 行）。
+
+====================================================================================================
+DOMAIN lead/s604_attribution_20261108/  MAIN S604_ATTRIBUTION.md  bytes=27182
+gateProblems = ["缺规范格式绑定行"]
+bindings(baseline)=0 bindingRegex='被核对象 SHA256\\s*=\\s*`?([0-9a-fA-F]{64})`?'
+banned = ["台账应改为", "建议修正台账", "应修改台账", "已修改台账", "可应用母本"]
+required_elements = ["逐窗", "对照表", "口径差异", "语料差异", "台账记错", "双锚点", "无法归属", "不改台账", "未验"]
+   elem '逐窗'                           raw_present=True
+   elem '对照表'                          raw_present=True
+   elem '口径差异'                         raw_present=True
+   elem '语料差异'                         raw_present=True
+   elem '台账记错'                         raw_present=True
+   elem '双锚点'                          raw_present=True
+   elem '无法归属'                         raw_present=True
+   elem '不改台账'                         raw_present=True
+   elem '未验'                           raw_present=True
+   --- lines containing SHA256/字节数 (8) ---
+   L19   | # | 件 | SHA256 | 字节数 | 与编排方基线 |
+   L31   - **九件 SHA256 与字节数全部与编排方基线一致**（行数本表按「\n 计数 + 尾行无换行补计」较基线统一少 1，属计数口径差；绑定以 SHA256/字节数为准）。
+   L118  2. **语料件自采集后未改（本人实跑）**：15 件 SHA256 + 字节数 + n_frames 与 R3 [A] 登记 **15/15 全吻合**（`_sw_numcheck.py` [P8]）；mtime（os.stat 实测）= t55k 三件 2026-10-20 09:21:15..09:22:05，l1c 19:04:16..19:05:06、l1d 19:25:55..19:26:45、l1e 20:40:07..20:40:57、l3 21:13:54..21:14:44（均 2026-10-21）——即**全部语料停在采集时刻**，早于台账文件 mtime（2026-1
+   L156  ### 5.3 复核回件（verdict 与 SHA256+字节数绑定）
+   L160    - 归因回件（复核的被核对象）`lead/s604_attribution_20261108/_sa_ATTRIBUTION_S604.md` **SHA256 = 7241026122978426838d6c8ccaa8ea3335fe6213adef6bae10ab9c7aa83df2f2，字节数 = 17272**（与其自报前缀 7241026122978426 一致）；
+   L161    - 该回件所述被核对象 `lead/slowframe_r3_20261108/_r3_GAPDIFF_RECHECK.md` **SHA256 = 98cd612f63210182f1f6aa9f1c4d664e711d7616e79bc9805d450695a919cf6e，字节数 = 11215**（与编排方基线一致）。
+   L172  4. **不改台账声明**：本件未修改 `lead/GOAL_THREE_TARGETS_20261018.md`、`lead/PENDING_DECISIONS.md` 及全部上游件一字；收尾实测台账 SHA256 = `2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede`、759518 B、mtime 2026-11-06 06:53:04 未变（`_sw_numcheck.py` [P10]）。是否修订由台账所有者裁决，**本件不判「台账该不该改」**。
+   L184  | 文件 | 说明 | SHA256 | 字节数 |
+
+====================================================================================================
+DOMAIN lead/s604_script_gap_20261109/  MAIN S604_SCRIPT_GAP.md  bytes=20271
+gateProblems = ["缺要素 脚本存在性", "缺要素 可重建"]
+bindings(baseline)=1 bindingRegex='被核对象 SHA256 = [0-9a-fA-F]{64}'
+banned = ["已定位错误环节", "确定错误在", "已重建台账", "已改台账"]
+required_elements = ["脚本存在性", "可重建", "自由度", "单向压缩", "候选", "可证伪", "假设非定谳", "最小补充证据", "未验"]
+   elem '脚本存在性'                        raw_present=False
+   elem '可重建'                          raw_present=False
+   elem '自由度'                          raw_present=True
+   elem '单向压缩'                         raw_present=True
+   elem '候选'                           raw_present=True
+   elem '可证伪'                          raw_present=True
+   elem '假设非定谳'                        raw_present=True
+   elem '最小补充证据'                       raw_present=True
+   elem '未验'                           raw_present=True
+   --- lines containing SHA256/字节数 (5) ---
+   L17   【本轮实跑】`python -I -X utf8 D:/Project/ra2-campaign-forge/lead/s604_script_gap_20261109/_sgw_fp_verify.py` → `_sgw_fp_verify_out.txt`（[1] 段）：**八件 8/8 MATCH**（SHA256+字节数逐一相等）：
+   L19   | 件 | SHA256 | 字节数 | 本轮复算 |
+   L91   - **15 份语料 JSON**：`out/re_work/work_chain/CONTINUE_20261003/lead/qc161_u0400_trip/{l1c,l1d,l1e,l3,t55k}_*/measure_w{0,1,2}.json`，字段 `samples.t`/`samples.f`/`frame_edges`（蓝本 `_r3_recompute_gapdiff.py:70-71`【实读】）。【本轮实跑】`_sgw_fp_verify.py` [3] 段：15/15 件 SHA256+bytes 与 R3 [A] 记载值逐位相等（例 l1c/w0 `9464cac4…
+   L142  被核对象 SHA256 = ba37635836dfc3b06f10edd875f83a5ab824141944b19e8a37b522eb6775ebb8，字节数 = 8211
+   L144  - **本轮转验**【本轮实跑】：`_sgw_fp_verify.py` [2] 段对该文件自算 SHA256+bytes → **MATCH**（`_sgw_fp_verify_out.txt`）。
+
+====================================================================================================
+DOMAIN lead/s604_script_hunt_20261109/  MAIN S604_SCRIPT_HUNT.md  bytes=27347
+gateProblems = ["含越界断言 已删除"]
+bindings(baseline)=58 bindingRegex='R[0-9]'
+banned = ["已改", "已删除", "已清理"]
+required_elements = ["dirsVisited", "耗时", "命中", "真伪", "完备性", "置信度", "替代路径", "验证方案", "未改任何文件", "未验"]
+   elem 'dirsVisited'                  raw_present=True
+   elem '耗时'                           raw_present=True
+   elem '命中'                           raw_present=True
+   elem '真伪'                           raw_present=True
+   elem '完备性'                          raw_present=True
+   elem '置信度'                          raw_present=True
+   elem '替代路径'                         raw_present=True
+   elem '验证方案'                         raw_present=True
+   elem '未改任何文件'                       raw_present=True
+   elem '未验'                           raw_present=True
+   HIT '已删除'          line=143  pos=13536  :: **不可能/未覆盖（如实申报，穷搜轮 §5 :105-110 申报 + 复核轮确认）**：已删除文件的磁盘未分配残块 carving 未做（本体已得，无必要）；JetBrains LocalHistory 为专有二进制未解析；OneDrive 仅确认存在、云端内容未审计；R6h（90.5s）/R9（120.1s）两路预算截断后的残余未补扫（穷搜判定已由 CLI 日志逐件清点 + DB 全列扫描覆盖，属转述判断）；WAL 为活文件，读的是扫描时点快照。
+   --- lines containing SHA256/字节数 (4) ---
+   L23   | 件 | 字节数 | SHA256（本轮自算=编排方基线） | mtime | MATCH |
+   L92   - 范围=仓库 depth8；扩展名=.log/.txt/.out/.md/.json/.jsonl，1B–5MB；谓词=9 针（R10 名针集）**且**同文件含 `def `/`import `（require_py）；dirs=5288，files=64378，120.1s **预算截断**；209 命中全部为「604」数字噪声（十六进制地址/字节数/行号），逐条摘句核实无脚本块。全量清单在盘 `_sh_r678_out.txt`。
+   L162  被核对象 SHA256 = 593c7a3ed3b1d1d47d6da5d8277f76c9323499aa04084a86e376ab5f9d2ab740，字节数 = 20271
+   L168  - **未来拿到（新的）脚本/存档时的验证方案**（本轮已按此执行，可作模板）：①先报路径与字节数，hashlib 记指纹，不动原件；②`python -I -X utf8` + 绝对路径在只读输入上重跑，与历史输出逐字节比对；③与台账落盘文本做去 CR 字节级比对（注意边界约定：含/不含首尾换行会导致 sha 不同——本轮实证 6a893fb8=sec[1:]↔台账 9687..9757+末换行）；④时刻链核对（会话时间戳 vs 文件 mtime vs 台账落盘命令输出）；⑤静态定位确切错误行并与候选码形逐一证伪/证实。

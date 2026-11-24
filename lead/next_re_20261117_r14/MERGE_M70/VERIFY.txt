@@ -1,0 +1,92 @@
+M70 VERIFY — 并表 NAMED_PUSH_AUDIT11 PASS 11 行（S22 TClassFactory 同族）
+复算时间：2026-11-20T13:38:04+08:00
+复算脚本：MERGE_M70\verify.py（ALL PASS）、MERGE_M70\analyze.py、MERGE_M70\compute.py
+
+=====================================================================
+一、卡片硬指标（必须逐项吻合，否则停下）
+=====================================================================
+并行数（本次并表行数）        : 11
+交集（verdict ∩ delta ∩ coverage）: 正好 11 行 = 预期 11 entry，无多无少
+  verdict.tsv                  : 11 行 / 8 列，verdict 全 PASS
+  delta.tsv                    : 11 行 / 6 列
+  coverage 命中                : 11 entry 各在 coverage 恰好 1 行
+  预期 11 entry                : 006C2B10 006C2C90 006C2E10 006C2F90 006C3110
+                                 006C3290 006C3410 006C3590 006C3890 006C3A10 006C3B90
+atlas 内（entry 小写归一）     : 11/11 全在 atlas 内（atlas 数据行 12,916）
+
+=====================================================================
+二、coverage.tsv 行数与列
+=====================================================================
+数据行数                      : 18,498（不增不减）
+总行数（含表头 1 行）          : 18,499
+列结构                        : 数据行均 8 列、TAB 分隔（表头 1 行逗号）
+11 行改动                     : 仅第 4/5/6 列
+  第 4 列 one_line_semantics   ← NAMED_PUSH_S22_B3/delta.tsv 原文照抄（逐字节一致）
+  第 5 列 grade                → [已证]（原均 [未证]）
+  第 6 列 evidence_path        → NAMED_PUSH_AUDIT11/VERDICT.md
+  第 1/2/3/7/8 列              : 逐字节不动（脚本逐行断言）
+
+=====================================================================
+三、全表 / atlas 内 / atlas 外 [已证]（盘上实算）
+=====================================================================
+全表 [已证]                   : 1,591（改前 1,580 → +11）
+atlas 内 [已证]               : 1,585（改前 1,574 → +11）
+atlas 外 [已证]               : 6（改前 6 → 不变）
+
+=====================================================================
+四、S22（atlas 内）proved 与 strict（strict 用带方括号字面 [未证] 口径）
+=====================================================================
+S22 proved                    : 98（改前 87 → +11）= 98/4851 = 2.02%
+S22 strict                    : 55（改前 44 → +11）= 55/4851 = 1.13%
+  strict 口径                 : strict_panel.py 第 78 行 `if "[未证]" not in sem:`
+                                带方括号字面 [未证]；11 行新语义逐行核 delta 第 4 列
+                                均不含字面 [未证]，故 strict 随 proved 同增 11。
+TOTAL atlas 内 proved         : 1,585（1,574 → +11）= 1,585/12,916 = 12.27%
+TOTAL atlas 内 strict         : 1,268（1,257 → +11）= 1,268/12,916 = 9.82%
+
+=====================================================================
+五、达标翻转（不得改变；若翻转须停下）
+=====================================================================
+有无达标翻转                  : 无
+名义达标（named_pct_S(R14)∧proved）：3/22 = S15 / S16 / S17（未变）
+严格达标（named_pct_S(R14)∧strict）：1/22 = S17（未变）
+11 行全属 S22，S22 不参与达标排名（门槛 2426，proved 98 / strict 55 远低于门槛）。
+
+=====================================================================
+六、M70 披露段落行号（PANEL.md，1-based）
+=====================================================================
+M70 披露段落起始行            : PANEL.md 第 150 行
+M70 披露段落完整范围          : 第 150–154 行（共 5 行）
+位置                          : 紧接 M69 披露（第 146–149 行）之后
+逐字节核对                    : 与卡片 M70-MERGE.md 第 46–50 行披露原文完全一致
+                                （verify.py：verbatim-identical = PASS；不省略、不改写）
+strict 口径字面               : 披露/同步全程使用带方括号字面 [未证]
+
+=====================================================================
+七、verify.py 全量 PASS 输出
+=====================================================================
+PASS PANEL has exactly one M70 disclosure start line
+PASS M70 disclosure block is verbatim-identical to card lines 46-50
+PASS M70 disclosure immediately after M69 disclosure
+M70 disclosure 1-based start line: 150 end line: 154
+PASS PANEL contains updated line: | **1,591 / 1,585** |
+PASS PANEL contains updated line: | S22 | 4851 | 1759 | 36.26 | 1759 | 36.26 | 34 | 0.70 ...
+PASS PANEL contains updated line: | **TOTAL** | **12,916** | ... | **1585** | **12.27** ...
+PASS PANEL contains updated line: | S22 | 4851 | 98 | 2.02 | **55** | **1.13** | 2426 | — | — |
+PASS PANEL contains updated line: | **TOTAL** | **12916** | **1585** | **12.27** | **1268** | **9.82** | — | **3/22** | **1/22** |
+PASS old S22 strict row gone
+PASS old TOTAL strict row gone
+PASS old 全表/atlas cell gone
+PASS coverage total lines incl header = 18499
+PASS coverage data rows = 18498
+PASS all data rows have 8 tab-separated cols
+PASS full [已证] = 1591
+PASS atlas-in [已证] = 1585
+PASS atlas-out [已证] = 6
+PASS audit verdict 11 rows all PASS
+PASS 11 entries: col4=delta verbatim, col5=[已证], col6=NAMED_PUSH_AUDIT11/VERDICT.md, all atlas-in
+PASS nominal 达标 = S15/S16/S17 (3/22), no flip
+PASS strict 达标 = S17 (1/22), no flip
+PASS S22 proved=98 strict=55
+PASS TOTAL atlas-in proved=1585 strict=1268
+OVERALL: ALL PASS

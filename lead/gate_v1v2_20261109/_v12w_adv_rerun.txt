@@ -1,0 +1,175 @@
+====================================================================================================
+=== A. 撰写人没见过的新句子（判定是否确定 + 是否正确） ===
+--- A1 纯身份陈述/规定式（应放过 V1）---
+  [NV1-a 疑问式] expect=V1   got=V1   OK | review=False | H1_疑问式
+        TEXT : 请核验者逐行确认 §5.4 排查表：见证槽是否已填？
+        UNIT : '请核验者逐行确认 §5.4 排查表：见证槽是否已填？'
+        REASON: HARD_V1 结构：H1_疑问式（完成词不可能充当断言谓语）
+  [NV1-b 禁止式] expect=V1   got=V1   OK | review=False | H5_否定禁止管辖
+        TEXT : 核验者不得代填身份值，亦不得视为已填。
+        UNIT : '核验者不得代填身份值，亦不得视为已填。'
+        REASON: HARD_V1 结构：H5_否定禁止管辖（完成词不可能充当断言谓语）
+  [NV1-c 紧邻否定] expect=V1   got=V1   OK | review=False | H5_否定禁止管辖
+        TEXT : 该槽尚未已填，按协议走 PARTIAL 档。
+        UNIT : '该槽尚未已填，按协议走 PARTIAL 档。'
+        REASON: HARD_V1 结构：H5_否定禁止管辖（完成词不可能充当断言谓语）
+  [NV1-d 占位定语] expect=V1   got=V1   OK | review=False | H2_引述占位,H4_完成词做定语
+        TEXT : 把 <已填件路径> 作为 _c7_selfcheck.py 的参数实跑。
+        UNIT : '把 <已填件路径> 作为 _c7_selfcheck.py 的参数实跑。'
+        REASON: HARD_V1 结构：H2_引述占位,H4_完成词做定语（完成词不可能充当断言谓语）
+  [NV1-e 条件分支] expect=V1   got=V1   OK | review=False | H6_条件选言分支
+        TEXT : 若 G1 见证已填，则核 D2/D3/D4；否则登记 PARTIAL。
+        UNIT : '若 G1 见证已填，则核 D2/D3/D4；'
+        REASON: HARD_V1 结构：H6_条件选言分支（完成词不可能充当断言谓语）
+  [NV1-f 表格列头] expect=V1   got=V1   OK | review=False | H1_疑问式,H3_表格状态列,H6_条件选言分支
+        TEXT : | 件 | 需什么字段 | 是否已填 | 判定条件 |
+        UNIT : ' 是否已填 '
+        REASON: HARD_V1 结构：H1_疑问式,H3_表格状态列,H6_条件选言分支（完成词不可能充当断言谓语）
+--- A2 纯完成断言（应抓住 V2）---
+  [NV2-a 已填+值] expect=V2   got=V2   OK | review=True  | DEFAULT_V2+REVIEW
+        TEXT : 三个身份字段已填，reviewerSessionId = sess_dwf-dwfrun-9f31。
+        UNIT : '三个身份字段已填，reviewerSessionId = sess_dwf-dwfrun-9f31。'
+        REASON: 无任何 V1 形状、亦无硬性完成宣称：机器判不了，fail-closed 默认 V2（宁可误拦），须人工复核或改写为显式规定式
+  [NV2-b 已交付] expect=V2   got=V2   OK | review=True  | DEFAULT_V2+REVIEW
+        TEXT : 本会话已提交 ACCEPTANCE_RECORDS_C07.json，门禁 exit 0。
+        UNIT : '本会话已提交 ACCEPTANCE_RECORDS_C07.json，门禁 exit 0。'
+        REASON: 无任何 V1 形状、亦无硬性完成宣称：机器判不了，fail-closed 默认 V2（宁可误拦），须人工复核或改写为显式规定式
+  [NV2-c 已补登] expect=V2   got=V2   OK | review=True  | DEFAULT_V2+REVIEW
+        TEXT : 台账 :5906 已补登 Q6 责任身份，本件归档完毕。
+        UNIT : '台账 :5906 已补登 Q6 责任身份，本件归档完毕。'
+        REASON: 无任何 V1 形状、亦无硬性完成宣称：机器判不了，fail-closed 默认 V2（宁可误拦），须人工复核或改写为显式规定式
+  [NV2-d 硬性宣称] expect=V2   got=V2   OK | review=False | V2_OVERRIDE:现已/已填三值/已落盘
+        TEXT : 现已填三值并过增强门禁，绑定行已落盘。
+        UNIT : '现已填三值并过增强门禁，绑定行已落盘。'
+        REASON: U 内含硬性完成宣称，且未被紧邻否定/禁止管辖
+--- A3 ★ 否定语境判反探针：真完成断言与无关禁令/否定词同句（逗号不切单元）---
+  [NT-1 禁令在后] expect=V2   got=V1   **MISMATCH** | review=False | H5_否定禁止管辖
+        TEXT : 现已填三值并过门禁，不得再改值。
+        UNIT : '现已填三值并过门禁，不得再改值。'
+        REASON: HARD_V1 结构：H5_否定禁止管辖（完成词不可能充当断言谓语）
+  [NT-2 禁令在前] expect=V2   got=V1   **MISMATCH** | review=False | H5_否定禁止管辖
+        TEXT : 核验者不得代填，但三值现已填并已交付。
+        UNIT : '核验者不得代填，但三值现已填并已交付。'
+        REASON: HARD_V1 结构：H5_否定禁止管辖（完成词不可能充当断言谓语）
+  [NT-3 不代填同句] expect=V2   got=V1   **MISMATCH** | review=False | H5_否定禁止管辖
+        TEXT : 本件三值已填，不代填见证槽。
+        UNIT : '本件三值已填，不代填见证槽。'
+        REASON: HARD_V1 结构：H5_否定禁止管辖（完成词不可能充当断言谓语）
+  [NT-4 不许事后] expect=V2   got=V1   **MISMATCH** | review=False | H5_否定禁止管辖
+        TEXT : 三值已填毕，不许事后改值。
+        UNIT : '三值已填毕，不许事后改值。'
+        REASON: HARD_V1 结构：H5_否定禁止管辖（完成词不可能充当断言谓语）
+  [NT-5 未验残留同句] expect=V2   got=V2   OK | review=False | V2_OVERRIDE:登记闭合
+        TEXT : 三值已填，无未验残留，登记闭合。
+        UNIT : '三值已填，无未验残留，登记闭合。'
+        REASON: U 内含硬性完成宣称，且未被紧邻否定/禁止管辖
+  [NT-6 非字同句] expect=V2   got=V2   OK | review=True  | DEFAULT_V2+REVIEW
+        TEXT : 三值已填，非计划号，正式任务书编号已落实。
+        UNIT : '三值已填，非计划号，正式任务书编号已落实。'
+        REASON: 无任何 V1 形状、亦无硬性完成宣称：机器判不了，fail-closed 默认 V2（宁可误拦），须人工复核或改写为显式规定式
+  [NT-7 纯禁令（对照）] expect=V1   got=V1   OK | review=False | H5_否定禁止管辖
+        TEXT : 不许已填。
+        UNIT : '不许已填。'
+        REASON: HARD_V1 结构：H5_否定禁止管辖（完成词不可能充当断言谓语）
+  [NT-8 纯禁令（对照）] expect=V1   got=V1   OK | review=False | H5_否定禁止管辖
+        TEXT : 不得视为已填。
+        UNIT : '不得视为已填。'
+        REASON: HARD_V1 结构：H5_否定禁止管辖（完成词不可能充当断言谓语）
+  [NT-9 双重否定] expect=V2   got=V1   **MISMATCH** | review=False | H5_否定禁止管辖
+        TEXT : 三值并非不已填，回件照录即可。
+        UNIT : '三值并非不已填，回件照录即可。'
+        REASON: HARD_V1 结构：H5_否定禁止管辖（完成词不可能充当断言谓语）
+--- A4 ★ 无关行内词触发 HARD_V1（判据是否真按命中局部语境）---
+  [LT-1 逐字在后] expect=V2   got=V1   **MISMATCH** | review=False | H2_引述占位
+        TEXT : 三值已填，且 reviewerRole 与 PERF:151 内部三角色逐字不同。
+        UNIT : '三值已填，且 reviewerRole 与 PERF:151 内部三角色逐字不同。'
+        REASON: HARD_V1 结构：H2_引述占位（完成词不可能充当断言谓语）
+  [LT-2 先例在后] expect=V2   got=V1   **MISMATCH** | review=False | H2_引述占位
+        TEXT : 三值已填；另附先例件一份供比对。
+        UNIT : '三值已填；'
+        REASON: HARD_V1 结构：H2_引述占位（完成词不可能充当断言谓语）
+  [LT-3 按字在后] expect=V2   got=V2   OK | review=True  | DEFAULT_V2+REVIEW
+        TEXT : 三值已填，按 NEXT:23 原序写入记录。
+        UNIT : '三值已填，按 NEXT:23 原序写入记录。'
+        REASON: 无任何 V1 形状、亦无硬性完成宣称：机器判不了，fail-closed 默认 V2（宁可误拦），须人工复核或改写为显式规定式
+  [LT-4 或字条件在后] expect=V2   got=V1   **MISMATCH** | review=False | H6_条件选言分支
+        TEXT : 三值已填，或按判定条件走 PARTIAL 档。
+        UNIT : '三值已填，或按判定条件走 PARTIAL 档。'
+        REASON: HARD_V1 结构：H6_条件选言分支（完成词不可能充当断言谓语）
+  [LT-5 → 在后] expect=V2   got=V1   **MISMATCH** | review=False | H6_条件选言分支
+        TEXT : 三值已填 → 登记闭合，本件留存。
+        UNIT : '三值已填 → 登记闭合，本件留存。'
+        REASON: HARD_V1 结构：H6_条件选言分支（完成词不可能充当断言谓语）
+
+====================================================================================================
+=== B. 独立复现撰写人 22/14/4 回归（直接调其 rule + 其样本数组）===
+  slot:79                        expect=V1 got=V1 PASS
+  slot:103                       expect=V1 got=V1 PASS
+  slot:110                       expect=V1 got=V1 PASS
+  slot:112                       expect=V1 got=V1 PASS
+  slot:114 [改写]                  expect=V1 got=V1 PASS
+  slot:120                       expect=V1 got=V1 PASS
+  slot:120b                      expect=V1 got=V1 PASS
+  truth:151                      expect=V1 got=V1 PASS
+  truth:228                      expect=V1 got=V1 PASS
+  truth:240                      expect=V1 got=V1 PASS
+  truth:22 [改写]                  expect=V1 got=V1 PASS
+  truth:208 [改写]                 expect=V1 got=V1 PASS
+  truth:204 [改写]                 expect=V1 got=V1 PASS
+  构造-V1-01 [规定式]                 expect=V1 got=V1 PASS
+  构造-V1-02 [否定式]                 expect=V1 got=V1 PASS
+  构造-V1-03 [疑问式]                 expect=V1 got=V1 PASS
+  构造-V1-04 [引述式]                 expect=V1 got=V1 PASS
+  构造-V1-05 [表格]                  expect=V1 got=V1 PASS
+  构造-V1-06 [条件式]                 expect=V1 got=V1 PASS
+  构造-V1-07 [做定语]                 expect=V1 got=V1 PASS
+  构造-V1-08 [禁止完成]                expect=V1 got=V1 PASS
+  构造-V1-09 [规定式+完成词]             expect=V1 got=V1 PASS
+  [V1] 22/22 PASS
+  构造-V2-01                       expect=V2 got=V2 PASS
+  构造-V2-02                       expect=V2 got=V2 PASS
+  构造-V2-03                       expect=V2 got=V2 PASS
+  构造-V2-04                       expect=V2 got=V2 PASS
+  构造-V2-05                       expect=V2 got=V2 PASS
+  构造-V2-06                       expect=V2 got=V2 PASS
+  构造-V2-07                       expect=V2 got=V2 PASS
+  构造-V2-08                       expect=V2 got=V2 PASS
+  构造-V2-09                       expect=V2 got=V2 PASS
+  构造-V2-10                       expect=V2 got=V2 PASS
+  构造-V2-11                       expect=V2 got=V2 PASS
+  构造-V2-12                       expect=V2 got=V2 PASS
+  构造-V2-13                       expect=V2 got=V2 PASS
+  构造-V2-14                       expect=V2 got=V2 PASS
+  [V2] 14/14 PASS
+  [MIXED] 独立复算 4 条
+  MIX-01   hits=['V1', 'V2'] agg=V2 expect=V2 PASS
+  MIX-02   hits=[] agg=V1 expect=V2 FAIL
+  MIX-03   hits=['V1', 'V2'] agg=V2 expect=V2 PASS
+  MIX-04   hits=['V1', 'V1'] agg=V1 expect=V1 PASS
+  [MIXED] 3/4 PASS
+  [REGRESSION-REPRO] V1 22/22 ; V2 14/14 ; MIXED 3/4
+
+====================================================================================================
+=== C. 9 处真命中：U 内 V2_OVERRIDE 是否全空（独立复算）===
+  c07_slot_20261109                L79   tok=已填     V12=V1 U内V2_OVERRIDE=[] hard=['H2_引述占位', 'H4_完成词做定语']
+  c07_slot_20261109                L103  tok=已填     V12=V1 U内V2_OVERRIDE=[] hard=['H2_引述占位']
+  c07_slot_20261109                L110  tok=已填     V12=V1 U内V2_OVERRIDE=[] hard=['H1_疑问式']
+  c07_slot_20261109                L112  tok=已填     V12=V1 U内V2_OVERRIDE=[] hard=['H1_疑问式', 'H3_表格状态列']
+  c07_slot_20261109                L120  tok=已填     V12=V1 U内V2_OVERRIDE=[] hard=['H2_引述占位', 'H3_表格状态列']
+  c07_slot_20261109                L120  tok=已填     V12=V1 U内V2_OVERRIDE=[] hard=['H2_引述占位', 'H3_表格状态列']
+  c07_truth_protocol_20261109      L151  tok=已填     V12=V1 U内V2_OVERRIDE=[] hard=['H6_条件选言分支']
+  c07_truth_protocol_20261109      L228  tok=已填     V12=V1 U内V2_OVERRIDE=[] hard=['H6_条件选言分支']
+  c07_truth_protocol_20261109      L240  tok=已填     V12=V1 U内V2_OVERRIDE=[] hard=['H3_表格状态列', 'H6_条件选言分支']
+  [C-TOTAL] hits=9
+
+====================================================================================================
+=== D. S3(DEFAULT_V2+REVIEW) 触发频率：新句子里『判不了』究竟出现几次 ===
+  三个身份字段已填。                                      got=V2   review=True  | DEFAULT_V2+REVIEW
+  三值已填，登记闭合。                                     got=V2   review=False | V2_OVERRIDE:登记闭合
+  本会话已提交登记件。                                     got=V2   review=True  | DEFAULT_V2+REVIEW
+  C07 责任身份已补登。                                   got=V2   review=True  | DEFAULT_V2+REVIEW
+  见证槽已代填，值照录。                                    got=V2   review=True  | DEFAULT_V2+REVIEW
+  两处落笔已补登并复核。                                    got=V2   review=True  | DEFAULT_V2+REVIEW
+  三值已填毕，未验项清零。                                   got=V2   review=False | V2_OVERRIDE:填毕
+  [D] plain-V2 句中走 S3(判不了/默认V2) 的命中 = 5 / 7
+[V12V-ADV-END]

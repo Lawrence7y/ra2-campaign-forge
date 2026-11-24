@@ -1,0 +1,194 @@
+{
+  "sourceFingerprints": {
+    "lead/control_20261106/D29_ENTRY_DRAFT.md": {
+      "bytes": 7565,
+      "sha256": "23f9dd52413b43b337f2956272c0d44e582953775229986a378a0494f94069dd"
+    },
+    "lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md": {
+      "bytes": 27271,
+      "sha256": "ed8951e72bd61cd322b1687c4496ec9fc0e8a362c1425d4020901228d885a001"
+    },
+    "lead/stall_event_def_20261106/_stall_probe.py": {
+      "bytes": 14612,
+      "sha256": "de882a9a678c4dafe3a69aa98715a99ca50d50094d09862c6daa252973edc6d7"
+    },
+    "lead/PENDING_DECISIONS.md": {
+      "bytes": 40303,
+      "sha256": "53ea57c6536b5429c0981cbbf8568d98ab675137c703ef15ee0b6266e535c65a"
+    },
+    "lead/d28_ruling_20261106/RULING_D28.md": {
+      "bytes": 13897,
+      "sha256": "29bb247fbf82d80adf8c9753a7bb3b6d18dfe6bd0583ff1f87f860fb763b5f15"
+    },
+    "lead/d13b_timing_clarify_20261106/BUDGET_SCENARIOS.json": {
+      "bytes": 2268,
+      "sha256": "7026a5595dda53fb3f17d5d8c75c7edf11d13ae1c0166da07e8cb68cab8e4b46"
+    },
+    "lead/d13b_timing_clarify_20261106/TIMELINE_MODEL.json": {
+      "bytes": 2045,
+      "sha256": "b085db6e45d01ca1d3ec0fc486243ffcbe7c9e8908b8c4e421871517bba42678"
+    },
+    "lead/d13b_timing_clarify_20261106/TIMING_SPEC_CLARIFY.md": {
+      "bytes": 21446,
+      "sha256": "02d91045c53297b620285507cdab0b4fa1b07e9fe18ab3bab7557c77e74e8ee9"
+    }
+  },
+  "verbatim": {
+    "lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177": "| 2 | **阻塞点程序计数器 (PC) / 调用栈地址** | 语料中只有时间戳 `t` 与帧号 `f`，完全不知道逻辑帧停滞的 100–200ms 内，主逻辑线程是在执行密集循环（如容器遍历）、还是卡在 DirectDraw 翻页等待、还是在 Windows 消息泵中挂起 | 需要**停滞瞬间的程序执行位置数据**：包含停滞发生时主线程的 EIP/RIP 内存虚拟地址（VA）、模块偏移量及前 5 层调用函数栈指针（且必须在停滞发生后 50ms 内捕获）。 |",
+    "lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190": "- **设计指标**：从帧停滞被检测到、到采样动作在目标线程生效的**端到端延迟必须 $< 50\\text{ ms}$（安全裕量要求 $\\le 20\\text{ ms}$）**；",
+    "lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:191": "- **拒止原则**：任何累积判定耗时 $\\ge 100\\text{ ms}$ 的触发机制均属不合格。若触发延迟过大，采样动作发生时真实停滞已然结束，采集到的栈将是下一帧正常运行时的代码，产生致命的因果倒错伪影。",
+    "lead/stall_event_def_20261106/_stall_probe.py:28": "T_DEFAULT = 0.100  # 秒，口径 B 停滞判定阈值（100ms）",
+    "lead/stall_event_def_20261106/_stall_probe.py:86": "def extract_platforms(ts, fs, thr=T_DEFAULT):",
+    "lead/stall_event_def_20261106/_stall_probe.py:93": "        while j + 1 < n and fs[j + 1] == fs[i]:",
+    "lead/stall_event_def_20261106/_stall_probe.py:95": "        dur = ts[j] - ts[i]",
+    "lead/stall_event_def_20261106/_stall_probe.py:96": "        if dur >= thr:",
+    "lead/PENDING_DECISIONS.md:260": "  **②停滞口径 = A**：**口径 B 为准**，口径 A 仅在引用 §507 历史数字时注明来源、**不回溯重算**",
+    "lead/d28_ruling_20261106/RULING_D28.md:28": "选择丁：保留口径 B，保持 D-13b 离线研究和 D-13 采样实现与执行 PAUSE。先交付一项有限的时序规格澄清与条件预算复审，不以本裁决选择或授权新的捕获实现。出处：题给裁决 q2、bounds；lead/PENDING_DECISIONS.md:260；lead/d27_ruling_20261106/RULING_D27.md:8、lead/d27_ruling_20261106/RULING_D27.md:32。",
+    "lead/d28_ruling_20261106/RULING_D28.md:30": "规格澄清必须分别列出事件离线分类时刻、在线触发时刻、原始上下文保存截止、离线解析完成时刻。停滞发生后 50ms 与检测后 <50ms 是两个起算点，安全裕量 ≤20ms 也须明确所处时间段。定义对累计判定 ≥100ms 的触发机制有拒止要求；等待满 100ms 才触发的方案与该规则存在待解决的规范冲突，不得静默删除规则。出处：lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:191；题给 F7、D8。",
+    "lead/d28_ruling_20261106/RULING_D28.md:32": "现四段模型为 2.5+100+48+2=152.5ms。2.5ms 是代理估算，48ms 是名义预算拆分，2ms 是指标，均不是已证明的实现耗时下界。故只判该固定模型不满足在 129.93ms 代表性事件结束前完成在线快照的要求，不判当前口径下物理不可行，也不关闭整条路线。129.93ms 是保留标签集合中位数，不是每个事件的时长上界。出处：lead/d13b_design_20261106/BUDGET_MODEL.json:5、lead/d13b_design_20261106/BUDGET_MODEL.json:19、lead/d13b_design_20261106/BUDGET_MODEL.json:26、lead/d13b_design_20261106/BUDGET_MODEL.json:32；lead/d27_ruling_20261106/RULING_D27.md:12；题给 F6、D2、D7。",
+    "lead/d28_ruling_20261106/RULING_D28.md:34": "预算注释中的条件反例 2.5+100+20=122.5ms，距 129.93ms 留有 7.43ms，只说明算术仍有研究空间；它不能消除定义第 191 行的规范冲突，不能证明真实时延、扰动、资源释放或栈解析可行。当前 152.5ms 若要严格小于 129.93ms，须削减严格超过 22.57ms，恰好削减 22.57ms 仅到相等。出处：lead/d13b_design_20261106/BUDGET_MODEL.json:34；题给 F6、D3、D9。",
+    "lead/d28_ruling_20261106/RULING_D28.md:36": "下一阶段限于规格、假设矩阵和纯模型/合成时序论证。如提出提前或周期性保存历史上下文，须按新方案独立审查触发、覆盖、假阳性、扰动、配额及回退，不能称作调参，本次也不授权实施。停滞结束后才取当前栈，与解析停滞期间已经保存的原始上下文，应严格区分；现有设计区分在线保存和离线解析，但没有已验证可用的采样实现。出处：lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:200；lead/d27_ruling_20261106/RULING_D27.md:28、lead/d27_ruling_20261106/RULING_D27.md:32、lead/d27_ruling_20261106/RULING_D27.md:42；题给 D4—D6。",
+    "lead/d28_ruling_20261106/RULING_D28.md:42": "口径 A 的历史引用及 occ_a/wait-trace 隔离继续遵守 lead/PENDING_DECISIONS.md:260、lead/PENDING_DECISIONS.md:261、lead/PENDING_DECISIONS.md:262。将来若另立提前/周期性捕获方案，而离线事件定义和标签规则不变，上述数字仍可作为原版本条件统计，不能直接当作新方案捕获覆盖率。若未来用户明确批准修改门槛、窗口或标签，须另建版本，独立计算新候选数、保留数及比例；旧 1737/1681/90.42% 保留为历史结果，禁止覆盖或跨版本直接比较。出处：题给 historyDisposal、D4；上述 D-12 与 D-27 引文。",
+    "lead/d13b_timing_clarify_20261106/TIMING_SPEC_CLARIFY.md:50": "   - **在后验串行触发模式下（等待口径 B 满 100ms 判定）**：",
+    "lead/d13b_timing_clarify_20261106/TIMING_SPEC_CLARIFY.md:54": "   - **在非串行触发模式下（如提前快照或环形缓冲暂存）**：",
+    "lead/d13b_timing_clarify_20261106/TIMING_SPEC_CLARIFY.md:55": "     若系统在 $T_{\\text{stall\\_start}} + 50.0\\text{ ms}$ 之前便已提前完成原始上下文捕获（仅暂存未裁决），待后续满 $100.0\\text{ ms}$ 时再行确认，则在逻辑上允许两者共存。然而依据 D-28 裁决（`RULING_D28.md:36`），提前捕获构成了全新的架构方案，不能称作调参，且未获授权实施。",
+    "lead/d13b_timing_clarify_20261106/TIMING_SPEC_CLARIFY.md:141": "> **「`:191` 禁止累计判定 $\\ge 100\\text{ms}$ 的触发机制，并未禁止所有提前触发」**"
+  },
+  "checks": {
+    "line177_has_50ms": true,
+    "D12_B_is_authoritative": true,
+    "T_DEFAULT_seconds": 0.1,
+    "line96_condition": "if dur >= thr:",
+    "claimed_D28_exact_quote_in_section2": false,
+    "claimed_D28_exact_quote_anywhere": false,
+    "clarification_repeats_claimed_quote": true,
+    "A_B_all_four_values_equal": true,
+    "A_B_entire_segments_equal": true,
+    "measuredSegmentCount": 0,
+    "segmentCount": 16,
+    "wait_until_B_then_capture_cannot_meet_50": true
+  },
+  "budget": [
+    {
+      "name": "情景 A「现行估值」",
+      "segmentsMs": [
+        "2.5",
+        "100.0",
+        "48.0",
+        "2.0"
+      ],
+      "computedTotalMs": "152.5",
+      "reportedTotalMs": "152.5",
+      "differenceMs": "0.0000",
+      "evidenceGrades": [
+        "估算",
+        "指标",
+        "估算",
+        "指标"
+      ],
+      "postDetectionMs": "50.0",
+      "postDetectionStrictlyBelow50": false,
+      "captureWithin50FromStart": false
+    },
+    {
+      "name": "情景 B「采用 :190 名义上界」",
+      "segmentsMs": [
+        "2.5",
+        "100.0",
+        "48.0",
+        "2.0"
+      ],
+      "computedTotalMs": "152.5",
+      "reportedTotalMs": "152.5",
+      "differenceMs": "0.0000",
+      "evidenceGrades": [
+        "估算",
+        "指标",
+        "估算",
+        "指标"
+      ],
+      "postDetectionMs": "50.0",
+      "postDetectionStrictlyBelow50": false,
+      "captureWithin50FromStart": false
+    },
+    {
+      "name": "情景 C「采用 :190 安全裕量」",
+      "segmentsMs": [
+        "2.5",
+        "100.0",
+        "18.0",
+        "2.0"
+      ],
+      "computedTotalMs": "122.5",
+      "reportedTotalMs": "122.5",
+      "differenceMs": "0.0000",
+      "evidenceGrades": [
+        "估算",
+        "指标",
+        "估算",
+        "指标"
+      ],
+      "postDetectionMs": "20.0",
+      "postDetectionStrictlyBelow50": true,
+      "captureWithin50FromStart": false
+    },
+    {
+      "name": "情景 D「中位数临界可达预算」",
+      "segmentsMs": [
+        "2.5",
+        "100.0",
+        "25.0",
+        "2.0"
+      ],
+      "computedTotalMs": "129.5",
+      "reportedTotalMs": "129.5",
+      "differenceMs": "0.0000",
+      "evidenceGrades": [
+        "估算",
+        "指标",
+        "估算",
+        "指标"
+      ],
+      "postDetectionMs": "27.0",
+      "postDetectionStrictlyBelow50": true,
+      "captureWithin50FromStart": false
+    }
+  ],
+  "timeline": [
+    {
+      "kind": "offline_classify",
+      "hardDeadline": false,
+      "verified": false
+    },
+    {
+      "kind": "online_trigger",
+      "hardDeadline": true,
+      "verified": false
+    },
+    {
+      "kind": "context_deadline",
+      "hardDeadline": true,
+      "verified": false
+    },
+    {
+      "kind": "offline_parse",
+      "hardDeadline": false,
+      "verified": false
+    }
+  ],
+  "pureLogicalCounterexampleMs": {
+    "status": "hypothetical assignments, not measured and not an implementation",
+    "start": "0",
+    "trigger": "30",
+    "capture": "40",
+    "classify": "120",
+    "duration": "120",
+    "line177_captureWithin50": true,
+    "line190_postTriggerBelow50": true,
+    "line190_safetyAtMost20": true,
+    "line191_triggerAccumBelow100": true,
+    "B_durationAtLeast100": true,
+    "classificationAfterDuration": true
+  },
+  "scope": "Only source reads and pure model calculations; original probe not imported or executed; no corpus reanalysis, gates, live processes or sampling APIs run."
+}

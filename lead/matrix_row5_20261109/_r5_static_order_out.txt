@@ -1,0 +1,54 @@
+def classify_except_freshness 起于 :4616，止于 :4698
+---- 函数体顶层语句序列（行号 | 语句 | _finish 出口实参）----
+:4617  '★ B2b/F：只回答 **F（本趟窗口内是否被写/新出现）**。\n\n    ★★ N9：本函数不得引用退出码判据（:5985-5990）…
+:4624  out = {'verdict': None, 'confidence': 'none', 'is_new': None, 'note': ''…
+:4628  def _finish(verdict: str, confidence: str, is_new, note: str) -> dict:
+ …
+:4634  pre = pre_freshness_snapshot if isinstance(pre_freshness_snapshot, dict)…
+:4636  st = pre.get('state')
+:4637  if st not in FRESHNESS_SNAPSHOT_STATES:
+    st = 'unknown'
+:4639  out['pre_snapshot_state'] = st
+:4641  post = post_observed if isinstance(post_observed, dict) else {}
+:4643  if post.get('read_error'):
+    return _finish('post_read_error', 'none',…
+        → _finish('post_read_error', 'none', None, …)
+:4648  if st == 'unknown':
+    return _finish('unknown', 'none', None, '★ 跑前快照未…
+        → _finish('unknown', 'none', None, …)
+:4652  if st == 'error':
+    return _finish('error_pre_snapshot', 'none', None,…
+        → _finish('error_pre_snapshot', 'none', None, …)
+:4656  post_exists = bool(post.get('exists'))
+:4657  if not post_exists:
+    if st == 'absent_confirmed':
+        return _fin…
+        → _finish('vanished', 'none', None, …)
+        → _finish('absent_both', 'low', False, …)
+:4666  if st == 'absent_confirmed':
+    return _finish('new_first_appearance', …
+        → _finish('new_first_appearance', 'high', True, …)
+:4672  pre_sha = pre.get('sha256')
+:4673  if not pre_sha:
+    return _finish('error_pre_snapshot', 'none', None, '…
+        → _finish('error_pre_snapshot', 'none', None, …)
+:4677  post_sha = post.get('sha256')
+:4678  if not post_sha:
+    return _finish('post_read_error', 'none', None, '★ …
+        → _finish('post_read_error', 'none', None, …)
+:4681  if post_sha != pre_sha:
+    return _finish('new_write', 'high', True, '★…
+        → _finish('new_write', 'high', True, …)
+:4685  pre_mt, post_mt = (pre.get('mtime_pre'), post.get('mtime_post'))
+:4686  if pre_mt is None or post_mt is None:
+    return _finish('leftover_uncha…
+        → _finish('leftover_unchanged', 'medium', False, …)
+:4690  if abs(float(post_mt) - float(pre_mt)) <= 0.0:
+    return _finish('lefto…
+        → _finish('leftover_unchanged', 'high', False, …)
+:4693  if float(post_mt) < float(pre_mt):
+    return _finish('rewritten_same_co…
+        → _finish('rewritten_same_content', 'low', True, …)
+:4697  return _finish('rewritten_same_content', 'medium', True, '★ sha 同而 mtime…
+        → _finish('rewritten_same_content', 'medium', True, …)
+---- done ----

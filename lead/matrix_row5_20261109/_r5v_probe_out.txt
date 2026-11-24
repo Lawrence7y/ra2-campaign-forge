@@ -1,0 +1,136 @@
+== P1 top-level side-effect scan ==
+  top-level call line 182: SetProcessDPIAware [OK]
+  __main__ guard present: True
+== P2 classify_except_freshness branch order (AST, own implementation) ==
+  func span 4616-4698
+  line  4637 if st not in FRESHNESS_SNAPSHOT_STATES
+  line  4643 if post.get('read_error')
+          -> post_read_error (line 4644)
+  line  4648 if st == 'unknown'
+          -> unknown (line 4649)
+  line  4652 if st == 'error'
+          -> error_pre_snapshot (line 4653)
+  line  4657 if not post_exists
+          -> vanished (line 4662)
+          -> absent_both (line 4659)
+  line  4666 if st == 'absent_confirmed'
+          -> new_first_appearance (line 4667)
+  line  4673 if not pre_sha
+          -> error_pre_snapshot (line 4674)
+  line  4678 if not post_sha
+          -> post_read_error (line 4679)
+  line  4681 if post_sha != pre_sha
+          -> new_write (line 4682)
+  line  4686 if pre_mt is None or post_mt is None
+          -> leftover_unchanged (line 4687)
+  line  4690 if abs(float(post_mt) - float(pre_mt)) <= 0.0
+          -> leftover_unchanged (line 4691)
+  line  4693 if float(post_mt) < float(pre_mt)
+          -> rewritten_same_content (line 4694)
+== P3 isolated import + 72-cell probe ==
+  FRESHNESS_SNAPSHOT_STATES = ('unknown', 'absent_confirmed', 'present', 'error')
+  None          x re_nofile            -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  None          x re_exist_nosha       -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  None          x re_exist_sha         -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  None          x nore_nofile          -> verdict=unknown                conf=none   is_new=None  usable=False
+  None          x nore_exist_nosha     -> verdict=unknown                conf=none   is_new=None  usable=False
+  None          x nore_exist_difsha    -> verdict=unknown                conf=none   is_new=None  usable=False
+  None          x nore_same_mt_same    -> verdict=unknown                conf=none   is_new=None  usable=False
+  None          x nore_same_mt_up      -> verdict=unknown                conf=none   is_new=None  usable=False
+  emptydict     x re_nofile            -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  emptydict     x re_exist_nosha       -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  emptydict     x re_exist_sha         -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  emptydict     x nore_nofile          -> verdict=unknown                conf=none   is_new=None  usable=False
+  emptydict     x nore_exist_nosha     -> verdict=unknown                conf=none   is_new=None  usable=False
+  emptydict     x nore_exist_difsha    -> verdict=unknown                conf=none   is_new=None  usable=False
+  emptydict     x nore_same_mt_same    -> verdict=unknown                conf=none   is_new=None  usable=False
+  emptydict     x nore_same_mt_up      -> verdict=unknown                conf=none   is_new=None  usable=False
+  missing_st    x re_nofile            -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  missing_st    x re_exist_nosha       -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  missing_st    x re_exist_sha         -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  missing_st    x nore_nofile          -> verdict=unknown                conf=none   is_new=None  usable=False
+  missing_st    x nore_exist_nosha     -> verdict=unknown                conf=none   is_new=None  usable=False
+  missing_st    x nore_exist_difsha    -> verdict=unknown                conf=none   is_new=None  usable=False
+  missing_st    x nore_same_mt_same    -> verdict=unknown                conf=none   is_new=None  usable=False
+  missing_st    x nore_same_mt_up      -> verdict=unknown                conf=none   is_new=None  usable=False
+  dirty         x re_nofile            -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  dirty         x re_exist_nosha       -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  dirty         x re_exist_sha         -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  dirty         x nore_nofile          -> verdict=unknown                conf=none   is_new=None  usable=False
+  dirty         x nore_exist_nosha     -> verdict=unknown                conf=none   is_new=None  usable=False
+  dirty         x nore_exist_difsha    -> verdict=unknown                conf=none   is_new=None  usable=False
+  dirty         x nore_same_mt_same    -> verdict=unknown                conf=none   is_new=None  usable=False
+  dirty         x nore_same_mt_up      -> verdict=unknown                conf=none   is_new=None  usable=False
+  expl_unknown  x re_nofile            -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  expl_unknown  x re_exist_nosha       -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  expl_unknown  x re_exist_sha         -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  expl_unknown  x nore_nofile          -> verdict=unknown                conf=none   is_new=None  usable=False
+  expl_unknown  x nore_exist_nosha     -> verdict=unknown                conf=none   is_new=None  usable=False
+  expl_unknown  x nore_exist_difsha    -> verdict=unknown                conf=none   is_new=None  usable=False
+  expl_unknown  x nore_same_mt_same    -> verdict=unknown                conf=none   is_new=None  usable=False
+  expl_unknown  x nore_same_mt_up      -> verdict=unknown                conf=none   is_new=None  usable=False
+  absent_conf   x re_nofile            -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  absent_conf   x re_exist_nosha       -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  absent_conf   x re_exist_sha         -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  absent_conf   x nore_nofile          -> verdict=absent_both            conf=low    is_new=False usable=False
+  absent_conf   x nore_exist_nosha     -> verdict=new_first_appearance   conf=high   is_new=True  usable=False
+  absent_conf   x nore_exist_difsha    -> verdict=new_first_appearance   conf=high   is_new=True  usable=False
+  absent_conf   x nore_same_mt_same    -> verdict=new_first_appearance   conf=high   is_new=True  usable=False
+  absent_conf   x nore_same_mt_up      -> verdict=new_first_appearance   conf=high   is_new=True  usable=False
+  error         x re_nofile            -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  error         x re_exist_nosha       -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  error         x re_exist_sha         -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  error         x nore_nofile          -> verdict=error_pre_snapshot     conf=none   is_new=None  usable=False
+  error         x nore_exist_nosha     -> verdict=error_pre_snapshot     conf=none   is_new=None  usable=False
+  error         x nore_exist_difsha    -> verdict=error_pre_snapshot     conf=none   is_new=None  usable=False
+  error         x nore_same_mt_same    -> verdict=error_pre_snapshot     conf=none   is_new=None  usable=False
+  error         x nore_same_mt_up      -> verdict=error_pre_snapshot     conf=none   is_new=None  usable=False
+  present_sha   x re_nofile            -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  present_sha   x re_exist_nosha       -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  present_sha   x re_exist_sha         -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  present_sha   x nore_nofile          -> verdict=vanished               conf=none   is_new=None  usable=False
+  present_sha   x nore_exist_nosha     -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  present_sha   x nore_exist_difsha    -> verdict=new_write              conf=high   is_new=True  usable=False
+  present_sha   x nore_same_mt_same    -> verdict=leftover_unchanged     conf=high   is_new=False usable=False
+  present_sha   x nore_same_mt_up      -> verdict=rewritten_same_content conf=medium is_new=True  usable=False
+  present_nosh  x re_nofile            -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  present_nosh  x re_exist_nosha       -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  present_nosh  x re_exist_sha         -> verdict=post_read_error        conf=none   is_new=None  usable=False
+  present_nosh  x nore_nofile          -> verdict=vanished               conf=none   is_new=None  usable=False
+  present_nosh  x nore_exist_nosha     -> verdict=error_pre_snapshot     conf=none   is_new=None  usable=False
+  present_nosh  x nore_exist_difsha    -> verdict=error_pre_snapshot     conf=none   is_new=None  usable=False
+  present_nosh  x nore_same_mt_same    -> verdict=error_pre_snapshot     conf=none   is_new=None  usable=False
+  present_nosh  x nore_same_mt_up      -> verdict=error_pre_snapshot     conf=none   is_new=None  usable=False
+  CELLS 72
+  C1 all-9-pre x read_error -> post_read_error: PASS
+  C2 missing-post-sha exit present-only: PASS
+  C3 read_error cells conf=none is_new=None usable=False: PASS
+  C4 baseline non-error labels unchanged: PASS
+== P4 make_pre runtime probe (temp dir inside write domain) ==
+  absent path -> state=absent_confirmed sha=None
+  present file -> state=present sha12=2cf24dba5fb0 (sha computed: True)
+  Path(None)  -> state=error err="TypeError: argument should be a str or an os.PathLike objec
+  explicit unknown-state produced at runtime: False
+== P5 STATE_MATRIX claimant cross-tab for read_error cells ==
+  preState=unknown          read_error-cell code verdict=post_read_error
+     row:2   state=unknown            verdict=unknown              [MISLABEL] cond=pre=None / {} / 缺 state / 脏值（跑前快照未采集或采集未
+     row:3   state=unknown            verdict=unknown              [MISLABEL] cond=pre.state 显式为 unknown（未采集）+ 跑后无件；未知不得默认等
+     rows with other preState (cannot claim): [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+  preState=absent_confirmed read_error-cell code verdict=post_read_error
+     row:6   state=absent_confirmed   verdict=new_first_appearance [MISLABEL] cond=跑前确认无件 + 跑后在场（存在性硬证）⇒ 本趟新出现；是否新崩溃仍只由集合差裁
+     row:7   state=absent_both        verdict=absent_both          [MISLABEL] cond=跑前确认无件 + 跑后无件 ⇒ 未见新出现，但「文件未出现」不能证无崩溃（E 口
+     rows with other preState (cannot claim): [2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15]
+  preState=present          read_error-cell code verdict=post_read_error
+     row:5   state=post_read_error    verdict=post_read_error      [MATCH] cond=跑后 read_bytes/stat/write_bytes 抛异常（post.
+     row:8   state=leftover_unchanged verdict=leftover_unchanged   [MISLABEL] cond=跑前在 + 跑后在 + sha 一致 + mtime 未变（mtime 双侧齐全
+     row:9   state=leftover_unchanged verdict=leftover_unchanged   [MISLABEL] cond=跑前在 + 跑后在 + sha 一致 + mtime 侧缺失 ⇒ A 旁证不可用
+     row:10  state=new_write          verdict=new_write            [MISLABEL] cond=跑前在 + 跑后在 + sha 不同 ⇒ 字节内容不同，本趟被写；是否新异常归集
+     row:11  state=rewritten_same_content verdict=rewritten_same_content [MISLABEL] cond=跑前在 + 跑后在 + sha 同 + mtime 变大 ⇒ 同内容重写（F 旁
+     row:12  state=rewritten_same_content verdict=rewritten_same_content [MISLABEL] cond=跑前在 + 跑后在 + sha 同 + mtime 回拨 ⇒ 疑似时钟回拨/ut
+     row:13  state=missing_sha        verdict=error_pre_snapshot   [MISLABEL] cond=跑前在 + 跑后在 + 缺 pre.sha256（B 主判据不可用）⇒ 独立 e
+     row:14  state=missing_sha        verdict=post_read_error      [MISLABEL] cond=跑前在 + 跑后在 + 缺 post.sha256（无法比对）
+     row:15  state=vanished           verdict=vanished             [MISLABEL] cond=跑前在 + 跑后无件（被删/改名/复制链中断）⇒ 异常态旗标，须人工复核；不给 
+     rows with other preState (cannot claim): [2, 3, 4, 6, 7]
+  preState=error            read_error-cell code verdict=post_read_error
+     row:4   state=error              verdict=error_pre_snapshot   [MISLABEL] cond=跑前采集抛异常（snap.error 非空）⇒ 独立 error 出口，不降级、
+     rows with other preState (cannot claim): [2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]

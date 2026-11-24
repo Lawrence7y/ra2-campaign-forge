@@ -1,0 +1,88 @@
+COMMON-PROBE · HASH_FIX — R14_COMMON.md §14.1 更正追加（第二写者，只追加）
+====================================================================================
+
+目标文件
+  lead\next_re_20261117_r14\R14_COMMON.md
+  写入时间 2026-11-20 19:25:17（本进程实测 mtime）
+
+追加前（BEFORE，写入前读盘实测）
+  bytes   222,026
+  sha256  39CB39A09A7682B9C494A4C3AA13C8AAC3D0470619DA2A21604D69D07CE6F00F
+  LF 数   1,475
+  CR 数   1,081（文件自带 CR，非本次引入）
+  BOM     无
+  末字节  0x0A（LF 结尾）
+
+追加后（AFTER，写入后重新读盘实测）
+  bytes   222,756
+  sha256  84DCF73A0D0C531F6273C5C0F806D00F20C4DFA2DEDCC4172D22845E57A4EB28
+  LF 数   1,487（+12，全部来自追加块）
+  CR 数   1,081（**与追加前完全相同**，追加块 CR = 0）
+  BOM     无
+  净增    730 B（纯尾部新增）
+
+前缀校验（核心铁律）
+  取新文件前 222,026 字节（= 追加前长度）
+  prefix bytes   222,026
+  prefix sha256  39CB39A09A7682B9C494A4C3AA13C8AAC3D0470619DA2A21604D69D07CE6F00F
+  ⇒ prefix sha256 == 追加前 sha256（本进程写入前实测）：**PASS**
+  ⇒ 该 sha256 同时等于上一轮 COMMON_PROBE\HASH.txt:15 记录的 AFTER sha256：**PASS**
+     （上一轮 HASH.txt mtime 19:22:50，早于本次写入，属独立旁证：本次追加的输入
+      恰为上一轮交付的落盘态，未被任何第三方改写）
+  ⇒ 旧行 0 变更：无修改、无重排、无末尾补删
+
+  如实登记（不冒充）：本次写入前**未另存 pre-image 副本**，故未做 222,026 次字面逐字节循环对照。
+  替代以三重交叉钉住前缀：
+    (a) 前缀 SHA-256 == 追加前 SHA-256（强于逐字节循环，任一字节不同即不碰撞地改变摘要）
+    (b) 追加前 SHA-256 == 上一轮 HASH.txt 记录的 AFTER 值（独立落盘旁证，非本进程自证）
+    (c) 长度闭合：220,117 + 1,909 + 730 = 222,756 == 实际长度
+
+逐字节循环校验（针对两段追加区，均以盘上独立副本为对照，字面 for 循环）
+  LOOP A：上一轮块 COMMON_PROBE\_append.md（1,909 B / sha256 0CE47717…61E32）
+          对 当前文件 [220,117, 222,026) → firstDiffIndex = -1 ：**PASS**
+          （同时验证上一轮追加区与「上一轮 HASH.txt 记录的 220,117 起点」一致）
+  LOOP B：本轮块 COMMON_PROBE\_append_fix.md（730 B / sha256 39355E6B…7AD2）
+          对 当前文件 [222,026, 222,756) → firstDiffIndex = -1 ：**PASS**
+  长度闭合 220,117 + 1,909 + 730 = 222,756 = 实际 222,756 ：**PASS**
+
+追加块
+  COMMON_PROBE\_append_fix.md
+  bytes   730
+  sha256  39355E6B2A3AE4EF80B57EB1786139D3738A0A147D12DA376A705483470C7AD2
+  BOM     无
+  CR 数   0（未引入 CRLF）
+  结构    首字节 0x0A（与上文隔一空行）+ 正文 + 末字节 0x0A
+  内容等于「空行 + 指令原文 + LF」逐字符核对：**PASS**（脚本内嵌原文与之 -ceq 比对）
+
+写入方式
+  [System.IO.File]::ReadAllBytes(目标) → 与 ReadAllBytes(块) 拼接到新数组
+  → [System.IO.File]::WriteAllBytes（一次性落盘，无中间改写、无二次落盘）
+
+内容边界
+  新增（仅此）：`### §14.1 更正（Lead 原文两处不精确）` + 更正 1（534 / 552 分母区分）+ 更正 2（86× / 139×）
+  未动：§0–§14.1 全部既有行（含上一轮追加块 220,117–222,025 逐字节复验相同）、文末各轮刷新记录、
+        COMMON-TECH-3 表
+  未碰（mtime 均早于本次写入 19:25:17，实测）：
+        COVERAGE\coverage.tsv          2026-11-20 19:04:11
+        COVERAGE\PANEL.md              2026-11-20 19:04:41
+        COVERAGE\CONFLICTS.tsv         2026-11-19 20:00:34
+        STATUS_BOARD.md                2026-11-20 19:06:46
+        台账 lead\GOAL_THREE_TARGETS_20261018.md  2026-11-20 19:24:23（早于 19:25:17）
+  未做：git commit（该文件**未被 git 跟踪**，`git ls-files --error-unmatch` 返回
+        "did not match any file(s) known to git"，故也无 index/HEAD 可对照）、
+        未建 venv、未 pip install、未删改任何 COMMON_PROBE 既有文件（HASH.txt 与 _append.md 原样保留）
+
+更正项的源对照（写入前只读抽查，数字逐字取自指令，0 处改写）
+  更正 1：
+    `534` = `real_named` 合计 —— INVENTORY_R2\REPORT.md:15（`534 / 453 / 81`）、:152、:203
+            （消除口径 `552 named − 18 伪名 = 534 real_named`）；INVENTORY\REPORT.md:106、:130 同值
+    `552` = PROBE_UNNAMED_R2 所用具名池 —— PROBE_UNNAMED_R2\REPORT.md:16、:196（`522/552 = 94.57%`）
+    两数确实不同集合（552 含 18 个伪名），原文 §14.1 判据 3 写 534、证据段写 552，更正成立。
+  更正 2：
+    86× = 94.57% ÷ 1.10% = 85.97（1.10% = 13/1,181，见 REPORT.md:195 与 §14.1 命题）
+    139× = 94.57% ÷ 0.68%（严格口径）—— REPORT.md:201 原文即写「差 139 倍」，
+           0.68% 见 REPORT.md:195（无名池 8/1,181）
+    ⇒ 原 §14.1 判据 2「相差两个数量级」表述不准确，更正成立（未改原文，仅追加更正）
+
+复现
+  追加前：Get-FileHash / Length；追加后：Length + 前缀切片 SHA-256 + 两段逐字节 for 循环 + CR/LF 计数

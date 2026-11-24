@@ -1,0 +1,17 @@
+=== [2] 隔离加载（同 test_candidate.py:40-57 的 importlib+patch DPI）===
+  classify = classify_except_freshness
+
+=== [3] 裁定一 · 状态值三态可分 / 原始输入归一（B-1）===
+  pre=None -> unknown/none is_new=None crash_ev=False pre_state=unknown
+  pre={} -> unknown/none is_new=None crash_ev=False pre_state=unknown
+  pre={'exists': False} -> unknown/none is_new=None crash_ev=False pre_state=unknown
+  pre={'state': 'zzz'} -> unknown/none is_new=None crash_ev=False pre_state=unknown
+  pre={'state': 'unknown'} -> unknown/none is_new=None crash_ev=False pre_state=unknown
+  五种原始输入输出全同(归一 unknown/none, 设计意图) = True
+  state 值层面三态(同一 post_present):
+    unknown          -> unknown/none pre_state=unknown
+    absent_confirmed -> new_first_appearance/high pre_state=absent_confirmed
+    present          -> new_write/high pre_state=present
+  三 verdict 两两不等 = True 集合=['new_first_appearance', 'new_write', 'unknown']
+  裁定一验收 absent_confirmed 与 unknown 输出不同 = True
+  依据 TASK.md:193-199 / B2B_DESIGN.md:100-106

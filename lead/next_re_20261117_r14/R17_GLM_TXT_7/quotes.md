@@ -1,0 +1,21 @@
+# 卡 R17-GLM-TXT-7 · 引证底稿（只读摘录）
+
+- REPORT.md L48: `| 2a | `[已证]` | **1,654** | 1,654 | 1,654 | ✅ |`
+- REPORT.md L49: `| 2b | `[静态推断]` | **5,875** | 5,875 | 5,875 | ✅ |`
+- REPORT.md L50: `| 2c | `[未证]` | **10,969** | 10,969 | 10,969 | ✅ |`
+- REPORT.md L51: `| 2d | 三档和 | 18,498 | 18,498 | 18,498 | ✅ |`
+- REPORT.md L55–58: `4a ④口径A 458` / `4b ④口径B 291` / `4c ④宽口径W 293` / `4d 完全无④ 1,196`
+- REPORT.md L77: `…B + 2 = 293 = W；458 + 1,196 = 1,654 闭合。`
+- REPORT.md L61–63: `5a R_OK 863` / `5b R_MISSING 0` / `5c R_TRACE_ONLY 791`
+- REPORT.md L78: `…R_TRACE_ONLY(791) + R_OK(863) = 1,654`，`R_MISSING = R_EMPTY = 0`。
+- REPORT.md L66: `| 6b | 权威 `strict_panel.py` 实跑 | **1,331**（TOTAL `proved_strict_n` 列） | — | 1,331 | ✅ 两实现一致 |`
+- REPORT.md L79: `…`proved_strict_n=1331`，与 S1 的 …完全一致。`strict_panel.py` 的 `named_strict=1372` 是**另一列**（命名口径），不是 strict 已证数，引用时不得混淆。`
+- REPORT.md L107: `…④ strict 1,331 必须带…且不得与 `strict_panel.py` 的 `named_strict=1372` 混淆。`
+- REPORT.md L99 (§4.2 侧效披露): `实跑 `strict_panel.py` 会在**它自己的目录** `RULING_R15_20261119/work/` 重写 `strict_panel.tsv` 与 `strict_panel.json`（该脚本设计如此，非本卡写域）。`
+- FACT_INDEX.tsv: 27 行（1 表头 + F01–F26 共 26 数据行），fact_id 连续无缺号。
+- FACT_INDEX.tsv F22 limitations: `三项限定不可拆；引 1,654 必须同引①②③。`
+- FACT_INDEX.tsv F23 limitations: `口径必须写明；宽松正则 /direct call/ 会多计 10 行（「无 direct caller」等字样），判形态须用全串「④ direct call」。`
+- FACT_INDEX.tsv F24 limitations: `R_OK 863 是「至少一个路径解析到真实文件」，不等于「逐 entry 专属证据」；…`
+- FACT_INDEX.tsv F25 limitations: `界向不可省；对外声明按 D-44 一律用严格列 1/22，名义 3/22 并列报告。`
+- LEAD_LOCK L1123 (AH1): `⚠️ 口径提醒：archive 的「213,523」是字符串长度（字符数），不是字节数；字节是 344,755。`
+- 加和复核：1654+5875+10969=18498 ✅；458+1196=1654 ✅；863+791=1654 ✅

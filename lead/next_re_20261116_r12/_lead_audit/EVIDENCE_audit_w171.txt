@@ -1,0 +1,69 @@
+=== D2 核实 1: 0x4DA568 是什么跳、跳到哪 ===
+   004DA554  mov      eax, dword ptr [0xa8ed84]        
+   004DA559  mov      ecx, dword ptr [0x8871e0]        
+   004DA55F  cdq                                       
+   004DA560  idiv     dword ptr [ecx + 0x1808]           <<<
+   004DA566  test     edx, edx                           <<<
+   004DA568  jne      0x4da63b                           <<<
+   004DA56E  mov      edx, dword ptr [esi]               <<<
+   004DA570  mov      ecx, esi                         
+   004DA572  call     dword ptr [edx + 0x84]           
+   004DA578  cmp      byte ptr [eax + 0xd37], bl       
+   004DA57E  jne      0x4da63b                         
+   004DA584  mov      eax, dword ptr [esi]             
+   004DA586  mov      ecx, esi                         
+   004DA588  call     dword ptr [eax + 0x54]           
+   004DA58B  test     al, al                           
+   004DA58D  jne      0x4da63b                         
+
+=== D2 核实 2: 0x4DA63B 处（节流跳转目标）是什么 ===
+   004DA635  je       0x4daf00                           
+   004DA63B  cmp      byte ptr [esi + 0x3d5], bl           <== jne 目标
+   004DA641  jne      0x4da677                           
+   004DA643  mov      eax, dword ptr [esi]               
+   004DA645  mov      ecx, esi                           
+   004DA647  call     dword ptr [eax + 0x84]             
+   004DA64D  cmp      byte ptr [eax + 0xd6a], bl         
+   004DA653  je       0x4da677                           
+   004DA655  mov      edx, dword ptr [esi]               
+   004DA657  push     1                                  
+   004DA659  mov      ecx, esi                           
+   004DA65B  call     dword ptr [edx + 0x1bc]            
+   004DA661  push     eax                                
+   004DA662  mov      ecx, 0x87f7e8                      
+   004DA667  call     0x578540                           
+   004DA66C  test     al, al                             
+   004DA66E  je       0x4da677                           
+   004DA670  mov      byte ptr [esi + 0x3d5], 1          
+   004DA677  cmp      dword ptr [esi + 0x674], ebx       
+   004DA67D  jne      0x4da689                           
+   004DA67F  push     0x80004003                         
+   004DA684  call     0x7dc720                           
+   004DA689  mov      eax, dword ptr [esi + 0x674]       
+   004DA68F  push     eax                                
+   004DA690  mov      ecx, dword ptr [eax]               
+   004DA692  call     dword ptr [ecx + 0x80]             
+   004DA698  test     al, al                             
+   004DA69A  je       0x4da7b0                           
+   004DA6A0  mov      edx, dword ptr [esi]               
+
+=== D2 核实 3: 0x4DA877 call [ecx+0x40] 是否在 0x4DA63B 之后 ===
+   004DA862  jne      0x4da86e                           
+   004DA864  push     0x80004003                         
+   004DA869  call     0x7dc720                           
+   004DA86E  mov      eax, dword ptr [esi + 0x674]       
+   004DA874  push     eax                                
+   004DA875  mov      ecx, dword ptr [eax]               
+   004DA877  call     dword ptr [ecx + 0x40]               <== 每帧派发
+   004DA87A  cmp      byte ptr [esi + 0x90], bl          
+   004DA880  je       0x4daf00                           
+   004DA886  cmp      esi, ebx                           
+   004DA888  jne      0x4da88e                           
+   004DA88A  xor      edi, edi                           
+   004DA88C  jmp      0x4da8a0                           
+   004DA88E  mov      edx, dword ptr [esi]               
+   004DA890  mov      ecx, esi                           
+
+=== D2 核实 4: 被跳过区间 [0x4DA56E,0x4DA63B) 的指令数 ===
+  从边界 0x4DA56E 起 = 60 条（W171 报 60）
+  从 0x4DA569 起 = 63 条（W171 说这是 63 条假指令）

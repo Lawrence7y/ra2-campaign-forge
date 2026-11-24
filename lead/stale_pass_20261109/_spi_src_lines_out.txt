@@ -1,0 +1,385 @@
+====================================================================================================
+FILE: lead/masking_effect_20261109/MASKING_EFFECT_AUDIT.md
+TOTAL_LINES = 415
+176: **统一 GATE（三方案共用）**：`AGGREGATE = AND_k( REAL per-needle self-test )`，其中每根 needle k **单独**跑未修改扫描器，要求 `EXIT=0 AND 6 条负控逐条匹配 WANT`；`HITSET / MASKED_LINES / EXCLUSIVE(k) / EXCLUSIVE_CONTROLS(k)` 一律**只报告、不门禁**（避免复核人指出的 k=1 平凡通过 / 语料漂移误判）。`PER_NEEDLE_SELFTEST` 必须来自**真实 k 次运行**，不得由语料推断。
+177: 
+178: | 方案 | 做法 | 改动量（对 `_rs_carrier_scan.py`） | 破坏性（对既有输出格式） |
+179: |---|---|---|---|
+180: | **甲'（推荐、零侵入）** | 逐 needle 独立跑自检，k 次完整扫描各出 `EXIT/SELF_TEST/6-controls`，`AGGREGATE=AND_k` | **0 行**（外部新外壳 ~15–25 行，本写域 `_me_auditcheck_plan2.py:plan_a`） | **完全不破坏**：每次输出仍是原格式，只多一层汇总；既有 `_fix_*.txt` 解析不变 |
+181: | **乙'** | 同上，但把门禁写成「逐针负控表」：每根单独 6 条 `want/got` 逐条比对，任一 mismatch 即 FAIL | 0 行（外部预计算）或内嵌 ~20–30 行 | **弱破坏**：新增 `PER_NEEDLE` 行，A–E 段不变 |
+202: # 判据（本件审定版；HITSET/EXCLUSIVE 为诊断量，AND_k 才是门禁）
+203: EXCLUSIVE(k)       = |{ line : hits(line) == {k} }|        # 独占语料行 = 38 / 43
+204: MASKED_LINES       = |{ line : |hits(line)| >= 2 }| = 41   # 41/122 = 33.6%
+205: MASKED_NEEDLES     = |{ k : EXCLUSIVE(k) == 0 }|    = 0
+206: EXCLUSIVE_CONTROLS = [0, 1]   # 6 条负控的逐针独占数（本会话 C4 实算）
+207: AGGREGATE          = AND_k( per_needle_SELF_TEST_k )       # = FAIL（N1 单跑 FAIL）
+208: DISTINGUISHABLE_PASS = (AGGREGATE == PASS) AND (SELF_TEST == PASS) AND (每针 6/6 逐条匹配)
+209: ```
+210: 
+211: 代入交付口径：**`DISTINGUISHABLE_PASS = FALSE`**——现行 `SELF_TEST` 不是由 `AND_k` 得出（`_me_design_out.txt:31-35`：E 段零 per-needle 行、零 hit-set 字段，「有几根被掩蔽」**UNKNOWABLE**，不是 0 也不是 1，是未报告）。**结果碰巧对（N1 在别处确实命中 79 行），这次 PASS 依然不可信。** 本会话当前语料下同一判据给 `MASKED_LINES=43/136`、`EXCLUSIVE_CONTROLS=[0,1]`（`_me_auditcheck_plan2_out.txt` 末段），结论不变。
+212: 
+213: ### 4.4 可粘贴片段（方案甲' 核心，直接可跑；完整三方案见 `_me_auditcheck_plan2.py`）
+214: 
+215: ```python
+216: # 甲'：逐 needle 独立跑自检 + AND_k + 坏针注入。零改动上游脚本。
+217: import subprocess, sys
+218: SCANNER = r"D:/Project/ra2-campaign-forge/lead/refsync_scope_20261109/_rs_carrier_scan.py"
+219: NEEDLES = ["只能判「不可复现」", "不能定位当年错误步骤"]
+220: WANTS   = ["ASSERTION"] * 4 + ["REFUTING_QUOTE", "ASSERTION"]
+221: CONTROLS = [
+222:     ("ledger_appendix_20261108/LEDGER_APPENDIX_DRAFT.md", 123),
+223:     ("ledger_appendix_20261108/_la_draft3_s604_gapdiff.md", 25),
+224:     ("ledger_bound_20261109/LEDGER_BOUND_VOLUME.md", 196),
+225:     ("ledger_bound_20261109/_lb_BOUND_VOLUME.md", 129),
+226:     ("s604_verdict_entry_20261109/_ve_DRAFT_S609.md", 22),
+227:     ("ledger_appendix_20261108/LEDGER_APPENDIX_DRAFT.md", 215),
+228: ]
+229: def one(n):
+230:     cmd = [sys.executable, "-I", "-X", "utf8", SCANNER,
+231:            "--needle", n, "--include-refuting", "--max-depth", "2", "--ext", ".md"]
+232:     cp = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+233:     ls = cp.stdout.splitlines()
+234:     st = next((l.split("=",1)[1].strip() for l in ls if l.startswith("SELF_TEST")), "<missing>")
+235:     got = []
+236:     for rel, no in CONTROLS:                       # 逐条负控比对，不只看总布尔
+237:         key = "%s:%d want=" % (rel, no)
+238:         L = next((l for l in ls if key in l), "")
+239:         got.append(L.split("got=")[-1].strip() if "got=" in L else "<missing>")
+240:     ok6 = all(g == w for g, w in zip(got, WANTS))
+241:     return cp.returncode, st, ok6
+242: rows = [(n, *one(n)) for n in NEEDLES]
+243: for n, ec, st, ok6 in rows:
+244:     print("NEEDLE %-24r EXIT=%d SELF_TEST=%-4s controls6=%s" % (n, ec, st, ok6))
+245: AGGREGATE = all(ec == 0 and st == "PASS" and ok6 for _, ec, st, ok6 in rows)
+246: print("AGGREGATE = %s  (AND_k over %d REAL per-needle self-tests)" %
+247:       ("PASS" if AGGREGATE else "FAIL", len(rows)))
+248: print("DISTINGUISHABLE_PASS = %s" % AGGREGATE)
+249: sys.exit(0 if AGGREGATE else 1)
+250: # 代入 N1/N2 => AGGREGATE=FAIL（N1 SELF_TEST=FAIL, :22 <not-scanned>）
+251: # 代入 ["只能判","不能定位当年"] => AGGREGATE=PASS（真通过）
+252: # 把 N1 换成保证零命中的哨兵 => AGGREGATE=FAIL（坏针被捕获）
+253: ```
+335: > 两个附加形态：① **min/argmin 位置依赖**——若判定还依赖 `argmin_i pos_i`（`_rs_carrier_scan.py:165`），加输入会改变 `argmin`，使「已扫到」集合单调而「已判对」集合**不单调**（反向掩蔽，§3.3）；② **无独占见证 / 独占见证被误用**——`exclusive(i)=U_i \ ∪_{j≠i}U_j` 可作**诊断**，但复核人已证把「≥1 条独占负控」当**硬门禁**会在 k=1 平凡通过、并在真通过场景误伤（`_mev_step5_out.txt:20-22`；本会话 S3 `EXCLUSIVE_CONTROLS=[0,0]` 却两针都 6/6 PASS）。**唯一可靠的门禁是 `AND_k` 真实逐输入自检。**
+375: 2. 6 条负控 5 条 `{N1,N2}`、`:22` 为 `{N2}`（本会话 C4）⇒ N2 一根即可 6/6（`_me_n2only_out.txt:546-552`）。
+376: 3. N1 的客观缺陷（直角/弯引号不归一）存在：单 needle 下 `:22 got=<not-scanned>`、79 vs 122 漏 43 行。
+377: 4. 【铁律】：被掩蔽的通过即使结果碰巧正确（N1 别处命中 79 行）也**必须标不可信**。
+379: **是否需加注 = 建议加注，本任务未执行**（`REFSYNC_SCOPE_FIX.md` 属绝对只读件）：
+380: - `REFSYNC_SCOPE_FIX.md:243`（R6 描述）、`:251`（登记双 needle 命令 + `SELF_TEST = PASS` 6/6）、`:252-253`（另两条 PASS）建议由台账所有者追加限定：「本 PASS 系 N1∪N2 并集口径，不构成逐 needle 有效性证据；`:22` 仅由第二 needle 命中；详见 `lead/masking_effect_20261109/MASKING_EFFECT_AUDIT.md`」。在盘 `_fix_d2_out.txt` 等建议加「口径限定」，不改写原数字。
+381: - 本会话/复核人直读确认：`REFSYNC_SCOPE_FIX.md` 全文无「掩盖/掩蔽/假 PASS/不可信」（`_mev_final_out.txt:2-6`）；而 `_nn_REPORT.md:90-100,365,400-402` 与 `NEEDLE_NORMALIZATION.md:91,293,364,393` **已登记「掩盖效应」并建议「每个 needle 单独跑一次自检」**（`:365` / `:364` 原文），`_nn_REPORT.md:402` 自认「本次 FAIL 之所以暴露，是编排方用单 needle 重跑了负控自检」——即下一轮已发现，但**上一轮交付件本身未加注**。建议补的正是这个缺口。
+384: - 暴露的方法论问题：把「多输入并集 + 单一布尔自检」当成「每个输入都有效」的证明；负控样本未做**逐输入覆盖度**设计；PASS 未绑定语料指纹；命令口径（单 vs 双 needle）与交付登记不一致却未标注。
+385: - 编排方「只跑单 needle 就报 FAIL」**算另一种偏差，但性质不同、不抵消原问题**：`REFSYNC_SCOPE_FIX.md:251` 登记正式命令是**双 needle**，编排方实跑**单 needle**（`--needle "只能判「不可复现」" --include-refuting`），差一个 `--needle`。按「报 FAIL 前须确认与登记口径一致」，该 FAIL **不能直接当交付件的验收结论**，应写「在单 needle 口径下 FAIL」。它**不是掩蔽**（没用另一输入掩盖失败），是**反向的口径错配**；但**碰巧是唯一发现通道**（`_nn_REPORT.md:402`）。如实评价：**结论方向对（N1 确有漏检），论证路径不严谨（口径与登记不符）**；若无本件的双/单对照 + 坏针注入，单靠那一条 FAIL 无法区分「N1 坏了」与「我少传了一个参数」。反过来说，「跑错口径反而暴露掩蔽」本身证明**正式口径的自检设计失效**——两边都有缺陷，类型不同，不护同僚也不过度自责。
+386: - 另如实登记：撰写人自己的「双针正式口径」也比 `:251` 多传 `--include-refuting`（复核人次要问题③），仅影响 C 段展开，不改五数字；未标注，属同类口径差。
+388: ### 6.4 报 PASS/FAIL 前清单（必做，逐条可执行）
+390: 1. **核对命令与登记口径逐字一致**（每个 `--needle / --pattern / --ext / --max-depth / --include-refuting`），不一致即标「非登记口径」，不得据此下交付结论。
+391: 2. **绑定**被核对象 SHA256 + 字节数 + 语料文件数（本件 §6.2 格式），PASS/FAIL 与指纹同发。
+393: 4. **门禁/诊断分离**：`EXCLUSIVE(k)`、`EXCLUSIVE_CONTROLS(k)`、`MASKED_LINES`、`MASKED_NEEDLES`、`HITSET` 只报告；**不得**用「语料独占行>0」或「独占负控≥1」替代 `AND_k`（复核 `partial` 教训）。
+398: 9. **单调性声明**：依赖 `min(pos)`/argmin 时额外跑「多加一根输入」对照，确认角色未改判（本例 `:22` 实测被改判为 `ANALYSIS_MENTION`）。
+399: 10. **未验项显式写「未验」**：搜不全、跑不动、没实跑的对象一律标注，不用 plausible 值填空。
+403: - **全库非全**：撰写人 5847/4962、复核人 31418/19616、本会话 91359/52108 三次均为**有界扫描**（各自深度/长路径/跳过目录不同）；超长路径树 `lead/o1prime_reach_20261109/_o1_tmp/long_B3_longpath/` 未无界下钻（本会话显式跳过并打印 `_me_auditcheck_search_out.txt`）。A/B/C/D 是正则计数，**不是逐文件执行审计**。
+404: - **D 段 4110 个提及自检/负控的文件、B 段 1436 处 `any()/min()` 未逐个实跑**；§5.2 表内只对直读源码或做了最小复现的对象给判断，A 段本会话新发现的 `out/re_work/...` 多输入 CLI 一律**未验**，不补造风险等级。
+405: - **`_v12_rule.py` 词表存活率、其它 HIGH/MEDIUM 脚本的坏针注入**：本次**未逐词/逐脚本实跑**，标未验。
+====================================================================================================
+FILE: lead/check_masking_20261109/CHECK_MASKING_INJECT.md
+TOTAL_LINES = 725
+25: **用语约定**：下文「压成 1 bit」一律指 `any()` / `ok &= good` / `min(pos)` 把 k≥2 个输入的存活情况合成单一布尔，最终只输出一行 `PASS`/`SELF_TEST = PASS`。
+124: 本会话另实跑 `grep -n -c -F "SELF_TEST"` 得 **d27/d29/d30 = 0 / 0 / 0，scanner = 1**（§4 的 30 秒判据第 3 步输出），即：
+125: 
+126: - **三件都没有字面 `SELF_TEST` 汇总行，也都没有 `min()`**；汇总就是末行 `print("PASS")`（d29/d30 `check_d29.py:105` / `check_d30.py:105`）或 `print("PASS: …")`（`check_d27.py:100`）+ `return 0` / `sys.exit(main())`。编排方的 `{}` 不是「无结构」，而是「无 `SELF_TEST` 记号」；本回件用「PASS 行」当等价汇总位。
+138: - 但每个 `require_all=False` 检查项内部把 k≥2 个词用 `any()` 合成 `covered = ∃w ∈ words: w in body`，只 append 一条「须包含 A 或 B」。**哪根词死了、哪根活着，输出里完全没有**。这就是「压成 1 bit」的有损压缩；与 `_rs_carrier_scan.py:229` 的 `any(n in txt …)` + `:343` `ok &= good` + `:346` 单 `SELF_TEST` 同形。
+154: - **d27 特有坑**：`check_d27.py:8` 用 CWD 相对 `DIRECTORY = Path("lead/d27_ruling_20261106")`，沙箱内须另建同名子目录放文档；`check_d29.py:50` / `check_d30.py:50` 用 `Path(__file__).resolve().parent`，副本同目录即命中。撰写人第一次驱动漏此点致 6 个 d27 场景 `EXIT=2 文件缺失`，**已判无效运行、作废重跑**（`_cm_AUDIT.md:143`，本会话直读）；结论只取第二次输出。
+179: | **无自检** | **结构类**：该件没有 `SELF_TEST` 行、没有负控表、没有逐输入打印行，其 PASS 只是一行裸布尔，无法从输出判断哪根输入死了 | 三 gate **全件**属于此类（§2.3 `grep -c` = 0/0/0）；scanner 有 1 个 `SELF_TEST` 行但 6 条负控压成同一布尔，属「有自检名、无逐输入自检实」 |
+211:   SCRIPT check_d27.py: '"卡顿不存在"' -> '"TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ"'; occurrences 1 -> 0; bytes 3764 -> 3783; sha256 3b769d7c64c27251 -> f404f58783ab4da0
+231: **杀光 `卡顿不存在` 后输出一字不变**（连引用计数 71 都不漂移）。另 `_cm_injection_out.txt:20-25`（杀 `外推`）、`:43-49`（杀 `外推` 换哨兵）亦全 `EXIT = 0` / PASS。
+271:   SCRIPT check_d29.py: '"前提"' -> '"TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ"'; occurrences 1 -> 0; bytes 3906 -> 3934; sha256 2a50b09adff555db -> 2399e95a43eaafa4
+331:   SCRIPT check_d30.py: '"误报率"' -> '"TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ"'; occurrences 1 -> 0; bytes 3926 -> 3951; sha256 6cb737963fc62a0e -> b1670537e12a6d7c
+392: 6 条负控全 PASS，`SELF_TEST = PASS`，`EXIT=0` —— 坏针完全被掩蔽。撰写人本次为 `6030/8998/222`（`_cm_rs_broken_out.txt:8,10`），复核人为 `6088/17843/230`，背景为 `638/84/20`（`REFSYNC_SCOPE_FIX.md:251`），本会话为 `6122/35152/236`：**三次数都不同，属 `--root` 默认语料/并行写入口径差，如实登记，不冒充复现同一数字**；只能判「坏针仍 `SELF_TEST=PASS`」这一性质。
+515: 2. **`check_d27.py`** —— OR 词表落在「未背书」承重段；输出「八项机械检查通过；引用 71 处」最像逐项已验却最易误读，杀光一根词后输出一字不变；另有 `check_d27.py:8` CWD 相对路径的脆弱性。
+634: | **甲' 外部外壳（推荐）** | 外壳 ~15–25 行；被审脚本 **0 行** | **完全不破坏**（每次单跑输出仍是原格式，只多 `AND_k` 汇总） |
+640: 另需 ~10 行 `hashlib` 指纹绑定（审计 `:345` 第 7 条），防并行写入让计数漂移被误读为「测试变好」——§3.3.4 的四组不同计数正是实例。
+642: **修复建议一句话**：先给 `_rs_carrier_scan.py` 套甲' 外壳并把 `REFSYNC_SCOPE_FIX.md:251` 的旧 PASS 标不可信，再对三 gate 的 OR 项做逐词 HIT/DEAD 报告 + 同一 `AND_k` 门禁，最后把 `PENDING_DECISIONS.md:92,105,129` 三处 `exit=0` 换成「逐输入 PASS 表 + 指纹」。
+650: 被核对象 SHA256 = 3b769d7c64c2725100186439725198dbc134a277914e2cb2e9b0af844fe7671c，字节数 = 3764
+652: 被核对象 SHA256 = 6cb737963fc62a0e045f51247b4fa57ef190acb0b524da3aa6b7713fd05ee9fd，字节数 = 3926
+664: - **(A) 补丁模板不可用**：`_cm_AUDIT.md:469-536` 的「可粘贴」模板移植到 `check_d29.py` 后 `DISTINGUISHABLE_PASS = False` / `PORT_EXIT=1`；根因是 `bad_needle_injection()` 判 `caught` 用了被掩蔽的并集布尔。另 3 处接口不一致（`parse` 收不到 `rc`、`controls` 需凭空造、k=1 元组退化）。本会话 `_cmv_template_port.py` 与 `_cmv_template_3way.py` 实跑复现，并给出/实跑修正版（§5.3）。**审计 §4.2 的 `AND_k` 原则是对的，错的是那份外壳实现。**
+695: **判不了什么（如实列）**：① 判不了裁决书事实与推理（三件 docstring 自称 format gate，`check_d27.py:1` / `check_d29.py:1` / `check_d30.py:1`）；② 判不了「真实历史上是否真有死词」——本次是**主动注入**，三件原词在文档里都实际命中，故**结果碰巧对，判的是 PASS 不可信，不是结论错**；③ 判不了其它未点名脚本；④ 判不了修复后效果（模板未落地、未跑修复后回归）；⑤ 判不了 scanner 当时数字（口径差，§3.3.4）；⑥ 判不了 d27 CWD 依赖是否算 bug（跑法坑，非 k→1 bit）；⑦ 判不了 `require_all=True` 项是否也有 1-bit 问题（只证对「整词删光」敏感，未证会打印逐词存活状态，事实上不打印）。
+====================================================================================================
+FILE: lead/d27_ruling_20261106/check_d27.py
+TOTAL_LINES = 107
+1: """Read-only D-27 gate. From the repository root: python -I <this script>."""
+2: 
+3: from pathlib import Path
+4: import re
+5: import sys
+6: 
+7: 
+8: DIRECTORY = Path("lead/d27_ruling_20261106")
+9: REQUIRED_HEADINGS = (
+10:     "新证据是否成立",
+11:     "它改变了什么前提",
+12:     "授权边界",
+13:     "附带两问",
+14:     "对条目的更正",
+15:     "未背书",
+16:     "诚实账",
+17: )
+18: REFERENCE = re.compile(r"[A-Za-z0-9_./-]+\.(md|py|json):\d+")
+53: def main():
+54:     paths = {name: DIRECTORY / name for name in ("RULING_D27.md", "FACTCHECK.md")}
+55:     missing = [path for path in paths.values() if not path.is_file()]
+56:     if missing:
+57:         for path in missing:
+58:             print(f"FAIL [1] 文件缺失或不是普通文件: {path.as_posix()}")
+59:         return 2
+60: 
+61:     errors = []
+62:     documents = {}
+63:     for name, path in paths.items():
+64:         try:
+65:             documents[name] = path.read_text(encoding="utf-8-sig")
+66:         except (OSError, UnicodeError) as exc:
+67:             errors.append(f"[1] 无法读取 UTF-8 文件 {path.as_posix()}: {exc}")
+68:             documents[name] = ""
+69:         if not documents[name].strip():
+70:             errors.append(f"[1] 文件为空或仅含空白: {path.as_posix()}")
+71: 
+72:     ruling = documents["RULING_D27.md"]
+73:     if not re.search(r"^main:\s*(A|B|C)\s*$", ruling, re.MULTILINE):
+74:         errors.append("[2] 裁决书须含匹配 ^main:\\s*(A|B|C)\\s*$ 的一行")
+75: 
+76:     bodies = sections(ruling)
+77:     for title in REQUIRED_HEADINGS:
+78:         if title not in bodies:
+79:             errors.append(f"[3] 缺少二级标题: {title}")
+80: 
+81:     for number, title, keywords in (
+82:         (4, "新证据是否成立", ("循环论证",)),
+83:         (5, "授权边界", ("本次不授权",)),
+84:         (6, "未背书", ("外推", "卡顿不存在")),
+85:     ):
+86:         if not any(keyword in body for body in bodies.get(title, [])
+87:                    for keyword in keywords):
+88:             errors.append(f"[{number}] {title}小节正文须包含: " + " 或 ".join(keywords))
+89: 
+90:     count = len(REFERENCE.findall(ruling))
+91:     if count < 8:
+92:         errors.append(f"[7] 裁决书引用须至少 8 处，实际 {count} 处")
+93:     if "selfBias" not in documents["FACTCHECK.md"]:
+94:         errors.append("[8] FACTCHECK.md 须包含 selfBias")
+95: 
+96:     if errors:
+97:         for error in errors:
+98:             print(f"FAIL {error}")
+99:         return 1
+100:     print(f"PASS: D-27 八项机械检查通过；裁决书引用 {count} 处")
+====================================================================================================
+FILE: lead/d29_ruling_20261106/check_d29.py
+TOTAL_LINES = 110
+1: """Read-only D-29 format gate; run from the repository root with python -I."""
+2: 
+3: import re
+4: from pathlib import Path
+5: 
+6: 
+7: REQUIRED_SECTIONS = (
+8:     "冲突是否成立",
+9:     "处置选择",
+10:     ":191 的适用边界",
+11:     "情景 B 作废后的 D 链",
+12:     "授权边界",
+13:     "未背书",
+14:     "诚实账",
+15: )
+50:     directory = Path(__file__).resolve().parent
+51:     names = ("RULING_D29.md", "FACTCHECK.md")
+52:     texts = {}
+53:     missing = []
+54:     failures = []
+55:     for name in names:
+56:         path = directory / name
+57:         try:
+58:             texts[name] = path.read_text(encoding="utf-8")
+59:         except FileNotFoundError:
+60:             missing.append(f"[1] Missing file: {path}")
+61:         except (OSError, UnicodeError) as exc:
+62:             failures.append(f"[1] Cannot read UTF-8 file {path}: {exc}")
+63:         else:
+64:             if not texts[name].strip():
+65:                 failures.append(f"[1] Empty file: {path}")
+66: 
+67:     if "RULING_D29.md" in texts:
+68:         ruling = texts["RULING_D29.md"]
+69:         if not re.search(r"^q1:\s*(甲|乙|丙|丁)\s*$", ruling, re.MULTILINE):
+70:             failures.append("[2] RULING_D29.md: missing valid q1 line (甲/乙/丙/丁)")
+71:         sections = section_bodies(ruling)
+72:         for title in REQUIRED_SECTIONS:
+73:             if title not in sections:
+74:                 failures.append(f"[3] RULING_D29.md: missing section: {title}")
+75:         requirements = (
+76:             (4, "冲突是否成立", ("互斥", "前提"), False),
+77:             (5, "授权边界", ("本次不授权",), True),
+78:             (6, "未背书", ("口径 B", "外推", "191"), True),
+79:         )
+80:         for number, title, words, require_all in requirements:
+81:             bodies = sections.get(title, [])
+82:             matches = [
+83:                 all(word in body for word in words) if require_all
+84:                 else any(word in body for word in words)
+85:                 for body in bodies
+86:             ]
+87:             if not any(matches):
+88:                 operator = " AND " if require_all else " OR "
+89:                 failures.append(f"[{number}] Section {title}: body must contain {operator.join(words)}")
+90:         citations = re.findall(r"[A-Za-z0-9_./-]+\.(md|py|json):\d+", ruling)
+91:         if len(citations) < 8:
+92:             failures.append(f"[7] RULING_D29.md: found {len(citations)} citations; need at least 8")
+93: 
+94:     if "FACTCHECK.md" in texts and "selfBias" not in texts["FACTCHECK.md"]:
+95:         failures.append("[8] FACTCHECK.md: missing selfBias")
+96: 
+97:     for reason in missing + failures:
+98:         print(reason)
+99:     if missing:
+100:         print("FAIL (missing files)")
+101:         return 2
+102:     if failures:
+103:         print("FAIL (content)")
+104:         return 1
+105:     print("PASS")
+====================================================================================================
+FILE: lead/d30_ruling_20261106/check_d30.py
+TOTAL_LINES = 110
+1: """Read-only D-30 format gate; run from the repository root with python -I."""
+2: 
+3: import re
+4: from pathlib import Path
+5: 
+6: 
+7: REQUIRED_SECTIONS = (
+8:     "三档权衡的实质",
+9:     "选择与理由",
+10:     "配额覆盖率的可接受性",
+11:     "触发判据的下一步",
+12:     "授权边界",
+13:     "未背书",
+14:     "诚实账",
+15: )
+50:     directory = Path(__file__).resolve().parent
+51:     names = ("RULING_D30.md", "FACTCHECK.md")
+52:     texts = {}
+53:     missing = []
+54:     failures = []
+55:     for name in names:
+56:         path = directory / name
+57:         try:
+58:             texts[name] = path.read_text(encoding="utf-8")
+59:         except FileNotFoundError:
+60:             missing.append(f"[1] Missing file: {path}")
+61:         except (OSError, UnicodeError) as exc:
+62:             failures.append(f"[1] Cannot read UTF-8 file {path}: {exc}")
+63:         else:
+64:             if not texts[name].strip():
+65:                 failures.append(f"[1] Empty file: {path}")
+66: 
+67:     if "RULING_D30.md" in texts:
+68:         ruling = texts["RULING_D30.md"]
+69:         if not re.search(r"^q1:\s*(甲|乙|丙|丁|戊)\s*$", ruling, re.MULTILINE):
+70:             failures.append("[2] RULING_D30.md: missing valid q1 line (甲/乙/丙/丁/戊)")
+71:         sections = section_bodies(ruling)
+72:         for title in REQUIRED_SECTIONS:
+73:             if title not in sections:
+74:                 failures.append(f"[3] RULING_D30.md: missing section: {title}")
+75:         requirements = (
+76:             (4, "三档权衡的实质", ("93.98", "误报率"), False),
+77:             (5, "授权边界", ("本次不授权",), True),
+78:             (6, "未背书", ("外推", "栈采样"), True),
+79:         )
+80:         for number, title, words, require_all in requirements:
+81:             bodies = sections.get(title, [])
+82:             matches = [
+83:                 all(word in body for word in words) if require_all
+84:                 else any(word in body for word in words)
+85:                 for body in bodies
+86:             ]
+87:             if not any(matches):
+88:                 operator = " AND " if require_all else " OR "
+89:                 failures.append(f"[{number}] Section {title}: body must contain {operator.join(words)}")
+90:         citations = re.findall(r"[A-Za-z0-9_./-]+\.(md|py|json):\d+", ruling)
+91:         if len(citations) < 8:
+92:             failures.append(f"[7] RULING_D30.md: found {len(citations)} citations; need at least 8")
+93: 
+94:     if "FACTCHECK.md" in texts and "selfBias" not in texts["FACTCHECK.md"]:
+95:         failures.append("[8] FACTCHECK.md: missing selfBias")
+96: 
+97:     for reason in missing + failures:
+98:         print(reason)
+99:     if missing:
+100:         print("FAIL (missing files)")
+101:         return 2
+102:     if failures:
+103:         print("FAIL (content)")
+104:         return 1
+105:     print("PASS")
+====================================================================================================
+FILE: lead/d28_ruling_20261106/check_d28.py
+TOTAL_LINES = 122
+1: """Read-only D-28 mechanical gate; run from the repository root with python -I."""
+2: 
+3: from pathlib import Path
+4: import re
+5: import sys
+6: 
+7: 
+8: SECTIONS = (
+9:     "B 链下一步",
+10:     "D 链处置",
+11:     "优先级与并行",
+12:     "本轮更该做的事",
+13:     "授权边界",
+14:     "未背书",
+15:     "诚实账",
+16: )
+54:     root = Path(__file__).resolve().parents[2]
+55:     directory = root / "lead" / "d28_ruling_20261106"
+85:         bodies = section_bodies(ruling)
+86:         for title in SECTIONS:
+87:             if title not in bodies:
+88:                 failures.append(f"[3] 缺少小节：{title}")
+89:         requirements = (
+90:             (4, "D 链处置", ("历史数字", "1681"), False),
+91:             (5, "授权边界", ("本次不授权",), True),
+92:             (6, "未背书", ("外推", "口径 B"), True),
+93:         )
+94:         for number, title, words, require_all in requirements:
+95:             body = "\n".join(bodies.get(title, []))
+96:             present = [word in body for word in words]
+97:             if not (all(present) if require_all else any(present)):
+98:                 relation = "同时包含" if require_all else "至少包含其一"
+99:                 failures.append(f"[{number}] {title} 小节正文须{relation}：{'、'.join(words)}")
+100:         count = len(REFERENCE.findall(ruling))
+101:         if count < 8:
+102:             failures.append(f"[7] RULING_D28.md 全文引用须至少 8 处，实际 {count} 处")
+103: 
+104:     factcheck = texts.get("FACTCHECK.md")
+105:     if factcheck is not None and "selfBias" not in factcheck:
+106:         failures.append("[8] FACTCHECK.md 缺少 selfBias 字样")
+107:     for reason in missing + failures:
+108:         print(f"FAIL {reason}")
+109:     if missing:
+110:         print("RESULT: FILE MISSING (exit 2)")
+111:         return 2
+112:     if failures:
+113:         print("RESULT: FAIL (exit 1)")
+114:         return 1
+115:     print("PASS: D-28 全部 8 项机械检查通过 (exit 0)")
+====================================================================================================
+FILE: lead/refsync_scope_20261109/_rs_carrier_scan.py
+TOTAL_LINES = 352
+165:     pos = min((line.find(n) for n in needles if n in line), default=-1)
+194:     ap.add_argument("--needle", action="append", required=True)
+229:         if not any(n in txt for n in a.needle):
+343:             ok &= good
+344:             P("  %-5s %s:%d want=%-16s got=%s" %
+345:               ("PASS" if good else "FAIL", rel, n, want, got))
+346:         P("SELF_TEST = %s" % ("PASS" if ok else "FAIL"))
+347: 
+348:     print("\n".join(out))
+349:     return 0 if ok else 1

@@ -1,0 +1,440 @@
+diff --git "a/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W41_csf_install\\ra2forge_patched_v12\\ra2forge\\builder.py" "b/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W43_b_line_s3\\ra2forge_patched_v13\\ra2forge\\builder.py"
+index 71995e3..37eda96 100644
+--- "a/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W41_csf_install\\ra2forge_patched_v12\\ra2forge\\builder.py"
++++ "b/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W43_b_line_s3\\ra2forge_patched_v13\\ra2forge\\builder.py"
+@@ -477,8 +477,10 @@ def _csf_out_ownership_guard(csf_out: Path, *, install_game_dir: Path | None,
+             f"--csf-out {csf_out} resolves inside the game directory {gd} "
+             "(gamemd.exe present). Writing a loose ra2md.csf there is an "
+             "install-level write entry and is REFUSED by default: a partial "
+-            "CSF would break game startup (W29), and a silent overwrite would "
+-            "bypass install preflight/backup/manifest. Use the guarded "
++            "CSF would make the official UI text render as MISSING:'...' "
++            "(W40 A/E; NOT a startup-failure rule - W40 A booted a legal "
++            "minimal CSF), and a silent overwrite would bypass install "
++            "preflight/backup/manifest. Use the guarded "
+             "channel instead: 'python -m ra2forge build ... --install "
+             f"\"{gd}\"' (or 'python -m ra2forge install --package <pkg> "
+             f"--game \"{gd}\"'), which routes ra2md.csf through the full "
+diff --git "a/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W41_csf_install\\ra2forge_patched_v12\\ra2forge\\cli.py" "b/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W43_b_line_s3\\ra2forge_patched_v13\\ra2forge\\cli.py"
+index cf09df9..acadb7b 100644
+--- "a/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W41_csf_install\\ra2forge_patched_v12\\ra2forge\\cli.py"
++++ "b/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W43_b_line_s3\\ra2forge_patched_v13\\ra2forge\\cli.py"
+@@ -124,6 +124,49 @@ def _uninstall_json(report: dict) -> dict:
+             "exit_code_meaning": UNINSTALL_EXIT_MEANINGS.get(code, f"exit {code}")}
+ 
+ 
++def _guard_ctx(args, entry_id: str) -> dict | None:
++    """W43/S3: build the OPT-IN W38-S1 guard context, or None (default)."""
++    fx = getattr(args, "version_guard", None)
++    if not fx:
++        return None
++    return {
++        "fixture": fx,
++        "entry": entry_id,
++        "declared_baseline_id": getattr(args, "declared_baseline_id", None),
++        "force_unknown": bool(getattr(args, "force_unknown", False)),
++        "report": getattr(args, "guard_report", None),
++        "argv": [entry_id],
++    }
++
++
++def _s3_precheck_csf_out(args) -> None:
++    """W38-S1 §1.2 / ACCEPTANCE A7: a --csf-out resolving INSIDE a game dir
++    is an INSTALL-LEVEL (E1) write entry.  With the S1 guard active it must
++    pass the S1 identity verdict (L1 recompute + C12) before any byte lands.
++    v12's own _csf_out_ownership_guard still applies (default refusal); this
++    is the additional identity gate required by S3.  No-op without the switch.
++    """
++    fx = getattr(args, "version_guard", None)
++    csf_out = getattr(args, "csf_out", None)
++    if not fx or not csf_out:
++        return
++    from pathlib import Path
++    from .version_guard import guard_write_entry
++    from .install import _s3_csf_out_reclassified
++    resolved = Path(csf_out).resolve()
++    game_dirs = []
++    for parent in resolved.parents:
++        if (parent / "gamemd.exe").is_file():
++            game_dirs.append(parent)
++    if getattr(args, "install", None):
++        gd = Path(args.install).resolve()
++        if (gd / "gamemd.exe").is_file() and gd not in game_dirs:
++            game_dirs.append(gd)
++    if not _s3_csf_out_reclassified(csf_out, game_dirs):
++        return
++    guard_write_entry("E2b->E1", game_dirs[0], _guard_ctx(args, "E2b->E1"))
++
++
+ def main(argv=None):
+     parser = argparse.ArgumentParser(
+         prog="python -m ra2forge",
+@@ -265,6 +308,47 @@ def main(argv=None):
+     p_ins = sub.add_parser("inspect", help="show summary of a .map file")
+     p_ins.add_argument("map", help="path to .map file")
+ 
++    # ---- W43 / S3: OPT-IN switches. With NONE of them given, every legacy
++    # command is byte-for-byte v12 (verified by out/SHA256_COMPAT*.txt). -----
++    for _p in (p_build, p_inst, p_un):
++        _p.add_argument("--version-guard", metavar="GUARD_JSON", default=None,
++                        help="W43/S3: OPT-IN W38-S1 identity guard fixture "
++                             "(adjudicated BASELINE.json + optional injected "
++                             "L1 evidence). Non-KNOWN_GOOD => ZERO game-dir "
++                             "writes, exit 20/21/22. Default: guard off.")
++        _p.add_argument("--guard-report", metavar="PATH", default=None,
++                        help="W43/S3: write guard_report.json here (OUTSIDE the "
++                             "game dir; default: no report file written).")
++        _p.add_argument("--declared-baseline-id", metavar="ID", default=None,
++                        help="W43/S3: declared baseline id for MISMATCH detail.")
++        _p.add_argument("--force-unknown", action="store_true",
++                        help="W43/S3: READ-ONLY degradation ONLY (W38-S1 R5); "
++                             "never permits a game-dir write.")
++
++    p_resolve = sub.add_parser(
++        "resolve", help="W43/S3: resolve a W42-S2 feature-set into a "
++                        "deterministic file-subset plan (pure, offline)")
++    p_resolve.add_argument("--feature-set", required=True,
++                           help="W42-S2 featureSet JSON path")
++    p_resolve.add_argument("--sandbox", required=True,
++                           help="W42-S2 sandboxInitialState JSON path")
++    p_resolve.add_argument("--guard-state", default=None,
++                           choices=["KNOWN_GOOD", "UNKNOWN", "MISMATCH",
++                                    "DIR_INVALID"],
++                           help="injected guard_state fixture (ACCEPTANCE_S2 §0)")
++    p_resolve.add_argument("--csf-out-inside-game-dir", action="store_true",
++                           help="B15: reclassify the csf-out write point to E1")
++    p_resolve.add_argument("--out", default=None,
++                           help="write the plan JSON here (default: stdout)")
++    p_resolve.add_argument("--summary", action="store_true",
++                           help="also print the install summary (warnings[] visible)")
++
++    p_gcheck = sub.add_parser(
++        "guard-check", help="W43/S3: read-only W38-S1 classify() verdict")
++    p_gcheck.add_argument("--game", required=True)
++    p_gcheck.add_argument("--version-guard", required=True)
++    p_gcheck.add_argument("--guard-report", default=None)
++
+     args = parser.parse_args(argv)
+ 
+     if args.cmd == "validate":
+@@ -303,6 +387,16 @@ def main(argv=None):
+         if args.mapselmd_base and not args.mapselmd:
+             print("error: --mapselmd-base requires --mapselmd", file=sys.stderr)
+             return 2
++        # W43/S3: E2b -> E1 path-attribution guard (only with the opt-in
++        # S1 guard). Runs BEFORE the build's first filesystem write.
++        try:
++            _s3_precheck_csf_out(args)
++        except Exception as exc:                       # noqa: BLE001 - guarded
++            from .version_guard import VersionGuardBlocked
++            if isinstance(exc, VersionGuardBlocked):
++                print(f"error: {exc}", file=sys.stderr)
++                return exc.exit_code
++            raise
+         design = _load(args.design)
+         try:
+             warnings = design_mod.validate(design)
+@@ -324,10 +418,17 @@ def main(argv=None):
+             try:
+                 report = install_package(mix_path.parent, args.install,
+                                          allow_content_conflict=
+-                                         args.allow_content_conflict)
+-            except (OSError, ValueError) as exc:
+-                print(f"error: {exc}", file=sys.stderr)
+-                return 1
++                                         args.allow_content_conflict,
++                                         version_guard=_guard_ctx(args, "E1"))
++            except Exception as exc:                   # noqa: BLE001 - guarded
++                from .version_guard import VersionGuardBlocked
++                if isinstance(exc, VersionGuardBlocked):
++                    print(f"error: {exc}", file=sys.stderr)
++                    return exc.exit_code
++                if isinstance(exc, (OSError, ValueError)):
++                    print(f"error: {exc}", file=sys.stderr)
++                    return 1
++                raise
+             print(f"installed into {report['game_dir']}:")
+             _print_report(report)
+             print("start gamemd.exe -> New Campaign -> the campaign list gains one "
+@@ -339,7 +440,8 @@ def main(argv=None):
+             report = install_package(args.package, args.game,
+                                      allow_content_conflict=
+                                      args.allow_content_conflict,
+-                                     adopt_legacy=args.adopt_legacy)
++                                     adopt_legacy=args.adopt_legacy,
++                                     version_guard=_guard_ctx(args, "E1"))
+         except PackageIdentityBlocked as exc:
+             # PKG-IDENT01: distinguishable exit codes - 3 = a different
+             # declared package_id (never releasable), 4 = undeclared identity
+@@ -347,9 +449,15 @@ def main(argv=None):
+             print(f"error: {exc}", file=sys.stderr)
+             return (EXIT_PACKAGE_MISMATCH if exc.kind == "package_mismatch"
+                     else EXIT_LEGACY_ADOPT_REQUIRED)
+-        except (OSError, ValueError) as exc:
+-            print(f"error: {exc}", file=sys.stderr)
+-            return 1
++        except Exception as exc:                       # noqa: BLE001 - guarded
++            from .version_guard import VersionGuardBlocked
++            if isinstance(exc, VersionGuardBlocked):
++                print(f"error: {exc}", file=sys.stderr)
++                return exc.exit_code
++            if isinstance(exc, (OSError, ValueError)):
++                print(f"error: {exc}", file=sys.stderr)
++                return 1
++            raise
+         print(f"installed into {report['game_dir']}:")
+         _print_report(report)
+         return 0
+@@ -358,10 +466,17 @@ def main(argv=None):
+         try:
+             report = uninstall(args.game, legacy=args.legacy,
+                                drop_legacy_battlemd=args.drop_legacy_battlemd,
+-                               force=args.force)
+-        except (OSError, ValueError) as exc:
+-            print(f"error: {exc}", file=sys.stderr)
+-            return 1
++                               force=args.force,
++                               version_guard=_guard_ctx(args, "E3"))
++        except Exception as exc:                       # noqa: BLE001 - guarded
++            from .version_guard import VersionGuardBlocked
++            if isinstance(exc, VersionGuardBlocked):
++                print(f"error: {exc}", file=sys.stderr)
++                return exc.exit_code
++            if isinstance(exc, (OSError, ValueError)):
++                print(f"error: {exc}", file=sys.stderr)
++                return 1
++            raise
+         code = _uninstall_exit_code(report)
+         if args.as_json:
+             # UNSEAL-FIX01: same facts / three-state status / exit code as
+@@ -394,6 +509,43 @@ def main(argv=None):
+             _print_verify(report)
+         return report["exit_code"]
+ 
++    if args.cmd == "resolve":
++        from . import feature_subset as _fs
++        try:
++            fs = _fs.load_json(args.feature_set)
++            sb = _fs.load_json(args.sandbox)
++            plan = _fs.resolve(fs, sb,
++                               guard_state=args.guard_state,
++                               csf_out_inside_game_dir=
++                               args.csf_out_inside_game_dir)
++        except (OSError, ValueError, KeyError) as exc:
++            print(f"error: {exc}", file=sys.stderr)
++            return 1
++        payload = json.dumps(plan, indent=2, ensure_ascii=False)
++        if args.out:
++            Path(args.out).parent.mkdir(parents=True, exist_ok=True)
++            Path(args.out).write_text(payload + "\n", encoding="utf-8")
++            if args.summary:
++                print(f"plan written to {args.out}")
++                for line in plan["install_summary"]:
++                    print(line)
++        else:
++            # stdout is ALWAYS pure JSON so it is machine-parseable.
++            print(payload)
++        # A coupling refusal is a machine-checkable refusal, not a crash.
++        return 0 if plan["coupling_passed"] else 2
++
++    if args.cmd == "guard-check":
++        from .version_guard import guard_check_json
++        try:
++            rep = guard_check_json(args.game, args.version_guard,
++                                   args.guard_report)
++        except (OSError, ValueError) as exc:
++            print(f"error: {exc}", file=sys.stderr)
++            return 1
++        print(json.dumps(rep, indent=2, ensure_ascii=False))
++        return 0
++
+     if args.cmd == "inspect":
+         text = _read_map_text(Path(args.map))
+         import re
+diff --git "a/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W41_csf_install\\ra2forge_patched_v12\\ra2forge\\csf.py" "b/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W43_b_line_s3\\ra2forge_patched_v13\\ra2forge\\csf.py"
+index 20e52bd..f472f04 100644
+--- "a/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W41_csf_install\\ra2forge_patched_v12\\ra2forge\\csf.py"
++++ "b/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W43_b_line_s3\\ra2forge_patched_v13\\ra2forge\\csf.py"
+@@ -517,7 +517,26 @@ def append_or_set_label(
+     if p.exists():
+         csf = read_csf(p, strict=True)
+     elif create_if_missing:
+-        csf = CsfFile(version=3, unused=0, language=language)
++        # W43/S3 -- closes the REAL gap flagged by Lead: v11/v12's
++        # append_or_set_label(create_if_missing=True, require_complete=False)
++        # fabricates a from-scratch CSF holding ONLY our label.  A loose
++        # ra2md.csf is a WHOLE-FILE override of langmd.mix, so that minimal
++        # file turns the official UI text into MISSING:'...' (W40 A/E).  It is
++        # NOT a startup-failure rule: W40 A booted a legal minimal CSF in
++        # 19.34 s; only a bad magic fails to start (W40 D).  No production
++        # path may create a minimal loose CSF from scratch.  The existing
++        # W30 low-level unit cases are unaffected: they never pass
++        # create_if_missing=True (verified by regress_dlc_v13.py).
++        raise CsfIncompleteError(
++            "MINIMAL_CSF_REFUSED: append_or_set_label(create_if_missing=True) "
++            "on a missing target would create a loose CSF containing only "
++            "our label. A loose ra2md.csf is a WHOLE-FILE override of the "
++            "copy inside langmd.mix: every official label would render as "
++            "MISSING:'...' in the UI (usability disaster, W40 A/E). This is "
++            "NOT a startup-failure rule (W40 A: a legal minimal CSF still "
++            "boots; W40 D: only a bad magic fails to start). Clone a COMPLETE "
++            "official base first (csf.load_official_csf / "
++            "write_csf(require_complete=True)), then append our label.")
+     else:
+         raise FileNotFoundError(f"CSF file not found: {p}")
+ 
+@@ -695,12 +714,20 @@ def assert_complete_csf(csf_or_bytes: "CsfFile | bytes | bytearray",
+     missing = base - present
+     if missing:
+         sample = sorted(missing)[:12]
++        # W43/S3 (Lead verdict D1/D2, W40 live arms): the CORRECT reason is
++        # "official UI text all becomes MISSING:'...'", NOT "game won't start".
++        # W40 A: a legal 115 B minimal CSF still booted in 19.34 s; W40 D:
++        # only a BAD MAGIC produced "Unable to initialize 'ra2.csf'".
+         raise CsfIncompleteError(
+             f"CSF is PARTIAL: {len(missing)} of {len(base)} official baseline "
+             "labels are missing (e.g. " + ", ".join(sample) + "). A loose "
+-            "ra2md.csf overrides the copy inside langmd.mix; a partial/minimal "
+-            "file makes the engine's \" FSC\" check fail and the game refuses "
+-            "to start. Only a complete official-base clone is allowed.")
++            "ra2md.csf overrides the copy inside langmd.mix, so a "
++            "partial/minimal file makes the OFFICIAL UI TEXT render as "
++            "MISSING:'...' (usability disaster, W40 A/E). This gate is NOT a "
++            "startup-failure rule: W40 A proved a legal minimal CSF still "
++            "boots; only a bad magic fails to start (W40 D). Only a complete "
++            "official-base clone (>= " + str(len(base)) + " official labels) "
++            "plus our appended labels is allowed.")
+     if csf.num_labels < len(base):
+         raise CsfIncompleteError(
+             f"CSF has {csf.num_labels} labels, fewer than the "
+diff --git "a/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W41_csf_install\\ra2forge_patched_v12\\ra2forge\\install.py" "b/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W43_b_line_s3\\ra2forge_patched_v13\\ra2forge\\install.py"
+index 86592e1..535245f 100644
+--- "a/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W41_csf_install\\ra2forge_patched_v12\\ra2forge\\install.py"
++++ "b/D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W43_b_line_s3\\ra2forge_patched_v13\\ra2forge\\install.py"
+@@ -383,9 +383,12 @@ MIX_NAME = "expandmd98.mix"
+ # never-releasable definite conflict in the preflight.
+ MAPSEL_NAME = "MAPSELMD.INI"
+ # W41: a loose ra2md.csf is a WHOLE-FILE override of the copy inside
+-# langmd.mix (W29 disk-first). A MINIMAL/partial CSF makes the engine's
+-# " FSC" check fail and the game refuses to start, so v12 ONLY ships a
+-# complete official-baseline clone (builder._emit_csf_artifacts enforces it).
++# langmd.mix (W29 disk-first). W43/S3 (Lead D1/D2, W40 live arms): a
++# MINIMAL/partial CSF makes the OFFICIAL UI TEXT render as MISSING:'...'
++# (usability disaster) -- NOT "the game refuses to start": W40 A booted a
++# legal minimal CSF in 19.34 s; only a BAD MAGIC (W40 D) fails to start.
++# So v12/v13 ONLY ship a complete official-baseline clone
++# (builder._emit_csf_artifacts + csf.assert_complete_csf enforce it).
+ # A foreign loose ra2md.csf is a never-releasable definite preflight conflict,
+ # exactly like MAPSELMD.INI. Original-absent semantics: the official game dir
+ # has NO loose ra2md.csf, so install is CREATE and uninstall is DELETE.
+@@ -407,6 +410,50 @@ SEAL_NAME = MANIFEST_NAME + SEAL_SUFFIX
+ SEAL_KIND = "install-seal"
+ SEAL_ERA_VERSION = (0, 7)
+ 
++# ---------------------------------------------------------------------------
++# W43 / S3 -- W38-S1 version guard wired to the ACTUAL game-dir write entries.
++# ---------------------------------------------------------------------------
++# [本次读码] v12/v11 had ZERO build-identity checks: install.py's only guard
++# was (game/"gamemd.exe").is_file() in preinstall_plan (L0, C06), and
++# uninstall() only checked game.is_dir().  W38-S1 §4 E1/E3 requires the S1
++# classify() identity verdict to gate those entries.
++# [静态推断] The gate is OPT-IN: it runs ONLY when the caller passes a
++# ``version_guard`` context (the new --version-guard switch).  With no switch
++# this function is a no-op, so the 57 inherited regression cases and the
++# byte-for-byte v12 compatibility are preserved.  Rationale: W38-S1 §3 step 2
++# mandates UNKNOWN + NO_ADJUDICATED_BASELINE when no adjudicated BASELINE.json
++# exists and §4 denies all game-dir writes under UNKNOWN/MISMATCH; enabling it
++# by default would refuse every offline sandbox install.
++# Gating the two TOP-LEVEL entries covers every HIGH/CRITICAL descendant row
++# in WRITE_ENTRY_AUDIT.tsv (see s3_contract.WRITE_ENTRY_COVERAGE) because the
++# private staged-write / rollback / orphan / legacy helpers are reachable only
++# through them.
++def _s3_guard_gate(entry_id: str, game, version_guard: dict | None) -> None:
++    if version_guard is None:
++        return                      # default path: byte-identical to v12
++    from . import version_guard as _vg
++    _vg.guard_write_entry(entry_id, Path(game), version_guard)
++
++
++def _s3_csf_out_reclassified(csf_out, game_dirs) -> bool:
++    """W38-S1 §1.2 path-attribution: realpath+commonpath inside a game dir
++    reclassifies the E2b csf-out write point as E1 (install-level)."""
++    if not csf_out or not game_dirs:
++        return False
++    try:
++        resolved = Path(csf_out).resolve()
++    except OSError:
++        return False
++    for gd in game_dirs:
++        try:
++            common = os.path.commonpath([str(resolved), str(Path(gd).resolve())])
++            if common == str(Path(gd).resolve()):
++                return True
++        except ValueError:
++            continue
++    return False
++
++
+ # SEAL-CHAIN01: distinguishable exit codes for verify and the uninstall seal
+ # gate (argparse keeps the conventional 2; 1 stays the generic operational
+ # error; 3/4 are the PKG-IDENT01 install refusals).
+@@ -1424,8 +1471,11 @@ def preinstall_plan(package_dir, game_dir, *, adopt_legacy: bool = False) -> dic
+                 f"game directory (not recorded as ours in {MANIFEST_NAME}). "
+                 "It is a WHOLE-FILE override of the official string table "
+                 "inside langmd.mix; overwriting it would destroy another "
+-                "mod's / a hand-edited CSF, and a partial file makes the game "
+-                "fail to start (W29). Back it up and resolve the conflict by "
++                "mod's / a hand-edited CSF, and a partial/minimal file would "
++                "make the official UI text render as MISSING:'...' (W40 A/E; "
++                "NOT a startup-failure rule - W40 A proved a legal minimal "
++                "CSF still boots, only a bad magic fails to start). Back it "
++                "up and resolve the conflict by "
+                 "hand, then re-run the install. This definite conflict is NOT "
+                 "releasable by --allow-content-conflict.")
+             if msg not in conflicts:
+@@ -1871,7 +1921,8 @@ def _rollback(game: Path, undo: list,
+ def install_package(package_dir, game_dir, force: bool = False, *,
+                     strict: bool = True,
+                     allow_content_conflict: bool = False,
+-                    adopt_legacy: bool = False) -> dict:
++                    adopt_legacy: bool = False,
++                    version_guard: dict | None = None) -> dict:
+     """Copy a built package into a game directory, backing up what it replaces.
+ 
+     DLC-STRICT01: everything is preflighted read-only first (preinstall_plan).
+@@ -1887,8 +1938,15 @@ def install_package(package_dir, game_dir, force: bool = False, *,
+     assertion that this install is the intended successor of a record whose
+     package_id is undeclared ("unknown"); it releases the identity gate ONLY,
+     nothing else.
++
++    W43/S3: ``version_guard`` is an OPT-IN W38-S1 guard context.  When
++    supplied, classify() runs BEFORE preinstall_plan (i.e. before the L0
++    gamemd.exe existence check is allowed to stand in for identity) and any
++    non-KNOWN_GOOD verdict refuses with ZERO writes (exit 20/21/22).  When
++    None (default) the behaviour is byte-for-byte v12's.
+     """
+     game = Path(game_dir)
++    _s3_guard_gate("E1", game, version_guard)
+     plan = preinstall_plan(package_dir, game, adopt_legacy=adopt_legacy)
+     identity = plan["identity"]
+ 
+@@ -2209,7 +2267,8 @@ def install_package(package_dir, game_dir, force: bool = False, *,
+ 
+ 
+ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False,
+-              force: bool = False) -> dict:
++              force: bool = False, *,
++              version_guard: dict | None = None) -> dict:
+     """Undo an install: delete our files, restore every backup, drop the manifest.
+ 
+     With legacy=True it also cleans the artefacts of ra2forge <= FORGE-1
+@@ -2237,6 +2296,9 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+     seal is still removed silently, exactly as before.
+     """
+     game = Path(game_dir)
++    # W43/S3: E3 uninstall guard. v12 had ONLY game.is_dir() (L0); the S1
++    # identity verdict now gates the delete/restore/record-removal entry.
++    _s3_guard_gate("E3", game, version_guard)
+     if not game.is_dir():
+         raise FileNotFoundError(f"game directory not found: {game}")
+     actions: list[str] = []

@@ -1,0 +1,12 @@
+const fs=require('fs');
+const ASAR='D:/DeepSeek harness/resources/app.asar';
+const fd=fs.openSync(ASAR,'r');
+const head=Buffer.alloc(16); fs.readSync(fd,head,0,16,0);
+const hs=head.readUInt32LE(4), jl=head.readUInt32LE(12);
+const jb=Buffer.alloc(jl); fs.readSync(fd,jb,0,jl,16);
+const header=JSON.parse(jb.toString('utf8')); const dataStart=8+hs;
+const all=[]; (function walk(n,p){for(const k of Object.keys(n.files||{})){const v=n.files[k];const q=p?p+'/'+k:k;if(v.files)walk(v,q);else all.push({p:q,size:v.size,offset:+v.offset});}})(header,'');
+const want=['dsh/node_modules/@deepseek-ai/dsh-tool-subagent/lib/index.js','dsh/node_modules/@deepseek-ai/dsh-tool-subagent/lib/model-selection-settings.js'];
+for(const w of want){const f=all.find(x=>x.p===w); if(!f){console.log('MISS '+w);continue;}
+  const b=Buffer.alloc(f.size); fs.readSync(fd,b,0,f.size,dataStart+f.offset);
+  const out='extract_'+w.split('/').pop(); fs.writeFileSync(out,b); console.log('wrote '+out+' '+f.size);}

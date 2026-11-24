@@ -1,0 +1,99 @@
+================================================================================
+V6_V3_REVIEW - R2 时间戳契约独立复核探针
+================================================================================
+
+[0. 被核对象与关联文件 SHA256 实测]
+  被核采样件: D:\Project\ra2-campaign-forge\lead\re_line_20261105\A1_SAMPLER_CANDIDATE\frame_edge_sampler.py
+    SHA256 = b382e893bafc6a7f38d08572affaa663eaef56a8de7c3f361eea38cc34185f3e
+    字节数 = 21411
+  [PASS] 采样件 SHA256 吻合任务书参照值
+  [PASS] 采样件字节数吻合 (21,411)
+  关联调用方: D:\Project\ra2-campaign-forge\lead\re_line_20261105\W5_HARNESS_EXT\qc151_trip.harness8_v4_ext.py
+    SHA256 = 5081780c5a2e3da5c934efff4665ed248ad01b1c4c883887eb1a66cc7d83f161
+    字节数 = 499047
+  [PASS] 调用方 SHA256 吻合任务书参照值
+  [PASS] 调用方字节数吻合 (499,047)
+  测试套件件: D:\Project\ra2-campaign-forge\lead\re_line_20261105\W5_HARNESS_EXT\_w5_test.py
+    SHA256 = df5771a830c4fa2df5445156284a65d7a5d1e2c4ac80945350a0d05c727df2c8
+    字节数 = 36624
+  [PASS] 单测 SHA256 吻合任务书参照值
+  [PASS] 单测字节数吻合 (36,624)
+
+[1. 复用模式时间戳契约测试 (传 f_pre 与 t_pre)]
+  [PASS] ts['f_pre'] 严格等于传入的 t_pre
+  [PASS] ts['segment_start'] 为进入业务读取时首次调用的 clock()
+  [PASS] ts['f_pre'] != ts['segment_start']（两者明确分开独立记录）
+  [PASS] f_pre 锚已知标记 f_pre_anchor_known 为 True
+  [PASS] f_pre_reused 字段为 True
+  [PASS] reads_per_sample 为 5
+
+[2. 缺省 t_pre 契约测试 (传 f_pre 但 t_pre=None)]
+  [PASS] 传 f_pre 但 t_pre 为 None 时，ts['f_pre'] 为 None（绝不拿进入时刻冒充）
+  [PASS] f_pre_anchor_known 标记严格为 False
+  [PASS] ts['segment_start'] 仍正常记录业务段起点
+  [PASS] f_pre_reused 仍为 True
+  [PASS] reads_per_sample 仍为 5
+
+[3. 反例测试：故意传入明显偏早的 t_pre]
+  传入偏早 t_pre = 12.345678
+  函数内首次 clock() = 10000.0
+  sample['ts']['f_pre'] = 12.345678
+  sample['ts']['segment_start'] = 10000.0
+  [PASS] 反例验证: ts['f_pre'] 严格采用偏早的 t_pre (12.345678)，绝无被 clock 覆盖
+  [PASS] 反例验证: segment_start 仍为进入函数后的业务读起点 (10000.0)
+  [PASS] 反例验证: 两者差值保持 9987.654322 (实测 9987.654322)
+
+[4. 向后兼容测试：自读前帧号模式 (f_pre=None, t_pre=None)]
+  [PASS] 非复用模式下 ts['segment_start'] == ts['f_pre']（为同一发起时刻）
+  [PASS] 非复用模式下 f_pre_anchor_known 为 True
+  [PASS] 非复用模式下 f_pre_reused 为 False
+  [PASS] 非复用模式下 reads_per_sample 为 6
+
+[5. 时间戳全序单调性校验]
+  [PASS] 复用模式时间戳满足全序: f_pre <= segment_start <= 4业务读 <= f_post_start == f_post <= segment_end
+  [PASS] 自读模式时间戳满足全序: f_pre == segment_start <= 4业务读 <= f_post_start == f_post <= segment_end
+
+[6. 调用方静态代码审查 (qc151_trip.harness8_v4_ext.py)]
+  在 harness 中查找到 1 处 read_sample 调用:
+    行 4166: frame_edge_sampler.read_sample(reader, time.perf_counter, f_pre=f, t_pre=t_now)
+  [PASS] harness 中存在且仅存在 1 处 read_sample 调用
+  [PASS] 调用实参包含 f_pre
+  [PASS] 调用实参包含 t_pre
+  [PASS] t_pre 参数传入变量 t_now
+  [PASS] f_pre 参数传入变量 f
+
+  [调用点上下文源码片段 (行 4147-4171)]:
+    4147 |     i = 0
+    4148 |     prev_f = None
+    4149 | 
+    4150 |     while True:
+    4151 |         t_now = time.perf_counter()
+    4152 |         if t_now >= t_end:
+    4153 |             break
+    4154 |         f = reader(MEASURE_CURRENT_FRAME_VA)
+    4155 |         if f is None:
+    4156 |             errs += 1
+    4157 |             tracker.feed(t_now, None, sample=None)
+    4158 |             prev_f = None
+    4159 |             _doze(0.001)
+    4160 |         else:
+    4161 |             samples.append((t_now, f))
+    4162 |             if prev_f is not None and f != prev_f:
+    4163 |                 # ★ D-21 裁 A：复用该拍外层已读的 f 与其读前时刻 t_now 作 S0，
+    4164 |                 #   本拍只新增 5 次读（四 VA + f_post），不再让 read_sample 自读前帧号。
+    4165 |                 #   ⇒ 与 W4 Q3_FRAME_EDGE_SPEC.md:318-328 的 5 读/20 B 设计对齐。
+    4166 |                 sample = frame_edge_sampler.read_sample(
+    4167 |                     reader, time.perf_counter, f_pre=f, t_pre=t_now)
+    4168 |                 ev = tracker.feed(t_now, f, sample=sample)
+    4169 |                 if ev is not None:
+    4170 |                     events.append(ev)
+    4171 |             else:
+  t_now 取样行号 = 4151
+  reader(FRAME_VA) 执行行号 = 4154
+  read_sample 调用行号 = 4166
+  [PASS] t_now 取在 reader(FRAME_VA) 之前
+  [PASS] reader(FRAME_VA) 执行在 read_sample 调用之前
+
+================================================================================
+复核结果汇总: PASS = 33, FAIL = 0
+================================================================================

@@ -1,0 +1,97 @@
+
+============================================================================
+A. 环境
+============================================================================
+python: 3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]
+exe: C:\Users\Administrator\AppData\Local\Programs\Python\Python312\python.exe
+user: Administrator
+
+============================================================================
+B. 指纹复算（hashlib.sha256，9 件 vs 编排方基线）
+============================================================================
+[MATCH] qc151_trip.candidate_lf.py sha=ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2 bytes=412759
+[MATCH] MATRIX_DEFECT_REACHABILITY.md sha=cd03a91aac610cd0e7d6f3c70008d5a8d351896173aa0ee9d5d035675f2746d6 bytes=27825
+[MATCH] _mr_REACH_EVIDENCE_20261109.md sha=67d0fc90ceae277f23d43f80484da9445a6385994752a882d04a8517809f10e9 bytes=20820
+[MATCH] RULING_MATRIX_AB.md sha=0e817ebb8087141de2b974b5587db0a3aa576f30ecb6a19c0ed993404707ec31 bytes=36851
+[MATCH] STATE_MATRIX.json sha=1d4ccc937cfa78f1ac5144c15fd3e87152e45d41565bf5031bde53202667e016 bytes=3558
+[MATCH] B2B_DESIGN.md sha=565771d8b31c516dc7a1e0100ea047484406a203390492df9f57170a6532feaf bytes=66735
+[MATCH] qc151_trip.py sha=517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636 bytes=399508
+[MATCH] PENDING_DECISIONS.md sha=3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 bytes=52419
+[MATCH] GOAL_THREE_TARGETS_20261018.md sha=2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede bytes=759518
+指纹核对：9/9 MATCH
+
+============================================================================
+C. importlib 静态装载候选模块（代码零改动）
+============================================================================
+module loaded: _qc151_cand_w2check
+functions: make_pre_freshness_snapshot copy_post_except_evidence classify_except_freshness
+
+============================================================================
+D. 路径串异常三态（R5：非法字符 / ENOTDIR / 超长 / 正常缺席）——只读探测不建件
+============================================================================
+  -- 非法字符: {'stat': 'OSError winerror=123 OSError', 'Path.exists': 'returned False', 'open_rb': 'OSError winerror=22 OSError'}
+  [R5·非法字符] make_pre -> state='absent_confirmed' exists=False size=None sha='' error=''
+  -- ENOTDIR: {'stat': 'OSError winerror=3 FileNotFoundError', 'Path.exists': 'returned False', 'open_rb': 'OSError winerror=2 FileNotFoundError'}
+  [R5·ENOTDIR] make_pre -> state='absent_confirmed' exists=False size=None sha='' error=''
+  -- 超长>260: {'stat': 'OSError winerror=123 OSError', 'Path.exists': 'returned False', 'open_rb': 'OSError winerror=22 OSError'}
+  [R5·超长>260] make_pre -> state='absent_confirmed' exists=False size=None sha='' error=''
+  -- 正常缺席: {'stat': 'OSError winerror=2 FileNotFoundError', 'Path.exists': 'returned False', 'open_rb': 'OSError winerror=2 FileNotFoundError'}
+  [R5·正常缺席] make_pre -> state='absent_confirmed' exists=False size=None sha='' error=''
+
+============================================================================
+E. 同一 deny-(RD) ACE 横跨两时点（同源子集实证：真 make_pre + 真 copy_post）
+============================================================================
+  S0 基线（无 deny）: {'stat': 'ok size=36', 'Path.exists': 'returned True', 'open_rb': 'ok'}
+  [S0·T0] make_pre -> state='present' exists=True size=36 sha='f73fef9ace73' error=''
+  [S0·T1] copy_post 返回 dict(evidence_path=D:\Project\ra2-campaign-forge\lead\w2_samecause_20261109\_w2_out\except_post_20261109T034747646911.txt)
+  [S0·T1] FRESHNESS verdict/conf/is_new = [('freshness_verdict', 'leftover_unchanged'), ('freshness_confidence', 'high'), ('freshness_is_new', False)]
+  [S0·T1] ERROR 行 = 无
+  icacls /deny Administrator:(RD) -> rc=0 '已处理的文件: D:\\Project\\ra2-campaign-forge\\lead\\w2_samecause_20261109\\_w2_case\\except.txt\n已成功处理 1 个文件; 处理 0 个文件时失败'
+  S1 deny-RD 状态: {'stat': 'ok size=36', 'Path.exists': 'returned True', 'open_rb': 'OSError winerror=13 PermissionError'}
+  [S1·T0(deny-RD)] make_pre -> state='error' exists=True size=36 sha='' error="PermissionError: [Errno 13] Permission denied: 'D:\\\\Project\\\\ra2-campaign-forge\\"
+  [S1·T1(deny-RD 同一 ACE 持续)] copy_post 外抛 PermissionError: [Errno 13] Permission denied: 'D:\\Project\\ra2-campaign-forge\\lead\\w2_samecause_20261109\\_w2_case\\except.txt'  (winerror=13)
+  [S1·T1(deny-RD 同一 ACE 持续)] FRESHNESS verdict/conf/is_new = [('freshness_verdict', 'post_read_error'), ('freshness_confidence', 'none'), ('freshness_is_new', None)]
+  [S1·T1(deny-RD 同一 ACE 持续)] ERROR 行 = [('freshness_copy_failed', "PermissionError: [Errno 13] Permission denied: 'D:\\\\Project\\\\ra2-campa"), ('freshness_copy_stage', 'read_bytes/stat/write_bytes'), ('freshness_copy_traceback', 'Traceback (most recent call last):\n  File "D:\\Project\\ra2-campaign-for')]
+  icacls /remove:d Administrator -> rc=0
+  S2 还原后: {'stat': 'ok size=36', 'Path.exists': 'returned True', 'open_rb': 'ok'}
+  [S2·T0(还原)] make_pre -> state='present' exists=True size=36 sha='f73fef9ace73' error=''
+  [S2·T1(还原)] copy_post 返回 dict(evidence_path=D:\Project\ra2-campaign-forge\lead\w2_samecause_20261109\_w2_out\except_post_20261109T034747694848.txt)
+  [S2·T1(还原)] FRESHNESS verdict/conf/is_new = [('freshness_verdict', 'leftover_unchanged'), ('freshness_confidence', 'high'), ('freshness_is_new', False)]
+  [S2·T1(还原)] ERROR 行 = 无
+
+============================================================================
+F. deny-R（拒全部读含属性）——exists() 在 py3.12.10 下吞还是抛
+============================================================================
+  icacls /deny Administrator:R -> rc=0 '已处理的文件: D:\\Project\\ra2-campaign-forge\\lead\\w2_samecause_20261109\\_w2_case\\except.txt\n已成功处理 1 个文件; 处理 0 个文件时失败'
+  S3 deny-R 状态: {'stat': 'ok size=36', 'Path.exists': 'returned True', 'open_rb': 'OSError winerror=13 PermissionError'}
+  [S3·T0(deny-R)] make_pre -> state='error' exists=True size=36 sha='' error="PermissionError: [Errno 13] Permission denied: 'D:\\\\Project\\\\ra2-campaign-forge\\"
+  [S3·T1(deny-R 同一 ACE 持续)] copy_post 外抛 PermissionError: [Errno 13] Permission denied: 'D:\\Project\\ra2-campaign-forge\\lead\\w2_samecause_20261109\\_w2_case\\except.txt'  (winerror=13)
+  [S3·T1(deny-R 同一 ACE 持续)] FRESHNESS verdict/conf/is_new = [('freshness_verdict', 'post_read_error'), ('freshness_confidence', 'none'), ('freshness_is_new', None)]
+  [S3·T1(deny-R 同一 ACE 持续)] ERROR 行 = [('freshness_copy_failed', "PermissionError: [Errno 13] Permission denied: 'D:\\\\Project\\\\ra2-campa"), ('freshness_copy_stage', 'read_bytes/stat/write_bytes'), ('freshness_copy_traceback', 'Traceback (most recent call last):\n  File "D:\\Project\\ra2-campaign-for')]
+  S4 还原后: {'stat': 'ok size=36', 'Path.exists': 'returned True', 'open_rb': 'ok'}
+
+============================================================================
+G. share-mode=0 独占句柄横跨两时点（机理演示；T0 无游戏进程见结论）
+============================================================================
+  独占句柄已持有（同进程内模拟他方握柄）
+  S5 锁定期状态: {'stat': 'ok size=36', 'Path.exists': 'returned True', 'open_rb': 'OSError winerror=13 PermissionError'}
+  [S5·T0(锁)] make_pre -> state='error' exists=True size=36 sha='' error="PermissionError: [Errno 13] Permission denied: 'D:\\\\Project\\\\ra2-campaign-forge\\"
+  [S5·T1(锁)] copy_post 外抛 PermissionError: [Errno 13] Permission denied: 'D:\\Project\\ra2-campaign-forge\\lead\\w2_samecause_20261109\\_w2_case\\except.txt'  (winerror=13)
+  [S5·T1(锁)] FRESHNESS verdict/conf/is_new = [('freshness_verdict', 'post_read_error'), ('freshness_confidence', 'none'), ('freshness_is_new', None)]
+  [S5·T1(锁)] ERROR 行 = [('freshness_copy_failed', "PermissionError: [Errno 13] Permission denied: 'D:\\\\Project\\\\ra2-campa"), ('freshness_copy_stage', 'read_bytes/stat/write_bytes'), ('freshness_copy_traceback', 'Traceback (most recent call last):\n  File "D:\\Project\\ra2-campaign-for')]
+  句柄已释放: {'stat': 'ok size=36', 'Path.exists': 'returned True', 'open_rb': 'ok'}
+
+============================================================================
+H. dst 写失败（out_dir 指向普通文件）——T1-only 根因同样落 read_error
+============================================================================
+  [H·T0(正常)] make_pre -> state='present' exists=True size=36 sha='f73fef9ace73' error=''
+  [H·T1(dst=普通文件)] copy_post 外抛 FileNotFoundError: [Errno 2] No such file or directory: 'D:\\Project\\ra2-campaign-forge\\lead\\w2_samecause_20261109\\_w2_not_a_dir.txt\\except_post_20261109T034747733685.txt'  (winerror=2)
+  [H·T1(dst=普通文件)] FRESHNESS verdict/conf/is_new = [('freshness_verdict', 'post_read_error'), ('freshness_confidence', 'none'), ('freshness_is_new', None)]
+  [H·T1(dst=普通文件)] ERROR 行 = [('freshness_copy_failed', "FileNotFoundError: [Errno 2] No such file or directory: 'D:\\\\Project\\\\"), ('freshness_copy_stage', 'read_bytes/stat/write_bytes'), ('freshness_copy_traceback', 'Traceback (most recent call last):\n  File "D:\\Project\\ra2-campaign-for')]
+
+============================================================================
+I. 收尾清理（写域内临时件删除）
+============================================================================
+  deleted _w2_not_a_dir.txt
+  deleted except.txt
+W2_PROBE_DONE

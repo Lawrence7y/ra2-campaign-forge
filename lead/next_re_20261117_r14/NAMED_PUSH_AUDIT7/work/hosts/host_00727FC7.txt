@@ -1,0 +1,84 @@
+00727FC7  90                       nop 
+00727FC8  90                       nop 
+00727FC9  90                       nop 
+00727FCA  90                       nop 
+00727FCB  90                       nop 
+00727FCC  90                       nop 
+00727FCD  90                       nop 
+00727FCE  90                       nop 
+00727FCF  90                       nop 
+00727FD0  53                       push ebx
+00727FD1  56                       push esi
+00727FD2  57                       push edi
+00727FD3  8bf1                     mov esi, ecx
+00727FD5  e89681ceff               call 0x410170
+00727FDA  8b5c2410                 mov ebx, dword ptr [esp + 0x10]
+00727FDE  8b542414                 mov edx, dword ptr [esp + 0x14]
+00727FE2  8b03                     mov eax, dword ptr [ebx]
+00727FE4  894624                   mov dword ptr [esi + 0x24], eax
+00727FE7  8b0b                     mov ecx, dword ptr [ebx]
+00727FE9  8d4604                   lea eax, [esi + 4]
+00727FEC  894e28                   mov dword ptr [esi + 0x28], ecx
+00727FEF  50                       push eax
+00727FF0  89562c                   mov dword ptr [esi + 0x2c], edx
+00727FF3  c786c001000000000000     mov dword ptr [esi + 0x1c0], 0
+00727FFD  c706b0597f00             mov dword ptr [esi], 0x7f59b0  <== install
+00728003  c70094597f00             mov dword ptr [eax], 0x7f5994
+00728009  c746088c597f00           mov dword ptr [esi + 8], 0x7f598c
+00728010  c7460c84597f00           mov dword ptr [esi + 0xc], 0x7f5984
+00728017  e81482ceff               call 0x410230
+0072801C  8d7e30                   lea edi, [esi + 0x30]
+0072801F  b964000000               mov ecx, 0x64
+00728024  83c8ff                   or eax, 0xffffffff
+00728027  f3ab                     rep stosd dword ptr es:[edi], eax
+00728029  a140418b00               mov eax, dword ptr [0x8b4140]
+0072802E  8b0d48418b00             mov ecx, dword ptr [0x8b4148]
+00728034  3bc8                     cmp ecx, eax
+00728036  7c2e                     jl 0x728066
+00728038  8a0d45418b00             mov cl, byte ptr [0x8b4145]
+0072803E  84c9                     test cl, cl
+00728040  7504                     jne 0x728046
+00728042  85c0                     test eax, eax
+00728044  7538                     jne 0x72807e
+00728046  8b0d4c418b00             mov ecx, dword ptr [0x8b414c]
+0072804C  85c9                     test ecx, ecx
+0072804E  7e2e                     jle 0x72807e
+00728050  03c8                     add ecx, eax
+00728052  a138418b00               mov eax, dword ptr [0x8b4138]
+00728057  6a00                     push 0
+00728059  51                       push ecx
+0072805A  b938418b00               mov ecx, 0x8b4138
+0072805F  ff5008                   call dword ptr [eax + 8]
+00728062  84c0                     test al, al
+00728064  7418                     je 0x72807e
+00728066  8b0d48418b00             mov ecx, dword ptr [0x8b4148]
+0072806C  8bc1                     mov eax, ecx
+0072806E  41                       inc ecx
+0072806F  890d48418b00             mov dword ptr [0x8b4148], ecx
+00728075  8b0d3c418b00             mov ecx, dword ptr [0x8b413c]
+0072807B  893481                   mov dword ptr [ecx + eax*4], esi
+0072807E  66833b00                 cmp word ptr [ebx], 0
+00728082  7507                     jne 0x72808b
+00728084  66837b0200               cmp word ptr [ebx + 2], 0
+00728089  7433                     je 0x7280be
+0072808B  53                       push ebx
+0072808C  b9e8f78700               mov ecx, 0x87f7e8
+00728091  e80ad7e3ff               call 0x5657a0
+00728096  8b1548418b00             mov edx, dword ptr [0x8b4148]
+0072809C  33c9                     xor ecx, ecx
+0072809E  85d2                     test edx, edx
+007280A0  7e12                     jle 0x7280b4
+007280A2  8b3d3c418b00             mov edi, dword ptr [0x8b413c]
+007280A8  3937                     cmp dword ptr [edi], esi
+007280AA  740b                     je 0x7280b7
+007280AC  41                       inc ecx
+007280AD  83c704                   add edi, 4
+007280B0  3bca                     cmp ecx, edx
+007280B2  7cf4                     jl 0x7280a8
+007280B4  83c9ff                   or ecx, 0xffffffff
+007280B7  66898816010000           mov word ptr [eax + 0x116], cx
+007280BE  8bc6                     mov eax, esi
+007280C0  5f                       pop edi
+007280C1  5e                       pop esi
+007280C2  5b                       pop ebx
+007280C3  c20800                   ret 8

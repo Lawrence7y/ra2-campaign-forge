@@ -1,0 +1,138 @@
+{
+ "exe_sha256": "73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476",
+ "cov_pin_sha": "2F498B18E64E7EF568A0EB7888CE9F8D710CABC91038E52A8167F8826B53B36E",
+ "cov_pin_bytes": 4083215,
+ "cov_4gap_pin_sha": "0046BAD980E9055AF61CC94DB9DA72C5346E087A49A00BA0009705807AA6ACF9",
+ "cov_4gap_pin_bytes": 4034144,
+ "cov_live_sha": "2F498B18E64E7EF568A0EB7888CE9F8D710CABC91038E52A8167F8826B53B36E",
+ "cov_live_bytes": 4083215,
+ "target_n": 32,
+ "three_buckets": {
+  "YES": 32
+ },
+ "clsid_defects": {
+  "MISMATCH": 1,
+  "MATCH": 22,
+  "MISSING_NONE": 9
+ },
+ "provenance": {
+  "vt_in_text": 32,
+  "ctor_in_text": 32,
+  "alloc_in_text": 32,
+  "clsid_in_text": 18
+ },
+ "s126_whole_table": 119,
+ "s126_proved": 119,
+ "pivot_site_dup": {},
+ "install_site_dup": {},
+ "ctor_dup": {},
+ "shared_allocator": {
+  "007C8E17": 32
+ },
+ "sizes": {
+  "8": 32
+ },
+ "esi_provenance": {
+  "site": "006BC43F",
+  "iat": "007E15D8",
+  "sym": "ole32.dll!CoRegisterClassObject"
+ },
+ "cross_76": {
+  "install": [],
+  "ctor": []
+ },
+ "gap122": {
+  "buckets": {
+   "B6_nothing": 14,
+   "B1_slot_witness": 76,
+   "B5_other_ring4_text": 32
+  },
+  "grades": {
+   "[已证]": 122
+  },
+  "has4": 108,
+  "by_reason": {
+   "audit_ring4_ctor_install": {
+    "n": 76,
+    "buckets": {
+     "B1_slot_witness": 76
+    },
+    "grades": {
+     "[已证]": 76
+    },
+    "has4": 76
+   },
+   "audit_ring4_alloc_reg_pivot": {
+    "n": 32,
+    "buckets": {
+     "B5_other_ring4_text": 32
+    },
+    "grades": {
+     "[已证]": 32
+    },
+    "has4": 32
+   },
+   "sem_virtual_witness_only": {
+    "n": 12,
+    "buckets": {
+     "B6_nothing": 12
+    },
+    "grades": {
+     "[已证]": 12
+    },
+    "has4": 0
+   },
+   "sem_live_table_install": {
+    "n": 2,
+    "buckets": {
+     "B6_nothing": 2
+    },
+    "grades": {
+     "[已证]": 2
+    },
+    "has4": 0
+   }
+  }
+ },
+ "merged32": {
+  "n": 32,
+  "proved": 32,
+  "has4": 32,
+  "pin_has4": 32,
+  "s126_cited": 0
+ },
+ "rule": [
+  "R1  vt 必须由 ring2_at 首 token − 0xC 得到，且 dword[vt+0xC] == entry",
+  "       （槽值不吻合 ⇒ NEED_AUDIT，理由：② 的槽位自述与字节不符）",
+  "R2  vt−4 必须是 .rdata 的 COL，且 COL+0xC→TD、TD+8 的内联名以 `.?AV` 开头",
+  "       （解不出 ⇒ NEED_AUDIT，理由：② 的 RTTI 链不可复现）",
+  "R3  以 ring4_at 首地址为锚，必须解出完整分配块",
+  "       push imm8? / call new / add esp,4 / test eax,eax / je / mov ecx,eax / call ctor",
+  "       （解不出 ⇒ NO，理由：枢轴站点形态不成立）",
+  "R4  ctor 体内必须存在 `C7 00 <imm32>` 装表指令，且 imm32 == R1 的 vt",
+  "       （不存在或不等 ⇒ NO，理由：装表点不可复现 / 装表值与本行 vt 不符）",
+  "R5  装表点必须在 entry 体内之外（e <= install < body_end 则视为 self-ctor ⇒ NO）",
+  "R6  四要素 {vt, slot, pivot(分配/枢轴), install(装表点)} 至少 3 项独立自核通过 ⇒ YES",
+  "       （<3 ⇒ NEED_AUDIT）",
+  "note: 本规则只判「能否据字节写出合 §12.6 的 ④」；不判 grade、不判 ③、不判命名。"
+ ],
+ "log": [
+  "gamemd.exe sha256 = 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476",
+  "coverage pin(本目录) sha=2F498B18E64E7EF568A0EB7888CE9F8D710CABC91038E52A8167F8826B53B36E bytes=4083215",
+  "coverage live      sha=2F498B18E64E7EF568A0EB7888CE9F8D710CABC91038E52A8167F8826B53B36E bytes=4083215（仅作时点对照，全文不用它）",
+  "coverage 4GAP pin  sha=0046BAD980E9055AF61CC94DB9DA72C5346E087A49A00BA0009705807AA6ACF9 bytes=4034144",
+  "target rows (f_reason=audit_ring4_alloc_reg_pivot) = 32",
+  "三桶 = {'YES': 32}",
+  "32 行内重复：pivot_site={} install_site={} ctor={}",
+  "32 install ∩ 76 ring4_at = []",
+  "32 ctor    ∩ 76 ring4_at = []",
+  "108 行装表站点总数=178，重复站点={}",
+  "32 行共用分配器 = {'007C8E17': 32}",
+  "32 行分配尺寸 = {8: 32}",
+  "esi 来历 = {'site': '006BC43F', 'iat': '007E15D8', 'sym': 'ole32.dll!CoRegisterClassObject'}",
+  "F1 122 行的现盘分桶 = {'B6_nothing': 14, 'B1_slot_witness': 76, 'B5_other_ring4_text': 32}",
+  "F1 122 行现盘 grade = {'[已证]': 122}",
+  "F1 122 行含 ④ 字符 = 108",
+  "按 f_reason 拆：{\"audit_ring4_ctor_install\": {\"n\": 76, \"buckets\": {\"B1_slot_witness\": 76}, \"grades\": {\"[已证]\": 76}, \"has4\": 76}, \"audit_ring4_alloc_reg_pivot\": {\"n\": 32, \"buckets\": {\"B5_other_ring4_text\": 32}, \"grades\": {\"[已证]\": 32}, \"has4\": 32}, \"sem_virtual_witness_only\": {\"n\": 12, \"buckets\": {\"B6_nothing\": 12}, \"grades\": {\"[已证]\": 12}, \"has4\": 0}, \"sem_live_table_install\": {\"n\": 2, \"buckets\": {\"B6_nothing\": 2}, \"grades\": {\"[已证]\": 2}, \"has4\": 0}}"
+ ]
+}

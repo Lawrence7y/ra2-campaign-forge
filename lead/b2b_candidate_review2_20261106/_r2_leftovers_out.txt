@@ -1,0 +1,22 @@
+=== [8] 上一轮遗留五项 · 本人复核 ===
+[遗留1] 判定书 :26 把'报告5键值是否出现'括注到 check_candidate.py:101-116
+  实读 :101 = 'def main() -> int:'
+  :101-116 含 'req_keys'? False
+  req_keys 实际起始行 = 232；检查[8]注释行 = 228
+  => 括注行号瑕疵成立，实质结论（5 键值被检查）不受影响
+[遗留2] 候选全文含 freshness 行数
+  严格小写 = 38；不区分大小写 = 52
+  判定书:140 清单区间展开 13 行，其中不含字面量的行 = [4801, 4802]
+  退出码判据区间 :6214-6219 含 'freshness'? False
+[遗留3] STATE_MATRIX #1 条件覆盖偏差
+  STATE_MATRIX.json:2 称'跑后任意文件状态 => unknown'
+  实跑 pre=None + post.read_error => post_read_error/none crash_ev=False（read_error 分支 :4643-4646 抢先）
+  => 偏差成立；候选与批准设计分类器逐字一致（B2B_DESIGN.md:310-311 N1 错误出口优先），属文档措辞，非候选缺陷
+[遗留4] 键名 camelCase ↔ snake_case 映射
+  候选 camel=0 snake=6；矩阵 camel=14 snake=0；设计 camel=4 snake=10
+  值语义：14 行矩阵 usableAsCrashEvidence 全 False，分类器 14/14 全 False（见 _r2_matrix_out.txt:2-16）
+  正式字段映射表：本探针未做全库扫描（范围大），沿用复核件有界扫描结论=无；本次如实标『未验(本探针)』
+[遗留5] 门禁读旧输出
+  check_candidate.py:68 TEST_OUT_REL 指向 tests/_test_out.txt；:196 test_out_path = BASE/tests/_test_out.txt
+  gate 引用 '_test_rerun_out'? False；引用 '_test_out.txt'? True
+  => 检查[6] 读候选目录既存旧输出，不读本轮重跑输出；属门禁卫生缺陷，按铁律7不据此判语义

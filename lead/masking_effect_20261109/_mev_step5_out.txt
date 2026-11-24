@@ -1,0 +1,37 @@
+=== ASK 5: apply plans to the SINGLE-NEEDLE FAIL scenario ===
+extracted plan keys = ['PLAN_A', 'PLAN_B', 'PLAN_C']
+
+GROUND TRUTH (my own unmodified-scanner run, --needle N1 only): SELF_TEST = FAIL
+(and :22 got=<not-scanned>, EXIT=1) -- see _mev_mech_out.txt / _mev_mech_n1only_out.txt
+
+--- V1: author's EXACT plans on the DELIVERED two-needle scenario ---
+  PLAN_A EXIT=1 : AGGREGATE = FAIL ; per-needle = 1/2 PASS ; proven_bits = 2
+  PLAN_B EXIT=0 : COVERAGE_GATE = PASS
+  PLAN_C EXIT=0 : MASKED_LINES = 43 / 136  (31.6%) ; COVERAGE_GATE = PASS  (every needle must own >=1 exclusive line) ; PER_NEEDLE_SELFTEST = {0: 'PASS', 1: 'PASS'}
+
+--- V2: author's EXACT plans with NEEDLES=[N1] (literal single-needle FAIL) ---
+  PLAN_A EXIT=1 : NEEDLE '只能判「不可复现」'                    EXIT=1 SELF_TEST=FAIL | scanned files = 645 ; carrier occurrences = 87 ; distinct files = 21 ; AGGREGATE = FAIL ; per-needle = 0/1 PASS ; proven_bits = 1
+  PLAN_B EXIT=0 : COVERAGE_GATE = PASS
+  PLAN_C EXIT=0 : COVERAGE_GATE = PASS  (every needle must own >=1 exclusive line) ; PER_NEEDLE_SELFTEST = {0: 'PASS'}
+
+--- V3: report §3(a) criterion #2 implemented literally (exclusive NEGATIVE CONTROLS) ---
+  needles=[N1,N2] : exclusive-control counts = [0, 1]
+  => criterion #2 requires >=1 per needle; N1 has 0 => should be UNPROVEN / FAIL
+  needles=[N1]    : exclusive-control counts = [5]
+  => with k=1 criterion #2 is trivially satisfied (all 5 N1 controls exclusive),
+     i.e. criterion #2 also FAILS to catch the single-needle self-test FAIL
+
+=== JUDGMENT ===
+  PLAN_A: catches it (AGGREGATE=FAIL in both V1 and V2) -- because it literally
+          runs each needle alone and ANDs the results.
+  PLAN_B: does NOT catch it (COVERAGE_GATE=PASS in V1 and V2) -- it gates on
+          |exclusive CORPUS lines|>0, never runs a per-needle self-test and never
+          checks the 6 negative controls. k=1 makes the gate trivially PASS.
+  PLAN_C: does NOT catch it (COVERAGE_GATE=PASS, PER_NEEDLE_SELFTEST={0:'PASS'}) --
+          its 'PER_NEEDLE_SELFTEST' label is a misnomer: it is derived purely from
+          corpus exclusivity, not from any self-test run. It contradicts the actual
+          N1-alone SELF_TEST=FAIL.
+  => report §3(a) criterion #2 as WRITTEN ('>=1 negative control in the exclusive
+     set') is not implemented in PLAN_B/PLAN_C; as implemented they certify the
+     very masked PASS the report declares untrustworthy.
+

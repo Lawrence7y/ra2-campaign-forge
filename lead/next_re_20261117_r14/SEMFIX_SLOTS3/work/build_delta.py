@@ -1,0 +1,65 @@
+# Build SEMFIX-SLOTS3 coverage_delta.tsv — 15 rows, 6 columns.
+# Semantics = on-disk first half (verbatim) + （③b档位 + 整体合同一句话 + 入口相对锚 +0xNN 与关键指令）
+import io
+OUT = r"D:\Project\ra2-campaign-forge\lead\next_re_20261117_r14\SEMFIX_SLOTS3\coverage_delta.tsv"
+
+# entry, subsystem, name, first_half(on-disk verbatim), ③b-clause, grade
+R = [
+ ("006F3330","S05","TechnoClass::slot185",
+  "FootClass 虚表槽 185(+0x2E4)：对象模型/虚表布局 方法",
+  "③b②：校验并返回目标对象能否沿候选对象选择链被定位——逐候选检查，-1哨兵则换下一个候选，全不中返回0，且末段虚调返回-1同样归零返回；入口锚 +0x0BD cmp dword ptr[eax+0xd50],-1 / +0x0C4 je 落 +0x0E0 为候选对象回退续行，+0x478 cmp eax,-1 / +0x47B jne / +0x47D xor eax,eax 为-1归零可证伪返回约定"),
+ ("006F8DF0","S05","TechnoClass::slot241",
+  "TechnoClass 虚表槽 241(+0x3C4)：对象模型/虚表布局 方法",
+  "③b④：对一个动态对象数组执行扩容后逐元素写入并同步更新计数与上界的批量填充；入口锚 +0x50B/+0x552 add eax,ecx 为扩容尺寸计算(非推进)，+0x522 mov dword ptr[edi+0x10],ecx 为真实计数写，+0x525 mov dword ptr[edx+eax*4],ebp 为元素写，+0x57B cmp eax,ecx 为界判，+0x595 jne 回跳"),
+ ("006FC0B0","S05","TechnoClass::slot240",
+  "FootClass 虚表槽 240(+0x3C0)：对象模型/虚表布局 方法",
+  "③b②：判定并返回目标能否开火的错误码——先用-1哨兵排除无效索引转入错路，再按互斥条件返回六种错误码之一(集合{1,3,5,6,8,9})，ret 0xc；入口锚 +0x717/+0x887 cmp eax,-1 与 +0x87C/+0x8AB cmp edx,-1 各接 je 错路"),
+ ("006FFEC0","S05","TechnoClass::slot29",
+  "TechnoClass 虚表槽 29(+0x74)：对象模型/虚表布局 方法",
+  "③b②：按当前帧时间戳比较计算对象状态返回码——以与0xA8ED84 CurrentFrame相减得到的-1哨兵检测时间戳是否已置，经setne bl谓词在六路互斥返回码中择一返回(集合{4,5,7,8,0x1A,0x37})；入口锚 +0x3D3 cmp edx,-1 / +0x3D6 je→+0x3E6 test eax,eax / +0x3E8 jne / +0x3EA xor bl,bl，-1来自时间戳而非无效索引"),
+ ("0070BF50","S05","TechnoClass::slot5",
+  "TechnoClass 虚表槽 5(+0x14)：对象模型/虚表布局 方法",
+  "③b②：复位对象的一组字段——8轮定界循环逐字段清零，且前置helper返回负值时立即原样返回该负错误码；入口锚 +0x00C call 0x65ab80 / +0x013 cmp eax,ebx / +0x015 jl→+0x2F9 ret 8，+0x03F 起8轮清字段循环(add edi,4推进/dec ebp定界)"),
+ ("00712170","S05","TechnoTypeClass::slot25",
+  "TechnoTypeClass 虚表槽 25(+0x64)：对象模型/虚表布局 方法",
+  "③b②+③b④：批量初始化类型对象的一组子对象——逐项写入虚表指针与字段(步长0x1c)，并以大量-1哨兵排除无效索引转入错路；入口锚 +0x7DA mov dword ptr[edi-0x1fc],eax / +0x811 mov dword ptr[edi],eax 显式写，+0x822 add edi,0x1c 推进，+0x826 cmp eax,ecx 界判，+0xCC2 cmp eax,-1 为35处-1哨兵样例"),
+ ("00716150","S05","TechnoTypeClass::slot42",
+  "AircraftTypeClass 虚表槽 42(+0xA8)：对象模型/虚表布局 方法",
+  "③b④：遍历以0x7fff为终止哨兵的坐标对序列，逐对把坐标写入栈上累加器直至遇哨兵结束；入口锚 +0x05E cmp word ptr[esi],0x7fff / +0x065 cmp word ptr[esi+2],0x7fff 哨兵界，+0x077 add esi,4 推进，+0x085/+0x08A/+0x095 累加器写，+0x104 jne 回跳"),
+
+ ("006D0270","S09","MouseClass::slot50",
+  "MouseClass 虚表槽 50(+0xC8)：UI/侧栏/菜单/对话框/输入/命令派发 方法",
+  "③b④：遍历全局标志数组，对每一置位项释放其关联对象并清零标志与数组槽位，直到数组上界；入口锚 +0x00E mov al,byte ptr[edi+0xb0cbdc] 读标志 / +0x016 je 跳过，call 0x7c8b3d 释放，+0x02A mov dword ptr[esi],0 汇合点清零，+0x033 推进 / +0x034 cmp esi,0xb0c1ac 界判 / +0x03A jl 回跳"),
+ ("006D04F0","S09","MouseClass::slot54",
+  "MouseClass 虚表槽 54(+0xD8)：UI/侧栏/菜单/对话框/输入/命令派发 方法",
+  "③b①+③b④：依据多道状态闸在互斥任务间分派执行——或按0x60步长遍历大数组发起虚调用，或按4字节步长筛选元素触发另一处理；入口锚 +0x015 je 直达尾，+0x023 mov al,byte ptr[esi+0x5544] / +0x029 je 为闸2真正跳转(订正卡面+0x0023)，循环1 +0x0E6 call[edx+0x34]/+0x0E9 add edi,0x60/+0x0EC cmp edi,0xb0cb20，循环2 +0x105 mov eax,[edi]/+0x12E add edi,4/+0x131 cmp edi,0xb0cbdc"),
+ ("00653850","S09","RadarClass::slot10",
+  "RadarClass 虚表槽 10(+0x28)：UI/侧栏/菜单/对话框/输入/命令派发 方法",
+  "③b①：按坐标域与WhatAmI类型在互斥处理分支间分派，设置雷达显示状态值并调用相应处理例程；入口锚 +0x064 call 0x5bdc80 坐标域处理，+0x0AE cmp eax,0x80f2 WhatAmI闸，+0x0EA/+0x0F6/+0x109 mov dword ptr[0xa8eda0],8/9/1 三态写，+0x138 call 0x656cb0 / +0x152 call 0x6578f0 分派不同处理"),
+ ("004F4480","S09","MouseClass::slot15",
+  "MouseClass 虚表槽 15(+0x3C)：UI/侧栏/菜单/对话框/输入/命令派发 方法",
+  "③b①：依据全局旗标与显示状态在互斥分支间切换显示处理——锁存旧状态、重置三态旗标并分派对应的显示更新调用；入口锚 +0x02F/+0x031/+0x037 setne/sete 锁存两态，+0x049 jne→+0x09B 跳过后段，+0x05F/+0x074/+0x095 call 0x6d3d10 三态调用，+0x0BD call[edx+0x40] / +0x0C0 mov byte ptr[0xb0b519],0 / +0x0FE call 0x55f1e0"),
+ ("004A8960","S09","TabClass::slot42",
+  "TabClass 虚表槽 42(+0xA8)：UI/侧栏/菜单/对话框/输入 方法",
+  "③b①：重置滚动原点后按多道旗标互斥地释放旧对象、分配构造新显示对象并触发所需重算；入口锚 +0x027..+0x041 写全局滚动原点0x886fa0..0x886fac，+0x05D call 0x6d5f60，+0x07A call 0x4068e0 释放旧对象，+0x0A4 call 0x7c8e17 分配 / +0x0DA call 0x7bc970 构造 / +0x0E8 mov dword ptr[eax+0x24],0x8000，+0x12B call 0x410e50"),
+ ("006C6680","S09","StaticButtonClass::slot33",
+  "StaticButtonClass 虚表槽 33(+0x84)：UI/侧栏/菜单/对话框/输入/命令派发 方法",
+  "③b①：按三态互斥地管理按钮标题字符串——释放旧串、按入参分配并拷贝新串、再依参数触发界面重算；入口锚 +0x00F call 0x7c8b3d 释放 / +0x017 清0，+0x031 call 0x7c8e17 分配 / +0x03C test eax,eax / +0x03E je / +0x042 call 0x7ca489 拷贝(订正卡面重复偏移)，+0x04E call[edx+0x48]，+0x064 call[eax+0x88] 重算"),
+ ("004F4320","S09","MouseClass::slot9",
+  "MouseClass 虚表槽 9(+0x24)：UI/侧栏/菜单/对话框/输入/命令派发 方法",
+  "③b①：取两路虚调结果写入输出后，按旗标在真/假两个互斥域间分派不同显示处理并汇合到统一虚调；入口锚 +0x010/+0x022 call[eax+0x2c]/[edx+0x30] 取输出，+0x031 闸[0xa8ef54]，真域 +0x037 call[edx+0x5c] / +0x044 call[eax+0x38]，假域 +0x07A call 0x54f000 / +0x092 call 0x54f050，+0x0B9 call[eax+0x28] 汇合"),
+ ("006AC210","S09","SidebarClass::slot33",
+  "SidebarClass 虚表槽 33(+0x84)：UI/侧栏/菜单/对话框/输入/命令派发 方法",
+  "③b①：按入参开关值互斥地装载对应提示字符串并触发侧栏项的刷新处理；入口锚 +0x00A call 0x640450 首闸早退，+0x019 cmp esi,0xc8→串0x13cd / +0x072 call 0x7ca564，+0x085 cmp esi,0xc9→串0x13d3，+0x0AC cmp esi,0xcb 范围[0xcb,0xcf)四分派→串0x13db/0x13dd/0x13df/0x13e1"),
+]
+
+HEADER = ["entry","subsystem","name","one_line_semantics","grade","evidence_path"]
+with io.open(OUT,"w",encoding="utf-8",newline="\n") as f:
+    f.write("\t".join(HEADER)+"\n")
+    for e,s,n,fh,clause in R:
+        sem = fh + "（" + clause + "）"
+        ev = "EVIDENCE/ROW_%s.txt;work/anchor_verify_result.json" % e
+        row = [e,s,n,sem,"[已证]",ev]
+        assert all("\t" not in c and "\n" not in c for c in row), e
+        f.write("\t".join(row)+"\n")
+print("wrote", OUT, "rows", len(R))

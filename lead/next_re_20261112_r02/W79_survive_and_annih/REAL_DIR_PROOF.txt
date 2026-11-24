@@ -1,0 +1,71 @@
+W79 · REAL DIR ZERO-MODIFICATION SELF-PROOF
+=================================================================
+Card   : lead\next_re_20261112_r02\W79_survive_and_annih
+Agent  : Hy4 (executor, not Lead)
+Method : full-tree manifest (rel path, size, mtime_ns, sha256) of the REAL
+         game dir D:\Project\ra2-campaign-forge\ra2youli taken BEFORE any
+         game run (out\real_pre.json) and AFTER cleanup (out\real_post.json);
+         diff by (rel, size, sha256) + mtime_ns.  The real dir was ONLY ever
+         a READ-ONLY robocopy SOURCE; every write went to the sandbox copy
+         W79_survive_and_annih\sandbox_game (deleted after all proofs).
+
+[本次实测] RESULT: IDENTICAL_TREE = True
+
+  PRE  : 647 files / 1,989,215,270 bytes / 277 map-like
+  POST : 647 files / 1,989,215,270 bytes / 277 map-like
+  diff : added=[]  removed=[]  changed=[]  mtime_diff_count=0
+
+Anchor hashes (PRE == POST, all equal=True):
+  RA2MD.INI             c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d
+  gamemd.exe            73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+  ddraw.dll             85e0f7d530dfda134793a57cb3e76b0287dcc96892ee57162dd68f47283b03a9
+  ra2forge_install.json fe3bdf62f4e871b61bf0d1b1d451b090af1c0b1804440c093089436253cc3914
+  BATTLEMD.INI          7e40691a3480b1e5ffe6d1cdfccb83f67da4447157607ec3ecb5d2278acf0791
+
+The four count/hash values match the W44 signed baseline carried in
+work\tools\w79_common.py BASELINE (647 / 1989215270 / 277 / c91c6a47… /
+73201cc0… / 85e0f7d5… / fe3bdf62…).  gamemd.exe is STILL 73201cc0…
+(unpatched).  ra2youli was NEVER written.
+
+[本次实测] Sandbox byte-restore (separate proof, not the real dir):
+  BATTLEMD.INI restored 2733 B / sha 7e40691a… == manifest original_sha256
+  == official 2733 B baseline == out\pristine\BATTLEMD.INI == real dir PRE/POST;
+  Scenario=RA2F_M1.MAP gone, Scenario=SOV01umd.MAP back.
+  Config restore: 21 items = 20 byte_identical=True + 1
+  (ra2forge_install.json.seal) removed_absent_baseline; all_ok=True.
+  Red line #4 "启动前字节副本+哈希": out\pristine\ holds 21 byte copies
+  saved BEFORE the first game launch (out\offline_s8.ndjson pristine_saved);
+  each trip additionally records config_pre_snapshot (per-file SHA) in its
+  TRIP_RESULT.json; restore performed byte-for-byte with real SHA self-proof.
+  One game-generated RA2F_M1.sav was removed (registered as added in the
+  first sandbox diff, then deleted); sandbox_post vs sandbox_pre =>
+  identical_tree=True (added/removed/changed all 0).
+  verify --game sandbox --json on restored state: exit 0 (v0.3 degraded).
+  sandbox_game\ deleted after all proofs (cleaned=True).
+
+[本次实测] Lock / process:
+  .game_instance.lock owner=lead at every non-trip instant.
+  5 trips, each: owner=w79 -> owner=lead (per-trip, never held across trips).
+  Only self-launched gamemd.exe pids closed:
+    trip1 3824 / trip2 19136 / trip3 13396 / trip4 11188 / trip5 24076
+  each via WM_CLOSE -> taskkill /PID <own> -> /F; residual_own_pid=0,
+  global gamemd residual=0 at offline / between trips / finalize.
+  No blanket taskkill.
+  Final lock: owner=lead (2026-11-14T08:57:12.995+08:00).
+
+[本次实测] Scope:
+  All writes inside W79_survive_and_annih\.  git used read-only
+  (status --porcelain=v1 once).  W21–W78 and REVIEW\ untouched.
+  DOCUMENTED EXCEPTION to "只写本卡目录": the shared coordination file
+  lead\next_re_20261112_r02\.game_instance.lock is necessarily rewritten
+  (owner=w79 -> owner=lead) by red line #1 (一趟一锁), exactly as W63/W70/
+  W76/W78 did.  This is the ONLY path outside the card dir written by W79;
+  it is a 4-line lock record, not game content, and its final owner is lead.
+
+Sources (all inside this card):
+  out\real_pre.json, out\real_post.json, out\FINALIZE.json,
+  out\finalize.ndjson, out\sandbox_pre.json, out\sandbox_post.json,
+  out\OFFLINE_s8.json (pristine_saved rows),
+  out\run_trip{1..5}.ndjson (config_pre_snapshot, lock_claimed/released,
+  close_game, trip_cleanup),
+  work\tools\w79_common.py (BASELINE), work\tools\w79_finalize.py.

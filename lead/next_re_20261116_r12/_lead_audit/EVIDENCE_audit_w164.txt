@@ -1,0 +1,68 @@
+============================================================================================
+A1 · 0x736204 的 call [eax+0x5C] + NULL 门
+============================================================================================
+  bytes = 8b8e7802000085c974058b01ff505c
+  want  = 8b8e7802000085c974058b01ff505c   PASS
+  解码（从 0x7361F0 起，skipdata）:
+     007361F0  sal      byte ptr [ecx + edx - 0x75], 0x86  
+     007361F5  int3                                        
+     007361F6  add      dword ptr [eax], eax               
+     007361F8  add      byte ptr [ebp - 0x74f88a40], al    
+     007361FE  into                                        
+     007361FF  call     0x70fe50                           
+     00736204  mov      ecx, dword ptr [esi + 0x278]         <== 
+     0073620A  test     ecx, ecx                           
+     0073620C  je       0x736213                           
+     0073620E  mov      eax, dword ptr [ecx]               
+     00736210  call     dword ptr [eax + 0x5c]             
+     00736213  mov      edx, dword ptr [esi]               
+
+============================================================================================
+A2 · 寻路门控 @0x4B055A
+============================================================================================
+  原始字节 @0x4B055A (16B) = 8b 46 54 83 cd ff 33 db 3b c5 0f 84 02 01 00 00
+  原始字节 @0x4B056A (10B) = 38 5e 5f 0f 84 f9 00 00 00 53   (W164 报 385e5f0f84f9000000…)
+  解码 0x4B0540..0x4B0580:
+     004B0543  mov      ecx, dword ptr [esp + 0x10]         
+     004B0547  mov      dword ptr [edx], ecx                
+     004B0549  mov      ecx, dword ptr [esp + 0x14]         
+     004B054D  mov      dword ptr [edx + 4], ecx            
+     004B0550  mov      ecx, dword ptr [esp + 0x18]         
+     004B0554  mov      dword ptr [edx + 8], ecx            
+     004B0557  mov      dword ptr [edx + 0xc], eax          
+     004B055A  mov      eax, dword ptr [esi + 0x54]         
+     004B055D  or       ebp, 0xffffffff                     
+     004B0560  xor      ebx, ebx                            
+     004B0562  cmp      eax, ebp                            
+     004B0564  je       0x4b066c                            
+     004B056A  cmp      byte ptr [esi + 0x5f], bl           
+     004B056D  je       0x4b066c                            
+     004B0573  push     ebx                                 
+     004B0574  mov      ecx, edi                            
+     004B0576  call     0x4b0f20                            
+     004B057B  test     al, al                              
+     004B057D  jne      0x4b0ac2                            
+
+  0x4B0500 atlas: {'entry': '004b0500', 'size': '1486', 'n_instr': '485', 'n_callers': '0', 'n_callees': '7', 'is_fnptr': '1', 'first_import': '', 'n_strings': '0', 'strings': ''}
+
+============================================================================================
+A3 · 更新槽 +0x40 vs +0x5C；+0x5C 目标是否 stdcall ret 4
+============================================================================================
+  0x55A910 tail bytes: 8b 44 24 04 8a 40 0c c2 04 00 90 90 90 90 90 90
+  0x55A910 atlas: {'entry': '0055a910', 'size': '17', 'n_instr': '6', 'n_callers': '2', 'n_callees': '0', 'is_fnptr': '1', 'first_import': '', 'n_strings': '0', 'strings': ''}
+  last 5 insns of 0x55A910:
+     0055A914  push     eax                            50
+     0055A915  mov      byte ptr [eax + 0xc], 0        c6 40 0c 00
+     0055A919  mov      ecx, dword ptr [eax]           8b 08
+     0055A91B  call     dword ptr [ecx + 0x60]         ff 51 60
+     0055A91E  ret      4                              c2 04 00
+
+--- SearchCore 0x429D6D ---
+  atlas: None
+
+--- Locomotion offset=4 子表：槽 16(+0x40) 与 槽 23(+0x5C) 的值 ---
+  LocomotionClass vtables: 41
+     vt=007E7E8C col_off=24  .?AVDriveLocomotionClass@@                      slot16=0x55abf0 slot23=0x4b4870
+     vt=007E7EB0 col_off=4   .?AVDriveLocomotionClass@@                      slot16=0x4b0500 slot23=0x55a910
+     vt=007E7F7C col_off=0   .?AVDriveLocomotionClass@@                      slot16=0x3fb745d1 slot23=0x4b4f20
+     vt=007E8254 col_off=24  .?AVDropPodLocomotionClass@@                    slot16=0x55abf0 slot23=0x55aba0

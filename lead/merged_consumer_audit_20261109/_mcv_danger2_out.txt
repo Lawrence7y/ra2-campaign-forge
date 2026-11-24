@@ -1,0 +1,349 @@
+dirsVisited=7040 scannedPy=10955 pruned=492 SCOPED_WINDOWS=29
+
+--- lead\equiv_class_20261109\_eq_proto.py : MATCH_LINE=40 ---
+     37 |          "expect_bytes": 12475}
+     38 | guard["match"] = (guard["sha256"] == guard["expect_sha"]
+     39 |                   and guard["bytes"] == guard["expect_bytes"])
+     40 | if not guard["match"]:
+     41 |     raise SystemExit("GUARD FAIL: driver fingerprint drifted: %r" % guard)
+     42 | 
+     43 | sys.path.insert(0, SL_DIR)
+     44 | import _sl_link as SL  # noqa: E402  (-B 已禁 pycache，不落只读目录)
+     45 | 
+     46 | # ---- J4 判据后处理 ----
+
+--- lead\gate_fp7_20261108\_g7_predicates.py : MATCH_LINE=212 ---
+    209 |                 ok_len = True
+    210 |                 if bm:
+    211 |                     ok_len = int(_COMMA.sub("", bm.group(1))) == size
+    212 |                 rec.update({"match": ok_sha and ok_len, "recomputed": sha, "bytes": size})
+    213 |                 if not (ok_sha and ok_len):
+    214 |                     problems.append("引用锚失配 %s：现盘 %s/%d ≠ 声明（R11/R3-3a）"
+    215 |                                     % (path, sha[:12], size))
+    216 |         else:
+    217 |             warnings.append("绑定行缺显式路径，需人工锚定（R11/R3-3b）")
+    218 |         bindings.append(rec)
+
+--- lead\gate_fp7_20261108\_gv_pred_check.py : MATCH_LINE=50 ---
+     47 |     check("A", rel.split("/")[-1] + " R12", r12p, [])
+     48 |     check("A", rel.split("/")[-1] + " R11", r11p, [])
+     49 |     print("      warn R10=%d R11=%d  bindings=%s" % (len(r10w), len(r11w),
+     50 |           [(b["path"] and b["path"][-40:], b["match"]) for b in r11b]))
+     51 | 
+     52 | # ---------- B 绑定回验独立重算 ----------
+     53 | print("== B 绑定行回验独立重算（自算 hashlib，不经 R11）==")
+     54 | CASES = [
+     55 |     (FILES[0], "lead/n4_yi_final_20261108/_cs_semantic_review_GLM_20261108.md", "ee27b4ca"),
+     56 |     (FILES[1], "_lv_subject_reply.txt", "6888379a"),
+
+--- lead\gate_r9r12_20261109\_g9_gate.py : MATCH_LINE=158 ---
+    155 |     r11_problems, r11_warnings, bindings = g7.r11_scan(text, d_dir, root=root)
+    156 |     bindings = [dict(b) for b in bindings]
+    157 |     n_reverified = sum(1 for b in bindings if b.get("path"))
+    158 |     n_match = sum(1 for b in bindings if b.get("match") is True)
+    159 |     r11_items = 1 + len(bindings)  # 存在性强制项 1 + 每条绑定行回验
+    160 |     r11_verdict = "FAIL" if r11_problems else "PASS"
+    161 |     predicates["R11"] = {
+    162 |         "rule_id": "R11", "name": "绑定行路径隔断容忍 + 引用锚回验（第 8 类）",
+    163 |         "items": r11_items, "bindings": len(bindings), "reverified": n_reverified,
+    164 |         "match_true": n_match,
+
+--- lead\r11_f2_fix_20261109\_f2v_final.py : MATCH_LINE=52 ---
+     49 | op, ow, ob = g7.r11_scan(text, W, root=REPO)
+     50 | pp, pw, pb = plus.r11_scan_plus(text, W, root=REPO)
+     51 | print("orig: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     52 |     len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+     53 | print("plus: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     54 |     len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+     55 | tiers = {}
+     56 | for b in pb:
+     57 |     if b.get("match") is True:
+     58 |         tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+
+--- lead\r11_f2_fix_20261109\_f2v_final.py : MATCH_LINE=54 ---
+     51 | print("orig: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     52 |     len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+     53 | print("plus: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     54 |     len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+     55 | tiers = {}
+     56 | for b in pb:
+     57 |     if b.get("match") is True:
+     58 |         tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+     59 | print("plus match tiers:", tiers)
+     60 | newp = [m for m in pp if m not in op]
+
+--- lead\r11_f2_fix_20261109\_f2v_final.py : MATCH_LINE=57 ---
+     54 |     len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+     55 | tiers = {}
+     56 | for b in pb:
+     57 |     if b.get("match") is True:
+     58 |         tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+     59 | print("plus match tiers:", tiers)
+     60 | newp = [m for m in pp if m not in op]
+     61 | print("plus new problems vs orig:", newp)
+
+--- lead\r11_f2_fix_20261109\_f2v_run.py : MATCH_LINE=50 ---
+     47 |         "n_bindings": len(ob), "declared_seq_same": seq_ok,
+     48 |         "orig_paths": [b["path"] for b in ob],
+     49 |         "plus_paths": [b.get("path") for b in pb],
+     50 |         "orig_match": [b["match"] for b in ob],
+     51 |         "plus_match": [b.get("match") for b in pb],
+     52 |         "plus_tiers": [b.get("tier") for b in pb],
+     53 |         "orig_problems": list(op), "plus_problems": list(pp),
+     54 |         "orig_warnings": list(ow), "plus_warnings": list(pw),
+     55 |     }
+     56 |     # 新增 problem 检测（逐条集合差，消息归一）
+
+--- lead\r11_f2_fix_20261109\_f2v_run.py : MATCH_LINE=51 ---
+     48 |         "orig_paths": [b["path"] for b in ob],
+     49 |         "plus_paths": [b.get("path") for b in pb],
+     50 |         "orig_match": [b["match"] for b in ob],
+     51 |         "plus_match": [b.get("match") for b in pb],
+     52 |         "plus_tiers": [b.get("tier") for b in pb],
+     53 |         "orig_problems": list(op), "plus_problems": list(pp),
+     54 |         "orig_warnings": list(ow), "plus_warnings": list(pw),
+     55 |     }
+     56 |     # 新增 problem 检测（逐条集合差，消息归一）
+     57 |     extra = [m for m in pp if m not in op]
+
+--- lead\r11_f2_fix_20261109\_f2v_run.py : MATCH_LINE=63 ---
+     60 |     tot["bindings"] += len(ob)
+     61 |     tot["orig_collected"] += sum(1 for b in ob if b["path"])
+     62 |     tot["plus_collected"] += sum(1 for b in pb if b.get("path"))
+     63 |     tot["orig_match"] += sum(1 for b in ob if b["match"] is True)
+     64 |     tot["plus_match"] += sum(1 for b in pb if b.get("match") is True)
+     65 |     tot["orig_problems"] += len(op)
+     66 |     tot["plus_problems"] += len(pp)
+     67 |     tot["orig_warnings"] += len(ow)
+     68 |     tot["plus_warnings"] += len(pw)
+     69 | 
+
+--- lead\r11_f2_fix_20261109\_f2v_run.py : MATCH_LINE=64 ---
+     61 |     tot["orig_collected"] += sum(1 for b in ob if b["path"])
+     62 |     tot["plus_collected"] += sum(1 for b in pb if b.get("path"))
+     63 |     tot["orig_match"] += sum(1 for b in ob if b["match"] is True)
+     64 |     tot["plus_match"] += sum(1 for b in pb if b.get("match") is True)
+     65 |     tot["orig_problems"] += len(op)
+     66 |     tot["plus_problems"] += len(pp)
+     67 |     tot["orig_warnings"] += len(ow)
+     68 |     tot["plus_warnings"] += len(pw)
+     69 | 
+     70 | (W / "_f2v_run_out.json").write_text(
+
+--- lead\r11_f2_fix_20261109\_f2v_verify9.py : MATCH_LINE=21 ---
+     18 |     text = p.read_text(encoding="utf-8")
+     19 |     pp, pw, pb = plus.r11_scan_plus(text, p.parent, root=REPO)
+     20 |     for k, b in enumerate(pb):
+     21 |         if b.get("match") is not True:
+     22 |             continue
+     23 |         src = b.get("alt") or b
+     24 |         vp = Path(src.get("verified_path") or src.get("path"))
+     25 |         data = vp.read_bytes()
+     26 |         sha = hashlib.sha256(data).hexdigest()
+     27 |         size = len(data)
+
+--- lead\r11_f2_fix_20261109\_f2w_checks.py : MATCH_LINE=28 ---
+     25 | n_ok = 0
+     26 | for r in cmp_["results"]:
+     27 |     for b in r["plus"]["bindings"]:
+     28 |         if b.get("match") is True:
+     29 |             sha_ok = (b.get("recomputed") or "").lower() == b["declared"].lower()
+     30 |             b_ok = True  # bytes 由谓词内部判定（ok_len），match=True 已含
+     31 |             print("%s | declared=%s/%s | recomputed=%s/%s | sha逐字一致=%s" % (
+     32 |                 r["file"].replace(str(REPO) + "\\", ""), b["declared"][:16] + "...",
+     33 |                 b.get("bytes_decl", "?") if "bytes_decl" in b else b.get("bytes", "?"),
+     34 |                 (b.get("recomputed") or "")[:16] + "...", b.get("bytes"),
+
+--- lead\r11_f2_fix_20261109\_f2w_dogfood.py : MATCH_LINE=24 ---
+     21 | pp, pw, pb = plus.r11_scan_plus(text, D, root=REPO)
+     22 | print("== dogfood：R11_F2_COVERAGE_FIX.md 自扫 ==")
+     23 | print("orig: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     24 |     len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+     25 | print("plus: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     26 |     len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+     27 | tiers = {}
+     28 | for b in pb:
+     29 |     if b.get("match") is True:
+     30 |         tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+
+--- lead\r11_f2_fix_20261109\_f2w_dogfood.py : MATCH_LINE=26 ---
+     23 | print("orig: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     24 |     len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+     25 | print("plus: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     26 |     len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+     27 | tiers = {}
+     28 | for b in pb:
+     29 |     if b.get("match") is True:
+     30 |         tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+     31 | print("plus match tiers:", tiers)
+     32 | print("plus new problems vs orig:", [m for m in pp if m not in op])
+
+--- lead\r11_f2_fix_20261109\_f2w_dogfood.py : MATCH_LINE=29 ---
+     26 |     len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+     27 | tiers = {}
+     28 | for b in pb:
+     29 |     if b.get("match") is True:
+     30 |         tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+     31 | print("plus match tiers:", tiers)
+     32 | print("plus new problems vs orig:", [m for m in pp if m not in op])
+     33 | print("plus warnings:", pw)
+     34 | 
+     35 | print()
+
+--- lead\r11_f2_fix_20261109\_f2_compare.py : MATCH_LINE=68 ---
+     65 |     tot["bindings"] += len(o_bind)
+     66 |     tot["orig_path"] += sum(1 for b in o_bind if b["path"])
+     67 |     tot["plus_path"] += sum(1 for b in n_bind if b.get("path"))
+     68 |     tot["orig_match"] += sum(1 for b in o_bind if b["match"] is True)
+     69 |     tot["plus_match"] += sum(1 for b in n_bind if b.get("match") is True)
+     70 |     tot["orig_problems"] += len(o_prob)
+     71 |     tot["plus_problems"] += len(n_prob)
+     72 | 
+     73 | print("== 30 件汇总 ==")
+     74 | print(json.dumps(tot, ensure_ascii=False, indent=2))
+
+--- lead\r11_f2_fix_20261109\_f2_compare.py : MATCH_LINE=69 ---
+     66 |     tot["orig_path"] += sum(1 for b in o_bind if b["path"])
+     67 |     tot["plus_path"] += sum(1 for b in n_bind if b.get("path"))
+     68 |     tot["orig_match"] += sum(1 for b in o_bind if b["match"] is True)
+     69 |     tot["plus_match"] += sum(1 for b in n_bind if b.get("match") is True)
+     70 |     tot["orig_problems"] += len(o_prob)
+     71 |     tot["plus_problems"] += len(n_prob)
+     72 | 
+     73 | print("== 30 件汇总 ==")
+     74 | print(json.dumps(tot, ensure_ascii=False, indent=2))
+     75 | print()
+
+--- lead\r11_f2_fix_20261109\_f2_repro.py : MATCH_LINE=49 ---
+     46 |     problems, warnings, bindings = g7.r11_scan(text, d_dir, root=REPO)
+     47 |     orig_bd = r["predicates"]["R11"].get("binding_details", [])
+     48 |     # 断言：本跑 binding_details 与回归 JSON 逐条一致（declared/path/match）
+     49 |     mine = [(b["declared"], b["path"], b["match"]) for b in bindings]
+     50 |     theirs = [(b["declared"], b["path"], b["match"]) for b in orig_bd]
+     51 |     if mine != theirs:
+     52 |         mismatch_json.append({"file": str(p), "mine": mine, "json": theirs})
+     53 |     lines = text.split("\n")
+     54 |     # 逐条绑定行定位原文语境
+     55 |     for bi, m in enumerate(BIND_RE.finditer(text)):
+
+--- lead\r11_f2_fix_20261109\_f2_repro.py : MATCH_LINE=50 ---
+     47 |     orig_bd = r["predicates"]["R11"].get("binding_details", [])
+     48 |     # 断言：本跑 binding_details 与回归 JSON 逐条一致（declared/path/match）
+     49 |     mine = [(b["declared"], b["path"], b["match"]) for b in bindings]
+     50 |     theirs = [(b["declared"], b["path"], b["match"]) for b in orig_bd]
+     51 |     if mine != theirs:
+     52 |         mismatch_json.append({"file": str(p), "mine": mine, "json": theirs})
+     53 |     lines = text.split("\n")
+     54 |     # 逐条绑定行定位原文语境
+     55 |     for bi, m in enumerate(BIND_RE.finditer(text)):
+     56 |         line_start = text.rfind("\n", 0, m.start()) + 1
+
+--- lead\r11_f2_fix_20261109\_f2_repro.py : MATCH_LINE=77 ---
+     74 |             "line_no": line_no,
+     75 |             "declared": m.group(1),
+     76 |             "orig_path": rec_bd["path"] if rec_bd else "!INDEX!",
+     77 |             "orig_match": rec_bd["match"] if rec_bd else None,
+     78 |             "sha_col": sha_pos,
+     79 |             "cur_line": cur,
+     80 |             "prev_line": prev,
+     81 |             "next_line": nxt,
+     82 |             "cur_spans": spans(cur),
+     83 |             "prev_spans": spans(prev),
+
+--- lead\r11_f2_fix_20261109\_f2_selftest.py : MATCH_LINE=109 ---
+    106 | t = "被核对象 SHA256 = %s，字节数 = %d（见 `lead/r11_f2_fix_20261109/_f2_repro.py` 与 `%s`）" % (
+    107 |     plus_sha, plus_bytes, anchor)
+    108 | n_p, n_w, nb = run(t)
+    109 | check("S4_多候选any-match-wins", not n_p and nb[0]["match"] is True
+    110 |       and nb[0].get("verified_path", "").endswith("_f2_r11plus.py"),
+    111 |       "problems=%r verified=%r" % (n_p, nb[0].get("verified_path")))
+    112 | 
+    113 | # ============ S5 原版行为保留 ============
+    114 | # (a) raw 可解析（doc_dir 相对）→ 两版同 MATCH
+    115 | t = "被核对象 `_f2_r11plus.py` SHA256 = %s，字节数 = %d" % (plus_sha, plus_bytes)
+
+--- lead\r33e_merge_20261109\_rev_cases.py : MATCH_LINE=335 ---
+    332 | chk("item3_decl_line13_verbatim", item3["decl_lines"] == [13]
+    333 |     and item3["decl_text"] == [item3["line13_actual"]], item3["decl_text"])
+    334 | chk("item3_members2_disciplines", item3["members_n"] == 2 and rec3["path"] is None
+    335 |     and rec3["tier"] == "SAMEDOC_LINK_EQ" and rec3["match"] is True
+    336 |     and not ({"verified_path", "recomputed", "bytes"} & set(rec3))
+    337 |     and "禁止由 merged 推导任何授权结论" in rm3["warning"])
+    338 | chk("item3_runner_coverage", an3["kset_n"] == 2 and an3["cover_ge2_lines"] == [13]
+    339 |     and an3["decl_hits_ge2"] == [{"line": 13, "covers_n": 2, "covers_all": True}])
+    340 | 
+    341 | Q4HEX = "6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251"
+
+--- lead\r33e_merge_20261109\_rev_core.py : MATCH_LINE=52 ---
+     49 |     fps.append({"file": rel, "sha256": got[0], "bytes": got[1],
+     50 |                 "expect_sha": sha, "expect_bytes": nb, "match": got == (sha, nb)})
+     51 |     chk("fp_" + rel.split("/")[-1], got == (sha, nb), "%s/%d" % got)
+     52 | chk("ALL_TEN_FP_MATCH", all(f["match"] for f in fps))
+     53 | 
+     54 | # _sl_link.py 未被改（硬门槛）
+     55 | chk("sl_link_untouched", fps[0]["match"], "%s/%d" % (fps[0]["sha256"], fps[0]["bytes"]))
+     56 | 
+     57 | # ---------- 被核对象绑定行独立实算 ----------
+     58 | obj = (RE_DIR / "_re_linked.py").read_bytes()
+
+--- lead\r33e_merge_20261109\_rev_core.py : MATCH_LINE=249 ---
+    246 |        "history_cross": hist_cross, "summary": summary, "assertions": A}
+    247 | OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
+    248 | 
+    249 | print("FINGERPRINTS:", "ALL_MATCH" if all(f["match"] for f in fps) else "MISMATCH",
+    250 |       "| _sl_link.py =", fps[0]["sha256"][:12], "/", fps[0]["bytes"])
+    251 | print("BINDING:", obj_sha, obj_bytes, "| notes_line_no =", out["binding"]["notes_line_no"])
+    252 | print("DIFF HUNKS:", len(hunks), [(h["tag"], tuple(h["orig"]), tuple(h["new"])) for h in hunks])
+    253 | print("DECL_RE:", repr(RE.DECL_RE.pattern), "| proto:", repr(proto_pat))
+    254 | for r in allrows:
+    255 |     print("%-11s %-34s:%-4s bd=%-7s %s->%s identical=%s triple_eq=%s members=%s decl=%s"
+
+--- lead\r33e_merge_20261109\_re_j4_cases.py : MATCH_LINE=113 ---
+    110 |     and "禁止由 merged 推导任何授权结论" in (rm.get("warning") or ""))
+    111 | pm, wm, recm = RE.link_triple(t3, doc3.parent, CAND, 412759)
+    112 | chk("a_item3_triple_shape",
+    113 |     recm["tier"] == "SAMEDOC_LINK_EQ" and recm["match"] is True and recm["path"] is None
+    114 |     and len(recm.get("members", [])) == 2 and recm.get("decl_lines") == [13])
+    115 | chk("a_item3_runner_crosscheck",
+    116 |     an["kset_n"] == 2 and 13 in an["decl_word_lines"]
+    117 |     and an["cover_ge2_lines"] == [13]
+    118 |     and [d for d in an["decl_cover_detail"] if d["covers_n"] >= 2]
+    119 |     == [{"line": 13, "covers_n": 2, "covers_all": True}])
+
+--- lead\r33e_merge_20261109\_re_parity_extra.py : MATCH_LINE=48 ---
+     45 | guard["sl_link"]["expect_bytes"] = EXPECT_SL_BYTES
+     46 | guard["sl_link"]["match"] = (guard["sl_link"]["sha256"] == EXPECT_SL_SHA
+     47 |                              and guard["sl_link"]["bytes"] == EXPECT_SL_BYTES)
+     48 | if not guard["sl_link"]["match"]:
+     49 |     raise SystemExit("GUARD FAIL: read-only original drifted")
+     50 | 
+     51 | sys.path.insert(0, str(SL_DIR))
+     52 | sys.path.insert(0, str(RE_DIR))
+     53 | import _sl_link as SL    # noqa: E402
+     54 | import _re_linked as RE  # noqa: E402
+
+--- lead\r33e_merge_20261109\_re_run10_diff.py : MATCH_LINE=143 ---
+    140 | chk("triple_t2_unique_rec_equal", trip["t2"]["rec_equal"] is True)
+    141 | chk("triple_t3_merged_shape",
+    142 |     trip["t3"]["merged"]["tier"] == "SAMEDOC_LINK_EQ"
+    143 |     and trip["t3"]["merged"]["match"] is True
+    144 |     and trip["t3"]["merged"]["path"] is None
+    145 |     and trip["t3"]["merged"]["members_n"] == 2
+    146 |     and trip["t3"]["merged"]["no_single_object_fields"] is True)
+    147 | 
+    148 | 
+    149 | def vc(rs):
+
+--- lead\samedoc_link_20261109\_slv_multitest.py : MATCH_LINE=66 ---
+     63 |       r["verdict"] == "multi" and len(r["anchors"]) == 2,
+     64 |       "verdict=%s anchors=%d %s" % (r["verdict"], len(r["anchors"]), paths))
+     65 | check("A2 多命中不选一个：link_triple 的 rec.path=None / rec.match=None / reverify 未设",
+     66 |       rec.get("path") is None and rec.get("match") is None and r.get("reverify") is None,
+     67 |       "rec.path=%r rec.match=%r reverify=%r" % (rec.get("path"), rec.get("match"), r.get("reverify")))
+     68 | check("A3 多命中走 warning 且 problems 恒空",
+     69 |       probs == [] and "多命中" in warns[0] and "放弃采集" in warns[0],
+     70 |       "problems=%r warning=%s…" % (probs, warns[0][:70]))
+     71 | 
+     72 | # ===== B. 同一文件三种写法 → 文件级去重后 unique =====
+
+EXIT=0

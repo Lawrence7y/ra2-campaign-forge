@@ -1,0 +1,28 @@
+import struct
+EXE=r"D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe"
+d=open(EXE,"rb").read(); BASE=0x400000
+def off(va): return va-BASE
+def by(va,n=8): return " ".join("%02X"%x for x in d[off(va):off(va)+n])
+print("### 0x0047C4D0 prologue: how does it read its TWO args?")
+print("###  a0 a0e9a800       mov al,[0x00A8E9A0]")
+print("###  56                push esi")
+print("###  84c0 / 57         test al,al ; push edi")
+print("###  8a 44 24 10       mov al,[esp+0x10]   <-- which chain")
+print("###  8b 7c 24 0c       mov edi,[esp+0xC]   <-- wanted id")
+print()
+print("0x0047C4D0..0x0047C4F8: "+by(0x0047C4D0,0x29))
+print()
+print("Stack layout R10 at entry (before the two pushes):")
+print("  [esp+0]   = return address")
+print("  [esp+4]   = arg1 (pushed LAST)")
+print("  [esp+8]   = arg2 (pushed FIRST)")
+print("After push esi, push edi:  [esp+0xC] = arg1 , [esp+0x10] = arg2")
+print("Therefore:  edi <- [esp+0xC] = arg1 = wanted id  PASSED LAST  = the SECOND push")
+print("            al  <- [esp+0x10] = arg2 = whichChain = the FIRST push")
+print("            => al!=0 selects chain B, al==0 selects chain A")
+print()
+print("### check at 0x47BDB0: pushes are  PUSH 0x0 (0x0047bdbb) then PUSH 0x6 (0x0047bdbf)")
+print("### => arg2 (whichChain) = 0  ,  arg1 (wanted) = 6     -- consistent with my classification")
+print()
+print("### VERIFY against the 0x47C4D0 body: cmp eax,edi where edi=wanted")
+print("0x0047C4F5..0x0047C517: "+by(0x0047C4F5,0x23))

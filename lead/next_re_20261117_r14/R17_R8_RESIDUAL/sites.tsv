@@ -1,0 +1,21 @@
+kind	target	site	value	bytes	decoded	note
+vtable_slot	0x43F180	0x7E3FE0	0x0043F180	80 F1 43 00	dword 0x43f180	.rdata table @0x7E3FE0, slot #0 of 9 (stride 4, 0x7E3FE0..0x7E4000); neighbours 0x5F4730,0x455C20,0x456750,0x5F4D10,0x5F6C30,0x459C00,0x4436F0,0x443410
+vtable_slot	0x449440	0x7E4068	0x00449440	40 94 44 00	dword 0x449440	.rdata table @0x7E4068, slot #? of run 0x7E4050..0x7E4080; values are all .text pointers, 8 consecutive slots
+imm32	0x43F1E9	0x43FB10	0x0043F1E9	E9 F1 43 00	dword 0x43f1e9	jump table @0x43FB0C entry[1] = jmp [ebp*4+0x43FB0C] @0x43F1C3
+imm32	0x43F1E9	0x43FB18	0x0043F1E9	E9 F1 43 00	dword 0x43f1e9	jump table @0x43FB0C entry[3]
+imm32	0x43F1CA	0x43FB0C	0x0043F1CA	CA F1 43 00	dword 0x43f1ca	jump table entry[0]  (case 0)
+imm32	0x43F9A6	0x43FB14	0x0043F9A6	A6 F9 43 00	dword 0x43f9a6	jump table entry[2]  (case 2)
+imm32	0x47C620	-	-	-	0 hits	4-byte pointer scan over every mapped section: no dword 0x47C620 anywhere (it is only reached by E8)
+call_e8	0x47C620	0x43F2AE	-	E8 6D D3 03 00	call 0x47c620	POSITIVE CONTROL of the scanner
+call_e8	0x43F180	-	-	-	0 direct E8 sites	.text [0x401000,0x7E038D)
+call_e8	0x449440	-	-	-	0 direct E8 sites	.text
+call_e8	0x43F1E9	-	-	-	0 direct E8 sites	reached only via jump table (and as fallthrough from case 0)
+call_e8	0x43F9A6	-	-	-	0 direct E8 sites	reached only via jump table
+call_e8	0x6F4A70	0x43F198/0x43F5DB/0x4D3799	-	E8 D3 58 2B 00	call 0x6f4a70	3 sites
+read_esp23	frame slot	0x43F249	0	88 5C 24 23	mov byte [esp+0x23], bl	write 0 (ebx=0 from 0x43F1EF xor ebx,ebx)
+read_esp23	frame slot	0x43F4FF	1	C6 44 24 23 01	mov byte [esp+0x23], 1	write 1
+read_esp23	frame slot	0x43F5AB	-	8A 44 24 23	mov al, [esp+0x23]	read
+read_esp23	frame slot	0x43F5AF	-	84 C0	test al,al	3 occurrences of the raw pattern 8B/88/C6 44 24 23 -> 0x43F249, 0x43F4FF, 0x43F5AB; verified by byte scan
+reject_gate	0x43F5D8	0x43F5B1	-	74 25	je 0x43f5d8	flag==0 -> reject
+reject_gate	0x43F5D8	0x43F220	-	0F 85 B2 03 00 00	jne 0x43f5d8	vtable call [esi+0x1ac] returned nonzero
+reject_gate	0x43F5E0	0x43F19F	-	0F 84 3B 04 00 00	je 0x43f5e0	call 0x6F4A70 returned 0

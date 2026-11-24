@@ -1,0 +1,336 @@
+
+======================== 0 CARD HASH / TIME / ENGINE ID ========================
+CARD_SIZE 31647
+CARD_SHA256 6cde19c881ab09f6f7b1246fe75dbc41d7538d0dbba59c9b528db9b35d821b46
+PROBE_TIME 2026-11-05T23:13:58.021654
+EXE_SHA256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+IMAGE_BASE 0x400000
+TEXT_LO/HI/SIZE 0x401000 0x7e1000 4063232
+  SEC .text VA 0x401000 VSZ 0x3df38d RAWPTR 0x1000 RAWSZ 0x3e0000
+  SEC .rdata VA 0x7e1000 VSZ 0x30074 RAWPTR 0x3e1000 RAWSZ 0x31000
+  SEC .data VA 0x812000 VSZ 0x367be4 RAWPTR 0x412000 RAWSZ 0x6c000
+  SEC .rsrc VA 0xb7a000 VSZ 0x18128 RAWPTR 0x47e000 RAWSZ 0x19000
+  SEC .detour VA 0xb93000 VSZ 0x2718 RAWPTR 0x497000 RAWSZ 0x3000
+BSS .data delta 0x27cc34 rawsize 0x6c000 zero_fill True
+fo(VA) None u32(VA) 0x0
+
+======================== 1 PROLOGUE / BOUNDARY / EARLY-RETURN (真反汇编) ========================
+  006F8DE0  c20400               ret      4
+  006F8DE3  5f                   pop      edi
+  006F8DE4  5e                   pop      esi
+  006F8DE5  33c0                 xor      eax, eax
+  006F8DE7  5b                   pop      ebx
+  006F8DE8  83c418               add      esp, 0x18
+  006F8DEB  c20400               ret      4
+  006F8DEE  90                   nop      
+  006F8DEF  90                   nop      
+  006F8DF0  83ec5c               sub      esp, 0x5c
+  006F8DF3  8b1534eca800         mov      edx, dword ptr [0xa8ec34]
+  006F8DF9  53                   push     ebx
+  006F8DFA  55                   push     ebp
+  006F8DFB  56                   push     esi
+  006F8DFC  57                   push     edi
+  006F8DFD  33ff                 xor      edi, edi
+  006F8DFF  83cdff               or       ebp, 0xffffffff
+  006F8E02  8bf1                 mov      esi, ecx
+  006F8E04  42                   inc      edx
+  006F8E05  897c2420             mov      dword ptr [esp + 0x20], edi
+  006F8E09  891534eca800         mov      dword ptr [0xa8ec34], edx
+  006F8E0F  8b06                 mov      eax, dword ptr [esi]
+  006F8E11  896c241c             mov      dword ptr [esp + 0x1c], ebp
+  006F8E15  896c243c             mov      dword ptr [esp + 0x3c], ebp
+  006F8E19  ff9084000000         call     dword ptr [eax + 0x84]
+  006F8E1F  8a88200d0000         mov      cl, byte ptr [eax + 0xd20]
+  006F8E25  84c9                 test     cl, cl
+  006F8E27  741b                 je       0x6f8e44
+  006F8E29  8b8e1c020000         mov      ecx, dword ptr [esi + 0x21c]
+  006F8E2F  e8fc28e1ff           call     0x50b730
+  006F8E34  84c0                 test     al, al
+  006F8E36  740c                 je       0x6f8e44
+  006F8E38  5f                   pop      edi
+  006F8E39  5e                   pop      esi
+  006F8E3A  5d                   pop      ebp
+  006F8E3B  33c0                 xor      eax, eax
+  006F8E3D  5b                   pop      ebx
+  006F8E3E  83c45c               add      esp, 0x5c
+  006F8E41  c20c00               ret      0xc
+  006F8E44  8b5c2470             mov      ebx, dword ptr [esp + 0x70]
+  006F8E48  f6c301               test     bl, 1
+  006F8E4B  757b                 jne      0x6f8ec8
+  006F8E4D  8b16                 mov      edx, dword ptr [esi]
+
+======================== 2 FULL-STREAM COVERAGE + disp_hits(0xA8EC34) ========================
+COVERAGE pct=99.99837567729335 insns=1394120 resync=66 .text_size=4063232
+DISP_HITS_0xA8EC34 count=2
+    0x6f8df3 R mov edx, dword ptr [0xa8ec34]
+    0x6f8e09 W mov dword ptr [0xa8ec34], edx
+WRITE_HITS count=1
+READ_HITS  count=1
+STREAM_LEN 1394120
+ANY_MEM_OPERAND_WITH_DISP_EQ_VA count=2
+    0x6f8df3 mov edx, dword ptr [0xa8ec34] base 0 index 0 size 4
+    0x6f8e09 mov dword ptr [0xa8ec34], edx base 0 index 0 size 4
+IMM32_EQ_VA count=0
+LEA_DISP_EQ_VA count=0
+
+======================== 3 WHOLE-FILE RAW LE DWORD 34 EC A8 00 (100% byte coverage) ========================
+RAW_DWORD_A8EC34_COUNT 2
+   file_off 0x2f8df5 ctx 00909083ec5c8b1534eca8005355565733ff83cd
+   file_off 0x2f8e0b ctx f142897c2420891534eca8008b06896c241c896c
+   file_off 0x2f8df5 section .text VA 0x6f8df5
+   file_off 0x2f8e0b section .text VA 0x6f8e0b
+RSDS_count 0 NB10_count 0 .pdb_count 0 .PDB_count 0
+pdb_casefold_count 0
+
+======================== 4 OVERLAPPING ABSOLUTE MEM OPS [0xA8EC34,0xA8EC38) + NEIGHBOURHOOD ========================
+OVERLAPPING_ABSOLUTE_MEM_OPS count=2
+    0x6f8df3 mov edx, dword ptr [0xa8ec34] size 4 R
+    0x6f8e09 mov dword ptr [0xa8ec34], edx size 4 W
+NEIGHBOURHOOD_ABSOLUTE_MEM_OPS_[VA-0x20,VA+0x20] count=127
+  (disp==VA subset) count=2
+    ('0x6f8df3', 'mov', 'edx, dword ptr [0xa8ec34]')
+    ('0x6f8e09', 'mov', 'dword ptr [0xa8ec34], edx')
+
+======================== 5 BRANCH/CMP/TEST/CALL BETWEEN ENTRY AND WRITEBACK ========================
+SEG_INSNS count=12
+JCC/CMP/TEST/CALL/RET count=0
+INC/DEC count=1
+    0x6f8e04 inc edx
+BRANCH_TARGETS_INSIDE_(HEAD,0x6F8E09] count=0
+RAW_E8_TO_6F8DF0 count=2 ['0x445f68', '0x4d9942']
+RAW_E9_TO_6F8DF0 count=0 []
+
+======================== 6 RETS IN [0x6F8DF0,0x6F9DB0) / VTABLE SLOT / push 0xA8EC30 ========================
+RETS count=4
+    0x6f8e41 c20c00 ret 0xc
+    0x6f9b52 c20c00 ret 0xc
+    0x6f9b6b c20c00 ret 0xc
+    0x6f9dac c20c00 ret 0xc
+u32(0x7F4D24) = 0x6f8df0  241*4 = 0x3c4
+IMM_EQ_0xA8EC30 count=3
+    0x65aaab push 0xa8ec30
+    0x65acc3 push 0xa8ec30
+    0x65ad05 push 0xa8ec30
+
+======================== 7 SYMBOL TABLE / DEBUG DIRECTORY / MAP FILES (符号名「未定名」依据) ========================
+MAGIC 0x10b
+EXPORT rva 0x0 size 0x0
+IMPORT rva 0x7955c0 size 0x154
+DEBUG  rva 0x3e1610 size 0x1c
+DEBUG_DIR_FILE_OFF 0x3e1610
+  ENTRY0 type=4 sizeOfData=0x110 ptrRaw=0x497000
+   DATA b'@\x00\x00\x00Dtr\x00\xc0%\x00\x00\xc0%\x00\x00\xe0\xf0@\x00@\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10>\x00\x08\x06\x00\x00\x000y\x00\x08\x01\x00\x00'
+MAP_FILES ['ECH01.MAP', 'ECH02.MAP', 'ECH03.MAP']
+   ECH01.MAP size 14226 head_hex 5b507265766965775d0a53697a653d302c302c3130362c36 head_repr b'[Preview]\nSize=0,0,106,6'
+     contains marker b'start'
+     contains marker b'mappack'
+   ECH02.MAP size 13606 head_hex 5b507265766965775d0a53697a653d302c302c3130362c36 head_repr b'[Preview]\nSize=0,0,106,6'
+     contains marker b'start'
+     contains marker b'mappack'
+   ECH03.MAP size 15483 head_hex 5b507265766965775d0a53697a653d302c302c3130362c36 head_repr b'[Preview]\nSize=0,0,106,6'
+     contains marker b'start'
+     contains marker b'mappack'
+
+======================== 8 HARNESS CONSTANTS / grep count (既有 Harness 不读本 VA) ========================
+GREP_A8EC34_count 0
+  harness:3831: MEASURE_CURRENT_FRAME_VA = 0x00A8ED84         # ★ CurrentFrame（逻辑帧计数器 u32）
+  harness:3832: MEASURE_CURRENT_FRAME_FILE_OFF = 0x0068ED84   # ★ = VA − 0x400000（D-79）
+  harness:3833: # ★ 计数器副读（§3.2；bench `ARR_*+0x10` 口径，LIVE_M0 两源互证 [实证]）
+  harness:3834: MEASURE_UNITS_VA = 0x008B4118        # units    / file_off 0x004B4118
+  harness:3835: MEASURE_INFANTRY_VA = 0x00A83DF8     # infantry / file_off 0x00683DF8
+  harness:3836: MEASURE_AIRCRAFT_VA = 0x00A8E3A0     # aircraft / file_off 0x0068E3A0
+  harness:3837: MEASURE_G_VA = 0x008A03A0            # G（Items=0x008A0394；形状自检 D-3：Items!=0 ∧ Count≤100000）
+  harness:3838: MEASURE_G_ITEMS_VA = 0x008A0394
+  harness:3839: MEASURE_B_VA = 0x00A8EB50            # B（Items=0x00A8EB44）
+  harness:3840: MEASURE_B_ITEMS_VA = 0x00A8EB44
+  harness:3841: MEASURE_TECHNO_VA = 0x00A8EC88       # Techno   / file_off 0x0068EC88
+
+======================== 9 §6.2 SOURCE LINE CITATIONS — exact line contents (核对行号是否对得上) ========================
+FILE ra2render\dllmain.cpp  TOTAL_LINES 52
+  ra2render\dllmain.cpp:25: BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
+  ra2render\dllmain.cpp:26:     switch (fdwReason) {
+  ra2render\dllmain.cpp:27:     case DLL_PROCESS_ATTACH:
+  ra2render\dllmain.cpp:28:         DisableThreadLibraryCalls(hinstDLL);
+  ra2render\dllmain.cpp:29:         LogMessage("==================================================");
+  ra2render\dllmain.cpp:30:         LogMessage("[ra2render] 模块已成功注入到目标进程 (PID: %lu)", GetCurrentProcessId());
+  ra2render\dllmain.cpp:31:         InstallVTableHooks();
+  ---
+FILE ra2render\blitter_hooks.cpp  TOTAL_LINES 3886
+  ra2render\blitter_hooks.cpp:1341: // 原版 0x006F8DF0 指令：
+  ra2render\blitter_hooks.cpp:1342: // 006F8DF0: 83 EC 5C          sub esp, 0x5C           (3 字节)
+  ra2render\blitter_hooks.cpp:1343: // 006F8DF3: 8B 15 34 EC A8 00 mov edx, [0x00A8EC34]   (6 字节)
+  ra2render\blitter_hooks.cpp:1344: // 合计 9 字节。下一条指令位于 0x006F8DF9 (53 = push ebx)
+  ---
+  ra2render\blitter_hooks.cpp:1351:     // 关键安全原则：如果单位已有存活的旧目标 (Target at offset 0x5D4)，在节流帧安全返回该目标，绝不返回 nullptr
+  ra2render\blitter_hooks.cpp:1352:     if (!IsBadReadPtr(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(pThis) + 0x5D4), sizeof(void*))) {
+  ra2render\blitter_hooks.cpp:1353:         void *pTarget = *reinterpret_cast<void**>(reinterpret_cast<uintptr_t>(pThis) + 0x5D4);
+  ra2render\blitter_hooks.cpp:1354:         if (pTarget != nullptr && !IsBadReadPtr(pTarget, 0x84)) {
+  ra2render\blitter_hooks.cpp:1355:             int health = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(pTarget) + 0x6C);
+  ra2render\blitter_hooks.cpp:1356:             uint8_t inLimbo = *reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(pTarget) + 0x81);
+  ra2render\blitter_hooks.cpp:1357:             if (health > 0 && inLimbo == 0) {
+  ra2render\blitter_hooks.cpp:1358:                 const uint32_t *pCurrentFrame = reinterpret_cast<const uint32_t*>(ADDR_CURRENT_FRAME);
+  ra2render\blitter_hooks.cpp:1359:                 uint32_t currentFrame = (pCurrentFrame && !IsBadReadPtr((void*)pCurrentFrame, 4)) ? *pCurrentFrame : 0;
+  ra2render\blitter_hooks.cpp:1360:                 uint32_t unitHash = ThrottleKey(pThis);   // 缺陷2：确定性分片键
+  ra2render\blitter_hooks.cpp:1361: 
+  ra2render\blitter_hooks.cpp:1362:                 int interval = GetEffectiveTargetScanInterval();
+  ra2render\blitter_hooks.cpp:1363:                 if (interval > 1 && currentFrame > 0) {
+  ra2render\blitter_hooks.cpp:1364:                     if (((unitHash + currentFrame) % static_cast<uint32_t>(interval)) != 0) {
+  ra2render\blitter_hooks.cpp:1365:                         g_telemetry.throttledTargetScans++;
+  ra2render\blitter_hooks.cpp:1366:                         return pTarget; // 保持原有存活目标，规避全图螺旋遍历！
+  ra2render\blitter_hooks.cpp:1367:                     }
+  ra2render\blitter_hooks.cpp:1368:                 }
+  ---
+  ra2render\blitter_hooks.cpp:1393:     // 填充跳板：备份的 9 字节 + jmp 回 0x006F8DF9 (5 字节)
+  ra2render\blitter_hooks.cpp:1394:     memcpy(s_greatestThreatTrampoline, s_origGreatestThreatBytes, 9);
+  ra2render\blitter_hooks.cpp:1395:     s_greatestThreatTrampoline[9] = 0xE9; // JMP rel32
+  ra2render\blitter_hooks.cpp:1396:     int32_t jmpBack = static_cast<int32_t>((ADDR_ORIG_TECHNO_GREATEST_THREAT + 9) - (reinterpret_cast<uintptr_t>(s_greatestThreatTrampoline) + 14));
+  ra2render\blitter_hooks.cpp:1397:     memcpy(&s_greatestThreatTrampoline[10], &jmpBack, sizeof(int32_t));
+  ra2render\blitter_hooks.cpp:1398: 
+  ra2render\blitter_hooks.cpp:1399:     g_pOrigTechnoGreatestThreat = reinterpret_cast<FnGreatestThreat>(reinterpret_cast<void*>(s_greatestThreatTrampoline));
+  ---
+  ra2render\blitter_hooks.cpp:1406:     // 安装 9 字节 Inline Hook：E9 <rel32> + 4 个 0x90 (NOP)
+  ra2render\blitter_hooks.cpp:1407:     uint8_t patch[9];
+  ra2render\blitter_hooks.cpp:1408:     patch[0] = 0xE9;
+  ra2render\blitter_hooks.cpp:1409:     uintptr_t hookAddr = union_cast<uintptr_t>(&TargetHooks::Hook_Techno_Greatest_Threat);
+  ra2render\blitter_hooks.cpp:1410:     int32_t jmpToHook = static_cast<int32_t>(hookAddr - (ADDR_ORIG_TECHNO_GREATEST_THREAT + 5));
+  ra2render\blitter_hooks.cpp:1411:     memcpy(&patch[1], &jmpToHook, sizeof(int32_t));
+  ra2render\blitter_hooks.cpp:1412:     patch[5] = 0x90;
+  ra2render\blitter_hooks.cpp:1413:     patch[6] = 0x90;
+  ra2render\blitter_hooks.cpp:1414:     patch[7] = 0x90;
+  ra2render\blitter_hooks.cpp:1415:     patch[8] = 0x90;
+  ra2render\blitter_hooks.cpp:1416:     memcpy(reinterpret_cast<void*>(ADDR_ORIG_TECHNO_GREATEST_THREAT), patch, 9);
+  ---
+FILE ra2render\blitter_hooks.cpp  TOTAL_LINES 3886
+  ra2render\blitter_hooks.cpp:547:     g_targetScanInterval = GetIniIntEx("Logic", "TargetScanInterval", 8, iniPath, &h_interval);
+  ---
+  ra2render\blitter_hooks.cpp:237: __declspec(noinline) int GetEffectiveTargetScanInterval() {
+  ra2render\blitter_hooks.cpp:238:     if (MpActive()) {
+  ra2render\blitter_hooks.cpp:239:         return 1; // G-08: 联机模式强制 1（禁用节流，保证锁步全量扫描）
+  ra2render\blitter_hooks.cpp:240:     }
+  ra2render\blitter_hooks.cpp:241:     return g_targetScanInterval; // 单机模式保持 ini 配置
+  ra2render\blitter_hooks.cpp:242: }
+  ---
+  ra2render\blitter_hooks.cpp:3781:     // 15. TechnoClass::Greatest_Threat Inline Hook (0x006F8DF0) - 全局寻敌汇聚点与存活目标保持
+  ra2render\blitter_hooks.cpp:3782:     InstallGreatestThreatHook();
+  ---
+  ra2render\blitter_hooks.cpp:3696: bool InstallVTableHooks() {
+  ra2render\blitter_hooks.cpp:3697:     LoadConfig();
+  ra2render\blitter_hooks.cpp:3698:     LogMessage("[ra2render] 正在安装 L1 渲染、L2 寻敌逻辑与 L3 星际战争迷雾虚表劫持...");
+  ---
+FILE ra2render\ra2render.ini  TOTAL_LINES 261
+  ra2render\ra2render.ini:21: [Logic]
+  ra2render\ra2render.ini:22: ; TargetScanInterval: 分散敌对目标全图扫描频率（帧数），默认 8（约 0.25 秒轮询一次）
+  ra2render\ra2render.ini:23: ; 800 单位重载对局下，将 O(N^2) 扫描开销降低 87.5%，消除逻辑慢动作（Tick 延缓）
+  ra2render\ra2render.ini:24: ; 【G-08 门控】联机模式(MpActive)下无条件强制为 1（禁用节流，保证全端锁步寻敌时序逐帧一致）
+  ra2render\ra2render.ini:25: TargetScanInterval=8
+  ---
+FILE ra2render\ra2render.h  TOTAL_LINES 492
+  ra2render\ra2render.h:30: // Target Scanning VTables
+  ra2render\ra2render.h:31: // TechnoClass vtable: 0x007F4960
+  ra2render\ra2render.h:32: // Index 241 (Greatest_Threat): 0x007F4960 + 241 * 4 = 0x007F4D24 -> 0x006F8DF0
+  ra2render\ra2render.h:33: // Index 265 (SelectAutoTarget): 0x007F4960 + 265 * 4 = 0x007F4D84 -> 0x006FB010
+  ra2render\ra2render.h:34: #define ADDR_VTABLE_ENTRY_TECHNO_GREATEST_THREAT 0x007F4D24
+  ra2render\ra2render.h:35: #define ADDR_ORIG_TECHNO_GREATEST_THREAT         0x006F8DF0
+  ---
+FILE lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py  TOTAL_LINES 8856
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:21: ★★ **经 `ra2loader.exe` / 任何 loader / stub / 注入器启动游戏 —— 一律禁止**。
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:22:    ★ `ra2loader.exe` 是**注入型**启动器：`LoadLibraryA` + `GetProcAddress`
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:23:      加载 `ra2render.dll`，而该 DLL 在 `DLL_PROCESS_ATTACH` 上**无条件改写
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:24:      游戏代码 6 字节**（`QC141:88` 逐字）⇒ ★ **一经它启动即落入"改码/注入"
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:25:      禁令，本趟证据作废**。
+  ---
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1070: def s4_injection_gate(pid: int, rec: Recorder, authorized: bool = False) -> bool:
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1071:     """★★ `S-4` 注入面闸门（★ **拿到 pid 之后、任何 L* 步骤之前**跑）。
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1072: 
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1073:     ★ 判据 `QC141:88`/`:89`：
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1074:       「命中 `ra2render` 或 `ra2loader` ⇒ **立即停手**、本趟作废、
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1075:         落盘模块表原文；**命中数必须 = 0**」。
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1076:     ★ 命中 > 0 ⇒ `EXIT_INJECTION_SUSPECTED`(62)；★ 并落盘模块表原文。
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1077:     ★★ **枚举失败 ⇒ 同一个 62/63 收口**（★ `EXIT_MODULE_ENUM_FAILED`），
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1078:       ★ **不得**当"未加载"放行。
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1079: 
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1080:     ★★ [U8 20261021] `authorized=True`（`--allow-loader` 双键授权成立）时：
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1081:       命中**降级为 WARN 并放行**，`S4_VERDICT["gate"] = "hit_authorized"`。
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1082:       ★ 缺省 `False` ⇒ 行为与授权前**逐字相同**（flag-off 房规）。
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1083:       ★★ 授权**不**改变枚举失败的收口：拿不到模块表仍按 63 硬停
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1084:         （★ 授权只放宽"命中"，不放宽"不可判定"）。
+  ---
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1080:     ★★ [U8 20261021] `authorized=True`（`--allow-loader` 双键授权成立）时：
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1081:       命中**降级为 WARN 并放行**，`S4_VERDICT["gate"] = "hit_authorized"`。
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1082:       ★ 缺省 `False` ⇒ 行为与授权前**逐字相同**（flag-off 房规）。
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1083:       ★★ 授权**不**改变枚举失败的收口：拿不到模块表仍按 63 硬停
+  lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py:1084:         （★ 授权只放宽"命中"，不放宽"不可判定"）。
+  ---
+FILE docs\re\re_sprint_S8_report.md  TOTAL_LINES 239
+  docs\re\re_sprint_S8_report.md:127: ### 3.1 G-03 · L2 Threat Retention 无独立门控键 [实证补强]
+  docs\re\re_sprint_S8_report.md:128: - **精准地址与原始指令**：
+  docs\re\re_sprint_S8_report.md:129:   - 目标：`TechnoClass::Greatest_Threat`
+  docs\re\re_sprint_S8_report.md:130:   - VA：`0x006F8DF0`（FileOffset：`0x2F8DF0`）
+  docs\re\re_sprint_S8_report.md:131:   - 原指令（9 字节）：`83 EC 5C 8B 15 34 EC A8 00`（`sub esp, 0x5c; mov edx, dword ptr [0xa8ec34]`）
+  docs\re\re_sprint_S8_report.md:132:   - 原版行为：递增调用全局计数器 `0xA8EC34`，并分配 0x5C 局部栈帧展开空间桶、螺旋 Cell、单位数组的三路完整择优打分。
+  docs\re\re_sprint_S8_report.md:133:   - 当前 Hook 改写：`blitter_hooks.cpp:495-502` 覆盖 9 字节跳转至 `Hook_Techno_Greatest_Threat`，在 `((unitHash + currentFrame) % interval) != 0` 节流帧短路直接 `return *(
+  docs\re\re_sprint_S8_report.md:134: - **补强分析 [推演]**：
+  docs\re\re_sprint_S8_report.md:135:   - 目标保持改变了原版“每帧对当前威胁重新严格打分择优”的机制。在敌人移动出射程或更高危目标（如自爆卡车、天启坦克）逼近时，节流帧会粘滞于旧目标。
+  docs\re\re_sprint_S8_report.md:136:   - 目前 Target Retention 逻辑与 `TargetScanInterval` 强耦合，没有独立的 ini 开关（如 `EnableThreatRetention`）。若联机对拍中发现目标粘滞造成分叉，只能将 `TargetScanInterval=1` 整体禁用节流，无法单独关闭
+  docs\re\re_sprint_S8_report.md:137: - **治理建议**：新增 `[Logic] EnableThreatRetention=0/1`，联机自动降级白名单 W2 联动设为 0。
+  ---
+FILE docs\re\net_sync_checksum.md  TOTAL_LINES 921
+  docs\re\net_sync_checksum.md:859: #### G-03 · L2 Threat Retention 无独立门控键
+  docs\re\net_sync_checksum.md:860: - **位置与指令 [实证]**：
+  docs\re\net_sync_checksum.md:861:   - 目标点：`TechnoClass::Greatest_Threat` 入口 VA `0x006F8DF0`（FileOffset `0x2F8DF0`）。
+  docs\re\net_sync_checksum.md:862:   - 原指令（9B）：`83 EC 5C 8B 15 34 EC A8 00`（`sub esp, 0x5c; mov edx, dword ptr [0xa8ec34]`）。
+  docs\re\net_sync_checksum.md:863:   - 原版在此递增计数器 `0xA8EC34`，并对全图候选进行三路完整枚举打分；
+  docs\re\net_sync_checksum.md:864:   - `blitter_hooks.cpp:495-502` 打入 `E9` 补丁后，在 `((unitHash + currentFrame) % interval) != 0` 节流帧短路直接 `return pTarget`（读取 `*(pThis + 0x5D4)` 目标指针）。
+  docs\re\net_sync_checksum.md:865: - **同步风险补强 [推演]**：
+  docs\re\net_sync_checksum.md:866:   - 目标保持改变了原版“每帧对当前威胁严格大于重新择优”的语义。若战场环境剧变（原目标出射程或出现近距离高危目标），节流端会粘滞原目标，直到放行帧才切换。
+  docs\re\net_sync_checksum.md:867:   - 当前无独立键控制 Retention，与 `TargetScanInterval` 强耦合。一旦联机对拍发现因目标粘滞导致开火偏差，必须把 `TargetScanInterval` 设为 1 整体回退，无法单关 Retention。
+  docs\re\net_sync_checksum.md:868: - **实施补强**：增加 `[Logic] EnableThreatRetention=0/1`（联机自动降级 W2 强制 0），解耦寻敌扫描间隔与目标保持逻辑。
+  ---
+FILE lead\re_line_20261105\W4_FIELD_SPEC\TASK.md  TOTAL_LINES 111
+  lead\re_line_20261105\W4_FIELD_SPEC\TASK.md:40: 为**每一个** VA 给一张卡，字段固定为：
+  lead\re_line_20261105\W4_FIELD_SPEC\TASK.md:41: 
+  lead\re_line_20261105\W4_FIELD_SPEC\TASK.md:42: | 字段 | 要求 |
+  lead\re_line_20261105\W4_FIELD_SPEC\TASK.md:43: |---|---|
+  lead\re_line_20261105\W4_FIELD_SPEC\TASK.md:44: | VA / 符号名 | 若符号名无法确定，写「未定名」，**不得编造** |
+  lead\re_line_20261105\W4_FIELD_SPEC\TASK.md:45: | 类型与宽度 | 精确到字节数 |
+  lead\re_line_20261105\W4_FIELD_SPEC\TASK.md:46: | **写点全集** | 逐个 VA + 字节，注明是否穷尽 |
+  ---
+FILE lead\re_line_20261105\W3_COSTBOUND\sections\Q3_SAMPLE_PLAN.md  TOTAL_LINES 275
+  lead\re_line_20261105\W3_COSTBOUND\sections\Q3_SAMPLE_PLAN.md:57: 
+  lead\re_line_20261105\W3_COSTBOUND\sections\Q3_SAMPLE_PLAN.md:58: #### (1) 观测目标与内存位置
+  lead\re_line_20261105\W3_COSTBOUND\sections\Q3_SAMPLE_PLAN.md:59: - **符号标识**：全图威胁扫描累积调用计数器（`GreatestThreatCallCount`）；
+  lead\re_line_20261105\W3_COSTBOUND\sections\Q3_SAMPLE_PLAN.md:60: - **内存位置**：位于 `.data` 节未初始化数据区（BSS），基址 VA 为 `0x00A8EC34`；
+  lead\re_line_20261105\W3_COSTBOUND\sections\Q3_SAMPLE_PLAN.md:61: - **数据类型**：32 位无符号整数（`uint32_t`，DWORD），占用 4 字节；
+  lead\re_line_20261105\W3_COSTBOUND\sections\Q3_SAMPLE_PLAN.md:62: - **读取方式**：外部只读直接内存读取（`_rpm_u32(handle, 0x00A8EC34)`）。
+  ---
+FILE lead\re_line_20261105\W3_COSTBOUND\W3_COSTBOUND.md  TOTAL_LINES 412
+  lead\re_line_20261105\W3_COSTBOUND\W3_COSTBOUND.md:283: | **2** | **C4 微观索敌** | `0x00A8EC34` | `GreatestThreatCallCount`<br>（位于 `.data` 节 RVA `+0x0068EC34`） | 4 字节 `uint32_t`<br>外部只读 RPM | `0x006F8E04..0x00
+  ---
+FILE docs\re\ARCHITECTURE_ATLAS.md  TOTAL_LINES 4860
+  docs\re\ARCHITECTURE_ATLAS.md:1259:         GT1["前置防重入自增: 0x00A8EC34"]
+  ---
+  docs\re\ARCHITECTURE_ATLAS.md:1323:   0x006F8DF3: 8B 15 34 EC A8 00 mov  edx, [0x00A8EC34]       ; 读取全局寻敌重入计数
+  ---
+  docs\re\ARCHITECTURE_ATLAS.md:1331:   0x006F8E04: 42                inc  edx                     ; 重入计数自增
+  ---
+
+======================== 10 STALE LINE REF CHECK: current blitter_hooks.cpp:495-502 (docs cite this for the 9B hook) ========================
+FILE ra2render\blitter_hooks.cpp  TOTAL_LINES 3886
+  ra2render\blitter_hooks.cpp:493: static void SyncFogStrengthMirror() {
+  ra2render\blitter_hooks.cpp:494:     static char s_prevRaw[16] = "";
+  ra2render\blitter_hooks.cpp:495:     static bool s_inited = false;
+  ra2render\blitter_hooks.cpp:496:     char buf[32] = {0};
+  ra2render\blitter_hooks.cpp:497:     char iniPath[MAX_PATH];
+  ra2render\blitter_hooks.cpp:498:     GetCurrentDirectoryA(MAX_PATH, iniPath);
+  ra2render\blitter_hooks.cpp:499:     strcat_s(iniPath, "\\ra2render.ini");
+  ra2render\blitter_hooks.cpp:500:     GetPrivateProfileStringA("FogOfWar", "FogStrengthPct", "\x01[ZC10B:ABSENT]\x01",
+  ra2render\blitter_hooks.cpp:501:                              buf, static_cast<DWORD>(sizeof(buf)), iniPath);
+  ra2render\blitter_hooks.cpp:502:     if (strcmp(buf, "\x01[ZC10B:ABSENT]\x01") == 0) return;   // 键缺失 ⇒ 保持现状
+  ra2render\blitter_hooks.cpp:503:     if (s_inited && strcmp(buf, s_prevRaw) == 0) return;      // 值未变 ⇒ 不动全局
+  ra2render\blitter_hooks.cpp:504:     strncpy_s(s_prevRaw, sizeof(s_prevRaw), buf, _TRUNCATE);
+  ra2render\blitter_hooks.cpp:505:     s_inited = true;
+  ra2render\blitter_hooks.cpp:506: 
+  ---
+
+======================== 11 END ========================
+PROBE_DONE 2026-11-05T23:15:50.865425

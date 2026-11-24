@@ -1,0 +1,57 @@
+P0-GATE-C / FINAL_PATH.txt — 0x47C620 可复算路径条件表达式
+目标: ra2youli\gamemd.exe SHA-256 73201CC0...F67476；.text 线性 skipdata 反汇编。
+复算脚本: work/p1_gate_dis.py → EVIDENCE/p1_gate_dis.txt（逐字节），work/p3_focused.py（FindTechnoNearestTo）。
+
+【符号】
+  S    = this = ecx@entry（Building 族，RTTI fail-closed）
+  A    = arg2 = [esp+0x20]@entry = [S+4 after 4 pushes] = BuildingTypeClass*
+  FBF  = [A+0x16BF]   FBE=[A+0x16BE]   FB7=[A+0x16B7]   E58=[A+0xE58] (dword)
+  M    = [0xA8E9A0] (byte)   E7=[0xA8E7AC](dword)   ED=[0xA8ED6B](byte)
+  HA   = [S+0xE4] (head A 链头)   HN=[obj+0x30] (链下一节点)
+  N(a) = call [a.vtable+0x2C]  = AbstractType（WhatAmI）
+
+【主路径表达式】（地址 → 指令 → 条件成立时的去向）
+ 0x47C620  eax = E7
+ 0x47C62E  if E7 != 0         → 0x47CA70   （另一模式分支；本输入不走）
+ 0x47C638  eax = A            ; 0x47C63C if A == 0 → 0x47C6A0（不查占用支：0x47C6A0→0x47C878→call 0x578540）
+ 0x47C640  cl = FBF           ; 0x47C646 test cl,cl
+ 0x47C648  if FBF == 0        → 0x47C6DD   （*** 本输入 ***）
+ 0x47C64E  else: if M==0 → 0x47C6A0；否则遍历 HA 找 N==6 → 0x47C676/0x47C6D1 或 N==0x24 → 0x47C6CD
+ 0x47C6DD  cl = FBE           ; 0x47C6E3 if FBE != 0 → 0x47C7C8（另一闸支：0x47C805 查占用）
+ 0x47C6EB  cl = FB7           ; 0x47C6F1 if FB7 != 0 → 0x47C7C8
+ 0x47C6F9  cmp E58, 0         ; 0x47C6FF if E58 != 0 → 0x47C76B（墙类型支，尾段回 0x47C6A0）
+ 0x47C701  al = M             ; 0x47C70A if M == 0 → 0x47C72F（跳过 HA 预扫）
+ 0x47C706/0x47C70C  [esp+0x10]=0 / [esp+0x14]=0（FindTechnoNearestTo 的 out 与 arg3 归零）
+ 0x47C712  esi = HA           ; 0x47C71A if HA == 0 → 0x47C72F
+ 0x47C71C..0x47C72D  HA 预扫：call N(esi)；if N==2 → 0x47C763（提前拒绝）；否则 esi=HN(esi) 循环
+ 0x47C72F  push 0; lea ecx,[esp+0x14]; push 0; push ecx; mov ecx,S
+ 0x47C738  call 0x47C3D0 = FindTechnoNearestTo(S, &out, 0, 0)   ← *** 查 head A ***
+             arg2=0 ⇒ 0x47C40F `mov ecx,[ecx+0xE4]` = head A（不是 0xE8 head B）
+             0x47C427 `mov al,[esi+0x14]; and al,1; ... je 0x47C4A7` ⇒ bit0=0 被跳过，bit0=1 参与距离比较
+ 0x47C73D  cmp eax,0 ; 0x47C73F if nearest != 0 → 0x47C853（al=0 拒绝）
+ 0x47C745..0x47C74A  push 0x24; call 0x47C4D0（第二占用查）；0x47C751 if ==0 → 0x47C85F
+ 0x47C85F  test [S+0x124],0x3f ; je → 0x47C6A0（不查占用支）
+ 0x47C878  [0xA8ED6B]!=0 时的支：push 1; push S; ecx=0x87F7E8; call 0x578540
+
+【代入实测输入】 四标志 FBF=FBE=FB7=0, E58=0；M=1；E7=0；ED=0
+ 0x47C620 E7=0 ⇒ 不跳 0x47CA70
+ 0x47C638 A 非空 ⇒ 不跳 0x47C6A0
+ 0x47C640 FBF=0 ⇒ 0x47C648  taken → 0x47C6DD
+ 0x47C6DD FBE=0 ⇒ 0x47C6E3  not taken
+ 0x47C6EB FB7=0 ⇒ 0x47C6F1  not taken
+ 0x47C6F9 E58=0 ⇒ 0x47C6FF  not taken → 顺序到 0x47C701
+ 0x47C701 M=1 ⇒ 0x47C70A  not taken
+ 0x47C712 HA：若空/无 N==2 ⇒ 0x47C72F；预扫仅对 N==2 提前出 0x47C763
+ 0x47C72F → 0x47C738   【落点 = 查 head A，不是「不查占用」支】
+ 注：ED=0 只在到达 0x47C6A0 时才被读（0x47C6A5），本路径已由 0x47C648 跳过 0x47C6A0，故 ED 不参与本次判定。
+
+【对步兵恒命中的条件链】
+ 工厂 0x6C3890→0x517A50 / 0x6C3410→0x7353C0 → 0x4D31E0 → 0x6F2B40
+ 0x6F3228 mov al,[esi+0x14] → 0x6F322F or al,1 → 0x6F3237 mov [esi+0x14],al；ret@0x6F3266 前无绕过分支
+ ⇒ 在册 InfantryClass 的 [obj+0x14]&1 = 1
+ ⇒ 0x47C427 的 and al,1 不会跳过它
+ ⇒ 0x47C738（查 head A）必然把「已放在目标格上的步兵」计入 nearest
+ ⇒ 0x47C73F jne 0x47C853 拒绝放置（al=0）
+ 【场景】放置 mode 1/3 挂链 + 目标格有步兵：0x47C620→0x47C62E→0x47C638→0x47C640→0x47C648
+ →0x47C6DD→0x47C6EB→0x47C6F9→0x47C701→0x47C712→0x47C72F→0x47C738，逐步地址如上。
+ 【分级】字节级路径条件 + bit0 写回 = [已证]；「引擎不允许建筑与步兵同格」总判断 = [静态推断]（见 UNKNOWNS.md U1/U2/U4/U6）。

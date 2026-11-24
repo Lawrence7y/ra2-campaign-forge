@@ -1,0 +1,25 @@
+id	observation	verdict	note
+A0	臂A(目标格空地 放置成功) 在 60 s 采样内 SENT_PERCELL(0x0043F2B3) 命中 >=1 次	CONTROL-PASS	灵敏度正对照成立 采样器在该输入下有效 后续任何"未观测"才有解释力
+A1	臂A 60 s 内两哨兵命中均为 0 次	FAIL-NO-CHANNEL	采样器不可用 本卡失败 不得据此出任何方向性结论
+A2	臂A 命中率 < 1e-3 (即 <120 次/60 s)	FAIL-NO-CHANNEL	Stage0 预注册门槛 (DESIGN 4.8) 建议不开真机窗口
+B0	臂B(己方步兵占格 结果=拒绝) 观测到 SENT_PERCELL >=1 次	PERCELL-CHAIN	逐格链调用了 0x47C620; can-place 已放行; 拒绝发生在扫描层(需R7翻译)
+B1	臂B 观测到 SENT_CANPLACE(0x00449487) >=1 次 且 SENT_PERCELL 全程 0 次 且 A0 成立	CANPLACE-CHAIN	本次拒绝发生在 0x43F220 出口(can-place 的 0x47C620 支路返回非零)
+B2	臂B 两哨兵均出现	CANPLACE-PASSED	仅证明 can-place 放行过 不能单独归因; 需重复至出现 B1 形态
+B3	臂B 两哨兵均 0 次 且 A0 成立 且二项检验 p<0.01	NO-GATE	本次点击未走到 0x47C620; 候选=0x449440 走 0x449493 的 BType vt[0xA8] 支路(R8) 或更早退出; 禁止写成"bit0 闸拒绝"
+B4	观测到非哨兵的返回地址	OTHER-CALLER	0x47C620 其余直接调用点(R6未闭合前不可命名) 计为噪声 不入判定
+C0	EIP 采样落在 W_GATE[0x0047C3D0,0x0047C4CA) 且最近哨兵=CANPLACE	GATE-AT-CANPLACE	最强形态: 闸核正在执行且调用链是 can-place
+C1	EIP 采样落在 W_GATE 且最近哨兵=PERCELL	GATE-AT-PERCELL	同 B0 但证据更强
+C2	EIP 采样落在 W_620/W_FRAME 且最近哨兵=CANPLACE	GATE-AT-CANPLACE-WEAK	窗口更宽命中率更高 但 EIP 不在闸核内 证据弱于 C0
+R0	点击后 2 s 内栈残留出现 SENT_CANPLACE 且点击前基线为空	CANPLACE-RESIDUE	弱证据 只证明"曾经调用过" 不能绑定本次点击
+R1	点击后 2 s 内栈残留出现 SENT_PERCELL 且点击前基线为空	PERCELL-RESIDUE	同 R0 且易被 hover 预览污染
+R2	点击前基线已含任一哨兵	VOID	残留通道作废(预览污染) 改用瞬时采样通道
+F1	观测到 SENT_CANPLACE 但该次点击放置成功	FALSIFY-CANPLACE	推翻"CANPLACE 命中即拒绝层"读法 判定必须改为臂间差分
+F2	臂A(允许) 中 SENT_PERCELL=0 而 SENT_CANPLACE>0	UNEXPECTED	与"允许时逐格必被扫描"冲突 说明 0x43F180 不是本卡认定的路径(R5/R7未闭合) 停机不出结论
+F3	同一采样点附近两种哨兵交替或同一 off 抖动	AMBIGUOUS	存在并发或嵌套 该段样本作废
+F4	NONE 样本占比 >99.9% 且分布随机	VOID-SAMPLES	命中的是 0x47C620 其它调用者(如AI) 不是目标链 样本作废
+F5	任一样本 ESP 不在 [0x00100000,0x7FFFFFFF)	DROP-SAMPLE	栈指针不可信(采样撕裂) 丢弃
+X1	attach 失败 (ERROR_ACCESS_DENIED=5 等)	SKIP-ATTACH	本方案不依赖 attach 降级为纯采样 不算失败
+X2	attach 成功但游戏冻结或合成输入失效	ABORT-ATTACH	立即 DebugActiveProcessStop 本次会话作废 重跑一次仍失败则本卡失败
+X3	游戏崩溃或 except.txt 变化	INCIDENT	只读落盘 except.txt 副本+size/mtime/SHA 与原时间线 按 FORBIDDEN_OPS 自证未越界
+X4	采样期间帧率下降 >30%	OBSERVER-EFFECT	该组标注观察者效应 不得单独用于判定
+X5	采样率 < 500 次/s	LOW-RATE	按 DESIGN 4.8 表降级判定 或重跑

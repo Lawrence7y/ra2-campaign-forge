@@ -1,0 +1,93 @@
+== F0 fingerprints (hashlib, read-only) ==
+  1d4ccc937cfa78f1ac5144c15fd3e87152e45d41565bf5031bde53202667e016  3558  STATE_MATRIX.json
+  565771d8b31c516dc7a1e0100ea047484406a203390492df9f57170a6532feaf  66735  B2B_DESIGN.md
+  ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2  412759  qc151_trip.candidate_lf.py
+PASS  F1 STATE_MATRIX.json = 14 data rows  || 14
+  :2 cond = pre=None / {} / 缺 state / 脏值（跑前快照未采集或采集未完成），跑后任意文件状态
+  :4 cond = 跑前采集抛异常（snap.error 非空）⇒ 独立 error 出口，不降级、不静默、不给 high
+  :5 cond = 跑前确认无件 + 跑后在场（存在性硬证）⇒ 本趟新出现；是否新崩溃仍只由集合差裁定
+  :6 cond = 跑前确认无件 + 跑后无件 ⇒ 未见新出现，但「文件未出现」不能证无崩溃（E 口径另算）
+PASS  F2 classify_except_freshness located  || 4616-4698
+PASS  F3 FRESHNESS_SNAPSHOT_STATES = 4-tuple  || ('unknown', 'absent_confirmed', 'present', 'error')
+PASS  F4 if-chain lines  || [4637, 4643, 4648, 4652, 4657, 4666, 4673, 4678, 4681, 4686, 4690, 4693]
+== M1 matrix claimant survey, both readings, baseline vs after-B ==
+  [BASELINE-STRICT(耦合件:67 preState+前件)] OK=60 MISLABEL=12 ORPHAN=9 (81 cells) 
+    MISLABEL none x re_none -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL none x re_true -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL empty x re_none -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL empty x re_true -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL missing x re_none -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL missing x re_true -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL dirty x re_none -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL dirty x re_true -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL absent x re_true -> actual=post_read_error ; rows [6] claim [('new_first_appearance', 'high', False)]
+    MISLABEL present_nosh x re_true -> actual=post_read_error ; rows [13] claim [('error_pre_snapshot', 'none', False)]
+    MISLABEL error x re_none -> actual=post_read_error ; rows [4] claim [('error_pre_snapshot', 'none', False)]
+    MISLABEL error x re_true -> actual=post_read_error ; rows [4] claim [('error_pre_snapshot', 'none', False)]
+    ORPHAN   expl_unknown x re_none -> actual=post_read_error
+    ORPHAN   expl_unknown x re_true -> actual=post_read_error
+    ORPHAN   expl_unknown x no_post_sha -> actual=unknown
+    ORPHAN   expl_unknown x sha_diff -> actual=unknown
+    ORPHAN   expl_unknown x mt_same -> actual=unknown
+    ORPHAN   expl_unknown x mt_up -> actual=unknown
+    ORPHAN   expl_unknown x mt_down -> actual=unknown
+    ORPHAN   expl_unknown x mt_missing -> actual=unknown
+    ORPHAN   absent x re_none -> actual=post_read_error
+  [BASELINE-LOOSE (condition 文本承载/preState=登记示例)] OK=67 MISLABEL=14 ORPHAN=0 (81 cells) 
+    MISLABEL none x re_none -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL none x re_true -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL empty x re_none -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL empty x re_true -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL missing x re_none -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL missing x re_true -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL dirty x re_none -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL dirty x re_true -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL expl_unknown x re_none -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL expl_unknown x re_true -> actual=post_read_error ; rows [2] claim [('unknown', 'none', False)]
+    MISLABEL absent x re_true -> actual=post_read_error ; rows [6] claim [('new_first_appearance', 'high', False)]
+    MISLABEL present_nosh x re_true -> actual=post_read_error ; rows [13] claim [('error_pre_snapshot', 'none', False)]
+    MISLABEL error x re_none -> actual=post_read_error ; rows [4] claim [('error_pre_snapshot', 'none', False)]
+    MISLABEL error x re_true -> actual=post_read_error ; rows [4] claim [('error_pre_snapshot', 'none', False)]
+  [AFTER-B-STRICT] OK=61 MISLABEL=3 ORPHAN=17 (81 cells) suppressed-by-priority: 1
+    MISLABEL absent x re_true -> actual=post_read_error ; rows [6] claim [('new_first_appearance', 'high', False)]
+    MISLABEL error x re_none -> actual=post_read_error ; rows [4] claim [('error_pre_snapshot', 'none', False)]
+    MISLABEL error x re_true -> actual=post_read_error ; rows [4] claim [('error_pre_snapshot', 'none', False)]
+    ORPHAN   none x re_none -> actual=post_read_error
+    ORPHAN   none x re_true -> actual=post_read_error
+    ORPHAN   empty x re_none -> actual=post_read_error
+    ORPHAN   empty x re_true -> actual=post_read_error
+    ORPHAN   missing x re_none -> actual=post_read_error
+    ORPHAN   missing x re_true -> actual=post_read_error
+    ORPHAN   dirty x re_none -> actual=post_read_error
+    ORPHAN   dirty x re_true -> actual=post_read_error
+    ORPHAN   expl_unknown x re_none -> actual=post_read_error
+    ORPHAN   expl_unknown x re_true -> actual=post_read_error
+    ORPHAN   expl_unknown x no_post_sha -> actual=unknown
+    ORPHAN   expl_unknown x sha_diff -> actual=unknown
+    ORPHAN   expl_unknown x mt_same -> actual=unknown
+    ORPHAN   expl_unknown x mt_up -> actual=unknown
+    ORPHAN   expl_unknown x mt_down -> actual=unknown
+    ORPHAN   expl_unknown x mt_missing -> actual=unknown
+    ORPHAN   absent x re_none -> actual=post_read_error
+  [AFTER-B-LOOSE (注记路由+优先句被消费方采纳)] OK=81 MISLABEL=0 ORPHAN=0 (81 cells) suppressed-by-priority: 2
+== M2 reviewer counterexample (absent_confirmed x read_error, exists=True) ==
+  actual_AST = post_read_error/none/None
+  strict claimants rows = [6] ; values = [('new_first_appearance', 'high', False)]
+PASS  M2 strict: row:6 still claims new_first_appearance/high after B; actual=post_read_error/none
+PASS  M2b after-B strict: :5 NOT eligible (preState=present != absent)
+== M3 W2 distinct exits: snap.error(:4611) + post.read_error(:4786) co-occur ==
+  error x re_none actual_AST = post_read_error/none/None
+PASS  M3 error x read_error -> post_read_error (not error_pre_snapshot)
+PASS  M3b after-B strict: :4 unchanged coverage -> still claims error x re (W2 open)
+== V1 six original-text verbatim check vs current disk ==
+  JSON:2 verbatim=MATCH
+  JSON:5 verbatim=MATCH
+  JSON:4 verbatim=MATCH
+  DESIGN:148 verbatim=MATCH
+  DESIGN:151 verbatim=MATCH
+  DESIGN:150 verbatim=MATCH
+PASS  V1 ORIGINAL_EXACT_TOTAL=6/6_MATCH  || 6
+
+SUMMARY strict: baseline mislabel=12 orphan=9 ; after-B mislabel=3 orphan=17
+SUMMARY loose : baseline mislabel=14 orphan=0 ; after-B mislabel=0 orphan=0
+R2_PROBE_ALL_PASS

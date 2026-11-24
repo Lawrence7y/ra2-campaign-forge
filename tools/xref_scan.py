@@ -11,8 +11,12 @@ xref_scan.py — gamemd.exe 静态交叉引用扫描器（capstone 线性扫描�
 import sys, json, struct, bisect
 from capstone import Cs, CS_ARCH_X86, CS_MODE_32
 
-EXE = r"D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe"
-SYM = r"D:\Project\ra2-campaign-forge\out\reverse\symbols.json"
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _ra2_paths import resolve_root
+_ROOT = resolve_root(__file__)
+EXE = str(_ROOT / "ra2youli" / "gamemd.exe")
+SYM = str(_ROOT / "out" / "reverse" / "symbols.json")
 IMAGE_BASE = 0x400000
 
 def load_sections():

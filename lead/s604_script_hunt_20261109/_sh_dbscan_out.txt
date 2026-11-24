@@ -1,0 +1,511 @@
+== db.sqlite 只读扫描（immutable=1）==
+objects=99 elapsed_probe=0.0s
+  table schema_migration :: CREATE TABLE schema_migration (
+      id text primary key,
+      checksum text not null,
+      app_version text,
+      time_applied integer not null
+    )
+  index sqlite_autoindex_schema_migration_1 :: 
+  table session :: CREATE TABLE session (
+        id text primary key,
+        project_id text not null,
+        workspace_id text,
+        parent_id text,
+        slug text not null,
+        directory text not null,
+  
+  index sqlite_autoindex_session_1 :: 
+  table message :: CREATE TABLE message (
+        id text primary key,
+        session_id text not null references session(id) on delete cascade,
+        time_created integer not null,
+        time_updated integer not n
+  index sqlite_autoindex_message_1 :: 
+  table part :: CREATE TABLE part (
+        id text primary key,
+        message_id text not null references message(id) on delete cascade,
+        session_id text not null,
+        time_created integer not null,
+   
+  index sqlite_autoindex_part_1 :: 
+  table todo :: CREATE TABLE todo (
+        session_id text not null references session(id) on delete cascade,
+        content text not null,
+        status text not null,
+        priority text not null,
+        posi
+  index sqlite_autoindex_todo_1 :: 
+  table session_entry :: CREATE TABLE session_entry (
+        id text primary key,
+        session_id text not null references session(id) on delete cascade,
+        type text not null,
+        time_created integer not null,
+
+  index sqlite_autoindex_session_entry_1 :: 
+  table permission :: CREATE TABLE permission (
+        project_id text primary key,
+        time_created integer not null,
+        time_updated integer not null,
+        data text not null
+      )
+  index sqlite_autoindex_permission_1 :: 
+  table input_history :: CREATE TABLE input_history (
+        id text primary key,
+        project_id text not null,
+        session_id text,
+        text text not null,
+        kind text not null,
+        time_created intege
+  index sqlite_autoindex_input_history_1 :: 
+  table local_setting :: CREATE TABLE local_setting (
+        scope text not null,
+        scope_id text not null,
+        namespace text not null,
+        key text not null,
+        value text not null,
+        schema_versio
+  index sqlite_autoindex_local_setting_1 :: 
+  table session_target :: CREATE TABLE "session_target" (
+        session_id text primary key references session(id) on delete cascade,
+        target_id text not null,
+        objective text not null,
+        status text not 
+  index sqlite_autoindex_session_target_1 :: 
+  table workflow_definition :: CREATE TABLE workflow_definition (
+        id text primary key,
+        name text not null,
+        source text not null check(source in ('builtin', 'user')),
+        trusted integer not null default 
+  index sqlite_autoindex_workflow_definition_1 :: 
+  table workflow_run :: CREATE TABLE workflow_run (
+        id text primary key,
+        definition_id text,
+        name text not null,
+        kind text not null default 'script',
+        parent_session_id text references 
+  index sqlite_autoindex_workflow_run_1 :: 
+  table workflow_activity :: CREATE TABLE workflow_activity (
+        id text primary key,
+        run_id text not null references workflow_run(id) on delete cascade,
+        parent_activity_id text,
+        call_index integer no
+  index sqlite_autoindex_workflow_activity_1 :: 
+  index sqlite_autoindex_workflow_activity_2 :: 
+  table workflow_event :: CREATE TABLE workflow_event (
+        id text primary key,
+        run_id text not null references workflow_run(id) on delete cascade,
+        sequence integer not null,
+        type text not null,
+  
+  index sqlite_autoindex_workflow_event_1 :: 
+  index sqlite_autoindex_workflow_event_2 :: 
+  table session_task_link :: CREATE TABLE session_task_link (
+        id text primary key,
+        root_workflow_run_id text references workflow_run(id) on delete cascade,
+        parent_link_id text references session_task_link(
+  index sqlite_autoindex_session_task_link_1 :: 
+  index sqlite_autoindex_session_task_link_2 :: 
+  table model_usage :: CREATE TABLE model_usage (
+        id text primary key,
+        logical_request_id text not null,
+        attempt_index integer not null default 0,
+        session_id text not null references session(
+  index sqlite_autoindex_model_usage_1 :: 
+  table turn_usage :: CREATE TABLE turn_usage (
+        session_id text not null references session(id) on delete cascade,
+        turn_id text not null,
+        trace_id text,
+        user_message_id text,
+        status 
+  index sqlite_autoindex_turn_usage_1 :: 
+  table tool_usage :: CREATE TABLE tool_usage (
+        id text primary key,
+        session_id text not null references session(id) on delete cascade,
+        turn_id text,
+        trace_id text,
+        tool_call_id text
+  index sqlite_autoindex_tool_usage_1 :: 
+  table session_input :: CREATE TABLE session_input (
+        id text primary key,
+        session_id text not null references session(id) on delete cascade,
+        kind text not null,
+        delivery text not null check(de
+  index sqlite_autoindex_session_input_1 :: 
+  table dwf_run :: CREATE TABLE dwf_run (
+        id text primary key,
+        parent_session_id text,
+        cwd text,
+        name text,
+        script_text text,
+        script_hash text,
+        args_json text,
+   
+  index sqlite_autoindex_dwf_run_1 :: 
+  table dwf_actor :: CREATE TABLE dwf_actor (
+        id integer primary key autoincrement,
+        run_id text not null references dwf_run(id) on delete cascade,
+        site_id text not null,
+        ordinal integer not
+  index sqlite_autoindex_dwf_actor_1 :: 
+  table sqlite_sequence :: CREATE TABLE sqlite_sequence(name,seq)
+  table dwf_node :: CREATE TABLE dwf_node (
+        id integer primary key autoincrement,
+        run_id text not null references dwf_run(id) on delete cascade,
+        site_id text not null,
+        ordinal integer not 
+  index sqlite_autoindex_dwf_node_1 :: 
+  table dwf_event :: CREATE TABLE dwf_event (
+        id integer primary key autoincrement,
+        run_id text not null references dwf_run(id) on delete cascade,
+        sequence integer not null,
+        type text not n
+  index sqlite_autoindex_dwf_event_1 :: 
+  table zcode_database_identity :: CREATE TABLE zcode_database_identity (
+      scope TEXT PRIMARY KEY,
+      identity TEXT NOT NULL
+    )
+  index sqlite_autoindex_zcode_database_identity_1 :: 
+  index session_project_idx :: CREATE INDEX session_project_idx on session(project_id)
+  index session_workspace_idx :: CREATE INDEX session_workspace_idx on session(workspace_id)
+  index session_parent_idx :: CREATE INDEX session_parent_idx on session(parent_id)
+  index message_session_time_created_id_idx :: CREATE INDEX message_session_time_created_id_idx
+        on message(session_id, time_created, id)
+  index part_message_id_id_idx :: CREATE INDEX part_message_id_id_idx on part(message_id, id)
+  index part_session_idx :: CREATE INDEX part_session_idx on part(session_id)
+  index todo_session_idx :: CREATE INDEX todo_session_idx on todo(session_id)
+  index session_entry_session_idx :: CREATE INDEX session_entry_session_idx on session_entry(session_id)
+  index session_entry_session_type_idx :: CREATE INDEX session_entry_session_type_idx on session_entry(session_id, type)
+  index session_entry_time_created_idx :: CREATE INDEX session_entry_time_created_idx on session_entry(time_created)
+  index input_history_project_time_idx :: CREATE INDEX input_history_project_time_idx
+        on input_history(project_id, time_created desc, id desc)
+  index input_history_time_idx :: CREATE INDEX input_history_time_idx
+        on input_history(time_created desc, id desc)
+  index local_setting_scope_idx :: CREATE INDEX local_setting_scope_idx
+        on local_setting(scope, scope_id)
+  index local_setting_namespace_key_idx :: CREATE INDEX local_setting_namespace_key_idx
+        on local_setting(namespace, key)
+  index session_task_type_idx :: CREATE INDEX session_task_type_idx on session(task_type)
+  index workflow_definition_source_idx :: CREATE INDEX workflow_definition_source_idx
+        on workflow_definition(source, enabled)
+  index workflow_run_parent_session_idx :: CREATE INDEX workflow_run_parent_session_idx
+        on workflow_run(parent_session_id)
+  index workflow_run_cwd_status_idx :: CREATE INDEX workflow_run_cwd_status_idx
+        on workflow_run(cwd, status, time_updated desc)
+  index workflow_run_definition_idx :: CREATE INDEX workflow_run_definition_idx
+        on workflow_run(definition_id)
+  index workflow_activity_run_status_idx :: CREATE INDEX workflow_activity_run_status_idx
+        on workflow_activity(run_id, status, call_index)
+  index workflow_activity_child_session_idx :: CREATE INDEX workflow_activity_child_session_idx
+        on workflow_activity(child_session_id)
+  index workflow_event_run_sequence_idx :: CREATE INDEX workflow_event_run_sequence_idx
+        on workflow_event(run_id, sequence)
+  index session_task_link_root_workflow_idx :: CREATE INDEX session_task_link_root_workflow_idx
+        on session_task_link(root_workflow_run_id, depth, path)
+  index session_task_link_parent_idx :: CREATE INDEX session_task_link_parent_idx
+        on session_task_link(parent_link_id)
+  index session_task_link_activity_idx :: CREATE INDEX session_task_link_activity_idx
+        on session_task_link(activity_id)
+  index model_usage_started_model_idx :: CREATE INDEX model_usage_started_model_idx
+        on model_usage(started_at, provider_id, model_id)
+  index model_usage_session_turn_idx :: CREATE INDEX model_usage_session_turn_idx
+        on model_usage(session_id, turn_id)
+  index model_usage_trace_idx :: CREATE INDEX model_usage_trace_idx
+        on model_usage(trace_id)
+  index model_usage_query_source_idx :: CREATE INDEX model_usage_query_source_idx
+        on model_usage(query_source)
+  index turn_usage_started_idx :: CREATE INDEX turn_usage_started_idx
+        on turn_usage(started_at)
+  index tool_usage_session_tool_call_idx :: CREATE UNIQUE INDEX tool_usage_session_tool_call_idx
+        on tool_usage(session_id, tool_call_id)
+  index tool_usage_started_tool_idx :: CREATE INDEX tool_usage_started_tool_idx
+        on tool_usage(started_at, tool_name)
+  index tool_usage_session_turn_idx :: CREATE INDEX tool_usage_session_turn_idx
+        on tool_usage(session_id, turn_id)
+  index session_trace_idx :: CREATE INDEX session_trace_idx on session(trace_id)
+  index message_session_sequence_idx :: CREATE INDEX message_session_sequence_idx
+        on message(session_id, sequence, time_created, id)
+  index part_message_sequence_idx :: CREATE INDEX part_message_sequence_idx
+        on part(message_id, sequence, time_created, id)
+  index part_session_message_sequence_idx :: CREATE INDEX part_session_message_sequence_idx
+        on part(session_id, message_id, sequence)
+  index session_input_session_admitted_idx :: CREATE INDEX session_input_session_admitted_idx
+        on session_input(session_id, admitted_sequence)
+  index session_input_session_status_idx :: CREATE INDEX session_input_session_status_idx
+        on session_input(session_id, status)
+  index dwf_run_cwd_idx :: CREATE INDEX dwf_run_cwd_idx on dwf_run(cwd, time_updated)
+  index dwf_actor_run_idx :: CREATE INDEX dwf_actor_run_idx on dwf_actor(run_id)
+  index dwf_node_run_idx :: CREATE INDEX dwf_node_run_idx on dwf_node(run_id)
+  index dwf_node_artifact_idx :: CREATE INDEX dwf_node_artifact_idx on dwf_node(run_id, artifact_id)
+  index dwf_event_artifact_idx :: CREATE INDEX dwf_event_artifact_idx
+        on dwf_event(run_id, json_extract(payload_json, '$.artifactId'), sequence)
+  trigger message_sequence_autofill :: CREATE TRIGGER message_sequence_autofill
+      after insert on message
+      when new.sequence is null
+      begin
+        update message
+        set sequence = (
+          select coalesce(max(sequenc
+  trigger part_sequence_autofill :: CREATE TRIGGER part_sequence_autofill
+      after insert on part
+      when new.sequence is null
+      begin
+        update part
+        set sequence = (
+          select coalesce(max(sequence), -1) +
+  table sqlite_stat1 :: CREATE TABLE sqlite_stat1(tbl,idx,stat)
+text_columns=['schema_migration.id', 'schema_migration.checksum', 'schema_migration.app_version', 'session.id', 'session.project_id', 'session.workspace_id', 'session.parent_id', 'session.slug', 'session.directory', 'session.path', 'session.title', 'session.version', 'session.share_url', 'session.summary_diffs', 'session.revert', 'session.permission', 'session.task_type', 'session.title_source', 'session.title_message_id', 'session.trace_id', 'session.last_outcome', 'message.id', 'message.session_id', 'message.data', 'part.id', 'part.message_id', 'part.session_id', 'part.data', 'todo.session_id', 'todo.content', 'todo.status', 'todo.priority', 'session_entry.id', 'session_entry.session_id', 'session_entry.type', 'session_entry.data', 'permission.project_id', 'permission.data', 'input_history.id', 'input_history.project_id', 'input_history.session_id', 'input_history.text', 'input_history.kind', 'input_history.attachments', 'local_setting.scope', 'local_setting.scope_id', 'local_setting.namespace', 'local_setting.key', 'local_setting.value', 'session_target.session_id', 'session_target.target_id', 'session_target.objective', 'session_target.status', 'session_target.summary_title', 'session_target.active_input_id', 'workflow_definition.id', 'workflow_definition.name', 'workflow_definition.source', 'workflow_definition.script_path', 'workflow_definition.script_hash', 'workflow_definition.meta_json', 'workflow_definition.scope', 'workflow_run.id', 'workflow_run.definition_id', 'workflow_run.name', 'workflow_run.kind', 'workflow_run.parent_session_id', 'workflow_run.cwd', 'workflow_run.script_path', 'workflow_run.script_hash', 'workflow_run.args_json', 'workflow_run.args_hash', 'workflow_run.status', 'workflow_run.current_phase', 'workflow_run.stats_json', 'workflow_run.failure_json', 'workflow_activity.id', 'workflow_activity.run_id', 'workflow_activity.parent_activity_id', 'workflow_activity.call_path', 'workflow_activity.type', 'workflow_activity.phase', 'workflow_activity.label', 'workflow_activity.input_hash', 'workflow_activity.prompt', 'workflow_activity.opts_json', 'workflow_activity.status', 'workflow_activity.child_session_id', 'workflow_activity.result_json', 'workflow_activity.error_json', 'workflow_event.id', 'workflow_event.run_id', 'workflow_event.type', 'workflow_event.phase', 'workflow_event.activity_id', 'workflow_event.payload_json', 'session_task_link.id', 'session_task_link.root_workflow_run_id', 'session_task_link.parent_link_id', 'session_task_link.activity_id', 'session_task_link.parent_session_id', 'session_task_link.child_session_id', 'session_task_link.role', 'session_task_link.path', 'session_task_link.phase', 'session_task_link.label', 'session_task_link.agent_type', 'session_task_link.model', 'session_task_link.status', 'model_usage.id', 'model_usage.logical_request_id', 'model_usage.session_id', 'model_usage.turn_id', 'model_usage.trace_id', 'model_usage.span_id', 'model_usage.assistant_message_id', 'model_usage.parent_user_message_id', 'model_usage.query_source', 'model_usage.provider_id', 'model_usage.model_id', 'model_usage.variant', 'model_usage.agent', 'model_usage.mode', 'model_usage.task_type', 'model_usage.status', 'model_usage.finish_reason', 'model_usage.error_type', 'model_usage.error_code', 'model_usage.error_message', 'model_usage.raw_usage_json', 'model_usage.provider_metadata_json', 'turn_usage.session_id', 'turn_usage.turn_id', 'turn_usage.trace_id', 'turn_usage.user_message_id', 'turn_usage.status', 'turn_usage.error_type', 'turn_usage.error_code', 'tool_usage.id', 'tool_usage.session_id', 'tool_usage.turn_id', 'tool_usage.trace_id', 'tool_usage.tool_call_id', 'tool_usage.tool_name', 'tool_usage.side_effect_scope', 'tool_usage.approval_status', 'tool_usage.status', 'tool_usage.error_type', 'tool_usage.error_code', 'tool_usage.error_message', 'session_input.id', 'session_input.session_id', 'session_input.kind', 'session_input.delivery', 'session_input.payload', 'session_input.promoted_message_id', 'session_input.status', 'session_input.status_reason', 'dwf_run.id', 'dwf_run.parent_session_id', 'dwf_run.cwd', 'dwf_run.name', 'dwf_run.script_text', 'dwf_run.script_hash', 'dwf_run.args_json', 'dwf_run.tool_call_id', 'dwf_run.resumed_from', 'dwf_run.status', 'dwf_run.result_json', 'dwf_run.failure_json', 'dwf_actor.run_id', 'dwf_actor.site_id', 'dwf_actor.name', 'dwf_actor.persona_json', 'dwf_actor.resolved_model', 'dwf_actor.session_id', 'dwf_node.run_id', 'dwf_node.site_id', 'dwf_node.kind', 'dwf_node.actor_site_id', 'dwf_node.input_hash', 'dwf_node.input_json', 'dwf_node.status', 'dwf_node.result_json', 'dwf_node.error_json', 'dwf_node.stats_json', 'dwf_node.artifact_id', 'dwf_event.run_id', 'dwf_event.type', 'dwf_event.payload_json', 'zcode_database_identity.scope', 'zcode_database_identity.identity']
+SCAN schema_migration.id elapsed=0.0s hits_so_far=0
+SCAN schema_migration.checksum elapsed=0.0s hits_so_far=0
+SCAN schema_migration.app_version elapsed=0.0s hits_so_far=0
+SCAN session.id elapsed=0.01s hits_so_far=0
+SCAN session.project_id elapsed=0.01s hits_so_far=0
+SCAN session.workspace_id elapsed=0.0s hits_so_far=0
+SCAN session.parent_id elapsed=0.0s hits_so_far=0
+SCAN session.slug elapsed=0.01s hits_so_far=0
+SCAN session.directory elapsed=0.0s hits_so_far=0
+SCAN session.path elapsed=0.0s hits_so_far=0
+SCAN session.title elapsed=0.0s hits_so_far=0
+SCAN session.version elapsed=0.0s hits_so_far=0
+SCAN session.share_url elapsed=0.0s hits_so_far=0
+SCAN session.summary_diffs elapsed=0.0s hits_so_far=0
+SCAN session.revert elapsed=0.0s hits_so_far=0
+SCAN session.permission elapsed=0.0s hits_so_far=0
+SCAN session.task_type elapsed=0.01s hits_so_far=0
+SCAN session.title_source elapsed=0.0s hits_so_far=0
+SCAN session.title_message_id elapsed=0.0s hits_so_far=0
+SCAN session.trace_id elapsed=0.01s hits_so_far=0
+SCAN session.last_outcome elapsed=0.01s hits_so_far=0
+SCAN message.id elapsed=0.46s hits_so_far=0
+SCAN message.session_id elapsed=0.44s hits_so_far=0
+SCAN message.data elapsed=8.34s hits_so_far=49
+SCAN part.id elapsed=1.59s hits_so_far=49
+SCAN part.message_id elapsed=2.42s hits_so_far=49
+SCAN part.session_id elapsed=2.09s hits_so_far=49
+SKIP part.data : database disk image is malformed
+SCAN todo.session_id elapsed=0.03s hits_so_far=9847
+SCAN todo.content elapsed=0.02s hits_so_far=9872
+SCAN todo.status elapsed=0.0s hits_so_far=9872
+SCAN todo.priority elapsed=0.0s hits_so_far=9872
+SCAN session_entry.id elapsed=0.07s hits_so_far=9872
+SCAN session_entry.session_id elapsed=0.05s hits_so_far=9872
+SCAN session_entry.type elapsed=0.06s hits_so_far=9872
+SKIP session_entry.data : database disk image is malformed
+SCAN permission.project_id elapsed=0.0s hits_so_far=9872
+SCAN permission.data elapsed=0.0s hits_so_far=9872
+SCAN input_history.id elapsed=0.0s hits_so_far=9872
+SCAN input_history.project_id elapsed=0.0s hits_so_far=9872
+SCAN input_history.session_id elapsed=0.0s hits_so_far=9872
+SCAN input_history.text elapsed=0.0s hits_so_far=9872
+SCAN input_history.kind elapsed=0.0s hits_so_far=9872
+SCAN input_history.attachments elapsed=0.0s hits_so_far=9872
+SCAN local_setting.scope elapsed=0.0s hits_so_far=9872
+SCAN local_setting.scope_id elapsed=0.0s hits_so_far=9872
+SCAN local_setting.namespace elapsed=0.0s hits_so_far=9872
+SCAN local_setting.key elapsed=0.0s hits_so_far=9872
+SCAN local_setting.value elapsed=0.0s hits_so_far=9872
+SCAN session_target.session_id elapsed=0.0s hits_so_far=9872
+SCAN session_target.target_id elapsed=0.0s hits_so_far=9872
+SCAN session_target.objective elapsed=0.0s hits_so_far=9872
+SCAN session_target.status elapsed=0.0s hits_so_far=9872
+SCAN session_target.summary_title elapsed=0.0s hits_so_far=9872
+SCAN session_target.active_input_id elapsed=0.0s hits_so_far=9872
+SCAN workflow_definition.id elapsed=0.0s hits_so_far=9872
+SCAN workflow_definition.name elapsed=0.0s hits_so_far=9872
+SCAN workflow_definition.source elapsed=0.0s hits_so_far=9872
+SCAN workflow_definition.script_path elapsed=0.0s hits_so_far=9872
+SCAN workflow_definition.script_hash elapsed=0.0s hits_so_far=9872
+SCAN workflow_definition.meta_json elapsed=0.0s hits_so_far=9872
+SCAN workflow_definition.scope elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.id elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.definition_id elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.name elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.kind elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.parent_session_id elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.cwd elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.script_path elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.script_hash elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.args_json elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.args_hash elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.status elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.current_phase elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.stats_json elapsed=0.0s hits_so_far=9872
+SCAN workflow_run.failure_json elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.id elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.run_id elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.parent_activity_id elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.call_path elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.type elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.phase elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.label elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.input_hash elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.prompt elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.opts_json elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.status elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.child_session_id elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.result_json elapsed=0.0s hits_so_far=9872
+SCAN workflow_activity.error_json elapsed=0.0s hits_so_far=9872
+SCAN workflow_event.id elapsed=0.0s hits_so_far=9872
+SCAN workflow_event.run_id elapsed=0.0s hits_so_far=9872
+SCAN workflow_event.type elapsed=0.0s hits_so_far=9872
+SCAN workflow_event.phase elapsed=0.0s hits_so_far=9872
+SCAN workflow_event.activity_id elapsed=0.0s hits_so_far=9872
+SCAN workflow_event.payload_json elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.id elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.root_workflow_run_id elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.parent_link_id elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.activity_id elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.parent_session_id elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.child_session_id elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.role elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.path elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.phase elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.label elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.agent_type elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.model elapsed=0.0s hits_so_far=9872
+SCAN session_task_link.status elapsed=0.0s hits_so_far=9872
+SKIP model_usage.id : database disk image is malformed
+SKIP model_usage.logical_request_id : database disk image is malformed
+SCAN model_usage.session_id elapsed=0.42s hits_so_far=9872
+SCAN model_usage.turn_id elapsed=0.36s hits_so_far=9872
+SCAN model_usage.trace_id elapsed=0.2s hits_so_far=9872
+SKIP model_usage.span_id : database disk image is malformed
+SKIP model_usage.assistant_message_id : database disk image is malformed
+SKIP model_usage.parent_user_message_id : database disk image is malformed
+SCAN model_usage.query_source elapsed=0.15s hits_so_far=9872
+SKIP model_usage.provider_id : database disk image is malformed
+SKIP model_usage.model_id : database disk image is malformed
+SKIP model_usage.variant : database disk image is malformed
+SKIP model_usage.agent : database disk image is malformed
+SKIP model_usage.mode : database disk image is malformed
+SKIP model_usage.task_type : database disk image is malformed
+SKIP model_usage.status : database disk image is malformed
+SKIP model_usage.finish_reason : database disk image is malformed
+SKIP model_usage.error_type : database disk image is malformed
+SKIP model_usage.error_code : database disk image is malformed
+SKIP model_usage.error_message : database disk image is malformed
+SKIP model_usage.raw_usage_json : database disk image is malformed
+SKIP model_usage.provider_metadata_json : database disk image is malformed
+SCAN turn_usage.session_id elapsed=0.02s hits_so_far=9872
+SCAN turn_usage.turn_id elapsed=0.01s hits_so_far=9872
+SCAN turn_usage.trace_id elapsed=0.1s hits_so_far=9872
+SCAN turn_usage.user_message_id elapsed=0.01s hits_so_far=9872
+SCAN turn_usage.status elapsed=0.0s hits_so_far=9872
+SCAN turn_usage.error_type elapsed=0.0s hits_so_far=9872
+SCAN turn_usage.error_code elapsed=0.0s hits_so_far=9872
+SCAN tool_usage.id elapsed=0.6s hits_so_far=9875
+SCAN tool_usage.session_id elapsed=0.51s hits_so_far=9875
+SCAN tool_usage.turn_id elapsed=0.59s hits_so_far=9875
+SKIP tool_usage.trace_id : database disk image is malformed
+SCAN tool_usage.tool_call_id elapsed=0.42s hits_so_far=9878
+SCAN tool_usage.tool_name elapsed=0.18s hits_so_far=9878
+SKIP tool_usage.side_effect_scope : database disk image is malformed
+SKIP tool_usage.approval_status : database disk image is malformed
+SKIP tool_usage.status : database disk image is malformed
+SKIP tool_usage.error_type : database disk image is malformed
+SKIP tool_usage.error_code : database disk image is malformed
+SKIP tool_usage.error_message : database disk image is malformed
+SCAN session_input.id elapsed=0.0s hits_so_far=9878
+SCAN session_input.session_id elapsed=0.01s hits_so_far=9878
+SCAN session_input.kind elapsed=0.17s hits_so_far=9878
+SCAN session_input.delivery elapsed=0.04s hits_so_far=9878
+SCAN session_input.payload elapsed=0.6s hits_so_far=9895
+SCAN session_input.promoted_message_id elapsed=0.08s hits_so_far=9895
+SCAN session_input.status elapsed=0.01s hits_so_far=9895
+SCAN session_input.status_reason elapsed=0.04s hits_so_far=9895
+SCAN dwf_run.id elapsed=0.0s hits_so_far=9895
+SCAN dwf_run.parent_session_id elapsed=0.01s hits_so_far=9895
+SCAN dwf_run.cwd elapsed=0.0s hits_so_far=9895
+SCAN dwf_run.name elapsed=0.0s hits_so_far=9896
+SKIP dwf_run.script_text : database disk image is malformed
+SKIP dwf_run.script_hash : database disk image is malformed
+SCAN dwf_run.args_json elapsed=0.01s hits_so_far=9952
+SKIP dwf_run.tool_call_id : database disk image is malformed
+SCAN dwf_run.resumed_from elapsed=0.02s hits_so_far=9952
+SKIP dwf_run.status : database disk image is malformed
+SKIP dwf_run.result_json : database disk image is malformed
+SCAN dwf_run.failure_json elapsed=0.01s hits_so_far=9988
+SCAN dwf_actor.run_id elapsed=0.01s hits_so_far=9988
+SCAN dwf_actor.site_id elapsed=0.0s hits_so_far=9988
+SCAN dwf_actor.name elapsed=0.01s hits_so_far=9988
+SCAN dwf_actor.persona_json elapsed=0.02s hits_so_far=9993
+SCAN dwf_actor.resolved_model elapsed=0.0s hits_so_far=9993
+SCAN dwf_actor.session_id elapsed=0.0s hits_so_far=9993
+SCAN dwf_node.run_id elapsed=0.01s hits_so_far=9993
+SCAN dwf_node.site_id elapsed=0.0s hits_so_far=9993
+SKIP dwf_node.kind : database disk image is malformed
+SKIP dwf_node.actor_site_id : database disk image is malformed
+SKIP dwf_node.input_hash : database disk image is malformed
+SKIP dwf_node.input_json : database disk image is malformed
+SKIP dwf_node.status : database disk image is malformed
+SKIP dwf_node.result_json : database disk image is malformed
+SKIP dwf_node.error_json : database disk image is malformed
+SKIP dwf_node.stats_json : database disk image is malformed
+SCAN dwf_node.artifact_id elapsed=0.0s hits_so_far=10182
+SKIP dwf_event.run_id : database disk image is malformed
+SKIP dwf_event.type : database disk image is malformed
+SKIP dwf_event.payload_json : database disk image is malformed
+SCAN zcode_database_identity.scope elapsed=0.0s hits_so_far=10224
+SCAN zcode_database_identity.identity elapsed=0.0s hits_so_far=10224
+== 总命中行=10224 总耗时=139.61s ==
+  message | data | 41127 | {"role":"user","time":{"created":1792275007272},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"QC202 紧凑核验","workId":"dwfrun-b63f835a-335c-45ec-8329-f133f8410f84","workflowNotification":{"kind":"terminal","status":"comple | []
+  message | data | 41229 | {"role":"user","time":{"created":1792275744314},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"① 进图态测量工装设计","workId":"dwfrun-a416b73f-24d8-47ea-bfb8-079d367ca090","workflowNotification":{"kind":"terminal","status":"compl | []
+  message | data | 41350 | {"role":"user","time":{"created":1792276732892},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"QC203 紧凑核验","workId":"dwfrun-384ea862-18b4-43a9-bcc1-13bd5d0c5b53","workflowNotification":{"kind":"terminal","status":"comple | []
+  message | data | 52458 | {"role":"user","time":{"created":1792470699110},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"① 基线方案异族核验（GLM 5.3）","workId":"dwfrun-a5d42c83-89f3-4cc9-b38e-dd398c28badf","workflowNotification":{"kind":"terminal","status | []
+  message | data | 53851 | {"role":"user","time":{"created":1792500562639},"summary":{"title":"Compact summary","body":"Summary:\n1. Primary Request and Intent:\n\n   **Original three goals** (from session start, still governing):\n   - ① 修数百单位卡顿 (fix lag with hundreds of units)\n   - ② 修主崩溃 (fix the main crash)\n   - ③ 保持安全改 | []
+  message | data | 54996 | {"role":"user","time":{"created":1792557503330},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"workflow","title":"HouseClass 计数器定名独立核验","workId":"dwfrun-9fb1ccc3-918d-4e91-9eda-2d736d134d73","workflowNotification":{"kind":"terminal", | []
+  message | data | 55044 | {"role":"user","time":{"created":1792560062462},"summary":{"title":"Compact summary","body":"Summary:\n1. **Primary Request and Intent:**\n\n   This session continued a **GOAL-3T 节拍驱动器** session for `ra2-campaign-forge`, a RA2/Yuri's Revenge reverse-engineering + campaign-compiler project. Three goa | []
+  message | data | 70235 | {"role":"user","time":{"created":1792770836415},"summary":{"title":"Compact summary","body":"Summary:\n1. Primary Request and Intent:\n\nThe session is a **GOAL-3T main driver round** for `ra2-campaign-forge` (D:\\Project\\ra2-campaign-forge, branch `main`, repo https://github.com/Lawrence7y/ra2-cam | []
+  message | data | 70671 | {"role":"user","time":{"created":1792778720579},"summary":{"title":"Compact summary","body":"Summary:\n1. Primary Request and Intent:\n\nThis is a **GOAL-3T main-driver round** for `ra2-campaign-forge` (D:\\Project\\ra2-campaign-forge, branch `main`, repo https://github.com/Lawrence7y/ra2-campaign-f | []
+  message | data | 72842 | {"role":"user","time":{"created":1792815940650},"summary":{"title":"Compact summary","body":"Summary:\n1. Primary Request and Intent:\n\nThis is a **GOAL-3T main-driver session** for `ra2-campaign-forge` (D:\\Project\\ra2-campaign-forge, branch `main`, ahead of origin/main by 2 commits). Standing pr | []
+  message | data | 115603 | {"role":"user","time":{"created":1793495057894},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"workflow","title":"harness8 v4 同族标注复核","workId":"dwfrun-25327efe-e66d-4587-a1bd-c1192ae072e1","workflowNotification":{"kind":"terminal","s | []
+  message | data | 115840 | {"role":"user","time":{"created":1793499968321},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"B：逐趟BOOT证据表","workId":"dwfrun-5f4bf3ca-f4a0-4db3-b675-7b857cdcc038","workflowNotification":{"kind":"terminal","status":"compl | []
+  message | data | 115988 | {"role":"user","time":{"created":1793533609514},"agent":"zcode-agent","modelSelection":{"providerId":"account:bigmodel-start-plan","modelId":"GLM-5.3-Flash","options":{"reasoningLevel":"max"}},"contextSnapshot":{"envInfo":{"cwd":"D:\\Project\\ra2-campaign-forge","platform":"win32","shell":"Git Bash" | []
+  message | data | 117059 | {"role":"user","time":{"created":1793675307612},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"workflow","title":"occ 口径普查异族独立核验","workId":"dwfrun-e1f81450-5a2a-490f-9ab3-fff8cf07f7b0","workflowNotification":{"kind":"terminal","statu | []
+  message | data | 117501 | {"role":"user","time":{"created":1793688668505},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"dwfrun-9f56973a-bd83-4769-bb80-fa122315e498","workId":"dwfrun-9f56973a-bd83-4769-bb80-fa122315e498","workflowNotification":{" | []
+  message | data | 121066 | {"role":"user","time":{"created":1793785377628},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"Find all measure_w*.json files and their directories","workId":"exec_643ded75-9d77-414c-9d55-633643e47dfb"},"visibility" | ['measure_w']
+  message | data | 122475 | {"role":"user","time":{"created":1793792463039},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"dwfrun-eb0bb82a-fb83-4734-98da-20520f4bd824","workId":"dwfrun-eb0bb82a-fb83-4734-98da-20520f4bd824","workflowNotification":{" | []
+  message | data | 123416 | {"role":"user","time":{"created":1793817482024},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"dwfrun-72de3cd1-02c3-4d08-ae96-2b83085458ab","workId":"dwfrun-72de3cd1-02c3-4d08-ae96-2b83085458ab","workflowNotification":{" | []
+  message | data | 123502 | {"role":"user","time":{"created":1793836951215},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"D-16 / D-15 裁决（GPT 6.1）","workId":"dwfrun-cccd2ce0-efb9-49a2-b4bd-73987a15fa33","workflowNotification":{"kind":"terminal","st | []
+  message | data | 123779 | {"role":"user","time":{"created":1793841803351},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"dwfrun-65734a63-0330-4d96-9ecb-87f65f4abb08","workId":"dwfrun-65734a63-0330-4d96-9ecb-87f65f4abb08","workflowNotification":{" | []
+  message | data | 125407 | {"role":"user","time":{"created":1793856451278},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"Extract distinct map_sha prefixes from all measure_w JSON files","workId":"exec_cccf8a88-488a-419b-a804-e9610b5bafae"}," | ['measure_w']
+  message | data | 125957 | {"role":"user","time":{"created":1793858896276},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"Locate all measure_w directories repo-wide","workId":"exec_1328a1df-10dd-4015-a156-fbe01af552d7"},"visibility":"model-on | ['measure_w']
+  message | data | 126037 | {"role":"user","time":{"created":1793859286100},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"Check archive_T49_u0800 measure_w0 counters","workId":"exec_1e527e91-975c-4b58-aa56-2b933bca6938"},"visibility":"model-o | ['measure_w']
+  message | data | 126038 | {"role":"user","time":{"created":1793859286108},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"Locate archive_T49_u0800 measure_w0.json","workId":"exec_17fd0fa6-6245-4fcf-8a98-5823ce727c38"},"visibility":"model-only | ['measure_w']
+  message | data | 126259 | {"role":"user","time":{"created":1793860019097},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"W2 同图同兵力帧时差归因","workId":"dwfrun-f7182e80-4ac1-445f-a6c3-2aaabd4736d0","workflowNotification":{"kind":"terminal","status":"com | []
+  message | data | 127899 | {"role":"user","time":{"created":1793864575307},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"Verify line ranges, MANIFEST shas, 10 physical files, and 18 extra measure_w files","workId":"exec_8fa4dd64-1a2d-493c-b4 | ['measure_w']
+  message | data | 128051 | {"role":"user","time":{"created":1793865027595},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"Enumerate the 18 unverified measure_w files and their map_sha values","workId":"exec_c89ede7c-b551-4121-8183-763ec4acc64 | ['measure_w']
+  message | data | 128799 | {"role":"user","time":{"created":1793867783085},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"W3 四大成本中心的静态可定量边界","workId":"dwfrun-1aeaeb17-57b6-4fea-a337-ed0ff6d5fd77","workflowNotification":{"kind":"terminal","status": | []
+  message | data | 129091 | {"role":"user","time":{"created":1793869435112},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"workflow","title":"D-19 采样充分性裁决（GPT 6.1 Sol medium）","workId":"dwfrun-1682f511-de08-44ec-9d60-88112fd33e3f","workflowNotification":{"kind" | []
+  message | data | 129909 | {"role":"user","time":{"created":1793872891433},"summary":{"title":"Compact summary","body":"Summary:\n1. **Primary Request and Intent**:\n\n   **Initial request (round 1)**: 继续逆向任务 (continue RE tasks), using workflows calling Magpie provider models: `hy4free` (priority), `gemini 3.8 Flash`, `DeepSe | []
+  message | data | 135240 | {"role":"user","time":{"created":1793894100486},"summary":{"title":"Compact summary","body":"Summary:\n## 1. Primary Request and Intent\n\n**Standing intent (from earlier session, still in force):** Continue RE (reverse-engineering) work on D:\\Project\\ra2-campaign-forge's RA2/YR engine problems —  | []
+  message | data | 141113 | {"role":"user","time":{"created":1793948811949},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"Check distribution of measure_w*.json across repository","workId":"exec_775316fa-1345-436a-8cc9-29aeb5a5c471"},"visibili | ['measure_w']
+  message | data | 141214 | {"role":"user","time":{"created":1793949337281},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"Check if out measure_w*.json contains occ/occlusion","workId":"exec_c6359fa5-753e-41a1-b07a-1f3e7b969a19"},"visibility": | ['measure_w']
+  message | data | 142945 | {"role":"user","time":{"created":1793959569959},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"Count measure_w*.json by top-level directory","workId":"exec_4c9f8fdc-478a-43b8-8f4e-4c2fe340398b"},"visibility":"model- | ['measure_w']
+  message | data | 147692 | {"role":"user","time":{"created":1794034320351},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"物理起点 S 可观测性与误差界（D-30 §4）","workId":"dwfrun-905376c0-a3b5-43f4-a100-04fc8f4ed9f9","workflowNotification":{"kind":"terminal","s | []
+  message | data | 149273 | {"role":"user","time":{"created":1794048593181},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"D链触发判据离线比较（D-30 §4）","workId":"dwfrun-c595d432-baf3-45f0-af69-9c614c1d81eb","workflowNotification":{"kind":"terminal","status | []
+  message | data | 150675 | {"role":"user","time":{"created":1794060903849},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"均匀慢窗口级代理量增量核算","workId":"dwfrun-c3fa20e3-01cd-4b22-bd5a-71b46f1fff6d","workflowNotification":{"kind":"terminal","status":"com | []
+  message | data | 150996 | {"role":"user","time":{"created":1794063296426},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"离线判据候选比较（第二轮）","workId":"dwfrun-1c93b364-e57c-405d-a271-66cd59e4b850","workflowNotification":{"kind":"terminal","status":"com | []
+  message | data | 151917 | {"role":"user","time":{"created":1794104955427},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"dwfrun-29dbbd2b-855f-4edf-8e39-e3387910aa1f","workId":"dwfrun-29dbbd2b-855f-4edf-8e39-e3387910aa1f","workflowNotification":{" | []
+  message | data | 153327 | {"role":"user","time":{"created":1794115757227},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"§604空档列第二方复算","workId":"dwfrun-4e0fdea9-97ad-43f7-9eba-6cae2c451ba5","workflowNotification":{"kind":"terminal","status":"comp | []
+  message | data | 154394 | {"role":"user","time":{"created":1794123477955},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"R2维度B崩点补证","workId":"dwfrun-a05ccb49-e10b-4004-8ce6-5f5b48d7820e","workflowNotification":{"kind":"terminal","status":"complet | []
+  message | data | 157352 | {"role":"user","time":{"created":1794139611156},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"语料异常件归因核查","workId":"dwfrun-3d631f64-39aa-49b5-81f9-bf2a06adaf8c","workflowNotification":{"kind":"terminal","status":"complet | []
+  message | data | 158238 | {"role":"user","time":{"created":1794147809277},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"方向裁决：下一步推进","workId":"dwfrun-f8edc8ba-7cdd-4109-a55b-97318fa1b5ed","workflowNotification":{"kind":"terminal","status":"comple | []
+  message | data | 159274 | {"role":"user","time":{"created":1794153326037},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"dwfrun-13448f03-38f0-40e1-b43c-c97759379f8f","workId":"dwfrun-13448f03-38f0-40e1-b43c-c97759379f8f","workflowNotification":{" | []
+  message | data | 159983 | {"role":"user","time":{"created":1794157030766},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"台账604空档差口径归属裁定","workId":"dwfrun-cec38f8b-6a40-4b41-b6b4-16da09b9d950","workflowNotification":{"kind":"terminal","status":"co | ['空档差']
+  message | data | 160430 | {"role":"user","time":{"created":1794160083210},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"按文件名搜 lead/ 与 out/re_work/ 下含 gapdiff/s604/604/gap 的 .py","workId":"exec_797e94dc-45db-435f-9799-4f46a45d4f9d"},"visibil | ['gapdiff', 's604']
+  message | data | 160431 | {"role":"user","time":{"created":1794160083220},"agent":"zcode-workflow","metadata":{"inputPresentation":"task_notification_steer","originMeta":{"backgroundSource":"bash","title":"按内容搜全部 .py 含「空档差/§604/S604/快1/3/慢1/3」字样","workId":"exec_49c0f065-723c-4256-a5f3-63e85648c7ca"},"visibility":"model-only" | ['空档差', '快1/3', '慢1/3']
+  message | data | 161124 | {"role":"user","time":{"created":1794163841206},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"dwfrun-bc9d8b8e-9faa-4226-8022-ccd881335683","workId":"dwfrun-bc9d8b8e-9faa-4226-8022-ccd881335683","workflowNotification":{" | []
+  message | data | 162164 | {"role":"user","time":{"created":1794171229288},"agent":"zcode-agent","metadata":{"inputPresentation":"task_notification","originMeta":{"backgroundSource":"workflow","title":"S604错帧对齐候选排他性检验","workId":"dwfrun-88b03f6c-146d-4893-8d84-e87a85abc6e3","workflowNotification":{"kind":"terminal","status":"c | []
+  part | data | 154345 | {"type":"tool","callID":"call_00_hsPbmiw93XvGDEssYR1s6040","declarationIndex":0,"tool":"Read","state":{"status":"completed","input":{"file_path":"D:\\Project\\ra2-campaign-forge\\out\\re_work\\work_chain\\CONTINUE_20261003\\crashspec_v4\\RC_SPEC_V4.md"},"output":"<system-reminder>The file is too lar | ['s604']
+  part | data | 157960 | {"type":"tool","callID":"call_00_wz6L5ClI924O7FabhOUB0591","declarationIndex":0,"tool":"Bash","state":{"status":"completed","input":{"command":"cd \"D:/Project/ra2-campaign-forge/out/re_work/work_chain/CONTINUE_20261003/lead\"; sed -n '120,260p' sampler_dim/SAMPLER_DIM.md","description":"Read SAMPLE | []
+  part | data | 158097 | {"type":"reasoning","text":"Now I have the full trip structure. Key facts:\n- Stage sequence: carrier_ownership(9.3) → target_pin(0) → ctrl_pre(0.016) → T0(2.97) → backup(0.015) → except_baseline(0) → mother_freeze(2.14) → launch(0.047) → window(1.86) → nav_menu(22.7) → nav_setup(4.9) → nav_start(12 | []
+  part | data | 158139 | {"type":"reasoning","text":"HUGE finding at H1_REMEASURE_RUNBOOK §1:\n\n\"旧基准图 [2]0LoadBench_U0200/U0800.yrm 的 200/800 预置单位全挂在 Russians/Americans 两个 house 上；遭遇战（MultiplayerOnly=1）只实例化玩家槽 house 的对象 ⇒ 真机仅 21/22 单位（= HouseClass::RespawnStartingForces 0x50D440 的国家默认开局部队），不是地图负载。替代图 H1 系列已产出（14-house fan | []
+  part | data | 158155 | {"type":"reasoning","text":"Wait — the mother variant _src_variant_800x600_csf has ScenIndex=166! But T24's F-3 read ScenIndex=0 post-run in the CARRIER's RA2MD.INI. Interesting: pre-launch INI has ScenIndex=166 (U0800's index per A-11: \"ScenIndex=166 → U0800\"!). Hmm — A-11: \"U0800 图身份：ScenIndex= | []
+  part | data | 158172 | {"type":"tool","callID":"call_182fe4c9a438454888f476f5","declarationIndex":0,"tool":"Write","state":{"status":"completed","input":{"content":"# MEASURE_DESIGN_v1 · 进图态性能测量方案（U0400 授权图，服务 C1/C2 补丁前后对照）\n\n> [META]\n> 日期 = 2026-10-17 · 执行 = ZCode 子代理（性能测量方案设计员；前次 deepseek 卡死零产物，本件为重派产物）\n> 模式 = **纯离线设 | []
+  part | data | 158179 | {"type":"tool","callID":"call_dd5c340ab65946458e77e347","declarationIndex":0,"tool":"Edit","state":{"status":"completed","input":{"file_path":"D:\\Project\\ra2-campaign-forge\\out\\re_work\\work_chain\\CONTINUE_20261003\\lead\\goal1_measure_design_20261018\\MEASURE_DESIGN_v1.md","new_string":"**探针进程 | []
+  part | data | 158182 | {"type":"tool","callID":"call_8b2b857cb5de44f1916c9df3","declarationIndex":0,"tool":"Edit","state":{"status":"completed","input":{"file_path":"D:\\Project\\ra2-campaign-forge\\out\\re_work\\work_chain\\CONTINUE_20261003\\lead\\goal1_measure_design_20261018\\MEASURE_DESIGN_v1.md","new_string":"| **①  | []
+  part | data | 158201 | {"type":"tool","callID":"call_e43fd7e34b0541319847c4c0","declarationIndex":0,"tool":"Read","state":{"status":"completed","input":{"file_path":"D:\\Project\\ra2-campaign-forge\\out\\re_work\\work_chain\\CONTINUE_20261003\\lead\\goal1_measure_design_20261018\\MEASURE_DESIGN_v1.md"},"output":"1\t# MEAS | []
+  part | data | 158272 | {"type":"reasoning","text":"Now I have all the information I need about the structure. Let me summarize the key variables in scope at the insertion point (:4005, after `budget.end_stage(\"frame\")`):\n- `pid` (resolved pid)\n- `hwnd` (main window)\n- `budget` (TripBudget)\n- `rec` (Recorder)\n- `arg | []
+  part | data | 158288 | {"type":"reasoning","text":"Wait — \"def \" count 113 includes docstring mentions. Fine, it's a baseline. Also note \"taskkill\" 2 (docstring mentions). \"sys.exit\" 13 — my new code adds ZERO sys.exit. EXIT_ 115 — new code adds no new EXIT_ constants and no new sys.exit. I'll re-grep after patch; e | []
+  ...(+10164)

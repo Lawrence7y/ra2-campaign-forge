@@ -1,0 +1,3158 @@
+diff --git a/ra2forge/__init__.py b/ra2forge/__init__.py
+index e2e14e2..fc2c0ef 100644
+--- a/ra2forge/__init__.py
++++ b/ra2forge/__init__.py
+@@ -2,8 +2,8 @@
+ storyline campaigns from an AI-written design JSON.
+ 
+ Public API:
+-    from ra2forge import (builder, design, install, maplib, mixlib, triggers,
+-                          lzo, format80)
++    from ra2forge import (builder, csf, design, install, maplib, mixlib,
++                          triggers, lzo, format80)
+ """
+ 
+ __version__ = "0.3.0"
+diff --git a/ra2forge/builder.py b/ra2forge/builder.py
+index 2d480e6..c5f94c7 100644
+--- a/ra2forge/builder.py
++++ b/ra2forge/builder.py
+@@ -32,10 +32,13 @@ Usage:
+ from __future__ import annotations
+ 
+ import hashlib
++import json
+ import re
+ from pathlib import Path
+ 
++from . import csf as csf_mod
+ from . import design as design_mod
++from .install import PACKAGE_MANIFEST_NAME
+ from .maplib import MissionMap, STANDARD_HOUSES, read_basic_section
+ from . import triggers as tg
+ from .mixlib import MixFile, crc_hash, write_mix
+@@ -56,13 +59,23 @@ class BuildError(RuntimeError):
+     """Raised when a build self-check fails (e.g. the NextScenario chain)."""
+ 
+ 
+-def build(design: dict, out_dir: str | Path) -> Path:
++def build(design: dict, out_dir: str | Path, *,
++          csf_out: str | Path | None = None,
++          csf_base: str | Path | None = None) -> Path:
+     """Compile design into <out_dir>/<CampaignName>/ and return the MIX path.
+ 
+     Self-checks (hard failures, not warnings):
+       1. every written .MAP is read back from disk and its [Basic] NextScenario
+          must match the design's mission order;
+       2. the written MIX must contain exactly the map files and no INI.
++
++    When csf_out is provided (CLI --csf-out PATH) and campaign.description is
++    non-empty, BATTLEMD98.INI Description= is written as a stable CSF label
++    (RA2F:<hash>) instead of raw text, the CSF file at csf_out is created or
++    updated (optionally cloned from csf_base first), a ready-to-use ra2md.csf
++    plus csf_patch.json are emitted in the package directory, and BUILD_REPORT
++    records the exact CSF target/label/text mapping. When csf_out is None
++    (default), behavior is byte-for-byte identical to v0.9.
+     """
+     warnings = design_mod.validate(design)
+     camp = design["campaign"]
+@@ -104,8 +117,20 @@ def build(design: dict, out_dir: str | Path) -> Path:
+ 
+     # --- 3. campaign registry: a loose, additive BATTLEMD98.INI -----------
+     battle_id = battle_id_for(camp)
+-    _write_map_file(out / BATTLE_FILE_NAME, _battle_ini(camp, missions, battle_id))
+-    check_lines.extend(_verify_battle_file(out, camp, missions, battle_id))
++    raw_desc = design_mod.description_for(camp)
++    desc_override: str | None = None
++    csf_label: str | None = None
++    if csf_out is not None and raw_desc:
++        csf_label = csf_label_for(design, battle_id)
++        desc_override = csf_label
++
++    _write_map_file(
++        out / BATTLE_FILE_NAME,
++        _battle_ini(camp, missions, battle_id, desc_override=desc_override),
++    )
++    check_lines.extend(
++        _verify_battle_file(out, camp, missions, battle_id, desc_override=desc_override)
++    )
+ 
+     # --- 4. MIX carries maps only (no INI may ever end up in it) ----------
+     mix_files = {name: text.encode("gbk", errors="replace")
+@@ -114,11 +139,74 @@ def build(design: dict, out_dir: str | Path) -> Path:
+     check_lines.append(_verify_mix_contents(mix_path, sorted(mix_files)))
+ 
+     (out / "story.md").write_text("\n".join(story) + "\n", encoding="utf-8")
+-    _write_build_report(out, camp, compiled, chain, battle_id, check_lines)
++    pkg_id_str = _write_package_identity(out, design)
++
++    csf_info: dict | None = None
++    if csf_out is not None:
++        if raw_desc and csf_label is not None:
++            csf_info = _emit_csf_artifacts(
++                out=out,
++                csf_out=Path(csf_out),
++                csf_base=Path(csf_base) if csf_base is not None else None,
++                csf_label=csf_label,
++                csf_text=raw_desc,
++                battle_id=battle_id,
++                pkg_id=pkg_id_str,
++                check_lines=check_lines,
++            )
++        else:
++            csf_info = {
++                "enabled": True,
++                "skipped": "campaign.description is empty; no CSF label emitted",
++                "csf_out": str(csf_out),
++            }
++
++    _write_build_report(out, camp, compiled, chain, battle_id, check_lines,
++                        pkg_id_str, csf_info=csf_info)
+     _write_install_readme(out, len(missions))
+     return mix_path
+ 
+ 
++# ---------------------------------------------------------------------------
++# package identity (PKG-IDENT01)
++# ---------------------------------------------------------------------------
++
++def _write_package_identity(out: Path, design: dict) -> str:
++    """Stamp <out>/ra2forge_package.json when the design declares an optional
++    top-level "package" object: {"id": ..., "version": ...}.
++
++    The id is the STABLE PACKAGE IDENTITY the installer (install.py
++    PKG-IDENT01) judges upgrades and coexistence by - deliberately a different
++    namespace from the campaign's battle id (campaign.id / BATTLEMD*.INI):
++    the battle id decides how the ENGINE merges campaign entries and must
++    stay stable across versions of the same package; the package_id decides
++    whether the INSTALLER treats a directory as this package's own and must
++    differ between different packages. Neither derives from the other, and
++    neither derives from the build path. A design without the "package"
++    object builds an UNDECLARED package (no ra2forge_package.json): installs
++    from it work, but re-installing over such a record requires the explicit
++    --adopt-legacy assertion. Returns the stamped id ("<undeclared>" when
++    absent) for the build report.
++    """
++    pkg = design.get("package")
++    if pkg is None:
++        return "<undeclared>"
++    if not isinstance(pkg, dict):
++        raise BuildError('the optional "package" design field must be an '
++                         f'object with "id" (and optionally "version"), got '
++                         f"{type(pkg).__name__}")
++    pid = str(pkg.get("id") or "").strip()
++    if not pid:
++        raise BuildError('the optional "package" design field declares no '
++                         'usable "id" (non-empty string required)')
++    ver = str(pkg.get("version") or "").strip() or "unknown"
++    payload = {"tool": "ra2forge", "package_id": pid, "package_version": ver}
++    (out / PACKAGE_MANIFEST_NAME).write_text(
++        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
++        encoding="utf-8")
++    return pid
++
++
+ # ---------------------------------------------------------------------------
+ # campaign chain
+ # ---------------------------------------------------------------------------
+@@ -189,13 +277,15 @@ def _verify_next_scenario_chain(out: Path, compiled, chain) -> list[str]:
+ 
+ 
+ def _verify_battle_file(out: Path, camp: dict, missions: list[dict],
+-                        battle_id: str) -> list[str]:
++                        battle_id: str,
++                        desc_override: str | None = None) -> list[str]:
+     """Read the written BATTLEMD98.INI back and assert the appended entry (R1/R3).
+ 
+     Checks on the bytes that actually landed on disk: the [Battles] index maps to
+     our own battle id, that id's section starts the campaign at the first map and
+-    carries the campaign-level description from the design file, and no official
+-    entry name is present anywhere in the file.
++    carries the campaign-level description from the design file (or the CSF label
++    when --csf-out is enabled), and no official entry name is present anywhere in
++    the file.
+     """
+     path = out / BATTLE_FILE_NAME
+     if not path.is_file():
+@@ -215,7 +305,8 @@ def _verify_battle_file(out: Path, camp: dict, missions: list[dict],
+         raise BuildError(
+             f"{BATTLE_FILE_NAME}: [{battle_id}] Scenario={entry.get('Scenario')!r}, "
+             f"expected {first_map!r}")
+-    want_desc = design_mod.description_for(camp) or str(camp["name"]).strip()
++    want_desc = (desc_override if desc_override is not None
++                 else (design_mod.description_for(camp) or str(camp["name"]).strip()))
+     if entry.get("Description", "") != want_desc:
+         raise BuildError(
+             f"{BATTLE_FILE_NAME}: [{battle_id}] Description="
+@@ -291,12 +382,90 @@ def battle_id_for(campaign) -> str:
+     return design_mod.campaign_battle_id(campaign)
+ 
+ 
+-def _battle_ini(camp: dict, missions: list[dict], battle_id: str) -> str:
++def csf_label_for(design: dict, battle_id: str | None = None) -> str:
++    """Stable CSF label name for campaign.description when CSF mode is enabled.
++
++    Uses design.package.id when declared, otherwise falls back deterministically
++    to battle_id + campaign.name. Format: RA2F:<8-hex-sha256-prefix>.
++    """
++    pkg = design.get("package")
++    pid = str(pkg.get("id") or "").strip() if isinstance(pkg, dict) else ""
++    if pid:
++        seed = f"pkg:{pid}"
++    else:
++        camp = design.get("campaign") or {}
++        bid = battle_id or battle_id_for(camp)
++        seed = f"battle:{bid}:{str(camp.get('name') or '').strip()}"
++    short_hash = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:8].upper()
++    return f"RA2F:{short_hash}"
++
++
++def _emit_csf_artifacts(
++    *,
++    out: Path,
++    csf_out: Path,
++    csf_base: Path | None,
++    csf_label: str,
++    csf_text: str,
++    battle_id: str,
++    pkg_id: str,
++    check_lines: list[str],
++) -> dict:
++    """Write/update csf_out and emit package ra2md.csf + csf_patch.json."""
++    try:
++        if csf_base is not None:
++            base_csf = csf_mod.read_csf(csf_base, strict=True)
++            if csf_out.resolve() != csf_base.resolve():
++                csf_mod.write_csf(csf_out, base_csf)
++        res = csf_mod.append_or_set_label(
++            csf_out, csf_label, csf_text, create_if_missing=True, verify=True
++        )
++    except (OSError, csf_mod.CsfError) as exc:
++        raise BuildError(f"CSF emission failed for {csf_out}: {exc}") from exc
++
++    pkg_csf = out / "ra2md.csf"
++    if csf_out.resolve() != pkg_csf.resolve():
++        pkg_csf.write_bytes(csf_out.read_bytes())
++
++    patch_payload = {
++        "target_csf": "ra2md.csf",
++        "label": csf_label,
++        "text": csf_text,
++        "battle_id": battle_id,
++        "package_id": pkg_id,
++        "csf_out": str(csf_out),
++        "action": res["action"],
++        "num_labels": res["num_labels"],
++    }
++    (out / "csf_patch.json").write_text(
++        json.dumps(patch_payload, indent=2, ensure_ascii=False) + "\n",
++        encoding="utf-8",
++    )
++    check_lines.append(
++        f"  [PASS] ra2md.csf: label {csf_label} -> {res['action']} "
++        f"(num_labels={res['num_labels']}, readback verified)"
++    )
++    return {
++        "enabled": True,
++        "target_csf": "ra2md.csf",
++        "label": csf_label,
++        "text": csf_text,
++        "csf_out": str(csf_out),
++        "pkg_csf": pkg_csf.name,
++        "patch_file": "csf_patch.json",
++        "action": res["action"],
++        "num_labels": res["num_labels"],
++    }
++
++
++def _battle_ini(camp: dict, missions: list[dict], battle_id: str,
++                desc_override: str | None = None) -> str:
+     # R3: the Description shown in the campaign list is the campaign-level blurb
+     # from the design file (campaign.description) - never a hard coded string and
+-    # never a "DESC:xxx" CSF label. It falls back to the campaign name only when
+-    # the design omits the field (design.validate warns about that).
+-    desc = design_mod.description_for(camp) or str(camp["name"]).strip()
++    # never a "DESC:xxx" CSF label unless CSF mode is explicitly enabled via
++    # --csf-out. Falls back to campaign.name when the design omits the field.
++    desc = (desc_override if desc_override is not None
++            else (design_mod.description_for(camp) or str(camp["name"]).strip()))
+     lines = [
+         "; Generated by RA2 Campaign Forge - APPENDED campaign entry.",
+         "; The game scans the GAME DIRECTORY for BATTLEMD*.INI and merges the",
+@@ -581,7 +750,9 @@ def _artifact_line(path: Path) -> str:
+ 
+ 
+ def _write_build_report(out: Path, camp: dict, compiled, chain, battle_id: str,
+-                        check_lines: list[str]) -> Path:
++                        check_lines: list[str],
++                        package_id: str = "<undeclared>",
++                        csf_info: dict | None = None) -> Path:
+     lines = [
+         "RA2 Campaign Forge - build report",
+         f"campaign={camp['name']}",
+@@ -590,12 +761,32 @@ def _write_build_report(out: Path, camp: dict, compiled, chain, battle_id: str,
+         f"battle_id={battle_id}",
+         f"battle_id_source={'campaign.id' if camp.get('id') else 'default RA2F1'}",
+         f"battle_index={BATTLE_INDEX}",
++        f"package_id={package_id}",
++        f"package_id_source={'design.package.id' if package_id != '<undeclared>' else 'undeclared (no ra2forge_package.json written)'}",
+         f"description={design_mod.description_for(camp) or camp['name']}",
+         f"first_scenario={compiled[0][0]}",
+         f"mix={MIX_FILE_NAME} (maps only)",
++    ]
++    if csf_info is not None:
++        if csf_info.get("skipped"):
++            lines.extend([
++                f"csf_mode=enabled (skipped: {csf_info['skipped']})",
++                f"csf_out={csf_info['csf_out']}",
++            ])
++        else:
++            lines.extend([
++                "csf_mode=enabled",
++                f"csf_target={csf_info['target_csf']}",
++                f"csf_label={csf_info['label']}",
++                f"csf_text={csf_info['text']}",
++                f"csf_out={csf_info['csf_out']}",
++                f"csf_instruction=write label {csf_info['label']!r} into {csf_info['target_csf']} "
++                f"(package {csf_info['pkg_csf']} + {csf_info['patch_file']} generated)",
++            ])
++    lines.extend([
+         "",
+         "NextScenario chain:",
+-    ]
++    ])
+     for (map_name, mmap), nxt in zip(compiled, chain):
+         lines.append(f"  {map_name}  title={mmap.name}  "
+                      f"next={nxt or '<campaign end>'}  "
+@@ -606,6 +797,13 @@ def _write_build_report(out: Path, camp: dict, compiled, chain, battle_id: str,
+     lines.append(_artifact_line(out / BATTLE_FILE_NAME))
+     lines.append(_artifact_line(out / MIX_FILE_NAME))
+     lines.append(_artifact_line(out / "story.md"))
++    if (out / PACKAGE_MANIFEST_NAME).is_file():
++        lines.append(_artifact_line(out / PACKAGE_MANIFEST_NAME))
++    if csf_info is not None and not csf_info.get("skipped"):
++        if (out / "ra2md.csf").is_file():
++            lines.append(_artifact_line(out / "ra2md.csf"))
++        if (out / "csf_patch.json").is_file():
++            lines.append(_artifact_line(out / "csf_patch.json"))
+     lines.append("")
+     report = out / "BUILD_REPORT.txt"
+     report.write_text("\n".join(lines), encoding="utf-8")
+diff --git a/ra2forge/cli.py b/ra2forge/cli.py
+index e6bbe1d..35c2070 100644
+--- a/ra2forge/cli.py
++++ b/ra2forge/cli.py
+@@ -1,4 +1,4 @@
+-"""Command line interface: validate / build / install / uninstall / inspect / example."""
++"""Command line interface: validate / build / install / uninstall / verify / inspect / example."""
+ 
+ from __future__ import annotations
+ 
+@@ -9,7 +9,119 @@ from pathlib import Path
+ 
+ from . import design as design_mod
+ from .builder import BuildError, build
+-from .install import install_package, uninstall
++from .install import (
++    EXIT_SEAL_MISSING,
++    EXIT_SEAL_MISMATCH,
++    EXIT_UNINSTALL_PARTIAL,
++    EXIT_VERIFY_DIGEST,
++    EXIT_VERIFY_DRIFT,
++    EXIT_VERIFY_STRUCTURAL,
++    PackageIdentityBlocked,
++    install_package,
++    uninstall,
++)
++from .verify import verify_install
++
++# PKG-IDENT01: distinguishable exit codes for the identity refusals
++# (argparse errors keep the conventional 2, everything else unexpected is 1)
++EXIT_PACKAGE_MISMATCH = 3
++EXIT_LEGACY_ADOPT_REQUIRED = 4
++
++# SEAL-CHAIN01: the exit-code table, quoted in verify --help, uninstall
++# --help and VERIFY.md. 5 > 6 > 7/8 > 9 is the severity order: verify
++# reports every finding and exits with the most severe class present.
++VERIFY_EXIT_CODES_TEXT = """\
++exit codes:
++  0  everything ok (orphans, if any, are listed but do not change the
++     code; a directory with no install record also verifies as 0 -
++     nothing to check)
++  1  the check itself failed to run (unexpected error)
++  2  command-line usage error (argparse)
++  5  manifest structure unusable (not JSON / required fields missing)
++  6  package_digest mismatch - the manifest's own records are not
++     self-consistent
++  7  install seal MISSING for a seal-era manifest (tool >= 0.7)
++  8  install seal MISMATCH / corrupt / aliased
++  9  drift: recorded files changed or missing on disk
++when several classes apply, the exit code is the MOST SEVERE one
++(5 > 6 > 7/8 > 9); every finding is still listed. Old manifests (tool
++< 0.7, no seal) verify in degraded mode: warned, still fully run.
++The seal detects accidents, not attacks - it is not anti-tamper."""
++
++# UNSEAL-FIX01 (W25, tool 0.8): the uninstall exit-code table. Quoted in
++# uninstall --help, VERIFY.md and UNSEAL_FIX.md - the three must stay
++# identical. The --json "exit_code_meaning" values come from the same table.
++UNINSTALL_EXIT_CODES_TEXT = """\
++exit codes (uninstall):
++  0  completed - the recorded lifecycle was processed (or there was
++     nothing to remove). Two documented sub-cases also exit 0: entry
++     refusals keep the record for a later retry (each one listed as a
++     warning; behavior unchanged since tool 0.7), and a non-qualifying
++     install-record slot is not acted on (report status "failed", see
++     the warning)
++  1  the uninstall itself failed unexpectedly (error on stderr, or
++     post-entry record removal failed - actions remain in the report)
++  2  command-line usage error (argparse)
++  7  uninstall REFUSED: install seal MISSING for a seal-era manifest
++     (tool >= 0.7) - nothing removed, nothing restored, record kept
++  8  uninstall REFUSED: install seal MISMATCH / corrupt / aliased
++  10 partial completion (report status "completed_with_warnings"):
++     the main uninstall COMPLETED - the record was deleted and every
++     recorded file was processed - but the FINAL cleanup failed (the
++     install seal could not be removed). The warning names the stray
++     seal file and the recovery (clear the obstacle and delete it by
++     hand, or re-run the install of the SAME package and uninstall
++     again). New in tool 0.8 (UNSEAL-FIX01): tool 0.7 exited 1 here
++     and lost the actions report
++report status values (report dict / uninstall --json "status"):
++  completed - the command ran to its defined end (see exit 0 notes)
++  completed_with_warnings - main flow done, final cleanup failed
++  failed - refused: seal gate (exit 7/8) or a non-qualifying record
++           slot (exit 0, unchanged since tool 0.7), or post-entry
++           record removal failed (exit 1, actions preserved in report)"""
++
++UNINSTALL_EXIT_MEANINGS = {
++    0: "completed - the recorded lifecycle was processed (or there was "
++       "nothing to remove; entry refusals keep the record for a retry, "
++       "and a non-qualifying record slot is not acted on - see warnings)",
++    1: "the uninstall itself failed unexpectedly (error on stderr, or "
++       "post-entry record removal failed - see warnings and actions)",
++    2: "command-line usage error (argparse)",
++    EXIT_SEAL_MISSING: "uninstall REFUSED: install seal MISSING for a "
++                       "seal-era manifest (tool >= 0.7)",
++    EXIT_SEAL_MISMATCH: "uninstall REFUSED: install seal MISMATCH / "
++                        "corrupt / aliased",
++    EXIT_UNINSTALL_PARTIAL: "partial completion (completed_with_warnings): "
++                            "the main uninstall completed but the final "
++                            "cleanup failed - the install seal could not "
++                            "be removed (see warnings)",
++}
++
++
++def _uninstall_exit_code(report: dict) -> int:
++    """UNSEAL-FIX01 / UNSEAL-FIX02: map the uninstall report to its CLI exit code."""
++    if report.get("refused"):
++        return (EXIT_SEAL_MISSING if report["refused"] == "seal_missing"
++                else EXIT_SEAL_MISMATCH)
++    if report.get("failed_step"):
++        return 1
++    if report.get("status") == "completed_with_warnings":
++        return EXIT_UNINSTALL_PARTIAL
++    return 0
++
++
++def _uninstall_json(report: dict) -> dict:
++    """UNSEAL-FIX01: the uninstall report as JSON - same facts, same exit
++    code and the same three-state status as the text report."""
++    code = _uninstall_exit_code(report)
++    return {"tool": "ra2forge", "command": "uninstall",
++            "game_dir": str(report.get("game_dir", "")),
++            "status": report.get("status"),
++            "actions": report.get("actions", []),
++            "warnings": report.get("warnings", []),
++            "refused": report.get("refused"),
++            "exit_code": code,
++            "exit_code_meaning": UNINSTALL_EXIT_MEANINGS.get(code, f"exit {code}")}
+ 
+ 
+ def main(argv=None):
+@@ -25,6 +137,16 @@ def main(argv=None):
+     p_build = sub.add_parser("build", help="compile a design into game files")
+     p_build.add_argument("--design", required=True, help="path to design JSON")
+     p_build.add_argument("--out", default="out", help="output directory")
++    p_build.add_argument("--csf-out", metavar="PATH", default=None,
++                         help="optional CSF output/update path: replace "
++                              "BATTLEMD98.INI Description= with a stable CSF "
++                              "label (RA2F:<hash>), write/update the CSF at "
++                              "PATH, and emit ra2md.csf + csf_patch.json in "
++                              "the package directory (omit to keep legacy "
++                              "raw-text Description=)")
++    p_build.add_argument("--csf-base", metavar="CSF_PATH", default=None,
++                         help="optional existing CSF (e.g. extracted ra2md.csf) "
++                              "to clone to --csf-out before appending the label")
+     p_build.add_argument("--install", metavar="GAME_DIR", default=None,
+                          help="also install the package into this game directory "
+                               "(backs up every replaced file)")
+@@ -40,15 +162,42 @@ def main(argv=None):
+     p_inst.add_argument("--game", required=True, metavar="GAME_DIR")
+     p_inst.add_argument("--force", action="store_true",
+                         help="accepted for backward compatibility only; it has "
+-                             "no effect on install (release content conflicts "
+-                             "with --allow-content-conflict; everything else "
+-                             "is a hard gate - see DLC-STRICT01)")
++                             "NO effect on install and never overrides any "
++                             "refusal - not the package-identity gate (exit 3 "
++                             "on a different declared package_id, exit 4 when "
++                             "identity is undeclared), not path-safety, "
++                             "corrupt-record, backup-protection or strict-risk "
++                             "blocks; release content conflicts with "
++                             "--allow-content-conflict instead")
+     p_inst.add_argument("--allow-content-conflict", action="store_true",
+                         help="release ONLY definite content conflicts (each one "
+                              "is logged); never releases path-safety, "
+-                             "corrupt-record or backup-protection blocks")
++                             "corrupt-record, backup-protection blocks or the "
++                             "package-identity gate")
++    p_inst.add_argument("--adopt-legacy", action="store_true",
++                        help="assert explicitly that this install is the "
++                             "intended successor of the install record already "
++                             "in the game directory when the identity is "
++                             "undeclared (record has no package_id, or this "
++                             "package has no ra2forge_package.json). Without "
++                             "it those cases are refused with exit 4. Does "
++                             "NOT release the different-package_id refusal "
++                             "(exit 3) or any other gate")
+ 
+-    p_un = sub.add_parser("uninstall", help="remove the package and restore backups")
++    p_un = sub.add_parser("uninstall", help="remove the package and restore backups",
++                          description="Remove the recorded package files, "
++                                      "restore every backup and delete the "
++                                      "install record together with its "
++                                      "seal. UNSEAL-FIX01 (tool 0.8): the "
++                                      "final seal cleanup is fault-tolerant "
++                                      "- a seal that cannot be removed "
++                                      "(read-only, open handle) leaves the "
++                                      "completed uninstall fully reported "
++                                      "with an explicit warning and exit "
++                                      "code 10 instead of aborting with "
++                                      "exit 1 and a lost report.",
++                          epilog=UNINSTALL_EXIT_CODES_TEXT,
++                          formatter_class=argparse.RawDescriptionHelpFormatter)
+     p_un.add_argument("--game", required=True, metavar="GAME_DIR")
+     p_un.add_argument("--legacy", action="store_true",
+                       help="also clean files placed by ra2forge <= FORGE-1 "
+@@ -58,7 +207,36 @@ def main(argv=None):
+                            "that has no backup (it is moved to "
+                            "BATTLEMD.INI.ra2forge.removed.bak)")
+     p_un.add_argument("--force", action="store_true",
+-                      help="delete files even when their sha256 changed")
++                      help="delete files even when their sha256 changed. Does "
++                           "NOT bypass the install-seal gate: a seal-era "
++                           "manifest (tool >= 0.7) whose seal is missing "
++                           "(exit 7) or mismatched/corrupt (exit 8) refuses "
++                           "the whole uninstall - nothing removed, nothing "
++                           "restored, record kept. Old manifests (no seal) "
++                           "uninstall as before with a degraded-mode warning. "
++                           "The seal detects accidents, not attacks - it is "
++                           "not anti-tamper")
++    p_un.add_argument("--json", dest="as_json", action="store_true",
++                      help="print the full uninstall report as a JSON object "
++                           "(same three-state status and same exit codes as "
++                           "the text report)")
++
++    p_ver = sub.add_parser(
++        "verify", help="read-only drift check of the installed package record",
++        description="Read-only verification of ra2forge_install.json and the "
++                    "files it recorded: manifest structure, package_digest "
++                    "self-consistency (of the RECORDS only), per-file disk "
++                    "sha256 (ok / changed / missing), ra2forge orphans "
++                    "(*.ra2forge.bak etc. not accounted for by the manifest), "
++                    "and the install seal. Writes NOTHING.",
++        epilog=VERIFY_EXIT_CODES_TEXT,
++        formatter_class=argparse.RawDescriptionHelpFormatter)
++    p_ver.add_argument("--game", required=True, metavar="GAME_DIR",
++                       help="the game directory to check (read-only; "
++                            "gamemd.exe is NOT required)")
++    p_ver.add_argument("--json", dest="as_json", action="store_true",
++                       help="print the full report as a JSON object (same "
++                            "exit codes as the text report)")
+ 
+     p_ex = sub.add_parser("example", help="write an example design JSON")
+     p_ex.add_argument("path", nargs="?", default="demo_campaign.json")
+@@ -98,12 +276,17 @@ def main(argv=None):
+         return 0
+ 
+     if args.cmd == "build":
++        if args.csf_base and not args.csf_out:
++            print("error: --csf-base requires --csf-out", file=sys.stderr)
++            return 2
+         design = _load(args.design)
+         try:
+             warnings = design_mod.validate(design)
+             for w in warnings:
+                 print(f"warning: {w}")
+-            mix_path = build(design, args.out)
++            mix_path = build(design, args.out,
++                             csf_out=args.csf_out,
++                             csf_base=args.csf_base)
+         except (BuildError, design_mod.DesignError) as exc:
+             print(f"error: {exc}", file=sys.stderr)
+             return 1
+@@ -127,7 +310,15 @@ def main(argv=None):
+         try:
+             report = install_package(args.package, args.game,
+                                      allow_content_conflict=
+-                                     args.allow_content_conflict)
++                                     args.allow_content_conflict,
++                                     adopt_legacy=args.adopt_legacy)
++        except PackageIdentityBlocked as exc:
++            # PKG-IDENT01: distinguishable exit codes - 3 = a different
++            # declared package_id (never releasable), 4 = undeclared identity
++            # (releasable only by --adopt-legacy)
++            print(f"error: {exc}", file=sys.stderr)
++            return (EXIT_PACKAGE_MISMATCH if exc.kind == "package_mismatch"
++                    else EXIT_LEGACY_ADOPT_REQUIRED)
+         except (OSError, ValueError) as exc:
+             print(f"error: {exc}", file=sys.stderr)
+             return 1
+@@ -143,9 +334,37 @@ def main(argv=None):
+         except (OSError, ValueError) as exc:
+             print(f"error: {exc}", file=sys.stderr)
+             return 1
+-        print(f"uninstalled from {report['game_dir']}:")
+-        _print_report(report)
+-        return 0
++        code = _uninstall_exit_code(report)
++        if args.as_json:
++            # UNSEAL-FIX01: same facts / three-state status / exit code as
++            # the text report - machine consumers read the same semantics.
++            print(json.dumps(_uninstall_json(report), indent=2,
++                             ensure_ascii=False))
++            return code
++        if report.get("refused"):
++            # SEAL-CHAIN01: distinguishable seal-gate refusals - the game
++            # directory was not modified by this run.
++            print("uninstall refused - nothing was removed or restored:")
++            _print_report(report)
++        else:
++            print(f"uninstalled from {report['game_dir']}:")
++            _print_report(report)
++        # UNSEAL-FIX01: the explicit three-state summary line - completed /
++        # completed_with_warnings / failed - matching the exit code above.
++        print(f"  status: {report['status']} (exit code {code})")
++        return code
++
++    if args.cmd == "verify":
++        try:
++            report = verify_install(args.game)
++        except OSError as exc:
++            print(f"error: {exc}", file=sys.stderr)
++            return 1
++        if args.as_json:
++            print(json.dumps(report, indent=2, ensure_ascii=False))
++        else:
++            _print_verify(report)
++        return report["exit_code"]
+ 
+     if args.cmd == "inspect":
+         text = _read_map_text(Path(args.map))
+@@ -180,6 +399,67 @@ def _print_report(report: dict) -> None:
+             print(f"  warning: {warning}")
+ 
+ 
++def _print_verify(r: dict) -> None:
++    """Human-readable verify report (same facts as the --json object)."""
++    print(f"verify report for {r['game_dir']}")
++    if not r["manifest_present"]:
++        for w in r["warnings"]:
++            print(f"  note: {w}")
++        print(f"  exit code: {r['exit_code']} ({r['exit_code_meaning']})")
++        return
++    era = ("LEGACY / degraded (no seal expected)"
++           if r["legacy_degraded"] else "seal era (tool >= 0.7)")
++    print(f"  manifest: {r['manifest_version'] or '<no version>'}  [{era}]")
++    if r["structural"]:
++        print(f"  structure: FAIL ({len(r['structural'])} finding(s))")
++        for s in r["structural"]:
++            print(f"    - {s}")
++    else:
++        print("  structure: OK")
++    d = r["digest"]
++    if d is None:
++        print("  package_digest: (skipped - legacy manifest has no digest)")
++    elif d["match"] is None:
++        print(f"  package_digest: SKIPPED ({d['note']})")
++    elif d["match"]:
++        print(f"  package_digest: OK  {str(d['recorded'])[:12]}... "
++              "(self-consistency of the records only - not proof of what is "
++              "on disk)")
++    else:
++        print(f"  package_digest: MISMATCH  recorded={str(d['recorded'])[:12]}..."
++              f"  recomputed={str(d['recomputed'])[:12]}...")
++    s = r["seal"]
++    if not s["expected"]:
++        print(f"  seal: not expected ({s['state']})"
++              + (f" - {s['detail']}" if s["detail"] else ""))
++    elif s["state"] == "ok":
++        print(f"  seal: OK ({s['path']})")
++    else:
++        print(f"  seal: {s['state'].upper()} - {s['detail']}")
++    counts = r["counts"]
++    print(f"  files: {counts['ok']} ok, {counts['changed']} changed, "
++          f"{counts['missing']} missing/unreadable  (of "
++          f"{len(r['files'])} recorded)")
++    for f in r["files"]:
++        mark = {"ok": "ok      ", "changed": "CHANGED ",
++                "missing": "MISSING "}.get(f["status"], "ERROR   ")
++        line = f"    {mark} {f['name']}"
++        if f["status"] == "changed":
++            line += (f"  (recorded {str(f['recorded_sha256'])[:12]}..., "
++                     f"disk {str(f['disk_sha256'])[:12]}...)")
++        print(line)
++    if r["orphans"]:
++        print(f"  orphans: {counts['orphans']} (ra2forge files the manifest "
++              "does not account for; listed, do not change the exit code)")
++        for o in r["orphans"]:
++            print(f"    - {o}")
++    else:
++        print("  orphans: none")
++    for w in r["warnings"]:
++        print(f"  note: {w}")
++    print(f"  exit code: {r['exit_code']} ({r['exit_code_meaning']})")
++
++
+ def _load(path: str) -> dict:
+     p = Path(path)
+     if not p.exists():
+diff --git a/ra2forge/csf.py b/ra2forge/csf.py
+new file mode 100644
+index 0000000..83a91a5
+--- /dev/null
++++ b/ra2forge/csf.py
+@@ -0,0 +1,527 @@
++"""CSF (Compiled String File) reader/writer for Red Alert 2 / Yuri's Revenge.
++
++Binary format (CSF v3, verified byte-for-byte against official ra2md.csf and ra2.csf):
++  Header (24 bytes, little-endian):
++    0x00  4s   magic        b" FSC" (0x43534620 = "CSF " in LE uint32)
++    0x04  I    version      3 (also accepts 2)
++    0x08  I    num_labels   number of LBL records
++    0x0C  I    num_strings  total number of string values across all labels
++    0x10  I    unused       0x00000000 in official ra2md.csf / ra2.csf (NOT a CRC)
++    0x14  I    language     0=English(US), ..., 9=Chinese
++
++  Label record (repeated num_labels times):
++    4s   lbl_magic    b" LBL" (0x4C424C20 = "LBL " in LE uint32)
++    I    num_values   number of value records attached to this label
++    I    name_len     byte length of ASCII label name
++    *    name         ASCII label name (name_len bytes)
++
++  Value record (repeated num_values times per label):
++    4s   val_magic    b" RTS" (0x53545220 = "STR " in LE) or b"WRTS" (0x57525453 = "STRW" in LE)
++    I    char_count   number of UTF-16LE code units (payload is char_count * 2 bytes)
++    *    text_bytes   UTF-16LE bytes with every byte bitwise-inverted (b ^ 0xFF)
++    [if val_magic == b"WRTS"]:
++      I    extra_len  byte length of ASCII extra string (e.g. EVA/sound tag)
++      *    extra      ASCII extra string (extra_len bytes)
++
++CRC / Checksum / Offset table notes:
++  CSF v3 has NO CRC/checksum field and NO offset/index table. Header offset 0x10
++  (4 bytes) is an unused/reserved field (0x00000000 in both official ra2md.csf
++  and ra2.csf). Mutating a CSF therefore requires updating `num_labels` and
++  `num_strings` consistently (and preserving `unused` / `language`).
++
++Pure Python standard library only.
++"""
++
++from __future__ import annotations
++
++import os
++import secrets
++import struct
++from dataclasses import dataclass, field
++from pathlib import Path
++
++CSF_MAGIC = b" FSC"
++LBL_MAGIC = b" LBL"
++STR_MAGIC = b" RTS"
++WRTS_MAGIC = b"WRTS"
++
++HEADER_STRUCT = struct.Struct("<4sIIIII")
++LABEL_STRUCT = struct.Struct("<4sII")
++UINT32_STRUCT = struct.Struct("<I")
++
++LANGUAGE_NAMES = {
++    0: "English (US)",
++    1: "English (UK)",
++    2: "German",
++    3: "French",
++    4: "Spanish",
++    5: "Italian",
++    6: "Japanese",
++    7: "Jabberwockie",
++    8: "Korean",
++    9: "Chinese",
++}
++
++_XOR_TRANS = bytes(b ^ 0xFF for b in range(256))
++
++
++class CsfError(ValueError):
++    """Raised when a CSF file is malformed, truncated, or unsupported."""
++
++
++@dataclass
++class CsfValue:
++    """One value entry under a CSF label."""
++
++    kind: bytes
++    text: str | None
++    extra: str | None = None
++    raw_bytes: bytes | None = None
++
++    @property
++    def is_known(self) -> bool:
++        return self.kind in (STR_MAGIC, WRTS_MAGIC) and self.raw_bytes is None
++
++    def to_bytes(self) -> bytes:
++        if self.raw_bytes is not None:
++            return self.raw_bytes
++        if self.text is None:
++            raise CsfError(f"cannot serialize value of kind {self.kind!r} with text=None")
++        raw_u16 = self.text.encode("utf-16-le")
++        if len(raw_u16) % 2 != 0:
++            raise CsfError("internal error: UTF-16LE byte length is odd")
++        char_count = len(raw_u16) // 2
++        inv_u16 = raw_u16.translate(_XOR_TRANS)
++        if self.kind == STR_MAGIC:
++            return STR_MAGIC + UINT32_STRUCT.pack(char_count) + inv_u16
++        if self.kind == WRTS_MAGIC:
++            extra_bytes = (self.extra or "").encode("ascii")
++            return (
++                WRTS_MAGIC
++                + UINT32_STRUCT.pack(char_count)
++                + inv_u16
++                + UINT32_STRUCT.pack(len(extra_bytes))
++                + extra_bytes
++            )
++        raise CsfError(f"unsupported CSF value type for serialization: {self.kind!r}")
++
++
++@dataclass
++class CsfLabel:
++    """One labeled entry in a CSF file."""
++
++    name: str
++    values: list[CsfValue] = field(default_factory=list)
++
++    @property
++    def text(self) -> str | None:
++        return self.values[0].text if self.values else None
++
++    def to_bytes(self) -> bytes:
++        name_bytes = self.name.encode("ascii")
++        parts = [LABEL_STRUCT.pack(LBL_MAGIC, len(self.values), len(name_bytes)), name_bytes]
++        for v in self.values:
++            parts.append(v.to_bytes())
++        return b"".join(parts)
++
++
++@dataclass
++class CsfFile:
++    """In-memory representation of a parsed CSF file."""
++
++    version: int = 3
++    unused: int = 0
++    language: int = 0
++    labels: list[CsfLabel] = field(default_factory=list)
++    warnings: list[str] = field(default_factory=list)
++    unknown_records: list[dict] = field(default_factory=list)
++    has_unparsed_tail: bool = False
++    header_num_labels: int | None = None
++    header_num_strings: int | None = None
++
++    @property
++    def num_labels(self) -> int:
++        return len(self.labels)
++
++    @property
++    def num_strings(self) -> int:
++        return sum(len(lbl.values) for lbl in self.labels)
++
++    def _match(self, a: str, b: str, *, case_insensitive: bool) -> bool:
++        return a.lower() == b.lower() if case_insensitive else a == b
++
++    def get_label(self, label: str, *, case_insensitive: bool = False) -> CsfLabel | None:
++        for lbl in self.labels:
++            if self._match(lbl.name, label, case_insensitive=case_insensitive):
++                return lbl
++        return None
++
++    def get(self, label: str, *, case_insensitive: bool = False) -> str | None:
++        lbl = self.get_label(label, case_insensitive=case_insensitive)
++        return lbl.text if lbl is not None else None
++
++    def set(
++        self,
++        label: str,
++        text: str,
++        *,
++        extra: str | None = None,
++        case_insensitive: bool = False,
++    ) -> str:
++        """Set or append a label's primary string value. Returns 'updated' or 'appended'."""
++        if not label or not label.isascii():
++            raise CsfError(f"label name must be non-empty ASCII, got {label!r}")
++        if extra is not None and not extra.isascii():
++            raise CsfError(f"WRTS extra string must be ASCII, got {extra!r}")
++        if self.has_unparsed_tail:
++            raise CsfError("cannot mutate a CSF file that contains an unparsed unknown value tail")
++        kind = WRTS_MAGIC if extra is not None else STR_MAGIC
++        val = CsfValue(kind=kind, text=text, extra=extra)
++        existing = self.get_label(label, case_insensitive=case_insensitive)
++        if existing is not None:
++            existing.values = [val]
++            return "updated"
++        self.labels.append(CsfLabel(name=label, values=[val]))
++        return "appended"
++
++    def to_dict(self) -> dict[str, str]:
++        out: dict[str, str] = {}
++        for lbl in self.labels:
++            if lbl.text is not None:
++                out[lbl.name] = lbl.text
++        return out
++
++    def to_bytes(self) -> bytes:
++        if self.has_unparsed_tail:
++            raise CsfError(
++                "cannot re-serialize CSF with an unparsed unknown value tail "
++                "(remaining label count/boundaries are unknown)"
++            )
++        n_labels = len(self.labels)
++        n_strings = sum(len(lbl.values) for lbl in self.labels)
++        header = HEADER_STRUCT.pack(
++            CSF_MAGIC,
++            self.version,
++            n_labels,
++            n_strings,
++            self.unused,
++            self.language,
++        )
++        chunks = [header]
++        for lbl in self.labels:
++            chunks.append(lbl.to_bytes())
++        return b"".join(chunks)
++
++
++def parse_csf(data: bytes, *, strict: bool = False) -> CsfFile:
++    """Parse raw CSF bytes into a CsfFile.
++
++    Raises CsfError on truncated headers/records, bad magic, or invalid UTF-16.
++    When strict=False (default), unknown value type magics (other than b" RTS"
++    and b"WRTS") are honestly reported in CsfFile.warnings / unknown_records
++    with their raw bytes preserved; when strict=True, unknown value types raise
++    CsfError.
++    """
++    if not isinstance(data, (bytes, bytearray, memoryview)):
++        raise CsfError(f"expected bytes-like input, got {type(data).__name__}")
++    buf = bytes(data)
++    total_len = len(buf)
++    if total_len < HEADER_STRUCT.size:
++        raise CsfError(
++            f"truncated CSF header: got {total_len} bytes, need at least {HEADER_STRUCT.size}"
++        )
++
++    magic, version, num_labels, num_strings, unused, language = HEADER_STRUCT.unpack_from(buf, 0)
++    if magic != CSF_MAGIC:
++        raise CsfError(f"bad CSF magic {magic!r}, expected {CSF_MAGIC!r}")
++    if version not in (2, 3):
++        raise CsfError(f"unsupported CSF version {version} (expected 2 or 3)")
++
++    pos = HEADER_STRUCT.size
++    labels: list[CsfLabel] = []
++    warnings: list[str] = []
++    unknown_records: list[dict] = []
++    has_unparsed_tail = False
++    parsed_values = 0
++
++    for lbl_idx in range(num_labels):
++        if pos + LABEL_STRUCT.size > total_len:
++            raise CsfError(
++                f"truncated LBL header at offset {pos} (label {lbl_idx}/{num_labels})"
++            )
++        lbl_magic, n_vals, name_len = LABEL_STRUCT.unpack_from(buf, pos)
++        pos += LABEL_STRUCT.size
++        if lbl_magic != LBL_MAGIC:
++            raise CsfError(
++                f"bad LBL magic {lbl_magic!r} at offset {pos - LABEL_STRUCT.size} "
++                f"(label {lbl_idx}/{num_labels})"
++            )
++        if pos + name_len > total_len:
++            raise CsfError(
++                f"truncated label name at offset {pos} (need {name_len} bytes, "
++                f"{total_len - pos} left)"
++            )
++        name_bytes = buf[pos:pos + name_len]
++        pos += name_len
++        try:
++            name = name_bytes.decode("ascii")
++        except UnicodeDecodeError as exc:
++            raise CsfError(
++                f"non-ASCII label name at label {lbl_idx}: {name_bytes!r}"
++            ) from exc
++
++        values: list[CsfValue] = []
++        aborted_on_unknown = False
++        for val_idx in range(n_vals):
++            if pos + 4 > total_len:
++                raise CsfError(
++                    f"truncated value magic at offset {pos} (label {name!r} value {val_idx}/{n_vals})"
++                )
++            val_start = pos
++            vmagic = buf[pos:pos + 4]
++            pos += 4
++
++            if vmagic in (STR_MAGIC, WRTS_MAGIC):
++                if pos + 4 > total_len:
++                    raise CsfError(
++                        f"truncated string length at offset {pos} (label {name!r})"
++                    )
++                char_count = UINT32_STRUCT.unpack_from(buf, pos)[0]
++                pos += 4
++                byte_len = char_count * 2
++                if pos + byte_len > total_len:
++                    raise CsfError(
++                        f"truncated string payload at offset {pos} (label {name!r}: "
++                        f"need {byte_len} bytes, {total_len - pos} left)"
++                    )
++                enc_bytes = buf[pos:pos + byte_len]
++                pos += byte_len
++                raw_u16 = enc_bytes.translate(_XOR_TRANS)
++                try:
++                    text = raw_u16.decode("utf-16-le")
++                except UnicodeDecodeError as exc:
++                    raise CsfError(
++                        f"invalid UTF-16LE string in label {name!r} at offset {pos - byte_len}"
++                    ) from exc
++
++                extra: str | None = None
++                if vmagic == WRTS_MAGIC:
++                    if pos + 4 > total_len:
++                        raise CsfError(
++                            f"truncated WRTS extra length at offset {pos} (label {name!r})"
++                        )
++                    extra_len = UINT32_STRUCT.unpack_from(buf, pos)[0]
++                    pos += 4
++                    if pos + extra_len > total_len:
++                        raise CsfError(
++                            f"truncated WRTS extra bytes at offset {pos} (label {name!r}: "
++                            f"need {extra_len} bytes, {total_len - pos} left)"
++                        )
++                    extra_bytes = buf[pos:pos + extra_len]
++                    pos += extra_len
++                    try:
++                        extra = extra_bytes.decode("ascii")
++                    except UnicodeDecodeError as exc:
++                        raise CsfError(
++                            f"non-ASCII WRTS extra field in label {name!r}: {extra_bytes!r}"
++                        ) from exc
++
++                values.append(CsfValue(kind=vmagic, text=text, extra=extra))
++                parsed_values += 1
++            else:
++                if strict:
++                    raise CsfError(
++                        f"unsupported CSF value type {vmagic!r} at offset {val_start} "
++                        f"(label {name!r})"
++                    )
++                raw_rest = buf[val_start:]
++                is_terminal = (lbl_idx == num_labels - 1) and (val_idx == n_vals - 1)
++                msg = (
++                    f"unsupported CSF value type {vmagic!r} at offset {val_start} "
++                    f"(label {name!r}, value {val_idx + 1}/{n_vals}); "
++                    f"preserved {len(raw_rest)} raw bytes"
++                )
++                if not is_terminal:
++                    msg += " (unknown record size prevents parsing subsequent entries)"
++                    has_unparsed_tail = True
++                warnings.append(msg)
++                unknown_records.append(
++                    {
++                        "label": name,
++                        "label_index": lbl_idx,
++                        "value_index": val_idx,
++                        "offset": val_start,
++                        "magic": vmagic,
++                        "raw_bytes": raw_rest,
++                        "terminal": is_terminal,
++                    }
++                )
++                values.append(
++                    CsfValue(kind=vmagic, text=None, extra=None, raw_bytes=raw_rest)
++                )
++                parsed_values += 1
++                pos = total_len
++                aborted_on_unknown = True
++                break
++
++        labels.append(CsfLabel(name=name, values=values))
++        if aborted_on_unknown:
++            break
++
++    if not has_unparsed_tail and not unknown_records and pos != total_len:
++        raise CsfError(
++            f"trailing bytes in CSF: parsed {pos} bytes for {num_labels} labels, "
++            f"but file has {total_len} bytes"
++        )
++
++    if not unknown_records and parsed_values != num_strings:
++        msg = (
++            f"CSF header num_strings={num_strings} disagrees with parsed value count "
++            f"{parsed_values}"
++        )
++        if strict:
++            raise CsfError(msg)
++        warnings.append(msg)
++
++    return CsfFile(
++        version=version,
++        unused=unused,
++        language=language,
++        labels=labels,
++        warnings=warnings,
++        unknown_records=unknown_records,
++        has_unparsed_tail=has_unparsed_tail,
++        header_num_labels=num_labels,
++        header_num_strings=num_strings,
++    )
++
++
++def read_csf(path: str | Path, *, strict: bool = False) -> CsfFile:
++    """Read and parse a CSF file from disk."""
++    p = Path(path)
++    if not p.is_file():
++        raise FileNotFoundError(f"CSF file not found: {p}")
++    return parse_csf(p.read_bytes(), strict=strict)
++
++
++def write_csf(path: str | Path, csf: CsfFile) -> Path:
++    """Serialize a CsfFile and write it safely via a staged temporary file."""
++    p = Path(path)
++    p.parent.mkdir(parents=True, exist_ok=True)
++    payload = csf.to_bytes()
++    # In-memory verification before touching disk
++    parse_csf(payload, strict=True)
++    stage = p.parent / f"{p.name}.tmp-{secrets.token_hex(6)}"
++    try:
++        stage.write_bytes(payload)
++        os.replace(stage, p)
++    finally:
++        if stage.exists():
++            try:
++                stage.unlink()
++            except OSError:
++                pass
++    return p
++
++
++def create_csf(
++    entries: dict[str, str] | list[tuple[str, str]] | None = None,
++    *,
++    language: int = 0,
++    version: int = 3,
++) -> CsfFile:
++    """Create a fresh CsfFile from initial label->text mappings."""
++    csf = CsfFile(version=version, unused=0, language=language)
++    if entries:
++        items = entries.items() if isinstance(entries, dict) else entries
++        for label, text in items:
++            csf.set(str(label), str(text))
++    return csf
++
++
++def append_or_set_label(
++    csf_path: str | Path,
++    label: str,
++    text: str,
++    *,
++    extra: str | None = None,
++    language: int = 0,
++    create_if_missing: bool = False,
++    case_insensitive: bool = False,
++    verify: bool = True,
++) -> dict:
++    """Append or update `label` -> `text` in `csf_path` without corrupting existing entries.
++
++    Reads and strictly validates the existing file first; if malformed, raises
++    CsfError without modifying the file on disk. After writing atomically,
++    re-reads the file from disk using read_csf() and asserts byte-exact text
++    equality for `label` as well as full preservation of every pre-existing label.
++    """
++    p = Path(csf_path)
++    if p.exists():
++        csf = read_csf(p, strict=True)
++    elif create_if_missing:
++        csf = CsfFile(version=3, unused=0, language=language)
++    else:
++        raise FileNotFoundError(f"CSF file not found: {p}")
++
++    # Snapshot pre-existing labels & values for roundtrip verification
++    before_snapshot = [
++        (lbl.name, [(v.kind, v.text, v.extra) for v in lbl.values])
++        for lbl in csf.labels
++    ]
++
++    action = csf.set(label, text, extra=extra, case_insensitive=case_insensitive)
++    write_csf(p, csf)
++
++    if verify:
++        readback = read_csf(p, strict=True)
++        got = readback.get(label, case_insensitive=case_insensitive)
++        if got != text:
++            raise CsfError(
++                f"CSF roundtrip verification failed for {label!r}: "
++                f"wrote {text!r}, read back {got!r}"
++            )
++        if extra is not None:
++            got_lbl = readback.get_label(label, case_insensitive=case_insensitive)
++            got_extra = got_lbl.values[0].extra if got_lbl and got_lbl.values else None
++            if got_extra != extra:
++                raise CsfError(
++                    f"CSF roundtrip WRTS extra mismatch for {label!r}: "
++                    f"wrote {extra!r}, read back {got_extra!r}"
++                )
++        expected_len = len(before_snapshot) + (1 if action == "appended" else 0)
++        if readback.num_labels != expected_len:
++            raise CsfError(
++                f"CSF roundtrip label count mismatch: expected {expected_len}, "
++                f"got {readback.num_labels}"
++            )
++        if readback.num_strings != sum(len(l.values) for l in readback.labels):
++            raise CsfError("CSF roundtrip num_strings self-consistency check failed")
++
++        # Assert every pre-existing label (other than the updated one) is untouched
++        after_map = [
++            (lbl.name, [(v.kind, v.text, v.extra) for v in lbl.values])
++            for lbl in readback.labels
++        ]
++        for idx, (orig_name, orig_vals) in enumerate(before_snapshot):
++            is_target = (
++                orig_name.lower() == label.lower()
++                if case_insensitive
++                else orig_name == label
++            )
++            if is_target:
++                continue
++            if after_map[idx] != (orig_name, orig_vals):
++                raise CsfError(
++                    f"CSF roundtrip altered existing label {orig_name!r} at index {idx}"
++                )
++
++    return {
++        "path": str(p),
++        "action": action,
++        "label": label,
++        "num_labels": csf.num_labels,
++        "num_strings": csf.num_strings,
++        "language": csf.language,
++    }
+diff --git a/ra2forge/install.py b/ra2forge/install.py
+index f5b550d..570cefe 100644
+--- a/ra2forge/install.py
++++ b/ra2forge/install.py
+@@ -239,6 +239,127 @@ family closed:
+   gate, deliberately: the engine opens the same name through the same reparse
+   point, and this read selects no write and no delete. What it says now names
+   the slot it read from when that slot is an alias.
++
++Safety rules (ORPHAN-FIX01) - the A -> A' upgrade path. Measured defect: after
++installing A over nothing and then A' (whose package dropped A's map X), X.MAP
++stayed in the game directory while the rewritten ra2forge_install.json no
++longer named it - uninstall could neither see nor remove it, and the backups a
++replacement wrote for files A itself had CREATED held our own previous bytes,
++so uninstall "restored" our old version instead of the true original (which
++never existed). The fix, judged from the record only:
++- preinstall_plan plans the exit of every file the CURRENT record names and
++  the new package dropped ("orphans", read-only like everything else):
++  * file still matches the recorded sha256 -> ours: removed; when a
++    <name>.ra2forge.bak slot is recorded and present, the ORIGINAL the slot
++    holds is restored first and the slot is consumed - unless the entry (or
++    the slot's absence, see below) proves the slot holds our own previous
++    bytes, in which case both are removed;
++  * file changed after install -> nobody's to judge: strict mode refuses with
++    a risk; non-strict keeps the file and its backup slot, with a warning;
++  * malformed or aliased entry names, aliases at the backup slots: hard
++    blockers, like every other slot;
++- ownership is judged ONLY from the manifest record + the recorded sha256.
++  A file the record does not name is never touched; nothing outside the game
++  directory is ever deleted;
++- the new manifest records ONLY the new package's files; the transition is
++  documented under "removed_orphans" (audit trail, not tracked state);
++- when a replacement would create a backup for a file the PREVIOUS record
++  names and no backup slot existed at preflight, that slot would hold OUR
++  previous bytes, not a user original: the new entry is written with
++  "original_absent": true, and uninstall() then removes file and slot instead
++  of restoring our own version back. Manifests without the flag behave
++  exactly as before;
++- every copy this install commits is rolled back best-effort when a later
++  step fails mid-run (created files unlinked; replaced files restored from
++  the backup slot created for them this run, pre-existing slots kept), the
++  rollback uses the same staged primitives, and what it did - and what it
++  could not do - is reported in the raised error.
++
++Safety rules (PKG-IDENT01) - package identity (RE-N10 item 5). The install
++record gains four fields; every identity judgment below reads them, never
++the install path:
++- package_id: the stable identity of the installed package, declared by the
++  package itself in <package>/ra2forge_package.json (written by 'build' when
++  the design declares an optional "package": {"id": ..., "version": ...}
++  object). It is NOT the install path and NOT the campaign's battle id from
++  BATTLEMD*.INI - those are two independent namespaces (the battle id decides
++  how the ENGINE merges campaign entries; package_id decides whether the
++  INSTALLER treats a directory as this package's own). A package without the
++  declaration carries package_id "unknown";
++- package_version: the package's own version string, separate from this
++  tool's `version` field (which tracks install.py itself, not the content);
++- package_digest: SHA-256 over "<name> <sha256-of-package-member>" lines,
++  one line per file package_files() ships (BATTLEMD98.INI, then *.MAP sorted,
++  then expandmd98.mix), lines sorted by name, joined with "\n", UTF-8. It
++  fingerprints exactly the bytes that land in the game directory - build
++  reports and readmes are deliberately excluded, so the digest changes iff
++  the installed content changes;
++- files[].source_package_digest: the package_digest of the package that
++  supplied that entry (multi-generation provenance). The new manifest also
++  records "supersedes" (the previous record's identity) as audit trail only
++  - judgments keep using the per-file record + sha256 discipline above.
++Install-time identity judgment (zero-write, BEFORE any re-verification):
++- no manifest -> fresh install; all new fields written;
++- manifest package_id == this package's declared package_id -> upgrade path
++  (ORPHAN-FIX01 exit planning runs as usual);
++- manifest package_id declared and DIFFERENT -> refused, kind
++  'package_mismatch' (CLI exit 3): this version does not support coexisting
++  packages (初版不支持并存). NEVER releasable - not by --force, not by
++  --allow-content-conflict, not by --adopt-legacy;
++- manifest package_id "unknown" (an old manifest, or one written from an
++  unstamped package), OR this package unstamped while the manifest declares
++  an id -> refused, kind 'legacy_adopt_required' (CLI exit 4), unless the
++  caller passes adopt_legacy=True (--adopt-legacy): the explicit user
++  assertion "this install is the intended successor". Adoption treats the
++  manifest's recorded files as ours so replacing them is not a content
++  conflict; it releases NOTHING else - path safety, corrupt records, backup
++  protection and strict risks still gate as before;
++- --force has never had any effect on install and gains none: it cannot
++  override an identity refusal. On uninstall it still means exactly "delete
++  a recorded file whose bytes changed", nothing more.
++Backward compatibility (reading v0.3/v0.4/v0.5 manifests): the new fields
++are simply absent; missing fields read as "unknown", and uninstall()
++ignores them entirely - a manifest without package_id installs nothing
++differently and uninstalls byte-identically to the pre-PKG-IDENT behavior.
++
++Safety rules (SEAL-CHAIN01) - the W23 trust chain (W21 UNCOVERED §3). The
++manifest is plain-text JSON and uninstall() acts on it, so a hand-edited or
++accidentally mangled manifest can silently drive deletions and restores.
++This family adds a PROTECTED RECORD, not a signature:
++
++- install writes <game>/ra2forge_install.json.seal right after the record it
++  protects: {"kind": "install-seal", "tool_version", "package_id",
++  "package_digest", "manifest_sha256", "sealed_at"}, where manifest_sha256
++  is SHA-256 over the manifest's CANONICAL bytes (UTF-8, BOM tolerated,
++  CRLF/CR normalized to LF). Newline normalization is deliberate: it is the
++  only difference a text editor's re-save can make without touching content.
++  Every content difference - one edited field, one removed entry,
++  re-indented JSON - changes the hash;
++- uninstall() gates on the seal BEFORE the first unlink: a seal-era manifest
++  (written by tool >= 0.7) whose seal is missing (CLI exit 7) or
++  mismatched/corrupt/aliased (CLI exit 8) refuses the WHOLE uninstall -
++  nothing removed, nothing restored, record kept. --force does NOT release
++  this gate: force means "delete a recorded file whose bytes changed", never
++  "trust a record whose seal does not check out". Old manifests (no seal)
++  are uninstalled as before, with an explicit degraded-mode warning;
++- UNSEAL-FIX01 (tool 0.8): the uninstall's FINAL cleanup step - the seal
++  removal - is fault-tolerant: when it fails (read-only seal, open handle)
++  the completed uninstall is reported in full (status
++  "completed_with_warnings", CLI exit 10, explicit warning naming the stray
++  seal and the recovery) instead of escaping as exit 1 with the report
++  lost. Tool 0.7 behavior exited 1 there. Normal uninstalls are unchanged
++  (writable seal removed silently, exit 0);
++- verify (ra2forge/verify.py) reports the same state read-only, plus
++  structure, package_digest self-consistency, per-file disk drift and
++  ra2forge orphans;
++- BOUNDARY, in one sentence: the seal detects ACCIDENTS - it is NOT
++  anti-tamper. Whoever can edit the manifest can recompute the seal; nothing
++  here claims cryptographic trust, signing or attacker resistance. Recovery
++  for an accidentally lost/damaged seal: re-run the install of the SAME
++  package (it rewrites the record and a fresh seal), then uninstall;
++- a failed install rolls the record back to its exact previous bytes if the
++  seal write fails, so an install never leaves a seal-era record standing
++  without its seal (the refused-uninstall state) silently.
+ """
+ 
+ from __future__ import annotations
+@@ -259,7 +380,35 @@ MIX_NAME = "expandmd98.mix"
+ LEGACY_MANIFEST = "ra2forge_uninstall.txt"
+ LEGACY_BATTLE_INI = "BATTLEMD.INI"
+ FORGE_MARKER = b"Generated by RA2 Campaign Forge"
+-TOOL_VERSION = "0.4"
++TOOL_VERSION = "1.0"
++# PKG-IDENT01: the per-package identity declaration. Written by 'build' when
++# the design carries an optional "package" object; its absence is what makes
++# a package (and every manifest installed from it) read as "unknown".
++PACKAGE_MANIFEST_NAME = "ra2forge_package.json"
++UNKNOWN_PACKAGE_ID = "unknown"
++# SEAL-CHAIN01: the protected record next to the manifest. Manifests written
++# by tool versions >= SEAL_ERA_VERSION expect it; older manifests are handled
++# in degraded mode (warned, never refused on the missing seal).
++SEAL_SUFFIX = ".seal"
++SEAL_NAME = MANIFEST_NAME + SEAL_SUFFIX
++SEAL_KIND = "install-seal"
++SEAL_ERA_VERSION = (0, 7)
++
++# SEAL-CHAIN01: distinguishable exit codes for verify and the uninstall seal
++# gate (argparse keeps the conventional 2; 1 stays the generic operational
++# error; 3/4 are the PKG-IDENT01 install refusals).
++EXIT_VERIFY_STRUCTURAL = 5   # manifest structure unusable
++EXIT_VERIFY_DIGEST = 6       # package_digest does not match the records
++EXIT_SEAL_MISSING = 7        # seal-era manifest, seal file absent
++EXIT_SEAL_MISMATCH = 8       # seal present but stale / corrupt / aliased
++EXIT_VERIFY_DRIFT = 9        # recorded files changed or missing on disk
++# UNSEAL-FIX01 (W25, tool 0.8): uninstall completed its main lifecycle (the
++# record was deleted, every recorded file was processed) but the FINAL
++# cleanup failed - the install seal could not be removed. Partial
++# completion: the report is preserved, status="completed_with_warnings",
++# the warning names the stray seal and the recovery. Quoted in uninstall
++# --help, VERIFY.md and UNSEAL_FIX.md.
++EXIT_UNINSTALL_PARTIAL = 10
+ 
+ 
+ class InstallBlocked(OSError):
+@@ -278,6 +427,268 @@ class InstallBlocked(OSError):
+         self.report = report if report is not None else {}
+ 
+ 
++class PackageIdentityBlocked(InstallBlocked):
++    """PKG-IDENT01: the identity judgment refused the install before any
++    write. kind is one of:
++      'package_mismatch'       - the directory holds a DIFFERENT declared
++                                 package; coexistence is not supported and
++                                 nothing releasable overrides this (CLI exit 3);
++      'legacy_adopt_required'  - the identity of one side is undeclared
++                                 ("unknown"), so proceeding would be a guess;
++                                 pass adopt_legacy=True (--adopt-legacy) to
++                                 assert this install is the intended successor
++                                 (CLI exit 4).
++    Subclasses InstallBlocked so callers that catch InstallBlocked keep
++    working; the CLI maps the kinds to distinct exit codes.
++    """
++
++
++class PackageIdentityError(ValueError):
++    """PKG-IDENT01: the package's ra2forge_package.json exists but does not
++    declare a usable identity. Refusing beats guessing: a malformed identity
++    declaration is a hard error, never silently "unknown"."""
++
++
++def _read_package_identity(package_dir: Path) -> dict:
++    """Read <package>/ra2forge_package.json (PKG-IDENT01), read-only.
++
++    Returns {"package_id": <str>, "package_version": <str>, "declared": bool}.
++    Without the file the package is UNDECLARED: both fields come back as
++    "unknown". With the file, package_id must be a non-empty string and
++    package_version (optional) a non-empty string; anything else raises
++    PackageIdentityError - a planted-but-garbage identity file must not
++    silently read as "no identity".
++    """
++    path = Path(package_dir) / PACKAGE_MANIFEST_NAME
++    if not path.exists():
++        return {"package_id": UNKNOWN_PACKAGE_ID,
++                "package_version": UNKNOWN_PACKAGE_ID, "declared": False}
++    try:
++        raw = json.loads(path.read_text(encoding="utf-8-sig"))
++    except (OSError, ValueError) as exc:
++        raise PackageIdentityError(
++            f"{PACKAGE_MANIFEST_NAME} in {package_dir} exists but is not "
++            f"readable JSON ({exc}) - refusing to install from a package "
++            "whose identity declaration is garbage") from exc
++    if not isinstance(raw, dict):
++        raise PackageIdentityError(
++            f"{PACKAGE_MANIFEST_NAME} in {package_dir} must be a JSON object")
++    pid = raw.get("package_id")
++    if not isinstance(pid, str) or not pid.strip():
++        raise PackageIdentityError(
++            f"{PACKAGE_MANIFEST_NAME} in {package_dir} lacks a non-empty "
++            "string 'package_id' - fix or remove the file")
++    ver = raw.get("package_version", UNKNOWN_PACKAGE_ID)
++    if ver is None:
++        ver = UNKNOWN_PACKAGE_ID
++    if not isinstance(ver, str) or not ver.strip():
++        raise PackageIdentityError(
++            f"{PACKAGE_MANIFEST_NAME} in {package_dir}: 'package_version' "
++            "must be a non-empty string when present")
++    return {"package_id": pid.strip(),
++            "package_version": ver.strip(), "declared": True}
++
++
++def _manifest_package_id(manifest) -> str:
++    """PKG-IDENT01: the declared identity of an install record, or "unknown".
++
++    Old manifests (v0.3/v0.4/v0.5) and manifests written from unstamped
++    packages have no usable package_id; both read as "unknown". A manifest
++    that carries a non-string or empty value is treated the same way - the
++    install side never trusts the record beyond its shape.
++    """
++    if not isinstance(manifest, dict):
++        return UNKNOWN_PACKAGE_ID
++    pid = manifest.get("package_id")
++    if isinstance(pid, str) and pid.strip():
++        return pid.strip()
++    return UNKNOWN_PACKAGE_ID
++
++
++def _manifest_str_field(manifest, key: str) -> str:
++    """Same leniency as _manifest_package_id for informational fields."""
++    if isinstance(manifest, dict):
++        val = manifest.get(key)
++        if isinstance(val, str) and val.strip():
++            return val.strip()
++    return UNKNOWN_PACKAGE_ID
++
++
++# ---------------------------------------------------------------------------
++# SEAL-CHAIN01: the install seal - a protected record, NOT a signature.
++#
++# The manifest is plain-text JSON and uninstall() acts on it, so a
++# hand-edited manifest can silently drive deletions (W21 UNCOVERED §3). The
++# seal records the canonical hash of the manifest bytes AS THIS INSTALL WROTE
++# THEM, so later edits are detected instead of trusted. BOUNDARY: this
++# guards accidents and honest tooling only - whoever can edit the manifest
++# can recompute the seal too. Nothing here is anti-tamper, and no output of
++# this module may claim otherwise.
++# ---------------------------------------------------------------------------
++
++def _manifest_version_tuple(manifest) -> tuple | None:
++    """Parse the manifest's 'version' (the TOOL version that wrote it) into a
++    comparable tuple, or None when absent/garbage. A manifest with no
++    parseable version predates the seal era."""
++    if not isinstance(manifest, dict):
++        return None
++    ver = manifest.get("version")
++    if not isinstance(ver, str):
++        return None
++    parts = ver.strip().split(".")
++    nums: list[int] = []
++    for part in parts:
++        if not part.isdigit():
++            return None
++        nums.append(int(part))
++    if not nums:
++        return None
++    while len(nums) < 2:
++        nums.append(0)
++    return tuple(nums)
++
++
++def _manifest_is_seal_era(manifest) -> bool:
++    """Does this manifest come from a tool version that writes and expects an
++    install seal (tool >= 0.7)? Old manifests (v0.3/0.4/0.5/0.6, or with a
++    missing/garbage version field) predate the seal and are handled in
++    degraded mode."""
++    ver = _manifest_version_tuple(manifest)
++    return ver is not None and ver >= SEAL_ERA_VERSION
++
++
++def manifest_canonical_sha256(manifest_path) -> str | None:
++    """SHA-256 over the manifest's CANONICAL bytes: the file bytes decoded as
++    UTF-8 (a BOM is tolerated), CRLF and lone CR normalized to LF, re-encoded
++    UTF-8. Returns None when the file cannot be read or decoded."""
++    try:
++        text = Path(manifest_path).read_bytes().decode("utf-8-sig")
++    except (OSError, UnicodeDecodeError, ValueError):
++        return None
++    text = text.replace("\r\n", "\n").replace("\r", "\n")
++    return hashlib.sha256(text.encode("utf-8")).hexdigest()
++
++
++def _seal_slot_error(game: Path) -> str | None:
++    """The seal is a derived name like the record itself: same five identity
++    criteria, never read or written through an alias."""
++    return _derived_slot_error(game, SEAL_NAME, "install seal")
++
++
++def evaluate_seal(game, manifest, manifest_path) -> dict:
++    """Judge the install seal for a manifest that was read from game/.
++    Read-only. Returns {"state", "detail", "recorded", "path"} with state:
++      ok          - seal present, parses, and its manifest_sha256 matches the
++                    canonical hash of the manifest bytes on disk (and its
++                    package_digest agrees with the manifest's, when both
++                    sides carry one);
++      missing     - seal-era manifest but the seal file is absent;
++      mismatch    - seal present but its hashes disagree (manifest edited
++                    after install, or a stale/tampered seal);
++      corrupt     - seal present but not readable JSON / not a seal object;
++      aliased     - the seal slot is not a plain file - refusing to read it;
++      not_expected- the manifest predates the seal era; a seal file may still
++                    exist (stale residue), reported as detail - never a
++                    refusal on its own.
++    """
++    game = Path(game)
++    seal_path = game / SEAL_NAME
++    if not _manifest_is_seal_era(manifest):
++        stray = seal_path.is_file()
++        return {"state": "not_expected",
++                "detail": (f"a {SEAL_NAME} is present but the manifest "
++                           "predates the seal era (tool version "
++                           f"{manifest.get('version')!r}) - treated as "
++                           "stale residue")
++                if stray else None,
++                "recorded": None, "path": str(seal_path)}
++    err = _seal_slot_error(game)
++    if err:
++        return {"state": "aliased", "detail": err, "recorded": None,
++                "path": str(seal_path)}
++    if not seal_path.is_file():
++        return {"state": "missing",
++                "detail": f"{SEAL_NAME} is absent for a seal-era manifest "
++                          f"(tool version {manifest.get('version')!r})",
++                "recorded": None, "path": str(seal_path)}
++    try:
++        seal = json.loads(seal_path.read_text(encoding="utf-8"))
++    except (OSError, ValueError) as exc:
++        return {"state": "corrupt",
++                "detail": f"{SEAL_NAME} is not readable JSON ({exc})",
++                "recorded": None, "path": str(seal_path)}
++    if not isinstance(seal, dict) or seal.get("kind") != SEAL_KIND:
++        return {"state": "corrupt",
++                "detail": f"{SEAL_NAME} is not a {SEAL_KIND!r} seal object",
++                "recorded": None, "path": str(seal_path)}
++    manifest_sha = manifest_canonical_sha256(manifest_path)
++    if manifest_sha is None:
++        return {"state": "corrupt",
++                "detail": "the manifest bytes cannot be read/decoded for the "
++                          "seal check",
++                "recorded": seal, "path": str(seal_path)}
++    recorded_sha = seal.get("manifest_sha256")
++    if recorded_sha != manifest_sha:
++        return {"state": "mismatch",
++                "detail": f"the manifest's canonical sha256 "
++                          f"{manifest_sha[:12]}... does not match the seal's "
++                          f"recorded manifest_sha256 "
++                          f"{str(recorded_sha)[:12]}... - the manifest "
++                          "changed after install (or the seal is "
++                          "stale/tampered)",
++                "recorded": seal, "path": str(seal_path)}
++    rec_digest = seal.get("package_digest")
++    man_digest = manifest.get("package_digest")
++    if (isinstance(rec_digest, str) and isinstance(man_digest, str)
++            and rec_digest != man_digest):
++        return {"state": "mismatch",
++                "detail": f"the seal's package_digest {str(rec_digest)[:12]}"
++                          f"... disagrees with the manifest's "
++                          f"{str(man_digest)[:12]}...",
++                "recorded": seal, "path": str(seal_path)}
++    return {"state": "ok", "detail": None, "recorded": seal,
++            "path": str(seal_path)}
++
++
++def write_install_seal(game, manifest: dict) -> None:
++    """Write the install seal next to the manifest, through the same staged,
++    alias-proof primitive as the record itself.
++
++    The seal must hash EXACTLY what the record write puts on disk, so it is
++    computed over the LF form of the manifest JSON (what
++    manifest_canonical_sha256() reconstructs from the CRLF file). Call it
++    only AFTER the record write has landed.
++    """
++    canonical_lf = json.dumps(manifest, indent=2, ensure_ascii=False)
++    seal = {
++        "tool": "ra2forge",
++        "kind": SEAL_KIND,
++        "tool_version": TOOL_VERSION,
++        "package_id": manifest.get("package_id"),
++        "package_digest": manifest.get("package_digest"),
++        "manifest_sha256": hashlib.sha256(canonical_lf.encode("utf-8"))
++                           .hexdigest(),
++        "sealed_at": datetime.now().isoformat(timespec="seconds"),
++    }
++    _stage_text_and_replace(json.dumps(seal, indent=2, ensure_ascii=False),
++                            Path(game) / SEAL_NAME, "install seal")
++
++
++def package_digest_from_steps(steps: list) -> str:
++    """PKG-IDENT01: content fingerprint of the package this plan ships.
++
++    SHA-256 over one UTF-8 line per shipped file, "<name> <sha256>",
++    sorted by name, joined with "\n" (no trailing newline). Built from the
++    plan's steps so the digest and the bytes actually copied can never
++    disagree; package_files() defines the shipped set (BATTLEMD98.INI, the
++    *.MAP files, expandmd98.mix) - build reports and readmes are excluded
++    on purpose because they never land in the game directory.
++    """
++    lines = [f"{s['name']} {s['new_sha']}"
++             for s in sorted(steps, key=lambda s: s["name"])]
++    return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
++
++
+ def sha256_of(path) -> str:
+     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+ 
+@@ -598,17 +1009,117 @@ def preinstall_warnings(game) -> list[str]:
+     return risks + notices
+ 
+ 
+-def preinstall_plan(package_dir, game_dir) -> dict:
++def _plan_orphans(game: Path, old_entries: dict, package_names: set) -> list:
++    """ORPHAN-FIX01: plan the exit of files the CURRENT record names that the
++    new package no longer contains. Read-only; every dangerous shape lands in
++    blockers via the caller's classes, never in the plan.
++
++    Each orphan dict: {name, mode, backup, sha256}; mode is
++      restore       - our file is still installed (sha matches the record);
++                      the recorded backup holds the pre-install ORIGINAL, so
++                      restore it over our file and consume the slot;
++      remove_absent - like restore, but the record proves the slot holds OUR
++                      own previous version (original_absent, or the slot was
++                      already gone at preflight): remove file + slot;
++      remove        - our file, no backup ever made (we created it): delete;
++      changed       - the bytes no longer match the record: keep file and
++                      backup slot, refuse in strict mode (a risk), warn in
++                      non-strict; never deleted, never adopted;
++      missing       - nothing left to clean (the slot may still restore an
++                      original - see restore below); no write planned here.
++    """
++    orphans: list[dict] = []
++    for entry in reversed(list(old_entries.values())):
++        name = entry["name"]
++        if name in package_names:
++            continue
++        if (name in (".", "..") or Path(name).name != name
++                or "/" in name or "\\" in name
++                or os.path.normcase(name.rstrip(". "))
++                == os.path.normcase(MANIFEST_NAME)):
++            # the caller turns this into a corrupt-manifest blocker
++            orphans.append({"name": name, "mode": "invalid_name",
++                            "backup": entry.get("backup"),
++                            "sha256": entry.get("sha256")})
++            continue
++        err = _dest_safety_error(game, name)
++        if err:
++            orphans.append({"name": name, "mode": "unsafe_slot", "reason": err,
++                            "backup": entry.get("backup"),
++                            "sha256": entry.get("sha256")})
++            continue
++        backup = entry.get("backup")
++        absent = bool(entry.get("original_absent"))
++        dest = game / name
++        dest_exists = dest.is_file()
++        dest_sha = sha256_of(dest) if dest_exists else None
++        ours = dest_exists and dest_sha == entry.get("sha256")
++        bak_ok = True
++        bak_exists = False
++        if backup:
++            if backup != name + BACKUP_SUFFIX:
++                orphans.append({"name": name, "mode": "invalid_backup",
++                                "backup": backup, "sha256": entry.get("sha256")})
++                continue
++            bak_exists = (game / backup).is_file()
++            if bak_exists:
++                bak_err = _bak_safety_error(game, name)
++                if bak_err:
++                    orphans.append({"name": name, "mode": "unsafe_backup",
++                                    "reason": bak_err, "backup": backup,
++                                    "sha256": entry.get("sha256")})
++                    continue
++            elif not dest_exists:
++                bak_ok = False  # recorded slot gone and nothing to restore
++        if dest_exists and not ours:
++            orphans.append({"name": name, "mode": "changed", "backup": backup,
++                            "sha256": entry.get("sha256"),
++                            "dest_sha": dest_sha})
++            continue
++        if not dest_exists and not bak_exists:
++            orphans.append({"name": name, "mode": "missing", "backup": backup,
++                            "sha256": entry.get("sha256")})
++            continue
++        if backup and bak_exists and not absent:
++            orphans.append({"name": name, "mode": "restore", "backup": backup,
++                            "sha256": entry.get("sha256")})
++        elif backup and bak_exists:
++            orphans.append({"name": name, "mode": "remove_absent",
++                            "backup": backup, "sha256": entry.get("sha256")})
++        else:
++            # no slot (we created it), or the recorded slot is already gone
++            orphans.append({"name": name, "mode": "remove", "backup": backup,
++                            "sha256": entry.get("sha256"), "bak_ok": bak_ok})
++    return orphans
++
++
++def preinstall_plan(package_dir, game_dir, *, adopt_legacy: bool = False) -> dict:
+     """Read-only preflight for install_package(): classify BEFORE any write.
+ 
+     Returns a dict with:
+       blockers / conflicts / risks / notices : list[str]
+       steps : the write plan - dicts {name, src, action, backup, conflict,
+-              recorded_backup, new_sha, dest_sha, size}; action is one of
+-              created/unchanged/replaced, backup is None/'create'/'keep'
++              recorded_backup, new_sha, dest_sha, size, original_absent};
++              action is one of created/unchanged/replaced, backup is
++              None/'create'/'keep'
+       manifest / corrupt_manifest : parsed record or why it was rejected
++      orphans : ORPHAN-FIX01 - planned exit of files the current record names
++                that this package dropped (see _plan_orphans); entries whose
++                name or slots fail the identity gates come back as
++                invalid_name / unsafe_slot / invalid_backup / unsafe_backup
++                and the caller turns them into hard blockers
++      identity : PKG-IDENT01 - {verdict, old_package_id, new_package_id,
++                new_package_version, package_digest, adopt_legacy, message};
++                verdict is one of fresh / upgrade / adopt / reject_mismatch /
++                reject_legacy. reject_* verdicts are raised by
++                install_package() as PackageIdentityBlocked before any write;
++                adopt (only with adopt_legacy=True) treats the current
++                record's files as ours; package_digest is computed from the
++                steps (see package_digest_from_steps).
+     Raises FileNotFoundError exactly like before when the game directory does
+-    not look like one or the package is unusable (still zero writes).
++    not look like one or the package is unusable (still zero writes), and
++    PackageIdentityError when the package's ra2forge_package.json exists but
++    is garbage (still zero writes).
+     """
+     package = Path(package_dir)
+     game = Path(game_dir)
+@@ -617,6 +1128,9 @@ def preinstall_plan(package_dir, game_dir) -> dict:
+             f"{game} does not look like a Yuri's Revenge directory "
+             f"(gamemd.exe not found)")
+     files = package_files(package)
++    # PKG-IDENT01: the package's own identity declaration, read before
++    # anything is planned. A planted-but-garbage declaration is a hard error.
++    pkg_ident = _read_package_identity(package)
+ 
+     blockers: list[str] = []
+     conflicts: list[str] = []
+@@ -664,11 +1178,77 @@ def preinstall_plan(package_dir, game_dir) -> dict:
+         for e in manifest.get("files", []):
+             if isinstance(e, dict) and e.get("name"):
+                 old_entries[e["name"]] = e
+-    same_install = (manifest is not None and manifest.get("package") is not None
+-                    and str(manifest["package"]) == str(package.resolve()))
++    # PKG-IDENT01: the install-time identity judgment. The old path-equality
++    # test (manifest["package"] == this directory) is GONE - from two
++    # different paths, or the same path,先后两个不同包 was indistinguishable;
++    # the identity now comes from the declared package_id on both sides.
++    old_pkg_id = _manifest_package_id(manifest)
++    new_pkg_id = pkg_ident["package_id"]
++    if manifest is None:
++        verdict = "fresh"
++    elif old_pkg_id == UNKNOWN_PACKAGE_ID:
++        # an old manifest (v0.3/0.4/0.5), or one written from an unstamped
++        # package: identity undeclared, so any install here would be a guess
++        verdict = "adopt" if adopt_legacy else "reject_legacy"
++    elif new_pkg_id == UNKNOWN_PACKAGE_ID:
++        # this package declares no identity while the record names one:
++        # it cannot be proven to be that package's successor
++        verdict = "adopt" if adopt_legacy else "reject_legacy"
++    elif new_pkg_id == old_pkg_id:
++        verdict = "upgrade"
++    else:
++        verdict = "reject_mismatch"
++    identity_msg: str | None = None
++    if verdict == "reject_mismatch":
++        identity_msg = (
++            f"package identity mismatch: {MANIFEST_NAME} records package_id "
++            f"{old_pkg_id!r}, but this package declares package_id "
++            f"{new_pkg_id!r}. This version does not support coexisting "
++            "packages (初版不支持并存) - uninstall the recorded package "
++            "first ('python -m ra2forge uninstall --game <dir>'). This "
++            "refusal is NOT bypassable: not by --force, not by "
++            "--allow-content-conflict, not by --adopt-legacy.")
++    elif verdict == "reject_legacy":
++        if old_pkg_id == UNKNOWN_PACKAGE_ID:
++            side = (f"{MANIFEST_NAME} in this directory declares no "
++                    "package_id (an old ra2forge manifest, or an install "
++                    "made from an unstamped package)")
++        else:
++            side = (f"{MANIFEST_NAME} in this directory records package_id "
++                    f"{old_pkg_id!r}, but this package declares no "
++                    f"package_id (no {PACKAGE_MANIFEST_NAME} in the package)")
++        identity_msg = (
++            f"package identity undeclared: {side}, so installing here "
++            "without more information would be a guess. Re-run with "
++            "--adopt-legacy to assert explicitly that this install is the "
++            "intended successor of whatever is recorded (its recorded files "
++            "are then treated as ours and upgraded over), or uninstall the "
++            "recorded package first. --force does NOT bypass this.")
++    # "recorded entries are ours" for the per-file conflict classification:
++    # true for a same-id upgrade and for an explicit adoption only. (The
++    # pre-PKG-IDENT path-equality semantics die here - see the verdict block.)
++    same_install = verdict in ("upgrade", "adopt")
+ 
+     risks, notices = _scan_environment(game)
+ 
++    # SEAL-CHAIN01: install REPLACES the trust anchor (a fresh seal is written
++    # with the new record), so the previous record's seal is NOT a gate here -
++    # but a seal-era record whose seal does not check out is disclosed as a
++    # notice, never silently consumed.
++    if manifest is not None:
++        prev_seal = evaluate_seal(game, manifest, manifest_path)
++        if prev_seal["state"] == "not_expected":
++            if prev_seal["detail"]:
++                notices.append(f"install seal note: {prev_seal['detail']}")
++        elif prev_seal["state"] != "ok":
++            notices.append(
++                f"the existing {MANIFEST_NAME} is seal-era (tool version "
++                f"{manifest.get('version')!r}) but its install seal is "
++                f"{prev_seal['state']} ({prev_seal['detail']}) - this "
++                "install replaces the record and writes a fresh seal "
++                "WITHOUT gating on the old one; run 'python -m ra2forge "
++                "verify --game <dir>' first if you did not expect this")
++
+     for src in files:
+         name = src.name
+         new_sha = sha256_of(src)
+@@ -710,10 +1290,11 @@ def preinstall_plan(package_dir, game_dir) -> dict:
+                     conflict = True
+                     conflicts.append(
+                         f"{name}: a previous ra2forge install (recorded in "
+-                        f"{MANIFEST_NAME}, package {manifest['package']!r}) "
+-                        "would be replaced by a DIFFERENT package - uninstall "
+-                        "it first, or pass --allow-content-conflict to "
+-                        "release this one conflict")
++                        f"{MANIFEST_NAME}, package "
++                        f"{manifest.get('package')!r}) would be replaced by "
++                        "a DIFFERENT package - uninstall it first, or pass "
++                        "--allow-content-conflict to release this one "
++                        "conflict")
+             elif name in old_entries:
+                 risks.append(
+                     f"{name} changed after our install (its sha256 no longer "
+@@ -748,14 +1329,80 @@ def preinstall_plan(package_dir, game_dir) -> dict:
+                     blockers.append(
+                         f"backup-protection: backup slot {bak.name} exists but "
+                         "is not a regular file; refusing to create the backup")
++        # ORPHAN-FIX01: does the backup this replacement would write hold a
++        # USER original (a slot already existed -> backup="keep") or OUR OWN
++        # previous bytes (no slot existed and the previous record names this
++        # file)? Drives the original_absent flag the new entry carries, which
++        # makes uninstall() remove file + slot instead of "restoring" our own
++        # earlier version over a file that never had an original.
++        original_absent = bool(name in old_entries
++                               and not (game / (name + BACKUP_SUFFIX)).is_file())
++        if action == "unchanged":
++            original_absent = bool(previous.get("original_absent"))
+         steps.append({"name": name, "src": src, "action": action,
+                       "backup": backup, "conflict": conflict,
+                       "recorded_backup": recorded_backup, "new_sha": new_sha,
+-                      "dest_sha": dest_sha, "size": src.stat().st_size})
++                      "dest_sha": dest_sha, "size": src.stat().st_size,
++                      "original_absent": original_absent})
++
++    # ORPHAN-FIX01: plan the exit of files the CURRENT record names and this
++    # package dropped. Read-only; dangerous shapes become hard blockers here,
++    # a file changed after install becomes a risk (strict refuses), the rest
++    # is executed by install_package() after the copies, before the record.
++    orphans = _plan_orphans(game, old_entries, {src.name for src in files})
++    for o in orphans:
++        if o["mode"] == "invalid_name":
++            blockers.append(
++                f"corrupt-manifest: the record names {o['name']!r}, which is "
++                "not a plain file name inside the game directory, and the "
++                "new package does not include it - refusing to plan its "
++                "removal instead of guessing")
++        elif o["mode"] in ("unsafe_slot", "unsafe_backup"):
++            blockers.append(
++                f"path-safety: recorded file {o['name']} is no longer the "
++                f"plain file/slot this record recorded ({o['reason']}) - "
++                "refusing to remove or restore it")
++        elif o["mode"] == "invalid_backup":
++            blockers.append(
++                f"corrupt-manifest: entry {o['name']} records backup "
++                f"{o['backup']!r}, which is not the "
++                f"{o['name'] + BACKUP_SUFFIX} slot this tool writes - "
++                "refusing to act on it")
++        elif o["mode"] == "changed":
++            risks.append(
++                f"{o['name']} is recorded in {MANIFEST_NAME} but this package "
++                "does not include it, and its sha256 no longer matches the "
++                "record - it changed after install. Keeping it would leave an "
++                "untracked file (and an untracked backup slot); deleting it "
++                "would delete bytes nobody recorded. Resolve it manually "
++                "('uninstall --force' to drop it, or remove/restore it by "
++                "hand) and re-run the install.")
++        elif o["mode"] == "missing":
++            notices.append(
++                f"{o['name']} is recorded in {MANIFEST_NAME} but already gone "
++                "and this package does not include it - nothing to clean")
++        elif o["mode"] == "remove" and not o.get("bak_ok", True):
++            notices.append(
++                f"the backup {o['name'] + BACKUP_SUFFIX} recorded for "
++                f"{o['name']} is missing - {o['name']} will be removed "
++                "without restoring anything")
+ 
+     return {"blockers": blockers, "conflicts": conflicts, "risks": risks,
+             "notices": notices, "steps": steps, "manifest": manifest,
+-            "corrupt_manifest": corrupt}
++            "corrupt_manifest": corrupt, "orphans": orphans,
++            "identity": {
++                "verdict": verdict,
++                "old_package_id": old_pkg_id,
++                "old_package_version": _manifest_str_field(manifest,
++                                                           "package_version"),
++                "old_package_digest": _manifest_str_field(manifest,
++                                                          "package_digest"),
++                "new_package_id": new_pkg_id,
++                "new_package_version": pkg_ident["package_version"],
++                "adopt_legacy": bool(adopt_legacy),
++                "message": identity_msg,
++            },
++            "package_digest": package_digest_from_steps(steps)}
+ 
+ 
+ def _refusal_text(plan: dict, allowed: list[str] | None = None) -> str:
+@@ -959,9 +1606,172 @@ def _write_step(game: Path, step: dict) -> tuple[str, str]:
+     return backup_name, _copy_verified(step["src"], dest, name)
+ 
+ 
++def _execute_orphan_plan(game: Path, plan: dict, actions: list[str],
++                         undo: list) -> list[dict]:
++    """ORPHAN-FIX01: execute the planned exit of the old record's dropped
++    files. Runs AFTER the package copies landed and BEFORE the record is
++    written, so a copy failure rolls back to the exact pre-run state and the
++    new record never names a file that is already gone. Every slot is
++    re-checked here, at the instant of its write or removal (same discipline
++    as _write_step). Returns the removed_orphans audit list for the manifest.
++    """
++    removed: list[dict] = []
++    old_pkg = (plan.get("manifest") or {}).get("package")
++    for o in plan.get("orphans", []):
++        mode = o["mode"]
++        if mode in ("missing", "changed"):
++            continue  # planned notes only; nothing to write, never adopted
++        name = o["name"]
++        dest = game / name
++        err = _dest_safety_error(game, name)
++        if err:
++            raise OSError(
++                f"orphan slot identity check failed right before the write: "
++                f"{err} - nothing was written for {name}")
++        backup = o.get("backup")
++        if backup:
++            bak_err = _bak_safety_error(game, name)
++            if bak_err:
++                raise OSError(
++                    f"orphan backup slot identity check failed right before "
++                    f"the write: {bak_err} - nothing was written for {name}")
++        # journal BEFORE acting, so a failure anywhere below rolls this back
++        undo.append({"kind": "orphan", "name": name,
++                     "sha": o.get("sha256"), "old_pkg": old_pkg})
++        if mode == "restore":
++            bak = game / backup
++            if not dest.is_file():
++                raise OSError(
++                    f"state changed under the preflight: orphan {name} is "
++                    "gone; re-run the install")
++            _stage_and_replace(bak, dest, None, "orphan-restore")
++            bak.unlink()
++            actions.append(
++                f"restored   {backup} -> {name} (orphan: this package no "
++                "longer includes it; the pre-install original is back)")
++            removed.append({"name": name, "action": "restored_backup",
++                            "backup": backup})
++        elif mode == "remove_absent":
++            if dest.is_file():
++                dest.unlink()
++            if backup:
++                bak = game / backup
++                if bak.is_file():
++                    bak.unlink()
++            actions.append(
++                f"removed    {name} (orphan: this package no longer includes "
++                "it; its backup slot held our own previous version - the "
++                "file never had an original, both are gone)")
++            removed.append({"name": name, "action": "removed_with_own_backup"})
++        else:  # remove
++            if dest.is_file():
++                dest.unlink()
++                actions.append(
++                    f"removed    {name} (orphan: recorded by the previous "
++                    "install, absent from this package)")
++                removed.append({"name": name, "action": "removed"})
++            else:
++                actions.append(
++                    f"missing    {name} (orphan already gone; its recorded "
++                    "backup slot is missing too)")
++                removed.append({"name": name, "action": "already_gone"})
++    return removed
++
++
++def _rollback(game: Path, undo: list,
++              errors: list[str] | None = None) -> list[str]:
++    """ORPHAN-FIX01 / UNSEAL-FIX02: best-effort undo of what a FAILED install
++    already wrote.
++
++    Each undo item is isolated in its own try/except Exception block so a
++    failure restoring or removing one path never aborts rolling back the rest.
++    Replaced files are restored from the backup slot created for them THIS run
++    (pre-existing "keep" slots are restored but kept); created files are
++    unlinked; an orphan removal is undone by re-installing the file from the
++    previous package the old record names, when that package still holds bytes
++    matching the recorded sha256. Any unrecoverable item or OS/step error is
++    appended both to the returned report lines and (when supplied) to errors.
++    """
++    lines: list[str] = []
++    for u in reversed(undo):
++        item_name = (
++            u.get("name")
++            or (u.get("step") or {}).get("name")
++            or "?"
++        )
++        try:
++            if u["kind"] == "copy_step":
++                step = u["step"]
++                name = step["name"]
++                dest = game / name
++                if step["backup"] in ("create", "keep"):
++                    slot = name + BACKUP_SUFFIX
++                    bak = game / slot
++                    if bak.is_file():
++                        _stage_and_replace(bak, dest, None, "rollback-restore")
++                        lines.append(
++                            f"rolled back {name} (restored from {slot})")
++                        if step["backup"] == "create":
++                            try:
++                                bak.unlink()
++                            except Exception as unlink_exc:
++                                msg = (f"rollback cleanup of {slot} failed: "
++                                       f"{unlink_exc}")
++                                lines.append(msg)
++                                if errors is not None:
++                                    errors.append(msg)
++                        continue
++                    msg = (
++                        f"could not roll back {name}: its backup slot {slot} "
++                        "is missing - the file is left as this failed install "
++                        "wrote it")
++                    lines.append(msg)
++                    if errors is not None:
++                        errors.append(msg)
++                elif step["action"] == "created":
++                    if dest.is_file():
++                        dest.unlink()
++                    lines.append(f"rolled back {name} (created file removed)")
++                else:
++                    msg = (
++                        f"could not roll back {name}: a replaced file without "
++                        "a backup slot cannot be restored - left as written")
++                    lines.append(msg)
++                    if errors is not None:
++                        errors.append(msg)
++            elif u["kind"] == "orphan":
++                name = u["name"]
++                dest = game / name
++                old_pkg = u.get("old_pkg")
++                src = (Path(old_pkg) / name) if old_pkg else None
++                if (src is not None and src.is_file()
++                        and u.get("sha")
++                        and sha256_of(src) == u["sha"]):
++                    _stage_and_replace(src, dest, u["sha"], "rollback-orphan")
++                    lines.append(
++                        f"rolled back the orphan removal of {name} "
++                        f"(re-installed from the previous package {old_pkg})")
++                else:
++                    msg = (
++                        f"could not roll back the orphan removal of {name}: "
++                        "the previous package is gone or does not match the "
++                        "recorded sha256 - whatever the pre-upgrade state "
++                        "was for this file, it is not restored by this run")
++                    lines.append(msg)
++                    if errors is not None:
++                        errors.append(msg)
++        except Exception as exc:
++            msg = f"rollback of {item_name} failed: {exc}"
++            lines.append(msg)
++            if errors is not None:
++                errors.append(msg)
++    return lines
++
++
+ def install_package(package_dir, game_dir, force: bool = False, *,
+                     strict: bool = True,
+-                    allow_content_conflict: bool = False) -> dict:
++                    allow_content_conflict: bool = False,
++                    adopt_legacy: bool = False) -> dict:
+     """Copy a built package into a game directory, backing up what it replaces.
+ 
+     DLC-STRICT01: everything is preflighted read-only first (preinstall_plan).
+@@ -971,10 +1781,32 @@ def install_package(package_dir, game_dir, force: bool = False, *,
+     allow_content_conflict=True releases ONLY the definite-content-conflict
+     class; each released file is printed and recorded under
+     precheck.allowed_content_conflicts in the manifest. force is accepted for
+-    signature compatibility but has never had an effect in this function.
++    signature compatibility but has never had an effect in this function -
++    in particular it can NEVER override a package-identity refusal
++    (PKG-IDENT01). adopt_legacy=True (--adopt-legacy) is the explicit
++    assertion that this install is the intended successor of a record whose
++    package_id is undeclared ("unknown"); it releases the identity gate ONLY,
++    nothing else.
+     """
+     game = Path(game_dir)
+-    plan = preinstall_plan(package_dir, game)
++    plan = preinstall_plan(package_dir, game, adopt_legacy=adopt_legacy)
++    identity = plan["identity"]
++
++    # PKG-IDENT01: the identity verdict gates BEFORE the conflict/risk
++    # machinery (after the corrupt-record/path-safety blockers, which must
++    # stay first - a record that failed its shape checks proves no identity).
++    if identity["verdict"] in ("reject_mismatch", "reject_legacy"):
++        kind = ("package_mismatch" if identity["verdict"] == "reject_mismatch"
++                else "legacy_adopt_required")
++        lines = ["install blocked by package identity - no file has been "
++                 "written:", f"  - {identity['message']}"]
++        report = _refusal_text(plan)
++        if report:
++            lines.append("  full preflight report (informational; releasing "
++                         "these classes would still NOT pass the identity "
++                         "gate):")
++            lines += [f"    {ln}" for ln in report.splitlines()[1:]]
++        raise PackageIdentityBlocked("\n".join(lines), kind=kind, report=plan)
+ 
+     if plan["blockers"]:
+         kind = "corrupt_manifest" if plan["corrupt_manifest"] else "path_safety"
+@@ -1065,52 +1897,199 @@ def install_package(package_dir, game_dir, force: bool = False, *,
+             "- re-run the install", kind="corrupt_manifest", report=plan)
+ 
+     # ---- first filesystem write happens below this line ----
++    # ORPHAN-FIX01: the whole write phase is journaled; any failure from here
++    # to the record write rolls back what this run already committed
++    # (best-effort, reported) instead of leaving an unrecorded half-install.
+     actions: list[str] = []
+     entries: list[dict] = []
+-    for step in plan["steps"]:
+-        name = step["name"]
+-        if step["action"] == "unchanged":
+-            entries.append({"name": name, "action": "unchanged",
+-                            "bytes": step["size"], "sha256": step["new_sha"],
+-                            "backup": step["recorded_backup"]})
+-            actions.append(f"unchanged  {name} (already up to date)")
+-            continue
+-        if step["backup"] == "keep":
+-            actions.append(f"kept       {name + BACKUP_SUFFIX} (original "
+-                           "backup of a previous install, not overwritten)")
+-        elif step["backup"] == "create":
+-            actions.append(f"backup     {name} -> {name + BACKUP_SUFFIX}")
+-        backup_name, landed = _write_step(game, step)
+-        entries.append({"name": name, "action": step["action"],
+-                        "bytes": step["size"], "sha256": landed,
+-                        "backup": backup_name})
+-        actions.append(f"{step['action']:10s} {name} ({step['size']} bytes)")
+-        if step["conflict"]:
+-            actions.append(f"ALLOWED    {name}: content conflict released by "
+-                           "--allow-content-conflict (recorded in the manifest)")
+-
+-    warnings = plan["risks"] + plan["notices"]
+-    manifest = {
+-        "tool": "ra2forge",
+-        "version": TOOL_VERSION,
+-        "installed_at": datetime.now().isoformat(timespec="seconds"),
+-        "package": str(Path(package_dir).resolve()),
+-        "game_dir": str(game.resolve()),
+-        "files": entries,
+-        "warnings": warnings,
+-        "precheck": {
+-            "strict": strict,
+-            "allowed_content_conflicts": allowed,
+-            "risks": plan["risks"],
+-            "notices": plan["notices"],
+-            "conflicts_seen": plan["conflicts"],
+-            "blockers": [],
+-        },
+-    }
+-    manifest_path = game / MANIFEST_NAME
+-    _stage_text_and_replace(
+-        json.dumps(manifest, indent=2, ensure_ascii=False), manifest_path,
+-        "install record")
++    undo: list = []
++    rolled_back = False
++    try:
++        for step in plan["steps"]:
++            name = step["name"]
++            if step["action"] == "unchanged":
++                entry = {"name": name, "action": "unchanged",
++                         "bytes": step["size"], "sha256": step["new_sha"],
++                         "backup": step["recorded_backup"]}
++                if step["original_absent"]:
++                    entry["original_absent"] = True
++                entries.append(entry)
++                actions.append(f"unchanged  {name} (already up to date)")
++                continue
++            if step["backup"] == "keep":
++                actions.append(f"kept       {name + BACKUP_SUFFIX} (original "
++                               "backup of a previous install, not overwritten)")
++            elif step["backup"] == "create":
++                actions.append(f"backup     {name} -> {name + BACKUP_SUFFIX}")
++            undo.append({"kind": "copy_step", "step": step, "name": name})
++            backup_name, landed = _write_step(game, step)
++            entry = {"name": name, "action": step["action"],
++                     "bytes": step["size"], "sha256": landed,
++                     "backup": backup_name}
++            if step["original_absent"]:
++                entry["original_absent"] = True
++            entries.append(entry)
++            actions.append(f"{step['action']:10s} {name} ({step['size']} bytes)")
++            if step["conflict"]:
++                actions.append(f"ALLOWED    {name}: content conflict released by "
++                               "--allow-content-conflict (recorded in the manifest)")
++
++        # ORPHAN-FIX01: the old record's dropped files leave AFTER the copies
++        # landed, BEFORE the record is written.
++        removed_orphans = _execute_orphan_plan(game, plan, actions, undo)
++
++        warnings = plan["risks"] + plan["notices"]
++        # PKG-IDENT01: every entry carries the digest of the package version
++        # that supplied it; the record gains the package's declared identity.
++        pkg_digest = plan["package_digest"]
++        for entry in entries:
++            entry["source_package_digest"] = pkg_digest
++        manifest = {
++            "tool": "ra2forge",
++            "version": TOOL_VERSION,
++            "package_id": identity["new_package_id"],
++            "package_version": identity["new_package_version"],
++            "package_digest": pkg_digest,
++            "installed_at": datetime.now().isoformat(timespec="seconds"),
++            "package": str(Path(package_dir).resolve()),
++            "game_dir": str(game.resolve()),
++            "files": entries,
++            "warnings": warnings,
++            "precheck": {
++                "strict": strict,
++                "allowed_content_conflicts": allowed,
++                "risks": plan["risks"],
++                "notices": plan["notices"],
++                "conflicts_seen": plan["conflicts"],
++                "blockers": [],
++            },
++        }
++        if manifest is not None and plan["manifest"] is not None:
++            # audit trail only - judgments never read this block (they keep
++            # using the per-file record + sha256 discipline of ORPHAN-FIX01)
++            manifest["supersedes"] = {
++                "package_id": identity["old_package_id"],
++                "package_version": identity["old_package_version"],
++                "package_digest": identity["old_package_digest"],
++                "package": plan["manifest"].get("package"),
++                "adopted_legacy": identity["verdict"] == "adopt",
++            }
++        if removed_orphans:
++            manifest["removed_orphans"] = removed_orphans
++        manifest_path = game / MANIFEST_NAME
++        # SEAL-CHAIN01: this install REPLACES the record; keep its previous
++        # bytes so a seal-write failure can restore them exactly. The
++        # preflight already parsed this record as UTF-8 JSON, so the decode
++        # below cannot fail for the state this function was planned from.
++        prev_record_text: str | None = None
++        if manifest_path.is_file():
++            prev_record_text = (manifest_path.read_bytes()
++                                .decode("utf-8-sig")
++                                .replace("\r\n", "\n").replace("\r", "\n"))
++        _stage_text_and_replace(
++            json.dumps(manifest, indent=2, ensure_ascii=False), manifest_path,
++            "install record")
++        # SEAL-CHAIN01: the seal is written AFTER the record it protects. If
++        # it cannot be written, the fresh record is rolled back to the exact
++        # previous bytes (or removed, when there was none) rather than left
++        # standing without its seal - a seal-era record without a seal is the
++        # REFUSED state (CLI exit 7 on uninstall), so an install must never
++        # manufacture one silently.
++        try:
++            write_install_seal(game, manifest)
++        except BaseException as seal_exc:
++            # UNSEAL-FIX02 (W26): isolate record rollback and package file
++            # rollback in separate try/except blocks so a failure in either
++            # never skips the other, and aggregate all errors cleanly instead
++            # of swallowing PermissionError and claiming success.
++            rec_err: Exception | None = None
++            try:
++                if prev_record_text is None:
++                    manifest_path.unlink()
++                else:
++                    _stage_text_and_replace(prev_record_text, manifest_path,
++                                            "install record restore")
++            except Exception as r_exc:
++                rec_err = r_exc
++
++            rollback_errors: list[str] = []
++            file_exc: Exception | None = None
++            report: list[str] = []
++            try:
++                report = _rollback(game, undo, rollback_errors)
++            except Exception as f_exc:
++                file_exc = f_exc
++                rollback_errors.append(f"file rollback aborted: {f_exc}")
++            rolled_back = True
++
++            if not isinstance(seal_exc, Exception):
++                raise
++
++            if rec_err is None and not rollback_errors:
++                msg = (
++                    f"the install seal ({SEAL_NAME}) could not be written "
++                    f"({seal_exc}) - the install record was rolled back to its "
++                    "previous bytes, the package files are UNCHANGED; nothing "
++                    "was left in the unsealed state"
++                )
++                if report:
++                    msg += (
++                        "\n  install aborted mid-write; best-effort "
++                        "rollback of what this run wrote:\n    "
++                        + "\n    ".join(report)
++                    )
++                raise OSError(msg) from seal_exc
++
++            summary = (
++                f"the install seal ({SEAL_NAME}) could not be written "
++                f"({seal_exc})"
++            )
++            if rec_err is not None:
++                action_desc = (
++                    f"remove {MANIFEST_NAME}" if prev_record_text is None
++                    else f"restore {MANIFEST_NAME} to its previous bytes"
++                )
++                rec_note = (
++                    f"install record rollback FAILED (could not {action_desc}: "
++                    f"{rec_err}; {MANIFEST_NAME} may be left standing without "
++                    f"a matching {SEAL_NAME})"
++                )
++            else:
++                rec_note = (
++                    f"install record rolled back cleanly ({MANIFEST_NAME} "
++                    "restored/removed)"
++                )
++            if rollback_errors:
++                file_note = (
++                    f"package file rollback had failures "
++                    f"({len(rollback_errors)}): "
++                    + "; ".join(rollback_errors)
++                )
++            elif report:
++                file_note = (
++                    "package files rolled back cleanly (all other writes "
++                    "of this run undone)"
++                )
++            else:
++                file_note = "package files were unchanged"
++            msg = f"{summary} - {rec_note}; {file_note}"
++            if report:
++                msg += (
++                    "\n  install aborted mid-write; best-effort rollback of what "
++                    "this run wrote:\n    " + "\n    ".join(report)
++                )
++            raise OSError(msg) from (rec_err or file_exc or seal_exc)
++        actions.append(f"written    {SEAL_NAME}")
++    except BaseException as exc:
++        if not rolled_back:
++            report = _rollback(game, undo)
++            if report:
++                if isinstance(exc, Exception):
++                    raise OSError(
++                        f"{exc}\n  install aborted mid-write; best-effort "
++                        "rollback of what this run wrote:\n    "
++                        + "\n    ".join(report)) from exc
++        raise
+     actions.append(f"written    {MANIFEST_NAME}")
+     return {"game_dir": game, "manifest": manifest_path, "actions": actions,
+             "warnings": warnings, "files": entries, "risks": plan["risks"],
+@@ -1123,12 +2102,39 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+ 
+     With legacy=True it also cleans the artefacts of ra2forge <= FORGE-1
+     (BATTLEMD.INI override, loose maps, mix, ra2forge_uninstall.txt).
++
++    SEAL-CHAIN01: before the first unlink, the install seal is judged. A
++    seal-era manifest (tool >= 0.7) whose seal is MISSING, MISMATCHED,
++    CORRUPT or ALIASED refuses the whole uninstall - nothing removed, nothing
++    restored, the record kept - and the report carries
++    refused="seal_missing" / "seal_mismatch" (CLI exits 7 / 8). --force does
++    NOT release this gate. Old manifests (no seal) uninstall as before, with
++    an explicit degraded-mode warning. On a completed uninstall the seal is
++    removed together with the record it protects.
++
++    UNSEAL-FIX01 (tool 0.8): the seal removal is the FINAL cleanup step -
++    by then the record is deleted and every recorded file was already
++    processed - so a failure there (a read-only seal, an open handle) must
++    not abort the command or lose the report. It becomes an explicit
++    warning (stray seal path + recovery), the report carries
++    status="completed_with_warnings" and the CLI exits 10 (tool 0.7 exited
++    1 here and lost the actions report). The report dict always carries
++    one of three statuses - "completed" / "completed_with_warnings" /
++    "failed" - mirrored by uninstall --json; the exit-code table is quoted
++    in uninstall --help, VERIFY.md and UNSEAL_FIX.md. A normal (writable)
++    seal is still removed silently, exactly as before.
+     """
+     game = Path(game_dir)
+     if not game.is_dir():
+         raise FileNotFoundError(f"game directory not found: {game}")
+     actions: list[str] = []
+     warnings: list[str] = []
++    seal_removed = False
++    # UNSEAL-FIX01: status bookkeeping for the three report states.
++    cleanup_failed = False
++    record_refused = False
++    record_unlink_failed = False
++    legacy_failed = False
+ 
+     manifest_path = game / MANIFEST_NAME
+     # DLC-HIGH3-FIX01 (A1 / HIGH-4 read side / LOW-8): the install record is
+@@ -1142,10 +2148,50 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+             f"{MANIFEST_NAME} does not qualify as a plain install record "
+             f"({record_err}) - refusing to read or act on it; resolve it "
+             "manually")
++        # UNSEAL-FIX01: nothing was acted on, so the report says so; the
++        # CLI exit stays 0 (behavior unchanged since tool 0.7) and the
++        # table in uninstall --help documents this sub-case.
++        record_refused = True
+     elif manifest is None:
+         warnings.append(f"no {MANIFEST_NAME} in {game}: nothing recorded to remove "
+                         f"(use --legacy for installs made by an older ra2forge)")
++        if (game / SEAL_NAME).is_file():
++            warnings.append(
++                f"a {SEAL_NAME} is present without an install record - left "
++                "in place (this tool only removes it as part of the "
++                "record's completed lifecycle); delete it by hand if it is "
++                "stale")
+     else:
++        # SEAL-CHAIN01: the seal gate, BEFORE the first unlink. uninstall()
++        # deletes and restores exactly what this record names, so on an
++        # unverified record that is the W21 UNCOVERED §3 forgery surface -
++        # refuse instead of trusting it. --force never releases this: force
++        # means "delete a recorded file whose bytes changed", never "trust a
++        # record whose seal does not check out".
++        seal_info = evaluate_seal(game, manifest, manifest_path)
++        if seal_info["state"] == "not_expected":
++            if seal_info["detail"]:
++                warnings.append(f"install seal note: {seal_info['detail']}")
++            warnings.append(
++                f"legacy manifest (tool version "
++                f"{manifest.get('version')!r}): no install seal expected - "
++                "proceeding WITHOUT seal protection (degraded mode; the "
++                "record is not verified against a seal)")
++        elif seal_info["state"] != "ok":
++            kind = ("seal_missing" if seal_info["state"] == "missing"
++                    else "seal_mismatch")
++            warnings.append(
++                f"uninstall REFUSED: install seal {seal_info['state']} - "
++                f"{seal_info['detail']}. The manifest and every recorded "
++                "file and backup slot are UNTOUCHED. Run 'python -m "
++                "ra2forge verify --game <dir>' for the drift report; if "
++                "the manifest is the one you want, re-run the install of "
++                "the SAME package to re-establish the seal, then uninstall "
++                "again. --force does NOT bypass this refusal.")
++            return {"game_dir": game, "actions": actions,
++                    "warnings": warnings, "seal": seal_info,
++                    "refused": kind, "status": "failed"}
++        seal_removed = seal_info["state"] == "ok"
+         refused = False
+         for entry in reversed(manifest.get("files", [])):
+             name = entry.get("name", "")
+@@ -1225,10 +2271,23 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+                 # refusal guarantees is the refused entry's own file - the other
+                 # entries of the same record are still processed. Measured:
+                 # DLC-HARDEN4-FIX02 raw/MB_*_post.txt, fsdiff 2, not 0.)
++            # ORPHAN-FIX01: the record can prove the backup slot holds OUR own
++            # previous version (the file was created by an earlier install and
++            # later replaced) - such a slot is removed with the file, never
++            # "restored" over a file that never had an original. Old manifests
++            # without the flag behave exactly as before.
++            absent = bool(entry.get("original_absent"))
+             if not dest.is_file():
+                 actions.append(f"missing    {name} (already gone)")
+             elif force or sha256_of(dest) == entry.get("sha256"):
+-                dest.unlink()
++                try:
++                    dest.unlink()
++                except OSError as exc:
++                    warnings.append(
++                        f"could not remove {name} ({exc}) - kept; "
++                        f"{MANIFEST_NAME} is kept for a later retry")
++                    refused = True
++                    continue
+                 actions.append(f"removed    {name}")
+             else:
+                 warnings.append(
+@@ -1241,26 +2300,53 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+                 continue
+             if backup:
+                 if bak.is_file():
+-                    # DLC-HIGH1-FIX01: identity re-check immediately before
+-                    # the restore write - the slot must still be empty, never
+-                    # a link or a file that appeared after the recorded file
+-                    # was removed (a restore through it would write into
+-                    # whatever that alias points at).
+-                    if dest.is_symlink() or dest.exists():
+-                        warnings.append(
+-                            f"cannot restore {backup} -> {name}: something "
+-                            f"now occupies the slot after the recorded file "
+-                            f"was removed - backup {backup} kept, resolve "
+-                            f"the slot manually")
+-                        refused = True
+-                        continue
+-                    # expected_sha=None: the staged bytes are verified against
+-                    # the backup itself - the manifest records the sha of what
+-                    # was INSTALLED, not of the original the backup holds.
+-                    _stage_and_replace(bak, dest, None, "restore")
+-                    bak.unlink()
+-                    actions.append(f"restored   {backup} -> {name}")
+-                else:
++                    if absent:
++                        try:
++                            bak.unlink()
++                        except OSError as exc:
++                            warnings.append(
++                                f"could not remove backup {backup} ({exc}) - "
++                                f"{name} was removed, {MANIFEST_NAME} is kept")
++                            refused = True
++                        else:
++                            actions.append(
++                                f"removed    {backup} (original absent - the slot "
++                                "held our own previous version, nothing to restore)")
++                    else:
++                        # DLC-HIGH1-FIX01: identity re-check immediately before
++                        # the restore write - the slot must still be empty, never
++                        # a link or a file that appeared after the recorded file
++                        # was removed (a restore through it would write into
++                        # whatever that alias points at).
++                        if dest.is_symlink() or dest.exists():
++                            warnings.append(
++                                f"cannot restore {backup} -> {name}: something "
++                                f"now occupies the slot after the recorded file "
++                                f"was removed - backup {backup} kept, resolve "
++                                f"the slot manually")
++                            refused = True
++                            continue
++                        # expected_sha=None: the staged bytes are verified against
++                        # the backup itself - the manifest records the sha of what
++                        # was INSTALLED, not of the original the backup holds.
++                        try:
++                            _stage_and_replace(bak, dest, None, "restore")
++                        except OSError as exc:
++                            warnings.append(
++                                f"could not restore {backup} -> {name} "
++                                f"({exc}) - backup {backup} kept, resolve the "
++                                "slot manually")
++                            refused = True
++                            continue
++                        actions.append(f"restored   {backup} -> {name}")
++                        try:
++                            bak.unlink()
++                        except OSError as exc:
++                            warnings.append(
++                                f"restored {name}, but could not remove "
++                                f"leftover backup slot {backup} ({exc}); "
++                                f"delete {backup} manually")
++                elif not absent:
+                     warnings.append(
+                         f"backup {backup} is missing - {name} was not restored")
+         if refused:
+@@ -1275,21 +2361,91 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+                 "refused, so the install record stays for a later 'uninstall' "
+                 "to retry once the refused slots are resolved manually")
+         else:
+-            manifest_path.unlink()
+-            actions.append(f"removed    {MANIFEST_NAME}")
++            manifest_removed = False
++            try:
++                manifest_path.unlink()
++            except OSError as exc:
++                record_unlink_failed = True
++                warnings.append(
++                    f"could not remove install record {MANIFEST_NAME} ({exc}) - "
++                    "every recorded file above was already processed, so "
++                    f"{MANIFEST_NAME} (and {SEAL_NAME}, if present) is kept "
++                    "to match the surviving record; clear the obstacle (e.g. "
++                    "remove the read-only attribute) and delete it or re-run "
++                    "uninstall")
++            else:
++                manifest_removed = True
++                actions.append(f"removed    {MANIFEST_NAME}")
++            # SEAL-CHAIN01: the seal completes its lifecycle together with
++            # the record it protects - only when the seal itself was verified
++            # (a stale seal on a legacy record is left for the user, never
++            # silently consumed).
++            # UNSEAL-FIX01 (W25, tool 0.8): this is the FINAL cleanup step -
++            # the record is already deleted and every recorded file was
++            # already processed above - so a failure here (a read-only seal,
++            # an open handle: PermissionError / WinError 5) must not abort
++            # the command and lose the actions report, and must not read as
++            # a total failure of an uninstall that DID complete its main
++            # lifecycle. The failure becomes an explicit warning (naming the
++            # stray seal, where it stands and how to recover), the report
++            # carries status="completed_with_warnings" and the CLI exits
++            # EXIT_UNINSTALL_PARTIAL (10). This is NOT "the seal can be
++            # ignored": the stray seal is disclosed every subsequent time
++            # (uninstall / verify) until removed. A normal (writable) seal
++            # is still removed silently, exactly as before.
++            if manifest_removed and seal_removed and (game / SEAL_NAME).is_file():
++                try:
++                    (game / SEAL_NAME).unlink()
++                    actions.append(f"removed    {SEAL_NAME}")
++                except OSError as exc:
++                    cleanup_failed = True
++                    warnings.append(
++                        f"the install seal ({SEAL_NAME}) could not be "
++                        f"removed ({exc}) - the uninstall itself is "
++                        "COMPLETE (the record was deleted and every "
++                        "recorded file was processed above), but the seal "
++                        "file is left standing at "
++                        f"{game / SEAL_NAME}; clear the obstacle (e.g. "
++                        "remove the read-only attribute or close the "
++                        "process holding the file) and delete it by hand, "
++                        "or re-run the install of the SAME package and "
++                        "uninstall again")
+ 
+     if legacy:
+         # files already handled by the manifest (removed + restored to their
+         # pre-install state) must not be deleted again by the legacy pass
+         handled = {e.get("name", "") for e in (manifest or {}).get("files", [])}
+-        _uninstall_legacy(game, actions, warnings, drop_legacy_battlemd, handled)
+-
+-    return {"game_dir": game, "actions": actions, "warnings": warnings}
++        legacy_failed = _uninstall_legacy(
++            game, actions, warnings, drop_legacy_battlemd, handled)
++
++    # UNSEAL-FIX01 / UNSEAL-FIX02: the three report states.
++    # "completed_with_warnings" is reserved for partial completion (main
++    # lifecycle done, final seal cleanup failed; CLI exit 10). "failed"
++    # covers refusals that acted on nothing (seal gate -> CLI 7/8;
++    # non-qualifying record slot -> CLI 0, unchanged since tool 0.7) as well
++    # as post-entry record-removal failure (failed_step="manifest_unlink" or
++    # "legacy_manifest_unlink" -> CLI 1, actions preserved in report).
++    failed_step = None
++    if record_unlink_failed or legacy_failed:
++        status = "failed"
++        failed_step = ("manifest_unlink" if record_unlink_failed
++                       else "legacy_manifest_unlink")
++    elif cleanup_failed:
++        status = "completed_with_warnings"
++    elif record_refused:
++        status = "failed"
++    else:
++        status = "completed"
++    report = {"game_dir": game, "actions": actions, "warnings": warnings,
++              "refused": None, "status": status}
++    if failed_step:
++        report["failed_step"] = failed_step
++    return report
+ 
+ 
+ def _uninstall_legacy(game: Path, actions: list[str], warnings: list[str],
+                       drop_legacy_battlemd: bool,
+-                      handled: set[str] | None = None) -> None:
++                      handled: set[str] | None = None) -> bool:
+     """Clean the artefacts of a ra2forge <= FORGE-1 install.
+ 
+     DLC-UNINSTALL-LEGACY01: this path used to trust the legacy listing and the
+@@ -1426,9 +2582,22 @@ def _uninstall_legacy(game: Path, actions: list[str], warnings: list[str],
+             if bak.is_file():
+                 # staged, alias-proof restore (never follows the slot, never
+                 # an alias at the slot)
+-                _stage_and_replace(bak, dest, None, "restore")
+-                bak.unlink()
++                try:
++                    _stage_and_replace(bak, dest, None, "restore")
++                except OSError as exc:
++                    warnings.append(
++                        f"could not restore {bak.name} -> {name} ({exc}) - "
++                        f"backup {bak.name} kept, {LEGACY_MANIFEST} is kept")
++                    refused = True
++                    continue
+                 actions.append(f"restored   {bak.name} -> {name}")
++                try:
++                    bak.unlink()
++                except OSError as exc:
++                    warnings.append(
++                        f"restored {name}, but could not remove leftover "
++                        f"backup slot {bak.name} ({exc}); delete {bak.name} "
++                        "manually")
+             elif drop_legacy_battlemd:
+                 moved = game / (name + ".ra2forge.removed.bak")
+                 # DLC-HIGH3-FIX01 (A1): this is a derived name too - the same
+@@ -1535,9 +2704,21 @@ def _uninstall_legacy(game: Path, actions: list[str], warnings: list[str],
+             continue
+         actions.append(f"removed    {name}")
+         if bak.is_file():
+-            _stage_and_replace(bak, dest, None, "restore")
+-            bak.unlink()
++            try:
++                _stage_and_replace(bak, dest, None, "restore")
++            except OSError as exc:
++                warnings.append(
++                    f"could not restore {bak.name} -> {name} ({exc}) - "
++                    f"backup {bak.name} kept, {LEGACY_MANIFEST} is kept")
++                refused = True
++                continue
+             actions.append(f"restored   {bak.name} -> {name}")
++            try:
++                bak.unlink()
++            except OSError as exc:
++                warnings.append(
++                    f"restored {name}, but could not remove leftover backup "
++                    f"slot {bak.name} ({exc}); delete {bak.name} manually")
+ 
+     if record_present:
+         if refused:
+@@ -1557,12 +2738,21 @@ def _uninstall_legacy(game: Path, actions: list[str], warnings: list[str],
+             # not address a record any more, and the removal is still only
+             # claimed when it actually happened.
+             if os.path.lexists(str(listing)):
+-                listing.unlink()
++                try:
++                    listing.unlink()
++                except OSError as exc:
++                    warnings.append(
++                        f"could not remove legacy record {LEGACY_MANIFEST} "
++                        f"({exc}) - files above were processed, so "
++                        f"{LEGACY_MANIFEST} is kept; clear the obstacle and "
++                        "delete it or re-run 'uninstall --legacy'")
++                    return True
+                 actions.append(f"removed    {LEGACY_MANIFEST}")
+             else:
+                 warnings.append(
+                     f"{LEGACY_MANIFEST} is already gone - it was removed "
+                     "during this pass, so no second deletion is claimed")
++    return False
+ 
+ 
+ def _load_manifest(path: Path):
+diff --git a/ra2forge/mixlib.py b/ra2forge/mixlib.py
+index 98ad453..a38fe38 100644
+--- a/ra2forge/mixlib.py
++++ b/ra2forge/mixlib.py
+@@ -207,6 +207,16 @@ def crc_hash(filename: str) -> int:
+     return zlib.crc32(filename.upper().encode("ascii", "replace")) & 0xFFFFFFFF
+ 
+ 
++def ts_crc_hash(filename: str) -> int:
++    """Westwood TS/RA2 MIX file ID (CRC-32 with 4-byte-tail length padding)."""
++    b = filename.upper().encode("ascii", "replace")
++    length = len(b)
++    aligned = length >> 2
++    if length & 3:
++        b = b + bytes([length - (aligned << 2)]) + bytes([b[aligned << 2]]) * (3 - (length & 3))
++    return zlib.crc32(b) & 0xFFFFFFFF
++
++
+ def classic_hash(filename: str) -> int:
+     """Tiberian Sun / RA2 fallback "classic" hash used by some old files."""
+     name = filename.upper().replace("\\", "").replace(":", "")[:12]
+@@ -284,8 +294,9 @@ class MixFile:
+         return out
+ 
+     def get(self, filename: str) -> bytes | None:
++        targets = (crc_hash(filename), ts_crc_hash(filename), classic_hash(filename))
+         for e in self.entries:
+-            if e.id in (crc_hash(filename), classic_hash(filename)):
++            if e.id in targets:
+                 return self.read_entry(e)
+         return None
+ 
+diff --git a/ra2forge/verify.py b/ra2forge/verify.py
+new file mode 100644
+index 0000000..4e51767
+--- /dev/null
++++ b/ra2forge/verify.py
+@@ -0,0 +1,306 @@
++"""verify - read-only drift detection for an installed ra2forge package.
++
++SEAL-CHAIN01 (W23): the manifest is plain-text JSON and uninstall acts on
++it, so a hand-edited or accidentally mangled manifest can silently drive
++deletions and restores (W21 UNCOVERED §3). `verify` reports - without
++writing anything:
++
++  1. manifest structure   - JSON parses, required fields present and
++                            well-formed (plain file name + 64-hex sha256 per
++                            entry, package_digest present for seal-era
++                            manifests);
++  2. package_digest       - recomputed over the manifest's OWN files[]
++                            records vs the recorded package_digest. NOTE:
++                            this proves the manifest's INTERNAL consistency
++                            only - the records could still disagree with
++                            the disk (check 3 is what looks at the disk);
++  3. per-file disk check  - the actual sha256 of every recorded file vs the
++                            recorded one: ok / changed / missing (a file
++                            that cannot be read is reported as unreadable
++                            and counts as drift);
++  4. orphans              - ra2forge-characteristic files on disk that the
++                            manifest does not account for (*.ra2forge.bak,
++                            *.ra2forge.removed.bak, *.ra2forge-stage*),
++                            minus the manifest/seal pair itself. Orphans
++                            are listed but do NOT change the exit code;
++  5. install seal         - for seal-era manifests (tool >= 0.7) the seal
++                            must exist and match the manifest's canonical
++                            bytes; older manifests run in DEGRADED mode
++                            (warned, still fully executed).
++
++BOUNDARY (do not widen when quoting this): the seal detects ACCIDENTS - it
++is NOT anti-tamper and NOT a security boundary. Whoever can edit the
++manifest can recompute the seal. Nothing here is cryptographic trust.
++"""
++
++from __future__ import annotations
++
++import hashlib
++import json
++import os
++from pathlib import Path
++
++from .install import (
++    MANIFEST_NAME,
++    SEAL_NAME,
++    _derived_slot_error,
++    evaluate_seal,
++    _manifest_is_seal_era,
++    sha256_of,
++    EXIT_VERIFY_STRUCTURAL,
++    EXIT_VERIFY_DIGEST,
++    EXIT_SEAL_MISSING,
++    EXIT_SEAL_MISMATCH,
++    EXIT_VERIFY_DRIFT,
++)
++
++EXIT_OK = 0
++
++# most severe first; verify reports every finding and exits with the worst
++_SEVERITY_ORDER = (EXIT_VERIFY_STRUCTURAL, EXIT_VERIFY_DIGEST,
++                   EXIT_SEAL_MISSING, EXIT_SEAL_MISMATCH, EXIT_VERIFY_DRIFT)
++
++EXIT_MEANINGS = {
++    EXIT_OK: "everything ok (orphans, if any, are listed without changing "
++             "the code; a directory with no install record also verifies "
++             "as 0 - nothing to check)",
++    1: "the check itself failed to run (unexpected error)",
++    2: "command-line usage error (argparse)",
++    EXIT_VERIFY_STRUCTURAL: "manifest structure unusable (not JSON, required "
++                            "fields missing/malformed)",
++    EXIT_VERIFY_DIGEST: "package_digest mismatch - the manifest's own "
++                        "records are not self-consistent",
++    EXIT_SEAL_MISSING: "install seal MISSING for a seal-era manifest "
++                       "(tool >= 0.7)",
++    EXIT_SEAL_MISMATCH: "install seal MISMATCH / corrupt / aliased",
++    EXIT_VERIFY_DRIFT: "drift: recorded files changed or missing on disk",
++}
++
++_ORPHAN_MARKERS = (".ra2forge.bak", ".ra2forge.removed.bak", ".ra2forge-stage")
++
++
++def _is_orphan_name(name: str) -> bool:
++    low = name.lower()
++    return any(low.endswith(m) or m in low for m in _ORPHAN_MARKERS)
++
++
++def _entry_structural_error(entry, idx: int) -> str | None:
++    """Why this files[] entry is structurally unusable, or None."""
++    where = f"files[{idx}]"
++    if not isinstance(entry, dict):
++        return f"{where}: not a JSON object"
++    name = entry.get("name")
++    if not isinstance(name, str) or not name:
++        return f"{where}: 'name' missing or not a string"
++    if (name in (".", "..") or Path(name).name != name
++            or "/" in name or "\\" in name):
++        return (f"{where}: {name!r} is not a plain file name inside the "
++                "game directory")
++    sha = entry.get("sha256")
++    if not isinstance(sha, str) or len(sha) != 64:
++        return f"{where} ({name}): 'sha256' missing or not a 64-char string"
++    if any(ch not in "0123456789abcdef" for ch in sha.lower()):
++        return f"{where} ({name}): 'sha256' is not 64 hex digits"
++    return None
++
++
++def verify_install(game_dir) -> dict:
++    """Read-only verification of the install record in game_dir.
++
++    Returns a JSON-serialisable report; report["exit_code"] is the CLI exit
++    code (see EXIT_MEANINGS / verify --help). Never writes, never deletes.
++    """
++    game = Path(game_dir)
++    manifest_path = game / MANIFEST_NAME
++    report: dict = {
++        "tool": "ra2forge",
++        "command": "verify",
++        "game_dir": str(game),
++        "manifest_present": False,
++        "manifest_version": None,
++        "legacy_degraded": False,
++        "structural": [],
++        "digest": None,
++        "seal": None,
++        "files": [],
++        "orphans": [],
++        "warnings": [],
++        "counts": {"ok": 0, "changed": 0, "missing": 0, "orphans": 0},
++        "exit_code": EXIT_OK,
++        "exit_code_meaning": EXIT_MEANINGS[EXIT_OK],
++    }
++
++    def worst_of(codes) -> int:
++        for code in _SEVERITY_ORDER:
++            if code in codes:
++                return code
++        return EXIT_OK
++
++    def finalize(codes) -> None:
++        code = worst_of(codes)
++        report["exit_code"] = code
++        report["exit_code_meaning"] = EXIT_MEANINGS.get(
++            code, f"exit {code}")
++
++    if not manifest_path.is_file():
++        report["warnings"].append(
++            f"no {MANIFEST_NAME} in {game} - nothing to verify "
++            "(an install with 'python -m ra2forge install' writes it)")
++        # UNSEAL-FIX01 (W25, tool 0.8): a seal standing without its record is
++        # the stray state a tool <= 0.7 uninstall could leave behind (and
++        # the state a failed final seal cleanup of a completed uninstall
++        # discloses). Never a false all-ok: name it, leave it (this tool
++        # only removes the seal as part of the record's completed
++        # lifecycle), and do not change the exit code - same policy as
++        # orphans (listed, do not change the code).
++        if (game / SEAL_NAME).is_file():
++            report["warnings"].append(
++                f"a {SEAL_NAME} is present without an install record - "
++                "left in place (this tool only removes it as part of the "
++                "record's completed lifecycle); delete it by hand if it is "
++                "stale")
++        return report
++    report["manifest_present"] = True
++
++    # the record is never read through an alias - same criteria as
++    # install/uninstall use for the record slot
++    rec_err = _derived_slot_error(game, MANIFEST_NAME, "install record")
++    if rec_err:
++        report["structural"].append(f"install record unusable: {rec_err}")
++        finalize([EXIT_VERIFY_STRUCTURAL])
++        return report
++    try:
++        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
++    except (OSError, UnicodeDecodeError) as exc:
++        report["structural"].append(f"{MANIFEST_NAME} is not readable "
++                                    f"UTF-8 text ({exc})")
++        finalize([EXIT_VERIFY_STRUCTURAL])
++        return report
++    except ValueError as exc:
++        report["structural"].append(f"{MANIFEST_NAME} is not valid JSON "
++                                    f"({exc})")
++        finalize([EXIT_VERIFY_STRUCTURAL])
++        return report
++    if not isinstance(manifest, dict):
++        report["structural"].append("malformed structure (expected a JSON "
++                                    "object)")
++        finalize([EXIT_VERIFY_STRUCTURAL])
++        return report
++    version = manifest.get("version")
++    report["manifest_version"] = version if isinstance(version, str) else None
++
++    legacy = not _manifest_is_seal_era(manifest)
++    report["legacy_degraded"] = legacy
++    if legacy:
++        report["warnings"].append(
++            f"legacy manifest (tool version {manifest.get('version')!r}): "
++            "predates the install seal - verifying in DEGRADED mode (no "
++            "package_digest / seal checks; file-level checks still run)")
++
++    entries = manifest.get("files")
++    if not isinstance(entries, list):
++        report["structural"].append("malformed structure (expected a "
++                                    "'files' list)")
++        finalize([EXIT_VERIFY_STRUCTURAL])
++        return report
++
++    # -- 1. structure
++    bad_indexes: set[int] = set()
++    for idx, entry in enumerate(entries):
++        err = _entry_structural_error(entry, idx)
++        if err:
++            report["structural"].append(err)
++            bad_indexes.add(idx)
++    if not legacy and not isinstance(manifest.get("package_digest"), str):
++        report["structural"].append("seal-era manifest lacks a string "
++                                    "'package_digest' field")
++        bad_indexes.add(-1)  # marker: digest checks are meaningless
++    structural_any = bool(report["structural"])
++
++    # -- 2. package_digest (self-consistency of the RECORDS ONLY)
++    if legacy:
++        report["digest"] = None
++    elif structural_any:
++        report["digest"] = {"recorded": manifest.get("package_digest"),
++                            "recomputed": None, "match": None,
++                            "note": "skipped - structural failures above "
++                                    "make the records unusable"}
++    else:
++        lines = sorted(f"{e['name']} {e['sha256'].lower()}" for e in entries)
++        recomputed = hashlib.sha256("\n".join(lines).encode("utf-8")) \
++            .hexdigest()
++        recorded = manifest.get("package_digest")
++        report["digest"] = {"recorded": recorded, "recomputed": recomputed,
++                            "match": recorded == recomputed,
++                            "note": "self-consistency of the manifest's own "
++                                    "records only - NOT proof of what is on "
++                                    "disk (see files[])"}
++
++    # -- 5. seal (independent of JSON validity: hashes the canonical bytes)
++    seal_info = evaluate_seal(game, manifest, manifest_path)
++    seal_state = seal_info["state"]
++    report["seal"] = {"expected": not legacy, "state": seal_state,
++                      "detail": seal_info["detail"],
++                      "path": seal_info["path"]}
++    if seal_state == "not_expected" and seal_info["detail"]:
++        report["warnings"].append(f"install seal note: {seal_info['detail']}")
++    seal_codes: set[int] = set()
++    if seal_state == "missing":
++        seal_codes.add(EXIT_SEAL_MISSING)
++    elif seal_state in ("mismatch", "corrupt", "aliased"):
++        seal_codes.add(EXIT_SEAL_MISMATCH)
++
++    # -- 3. per-file disk check (structurally valid entries only)
++    for idx, entry in enumerate(entries):
++        if idx in bad_indexes:
++            continue
++        name = entry["name"]
++        recorded_sha = entry["sha256"].lower()
++        dest = game / name
++        if not dest.is_file():
++            status, disk_sha = "missing", None
++        else:
++            try:
++                disk_sha = sha256_of(dest)
++                status = "ok" if disk_sha == recorded_sha else "changed"
++            except OSError as exc:
++                disk_sha = None
++                status = f"unreadable ({exc})"
++        report["files"].append({"name": name, "recorded_sha256": recorded_sha,
++                                "disk_sha256": disk_sha, "status": status})
++    counts = report["counts"]
++    counts["ok"] = sum(1 for f in report["files"] if f["status"] == "ok")
++    counts["changed"] = sum(1 for f in report["files"]
++                            if f["status"] == "changed")
++    counts["missing"] = sum(1 for f in report["files"]
++                            if f["status"].startswith(("missing",
++                                                       "unreadable")))
++
++    # -- 4. orphans (listed; never change the exit code)
++    accounted = {os.path.normcase(MANIFEST_NAME),
++                 os.path.normcase(SEAL_NAME)}
++    for idx, entry in enumerate(entries):
++        if idx in bad_indexes or not isinstance(entry, dict):
++            continue
++        if isinstance(entry.get("name"), str):
++            accounted.add(os.path.normcase(entry["name"]))
++        backup = entry.get("backup")
++        if isinstance(backup, str) and backup:
++            accounted.add(os.path.normcase(backup))
++    for p in sorted(game.iterdir()):
++        if not p.is_file() or not _is_orphan_name(p.name):
++            continue
++        if os.path.normcase(p.name) in accounted:
++            continue
++        report["orphans"].append(p.name)
++    counts["orphans"] = len(report["orphans"])
++
++    codes: set[int] = set(seal_codes)
++    if structural_any:
++        codes.add(EXIT_VERIFY_STRUCTURAL)
++    if report["digest"] and report["digest"]["match"] is False:
++        codes.add(EXIT_VERIFY_DIGEST)
++    if counts["changed"] or counts["missing"]:
++        codes.add(EXIT_VERIFY_DRIFT)
++    finalize(codes)
++    return report

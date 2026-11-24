@@ -1,0 +1,23 @@
+① 入口
+  entry=0046D000  .text=[00401000,007E038D)  in_text=True  atlas_size=69  atlas_end=0046D045
+  反汇编条数=21  skipdata空洞=0  首条=mov eax, dword ptr [esp + 8]  末条=ret 8  末条末字节=0046D045
+  末 3 条：
+    0046D03F  33 C0                xor eax, eax
+    0046D041  5E                   pop esi
+    0046D042  C2 08 00             ret 8
+
+② 类身份（.rdata 虚表槽 → RTTI）
+  槽 007E4A3C = 00 D0 46 00   （vt 007E4A28 + 0x14 = slot#5，与线索 slot5 一致）
+  [vt-4] = 007E4A24 → COL 20 C9 7F 00 = 007FC920
+  COL.+0 = 00 00 00 00  (sig=0)
+  COL+0xC (pTD, 绝对VA) = 70 B1 81 00 ; COL+0x10 (pCHD) = 10 C9 7F 00 → CHD 007FC910 sig=00000000 attr=00000005
+  TD 0081B170 = 94 95 7F 00 00 00 00 00 ; TD+8 内联装饰名 0081B178 = '.?AVCampaignClass@@'
+  vt slot0 = 00410260 (=主表标志 00410260 : YES)
+
+④ 使用见证（.text 构造器活表安装点；与 ② 不同源）
+  安装点 0046CB70 : 0046CB70 C7 06 28 4A 7E 00    mov dword ptr [esi], 0x7e4a28
+  所在函数 = 构造器 0046CB60（首条 0046CB60 8B 44 24 04          mov eax, dword ptr [esp + 4]）
+  构造器调用者 006C02BC : 006C02BC 68 A0 03 00 00       push 0x3a0
+  紧邻 operator new 0x7C8E17 调用 006C02C1 : 006C02C1 E8 51 8B 10 00       call 0x7c8e17
+  构造调用 = 006C02D1 : 006C02D1 E8 8A C8 DA FF       call 0x46cb60
+  ㉓ 排除：删除析构器 0046D090 体内写点 0046D096 : 0046D096 C7 06 28 4A 7E 00    mov dword ptr [esi], 0x7e4a28（行外）

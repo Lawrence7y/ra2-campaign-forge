@@ -1,0 +1,71 @@
+=== ③(b) 独立逐条 diff：19 条绑定，逐条 (Δpp, Δpm) ===
+changed_bindings = 10  changed_docs = 5
+DELTA histogram {(0, 0): 1, (1, 1): 8, (0, 1): 1}
+TOTAL Δ(plus_path, plus_match) = (8, 9)
+base pp/pm = (9, 9)  proj pp/pm = (17, 18)
+  ( 6,0) Δ=(0, 0)  tier None->None  path False->False  match None->None  keys_added=['samedoc_link']
+  (19,0) Δ=(1, 1)  tier None->'SAMEDOC_LINK'  path False->True  match None->True  keys_added=['bytes', 'recomputed', 'samedoc_link', 'verified_path']
+  (20,0) Δ=(0, 1)  tier None->'SAMEDOC_LINK_EQ'  path False->False  match None->True  keys_added=['decl_lines', 'members', 'samedoc_link']
+  (27,0) Δ=(1, 1)  tier None->'SAMEDOC_LINK'  path False->True  match None->True  keys_added=['bytes', 'recomputed', 'samedoc_link', 'verified_path']
+  (27,1) Δ=(1, 1)  tier None->'SAMEDOC_LINK'  path False->True  match None->True  keys_added=['bytes', 'recomputed', 'samedoc_link', 'verified_path']
+  (27,2) Δ=(1, 1)  tier None->'SAMEDOC_LINK'  path False->True  match None->True  keys_added=['bytes', 'recomputed', 'samedoc_link', 'verified_path']
+  (27,4) Δ=(1, 1)  tier None->'SAMEDOC_LINK'  path False->True  match None->True  keys_added=['bytes', 'recomputed', 'samedoc_link', 'verified_path']
+  (27,5) Δ=(1, 1)  tier None->'SAMEDOC_LINK'  path False->True  match None->True  keys_added=['bytes', 'recomputed', 'samedoc_link', 'verified_path']
+  (28,0) Δ=(1, 1)  tier None->'SAMEDOC_LINK'  path False->True  match None->True  keys_added=['bytes', 'recomputed', 'samedoc_link', 'verified_path']
+  (28,1) Δ=(1, 1)  tier None->'SAMEDOC_LINK'  path False->True  match None->True  keys_added=['bytes', 'recomputed', 'samedoc_link', 'verified_path']
+MERGED-TIER rows in projection = 1
+  MERGED ROW (20,0): file=D:\Project\ra2-campaign-forge\lead\b2b_isolated_20261107\_integ_INTEGRATION_REPORT.md
+    keys=['citation', 'decl_lines', 'declared', 'match', 'members', 'path', 'samedoc_link', 'tier', 'tried']
+    path=None match=True tier='SAMEDOC_LINK_EQ' members_n=2 decl_lines=[13]
+    has single-object keys: {'verified_path': False, 'recomputed': False, 'bytes': False}
+    contribution to (pp,pm) = (0, 1)
+    is one of the 10 changed? True
+    delta of that row = [(0, 1)]
+    members sha equal: True ['ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2', 'ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2']
+ALL Δ(0,+1) rows = [(20, 0)]
+UNIQUE(Δ(+1,+1)) rows = [(19, 0), (27, 0), (27, 1), (27, 2), (27, 4), (27, 5), (28, 0), (28, 1)]
+ZERO(Δ(0,0)) rows = [(6, 0)]
+
+=== ③(a) 对投影跑撰写员 checker 与复核员 checker ===
+WRITER _ci_checks violations=1 ['INV-06 plus_path=17 != plus_match=18 (baseline identity broken; must reconcile with plus_match_by_kind)']
+INDEPENDENT violations=1 ['INV-06 plus_path=17 != plus_match=18']
+facts writer M=1 E=1 merged_present=True
+facts indep  M=1 E=1 merged_present=True
+
+=== ④(d) _ci_gate.py 三态实跑 ===
+  selftest                 rc=0
+      TEMP: C:\Users\Administrator\AppData\Local\Temp\_ci_gate_p53ipp01
+      [PASS] baseline expect_merged=False alerts=0 expected=0 temp=baseline.json
+      [PASS] CE-08 symmetric drift alerts=2 expected=INV-08 temp=symmetric_drift.json
+      INV-07 M=1 != E=0 (non-merged cause OR missing merged dimension)
+      INV-08 numeric equal but SET differs: [(3, 0)] / [(6, 0)]
+      [PASS] non-merged plus_match>plus_path alerts=2 expected=INV-07 temp=nonmerged_cause.json
+      INV-07 M=1 != E=0 (non-merged cause OR missing merged dimension)
+      INV-06 baseline identity broken without merged
+      SELFTEST_ALL_PASS = True
+  baseline                 rc=0
+      FILE: D:\Project\ra2-campaign-forge\lead\r11_f2_fix_20261109\_f2_compare_out.json  expect_merged = False
+      OK violations=0
+  merged --expect-merged   rc=0
+      FILE: C:\Users\Administrator\AppData\Local\Temp\_ci_merged_r8prxhqj\merged_projection.json  expect_merged = True
+      OK violations=0
+
+=== ④(c) 独立沙箱：硬编码 totals.plus_match=9 到 merged 投影 ===
+  _f2w_checks.py     rc=0 output_has_totals=False notable=['sha 逐字一致条数 = 8']
+  _f2w_pass.py       rc=0 output_has_totals=False notable=['R11 PASS: orig=6 plus=7 | overall PASS: orig=6 plus=7']
+  _f2w_extract.py    rc=0 output_has_totals=False notable=['rows=19 plus_bindings=19 orig_bindings=19']
+  _f2w_final.py      rc=0 output_has_totals=False notable=[]
+  WRITER _ci_checks        rc=1
+      ALERT violations=2
+      - INV-01 totals.plus_match=9 != recomputed=18
+      - INV-06 plus_path=17 != plus_match=9 (baseline identity broken; must reconcile with plus_match_by_kind)
+  INDEPENDENT _civ_checks  rc=1
+      ALERT violations=2
+      - INV-01 totals.plus_match=9 != recomputed=18
+      - INV-06 plus_path=17 != plus_match=9
+
+=== 边界：三个指纹锁对原件实跑（CASE A 情形） ===
+  _f2d_fpcheck.py      rc=0 line=[]
+  _f2dw_fpcheck.py     rc=0 line=['MATCH  lead/r11_f2_fix_20261109/_f2_compare_out.json 44958 148ea8d689eaaf582af05ea1bf4650605e104d6d74f8c7765e75a6eec662c7b1']
+  _f2dv_fpcheck.py     rc=0 line=['MATCH\tlead\\r11_f2_fix_20261109\\_f2_compare_out.json\t148ea8d689eaaf582af05ea1bf4650605e104d6d74f8c7765e75a6eec662c7b1\t44958\texpected=148ea8d689eaaf582af05ea1bf4650605e104d6d74f8c7765e75a6eec662c7b1/44958']
+TEMP: C:\Users\Administrator\AppData\Local\Temp\_civ_hard_cu4k5_c_

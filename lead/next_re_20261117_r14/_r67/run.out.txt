@@ -1,0 +1,245 @@
+==============================================================================
+[P1] sha256 实现对照已知向量
+  PASS P1 vector len=0  e3b0c44298fc1c14
+  PASS P1 vector len=3  ba7816bf8f01cfea
+  PASS P1 vector len=43  d7a8fbb307d78094
+
+==============================================================================
+[0] 读权威清单 D:\Project\ra2-campaign-forge\lead\next_re_20261117_r14\R17_R101_TIER_FINAL_4417\tier_final_4417.tsv
+  清单字节 696579 / 363a1199efa75229 / CR=0 LF=4418
+  数据行 4417
+  PASS 清单行数 = 4417  4417
+  sum(bytes) = 737517286
+  PASS 清单 sum(bytes) = 737,517,286  737517286
+
+==============================================================================
+[N2 负控] 清单 bytes 列 vs 磁盘 getsize 逐行比对（统计前提）
+  缺失 0 件 / 字节不符 1 件
+    MISMATCH next_re_20261117_r14/D41_SUBST/_audit/EVIDENCE/a2_sites.json 清单=913237 磁盘=17624355 差=16711118
+  PASS N2 全部文件存在  0
+  PASS N2 字节不符件数 = 1（唯一例外 a2_sites.json 的净额行）  1
+  PASS N2 例外行确为 a2_sites.json  next_re_20261117_r14/D41_SUBST/_audit/EVIDENCE/a2_sites.json
+
+  [N2-b] 净额行口径闭合核算（§2.71 剔 bounds 段后残留的键足迹）
+    磁盘 17624355 = dumps(全文) 17624355 ? True
+    dumps(calls) = 913228 ; dumps(bounds) = 16711104 ; 骨架 = 23
+    清单记 913237 = len('"calls": ') + dumps(calls) = 9 + 913228 = 913237 ? True
+    差额 16711118 = dumps(bounds) + 14 = 16711104 + 14 = 16711118 ? True
+    ⇒ 骨架 23 = 10('{"calls": ') + 12(', "bounds": ') + 1('}')；净额把 14('{' + ', "bounds": ' + '}') 划给被剔的 bounds 段
+  PASS N2-b 913,237 = 9 + dumps(calls)  913228
+  PASS N2-b 16,711,118 = dumps(bounds) + 14
+  PASS N2-b 净额 + 差额 = 磁盘字节
+  PASS N2-b 这解释了上轮未取得的『差 9 B』：9 = len('"calls": ')
+
+==============================================================================
+[1] 全部 4417 件逐一计算 SHA256（全量，非抽样）
+    ... 500/4417  1.0s
+    ... 1000/4417  1.9s
+    ... 1500/4417  2.8s
+    ... 2000/4417  3.6s
+    ... 2500/4417  4.2s
+    ... 3000/4417  4.8s
+    ... 3500/4417  5.4s
+    ... 4000/4417  6.2s
+  完成 4417 件，用时 6.7 s，实测读取（磁盘口径）754228404 B
+  PASS 实测读取总字节 = 737,517,286 + 16,711,118 = 754,228,404（磁盘口径）  754228404
+  PASS 磁盘口径 - 清单口径 = 16,711,118（a2 净额行差额）  16711118
+
+==============================================================================
+[2] 按 SHA256 分簇（两个口径并列：磁盘口径 / 清单口径）
+  【磁盘口径】唯一 SHA256 簇数 = 4087；唯一内容总字节 = 615909180
+  【磁盘口径】重复文件数 = 330；重复字节总量 = 138319224
+  【磁盘口径】语料总字节 = 754228404（去重率 件 7.47% / 字节 18.34%）
+  【清单口径】唯一内容总字节 = 599198062；重复字节总量 = 138319224；语料 737,517,286
+  【两口径差】唯一字节：清单口径 − 磁盘口径 = -16711118（= −16,711,118，因为 a2 是唯一簇代表，磁盘计 17,624,355、清单计 913,237）；重复字节差 0
+  PASS 唯一簇数 + 重复件数 = 4417
+  PASS 磁盘口径：唯一 + 重复 = 总字节
+  PASS 清单口径：唯一 + 重复 = 737,517,286
+  PASS 两口径唯一字节差恰为 a2 净额差额
+  PASS 两口径重复字节相等（a2 未被复制，故重复侧不受净额影响）
+
+==============================================================================
+[P3/N1] 去重器双向验证（在临时目录内构造，不触碰语料）
+    a=363a1199efa75229  b=363a1199efa75229  c=60b2a5da98ec4211
+  PASS P3 字节级复制件并入同一簇（3 件 -> 2 簇）  clusters=2
+  PASS P3 复制件确被识别为重复（dup=1）  dup=1
+  PASS N1 改 1 字节者落不同簇
+  PASS N1 改 1 字节者字节数不变但哈希变
+
+==============================================================================
+[P2] 4 份已知 68,253 对 calls 文件 —— 字节校验 + 内容等值
+  file                     disk_bytes    tsv_bytes sha256[:16]         
+  a2_sites.json              17624355       913237 7a8447d1d816cdc3    
+  PASS P2 a2_sites.json 在 4417 清单内  next_re_20261117_r14/D41_SUBST/_audit/EVIDENCE/a2_sites.json
+  PASS P2 a2 清单为净额行（913,237 = 9 + dumps(calls)），非磁盘字节；差额已闭合  913237 vs 17624355
+  scan_mine.json              1365365      1365365 ba90546a7c682605    
+  PASS P2 scan_mine.json 在 4417 清单内  next_re_20261117_r14/S21_DIRECT/_audit/EVIDENCE/scan_mine.json
+  PASS P2 scan_mine.json 清单字节 = 磁盘字节  1365365 vs 1365365
+  e8_sites_audit.json         1365087      1365087 043f2205ea18b0a2    
+  PASS P2 e8_sites_audit.json 在 4417 清单内  next_re_20261117_r14/S09_KPROVED7/_audit/EVIDENCE/e8_sites_audit.json
+  PASS P2 e8_sites_audit.json 清单字节 = 磁盘字节  1365087 vs 1365087
+  sweep.json                  1631944      1631944 febdbce6ba660afd    
+  PASS P2 sweep.json 在 4417 清单内  next_re_20261117_r14/S08_KPROVED2/_audit/EVIDENCE/sweep.json
+  PASS P2 sweep.json 清单字节 = 磁盘字节  1631944 vs 1631944
+  条数：sm.calls=68253  e8=68253  sw.e8=68253  a2.calls(目标键)=6728  对数合计 a2=68253
+  PASS P2 sm.calls 68,253 条  68253
+  PASS P2 e8 68,253 条  68253
+  PASS P2 sw.e8 68,253 条  68253
+  PASS P2 a2.calls 展开 68,253 对
+  PASS P2 a2.calls 目标键 6,728  6728
+  PASS P2 三份列表 calls 逐元素完全相同（sm==e8）
+  PASS P2 三份列表 calls 逐元素完全相同（e8==sw）
+  a2 以 (site,target) 解读：与 e8 同集=True；以 (target,site) 解读：同集=False
+  PASS P2 a2.calls 与列表 calls 内容同集（方向 site,target）  |a2|=68253 |list|=68253
+  [N3 负控] 对 calls 比较器做篡改检测（只改 1 对，必须判不等）
+  PASS N3 改 1 对后 e8 != sm
+  PASS N3 改 1 对后集合 != 原集合
+  PASS N3 删 1 对后长度不等
+  PASS N3 a2 若按 (target,site) 解读必须判不等（方向敏感）
+  PASS N3 e8 列表里确实存在 site != target 的对（否则方向判定无区分力）  diff=68253/68253
+  四份 sha256 两两相同？ False
+  不同 sha256 个数 = 4
+  PASS P2 四份磁盘字节两两不同（序列化不同 -> 哈希不同）
+
+==============================================================================
+[3] JSON 内部等值但序列化不同：量化（纪律 31 口径标注）
+  a2.calls     紧凑口径     838248 B / 默认口径     913228 B / 差    74980 B (8.21%)
+  sm.calls     紧凑口径    1228582 B / 默认口径    1365087 B / 差   136505 B (10.00%)
+  e8           紧凑口径    1228582 B / 默认口径    1365087 B / 差   136505 B (10.00%)
+  sw.e8        紧凑口径    1228582 B / 默认口径    1365087 B / 差   136505 B (10.00%)
+  sw.installs  紧凑口径     248114 B / 默认口径     266791 B / 差    18677 B (7.00%)
+  a2.calls 盘上序列化（hex 字符串、目标->站点字典，默认口径）913228 B
+  同一内容的「十进制 [site,target] 列表」形态（默认口径）            1365087 B
+  PASS P2/3 同一批 68,253 对在两种序列化下字节不同（故哈希不同）
+  PASS 口径 a2 = json.dump 默认分隔符（逐字节相等）
+  PASS 口径 sweep = json.dump 默认分隔符（逐字节相等）
+  PASS 口径 e8 = json.dump 默认分隔符（逐字节相等）
+  PASS 口径 scan_mine = json.dump 默认分隔符（逐字节相等）
+
+==============================================================================
+[4b] 跨序列化内容等值口径 —— SHA256 文件级去重抓不到的那一块
+  SHA256 是「字节指纹」，序列化不同即不同簇。已确认四份 calls 文件在 [4] 里 cluster_size 全 = 1（各自成簇）
+    a2_sites.json        cluster_size=1  sha256=7a8447d1d816cdc3
+    scan_mine.json       cluster_size=1  sha256=ba90546a7c682605
+    e8_sites_audit.json  cluster_size=1  sha256=043f2205ea18b0a2
+    sweep.json           cluster_size=1  sha256=febdbce6ba660afd
+  PASS 四份 calls 文件在 SHA256 口径下各自成簇（去重抓不到它们之间的冗余）
+    规范串 a2_sites.calls   对=68253  len=1228553  sha256=67a10662007eec7a
+    规范串 scan_mine.calls  对=68253  len=1228553  sha256=67a10662007eec7a
+    规范串 e8_sites_audit   对=68253  len=1228553  sha256=67a10662007eec7a
+    规范串 sweep.e8         对=68253  len=1228553  sha256=67a10662007eec7a
+  PASS 四份规范串哈希完全相同（内容等值）  1
+  PASS N4 规范串对改 1 对敏感
+  PASS N5 规范串对删 1 对敏感
+  内容等值口径：从磁盘口径唯一体量 615909180 扣掉 2 份重复列表 calls（2×1365087） 与 a2 的 calls 部分（913228）
+    => 内容等值唯一体量 = 612265778 B
+    唯一件数（内容等值口径）= 4087 − 3 = 4084
+  PASS 内容等值唯一体量 = 615,909,180 − 2×1,365,087 − 913,228 = 611,813,919  612265778
+  PASS 内容等值唯一体量 < 磁盘口径唯一体量（扣减为正）  612265778 < 615909180
+  PASS 内容等值口径扣减量 = 3,643,402  3643402
+
+==============================================================================
+[4] 重复簇明细
+  含重复的簇数 = 184；其中 2 件 140 / 3 件 22 / >=4 件 22
+  Top 15（按浪费字节 = 单件字节 x (份数-1) 排序）：
+  #        bytes    n       wasted  sha256[:16] / 路径
+  1     73899177    2     73899177  1873a68a9f05950f
+       - re_chain_synthesis_20261111/baseline_backup/re_orphan_owners_20261110/_oo_disasm_out.txt
+       - re_orphan_owners_20261110/_oo_disasm_out.txt
+  2      4136525    3      8273050  a07a74c173286b4d
+       - next_re_20261117_r14/R16_MERGE_D1_WIDE_B4/_after_coverage.tsv
+       - next_re_20261117_r14/R17_LEAD_BASELINE/coverage.before_hyg.tsv
+       - next_re_20261117_r14/R17_MERGE_HYG93/coverage.before.tsv
+  3      4083215    3      8166430  2f498b18e64e7ef5
+       - next_re_20261117_r14/R16_MERGE_PIVOT32/_before_exact_coverage.tsv
+       - next_re_20261117_r14/R16_PROBE_4FINAL/_pin_coverage.tsv
+       - next_re_20261117_r14/R16_PROBE_F1_PIVOT/_pin_coverage_live.tsv
+  4      4129477    2      4129477  b84d53dd046c71c1
+       - next_re_20261117_r14/R16_MERGE_D1_WIDE_B3/_after_coverage.tsv
+       - next_re_20261117_r14/R16_MERGE_D1_WIDE_B4/_pin_coverage.tsv
+  5      4119324    2      4119324  89edbd91e5ec5d4d
+       - next_re_20261117_r14/R16_MERGE_D1_WIDE_B2/_after_coverage.tsv
+       - next_re_20261117_r14/R16_MERGE_D1_WIDE_B3/_pin_coverage.tsv
+  6      4108800    2      4108800  65e9cf2b3e778e98
+       - next_re_20261117_r14/R16_MERGE_D1_WIDE_B1/_after_coverage.tsv
+       - next_re_20261117_r14/R16_MERGE_D1_WIDE_B2/_pin_coverage.tsv
+  7      4097787    2      4097787  412ed7e36bc1ad49
+       - next_re_20261117_r14/R16_MERGE_D1_FINAL/_after_coverage.tsv
+       - next_re_20261117_r14/R16_MERGE_D1_WIDE_B1/_pin_coverage.tsv
+  8      4088277    2      4088277  6353351e9f70132b
+       - next_re_20261117_r14/R16_MERGE_OTHER14/_pin_coverage.tsv
+       - next_re_20261117_r14/R16_MERGE_PIVOT32/_staged_coverage.tsv
+  9      4079053    2      4079053  3a1dc1dd3f67b768
+       - next_re_20261117_r14/R16_AUDIT_EVID802_11/_coverage_snapshot.tsv
+       - next_re_20261117_r14/R16_MERGE_EVID802_11/_coverage_before.tsv
+  10     4068561    2      4068561  400d211a53ab55c7
+       - next_re_20261117_r14/R16_AUDIT_F1_B5/_pin_coverage_400D211A.tsv
+       - next_re_20261117_r14/R16_MERGE_F1_B4/_pin_coverage.tsv
+  11     4040803    2      4040803  95dfac9e6cec2d46
+       - next_re_20261117_r14/R16_AUDIT_F1_B2/_pin_coverage.tsv
+       - next_re_20261117_r14/R16_AUDIT_F1_B3/_pin_coverage.tsv
+  12     4034144    2      4034144  0046bad980e9055a
+       - next_re_20261117_r14/R16_MEASURE_4TAX/coverage_snapshot.tsv
+       - next_re_20261117_r14/R16_PROBE_4GAP/_pin_coverage.tsv
+  13     1491145    2      1491145  b1c68f801627cbce
+       - next_re_20261116_r13/W171_cost_breakdown/EVIDENCE/S9_field_writers.txt
+       - next_re_20261116_r13/W171_cost_breakdown/EVIDENCE/S9_stdout.txt
+  14     1296826    2      1296826  b3a821d6f226728b
+       - next_re_20261117_r14/S09_KPROVED/_audit/EVIDENCE/sweep_sites.tsv
+       - next_re_20261117_r14/S11_DIRECT/work/all_e8_calls.tsv
+  15       26759   42      1097119  cb913cfb26733c5d
+       - next_re_20261112_r10/W110_crash/out/_archive_ai/trip_ai_guard_r1/baseline_except/except.txt
+       - next_re_20261112_r10/W110_crash/out/_archive_ai/trip_ai_guard_r2/baseline_except/except.txt
+       - next_re_20261112_r10/W110_crash/out/_archive_ai/trip_ai_guard_r3/baseline_except/except.txt
+       - next_re_20261112_r10/W110_crash/out/_archive_ai/trip_ai_hunt_r1/baseline_except/except.txt
+       - ... 另 38 件
+
+  Top 10 按份数（同内容份数最多）：
+  1   n=42 bytes=26759 cb913cfb26733c5d  next_re_20261112_r10/W110_crash/out/_archive_ai/trip_ai_guard_r1/baseline_except/except.txt
+  2   n=33 bytes=26272 6907f3954ceea94b  next_re_20261112_r02/W27_campaign_live/sandbox_game/except.txt
+  3   n=10 bytes=26794 0c835350fce8477a  next_re_20261112_r10/W110_crash/out/_archive_burst1mix/trip_burst1mix_r1/baseline_except/except.txt
+  4   n=7 bytes=26497 3429ff456c9ca6a0  next_re_20261112_r06/W91_approach/EVIDENCE/trip_P2_archived_except.txt
+  5   n=6 bytes=26579 f8f6bc248039bfd3  next_re_20261112_r06/W91_approach/EVIDENCE/trip_P1_archived_except.txt
+  6   n=6 bytes=26405 6694b75e46a6e773  l1_u0800_20261020/evidence_r2/except_carrier_6694b75e.txt
+  7   n=4 bytes=262804 7543fc9b1460efe9  next_re_20261117_r14/R16_AUDIT_EVID802_11/_resolve_before/resolve.tsv
+  8   n=4 bytes=85932 dbb778b011fb26e1  next_re_20261117_r14/COVERAGE/coverage_outside_atlas.tsv
+  9   n=4 bytes=31404 66cd43dbff81d3f7  next_re_20261117_r14/_hygiene/M10_before/CONFLICTS.tsv
+  10  n=4 bytes=26804 7841c887944760db  next_re_20261112_r10/W110_crash/out/_archive_run5/trip_crash_step2_r1/archived_except.txt
+
+==============================================================================
+[5] 落盘 D:\Project\ra2-campaign-forge\lead\next_re_20261117_r14\_r67\unique_content_4417.tsv
+  回读行数 = 4417（期望 4417）
+  回读 sum(bytes) 磁盘口径 = 754228404（期望 754,228,404）
+  回读 sum(decl_bytes) 清单口径 = 737517286（期望 737,517,286）
+  回读唯一 sha256 簇数 = 4087（期望 4087）
+  回读唯一内容字节 磁盘口径 = 615909180（期望 615909180）
+  回读唯一内容字节 清单口径 = 599198062（期望 599198062）
+  PASS 回读行数 = 4417  4417
+  PASS 回读 sum(bytes) 磁盘口径 = 754,228,404  754228404
+  PASS 回读 sum(decl_bytes) 清单口径 = 737,517,286  737517286
+  PASS 回读唯一簇数一致  4087 vs 4087
+  PASS 回读唯一内容字节 磁盘口径一致  615909180 vs 615909180
+  PASS 回读唯一内容字节 清单口径一致  599198062 vs 599198062
+  PASS 回读重复字节 = 总 − 唯一（磁盘口径）  138319224
+  PASS 唯一簇数 + 重复件数 = 4417
+
+==============================================================================
+[6] 扩展名维度（件数/总字节/唯一字节）
+  .tsv     n= 936  总    476708674  唯一    418867257  重复     57841417
+  .txt     n=3347  总    244703027  唯一    164225220  重复     80477807
+  .json    n=  27  总     30953047  唯一     30953047  重复            0
+  .log     n=  99  总      1735903  唯一      1735903  重复            0
+  .md      n=   8  总       127753  唯一       127753  重复            0
+
+==============================================================================
+[7] 汇总（两口径并列，纪律 31：引用必须带口径）
+  §2.71 / F24 语料值（清单净额口径）：4,417 件 / 737,517,286 B
+  磁盘口径实测                     ：4,417 件 / 754228404 B（差 16711118 = a2 净额行）
+  唯一内容体量（SHA256 去重，磁盘口径）：4087 簇 / 615909180 B
+  唯一内容体量（SHA256 去重，清单口径）：4087 簇 / 599198062 B
+  重复（同一内容多份落盘，磁盘口径）  ：330 件 / 138319224 B
+  重复（同一内容多份落盘，清单口径）  ：330 件 / 138319224 B
+  含重复的簇                          ：184
+  自测项 65，FAIL 0
+
+RESULT ALL-PASS

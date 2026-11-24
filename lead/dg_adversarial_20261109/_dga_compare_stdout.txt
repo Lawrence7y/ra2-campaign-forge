@@ -1,0 +1,64 @@
+=== (4b) DG 相对 H5 的逐条增量（严格口径 expect≠AMBIG）===
+  DG_pure    vs H5_lit     : DG_pure 独对 7 ['P16', 'P17', 'C06', 'C13', 'C14', 'C15', 'C16'] ; H5_lit 独对 2 ['C10', 'C11'] ; 同对/同错 27
+  DG_pure    vs H5_gov     : DG_pure 独对 5 ['C06', 'C13', 'C14', 'C15', 'C16'] ; H5_gov 独对 2 ['C10', 'C11'] ; 同对/同错 29
+  DG_pure    vs R12        : DG_pure 独对 7 ['P17', 'C06', 'C13', 'C14', 'C15', 'C16', 'C18'] ; R12 独对 6 ['P06', 'P07', 'P08', 'P09', 'P10', 'P12'] ; 同对/同错 23
+  DG_pure    vs DG_dropin  : DG_pure 独对 1 ['P17'] ; DG_dropin 独对 1 ['C08'] ; 同对/同错 34
+  H5_lit     vs R12        : H5_lit 独对 3 ['C10', 'C11', 'C18'] ; R12 独对 7 ['P06', 'P07', 'P08', 'P09', 'P10', 'P12', 'P16'] ; 同对/同错 26
+
+=== (5a) 「不误判两个独立否定」专项口径（只看 P 组 17 条 PASS）===
+  P 组 n = 17
+  DG_pure    fp = 7/17 : ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12']
+  DG_dropin  fp = 8/17 : ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P17']
+  H5_lit     fp = 9/17 : ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P16', 'P17']
+  H5_gov     fp = 7/17 : ['P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12']
+  R12        fp = 2/17 : ['P11', 'P17']
+  R12_lit    fp = 2/17 : ['P11', 'P17']
+  → 作者自造 20 条负样本上 DG fp=0（_dga_step1_out.json:step_a3_fp），本任务自造 P 组上 DG_pure fp=7 —— 证明 fp=0 是训练集内结论，不是泛化结论
+
+=== (5a) 真 DN 专项口径（只看 C 组 CATCH 条）===
+  C 组 n = 19
+  DG_pure    fn = 11/19 : ['C01', 'C02', 'C03', 'C04', 'C05', 'C07', 'C08', 'C09', 'C10', 'C11', 'C12']
+  DG_dropin  fn = 10/19 : ['C01', 'C02', 'C03', 'C04', 'C05', 'C07', 'C09', 'C10', 'C11', 'C12']
+  H5_lit     fn = 14/19 : ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C12', 'C13', 'C14', 'C15', 'C16']
+  H5_gov     fn = 14/19 : ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C12', 'C13', 'C14', 'C15', 'C16']
+  R12        fn = 17/19 : ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C18']
+  R12_lit    fn = 17/19 : ['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C18']
+
+=== (4b) 19 式覆盖：DG vs H5 是否同分（第一步复核结论）===
+  DG 19/19 ; H5_lit 19/19 ; R12 0/19（_dga_step1_out.json:step_a1_gaps）
+  → 19/19 不是 DG 独特价值：H5 的 28 支字面超集同样 19/19。
+  DG 独对而 H5_lit 错的 CATCH 条 = ['C06', 'C13', 'C14', 'C15', 'C16'] （19 式之外的生成式泛化）
+  H5_lit 独对而 DG 错的 CATCH 条 = ['C10', 'C11'] （H5 通配支 非[^，,。；;]{0,4}不(宣告|…) 过宽反而蒙对）
+
+=== (4b) 105,492 串 vs 28 支：口径对齐 ===
+  DG_STATS = {'n_neg1': 59, 'n_mid': 23, 'n_neg2': 21, 'n_gap': 9, 'n_verb': 29, 'n_tail': 5, 'n_pseudo_veto': 12, 'cartesian_T12': 28497, 'cartesian_T3': 76995, 'cartesian_total': 105492, 'rule_count': 2, 'pattern_chars': 836, 'wildcards': 1}
+  H5_DN_EXTRA 分支数 = 28 ; H5_R12_TEN 分支数 = 10 ; 合计字面支 = 38
+  → 任务书「H5 的 28 支字面超集」= H5_DN_EXTRA 的 28 支（其中 27 支纯字面 + 1 支带通配 非[^…]{0,4}不(宣告|…)）；连十式共 38 支。
+  → DG 的 105,492 是【笛卡尔积可生成串数】，不是 105,492 个已验证构式；实读 _dg_core.py:129-136，n_t12=59*23*21=28497、n_t3=59*9*29*5=76995。
+
+=== (4c) 维护成本：加 1 个新构式要动几张表 ===
+  DG 7 张闭合表 + 5 组作用域常量；加 1 项 MID 即新增 1239 个生成串（扰动面）
+  H5 加 1 个构式 = H5_DN_EXTRA 加 1 个字面选择支 = 精确 1 个新串；作用域由 H5_MICRO_BREAK_RE/H5_SELF_SUBJ_RE/H5_CONTRAST_RE 另表维护
+    add_MID_entry_T12_strings                  1239
+    add_NEG1_entry_strings                     1788
+    add_NEG2_entry_T12_strings                 1357
+    add_SPLIT_TAIL_entry_T3_strings            15399
+    add_GAP_entry_T3_strings                   8555
+    add_SCOPE_VERB_entry_T3_strings            2655
+
+=== (5b/3d) 交付形态：guard 在「一行替换」下是否生效（静态 co_names 实查）===
+  r10_context  co_names 含 guard = {'dg_double_neg': False, '_mask_quotes': False, '_scope': False, 'DG_SECOND_SUBJ_RE': False, 'DG_COORD_RE': False, 'DG_QUOTE_RE': False, 'DG_BREAK_RE': False} ; 缺失 = ['dg_double_neg', '_mask_quotes', '_scope', 'DG_SECOND_SUBJ_RE', 'DG_COORD_RE', 'DG_QUOTE_RE', 'DG_BREAK_RE']
+  r12_scan     co_names 含 guard = {'dg_double_neg': False, '_mask_quotes': False, '_scope': False, 'DG_SECOND_SUBJ_RE': False, 'DG_COORD_RE': False, 'DG_QUOTE_RE': False, 'DG_BREAK_RE': False} ; 缺失 = ['dg_double_neg', '_mask_quotes', '_scope', 'DG_SECOND_SUBJ_RE', 'DG_COORD_RE', 'DG_QUOTE_RE', 'DG_BREAK_RE']
+  → 一行替换只改 DOUBLE_NEG_RE，7 条不变式里 ④?（第二主语/并列/引证/切断）的 4 条 guard 在 r10_context/r12_scan 中一个都不执行；与 DNEG_GENERATIVE.md:173 的复核结论一致
+
+=== (5d) 本工作判不了什么（如实列，均标未验）===
+  1. 中文双重否定全域真值 / token 级频次：本集 41 条为自造单句，无 BCC/CCL 语料；
+  2. 真实门禁落地效果：_g7_predicates.py 与所有保护件绝对只读，未改；DG_dropin 是内存第二模块实例模拟，非真实替换；
+  3. 繁体/英文/被动/跨行/>24 字距/多语种混合：本集未覆盖，未验；
+  4. A 组 5 条 AMBIG 的最终真值：需所有者或语言学裁定，本集只给保守应判敏感性分析；
+  5. 「不容不 / 未许不 / 非不认可」等是否属规范汉语真 DN：人工裁定，未验；
+  6. GP-A2/A3 同义完成词族、证据不独立、分离型 post 整句：不在双重否定方案射程，未改善且未验；
+  7. 74 条回归的 chain 层间冲突 31→32（作者 Shim）vs 31→31（真实一行替换）：本会话只复现作者 Shim 口径 31→32，未独立重跑真实一行替换口径（标未验）；
+  8. H5 补丁其它维度（G1-G4 全域）：本工作只比双重否定一维。
+
+written: _dga_compare_out.json

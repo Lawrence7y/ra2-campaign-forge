@@ -1,0 +1,30 @@
+n_lines 248
+46|     " rec={'domain':r['domain'],'main':r['main'],'mainBytes':r['mainBytes'],'gateProblems':r.get('gateProblems',[]),'bindings':r.get('bindings'),'banned':r.get('params',{}).get('banned',[])},",
+88| const rjRun = await __host.worldRead("world-read#2", "run", ["python", ["-I", "-X", "utf8", "-c", REJUDGE_CODE], { output: { tail: 49152 }, timeoutMs: 180000 }]);
+89| const rjText = rjRun.stdout.trim();
+90| __host.log("32 域双轨重判 exit=" + rjRun.exitCode + "，长度 " + rjText.length);
+95|     "【32 域双轨重判结果（编排方实跑：对每个域的主件同时跑朴素字面判断与 R10/R12 谓词）】" + rjText,
+98|     "  36 处门禁位点改造（lead/gate_doc_name_fix_20261109/GATE_DOC_NAME_FIX.md，已交付）解决了「用 max(st_size) 挑错文件」这一个缺陷。但那份改造件自己给出的 32 域回归里，**10 个域仍有门禁问题，5 个域 bindings=0**。",
+99|     "  编排方本轮进一步实跑发现：这 10 个域的门禁判据全部是**朴素字面判断**（`for bad in [...]: if bad in t: P.append('含越权断言 '+bad)`），没有任何语境分类。而同一份谓词库 lead/gate_fp7_20261108/_g7_predicates.py 里的 R10 已经实现了否定语境/短引证跨度豁免，R12 实现了双重否定。",
+110|     "【任务：对 10 个仍报问题的域做逐域真伪判定】",
+112|     "第一步 复核 32 域基线。自己重跑一遍双轨重判（不得采信编排方数字），确认：",
+113|     "  (a) 实际有几个域 gateProblems 非空？",
+114|     "  (b) 有几个域 bindings=0？bindings=0 本身是不是一个问题（该域任务书是否要求绑定行）？",
+131|     "  (b) 若把 10 个域全部改走 R10+R12+谓词化判据，还有几个域会不通过？逐个列出；",
+132|     "  (c) 5 个 bindings=0 的域：逐个说明是任务书没要求、还是要求了但交付件缺（后者是真问题）。",
+141|     "【纪律】只重判，不改任何已交付件、不改历史 payload。产出落本任务写域，前缀 _rj_。零真机、零采样代码、不 commit、不 push。",
+146|     "② ★ 自己重跑 32 域双轨重判（不得采信编排方的 _rj 结论），核对「几个域仍报问题」「几个域 bindings=0」两个数字。若不同，明确指出。",
+153|     "只读，核验脚本只能落本任务写域且前缀 _rjv_。",
+166|     "【双轨重判】" + rjText,
+170|     "【交付】写 GATE_REJUDGE_32.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（只重判不改件）；2 上游指纹（七件）+ 32 域基线复核（几域仍报问题/几域 bindings=0/朴素与谓词的差异数）；3 逐域真伪判定表（每处给域/主件/命中词/行号/原句/A-B-C-D 语境类/真伪/依据）；4 修正后的账（真问题几处 / 误报几处 / 全改谓词化后还有几域不过 / 5 个 bind=0 域逐个定性）；5 36 处改造件补遗建议（两件事为何必须一起做 + 判据层最小可粘贴片段 + 迁移顺序）；6 复核回件（绑定行格式）+ 判不了的边界 + 未改已交付
+172|     "必现要素：32 域 / 10 域 / bindings=0 / A 检索动作 / B 小节标题 / C 否定式 / D 真断言 / 误报 / 真问题 / 判不了 / R10 / R12 / 迁移顺序 / 未验。逐域必须给原句，不许用「已核对」概括。复核 verdict 如实记；refuted 或 partial 标 unconfirmed。",
+186|     " for k in ['32 域','bindings=0','A 检索动作','B 小节标题','C 否定式','D 真断言','误报','真问题','判不了','R10','R12','迁移顺序','未验']:",
+204| let gateProblems = "";
+208|     gateProblems = (g.problems ?? []).join("；");
+209|     __host.log("门禁 exit=" + gateRun.exitCode + " ok=" + gateOk + " " + gateProblems);
+212|     gateProblems = "门禁输出不可解析（exit=" + gateRun.exitCode + "）";
+217|     await __host.publishArtifact("artifact#1", "file", ["gate-rejudge32", realDoc, { title: "32 域门禁判据逐域重判", description: "10 个仍报问题的域逐个判真伪；未改任何已交付件", primary: true }]);
+222|     await __host.publishArtifact("artifact#2", "file", ["gate-rejudge32", realDoc, { title: "32 域门禁判据逐域重判", description: "重建后重新发布", primary: true }]);
+226|     conclusion: "32 域判据重判完成，复核 verdict=" + confirmation.verdict + "，重判件" + (published ? "已发布" : "未发布") + "，门禁" + (gateOk ? "通过" : "未通过") + "。" + (gateOk ? "" : "门禁问题：" + gateProblems) + " 十个域：" + finding.tenDomains + " 修正后的账：" + finding.afterRejudge + " ★ 未改任何已交付件。",
+236|         "python -I -X utf8 -c <32域双轨重判：朴素 vs R10/R12>：实 import 谓词库（exit=" + rjRun.exitCode + "）",
+244|         ...(!gateOk ? ["门禁未通过：" + gateProblems] : []),

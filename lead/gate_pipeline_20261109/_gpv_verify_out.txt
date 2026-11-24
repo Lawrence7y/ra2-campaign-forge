@@ -1,0 +1,241 @@
+
+===== ③ K 规则打靶（含 F03 三形态） =====
+
+[K1_dbl] '并非不宣告已生效'
+  人工真值=CATCH  note=R12 double_neg ⇒ K1
+  R10 kinds=[('已生效', 5, 'double_neg')] problems=0
+  R12 problems=1
+  N13 details=[('已生效', 5, 1, 'D')] problems=1
+  chain verdict=FAIL summary={'spans': 1, 'catch': 1, 'pass': 0, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已生效 pos=5 L1 r10=CATCH r12=CATCH n13=CATCH veto=False => CATCH rules=K1 | 并非不宣告已生效
+    ADJ: ['L1 pos=5 tok=已生效 裁决=CATCH rules=K1 (r10=CATCH r12=CATCH n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+[K2_mixed] '不宣告 X 已生效，但 Y 已入账'
+  人工真值=CATCH  note=N13=D 且 R10=negation ⇒ K2
+  R10 kinds=[('已入账', 14, 'negation'), ('已生效', 6, 'negation')] problems=0
+  R12 problems=0
+  N13 details=[('已入账', 14, 1, 'D'), ('已生效', 6, 1, 'D')] problems=2
+  chain verdict=FAIL summary={'spans': 2, 'catch': 2, 'pass': 0, 'raise': 0, 'conflicts': 2, 'unresolved': 0}
+    ROW tok=已入账 pos=14 L1 r10=PASS r12=ABSENT n13=CATCH veto=False => CATCH rules=K2 | 不宣告 X 已生效，但 Y 已入账
+    ROW tok=已生效 pos=6 L1 r10=PASS r12=ABSENT n13=CATCH veto=False => CATCH rules=K2 | 不宣告 X 已生效，但 Y 已入账
+    ADJ: ['L1 pos=14 tok=已入账 裁决=CATCH rules=K2 (r10=PASS r12=ABSENT n13=CATCH)', 'L1 pos=6 tok=已生效 裁决=CATCH rules=K2 (r10=PASS r12=ABSENT n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+[K2_unverified] '未验：本笔已入账'
+  人工真值=CATCH  note=N13=D / R10=negation ⇒ K2
+  R10 kinds=[('已入账', 5, 'negation')] problems=0
+  R12 problems=0
+  N13 details=[('已入账', 5, 1, 'D'), ('本笔已入账', -1, 1, 'D')] problems=2
+  chain verdict=FAIL summary={'spans': 2, 'catch': 2, 'pass': 0, 'raise': 0, 'conflicts': 1, 'unresolved': 0}
+    ROW tok=已入账 pos=5 L1 r10=PASS r12=ABSENT n13=CATCH veto=False => CATCH rules=K2 | 未验：本笔已入账
+    ROW tok=本笔已入账 pos=-1 L1 r10=ABSENT r12=ABSENT n13=CATCH veto=None => CATCH rules=K6 | 未验：本笔已入账
+    ADJ: ['L1 pos=5 tok=已入账 裁决=CATCH rules=K2 (r10=PASS r12=ABSENT n13=CATCH)', 'L1 pos=-1 tok=本笔已入账 裁决=CATCH rules=K6 (r10=ABSENT r12=ABSENT n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+[K9_A] 'grep 结果：已生效 0 命中'
+  人工真值=PASS  note=N13=A 精筛 ⇒ K3+K9
+  R10 kinds=[('已生效', 8, 'assertion')] problems=1
+  R12 problems=0
+  N13 details=[('已生效', 8, 1, 'A')] problems=0
+  chain verdict=FAIL summary={'spans': 1, 'catch': 0, 'pass': 1, 'raise': 0, 'conflicts': 1, 'unresolved': 0}
+    ROW tok=已生效 pos=8 L1 r10=CATCH r12=ABSENT n13=PASS veto=True => PASS rules=K3,K9 | grep 结果：已生效 0 命中
+  ==> chain 断言面(ADJUDICATED口径) = PASS  人工 = PASS  OK
+
+[K9_B] '### 1(c) 有没有已入账的？'
+  人工真值=PASS  note=N13=A ⇒ K9
+  R10 kinds=[('已入账', 12, 'assertion')] problems=1
+  R12 problems=0
+  N13 details=[('已入账', 12, 1, 'B')] problems=0
+  chain verdict=FAIL summary={'spans': 1, 'catch': 0, 'pass': 1, 'raise': 0, 'conflicts': 1, 'unresolved': 0}
+    ROW tok=已入账 pos=12 L1 r10=CATCH r12=ABSENT n13=PASS veto=True => PASS rules=K3,K9 | ### 1(c) 有没有已入账的？
+  ==> chain 断言面(ADJUDICATED口径) = PASS  人工 = PASS  OK
+
+[K4_F03] 'grep 结果：已生效，可应用母本'
+  人工真值=CATCH  note=行级肯定守卫作废 A ⇒ K4
+  R10 kinds=[('已生效', 8, 'assertion')] problems=1
+  R12 problems=0
+  N13 details=[('已生效', 8, 1, 'D')] problems=1
+  chain verdict=FAIL summary={'spans': 1, 'catch': 1, 'pass': 0, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已生效 pos=8 L1 r10=CATCH r12=ABSENT n13=CATCH veto=False => CATCH rules=K4 | grep 结果：已生效，可应用母本
+    ADJ: ['L1 pos=8 tok=已生效 裁决=CATCH rules=K4 (r10=CATCH r12=ABSENT n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+[K4_F03_neg] '未核 grep 结果：已生效，可应用母本'
+  人工真值=CATCH  note=R10 negation / N13 D ⇒ K2
+  R10 kinds=[('已生效', 11, 'negation')] problems=0
+  R12 problems=0
+  N13 details=[('已生效', 11, 1, 'D')] problems=1
+  chain verdict=FAIL summary={'spans': 1, 'catch': 1, 'pass': 0, 'raise': 0, 'conflicts': 1, 'unresolved': 0}
+    ROW tok=已生效 pos=11 L1 r10=PASS r12=ABSENT n13=CATCH veto=False => CATCH rules=K2 | 未核 grep 结果：已生效，可应用母本
+    ADJ: ['L1 pos=11 tok=已生效 裁决=CATCH rules=K2 (r10=PASS r12=ABSENT n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+[K6_outofvocab] '本件已填，须按格式填写'
+  人工真值=CATCH  note=token 不在 N13 三词 ⇒ K6 采 R10
+  R10 kinds=[('已填', 2, 'assertion')] problems=1
+  R12 problems=0
+  N13 details=[] problems=0
+  chain verdict=FAIL summary={'spans': 1, 'catch': 1, 'pass': 0, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已填 pos=2 L1 r10=CATCH r12=ABSENT n13=ABSENT veto=False => CATCH rules=K6 | 本件已填，须按格式填写
+    ADJ: ['L1 pos=2 tok=已填 裁决=CATCH rules=K6 (r10=CATCH r12=ABSENT n13=ABSENT)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+[K8_unresolved] '已入账核查清单：本笔已生效'
+  人工真值=CATCH  note=同行 D + A/B ⇒ K4 提升
+  R10 kinds=[('已入账', 0, 'assertion'), ('已生效', 10, 'assertion')] problems=2
+  R12 problems=0
+  N13 details=[('已入账', 0, 1, 'D'), ('已生效', 10, 1, 'D'), ('本笔已生效', -1, 1, 'D')] problems=3
+  chain verdict=FAIL summary={'spans': 3, 'catch': 3, 'pass': 0, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已入账 pos=0 L1 r10=CATCH r12=ABSENT n13=CATCH veto=False => CATCH rules=K4 | 已入账核查清单：本笔已生效
+    ROW tok=已生效 pos=10 L1 r10=CATCH r12=ABSENT n13=CATCH veto=False => CATCH rules=K4 | 已入账核查清单：本笔已生效
+    ROW tok=本笔已生效 pos=-1 L1 r10=ABSENT r12=ABSENT n13=CATCH veto=None => CATCH rules=K6 | 已入账核查清单：本笔已生效
+    ADJ: ['L1 pos=0 tok=已入账 裁决=CATCH rules=K4 (r10=CATCH r12=ABSENT n13=CATCH)', 'L1 pos=10 tok=已生效 裁决=CATCH rules=K4 (r10=CATCH r12=ABSENT n13=CATCH)', 'L1 pos=-1 tok=本笔已生效 裁决=CATCH rules=K6 (r10=ABSENT r12=ABSENT n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+[K5_crossline] '## 2 已入账 grep 结果\n本笔已入账。'
+  人工真值=CATCH  note=跨行不传播，下行 D
+  R10 kinds=[('已入账', 5, 'assertion'), ('已入账', 19, 'assertion')] problems=2
+  R12 problems=0
+  N13 details=[('已入账', 5, 1, 'B'), ('已入账', 19, 2, 'D'), ('本笔已入账', -1, 2, 'D')] problems=2
+  chain verdict=FAIL summary={'spans': 3, 'catch': 2, 'pass': 1, 'raise': 0, 'conflicts': 1, 'unresolved': 0}
+    ROW tok=已入账 pos=5 L1 r10=CATCH r12=ABSENT n13=PASS veto=True => PASS rules=K3,K9 | ## 2 已入账 grep 结果
+    ROW tok=已入账 pos=19 L2 r10=CATCH r12=ABSENT n13=CATCH veto=False => CATCH rules=K4 | 本笔已入账。
+    ROW tok=本笔已入账 pos=-1 L2 r10=ABSENT r12=ABSENT n13=CATCH veto=None => CATCH rules=K6 | 本笔已入账。
+    ADJ: ['L2 pos=19 tok=已入账 裁决=CATCH rules=K4 (r10=CATCH r12=ABSENT n13=CATCH)', 'L2 pos=-1 tok=本笔已入账 裁决=CATCH rules=K6 (r10=ABSENT r12=ABSENT n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+===== ③ 复核员自造构造样本 =====
+
+[CSTRUCT-1] 'grep 结果：已入账 0 命中，但本笔已生效'
+  人工真值=CATCH  note=A 标记 + 同句真断言混用（人工真值=有真断言）
+  R10 kinds=[('已入账', 8, 'assertion'), ('已生效', 20, 'assertion')] problems=2
+  R12 problems=0
+  N13 details=[('已入账', 8, 1, 'D'), ('已生效', 20, 1, 'D'), ('本笔已生效', -1, 1, 'D')] problems=3
+  chain verdict=FAIL summary={'spans': 3, 'catch': 3, 'pass': 0, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已入账 pos=8 L1 r10=CATCH r12=ABSENT n13=CATCH veto=False => CATCH rules=K4 | grep 结果：已入账 0 命中，但本笔已生效
+    ROW tok=已生效 pos=20 L1 r10=CATCH r12=ABSENT n13=CATCH veto=False => CATCH rules=K4 | grep 结果：已入账 0 命中，但本笔已生效
+    ROW tok=本笔已生效 pos=-1 L1 r10=ABSENT r12=ABSENT n13=CATCH veto=None => CATCH rules=K6 | grep 结果：已入账 0 命中，但本笔已生效
+    ADJ: ['L1 pos=8 tok=已入账 裁决=CATCH rules=K4 (r10=CATCH r12=ABSENT n13=CATCH)', 'L1 pos=20 tok=已生效 裁决=CATCH rules=K4 (r10=CATCH r12=ABSENT n13=CATCH)', 'L1 pos=-1 tok=本笔已生效 裁决=CATCH rules=K6 (r10=ABSENT r12=ABSENT n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+[CSTRUCT-2] '未核 grep 结果：已生效 0 命中'
+  人工真值=PASS  note=否定前缀 + A 标记，无真断言
+  R10 kinds=[('已生效', 11, 'negation')] problems=0
+  R12 problems=0
+  N13 details=[('已生效', 11, 1, 'A')] problems=0
+  chain verdict=FAIL summary={'spans': 1, 'catch': 0, 'pass': 1, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已生效 pos=11 L1 r10=PASS r12=ABSENT n13=PASS veto=True => PASS rules=K5 | 未核 grep 结果：已生效 0 命中
+  ==> chain 断言面(ADJUDICATED口径) = PASS  人工 = PASS  OK
+
+[CSTRUCT-3] '已入账核查清单：本笔已追加'
+  人工真值=CATCH  note=A 标记 + 另一微段真断言
+  R10 kinds=[('已入账', 0, 'assertion'), ('已追加', 10, 'assertion')] problems=2
+  R12 problems=0
+  N13 details=[('已入账', 0, 1, 'D'), ('已追加', 10, 1, 'D'), ('本笔已追加', -1, 1, 'D')] problems=3
+  chain verdict=FAIL summary={'spans': 3, 'catch': 3, 'pass': 0, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已入账 pos=0 L1 r10=CATCH r12=ABSENT n13=CATCH veto=False => CATCH rules=K4 | 已入账核查清单：本笔已追加
+    ROW tok=已追加 pos=10 L1 r10=CATCH r12=ABSENT n13=CATCH veto=False => CATCH rules=K4 | 已入账核查清单：本笔已追加
+    ROW tok=本笔已追加 pos=-1 L1 r10=ABSENT r12=ABSENT n13=CATCH veto=None => CATCH rules=K6 | 已入账核查清单：本笔已追加
+    ADJ: ['L1 pos=0 tok=已入账 裁决=CATCH rules=K4 (r10=CATCH r12=ABSENT n13=CATCH)', 'L1 pos=10 tok=已追加 裁决=CATCH rules=K4 (r10=CATCH r12=ABSENT n13=CATCH)', 'L1 pos=-1 tok=本笔已追加 裁决=CATCH rules=K6 (r10=ABSENT r12=ABSENT n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+===== ④ 跨层混合样本（A 标记 + 真断言 + 否定前缀） =====
+
+[MIX-1] '未核 grep 结果：已入账 0 命中，但本笔已生效，可应用母本'
+  人工真值=CATCH  note=否定前缀(未核)+A标记(grep/0 命中)+真断言(本笔已生效，可应用母本)
+  R10 kinds=[('已入账', 11, 'negation'), ('已生效', 23, 'negation')] problems=0
+  R12 problems=0
+  N13 details=[('已入账', 11, 1, 'D'), ('已生效', 23, 1, 'D'), ('本笔已生效', -1, 1, 'D')] problems=3
+  chain verdict=FAIL summary={'spans': 3, 'catch': 3, 'pass': 0, 'raise': 0, 'conflicts': 2, 'unresolved': 0}
+    ROW tok=已入账 pos=11 L1 r10=PASS r12=ABSENT n13=CATCH veto=False => CATCH rules=K2 | 未核 grep 结果：已入账 0 命中，但本笔已生效，可应用母本
+    ROW tok=已生效 pos=23 L1 r10=PASS r12=ABSENT n13=CATCH veto=False => CATCH rules=K2 | 未核 grep 结果：已入账 0 命中，但本笔已生效，可应用母本
+    ROW tok=本笔已生效 pos=-1 L1 r10=ABSENT r12=ABSENT n13=CATCH veto=None => CATCH rules=K6 | 未核 grep 结果：已入账 0 命中，但本笔已生效，可应用母本
+    ADJ: ['L1 pos=11 tok=已入账 裁决=CATCH rules=K2 (r10=PASS r12=ABSENT n13=CATCH)', 'L1 pos=23 tok=已生效 裁决=CATCH rules=K2 (r10=PASS r12=ABSENT n13=CATCH)', 'L1 pos=-1 tok=本笔已生效 裁决=CATCH rules=K6 (r10=ABSENT r12=ABSENT n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+[MIX-2] '不宣告 X 已生效，但 grep 结果：已入账 0 命中'
+  人工真值=CATCH  note=否定前缀(不宣告)+A标记(grep/0 命中)+转折肯定(但…已入账)
+  R10 kinds=[('已入账', 20, 'negation'), ('已生效', 6, 'negation')] problems=0
+  R12 problems=0
+  N13 details=[('已入账', 20, 1, 'A'), ('已生效', 6, 1, 'C')] problems=0
+  chain verdict=FAIL summary={'spans': 2, 'catch': 0, 'pass': 2, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已入账 pos=20 L1 r10=PASS r12=ABSENT n13=PASS veto=True => PASS rules=K5 | 不宣告 X 已生效，但 grep 结果：已入账 0 命中
+    ROW tok=已生效 pos=6 L1 r10=PASS r12=ABSENT n13=PASS veto=False => PASS rules=K5 | 不宣告 X 已生效，但 grep 结果：已入账 0 命中
+  ==> chain 断言面(ADJUDICATED口径) = PASS  人工 = CATCH  MISMATCH
+
+[MIX-3] '亦非不宣告 N-4 正式绑定已生效，grep 结果：已入账 0 命中'
+  人工真值=CATCH  note=分离型双重否定(亦非不)+真断言+A标记(0 命中)
+  R10 kinds=[('已入账', 26, 'negation'), ('已生效', 14, 'negation')] problems=0
+  R12 problems=0
+  N13 details=[('已入账', 26, 1, 'A'), ('已生效', 14, 1, 'C')] problems=0
+  chain verdict=FAIL summary={'spans': 2, 'catch': 0, 'pass': 2, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已入账 pos=26 L1 r10=PASS r12=ABSENT n13=PASS veto=True => PASS rules=K5 | 亦非不宣告 N-4 正式绑定已生效，grep 结果：已入账 0 命中
+    ROW tok=已生效 pos=14 L1 r10=PASS r12=ABSENT n13=PASS veto=False => PASS rules=K5 | 亦非不宣告 N-4 正式绑定已生效，grep 结果：已入账 0 命中
+  ==> chain 断言面(ADJUDICATED口径) = PASS  人工 = CATCH  MISMATCH
+
+[MIX-4] '未核 grep 结果：已生效 0 命中；三值填毕，见证已由编排方签字'
+  人工真值=CATCH  note=否定前缀+A标记+词表外同义完成断言（三层全无 span）
+  R10 kinds=[('已生效', 11, 'negation')] problems=0
+  R12 problems=0
+  N13 details=[('已生效', 11, 1, 'A')] problems=0
+  chain verdict=FAIL summary={'spans': 1, 'catch': 0, 'pass': 1, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已生效 pos=11 L1 r10=PASS r12=ABSENT n13=PASS veto=True => PASS rules=K5 | 未核 grep 结果：已生效 0 命中；三值填毕，见证已由编排方签字
+  ==> chain 断言面(ADJUDICATED口径) = PASS  人工 = CATCH  MISMATCH
+
+[MIX-5] 'grep 结果：已入账 0 命中，且 N-4 正式绑定已生效'
+  人工真值=CATCH  note=A 标记 + 转折肯定(且…已生效)
+  R10 kinds=[('已入账', 8, 'assertion'), ('已生效', 27, 'assertion')] problems=2
+  R12 problems=0
+  N13 details=[('已入账', 8, 1, 'D'), ('已生效', 27, 1, 'D')] problems=2
+  chain verdict=FAIL summary={'spans': 2, 'catch': 2, 'pass': 0, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已入账 pos=8 L1 r10=CATCH r12=ABSENT n13=CATCH veto=False => CATCH rules=K4 | grep 结果：已入账 0 命中，且 N-4 正式绑定已生效
+    ROW tok=已生效 pos=27 L1 r10=CATCH r12=ABSENT n13=CATCH veto=False => CATCH rules=K4 | grep 结果：已入账 0 命中，且 N-4 正式绑定已生效
+    ADJ: ['L1 pos=8 tok=已入账 裁决=CATCH rules=K4 (r10=CATCH r12=ABSENT n13=CATCH)', 'L1 pos=27 tok=已生效 裁决=CATCH rules=K4 (r10=CATCH r12=ABSENT n13=CATCH)']
+  ==> chain 断言面(ADJUDICATED口径) = CATCH  人工 = CATCH  OK
+
+===== ④ 撰写人自认兜不住三条（独立复核） =====
+
+[GP-A1] '亦非不宣告 N-4 正式绑定已生效'
+  人工真值=CATCH  note=撰写人 3(d) 自认兜不住
+  R10 kinds=[('已生效', 14, 'negation')] problems=0
+  R12 problems=0
+  N13 details=[('已生效', 14, 1, 'C')] problems=0
+  chain verdict=FAIL summary={'spans': 1, 'catch': 0, 'pass': 1, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+    ROW tok=已生效 pos=14 L1 r10=PASS r12=ABSENT n13=PASS veto=False => PASS rules=K5 | 亦非不宣告 N-4 正式绑定已生效
+  ==> chain 断言面(ADJUDICATED口径) = PASS  人工 = CATCH  MISMATCH
+
+[GP-A2] '本件登记闭合，母本即日起适用'
+  人工真值=CATCH  note=撰写人 3(d) 自认兜不住
+  R10 kinds=[] problems=0
+  R12 problems=0
+  N13 details=[] problems=0
+  chain verdict=FAIL summary={'spans': 0, 'catch': 0, 'pass': 0, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+  ==> chain 断言面(ADJUDICATED口径) = PASS  人工 = CATCH  MISMATCH
+
+[GP-A3] '三值填毕，见证已由编排方签字'
+  人工真值=CATCH  note=撰写人 3(d) 自认兜不住
+  R10 kinds=[] problems=0
+  R12 problems=0
+  N13 details=[] problems=0
+  chain verdict=FAIL summary={'spans': 0, 'catch': 0, 'pass': 0, 'raise': 0, 'conflicts': 0, 'unresolved': 0}
+  ==> chain 断言面(ADJUDICATED口径) = PASS  人工 = CATCH  MISMATCH
+
+===== ⑦ 门槛扫描 =====
+{
+ "regression_has_assert": false,
+ "regression_has_raise": false,
+ "regression_has_sys_exit": false,
+ "regression_has_threshold_literal_FP2": true,
+ "design_lines_371_377": [
+  "3. **回归门槛（数值，可在 `_gp_regression.py` 上加断言）**：",
+  "   - 现有 74 条合成语料上，新链 `FP ≤ 2 且 FN ≤ 3`（即不得劣于本会话基线 69/74）；",
+  "   - N13 自带回归 `正 16/16 放过、负 26/26 抓住、真件 0 D、ALL_PASS=True` 必须保持（本会话实跑通过）；",
+  "   - g7 反向验证 `verdict total=46 pass=46 fail=0`（`lead/gate_fp7_20261108/_g7_reverse_validate_out.txt:72` 本会话读取该落盘输出，`GATE_FALSE_POSITIVE_5_6_7.md:224` 同值；**脚本本身本会话未重跑**，如实标「未验」）；",
+  "   - `conflicts[]` 条数只增不减（新层若让冲突「消失」，必须给出逐 span 的新证据规则，否则视为放宽判据）；",
+  "   - 并行等价：新层加入后重跑 2(c) 的 `PARALLEL_VS_SERIAL ALL_EQUAL=True`。",
+  "4. **空跑防线**：沿用 `_g9_gate.py:13-18,121-122` 的 `items==0 ⇒ FAIL_EMPTY`；新层 0 项检查不得 PASS。"
+ ]
+}
+
+written: D:\Project\ra2-campaign-forge\lead\gate_pipeline_20261109\_gpv_verify_out.json

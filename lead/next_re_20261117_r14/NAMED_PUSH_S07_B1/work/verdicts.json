@@ -1,0 +1,164 @@
+{
+ "D": {
+  "00421730": {
+   "r2": 1,
+   "r3": 1,
+   "r4": 1,
+   "why2": "slotva 007E32C4 驻 .rdata，vtable base=007E32A4，slot offset=+0x20(=slot#8，与名字 vslot8 的 8 一致)；[vt-4]=COL 007FB990(sig=0)→[COL+0xC]=TD 008182A8→TD+8 名串 .?AVAlphaShapeClass@@；vt[0]=00410260(MAIN 标志)，ctor 00420960 在 0042097C 写 [esi]=007E32A4=对象主表；② 由 RTTI+槽自洽独立钉死，非 slotN 字面。",
+   "why3": "③b② PASS。析构本体 call [edx+0x10]@00421763(ff 52 10；edx=[88A0F0] 容器对象，活 vt=007E3238，vt+0x10=Find@00421A90，其 00421AAF 处 83 C8 FF=or eax,-1 字节伪证未命中返 -1 下标)→cmp eax,-1@00421766(83 F8 FF)→je@00421769(74 2D)→00421798，test/cmp 与 jcc 零间隔无 eax 覆写；命中路 00421771 cmp eax,[88A100] 边界 + 00421778 mov [88A100],ecx 非栈写 + 00421780..00421796 前移循环 0042178A mov [ecx+eax*4-4],edx(89 54 81 FC 循环体内非栈写)+00421794 cmp 边界+00421796 jl 回边；另有第二容器 [B0F720] 同型(call 004217AC/Find 004E0550)。未命中 -1 跳过摘链 vs 命中压缩摘链，两路动作真不同；非 bool(下标约定多值)、非纯转发、非 malloc 模板、非多路同一 call(两个不同容器对象)。本行是标量删除析构体，按既有口径『析构函数体内容器 Find 返 -1 哨兵分支成立』计 ③b②。非流 I/O，无读写方向问题。",
+   "why4": "vt 007E32A4 由行外真构造器 00420960 在 0042097C(c7 06 a4 32 7e 00)写对象 [esi] 装活表(00420965 call 0x410170 基类构造+字段初始化)；本体内 0042173D 写 [esi]=7E32A4 是析构器自装表，按 ㉓ 排除、未用作锚；[reg+0x20] 派发链在 .text(358 处)，与 ② 的 .rdata RTTI 链不同源。"
+  },
+  "00435BE0": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E3BE4，vt=007E3AD0，offset=+276(=slot#69，与名字 vslot69 一致)；RTTI 007FC040→00818BE0→.?AVBuildingLightClass@@；vt[0]=00410260 主表；ctor 00435820 装活表；② 钉死。",
+   "why3": "唯一 chA 站点 call 0x7C8E17@00435C95=operator new → test eax,eax → je：分配失败空指针判断，命中路无 ③b 域内可伪证错误码，属『分配包装零判断/对象初始化模板假句』(D-46(A)/三陷阱模板假句)。无可证多值返值约定、无 Find -1、无跳表/内存形状/循环非栈写。③ 不成立。",
+   "why4": "vt 007E3AD0 行外 ctor 00435820@004358AF 装活表，[reg+0x114] 派发链 6 处，与 ② RTTI 链不同源；④ 独立成立但 ③ 未过不升级。"
+  },
+  "004361D0": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E3B2C，vt=007E3AD0，offset=+92(=slot#23)；RTTI .?AVBuildingLightClass@@；vt[0]=00410260 主表；② 钉死。",
+   "why3": "1827B/513 指令浮点光照计算函数。2 站点：call [eax+0x350]@00436668→TEST_EAX→je 为对象类型/空探测；call [eax+0x2c]@004367E6→cmp eax,1→jne 为类型==1 布尔态比较(imm=1 非多值错误码、被调间接不可取证返值)。大量 fmul/fadd/fstp 几何运算主体，无 falsifiable 错误码/返回约定、无每路可验跳转表。③ 不成立。",
+   "why4": "vt 007E3AD0 行外 ctor 00435820@004358AF 装活表，[reg+0x5C] 派发链 166 处，与 ② 不同源；④ 成立但 ③ 未过。"
+  },
+  "004370C0": {
+   "r2": 1,
+   "r3": 1,
+   "r4": 1,
+   "why2": "slotva 007E3AF0，vt=007E3AD0，offset=+0x20(=slot#8=vslot8)；RTTI 007FC040→00818BE0→.?AVBuildingLightClass@@；vt[0]=00410260 主表；ctor 00435820 装活表；② 钉死。",
+   "why3": "③b② PASS。析构本体 call [edx+0x10]@00437107(edx=[8B4190]，活 vt=007E9C24，Find@004E9DB0，004E9DCF 处 83 C8 FF=or eax,-1)→cmp eax,-1@0043710A→je@0043710D→0043713C，零间隔无 eax 覆写；命中路 0043711C mov [8B41A0],ecx 非栈写 + 00437124..0043713A 压缩循环 0043712E mov [ecx+eax*4-4],edx(89 54 81 FC 循环体内非栈写)+00437138 cmp 边界+0043713A jl 回边；未命中 -1 跳过摘链 vs 命中压缩，两路真不同；非 bool/模板/纯转发。析构体内容器 Find -1 按既有口径计 ③b②。非流 I/O。",
+   "why4": "vt 007E3AD0 由行外真 ctor 00435820 在 004358AF 写活表；本体内 004370C4 析构自装表按 ㉓ 排除；[reg+0x20] 派发链 358 处(.text)，与 ② RTTI 链不同源。"
+  },
+  "00491210": {
+   "r2": 1,
+   "r3": 1,
+   "r4": 1,
+   "why2": "slotva 007E5358，vt=007E5358，offset=+0(=slot#0)；RTTI 007FD3E8→0081DC98→.?AVConvertClass@@；vt[0]=00491210=本 entry(非 COM 根类主表，ctor 0048E740 在 0048E93B 写 [esi]=7E5358 即对象 offset0 主表)。紧邻 007E5318(.?AV?$DynamicVectorClass@PAVConvertClass@@@@)、007E5338( VectorClass ) 两个容器成员表按陷阱③明确排除，未当主表。类名 RTTI+槽号+槽值自洽，② 独立钉死。",
+   "why3": "③b② PASS。析构本体 call [eax+0x10]@00491261(eax=[89ECF8] 容器对象，活 vt=007E5318，Find@0049B0B0，0049B0CF 处 83 C8 FF=or eax,-1)→cmp eax,-1@00491264→je@00491267→00491296，零间隔无 eax 覆写；命中路 00491276 mov [89ED08],ecx 非栈写 + 0049127E..00491294 压缩循环 00491288 mov [ecx+eax*4-4],edx(89 54 81 FC 循环体内非栈写)+00491292 cmp+00491294 jl 回边；未命中 -1 跳过 vs 命中压缩两路真不同；非 bool/模板。析构体内容器 Find -1 按既有口径计 ③b②。非流 I/O。",
+   "why4": "vt 007E5358 由行外真 ctor 0048E740 在 0048E93B(c7 06 58 53 7e 00)写对象 [esi] 装活表；本体内 00491214 析构自装表按 ㉓ 排除；[reg+0] 派发链在 .text，与 ② .rdata RTTI 链不同源。"
+  },
+  "004BAD80": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E8630，vt=007E85D4，offset=+92(=slot#23)；RTTI 00800260→008205D8→.?AVDSurface@@；vt[0]=004C1AC0(DSurface 非 COM 根类主表，ctor 004BA5A0 装活表)；② 钉死。",
+   "why3": "315B/117 指令，chA p1=5/p2=4/p3=0：5 处 call→test 的被调均无多值可伪证返值约定，两路动作签名不足；2 个 direct caller(006421DB/00642396)不改变本体无 ③b 的事实；无跳表/内存形状/循环非栈写。③ 不成立。",
+   "why4": "vt 007E85D4 行外 ctor 004BA5A0@004BA5D0 装活表，[reg+0x5C] 派发链 166 处；④ 成立但 ③ 未过。"
+  },
+  "004BB0D0": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E85E0，vt=007E85D4，offset=+12(=slot#3)；RTTI .?AVDSurface@@；主表非小成员表；② 钉死。",
+   "why3": "唯一 p3 站点：间接 call→cmp eax,0x887601c2(单一定值 magic)→jne。该常量既非多值状态码、亦非 Find 返 -1 下标约定；被调为间接虚调用无法字节取证其返值语义；跨 0x887601c2 的单一 magic 比较不构成可伪证错误码/返回约定。③ 不成立。",
+   "why4": "vt 007E85D4 行外 ctor 004BA5A0 装活表，派发链 400 处；④ 成立但 ③ 未过。"
+  },
+  "004BB620": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E85E4，vt=007E85D4，offset=+16(=slot#4)；RTTI .?AVDSurface@@；② 钉死。",
+   "why3": "唯一 p3 站点：间接 call→cmp eax,0x887601c2(单一定值 magic)→jne；同 004BB0D0 的判由——非多值状态码、非 Find -1 下标、间接被调不可字节取证返值，magic 常量比较不构成 ③b 可伪证返回约定。③ 不成立。",
+   "why4": "vt 007E85D4 行外 ctor 004BA5A0 装活表，派发链 400 处；④ 成立但 ③ 未过。"
+  },
+  "004BB830": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E85F0，vt=007E85D4，offset=+28(=slot#7)；RTTI .?AVDSurface@@；② 钉死。",
+   "why3": "711B/233 指令，chA p1=2/p2=1/p3=0：call→test 的被调无可伪证多值返值、两路动作签名相同；无跳表/内存形状/循环非栈写。③ 不成立。",
+   "why4": "vt 007E85D4 行外 ctor 004BA5A0 装活表，派发链 142 处；④ 成立但 ③ 未过。"
+  },
+  "004BF750": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E8664，vt=007E85D4，offset=+144(=slot#36)；RTTI .?AVDSurface@@；② 钉死。",
+   "why3": "1499B/483 指令，chA p1=1/p2=1/p3=0：唯一 call→test 路径被调无可伪证返值常量、动作签名不足；无 ③b①/③/④ 形态。③ 不成立。",
+   "why4": "vt 007E85D4 行外 ctor 004BA5A0 装活表，派发链 46 处；④ 成立但 ③ 未过。"
+  },
+  "004C0750": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E8620，vt=007E85D4，offset=+76(=slot#19)；RTTI .?AVDSurface@@；② 钉死。",
+   "why3": "chA p3 站点：间接 call→TEST_EAX→je→直接 ret(004C07??→004C1090)；被调间接不可取证、TEST_EAX je 为空指针/布尔探测，非多值可伪证返回约定；余站点 p3=0。无 Find -1/跳表/循环非栈写。③ 不成立。",
+   "why4": "vt 007E85D4 行外 ctor 004BA5A0 装活表，派发链 123 处；④ 成立但 ③ 未过。"
+  },
+  "004C0E30": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E8624，vt=007E85D4，offset=+80(=slot#20)；RTTI .?AVDSurface@@；② 钉死。",
+   "why3": "chA p3 站点：间接 call→TEST_EAX→je→直接 ret(004C0E??→004C16B6)；同 slot19 判由——TEST_EAX je 空/布尔探测，间接被调无可伪证多值返值；余站点 p3=0。无 ③b 整体合同。③ 不成立。",
+   "why4": "vt 007E85D4 行外 ctor 004BA5A0 装活表，派发链 35 处；④ 成立但 ③ 未过。"
+  },
+  "005550C0": {
+   "r2": 1,
+   "r3": 1,
+   "r4": 1,
+   "why2": "slotva 007ED03C，vt=007ED028，offset=+20(=slot#5)；RTTI 008050F0→00829C00→.?AVLightSourceClass@@；vt[0]=00410260 主表；ctor 00554760 装活表；② 钉死。",
+   "why3": "③b② PASS，流读入(方向未写反)。call 0x410380@005550CB(e8 b0 b2 eb ff)；被调空参 00410389 mov eax,0x80004003=E_POINTER，正路 0041039E call [eax+0xc]=IStream::Read 槽(读入方向字节证实)。本体 test eax,eax@005550D0(85 c0)→jl@005550D2(7c 2d)→00555101；jl 成立路跳过清零、原样返回负 HRESULT；不成立路 call 0x4101c0 后逐字段读回并重装 4 张 vt(005550E4..005550F8)后 xor eax,eax 返 0。失败返负值/成功返 0、调用方真拿它分支、两路动作不同、零间隔无 eax 覆写；非 bool(负值多值错误码)。",
+   "why4": "vt 007ED028 由行外真 ctor 00554760 在 005547A0(c7 06 28 d0 7e 00)写活表(00554763 call 0x410170 基类构造)；[reg+0x14] 派发链 273 处(.text)，与 ② .rdata RTTI 链不同源。"
+  },
+  "00555110": {
+   "r2": 1,
+   "r3": 1,
+   "r4": 1,
+   "why2": "slotva 007ED040，vt=007ED028，offset=+24(=slot#6)；RTTI .?AVLightSourceClass@@；vt[0]=00410260 主表；② 钉死。",
+   "why3": "③b② PASS，流写出(方向未写反)。call 0x410320@0055511F(e8 fc b1 eb ff)；被调空参 0041032B mov eax,0x80004003=E_POINTER，正路 call [eax+0x10]=IStream::Write 槽(写出方向字节证实)。本体 test eax,eax@00555124→jl@00555126(7c 02)→0055512A；jl 路原样返回负 HRESULT，非 jl 路 xor eax,eax@00555128 返 0。失败返负/成功返 0、真分支、两路不同、零间隔无 eax 覆写，非 bool。",
+   "why4": "vt 007ED028 行外 ctor 00554760@005547A0 装活表；[reg+0x18] 派发链 367 处；与 ② 不同源。"
+  },
+  "00555150": {
+   "r2": 1,
+   "r3": 1,
+   "r4": 1,
+   "why2": "slotva 007ED048，vt=007ED028，offset=+0x20(=slot#8)；RTTI .?AVLightSourceClass@@；vt[0]=00410260 主表；② 钉死。",
+   "why3": "③b② PASS。析构本体 call [edx+0x10]@0055518A(edx=[ABCA10]，活 vt=007ECF7C，Find@005554F0，0055550F 处 83 C8 FF=or eax,-1)→cmp eax,-1@0055518D→je@00555190→005551BF，零间隔无 eax 覆写；命中路 0055519F mov [ABCA20],ecx 非栈写 + 005551A7..005551BD 压缩循环 005551B1 mov [ecx+eax*4-4],edx(89 54 81 FC 循环体内非栈写)+005551BD jl 回边；未命中 -1 跳过 vs 命中压缩两路真不同；非 bool/模板。析构体内容器 Find -1 按既有口径计 ③b②。非流 I/O。",
+   "why4": "vt 007ED028 行外 ctor 00554760@005547A0 装活表；本体内 00555156 析构自装表按 ㉓ 排除；[reg+0x20] 派发链 358 处，与 ② 不同源。"
+  },
+  "00565C10": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E6184，vt=007E6114，offset=+112(=slot#28)；RTTI 007FFCB8→00816BD8→.?AVDisplayClass@@；vt[0]=004F4240(Display 非 COM 根类主表，ctor 004A8730 装活表)；另有 MapClass 007ED404 同号槽(共享布局)但名字指向 DisplayClass，取 007E6114；② 钉死。",
+   "why3": "5374B/1423 指令。6 个 p3 站点：call 0x7C8E17=malloc 零判断(004A8730 处的分配包装)、0x578290/0x567110 等间接/未知返值 test→je、malloc 空判断 + 对象初始化模板假句，无一给出域内 falsifiable 多值返值约定；无跳表/内存形状/循环非栈写合同。③ 不成立。",
+   "why4": "vt 007E6114 行外 ctor 004A8730@004A8830 装活表，[reg+0x70] 派发链 100 处；④ 成立但 ③ 未过。"
+  },
+  "00567230": {
+   "r2": 1,
+   "r3": 0,
+   "r4": 1,
+   "why2": "slotva 007E6188，vt=007E6114，offset=+116(=slot#29)；RTTI .?AVDisplayClass@@；② 钉死。",
+   "why3": "315B/103 指令，chA p1=2/p2=2/p3=0：call→test 被调无可伪证多值返值、两路动作签名不足；1 个 direct caller(0065449D)不改变本体无 ③b；无跳表/循环非栈写。③ 不成立。",
+   "why4": "vt 007E6114 行外 ctor 004A8730 装活表，派发链 131 处；④ 成立但 ③ 未过。"
+  },
+  "006DBD20": {
+   "r2": 1,
+   "r3": 1,
+   "r4": 1,
+   "why2": "slotva 007F435C，vt=007F4348，offset=+20(=slot#5)；RTTI 0080B9A8→00842A38→.?AVTactical@@；vt[0]=00410260 主表；ctor 006D1C20 在 006D1D54 写 [esi]=007F4348；② 钉死。",
+   "why3": "③b② PASS，流读入(方向未写反)。call 0x410380@006DBD2E；被调空参 00410389 mov eax,0x80004003=E_POINTER、正路 0041039E call [eax+0xc]=IStream::Read 槽(读入)。本体 test eax,eax@006DBD33→jl@006DBD35(0f 8c b4 00 00 00)→006DBDEF 原样返回负 HRESULT；不成立路 call 0x6D1E30/0x6D8640 + 多处对象字段内存写(006DBDC7..006DBDE6，非栈写)后 xor eax,eax@006DBDED 返 0。失败返负/成功返 0、真分支、两路动作不同、零间隔无 eax 覆写，非 bool。",
+   "why4": "vt 007F4348 由行外真 ctor 006D1C20 在 006D1D54(c7 06 48 43 7f 00)写活表(006D1C25 call 0x410170 基类构造)；[reg+0x14] 派发链 273 处(.text)，与 ② .rdata RTTI 链不同源。"
+  }
+ },
+ "counts": {
+  "checked": 18,
+  "r2": 18,
+  "r3": 7,
+  "r4": 18,
+  "allfour": 7
+ },
+ "pass": [
+  "00421730",
+  "004370C0",
+  "00491210",
+  "005550C0",
+  "00555110",
+  "00555150",
+  "006DBD20"
+ ]
+}

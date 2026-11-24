@@ -1,0 +1,635 @@
+=== DETAIL_META === depthCap=6 maxBytes=400000 candidateFiles=29
+
+--- lead/equiv_class_20261109/_eq_proto.py ---
+  LOAD_LABELS=['EQ_PROTO(proto)', 'SL_LINK(orig)']
+  LOAD_STMTS:
+    L43: sys.path.insert(0, SL_DIR)
+    L44: import _sl_link as SL  # noqa: E402  (-B 已禁 pycache，不落只读目录)
+  CALLS:
+    L4: 【定位】只做判据原型验证：以只读谓词 lead/samedoc_link_20261109/_sl_link.py 的 link()
+    L11: 仅当 link() verdict = multi（≥2 个现盘文件 hash+字节数皆符）时介入：
+    L96: res = SL.link(text, doc_dir, hexv, nbytes, root=ROOT)
+  FIELD_READS:
+    L38: guard["match"] = (guard["sha256"] == guard["expect_sha"]
+    L39: and guard["bytes"] == guard["expect_bytes"])
+    L40: if not guard["match"]:
+    L79: out["verdict"] = "merged"
+    L80: out["eq"] = {"rule": "J4 same-doc provenance-declared byte-identical copy class",
+    L83: "members": [{"path": m["path"], "sha": m["sha"], "bytes": m["size"]}
+    L91: "；".join(m["path"] for m in members)))
+    L99: "raw_verdict": res["verdict"], "final_verdict": merged["verdict"],
+    L101: "raw_anchor_paths": [m["path"] for m in res.get("anchors", [])],
+
+--- lead/equiv_class_20261109/_eq_surface_probe.py ---
+  LOAD_LABELS=['EQ_PROTO(proto)']
+  LOAD_STMTS:
+    L8: sys.path.insert(0, r"D:\Project\ra2-campaign-forge\lead\equiv_class_20261109")
+    L9: import _eq_proto as P  # noqa: E402  复用 SL / DECL_RE / eq_merge / ROOT
+  CALLS:
+    L15: _r = P.SL.link(_T, r"D:\Project\ra2-campaign-forge\lead\f2d_rootcause_20261109",
+    L24: _r = P.SL.link(_T, r"D:\Project\ra2-campaign-forge\lead\matrix_binding_20261108",
+    L33: _r = P.SL.link(_T, r"D:\Project\ra2-campaign-forge\lead\gate_validate_20261108",
+  FIELD_READS:
+    L20: % (_r["verdict"], _m["verdict"], _dl, _i.get("applied")))
+    L29: % (_r["verdict"], _m["verdict"], _dl, _i.get("applied")))
+    L38: % (_r["verdict"], _m["verdict"], _dl, _i.get("applied")))
+
+--- lead/equiv_class_20261109/_eqv_adv.py ---
+  LOAD_LABELS=['SL_LINK(orig)']
+  LOAD_STMTS:
+    L17: sys.path.insert(0, ROOT + "/lead/samedoc_link_20261109")
+    L18: import _sl_link as SL  # noqa: E402
+  CALLS:
+    L76: res = SL.link(text, os.path.join(FX, name), HEX, N, root=ROOT)
+  FIELD_READS:
+    L30: return res["verdict"], {"applied": False, "reason": "not multi"}
+    L79: name, res["verdict"], fin, len(res.get("anchors", [])),
+
+--- lead/equiv_class_20261109/_eqv_close.py ---
+  LOAD_LABELS=['EQ_PROTO(proto)', 'SL_LINK(orig)']
+  LOAD_STMTS:
+    L18: sys.path.insert(0, ROOT + "/lead/samedoc_link_20261109")
+    L20: import _sl_link as SL  # noqa: E402
+  CALLS:
+    L79: res = SL.link(text, os.path.dirname(doc), hexv, bd, root=ROOT)
+  FIELD_READS:
+    L29: return res["verdict"], {"applied": False, "reason": "not multi"}
+    L82: agree = "AGREE" if rec_verdict == res["verdict"] else "DISAGREE"
+    L83: ok = bool(res.get("reverify") and res["reverify"].get("ok"))
+    L84: closed = (res["verdict"] == "unique" and ok) or fin == "merged"
+    L87: if res["verdict"] == "unique" and ok:
+    L91: elif res["verdict"] == "multi":
+    L93: elif res["verdict"] == "zero":
+    L97: rows.append((tag, "rec=" + str(rec_verdict), "raw=" + res["verdict"],
+    L101: rec_verdict, res["verdict"], fin, closed, len(res.get("anchors", [])),
+
+--- lead/equiv_class_20261109/_eqv_j1.py ---
+  LOAD_LABELS=['SL_LINK(orig)']
+  LOAD_STMTS:
+    L13: sys.path.insert(0, ROOT + "/lead/samedoc_link_20261109")
+    L14: import _sl_link as SL  # noqa: E402
+  CALLS:
+    L39: res = SL.link(text, os.path.dirname(q4p), Q4HEX, 26405, root=ROOT)
+  FIELD_READS:
+    L45: res["verdict"], len(res.get("anchors", [])), decl_all or "[]"))
+
+--- lead/merged_consumer_audit_20261109/_mc_detail.py ---
+  LOAD_LABELS=['EQ_PROTO(proto)', 'R11_PLUS(prod)', 'RE_LINKED(merged)', 'SL_LINK(orig)']
+  LOAD_STMTS:
+    L4: * 模块装载语句（importlib spec_from_file_location / from X import / import X）
+    L22: LOAD_PATH = re.compile(r"spec_from_file_location|SourceFileLoader|exec_module|sys\.path|import_module|__import__")
+  CALLS:
+    L6: * link()/link_triple()/r11_scan_plus() 调用行
+
+--- lead/merged_consumer_audit_20261109/_mc_scan.py ---
+  LOAD_LABELS=['R11_PLUS(prod)', 'RE_LINKED(merged)', 'SL_LINK(orig)']
+  CALLS:
+    L5: B. 谁调用 link() / link_triple() / r11_scan_plus()
+    L103: # A: 调用 link()/link_triple() 的返回值的件（含直接调用或 import 后间接）
+    L105: print("\n=== A. 调用 link()/link_triple() 的件 (n=%d) ===" % len(callers))
+  FIELD_READS:
+    L6: C. 谁读 rec['path'] / rec['verified_path'] / ['recomputed'] / ['bytes'] / ['match'] / ['tier'] 下标
+    L7: D. 「match=True ⇒ path 非空」危险模式（match 与 path 同读、或 if rec['match'] 后用 rec['path']）
+    L29: # .get("path") 形态
+    L112: print("\n=== B. 读 rec['path']/rec['verified_path'] 且与联查/r11 相关的件 (n=%d) ===" % len(pathreaders))
+    L115: (r["file"], r["fields"].get("path", 0), r["fields"].get("verified_path", 0),
+    L116: r["fields"].get("match", 0), r["fields"].get("tier", 0), r["danger_coarse"]))
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L6: C. 谁读 rec['path'] / rec['verified_path'] / ['recomputed'] / ['bytes'] / ['match'] / ['tier'] 下标
+    L7: D. 「match=True ⇒ path 非空」危险模式（match 与 path 同读、或 if rec['match'] 后用 rec['path']）
+
+--- lead/r11_f2_fix_20261109/_f2_compare.py ---
+  LOAD_LABELS=['R11_PLUS(prod)']
+  LOAD_STMTS:
+    L25: spec = importlib.util.spec_from_file_location("_g7_predicates_cmp", G7)
+    L27: spec.loader.exec_module(g7)
+    L29: spec2 = importlib.util.spec_from_file_location("_f2_r11plus", F2PLUS)
+    L31: spec2.loader.exec_module(f2p)
+  CALLS:
+    L42: n_prob, n_warn, n_bind = f2p.r11_scan_plus(text, d_dir, root=REPO)
+  FIELD_READS:
+    L49: if ob["path"] is not None:
+    L50: assert nb["path"] == ob["path"], "原 T1 path 丢失 %s: %r→%r" % (p, ob["path"], nb["path"])
+    L52: others_fail = any(r["predicates"][k]["verdict"] == "FAIL"
+    L66: tot["orig_path"] += sum(1 for b in o_bind if b["path"])
+    L67: tot["plus_path"] += sum(1 for b in n_bind if b.get("path"))
+    L68: tot["orig_match"] += sum(1 for b in o_bind if b["match"] is True)
+    L69: tot["plus_match"] += sum(1 for b in n_bind if b.get("match") is True)
+    L82: short, 0, ob["declared"][:12], ob["path"], nb.get("path"),
+    L83: nb.get("tier"), nb.get("match"), nb.get("citation")))
+    L93: o11, n11 = row["orig"]["verdict"], row["plus"]["verdict"]
+
+--- lead/r11_f2_fix_20261109/_f2_r11plus.py ---
+  LOAD_LABELS=['R11_PLUS(prod)']
+  LOAD_STMTS:
+    L70: spec = importlib.util.spec_from_file_location("_g7_predicates_f2plus", G7_PREDICATES_PATH)
+    L72: spec.loader.exec_module(mod)
+  CALLS:
+    L139: def r11_scan_plus(text, doc_dir, root=None, recompute=None):
+  FIELD_READS:
+    L203: rec["tier"] = "T1"
+    L209: rec["match"] = False
+    L218: alt["tier"] = tier
+    L223: rec["match"] = True  # 事实：声明 hash 已由同行替代锚回验成立
+    L227: w += "；同行替代锚回验 MATCH：%s" % alt["path"]
+    L240: rec["match"] = False
+    L248: rec["match"] = True
+    L264: verified["tier"] = tier
+    L269: "tier": verified["tier"],
+    L270: "verified_path": verified["path"],
+    L272: "bytes": verified["bytes"]})
+    L276: rec["match"] = False
+    L277: rec["tier"] = "T2"
+    L279: % (r["candidate"], r["sha"][:12], r["bytes"]))
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L227: w += "；同行替代锚回验 MATCH：%s" % alt["path"]
+
+--- lead/r11_f2_fix_20261109/_f2_selftest.py ---
+  LOAD_LABELS=['R11_PLUS(prod)']
+  LOAD_STMTS:
+    L28: spec = importlib.util.spec_from_file_location("_g7_predicates_st", G7)
+    L30: spec.loader.exec_module(g7)
+    L31: spec2 = importlib.util.spec_from_file_location("_f2_r11plus_st", F2PLUS)
+    L33: spec2.loader.exec_module(f2p)
+  CALLS:
+    L64: n_p, n_w, n_b = f2p.r11_scan_plus(t_suf, REPO / "lead", root=REPO)
+    L75: return f2p.r11_scan_plus(text, REPO / "lead", root=REPO)
+    L117: n_p, n_w, n_b = f2p.r11_scan_plus(t, F2PLUS.parent, root=REPO)
+    L126: n_p, _, _ = f2p.r11_scan_plus(t, REPO / "lead", root=REPO)
+    L130: n_p, _, _ = f2p.r11_scan_plus("hello 无绑定", REPO / "lead", root=REPO)
+    L141: n_p, _, _ = f2p.r11_scan_plus(text, p.parent, root=REPO)
+  FIELD_READS:
+    L68: not n_p and n_b[0]["match"] is True and n_b[0].get("suffix_stripped") is True
+    L69: and n_b[0].get("tier") == "T1",
+    L70: "plus problems=%r match=%r stripped=%r" % (n_p, n_b[0].get("match"), n_b[0].get("suffix_stripped")))
+    L85: check("S3b_显式照录降级为警告", not n_p and len(n_w) == 1 and "降级" in n_w[0] and nb[0]["match"] is False
+    L109: check("S4_多候选any-match-wins", not n_p and nb[0]["match"] is True
+    L110: and nb[0].get("verified_path", "").endswith("_f2_r11plus.py"),
+    L111: "problems=%r verified=%r" % (n_p, nb[0].get("verified_path")))
+    L119: not o_p and not n_p and o_b[0]["match"] is True and n_b[0]["match"] is True
+    L120: and n_b[0].get("tier") == "T1" and n_b[0].get("suffix_stripped") is False,
+    L121: "orig match=%r plus match=%r" % (o_b[0]["match"], n_b[0]["match"]))
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L110: and nb[0].get("verified_path", "").endswith("_f2_r11plus.py"),
+
+--- lead/r11_f2_fix_20261109/_f2v_edge.py ---
+  LOAD_LABELS=['R11_PLUS(prod)']
+  LOAD_STMTS:
+    L13: spec = importlib.util.spec_from_file_location("_f2p", W / "_f2_r11plus.py")
+    L15: spec.loader.exec_module(plus)
+    L81: s2 = iu.spec_from_file_location("_g7x", REPO / "lead" / "gate_fp7_20261108" / "_g7_predicates.py")
+    L82: g7 = iu.module_from_spec(s2); s2.loader.exec_module(g7)
+  CALLS:
+    L36: p, w, b = plus.r11_scan_plus(doc, FX, root=REPO)
+    L43: p2, w2, b2 = plus.r11_scan_plus(doc2, FX, root=REPO)
+    L48: p, w, b = plus.r11_scan_plus(doc, FX, root=REPO)
+    L77: p3, w3, b3 = plus.r11_scan_plus(doc3, FX, root=REPO)
+  FIELD_READS:
+    L39: b[0].get("tier"), b[0].get("match"), b[0].get("suffix_stripped"), b[0].get("used_variant")))
+
+--- lead/r11_f2_fix_20261109/_f2v_final.py ---
+  LOAD_LABELS=['R11_PLUS(prod)']
+  LOAD_STMTS:
+    L13: spec = importlib.util.spec_from_file_location("_f2p", W / "_f2_r11plus.py")
+    L15: spec.loader.exec_module(plus)
+    L17: s2 = importlib.util.spec_from_file_location("_g7x", REPO / "lead" / "gate_fp7_20261108" / "_g7_predicates.py")
+    L19: s2.loader.exec_module(g7)
+  CALLS:
+    L24: p2, w2, b2 = plus.r11_scan_plus(doc2, FX, root=REPO)
+    L50: pp, pw, pb = plus.r11_scan_plus(text, W, root=REPO)
+  FIELD_READS:
+    L52: len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+    L54: len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+    L57: if b.get("match") is True:
+    L58: tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L52: len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+    L54: len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+
+--- lead/r11_f2_fix_20261109/_f2v_run.py ---
+  LOAD_LABELS=['R11_PLUS(prod)']
+  LOAD_STMTS:
+    L13: spec = importlib.util.spec_from_file_location(name, path)
+    L15: spec.loader.exec_module(mod)
+  CALLS:
+    L35: pp, pw, pb = plus.r11_scan_plus(text, d_dir, root=REPO)
+  FIELD_READS:
+    L46: "file_verdict_regression": r["verdict"],
+    L48: "orig_paths": [b["path"] for b in ob],
+    L49: "plus_paths": [b.get("path") for b in pb],
+    L50: "orig_match": [b["match"] for b in ob],
+    L51: "plus_match": [b.get("match") for b in pb],
+    L52: "plus_tiers": [b.get("tier") for b in pb],
+    L61: tot["orig_collected"] += sum(1 for b in ob if b["path"])
+    L62: tot["plus_collected"] += sum(1 for b in pb if b.get("path"))
+    L63: tot["orig_match"] += sum(1 for b in ob if b["match"] is True)
+    L64: tot["plus_match"] += sum(1 for b in pb if b.get("match") is True)
+
+--- lead/r11_f2_fix_20261109/_f2v_verify9.py ---
+  LOAD_LABELS=['R11_PLUS(prod)']
+  LOAD_STMTS:
+    L10: spec = importlib.util.spec_from_file_location("_f2p", REPO / "lead" / "r11_f2_fix_20261109" / "_f2_r11plus.py")
+    L12: spec.loader.exec_module(plus)
+  CALLS:
+    L19: pp, pw, pb = plus.r11_scan_plus(text, p.parent, root=REPO)
+  FIELD_READS:
+    L21: if b.get("match") is not True:
+    L24: vp = Path(src.get("verified_path") or src.get("path"))
+    L29: ok_bytes = size == src["bytes"]
+    L31: print("MATCH#%d #%d bind#%d tier=%s alt=%s %s" % (n, i, k + 1, b.get("tier"), bool(b.get("alt")), vp))
+    L34: print("   bytes declared=%s mine=%d bytes_ok=%s" % (src["bytes"], size, ok_bytes))
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L24: vp = Path(src.get("verified_path") or src.get("path"))
+
+--- lead/r11_f2_fix_20261109/_f2w_dogfood.py ---
+  LOAD_LABELS=['R11_PLUS(prod)']
+  LOAD_STMTS:
+    L11: s1 = importlib.util.spec_from_file_location("_g7x", REPO / "lead" / "gate_fp7_20261108" / "_g7_predicates.py")
+    L13: s1.loader.exec_module(g7)
+    L14: s2 = importlib.util.spec_from_file_location("_f2p", D / "_f2_r11plus.py")
+    L16: s2.loader.exec_module(plus)
+  CALLS:
+    L21: pp, pw, pb = plus.r11_scan_plus(text, D, root=REPO)
+  FIELD_READS:
+    L24: len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+    L26: len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+    L29: if b.get("match") is True:
+    L30: tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L24: len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+    L26: len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+
+--- lead/r33e_merge_20261109/_re_j4_cases.py ---
+  LOAD_LABELS=['EQ_PROTO(proto)', 'RE_LINKED(merged)', 'SL_LINK(orig)']
+  LOAD_STMTS:
+    L29: sys.path.insert(0, str(SL_DIR))
+    L30: sys.path.insert(0, str(RE_DIR))
+    L31: import _sl_link as SL   # noqa: E402
+    L32: import _re_linked as RE  # noqa: E402
+  CALLS:
+    L60: ro = SL.link(text, ddir, hx, bd)
+    L61: rm = RE.link(text, ddir, hx, bd)
+    L111: pm, wm, recm = RE.link_triple(t3, doc3.parent, CAND, 412759)
+  FIELD_READS:
+    L27: if not (guard["sha256"] == guard["expect_sha"] and guard["bytes"] == guard["expect_bytes"]):
+    L97: "verdict_orig": ro["verdict"], "verdict_merged": rm["verdict"],
+    L98: "members": eq.get("members"), "decl_lines": eq.get("decl_lines"),
+    L101: chk("a_item3_merged", ro["verdict"] == "multi" and rm["verdict"] == "merged")
+    L102: chk("a_item3_members2", len(eq.get("members", [])) == 2)
+    L108: and all(set(x) == {"path", "sha", "bytes"} for x in eq.get("members", []))
+    L113: recm["tier"] == "SAMEDOC_LINK_EQ" and recm["match"] is True and recm["path"] is None
+    L114: and len(recm.get("members", [])) == 2 and recm.get("decl_lines") == [13])
+    L128: qres["bytes_%s" % bd] = {"verdict_orig": ro["verdict"], "verdict_merged": rm["verdict"],
+    L132: ro["verdict"] == "multi" and rm["verdict"] == "multi" and idt)
+    L143: rec = {"verdict_orig": ro["verdict"], "verdict_merged": rm["verdict"],
+    L144: "identical": idt, "anchors": [m["path"].split("_re_fixtures")[-1] for m in rm.get("anchors", [])],
+    L148: ro["verdict"] == "multi" and rm["verdict"] == expect and
+    L195: len((v.get("members") or []))))
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L113: recm["tier"] == "SAMEDOC_LINK_EQ" and recm["match"] is True and recm["path"] is None
+
+--- lead/r33e_merge_20261109/_re_linked.py ---
+  LOAD_LABELS=['EQ_PROTO(proto)', 'R11_PLUS(prod)', 'RE_LINKED(merged)', 'SL_LINK(orig)']
+  CALLS:
+    L9: (2) link() 的 multi 分支尾部（原 :210 之后）并入 J4 判定块；
+    L10: (3) link_triple() 为 merged 新增 tier=SAMEDOC_LINK_EQ 映射与 merged rec 字段。
+    L28: recomputed / bytes 等单对象字段（rec["path"] 保持 None）；link() 输出的 out["reverify"]
+    L171: def link(text, doc_dir, binding_hex, bytes_decl=None, root=REPO_ROOT, max_detail=12):
+    L303: def link_triple(text, doc_dir, binding_hex, bytes_decl=None, root=REPO_ROOT):
+    L309: r = link(text, doc_dir, binding_hex, bytes_decl, root)
+    L342: r = link(text, doc.parent, argv[2], bd)
+  FIELD_READS:
+    L28: recomputed / bytes 等单对象字段（rec["path"] 保持 None）；link() 输出的 out["reverify"]
+    L34: 3. members 全列：out["eq"]["members"] 与 rec["members"] 逐成员列
+    L182: out["verdict"] = "invalid_hex"
+    L223: {"path": rec["path"], "sha12": rec["sha"][:12],
+    L232: out["verdict"] = "unique"
+    L234: out["reverify"] = {"path": a["path"], "sha": a["sha"], "bytes": a["size"],
+    L238: % (a["path"], a["sha"], a["size"]))
+    L240: out["verdict"] = "multi"
+    L244: % ("；".join(m["path"] for m in matches[:max_detail]),
+    L255: #   out["reverify"] 保持 None；merged 不构成任何授权结论（角色归属留人工）；
+    L275: out["verdict"] = "merged"
+    L276: out["eq"] = {"rule": "J4 same-doc provenance-declared byte-identical copy class",
+    L280: "members": [{"path": m["path"], "sha": m["sha"],
+    L289: "；".join(m["path"] for m in matches)))
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L307: 与全体成员现盘重算逐位一致）、rec["path"] 恒 None（纪律一：不做单一对象主张）、
+    L317: rec["verified_path"] = r["reverify"]["path"]
+
+--- lead/r33e_merge_20261109/_re_parity_extra.py ---
+  LOAD_LABELS=['RE_LINKED(merged)', 'SL_LINK(orig)']
+  LOAD_STMTS:
+    L51: sys.path.insert(0, str(SL_DIR))
+    L52: sys.path.insert(0, str(RE_DIR))
+    L53: import _sl_link as SL    # noqa: E402
+    L54: import _re_linked as RE  # noqa: E402
+  CALLS:
+    L75: ro = SL.link(text, ddir, hx, bd, root)
+    L76: rm = RE.link(text, ddir, hx, bd, root)
+    L77: po, wo, reco = SL.link_triple(text, ddir, hx, bd, root)
+    L78: pm, wm, recm = RE.link_triple(text, ddir, hx, bd, root)
+  FIELD_READS:
+    L46: guard["sl_link"]["match"] = (guard["sl_link"]["sha256"] == EXPECT_SL_SHA
+    L47: and guard["sl_link"]["bytes"] == EXPECT_SL_BYTES)
+    L48: if not guard["sl_link"]["match"]:
+    L79: return {"vo": ro["verdict"], "vm": rm["verdict"],
+    L87: "tier_orig": reco["tier"], "tier_merged": recm["tier"],
+    L88: "match_merged": recm["match"], "path_merged": recm["path"],
+    L89: "members_merged": len(recm.get("members") or []),
+    L164: memb = eq.get("members") or []
+    L171: and len({m["path"] for m in memb}) == N
+    L173: and all(set(m) == {"path", "sha", "bytes"} and m["sha"] == FH and m["bytes"] == NB
+    L177: all(n in r["rm"]["warning"] for n in [m["path"] for m in memb]), "warning len=%d" % len(r["rm"]["warning"]))
+    L178: chk("Pm_disciplines", r["rm"]["reverify"] is None and r["rm"]["problems"] == []
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L88: "match_merged": recm["match"], "path_merged": recm["path"],
+
+--- lead/r33e_merge_20261109/_re_run10_diff.py ---
+  LOAD_LABELS=['RE_LINKED(merged)', 'SL_LINK(orig)']
+  LOAD_STMTS:
+    L33: sys.path.insert(0, str(SL_DIR))
+    L34: sys.path.insert(0, str(RE_DIR))
+    L35: import _sl_link as SL   # noqa: E402  只读原件
+    L36: import _re_linked as RE  # noqa: E402  并入版
+  CALLS:
+    L68: ro = SL.link(raw.decode("utf-8"), doc.parent, exp_hex, bytes_decl)
+    L69: rm = RE.link(raw.decode("utf-8"), doc.parent, exp_hex, bytes_decl)
+    L131: po, wo, reco = SL.link_triple(raw, doc.parent, hx, bd)
+    L132: pm, wm, recm = RE.link_triple(raw, doc.parent, hx, bd)
+  FIELD_READS:
+    L30: if not (guard_sl["sha256"] == guard_sl["expect_sha"] and guard_sl["bytes"] == guard_sl["expect_bytes"]):
+    L77: "verdict_orig": ro["verdict"], "verdict_merged": rm["verdict"],
+    L85: "members_merged": len(eq.get("members", [])) if eq else None,
+    L115: m.get("reverify") is None and bool(m["eq"]["decl_lines"])
+    L116: and all(d.get("text") for d in m["eq"]["decl_hits"])
+    L117: and all(set(x) == {"path", "sha", "bytes"} for x in m["eq"]["members"]))
+    L133: trip[tag] = {"orig": {"tier": reco["tier"], "match": reco["match"], "path": reco["path"]},
+    L134: "merged": {"tier": recm["tier"], "match": recm["match"], "path": recm["path"],
+    L135: "members_n": len(recm.get("members") or []),
+    L142: trip["t3"]["merged"]["tier"] == "SAMEDOC_LINK_EQ"
+    L143: and trip["t3"]["merged"]["match"] is True
+    L144: and trip["t3"]["merged"]["path"] is None
+    L172: hist_v = {r["tag"]: r["verdict"] for r in hist["ten"]}
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L133: trip[tag] = {"orig": {"tier": reco["tier"], "match": reco["match"], "path": reco["path"]},
+    L134: "merged": {"tier": recm["tier"], "match": recm["match"], "path": recm["path"],
+    L144: and trip["t3"]["merged"]["path"] is None
+
+--- lead/r33e_merge_20261109/_re_struct_diff.py ---
+  LOAD_LABELS=['RE_LINKED(merged)', 'SL_LINK(orig)']
+  CALLS:
+    L3: hunk 落在白名单（模块 docstring、link() docstring、link_triple() docstring、
+    L31: #   replace 允许跨 (2,24)=模块 docstring；(139,141)=link() docstring；
+    L32: #           (225,226)=link_triple() docstring；229=tier 三元；243=usage 行
+  FIELD_READS:
+    L24: assert guard["sl_link"]["bytes"] == guard["sl_link"]["expect_bytes"], "GUARD FAIL: original drifted"
+    L57: print("GUARD:", guard["sl_link"]["sha256"][:12], "/", guard["sl_link"]["bytes"],
+    L58: "| RE:", guard["re_linked"]["sha256"][:12], "/", guard["re_linked"]["bytes"])
+
+--- lead/r33e_merge_20261109/_rev_cases.py ---
+  LOAD_LABELS=['EQ_PROTO(proto)', 'RE_LINKED(merged)', 'SL_LINK(orig)']
+  LOAD_STMTS:
+    L47: spec = importlib.util.spec_from_file_location(name, p)
+    L49: spec.loader.exec_module(mod)
+  CALLS:
+    L101: # ---------- 运行方独立的覆盖图 / 词行分析（基于 link() 的 anchors） ----------
+    L117: # 完全不依赖 link() 输出的覆盖重建：按文本行内出现的 token 字面量建覆盖集合
+    L176: ro = SL.link(text, d, FH, NB)
+    L177: rm = RE.link(text, d, FH, NB)
+    L182: po, wo, recm = RE.link_triple(text, d, FH, NB)
+    L318: ro3 = SL.link(t3, doc3.parent, CAND, 412759)
+    L319: rm3 = RE.link(t3, doc3.parent, CAND, 412759)
+    L320: p3, w3, rec3 = RE.link_triple(t3, doc3.parent, CAND, 412759)
+    L346: roq = SL.link(q4, q4path.parent, Q4HEX, bd)
+    L347: rmq = RE.link(q4, q4path.parent, Q4HEX, bd)
+  FIELD_READS:
+    L43: guard["sha256"] == guard["expect_sha"] and guard["bytes"] == guard["expect_bytes"],
+    L44: "%s/%d" % (guard["sha256"], guard["bytes"]))
+    L98: out["verdict"] = "merged"
+    L183: return {"name": name, "n_files": n, "orig": ro["verdict"], "new": rm["verdict"],
+    L184: "proto": proto_out["verdict"], "proto_info": proto_info,
+    L189: "members_n": len((rm.get("eq") or {}).get("members", [])),
+    L193: "triple": {"tier": recm["tier"], "match": recm["match"], "path": recm["path"],
+    L194: "keys": sorted(recm.keys()), "members_n": len(recm.get("members", [])),
+    L215: chk(nm + "_output_identical_to_orig", r["identical_json"] and r["reverify"] is None)
+    L217: chk(nm + "_no_eq_key", r["eq"] is None)
+    L240: chk(nm + "_no_eq_key", r["eq"] is None)
+    L258: eq = e2["eq"]
+    L259: mem = eq["members"]
+    L260: chk("d1_path_none__link_reverify_none", e2["reverify"] is None)
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L193: "triple": {"tier": recm["tier"], "match": recm["match"], "path": recm["path"],
+    L328: "triple": {"tier": rec3["tier"], "match": rec3["match"], "path": rec3["path"],
+
+--- lead/r33e_merge_20261109/_rev_core.py ---
+  LOAD_LABELS=['EQ_PROTO(proto)', 'R11_PLUS(prod)', 'RE_LINKED(merged)', 'SL_LINK(orig)']
+  LOAD_STMTS:
+    L137: spec = importlib.util.spec_from_file_location(name, p)
+    L139: spec.loader.exec_module(mod)
+  CALLS:
+    L180: ro = SL.link(text, doc.parent, hexv, bd)
+    L181: rm = RE.link(text, doc.parent, hexv, bd)
+    L184: po, wo, reco = SL.link_triple(text, doc.parent, hexv, bd)
+    L185: pm, wm, recm = RE.link_triple(text, doc.parent, hexv, bd)
+  FIELD_READS:
+    L52: chk("ALL_TEN_FP_MATCH", all(f["match"] for f in fps))
+    L55: chk("sl_link_untouched", fps[0]["match"], "%s/%d" % (fps[0]["sha256"], fps[0]["bytes"]))
+    L188: "orig": ro["verdict"], "new": rm["verdict"],
+    L193: "triple_orig_tier": reco["tier"], "triple_new_tier": recm["tier"],
+    L194: "triple_new_path": recm["path"],
+    L195: "members_n": len(rm.get("eq", {}).get("members", [])),
+    L228: hv = {r["tag"]: r["verdict"] for r in hist["ten"]}
+    L249: print("FINGERPRINTS:", "ALL_MATCH" if all(f["match"] for f in fps) else "MISMATCH",
+    L250: "| _sl_link.py =", fps[0]["sha256"][:12], "/", fps[0]["bytes"])
+
+--- lead/r33e_merge_20261109/_rev_edge25.py ---
+  LOAD_LABELS=['EQ_PROTO(proto)', 'RE_LINKED(merged)', 'SL_LINK(orig)']
+  LOAD_STMTS:
+    L28: s = importlib.util.spec_from_file_location(name, p)
+    L30: s.loader.exec_module(m)
+  CALLS:
+    L84: ro = SL.link(text, d, FH, NB)
+    L85: rm = RE.link(text, d, FH, NB)
+    L87: pp, pw, recm = RE.link_triple(text, d, FH, NB)
+  FIELD_READS:
+    L39: if res["verdict"] != "multi":
+    L62: out["verdict"] = "merged"
+    L91: "orig_verdict": ro["verdict"], "impl_verdict": rm["verdict"],
+    L92: "proto_reimpl_verdict": po["verdict"], "proto_info": pi,
+    L94: "impl_members": len(eq.get("members", [])),
+    L96: "triple": {"tier": recm["tier"], "path": recm["path"], "match": recm["match"],
+    L97: "keys": sorted(recm.keys()), "members_n": len(recm.get("members", []))},
+    L102: chk("orig_is_multi_25", ro["verdict"] == "multi" and res["anchors_orig"] == 12)
+    L103: chk("proto_reimpl_stays_multi", po["verdict"] == "multi", json.dumps(pi, ensure_ascii=False))
+    L104: chk("impl_merges_due_to_full_matches", rm["verdict"] == "merged", rm["verdict"])
+    L105: chk("divergence_real", po["verdict"] != rm["verdict"])
+    L107: chk("impl_disciplines_hold", recm["path"] is None and rm["reverify"] is None
+    L111: all(set(m) == {"path", "sha", "bytes"} and m["sha"] == FH and m["bytes"] == NB
+    L112: for m in eq.get("members", [])))
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L96: "triple": {"tier": recm["tier"], "path": recm["path"], "match": recm["match"],
+
+--- lead/samedoc_link_20261109/_sl_link.py ---
+  LOAD_LABELS=['R11_PLUS(prod)', 'SL_LINK(orig)']
+  CALLS:
+    L138: def link(text, doc_dir, binding_hex, bytes_decl=None, root=REPO_ROOT, max_detail=12):
+    L224: def link_triple(text, doc_dir, binding_hex, bytes_decl=None, root=REPO_ROOT):
+    L227: r = link(text, doc_dir, binding_hex, bytes_decl, root)
+    L249: r = link(text, doc.parent, argv[2], bd)
+  FIELD_READS:
+    L147: out["verdict"] = "invalid_hex"
+    L188: {"path": rec["path"], "sha12": rec["sha"][:12],
+    L197: out["verdict"] = "unique"
+    L199: out["reverify"] = {"path": a["path"], "sha": a["sha"], "bytes": a["size"],
+    L203: % (a["path"], a["sha"], a["size"]))
+    L205: out["verdict"] = "multi"
+    L209: % ("；".join(m["path"] for m in matches[:max_detail]),
+    L212: out["verdict"] = "zero"
+    L218: % (d["hex_near_lines"], d["path"], d["sha12"], d["size"]))
+    L229: "tier": "SAMEDOC_LINK" if r["verdict"] in ("unique", "multi") else None,
+    L231: if r["verdict"] == "unique":
+    L232: rec["path"] = r["reverify"]["path"]
+    L233: rec["match"] = True
+    L234: rec["verified_path"] = r["reverify"]["path"]
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L234: rec["verified_path"] = r["reverify"]["path"]
+
+--- lead/samedoc_link_20261109/_sl_run10.py ---
+  LOAD_LABELS=['SL_LINK(orig)']
+  LOAD_STMTS:
+    L24: spec = importlib.util.spec_from_file_location("_sl_link_mod", HERE / "_sl_link.py")
+    L26: spec.loader.exec_module(sl)
+  CALLS:
+    L83: r = sl.link(raw.decode("utf-8"), doc.parent, exp_hex, bytes_decl)
+  FIELD_READS:
+    L84: rec["verdict"] = r["verdict"]
+    L85: rec["anchors"] = [{"path": a["path"], "sha12": a["sha"][:12], "size": a["size"],
+    L88: rec["reverify"] = r["reverify"]
+    L115: print("  判定: %s" % rec["verdict"])
+    L118: (short(a["path"]), a["sha12"], a["size"], a["tokens"]))
+    L119: if rec["reverify"]:
+    L121: (rec["reverify"]["ok"], rec["reverify"]["sha"][:12],
+    L122: rec["reverify"]["bytes"]))
+    L125: (short(d["path"]), d["sha12"], d["size"], d["hex_near_lines"]))
+    L128: closed = [r for r in ten if r["verdict"] == "unique" and r["reverify"] and r["reverify"]["ok"]]
+    L129: multi = [r for r in ten if r["verdict"] == "multi"]
+    L130: zero = [r for r in ten if r["verdict"] == "zero"]
+    L131: uniq_bad = [r for r in ten if r["verdict"] == "unique" and not (r["reverify"] and r["reverify"]["ok"])]
+    L144: print("附加对照行位判定: " + "; ".join("%s→%s" % (r["tag"], r["verdict"]) for r in extra))
+
+--- lead/samedoc_link_20261109/_sl_selftest.py ---
+  LOAD_LABELS=['SL_LINK(orig)']
+  LOAD_STMTS:
+    L25: spec = importlib.util.spec_from_file_location("_sl_link_mod", HERE / "_sl_link.py")
+    L27: spec.loader.exec_module(sl)
+  CALLS:
+    L68: r = sl.link(doc_a.read_text(encoding="utf-8"), doc_a.parent, sha_a, n_a)
+    L84: r = sl.link(doc_b.read_text(encoding="utf-8"), doc_b.parent, sha_t, n_t)
+    L104: r = sl.link(doc_c.read_text(encoding="utf-8"), doc_c.parent, marker)
+    L116: r = sl.link(doc_d1.read_text(encoding="utf-8"), doc_d1.parent, sha_l, n_l)
+    L128: r = sl.link(doc_d2.read_text(encoding="utf-8"), doc_d2.parent, sha_r, n_r, root=FIX)
+    L142: r = sl.link(doc_d3.read_text(encoding="utf-8"), doc_d3.parent, sha_sub, n_sub, root=FIX)
+    L147: r = sl.link(doc_d3.read_text(encoding="utf-8"), doc_d3.parent, sha_root, n_root, root=FIX)
+    L159: r = sl.link(doc_d4.read_text(encoding="utf-8"), doc_d4.parent, sha_c, n_c, root=REPO)
+  FIELD_READS:
+    L69: check("(a) multi→放弃采集", r["verdict"] == "multi" and len(r["anchors"]) == 2
+    L71: "verdict=%s anchors=%d warning=%s…" % (r["verdict"], len(r["anchors"]), r["warning"][:60]))
+    L85: paths = {a["path"] for a in r["anchors"]}
+    L89: r["verdict"] == "unique" and len(paths) == 1 and r["reverify"]["ok"]
+    L92: % (r["verdict"], len(paths), toks, occ, r["reverify"] and r["reverify"]["ok"]))
+    L106: r["verdict"] == "zero" and "绑定行缺显式路径" in r["warning"]
+    L108: "verdict=%s warning=%s…" % (r["verdict"], r["warning"][:50]))
+    L117: got = r["reverify"]["path"] if r["reverify"] else None
+    L118: check("(d1) doc_dir 解析", r["verdict"] == "unique" and got
+    L120: "verdict=%s resolved=%s" % (r["verdict"], got))
+    L129: got = r["reverify"]["path"] if r["reverify"] else None
+    L130: check("(d2) root 回退", r["verdict"] == "unique" and got
+    L132: "verdict=%s resolved=%s" % (r["verdict"], got))
+    L143: got = r["reverify"]["path"] if r["reverify"] else None
+
+--- lead/samedoc_link_20261109/_slv_multitest.py ---
+  LOAD_LABELS=['SL_LINK(orig)']
+  LOAD_STMTS:
+    L15: spec = importlib.util.spec_from_file_location("_sl_link_mod_v", HERE / "_sl_link.py")
+    L17: spec.loader.exec_module(sl)
+  CALLS:
+    L58: r = sl.link(doc_a.read_text(encoding="utf-8"), doc_a.parent, sha_f, n_f, root=None)
+    L60: probs, warns, rec = sl.link_triple(doc_a.read_text(encoding="utf-8"), doc_a.parent,
+    L80: r = sl.link(doc_b.read_text(encoding="utf-8"), doc_b.parent, sha_t, n_t, root=None)
+    L88: r = sl.link(doc_b.read_text(encoding="utf-8"), doc_b.parent, sha_t, n_t + 1, root=None)
+    L98: r = sl.link(doc_c.read_text(encoding="utf-8"), doc_c.parent, marker, 1, root=None)
+    L102: probs, warns, rec = sl.link_triple(doc_c.read_text(encoding="utf-8"), doc_c.parent,
+    L115: r = sl.link(doc_d.read_text(encoding="utf-8"), doc_d.parent, sha_dd, n_dd,
+    L121: r = sl.link(doc_d.read_text(encoding="utf-8"), doc_d.parent, sha_rt, n_rt,
+    L133: r = sl.link(doc_e.read_text(encoding="utf-8"), doc_e.parent, sha_f, n_f, root=None)
+  FIELD_READS:
+    L59: paths = sorted(a["path"] for a in r["anchors"])
+    L63: r["verdict"] == "multi" and len(r["anchors"]) == 2,
+    L64: "verdict=%s anchors=%d %s" % (r["verdict"], len(r["anchors"]), paths))
+    L66: rec.get("path") is None and rec.get("match") is None and r.get("reverify") is None,
+    L67: "rec.path=%r rec.match=%r reverify=%r" % (rec.get("path"), rec.get("match"), r.get("reverify")))
+    L82: r["verdict"] == "unique" and len(r["anchors"]) == 1 and r["reverify"]["ok"]
+    L83: and Path(r["reverify"]["path"]) == t1.resolve(),
+    L84: "verdict=%s anchor=%s tokens=%d" % (r["verdict"], r["reverify"]["path"],
+    L90: r["verdict"] == "zero",
+    L91: "verdict=%s（hex 同值、bytes_decl=%d ≠ 现盘 %d）" % (r["verdict"], n_t + 1, n_t))
+    L100: r["verdict"] == "zero" and "绑定行缺显式路径" in r["warning"] and "零命中" in r["warning"],
+    L101: "verdict=%s warning=%s…" % (r["verdict"], r["warning"][:60]))
+    L105: probs == [] and rec["tier"] is None and rec["match"] is None,
+    L106: "problems=%r tier=%r match=%r" % (probs, rec["tier"], rec["match"]))
+  *** DANGER_WINDOW(match→path/verified_path within 6 lines) ***
+    L66: rec.get("path") is None and rec.get("match") is None and r.get("reverify") is None,
+    L67: "rec.path=%r rec.match=%r reverify=%r" % (rec.get("path"), rec.get("match"), r.get("reverify")))
+
+--- lead/samedoc_link_20261109/_slv_run10copy.py ---
+  LOAD_LABELS=['SL_LINK(orig)']
+  LOAD_STMTS:
+    L24: spec = importlib.util.spec_from_file_location("_sl_link_mod", HERE / "_sl_link.py")
+    L26: spec.loader.exec_module(sl)
+  CALLS:
+    L83: r = sl.link(raw.decode("utf-8"), doc.parent, exp_hex, bytes_decl)
+  FIELD_READS:
+    L84: rec["verdict"] = r["verdict"]
+    L85: rec["anchors"] = [{"path": a["path"], "sha12": a["sha"][:12], "size": a["size"],
+    L88: rec["reverify"] = r["reverify"]
+    L115: print("  判定: %s" % rec["verdict"])
+    L118: (short(a["path"]), a["sha12"], a["size"], a["tokens"]))
+    L119: if rec["reverify"]:
+    L121: (rec["reverify"]["ok"], rec["reverify"]["sha"][:12],
+    L122: rec["reverify"]["bytes"]))
+    L125: (short(d["path"]), d["sha12"], d["size"], d["hex_near_lines"]))
+    L128: closed = [r for r in ten if r["verdict"] == "unique" and r["reverify"] and r["reverify"]["ok"]]
+    L129: multi = [r for r in ten if r["verdict"] == "multi"]
+    L130: zero = [r for r in ten if r["verdict"] == "zero"]
+    L131: uniq_bad = [r for r in ten if r["verdict"] == "unique" and not (r["reverify"] and r["reverify"]["ok"])]
+    L144: print("附加对照行位判定: " + "; ".join("%s→%s" % (r["tag"], r["verdict"]) for r in extra))
+
+--- lead/samedoc_link_20261109/_slw_fix4.py ---
+  LOAD_LABELS=['SL_LINK(orig)']
+  LOAD_STMTS:
+    L24: spec = importlib.util.spec_from_file_location("_sl_link_readonly", LINK_PY)
+    L26: spec.loader.exec_module(sl)
+  CALLS:
+    L56: r1 = sl.link(doc1, FX, sha_a, n_a)
+    L69: r2 = sl.link(doc2, FX / "dedup", sha_t, n_t)
+    L82: r3 = sl.link(doc3, FX, ghost, 99)
+    L104: r41 = sl.link(f"(d1) 同目录裸名 `local.txt`。\n\n被核对象 SHA256 = {sha_l}，字节数 = {NL}\n",
+    L106: r42 = sl.link(f"(d2) 根回退名 `rootonly.txt`。\n\n被核对象 SHA256 = {sha_r}，字节数 = {NR}\n",
+    L108: r43 = sl.link(f"(d3) 同名件 `both.txt`。\n\n被核对象 SHA256 = {sha_d}，字节数 = {n_d}\n",
+    L110: r44 = sl.link(f"(d3) 同名件 `both.txt`。\n\n被核对象 SHA256 = {sha_ro}，字节数 = {n_ro}\n",
+  FIELD_READS:
+    L58: r1["verdict"] == "multi" and len(r1["anchors"]) == 2
+    L59: and r1["reverify"] is None and r1["problems"] == []
+    L61: f"verdict={r1['verdict']} anchors={len(r1['anchors'])} reverify={r1['reverify']} "
+    L72: r2["verdict"] == "unique" and len(r2["anchors"]) == 1
+    L74: and r2["reverify"]["ok"] is True and r2["problems"] == [],
+    L75: f"verdict={r2['verdict']} 不同现盘文件=1 写法={sorted(set(toks))} "
+    L76: f"回验={r2['reverify']['sha'][:12]}…/{r2['reverify']['bytes']}B ok={r2['reverify']['ok']}")
+    L84: r3["verdict"] == "zero" and r3["anchors"] == [] and r3["reverify"] is None
+    L87: f"verdict={r3['verdict']} anchors={len(r3['anchors'])} problems={r3['problems']} "
+    L112: cond4 = (r41["verdict"] == "unique" and r41["anchors"][0]["path"].endswith("rel\\sub\\local.txt")
+    L113: and r42["verdict"] == "unique" and r42["anchors"][0]["path"].endswith("rel\\rootonly.txt")
+    L114: and r43["verdict"] == "unique" and r43["anchors"][0]["path"].endswith("rel\\sub\\both.txt")
+    L115: and r44["verdict"] == "zero" and r44["problems"] == [])
+    L117: f"(d1)doc_dir→{Path(r41['anchors'][0]['path']).name} "

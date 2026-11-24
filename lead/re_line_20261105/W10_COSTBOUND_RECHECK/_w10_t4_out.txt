@@ -1,0 +1,132 @@
+================================================================================
+               W10 T4 · C1/C2/C4 集体可信度与静态排除裁决独立复算探针
+================================================================================
+被核对象 = gamemd.exe + W3_COSTBOUND/sections/Q1_*.md
+gamemd.exe SHA256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476，字节数 = 4825360
+Engine 自证 = COVERAGE 99.9984% (1394120 insns, 66 resyncs) / IMAGEBASE 0x400000
+================================================================================
+
+### 1. C1 (寻路) 核心指令边界、字节与硬限复核 ###
+[C1 Loop] 范围: 0x00429D6D - 0x0042A3D8, 指令数: 544 条, 字节总和: 1649 字节
+[C1 Loop] W3 声称 1,645 字节 vs 实测 1649 字节 (相差 4 字节)
+[C1 Loop] 首指令: 0x00429D6D (4B) mov ecx, dword ptr [esp + 0x70]
+[C1 Loop] 末指令: 0x0042A3D8 (6B) jne 0x429d6d
+[C1 HardLimit 1 - 0xFFF7 默认上限重写]:
+  0x00429D51: 8b442470         mov      eax, dword ptr [esp + 0x70]
+  0x00429D55: 85c0             test     eax, eax
+  0x00429D57: 7d08             jge      0x429d61
+  0x00429D59: c7442470f7ff0000 mov      dword ptr [esp + 0x70], 0xfff7
+  0x00429D61: 8b442414         mov      eax, dword ptr [esp + 0x14]
+  0x00429D65: 85c0             test     eax, eax
+[C1 HardLimit 2 - 0x2710 (10000) 校验硬限]:
+  0x0042A3DE: 8b4c2428         mov      ecx, dword ptr [esp + 0x28]
+  0x0042A3E2: 81f910270000     cmp      ecx, 0x2710
+  0x0042A3E8: 7454             je       0x42a43e
+  0x0042A3EA: 8b442414         mov      eax, dword ptr [esp + 0x14]
+  0x0042A3EE: 85c0             test     eax, eax
+  0x0042A3F0: 744c             je       0x42a43e
+  0x0042A3F2: 3b4c2470         cmp      ecx, dword ptr [esp + 0x70]
+  0x0042A3F6: 7446             je       0x42a43e
+
+### 2. C2 (渲染裁剪) 核心指令、IsVisible 真实体量与虚表调用复核 ###
+[C2 DrawIfVisible] 范围: 0x005F4B10 - 0x005F4D0C, 指令数: 165 条, 字节总和: 511 字节
+[C2 IsVisible] 范围: 0x006D2140 - 0x006D226F, 指令数: 106 条, 字节总和: 306 字节
+[C2 IsVisible] W3 声称 38 条指令 vs 实测 106 条 (低估 2.79 倍)
+[C2 Cluster 0x6D8DB0] 全簇指令数: 1603 条
+  call 0x5F4B10 直接调用数: 0 处
+  call [reg+0x104] 虚表分派数: 5 处
+    0x006D909E: ff9204010000     call     dword ptr [edx + 0x104]
+    0x006D916C: ff9204010000     call     dword ptr [edx + 0x104]
+    0x006D93FA: ff9204010000     call     dword ptr [edx + 0x104]
+    0x006D98E9: ff9204010000     call     dword ptr [edx + 0x104]
+    0x006D9A21: ff9204010000     call     dword ptr [edx + 0x104]
+
+### 3. C4 (微观索敌) SelectAutoTarget vs Greatest_Threat 深度剖析 ###
+[C4 SelectAutoTarget 0x006FB010] 指令数: 33 条
+  0x006FB010: 56               push     esi
+  0x006FB011: 8bf1             mov      esi, ecx
+  0x006FB013: 57               push     edi
+  0x006FB014: 8b06             mov      eax, dword ptr [esi]
+  0x006FB016: ff9084000000     call     dword ptr [eax + 0x84]
+  0x006FB01C: 8b8084060000     mov      eax, dword ptr [eax + 0x684]
+  0x006FB022: 83f8ff           cmp      eax, -1
+  0x006FB025: 7447             je       0x6fb06e
+  0x006FB027: 8bbefc020000     mov      edi, dword ptr [esi + 0x2fc]
+  0x006FB02D: 3bf8             cmp      edi, eax
+[C4 Greatest_Threat 0x006F8DF0] 范围: 0x006F8DF0 - 0x006F9DB0, 指令数: 1256 条, 字节总和: 4038 字节
+[C4 扫描半径计算逻辑 (0x006F9125 - 0x006F9144)]:
+  0x006F9125: c1ff08           sar      edi, 8
+  0x006F9128: ff9284000000     call     dword ptr [edx + 0x84]
+  0x006F912E: 8b808c060000     mov      eax, dword ptr [eax + 0x68c]
+  0x006F9134: 99               cdq      
+  0x006F9135: 81e2ff000000     and      edx, 0xff
+  0x006F913B: 03c2             add      eax, edx
+  0x006F913D: c1f808           sar      eax, 8
+  0x006F9140: 8d440701         lea      eax, [edi + eax + 1]
+  0x006F9144: 89442438         mov      dword ptr [esp + 0x38], eax
+[C4 20x20 空间桶映射计算 (0x00412B9A - 0x00412BD0)]:
+  0x00412B9A: b867666666       mov      eax, 0x66666667
+  0x00412B9F: f72d14f98700     imul     dword ptr [0x87f914]
+  0x00412BA5: 8bca             mov      ecx, edx
+  0x00412BA7: 8bc6             mov      eax, esi
+  0x00412BA9: c1f903           sar      ecx, 3
+  0x00412BAC: 8bd1             mov      edx, ecx
+  0x00412BAE: be13000000       mov      esi, 0x13
+  0x00412BB3: c1ea1f           shr      edx, 0x1f
+  0x00412BB6: 03ca             add      ecx, edx
+  0x00412BB8: 99               cdq      
+  0x00412BB9: f7f9             idiv     ecx
+  0x00412BBB: 83f813           cmp      eax, 0x13
+  0x00412BBE: 7f02             jg       0x412bc2
+  0x00412BC0: 8bf0             mov      esi, eax
+  0x00412BC2: b867666666       mov      eax, 0x66666667
+  0x00412BC7: f72d18f98700     imul     dword ptr [0x87f918]
+  0x00412BCD: 8bca             mov      ecx, edx
+  0x00412BCF: c1f903           sar      ecx, 3
+[C4 单格链表遍历与评估例程 0x006F8960] 头部 75 条指令:
+  0x006F8960: 8b442414         mov      eax, dword ptr [esp + 0x14]
+  0x006F8964: 53               push     ebx
+  0x006F8965: 55               push     ebp
+  0x006F8966: 56               push     esi
+  0x006F8967: 8bf1             mov      esi, ecx
+  0x006F8969: 57               push     edi
+  0x006F896A: 8b4c2428         mov      ecx, dword ptr [esp + 0x28]
+  0x006F896E: 8b7c241c         mov      edi, dword ptr [esp + 0x1c]
+  0x006F8972: c70000000000     mov      dword ptr [eax], 0
+  0x006F8978: 57               push     edi
+  0x006F8979: c70100000000     mov      dword ptr [ecx], 0
+  0x006F897F: b9e8f78700       mov      ecx, 0x87f7e8
+  0x006F8984: e817cee6ff       call     0x5657a0
+  0x006F8989: 8b6c242c         mov      ebp, dword ptr [esp + 0x2c]
+  0x006F898D: 8bd8             mov      ebx, eax
+
+### 4. 三条链算术模型与敏感度独立复算 ###
+[C1 寻路算术复算]
+  W3 给定: 720 ~ 3,600 ms (基于 2,000~10,000 节点, 800~1,000 指令, 0.3~0.375 ns/ins)
+  独立复算 (典型节点 1200 ins, 10000 节点): 1200 * 10000 * 1200 * 0.375ns = 5,400 ms (比值 1.50x)
+  独立复算 (最坏节点 6380 ins, 10000 节点): 1200 * 10000 * 6380 * 0.375ns = 28,710 ms (比值 7.98x)
+  独立复算 (最坏节点 6380 ins, 65527 节点): 1200 * 65527 * 6380 * 0.375ns = 188,128 ms (比值 52.26x)
+
+[C2 渲染算术复算]
+  W3 给定: 100 ~ 150 ms (基于 1,000~1,200 单位全入屏交火, 80~100 μs/单位)
+  独立复算 (W3极端全入屏 1000~1200 单位, 100~120 μs): 100 ~ 144 ms (加粒子 150 ms, 比值 1.00x)
+  独立复算 (视口物理容量上限 150~300 单位, 100~120 μs): 15 ~ 36 ms (比值 0.15x ~ 0.24x)
+  全裁剪下界 (1200 单位全部在屏外): 1200 * 29~123 ins * 0.33 ns = 0.012 ~ 0.049 ms
+
+[C4 索敌算术复算]
+  W3 给定: 19 ~ 36 ms (极端长程 125 ms, 基于 6.35e5~1.20e6 cells, 30 ns/cell)
+  独立复算 (现代 CPU 3.0GHz, 9 ns/cell): 5.71 ~ 10.80 ms (极端 37.59 ms, 比值 0.30x)
+  独立复算 (保守 CPU 2.67GHz, 15 ns/cell): 9.52 ~ 18.00 ms (极端 62.66 ms, 比值 0.50x)
+  独立复算 (W3 外推参数 30 ns/cell): 19.05 ~ 36.00 ms (极端 125.31 ms, 比值 1.00x)
+
+[集体可信度与静态排除判定对账]
+  实测慢窗帧时恶化赤字: ΔT = 166.8 ms - 32.0 ms = 134.8 ms
+  - C1 上界 (5,400 ~ 28,710 ms): 达到赤字的 40x ~ 213x, 绝对无法排除 (PARTIAL, 极端并发假设)
+  - C2 上界 (15 ~ 36 ms / 96 ~ 144 ms): 达到赤字的 11% ~ 107%, 属于同数量级 (0阶差), 无法排除 (PARTIAL, 极端视口假设)
+  - C4 上界 (5.7 ~ 36 ms / 极端 125 ms): 达到赤字的 4.2% ~ 93%, 属于同数量级 (0阶差), 无法排除 (PARTIAL, 极端同帧重搜假设)
+  - C3 上界 (0.05 ~ 0.1 ms): 仅占赤字 0.04% ~ 0.07% (差 2~3 个数量级), 唯一可静态排除项 (CONFIRMED)
+  总结论核验: 「C1/C2/C4 都不能静态排除」—— 结论依然完全成立！
+
+================================================================================
+PROBE DONE -- exit 0
+================================================================================

@@ -1,0 +1,45 @@
+COMMON-TECH-3 · HASH — R14_COMMON.md 追加前后字节 / SHA-256 / 前缀逐字节校验
+====================================================================================
+
+目标文件
+  lead\next_re_20261117_r14\R14_COMMON.md
+
+追加前（BEFORE）
+  bytes   202,159
+  sha256  24CC87B84FDC4A59E6416036956EBE5F006A163E6731A2F677800C85DA4083D7
+  末字节  0x0A（LF 结尾，无 BOM，全文 LF）
+
+追加后（AFTER）
+  bytes   220,117
+  sha256  D3095EF4A6CCABA2EBEA0028ECFFB61B9CE4F31A26B62583117F1E1999E09DC1
+  行数    1,457（追加前 1,277 行）
+  净增    17,958 B（纯尾部新增）
+
+前缀逐字节校验（核心铁律）
+  取新文件前 202,159 字节（= 追加前长度）作为前缀
+  prefix bytes  202,159
+  prefix sha256 24CC87B84FDC4A59E6416036956EBE5F006A163E6731A2F677800C85DA4083D7
+  ⇒ 前缀 sha256 == 追加前 sha256 ：**PASS**
+  ⇒ 前缀与追加前字节内容逐字节相同（Python `prefix == old` 直接比较）：**PASS**
+  ⇒ 旧行 0 变更（无单行修改，无重排，无末尾补删）
+
+尾部一致性
+  new[202159:] == COMMON_TECH3\_append.md（LF 归一后）逐字节相同：**PASS**
+  追加块 CR 计数 = 0（未引入 CRLF），以 LF 结尾
+
+过程留痕（如实记录）
+  追加分两步落盘：
+  1) 首次追加：202,159 → 220,122 B / sha256 6B070E565FE7ABD2B3B7C38E212EFCE2CFD86AA90F0AF2D8E0DCE6D70484A67F
+     （`work\append.py`，前缀校验 PASS）
+  2) 发现追加块内 §13.1 表格分隔行多 1 列（7 列 <-> 6 列表头），修正后从**同一 202,159 B 前缀**重建：
+     重建前先复核当前文件前 202,159 B 的 sha256 == 24CC87B8…（PASS），再写 prefix + 修正块
+     → 220,117 B / sha256 D3095EF4…
+  上表 AFTER 为**最终盘上值**；两次落盘的前缀校验均 PASS，旧行始终 0 变更。
+  复现脚本：COMMON_TECH3\work\append.py、COMMON_TECH3\work\rebuild.py
+  原始输出：COMMON_TECH3\work\append_out.txt、COMMON_TECH3\work\rebuild_out.txt
+
+本次追加的内容边界
+  新增：`## 13 ·` 章头 + §13.1 / §13.2 / §13.3 / §13.4（D-47）/ §13.5 + 本轮刷新记录表
+  未动：§0–§12 全部既有行、文末各轮刷新记录既有行
+  未碰：COVERAGE\coverage.tsv、COVERAGE\PANEL.md、STATUS_BOARD.md、台账、CONFLICTS.tsv
+  未做：git commit、venv、pip install

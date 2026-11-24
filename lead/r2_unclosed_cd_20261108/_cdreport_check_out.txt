@@ -1,0 +1,85 @@
+====================================================================================================
+【_cdreport_check.py】CD_BREAKPOINTS.md 撰写前独立复核（python -I -X utf8，只读，只写 stdout）
+====================================================================================================
+§0 指纹绑定（hashlib 实算）
+  dC_recompute.py      SHA256=ec64adac558e87e5cdf53563368c7aacea712222e70f303ca85deb83eb08ee3a  字节=23115
+  dC_out.txt           SHA256=a0deb34a4aed83efe3d0b80dfff4f05eb28eeec5fac5613ff49316fd8081337a  字节=13473
+  dD_check.py          SHA256=f2f3c561ded7b209f9206891e688642913ae15410fd2abbe8b075a0165f91907  字节=7909
+  dD_align.py          SHA256=446978109968bf3d9d3fab49a6a176c5f504ddfdc5d46e6f95c87c8b463dc6e6  字节=18733
+  dD_md                SHA256=bb61eedbddea61e9ffcb1ac8981dadd8b3ee0fb12c715ccb3e600ca78c50fac1  字节=18262
+  dD_align_out.txt     SHA256=4fd5a8a193cfb6661b061d5bc2fe6a24163fee564fde44baba058944742f129b  字节=9088
+  dD_check_out.txt     SHA256=7cdfcf9efb76ddffec3a8ea68a536b28f0099d2d571fc18c64d52cf0a8c9491b  字节=5117
+  supp                 SHA256=f0177d2cbafdb4dbd388d6b38b97d14ae73688f36f58df4f0fff7edc31a59b66  字节=5088
+  probe                SHA256=3be36ba259b50c88751d2c1fca73a242421671e27676f3b629e8f523b8383a51  字节=17525
+  compare              SHA256=4a3424050125b98c0dd3a9a76ec6603fc03ad976e0b9fdecfb34d3b683b94726  字节=48343
+  round2               SHA256=bcd7c8e53f6987a899f78fd1bd8ae90247193f1897aadf15cc58daa45211982a  字节=49968
+  r2closure            SHA256=bf426786db82c34dd6b6d21e3022678285e3e22f52dbdaa5085d85c3b6f8fbde  字节=22351
+  cd_check.py          SHA256=7fbb9a574d576ecbe83226a24190e3a8f2e5b0114ee947e1a1b8a3ce4b326764  字节=15031
+  cd_check_out.txt     SHA256=310c31600f1fd39b782d8976c57d2e048336d18951f71a07199adda59c1cd673  字节=22652
+  cd_verdict.md        SHA256=2b51dfe9c1cacaec631b7df92d53aa7db0a4ad6ce0a8e732cdacff3043557338  字节=14604
+  verify_cd_out.txt    SHA256=11e4b0ff9684ee0102d7b2e811c79a8d04c21dd31d856da130724cfa3f4fc475  字节=21874
+
+§1 C 崩点1：_dC_recompute.py :356-369 emit 字面性 + all_pass 门覆盖（AST 实算）
+  :356-369 emit 调用 = 6 处；纯字面 = 6 处（行 [356, 358, 360, 362, 364, 367]）；含插值/格式化 = 0 处
+  all_pass 比较项 = 11 个；引用 Name = A, A_collapse_gt0, A_nf_eq_ideal, A_preempt0, A_recall0, B, B_preempt0, B_preempt0_and_upideal, B_up_eq_ideal, bad_within50, chain_fail, decomp_fail, len, n_cells, nonneg_fail, probe_bad
+  检查型变量 22 个中 NOT in gate = 10 个：cap_eq_ideal, A_cap_eq_up, A_up_eq_ideal, A_maxloss_eq, B_upideal_but_preempt_gt0, B_preempt0_recall_gt0, B_nf_eq_ideal, B_recall0, named_set, not_named
+  ge100 出现行 = [297, 340]；含 ge100 的比较运算（全模块 AST）= 0 处
+  :420 原文 = emit("  总判定 = %s" % ("PASS（上述 9.1–9.7 均按本轮实跑成立）" if all_pass else "FAIL"))
+  all_pass 引用中含 supp/7b 相关名（supp_rows/ge100/supp）= False
+
+§2 C 崩点2：13 档「全部触发 ≥100ms」独立实算（supplement 原件 + _dC_out.txt 7b 双源）
+  13 档名单（_dC_out.txt:80 解析）= ['C2-N16-P95x2', 'C2-P95x2', 'C2-P95x3', 'C2-P99x2', 'C2-P99x3', 'C2-abs-P95x2', 'C3-N16-r2', 'C3-r12', 'C3-r2', 'C3-r4', 'C3-r4-clean', 'C3-r8', 'C3-r8-clean']（n=13）
+  全部≥100 = 4 档：C2-P95x3(19/19), C2-P99x3(18/18), C3-r4(24/24), C3-r8(16/16)
+  部分≥100 = 5 档：C2-N16-P95x2(18/45), C2-P95x2(4/27), C2-P99x2(1/24), C3-N16-r2(156/195), C3-r2(148/180)
+  supplement 无行 = 4 档：C2-abs-P95x2, C3-r12, C3-r4-clean, C3-r8-clean
+  7b 表 vs supplement 原件逐档对账（nTrig/gt50/ge100）：不一致 = 0
+  probe 细部行 min=377.385 出现行 = [171]（C3-r12 行级 ≥100 证据的读回点）
+  compare:146 原文 = `C2-P95x3` / `C2-P99x3` / `C3-r4/r8` 的补算行触发等待已 ≥100ms（同文件 :12,14,21-22，锚口径见 §3.2）；
+
+§3 D 独立证成：_dD_check.py B1-B4 out() 字面性 AST 实算 + _dD_ 脚本 supplement 引用 grep
+  B1 块 :82-94 out() computed=2 literal=6
+  B2 块 :97-112 out() computed=3 literal=5
+  B3 块 :114-125 out() computed=0 literal=12
+  B4 块 :128-137 out() computed=0 literal=10
+  dD_check 中含「supplement」的行 = 1 处
+    dD_check:121  out("    该结论不依赖 S 的精确值；_dtrigger_supplement_out.txt:11-24,29 给出观测锚下已 >50ms 的触发数，")
+  dD_align 中含「supplement」的行 = 3 处
+    dD_align:66  "lead/dtrigger_compare_20261107/_dtrigger_supplement_out.txt",
+    dD_align:348  out("    _dtrigger_supplement_out.txt:11-24,29 与 CRITERIA_COMPARE.md:34-35,145-147；")
+    dD_align:362  out("      _dtrigger_analysis.py / _dtrigger_supplement.py 本轮未重跑（它们会覆写只读既有件，铁律禁止）；")
+  _dD_align.py:55-74 原文（判 :66-67 是否解析表行）：
+    :55 # ---------------------------------------------------------------------------
+    :56 FPS = [
+    :57     "lead/dstart_observable_20261107/S_OBSERVABILITY.md",
+    :58     "lead/dstart_observable_20261107/S_UNCERTAINTY.md",
+    :59     "lead/dstart_observable_20261107/AUDIT_S_OBSERVABLE_20261107.md",
+    :60     "lead/dstart_observable_20261107/S_ESTIMATES.json",
+    :61     "lead/dstart_observable_20261107/_s_estimator_probe.py",
+    :62     "lead/dstart_observable_20261107/_independent_audit_probe.py",
+    :63     "lead/dtrigger_compare_20261107/CRITERIA_COMPARE.md",
+    :64     "lead/dtrigger_compare_20261107/CRITERIA_METRICS.json",
+    :65     "lead/dtrigger_compare_20261107/_cost_quota_data.json",
+    :66     "lead/dtrigger_compare_20261107/_dtrigger_supplement_out.txt",
+    :67     "lead/dtrigger_compare_20261107/_dtrigger_probe_out.txt",
+    :68     "lead/dtrigger_compare_20261107/_dtrigger_analysis_out.txt",
+    :69     "lead/d30_ruling_20261106/RULING_D30.md",
+    :70     "lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md",
+    :71     "lead/stall_event_def_20261106/STALL_EVENTS.json",
+    :72 ]
+    :73 
+    :74 out("=" * 100)
+
+§4 D 硬阻断解除条件：O1 精度括注算术 + stall_def/:177 原文 + 台账 mtime
+  O1 算术：1ms+1ms=2ms；2/50=4.0%；1/50=2.0%；2/20=10.0%
+  stall_def:177  | 2 | **阻塞点程序计数器 (PC) / 调用栈地址** | 语料中只有时间戳 `t` 与帧号 `f`，完全不知道逻辑帧停滞的 100–200ms 内，主逻辑线程是在执行密集循环（如容器遍历）、还是卡在 DirectDraw 翻页等待
+  stall_def:190  - **设计指标**：从帧停滞被检测到、到采样动作在目标线程生效的**端到端延迟必须 $< 50\text{ ms}$（安全裕量要求 $\le 20\text{ ms}$）**；
+  stall_def:191  - **拒止原则**：任何累积判定耗时 $\ge 100\text{ ms}$ 的触发机制均属不合格。若触发延迟过大，采样动作发生时真实停滞已然结束，采集到的栈将是下一帧正常运行时的代码，产生致命的因果倒错伪影。
+  stall_def mtime = 2026-11-06T16:03:30.294057（补证脚本落盘窗口 2026-11-08 14:24~14:37 之前即未改）
+  goal mtime = 2026-11-06T06:53:04.100348 size=759518
+  pending mtime = 2026-11-07T13:58:51.920537 size=50194
+
+§5 未验项核查：编排方内联回件 JSON 是否落盘（grep『四项崩点补证完成』over lead/）
+  命中文件 = 3 处：['D:/Project/ra2-campaign-forge/lead\\r2_unclosed_cd_20261108\\_cdreport_check.py', 'D:/Project/ra2-campaign-forge/lead\\r2_unclosed_cd_20261108\\_verify_cd.py', 'D:/Project/ra2-campaign-forge/lead\\r2_unclosed_cd_20261108\\_verify_cd_out.txt']
+  （若仅命中 _cd_verdict.md 的转述，则编排方内联补证回件 JSON 无磁盘指纹实体，记未验）
+
+【_cdreport_check.py 运行完成】

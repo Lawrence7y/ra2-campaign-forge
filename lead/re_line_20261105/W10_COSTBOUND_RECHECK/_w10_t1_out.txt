@@ -1,0 +1,775 @@
+================================================================================
+                      W10 T1 · C1 寻路独立复算探针输出
+================================================================================
+被核对象 = gamemd.exe + W3_COSTBOUND/sections/Q1_C1_PATHFIND.md
+gamemd.exe SHA256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476，字节数 = 4825360
+Engine 自证 = COVERAGE 99.9984% (1394120 insns, 66 resyncs) / IMAGEBASE 0x400000
+================================================================================
+
+### 一、Dijkstra 主循环精确边界与指令数核实 ###
+W3 声称: [0x00429D6D .. 0x0042A3D8], 544 条指令, 1,645 字节
+实测首指令: 0x00429D6D (size=4B) mov ecx, dword ptr [esp + 0x70]
+实测末指令: 0x0042A3D8 (size=6B) jne 0x429d6d
+实测指令数: 544 条
+实测指令字节总和 sum(insn.size): 1649 字节
+实测地址跨度 [0x00429D6D, 0x0042A3D8): 0x66B (1643 字节)
+实测闭区间跨度 [0x00429D6D, 0x0042A3DE): 0x671 (1649 字节)
+差异分析: W3 的 1645 字节既不是 1643 也不是 1649，与字节实测差 4 字节。
+
+### 二、循环体内全量 544 条指令反汇编 ###
+[000] 0x00429D6D (4B) 8b4c2470         mov      ecx, dword ptr [esp + 0x70]
+[001] 0x00429D71 (4B) 8b442428         mov      eax, dword ptr [esp + 0x28]
+[002] 0x00429D75 (2B) 33d2             xor      edx, edx
+[003] 0x00429D77 (2B) 3bc1             cmp      eax, ecx
+[004] 0x00429D79 (6B) 0f8d5f060000     jge      0x42a3de
+[005] 0x00429D7F (4B) 8b442414         mov      eax, dword ptr [esp + 0x14]
+[006] 0x00429D83 (4B) 8b7c2438         mov      edi, dword ptr [esp + 0x38]
+[007] 0x00429D87 (2B) 8b08             mov      ecx, dword ptr [eax]
+[008] 0x00429D89 (2B) 8b01             mov      eax, dword ptr [ecx]
+[009] 0x00429D8B (2B) 3bc7             cmp      eax, edi
+[010] 0x00429D8D (4B) 89442420         mov      dword ptr [esp + 0x20], eax
+[011] 0x00429D91 (2B) 750e             jne      0x429da1
+[012] 0x00429D93 (3B) 8b4904           mov      ecx, dword ptr [ecx + 4]
+[013] 0x00429D96 (3B) 8b7e34           mov      edi, dword ptr [esi + 0x34]
+[014] 0x00429D99 (2B) 3bcf             cmp      ecx, edi
+[015] 0x00429D9B (6B) 0f843d060000     je       0x42a3de
+[016] 0x00429DA1 (2B) 8b00             mov      eax, dword ptr [eax]
+[017] 0x00429DA3 (4B) 8954241c         mov      dword ptr [esp + 0x1c], edx
+[018] 0x00429DA7 (3B) 83c024           add      eax, 0x24
+[019] 0x00429DAA (4B) 89542418         mov      dword ptr [esp + 0x18], edx
+[020] 0x00429DAE (4B) 0fbf4802         movsx    ecx, word ptr [eax + 2]
+[021] 0x00429DB2 (7B) 0faf0ddcc28900   imul     ecx, dword ptr [0x89c2dc]
+[022] 0x00429DB9 (3B) 0fbf00           movsx    eax, word ptr [eax]
+[023] 0x00429DBC (2B) 03c8             add      ecx, eax
+[024] 0x00429DBE (4B) 894c243c         mov      dword ptr [esp + 0x3c], ecx
+[025] 0x00429DC2 (4B) 8b442418         mov      eax, dword ptr [esp + 0x18]
+[026] 0x00429DC6 (3B) 83f808           cmp      eax, 8
+[027] 0x00429DC9 (2B) 7540             jne      0x429e0b
+[028] 0x00429DCB (4B) 8b4c2420         mov      ecx, dword ptr [esp + 0x20]
+[029] 0x00429DCF (2B) 8b11             mov      edx, dword ptr [ecx]
+[030] 0x00429DD1 (7B) 0fbf8216010000   movsx    eax, word ptr [edx + 0x116]
+[031] 0x00429DD8 (3B) 83f8ff           cmp      eax, -1
+[032] 0x00429DDB (2B) 7427             je       0x429e04
+[033] 0x00429DDD (6B) 8b0d3c418b00     mov      ecx, dword ptr [0x8b413c]
+[034] 0x00429DE3 (3B) 8b1481           mov      edx, dword ptr [ecx + eax*4]
+[035] 0x00429DE6 (3B) 8b4228           mov      eax, dword ptr [edx + 0x28]
+[036] 0x00429DE9 (4B) 89442460         mov      dword ptr [esp + 0x60], eax
+[037] 0x00429DED (5B) 0fbf4c2462       movsx    ecx, word ptr [esp + 0x62]
+[038] 0x00429DF2 (3B) 0fbfd0           movsx    edx, ax
+[039] 0x00429DF5 (5B) a124f98700       mov      eax, dword ptr [0x87f924]
+[040] 0x00429DFA (3B) c1e109           shl      ecx, 9
+[041] 0x00429DFD (2B) 03ca             add      ecx, edx
+[042] 0x00429DFF (3B) 8d0488           lea      eax, [eax + ecx*4]
+[043] 0x00429E02 (2B) eb15             jmp      0x429e19
+[044] 0x00429E04 (5B) b8e0c28900       mov      eax, 0x89c2e0
+[045] 0x00429E09 (2B) eb0e             jmp      0x429e19
+[046] 0x00429E0B (7B) 8b0c8574377e00   mov      ecx, dword ptr [eax*4 + 0x7e3774]
+[047] 0x00429E12 (4B) 8b542420         mov      edx, dword ptr [esp + 0x20]
+[048] 0x00429E16 (3B) 8d048a           lea      eax, [edx + ecx*4]
+[049] 0x00429E19 (2B) 8b18             mov      ebx, dword ptr [eax]
+[050] 0x00429E1B (4B) 89442424         mov      dword ptr [esp + 0x24], eax
+[051] 0x00429E1F (2B) 85db             test     ebx, ebx
+[052] 0x00429E21 (6B) 0f847a030000     je       0x42a1a1
+[053] 0x00429E27 (4B) 8b442418         mov      eax, dword ptr [esp + 0x18]
+[054] 0x00429E2B (3B) 8d4b24           lea      ecx, [ebx + 0x24]
+[055] 0x00429E2E (3B) 83f808           cmp      eax, 8
+[056] 0x00429E31 (4B) 894c2430         mov      dword ptr [esp + 0x30], ecx
+[057] 0x00429E35 (2B) 740d             je       0x429e44
+[058] 0x00429E37 (7B) 8b3c8504a38900   mov      edi, dword ptr [eax*4 + 0x89a304]
+[059] 0x00429E3E (4B) 8b44243c         mov      eax, dword ptr [esp + 0x3c]
+[060] 0x00429E42 (2B) eb0e             jmp      0x429e52
+[061] 0x00429E44 (4B) 0fbf7902         movsx    edi, word ptr [ecx + 2]
+[062] 0x00429E48 (7B) 0faf3ddcc28900   imul     edi, dword ptr [0x89c2dc]
+[063] 0x00429E4F (3B) 0fbf01           movsx    eax, word ptr [ecx]
+[064] 0x00429E52 (2B) 03f8             add      edi, eax
+[065] 0x00429E54 (6B) 8b8340010000     mov      eax, dword ptr [ebx + 0x140]
+[066] 0x00429E5A (3B) f6c401           test     ah, 1
+[067] 0x00429E5D (2B) 741b             je       0x429e7a
+[068] 0x00429E5F (7B) 0fbe931b010000   movsx    edx, byte ptr [ebx + 0x11b]
+[069] 0x00429E66 (3B) 8b4630           mov      eax, dword ptr [esi + 0x30]
+[070] 0x00429E69 (5B) c644246000       mov      byte ptr [esp + 0x60], 0
+[071] 0x00429E6E (2B) 2bc2             sub      eax, edx
+[072] 0x00429E70 (1B) 99               cdq      
+[073] 0x00429E71 (2B) 33c2             xor      eax, edx
+[074] 0x00429E73 (2B) 2bc2             sub      eax, edx
+[075] 0x00429E75 (3B) 83f801           cmp      eax, 1
+[076] 0x00429E78 (2B) 7f05             jg       0x429e7f
+[077] 0x00429E7A (5B) c644246001       mov      byte ptr [esp + 0x60], 1
+[078] 0x00429E7F (1B) 51               push     ecx
+[079] 0x00429E80 (5B) b9e8f78700       mov      ecx, 0x87f7e8
+[080] 0x00429E85 (5B) e866351400       call     0x56d3f0
+[081] 0x00429E8A (6B) 8b0d58f88700     mov      ecx, dword ptr [0x87f858]
+[082] 0x00429E90 (3B) 8d0480           lea      eax, [eax + eax*4]
+[083] 0x00429E93 (4B) 8b542440         mov      edx, dword ptr [esp + 0x40]
+[084] 0x00429E97 (3B) 8d0441           lea      eax, [ecx + eax*2]
+[085] 0x00429E9A (3B) 0fbf08           movsx    ecx, word ptr [eax]
+[086] 0x00429E9D (3B) 8b4628           mov      eax, dword ptr [esi + 0x28]
+[087] 0x00429EA0 (4B) 894c244c         mov      dword ptr [esp + 0x4c], ecx
+[088] 0x00429EA4 (3B) 39048a           cmp      dword ptr [edx + ecx*4], eax
+[089] 0x00429EA7 (2B) 741e             je       0x429ec7
+[090] 0x00429EA9 (4B) 8a4c2460         mov      cl, byte ptr [esp + 0x60]
+[091] 0x00429EAD (2B) 84c9             test     cl, cl
+[092] 0x00429EAF (2B) 7453             je       0x429f04
+[093] 0x00429EB1 (6B) 8a8b22010000     mov      cl, byte ptr [ebx + 0x122]
+[094] 0x00429EB7 (2B) 84c9             test     cl, cl
+[095] 0x00429EB9 (2B) 750c             jne      0x429ec7
+[096] 0x00429EBB (4B) 8a4c2474         mov      cl, byte ptr [esp + 0x74]
+[097] 0x00429EBF (2B) 84c9             test     cl, cl
+[098] 0x00429EC1 (6B) 0f85da020000     jne      0x42a1a1
+[099] 0x00429EC7 (4B) 8a4c2460         mov      cl, byte ptr [esp + 0x60]
+[100] 0x00429ECB (2B) 84c9             test     cl, cl
+[101] 0x00429ECD (2B) 7435             je       0x429f04
+[102] 0x00429ECF (3B) 8b4e18           mov      ecx, dword ptr [esi + 0x18]
+[103] 0x00429ED2 (7B) 8d2cbd00000000   lea      ebp, [edi*4]
+[104] 0x00429ED9 (4B) 896c242c         mov      dword ptr [esp + 0x2c], ebp
+[105] 0x00429EDD (3B) 390429           cmp      dword ptr [ecx + ebp], eax
+[106] 0x00429EE0 (2B) 7555             jne      0x429f37
+[107] 0x00429EE2 (4B) 8b542414         mov      edx, dword ptr [esp + 0x14]
+[108] 0x00429EE6 (3B) 8b4624           mov      eax, dword ptr [esi + 0x24]
+[109] 0x00429EE9 (3B) d94204           fld      dword ptr [edx + 4]
+[110] 0x00429EEC (6B) dc05c0377e00     fadd     qword ptr [0x7e37c0]
+[111] 0x00429EF2 (3B) d90428           fld      dword ptr [eax + ebp]
+[112] 0x00429EF5 (2B) ded9             fcompp   
+[113] 0x00429EF7 (2B) dfe0             fnstsw   ax
+[114] 0x00429EF9 (3B) f6c401           test     ah, 1
+[115] 0x00429EFC (6B) 0f859f020000     jne      0x42a1a1
+[116] 0x00429F02 (2B) eb33             jmp      0x429f37
+[117] 0x00429F04 (3B) 8b4e1c           mov      ecx, dword ptr [esi + 0x1c]
+[118] 0x00429F07 (7B) 8d2cbd00000000   lea      ebp, [edi*4]
+[119] 0x00429F0E (4B) 896c242c         mov      dword ptr [esp + 0x2c], ebp
+[120] 0x00429F12 (3B) 390429           cmp      dword ptr [ecx + ebp], eax
+[121] 0x00429F15 (2B) 7520             jne      0x429f37
+[122] 0x00429F17 (4B) 8b542414         mov      edx, dword ptr [esp + 0x14]
+[123] 0x00429F1B (3B) 8b4620           mov      eax, dword ptr [esi + 0x20]
+[124] 0x00429F1E (3B) d94204           fld      dword ptr [edx + 4]
+[125] 0x00429F21 (6B) dc05c0377e00     fadd     qword ptr [0x7e37c0]
+[126] 0x00429F27 (3B) d90428           fld      dword ptr [eax + ebp]
+[127] 0x00429F2A (2B) ded9             fcompp   
+[128] 0x00429F2C (2B) dfe0             fnstsw   ax
+[129] 0x00429F2E (3B) f6c401           test     ah, 1
+[130] 0x00429F31 (6B) 0f856a020000     jne      0x42a1a1
+[131] 0x00429F37 (3B) 8a4608           mov      al, byte ptr [esi + 8]
+[132] 0x00429F3A (4B) 8b4c2420         mov      ecx, dword ptr [esp + 0x20]
+[133] 0x00429F3E (4B) 8b7c2468         mov      edi, dword ptr [esp + 0x68]
+[134] 0x00429F42 (1B) 50               push     eax
+[135] 0x00429F43 (2B) 8b01             mov      eax, dword ptr [ecx]
+[136] 0x00429F45 (3B) 8b4e30           mov      ecx, dword ptr [esi + 0x30]
+[137] 0x00429F48 (2B) 8b17             mov      edx, dword ptr [edi]
+[138] 0x00429F4A (1B) 50               push     eax
+[139] 0x00429F4B (4B) 8b442420         mov      eax, dword ptr [esp + 0x20]
+[140] 0x00429F4F (1B) 51               push     ecx
+[141] 0x00429F50 (1B) 50               push     eax
+[142] 0x00429F51 (1B) 53               push     ebx
+[143] 0x00429F52 (2B) 8bcf             mov      ecx, edi
+[144] 0x00429F54 (6B) ff92ac010000     call     dword ptr [edx + 0x1ac]
+[145] 0x00429F5A (2B) 8bd8             mov      ebx, eax
+[146] 0x00429F5C (4B) 8a442412         mov      al, byte ptr [esp + 0x12]
+[147] 0x00429F60 (2B) 84c0             test     al, al
+[148] 0x00429F62 (2B) 7407             je       0x429f6b
+[149] 0x00429F64 (3B) 83fb07           cmp      ebx, 7
+[150] 0x00429F67 (2B) 7d02             jge      0x429f6b
+[151] 0x00429F69 (2B) 33db             xor      ebx, ebx
+[152] 0x00429F6B (5B) 837c241808       cmp      dword ptr [esp + 0x18], 8
+[153] 0x00429F70 (2B) 7431             je       0x429fa3
+[154] 0x00429F72 (4B) 8a442460         mov      al, byte ptr [esp + 0x60]
+[155] 0x00429F76 (4B) 8b542420         mov      edx, dword ptr [esp + 0x20]
+[156] 0x00429F7A (2B) 84c0             test     al, al
+[157] 0x00429F7C (1B) 57               push     edi
+[158] 0x00429F7D (4B) 8b7c2428         mov      edi, dword ptr [esp + 0x28]
+[159] 0x00429F81 (3B) 0f94c1           sete     cl
+[160] 0x00429F84 (1B) 53               push     ebx
+[161] 0x00429F85 (1B) 51               push     ecx
+[162] 0x00429F86 (1B) 57               push     edi
+[163] 0x00429F87 (1B) 52               push     edx
+[164] 0x00429F88 (2B) 8bce             mov      ecx, esi
+[165] 0x00429F8A (5B) e8a1f8ffff       call     0x429830
+[166] 0x00429F8F (3B) d84e04           fmul     dword ptr [esi + 4]
+[167] 0x00429F92 (4B) 8b442418         mov      eax, dword ptr [esp + 0x18]
+[168] 0x00429F96 (7B) d804852c878100   fadd     dword ptr [eax*4 + 0x81872c]
+[169] 0x00429F9D (4B) d95c2434         fstp     dword ptr [esp + 0x34]
+[170] 0x00429FA1 (2B) eb47             jmp      0x429fea
+[171] 0x00429FA3 (4B) 8b4c2420         mov      ecx, dword ptr [esp + 0x20]
+[172] 0x00429FA7 (4B) 8b542430         mov      edx, dword ptr [esp + 0x30]
+[173] 0x00429FAB (2B) 8b39             mov      edi, dword ptr [ecx]
+[174] 0x00429FAD (4B) 0fbf4a02         movsx    ecx, word ptr [edx + 2]
+[175] 0x00429FB1 (4B) 0fbf4726         movsx    eax, word ptr [edi + 0x26]
+[176] 0x00429FB5 (3B) 83c724           add      edi, 0x24
+[177] 0x00429FB8 (2B) 2bc1             sub      eax, ecx
+[178] 0x00429FBA (1B) 99               cdq      
+[179] 0x00429FBB (2B) 8bc8             mov      ecx, eax
+[180] 0x00429FBD (3B) 0fbf07           movsx    eax, word ptr [edi]
+[181] 0x00429FC0 (2B) 33ca             xor      ecx, edx
+[182] 0x00429FC2 (2B) 2bca             sub      ecx, edx
+[183] 0x00429FC4 (4B) 8b542430         mov      edx, dword ptr [esp + 0x30]
+[184] 0x00429FC8 (3B) 0fbf12           movsx    edx, word ptr [edx]
+[185] 0x00429FCB (2B) 2bc2             sub      eax, edx
+[186] 0x00429FCD (1B) 99               cdq      
+[187] 0x00429FCE (2B) 33c2             xor      eax, edx
+[188] 0x00429FD0 (2B) 2bc2             sub      eax, edx
+[189] 0x00429FD2 (2B) 3bc1             cmp      eax, ecx
+[190] 0x00429FD4 (4B) 89442434         mov      dword ptr [esp + 0x34], eax
+[191] 0x00429FD8 (2B) 7f04             jg       0x429fde
+[192] 0x00429FDA (4B) 894c2434         mov      dword ptr [esp + 0x34], ecx
+[193] 0x00429FDE (4B) db442434         fild     dword ptr [esp + 0x34]
+[194] 0x00429FE2 (4B) 8b7c2424         mov      edi, dword ptr [esp + 0x24]
+[195] 0x00429FE6 (4B) d95c2434         fstp     dword ptr [esp + 0x34]
+[196] 0x00429FEA (3B) 83fb07           cmp      ebx, 7
+[197] 0x00429FED (6B) 0f8d8a010000     jge      0x42a17d
+[198] 0x00429FF3 (4B) 8a442460         mov      al, byte ptr [esp + 0x60]
+[199] 0x00429FF7 (2B) 84c0             test     al, al
+[200] 0x00429FF9 (2B) 7412             je       0x42a00d
+[201] 0x00429FFB (3B) 8b4618           mov      eax, dword ptr [esi + 0x18]
+[202] 0x00429FFE (3B) 8b0c28           mov      ecx, dword ptr [eax + ebp]
+[203] 0x0042A001 (3B) 8b4628           mov      eax, dword ptr [esi + 0x28]
+[204] 0x0042A004 (2B) 3bc8             cmp      ecx, eax
+[205] 0x0042A006 (2B) 7516             jne      0x42a01e
+[206] 0x0042A008 (5B) e994010000       jmp      0x42a1a1
+[207] 0x0042A00D (3B) 8b561c           mov      edx, dword ptr [esi + 0x1c]
+[208] 0x0042A010 (3B) 8b4e28           mov      ecx, dword ptr [esi + 0x28]
+[209] 0x0042A013 (3B) 8b042a           mov      eax, dword ptr [edx + ebp]
+[210] 0x0042A016 (2B) 3bc1             cmp      eax, ecx
+[211] 0x0042A018 (6B) 0f8483010000     je       0x42a1a1
+[212] 0x0042A01E (4B) 8b4c2434         mov      ecx, dword ptr [esp + 0x34]
+[213] 0x0042A022 (4B) 8b542464         mov      edx, dword ptr [esp + 0x64]
+[214] 0x0042A026 (4B) 8b442414         mov      eax, dword ptr [esp + 0x14]
+[215] 0x0042A02A (1B) 51               push     ecx
+[216] 0x0042A02B (1B) 52               push     edx
+[217] 0x0042A02C (1B) 57               push     edi
+[218] 0x0042A02D (1B) 50               push     eax
+[219] 0x0042A02E (2B) 8bce             mov      ecx, esi
+[220] 0x0042A030 (5B) e82b040000       call     0x42a460
+[221] 0x0042A035 (2B) 8bd8             mov      ebx, eax
+[222] 0x0042A037 (4B) 8b44241c         mov      eax, dword ptr [esp + 0x1c]
+[223] 0x0042A03B (2B) 85c0             test     eax, eax
+[224] 0x0042A03D (4B) 895c2424         mov      dword ptr [esp + 0x24], ebx
+[225] 0x0042A041 (2B) 7509             jne      0x42a04c
+[226] 0x0042A043 (4B) 895c241c         mov      dword ptr [esp + 0x1c], ebx
+[227] 0x0042A047 (5B) e9d9000000       jmp      0x42a125
+[228] 0x0042A04C (3B) d94308           fld      dword ptr [ebx + 8]
+[229] 0x0042A04F (3B) d85808           fcomp    dword ptr [eax + 8]
+[230] 0x0042A052 (3B) 8b7e14           mov      edi, dword ptr [esi + 0x14]
+[231] 0x0042A055 (2B) 8b0f             mov      ecx, dword ptr [edi]
+[232] 0x0042A057 (2B) dfe0             fnstsw   ax
+[233] 0x0042A059 (3B) f6c401           test     ah, 1
+[234] 0x0042A05C (1B) 41               inc      ecx
+[235] 0x0042A05D (2B) 8bd1             mov      edx, ecx
+[236] 0x0042A05F (2B) 746c             je       0x42a0cd
+[237] 0x0042A061 (4B) 8b44241c         mov      eax, dword ptr [esp + 0x1c]
+[238] 0x0042A065 (2B) d1ea             shr      edx, 1
+[239] 0x0042A067 (3B) 8b4008           mov      eax, dword ptr [eax + 8]
+[240] 0x0042A06A (4B) 89442444         mov      dword ptr [esp + 0x44], eax
+[241] 0x0042A06E (3B) 8b4704           mov      eax, dword ptr [edi + 4]
+[242] 0x0042A071 (2B) 3bc8             cmp      ecx, eax
+[243] 0x0042A073 (2B) 7352             jae      0x42a0c7
+[244] 0x0042A075 (3B) 83f901           cmp      ecx, 1
+[245] 0x0042A078 (2B) 762c             jbe      0x42a0a6
+[246] 0x0042A07A (3B) 8b6f08           mov      ebp, dword ptr [edi + 8]
+[247] 0x0042A07D (4B) 8b5c9500         mov      ebx, dword ptr [ebp + edx*4]
+[248] 0x0042A081 (3B) d94308           fld      dword ptr [ebx + 8]
+[249] 0x0042A084 (4B) d85c2444         fcomp    dword ptr [esp + 0x44]
+[250] 0x0042A088 (2B) dfe0             fnstsw   ax
+[251] 0x0042A08A (3B) f6c441           test     ah, 0x41
+[252] 0x0042A08D (2B) 750d             jne      0x42a09c
+[253] 0x0042A08F (4B) 895c8d00         mov      dword ptr [ebp + ecx*4], ebx
+[254] 0x0042A093 (2B) 8bca             mov      ecx, edx
+[255] 0x0042A095 (2B) d1ea             shr      edx, 1
+[256] 0x0042A097 (3B) 83f901           cmp      ecx, 1
+[257] 0x0042A09A (2B) 77de             ja       0x42a07a
+[258] 0x0042A09C (4B) 8b44241c         mov      eax, dword ptr [esp + 0x1c]
+[259] 0x0042A0A0 (4B) 8b5c2424         mov      ebx, dword ptr [esp + 0x24]
+[260] 0x0042A0A4 (2B) eb04             jmp      0x42a0aa
+[261] 0x0042A0A6 (4B) 8b44241c         mov      eax, dword ptr [esp + 0x1c]
+[262] 0x0042A0AA (3B) 8b5708           mov      edx, dword ptr [edi + 8]
+[263] 0x0042A0AD (3B) 89048a           mov      dword ptr [edx + ecx*4], eax
+[264] 0x0042A0B0 (2B) 8b17             mov      edx, dword ptr [edi]
+[265] 0x0042A0B2 (3B) 8b4f0c           mov      ecx, dword ptr [edi + 0xc]
+[266] 0x0042A0B5 (1B) 42               inc      edx
+[267] 0x0042A0B6 (2B) 3bc1             cmp      eax, ecx
+[268] 0x0042A0B8 (2B) 8917             mov      dword ptr [edi], edx
+[269] 0x0042A0BA (2B) 7603             jbe      0x42a0bf
+[270] 0x0042A0BC (3B) 89470c           mov      dword ptr [edi + 0xc], eax
+[271] 0x0042A0BF (3B) 3b4710           cmp      eax, dword ptr [edi + 0x10]
+[272] 0x0042A0C2 (2B) 7303             jae      0x42a0c7
+[273] 0x0042A0C4 (3B) 894710           mov      dword ptr [edi + 0x10], eax
+[274] 0x0042A0C7 (4B) 895c241c         mov      dword ptr [esp + 0x1c], ebx
+[275] 0x0042A0CB (2B) eb58             jmp      0x42a125
+[276] 0x0042A0CD (3B) 8b4308           mov      eax, dword ptr [ebx + 8]
+[277] 0x0042A0D0 (4B) 89442448         mov      dword ptr [esp + 0x48], eax
+[278] 0x0042A0D4 (3B) 8b4704           mov      eax, dword ptr [edi + 4]
+[279] 0x0042A0D7 (2B) d1ea             shr      edx, 1
+[280] 0x0042A0D9 (2B) 3bc8             cmp      ecx, eax
+[281] 0x0042A0DB (2B) 7348             jae      0x42a125
+[282] 0x0042A0DD (3B) 83f901           cmp      ecx, 1
+[283] 0x0042A0E0 (2B) 7622             jbe      0x42a104
+[284] 0x0042A0E2 (3B) 8b6f08           mov      ebp, dword ptr [edi + 8]
+[285] 0x0042A0E5 (4B) 8b5c9500         mov      ebx, dword ptr [ebp + edx*4]
+[286] 0x0042A0E9 (3B) d94308           fld      dword ptr [ebx + 8]
+[287] 0x0042A0EC (4B) d85c2448         fcomp    dword ptr [esp + 0x48]
+[288] 0x0042A0F0 (2B) dfe0             fnstsw   ax
+[289] 0x0042A0F2 (3B) f6c441           test     ah, 0x41
+[290] 0x0042A0F5 (2B) 750d             jne      0x42a104
+[291] 0x0042A0F7 (4B) 895c8d00         mov      dword ptr [ebp + ecx*4], ebx
+[292] 0x0042A0FB (2B) 8bca             mov      ecx, edx
+[293] 0x0042A0FD (2B) d1ea             shr      edx, 1
+[294] 0x0042A0FF (3B) 83f901           cmp      ecx, 1
+[295] 0x0042A102 (2B) 77de             ja       0x42a0e2
+[296] 0x0042A104 (3B) 8b5708           mov      edx, dword ptr [edi + 8]
+[297] 0x0042A107 (4B) 8b442424         mov      eax, dword ptr [esp + 0x24]
+[298] 0x0042A10B (3B) 89048a           mov      dword ptr [edx + ecx*4], eax
+[299] 0x0042A10E (2B) 8b17             mov      edx, dword ptr [edi]
+[300] 0x0042A110 (3B) 8b4f0c           mov      ecx, dword ptr [edi + 0xc]
+[301] 0x0042A113 (1B) 42               inc      edx
+[302] 0x0042A114 (2B) 3bc1             cmp      eax, ecx
+[303] 0x0042A116 (2B) 8917             mov      dword ptr [edi], edx
+[304] 0x0042A118 (2B) 7603             jbe      0x42a11d
+[305] 0x0042A11A (3B) 89470c           mov      dword ptr [edi + 0xc], eax
+[306] 0x0042A11D (3B) 3b4710           cmp      eax, dword ptr [edi + 0x10]
+[307] 0x0042A120 (2B) 7303             jae      0x42a125
+[308] 0x0042A122 (3B) 894710           mov      dword ptr [edi + 0x10], eax
+[309] 0x0042A125 (4B) 8a442460         mov      al, byte ptr [esp + 0x60]
+[310] 0x0042A129 (2B) 84c0             test     al, al
+[311] 0x0042A12B (2B) 7412             je       0x42a13f
+[312] 0x0042A12D (3B) 8b4e18           mov      ecx, dword ptr [esi + 0x18]
+[313] 0x0042A130 (4B) 8b44242c         mov      eax, dword ptr [esp + 0x2c]
+[314] 0x0042A134 (3B) 8b5628           mov      edx, dword ptr [esi + 0x28]
+[315] 0x0042A137 (3B) 891401           mov      dword ptr [ecx + eax], edx
+[316] 0x0042A13A (3B) 8b4e24           mov      ecx, dword ptr [esi + 0x24]
+[317] 0x0042A13D (2B) eb10             jmp      0x42a14f
+[318] 0x0042A13F (3B) 8b4e1c           mov      ecx, dword ptr [esi + 0x1c]
+[319] 0x0042A142 (4B) 8b44242c         mov      eax, dword ptr [esp + 0x2c]
+[320] 0x0042A146 (3B) 8b5628           mov      edx, dword ptr [esi + 0x28]
+[321] 0x0042A149 (3B) 891401           mov      dword ptr [ecx + eax], edx
+[322] 0x0042A14C (3B) 8b4e20           mov      ecx, dword ptr [esi + 0x20]
+[323] 0x0042A14F (4B) 8b542424         mov      edx, dword ptr [esp + 0x24]
+[324] 0x0042A153 (3B) 8b5204           mov      edx, dword ptr [edx + 4]
+[325] 0x0042A156 (3B) 891401           mov      dword ptr [ecx + eax], edx
+[326] 0x0042A159 (3B) 8b466c           mov      eax, dword ptr [esi + 0x6c]
+[327] 0x0042A15C (4B) 8b54244c         mov      edx, dword ptr [esp + 0x4c]
+[328] 0x0042A160 (2B) 33c9             xor      ecx, ecx
+[329] 0x0042A162 (8B) 668b8c46be000000 mov      cx, word ptr [esi + eax*2 + 0xbe]
+[330] 0x0042A16A (2B) 3bd1             cmp      edx, ecx
+[331] 0x0042A16C (2B) 7533             jne      0x42a1a1
+[332] 0x0042A16E (4B) 8b542430         mov      edx, dword ptr [esp + 0x30]
+[333] 0x0042A172 (1B) 40               inc      eax
+[334] 0x0042A173 (3B) 89466c           mov      dword ptr [esi + 0x6c], eax
+[335] 0x0042A176 (2B) 8b02             mov      eax, dword ptr [edx]
+[336] 0x0042A178 (3B) 894670           mov      dword ptr [esi + 0x70], eax
+[337] 0x0042A17B (2B) eb24             jmp      0x42a1a1
+[338] 0x0042A17D (4B) 3b7c2438         cmp      edi, dword ptr [esp + 0x38]
+[339] 0x0042A181 (2B) 751e             jne      0x42a1a1
+[340] 0x0042A183 (4B) 8a442413         mov      al, byte ptr [esp + 0x13]
+[341] 0x0042A187 (2B) 84c0             test     al, al
+[342] 0x0042A189 (2B) 7516             jne      0x42a1a1
+[343] 0x0042A18B (3B) 8b4630           mov      eax, dword ptr [esi + 0x30]
+[344] 0x0042A18E (3B) 8b6e34           mov      ebp, dword ptr [esi + 0x34]
+[345] 0x0042A191 (2B) 2bc5             sub      eax, ebp
+[346] 0x0042A193 (1B) 99               cdq      
+[347] 0x0042A194 (2B) 33c2             xor      eax, edx
+[348] 0x0042A196 (2B) 2bc2             sub      eax, edx
+[349] 0x0042A198 (3B) 83f801           cmp      eax, 1
+[350] 0x0042A19B (6B) 0f8e3d020000     jle      0x42a3de
+[351] 0x0042A1A1 (4B) 8b442418         mov      eax, dword ptr [esp + 0x18]
+[352] 0x0042A1A5 (1B) 40               inc      eax
+[353] 0x0042A1A6 (3B) 83f808           cmp      eax, 8
+[354] 0x0042A1A9 (4B) 89442418         mov      dword ptr [esp + 0x18], eax
+[355] 0x0042A1AD (6B) 0f8e0ffcffff     jle      0x429dc2
+[356] 0x0042A1B3 (4B) 8b4c241c         mov      ecx, dword ptr [esp + 0x1c]
+[357] 0x0042A1B7 (2B) 85c9             test     ecx, ecx
+[358] 0x0042A1B9 (6B) 0f84fc000000     je       0x42a2bb
+[359] 0x0042A1BF (3B) 8b5614           mov      edx, dword ptr [esi + 0x14]
+[360] 0x0042A1C2 (3B) 833a00           cmp      dword ptr [edx], 0
+[361] 0x0042A1C5 (6B) 0f84ea010000     je       0x42a3b5
+[362] 0x0042A1CB (3B) 8b7a08           mov      edi, dword ptr [edx + 8]
+[363] 0x0042A1CE (3B) d94108           fld      dword ptr [ecx + 8]
+[364] 0x0042A1D1 (3B) 8b6f04           mov      ebp, dword ptr [edi + 4]
+[365] 0x0042A1D4 (3B) d94508           fld      dword ptr [ebp + 8]
+[366] 0x0042A1D7 (2B) ded9             fcompp   
+[367] 0x0042A1D9 (4B) 896c244c         mov      dword ptr [esp + 0x4c], ebp
+[368] 0x0042A1DD (2B) dfe0             fnstsw   ax
+[369] 0x0042A1DF (3B) f6c441           test     ah, 0x41
+[370] 0x0042A1E2 (6B) 0f84cd010000     je       0x42a3b5
+[371] 0x0042A1E8 (3B) 894f04           mov      dword ptr [edi + 4], ecx
+[372] 0x0042A1EB (2B) 8b3a             mov      edi, dword ptr [edx]
+[373] 0x0042A1ED (3B) 83ff02           cmp      edi, 2
+[374] 0x0042A1F0 (5B) bb01000000       mov      ebx, 1
+[375] 0x0042A1F5 (2B) 7c1d             jl       0x42a214
+[376] 0x0042A1F7 (3B) 8b4208           mov      eax, dword ptr [edx + 8]
+[377] 0x0042A1FA (3B) 8b4808           mov      ecx, dword ptr [eax + 8]
+[378] 0x0042A1FD (3B) 8b4004           mov      eax, dword ptr [eax + 4]
+[379] 0x0042A200 (3B) d94108           fld      dword ptr [ecx + 8]
+[380] 0x0042A203 (3B) d94008           fld      dword ptr [eax + 8]
+[381] 0x0042A206 (2B) ded9             fcompp   
+[382] 0x0042A208 (5B) b902000000       mov      ecx, 2
+[383] 0x0042A20D (2B) dfe0             fnstsw   ax
+[384] 0x0042A20F (3B) f6c441           test     ah, 0x41
+[385] 0x0042A212 (2B) 7405             je       0x42a219
+[386] 0x0042A214 (5B) b901000000       mov      ecx, 1
+[387] 0x0042A219 (3B) 83ff03           cmp      edi, 3
+[388] 0x0042A21C (2B) 7c1f             jl       0x42a23d
+[389] 0x0042A21E (3B) 8b4208           mov      eax, dword ptr [edx + 8]
+[390] 0x0042A221 (3B) 8b780c           mov      edi, dword ptr [eax + 0xc]
+[391] 0x0042A224 (3B) 8b0488           mov      eax, dword ptr [eax + ecx*4]
+[392] 0x0042A227 (3B) d94708           fld      dword ptr [edi + 8]
+[393] 0x0042A22A (3B) d94008           fld      dword ptr [eax + 8]
+[394] 0x0042A22D (2B) ded9             fcompp   
+[395] 0x0042A22F (2B) dfe0             fnstsw   ax
+[396] 0x0042A231 (3B) f6c441           test     ah, 0x41
+[397] 0x0042A234 (2B) 7507             jne      0x42a23d
+[398] 0x0042A236 (5B) b903000000       mov      ecx, 3
+[399] 0x0042A23B (2B) eb05             jmp      0x42a242
+[400] 0x0042A23D (3B) 83f901           cmp      ecx, 1
+[401] 0x0042A240 (2B) 7470             je       0x42a2b2
+[402] 0x0042A242 (3B) 8b4208           mov      eax, dword ptr [edx + 8]
+[403] 0x0042A245 (3B) 8b2c88           mov      ebp, dword ptr [eax + ecx*4]
+[404] 0x0042A248 (3B) 8b3c98           mov      edi, dword ptr [eax + ebx*4]
+[405] 0x0042A24B (3B) 892c98           mov      dword ptr [eax + ebx*4], ebp
+[406] 0x0042A24E (3B) 8b4208           mov      eax, dword ptr [edx + 8]
+[407] 0x0042A251 (2B) 8bd9             mov      ebx, ecx
+[408] 0x0042A253 (3B) 893c88           mov      dword ptr [eax + ecx*4], edi
+[409] 0x0042A256 (2B) 8b2a             mov      ebp, dword ptr [edx]
+[410] 0x0042A258 (3B) 8d3c09           lea      edi, [ecx + ecx]
+[411] 0x0042A25B (4B) 8d440901         lea      eax, [ecx + ecx + 1]
+[412] 0x0042A25F (2B) 3bfd             cmp      edi, ebp
+[413] 0x0042A261 (4B) 89442460         mov      dword ptr [esp + 0x60], eax
+[414] 0x0042A265 (2B) 7f1d             jg       0x42a284
+[415] 0x0042A267 (3B) 8b4208           mov      eax, dword ptr [edx + 8]
+[416] 0x0042A26A (3B) 8b04b8           mov      eax, dword ptr [eax + edi*4]
+[417] 0x0042A26D (3B) d94008           fld      dword ptr [eax + 8]
+[418] 0x0042A270 (3B) 8b4208           mov      eax, dword ptr [edx + 8]
+[419] 0x0042A273 (3B) 8b0488           mov      eax, dword ptr [eax + ecx*4]
+[420] 0x0042A276 (3B) d94008           fld      dword ptr [eax + 8]
+[421] 0x0042A279 (2B) ded9             fcompp   
+[422] 0x0042A27B (2B) dfe0             fnstsw   ax
+[423] 0x0042A27D (3B) f6c441           test     ah, 0x41
+[424] 0x0042A280 (2B) 7502             jne      0x42a284
+[425] 0x0042A282 (2B) 8bcf             mov      ecx, edi
+[426] 0x0042A284 (4B) 396c2460         cmp      dword ptr [esp + 0x60], ebp
+[427] 0x0042A288 (2B) 7f20             jg       0x42a2aa
+[428] 0x0042A28A (3B) 8b4208           mov      eax, dword ptr [edx + 8]
+[429] 0x0042A28D (4B) 8b7c2460         mov      edi, dword ptr [esp + 0x60]
+[430] 0x0042A291 (3B) 8b3cb8           mov      edi, dword ptr [eax + edi*4]
+[431] 0x0042A294 (3B) 8b0488           mov      eax, dword ptr [eax + ecx*4]
+[432] 0x0042A297 (3B) d94708           fld      dword ptr [edi + 8]
+[433] 0x0042A29A (3B) d94008           fld      dword ptr [eax + 8]
+[434] 0x0042A29D (2B) ded9             fcompp   
+[435] 0x0042A29F (2B) dfe0             fnstsw   ax
+[436] 0x0042A2A1 (3B) f6c441           test     ah, 0x41
+[437] 0x0042A2A4 (2B) 7504             jne      0x42a2aa
+[438] 0x0042A2A6 (4B) 8b4c2460         mov      ecx, dword ptr [esp + 0x60]
+[439] 0x0042A2AA (2B) 3bcb             cmp      ecx, ebx
+[440] 0x0042A2AC (2B) 7594             jne      0x42a242
+[441] 0x0042A2AE (4B) 8b6c244c         mov      ebp, dword ptr [esp + 0x4c]
+[442] 0x0042A2B2 (4B) 896c2414         mov      dword ptr [esp + 0x14], ebp
+[443] 0x0042A2B6 (5B) e9fe000000       jmp      0x42a3b9
+[444] 0x0042A2BB (3B) 8b4e14           mov      ecx, dword ptr [esi + 0x14]
+[445] 0x0042A2BE (2B) 8b11             mov      edx, dword ptr [ecx]
+[446] 0x0042A2C0 (2B) 85d2             test     edx, edx
+[447] 0x0042A2C2 (2B) 7509             jne      0x42a2cd
+[448] 0x0042A2C4 (4B) 89542414         mov      dword ptr [esp + 0x14], edx
+[449] 0x0042A2C8 (5B) e9fc000000       jmp      0x42a3c9
+[450] 0x0042A2CD (3B) 8b4108           mov      eax, dword ptr [ecx + 8]
+[451] 0x0042A2D0 (5B) bb01000000       mov      ebx, 1
+[452] 0x0042A2D5 (3B) 8b1490           mov      edx, dword ptr [eax + edx*4]
+[453] 0x0042A2D8 (3B) 8b7804           mov      edi, dword ptr [eax + 4]
+[454] 0x0042A2DB (3B) 895004           mov      dword ptr [eax + 4], edx
+[455] 0x0042A2DE (2B) 8b01             mov      eax, dword ptr [ecx]
+[456] 0x0042A2E0 (3B) 8b5108           mov      edx, dword ptr [ecx + 8]
+[457] 0x0042A2E3 (4B) 897c244c         mov      dword ptr [esp + 0x4c], edi
+[458] 0x0042A2E7 (7B) c7048200000000   mov      dword ptr [edx + eax*4], 0
+[459] 0x0042A2EE (2B) 8b11             mov      edx, dword ptr [ecx]
+[460] 0x0042A2F0 (1B) 4a               dec      edx
+[461] 0x0042A2F1 (2B) 8bfa             mov      edi, edx
+[462] 0x0042A2F3 (2B) 8911             mov      dword ptr [ecx], edx
+[463] 0x0042A2F5 (3B) 83ff02           cmp      edi, 2
+[464] 0x0042A2F8 (2B) 7c1d             jl       0x42a317
+[465] 0x0042A2FA (3B) 8b4108           mov      eax, dword ptr [ecx + 8]
+[466] 0x0042A2FD (3B) 8b5008           mov      edx, dword ptr [eax + 8]
+[467] 0x0042A300 (3B) 8b4004           mov      eax, dword ptr [eax + 4]
+[468] 0x0042A303 (3B) d94208           fld      dword ptr [edx + 8]
+[469] 0x0042A306 (3B) d94008           fld      dword ptr [eax + 8]
+[470] 0x0042A309 (2B) ded9             fcompp   
+[471] 0x0042A30B (5B) ba02000000       mov      edx, 2
+[472] 0x0042A310 (2B) dfe0             fnstsw   ax
+[473] 0x0042A312 (3B) f6c441           test     ah, 0x41
+[474] 0x0042A315 (2B) 7405             je       0x42a31c
+[475] 0x0042A317 (5B) ba01000000       mov      edx, 1
+[476] 0x0042A31C (3B) 83ff03           cmp      edi, 3
+[477] 0x0042A31F (2B) 7c1f             jl       0x42a340
+[478] 0x0042A321 (3B) 8b4108           mov      eax, dword ptr [ecx + 8]
+[479] 0x0042A324 (3B) 8b780c           mov      edi, dword ptr [eax + 0xc]
+[480] 0x0042A327 (3B) 8b0490           mov      eax, dword ptr [eax + edx*4]
+[481] 0x0042A32A (3B) d94708           fld      dword ptr [edi + 8]
+[482] 0x0042A32D (3B) d94008           fld      dword ptr [eax + 8]
+[483] 0x0042A330 (2B) ded9             fcompp   
+[484] 0x0042A332 (2B) dfe0             fnstsw   ax
+[485] 0x0042A334 (3B) f6c441           test     ah, 0x41
+[486] 0x0042A337 (2B) 7507             jne      0x42a340
+[487] 0x0042A339 (5B) ba03000000       mov      edx, 3
+[488] 0x0042A33E (2B) eb05             jmp      0x42a345
+[489] 0x0042A340 (3B) 83fa01           cmp      edx, 1
+[490] 0x0042A343 (2B) 746c             je       0x42a3b1
+[491] 0x0042A345 (3B) 8b4108           mov      eax, dword ptr [ecx + 8]
+[492] 0x0042A348 (3B) 8b2c90           mov      ebp, dword ptr [eax + edx*4]
+[493] 0x0042A34B (3B) 8b3c98           mov      edi, dword ptr [eax + ebx*4]
+[494] 0x0042A34E (3B) 892c98           mov      dword ptr [eax + ebx*4], ebp
+[495] 0x0042A351 (3B) 8b4108           mov      eax, dword ptr [ecx + 8]
+[496] 0x0042A354 (2B) 8bda             mov      ebx, edx
+[497] 0x0042A356 (3B) 893c90           mov      dword ptr [eax + edx*4], edi
+[498] 0x0042A359 (2B) 8b29             mov      ebp, dword ptr [ecx]
+[499] 0x0042A35B (3B) 8d3c12           lea      edi, [edx + edx]
+[500] 0x0042A35E (4B) 8d441201         lea      eax, [edx + edx + 1]
+[501] 0x0042A362 (2B) 3bfd             cmp      edi, ebp
+[502] 0x0042A364 (4B) 89442460         mov      dword ptr [esp + 0x60], eax
+[503] 0x0042A368 (2B) 7f1d             jg       0x42a387
+[504] 0x0042A36A (3B) 8b4108           mov      eax, dword ptr [ecx + 8]
+[505] 0x0042A36D (3B) 8b04b8           mov      eax, dword ptr [eax + edi*4]
+[506] 0x0042A370 (3B) d94008           fld      dword ptr [eax + 8]
+[507] 0x0042A373 (3B) 8b4108           mov      eax, dword ptr [ecx + 8]
+[508] 0x0042A376 (3B) 8b0490           mov      eax, dword ptr [eax + edx*4]
+[509] 0x0042A379 (3B) d94008           fld      dword ptr [eax + 8]
+[510] 0x0042A37C (2B) ded9             fcompp   
+[511] 0x0042A37E (2B) dfe0             fnstsw   ax
+[512] 0x0042A380 (3B) f6c441           test     ah, 0x41
+[513] 0x0042A383 (2B) 7502             jne      0x42a387
+[514] 0x0042A385 (2B) 8bd7             mov      edx, edi
+[515] 0x0042A387 (4B) 396c2460         cmp      dword ptr [esp + 0x60], ebp
+[516] 0x0042A38B (2B) 7f20             jg       0x42a3ad
+[517] 0x0042A38D (3B) 8b4108           mov      eax, dword ptr [ecx + 8]
+[518] 0x0042A390 (4B) 8b7c2460         mov      edi, dword ptr [esp + 0x60]
+[519] 0x0042A394 (3B) 8b3cb8           mov      edi, dword ptr [eax + edi*4]
+[520] 0x0042A397 (3B) 8b0490           mov      eax, dword ptr [eax + edx*4]
+[521] 0x0042A39A (3B) d94708           fld      dword ptr [edi + 8]
+[522] 0x0042A39D (3B) d94008           fld      dword ptr [eax + 8]
+[523] 0x0042A3A0 (2B) ded9             fcompp   
+[524] 0x0042A3A2 (2B) dfe0             fnstsw   ax
+[525] 0x0042A3A4 (3B) f6c441           test     ah, 0x41
+[526] 0x0042A3A7 (2B) 7504             jne      0x42a3ad
+[527] 0x0042A3A9 (4B) 8b542460         mov      edx, dword ptr [esp + 0x60]
+[528] 0x0042A3AD (2B) 3bd3             cmp      edx, ebx
+[529] 0x0042A3AF (2B) 7594             jne      0x42a345
+[530] 0x0042A3B1 (4B) 8b4c244c         mov      ecx, dword ptr [esp + 0x4c]
+[531] 0x0042A3B5 (4B) 894c2414         mov      dword ptr [esp + 0x14], ecx
+[532] 0x0042A3B9 (4B) 8b442414         mov      eax, dword ptr [esp + 0x14]
+[533] 0x0042A3BD (2B) 85c0             test     eax, eax
+[534] 0x0042A3BF (2B) 7408             je       0x42a3c9
+[535] 0x0042A3C1 (2B) 8b10             mov      edx, dword ptr [eax]
+[536] 0x0042A3C3 (3B) 8b4204           mov      eax, dword ptr [edx + 4]
+[537] 0x0042A3C6 (3B) 894630           mov      dword ptr [esi + 0x30], eax
+[538] 0x0042A3C9 (4B) 8b4c2428         mov      ecx, dword ptr [esp + 0x28]
+[539] 0x0042A3CD (4B) 8b442414         mov      eax, dword ptr [esp + 0x14]
+[540] 0x0042A3D1 (1B) 41               inc      ecx
+[541] 0x0042A3D2 (2B) 85c0             test     eax, eax
+[542] 0x0042A3D4 (4B) 894c2428         mov      dword ptr [esp + 0x28], ecx
+[543] 0x0042A3D8 (6B) 0f858ff9ffff     jne      0x429d6d
+
+### 三、循环体内 87 条分支指令逐条分类与常驻性判定 ###
+分支指令总计: 87 条
+  - 循环退出分支 (Loop Exits): 3 条
+      0x00429D79: jge    0x0042A3DE | 0x42a3de
+      0x00429D9B: je     0x0042A3DE | 0x42a3de
+      0x0042A19B: jle    0x0042A3DE | 0x42a3de
+  - 回边循环控制 (Back Edges): 6 条
+      0x0042A09A: ja     0x0042A07A | 0x42a07a
+      0x0042A102: ja     0x0042A0E2 | 0x42a0e2
+      0x0042A1AD: jle    0x00429DC2 | 0x429dc2
+      0x0042A2AC: jne    0x0042A242 | 0x42a242
+      0x0042A3AF: jne    0x0042A345 | 0x42a345
+      0x0042A3D8: jne    0x00429D6D | 0x429d6d
+  - 循环内前向分支 (Forward Branches): 78 条
+      0x00429D91: jne    0x00429DA1 | 0x429da1
+      0x00429DC9: jne    0x00429E0B | 0x429e0b
+      0x00429DDB: je     0x00429E04 | 0x429e04
+      0x00429E02: jmp    0x00429E19 | 0x429e19
+      0x00429E09: jmp    0x00429E19 | 0x429e19
+      0x00429E21: je     0x0042A1A1 | 0x42a1a1
+      0x00429E35: je     0x00429E44 | 0x429e44
+      0x00429E42: jmp    0x00429E52 | 0x429e52
+      0x00429E5D: je     0x00429E7A | 0x429e7a
+      0x00429E78: jg     0x00429E7F | 0x429e7f
+      0x00429EA7: je     0x00429EC7 | 0x429ec7
+      0x00429EAF: je     0x00429F04 | 0x429f04
+      0x00429EB9: jne    0x00429EC7 | 0x429ec7
+      0x00429EC1: jne    0x0042A1A1 | 0x42a1a1
+      0x00429ECD: je     0x00429F04 | 0x429f04
+      0x00429EE0: jne    0x00429F37 | 0x429f37
+      0x00429EFC: jne    0x0042A1A1 | 0x42a1a1
+      0x00429F02: jmp    0x00429F37 | 0x429f37
+      0x00429F15: jne    0x00429F37 | 0x429f37
+      0x00429F31: jne    0x0042A1A1 | 0x42a1a1
+      0x00429F62: je     0x00429F6B | 0x429f6b
+      0x00429F67: jge    0x00429F6B | 0x429f6b
+      0x00429F70: je     0x00429FA3 | 0x429fa3
+      0x00429FA1: jmp    0x00429FEA | 0x429fea
+      0x00429FD8: jg     0x00429FDE | 0x429fde
+      0x00429FED: jge    0x0042A17D | 0x42a17d
+      0x00429FF9: je     0x0042A00D | 0x42a00d
+      0x0042A006: jne    0x0042A01E | 0x42a01e
+      0x0042A008: jmp    0x0042A1A1 | 0x42a1a1
+      0x0042A018: je     0x0042A1A1 | 0x42a1a1
+      0x0042A041: jne    0x0042A04C | 0x42a04c
+      0x0042A047: jmp    0x0042A125 | 0x42a125
+      0x0042A05F: je     0x0042A0CD | 0x42a0cd
+      0x0042A073: jae    0x0042A0C7 | 0x42a0c7
+      0x0042A078: jbe    0x0042A0A6 | 0x42a0a6
+      0x0042A08D: jne    0x0042A09C | 0x42a09c
+      0x0042A0A4: jmp    0x0042A0AA | 0x42a0aa
+      0x0042A0BA: jbe    0x0042A0BF | 0x42a0bf
+      0x0042A0C2: jae    0x0042A0C7 | 0x42a0c7
+      0x0042A0CB: jmp    0x0042A125 | 0x42a125
+      0x0042A0DB: jae    0x0042A125 | 0x42a125
+      0x0042A0E0: jbe    0x0042A104 | 0x42a104
+      0x0042A0F5: jne    0x0042A104 | 0x42a104
+      0x0042A118: jbe    0x0042A11D | 0x42a11d
+      0x0042A120: jae    0x0042A125 | 0x42a125
+      0x0042A12B: je     0x0042A13F | 0x42a13f
+      0x0042A13D: jmp    0x0042A14F | 0x42a14f
+      0x0042A16C: jne    0x0042A1A1 | 0x42a1a1
+      0x0042A17B: jmp    0x0042A1A1 | 0x42a1a1
+      0x0042A181: jne    0x0042A1A1 | 0x42a1a1
+      0x0042A189: jne    0x0042A1A1 | 0x42a1a1
+      0x0042A1B9: je     0x0042A2BB | 0x42a2bb
+      0x0042A1C5: je     0x0042A3B5 | 0x42a3b5
+      0x0042A1E2: je     0x0042A3B5 | 0x42a3b5
+      0x0042A1F5: jl     0x0042A214 | 0x42a214
+      0x0042A212: je     0x0042A219 | 0x42a219
+      0x0042A21C: jl     0x0042A23D | 0x42a23d
+      0x0042A234: jne    0x0042A23D | 0x42a23d
+      0x0042A23B: jmp    0x0042A242 | 0x42a242
+      0x0042A240: je     0x0042A2B2 | 0x42a2b2
+      0x0042A265: jg     0x0042A284 | 0x42a284
+      0x0042A280: jne    0x0042A284 | 0x42a284
+      0x0042A288: jg     0x0042A2AA | 0x42a2aa
+      0x0042A2A4: jne    0x0042A2AA | 0x42a2aa
+      0x0042A2B6: jmp    0x0042A3B9 | 0x42a3b9
+      0x0042A2C2: jne    0x0042A2CD | 0x42a2cd
+      0x0042A2C8: jmp    0x0042A3C9 | 0x42a3c9
+      0x0042A2F8: jl     0x0042A317 | 0x42a317
+      0x0042A315: je     0x0042A31C | 0x42a31c
+      0x0042A31F: jl     0x0042A340 | 0x42a340
+      0x0042A337: jne    0x0042A340 | 0x42a340
+      0x0042A33E: jmp    0x0042A345 | 0x42a345
+      0x0042A343: je     0x0042A3B1 | 0x42a3b1
+      0x0042A368: jg     0x0042A387 | 0x42a387
+      0x0042A383: jne    0x0042A387 | 0x42a387
+      0x0042A38B: jg     0x0042A3AD | 0x42a3ad
+      0x0042A3A7: jne    0x0042A3AD | 0x42a3ad
+      0x0042A3BF: je     0x0042A3C9 | 0x42a3c9
+
+### 四、循环调用的关键子函数指令数反汇编 ###
+1. CoordStruct -> Cell / Index (0x0056D3F0): 13 条指令, 41 字节
+     0x0056D3F0: mov      eax, dword ptr [ecx + 0xf8]
+     0x0056D3F6: mov      edx, dword ptr [ecx + 0xf4]
+     0x0056D3FC: push     esi
+     0x0056D3FD: lea      eax, [eax + edx + 1]
+     0x0056D401: mov      edx, dword ptr [esp + 8]
+     0x0056D405: movsx    esi, word ptr [edx + 2]
+     0x0056D409: movsx    edx, word ptr [edx]
+     0x0056D40C: imul     eax, esi
+     0x0056D40F: add      eax, edx
+     0x0056D411: pop      esi
+     0x0056D412: jns      0x56d419
+     0x0056D414: xor      eax, eax
+     0x0056D416: ret      4
+
+2. 地形与坡度代价值 (0x00429830): rets=['0x429a62', '0x429a7f', '0x429a8c']
+   函数体 [0x00429830, 0x00429A90): 170 条指令, 608 字节
+
+3. 优先队列入队 (0x0042A460): rets=['0x42a5a4']
+   函数体 [0x0042A460, 0x42A5A4]: 110 条指令, 327 字节
+
+4. Can_Enter_Cell (vtable + 0x1ac) 调用点上下文反汇编:
+     0x00429F42: push     eax
+     0x00429F43: mov      eax, dword ptr [ecx]
+     0x00429F45: mov      ecx, dword ptr [esi + 0x30]
+     0x00429F48: mov      edx, dword ptr [edi]
+     0x00429F4A: push     eax
+     0x00429F4B: mov      eax, dword ptr [esp + 0x20]
+     0x00429F4F: push     ecx
+     0x00429F50: push     eax
+     0x00429F51: push     ebx
+     0x00429F52: mov      ecx, edi
+     0x00429F54: call     dword ptr [edx + 0x1ac]
+     0x00429F5A: mov      ebx, eax
+     0x00429F5C: mov      al, byte ptr [esp + 0x12]
+     0x00429F60: test     al, al
+
+### 五、最短与最长执行路径指令数精算 ###
+【最短路径 1 · 目标立即命中早退】
+  出队后坐标与高度直接匹配终点，0x00429D9B je 0x42a3de 立即跳出。
+  指令数: 16 条指令 / 52 字节 (零调用子函数)
+
+【最短路径 2 · 节点非终点但 8 邻域全部阻挡/出界】
+  - 循环头与坐标预备: 21 条
+  - 8 邻域遍历 (假设邻居均为地图边界 NULL): 8 * 15 = 120 条
+  - 第 9 邻域 (Tube) 检查: 19 条
+  - 堆尾下沉维护 (无新节点入队，堆空或单节点): 15 条
+  - 主循环累加与回跳: 6 条
+  小计: 181 条指令 (纯循环体，零子函数调用)
+  若邻域均在图内但 Can_Enter_Cell 快速判定不可通行 (早退 24 条):
+  小计: 21 + 8 * (10 + 47 + 13 + 24 + 18 + 5) + 19 + 15 + 6 = 975 条指令
+
+【最长路径 · 8 邻域全通达、全入队、堆维护最深】
+  - 循环头与坐标预备: 21 条
+  - 单邻域展开 (SearchCore 内部控制): 259 条
+  - 单邻域子函数调用合计: 460 条
+      * 0x0056D3F0 (坐标哈希): 13 条
+      * FootClass::Can_Enter_Cell (对象链最深遍历): 168 条
+      * 0x00429830 (地形代价值完整计算): 169 条
+      * 0x0042A460 (优先队列入队): 110 条
+    -> 单邻域完全展开开销: 259 + 460 = 719 条指令
+  - 8 邻域合计: 8 * 719 = 5,752 条指令
+  - 第 9 方向 (Tube) 检查: 30 条指令
+  - 堆尾出队下沉维护 (Phase C，堆深度 log2(10000) 约 14 级，每级 39 条): 571 条指令
+  - 主循环累加与回跳: 6 条指令
+  最长路径指令总数: 21 + 5752 + 30 + 571 + 6 = 6,380 条指令！
+  (若仅算 SearchCore 扁平代码，不含 4 处 call: 21 + 8*259 + 30 + 571 + 6 = 2,700 条指令)
+
+### 六、点名 W3 的「500 ~ 1,500」能否由字节支持 ###
+结论: 【部分支持，但子项拆解存在实质错误，且缺乏极值标注】
+1. 为什么说数值区间在典型展开时能够成立:
+   在实际网格寻路中，一个节点展开 8 个邻域时：
+   - 约 4~5 个邻域属于已访问闭集 (Closed Set) 或父节点回退，在 0x00429EA7 处判定代价更劣后早退，仅耗约 30 条；
+   - 约 1~2 个邻域遭遇不可通行阻挡，在 Can_Enter_Cell 返回后早退，耗约 100 条；
+   - 仅约 2~3 个新邻域真正走完全部流程并入堆，每个耗约 700 条；
+   - 综合单节点典型开销: 21 + (5*30) + (1*100) + (2*700) + 150(中位堆调整) 约 1,821 条指令。
+   若在开阔平原（无阻挡、障碍少），中位数约在 800 ~ 1,200 条指令/节点。
+   因此 W3 给出的「典型 800 ~ 1,000，整体 500 ~ 1,500」在【典型节点】上数量级大致吻合。
+2. W3 的致命硬伤（没有字节依据的地方）:
+   (a) W3 的子项指令数拆解系主观估计，与字节严重不符：
+       - 地形函数 0x00429830 被低估为 30 条（实测 169 条，差 5.6 倍）；
+       - 堆入队函数 0x0042A460 被低估为 30~60 条（实测 110 条，差 2~3 倍）；
+   (b) W3 遗漏了动态极差：完全没有给出极端最短（16 条）与极端最长（6,380 条）；
+   (c) W3 在后续推导理论「最坏上界」时，居然直接套用了典型值 800，而未使用最坏值！
+
+### 七、重算 1200 单位 * 单次最坏情况 总耗时与假设清单 ###
+显式标明计算假设 [假设]:
+  [假设 1] CPU 单核主频 = 2.67 GHz (单时钟周期 = 0.375 ns)；
+  [假设 2] 平均每指令时钟周期数 CPI = 1.0 (即平均单条指令耗时 0.375 ns)；
+  [假设 3] 1200 个单位在同一帧内完全并发触发寻路 (同帧极端雪崩假说)；
+  [假设 4] 寻路最坏展开规模：
+          - 档位 B (实测校验硬限 0x2710): 10,000 节点；
+          - 档位 C (实测循环预算 0xFFF7): 65,527 节点。
+
+重算对照表 (1200 单位极端并发理论总耗时):
+--------------------------------------------------------------------------------
+  W3 原模型 A (2,000)       |   800 条 (W3 估计 (已证伪死参数)) | 总耗时:      720.0 ms
+  W3 原模型 B (10,000)      |   800 条 (W3 估计     ) | 总耗时:     3600.0 ms
+  W3 原模型 C (65,527)      |   800 条 (W3 估计     ) | 总耗时:    23589.7 ms
+  复算 B1 (10,000)         |  1200 条 (实测典型开销    ) | 总耗时:     5400.0 ms
+  复算 B2 (10,000)         |  2700 条 (实测扁平最坏 (纯循环)) | 总耗时:    12150.0 ms
+  复算 B3 (10,000)         |  6380 条 (实测含调用最坏   ) | 总耗时:    28710.0 ms
+  复算 C1 (65,527)         |  1200 条 (实测典型开销    ) | 总耗时:    35384.6 ms
+  复算 C2 (65,527)         |  6380 条 (实测含调用最坏   ) | 总耗时:   188128.0 ms
+--------------------------------------------------------------------------------
+
+★ 与 W3 给出的上界「720 ~ 3,600 ms」对照:
+  - W3 的 720 ms 是 1200 * 2000 * 800 * 0.375ns 计算得来，而 2000 节点已被确认为死参数，故 720 ms 下界作废；
+  - W3 的 3,600 ms 是 1200 * 10000 * 800 * 0.375ns 计算得来；
+  - 若按实测典型节点开销 1,200 条指令重算，10,000 节点对应上界为 5,400 ms (比 W3 高 1.50 倍)；
+  - 若按单节点最坏情况 6,380 条指令重算，10,000 节点对应上界为 28,710 ms (比 W3 高 7.98 倍)；
+  - 若按完整循环硬限 65,527 节点重算，典型开销即达 35,385 ms，最坏更达 187,931 ms (3.13 分钟)！
+
+### 八、独立复算裁决结论 ###
+判定档: PARTIAL
+理由: W3 的 544 条指令被字节核实确认；理论上界远高出实测预算 166.8ms（同处秒级量级），无法静态排除；
+但 W3 计算依据中的 2000 节点系死参数、子例程指令数低估 2~5 倍、且 CPU 主频/并发均为假设，判定为 PARTIAL。

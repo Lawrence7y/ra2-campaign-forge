@@ -1,0 +1,120 @@
+================================================================================
+V6_V3_REVIEW R5 独立复核探针 (_v6_r5.py)
+执行时刻: 2026-11-10 13:31:54
+================================================================================
+
+[1. 被核对象 SHA256 与字节数实算绑定]
+--------------------------------------------------------------------------------
+被核对象路径: D:\Project\ra2-campaign-forge\lead\re_line_20261105\W5_HARNESS_EXT\_w5_test.py
+实算 SHA256 : df5771a830c4fa2df5445156284a65d7a5d1e2c4ac80945350a0d05c727df2c8
+实算字节数   : 36624 字节
+参照 SHA256 : df5771a830c4fa2df5445156284a65d7a5d1e2c4ac80945350a0d05c727df2c8
+参照字节数   : 36624 字节
+>> _w5_test.py SHA256 与字节数校验: 严格吻合 [PASS]
+
+配套扩展件路径: D:\Project\ra2-campaign-forge\lead\re_line_20261105\W5_HARNESS_EXT\qc151_trip.harness8_v4_ext.py
+实算 SHA256   : 5081780c5a2e3da5c934efff4665ed248ad01b1c4c883887eb1a66cc7d83f161
+实算字节数     : 499047 字节
+>> qc151_trip.harness8_v4_ext.py SHA256 校验: 严格吻合 [PASS]
+
+配套采样件路径: D:\Project\ra2-campaign-forge\lead\re_line_20261105\A1_SAMPLER_CANDIDATE\frame_edge_sampler.py
+实算 SHA256   : b382e893bafc6a7f38d08572affaa663eaef56a8de7c3f361eea38cc34185f3e
+实算字节数     : 21411 字节
+>> frame_edge_sampler.py SHA256 校验: 严格吻合 [PASS]
+
+[2. 原版 _w5_test.py 独立重跑 (python -I -X utf8)]
+--------------------------------------------------------------------------------
+执行命令: C:\Users\Administrator\AppData\Local\Programs\Python\Python312\python.exe -I -X utf8 D:\Project\ra2-campaign-forge\lead\re_line_20261105\W5_HARNESS_EXT\_w5_test.py
+进程退出码 (EXIT_CODE): 0
+输出摘要 (最后 25 行):
+    [6.1] 冻结窗采样结果:
+          既有轮询样本数: 125 (全部 CurrentFrame=3668)
+          追加四 VA 事件数: 0 (预期严格为 0)
+          四 VA 追加读取总数: 0 (预期严格为 0)
+    [6.2] Tracker 统计输出:
+          counts.edge: 0
+          frame_clock_freeze_max_s: 0.496 s
+          note: `frame_clock_freeze_max_s` 只说明【CurrentFrame 帧号】连续未变的最长时段；不得据此宣称业务字段冻结（D-19 F5/F11）。读失败的墙钟不计入（断裂会立刻切断冻结计时）。
+    [6.3] 零成本宣称规避校验通过: 绝无 zero_cost=True 声明，合规披露盲区 [PASS]
+  >> 用例 6 判定: PASS (帧冻结窗零样本，note 明示不宣称业务字段冻结，保留双 markers)
+  
+  ================================================================================
+  测试结果汇总
+  ================================================================================
+    [PASS] Case 1: 开关为 0 ⇒ 不产生任何新采样行（零行为差结构证明）
+    [PASS] Case 2: 开关为 1 ⇒ 每沿恰好追加 5 读（四 VA + f_post，D-21 裁 A）
+    [PASS] Case 3: 读失败 ⇒ 字段为 null，不是 0
+    [PASS] Case 4: S4 命中 ⇒ 立即停手（不得进入采样）
+    [PASS] Case 5: --allow-loader + 扩项 ⇒ 拒绝启动
+    [PASS] Case 6: 帧冻结窗 ⇒ 零样本，且不宣称该窗零成本
+  --------------------------------------------------------------------------------
+  总计: 6 用例, 通过: 6, 失败: 0
+  总耗时: 0.013 秒 (全部纯离线模拟，零真机系统调用)
+  最终判定: PASS (EXIT=0)
+  ================================================================================
+>> 原版单测重跑结果: 6 条全 PASS，EXIT=0 [PASS]
+
+[3. 审查用例 2 断言强度]
+--------------------------------------------------------------------------------
+是否包含严格等式断言 'assert total_extra_reads == expected_edges * 5': True
+是否存在放宽的不等式断言 'total_extra_reads <=': False
+是否包含追加帧号读等式断言 'assert extra_frame_reads == expected_edges * 1': True
+是否包含 VA_GEN_STAMP 严格等式断言: True
+是否包含 VA_THREAT_CALLS 严格等式断言: True
+是否包含 VA_DIRTY_RECT 严格等式断言: True
+是否包含 VA_BULLET 严格等式断言: True
+是否包含复用模式 5 读断言 'assert len(order_log2) == 5': True
+是否包含样本结构 'sample_reuse["reads_per_sample"] == 5': True
+>> 用例 2 断言强度判定: 确为严格等式 ==（非放宽 <=），逐字段与总量双重死锁 [PASS]
+
+[4. 审查用例 2.3 时间戳全序断言]
+--------------------------------------------------------------------------------
+全序链断言第一段 ('assert ts["f_pre"] <= ts["segment_start"] <= ts["gen_stamp"] <= ts["threat_calls"]'): True
+全序链断言第二段 ('<= ts["dirty_rect_count"] <= ts["bullet_count"] <= ts["f_post_start"] <= ts["segment_end"]'): True
+是否包含 'ts["f_pre"] <= ts["segment_start"]' 适配复用模式: True
+>> 用例 2.3 时间戳断言判定: 已完全适配 D-21 裁 A 复用前读模式 (ts['f_pre'] <= ts['segment_start']) [PASS]
+
+[5. 隔离副本反例检验 (★ 反例要求: 绝不动原文件)]
+--------------------------------------------------------------------------------
+--- 反例实验 A: 破坏 f_pre 读次处理 (复用模式下依然调用 reader(FRAME_VA)，退化为 6 读) ---
+反例 A 退出码: 1 (预期 != 0)
+反例 A 捕获的异常信息:
+  !! 用例执行异常: Case 2: 开关为 1 ⇒ 每沿恰好追加 5 读（四 VA + f_post，D-21 裁 A）
+     AssertionError: 复用模式读序必须为四VA+f_post，实际 [11070852, 8906976, 11070516, 11587208, 11070800, 11070852]
+          W5EXT 审计记录: FAILED_INJECTION_SUSPECTED (★ W5EXT 硬断言阻断：发现非零注入命中 (ra2render=[], ra2loader=[])，立即停手) [PASS]
+    [FAIL] Case 2: 开关为 1 ⇒ 每沿恰好追加 5 读（四 VA + f_post，D-21 裁 A） (AssertionError: 复用模式读序必须为四VA+f_post，实际 [11070852, 8906976, 11070516, 11587208, 11070800, 11070852])
+  最终判定: FAIL (EXIT=1)
+>> 反例实验 A 结论: 单测立即触发 AssertionError 且 EXIT!=0，成功捕获多余读取 [PASS]
+
+--- 反例实验 B: 破坏时间戳真实性 (用进入时刻冒充外层读前锚时刻) ---
+反例 B 退出码: 1 (预期 != 0)
+反例 B 捕获的异常信息:
+  !! 用例执行异常: Case 2: 开关为 1 ⇒ 每沿恰好追加 5 读（四 VA + f_post，D-21 裁 A）
+     AssertionError: f_pre 时刻必须等于外层读前锚，不得用进入时刻冒充
+          W5EXT 审计记录: FAILED_INJECTION_SUSPECTED (★ W5EXT 硬断言阻断：发现非零注入命中 (ra2render=[], ra2loader=[])，立即停手) [PASS]
+    [FAIL] Case 2: 开关为 1 ⇒ 每沿恰好追加 5 读（四 VA + f_post，D-21 裁 A） (AssertionError: f_pre 时刻必须等于外层读前锚，不得用进入时刻冒充)
+  最终判定: FAIL (EXIT=1)
+>> 反例实验 B 结论: 单测精准捕获时间戳冒充并抛出断言失败 [PASS]
+
+--- 反例实验 C: 破坏时间戳全序契约 (ts['segment_start'] < ts['f_pre']，检验用例 2.3 全序断言) ---
+反例 C 退出码: 1 (预期 != 0)
+反例 C 捕获的异常信息:
+  !! 用例执行异常: Case 2: 开关为 1 ⇒ 每沿恰好追加 5 读（四 VA + f_post，D-21 裁 A）
+     AssertionError: 
+          W5EXT 审计记录: FAILED_INJECTION_SUSPECTED (★ W5EXT 硬断言阻断：发现非零注入命中 (ra2render=[], ra2loader=[])，立即停手) [PASS]
+    [FAIL] Case 2: 开关为 1 ⇒ 每沿恰好追加 5 读（四 VA + f_post，D-21 裁 A） (AssertionError: )
+  最终判定: FAIL (EXIT=1)
+>> 反例实验 C 结论: 用例 2.3 单调全序断言成功拦截时间倒流并立即抛出 AssertionError，非摆设 [PASS]
+
+>> 临时沙盒清理完成: 隔离反例副本已安全移除
+
+[6. 原文件零修改证明]
+--------------------------------------------------------------------------------
+TARGET_TEST    后验 SHA256: df5771a830c4fa2df5445156284a65d7a5d1e2c4ac80945350a0d05c727df2c8 (吻合: True)
+TARGET_EXT     后验 SHA256: 5081780c5a2e3da5c934efff4665ed248ad01b1c4c883887eb1a66cc7d83f161 (吻合: True)
+TARGET_SAMPLER 后验 SHA256: b382e893bafc6a7f38d08572affaa663eaef56a8de7c3f361eea38cc34185f3e (吻合: True)
+>> 原文件字节绝对未动 (SHA256 100% 保持一致) [PASS]
+
+================================================================================
+R5 全部核验项执行完毕: 全部严格通过 (CONFIRMED)
+================================================================================

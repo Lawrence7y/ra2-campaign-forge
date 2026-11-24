@@ -1,0 +1,311 @@
+### C2. failure path of 0x006C5210 (push 1 + call [reg+0x20])
+  @0x006C5270:
+  006C5270  7d09                   jge 0x6c527b
+  006C5272  8b16                   mov edx, dword ptr [esi]
+  006C5274  6a01                   push 1
+  006C5276  8bce                   mov ecx, esi
+  006C5278  ff5220                 call dword ptr [edx + 0x20]
+  006C527B  8bc7                   mov eax, edi
+  006C527D  5f                     pop edi
+  006C527E  5e                     pop esi
+  006C527F  c21000                 ret 0x10
+  006C5282  90                     nop 
+  006C5283  90                     nop 
+  006C5284  90                     nop 
+  006C5285  90                     nop 
+  006C5286  90                     nop 
+
+### C3. vt[8] of the two tables (slot8 = vt+0x20 = deleting destructor slot)
+  vt 0x007E88D0 : slot8 = 0x004CA770   slot0 = 0x00410260
+  vt 0x007E5358 : slot8 = 0x00499A50   slot0 = 0x00491210
+  vt 0x007F4348 : slot8 = 0x006DC470   slot0 = 0x00410260
+  vt 0x007E1964 : slot8 = 0x0040D270   slot0 = 0x004F4240
+
+### E2. is each write site a deleting destructor?  (flag test + operator delete 0x7C8B3D)
+  -- 0x004CA770  [vt[8] of FactoryClass table 007E88D0] --
+  004CA770  51                     push ecx
+  004CA771  56                     push esi
+  004CA772  8bf1                   mov esi, ecx
+  004CA774  b201                   mov dl, 1
+  004CA776  c706d0887e00           mov dword ptr [esi], 0x7e88d0
+  004CA77C  c74604b4887e00         mov dword ptr [esi + 4], 0x7e88b4
+  004CA783  c74608ac887e00         mov dword ptr [esi + 8], 0x7e88ac
+  004CA78A  c7460ca4887e00         mov dword ptr [esi + 0xc], 0x7e88a4
+  004CA791  e83ab12500             call 0x7258d0
+  004CA796  8b15303ea800           mov edx, dword ptr [0xa83e30]
+  004CA79C  8d442404               lea eax, [esp + 4]
+  004CA7A0  50                     push eax
+  004CA7A1  b9303ea800             mov ecx, 0xa83e30
+  004CA7A6  89742408               mov dword ptr [esp + 8], esi
+  004CA7AA  ff5210                 call dword ptr [edx + 0x10]
+  004CA7AD  83f8ff                 cmp eax, -1
+  004CA7B0  742d                   je 0x4ca7df
+  004CA7B2  8b0d403ea800           mov ecx, dword ptr [0xa83e40]
+  004CA7B8  3bc1                   cmp eax, ecx
+  004CA7BA  7d23                   jge 0x4ca7df
+  004CA7BC  49                     dec ecx
+  004CA7BD  3bc1                   cmp eax, ecx
+  004CA7BF  890d403ea800           mov dword ptr [0xa83e40], ecx
+  004CA7C5  7d18                   jge 0x4ca7df
+  004CA7C7  8b0d343ea800           mov ecx, dword ptr [0xa83e34]
+  004CA7CD  40                     inc eax
+  004CA7CE  8b1481                 mov edx, dword ptr [ecx + eax*4]
+  004CA7D1  895481fc               mov dword ptr [ecx + eax*4 - 4], edx
+  004CA7D5  8b0d403ea800           mov ecx, dword ptr [0xa83e40]
+  004CA7DB  3bc1                   cmp eax, ecx
+  004CA7DD  7ce8                   jl 0x4ca7c7
+  004CA7DF  a0a0e9a800             mov al, byte ptr [0xa8e9a0]
+  004CA7E4  84c0                   test al, al
+  004CA7E6  7407                   je 0x4ca7ef
+  004CA7E8  8bce                   mov ecx, esi
+  004CA7EA  e801f8ffff             call 0x4c9ff0
+  004CA7EF  8b1520f7b000           mov edx, dword ptr [0xb0f720]
+  004CA7F5  8d442404               lea eax, [esp + 4]
+  004CA7F9  50                     push eax
+  004CA7FA  b920f7b000             mov ecx, 0xb0f720
+  -- 0x00490400  [write site 00490406 row 00491210] --
+  00490400  51                     push ecx
+  00490401  56                     push esi
+  00490402  8bf1                   mov esi, ecx
+  00490404  c70658537e00           mov dword ptr [esi], 0x7e5358
+  0049040A  e881000000             call 0x490490
+  0049040F  8b8670010000           mov eax, dword ptr [esi + 0x170]
+  00490415  50                     push eax
+  00490416  e822873300             call 0x7c8b3d
+  0049041B  8b8e78010000           mov ecx, dword ptr [esi + 0x178]
+  00490421  c7867001000000000000   mov dword ptr [esi + 0x170], 0
+  0049042B  51                     push ecx
+  0049042C  e80c873300             call 0x7c8b3d
+  00490431  83c408                 add esp, 8
+  00490434  c7867801000000000000   mov dword ptr [esi + 0x178], 0
+  0049043E  a1f8ec8900             mov eax, dword ptr [0x89ecf8]
+  00490443  8d542404               lea edx, [esp + 4]
+  00490447  52                     push edx
+  00490448  b9f8ec8900             mov ecx, 0x89ecf8
+  0049044D  89742408               mov dword ptr [esp + 8], esi
+  00490451  ff5010                 call dword ptr [eax + 0x10]
+  00490454  83f8ff                 cmp eax, -1
+  00490457  5e                     pop esi
+  00490458  742d                   je 0x490487
+  0049045A  8b0d08ed8900           mov ecx, dword ptr [0x89ed08]
+  00490460  3bc1                   cmp eax, ecx
+  00490462  7d23                   jge 0x490487
+  00490464  49                     dec ecx
+  00490465  3bc1                   cmp eax, ecx
+  00490467  890d08ed8900           mov dword ptr [0x89ed08], ecx
+  0049046D  7d18                   jge 0x490487
+  0049046F  8b0dfcec8900           mov ecx, dword ptr [0x89ecfc]
+  00490475  40                     inc eax
+  00490476  8b1481                 mov edx, dword ptr [ecx + eax*4]
+  00490479  895481fc               mov dword ptr [ecx + eax*4 - 4], edx
+  0049047D  8b0d08ed8900           mov ecx, dword ptr [0x89ed08]
+  00490483  3bc1                   cmp eax, ecx
+  00490485  7ce8                   jl 0x49046f
+  00490487  59                     pop ecx
+  00490488  c3                     ret 
+  00490489  90                     nop 
+  -- 0x006DC470  [write site 006DC475 row 006DBD20] --
+  006DC470  56                     push esi
+  006DC471  8bf1                   mov esi, ecx
+  006DC473  c70648437f00           mov dword ptr [esi], 0x7f4348
+  006DC479  c746042c437f00         mov dword ptr [esi + 4], 0x7f432c
+  006DC480  c7460824437f00         mov dword ptr [esi + 8], 0x7f4324
+  006DC487  c7460c1c437f00         mov dword ptr [esi + 0xc], 0x7f431c
+  006DC48E  c7052473880000000000   mov dword ptr [0x887324], 0
+  006DC498  e8533dd3ff             call 0x4101f0
+  006DC49D  f644240801             test byte ptr [esp + 8], 1
+  006DC4A2  7409                   je 0x6dc4ad
+  006DC4A4  56                     push esi
+  006DC4A5  e893c60e00             call 0x7c8b3d
+  006DC4AA  83c404                 add esp, 4
+  006DC4AD  8bc6                   mov eax, esi
+  006DC4AF  5e                     pop esi
+  006DC4B0  c20400                 ret 4
+  006DC4B3  90                     nop 
+  006DC4B4  90                     nop 
+  006DC4B5  90                     nop 
+  006DC4B6  90                     nop 
+  006DC4B7  90                     nop 
+  006DC4B8  90                     nop 
+  006DC4B9  90                     nop 
+  006DC4BA  90                     nop 
+  006DC4BB  90                     nop 
+  006DC4BC  90                     nop 
+  006DC4BD  90                     nop 
+  006DC4BE  90                     nop 
+  006DC4BF  90                     nop 
+  006DC4C0  8bc1                   mov eax, ecx
+  006DC4C2  56                     push esi
+  006DC4C3  8b4c2408               mov ecx, dword ptr [esp + 8]
+  006DC4C7  8b30                   mov esi, dword ptr [eax]
+  006DC4C9  8b11                   mov edx, dword ptr [ecx]
+  006DC4CB  2bf2                   sub esi, edx
+  006DC4CD  8b5004                 mov edx, dword ptr [eax + 4]
+  006DC4D0  8930                   mov dword ptr [eax], esi
+  006DC4D2  8b4904                 mov ecx, dword ptr [ecx + 4]
+  006DC4D5  2bd1                   sub edx, ecx
+  006DC4D7  5e                     pop esi
+  -- 0x0040D1B0  [write site 0040D1B2 (atexit-registered global dtor)] --
+  0040D1B0  56                     push esi
+  0040D1B1  57                     push edi
+  0040D1B2  c705e8f7870064197e00   mov dword ptr [0x87f7e8], 0x7e1964
+  0040D1BC  c705004d88005c197e00   mov dword ptr [0x884d00], 0x7e195c
+  0040D1C6  be844b8800             mov esi, 0x884b84
+  0040D1CB  bf04000000             mov edi, 4
+  0040D1D0  81ee940f0000           sub esi, 0xf94
+  0040D1D6  6860d24000             push 0x40d260
+  0040D1DB  6a4b                   push 0x4b
+  0040D1DD  6a34                   push 0x34
+  0040D1DF  8d4650                 lea eax, [esi + 0x50]
+  0040D1E2  50                     push eax
+  0040D1E3  e8e8ddffff             call 0x40afd0
+  0040D1E8  8bce                   mov ecx, esi
+  0040D1EA  e811010000             call 0x40d300
+  0040D1EF  4f                     dec edi
+  0040D1F0  75de                   jne 0x40d1d0
+  0040D1F2  b9e8f78700             mov ecx, 0x87f7e8
+  0040D1F7  e8045a2400             call 0x652c00
+  0040D1FC  5f                     pop edi
+  0040D1FD  5e                     pop esi
+  0040D1FE  c3                     ret 
+  0040D1FF  90                     nop 
+  0040D200  6820d24000             push 0x40d220
+  0040D205  c705b8f7870000000000   mov dword ptr [0x87f7b8], 0
+  0040D20F  e876c53b00             call 0x7c978a
+  0040D214  59                     pop ecx
+  0040D215  c3                     ret 
+  0040D216  90                     nop 
+  0040D217  90                     nop 
+  0040D218  90                     nop 
+  0040D219  90                     nop 
+  0040D21A  90                     nop 
+  0040D21B  90                     nop 
+  0040D21C  90                     nop 
+  0040D21D  90                     nop 
+  0040D21E  90                     nop 
+  0040D21F  90                     nop 
+  0040D220  a1b8f78700             mov eax, dword ptr [0x87f7b8]
+  0040D225  85c0                   test eax, eax
+  -- 0x0040D290  [write site 0040D295] --
+  0040D290  53                     push ebx
+  0040D291  8bd9                   mov ebx, ecx
+  0040D293  56                     push esi
+  0040D294  57                     push edi
+  0040D295  c70364197e00           mov dword ptr [ebx], 0x7e1964
+  0040D29B  c783185500005c197e00   mov dword ptr [ebx + 0x5518], 0x7e195c
+  0040D2A5  8db39c530000           lea esi, [ebx + 0x539c]
+  0040D2AB  bf04000000             mov edi, 4
+  0040D2B0  81ee940f0000           sub esi, 0xf94
+  0040D2B6  6860d24000             push 0x40d260
+  0040D2BB  6a4b                   push 0x4b
+  0040D2BD  6a34                   push 0x34
+  0040D2BF  8d4650                 lea eax, [esi + 0x50]
+  0040D2C2  50                     push eax
+  0040D2C3  e808ddffff             call 0x40afd0
+  0040D2C8  8bce                   mov ecx, esi
+  0040D2CA  e831000000             call 0x40d300
+  0040D2CF  4f                     dec edi
+  0040D2D0  75de                   jne 0x40d2b0
+  0040D2D2  8bcb                   mov ecx, ebx
+  0040D2D4  e827592400             call 0x652c00
+  0040D2D9  f644241001             test byte ptr [esp + 0x10], 1
+  0040D2DE  7409                   je 0x40d2e9
+  0040D2E0  53                     push ebx
+  0040D2E1  e857b83b00             call 0x7c8b3d
+  0040D2E6  83c404                 add esp, 4
+  0040D2E9  5f                     pop edi
+  0040D2EA  8bc3                   mov eax, ebx
+  0040D2EC  5e                     pop esi
+  0040D2ED  5b                     pop ebx
+  0040D2EE  c20400                 ret 4
+  0040D2F1  90                     nop 
+  0040D2F2  90                     nop 
+  0040D2F3  90                     nop 
+  0040D2F4  90                     nop 
+  0040D2F5  90                     nop 
+  0040D2F6  90                     nop 
+  0040D2F7  90                     nop 
+  0040D2F8  90                     nop 
+  0040D2F9  90                     nop 
+
+### F. S22_B4 factory ctors: vt immediate + its occurrence count in whole file
+  ctor 0x00512580 -> vt 0x000001B4 : 196 occurrence(s) ['0x00407D4A', '0x0040A29F', '0x00414DFA', '0x004151AC', '0x00419FE0', '0x0042204F', '0x004220FB', '0x004228C2', '0x00422A36', '0x00423AAA', '0x00424BF2', '0x00424C72', '0x00424D3F', '0x004252E3', '0x004255FB', '0x00425872', '0x004259FA', '0x00435AC9', '0x00436615', '0x00436BC8', '0x0043F6E8', '0x0043F785', '0x00444049', '0x00444470', '0x004445BF', '0x00450DE6', '0x00451861', '0x00467BA0', '0x00467BE8', '0x00467E4F', '0x00468933', '0x00468968', '0x00468979', '0x00468988', '0x004B17DE', '0x004B1A6D', '0x004B207F', '0x004B20B2', '0x004B2555', '0x004B25D9', '0x004B5EAC', '0x004B6158', '0x004B6181', '0x004CD778', '0x004CDD09', '0x004CE13F', '0x004F5692', '0x004F709A', '0x00502DF8', '0x00512589', '0x005148F5', '0x00514A0A', '0x0051B4B9', '0x0051B68F', '0x0051B78C', '0x0051B99E', '0x0052CB92', '0x0052CBD3', '0x0052CBDF', '0x0052CD64', '0x00543A25', '0x00544F33', '0x00545057', '0x00545FC5', '0x005460CF', '0x005460ED', '0x00546108', '0x00546129', '0x00546163', '0x0054617F', '0x005461B5', '0x005461D0', '0x005462D9', '0x0054C19C', '0x0054C838', '0x0054CBF3', '0x0054D609', '0x00553835', '0x00558990', '0x00559293', '0x00559718', '0x00559825', '0x005598DA', '0x00559BC9', '0x00559F7D', '0x0055D367', '0x0055D873', '0x0055DEC3', '0x0055DED7', '0x00566DAE', '0x00566E39', '0x005811EF', '0x005818D7', '0x0058F73C', '0x00590265', '0x00590277', '0x00597E78', '0x00597E8B', '0x0059E34A', '0x005A747E', '0x005B1232', '0x005B1690', '0x005B1774', '0x005C2712', '0x005C2A4C', '0x005F4486', '0x005F4FAA', '0x005F5A52', '0x005F82C8', '0x005F88A8', '0x0062C490', '0x0062CA6E', '0x0062D3E0', '0x0062D501', '0x0062D5D3', '0x0062D6C2', '0x0062EDB7', '0x0062FBA6', '0x0065E212', '0x0065E37B', '0x00662717', '0x00662F84', '0x006658C4', '0x0066A47A', '0x0066A4B9', '0x0068C4AE', '0x0069A708', '0x0069AE17', '0x0069AE54', '0x006A0E6A', '0x006A10AF', '0x006A16C2', '0x006A16F5', '0x006A1BA6', '0x006A1C2A', '0x006CC3E0', '0x006D5376', '0x006F2C90', '0x006F4331', '0x0070E4B9', '0x0070E999', '0x0070E9B2', '0x0070E9BE', '0x0070EA06', '0x0070EA12', '0x0070EA6D', '0x0070EA79', '0x0070EAC1', '0x0070EACD', '0x0070EB15', '0x0070EB21', '0x0070EBAD', '0x0070EBCA', '0x0070EBD6', '0x0070EC1E', '0x0070EC2A', '0x0070EC6E', '0x0071052D', '0x00719639', '0x00719686', '0x007199C8', '0x00719A09', '0x00729018', '0x0072955C', '0x007298DF', '0x00729987', '0x00735B5A', '0x00735D29', '0x00735E2A', '0x00735FEE', '0x007364E5', '0x0073B472', '0x0073C5E2', '0x0073FE44', '0x007425FA', '0x0074A94B', '0x0075BDC2', '0x0075C130', '0x0075C211', '0x0075F1A1', '0x0075F922', '0x00761B3D', '0x007625D1', '0x0078CC8D', '0x0079D12A', '0x007C32D3', '0x007C32F2', '0x007C331D', '0x007C334B', '0x007C3388', '0x007C339C', '0x007C33AC', '0x007CE6F4', '0x007DD957', 'non-.text', 'non-.text']
+  ctor 0x0065D432 -> vt 0x007F094C : 5 occurrence(s) ['0x0065D43B', '0x0065D44D', '0x0065D467', '0x0065D4BB', '0x0065D4D8']
+  ctor 0x006BEE42 -> vt 0x007F3768 : 1 occurrence(s) ['0x006BEE4B']
+  ctor 0x006BEFC2 -> vt 0x007F3780 : 1 occurrence(s) ['0x006BEFCB']
+  ctor 0x006BF142 -> vt 0x007F3798 : 1 occurrence(s) ['0x006BF14B']
+  ctor 0x006BF2C2 -> vt 0x007F37B0 : 1 occurrence(s) ['0x006BF2CB']
+  ctor 0x006BF442 -> vt 0x007F37C8 : 1 occurrence(s) ['0x006BF44B']
+  ctor 0x006BF5C2 -> vt 0x007F37E0 : 1 occurrence(s) ['0x006BF5CB']
+  ctor 0x006BF742 -> vt 0x007F37F8 : 1 occurrence(s) ['0x006BF74B']
+  ctor 0x006BF8C2 -> vt 0x007F3810 : 1 occurrence(s) ['0x006BF8CB']
+  ctor 0x006BFA42 -> vt 0x007F3828 : 1 occurrence(s) ['0x006BFA4B']
+  ctor 0x006BFBC2 -> vt 0x007F3840 : 1 occurrence(s) ['0x006BFBCB']
+  ctor 0x006BFD42 -> vt 0x007F3858 : 1 occurrence(s) ['0x006BFD4B']
+  ctor 0x006BFEC2 -> vt 0x007F3870 : 1 occurrence(s) ['0x006BFECB']
+  ctor 0x006C0042 -> vt 0x007F3888 : 1 occurrence(s) ['0x006C004B']
+  ctor 0x006C01C2 -> vt 0x007F38A0 : 1 occurrence(s) ['0x006C01CB']
+  ctor 0x006C0342 -> vt 0x007F38B8 : 1 occurrence(s) ['0x006C034B']
+  ctor 0x006C04C2 -> vt 0x007F38D0 : 1 occurrence(s) ['0x006C04CB']
+  ctor 0x006C0642 -> vt 0x007F38E8 : 1 occurrence(s) ['0x006C064B']
+  ctor 0x006C07C2 -> vt 0x007F3900 : 1 occurrence(s) ['0x006C07CB']
+  ctor 0x006C0942 -> vt 0x007F3918 : 1 occurrence(s) ['0x006C094B']
+  ctor 0x006C0AC2 -> vt 0x007F3930 : 1 occurrence(s) ['0x006C0ACB']
+  ctor 0x006C0C42 -> vt 0x007F3948 : 1 occurrence(s) ['0x006C0C4B']
+  ctor 0x006C0DC2 -> vt 0x007F3960 : 1 occurrence(s) ['0x006C0DCB']
+  ctor 0x006C0F42 -> vt 0x007F3978 : 1 occurrence(s) ['0x006C0F4B']
+  ctor 0x006C10C2 -> vt 0x007F3990 : 1 occurrence(s) ['0x006C10CB']
+  ctor 0x006C1242 -> vt 0x007F39A8 : 1 occurrence(s) ['0x006C124B']
+  ctor 0x006C13C2 -> vt 0x007F39C0 : 1 occurrence(s) ['0x006C13CB']
+  ctor 0x006C1542 -> vt 0x007F39D8 : 1 occurrence(s) ['0x006C154B']
+  ctor 0x006C16C2 -> vt 0x007F39F0 : 1 occurrence(s) ['0x006C16CB']
+  ctor 0x006C1842 -> vt 0x007F3A08 : 1 occurrence(s) ['0x006C184B']
+  ctor 0x006C19C2 -> vt 0x007F3A20 : 1 occurrence(s) ['0x006C19CB']
+  ctor 0x006C1B42 -> vt 0x007F3A38 : 1 occurrence(s) ['0x006C1B4B']
+  ctor 0x006C1CC2 -> vt 0x007F3A50 : 1 occurrence(s) ['0x006C1CCB']
+  ctor 0x006C1E42 -> vt 0x007F3A68 : 1 occurrence(s) ['0x006C1E4B']
+  ctor 0x006C1FC2 -> vt 0x007F3A80 : 1 occurrence(s) ['0x006C1FCB']
+  ctor 0x006C2142 -> vt 0x007F3A98 : 1 occurrence(s) ['0x006C214B']
+  ctor 0x006C22C2 -> vt 0x007F3AB0 : 1 occurrence(s) ['0x006C22CB']
+  ctor 0x006C2442 -> vt 0x007F3AC8 : 1 occurrence(s) ['0x006C244B']
+  ctor 0x006C25C2 -> vt 0x007F3AE0 : 1 occurrence(s) ['0x006C25CB']
+  ctor 0x006C2742 -> vt 0x007F3AF8 : 1 occurrence(s) ['0x006C274B']
+  ctor 0x006C28C2 -> vt 0x007F3B10 : 1 occurrence(s) ['0x006C28CB']
+  ctor 0x006C2A42 -> vt 0x007F3B28 : 1 occurrence(s) ['0x006C2A4B']
+  ctor 0x006C2BC2 -> vt 0x007F3B40 : 1 occurrence(s) ['0x006C2BCB']
+  ctor 0x006C2D42 -> vt 0x007F3B58 : 1 occurrence(s) ['0x006C2D4B']
+  ctor 0x006C2EC2 -> vt 0x007F3B70 : 1 occurrence(s) ['0x006C2ECB']
+  ctor 0x006C3042 -> vt 0x007F3B88 : 1 occurrence(s) ['0x006C304B']
+  ctor 0x006C31C2 -> vt 0x007F3BA0 : 1 occurrence(s) ['0x006C31CB']
+  ctor 0x006C3342 -> vt 0x007F3BB8 : 1 occurrence(s) ['0x006C334B']
+  ctor 0x006C34C2 -> vt 0x007F3BD0 : 1 occurrence(s) ['0x006C34CB']
+  ctor 0x006C3642 -> vt 0x007F3BE8 : 1 occurrence(s) ['0x006C364B']
+  ctor 0x006C37C2 -> vt 0x007F3C00 : 1 occurrence(s) ['0x006C37CB']
+  ctor 0x006C3942 -> vt 0x007F3C18 : 1 occurrence(s) ['0x006C394B']
+  ctor 0x006C3AC2 -> vt 0x007F3C30 : 1 occurrence(s) ['0x006C3ACB']
+  ctor 0x006C3C42 -> vt 0x007F3C48 : 1 occurrence(s) ['0x006C3C4B']
+  ctor 0x006C3DC2 -> vt 0x007F3C60 : 1 occurrence(s) ['0x006C3DCB']
+  ctor 0x006C3F42 -> vt 0x007F3C78 : 1 occurrence(s) ['0x006C3F4B']
+  ctor 0x006C40C2 -> vt 0x007F3C90 : 1 occurrence(s) ['0x006C40CB']
+  ctor 0x006C4242 -> vt 0x007F3CA8 : 1 occurrence(s) ['0x006C424B']
+  ctor 0x006C43C2 -> vt 0x007F3CC0 : 1 occurrence(s) ['0x006C43CB']
+  ctor 0x006C4542 -> vt 0x007F3CD8 : 1 occurrence(s) ['0x006C454B']
+  ctor 0x006C46C2 -> vt 0x007F3CF0 : 1 occurrence(s) ['0x006C46CB']
+  ctor 0x006C4842 -> vt 0x007F3D08 : 1 occurrence(s) ['0x006C484B']
+  ctor 0x006C49C2 -> vt 0x007F3D20 : 1 occurrence(s) ['0x006C49CB']
+  ctor 0x006C4B42 -> vt 0x007F3D38 : 1 occurrence(s) ['0x006C4B4B']
+  ctor 0x006C4CC2 -> vt 0x007F3D50 : 1 occurrence(s) ['0x006C4CCB']
+  ctor 0x006C4E42 -> vt 0x007F3D68 : 1 occurrence(s) ['0x006C4E4B']
+  ctor 0x006C4FC2 -> vt 0x007F3D80 : 1 occurrence(s) ['0x006C4FCB']
+  ctor 0x006C5142 -> vt 0x007F3D98 : 1 occurrence(s) ['0x006C514B']
+  ctor 0x006C52C2 -> vt 0x007F3DB0 : 1 occurrence(s) ['0x006C52CB']
+  ctor 0x006C5442 -> vt 0x007F3DC8 : 1 occurrence(s) ['0x006C544B']
+  ctor 0x006C55C2 -> vt 0x007F3DE0 : 1 occurrence(s) ['0x006C55CB']
+  ctor 0x006C5742 -> vt 0x007F3DF8 : 1 occurrence(s) ['0x006C574B']
+  ctor 0x006C58C2 -> vt 0x007F3E10 : 1 occurrence(s) ['0x006C58CB']
+  ctor 0x006C5A42 -> vt 0x007F3E28 : 1 occurrence(s) ['0x006C5A4B']
+  ctor 0x006C5BC2 -> vt 0x007F3E40 : 1 occurrence(s) ['0x006C5BCB']
+  ctor 0x006C5D42 -> vt 0x007F3E58 : 1 occurrence(s) ['0x006C5D4B']
+  ctor 0x006C5EC2 -> vt 0x007F3E70 : 1 occurrence(s) ['0x006C5ECB']
+  ctor 0x006C6042 -> vt 0x007F3E88 : 1 occurrence(s) ['0x006C604B']
+  ctor 0x00767707 -> vt 0x007F70B4 : 1 occurrence(s) ['0x00767710']

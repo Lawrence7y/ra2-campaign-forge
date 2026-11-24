@@ -1,0 +1,25 @@
+=== (1) FORGE TEST: can a reviewer fabricate a 'fully independent' certificate? ===
+  forged_world: all 5 role values are pointers; oracle_truth=True;
+                oracle_author = 'independent_blind_adjudicator' (a string I typed)
+                oracle_sealed  = True (a bool I typed, no hash verified)
+  checker VERDICT = ALARM  L2_ok=False  L2_problems=["L2[lead/matrix_ab_ruling_20261109/|需谁批准] L2c: role 批准人角色头 value is a non-value: '见台账登记，本件不重录'", "L2[lead/matrix_ab_ruling_20261109/|需谁批准] L2c: role 赋值算子 value is a non-value: '见台账登记，本件不重录'", "L2[lead/matrix_ab_ruling_20261109/|需谁批准] L2c: role 具体施事值 value is a non-value: '见台账登记，本件不重录'", "L2[lead/matrix_reach_20261109/|实跑输出] L2c: role 实跑事件 value is a non-value: '见台账登记，本件不重录'", "L2[lead/matrix_reach_20261109/|实跑输出] L2c: role 输出载荷(带具体值的 key=value 数据行) value is a non-value: '见台账登记，本件不重录'", "L2[lead/n11_wording_fix_20261108/|改前改后] L2c: role 改前标签+实值 value is a non-value: '见台账登记，本件不重录'", "L2[lead/n11_wording_fix_20261108/|改前改后] L2c: role 改后标签+实值 value is a non-value: '见台账登记，本件不重录'", "L2[lead/n11_wording_fix_20261108/|改前改后] L2c: role 对照算子 value is a non-value: '见台账登记，本件不重录'", "L2[lead/s604_script_gap_20261109/|脚本存在性] L2c: role 脚本对象 value is a non-value: '见台账登记，本件不重录'", "L2[lead/s604_script_gap_20261109/|脚本存在性] L2c: role 存在性谓词 value is a non-value: '见台账登记，本件不重录'", "L2[lead/s604_script_gap_20261109/|脚本存在性] L2c: role 判定算子 value is a non-value: '见台账登记，本件不重录'", "L2[lead/s604_script_gap_20261109/|脚本存在性] L2c: role 已决断极性 value is a non-value: '见台账登记，本件不重录'", "L2[lead/s604_script_gap_20261109/|可重建] L2c: role 重建动作 value is a non-value: '见台账登记，本件不重录'", "L2[lead/s604_script_gap_20261109/|可重建] L2c: role 肯定情态 value is a non-value: '见台账登记，本件不重录'", "L2[lead/s604_script_gap_20261109/|可重建] L2c: role 确定性证据 value is a non-value: '见台账登记，本件不重录'"]
+  => L2 detects pointer values? True
+  => but oracle independence itself is UNVERIFIABLE from checker inputs: certificate_ok only compares two author STRINGS (:120) and a BOOL (:122)
+
+  forged_world_2: anchor='nowhere/FAKE.md:999', quote explicitly fabricated,
+                  role values left intact, independence flags self-declared
+  checker VERDICT = ALARM  L2_ok=True  L2_problems=[]
+  => anchor is only regex-checked (:100), NOT resolved against any file
+
+=== (2) MY 3 NOVEL semantic-empty payloads vs the checker's L3 corpus ===
+  RV-E1  需谁批准       R9S_present=True   => caught(ABSENT)? False
+  RV-E2  改前改后       R9S_present=True   => caught(ABSENT)? False
+  RV-E3  可重建        R9S_present=True   => caught(ABSENT)? False
+  full checker with my 3 added: VERDICT=ALARM  L3_adversarial=7/16 caught, L3_ok=False
+
+=== (3) META-TEST sensitivity: does the checker alarm on a NEW error class? ===
+  novel-marker leaky predicate + my corpus: VERDICT=ALARM  L3_ok=False  n_caught=6/16
+
+=== (4) Re-run author's meta_test() as-is (independent import) ===
+  baseline=PASS  n_wrong=4 n_caught=4  n_good=1 n_false=0  CHECKER_VALID=True
+WROTE _fnrv_adversarial_out.json

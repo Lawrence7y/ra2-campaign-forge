@@ -1,0 +1,285 @@
+{
+ "files": {
+  "N13": "lead/gate_n13_20261109/_n13_predicates.py",
+  "G7": "lead/gate_fp7_20261108/_g7_predicates.py",
+  "V12": "lead/gate_v1v2_20261109/_v12_rule.py"
+ },
+ "line_evidence": {
+  "N13": {
+   "5": "C 否定式交既有 R10（lead/gate_fp7_20261108/_g7_predicates.py:78-130）判定，",
+   "6": "本件只消费其 kind，另加「否定必须落在 token 自己的微段内」的局部性守卫；",
+   "25": "DEFAULT_TOKENS = (\"已入账\", \"已追加\", \"已生效\")",
+   "183": "def r13_scan(text, tokens=DEFAULT_TOKENS, r10_scan=None, r12_scan=None):",
+   "189": "r10_scan / r12_scan 来自 _g7_predicates.py；生产用法必须同时加载。",
+   "195": "if r10_scan is not None:",
+   "196": "_, _, rhits = r10_scan(text, list(tokens))",
+   "199": "if r12_scan is not None:",
+   "200": "_, dhits = r12_scan(text, list(tokens))",
+   "231": "\"r10_kind\": r10_map.get((tok, gpos))}",
+   "242": "if (tok, gpos) in r12_pos:",
+   "243": "rec.update(kind=\"D\", exempt=False, rule=\"R12 双重否定构式=肯定\")",
+   "251": "if direct_neg or (in_quote and _BAN.search(_QUOTE_SPAN.sub(\" \", body))):",
+   "252": "k = rec[\"r10_kind\"]",
+   "253": "if r10_scan is not None and k in (\"negation\", \"quote_mention\"):",
+   "254": "rec.update(kind=\"C\", exempt=True,",
+   "256": "r10_kind=k)",
+   "257": "elif r10_scan is None:",
+   "307": "def r13_assertions(text, tokens=DEFAULT_TOKENS, r10_scan=None, r12_scan=None):",
+   "310": "_, details = r13_scan(text, tokens, r10_scan=r10_scan, r12_scan=r12_scan)"
+  },
+  "G7": {
+   "69": "NEG_RE = re.compile(r\"(不|无|未|非|禁|勿|否决|排除|不宣告|不得)\")  # 与编排方探针同词表",
+   "71": "CLAUSE_BREAK = \"。！？；\\n\"  # 子句边界：否定回看不跨句（防「无需…」的「无」污染下一 token）",
+   "76": "DOUBLE_NEG_RE = re.compile(r\"(不得不|并非不|并不是不|不是不|无不|没有不|不无|不能不|不可不|未曾不)\")",
+   "78": "def r10_context(text, start, end):",
+   "92": "dbl = bool(DOUBLE_NEG_RE.search(pre))",
+   "113": "def r10_scan(text, assert_tokens):",
+   "120": "ctx = r10_context(text, m.start(), m.end())",
+   "134": "def r12_scan(text, assert_tokens):",
+   "144": "ctx = r10_context(text, m.start(), m.end())",
+   "145": "if ctx[\"kind\"] == \"double_neg\":"
+  },
+  "V12": {
+   "29": "import re",
+   "32": "V2_OVERRIDE = (",
+   "36": "\"已填完\", \"已提交完\", \"已补登完\", \"已签\", \"已落盘\", \"已入账\", \"已交付\",",
+   "38": "V2_OVERRIDE_RE = re.compile(r\"已(按|照|依|经|由|将|把)[^。；|]{0,12}(填|登|交|录|签|算|盘)\")",
+   "42": "PROHIBIT = (\"不得\", \"不许\", \"禁止\", \"严禁\", \"切勿\", \"不可\", \"不代填\", \"未代填\", \"不代\")",
+   "66": "_CLAUSE_SEPS = \"。！？；\\n\"",
+   "97": "U, off = _segment(line, rel, _CLAUSE_SEPS)",
+   "108": "def classify_v12(text, start, end, token):",
+   "143": "if hard:",
+   "149": "hit_override = [k for k in V2_OVERRIDE if k in U]",
+   "152": "if hit_override and not adj_neg and not prohibit_U:",
+   "167": "# ---- S3 DEFAULT：判不了 -> fail-closed 默认 V2 + 人工复核 ----",
+   "168": "return {\"verdict\": \"V2\", \"hard\": [], \"weak\": [], \"override\": \"\",",
+   "169": "\"unit\": U, \"line\": line, \"review_flag\": True,",
+   "170": "\"reason\": \"无任何 V1 形状、亦无硬性完成宣称：机器判不了，fail-closed 默认 V2（宁可误拦），须人工复核或改写为显式规定式\"}"
+  },
+  "PIPE": {
+   "29": "N13_PATH = ROOT / \"lead\" / \"gate_n13_20261109\" / \"_n13_predicates.py\"",
+   "49": "\"\"\"只读加载两层谓词本体；返回 (g7, n13, n13.DEFAULT_TOKENS)。\"\"\"",
+   "50": "g7 = _load(G7_PATH, \"_gp_pipe_g7\")",
+   "51": "n13 = _load(N13_PATH, \"_gp_pipe_n13\")",
+   "52": "return g7, n13, list(n13.DEFAULT_TOKENS)",
+   "58": "def extract_spans(text, tokens):",
+   "78": "r10_problems, r10_warnings, r10_hits = g7.r10_scan(text, tokens)",
+   "79": "r12_problems, r12_hits = g7.r12_scan(text, tokens)",
+   "80": "r13_problems, r13_details = n13.r13_assertions(",
+   "81": "text, n13_tokens, r10_scan=g7.r10_scan, r12_scan=g7.r12_scan)",
+   "135": "for tok in tok_set:",
+   "137": "for m in re.finditer(re.escape(tok), text):",
+   "179": "elif n13_v == \"PASS\" and r10_v == \"PASS\" and r12_v == \"ABSENT\":",
+   "180": "verdict = \"PASS\"; rule.append(\"K5\")",
+   "253": "verdict = \"PASS\""
+  }
+ },
+ "n13_forwards_r10": {
+  "r13_scan_params": [
+   "text",
+   "tokens",
+   "r10_scan",
+   "r12_scan"
+  ],
+  "has_r10_scan_param": true,
+  "has_r12_scan_param": true,
+  "internal_calls": {
+   "r10_scan": [
+    196
+   ],
+   "r12_scan": [
+    200
+   ]
+  },
+  "C_class_kind_gate_lines": [
+   [
+    253,
+    "k in (\"negation\", \"quote_mention\")"
+   ]
+  ],
+  "C_assign_line": 254,
+  "C_assign_text": "rec.update(kind=\"C\", exempt=True,"
+ },
+ "pipeline_injection": [
+  [
+   80,
+   "r10_scan",
+   "g7.r10_scan"
+  ],
+  [
+   80,
+   "r12_scan",
+   "g7.r12_scan"
+  ]
+ ],
+ "r12_reuses_r10": {
+  "r12_scan_calls": [
+   [
+    143,
+    "?"
+   ],
+   [
+    143,
+    "?"
+   ],
+   [
+    144,
+    "r10_context"
+   ],
+   [
+    144,
+    "?"
+   ],
+   [
+    144,
+    "?"
+   ],
+   [
+    146,
+    "?"
+   ],
+   [
+    147,
+    "?"
+   ],
+   [
+    147,
+    "?"
+   ]
+  ],
+  "calls_r10_context": true,
+  "source_line_144": "ctx = r10_context(text, m.start(), m.end())"
+ },
+ "A_tests": {
+  "V12|G7": {
+   "A1_no_import": true,
+   "imports_a": [
+    "re"
+   ],
+   "imports_b": [
+    "re",
+    "hashlib",
+    "pathlib"
+   ],
+   "A2_writer_style_shared": [],
+   "A2_writer_style_pass": true,
+   "A2_full_shared_literals": [
+    "",
+    "\n",
+    ",",
+    "。！？；\n"
+   ],
+   "A2_full_pass": false,
+   "A4_shared_function_names": [],
+   "A4_pass": true,
+   "A5_distinct_files": true
+  },
+  "V12|N13": {
+   "A1_no_import": true,
+   "imports_a": [
+    "re"
+   ],
+   "imports_b": [
+    "re"
+   ],
+   "A2_writer_style_shared": [
+    "已入账"
+   ],
+   "A2_writer_style_pass": false,
+   "A2_full_shared_literals": [
+    "",
+    "PASS",
+    "line",
+    "已入账"
+   ],
+   "A2_full_pass": false,
+   "A4_shared_function_names": [],
+   "A4_pass": true,
+   "A5_distinct_files": true
+  },
+  "G7|N13": {
+   "A1_no_import": true,
+   "imports_a": [
+    "re",
+    "hashlib",
+    "pathlib"
+   ],
+   "imports_b": [
+    "re"
+   ],
+   "A2_writer_style_shared": [],
+   "A2_writer_style_pass": true,
+   "A2_full_shared_literals": [
+    "",
+    " ",
+    "kind",
+    "negation",
+    "pos",
+    "quote_mention",
+    "token"
+   ],
+   "A2_full_pass": false,
+   "A4_shared_function_names": [],
+   "A4_pass": true,
+   "A5_distinct_files": true
+  }
+ },
+ "v12_only_import_re": {
+  "imports": [
+   "re"
+  ],
+  "is_only_re": true
+ },
+ "v12_no_r10_symbols": {
+  "r10_context": true,
+  "DOUBLE_NEG_RE": true,
+  "NEG_RE": false,
+  "r10_scan": true,
+  "r12_scan": true
+ },
+ "runtime_token_contract": {
+  "families": [
+   {
+    "tokens": [
+     "已入账",
+     "已追加",
+     "已生效"
+    ],
+    "rows": 55
+   },
+   {
+    "tokens": [
+     "已生效",
+     "可应用母本",
+     "放行 N-5",
+     "已入账",
+     "已追加"
+    ],
+    "rows": 17
+   },
+   {
+    "tokens": [
+     "已补登",
+     "已填入",
+     "已填",
+     "已代填"
+    ],
+    "rows": 1
+   },
+   {
+    "tokens": [
+     "已填",
+     "已代填",
+     "已提交"
+    ],
+    "rows": 1
+   }
+  ],
+  "identical_to_DEFAULT_TOKENS": 55,
+  "superset_of_three_tokens": 17,
+  "badban_is_superset": true,
+  "shared_contract_rows": 72,
+  "n": 74,
+  "note": "字面词表常量并非模块级共享定义；共享发生在编排层喂同一 tokens"
+ }
+}

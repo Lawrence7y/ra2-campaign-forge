@@ -1,0 +1,44 @@
+### V7: orphan WITH a real user backup: upgrade must restore the user's original from X.MAP.ra2forge.bak ###
+state at start: install A done over user's own X.MAP (V4b); X.MAP.ra2forge.bak sha 96e5664f... = user's original
+CMD: python -m ra2forge install --package <pkgs\ORPHAN PROBE TWO> --game <game>
+error: install blocked by preflight - no file has been written:
+  definite content conflicts (strict mode refuses them; sole escape: --allow-content-conflict):
+    - BATTLEMD98.INI: a previous ra2forge install (recorded in ra2forge_install.json, package 'D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W21_dlc_orphan\\sandbox\\pkgs\\ORPHAN PROBE') would be replaced by a DIFFERENT package - uninstall it first, or pass --allow-content-conflict to release this one conflict
+    - Y.MAP: a previous ra2forge install (recorded in ra2forge_install.json, package 'D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W21_dlc_orphan\\sandbox\\pkgs\\ORPHAN PROBE') would be replaced by a DIFFERENT package - uninstall it first, or pass --allow-content-conflict to release this one conflict
+    - expandmd98.mix: a previous ra2forge install (recorded in ra2forge_install.json, package 'D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261112_r02\\W21_dlc_orphan\\sandbox\\pkgs\\ORPHAN PROBE') would be replaced by a DIFFERENT package - uninstall it first, or pass --allow-content-conflict to release this one conflict
+  notices (do not block):
+    - BATTLEMD.INI present (normal install state) and left untouched; the campaign is appended by BATTLEMD98.INI (the engine merges both by battle id). This is NOT a conflict.
+EXIT CODE: 1
+== game dir files ==
+  BATTLEMD.INI                       74B  sha256:783b8622ae6b4730c56d9094568db1d43bc2a0b37ce2a4e824e41438ee7fc067
+  BATTLEMD98.INI                    386B  sha256:29608485366540e77e8f3468d59a84504c3c452116fbf104813c511e097eb0d0
+  expandmd98.mix                   8555B  sha256:4a4724042c106dddf4d40338c74ae18e44c4617c05a68e740f47c82f1c163bac
+  gamemd.exe                         70B  sha256:7155cf2648f960d5c3783359e18b860d13770d046cf898d80d9ef76df92323d6
+  ra2forge_install.json            2119B  sha256:71cb254e05661529bc96ba74ab614652ce3f2779d1d4079007472cfd3819264c
+  RA2MD.INI                          40B  sha256:7b0f1352324b070b8e701ffef176de6ae57793ca38bf13cb6a1a82036291e9b5
+  USERMAP1.MAP                       49B  sha256:59057b73251c2ee3578f95d11678b79c8314e3001fffa2759babfe561e2e1433
+  X.MAP                            4321B  sha256:f9a90db6f6beaa97a79c4f1be77b20371f05a112ed73b29b471854f746b4fae0
+  X.MAP.ra2forge.bak                 65B  sha256:96e5664fa143c26b87c583eca8280f7fc8a8c52d9f050fd4d5421911ed809350
+  Y.MAP                            4200B  sha256:b1bbeb660dc15bd1c78ed3e03d96d2bf8af0b6b1af0128fd3887b904a752d9d6
+== manifest ra2forge_install.json ==
+  package: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\sandbox\pkgs\ORPHAN PROBE
+  version: 0.5  installed_at: 2026-11-13T06:57:55
+  entry: BATTLEMD98.INI     action=created   backup=None original_absent=None sha256=29608485366540e7
+  entry: X.MAP              action=replaced  backup=X.MAP.ra2forge.bak original_absent=None sha256=f9a90db6f6beaa97
+  entry: Y.MAP              action=created   backup=None original_absent=None sha256=b1bbeb660dc15bd1
+  entry: expandmd98.mix     action=created   backup=None original_absent=None sha256=4a4724042c106ddd
+CHECK: X.MAP sha now (expect user original 96e5664fa143c26b87c583eca8280f7fc8a8c52d9f050fd4d5421911ed809350):
+f9a90db6f6beaa97a79c4f1be77b20371f05a112ed73b29b471854f746b4fae0
+CHECK: X.MAP.ra2forge.bak still present? True
+CMD: python -m ra2forge uninstall --game <game>
+uninstalled from D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\sandbox\game:
+  removed    expandmd98.mix
+  removed    Y.MAP
+  removed    X.MAP
+  restored   X.MAP.ra2forge.bak -> X.MAP
+  removed    BATTLEMD98.INI
+  removed    ra2forge_install.json
+EXIT CODE: 0
+CMD: diffsnap v4_00_initial_with_userX vs v7_31_after_uninstall
+IDENTICAL: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v4_00_initial_with_userX.sha.txt == D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v7_31_after_uninstall.sha.txt
+DIFF EXIT CODE: 0 (0 = user's world restored byte-exact)

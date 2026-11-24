@@ -1,0 +1,126 @@
+=== 4. 相关系数（自实现 Pearson；样本 = units0非空 & live_fps可算且>0）===
+valid n = 63  独立趟数 = 34
+ρ(pre_fps15, live_fps) 全库                                n=63  rho=+0.871733    spearman=+0.753426 
+ρ(units0,     live_fps) 全库                               n=63  rho=-0.350093    spearman=-0.429973 
+ρ(pre_fps15, units0)    全库                               n=63  rho=-0.457489    spearman=-0.454130 
+ρ(pre_fps15, fps_avg)   全库                               n=63  rho=+0.614237    spearman=+0.565952 (filter fps_avg)
+
+=== 固定 harness 版本内 ρ(units0, live_fps) ===
+[37a7c9cdf2ca97e3] n=6 trips=2                           n=6   rho=+0.443479    spearman=+0.292770 
+[38244d2907e7f7fa] n=9 trips=3                           n=9   rho=-0.370478    spearman=-0.843274 
+[LABEL:None] n=22 trips=16                               n=22  rho=-0.149869    spearman=-0.098343 
+[LABEL:qc151_trip.harness3.py] n=12 trips=4              n=12  rho=-0.244375    spearman=-0.647750 
+[d019e8beecfb5fd8] n=10 trips=7                          n=10  rho=+0.957151    spearman=+0.617065 
+[dd5459fe0cf3461c] n=4 trips=2                           n=4   rho=+0.666494    spearman=+0.774597 
+
+--- pooled within-version（各组减组均值后合并，消除组间差异）---
+ρ(units0, live_fps) pooled within-harness (demeaned)     n=63  rho=+0.591069    spearman=+0.275766 groups=6
+
+=== key 对照：同 map(f3bb...) 的六组 harness，各自 units0 / live_fps / pre ===
+  qc151_trip.harness3.py         n=3  units=1342 ..1342  live=  8.78.. 11.98  median= 10.21  pre=10.02..10.02
+  qc151_trip.harness7.py         n=5  units=941  ..974   live= 31.10.. 31.32  median= 31.22  pre=30.72..31.34
+  qc151_trip.harness8.py         n=4  units=1342 ..1347  live=  3.05.. 10.61  median=  5.77  pre= 2.68.. 6.68
+  qc151_trip.harness8_v3.py      n=6  units=1349 ..1352  live=  5.89.. 16.74  median= 12.00  pre= 8.69..14.03
+  qc151_trip.harness8_v4.py      n=9  units=1189 ..1229  live= 18.54.. 31.29  median= 31.24  pre=15.35..31.39
+
+=== 5. 同义反复检查：pre_fps15 vs live_fps 逐窗比值/差 ===
+  l3_20261031ha        w0 units=1342  pre=  2.678 live=  3.050  Δ= +0.372  ratio=1.139 harness=qc151_trip.harness8.py
+  l3_20261031hb        w0 units=1347  pre=  6.676 live=  6.791  Δ= +0.115  ratio=1.017 harness=qc151_trip.harness8.py
+  l3_20261031hb        w1 units=1347  pre=  6.676 live=  4.758  Δ= -1.918  ratio=0.713 harness=qc151_trip.harness8.py
+  l3_20261031hb        w2 units=1347  pre=  6.676 live= 10.607  Δ= +3.931  ratio=1.589 harness=qc151_trip.harness8.py
+  l1c_20261021         w0 units=881   pre=  8.023 live=  9.221  Δ= +1.198  ratio=1.149 harness=qc151_trip.harness3.py
+  l1c_20261021         w1 units=881   pre=  8.023 live=  9.132  Δ= +1.109  ratio=1.138 harness=qc151_trip.harness3.py
+  l1c_20261021         w2 units=881   pre=  8.023 live= 10.035  Δ= +2.012  ratio=1.251 harness=qc151_trip.harness3.py
+  l3_1101v3a           w0 units=1349  pre=  8.689 live= 11.625  Δ= +2.936  ratio=1.338 harness=qc151_trip.harness8_v3.py
+  l3_1101v3a           w1 units=1349  pre=  8.689 live= 14.071  Δ= +5.382  ratio=1.619 harness=qc151_trip.harness8_v3.py
+  l3_1101v3a           w2 units=1349  pre=  8.689 live=  5.891  Δ= -2.798  ratio=0.678 harness=qc151_trip.harness8_v3.py
+  l1e_20261021         w0 units=866   pre=  9.354 live= 11.660  Δ= +2.306  ratio=1.247 harness=qc151_trip.harness3.py
+  l1e_20261021         w1 units=866   pre=  9.354 live= 12.403  Δ= +3.049  ratio=1.326 harness=qc151_trip.harness3.py
+  l1e_20261021         w2 units=866   pre=  9.354 live= 14.646  Δ= +5.292  ratio=1.566 harness=qc151_trip.harness3.py
+  l1d_20261021         w0 units=874   pre= 10.012 live= 10.266  Δ= +0.254  ratio=1.025 harness=qc151_trip.harness3.py
+  l1d_20261021         w1 units=874   pre= 10.012 live= 10.269  Δ= +0.257  ratio=1.026 harness=qc151_trip.harness3.py
+  l1d_20261021         w2 units=874   pre= 10.012 live= 13.701  Δ= +3.689  ratio=1.368 harness=qc151_trip.harness3.py
+  l3_20261021          w0 units=1342  pre= 10.023 live=  8.784  Δ= -1.239  ratio=0.876 harness=qc151_trip.harness3.py
+  l3_20261021          w1 units=1342  pre= 10.023 live= 11.981  Δ= +1.958  ratio=1.195 harness=qc151_trip.harness3.py
+  l3_20261021          w2 units=1342  pre= 10.023 live= 10.213  Δ= +0.190  ratio=1.019 harness=qc151_trip.harness3.py
+  l3_1101v3b           w0 units=1352  pre= 14.025 live= 16.744  Δ= +2.719  ratio=1.194 harness=qc151_trip.harness8_v3.py
+  l3_1101v3b           w1 units=1352  pre= 14.025 live= 12.384  Δ= -1.641  ratio=0.883 harness=qc151_trip.harness8_v3.py
+  l3_1101v3b           w2 units=1352  pre= 14.025 live= 11.217  Δ= -2.808  ratio=0.800 harness=qc151_trip.harness8_v3.py
+  l3_1101v4c           w0 units=1229  pre= 15.346 live= 18.540  Δ= +3.194  ratio=1.208 harness=qc151_trip.harness8_v4.py
+  l3_1101v4c           w1 units=1229  pre= 15.346 live= 28.416  Δ=+13.070  ratio=1.852 harness=qc151_trip.harness8_v4.py
+  l3_1101v4c           w2 units=1229  pre= 15.346 live= 30.705  Δ=+15.359  ratio=2.001 harness=qc151_trip.harness8_v4.py
+  l3_1101v4d           w0 units=1225  pre= 30.053 live= 31.181  Δ= +1.128  ratio=1.038 harness=qc151_trip.harness8_v4.py
+  l3_1101v4d           w1 units=1225  pre= 30.053 live= 31.268  Δ= +1.215  ratio=1.040 harness=qc151_trip.harness8_v4.py
+  l3_1101v4d           w2 units=1225  pre= 30.053 live= 31.267  Δ= +1.214  ratio=1.040 harness=qc151_trip.harness8_v4.py
+  l3_20261023r         w0 units=941   pre= 30.716 live= 31.320  Δ= +0.604  ratio=1.020 harness=qc151_trip.harness7.py
+  l3_20261023r         w1 units=941   pre= 30.716 live= 31.099  Δ= +0.383  ratio=1.012 harness=qc151_trip.harness7.py
+  l3_20261023q         w0 units=974   pre= 31.340 live= 31.135  Δ= -0.205  ratio=0.993 harness=qc151_trip.harness7.py
+  l3_20261023q         w1 units=974   pre= 31.340 live= 31.299  Δ= -0.041  ratio=0.999 harness=qc151_trip.harness7.py
+  l3_20261023q         w2 units=974   pre= 31.340 live= 31.218  Δ= -0.122  ratio=0.996 harness=qc151_trip.harness7.py
+  l3_1101v4e           w0 units=1189  pre= 31.395 live= 31.286  Δ= -0.109  ratio=0.997 harness=qc151_trip.harness8_v4.py
+  l3_1101v4e           w1 units=1189  pre= 31.395 live= 31.238  Δ= -0.157  ratio=0.995 harness=qc151_trip.harness8_v4.py
+  l3_1101v4e           w2 units=1189  pre= 31.395 live= 31.273  Δ= -0.122  ratio=0.996 harness=qc151_trip.harness8_v4.py
+  t55k_20261020        w0 units=842   pre= 31.401 live= 31.281  Δ= -0.120  ratio=0.996 harness=None
+  t55k_20261020        w1 units=842   pre= 31.401 live= 31.284  Δ= -0.117  ratio=0.996 harness=None
+  t55k_20261020        w2 units=842   pre= 31.401 live= 31.274  Δ= -0.127  ratio=0.996 harness=None
+  |Δ| 中位数 = 0.5541, 均值 = 2.4138, n=63
+ρ(pre_fps15, live_fps) 按趟取均值（去重复计数）                      n=34  rho=+0.813921    spearman=+0.650928 n_trips=34
+ρ(units0, live_fps) 按趟取均值（去重复计数）                         n=34  rho=-0.294512    spearman=-0.314913 n_trips=34
+
+=== 6. 趟内 vs 趟间 fps 极差 ===
+  趟内 archive_T38            n=2   31.221.. 31.458  极差=  0.236
+  趟内 archive_T39            n=2   31.268.. 31.450  极差=  0.182
+  趟内 l1a_20261020           n=3   31.226.. 31.270  极差=  0.044
+  趟内 l1c_20261021           n=3    9.132.. 10.035  极差=  0.903
+  趟内 l1d_20261021           n=3   10.266.. 13.701  极差=  3.435
+  趟内 l1e_20261021           n=3   11.660.. 14.646  极差=  2.986
+  趟内 l3_1101v3a             n=3    5.891.. 14.071  极差=  8.180
+  趟内 l3_1101v3b             n=3   11.217.. 16.744  极差=  5.527
+  趟内 l3_1101v4c             n=3   18.540.. 30.705  极差= 12.166
+  趟内 l3_1101v4d             n=3   31.181.. 31.268  极差=  0.088
+  趟内 l3_1101v4e             n=3   31.238.. 31.286  极差=  0.048
+  趟内 l3_20261021            n=3    8.784.. 11.981  极差=  3.197
+  趟内 l3_20261023q           n=3   31.135.. 31.299  极差=  0.164
+  趟内 l3_20261023r           n=2   31.099.. 31.320  极差=  0.221
+  趟内 l3_20261031hb          n=3    4.758.. 10.607  极差=  5.849
+  趟内 t55k_20261020          n=3   31.274.. 31.284  极差=  0.010
+  趟内极差 中位数 = 0.5697 (n=16 趟), 均值=2.7023, max=12.1657
+  趟间（各趟均值）n=34  范围 2.010..33.952  极差=31.942
+  趟间 中位数=31.214
+  两趟均值 |差| 的中位数 = 5.4368 (n=561 对)
+
+  按 units0 分层的趟均值:
+    archive_T34            units0=242    mean_live= 33.952  harness=None
+    l1_20261023hc          units0=672    mean_live= 32.257  harness=qc151_trip.harness7.py
+    archive_T36            units0=242    mean_live= 31.417  harness=None
+    archive_T39            units0=242    mean_live= 31.359  harness=None
+    archive_T38            units0=242    mean_live= 31.340  harness=None
+    archive_T43            units0=242    mean_live= 31.324  harness=None
+    archive_T33            units0=241    mean_live= 31.300  harness=None
+    archive_T47            units0=251    mean_live= 31.284  harness=None
+    t55k_20261020          units0=842    mean_live= 31.279  harness=None
+    archive_T41            units0=242    mean_live= 31.279  harness=None
+    archive_T44            units0=242    mean_live= 31.273  harness=None
+    l3_1101v4e             units0=1189   mean_live= 31.266  harness=qc151_trip.harness8_v4.py
+    archive_T42            units0=242    mean_live= 31.261  harness=None
+    l1a_20261020           units0=732    mean_live= 31.249  harness=None
+    archive_T32            units0=241    mean_live= 31.248  harness=None
+    l3_1101v4d             units0=1225   mean_live= 31.239  harness=qc151_trip.harness8_v4.py
+    l3_20261023q           units0=974    mean_live= 31.217  harness=qc151_trip.harness7.py
+    archive_T40            units0=242    mean_live= 31.210  harness=None
+    l3_20261023r           units0=941    mean_live= 31.210  harness=qc151_trip.harness7.py
+    archive_T49_u0800      units0=491    mean_live= 31.142  harness=None
+    archive_T45            units0=242    mean_live= 30.840  harness=None
+    l1_20261023e4          units0=702    mean_live= 29.441  harness=qc151_trip.harness7.py
+    l3_1101v4c             units0=1229   mean_live= 25.887  harness=qc151_trip.harness8_v4.py
+    l3_1101v3b             units0=1352   mean_live= 13.448  harness=qc151_trip.harness8_v3.py
+    l1e_20261021           units0=866    mean_live= 12.903  harness=qc151_trip.harness3.py
+    l1d_20261021           units0=874    mean_live= 11.412  harness=qc151_trip.harness3.py
+    l3_1101v3a             units0=1349   mean_live= 10.529  harness=qc151_trip.harness8_v3.py
+    l3_20261021            units0=1342   mean_live= 10.326  harness=qc151_trip.harness3.py
+    l1_20261023hb          units0=0      mean_live= 10.067  harness=qc151_trip.harness7.py
+    l1c_20261021           units0=881    mean_live=  9.463  harness=qc151_trip.harness3.py
+    l3_20261031hb          units0=1347   mean_live=  7.386  harness=qc151_trip.harness8.py
+    l1_20261023k           units0=0      mean_live=  4.517  harness=qc151_trip.harness7.py
+    l3_20261031ha          units0=1342   mean_live=  3.050  harness=qc151_trip.harness8.py
+    l1_20261023e1          units0=0      mean_live=  2.010  harness=qc151_trip.harness7.py

@@ -1,0 +1,105 @@
+
+=== T1 · read_one 读取语义 ===
+  PASS  T1.1 正常值透传
+  PASS  T1.2 None ⇒ None（不补 0）
+  PASS  T1.3 越界 >0xFFFFFFFF ⇒ None
+  PASS  T1.4 负数 ⇒ None
+  PASS  T1.5 非 int（str）⇒ None
+  PASS  T1.6 bool 拒收（True）
+  PASS  T1.7 边界 0xFFFFFFFF 接受
+  PASS  T1.8 边界 0 接受（0 是合法读数）
+  PASS  T1.9 reader 抛异常 ⇒ None（不向外抛）
+
+=== T2 · read_sample 读序 / 齐全性 / 跨帧判定 ===
+  PASS  T2.1 读序=帧前/四字段/帧后（6 次读）
+  PASS  T2.2 四字段值正确
+  PASS  T2.3 f_pre/f_post 正确
+  PASS  T2.4 帧号变化 ⇒ cross_frame=True
+  PASS  T2.5 schema 正确（V3，D-21 裁 A 升版）
+  PASS  T2.6 两个未证标记都在
+  PASS  T2.7 va 段记录全部 5 个地址
+  PASS  T2.8 ts 段记录读取起点与读段止点（V3 含 f_pre_anchor_known）
+  PASS  T2.8b ts 段含 segment_start / segment_end
+  PASS  T2.8c segment_end >= f_post（止点不早于起点）
+  PASS  T2.8d segment_start == f_pre（同一时刻）
+  PASS  T2.9 帧号未变 ⇒ cross_frame=False
+  PASS  T2.10 f_post 读失败 ⇒ cross_frame=None
+  PASS  T2.11 f_post 读失败 ⇒ f_post=None
+  PASS  T2.12 失败字段记 None（不补 0）
+  PASS  T2.13 时间戳逐次递增
+
+=== T3 · classify_edge 帧沿分类 ===
+  PASS  T3.1 首样本 ⇒ first
+  PASS  T3.2 同值 ⇒ same
+  PASS  T3.3 df=1 ⇒ edge
+  PASS  T3.4 df=3 ⇒ edge_missed
+  PASS  T3.5 df<0 ⇒ unjudgeable
+  PASS  T3.6 f 为 None ⇒ unjudgeable
+
+=== T4 · FrameEdgeTracker 事件与统计 ===
+  PASS  T4.1 edge 事件数（df=1 一次 + df=3 一次）
+  PASS  T4.2 事件帧号序列
+  PASS  T4.3 事件种类
+  PASS  T4.4 df>1 归属为聚合
+  PASS  T4.5 df=1 归属为单帧
+  PASS  T4.6 样本数
+  PASS  T4.7 edge 计数
+  PASS  T4.8 edge_missed 计数
+  PASS  T4.9 未观测帧下界 = df-1 = 2
+  PASS  T4.10 unjudgeable 计数（104→103 回退一次；首样本不算）
+  PASS  T4.10b first 计数（首样本单列，不混入 unjudgeable）
+  PASS  T4.11 本组无读失败 ⇒ null_frames=0
+  PASS  T4.12 冻结段最大时长 > 0
+  PASS  T4.13 stats 带两个未证标记
+  PASS  T4.14 stats 明写不得宣称业务字段冻结
+
+=== T5 · JSONL 格式 / 往返 / 拒收 ===
+  PASS  T5.1 单行（无 \n / \r）
+  PASS  T5.2 往返一致（values）
+  PASS  T5.3 往返保留 markers
+  PASS  T5.4 非 JSON ⇒ None
+  PASS  T5.5 schema 不符 ⇒ 拒收
+  PASS  T5.6 JSON 数组（非 dict）⇒ 拒收
+  PASS  T5.7 中文不转义（ensure_ascii=False）
+  PASS  T5.8 超长值不破坏单行
+
+=== T6 · 静态交叉核对：地址与 spec 逐字一致 ===
+  PASS  T6.1 帧号 VA
+  PASS  T6.2 字段 gen_stamp 的 VA
+  PASS  T6.2 字段 threat_calls 的 VA
+  PASS  T6.2 字段 dirty_rect_count 的 VA
+  PASS  T6.2 字段 bullet_count 的 VA
+  PASS  T6.3 字段顺序固定（读序即此序）
+  PASS  T6.4 harness 源文件可读（找到 D:\Project\ra2-campaign-forge\lead\goal1_harness8_20261031\qc151_trip.harness8_v4.py）
+  PASS  T6.4b harness 帧号常量与候选件一致
+  PASS  T6.5 harness 观测频率常量
+
+=== T8 · A1 复核 R4/R5 回归（读失败断裂状态机 + 键名自解释）===
+  PASS  T8.1 [100,None,100] 不虚报冻结
+  PASS  T8.2 [100,None,100] 记 1 次 resume_after_loss
+  PASS  T8.3 [100,None,100] 不产 edge/same 事件
+  PASS  T8.4 [100,None,150] 不虚报漏沿
+  PASS  T8.5 [100,None,150] 不产假聚合事件
+  PASS  T8.6 [100,None,150] 记 resume_after_loss=1
+  PASS  T8.7 读失败 5 s 不虚增冻结
+  PASS  T8.8 真冻结仍被测到（≥1.5 s）
+  PASS  T8.9 stats 不再暴露旧键 freeze_max_s
+  PASS  T8.10 stats 暴露自解释键 frame_clock_freeze_max_s
+  PASS  T8.11 note 明写读失败墙钟不计入
+  PASS  T8.12 10ms 内 df=50 记 implausible_df=1
+  PASS  T8.13 该事件的 df_dt_plausible=False
+  PASS  T8.14 合理的 df=5/1s 不误报
+  PASS  T8.15 df<0 仍记 unjudgeable
+
+=== T7 · D-19 三个重点要求：null 不补 0 / df>1 不插值 / 冻结不断言业务 ===
+  PASS  T7.1 df=4 只记 1 个事件（不生成 2/3/4 三帧假值）
+  PASS  T7.2 df=4 漏沿下界 = 3
+  PASS  T7.3 源码不含 hook / 注入 / 挂线程 / dump 调用
+  PASS  T7.4 RpmReader 默认关闭（enable=False）
+  PASS  T7.5 未启用时 open() 返回 False（不触碰系统）
+  PASS  T7.6 未启用时 err 明写 disabled
+  PASS  T7.7 未开句柄时 read 返回 None
+
+==============================================================
+SUMMARY  PASS=85  FAIL=0
+==============================================================

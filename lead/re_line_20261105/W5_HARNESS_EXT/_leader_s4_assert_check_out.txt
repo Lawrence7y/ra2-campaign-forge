@@ -1,0 +1,74 @@
+target: D:/Project/ra2-campaign-forge/lead/re_line_20261105/W5_HARNESS_EXT/qc151_trip.harness8_v4_ext.py
+size: 404835 lines: 9077
+
+=== 1. _W5_STATE 的初始定义 ===
+  183	_W5_STATE = {
+  184	    "on": False,
+  185	    "ra2render_hits": None,
+  186	    "ra2loader_hits": None,
+  187	    "last_window_events": [],
+  188	    "last_window_stats": None,
+  189	    "last_window_tracker": None,
+  190	}
+  191	
+  192	_W5_CUSTOM_READER = None
+  193	
+  194	
+  195	def w5_set_reader(reader_fn):
+  196	    """注入假 reader（供离线单测使用）"""
+
+=== 2. _W5_STATE 所有键的写入点 ===
+  204	_W5_STATE["on"] = False
+  205	_W5_STATE["ra2render_hits"] = None
+  206	_W5_STATE["ra2loader_hits"] = None
+  207	_W5_STATE["last_window_events"] = []
+  208	_W5_STATE["last_window_stats"] = None
+  209	_W5_STATE["last_window_tracker"] = None
+  1005	_W5_STATE["ra2render_hits"] = list(scan.get("ra2render_hits") or [])
+  1006	_W5_STATE["ra2loader_hits"] = list(scan.get("ra2loader_hits") or [])
+  4178	_W5_STATE["last_window_events"] = events
+  4179	_W5_STATE["last_window_stats"] = tracker.stats()
+  4180	_W5_STATE["last_window_tracker"] = tracker
+  7719	_W5_STATE["on"] = _w5_on
+
+=== 3. s4_scan_names 的调用点（母本体内）===
+  978	def s4_scan_names(names) -> dict:
+  1003	def s4_scan_names(names) -> dict:
+  1199	scan = s4_scan_names(names)
+
+=== 4. 枚举失败分支的 return（在 s4_scan_names 调用之前？）===
+  W5 hook 版 s4_injection_gate 起于行 1116
+  1252	def s4_injection_gate(pid: int, rec: Recorder, authorized: bool = False) -> bool:
+  1253	    res = _s4_injection_gate_mother(pid, rec, authorized=authorized)
+  1254	    if not _W5_STATE["on"]:
+  1255	        return res
+  1256	    if authorized:
+  1257	        rec.add("W5EXT", "s4_hard_assertion", "FAILED_ALLOW_LOADER",
+  1258	                "script:s4_injection_gate",
+  1259	                note="★ W5EXT 硬断言阻断：严禁在 --allow-loader / authorized 下启用扩项")
+  1260	        S4_VERDICT["gate"] = "w5_refused_allow_loader"
+  1261	        S4_VERDICT["exit_code"] = EXIT_INJECTION_SUSPECTED
+  1262	        return False
+  ^^^ 该分支提前 return False
+
+=== 5. 结论推导 ===
+  _W5_STATE 初始块是否含 ra2render_hits 键: True
+  若为 False ⇒ 枚举失败分支下该键**不存在**，
+     W5 hook 里 `_W5_STATE.get('ra2render_hits') or []` 得到 []，
+     而 `not res`（res=False）会触发 `FAILED_INJECTION_SUSPECTED` 分支 ⇒ **仍然阻断**。
+  ⇒ 需确认 hook 用的是 .get() 而不是 [] 索引。
+  hook 用 .get() 取值: True
+
+=== 6. 语法与禁止面（副本自身）===
+  AST parse: OK
+  WriteProcessMemory   = 3
+  CreateRemoteThread   = 1
+  SuspendThread        = 0
+  MiniDumpWriteDump    = 11
+  StackWalk            = 0
+  SetWindowsHookEx     = 1
+
+=== 7. flag-off 语义：_W5_STATE['on'] 缺省 ===
+  init 块含 'on': True
+
+DONE

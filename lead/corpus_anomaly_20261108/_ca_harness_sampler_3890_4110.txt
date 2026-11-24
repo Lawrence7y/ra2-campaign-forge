@@ -1,0 +1,221 @@
+3890: 
+3891: def _rpm_close(handle) -> None:
+3892:     """★ 关只读句柄（§3.2：finally 关闭）。"""
+3893:     if handle:
+3894:         ctypes.windll.kernel32.CloseHandle(handle)
+3895: 
+3896: 
+3897: def _rpm_u32(handle, va: int):
+3898:     """★ `ReadProcessMemory` 读 u32；失败 ⇒ `None`（**不抛**，采样器内部收口）。
+3899: 
+3900:     ★ `lpNumberOfBytesRead` 必须核 4 字节全读（半读 ⇒ 视为失败，§5.4 读数畸形）。
+3901:     """
+3902:     k32 = ctypes.windll.kernel32
+3903:     k32.ReadProcessMemory.argtypes = [wt.HANDLE, ctypes.c_void_p,
+3904:                                       ctypes.c_void_p, ctypes.c_size_t,
+3905:                                       ctypes.POINTER(ctypes.c_size_t)]
+3906:     k32.ReadProcessMemory.restype = wt.BOOL
+3907:     buf = ctypes.c_uint32(0)
+3908:     got = ctypes.c_size_t(0)
+3909:     ok = k32.ReadProcessMemory(handle, ctypes.c_void_p(va), ctypes.byref(buf),
+3910:                                ctypes.sizeof(buf), ctypes.byref(got))
+3911:     if not ok or got.value != ctypes.sizeof(buf):
+3912:         return None
+3913:     return buf.value
+3914: 
+3915: 
+3916: class _PMC(ctypes.Structure):
+3917:     """★ `PROCESS_MEMORY_COUNTERS`（工作集/提交内存；服务 M-6 静默死亡归因）。"""
+3918:     _fields_ = [("cb", wt.DWORD), ("PageFaultCount", wt.DWORD),
+3919:                 ("PeakWorkingSetSize", ctypes.c_size_t),
+3920:                 ("WorkingSetSize", ctypes.c_size_t),
+3921:                 ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+3922:                 ("QuotaPagedPoolUsage", ctypes.c_size_t),
+3923:                 ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+3924:                 ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+3925:                 ("PagefileUsage", ctypes.c_size_t),
+3926:                 ("PeakPagefileUsage", ctypes.c_size_t)]
+3927: 
+3928: 
+3929: def _rpm_mem_kb(handle):
+3930:     """★ 工作集/提交内存（KB；`GetProcessMemoryInfo`）；失败 ⇒ `(None, None)`。
+3931: 
+3932:     ★ 不可测写 `null` 不写 0（Recorder 纪律）。
+3933:     """
+3934:     try:
+3935:         psapi = ctypes.windll.psapi
+3936:         psapi.GetProcessMemoryInfo.argtypes = [wt.HANDLE,
+3937:                                                ctypes.POINTER(_PMC), wt.DWORD]
+3938:         psapi.GetProcessMemoryInfo.restype = wt.BOOL
+3939:         pmc = _PMC()
+3940:         pmc.cb = ctypes.sizeof(_PMC)
+3941:         if psapi.GetProcessMemoryInfo(handle, ctypes.byref(pmc), pmc.cb):
+3942:             return pmc.WorkingSetSize // 1024, pmc.PagefileUsage // 1024
+3943:     except Exception:
+3944:         return None, None
+3945:     return None, None
+3946: 
+3947: 
+3948: def _rpm_counters(handle) -> dict:
+3949:     """★ 1 Hz 计数器副读（§3.2）：units/infantry/aircraft + G/B/Techno
+3950:     （Items 形状自检 D-3：`Items != 0 ∧ Count ≤ 100000`——Items 是**指针**，
+3951:     ★ 禁用 `Count−Items==0xC`（把指针当计数，恒假；§3.6-D3））+ 工作集/提交内存。
+3952: 
+3953:     ★ 任一项读失败 ⇒ 该项 `null`（不写 0）；**零写入**目标进程。
+3954:     """
+3955:     units = _rpm_u32(handle, MEASURE_UNITS_VA)
+3956:     infantry = _rpm_u32(handle, MEASURE_INFANTRY_VA)
+3957:     aircraft = _rpm_u32(handle, MEASURE_AIRCRAFT_VA)
+3958:     g = _rpm_u32(handle, MEASURE_G_VA)
+3959:     g_items = _rpm_u32(handle, MEASURE_G_ITEMS_VA)
+3960:     b = _rpm_u32(handle, MEASURE_B_VA)
+3961:     b_items = _rpm_u32(handle, MEASURE_B_ITEMS_VA)
+3962:     techno = _rpm_u32(handle, MEASURE_TECHNO_VA)
+3963:     ws_kb, pf_kb = _rpm_mem_kb(handle)
+3964:     return {"units": units, "infantry": infantry, "aircraft": aircraft,
+3965:             "g": g, "b": b, "techno": techno, "g_items": g_items,
+3966:             "b_items": b_items, "ws_kb": ws_kb, "pf_kb": pf_kb,
+3967:             "shape": {"g_valid": (None if (g is None or g_items is None)
+3968:                                   else (g_items != 0 and g <= 100000)),
+3969:                       "b_valid": (None if (b is None or b_items is None)
+3970:                                   else (b_items != 0 and b <= 100000))}}
+3971: 
+3972: 
+3973: def _measure_poll_span(handle, span_s: float, hz: int):
+3974:     """★ 定拍只读轮询一段墙钟：`CurrentFrame` u32 采样 + 1 Hz 计数器副读。
+3975: 
+3976:     ★ 同构 bench `poll_frames`（§3.2）；主线程内联 `time.perf_counter` 定拍；
+3977:       ★ 节拍延时**只**经既有 `_doze`（QC197 纪律：`time.sleep` 既有调用一字不动）。
+3978:     ★ 实际到拍节奏照实留痕（samples 的 t = `time.perf_counter()` 浮点；
+3979:       stats 的 `hz_effective` 折算披露；§3.2 量化照实披露）。
+3980:     ★ RPM 读失败**不抛**：退避 `_doze(0.001)` 继续守窗，失败计数随 err 返回。
+3981:     ★ 返回 `(t0, samples, counters, err)`；samples=`[(perf_counter, f), ...]`。
+3982:     """
+3983:     samples: list = []
+3984:     counters: list = []
+3985:     errs = 0
+3986:     t0 = time.perf_counter()
+3987:     t_end = t0 + span_s
+3988:     next_ctr = t0 - 1.0        # ★ 首轮即做一次计数器副读（t_rel≈0，§3.2 schema）
+3989:     i = 0
+3990:     while True:
+3991:         t_now = time.perf_counter()
+3992:         if t_now >= t_end:
+3993:             break
+3994:         f = _rpm_u32(handle, MEASURE_CURRENT_FRAME_VA)
+3995:         if f is None:
+3996:             errs += 1
+3997:             _doze(0.001)       # ★ 失败退避：仍守窗长，不空转烧核
+3998:         else:
+3999:             samples.append((t_now, f))
+4000:         if t_now >= next_ctr:
+4001:             row = _rpm_counters(handle)
+4002:             row["t_rel"] = round(t_now - t0, 6)
+4003:             counters.append(row)
+4004:             next_ctr = t_now + 1.0
+4005:         # ★ 定拍：离下拍有余量才睡；睡过头则顺延（节奏照实留痕，不追读补样）
+4006:         i += 1
+4007:         t_next = t0 + i / hz
+4008:         ahead = t_next - time.perf_counter()
+4009:         while ahead > 0.0025:
+4010:             _doze(0.002)
+4011:             ahead = t_next - time.perf_counter()
+4012:     err = (f"ReadProcessMemory 失败 {errs} 次（有效样本 {len(samples)}）"
+4013:            if errs else None)
+4014:     return t0, samples, counters, err
+4015: # >>> QC213-BEGIN probe（嵌套哨兵：删本块=还原 QC212 锚 bf4f32fe…）
+4016: # ===========================================================================
+4017: # §10.8b · QC213 · per-house 运行期探针（★ 纯新增只读节；随 --measure 窗激活）
+4018: # ===========================================================================
+4019: # ★★ 授权与门控（照 QC210-212 flag-off 房规）：探针**不新增 CLI 开关**，随既有
+4020: #   `--measure`（缺省 0）且 nav 全绿时随窗激活（main-arm 块）；缺省 off ⇒ 零执行、
+4021: #   零 rec 行、零行为。RPM 只沿用 §10.8 既有只读模式（句柄=measure 句柄，S-4 后
+4022: #   开、finally 关；本节零写入、零注入）。
+4023: # ★ 枚举读法（分析员规格；VA/file_off 成对，D-79）：
+4024: #   Items=rd32(0xA8022C / file_off 0x68022C)；Count=rd32(0xA80238 / 0x680238)；
+4025: #   哨兵 items==0 或 n>64 ⇒ probe_error=bad_vector（预期 n=4=两槽+Neutral+Special；
+4026: #   n≥14 = FFA 块军模型对象级实锤，本身即关键读数）。
+4027: # ★ 人类 house 三重识别：主=Items[i]==rd32(0xA83D4C / 0x683D4C)（引擎 PlayerPtr）；
+4028: #   辅=+0x1EC!=0；对照=id30==0。AI=id30==8 且 ≠PlayerPtr。
+4029: # ★ 采样：锚点=CurrentFrame u32@0xA8ED84（既有读法）；三档闩锁 frame≥300/600/1800
+4030: #   各一次（去重）；帧钟冻结≥2s 补 final 快照后停；piggyback 既有 500Hz measure
+4031: #   循环（经 `_rpm_u32` 同名包装顺路驱动，见块尾；每 house ~20 dword 开销可忽略）。
+4032: # ★ readings 键：p{帧号 6 位零填}_h{i}_{字段}（h{i} 按 Items 序）+ meta_count/
+4033: #   meta_playeridx + 预注册布尔 q213_allies_us_fr/br/ru（随快照落，组=QC213）。
+4034: _QC213_PROBE = {
+4035:     "on": False, "done": False, "err": None, "errs": 0,
+4036:     "latched": {}, "latched_n": 0, "frozen_done": False,
+4037:     "last_f": None, "last_t": None, "snapshots": [],
+4038:     "latch_frames": None,              # ★ QC151P3：阶梯锁存帧集（None ⇒ 锚 QC213_LATCH_FRAMES）
+4039: }
+4040: QC213_HOUSE_ITEMS_VA = 0x00A8022C   # HouseClass::Array Items（file_off 0x0068022C）
+4041: QC213_HOUSE_COUNT_VA = 0x00A80238   # Count（file_off 0x00680238）
+4042: QC213_PLAYERPTR_VA = 0x00A83D4C     # PlayerPtr（file_off 0x00683D4C）
+4043: QC213_LATCH_FRAMES = (300, 600, 1800)
+4044: QC213_FREEZE_S = 2.0                # 帧钟冻结 ≥2s ⇒ 补 final 快照后停
+4045: QC213_ID30_FR = 2                   # 预注册同盟位号：FR
+4046: QC213_ID30_BR = 4                   # BR
+4047: QC213_ID30_RU = 8                   # RU（战争成立性：同盟位必须为 0）
+4048: QC213_ERR_CAP = 3                   # probe_error 行上限（防坏向量刷屏；达帽即收口）
+4049: QC213_SCORE_OFF = 0x15FF4           # 可选便宜项：计分簿区偏移
+4050: QC213_SCORE_LEN = 0x20B             # 原始 dump 长度（摘要入 rec，blob 不入）
+4051: _QC213_FIELDS = (                   # (键, 种类, 偏移)；u8=4字节对齐小端取字节
+4052:     ("id30", "u32", 0x30), ("htc34", "u32", 0x34),
+4053:     ("isHuman1EC", "u8", 0x1EC), ("loser1ED", "u8", 0x1ED),
+4054:     ("def1F5", "u8", 0x1F5),
+4055:     ("wf1F6", "u8", 0x1F6), ("wf1F7", "u8", 0x1F7), ("wf1F8", "u8", 0x1F8),
+4056:     ("x2F0", "u32", 0x2F0),
+4057:     ("c5560", "u32", 0x5560), ("c5574", "u32", 0x5574),
+4058:     ("c5588", "u32", 0x5588), ("c559C", "u32", 0x559C),
+4059:     ("m5788", "u32", 0x5788), ("m578C", "u32", 0x578C),
+4060:     ("m5798", "u32", 0x5798), ("m579C", "u32", 0x579C), ("m57A0", "u32", 0x57A0),
+4061:     ("spot6B", "u8", 0x6B), ("gate6D5", "u8", 0x6D5), ("team6CC", "u32", 0x6CC),
+4062: )
+4063: 
+4064: 
+4065: def _qc213_u8(handle, base_va: int, off: int):
+4066:     """★ QC213：4 字节对齐小端取单字节——对齐下取 dword，按 (off&3)*8 移位。"""
+4067:     v = _rpm_u32_qc213_base(handle, base_va + (off & ~3))
+4068:     return None if v is None else ((v >> ((off & 3) * 8)) & 0xFF)
+4069: 
+4070: 
+4071: def _qc213_digest(handle, base_va: int, off: int, n: int):
+4072:     """★ QC213 可选便宜项：+0x15FF4 起 n=0x20B 原始 dump（计分簿区）→ 摘要。
+4073: 
+4074:     ★ 4 字节对齐 dword 逐读拼包（小端）后截 n 字节；**sha16+首 8 字节 hex 入 rec**，
+4075:       原始 blob 不入 rec（Recorder 纪律：原始样列禁入）。读失败 ⇒ None。
+4076:     """
+4077:     aligned = off & ~3
+4078:     skip = off - aligned
+4079:     total = skip + n
+4080:     buf = bytearray()
+4081:     for k in range((total + 3) // 4):
+4082:         v = _rpm_u32_qc213_base(handle, base_va + aligned + 4 * k)
+4083:         if v is None:
+4084:             return None
+4085:         buf += v.to_bytes(4, "little")
+4086:     raw = bytes(buf[skip:skip + n])
+4087:     return {"sha16": hashlib.sha256(raw).hexdigest()[:16],
+4088:             "head8": raw[:8].hex()}
+4089: 
+4090: 
+4091: def _qc213_err(rec, frame, kind: str) -> None:
+4092:     """★ QC213：probe_error 只记不抛；同段错误达帽（QC213_ERR_CAP）即收口。"""
+4093:     if rec is not None and _QC213_PROBE["errs"] < QC213_ERR_CAP:
+4094:         _QC213_PROBE["errs"] += 1
+4095:         rec.add("QC213", "qc213_probe_error", {"kind": kind, "frame": frame},
+4096:                 "script:_qc213_snapshot",
+4097:                 note="★ QC213：哨兵 items==0/n>64=bad_vector、读失败=read_fail"
+4098:                      "（只记不抛；达帽收口）")
+4099:     if _QC213_PROBE["errs"] >= QC213_ERR_CAP:
+4100:         _QC213_PROBE["done"] = True
+4101: 
+4102: 
+4103: def _qc213_snapshot(handle, frame: int, kind: str) -> None:
+4104:     """★ QC213 单次快照：House 枚举 + 每 house 字段表（全只读；失败只记不抛）。"""
+4105:     rec = ACTIVE_REC[0]
+4106:     tag = f"p{frame:06d}"
+4107:     if rec is None:
+4108:         return
+4109:     items = _rpm_u32_qc213_base(handle, QC213_HOUSE_ITEMS_VA)
+4110:     count = _rpm_u32_qc213_base(handle, QC213_HOUSE_COUNT_VA)

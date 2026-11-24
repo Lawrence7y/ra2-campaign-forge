@@ -1,0 +1,239 @@
+
+============================================================================
+P0 绑定与静态装载（importlib.util.spec_from_file_location，零 exec）
+============================================================================
+[bind] candidate sha256 = ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2
+[bind] candidate bytes  = 412759
+[bind] expected         = ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2
+[bind] MATCH = True
+[load] 候选模块静态装载成功： qc151_candidate_lf_probe FRESHNESS_SNAPSHOT_STATES = ('unknown', 'absent_confirmed', 'present', 'error') CARRIER_FILES = ('gamemd.exe', 'ra2loader.exe', 'ra2render.dll', 'ra2opt_play.bat', 'except.txt')
+
+============================================================================
+P0a AST 控制流图：make_pre 全部 snap['state'] 赋值点与 return 点
+============================================================================
+  state 赋值 @:4599  snap["state"] = "absent_confirmed"
+  state 赋值 @:4603  snap["state"] = "present"
+  state 赋值 @:4610  snap["state"] = "error"
+  return    @:4601
+  return    @:4613
+  if        @:4598  test: not p.exists()
+  except    @:4608
+
+============================================================================
+P0a2 AST：classify 顶层 if 分支码序
+============================================================================
+  if @:4637  test: st not in FRESHNESS_SNAPSHOT_STATES
+  if @:4643  test: post.get("read_error")
+  if @:4648  test: st == "unknown"
+  if @:4652  test: st == "error"
+  if @:4657  test: not post_exists
+  if @:4666  test: st == "absent_confirmed"
+  if @:4673  test: not pre_sha
+  if @:4678  test: not post_sha
+  if @:4681  test: post_sha != pre_sha
+  if @:4686  test: pre_mt is None or post_mt is None
+  if @:4690  test: abs(float(post_mt) - float(pre_mt)) <= 0.0
+  if @:4693  test: float(post_mt) < float(pre_mt)
+
+============================================================================
+P0a3 AST：copy_post 内 post_observed['read_error'] 全部赋值点
+============================================================================
+  read_error 写点 @:4786: post_observed["read_error"] = f"{type(exc).__name__}: {exc}"
+
+============================================================================
+P0a4 AST：全模块 _pre_freshness_snapshot / pre_freshness_snapshot 写点
+============================================================================
+  AnnAssign @:6528: _pre_freshness_snapshot: dict | None = None
+  Assign @:6623: _pre_freshness_snapshot = make_pre_freshness_snapshot(
+            carrier_dir / "except.txt")
+
+============================================================================
+P0a5 源码锚点（候选原文逐行）
+============================================================================
+-- sha256_file 全文 --
+  :431 def sha256_file(p: Path) -> str:
+  :432     """★ 流式 sha256。★ 纯只读（`open(...,'rb')`）。"""
+  :433     h = hashlib.sha256()
+  :434     with open(p, "rb") as f:
+  :435         for blk in iter(lambda: f.read(1 << 20), b""):
+  :436             h.update(blk)
+  :437     return h.hexdigest()
+-- make_pre try 体 --
+  :4594     try:
+  :4595         p = Path(except_path)
+  :4596         snap["captured_at_epoch"] = time.time()
+  :4597         snap["captured_at_iso"] = now_iso()
+  :4598         if not p.exists():
+  :4599             snap["state"] = "absent_confirmed"
+  :4600             snap["exists"] = False
+  :4601             return snap
+  :4602         st = p.stat()
+  :4603         snap["state"] = "present"
+  :4604         snap["exists"] = True
+  :4605         snap["size"] = int(st.st_size)
+  :4606         snap["mtime_pre"] = float(st.st_mtime)
+  :4607         snap["sha256"] = sha256_file(p)
+  :4608     except Exception as exc:
+  :4609         import traceback
+  :4610         snap["state"] = "error"
+  :4611         snap["error"] = f"{type(exc).__name__}: {exc}"
+  :4612         snap["traceback"] = "".join(traceback.format_exception(exc))
+  :4613     return snap
+-- classify 头三支 --
+  :4641     post = post_observed if isinstance(post_observed, dict) else {}
+  :4642     # ★ N1：错误独立出口，优先于一切状态折叠
+  :4643     if post.get("read_error"):
+  :4644         return _finish("post_read_error", "none", None,
+  :4645                        "★ 跑后件读/复制失败（独立 error 出口，禁止静默）："
+  :4646                        f"{post['read_error']}；pre_snapshot_state={st}")
+  :4647     # ★★ N3/N2：unknown 与 absent_confirmed 在第一个分支就分道，禁止折叠
+  :4648     if st == "unknown":
+  :4649         return _finish("unknown", "none", None,
+  :4650                        "★ 跑前快照未采集/传参丢失/采集未完成 ⇒ F 不可判；"
+  :4651                        "未知 ≠ 不存在；不得据此输出「本趟新出现」或 high")
+  :4652     if st == "error":
+  :4653         return _finish("error_pre_snapshot", "none", None,
+  :4654                        f"★ 跑前采集失败（独立 error 出口）：{pre.get('error')!r}")
+-- classify present 支 --
+  :4671     # ---- st == "present" ----
+  :4672     pre_sha = pre.get("sha256")
+  :4673     if not pre_sha:
+  :4674         return _finish("error_pre_snapshot", "none", None,
+  :4675                        "★ 跑前在场但缺 sha256 ⇒ B 主判据不可用"
+  :4676                        "（独立 error 出口，不降级为 high、不静默）")
+  :4677     post_sha = post.get("sha256")
+  :4678     if not post_sha:
+  :4679         return _finish("post_read_error", "none", None,
+  :4680                        "★ 跑后缺 sha256 ⇒ 无法比对（error 出口）")
+  :4681     if post_sha != pre_sha:
+  :4682         return _finish("new_write", "high", True,
+  :4683                        "★ 字节内容不同 ⇒ F=本趟被写；是否新异常归集合差（:677）")
+-- copy_post src_missing / 异常路径 --
+  :4755     try:
+  :4756         if not src.exists():
+  :4757             post_observed["exists"] = False
+  :4758             post_observed["captured_at_iso"] = now_iso()
+  :4759             rec.add("EXCEPT", "evidence_copy", None, f"{src}:path",
+  :4760                     note="★ 载体 except.txt 不存在 ⇒ 无原件可副本（如实记账）")
+  :4761             # ★ N4：早退分支同样落盘 F 字段（不可只算不写）
+  :4762             _emit_f(classify_except_freshness(pre_freshness_snapshot,
+  :4763                                               post_observed), "src_missing")
+  :4764             return None
+  :4773     except Exception as exc:
+  :4774         # ★★ N10：复制/读取失败 ⇒ 先 rec.add("ERROR", ...) 显式留痕，再**上抛**
+  :4775         import traceback
+  :4776         where = f"{src}:file"
+  :4777         rec.add("ERROR", "freshness_copy_failed",
+  :4778                 f"{type(exc).__name__}: {exc}", where,
+  :4779                 note="★★ B2b/N10：复制失败显式留痕，不许静默降级")
+  :4780         rec.add("ERROR", "freshness_copy_stage",
+  :4781                 "read_bytes/stat/write_bytes", where,
+  :4782                 note="captured_at_iso="
+  :4783                      f"{post_observed.get('captured_at_iso')!r}")
+  :4784         rec.add("ERROR", "freshness_copy_traceback",
+  :4785                 "".join(traceback.format_exception(exc)), "script:traceback")
+  :4786         post_observed["read_error"] = f"{type(exc).__name__}: {exc}"
+  :4787         # ★ N4/N1：错误分支同样落盘 F 字段，且走独立 error 出口
+  :4788         _emit_f(classify_except_freshness(pre_freshness_snapshot,
+  :4789                                           post_observed), "copy_failed")
+  :4790         raise
+
+============================================================================
+P4 make_pre 输出域实跑 sweep（8 类输入，纯只读：exists/stat/open 读）
+============================================================================
+  [absent·真实不存在的文件] -> state='absent_confirmed' exists=False size=None sha256= error=''
+  [present·真实在场的文件(矩阵母件)] -> state='present' exists=True size=29818 sha256=6f2b3009b0de33bb… error=''
+  [error?·目录路径(sha256_file 必炸)] -> state='error' exists=True size=4096 sha256= error="PermissionError: [Errno 13] Permission denied: 'D:\\\\Project\\\\ra2"
+  [error·Path(None)] -> state='error' exists=None size=None sha256= error='TypeError: argument should be a str or an os.PathLike object whe'
+  [error·Path(3)] -> state='error' exists=None size=None sha256= error='TypeError: argument should be a str or an os.PathLike object whe'
+  [error?·非法字符路径] -> state='absent_confirmed' exists=False size=None sha256= error=''
+  [edge?·文件底下的子路径(ENOTDIR)] -> state='absent_confirmed' exists=False size=None sha256= error=''
+  [edge·空字符串 ''] -> state='error' exists=True size=12288 sha256= error="PermissionError: [Errno 13] Permission denied: '.'"
+  states_seen = {'absent_confirmed': 3, 'present': 1, 'error': 4}
+  ★ 显式 'unknown' 是否出现在 make_pre 输出域：False
+  交叉验证：present 件 make_pre 内 sha256 == hashlib 直算：True
+
+============================================================================
+P1 W1：pre 全变体 × read_error → classify 实跑 verdict（矩阵 :2 声称 unknown）
+============================================================================
+  pre=None(未采集)      × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: :2]
+  pre=None(未采集)      × read_error·exists=True -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: :2]
+  pre={}(未采集)        × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: :2]
+  pre={}(未采集)        × read_error·exists=True -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: :2]
+  pre=缺state(未采集)    × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: :2]
+  pre=缺state(未采集)    × read_error·exists=True -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: :2]
+  pre=脏值(未采集)        × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: :2]
+  pre=脏值(未采集)        × read_error·exists=True -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: :2]
+  pre=显式unknown      × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: 无行(严格键::2不含显式unknown、:3要跑后无件)=W1']
+  pre=显式unknown      × read_error·exists=True -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: 无行(严格键::2不含显式unknown、:3要跑后无件)=W1']
+  pre=absent_confirmed × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='absent_confirmed'  [矩阵归属: 无行=O1 / exists=True 型被:6字面误claim=O1']
+  pre=absent_confirmed × read_error·exists=True -> verdict='post_read_error' conf='none' is_new=None pre_state='absent_confirmed'  [矩阵归属: 无行=O1 / exists=True 型被:6字面误claim=O1']
+  pre=present(带sha)  × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='present'  [矩阵归属: :5]
+  pre=present(带sha)  × read_error·exists=True -> verdict='post_read_error' conf='none' is_new=None pre_state='present'  [矩阵归属: :5]
+  pre=error          × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='error'  [矩阵归属: :4=W2]
+  pre=error          × read_error·exists=True -> verdict='post_read_error' conf='none' is_new=None pre_state='error'  [矩阵归属: :4=W2]
+
+============================================================================
+P2 W2：pre=error(真实 make_pre 产) × read_error / 跑后无件 对照
+============================================================================
+  error × read_error(exists=None) -> verdict='post_read_error' conf='none' pre_state='error' note='★ 跑后件读/复制失败（独立 error 出口，禁止静默）：PermissionError: [Errno 13] fake-lock (探针构'
+  error × 跑后无件              -> verdict='error_pre_snapshot' conf='none'  (矩阵 :4 ✓ 对照组)
+  → 矩阵 :4 声称 error_pre_snapshot，read_error 格实码 'post_read_error' ⇒ W2 实证
+
+============================================================================
+P3 O1：copy_post 实跑——pre=absent_confirmed + 复制异常 → read_error
+============================================================================
+
+  --- C1 O1主子格: pre=absent + src 在场但 read_bytes 被锁 PermissionError ---
+  copy_post 结果: 外抛 PermissionError: [Errno 13] 文件被占用(探针)
+  Recorder ERROR 行: [('freshness_copy_failed', 'PermissionError: [Errno 13] 文件被占用(探针)'), ('freshness_copy_stage', 'read_bytes/stat/write_bytes'), ('freshness_copy_traceback', 'Traceback (most recent call last):\n  File "D:\\Project\\ra2-ca')]
+  Recorder FRESHNESS verdict/conf/is_new: [('freshness_verdict', 'post_read_error'), ('freshness_confidence', 'none'), ('freshness_is_new', None)]
+  classify 实收: pre_is_None=False pre_state='absent_confirmed' post_exists=None post_read_error='PermissionError: [Errno 13] 文件被占用(探针)' → verdict='post_read_error' conf='none'
+
+  --- C2 O1'子格: pre=absent + 读成功 + dst.write_bytes 失败(exists=True) ---
+  copy_post 结果: 外抛 OSError: [Errno 28] 磁盘满(探针)
+  Recorder ERROR 行: [('freshness_copy_failed', 'OSError: [Errno 28] 磁盘满(探针)'), ('freshness_copy_stage', 'read_bytes/stat/write_bytes'), ('freshness_copy_traceback', 'Traceback (most recent call last):\n  File "D:\\Project\\ra2-ca')]
+  Recorder FRESHNESS verdict/conf/is_new: [('freshness_verdict', 'post_read_error'), ('freshness_confidence', 'none'), ('freshness_is_new', None)]
+  classify 实收: pre_is_None=False pre_state='absent_confirmed' post_exists=True post_read_error='OSError: [Errno 28] 磁盘满(探针)' → verdict='post_read_error' conf='none'
+
+  --- C3 O1变体: src.exists() 自身抛异常 ---
+  copy_post 结果: 外抛 OSError: [Errno 5] ACL 拒绝(探针)
+  Recorder ERROR 行: [('freshness_copy_failed', 'OSError: [Errno 5] ACL 拒绝(探针)'), ('freshness_copy_stage', 'read_bytes/stat/write_bytes'), ('freshness_copy_traceback', 'Traceback (most recent call last):\n  File "D:\\Project\\ra2-ca')]
+  Recorder FRESHNESS verdict/conf/is_new: [('freshness_verdict', 'post_read_error'), ('freshness_confidence', 'none'), ('freshness_is_new', None)]
+  classify 实收: pre_is_None=False pre_state='absent_confirmed' post_exists=None post_read_error='OSError: [Errno 5] ACL 拒绝(探针)' → verdict='post_read_error' conf='none'
+
+  --- C4 对照组: pre=absent + 跑后无件 → src_missing 分支 ---
+  copy_post 结果: None(正常早退)
+  Recorder ERROR 行: 无
+  Recorder FRESHNESS verdict/conf/is_new: [('freshness_verdict', 'absent_both'), ('freshness_confidence', 'low'), ('freshness_is_new', False)]
+  classify 实收: pre_is_None=False pre_state='absent_confirmed' post_exists=False post_read_error='None' → verdict='absent_both' conf='low'
+
+  --- C5 对照组: pre=absent + 跑后在 + 复制全成功 → new_first_appearance ---
+  copy_post 结果: 外抛 TypeError: expected str, bytes or os.PathLike object, not FakeLeaf
+  Recorder ERROR 行: 无
+  Recorder FRESHNESS verdict/conf/is_new: [('freshness_verdict', 'new_first_appearance'), ('freshness_confidence', 'high'), ('freshness_is_new', True)]
+  classify 实收: pre_is_None=False pre_state='absent_confirmed' post_exists=True post_read_error='None' → verdict='new_first_appearance' conf='high'
+
+============================================================================
+P5 W3：make_pre 在场必算 sha 实跑 + fixture 同抢格
+============================================================================
+  make_pre(真实在场文件) -> state='present' sha256=6f2b3009b0de33bb… len(sha)=64 ⇒ 在场必带非空 64 位 sha
+  make_pre(sha256 会炸的输入·Path(None)) -> state='error' error="TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'" ⇒ sha 算炸 → 整体 error，绝不产出 present缺sha
+  fixture present×缺pre.sha × read_error -> verdict='post_read_error' pre_state='present' (:5 先截，:13 同抢落空)
+  fixture present×缺pre.sha × 跑后在·无read_error -> verdict='error_pre_snapshot' (:13 域内正确)
+  fixture present×带sha × read_error(exists=True) -> verdict='post_read_error' (:5 ✓)
+
+============================================================================
+P6 O2：显式 unknown × 跑后在 —— classify 直调可构，实流不可产
+============================================================================
+  fixture 显式unknown × 跑后在 -> verdict='unknown' conf='none' pre_state='unknown'
+  fixture 显式unknown × 跑后无件 -> verdict='unknown' (:3 ✓ 对照)
+  fixture pre=None × 跑后无件  -> verdict='unknown' (:2 ✓ 对照)
+  ⇒ make_pre 输出域(P4 实跑 states_seen)不含 'unknown'；实流 pre 只有两个写点 :6528(None) 与 :6623(make_pre 输出)（P0a4 实证）
+
+============================================================================
+P7 汇总
+============================================================================
+  states_seen(make_pre 8 类输入实跑): ['absent_confirmed', 'error', 'present']
+  classify 直调+经 copy_post 实跑总调用次数: 5
+PROBE_DONE

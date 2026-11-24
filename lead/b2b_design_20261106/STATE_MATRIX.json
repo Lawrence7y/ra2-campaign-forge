@@ -1,0 +1,16 @@
+[
+  {"state":"unknown","preState":"unknown","condition":"pre=None / {} / 缺 state / 脏值（跑前快照未采集或采集未完成），跑后任意文件状态","verdict":"unknown","confidence":"none","usableAsCrashEvidence":false},
+  {"state":"unknown","preState":"unknown","condition":"pre.state 显式为 unknown（未采集）+ 跑后无件；未知不得默认等于不存在","verdict":"unknown","confidence":"none","usableAsCrashEvidence":false},
+  {"state":"error","preState":"error","condition":"跑前采集抛异常（snap.error 非空）⇒ 独立 error 出口，不降级、不静默、不给 high","verdict":"error_pre_snapshot","confidence":"none","usableAsCrashEvidence":false},
+  {"state":"post_read_error","preState":"present","condition":"跑后 read_bytes/stat/write_bytes 抛异常（post.read_error 非空）⇒ 独立 error 出口","verdict":"post_read_error","confidence":"none","usableAsCrashEvidence":false},
+  {"state":"absent_confirmed","preState":"absent_confirmed","condition":"跑前确认无件 + 跑后在场（存在性硬证）⇒ 本趟新出现；是否新崩溃仍只由集合差裁定","verdict":"new_first_appearance","confidence":"high","usableAsCrashEvidence":false},
+  {"state":"absent_both","preState":"absent_confirmed","condition":"跑前确认无件 + 跑后无件 ⇒ 未见新出现，但「文件未出现」不能证无崩溃（E 口径另算）","verdict":"absent_both","confidence":"low","usableAsCrashEvidence":false},
+  {"state":"leftover_unchanged","preState":"present","condition":"跑前在 + 跑后在 + sha 一致 + mtime 未变（mtime 双侧齐全）⇒ 原样遗留（非本趟写入）","verdict":"leftover_unchanged","confidence":"high","usableAsCrashEvidence":false},
+  {"state":"leftover_unchanged","preState":"present","condition":"跑前在 + 跑后在 + sha 一致 + mtime 侧缺失 ⇒ A 旁证不可用，同内容重写盲区此趟未覆盖（如实标注，不虚报 high）","verdict":"leftover_unchanged","confidence":"medium","usableAsCrashEvidence":false},
+  {"state":"new_write","preState":"present","condition":"跑前在 + 跑后在 + sha 不同 ⇒ 字节内容不同，本趟被写；是否新异常归集合差（:677）","verdict":"new_write","confidence":"high","usableAsCrashEvidence":false},
+  {"state":"rewritten_same_content","preState":"present","condition":"跑前在 + 跑后在 + sha 同 + mtime 变大 ⇒ 同内容重写（F 旁证补 B 盲区）","verdict":"rewritten_same_content","confidence":"medium","usableAsCrashEvidence":false},
+  {"state":"rewritten_same_content","preState":"present","condition":"跑前在 + 跑后在 + sha 同 + mtime 回拨 ⇒ 疑似时钟回拨/utime 拉回，置信降级为 low，须人工复核","verdict":"rewritten_same_content","confidence":"low","usableAsCrashEvidence":false},
+  {"state":"missing_sha","preState":"present","condition":"跑前在 + 跑后在 + 缺 pre.sha256（B 主判据不可用）⇒ 独立 error 出口，不降级为 high、不静默","verdict":"error_pre_snapshot","confidence":"none","usableAsCrashEvidence":false},
+  {"state":"missing_sha","preState":"present","condition":"跑前在 + 跑后在 + 缺 post.sha256（无法比对）","verdict":"post_read_error","confidence":"none","usableAsCrashEvidence":false},
+  {"state":"vanished","preState":"present","condition":"跑前在 + 跑后无件（被删/改名/复制链中断）⇒ 异常态旗标，须人工复核；不给 high、不判本趟新出现、is_new=null","verdict":"vanished","confidence":"none","usableAsCrashEvidence":false}
+]

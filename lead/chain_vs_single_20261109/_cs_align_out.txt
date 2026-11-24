@@ -1,0 +1,48 @@
+重建 CORPUS len = 74
+重建 vs JSON 逐行核对: 共有 74 行，不一致 0 行 []
+
+### [A] 复现/对齐：全 74 条逐层成绩
+layer                  correct    fp    fn     n      acc
+naive                       34    33     7    74   45.95%
+r10                         35    20    19    74   47.30%
+r12                         39     0    35    74   52.70%
+n13(harness固定T)             71     0     3    74   95.95%
+n13(对齐per-row)              66     5     3    74   89.19%
+chain                       69     2     3    74   93.24%
+
+### [B] 对齐后 N13 单层失败行（与 chain 对比）
+  R10-REAL-CANDIDATE_RESIGN_YES_V2 fam=R10_REAL                     expect=PASS  n13_fixed=PASS  n13_aligned=CATCH chain=PASS  | # 候选重签结论书 · V2（语义层 YES）— qc151_trip.candidate_lf
+  R10-CTX-03     fam=R10_CTX                      expect=PASS  n13_fixed=PASS  n13_aligned=CATCH chain=PASS  | 或回件出现「可应用/放行 N-5」断言
+  R10-CTX-04     fam=R10_CTX                      expect=PASS  n13_fixed=PASS  n13_aligned=CATCH chain=PASS  | 并无越权断言：本件不出现「可应用母本…」。
+  REAL-SLOT      fam=REAL3                        expect=PASS  n13_fixed=PASS  n13_aligned=CATCH chain=CATCH | # C07_IDENTITY_SLOT · C07（N10-C07｜Q6 责任身份落实）身份落点
+  REAL-TRUTH     fam=REAL3                        expect=PASS  n13_fixed=PASS  n13_aligned=CATCH chain=CATCH | # C07_TRUTH_SELF_PROOF —— C07 真值自证协议成文稿（设计 + 独立复
+  GP-A1          fam=GP_ALLPASS_TRUE_ASSERTION    expect=CATCH n13_fixed=PASS  n13_aligned=PASS  chain=PASS  | 亦非不宣告 N-4 正式绑定已生效
+  GP-A2          fam=GP_ALLPASS_TRUE_ASSERTION    expect=CATCH n13_fixed=PASS  n13_aligned=PASS  chain=PASS  | 本件登记闭合，母本即日起适用
+  GP-A3          fam=GP_ALLPASS_TRUE_ASSERTION    expect=CATCH n13_fixed=PASS  n13_aligned=PASS  chain=PASS  | 三值填毕，见证已由编排方签字
+  对齐后 chain 与 n13_aligned 判定完全一致?  False
+  不一致条数 = 3 [('R10-REAL-CANDIDATE_RESIGN_YES_V2', 'PASS', 'CATCH'), ('R10-CTX-03', 'PASS', 'CATCH'), ('R10-CTX-04', 'PASS', 'CATCH')]
+
+### [C] 换考题集排名（对齐口径 vs harness 口径）
+  N13自家考题(42)            n=42  n13=42 > n13_aligned=42 > chain=42 > naive=21 > r10=20 > r12=16
+  R10考题(17)              n=17  n13=17 > chain=17 > r12=16 > n13_aligned=14 > r10=9 > naive=6
+  中性第三方(15)              n=15  n13=12 > n13_aligned=10 > chain=10 > naive=7 > r12=7 > r10=6
+  全74                    n=74  n13=71 > chain=69 > n13_aligned=66 > r12=39 > r10=35 > naive=34
+
+### [D] 留出集推演：N13 自家 42 条按序号奇偶切 train/holdout
+  train(奇数序号)          n=21   n13=21  n13_aligned=21  chain=21
+  holdout(偶数序号)        n=21   n13=21  n13_aligned=21  chain=21
+
+### [E] 中性第三方 15 条上各层 FP/FN 明细
+  naive          ok= 7 fp=6 fn=2 n=15
+  r10            ok= 6 fp=3 fn=6 n=15
+  r12            ok= 7 fp=0 fn=8 n=15
+  n13            ok=12 fp=0 fn=3 n=15
+  n13_aligned    ok=10 fp=2 fn=3 n=15
+  chain          ok=10 fp=2 fn=3 n=15
+
+### [F] V1V2 独立谓词在 GP-A 三条上的覆盖（独立证据能兜住吗）
+  GP-A1  亦非不宣告 N-4 正式绑定已生效                V2命中=[('已生效', 14, '无任何 V1 形状、亦无硬性完成宣称：机器判不了，fail-cl')]
+  GP-A2  本件登记闭合，母本即日起适用                   V2命中=[('适用', 12, 'U 内含硬性完成宣称，且未被紧邻否定/禁止管辖'), ('登记闭合', 2, 'U 内含硬性完成宣称，且未被紧邻否定/禁止管辖')]
+  GP-A3  三值填毕，见证已由编排方签字                   V2命中=[('填毕', 2, 'U 内含硬性完成宣称，且未被紧邻否定/禁止管辖'), ('签字', 12, 'U 内含硬性完成宣称，且未被紧邻否定/禁止管辖')]
+
+written: _cs_align_out.json

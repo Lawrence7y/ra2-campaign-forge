@@ -1,0 +1,9 @@
+site	form	base	index	bound_check	reach_73_or_107	fn_anchor
+0x418DDB	call [ecx+eax*4] (FF 14 89)	ecx	eax	无	不能：误命中——该字节位于跳表数据区（同区可见 0x418d0b / 0x418ae8 / 0x418a34 等 dword 跳转目标），非真实指令	无（数据区）
+0x59C97B	jmp [ebx+ecx*4-9] (FF 64 8B F7)	ebx	ecx	有：0x59C969 83 F8 4B (cmp eax,75) + 0F 8E；0x59C97A 83 FF 64 (cmp edi,100)	不能：误命中——0x59C978 = 8D 7C 00 02 / 0x59C97C = 83 FF 64，是 0x59C97B 处字节切分的假指令，真实流为 ...02 | 83 FF 64（cmp edi,100）	无（数据/错误切分）
+0x59C9BE	jmp [ebx+ecx*4-9] (FF 64 8B C7)	ebx	ecx	有：0x59C9BD 83 FF 64 (cmp edi,0x64) + 7F 05	不能：误命中——0x59C9BE 处真实流为 4A | 83 FF 64，FF 64 8B C7 是 0x59C9BE 起切分的假指令	无（错误切分）
+0x5C64C3	call [eax+edx*4] (FF 24 80)	eax	edx	无上界裁剪（前置 3B F2 76 09 / 38 1E 75 05 / 4E 3B F2 77 F7 为 memcmp 循环）	不能：base=eax 为字符串指针，index 为字节差；与 0x7E3EBC 段无关	0x5C62B0（0x5C62A8..0x5C62AF 为 90*8 填充）
+0x756843	call [ebp*4+0x846840] (FF 14 B5 40 68 84 00)	无（纯 disp32 表 0x846840）	ebp	无	不能：表 0x846840 有效函数指针仅 #0..#31（#32 起为 0 / 小整数 / double 位型），表实长 32 ⇒ index∈[0,31]，离 73/107 很远	0x756590（0x75658C: C3，0x75658D..0x75658F: 90*3）
+0x7CC172	call [ebx+ecx*4+8] (FF 54 B3 08)	ebx	ecx	无正上界：仅 0x7CC15F 83 FE FF (cmp esi,-1)	不能：base=ebx 为栈上异常链表结点数组（从 [esp+20h] 取出），index 取自结点 +0Ch，只查 -1	0x7CC0DC（0x7CC0DB: CC 填充）
+0x7CC21B	call [edi+ecx*4+4] (FF 54 8F 04)	edi	ecx	无正上界：仅 0x7CC213 83 FE FF	不能：同上（SEH 处理器链表）	0x7CC0DC
+0x7CC257	call [edi+ecx*4+8] (FF 54 8F 08)	edi	ecx	无正上界：同上	不能：同上	0x7CC0DC

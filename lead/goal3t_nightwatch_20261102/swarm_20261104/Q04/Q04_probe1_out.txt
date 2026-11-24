@@ -1,0 +1,304 @@
+coverage: (99.99837567729335, 1394120, 66)
+
+=== A. MLF 四旗标门：0x55DEB0..0x55DEE0（jne 0x55DEC8 与 ret 0x55DEDB） ===
+0055DEB0  c05f5e84           rcr byte ptr [edi + 0x5e], 0x84
+0055DEB4  c9                 leave 
+0055DEB5  5d                 pop ebp
+0055DEB6  c60558cdab0000     mov byte ptr [0xabcd58], 0
+0055DEBD  0f94c0             sete al
+0055DEC0  5b                 pop ebx
+0055DEC1  81c4b4010000       add esp, 0x1b4
+0055DEC7  c3                 ret 
+0055DEC8  c60558cdab0000     mov byte ptr [0xabcd58], 0
+0055DECF  5f                 pop edi
+0055DED0  5e                 pop esi
+0055DED1  5d                 pop ebp
+0055DED2  b001               mov al, 1
+0055DED4  5b                 pop ebx
+0055DED5  81c4b4010000       add esp, 0x1b4
+0055DEDB  c3                 ret 
+0055DEDC  90                 nop 
+0055DEDD  90                 nop 
+0055DEDE  90                 nop 
+0055DEDF  90                 nop 
+
+=== B. MLF 焦点等待环入口：0x55D377..0x55D3C3（0xABCD58 闩 + Sleep 环） ===
+0055D377  a080eda800         mov al, byte ptr [0xa8ed80]
+0055D37C  c60558cdab0001     mov byte ptr [0xabcd58], 1
+0055D383  84c0               test al, al
+0055D385  7534               jne 0x55d3bb
+0055D387  8b35f0117e00       mov esi, dword ptr [0x7e11f0]
+0055D38D  a138b2a800         mov eax, dword ptr [0xa8b238]
+0055D392  85c0               test eax, eax
+0055D394  7405               je 0x55d39b
+0055D396  83f805             cmp eax, 5
+0055D399  7517               jne 0x55d3b2
+0055D39B  68f4010000         push 0x1f4
+0055D3A0  ffd6               call esi
+0055D3A2  e8a9790700         call 0x5d4d50
+0055D3A7  a080eda800         mov al, byte ptr [0xa8ed80]
+0055D3AC  84c0               test al, al
+0055D3AE  74dd               je 0x55d38d
+0055D3B0  eb09               jmp 0x55d3bb
+0055D3B2  6a0a               push 0xa
+0055D3B4  ffd6               call esi
+0055D3B6  e895790700         call 0x5d4d50
+0055D3BB  a184eda800         mov eax, dword ptr [0xa8ed84]
+
+=== C. 挂起门：0x55D7D4..0x55D884（读 [0xA8B230]+0x62C 与 0x55D877 ret） ===
+0055D7D4  8b3d30b2a800       mov edi, dword ptr [0xa8b230]
+0055D7DA  8a8730060000       mov al, byte ptr [edi + 0x630]
+0055D7E0  84c0               test al, al
+0055D7E2  743d               je 0x55d821
+0055D7E4  8b8720060000       mov eax, dword ptr [edi + 0x620]
+0055D7EA  8bb728060000       mov esi, dword ptr [edi + 0x628]
+0055D7F0  81c720060000       add edi, 0x620
+0055D7F6  83f8ff             cmp eax, -1
+0055D7F9  7410               je 0x55d80b
+0055D7FB  8d4f04             lea ecx, [edi + 4]
+0055D7FE  e83db41600         call 0x6c8c40
+0055D803  2b07               sub eax, dword ptr [edi]
+0055D805  3bc6               cmp eax, esi
+0055D807  7d06               jge 0x55d80f
+0055D809  2bf0               sub esi, eax
+0055D80B  85f6               test esi, esi
+0055D80D  7f12               jg 0x55d821
+0055D80F  8b1530b2a800       mov edx, dword ptr [0xa8b230]
+0055D815  c6823006000000     mov byte ptr [edx + 0x630], 0
+0055D81C  e85f691200         call 0x684180
+0055D821  a130b2a800         mov eax, dword ptr [0xa8b230]
+0055D826  8b882c060000       mov ecx, dword ptr [eax + 0x62c]
+0055D82C  85c9               test ecx, ecx
+0055D82E  7448               je 0x55d878
+0055D830  e81b750700         call 0x5d4d50
+0055D835  e846f8f2ff         call 0x48d080
+0055D83A  e821ddfdff         call 0x53b560
+0055D83F  8b0d24738800       mov ecx, dword ptr [0x887324]
+0055D845  8b11               mov edx, dword ptr [ecx]
+0055D847  ff525c             call dword ptr [edx + 0x5c]
+0055D84A  b9e8f78700         mov ecx, 0x87f7e8
+0055D84F  e82c6cf9ff         call 0x4f4480
+0055D854  e807090000         call 0x55e160
+0055D859  8a0da0e9a800       mov cl, byte ptr [0xa8e9a0]
+0055D85F  33c0               xor eax, eax
+0055D861  5f                 pop edi
+0055D862  5e                 pop esi
+0055D863  84c9               test cl, cl
+0055D865  5d                 pop ebp
+0055D866  c60558cdab0000     mov byte ptr [0xabcd58], 0
+0055D86D  0f94c0             sete al
+0055D870  5b                 pop ebx
+0055D871  81c4b4010000       add esp, 0x1b4
+0055D877  c3                 ret 
+0055D878  8b0df8d5a800       mov ecx, dword ptr [0xa8d5f8]
+0055D87E  f6c102             test cl, 2
+0055D881  757c               jne 0x55d8ff
+
+=== D. 旗标状态机 0x55CFD0 头部 ===
+0055CFD0  a184eda800         mov eax, dword ptr [0xa8ed84]
+0055CFD5  83ec7c             sub esp, 0x7c
+0055CFD8  a9ff030000         test eax, 0x3ff
+0055CFDD  53                 push ebx
+0055CFDE  56                 push esi
+0055CFDF  eb78               jmp 0x55d059
+0055CFE1  e8ba27f4ff         call 0x49f7a0
+0055CFE6  84c0               test al, al
+0055CFE8  756f               jne 0x55d059
+0055CFEA  a14c3da800         mov eax, dword ptr [0xa83d4c]
+0055CFEF  6a08               push 8
+0055CFF1  8b4830             mov ecx, dword ptr [eax + 0x30]
+0055CFF4  51                 push ecx
+0055CFF5  8d4c241c           lea ecx, [esp + 0x1c]
+0055CFF9  e8c296f6ff         call 0x4c66c0
+0055CFFE  813dc802a80080000000 cmp dword ptr [0xa802c8], 0x80
+0055D008  7d4f               jge 0x55d059
+0055D00A  8b0dd002a800       mov ecx, dword ptr [0xa802d0]
+0055D010  57                 push edi
+0055D011  8bf0               mov esi, eax
+0055D013  8d14c9             lea edx, [ecx + ecx*8]
+0055D016  8d0c91             lea ecx, [ecx + edx*4]
+0055D019  8dbc49d402a800     lea edi, [ecx + ecx*2 + 0xa802d4]
+0055D020  b91b000000         mov ecx, 0x1b
+0055D025  f3a5               rep movsd dword ptr es:[edi], dword ptr [esi]
+0055D027  66a5               movsw word ptr es:[edi], word ptr [esi]
+0055D029  a4                 movsb byte ptr es:[edi], byte ptr [esi]
+0055D02A  ff1530157e00       call dword ptr [0x7e1530]
+
+=== E. dispatcher 帧循环 0x48CE80..0x48CEB0 ===
+0048CE80  fc                 cld 
+0048CE81  2c82               sub al, 0x82
+0048CE83  0001               add byte ptr [ecx], al
+0048CE85  e826ec2000         call 0x69bab0
+0048CE8A  e8d1040d00         call 0x55d360
+0048CE8F  84c0               test al, al
+0048CE91  7409               je 0x48ce9c
+0048CE93  e838010d00         call 0x55cfd0
+0048CE98  84c0               test al, al
+0048CE9A  750e               jne 0x48ceaa
+0048CE9C  e80ffaffff         call 0x48c8b0
+0048CEA1  e82a010d00         call 0x55cfd0
+0048CEA6  84c0               test al, al
+0048CEA8  74e0               je 0x48ce8a
+0048CEAA  e801112a00         call 0x72dfb0
+
+=== F. 泵计数 0xAA0430 写点（复钉 r063a 7 组写者）===
+hits = 17
+  00432CD2 R mov ecx, dword ptr [0xaa0430]
+  00432CDD W mov dword ptr [0xaa0430], ecx
+  0053E7EF R mov eax, dword ptr [0xaa0430]
+  0053E9AC R mov eax, dword ptr [0xaa0430]
+  0053EBB0 R mov ecx, dword ptr [0xaa0430]
+  005D4D64 R mov ebx, dword ptr [0xaa0430]
+  005D4D77 W mov dword ptr [0xaa0430], ebx
+  005DC44E R mov ecx, dword ptr [0xaa0430]
+  005DC459 W mov dword ptr [0xaa0430], ecx
+  00759200 R mov edx, dword ptr [0xaa0430]
+  00759210 W mov dword ptr [0xaa0430], edx
+  00759A36 R mov edx, dword ptr [0xaa0430]
+  00759A3F W mov dword ptr [0xaa0430], edx
+  00775A74 R mov edx, dword ptr [0xaa0430]
+  00775A7F W mov dword ptr [0xaa0430], edx
+  0077F911 R mov eax, dword ptr [0xaa0430]
+  0077F925 W mov dword ptr [0xaa0430], eax
+
+=== G. 0xA8E9A0（in-tactical/INGAME 门）写点 ===
+hits = 123  W = 23
+  W 0052D9D7 mov byte ptr [0xa8e9a0], 1
+  W 0055FC96 mov byte ptr [0xa8e9a0], 0
+  W 0055FD9A mov byte ptr [0xa8e9a0], al
+  W 006472AA mov byte ptr [0xa8e9a0], 0
+  W 006472F0 mov byte ptr [0xa8e9a0], 0
+  W 006474AC mov byte ptr [0xa8e9a0], 0
+  W 006475BE mov byte ptr [0xa8e9a0], al
+  W 00647ADC mov byte ptr [0xa8e9a0], al
+  W 006481FE mov byte ptr [0xa8e9a0], al
+  W 0064826F mov byte ptr [0xa8e9a0], 0
+  W 00652351 mov byte ptr [0xa8e9a0], 0
+  W 006858EA mov byte ptr [0xa8e9a0], 0
+  W 006859F9 mov byte ptr [0xa8e9a0], 0
+  W 00685B33 mov byte ptr [0xa8e9a0], 0
+  W 00685BC7 mov byte ptr [0xa8e9a0], 0
+  W 00685C23 mov byte ptr [0xa8e9a0], al
+  W 00686035 mov byte ptr [0xa8e9a0], 0
+  W 0068620F mov byte ptr [0xa8e9a0], 0
+  W 006863C3 mov byte ptr [0xa8e9a0], 0
+  W 006866EF mov byte ptr [0xa8e9a0], bl
+  W 006BE1CC mov byte ptr [0xa8e9a0], bl
+  W 0078EC41 mov byte ptr [0xa8e9a0], 1
+  W 0078EEAD mov byte ptr [0xa8e9a0], bl
+
+=== H. 四旗标各自写点普查 ===
+  00A8ECD0 hits=13 W=8
+      W 004F86F7 mov byte ptr [0xa8ecd0], 1
+      W 004F879C mov byte ptr [0xa8ecd0], 1
+      W 004F87B2 mov byte ptr [0xa8ecd0], 1
+      W 0052DA7F mov byte ptr [0xa8ecd0], 0
+      W 0055D123 mov byte ptr [0xa8ecd0], bl
+      W 0055D1B7 mov byte ptr [0xa8ecd0], bl
+      W 0055D21F mov byte ptr [0xa8ecd0], bl
+      W 0055D262 mov byte ptr [0xa8ecd0], bl
+  00A83D49 hits=14 W=9
+      W 004F867C mov byte ptr [0xa83d49], 1
+      W 004F8692 mov byte ptr [0xa83d49], 1
+      W 004F86EE mov byte ptr [0xa83d49], 1
+      W 004F87BB mov byte ptr [0xa83d49], 1
+      W 0052DA78 mov byte ptr [0xa83d49], 0
+      W 0055D129 mov byte ptr [0xa83d49], bl
+      W 0055D1B1 mov byte ptr [0xa83d49], bl
+      W 0055D219 mov byte ptr [0xa83d49], bl
+      W 0055D25C mov byte ptr [0xa83d49], bl
+  008B41C0 hits=9 W=6
+      W 0048CB2E mov byte ptr [0x8b41c0], 1
+      W 0052DA86 mov byte ptr [0x8b41c0], 0
+      W 0055D12F mov byte ptr [0x8b41c0], bl
+      W 0055D1BD mov byte ptr [0x8b41c0], bl
+      W 0055D225 mov byte ptr [0x8b41c0], bl
+      W 0055D268 mov byte ptr [0x8b41c0], bl
+  00A83D48 hits=9 W=6
+      W 004C7917 mov byte ptr [0xa83d48], 1
+      W 0052DA8D mov byte ptr [0xa83d48], 0
+      W 0055D135 mov byte ptr [0xa83d48], bl
+      W 0055D1C3 mov byte ptr [0xa83d48], bl
+      W 0055D22B mov byte ptr [0xa83d48], bl
+      W 0055D26E mov byte ptr [0xa83d48], bl
+
+=== I. 0xABCD58 全部读写点（闩语义核验）===
+hits = 11
+  0055CBF0 R mov al, byte ptr [0xabcd58]
+  0055CC00 W mov byte ptr [0xabcd58], 1
+  0055CC10 W mov byte ptr [0xabcd58], 0
+  0055D15F W mov byte ptr [0xabcd58], bl
+  0055D1ED W mov byte ptr [0xabcd58], bl
+  0055D245 W mov byte ptr [0xabcd58], bl
+  0055D292 W mov byte ptr [0xabcd58], bl
+  0055D37C W mov byte ptr [0xabcd58], 1
+  0055D866 W mov byte ptr [0xabcd58], 0
+  0055DEB6 W mov byte ptr [0xabcd58], 0
+  0055DEC8 W mov byte ptr [0xabcd58], 0
+
+=== J. 0xA8B24C（加载相位）与 0xA8B238（GameMode）写点 ===
+  00A8B24C hits=23 W=9
+      W 0052E3D2 mov dword ptr [0xa8b24c], 2
+      W 0052F467 mov dword ptr [0xa8b24c], 2
+      W 005B633B mov dword ptr [0xa8b24c], eax
+      W 005B7333 mov dword ptr [0xa8b24c], 2
+      W 005BA3FE mov dword ptr [0xa8b24c], eax
+      W 005BB212 mov dword ptr [0xa8b24c], 2
+      W 005E18E4 mov dword ptr [0xa8b24c], eax
+      W 005E5515 mov dword ptr [0xa8b24c], 2
+      W 005E74C3 mov dword ptr [0xa8b24c], 2
+  00A8B238 hits=570 W=30
+      W 0048CF94 mov dword ptr [0xa8b238], ebx
+      W 0052DD61 mov dword ptr [0xa8b238], 4
+      W 0052DD7F mov dword ptr [0xa8b238], 3
+      W 0052E10F mov dword ptr [0xa8b238], 5
+      W 0052E175 mov dword ptr [0xa8b238], ebx
+      W 0052E1FE mov dword ptr [0xa8b238], ebx
+      W 0052E213 mov dword ptr [0xa8b238], ebx
+      W 0052E2B3 mov dword ptr [0xa8b238], edi
+      W 0052E2FA mov dword ptr [0xa8b238], edi
+      W 0052E337 mov dword ptr [0xa8b238], edi
+      W 0052E3C6 mov dword ptr [0xa8b238], 3
+      W 0052E42B mov dword ptr [0xa8b238], ebx
+
+=== K. 挂起态全局镜像 0xA8ED9C 与追帧目标 0xB07784 写点 ===
+  00A8ED9C hits=42 W=23
+      W 0048CE73 mov byte ptr [0xa8ed9c], cl
+      W 006586EB mov byte ptr [0xa8ed9c], 1
+      W 00658758 mov byte ptr [0xa8ed9c], dl
+      W 0065F64B mov byte ptr [0xa8ed9c], 1
+      W 0065F6AC mov byte ptr [0xa8ed9c], cl
+      W 0067E755 mov byte ptr [0xa8ed9c], cl
+      W 00684159 mov byte ptr [0xa8ed9c], 1
+      W 006841FC mov byte ptr [0xa8ed9c], 0
+      W 00684278 mov byte ptr [0xa8ed9c], al
+      W 006842D9 mov byte ptr [0xa8ed9c], 0
+      W 006DEEE5 mov byte ptr [0xa8ed9c], 1
+      W 006DEF6D mov byte ptr [0xa8ed9c], al
+  00B07784 hits=8 W=7
+      W 0055DE94 mov dword ptr [0xb07784], edi
+      W 00684165 mov dword ptr [0xb07784], 0
+      W 0068420D mov dword ptr [0xb07784], 0
+      W 00684282 mov dword ptr [0xb07784], 0
+      W 006842E5 mov dword ptr [0xb07784], 0
+      W 0069BB0F mov dword ptr [0xb07784], edx
+      W 0069BBD2 mov dword ptr [0xb07784], 0
+
+=== L. 渐变状态机 0xA9FAB0/0xA9FA98 写点（P01 判别式第 4 条）===
+  00A9FAB0 hits=10 W=6
+      W 00539881 mov dword ptr [0xa9fab0], ebx
+      W 0053B4F7 mov dword ptr [0xa9fab0], 1
+      W 0053B58D mov dword ptr [0xa9fab0], 2
+      W 0053B65A mov dword ptr [0xa9fab0], 0
+      W 0053B68F mov dword ptr [0xa9fab0], 3
+      W 0053B732 mov dword ptr [0xa9fab0], 0
+  00A9FA98 hits=14 W=7
+      W 00539875 mov dword ptr [0xa9fa98], ebx
+      W 0053B4EB mov dword ptr [0xa9fa98], edi
+      W 0053B582 mov dword ptr [0xa9fa98], eax
+      W 0053B597 mov dword ptr [0xa9fa98], 0x2d
+      W 0053B608 mov dword ptr [0xa9fa98], eax
+      W 0053B67B mov dword ptr [0xa9fa98], ecx
+      W 0053B6DB mov dword ptr [0xa9fa98], eax
+
+Q04_probe1 done.

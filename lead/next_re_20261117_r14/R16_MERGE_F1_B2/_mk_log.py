@@ -1,0 +1,90 @@
+# -*- coding: utf-8 -*-
+"""Generate MERGE_LOG.md: 18 rows before/after col4 + 9 checks + numbers."""
+import os, sys, json
+sys.stdout.reconfigure(encoding="utf-8")
+ROOT = r"D:\Project\ra2-campaign-forge\lead\next_re_20261117_r14"
+OUT  = os.path.join(ROOT, "R16_MERGE_F1_B2")
+bs=json.load(open(os.path.join(OUT,"before_state.json"),encoding="utf-8"))
+as_=json.load(open(os.path.join(OUT,"after_state.json"),encoding="utf-8"))
+verify=open(os.path.join(OUT,"VERIFY.txt"),encoding="utf-8").read()
+
+L=[]
+L.append("# R16-MERGE-F1 B2 合并日志")
+L.append("")
+L.append("> 角色：合并员（唯一写者）· 批次 B2 = 派生集合第 19–36 行 · PANEL 披露编号 M90")
+L.append("> 审计裁决：`R16_AUDIT_F1_B2/VERDICT.md` = PASS 18 / FAIL 0 / 必改 0（已确认）")
+L.append("")
+L.append("## 0. 两份文件改前 → 改后")
+L.append("")
+L.append("| 文件 | mtime | bytes | sha256 | 行数(LF) | 行尾 |")
+L.append("|---|---|---|---:|---:|---|")
+for nm,key in [("coverage.tsv","coverage"),("PANEL.md","panel")]:
+    b=bs[key]; a=as_[key]
+    L.append(f"| {nm} BEFORE | {b['mtime']} | {b['bytes']:,} | `{b['sha256']}` | {b['lf']} | LF-only(CRLF=0) |")
+    L.append(f"| {nm} AFTER  | {a['mtime']} | {a['bytes']:,} | `{a['sha256']}` | {a['lf']} | LF-only(CRLF=0) |")
+L.append("")
+L.append("覆盖行：`coverage.tsv` 第 4 列（one_line_semantics），18 行；PANEL.md 第 246–252 行插入 1 条 M90 披露（紧接 M89 块之后）。")
+L.append("")
+
+L.append("## 1. 18 行第 4 列 before / after（完整文本）")
+L.append("")
+L.append("每行的改前第 4 列 ≡ 盘上原值；改后第 4 列 = 改前原值 + 追加段（严格前缀 18/18，追加段均以 `；④ 活表槽位见证` 起，含 §12.6 不含 §12.4）。")
+L.append("grade 第 5 列保持 `[已证]`，其余 7 列逐字节不变。")
+L.append("")
+before_col4=bs["before_col4"]
+# read after col4 from coverage
+cov=open(os.path.join(ROOT,"COVERAGE","coverage.tsv"),"rb").read().decode("utf-8").split("\n")
+rows=[ln.split("\t") for ln in cov[1:] if ln]
+by={r[0].strip().upper():r for r in rows}
+dentries=as_["merged_entries"]
+for k,e in enumerate(dentries,1):
+    b=before_col4[e]; a=by[e][3]; seg=a[len(b):]
+    L.append(f"### {k}. {e}（+{len(seg)} 字节）")
+    L.append("")
+    L.append("**before 第4列：**")
+    L.append("```text")
+    L.append(b)
+    L.append("```")
+    L.append("")
+    L.append("**after 第4列：**")
+    L.append("```text")
+    L.append(a)
+    L.append("```")
+    L.append("")
+    L.append(f"追加段：`{seg[:80]}{'…' if len(seg)>80 else ''}`")
+    L.append("")
+
+L.append("## 2. 九个验证（VERIFY.txt）")
+L.append("")
+L.append("```text")
+L.append(verify)
+L.append("```")
+L.append("")
+L.append("## 3. 六个实测数")
+L.append("")
+L.append("| 指标 | 值 |")
+L.append("|---|---:|")
+L.append(f"| N_pre_A（18 行改前第4列含 ④ 的行数）| {bs['N_pre_A']} |")
+L.append(f"| N_pre_B（18 行改前第4列含 ④ 活表槽位见证 的行数）| {bs['N_pre_B']} |")
+L.append(f"| N_A_pre（全表口径A 改前）| {bs['N_A_pre']} |")
+L.append(f"| N_A_post（全表口径A 改后）| {as_['N_A_post']} |")
+L.append(f"| N_B_pre（全表口径B 改前）| {bs['N_B_pre']} |")
+L.append(f"| N_B_post（全表口径B 改后）| {as_['N_B_post']} |")
+L.append("")
+L.append("净增：口径 A = 354 − 351 = **3 行**（不是 +18：18 行里 15 行改前第 4 列已含 ④，故口径 A 不增）；口径 B = 170 − 152 = **18 行**。")
+L.append("")
+L.append("## 4. 达标集合（strict_panel.py 口径复算，输出在本目录 strict_panel.tsv/json）")
+L.append("")
+L.append("- 名义达标：**S15,S16,S17**（3/22）")
+L.append("- 严格达标：**S17**（1/22）")
+L.append("- atlas 内 proved 1,648 / proved_strict 1,331；达标未翻转。")
+L.append("")
+L.append("## 5. 硬边界确认")
+L.append("")
+L.append("- 只改 `coverage.tsv` 该 18 行第 4 列；其它行、其它列零改（验证 [1][3][4]）。")
+L.append("- `PANEL.md` 只新增 1 条 M90 披露，既有内容零删除零改字（验证 [7]）。")
+L.append("- 未改 R14_COMMON / 台账 / 看板 / _drafts / _cards / 任何卡目录；未做逆向。")
+L.append("- strict_panel.py 未改共享原件，副本输出在本目录。")
+L.append("")
+open(os.path.join(OUT,"MERGE_LOG.md"),"w",encoding="utf-8").write("\n".join(L)+"\n")
+print("wrote MERGE_LOG.md", os.path.getsize(os.path.join(OUT,"MERGE_LOG.md")),"bytes")

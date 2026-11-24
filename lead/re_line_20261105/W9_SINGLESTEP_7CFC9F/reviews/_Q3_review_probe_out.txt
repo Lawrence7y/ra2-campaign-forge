@@ -1,0 +1,160 @@
+==============================================================================
+独立复核员·Q3 复核探针（自己实跑，非引用 Q3 探针输出）
+运行时刻 = 2026-11-06 03:53:54
+python = 3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]
+==============================================================================
+[1] 两个 SHA256 / 字节数（hashlib 实算，绝对路径）
+gamemd.exe  sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 ; bytes = 4825360
+EXCEPT 件   sha256 = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251 ; bytes = 26405
+
+[2] 回件头部（Q3_MECHANISM.md:1-5 逐行读，检查两个 SHA 是否真在头部）
+  Q3_MECHANISM.md:1 | 被核对象 = gamemd.exe + EXCEPT_SINGLESTEP_0x7CFC9F_20261019T1352.txt
+  Q3_MECHANISM.md:2 | gamemd.exe SHA256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476，字节数 = 4825360
+  Q3_MECHANISM.md:3 | EXCEPT 件 SHA256 = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251，字节数 = 26405
+  Q3_MECHANISM.md:4 | Engine 自证 = COVERAGE 99.998375677293% / IMAGEBASE 0x400000
+  Q3_MECHANISM.md:5 | 回件时刻 = 2026-11-06 02:34:24
+  Q3_MECHANISM.md:6 | 
+  头部含 gamemd.exe SHA256  = True
+  头部含 EXCEPT 件 SHA256    = True
+  头部含 字节数 4825360       = True
+  头部含 字节数 26405         = True
+  头部含 COVERAGE             = True
+  头部含 IMAGEBASE 0x400000   = True
+  头部含 回件时刻             = True
+
+[3] Engine 自证（自己实例化）
+  IMAGEBASE = 0x400000 ; COVERAGE = 99.998375677293% ; insns = 1394120 ; resync fails = 66
+  .text = [0x401000,0x7E1000) raw=0x1000 size=0x3E0000
+[3a] 崩点原始字节（自己 e.rd）
+  fo(0x7CFC9F) = 0x3CFC9F
+  e.rd(0x7CFC9F,32) = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+  EXCEPT Bytes 行抽出 32 字节 = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+  磁盘 vs 证据件逐字节差异索引 = []
+  0x7CFC9F in e.by() = True
+  by()[0x7CFC9F] = mov ecx, dword ptr [edx] (size=2)
+[3b] 崩点前 6 条指令（自己 e.disasm）—— 检查 0x7CFC9B 末址 = 0x7CFC9F
+  0x7CFC87  0000         add      byte ptr [eax], al  (末址=0x7CFC89)
+  0x7CFC89  6a20         push     0x20  (末址=0x7CFC8B)
+  0x7CFC8B  234df8       and      ecx, dword ptr [ebp - 8]  (末址=0x7CFC8E)
+  0x7CFC8E  5f           pop      edi  (末址=0x7CFC8F)
+  0x7CFC8F  85c9         test     ecx, ecx  (末址=0x7CFC91)
+  0x7CFC91  7c05         jl       0x7cfc98  (末址=0x7CFC93)
+  0x7CFC93  d1e1         shl      ecx, 1  (末址=0x7CFC95)
+  0x7CFC95  47           inc      edi  (末址=0x7CFC96)
+  0x7CFC96  ebf7         jmp      0x7cfc8f  (末址=0x7CFC98)
+  0x7CFC98  8b4df4       mov      ecx, dword ptr [ebp - 0xc]  (末址=0x7CFC9B)
+  0x7CFC9B  8b54f904     mov      edx, dword ptr [ecx + edi*8 + 4]  (末址=0x7CFC9F)
+
+[4] EFlags=0x286 逐位（自己位运算，不采信旧件）
+  置位 bits = [1, 2, 7, 9]
+  TF(bit8)=0 IF(bit9)=1 RF(bit16)=0 VM(bit17)=0 SF(bit7)=1 ZF(bit6)=0
+[4b] 证据件字段普查（DR6/DR0/ExceptionInformation/ExceptionAddress/CONTEXT）
+  Dr0                      -> [] (全文零命中)
+  Dr1                      -> [] (全文零命中)
+  Dr2                      -> [] (全文零命中)
+  Dr3                      -> [] (全文零命中)
+  Dr6                      -> [] (全文零命中)
+  Dr7                      -> [] (全文零命中)
+  DR0                      -> [] (全文零命中)
+  DR6                      -> [] (全文零命中)
+  DR7                      -> [] (全文零命中)
+  ExceptionInformation     -> [] (全文零命中)
+  ExceptionFlags           -> [] (全文零命中)
+  ExceptionRecord          -> [] (全文零命中)
+  NumberParameters         -> [] (全文零命中)
+  ExceptionAddress         -> [] (全文零命中)
+  CONTEXT                  -> [] (全文零命中)
+  EFlags                   -> [15]
+
+[5] handler EFlags printf 取数指令（自己 e.disasm(0x4C8C63,0x18)，不用 Q3 探针输出）
+  0x4C8C63  8b8dc0000000 mov      ecx, dword ptr [ebp + 0xc0]
+  0x4C8C69  8d542434     lea      edx, [esp + 0x34]
+  0x4C8C6D  51           push     ecx
+  0x4C8C6E  68501e8200   push     0x821e50
+  0x4C8C73  52           push     edx
+  0x4C8C74  ffd3         call     ebx
+  0x4C8C76  83c40c       add      esp, 0xc
+[5b] 全组 10 个寄存器取数指令（自己 e.disasm(0x4C8B79,0xE0) 抓 [ebp+disp]）
+  +0x09C : 0x4C8C15  8b8d9c000000 mov      ecx, dword ptr [ebp + 0x9c]
+  +0x0A0 : 0x4C8C1B  8b95a0000000 mov      edx, dword ptr [ebp + 0xa0]
+  +0x0A4 : 0x4C8BCD  8b95a4000000 mov      edx, dword ptr [ebp + 0xa4]
+  +0x0A8 : 0x4C8C21  8b85a8000000 mov      eax, dword ptr [ebp + 0xa8]
+  +0x0AC : 0x4C8BC7  8b8dac000000 mov      ecx, dword ptr [ebp + 0xac]
+  +0x0B0 : 0x4C8BD3  8b85b0000000 mov      eax, dword ptr [ebp + 0xb0]
+  +0x0B4 : 0x4C8B79  8b8db4000000 mov      ecx, dword ptr [ebp + 0xb4]
+  +0x0B8 : 0x4C8B85  8b85b8000000 mov      eax, dword ptr [ebp + 0xb8]
+  +0x0C4 : 0x4C8B7F  8b95c4000000 mov      edx, dword ptr [ebp + 0xc4]
+  [ebp+0xC0] 是否出现 = False -> None
+[5c] 格式串亲读
+  e.rd(0x821E50,16) = b'EFlags:%08X \r\n\x00\x00'
+  e.rd(0x820F74,110) = b'EXCEPTION_SINGLE_STEP\r\r\nDescription: A trace trap or other single-instruction mechanism signaled that one inst'
+[5d] IAT 解析（自己 e.resolve_iat）
+  0x7E115C -> ('KERNEL32.dll', 'IsBadReadPtr')
+  0x7E1160 -> ('KERNEL32.dll', 'lstrcatA')
+  0x7E11B4 -> ('KERNEL32.dll', 'IsBadCodePtr')
+  0x7E12C0 -> ('KERNEL32.dll', 'RaiseException')
+
+[6] 异常码表亲读（自己 e.rd）
+  e.rd(0x7E8840,8)  = 03 00 00 80 02 00 00 80  (dwords = 0x80000003 0x80000002)
+  e.rd(0x7E8880,8)  = 04 00 00 80 FD 00 00 C0  (dwords = 0x80000004 0xC00000FD)
+  证据件 :1-3 = ['Error code: EXCEPTION_SINGLE_STEP', '', 'Description: A trace trap or other single-instruction mechanism signaled that one instruction has been executed.']
+
+[7] ICEBP/0xF1 排除（自己 e.rd + e.by）
+  e.rd(0x7CFC9E,1) = 04 ; 0x7CFC9E in by() = False
+  e.rd(0x7CFC9B,4) = 8B 54 F9 04
+  窗口 [0x7CFC7F,0x7CFCBF) = CE 75 0D 8B 8C 90 C4 00 00 00 6A 20 23 4D F8 5F 85 C9 7C 05 D1 E1 47 EB F7 8B 4D F4 8B 54 F9 04 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+  0xF0 @ 0x7CFCA3 : in by() = False
+  0xF1 @ 0x7CFCA5 : in by() = False
+
+[8] 候选③（自己单遍 stream 扫描，不采信 Q3 探针输出）
+  全 .text 立即数 == 0x80000004 的指令数 = 0 ; []
+  call [0x7E12C0] 的指令数 = 2 ; [('0x7d2f92', 'call', 'dword ptr [0x7e12c0]'), ('0x7db8a0', 'call', 'dword ptr [0x7e12c0]')]
+  e.rd(0x7F9928,32) = 63 73 6D E0 01 00 00 00 00 00 00 00 00 00 00 00 03 00 00 00 20 05 93 19 00 00 00 00 00 00 00 00
+  首 dword = 0xE06D7363
+  e.rd(0x7C9484,8) = E8 8A 66 00 00 6A 09 8B
+    0x7C9484  e88a660000   call     0x7cfb13
+    0x7C9489  6a09         push     9
+[8b] 全 .text 直接 call/jmp 落点 == 0x7CFC9F（自己单遍 stream）
+  direct call/jmp targets == 0x7CFC9F : 0 []
+
+[9] 导入表（自己 PE 解析）
+  导入函数总数 = 339
+  SetThreadContext                 = False
+  GetThreadContext                 = False
+  RaiseException                   = True
+  SetUnhandledExceptionFilter      = True
+  UnhandledExceptionFilter         = True
+  AddVectoredExceptionHandler      = False
+  IsDebuggerPresent                = False
+  DebugActiveProcess               = False
+  SuspendThread                    = False
+
+[10] Esi/Edi 语义（自己 e.disasm 函数头 + 立即数扫描限定窗口）
+  e.rd(0x7CFB13,5) = 55 8B EC 83 EC ; e.rd(0x7CFB12,1) = C3
+  0x7CFB33  8d4817       lea      ecx, [eax + 0x17]
+  0x7CFB36  83e1f0       and      ecx, 0xfffffff0
+  0x7CFB39  894df0       mov      dword ptr [ebp - 0x10], ecx
+  0x7CFB3C  c1f904       sar      ecx, 4
+  0x7CFB3F  49           dec      ecx
+  0x7CFB40  83f920       cmp      ecx, 0x20
+  0x7CFB43  7d0e         jge      0x7cfb53
+  0x7CFB45  83ceff       or       esi, 0xffffffff
+  0x7CFB48  d3ee         shr      esi, cl
+  0x7CFB4A  834df8ff     or       dword ptr [ebp - 8], 0xffffffff
+  0x7CFB4E  8975f4       mov      dword ptr [ebp - 0xc], esi
+  0x7CFB51  eb10         jmp      0x7cfb63
+  窗口 [0x7CFB13,0x7CFC9F) 内立即数 0x7FFFFFFF = 0 []
+  窗口 [0x7CFB13,0x7CFC9F) 内立即数 0xFFFFFFFF = 5 [('0x7cfb45', 'or', 'esi, 0xffffffff'), ('0x7cfb4a', 'or', 'dword ptr [ebp - 8], 0xffffffff'), ('0x7cfb56', 'or', 'eax, 0xffffffff'), ('0x7cfbfc', 'cmp', 'dword ptr [eax], -1'), ('0x7cfc13', 'cmp', 'edx, -1')]
+
+[11] 回件结论支撑抽样：逐条检查是否有「反汇编地址 + 原始字节」
+  3.2 EFlags 取数            : {'0x4C8C63': True, '8b8dc0000000': True, '0x4C8C6E': True, '68501e8200': True}
+  4.3 EIP 退化性              : {'0x7CFC98': True, '8b4df4': True, '0x7CFC9B': True, '8b54f904': True, '0x7CFC9F': True, '8b0a': True}
+  6.1 Esi 链                : {'0x7CFB45': True, '83ceff': True, '0x7CFB48': True, 'd3ee': True}
+  6.2 Edi 链                : {'0x7CFC68': True, '33ff': True, '0x7CFC95': True, '47': True}
+  4.1 异常码表                 : {'0x7E8880': True, '04 00 00 80': True}
+  5(3) RaiseException 模板   : {'0x7F9928': True, '0xE06D7363': True, '0x7D2F92': True}
+  5(3) 返回链                 : {'0x7C9484': True, 'E8 8A 66 00 00': True}
+  5(4) ICEBP               : {'0x7CFC9E': True, '0xF0@0x7CFCA3': True, '0xF1@0x7CFCA5': True}
+
+耗时 = 85.62 s
+EXIT=0 / 零真机 / 零活进程读取 / 零采样注入 / 唯一写域 reviews/

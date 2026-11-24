@@ -1,0 +1,39 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+00409470	S19	AudioInit	DirectSoundCreate+SetCooperativeLevel+CreateThread(0x4095B0) audio subsystem init	high	EVIDENCE/task1_init_409470.txt
+004095B0	S19	DirectSoundMixerThread	high-priority thread feeding IDirectSoundBuffer via Lock/Unlock/GetStatus/GetCurrentPosition	high	EVIDENCE/task1_thread_4095B0.txt
+00406F70	S19	AudioFrameUpdate	33ms-throttled per-frame audio tick with reentrancy lock; calls 5 sub-steps	high	EVIDENCE/task1_frame_406F70.txt
+004041D0	S19	AudioSampleUpdate	per-frame sample decay + Limit post-facto truncation (0x404D80)	high	EVIDENCE/task2_reader_sample_update_4041D0.txt
+00405190	S19	VoiceAlloc	300-slot DirectSound voice pool allocator (zero preemption)	high	EVIDENCE/task2_callers_00405190.txt
+00750920	S19	VocClass::PlayGlobal	one-shot global sound by ID in ECX (116 capstone sites / 66 caller fns)	high	EVIDENCE/task2_callers_00750920.txt
+007509E0	S19	VocClass::PlayAt	one-shot positional 3D sound by ID in ECX + Coord* in EDX (97 sites / 65 fns)	high	EVIDENCE/task2_callers_007509E0.txt
+00750E20	S19	VocClass::PlayIndexAtPos	wrapper that queues 3D sound request node then calls PlayAt (18 sites / 10 fns)	high	EVIDENCE/task2_callers_00750E20.txt
+00750440	S19	VocClass::ParseINI	parses [Sounds] INI keys into VocClass fields via 13 setters	high	EVIDENCE/task2_ini_parse_00750440.txt
+00406520	S19	VocClass::SetAttack	INI setter writes VocClass+0x138 (Attack frames)	high	EVIDENCE/task2_ini_writers_406500.txt
+00406530	S19	VocClass::SetDecay	INI setter writes VocClass+0x13C (Decay frames)	high	EVIDENCE/task2_ini_writers_406500.txt
+00406540	S19	VocClass::SetPriority	INI setter writes VocClass+0x40 (Priority 0..4)	high	EVIDENCE/task2_ini_writers_406500.txt
+00406550	S19	VocClass::SetVolume	INI setter writes VocClass+0x18 volume struct	high	EVIDENCE/task2_ini_writers_406500.txt
+00406570	S19	VocClass::SetControl	INI setter writes VocClass+0x10 Control bits (+0x138/+0x13C conditioned)	high	EVIDENCE/task2_ini_writers_406500.txt
+004065C0	S19	VocClass::SetType	INI setter writes VocClass+0x14 acoustic type bits	high	EVIDENCE/task2_ini_writers_406500.txt
+004065D0	S19	VocClass::SetLimit	INI setter writes VocClass+0x48 concurrent-instance limit	high	EVIDENCE/task2_ini_writers_406500.txt
+004065E0	S19	VocClass::SetRange	INI setter writes VocClass+0x50 3D audible range	high	EVIDENCE/task2_ini_writers_406500.txt
+004065F0	S19	VocClass::SetMinVolume	INI setter writes VocClass+0x54 min-volume float from stack arg	high	EVIDENCE/task2_ini_writers_406500.txt
+00406600	S19	VocClass::SetDelay	INI setter writes VocClass+0x58 MinDelay and +0x5C MaxDelay	high	EVIDENCE/task2_ini_writers_406500.txt
+00406610	S19	VocClass::SetFShift	INI setter writes VocClass+0x60 MinFDelta and +0x64 MaxFDelta	high	EVIDENCE/task2_ini_writers_406500.txt
+00406620	S19	VocClass::SetVShift	INI setter writes VocClass+0x68 VShift clamped to 0..100	high	EVIDENCE/task2_ini_writers_406500.txt
+00406640	S19	VocClass::SetLoop	INI setter writes VocClass+0x4C Loop count	high	EVIDENCE/task2_ini_writers_406500.txt
+00406650	S19	VocClass::HasDelay	reads Control(+0x10) and Loop(+0x4C) to test delay eligibility	high	EVIDENCE/task2_ini_writers_406500.txt
+00750AC0	S19	VocClass::Calc3DAttenuation	computes 3D volume attenuation/pan from Coord and camera	medium	EVIDENCE/task2_reader_PlayAt3D_750AC0.txt
+00406130	S19	AudioController::GetVoice	reads controller slot +0x8 current voice	medium	EVIDENCE/task1_summary.txt
+00406060	S19	AudioController::ShutUp	stops current voice on an AudioController	medium	EVIDENCE/task1_summary.txt
+00407B60	S19	AudioStream::PlayWAV	plays streamed WAV (theme/EVA/score) on dedicated stream, not the 300-slot pool	high	EVIDENCE/task3to5_dump_summary.txt
+00752700	S19	EVA::QueueVoice	queues EVA voice by event-name string in ECX + priority; 77 sites/42 fns	high	EVIDENCE/task4_EVA_QueueVoice_00752700.txt
+00752480	S19	EVA::EnqueueDecision	priority 1/2/3 enqueue/preempt decision; maps name to index via stricmp table	high	EVIDENCE/task4_EVA_enqueue_00752480.txt
+00752760	S19	EVA::FrameUpdate	per-frame EVA stream progression, called from AudioFrameUpdate	high	EVIDENCE/task3to5_dump_summary.txt
+007209D0	S19	Theme::AI	dynamic theme score evaluation, single caller 0x406F70	high	EVIDENCE/task3to5_dump_summary.txt
+00720B20	S19	Theme::QueueSong	queues a theme song (30 sites / 13 fns)	high	EVIDENCE/task3to5_dump_summary.txt
+00720BB0	S19	Theme::PlaySong	plays queued theme song via AudioStream::PlayWAV (12 sites / 8 fns)	high	EVIDENCE/task3to5_dump_summary.txt
+00720EA0	S19	Theme::Stop	stops current theme via AudioStream stop 0x407F40 (27 sites / 10 fns)	high	EVIDENCE/task3to5_Theme_Stop_00720EA0.txt
+00759C30	S19	VQAClass::Advance_Frame	per-frame VQA playback advance with Pause/Unpause/Ready states	high	EVIDENCE/task3to5_VQA_player_00759C30.txt
+00432750	S19	BinkOpenInit	opens Bink movie and sets DirectSound sound system	high	EVIDENCE/task5_bink.txt
+00432C70	S19	BinkMovieLoop	blocking modal movie loop: own Peek/GetMessage pump + BinkDoFrame until done	high	EVIDENCE/task5_bink.txt
+00432E40	S19	BinkFrameAdvance	decodes/copies one Bink frame (BinkWait/DoFrame/CopyToBuffer)	high	EVIDENCE/task5_bink.txt

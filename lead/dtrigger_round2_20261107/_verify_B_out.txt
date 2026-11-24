@@ -1,0 +1,79 @@
+[语料] measure_w*.json n=104  采样点 n=1125992
+[manifest] 推进窗 n=64
+[事件] 全量 n=1737  isRealMatch=true n=1681  real_keys n=1681  startTick=0 n=4
+[游程] n=28381  real 与游程对齐 n=1681/1681
+[e] median(og|i>0) = 2.510999999 ms  n=28317  (3位=2.511)
+
+[主表·我独立复算]  id | nTrig | >=100 | +e>50(全精度) | +e>50(e=2.511) | >50 | min/med/max | realHits
+  C2-abs-P95x2        29       5               29                29    29 66.334/70.931/321.002      8
+  C3-r4               24      24               24                24    24 125.884/127.491/440.389      8
+  C3-r4-clean         24      24               24                24    24 128.284/130.237/461.598      8
+  C3-r8               16      16               16                16    16 251.709/256.261/258.378      1
+  C3-r8-clean         16      16               16                16    16 254.247/258.835/260.904      1
+  C3-r12              15      15               15                15    15 377.385/385.601/387.990      0
+
+[结构] i==0 n=64  og=None 且 he>=64 n=0  he<64 n=3813
+  start0 ('l1c_20261021', 'w0', 0, 56) 游程数=1 he=0 og=None 进入触发集的 id=[]
+  start0 ('l3_1101v3a', 'w0', 0, 68) 游程数=1 he=0 og=None 进入触发集的 id=[]
+  start0 ('l3_20261031ha', 'w0', 0, 103) 游程数=1 he=0 og=None 进入触发集的 id=[]
+  start0 ('l3_20261031hb', 'w2', 0, 52) 游程数=1 he=0 og=None 进入触发集的 id=[]
+[结构] 各 id 触发行中 og=None 的条数：{'C2-abs-P95x2': 0, 'C3-r4': 0, 'C3-r4-clean': 0, 'C3-r8': 0, 'C3-r8-clean': 0, 'C3-r12': 0}
+[陷阱核对] C2-abs-P95x2: >=100 的 5 条 d_fin 最小=158.582；false(d_fin<100) n=5；两集合交集 n=0
+
+[交叉校验 A] 与 CRITERIA_METRICS.json（本轮实读）比对
+  C2-abs-P95x2     nTrig 29==29 True | realHits 8==8 True | latP50(real) 169.9605000030715 vs 169.9605 True
+  C3-r4            nTrig 24==24 True | realHits 8==8 True | latP50(real) 344.63599999799044 vs 344.636 True
+  C3-r4-clean      nTrig 24==24 True | realHits 8==8 True | latP50(real) 347.2489999985555 vs 347.249 True
+  C3-r8            nTrig 16==16 True | realHits 1==1 True | latP50(real) 257.0150000101421 vs 257.015 True
+  C3-r8-clean      nTrig 16==16 True | realHits 1==1 True | latP50(real) 259.5140000048559 vs 259.514 True
+  C3-r12           nTrig 15==15 True | realHits 0==0 True | latP50(real) None vs 0.0 True
+  A_ok = True
+[交叉校验 B] 与 _dtrigger_probe_out.txt:138,149,160,171（本轮实读+正则解析）比对
+  :138 C2-abs-P95x2     probe 66.334/70.931/321.002 vs mine 66.334/70.931/321.002  OK
+  :149 C3-r4            probe 125.884/127.491/440.389 vs mine 125.884/127.491/440.389  OK
+  :160 C3-r8            probe 251.709/256.261/258.378 vs mine 251.709/256.261/258.378  OK
+  :171 C3-r12           probe 377.385/385.601/387.990 vs mine 377.385/385.601/387.990  OK
+  B_ok = True
+[交叉校验 C] 与交付 _dB_anchor_recompute_data.json 比对（12 格 + 逐触发 wait 数组）
+  C2-abs-P95x2     cells=True 逐值wait=True 触发键集合=True
+  C3-r4            cells=True 逐值wait=True 触发键集合=True
+  C3-r4-clean      cells=True 逐值wait=True 触发键集合=True
+  C3-r8            cells=True 逐值wait=True 触发键集合=True
+  C3-r8-clean      cells=True 逐值wait=True 触发键集合=True
+  C3-r12           cells=True 逐值wait=True 触发键集合=True
+  C_ok = True  | data.selfcheck_all_pass = True
+[交叉校验 D] e 取 2.511 常数时 12 格不变？
+  D_ok = True  (>=100 与交付一致 且 全精度e与e=2.511同值) {'C2-abs-P95x2': (29, 29), 'C3-r4': (24, 24), 'C3-r4-clean': (24, 24), 'C3-r8': (16, 16), 'C3-r8-clean': (16, 16), 'C3-r12': (15, 15)}
+[交叉校验 E] 敏感性：6 档一律 runStart 谓词（我独立复算）
+  C2-abs-P95x2/runStart    nTrig/>=100/+e>50 = 27/4/27 waitMed=73.378 waitMax=331.407
+  C3-r4/runStart           nTrig/>=100/+e>50 = 24/24/24 waitMed=130.237 waitMax=461.598
+  C3-r4-clean              nTrig/>=100/+e>50 = 24/24/24 waitMed=130.237 waitMax=461.598
+  C3-r8/runStart           nTrig/>=100/+e>50 = 16/16/16 waitMed=258.835 waitMax=260.904
+  C3-r8-clean              nTrig/>=100/+e>50 = 16/16/16 waitMed=258.835 waitMax=260.904
+  C3-r12/runStart          nTrig/>=100/+e>50 = 15/15/15 waitMed=387.348 waitMax=390.504
+
+[指纹] 本轮实算
+  _dB_anchor_recompute_out.txt           3e9588ce1def2ebc5b9ad77a3ce242b47bcada4ae1ab1bc4ea606775edd40807 14479
+  _dB_anchor_recompute_data.json         8fb149f21e9b41d7c808e8f8c2e1cb35ca62b881ebe65bfba7029b6f95763794 42910
+  _dB_anchor_recompute.py                44b10371cdc258e7db5c232f53d9d64dfdf4f34cb084115d0bb8c7a05a5a382b 27324
+  _dB_anchor_recompute_stdout.txt        9a8db8791986eaeb1db08342ca8210c0ffe6637b5a59d366a0f45ad7073653a7 14693
+  CRITERIA_COMPARE.md                    4a3424050125b98c0dd3a9a76ec6603fc03ad976e0b9fdecfb34d3b683b94726 48343
+  out.txt:18 = 被核对象 SHA256 = 4a3424050125b98c0dd3a9a76ec6603fc03ad976e0b9fdecfb34d3b683b94726，字节数 = 48343
+  out.txt:18 的 hash == CRITERIA_COMPARE.md ? True ；== _dB_anchor_recompute_out.txt ? False
+  我复核用的铁律9行：被核对象 SHA256 = 3e9588ce1def2ebc5b9ad77a3ce242b47bcada4ae1ab1bc4ea606775edd40807，字节数 = 14479
+[交叉校验 F] 回件 evidence 中的 _dB_ 指纹字符串是否与实际吻合
+  回件称脚本 hash 尾=26f3fb61829756dfeecf；实算脚本 hash 含该尾? False；该尾出现在 data.json? False
+  回件称 out.txt hash 尾=b6f95763794；实算 out.txt hash 含该尾? False；该尾出现在 data.json? True
+
+[汇总] A_ok=True B_ok=True C_ok=True D_ok=True
+[交付件内部文本核对]
+  out.txt:120: C2-abs-P95x2 → P95x2/runStart     |    27|      4|     27|    73.378|   331.407
+  out.txt:126:   对照（只读参照，不采信为结果）：_dtrigger_supplement_out.txt:15 的 C2-P95x2-复算 = 27/4/4(>=100=4)；:21 的 C3-r4 = 24/24/24；:22 的 C3-r8 = 16/16/16。
+  out.txt:148: 【§七 本轮仍未验项（单列，不并入上述结论）】
+  out.txt:149:   1. 物理起点 S 的精确 waitAfterS：语料只有 (t,f)，S ∈ (t[i-1], t[i]] 不可测；本轮全部 wait 是 S_hat 锚下的下界（S_OBSERVABILITY.md:57-63、CRITERIA_COMPARE.md:395）。
+  out.txt:150:   2. 逐游程代入各自 og/e 的实测 +e>50：本轮按 §3.1:222-223 只用中位常数 e，未做逐游程修正（该修正在既有定义中本就未验）。
+  out.txt:153:   5. 其余 §7 各项（实际保存负担/配额资源、内部状态旗标、跨窗连续时序、延迟分布逐档重跑、工程可行性/修复收益/方案批准）：本轮均未实跑，保持未验。
+  out.txt:155: 自检总判定 = PASS（全部检查项均为本脚本本轮实跑）
+  supplement_out.txt:15: C2-P95x2-复算         |     27|   14.81%|   73.378|  196.034|  331.407|     27|      27|       4|    14.81%|      100.00%|      7
+  supplement_out.txt:21: C3-r4               |     24|    0.00%|  130.237|  348.141|  461.598|     24|      24|      24|   100.00%|      100.00%|      8
+  supplement_out.txt:22: C3-r8               |     16|    0.00%|  258.835|  260.038|  260.904|     16|      16|      16|   100.00%|      100.00%|      1

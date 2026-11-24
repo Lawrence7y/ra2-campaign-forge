@@ -1,0 +1,40 @@
+check	addr	bytes	decode	evidence
+SHA256	-	73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476	-	4,825,360 B, PE32, imagebase 0x400000
+HOST	0x0043b680	8b442404568bf150e8738c2b	mov eax, dword ptr [esp + 4]	host anchor, must be instruction boundary
+HOST	0x0043b740	8b442408535556578bf150e8	mov eax, dword ptr [esp + 8]	host anchor, must be instruction boundary
+HOST	0x0043bcf0	515355568bf1578dbeb40600	push ecx	host anchor, must be instruction boundary
+FN_END	0x0043b73d	c20400	ret 4	0x43b680 host: c2 04 00 = ret 4 ; next fn at 0x43b740
+FN_END	0x0043bcdb	c20800	ret 8	0x43b740 host: c2 08 00 = ret 8 ; next fn at 0x43bcde
+FN_END	0x0043c0c9	c3	ret 	0x43bcf0 host: c3 = ret (near) ; epilogue pops edi/esi/ebp/ebx/ecx
+FN_END	0x0043c0ca	909090909090	nop 	six 0x90 NOP padding bytes -> real fn_end = 0x43c0d0 (R9 wrote 0x43c0ca = ret operand start, MISSED padding)
+SITE	0x0043b71f	c706bc3e7e00c7	mov dword ptr [esi], 0x7e3ebc	immediate-hit store to one of the 4 slots
+SITE	0x0043b725	c74604a03e7e00	mov dword ptr [esi + 4], 0x7e3ea0	immediate-hit store to one of the 4 slots
+SITE	0x0043b72c	c74608983e7e00	mov dword ptr [esi + 8], 0x7e3e98	immediate-hit store to one of the 4 slots
+SITE	0x0043b733	c7460c903e7e00	mov dword ptr [esi + 0xc], 0x7e3e90	immediate-hit store to one of the 4 slots
+SITE	0x0043b9fa	c706bc3e7e00c7	mov dword ptr [esi], 0x7e3ebc	immediate-hit store to one of the 4 slots
+SITE	0x0043ba00	c74500a03e7e00	mov dword ptr [ebp], 0x7e3ea0	immediate-hit store to one of the 4 slots
+SITE	0x0043ba07	c74608983e7e00	mov dword ptr [esi + 8], 0x7e3e98	immediate-hit store to one of the 4 slots
+SITE	0x0043ba0e	c7460c903e7e00	mov dword ptr [esi + 0xc], 0x7e3e90	immediate-hit store to one of the 4 slots
+SITE	0x0043bcfd	c706bc3e7e008b	mov dword ptr [esi], 0x7e3ebc	immediate-hit store to one of the 4 slots
+SITE	0x0043bd05	c74604a03e7e00	mov dword ptr [esi + 4], 0x7e3ea0	immediate-hit store to one of the 4 slots
+SITE	0x0043bd0c	c74608983e7e00	mov dword ptr [esi + 8], 0x7e3e98	immediate-hit store to one of the 4 slots
+SITE	0x0043bd13	c7460c903e7e00	mov dword ptr [esi + 0xc], 0x7e3e90	immediate-hit store to one of the 4 slots
+G2_THIS	0x0043b685	8bf1	mov esi, ecx	mov esi, ecx (host 0x43b680)
+G2_THIS	0x0043b748	8bf1	mov esi, ecx	mov esi, ecx (host 0x43b740)
+G2_THIS	0x0043b94a	8d6e04	lea ebp, [esi + 4]	lea ebp,[esi+4] -> [ebp] at 0x43ba00 == [this+4]
+G2_THIS	0x0043bcf4	8bf1	mov esi, ecx	mov esi, ecx (host 0x43bcf0)
+G4_BASE	0x0043b687	50e8738c2b0033	push eax	push eax; call 0x6f4300 base ctor
+G4_BASE	0x0043b74a	50e8f0732b008b4c	push eax	push eax; call 0x6f2b40 base ctor
+G4_BASE	0x0043bd2e	e8cd	call 0x405c00	call 0x405c00 (ctor form) - re-init of member subobject, NOT a base ctor
+G5_EPI	0x0043b73a	8bc65e	mov eax, esi	mov eax,esi -> returns this
+G5_EPI	0x0043bcd5	8bc6	mov eax, esi	mov eax,esi -> returns this
+G5_EPI	0x0043c0b6	8bcec6450d00	mov ecx, esi	mov ecx,esi / call 0x6f4500 - NO mov eax,esi; eax left by callee
+G4_NEW	0x0043bc10	50e801d23800	push eax	push eax; call 0x7c8e17 (operator new thunk) -> AFTER sites at 0x43bcfd.., proves sites not allocator-end
+NEW_SEM	0x007c8e17	6a01ff742408e8200600005959c3	push 1	push 1; push [esp+8]; call 0x7c9442 -> operator new( size, 1 )
+DEL_SEM	0x007c8b3d	ff742404e8a208000059c3	push dword ptr [esp + 4]	push [esp+4]; call 0x7c93e8 -> operator delete( ptr )
+G3_SIG	-	-	-	none of: mov dword ptr [esp+..],1 ; test al,1 on this ; push esi after mov eax,[esi] + call delete -> zero hits in all 3 host ranges
+C3_SLOT	0x007e3e90	90054100	dword 0x00410590	slot value 0x00410590, expected 0x00410590, MATCH
+C3_SLOT	0x007e3e98	80054100	dword 0x00410580	slot value 0x00410580, expected 0x00410580, MATCH
+C3_SLOT	0x007e3ea0	e0054100	dword 0x004105e0	slot value 0x004105e0, expected 0x004105e0, MATCH
+C3_SLOT	0x007e3ebc	60024100	dword 0x00410260	slot value 0x00410260, expected 0x00410260, MATCH
+B2_CHECK	-	-	-	all 12 sites write .text-resident values (0x7e3ebc/0x7e3ea0/0x7e3e98/0x7e3e90 are slots in .rdata 0x7e1000..0x841000; contents 0x410260/0x4105e0/0x410580/0x410590 in .text)

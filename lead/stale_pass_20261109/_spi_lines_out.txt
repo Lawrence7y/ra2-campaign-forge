@@ -1,0 +1,153 @@
+====================================================================================================
+FILE: lead/PENDING_DECISIONS.md
+TOTAL_LINES = 381
+90: - **D-30 已裁决（2026-11-06）：`q1: 戊`（不选任何 k 档进入实现/执行）。** **保留「提前候选 + 事后分类」的离线论证资格，现阶段不选定任何 k 档进入实现或执行；D-13 实现与执行继续 PAUSE，目标①机制挂账不解除。**
+91:   **裁决人**=`magpie/codex/gpt-6.1-sol$medium`（章程 D 类裁决通道；裁决书正文未载 run id，本条不补造）；
+92:   裁决书 `lead/d30_ruling_20261106/RULING_D30.md`（13,197 B / `d5afc90c50bbf57b…3983d04f`）+ 事实核证 `FACTCHECK.md`（11,394 B）+ `_d30_facts.py`/`_out.txt`；门禁 `check_d30.py` 实跑 **exit=0**（2026-11-07 复跑仍 PASS）。
+93:   **定谳要点**：`k=10` 作为「高召回候选能否承受成本」的**离线基准**（**不视为已接受其开销**）；`k=25` 作**边界敏感性对照**；**不采纳 `k=50`** 作为满足 `:177` 的现行方案，**不得为降误报牺牲 `:177`**。
+94:   **三档实算（Leader 已复算，`k` 点 = `k−1` 个间隔）**：k=10 名义跨度 **18 ms**、触发 28,294、误报率 93.98%、按 1681 真实标签查准率 **5.94%**；k=25 **48 ms** / 5,343 / 68.11% / **31.46%**；k=50 **98 ms** / 1,866 / 8.68% / **90.09%**（三档 `realHits=1681`、`missedReal=0`；另 23 条 d≥100ms 候选不属保留真实标签集合）。
+95:   ★ **「误报率」= 误触发数/总触发数，「查准率」≠ 战斗真实事件标签查准率、也不是 FP/(FP+TN)**；`93.98%` 本身**不能**判定成本可接受。
+96:   ★ **Q4 配额**：真实事件集中在 **26 个非空窗**（**104 是文件数，不是事件窗数**）；N=1/3/5 理想覆盖 26/73/117 → **1.55% / 4.34% / 6.96%**，**且未计在线误触发抢占**；每非空窗均值 64.6538 事件，**配额 5 并非覆盖约三分之一**。1.55%–6.96% **仅可有条件服务于探索性抽样取证**，不能承诺全量观测，**不放开配额**。
+97:   ★ **Q5 扰动 `verified=false`**：4 项依赖全需真机。**任何涉及触发开销的判断都建立在未验前提上。**
+98:   ★ **判据下一步**：要求**重新设计并离线比较候选判据**，**不预定 P95 相对阈值胜出**；相对帧间隔只作待验候选，**不得以等待 P95 突破时间约束**。内部 `IN_TACTICAL/SCORE_SCREEN/PAUSED/LOADING` 继续登记为**数据缺口**。
+99:   ★ **驳正**：20–30 FPS 只说明**条件重叠可能**（33.33–50 ms / 16.67–25 个 500 Hz 周期），**不能解释全部 93.98% 误触发**（严格该时长带只占 3215/26590 = **12.09%**），且游程跨度**不是**独立测得的完整帧执行耗时。
+100:   **授权边界**：本次不授权启动 `gamemd.exe`/`ra2loader`/`YURI.exe`、`taskkill`、读活进程、E3、hook/MiniDump/SuspendThread/StackWalk/探针注入及任何采样代码或执行。
+101:   **证据**：`lead/early_trigger_feasibility_20261106/`（主交付 28,576 B + `FEASIBILITY_STATS.json` + 探针 + 复核件）;`lead/d29_ruling_20261106/RULING_D29.md:6,:20,:28,:47`。
+103: - **D-29 已裁决（2026-11-06）：`q1: 丁`（保留四条约束，只否决串行机制）。** **保留 `:177`「停滞发生后 50ms 内捕获」、`:190`「检测后 <50ms、安全裕量 ≤20ms」、`:191` 拒止原则、口径 B 四条；否决「等满 100ms 才触发、随后才捕获」的串行机制；允许在既定边界内继续离线论证「提前保存 + 事后分类」的独立方案。工程可达性未验，D-13 采样实现与执行继续 PAUSE。**
+105:   裁决书 `lead/d29_ruling_20261106/RULING_D29.md`（12,258 B / `325c950eec4d3275…7212afb`）+ `FACTCHECK.md`（12,647 B）+ `_d29_facts.py`/`_out.txt`；门禁 `check_d29.py` 实跑 **exit=0**。
+107:   ★ **`:191` 适用边界**：禁止累计判定 ≥100ms 的触发机制（含「等满口径 B 门槛再抓当前现场」）；其文字**没有**直接禁止离线按 `d≥100ms` 分类，**也不能**推出禁止所有提前触发或周期性历史保存。**这是规范解释，不是删除拒止原则、也不是授权新实现。**
+109:   ★ **勘误**：「`:191` 并未禁止所有提前触发」**不是 D-28 §2 原话**（实跑 `claimed_D28_exact_quote_in_section2=false`）；该措辞见 `TIMING_SPEC_CLARIFY.md:141`。可据 `RULING_D28.md:30/:36/:42` 作**范围概括**，**不得冒充逐字引文**。
+110:   ★ **情景 B 作废**：B 与 A 四段数值、段名、证据等级**完全相同**（2.5+100+48+2=152.5），说明其**并未按 `:190` 的 <50ms 上界重算**，**不构成独立合规情景**；A 仅保留固定参数算术用途。四组情景 **16 段实测数 = 0**（证据等级依次为 估算/指标/估算/指标）。
+111:   ★ **C/D 低于 129.93ms 只是条件算术**：四组**均含「等待 100ms」的串行段**，C/D 低于中位数**也不能**满足 `:177` 或绕开 `:191`；**129.93ms 不能充当全事件截止或推定覆盖率**。
+113:   **证据**：`lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177,:190,:191`；`lead/d13b_timing_clarify_20261106/TIMING_SPEC_CLARIFY.md:54,:55,:141`；`lead/d28_ruling_20261106/RULING_D28.md:30,:32,:34,:36`。
+117:   裁决书 `lead/d28_ruling_20261106/RULING_D28.md`（13,897 B / `29bb247fbf82d80a…763b5f15`）+ `FACTCHECK.md`（13,028 B）+ `_d28_facts.py`/`_out.txt`；门禁 `check_d28.py` 实跑 **exit=0**。
+125:   **证据**：`lead/d25_ruling_20261106/RULING_D25.md:19,:21,:36,:37,:38`；`lead/d13b_design_20261106/BUDGET_MODEL.json:5,:19,:26,:32,:34`；`lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:200`；`lead/d27_ruling_20261106/RULING_D27.md:12,:28,:32,:42,:48`。
+127: - **D-27 已裁决（2026-11-06）：B（立 D-13b 离线设计）。** **D-13 依据新证据重裁：立 D-13b，面向当前保留的短停样本重开「离线」方案设计与「不含采样实现」的离线单测；D-13 采样代码与执行继续 PAUSE。**
+129:   裁决书 `lead/d27_ruling_20261106/RULING_D27.md`（17,658 B，71 处引用）+ 事实核证 `FACTCHECK.md` + `_d27_facts.py`/`_out.txt`；门禁 `check_d27.py` 实跑 **exit=0**。
+130:   **新证据（11 条经独立核证，Leader 已复算）**：`lead/stall_event_def_20261106/STALL_EVENTS.json` 共 **1737** 条候选平台，`isRealMatch=true` **1681** / `false` **56**；
+131:   true 集合中 `durationMs>=1000` 为 **0**，最长 **566.96 ms**，中位 **129.93 ms**，`100<=d<200ms` 有 **1520** 条（**90.42%**）、`200<=d<500ms` 158 条、`500<=d<1000ms` 3 条。
+156:   证据：`lead/d27_ruling_20261106/RULING_D27.md`、`FACTCHECK.md`、`_d27_facts_out.txt`；
+157:   `lead/stall_event_def_20261106/`（主交付 + `STALL_EVENTS.json` 659,297 B / `5bf15284…053cad` + 探针 + 复核件）；
+158:   `lead/d26_ruling_20261106/RULING_D26.md:9,:19`。
+160: - **D-26 已裁决（2026-11-06）：D-13 = PAUSE，D-14 = C。** **★ 本条的 D-13 部分已由 D-27 重裁为「B（立 D-13b）」，但 D-26 的 D-14 定谳与「不解除目标①机制挂账」继续有效。**
+162:   裁决书 `lead/d26_ruling_20261106/RULING_D26.md`（15,373 B）+ `FACTCHECK.md` + `_d26_facts.py`/`_out.txt`；门禁 `check_d26.py` 实跑 **exit=0**。
+186:   裁决书 `lead/d25_ruling_20261106/RULING_D25.md`（15,545 B）+ 事实核证 `FACTCHECK.md` + `_d25_facts.py`/`_out.txt`；门禁 `check_d25.py` 实跑 **exit=0**。
+199:   **执行现状**：**A 已完成**（`lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md`，**总判仍为 PARTIAL**，须继续带引用限定）；其残余已由 N-1 固定成账（`lead/a_residual_20261106/`，17 条 = CONFIRMED 12 / PARTIAL 5，门禁 exit=0）；**B 在途**（首件 N-2 预审判 B2 `NO`，已由 **D-25** 重裁为 B2b 路线）；**D 未启**（N-7 五读负担复算 / N-8 慢窗统计核对）；**C 阻塞**（D-13 技术方案未定谳）。
+348:   **执行（GOAL-3T 线，2026-10-26）**：`mimosa git-gate install` 落地**原生 git 门禁**（pre-commit/pre-push，高危阻断），双对照实证 diff-only——阳性=暂存集含 high 两件时归因恰为该两件（`_disc_armG.py:75`/`_disc_stdio.py:47`，rc=2）；阴性=两件出暂存后 127 个变更源码文件全查放行（rc=0）；pre-push 扫**待推提交 diff**（6 文件）放行。
+====================================================================================================
+FILE: lead/GOAL_THREE_TARGETS_20261018.md
+TOTAL_LINES = 9757
+246: - 2026-10-20 13:0x Notion U1–U9 裁决（日志 §300）：U1/U2 接受；**U3 的 C7 降为只记录**（写回 INI 不可信），真判别=跑 L2 或读 0xA8B558；路由=先 L1，R0 则先上 L3、L2 排后；U4 允许但称「高速档」分表报；U5/U6/U9 不做；**U7 名单=t31 84+5=89 件含 RA2MD Update.ico**；U8 单独立项但紧跟 L1（B0/B1 两档）；**D5 勘误：T55k 未加载 DLL、实载 XMP29U2，结论不变理由换三条**。
+256: - 2026-10-20 17:1x **★★★ Notion 三裁决执行轮（日志 §310）**：**裁决1（①）=A E1/E2/E3 阶梯**（B 并入 E1 做两张图裸起对照；E1 固化成趟前门禁=清屏；harness 补「进程死亡 fail-fast」另开项；procdump 兜底）——⏸ **待用户在场**；**裁决2（③）=B+C 合并，只编译不部署**（否决单独施用；P1/SBH 必然合批；合批前须对着当前 P2 母本重算白名单/13槽/9位点并异族核验；D1 REFUTED 须如实写覆盖面；P1 排 L1 之后）——✅ **P1 离线编译 `CL_EXIT=0`**，产物 `550072bc95ed045e` 175,104B；**裁决3（②）=确认先离线+桌面单测是硬门**——✅ **SBH 桌面单测全过**（G0 四路径+开关幂等 16/16；计数器 8×50000=400000 精确+熔断单向性 5/5，C 侧实跑）；**并发写入者事件**：我的 P1 成品有 `ForgeTelemetry` 重复定义+`g_targetScanInterval=8` 残留（编译不过），被并发子代理抓到，已**采信其版 `4431f4a4` 并重编译验证**；**调度器**：16:46 那拍未跑成 ⇒ 重建 `automation-07c8dfec` 并读回确认 `enabled:true`/nextRunAt 17:21。
+260: - 2026-10-20 20:1x **E2 短路径趟 = L1 首次完整生命周期（日志 §313 续）**：out-dir 改 `l1a_20261020`（载体 129 字符 < 131）后 **EXIT=0**（main/finalize 全 0）；导航链 nav_menu→nav_setup→nav_start **全一次过**（attempts=1、fg_is_ours=True、NAV.verdict=OK）；三窗全 `verdict=ok`（span 各 25.0s）；**units0=732**（脚本门 ≥150 过、设计门 ≥800 **未达**）；fps_avg 31.24/31.24/29.00、fps_p50 30.97/31.06/30.96、p90 35.15/35.24/35.18ms、p99 37.7/38.7/39.0ms、tick_miss 0/1/1、hz_effective 500.1 三窗一致、except.txt 1046→1046 **零新增（本次是真值）**。**按屋探针（frame 3724）**：h0=175 / h1=91 / h2=225 / h3=240 合计 731 与 units0 自洽；ShortGame 探针 glob=0/sess=0/equal=true ⇒ 会话内武装 no 分支（合设计 §2.3）。**units0=732 vs 设计门 800 回查（按设计 §337 F1 分支）**：XMP29U2.MAP sha 0add791d…60bc = sf8 ✅、载体 88 件齐全 ✅、[Units] 3360 行 / [Infantry] 2240 行 ✅、RA2MD.INI 0cc65385 与 t55k 同 sha ✅ ⇒ **三项全对，732 是真实值非载错图**；与 T50 的 971 差异（h0 175 vs 283、h1 91 vs 79）登记为**待查项**，本轮不做推断。**新登记 harness 三缺陷**：①F-4 路径写死 `[2]0LoadBench_U0400.yrm`（qc151_trip.py:4206）恒假，本轮报 93c2974b 而实载 XMP29U2.MAP；②measure_w*.json 的 map_sha256 是 argv 回显、不证明实载；③frame 阶段耗时 **126.7s**（pre_capture_wait_polls=253×0.5s，全屏下矩形恒 2560×1440≠800×600 致 while 等满 deadline），属设计内降级但耗时异常。取证件 `qc161_u0400_trip/l1a_20261020/E2_SUCCESS_TRIP_REPORT.md` + `qc161_u0400_trip/l1_u0800_e1c_dump_20261020/E2_D117_PATH_LENGTH_ROOTCAUSE.md`；探针 `scratch/boot_probe/`（path_ab_probe.py / dialog_text_probe.py / launch_e2_shortpath.py）。**② 下一步前提已变**：现有健康进程可对照，主崩溃是否在正常路径复现成为 ② 的下一判据；不复现 ⇒ 此前全部崩溃证据皆为 csf 框次生现象。
+261: - 2026-10-20 22:4x **★★ P1+SBH 合批编译通过 + verify_hooks 假绿揪出（日志 §314）**：5 段合并 5/5 干净命中、**CL_EXIT=0 / LINK_EXIT=0**（产物 `build/ra2render_merged.dll` 178,688 B / `4d3aacf7ddf5139f`）、§3.4 三查全绿（标记 12/4/30、35 个文件级定义零重复、`g_targetScanInterval` 与 `EnableSbhGuard` 默认值单值）。**★ 踩坑**：原始 `sbh.diff` hunk1 的 `#include <bcrypt.h>` 与 P1 的 `[VER-GATE V1]` 重复 ⇒ `patch` 拒该 hunk（`.rej` 落盘）⇒ **`g_enableSbhGuard` 全局定义缺失**而其余 hunk 仍引用它，21:07 的 `out_fuzz0.cpp` 正是这个残缺态；按 `mkdiff.py` 去重规则补声明后才编译通过。**教训：`.rej` 存在即合并未完成，不能只看 exit code。** **★★ verify_hooks 对合并件 FAIL 两个真实缺口**：①**假绿**——P1 把 `PatchVTablePointer` 改成 5 参（新增 `expectOrig`），而 `tools/verify_hooks.py:89-128` 正则写死 4 参 ⇒ 母本 13/13 命中、P1 与 P1+SBH **0/13 命中**，门禁报「0 个虚表槽均有对应还原」并因 `0==0` 判 **PASS**，13 槽完全失明（③ 门第 2、3 条都依赖它）；②**真缺口**——`EnableSbhGuard` 在 LoadConfig 被读但 `ra2render.ini [System]` 无此键，[4] 项报 `!! LoadConfig 读取但 ini 未列出`。**⇒ ③ 门不能按现状判过。** **★ 执行者空交付 2/2**：Agent（DeepSeek 会话默认）两件分别烧 795k / 1,082k token **零落盘**（合计 1.88M），按 §3.3 该通道冷却，改走 `CreateWorkflow` 直指新通道并**四通道并行**（用户令「多分散 buddy switch 模型避免限速」）：②崩溃判读=qwen-cn 执行+GLM 核验、③verify_hooks 修复=GLM 执行+qwen-global 核验、①E2 门禁判读=qwen-global 执行+GLM 核验。**② 部分产出已推翻旧判读**：`goal2_crashaddr_20261020/FINDINGS.md` 实测 `.data` 页保护=**PAGE_READWRITE**（`MEM_WRITE` 置位）⇒「不能为 written」**不是页不可写**；`EIP == 目标 == 0x0084F2BA` 是**取指异常规范签名**（`.data` 的 `MEM_EXECUTE` CLEAR）⇒ 是 **DEP 拦截执行不可执行页**而非写失败；且该地址文件内 32 字节**全 00**（所谓 float 表是运行期算出）、`0x84F2BA mod 4 = 2`（4 字节对齐 float 存储永远落不到）⇒ §312 的「越界写浮点表」整条链待重写。**卫生**：无游戏进程、`out/ct/` 空、母本四哈希未变。**三目标勾选无变化**（①`units0=732` 未达设计门 800 且判定在飞；②判读在飞且两次崩溃皆发生在初始化已失败进程里；③判据 1 达成但 2/3/4 未达）。取证件 `goal3_p1sbh_merge_20261020/RECEIPT.md`。
+262: - 2026-10-20 23:3x **★★ 本轮后段：三线全部由主会话自行收口（日志 §314 §六–§十一）**：**③ verify_hooks 假绿已修并四档实跑全绿**——MOTHER 13/13 PASS、P1 13/13 PASS、P1+SBH+母本 ini 13/13 但 ini 23/24 **FAIL**（缺口真实）、P1+SBH+**v2 ini** 13/13 **24/24 PASS**；修法=弃固定参数正则，改**括号配平扫描+按实参位置取值**（`_split_args` 跳过嵌套括号与字符串内逗号含转义、`_iter_calls` 配平扫描；install name 取第 4 实参、`expect_orig` 取第 5 实参；remove 判据由「第 2 参 nullptr」改为「**第 3 参 nullptr**」——母本与 P1 的还原调用都是第 3 参 nullptr）；`expect_orig` 母本 0/13、P1 与 P1+SBH 各 13/13；三档 install/remove 目标集 13 对 13 完全配对；ini v2 与母本 diff **只有 2 行**。哈希 v2 工具 `caa324cc2c701167`(20,541B) / v2 ini `577baa489cb3d8a5`(16,645B)，母本 `8520fd0b231c9df9` / `27c9a60c55a8a1b4` **零改动**。**① E2 趟门禁判定完成**：**V 门 8 过 / 1 不过 / 1 N_A，R 门判 R3**；V4 设计门 FAIL（`units0=732<800`）；R0 否（w2 `fps_avg=29.001<30`）、R1 否、**R2 是**（`tick_miss` w1/w2 各 1）、**R3 是**（w2 `max_stall=1.782s`）、R4/R5 否。**三疑点全查清**：A 口径不同——`max_stall_s`=「最长连续 df=0 墙钟跨度」非帧间隔，**决定性证据=w0/w1 各 781 帧、w2 只 725，缺口 56 帧÷31.24fps=1.793s，实测冻结 1.782s，误差 0.6% ⇒ w2 全部帧数缺口都来自这一次窗尾冻结**，活跃段三窗帧率完全一致；D4 终局排除已做（冻结期 `units` 629→629、`infantry` 219→219、`techno` 848→848 全不变、无败北翻转）⇒ 非终局伪影。B 三窗负载不一致——h1（Computer）91→92→92→91→86→76→**39→3**，总负载 729→632（降 13.3%），w2 窗内 h1 已基本清零 ⇒ `fps_avg` 跨窗失真，但 `f34`/`p90`/`p99` 跨窗高度一致（贴帽特征）。C evidence `RA2MD.INI` 实测 `f488cfcd`(1,783B) ≠ 源变体 `0cc65385`(1,785B)，**报告把源变体值当成了 evidence 值**（差 2 字节=引擎写回 `ScenIndex=166→0`），对 V6/V9 无影响。**⇒ 本趟不能作 ① 基线趟，但测量管道健康**；**下一档不该先跑 L2**——先查 h1 衰减根因再重掷 L1，L1 仍不足则按 F1 跳 **L3**（L2 是抬上限，不解决负载不足）。**② 崩溃机制翻案**：`.data` `Characteristics=0xC0000040`（`MEM_WRITE` SET、`MEM_EXECUTE` CLEAR）+ `DllCharacteristics=0x0020`（`NX_COMPAT` CLEAR）+ `0x0084F2BA mod 4=2`（对齐基址 `0x84F2B8` 解码得 float 表 0.10793/0.10870/0.10946/0.11022，公差 0.000762）⇒ **§312「越界写浮点表」推翻**：`.data` 可写、写不会失败，`EIP==目标==0x0084F2BA` 是**取指异常规范签名**（DEP 拦截执行不可执行页），`mod 4=2` 落在 float 表未对齐中间字节 ⇒ **指针腐化**（vtable 槽或栈返回地址），与 `0x0054A56E` 的 `esi` 腐化同族；**(a) 函数指针 vs (b) 栈返回地址未定谳，需真机 dump**。千问 `FINDINGS.md` 两处数字错（称偏移 `0x008612BA`、称 32 字节全 00；实测 `0x44F2BA`、非零 float 表），其 22:38 探针脚本已自行修正，核心结论经我独立复现成立。**通道健康**：DeepSeek 会话默认 **两连空交付 1.88M token 零落盘**（795k+1,082k）⇒ 冷却；GLM `dwfrun-eba184ee` **errored**（我令其停手让出目录后无 submit_result）；qwen-global `dwfrun-9ac2cfed` **errored**（network_error 退避 33 分钟后）；qwen-cn `dwfrun-cbfa41c9` ② 仍在跑；qwen-global `dwfrun-9e45d4e5` ③ 异族核验在飞。**⇒ 本轮三条线实质成果全部由主会话自做完成，子代理通道本轮零有效交付。** **事故两起已登记**：①派发后主会话在同目录动手致并发覆写（GLM 升级 `dwfq-eba184ee-1`，责任在我）；②台账被 `open(wb)` 先截断致 407,798B→1,977B，**已从私仓镜像 `b41f339`（407,798B/c95b4c2249cfb2f3，含 §313）完整恢复**并重新追加。**三目标勾选无变化。**
+263: - 2026-10-21 11:1x **① h1 衰减根因定谳 + 三处判读纠正（日志 §316）**：**★ 纠正一**——`loser1ED` **不是败北**，按 `YRpp/HouseClass.h` 布局（`+0x1EC=CurrentPlayer` / `+0x1ED=PlayerControl` / `+0x1F5=Defeated` / `+0x1F6=IsGameOver` / `+0x1F7=IsWinner` / `+0x1F8=IsLoser`），实测 `isHuman1EC == loser1ED` 在 8 帧×4 屋**恒等**（同语义相邻 bool 的表现），而真正的败北四字段（`def1F5`/`wf1F6`/`wf1F7`/`wf1F8`）**128 个读数非零记录 0 个** ⇒ **本趟全程无任何屋败北**，§314 的「h0 判负」撤回；**教训=探针字段名不可信，必须对结构体布局反推**。**★ 纠正二**——预置单位**没有**被丢弃：`XMP29U2.MAP`（3360/2240/**0 建筑**/owner `<human player>`…）vs `[2]0LoadBench_U0400.yrm`（1680/1120/**41 建筑**/owner `Americans`,`Russians`…），判据=h3 的 `c5574` **8 帧全程恒 240** 精确等于 .MAP 的 Special 车辆预置 240（yrm 只有 120）⇒ **实载 .MAP 且预置被实例化**，记忆库 PERF-NSCALE01「遭遇战丢弃预置单位」**不适用本图**；**这是 V9 门第一次有真实区分力的实证**（上轮只验文件存在+sha）。**★ 纠正三**——`c5574`/`c5588`/`c559C` 语义**未知**，撤回「步兵链/车辆链」定名（`qc151_trip.py:3065-3066` 零语义注释、`YRpp` 在 `0x5550–0x55A0` 无 TechnoClass 链表定义、二分定名失败：h3 预置 240 车+160 兵而 `c5574=240`/`c5588=107` 都对不上）；唯一可确认=**三链之和 971 ≈ `units+infantry` 972 ≈ `techno` 978（差 7）**。**h1 衰减机制（不依赖定名）**：`c5574` 91→3（−96.7%）、`c5588` 23→3（−87.0%）**两链同步崩塌**，而 h0/h2/h3 的 `c5588` **全程零变化**（8/104/107 恒定）；`c5560`（唯一非零 6→7→4→**0**）在帧 5100 归零**恰与加速崩塌同帧**；衰减**逐段加速** −0.003→−0.017→−0.033→**−0.123**→−0.120（**37 倍**）＝防线崩溃曲线非匀速清理；几何上四槽位全员 `Mission=Hunt`（地图原文）、密度 0.73–0.89/格、`Neutral` vs `Special` **仅隔 5 格**、`Computer` 距两者 14/15 格 ⇒ **h1 夹在中间、开局混战、且是唯一有生产活动的屋⇒首要目标**。**`units0=732` 直接原因**：车辆 730/960=**76.0%**、步兵 242/640=**37.8%**（低一半，约差 68 个）；**分布未定谳**，须先定名三链语义才能逐槽位核对。**下一档：不该先跑 L2**——先定名三链+查步兵分布；改图（拉开 ≥30 格或 Mission 改 Guard）**需 Lead 裁决**；L1 重掷须前两项解决；仍不足按 §5.5 F1 跳 **L3**。取证件 `goal1_h1decay_20261021/H1_DECAY_ROOTCAUSE.md`。**三目标勾选无变化。**
+303:   边界在 130/131 逐字符翻转。**⇒ 上一轮回执「`--out-dir` 须缩到 ≤80」作废**，
+325: | 合并件离线编译 | **CL/CL2/LINK 全 exit=0**（直接 cl，未用 build.bat） |
+327: | `verify_hooks` 假绿 | **已复现且已修**：原版对合并件报 0/0 却 PASS；v2 报 **13/13** |
+1192:   ([None,900]/[10,900]⇒jump 拒、[399,401]/[400]⇒达标)；N<1 哑图实测 exit 2；门禁演算 v2 129/130/130；
+====================================================================================================
+FILE: lead/refsync_scope_20261109/REFSYNC_SCOPE_FIX.md
+TOTAL_LINES = 363
+234: ### 5.1 可执行规则 R1–R6（实现于 `lead/refsync_scope_20261109/_rs_carrier_scan.py`）
+235: 
+236: | 规则 | 内容 |
+237: |---|---|
+238: | **R1 内容寻址全集** | `U = { f \| f 在 ROOT=`整个 lead/` 下、深度**无上限**、扩展名白名单、非二进制 }`。禁止按 目录名 / 写域 / 成文日期 / 文件名模式 预过滤；**绝不拿 prior report 的文件列表当扫描全集**；先按内容过滤（`file_bytes` 含 needle 才入候选，副本自动入选）；逐文件登记 `sha256 + 字节数 + 命中行号` 与 `scanned-files` 计数，使重跑可复核。 |
+239: | **R2 以句为单位** | 唯一键 = `(abs_path, line_no)`；**文件只是派生分组**（先得 `(file,line,role,entry,risk)` 元组，再 `GROUP BY file` 出件数）。同哈希 sandbox 副本是**不同键**，单列 `SANDBOX_COPY` 组标「效力未验」，不合并、不静默丢弃。**以句为单位而非以件为单位**的理由：① 组① 整行 160 字符在 lead/ 有 10 份逐字同文 / 9 文件，按文件计会压成 9 个、按「同文去重」再压成 1 处；② **入账风险是行级属性**——同一 `LEDGER_APPENDIX_DRAFT.md` 的 `:123`（块内 HIGH）与 `:215`（§6.3 NONE）风险相反，`LEDGER_BOUND_VOLUME.md` 的 `:196`（块内过时断言）与 `:270`（块内否定句）风险相反，按文件判必然误判其一；③ 「2 件 / 4 件 / 6 件 / 18 件 / 22 件」都可由同一批元组按谓词重算，不再随口径漂移。 |
+240: | **R3 显式逐字比对** | 「同一句」必须打印 `EQUAL / NOT-EQUAL` + 首个差异字符的 `U+xxxx` 码位 + 整行 SHA256；不许肉眼判「一样」（§2.2 给足证据）。 |
+241: | **R4 转录区块判 HIGH** | START/END 正则**整行命中**锚定标记行；只认开区间 `start < line < end` ⇒ `HIGH: 随整段进台账`；`@@BODY_n@@` ⇒ `INDIRECT: 重建时由源件注入`；块外 / 无块 / 独立终件 ⇒ `NONE`；**标记不成对 ⇒ `UNKNOWN: 需人工复核`，绝不猜**（§3.2 的 `:66` 误判即反例）。 |
+242: | **R5 引用否定不删除，打 ROLE** | `needs_fix = (role == ASSERTION) AND (risk == HIGH)`；详见 §5.3。 |
+243: | **R6 负控自检** | 6 个已知肯定/否定样本必须分别判 `ASSERTION` / `REFUTING_QUOTE`，否则 `EXIT=1`。 |
+247: 脚本：`lead/refsync_scope_20261109/_rs_carrier_scan.py`（只读、只打印 stdout，`validated_root()` 用 `os.path.commonpath` 把 root 限制在仓库内；不写任何文件，输出记录由调用方重定向到本写域）。
+251: | 1 | `python -I -X utf8 "…/_rs_carrier_scan.py" --needle "只能判「不可复现」" --needle "不能定位当年错误步骤" --max-depth 2 --ext .md > "…/_fix_d2_out.txt"` | `EXIT=0`；`scanned files = 627 ; carrier occurrences = 80 ; distinct files = 19`（现盘，含自引；撰写时点 622/73/18）；B 段 `occurrences = 4 ; distinct files = 4`；`SELF_TEST = PASS`（6/6，含 `:215 want=ASSERTION got=ASSERTION`、`_ve_DRAFT_S609.md:22 want=REFUTING_QUOTE got=REFUTING_QUOTE`） |
+252: | 2 | 同上，去 `--max-depth`（无深度上限 `--ext .md`）`> "…/_fix_md_out.txt"` | `EXIT=0`；`scanned files = 947 ; carrier occurrences = 86 ; distinct files = 23`（撰写时点 942/79/22）；B 段 `occurrences = 6 ; distinct files = 6`（+2 sandbox）；`SELF_TEST = PASS` |
+253: | 3 | 同上，默认全扩展名 `.md,.txt,.py,.json` 无深度上限 `> "…/_fix_all_out.txt"` | `EXIT=0`；`scanned files = 5500 ; carrier occurrences = 2429 ; distinct files = 81`（**仅供审计，不作施工数**；上一轮撰写时点 5442 / 1052 / 67，差值含本写域与并行新件）；B 段仍 `6 / 6`；`SELF_TEST = PASS` |
+254: | 4 | 负控探针 `python -I -X utf8 "…/_rs_carrier_scan.py" --needle "三选一不可定谳" --ext .md --max-depth 2 --no-self-test` | `scanned files = 627 ; carrier occurrences = 13 ; distinct files = 5` ⇒ 换 needle 结果随之变化，**脚本不硬编码结论**（【复核】⑦ 的复现） |
+258: ### 5.3 如何排除「引用该句来否定它」的文件（R5，不是删掉，是打角色）
+260: 实现在 `_rs_carrier_scan.py:164-189` 的 `classify_line()`：① 求 needle 在行内位置，再求成对引号跨度（`「」`/`『』`/反引号/`“”`）与 `>`、`|` 引用前缀；needle 落在引号跨度内 ⇒ 引文候选；② 同行含否定/更新词表（`不再成立 / 过时 / 已定谳 / 已定位 / 被推翻 / 取代 / 自本节起 / 改前 / 改后 / 逐字 / grep / 命中 / 验收 / 复核 / 未验项 / …`）⇒ `REFUTING_QUOTE` 或 `NEGATED_CITATION`；③ 「改后样例」无引号但含 `2026-11-09 更新 / 错误步骤已定谳为 / 改为：` ⇒ `UPDATED_SAMPLE`；④ 纯命令/校核行 ⇒ `ANALYSIS_MENTION`；⑤ **只有裸断言**（无引号包裹、无否定词）才是 `ASSERTION`；⑥ `needs_fix` 必须同时满足 `ASSERTION` 且 `risk = HIGH`。
+273: | **编排方全量口径**（lead/ d≤2、md） | **4 件** | 上述 2 件 + `LEDGER_BOUND_VOLUME.md:196` + `_lb_BOUND_VOLUME.md:129`（本会话 `_fix_d2_out.txt` B 段 `4/4`） |
+274: | **全 lead/ 无深度上限** | **6 件** | 上述 4 件 + `_dnw_sandbox/` 与 `_dnv_sandbox36/` 的 `LEDGER_APPENDIX_DRAFT.md:123`（本会话 `_fix_md_out.txt` B 段 `6/6`；`MINHARD_SET_CHECK.md:180` A′ 同数；sandbox 效力未验） |
+276: **主答案 = 4 件**（编排方指定口径）。「最小硬项 4 件」这个数字巧合地仍对，但**内容完全不同**：`S604_REFSYNC_FULL.md:319` 原建议的 4 件是 `{LEDGER_APPENDIX_DRAFT, _la_draft3, _lad_tpl, S604_ATTRIBUTION}`（含两组不成立/不适用的硬度），正确的 4 件是 `{LEDGER_APPENDIX_DRAFT, _la_draft3, LEDGER_BOUND_VOLUME, _lb_BOUND_VOLUME}`。`_lad_tpl.md` 只余 `INDIRECT` 指纹登记风险，`S604_ATTRIBUTION.md` 完全不在交集内。
+282: | 编排方全量扫描（lead/ d≤2、md、两句精确串） | **18** | 70 |
+283: | 本会话独立重跑（同口径，OR-of-two-exact-strings，**撰写时点语料**） | **18** | **73**（+3 见 §3.1） |
+284: | 全 lead/ 无深度上限、md（撰写时点语料） | **22** | 79 |
+285: | 现盘（含本写域自引与并行新件）d≤2 / 无上限 | **19 / 23** | **80 / 86** |
+286: | 全 lead/ 无上限、`.md/.txt/.py/.json`（现盘） | **81** | 2429 出现点（仅供审计，不作施工数） |
+292: - **§607**（`_la_draft3_s604_gapdiff.md:25`，160 字符 / SHA256 `8daa70d7eac55d437fb5655dc71ca32b7b3714212a7b0c0e56f5f24731ec5ed8`；经 `:123` / 合订本 `:196` / `:129` 四份逐字同文进台账）：
+293:   > `- **边界（如实）**：§604 内联生成脚本未落盘（:9751-9755 两次自认），**只能判「不可复现」、不能定位当年错误步骤**；§603 项（:9673/:9680 ratio_max=0.9831 等）未核；本节只登记复算事实与可引用边界，**台账 :9704-9729 原文是否修订由台账所有者裁决**。`
+294: - **§609**（`_ve_DRAFT_S609.md:22`，711 字符 / SHA256 `ae80c41095d061b0e7d03e54894c6ff7746f82b102f1607712c446c319709b29`；`S604_VERDICT_ENTRY_DRAFT.md:79` 同文，合订本 `:270`/`:201` 副本）：
+295:   > `…其边界句「只能判『不可复现』、不能定位当年错误步骤」（:123）**自本节起不再成立**——错误步骤已定位（dur 字典错位），该句属被本节取代的过时表述，如何修订留台账所有者裁决。`
+296: 
+297: **逐字比对（不是「看着一样」）**：本会话 `python -I -X utf8 -c` 输出 `607:25 len= 160 sha= 8daa70d7…`、`609:22 len= 711 sha= ae80c410…`、`EQUAL = False`、`DIFF_COUNT(common prefix) = 156`，首差异 `pos=4 left='边' U+8FB9 right='与' U+4E0E`；引号码位实测 `607:25 quote marks = [(50,'「',U+300C),(55,'」',U+300D)]`、`609:22` 前 8 个含 `(165,'『',U+300E),(170,'』',U+300F)`；`N1 in 607 = True`、`V1 in 609 = True` ⇒ **两行不是同一句，且用了不同引号变体**，但都含 `不能定位当年错误步骤`。
+298: 
+299: **直接冲突**：§607 断言「**不能定位当年错误步骤**」，§609 断言「该句**自本节起不再成立**、**错误步骤已定位（dur 字典错位）**」；§609 还把 `:123` 这个**草案里的行号**当作台账内可指认对象，追加后该行号在 GOAL 里并不存在，指认失效。`MINHARD_SET_CHECK.md:238` 同判「GOAL 台账内两节互斥」；`LEDGER_BOUND_VOLUME.md:46` 把「笔3 §607 ↔ 第 5 笔 §609」列为唯一「建议成组」的一对。
+====================================================================================================
+FILE: lead/d27_ruling_20261106/RULING_D27.md
+TOTAL_LINES = 79
+1: # D-27：重开 D-13b 离线设计裁决书
+2: 
+3: 依据：题给《裁决员结论》《事实核证》《裁决书事实核对意见》。本撰写阶段亲读 D-27 草案、D-26 裁决书及既有核证输出；其他来源行号按题给核证引用。本阶段未重跑统计、原探针、合成反例或门禁。文书承接给定裁决，不产生用户新增采样授权。
+4: 
+5: ## 0 定谳
+6: main: B
+7: 
+12: 成立的是条件统计：当前97窗、当前标签规则下，1737个候选平台中1681个标为 isRealMatch=true、56个为false；true集合中 >=1s 为0，最长566.96ms，中位129.93ms。100<=d<200ms 有1520个，占90.42236763831053%；200<=d<500ms 有158个，500<=d<1000ms 有3个。这里的 true 是分类器保留标签，不等同已独立证明的真实对局语义。依据为题给独立核证F2及本阶段亲读 lead/d27_ruling_20261106/_d27_facts_out.txt:9，本阶段未重算。
+16: “长停=0 是否循环论证”：须分两层回答。d>=0.100s只是下限，恢复推进条件也不限制持续时间，所以“剩下的本来就必然都是短停”不成立。原分类器没有时长上限；既有专项合成核证显示内部1.5s恢复平台及末段1.5s后下一窗恢复平台均可判true。因此，条件标签计数本身不因100ms阈值而构成循环。（出处：题给F10、D2；lead/stall_event_def_20261106/_stall_probe.py:86；lead/stall_event_def_20261106/_stall_probe.py:95；lead/d27_ruling_20261106/_d27_facts_out.txt:82；lead/d27_ruling_20261106/_d27_facts_out.txt:85。）
+17: 
+18: 但若把全窗不动或未观察到恢复直接判成结束态，再用排除后的零长停证明现实长停不存在，就把待验证的状态判断当前提，构成循环式语义论证和选择偏差。全窗分支无条件排除、不查后续恢复；末段分支只查紧邻后续窗，缺窗或末窗会落入终局标签。既有合成反例显示全窗1.5s后恢复仍被排除，末段1.5s缺后续观测也被排除。这证明漏检可能，不证明现有53条必有真实长停。（出处：题给F11、D2；lead/stall_event_def_20261106/_stall_probe.py:168；lead/stall_event_def_20261106/_stall_probe.py:189；lead/stall_event_def_20261106/_stall_probe.py:211；lead/stall_event_def_20261106/_stall_probe.py:224；lead/d27_ruling_20261106/_d27_facts_out.txt:83；lead/d27_ruling_20261106/_d27_facts_out.txt:84。）
+58: 7. “Leader亲跑exit=0”和复核通过只能标来源声明或已有字段，不得签为本阶段执行通过。本阶段未运行check_stall_def.py、核证脚本、原探针或合成反例。（出处：lead/control_20261106/D27_ENTRY_DRAFT.md:26；lead/control_20261106/D27_ENTRY_DRAFT.md:28；lead/d27_ruling_20261106/_d27_facts_out.txt:86；本阶段工具记录。）
+69: - 不背书本阶段未执行的门禁、统计复算、合成单测、全量截图状态核验或可行性验证已通过。（出处：本阶段工具记录；lead/d27_ruling_20261106/_d27_facts_out.txt:86。）
+75: 本阶段实际执行了目录定位和文件清单读取，亲读lead/control_20261106/D27_ENTRY_DRAFT.md、lead/d26_ruling_20261106/RULING_D26.md、lead/d27_ruling_20261106/_d27_facts_out.txt，并使用文件写入工具生成两份指定文件。统计、原探针重跑和合成反例的成功来自题给F1–F11与既有输出，本阶段未重跑，不签为本阶段检查通过。既有核证命令为 `python -I -X utf8 D:/Project/ra2-campaign-forge/lead/d27_ruling_20261106/_d27_facts.py > D:/Project/ra2-campaign-forge/lead/d27_ruling_20261106/_d27_facts_out.txt`，退出码0由题给F1提供，命令及结果内容见既有输出第1、9、26、27、28、82–87行。（出处：题给F1；本阶段工具记录。）
+77: 未验：全部53条独立状态真值、逐窗有效性和完整形式谓词、连续时序缺口、跨场景代表范围、系统时延与扰动、配额/回退模型验证、资源释放、栈解析、真实运行上界、机制定位及改善；未确认获准离线栈材料存在。本阶段未运行check_stall_def.py或其他门禁，未运行真机、活进程或采样操作，未改只读来源或门禁，未commit/push。（出处：题给D4–D6及《裁决员结论》q4Answer；本阶段工具记录。）
+====================================================================================================
+FILE: lead/d29_ruling_20261106/RULING_D29.md
+TOTAL_LINES = 73
+1: # D-29 时序要求与口径 B 裁决
+2: 
+3: ## 0 定谳
+4: q1: 丁
+5: 
+6: 保留发生后 50ms 捕获、检测后严格 <50ms 与安全裕量 ≤20ms、:191 拒止原则及口径 B；否决“等满 100ms 才触发、随后才捕获”的串行机制。允许在既定边界内继续离线论证提前保存与事后分类的独立方案，工程可达性未验，D-13 采样实现与执行继续 PAUSE。依据：题给裁决 q1、bounds；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:191；lead/d28_ruling_20261106/RULING_D28.md:28、lead/d28_ruling_20261106/RULING_D28.md:36。
+10: :177 与 100ms 门槛不构成无条件的数学互斥；互斥依赖“在线必须等满 100ms 才触发，捕获不早于触发”的串行前提。设物理停滞起点 S、触发时刻 T、原始上下文实际保存时刻 C，若 T−S≥100ms 且 C≥T，则 C−S≥100ms>50ms，必然违反 :177，同时属于 :191 拒止的累积判定机制。依据：lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:191；lead/d28_ruling_20261106/RULING_D28.md:30；题给 F10。
+14: 本撰写阶段实跑 `python -I -X utf8 D:/Project/ra2-campaign-forge/lead/d29_ruling_20261106/_d29_facts.py`，退出码 0。纯逻辑赋值 S=0、T=30、C=40、分类时刻=120、d=120ms，使发生后≤50、检测后<50、安全裕量≤20、触发累计判定<100、最终 d≥100、分类不早于事件结束六项均为 true。这只反驳无条件数学互斥，没有证明工程实现、真实覆盖或起点可观测性。依据：该命令输出 pureLogicalCounterexampleMs；lead/d29_ruling_20261106/_d29_facts_out.txt:179；lead/d13b_timing_clarify_20261106/TIMING_SPEC_CLARIFY.md:54、lead/d13b_timing_clarify_20261106/TIMING_SPEC_CLARIFY.md:55。
+18: 选择丁：不选甲降级需求，不选乙更改用户分类口径，也不选丙以无条件互斥关闭整条 D 链。保留原规范，限定否决串行机制，提前或周期性保存另按独立方案审查。依据：题给裁决 q1；lead/PENDING_DECISIONS.md:260；lead/d28_ruling_20261106/RULING_D28.md:30、lead/d28_ruling_20261106/RULING_D28.md:36。
+19: 
+20: 提前候选与最终事件分类可以分开。在最终仍按原版 d≥100ms、原窗口与标签规则分类，候选不冒充已确认事件，且未捕获事件不被静默剔除而改变统计母体的前提下，提前保存与 D-12 不冲突。若最终阈值降为 30ms，或按捕获成功与否改写原集合，就不能宣称沿用不变的口径 B；修改只能建议，须用户另行裁定。依据：题给裁决 q2ConflictWithD12；lead/PENDING_DECISIONS.md:260；lead/stall_event_def_20261106/_stall_probe.py:96；lead/d28_ruling_20261106/RULING_D28.md:42。
+26: :191 禁止累积判定耗时≥100ms的触发机制，包括等满口径 B 门槛再触发当前现场捕获；其文字没有直接禁止离线按 d≥100ms 分类，也不能推出禁止所有提前触发或周期性历史保存。这是对规范适用范围的解释，不是删除拒止原则或授权新实现。依据：lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:191；lead/d28_ruling_20261106/RULING_D28.md:30、lead/d28_ruling_20261106/RULING_D28.md:36；题给裁决 q2Bounds。
+28: 提前保存与事后筛选的逻辑相容不意味着 :177 自动满足。仍须证明正确事件、正确目标线程的原始上下文在物理起点 S 后 50ms 内实际保存，检测至生效满足 :190，并审查起点可观测性与误差、覆盖、假阳性、扰动、配额和回退。停滞结束后才取当前栈，不能替代停滞期间已保存的上下文。依据：lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190；lead/d28_ruling_20261106/RULING_D28.md:36；题给裁决 q2Bounds。
+47: 下一步限于离线可审查的时间约束与假设矩阵，分列物理起点、触发、上下文保存、事件分类及离线解析，注明每段起止、并行/串行关系、证据等级、未知量与误差，分别验证 C−S≤50、C−T<50、安全裕量≤20、触发累计判定<100、最终 d≥100。纯数学与合成时序应覆盖短于100ms假阳性、恰好50/100ms边界、起点误差、周期相位、窗口切断和配额/回退，给出可行域与反例。优先补足物理起点可观测性和覆盖定义；实际耗时离线无法确认的继续标“未验”，不得倒推参数充作实测。提前或周期性保存须独立审查，不能称作调参，也不授权采样实现。依据：题给裁决 q3NextStep；lead/d28_ruling_20261106/RULING_D28.md:30、lead/d28_ruling_20261106/RULING_D28.md:36；本阶段命令输出 timeline 四类 verified 均 false。
+67: 题给“裁决书事实核对意见”为 approved=true、blockers=[]、missing=[]、unverifiable=[]；没有输入 blocker 需要登记。这是题给核对意见，不是本撰写阶段门禁通过证明。依据：题给核对意见原字段。
+71: 未运行原探针、门禁、历史语料重算或任何真机与采样实现，不记通过。来源原文部分由脚本读取并输出逐行摘录；草案措辞和历史统计的进一步核证归于题给 F/D 与裁决材料，未独立追查全部历史来源。作者复制动作、工程时延、起点可观测性及覆盖均未验。依据：本阶段工具记录；题给事实核证 D4、F14；上述命令输出 scope。
+====================================================================================================
+FILE: lead/d30_ruling_20261106/RULING_D30.md
+TOTAL_LINES = 82
+1: # D30 裁决书：三档 k 的代价与离线论证资格
+2: 
+3: ## 0 定谳
+4: q1: 戊
+5: 
+6: 裁定为“保留提前候选、事后分类的离线论证资格，现阶段不选定任何 k 档进入实现或执行”。优先以 k=10 检验高召回候选能否承受成本，以 k=25 作边界敏感性对照，不采纳 k=50 作为满足发生后50ms捕获要求的现行方案。D-13 实现与执行继续 PAUSE，目标①机制挂账不解除。依据：题给裁决员结论 q1、q1Rationale；lead/d29_ruling_20261106/RULING_D29.md:6；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177。
+20: 表中数值由本次命令A全量复现；k点只有k−1个间隔，原判据为 length=j−i+1、length≥k。三档均有 realHits=1681、missedReal=0，另23条 d≥100ms 候选不属于保留真实标签集合；若按该集合计算，查准率分别为5.9412%、31.4617%、90.0857%。依据：题给核证 F3、F4、D2、D5；lead/early_trigger_feasibility_20261106/_feasibility_probe.py:499；lead/early_trigger_feasibility_20261106/_feasibility_probe.py:502；本次命令A输出 Q3。
+28: ## 2 选择与理由
+47: 
+62: 本次不授权修改题列只读路径、口径B、需求原文、门禁脚本；唯一写域为lead/d30_ruling_20261106/，不commit、不push。Python使用隔离模式、UTF-8、绝对脚本路径，指纹使用hashlib。本阶段仅在允许写域创建本书与FACTCHECK.md，并运行指定离线核证脚本；未改门禁。依据：本次题给铁律3—8及本阶段工具调用记录。
+76: 裁决员阶段未运行核证脚本；本次撰写阶段实际执行命令A：`python -I -X utf8 D:/Project/ra2-campaign-forge/lead/d30_ruling_20261106/_d30_facts.py`，退出码0，输出 `corpus: {"files": 104, "samples": 1125992}`、`checks: "All numeric assertions passed"`。这是全量离线数值核证通过，不把上游运行冒充本阶段运行，也不把原探针、check_feasibility.py或原门禁计为通过；后三者本次未运行。依据：本阶段命令A工具返回；题给裁决 bounds 第4项；题给核证 F1。
+====================================================================================================
+FILE: lead/d28_ruling_20261106/RULING_D28.md
+TOTAL_LINES = 82
+1: # D-28 两链路线裁决
+2: 
+3: ## 0 定谳
+4: q1: A
+5: q2: 丁
+7: B 链立即安排独立候选复审及独立复核；D 链保持口径 B 与 D-13b 离线研究状态，先澄清时序规格并复审条件预算，再决定是否另立捕获方案。两条链分别验收，不以一条链的进展替代另一条链的证据。
+9: 证据说明：本文依据题给「裁决员结论」「事实核证 F1—F10、D1—D10、selfBias」和「裁决书事实核对意见」整理。下列文件行号来自这些输入，本撰写阶段未逐文件重读，未运行核证脚本、门禁、29 项测试、43 项测试或语料重算。题给核证阶段的执行事实均明确归于独立核证输入，不记作撰写阶段亲跑通过。
+30: 规格澄清必须分别列出事件离线分类时刻、在线触发时刻、原始上下文保存截止、离线解析完成时刻。停滞发生后 50ms 与检测后 <50ms 是两个起算点，安全裕量 ≤20ms 也须明确所处时间段。定义对累计判定 ≥100ms 的触发机制有拒止要求；等待满 100ms 才触发的方案与该规则存在待解决的规范冲突，不得静默删除规则。出处：lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190、lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:191；题给 F7、D8。
+32: 现四段模型为 2.5+100+48+2=152.5ms。2.5ms 是代理估算，48ms 是名义预算拆分，2ms 是指标，均不是已证明的实现耗时下界。故只判该固定模型不满足在 129.93ms 代表性事件结束前完成在线快照的要求，不判当前口径下物理不可行，也不关闭整条路线。129.93ms 是保留标签集合中位数，不是每个事件的时长上界。出处：lead/d13b_design_20261106/BUDGET_MODEL.json:5、lead/d13b_design_20261106/BUDGET_MODEL.json:19、lead/d13b_design_20261106/BUDGET_MODEL.json:26、lead/d13b_design_20261106/BUDGET_MODEL.json:32；lead/d27_ruling_20261106/RULING_D27.md:12；题给 F6、D2、D7。
+34: 预算注释中的条件反例 2.5+100+20=122.5ms，距 129.93ms 留有 7.43ms，只说明算术仍有研究空间；它不能消除定义第 191 行的规范冲突，不能证明真实时延、扰动、资源释放或栈解析可行。当前 152.5ms 若要严格小于 129.93ms，须削减严格超过 22.57ms，恰好削减 22.57ms 仅到相等。出处：lead/d13b_design_20261106/BUDGET_MODEL.json:34；题给 F6、D3、D9。
+36: 下一阶段限于规格、假设矩阵和纯模型/合成时序论证。如提出提前或周期性保存历史上下文，须按新方案独立审查触发、覆盖、假阳性、扰动、配额及回退，不能称作调参，本次也不授权实施。停滞结束后才取当前栈，与解析停滞期间已经保存的原始上下文，应严格区分；现有设计区分在线保存和离线解析，但没有已验证可用的采样实现。出处：lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:200；lead/d27_ruling_20261106/RULING_D27.md:28、lead/d27_ruling_20261106/RULING_D27.md:32、lead/d27_ruling_20261106/RULING_D27.md:42；题给 D4—D6。
+42: 口径 A 的历史引用及 occ_a/wait-trace 隔离继续遵守 lead/PENDING_DECISIONS.md:260、lead/PENDING_DECISIONS.md:261、lead/PENDING_DECISIONS.md:262。将来若另立提前/周期性捕获方案，而离线事件定义和标签规则不变，上述数字仍可作为原版本条件统计，不能直接当作新方案捕获覆盖率。若未来用户明确批准修改门槛、窗口或标签，须另建版本，独立计算新候选数、保留数及比例；旧 1737/1681/90.42% 保留为历史结果，禁止覆盖或跨版本直接比较。出处：题给 historyDisposal、D4；上述 D-12 与 D-27 引文。
+72: - 不将题给独立核证成功及历史报告声明记为本撰写阶段亲跑通过；门禁、测试、语料重算本阶段均未运行。依据：本阶段工具记录；题给 F4/F5。
+78: 本撰写阶段仅执行目录定位命令 `pwd; rg --files lead/d28_ruling_20261106`，输出工作目录 `/d/Project/ra2-campaign-forge`，并列出 `_d28_facts.py`、`_d28_facts_out.txt`，退出码 0；随后以文件写入工具生成本裁决及 FACTCHECK.md。未运行核证脚本、门禁、历史测试、探针或统计重算。本文来源行号与数值均来自题给材料，本阶段原文件内容未重读、历史执行未独立复现。

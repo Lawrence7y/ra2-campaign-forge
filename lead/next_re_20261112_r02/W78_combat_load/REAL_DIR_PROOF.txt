@@ -1,0 +1,60 @@
+W78 · 真目录零改动自证 (REAL_DIR_PROOF)
+==========================================
+执行者 Hy4（W78，非 Lead）｜卡目录 lead\next_re_20261112_r02\W78_combat_load\
+时间盒内完成；本文件所有数字来自 out\FINALIZE.json / out\real_pre.json / out\real_post.json（实算，非转述）。
+
+[结论] 真目录 ra2youli 在 W78 全程只读，PRE/POST 全树 IDENTICAL_TREE=True（零改动）。
+
+1. 真目录 PRE / POST 全树对比（逐文件 rel+size+sha256）
+   file_count       : 647 == 647
+   total_bytes      : 1,989,215,270 == 1,989,215,270
+   maplike_count    : 277 == 277
+   added            : 0
+   removed          : 0
+   changed          : 0
+   mtime_diff       : 0
+   identical_tree   : True
+   口径：C.write_manifest() 对 ra2youli 全树 rglob 每个文件实算 sha256 后逐项比对；
+        本卡从未对 ra2youli 发起任何写操作（robocopy 源只读；install 目标始终是 sandbox_game）。
+
+2. 四项锚哈希 PRE == POST（W44 签发基线）
+   RA2MD.INI            : c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d
+   gamemd.exe           : 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+   ddraw.dll            : 85e0f7d530dfda134793a57cb3e76b0287dcc96892ee57162dd68f47283b03a9
+   ra2forge_install.json: fe3bdf62f4e871b61bf0d1b1d451b090af1c0b1804440c093089436253cc3914
+   BATTLEMD.INI         : 7e40691a3480b1e5ffe6d1cdfccb83f67da4447157607ec3ecb5d2278acf0791
+   五项 equal=true（见 out\FINALIZE.json → real_dir_anchors）。
+
+3. 沙箱 BATTLEMD.INI 逐字节还原（inplace [SOV1] 改写的逆操作）
+   uninstall exit 0；还原后 2733 B / 7e40691a…；
+   sha == 清单 original_sha256 == 官方样板 7e40691a… == pristine 字节副本 == 真目录 PRE/POST 字节；
+   bytes_equal_pristine=True / bytes_equal_real_dir=True；
+   Scenario=RA2F_M1.MAP 已消失（sov1_scenario_gone=True），
+   Scenario=SOV01umd.MAP 已回来（official_sov1_scenario_back=True）。
+
+4. 21 项可写配置字节副本 + 收尾逐字节还原实算自证
+   启动前 out\pristine\ 保存 20 个实际存在的文件（第 21 项 .seal 基线不存在，记 absent_baseline）；
+   收尾 config_restore_summary：21/21 全部 byte_identical=True 或 removed_absent_baseline，
+   all_ok=True（20 项逐字节一致 + 1 项按"基线不存在"移除）。
+
+5. 沙箱自身 PRE/POST
+   sandbox_pre: 647 / 1,989,215,270 / 277。
+   第一次 POST diff 出现 2 个游戏自生成的 .sav（RA2F_M1.sav / RA2F_M2.sav —— 见 §6 物证），
+   按 added 删除后 recompute：sandbox_diff_after_extra_cleanup.identical_tree=True
+   （added=[] removed=[] changed=[]）。
+   还原态 verify --game sandbox --json exit 0。
+   沙箱目录已删除：sandbox_dir_after_delete.cleaned=True。
+
+6. 附带物证（不依赖字段/截图的进关证明）
+   游戏在沙箱目录自生成 RA2F_M1.sav 与 RA2F_M2.sav；收尾 diff 登记后删除。
+   与 W76 的 5 份 .sav 同构，是"M1 与 M2 都确实进去过"的物证。
+
+7. 锁与残留
+   .game_instance.lock 收尾 owner=lead（is_lead=True），内容见下：
+     "W78 trip trip4 (time) FINISHED ... restored owner=lead."
+   全局 gamemd.exe 残留 = 0；全程只 taskkill 本卡自启 pid（trip1 36584 / trip2 34180 /
+   trip3 22508 / trip4 35680），每次 residual_own_pid=0；未 blanket taskkill。
+
+8. 范围
+   本卡只写 lead\next_re_20261112_r02\W78_combat_load\ 与 run 级 .game_instance.lock。
+   git 只读（无 commit）；未改 W21–W77 任何文件；未写 ra2youli。

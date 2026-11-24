@@ -1,0 +1,249 @@
+[X1] gamemd.exe sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+  sec .text    va=00401000 vsz=3DF38D raw=001000/3E0000
+  sec .rdata   va=007E1000 vsz=030074 raw=3E1000/031000
+  sec .data    va=00812000 vsz=367BE4 raw=412000/06C000
+  sec .rsrc    va=00B7A000 vsz=018128 raw=47E000/019000
+  sec .detour  va=00B93000 vsz=002718 raw=497000/003000
+
+[X2] RTTI 双链 walk（我自己的二跳解析）
+  GenericList        V=7E1B04 COL=7FAD18 sig=0 TD=817508 vfp=7F9594 CHD=7FAD08 numBases=1 name='.?AVGenericList@@'
+      base[0] pTD=817508 '.?AVGenericList@@' numContainedBases=0 mdisp=0
+  INIClass           V=7EA5F4 COL=802510 sig=0 TD=8174B0 vfp=7F9594 CHD=802500 numBases=1 name='.?AVINIClass@@'
+      base[0] pTD=8174B0 '.?AVINIClass@@' numContainedBases=0 mdisp=0
+  List<INISection*>  V=7E1AFC COL=7FAC20 sig=0 TD=817480 vfp=7F9594 CHD=7FAC10 numBases=2 name='.?AV?$List@PAUINISection@INIClass@@@@'
+      base[0] pTD=817480 '.?AV?$List@PAUINISection@INIClass@@@@' numContainedBases=1 mdisp=0
+      base[1] pTD=817508 '.?AVGenericList@@' numContainedBases=0 mdisp=0
+  GenericNode        V=7E1B0C COL=7FACD0 sig=0 TD=8174E8 vfp=7F9594 CHD=7FACC0 numBases=1 name='.?AVGenericNode@@'
+      base[0] pTD=8174E8 '.?AVGenericNode@@' numContainedBases=0 mdisp=0
+  CDFileClass        V=7E1668 COL=7FA4D8 sig=0 TD=815E38 vfp=7F9594 CHD=7FA4C8 numBases=4 name='.?AVCDFileClass@@'
+      base[0] pTD=815E38 '.?AVCDFileClass@@' numContainedBases=3 mdisp=0
+      base[1] pTD=815E18 '.?AVBufferIOFileClass@@' numContainedBases=2 mdisp=0
+      base[2] pTD=815DF8 '.?AVRawFileClass@@' numContainedBases=1 mdisp=0
+      base[3] pTD=815DE0 '.?AVFileClass@@' numContainedBases=0 mdisp=0
+  CCFileClass        V=7E16B0 COL=7FA590 sig=0 TD=815E58 vfp=7F9594 CHD=7FA580 numBases=5 name='.?AVCCFileClass@@'
+      base[0] pTD=815E58 '.?AVCCFileClass@@' numContainedBases=4 mdisp=0
+      base[1] pTD=815E38 '.?AVCDFileClass@@' numContainedBases=3 mdisp=0
+      base[2] pTD=815E18 '.?AVBufferIOFileClass@@' numContainedBases=2 mdisp=0
+      base[3] pTD=815DF8 '.?AVRawFileClass@@' numContainedBases=1 mdisp=0
+      base[4] pTD=815DE0 '.?AVFileClass@@' numContainedBases=0 mdisp=0
+  [0x8174C8]=007F9594 (期望 vfp 0x7F9594) ; 0x8174D0 名='.?AVCCINIClass@@'
+  互不为基类：GenericList 基含 INIClassTD? False ; INIClass 基含 GenericListTD? False
+  List<INISection*> 基含 GenericListTD(0x817508)? True (numBases=2, CHD=7FAC10)
+
+[X3] 盘上字节钉
+  R062窗1       7787C0: c7442438041b7e00 exp=c7442438041b7e00 MATCH
+  R062窗2       779BB3: c7442424041b7e00 exp=c7442424041b7e00 MATCH
+  R062窗3       779E33: c7442424041b7e00 exp=c7442424041b7e00 MATCH
+  补A           7787F7: c7442430f4a57e00 exp=c7442430f4a57e00 MATCH
+  补B           779BEA: c744241cf4a57e00 exp=c744241cf4a57e00 MATCH
+  补C           779E6A: c744241cf4a57e00 exp=c744241cf4a57e00 MATCH
+  R063b-D      5CEF41: c7442428f4a57e00 exp=c7442428f4a57e00 MATCH
+  R063b-E      76C4A4: c7442430f4a57e00 exp=c7442430f4a57e00 MATCH
+  R063b-F      778B20: c744242cf4a57e00 exp=c744242cf4a57e00 MATCH
+  T16          5D761D: c7442478f4a57e00 exp=c7442478f4a57e00 MATCH
+  复位体[esi]     5256F8: c706f4a57e00     exp=c706f4a57e00     MATCH
+  复位体[esi+C]   52571E: c7460c041b7e00   exp=c7460c041b7e00   MATCH
+  复位体[+1C]     525760: c7000c1b7e00     exp=c7000c1b7e00     MATCH
+  复位体[+10]     52578D: c7000c1b7e00     exp=c7000c1b7e00     MATCH
+  => 14/14 MATCH
+
+[X4] 全 .text 线性解码…
+  insns=1394120 范围 401000..7E0FFD
+  E8 头集合 = 6719
+
+[X5] 17 行 STRICT D-归一化（我自己的引擎）
+  A row 77884F D(row)=['0xd0'] D(lea)=['0xd0'] W=-0x98 命中=[('0x7787f7', 'INIClass', '-0x98')]
+  A row 77890C D(row)=['0xd0'] D(lea)=['0xd0'] W=-0x98 命中=[('0x7787f7', 'INIClass', '-0x98')]
+  A row 778956 D(row)=['0xd0'] D(lea)=['0xd0'] W=-0x98 命中=[('0x7787f7', 'INIClass', '-0x98')]
+  B row 779C3D D(row)=['0xbc'] D(lea)=['0xbc'] W=-0x98 命中=[('0x779bea', 'INIClass', '-0x98')]
+  C row 779EBD D(row)=['0xbc'] D(lea)=['0xbc'] W=-0x98 命中=[('0x779e6a', 'INIClass', '-0x98')]
+  D row 5CEFC9 D(row)=['0xe4'] D(lea)=['0xe4'] W=-0xac 命中=[('0x5cef41', 'INIClass', '-0xac')]
+  D row 5CF10E D(row)=['0xe4'] D(lea)=['0xe4'] W=-0xac 命中=[('0x5cef41', 'INIClass', '-0xac')]
+  D row 5CF162 D(row)=['0xe4'] D(lea)=['0xe4'] W=-0xac 命中=[('0x5cef41', 'INIClass', '-0xac')]
+  D row 5CF284 D(row)=['0xe4'] D(lea)=['0xe4'] W=-0xac 命中=[('0x5cef41', 'INIClass', '-0xac')]
+  D row 5CF2E0 D(row)=['0xe4'] D(lea)=['0xe4'] W=-0xac 命中=[('0x5cef41', 'INIClass', '-0xac')]
+  D row 5CF42C D(row)=['0xe4'] D(lea)=['0xe4'] W=-0xac 命中=[('0x5cef41', 'INIClass', '-0xac')]
+  D row 5CF4C7 D(row)=['0xe4'] D(lea)=['0xe4'] W=-0xac 命中=[('0x5cef41', 'INIClass', '-0xac')]
+    (D 剪枝点: ['5CF038', '5CF350', '5CF556'])
+  E row 76C555 D(row)=['0xe4'] D(lea)=['0xe4'] W=-0xac 命中=[('0x76c4a4', 'INIClass', '-0xac')]
+  F row 778BCF D(row)=['0xf0'] D(lea)=['0xf0'] W=-0xb8 命中=[('0x778b20', 'INIClass', '-0xb8')]
+  F row 778DD1 D(row)=['0xf0'] D(lea)=['0xf0'] W=-0xb8 命中=[('0x778b20', 'INIClass', '-0xb8')]
+  F row 778E24 D(row)=['0xf0'] D(lea)=['0xf0'] W=-0xb8 命中=[('0x778b20', 'INIClass', '-0xb8')]
+  T16 row 5D76A9 D(row)=['0x134'] D(lea)=['0x134'] W=-0xac 命中=[('0x5d761d', 'INIClass', '-0xac')]
+    (T16 剪枝点: ['5D79D0'])
+  汇总: W可算=17/17 W命中INIClass=17 W命中GenericList=0 唯一命中=17 GL错位集=[12]
+
+  INI stamp 邻近 ctor 0x525A10 的 this 同格链（每帧）：
+  A stamp@7787F7 disp=0x30 → 邻域±8 条内未见 lea+call 0x525A10 对
+  B stamp@779BEA disp=0x1c → 邻域±8 条内未见 lea+call 0x525A10 对
+  C stamp@779E6A disp=0x1c → 邻域±8 条内未见 lea+call 0x525A10 对
+  D stamp@5CEF41 disp=0x28 → 邻域±8 条内未见 lea+call 0x525A10 对
+  E stamp@76C4A4 disp=0x30 → 邻域±8 条内未见 lea+call 0x525A10 对
+  F stamp@778B20 disp=0x2c → 邻域±8 条内未见 lea+call 0x525A10 对
+  T16 stamp@5D761D disp=0x78 → 邻域±8 条内未见 lea+call 0x525A10 对
+
+[X6] 帧 D vtable 落实自验
+  rb(0x5CEF6B,3)=ff5008 rb(0x5CEF78,3)=ff521c (期望 ff5008 / ff521c)
+  rb(0x473A9B,6)=c706b0167e00 (CCFileClass ctor stamp, 期望 c706b0167e00)
+  vtable[0x7E16B0+8]=473FC0 ret唯一=4 全ret=[4] ; [+0x1C]=473D10 ret唯一=4 全ret=[4]
+  未落实 call 候选 5CF038 bytes=ff5208 call dword ptr [edx + 8]
+  未落实 call 候选 5CF350 bytes=ff5208 call dword ptr [edx + 8]
+  未落实 call 候选 5CF556 bytes=ff5208 call dword ptr [edx + 8]
+
+  E2 承重假设网格（帧 D，c1=两落实 call 假设 ret；u=三未落实 call 假设 ret/None=按剪枝规则）
+    c1=0x0  u=None  闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0x0  u=0     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0x0  u=4     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0x0  u=8     闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0x4  u=None  闭合=7/7 W命中INIClass=7 W命中GenericList=0 多命中=0
+    c1=0x4  u=0     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0x4  u=4     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0x4  u=8     闭合=7/7 W命中INIClass=7 W命中GenericList=0 多命中=0
+    c1=0x8  u=None  闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0x8  u=0     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0x8  u=4     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0x8  u=8     闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0xc  u=None  闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0xc  u=0     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0xc  u=4     闭合=0/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+    c1=0xc  u=8     闭合=7/7 W命中INIClass=0 W命中GenericList=0 多命中=0
+  => 「仅 (c1=4,u∈{None,8}) 7/7 闭合∧INIClass=7；其余 14 组 INIClass=0 且 GL 恒 0」： True
+
+  E2b 其余六帧 STRICT 恒等：
+    A 行=3 闭合=3 INIClass=3 GenericList=0
+    B 行=1 闭合=1 INIClass=1 GenericList=0
+    C 行=1 闭合=1 INIClass=1 GenericList=0
+    E 行=1 闭合=1 INIClass=1 GenericList=0
+    F 行=3 闭合=3 INIClass=3 GenericList=0
+    T16 行=1 闭合=1 INIClass=1 GenericList=0
+  => 非 D 帧 STRICT 恒等闭合行数 = 10（R064REV 称「14 行」；10+7=17 才自洽）
+
+[X7] 判据可互换性（17 行全验）
+  A 77884F W=-0x98 同字面GL/List=[('0x7787c0', 'GenericList')] 同物理槽=[] 落W+0xC=[('0x7787c0', 'GenericList'), ('0x7787d1', 'List<INISection*>')]
+  A 77890C W=-0x98 同字面GL/List=[('0x7787c0', 'GenericList')] 同物理槽=[] 落W+0xC=[('0x7787c0', 'GenericList'), ('0x7787d1', 'List<INISection*>')]
+  A 778956 W=-0x98 同字面GL/List=[('0x7787c0', 'GenericList')] 同物理槽=[] 落W+0xC=[('0x7787c0', 'GenericList'), ('0x7787d1', 'List<INISection*>')]
+  B 779C3D W=-0x98 同字面GL/List=[('0x779bb3', 'GenericList')] 同物理槽=[] 落W+0xC=[('0x779bb3', 'GenericList'), ('0x779bc4', 'List<INISection*>')]
+  C 779EBD W=-0x98 同字面GL/List=[('0x779e33', 'GenericList')] 同物理槽=[] 落W+0xC=[('0x779e33', 'GenericList'), ('0x779e44', 'List<INISection*>')]
+  D 5CEFC9 W=-0xac 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x5cef20', 'List<INISection*>')]
+  D 5CF10E W=-0xac 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x5cef20', 'List<INISection*>')]
+  D 5CF162 W=-0xac 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x5cef20', 'List<INISection*>')]
+  D 5CF284 W=-0xac 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x5cef20', 'List<INISection*>')]
+  D 5CF2E0 W=-0xac 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x5cef20', 'List<INISection*>')]
+  D 5CF42C W=-0xac 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x5cef20', 'List<INISection*>')]
+  D 5CF4C7 W=-0xac 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x5cef20', 'List<INISection*>')]
+  E 76C555 W=-0xac 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x76c484', 'List<INISection*>')]
+  F 778BCF W=-0xb8 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x778ae5', 'GenericList'), ('0x778af9', 'List<INISection*>')]
+  F 778DD1 W=-0xb8 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x778ae5', 'GenericList'), ('0x778af9', 'List<INISection*>')]
+  F 778E24 W=-0xb8 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x778ae5', 'GenericList'), ('0x778af9', 'List<INISection*>')]
+  T16 5D76A9 W=-0xac 同字面GL/List=[] 同物理槽=[] 落W+0xC=[('0x5d75e8', 'List<INISection*>')]
+  => 同字面disp有GL/List store 的行=5；同物理槽=0；落 W+0xC 槽=17（共 17）
+
+[X8] 帧 F 解码边界定量（0x778B39..0x778B47）
+  原始字节：
+    778B10: 7c 24 5c c6 44 24 60 00 89 7c 24 64 89 7c 24 68
+    778B20: c7 44 24 2c f4 a5 7e 00 e8 e3 ce da ff 8d 8c 24
+    778B30: 84 00 00 00 e8 87 9a cb ff 8d 4c 24 10 53 e8 4d
+    778B40: bb 03 00 8d 4c 24 10 e8 e4 cf 03 00 8d 4c 24 10
+    778B50: e8 eb c8 03 00 8d 4c 24 24 50 e8 b1 dc da ff 85
+  我的线性解码流覆盖 0x778B20..0x778B60：
+    778B20 c744242cf4a57e00     mov   dword ptr [esp + 0x2c], 0x7ea5f4
+    778B28 e8e3cedaff           call  0x525a10
+    778B2D 8d8c2484000000       lea   ecx, [esp + 0x84]
+    778B34 e8879acbff           call  0x4325c0
+    778B39 8d4c2410             lea   ecx, [esp + 0x10]
+    778B3D 53                   push  ebx
+    778B3E e84dbb0300           call  0x7b4690
+    778B43 8d4c2410             lea   ecx, [esp + 0x10]
+    778B47 e8e4cf0300           call  0x7b5b30
+    778B4C 8d4c2410             lea   ecx, [esp + 0x10]
+    778B50 e8ebc80300           call  0x7b5440
+    778B55 8d4c2424             lea   ecx, [esp + 0x24]
+    778B59 50                   push  eax
+    778B5A e8b1dcdaff           call  0x526810
+    778B5F 85c0                 test  eax, eax
+  全镜像 jmp/jcc 直接跳入 [0x778B40..0x778B47) 的站点：
+    （无）
+  锚定流（从字节钉 stamp 0x778B20 线性前向解码到 0x778BA8）：
+    778B20 c744242cf4a57e00     mov   dword ptr [esp + 0x2c], 0x7ea5f4
+    778B28 e8e3cedaff           call  0x525a10
+    778B2D 8d8c2484000000       lea   ecx, [esp + 0x84]
+    778B34 e8879acbff           call  0x4325c0
+    778B39 8d4c2410             lea   ecx, [esp + 0x10]
+    778B3D 53                   push  ebx
+    778B3E e84dbb0300           call  0x7b4690
+    778B43 8d4c2410             lea   ecx, [esp + 0x10]
+    778B47 e8e4cf0300           call  0x7b5b30
+    778B4C 8d4c2410             lea   ecx, [esp + 0x10]
+    778B50 e8ebc80300           call  0x7b5440
+    778B55 8d4c2424             lea   ecx, [esp + 0x24]
+    778B59 50                   push  eax
+    778B5A e8b1dcdaff           call  0x526810
+    778B5F 85c0                 test  eax, eax
+    778B61 753c                 jne   0x778b9f
+    778B63 8bce                 mov   ecx, esi
+    778B65 e8a6fbffff           call  0x778710
+    778B6A 8d4c2410             lea   ecx, [esp + 0x10]
+    778B6E e87dbb0300           call  0x7b46f0
+    778B73 8d4c2424             lea   ecx, [esp + 0x24]
+    778B77 e874cbdaff           call  0x5256f0
+    778B7C 8d8c2484000000       lea   ecx, [esp + 0x84]
+    778B83 c784248400000068167e00 mov   dword ptr [esp + 0x84], 0x7e1668
+    778B8E e8ed8fcbff           call  0x431b80
+    778B93 8bc6                 mov   eax, esi
+    778B95 5f                   pop   edi
+    778B96 5e                   pop   esi
+    778B97 5b                   pop   ebx
+    778B98 81c4d0000000         add   esp, 0xd0
+    778B9E c3                   ret   
+    778B9F 55                   push  ebp
+    778BA0 8d4c241c             lea   ecx, [esp + 0x1c]
+  线性流 [0x778B39..0x778B47) 指令: [('0x778b39', 'lea'), ('0x778b3d', 'push'), ('0x778b3e', 'call'), ('0x778b43', 'lea')]
+  锚定流 [0x778B39..0x778B47) 指令: [('0x778b39', 'lea'), ('0x778b3d', 'push'), ('0x778b3e', 'call'), ('0x778b43', 'lea')]
+  线性流 esp 净效应=+0 ; 锚定流 esp 净效应=+0 ; δ=0
+  线性 row 778BCF W=-0xb8 命中=[('0x778b20', 'INIClass', '-0xb8')]
+  线性 row 778DD1 W=-0xb8 命中=[('0x778b20', 'INIClass', '-0xb8')]
+  线性 row 778E24 W=-0xb8 命中=[('0x778b20', 'INIClass', '-0xb8')]
+  线性 stamp 778A9F CDFileClass D=0xdc P=-0x58
+  线性 stamp 778ACF GenericNode D=0xdc P=-0xa8
+  线性 stamp 778AE5 GenericList D=0xe0 P=-0xac
+  线性 stamp 778AF9 List<INISection*> D=0xdc P=-0xac
+  线性 stamp 778B20 INIClass D=0xe4 P=-0xb8
+  线性 stamp 778B83 CDFileClass D=0xdc P=-0x58
+  线性 stamp 778F0F CDFileClass D=0xe0 P=-0x58
+  锚定 row 778BCF W=-0xb8 命中=[('0x778b20', 'INIClass', '-0xb8')]
+  锚定 row 778DD1 W=-0xb8 命中=[('0x778b20', 'INIClass', '-0xb8')]
+  锚定 row 778E24 W=-0xb8 命中=[('0x778b20', 'INIClass', '-0xb8')]
+  锚定 stamp 778A9F CDFileClass D=0xdc P=-0x58
+  锚定 stamp 778ACF GenericNode D=0xdc P=-0xa8
+  锚定 stamp 778AE5 GenericList D=0xe0 P=-0xac
+  锚定 stamp 778AF9 List<INISection*> D=0xdc P=-0xac
+  锚定 stamp 778B20 INIClass D=0xe4 P=-0xb8
+  锚定 stamp 778B83 CDFileClass D=0xdc P=-0x58
+  锚定 stamp 778F0F CDFileClass D=0xe0 P=-0x58
+  锚定重模拟剪枝点: []
+
+[X9] 关键 callee ret-imm（我自己的闭包交集）
+  528C00 ret唯一=16 全ret=[16] 闭包=163
+  525A10 ret唯一=8 全ret=[8] 闭包=23
+  5256F0 ret唯一=0 全ret=[0] 闭包=75
+  527F20 ret唯一=16 全ret=[16] 闭包=189
+  526D90 ret唯一=12 全ret=[12] 闭包=84
+  5295F0 ret唯一=12 全ret=[12] 闭包=144
+  40E340 ret唯一=4 全ret=[4] 闭包=26
+  40E320 ret唯一=0 全ret=[0] 闭包=6
+  7B6290 ret唯一=0 全ret=[0] 闭包=55
+  47A9D0 ret唯一=4 全ret=[4] 闭包=12
+  4325C0 ret唯一=0 全ret=[0] 闭包=30
+  7B5440 ret唯一=0 全ret=[0] 闭包=5
+  526810 ret唯一=4 全ret=[4] 闭包=120
+  7B4630 ret唯一=4 全ret=[4] 闭包=41
+  7B5B30 ret唯一=0 全ret=[0] 闭包=33
+  7B4690 ret唯一=4 全ret=[4] 闭包=37
+  7B46F0 ret唯一=0 全ret=[0] 闭包=11
+  473FC0 ret唯一=4 全ret=[4] 闭包=5
+  473D10 ret唯一=4 全ret=[4] 闭包=123
+  473A80 ret唯一=0 全ret=[0] 闭包=13
+  431F10 ret唯一=4 全ret=[4] 闭包=8
+  431B80 ret唯一=0 全ret=[0] 闭包=25
+
+[X-END] 完成

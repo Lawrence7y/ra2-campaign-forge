@@ -1,0 +1,29 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+006CAF90	S16	SuperClass::ctor	Initializes 27 fields (Type/Owner/CurrentFrame timer/flags) and writes 4 vptables 7F3FE8/7F3FCC/7F3FC4/7F3FBC	[已证]	EVIDENCE/E11_super_fields.txt
+006CB560	S16	SuperClass::Grant	Grants SW: sets Granted/OneTime/CanHold, loads RechargeTimer from Type+0xB0 and resets ChargeDrainState	[已证]	EVIDENCE/E11_super_fields.txt
+006CB820	S16	SuperClass::SetReadiness	Writes IsCharged (+0x6F) from argument (3-byte function)	[已证]	EVIDENCE/E11_super_fields.txt
+006CB920	S16	SuperClass::ClickFire	Player click handler: 3 paths call Launch(0x6CC390), handles charge drain, PostClick, OneTime	[已证]	EVIDENCE/E12_launch_chain.txt
+006CBCA0	S16	SuperClass::HasChargeProgressed	Per-logic-frame charge update: dec sound timer, evaluate Timer fold, flip IsCharged/ChargeDrainState, update Cameo cache	[已证]	EVIDENCE/E11_super_fields.txt
+006CBEE0	S16	SuperClass::GetCameoChargeState	Pure reader: maps remaining/total to cameo frame 0..0x35 using Rules+0x760 (ChargeToDrainRatio)	[已证]	EVIDENCE/E11_super_fields.txt
+006CC260	S16	SuperClass::GetRechargeTime	Returns CustomChargeTime(+0x24) unless -1, then Type->RechargeTime(+0xB0)	[已证]	EVIDENCE/E11_super_fields.txt
+006CC280	S16	SuperClass::SetRechargeTime	Writes CustomChargeTime(+0x24) from stack argument	[已证]	EVIDENCE/E11_super_fields.txt
+006CC290	S16	SuperClass::ResetRechargeTime	Sets CustomChargeTime(+0x24) = -1	[已证]	EVIDENCE/E11_super_fields.txt
+006CC360	S16	SuperClass::CanFire	Returns !IsOnHold && (UseChargeDrain ? ChargeDrainState!=0 : IsCharged)	[已证]	EVIDENCE/E11_super_fields.txt
+006CC390	S16	SuperClass::Launch	12-case effect dispatch via Type->Type(+0xB4) and jump table 0x6CDE44	[已证]	EVIDENCE/E12_launch_chain.txt
+006CD70C	S16	SuperClass::Launch::PsychicReveal	Case 11: 2x MapClass::RevealArea2(0x5678E0) using Rules+0xFEC radius	[已证]	EVIDENCE/E12_launch_chain.txt
+006CDE44	S16	SuperClass::Launch::JumpTable	12 absolute VA dispatch table (Nuke..PsychicReveal)	[已证]	EVIDENCE/E12_launch_chain.txt
+006CDEF0	S16	SuperClass::IPersistStream::Load	Restores 4 vptables, registers Type/Owner/Animation pointers for swizzle, clears BlinkTimer	[已证]	EVIDENCE/E01_rtti.txt
+006CE020	S16	SuperClass::CalculateChecksum	Hashes Granted/OneTime/IsCharged/CameoChargeState/ChargeDrainState/CanHold/Animation	[已证]	EVIDENCE/E11_super_fields.txt
+006CE200	S16	SuperClass::WhatAmI	Returns 0x39 (AbstractType::Super=57)	[已证]	EVIDENCE/E02_vftable_slots.txt
+006CE210	S16	SuperClass::GetSize	Returns 0x80 (128 bytes) = max field offset+width	[已证]	EVIDENCE/E02_vftable_slots.txt
+006CE5B0	S16	SuperWeaponTypeClass::ctor	Initializes 31 fields (RechargeTime=4500, Type=-1, flags) and writes 4 vptables 7F4090/7F4074/7F406C/7F4064	[已证]	EVIDENCE/E05_swtype_ini_loader_full.txt
+006CE8F0	S16	SuperWeaponTypeClass::WhatAmI	Returns 0x20 (AbstractType::SuperWeaponType=32)	[已证]	EVIDENCE/E02_vftable_slots.txt
+006CE900	S16	SuperWeaponTypeClass::GetSize	Returns 0x100 (256 bytes) = allocation size = max field offset+width	[已证]	EVIDENCE/E02_vftable_slots.txt
+006CE910	S16	SuperWeaponTypeClass::CalculateChecksum	Hashes ArrayIndex/Action/Voice slots/IsPowered/DisableableFromShell/PreClick/AIDefendAgainst	[已证]	EVIDENCE/E02_vftable_slots.txt
+006CEA20	S16	SuperWeaponTypeClass::Load_INI	Reads 19 INI keys into fields (RechargeTime/Type/Action/Range/PostClick/PreClick/AuxBuilding/etc.)	[已证]	EVIDENCE/E07_loader_keys_pairing.txt
+006CE1A0	S16	SuperClass::ShouldFlashTab	Ready && ReadinessFrame + Type->FlashSidebarTabFrames(+0xE8) > CurrentFrame	[已证]	EVIDENCE/E11_super_fields.txt
+004F8440	S16	HouseClass::Update	Per-logic-frame driver: loops House->Supers[0..Count) and calls HasChargeProgressed once per Super (channel B, atlas hole)	[已证]	EVIDENCE/E10_perframe_chain.txt
+004FAE50	S16	HouseClass::FireSuperWeapon	UI/AI command entry: picks House->Supers[SW index], handles PostClick/PreDependent then calls ClickFire	[已证]	EVIDENCE/E12_launch_chain.txt
+004F9370	S16	HouseClass::Update_twin_dead	Unreferenced twin of House::Update (0 call sites / 0 imm32 refs); its HasCharge call at 4F9397 is dead	[已证]	EVIDENCE/E08_charge_callers.txt
+0055E160	S16	MainLogicFrame::UpdateHouses	Called right after CurrentFrame increment; issues House::Update via vslot 0x5C at 0x55E269	[已证]	EVIDENCE/E10_perframe_chain.txt
+006BF510	S16	TClassFactory<SWType>::Create	Allocates SuperWeaponTypeClass with push 0x100 then calls ctor 0x6CE5B0	[已证]	EVIDENCE/E02_vftable_slots.txt

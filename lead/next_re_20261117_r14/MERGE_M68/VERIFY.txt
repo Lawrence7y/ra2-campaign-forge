@@ -1,0 +1,91 @@
+M68 VERIFY — 并表 4 行验证报告
+===============================
+
+一、实际并行数（审计 PASS ∩ delta entry ∩ 卡面 4 行 ∩ coverage）
+----------------------------------------------------------------
+  NAMED_PUSH_AUDIT8/verdict.tsv（4 行、8 列、第 3 列 verdict，全 PASS）
+    ∩ NAMED_PUSH_S12_B1/delta.tsv（4 行、6 列）
+    ∩ 卡面 entry（00442230/00447210/00447F10/0044E8F0）
+    ∩ coverage 现盘 entry
+    = 4 行（要求正好 4 ✓）。
+
+  PASS 集合（4）：00442230 00447210 00447F10 0044E8F0
+  delta 集合（4）= PASS 集合 = 卡面集合 = coverage 命中集合；
+  PASS∖delta=0，delta∖PASS=0，双向差集均 0，无异常，未停下。
+  4 行在 coverage 中各命中唯一一行（归一大写后无重复 entry），改前 grade 全 [静态推断] ✓。
+
+  交集正好 4 行即满足卡片"交集必须正好 4 行；不是就停下报告"的要求，未触发停下。
+
+二、atlas 归属（entry 归一为大写 8 位后核 function_atlas.tsv）
+--------------------------------------------------------------
+  00442230 → atlas 内（atlas 原文 00442230）
+  00447210 → atlas 内（atlas 原文 00447210）
+  00447F10 → atlas 内（atlas 原文 00447f10，小写，须归一）
+  0044E8F0 → atlas 内（atlas 原文 0044e8f0，小写，须归一）
+  atlas 内 4 / atlas 外 0；无"A 口径不计"行。故 4 行全部计入 atlas 内 [已证]。
+
+三、数据行数与逐行 diff
+------------------------
+  coverage.tsv 数据行 18,498 → 18,498（不变，8 列、TAB 分隔、无 BOM、LF、无尾随换行）。
+  改动行 4 行，逐行 diff 核对：仅第 4/5/6 列变化，第 1/2/3/7/8 列逐字节不变。
+    第 4 列 one_line_semantics = 对应 delta 第 4 列原文照抄（4/4 逐字节相等）；
+    第 5 列 grade = [已证]（4/4，改前均 [静态推断]）；
+    第 6 列 evidence_path = NAMED_PUSH_AUDIT8/VERDICT.md（4/4）。
+  4 行新语义均不含字面 [未证]（4/4 False）。
+
+四、[已证] 计数
+---------------
+  全表 [已证]：1,569 → 1,573  （+4）
+  atlas 内 [已证]：1,563 → 1,567  （+4，因 4 行全在 atlas 内）
+  atlas 外 [已证]：6 → 6  （不变）
+  grade 直方图（改后）：[已证] 1,573 / [静态推断] 5,934 / [未证] 10,991（和 18,498）；
+  conflict==1 254→254 不变。
+
+五、S12 的 proved 与 strict（atlas 内，权威口径）
+-------------------------------------------------
+  S12：proved 55 → 59（+4）；proved_strict 40 → 44（+4）
+       proved_pct 19.71% → 21.15%（59/279），strict_pct 14.34% → 15.77%（44/279），
+       atlas_n=279，门槛(50%)=140，门槛(90%)=252 → 仍未达标。
+  TOTAL：proved 1,563 → 1,567；proved_strict 1,246 → 1,250
+         proved_pct 12.10% → 12.13%（1,567/12,916），strict_pct 9.65% → 9.68%。
+
+  strict 与 proved 同增（+4 全数）：4 行 delta 第 4 列语义逐行核对均不含字面 [未证]
+  （4/4 False）。
+
+六、达标翻转
+------------
+  名义达标（named_S14≥ceil(0.9n) 且 proved≥ceil(0.5n)）：
+    改前 S15/S16/S17 → 改后 S15/S16/S17（不变，3/22）
+  严格达标（named_S14≥ceil(0.9n) 且 proved_strict≥ceil(0.5n)）：
+    改前 S17 → 改后 S17（不变，1/22）
+  结论：**无达标翻转**。符合卡片"达标判定不得改变（严格仍仅 S17）"。
+
+七、strict 用的是带方括号字面 [未证] 口径的证据
+-----------------------------------------------
+  权威脚本 RULING_R15_20261119/work/strict_panel.py 第 78 行原文：
+       if "[未证]" not in sem:
+           d[s]["proved_strict_n"] += 1
+  即排除条件是语义栏含"带方括号的字面 [未证]"，不是裸"未证"二字。
+  本轮复算证据：
+    1) 将 strict_panel.py 复制并将 OUT 重定向至 MERGE_M68/_strict_out 后原样执行
+       （判定逻辑未改，仅改输出目录）：
+       改前输出与 PANEL 严格双列表逐格一致：S12 55/40、TOTAL 1563/1246；
+       名义 S15/S16/S17、严格 S17。
+       改后输出：S12 59/44、TOTAL 1567/1250；名义 S15/S16/S17、严格 S17。
+       输出：MERGE_M68/_strict_out/strict_panel.tsv、strict_panel.json（改后截面）。
+    2) 独立复核脚本 MERGE_M68/_postcheck.py 以同一字面条件复算，结果一致。
+    3) 4 行 delta 第 4 列语义逐行核对无字面 [未证]（4/4 False），
+       故 strict 增量严格等于 proved 增量（S12 +4、TOTAL +4）。
+
+八、前置复核（卡片"Lead 已核过的前置"，改前实测全部吻合）
+----------------------------------------------------------
+  数据行 18,498 ✓；全表 [已证] 1,569 ✓；atlas 内 1,563 ✓；atlas 外 6 ✓；
+  S12（atlas 内 proved）55 ✓。4 行当前 grade 全 [静态推断] ✓。
+  4 行应全在 atlas 内 → 实测 atlas 内 4 ✓（含两行 atlas 原文小写须归一）。
+
+九、边界
+--------
+  未 git commit；未改 R14_COMMON.md / STATUS_BOARD.md / 台账 / NAMED_PUSH_* /
+  NAMED_PUSH_AUDIT* / RESCAN_MOVED；仅写 COVERAGE/coverage.tsv、COVERAGE/PANEL.md
+  两文件（改动前备份与本目录工作脚本/日志均在 MERGE_M68 内）。
+  唯一 COVERAGE 写者，符合卡片独占写权要求。

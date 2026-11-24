@@ -1,0 +1,73 @@
+{
+ "guard": {
+  "sl_link": {
+   "sha256": "a4ae4dc1d87d1ed052c4480883b207db9f70d6ca4868960e467bef17ed3cd7a5",
+   "bytes": 12475,
+   "expect_sha": "a4ae4dc1d87d1ed052c4480883b207db9f70d6ca4868960e467bef17ed3cd7a5",
+   "expect_bytes": 12475
+  },
+  "re_linked": {
+   "sha256": "7ca339c6beb728f488903e1b0c748708accf45cd5e3bce45d532290c0c755b52",
+   "bytes": 19481
+  }
+ },
+ "struct_ok": true,
+ "hunks": [
+  {
+   "op": "replace",
+   "orig": "lines 2-2",
+   "new": "new lines 2-2"
+  },
+  {
+   "op": "replace",
+   "orig": "lines 4-10",
+   "new": "new lines 4-14"
+  },
+  {
+   "op": "replace",
+   "orig": "lines 12-17",
+   "new": "new lines 16-44"
+  },
+  {
+   "op": "replace",
+   "orig": "lines 20-20",
+   "new": "new lines 47-47"
+  },
+  {
+   "op": "insert",
+   "orig": "after line 48",
+   "new": "new lines 76-81"
+  },
+  {
+   "op": "replace",
+   "orig": "lines 140-141",
+   "new": "new lines 173-176"
+  },
+  {
+   "op": "insert",
+   "orig": "after line 210",
+   "new": "new lines 246-289"
+  },
+  {
+   "op": "replace",
+   "orig": "lines 226-226",
+   "new": "new lines 305-308"
+  },
+  {
+   "op": "replace",
+   "orig": "lines 229-229",
+   "new": "new lines 311-312"
+  },
+  {
+   "op": "insert",
+   "orig": "after line 236",
+   "new": "new lines 320-329"
+  },
+  {
+   "op": "replace",
+   "orig": "lines 243-243",
+   "new": "new lines 336-336"
+  }
+ ],
+ "unified_diff": "--- _sl_link.py\n+++ _re_linked.py\n@@ -1,21 +1,48 @@\n # -*- coding: utf-8 -*-\n-\"\"\"_sl_link.py — 同文档指纹-路径联查谓词（F2-d §5.2(3) 方案(3) 的原型实现与验证件）。\n-\n-【解决什么】绑定行「被核对象 SHA256 = <64hex>，字节数 = n」行内无显式路径时，现行四级\n-采集（T1 分隔段/同行、T2 尾括注、T2N 同行明文、T3 相邻行，见\n-lead/r11_f2_fix_20261109/_f2_r11plus.py:164-194）全部落空，走 _f2_r11plus.py:303-305 的\n-else 分支：仅产出 R3-3b warning「绑定行缺显式路径，需人工锚定」，binding 记录\n-path=None / match=None / tier=None。F2-d 调查（lead/f2d_rootcause_20261109/F2D_ROOT_CAUSE.md\n-§2.4）证明这是规范允许的合法形态，且十条的对象路径全部在同文档他处给出（多为\n-「指纹表格 + 表后重述行」结构）——信息无损失，但无法自动回验。\n-\n-【本谓词补的能力】同文档联查（不做的事：全仓反查）：在同一文档文本内找出全部带路径项，\n-逐个现盘重算 sha256，与绑定行 hex 比对，严格三态：\n-  unique  恰好 1 个「不同现盘文件」（hash 与声明的 sha、字节数皆符）→ 采为该绑定行的\n-          锚对象，产出 warning「同文档联查命中」+ 路径 + 回验结果；\n-  multi   ≥2 个不同现盘文件同 hash → 放弃采集（无法确定是哪一个），产出 warning\n-          「同文档联查多命中，无法确定」；\n+\"\"\"_re_linked.py — 同文档指纹-路径联查谓词 · J4 等价类判据并入版（R3-3e 候选）。\n+\n+【并入来源与守约】\n+  本件 = lead/samedoc_link_20261109/_sl_link.py（SHA256\n+  a4ae4dc1d87d1ed052c4480883b207db9f70d6ca4868960e467bef17ed3cd7a5 / 12475 B，只读原件）\n+  的逐行拷贝 + 三处并入改动（其余行零改动）：\n+    (1) 模块级新增 DECL_RE —— J4 溯源声明词封闭集（★ 禁扩）；\n+    (2) link() 的 multi 分支尾部（原 :210 之后）并入 J4 判定块；\n+    (3) link_triple() 为 merged 新增 tier=SAMEDOC_LINK_EQ 映射与 merged rec 字段。\n+  unique / zero / invalid_hex 三分支与未触发 J4 的 multi 分支：执行路径与原实现完全一致\n+  （J4 块只在 multi 分支内运行，未触发时对 out 零改动）。\n+  逐条回归证明 = lead/r33e_merge_20261109/_re_run10_out.json（F2-d 十条真实无路径绑定行，\n+  原实现 vs 并入版输出 JSON 逐条全等）；结构证明 = 同件 diff_hunks（difflib 差异面白名单核验）。\n+\n+【J4 三条件（须同时满足才改判 merged；lead/equiv_class_20261109/_eq_criteria.md §5.1）】\n+  (i)   行 L 命中溯源声明词封闭集 DECL_RE（复制自｜复制为｜COPY_IDENTICAL\\\\s*=\\\\s*True）；\n+  (ii)  ≥2 个 multi 成员的锚定 token 行号集合含 L（行号取自 anchors 记录，每 token 至多\n+        前 4 行，与原实现 rec[\"tokens\"] 的 lines[:4] 同限）；\n+  (iii) 各命中行覆盖成员的并集 == 全体 multi 成员（全或无，不部分合并）。\n+  任一不满足 → 维持 multi 原样（放弃采集）。unique/zero/invalid_hex 一律不介入\n+  （unique 不因等价类降级为 multi，zero 无类可并）。声明词组刻意不含「逐字节同一/相同」\n+  等纯等同词——Q4_RELATION.md:85/:168 真实反例：纯等同词会把「不同趟次证据件恰好同哈希」\n+  的发现性表述误当复制声明（_eq_proto.py:16-17 / _eq_criteria.md §4）。\n+\n+【merged 三纪律（三条全部落地，缺一不可）】\n+  1. path=None 不做单一对象主张：link_triple 的 merged rec 恒不写 path / verified_path /\n+     recomputed / bytes 等单对象字段（rec[\"path\"] 保持 None）；link() 输出的 out[\"reverify\"]\n+     恒为 None。merged 是「副本群」形态，不指向任何单一对象。\n+  2. 禁止从 merged 推导授权结论：merged 只表明「同文档内存在声明背书的逐字节同值副本群」，\n+     不构成对任一成员的锚定、放行或授权（隔离副本集成通过 ≠ 母本可写，RULING_D25:26，\n+     _integ_INTEGRATION_REPORT.md:59 实读在案）。本纪律写于本 docstring、J4 块注释、\n+     link_triple 注释、merged warning 文本、lead/r33e_merge_20261109/_re_NOTES.md。\n+  3. members 全列：out[\"eq\"][\"members\"] 与 rec[\"members\"] 逐成员列\n+     {path: 现盘解析路径, sha: 64 位小写十六进制全量, bytes: 整数}，取全量 matches，\n+     不做 max_detail 截断。\n+\n+【原能力（同 _sl_link.py，不变）】绑定行「被核对象 SHA256 = <64hex>，字节数 = n」行内无\n+显式路径时，现行四级采集（T1/T2/T2N/T3，_f2_r11plus.py:164-194）全部落空走 R3-3b；\n+本谓词补同文档联查（不做全仓反查）：在同一文档文本内找出全部带路径项，逐个现盘重算\n+sha256，与绑定行 hex 比对，严格三态：\n+  unique  恰好 1 个不同现盘文件 hash+字节数皆符 → 采为锚对象，回验 MATCH；\n+  multi   ≥2 个不同现盘文件同 hash → 放弃采集（J4 并入后：满足三条件改判 merged，\n+          否则维持 multi）；\n   zero    无任何命中 → 保留原 R3-3b warning「绑定行缺显式路径，需人工锚定」。\n ★ 只在给定文档文本内取路径项（同文档），绝不全仓反查。\n-★ 一律 warning 级：任何分支都不产出 problem（problems 恒为空列表）。\n+★ 一律 warning 级：任何分支都不产出 problem（problems 恒为空列表，merged 亦然）。\n ★ 路径解析顺序与原版谓词一致（lead/gate_fp7_20261108/_g7_predicates.py:195-200）：\n@@ -48,2 +75,8 @@\n _COMMA = re.compile(r\",\")\n+\n+# ---- J4 并入改动 (1)：溯源声明词封闭集 --------------------------------------\n+# 并入自 lead/equiv_class_20261109/_eq_proto.py:47 eq_merge；★ 封闭集禁扩：\n+# 不含「逐字节同一/相同」等纯等同词（防把「不同趟次证据件恰好同哈希」的发现性\n+# 表述误当复制声明，Q4_RELATION.md 真实反例）；漏词只会漏闭合（安全方向）。\n+DECL_RE = re.compile(r\"复制自|复制为|COPY_IDENTICAL\\s*=\\s*True\")\n \n@@ -139,4 +172,6 @@\n     \"\"\"同文档联查主入口。输入 = 一个文档全文 + 一条绑定行的 hex（+ 可选声明字节数）。\n-    返回 dict：verdict ∈ {unique, multi, zero, invalid_hex}；warning 一律 warning 级；\n-    problems 恒为 []（联查永不升级 problem）。\"\"\"\n+    返回 dict：verdict ∈ {unique, multi, merged, zero, invalid_hex}；warning 一律\n+    warning 级；problems 恒为 []（联查永不升级 problem）。\n+    merged = J4 并入的新形态：multi 且三条件全满足时的等价类判定（见模块 docstring\n+    三纪律；未满足时保持 multi 原样，输出与原实现逐字节一致）。\"\"\"\n     out = {\"scope\": \"same-document\", \"problems\": [], \"binding_hex\": binding_hex,\n@@ -210,2 +245,46 @@\n                              len(matches)))\n+        # ==== J4 并入改动 (2)：等价类判据块（仅 multi 介入） ====\n+        # 来源：lead/equiv_class_20261109/_eq_proto.py:50-92 eq_merge（判据文档\n+        # _eq_criteria.md §5.1）；以下块只在 multi 分支内运行，三条件任一不满足时\n+        # 对 out 零改动（保持 multi 原样，与原实现输出逐字节一致）。\n+        # 条件 (i)  行 L 命中封闭集 DECL_RE（禁扩，见模块 docstring）；\n+        # 条件 (ii) ≥2 个成员的锚定 token 行号含 L（行号取自 cache 记录的 tokens 行号，\n+        #           每 token 至多前 4 行，与原实现 lines[:4] 同限）；\n+        # 条件 (iii) 命中行覆盖成员的并集 == 全体成员（全或无，不部分合并）。\n+        # ★ merged 三纪律（落地）：path 恒 None——本块不写任何单对象主张字段，\n+        #   out[\"reverify\"] 保持 None；merged 不构成任何授权结论（角色归属留人工）；\n+        #   members 用全量 matches 全列（不用 anchors[:max_detail] 截断）。\n+        _kset = {m[\"key\"] for m in matches}\n+        _cov = {}\n+        for _m in matches:\n+            for _t in _m[\"tokens\"]:\n+                for _ln in _t[\"lines\"]:\n+                    _cov.setdefault(_ln, set()).add(_m[\"key\"])\n+        _decl_hits = []\n+        for _i, _lntext in enumerate(text.splitlines()):\n+            if DECL_RE.search(_lntext):\n+                _ck = _cov.get(_i + 1, set())\n+                if len(_ck) >= 2:\n+                    _decl_hits.append({\"line\": _i + 1, \"covers\": sorted(_ck),\n+                                       \"text\": _lntext.strip()})\n+        if _decl_hits:\n+            _group = set()\n+            for _d in _decl_hits:\n+                _group |= set(_d[\"covers\"])\n+            if _group == _kset:\n+                out[\"verdict\"] = \"merged\"\n+                out[\"eq\"] = {\"rule\": \"J4 same-doc provenance-declared byte-identical copy class\",\n+                             \"decl_vocab\": DECL_RE.pattern,\n+                             \"decl_lines\": [d[\"line\"] for d in _decl_hits],\n+                             \"decl_hits\": _decl_hits,\n+                             \"members\": [{\"path\": m[\"path\"], \"sha\": m[\"sha\"],\n+                                          \"bytes\": m[\"size\"]} for m in matches]}\n+                out[\"warning\"] = (\n+                    \"同文档联查多命中 → 等价类合并（warning 级）：同文档第 %s 行存在溯源声明\"\n+                    \"（复制自/复制为/COPY_IDENTICAL=True），全部 %d 个同 hash 现盘文件的锚定 token \"\n+                    \"在该(些)行同现，机器逐字节核实同值 → 合并为同一内容的声明背书副本群；\"\n+                    \"未做单一对象主张（path=None），角色归属留人工判定，\"\n+                    \"禁止由 merged 推导任何授权结论。成员：%s\"\n+                    % (\",\".join(str(d[\"line\"]) for d in _decl_hits), len(matches),\n+                       \"；\".join(m[\"path\"] for m in matches)))\n     else:\n@@ -225,6 +304,10 @@\n     \"\"\"与 r11_scan_plus 同契约的薄封装：返回 (problems, warnings, binding_rec)。\n-    problems 恒为 []——联查结论一律走 warnings（★ 不升级 problem）。\"\"\"\n+    problems 恒为 []——联查结论一律走 warnings（★ 不升级 problem）。\n+    merged（J4 新形态）：rec[\"tier\"]=\"SAMEDOC_LINK_EQ\"、rec[\"match\"]=True（仅指声明 hex\n+    与全体成员现盘重算逐位一致）、rec[\"path\"] 恒 None（纪律一：不做单一对象主张）、\n+    rec[\"members\"] 全列（纪律三）；禁止由 merged 推导任何授权结论（纪律二）。\"\"\"\n     r = link(text, doc_dir, binding_hex, bytes_decl, root)\n     rec = {\"declared\": r.get(\"binding_hex\"), \"path\": None, \"match\": None,\n-           \"tier\": \"SAMEDOC_LINK\" if r[\"verdict\"] in (\"unique\", \"multi\") else None,\n+           \"tier\": (\"SAMEDOC_LINK\" if r[\"verdict\"] in (\"unique\", \"multi\")\n+                    else \"SAMEDOC_LINK_EQ\" if r[\"verdict\"] == \"merged\" else None),\n            \"samedoc_link\": r}\n@@ -236,2 +319,12 @@\n         rec[\"bytes\"] = r[\"reverify\"][\"bytes\"]\n+    elif r[\"verdict\"] == \"merged\":\n+        # ==== J4 并入改动 (3)：merged rec 形态 ====\n+        # ★ 三纪律落地：path 保持 None（不写 verified_path/recomputed/bytes 等\n+        #   单对象字段——merged 是副本群形态，不做单一对象主张）；match=True 仅指\n+        #   「声明 hex 与全体成员现盘重算逐位一致」，不指向任何单一对象；members\n+        #   全列（逐成员 path/sha/bytes，无截断）；禁止由 merged 推导任何授权结论。\n+        rec[\"tier\"] = \"SAMEDOC_LINK_EQ\"\n+        rec[\"match\"] = True\n+        rec[\"members\"] = r[\"eq\"][\"members\"]\n+        rec[\"decl_lines\"] = r[\"eq\"][\"decl_lines\"]\n     return r[\"problems\"], [r[\"warning\"]] + (\n@@ -242,3 +335,3 @@\n     if len(argv) < 3:\n-        print(\"usage: python -I -X utf8 _sl_link.py <doc_path> <hex64> [bytes_decl]\")\n+        print(\"usage: python -I -X utf8 _re_linked.py <doc_path> <hex64> [bytes_decl]\")\n         return 2\n"
+}

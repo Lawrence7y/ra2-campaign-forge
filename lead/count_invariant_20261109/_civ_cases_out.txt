@@ -1,0 +1,76 @@
+TEMP: C:\Users\Administrator\AppData\Local\Temp\_civ_ce_l5flh4q5
+[PASS] CE01_totals_pm8 expect=INV-01 alerts=2 hit=1 
+       INV-01 totals.plus_match=8 != recomputed=9
+       INV-06 plus_path=9 != plus_match=8
+[PASS] CE02_pp20 expect=INV-02 alerts=3 hit=1 
+       INV-01 totals.plus_path=20 != recomputed=9
+       INV-02 plus_path=20 not in [0,19]
+       INV-06 plus_path=20 != plus_match=9
+[PASS] CE03_op12 expect=INV-03 alerts=2 hit=1 
+       INV-01 totals.orig_path=12 != recomputed=1
+       INV-03 orig_path=12 > plus_path=9
+[PASS] CE04_neg_and_verdict_lie expect=INV-04 alerts=2 hit=1 
+       INV-01 totals.plus_problems=-1 != recomputed=23
+       INV-04 plus_problems=-1 negative/non-int
+[PASS] CE05_drop_tier_key expect=INV-05 alerts=1 hit=1 (removed tier='T2N')
+       INV-05 (3,0) no explicit tier key
+      WEAK(.get-only) alerts=0  tiers={'None': 11, 'T3': 1, 'T2': 5, 'T1': 1, 'T2N': 1} sum=19  -> concealment=YES(no alert)
+[PASS] CE06_break_identity expect=INV-06 alerts=1 hit=1 
+       INV-06 plus_path=9 != plus_match=8
+[PASS] CE07_merged_without_tier expect=INV-07 alerts=2 hit=1 
+       INV-06 plus_path=8 != plus_match=9
+       INV-07 M=1 != E=0
+[PASS] CE08_symmetric_drift expect=INV-08 alerts=2 hit=1 (totals unchanged=True)
+       INV-07 M=1 != E=0
+       INV-08 numeric equal but SET differs: path\match=[(3, 0)] match\path=[(6, 0)]
+      RECOMPUTED==STORED(7keys)=True ; INV-01 alerts=0 ; INV-06 alerts=0
+[PASS] CE09_v2_no_policy expect=INV-09 alerts=2 hit=2 
+       INV-09 no counting_policy
+       INV-09 no plus_match_by_kind
+[PASS] CE09b_bykind_inconsistent expect=INV-09 alerts=1 hit=1 
+       INV-09 sp+me=10 != plus_match=9
+[PASS] CIV_nonmerged_diff_plus1 expect=INV-07 alerts=2 hit=1 plus_path=9 plus_match=10
+       INV-06 plus_path=9 != plus_match=10
+       INV-07 M=1 != E=0
+      plus_match>plus_path=True M=1 E=0 merged_present=False TRUE_MERGED=False
+[PASS] CIV_reverse_diff expect=INV-06 alerts=1 hit=1 plus_path=9 plus_match=8 E=0
+       INV-06 plus_path=9 != plus_match=8
+
+=== 7-key totals 投影多对一实证 ===
+  A(non-merged) totals = {"bindings": 19, "orig_match": 0, "orig_path": 1, "orig_problems": 24, "plus_match": 10, "plus_path": 9, "plus_problems": 23}
+  B(merged-tier) totals= {"bindings": 19, "orig_match": 0, "orig_path": 1, "orig_problems": 24, "plus_match": 10, "plus_path": 9, "plus_problems": 23}
+  totals EQUAL = True  results[] EQUAL = False
+  A: M=1 E=0 merged_present=False alerts=['INV-06 plus_path=9 != plus_mat', 'INV-07 M=1 != E=0']
+  B: M=1 E=1 merged_present=True alerts=['INV-06 plus_path=9 != plus_mat']
+[PASS] CIV_merged_row_shape_gap expect=None alerts=3 hit=0 M=0 E=0
+       INV-06 plus_path=9 != plus_match=10
+       INV-07 (19,0) merged-tier row not match=True/path=None
+       INV-07 (19,0) merged-tier row missing members>=2
+      WRITER _ci_checks INV-07 alerts=[] ; INDEPENDENT INV-07 alerts=['INV-07 (19,0) merged-tier row not match=True/path=None', 'INV-07 (19,0) merged-tier row missing members>=2']
+      independent shape-check caught = True
+[PASS] CIV_BASELINE expect=None alerts=0 hit=0 
+      BASELINE alerts=0 (expected 0)
+
+== SUMMARY ==
+  OK    CE01_totals_pm8
+  OK    CE02_pp20
+  OK    CE03_op12
+  OK    CE04_neg_and_verdict_lie
+  OK    CE05_drop_tier_key
+  OK    CE05_weak_no_alert
+  OK    CE06_break_identity
+  OK    CE07_merged_without_tier
+  OK    CE08_symmetric_drift
+  OK    CE08_totals_byte_unchanged
+  OK    CE08_no_recompute_alert
+  OK    CE09_v2_no_policy
+  OK    CE09b_bykind_inconsistent
+  OK    CIV_nonmerged_diff_plus1
+  OK    CIV_nonmerged_diff_plus1_no_merged
+  OK    CIV_reverse_diff
+  OK    CIV_7key_multitoone
+  OK    CIV_merged_row_shape_gap
+  OK    CIV_BASELINE
+  OK    CIV_BASELINE_zero_alerts
+CE_ALL_ALERT = True  CE_COUNT = 13
+ALL_ASSERTIONS = True

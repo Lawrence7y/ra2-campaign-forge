@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""mksample18.py — 把人工核结论写成干净 TSV（保证列数一致；正文里的 tab 换成空格）。"""
+import csv
+import os
+
+OUT = os.path.dirname(os.path.abspath(__file__))
+HDR = ["entry", "subsystem", "name", "bucket", "anchor_file", "lineno",
+       "ctx_20_40", "auto_form", "manual_verdict", "manual_reason"]
+
+R = [
+ ("0046CE10", "S21", "CreateFromINIList", "CTX_STRONG",
+  "next_re_20261117_r14/S21-F1/EVIDENCE/46CE10_CreateFromINIList.txt", "1",
+  "0046CE10  83ec24  sub esp,0x24（文件第 1 行，其后 209 行连续指令体）", "A4", "AGREE",
+  "文件名 46CE10_CreateFromINIList.txt 用 6 位短形式，A1 的 8 位索引看不见它；文件第 1 行就是 entry 的入口指令 sub esp,0x24，其后全是该函数体，无别的函数插在前面。这是「逐 entry 反汇编 dump」，A4 判定成立。同时说明 675 里有真 dump 被文件名索引漏掉。"),
+ ("0047C4D0", "S06", "Unknown", "CTX_STRONG",
+  "next_re_20261117_r14/S02B_GATE/EVIDENCE/fresh_47C4D0.txt", "3",
+  "0047C4D0  a0 a0e9a800  mov al,byte ptr [0xa8e9a0]", "A4", "AGREE",
+  "第 1 行抬头写死 === 47C4D0 : 0047C4D0 + 100 bytes ===，第 2 行注明来源 peutil.disasm (capstone, skipdata=True)，第 3 行起是 100 字节指令体。按「该 entry 是一段反汇编的起点」判 STRONG 正确，且 dump 边界（+100 字节）是显式声明的，不是猜的。"),
+ ("0048DCD0", "S05", "GetTechnoType", "CTX_STRONG",
+  "next_re_20261117_r14/S09-F1/EVIDENCE/E09_vtables_dispatcher_eventring.txt", "40",
+  "=== 0x48DCD0 dump === / 0048DCD0  8d41ff  lea eax,[ecx-1]", "A4", "AGREE",
+  "第 39 行是小节抬头 === 0x48DCD0 dump ===，第 40 行以该地址起指令体（lea eax,[ecx-1] 正是 class-id 归一的典型形状，与台账名 GetTechnoType 自洽）。文件整体是 vtables 派发/事件环主题、不是专为该 entry 建的，但该 entry 在这里确有自己的 dump 小节，A4 成立。"),
+ ("005276D0", "S21", "GetInteger?", "CTX_STRONG",
+  "next_re_20261117_r14/S21-F1/EVIDENCE/keys1.txt", "41",
+  "--- GetInteger? @ 005276D0 --- / 005276D0  83ec0c  sub esp,0xc", "A4", "AGREE",
+  "第 40 行有 --- GetInteger? @ 005276D0 --- 的专题小节抬头，第 41 行起是该函数体。抬头把函数名与地址绑在一起，属「以它为主体」的锚点；A4 判定与人工看的一致。"),
+ ("00665650", "S04", "Unknown", "CTX_STRONG",
+  "next_re_20261117_r14/W175_global8871/EVIDENCE/t1_ctor_665650_head.txt", "2",
+  "; candidate ctor 0x665650 head 0x500 bytes (skipdata=True)", "A4", "AGREE",
+  "第 1 行是注释抬头，声明这是 0x665650 的候选构造器头 0x500 字节，第 2 行起即指令体。文件名 t1_ctor_665650_head.txt 也是 6 位短形式——又一个 A1 看不见的专属文件。判 STRONG 合理。"),
+ ("006B6C90", "S10", "Unknown", "CTX_STRONG",
+  "next_re_20261117_r14/S10_K7/EVIDENCE/ctor_candidates.txt", "2",
+  "===== candidate A 006B6C90 ===== / 006B6C90  83ec0c  sub esp,0xc", "A4", "AGREE",
+  "文件是「构造器候选」清单，第 1 行 ===== candidate A 006B6C90 ===== 点名，第 2 行起是该候选的函数体。候选清单里每个候选各有自己的 dump 段，对该 entry 而言确实是一段以它为起点的反汇编。判 STRONG 成立，但要注意这是「候选」身份、未定名。"),
+ ("00457630", "S12", "BuildingClass::FirstActiveSWIdx", "CTX_MEDIUM",
+  "next_re_20261112_r10/W130_atlas/function_atlas.tsv", "1301",
+  "00457630  89  26  2  1  0   0（表头 entry size n_instr n_callers n_callees is_fnptr ...）", "M1", "AGREE",
+  "该文件表头第 1 列就是 entry，本行是 key=00457630 的唯一一条记录，其后有 size/n_instr/n_callers 等 >=2 个属性列，完全符合卡面的 CTX_MEDIUM 定义。判定机械正确；但要说清：atlas 是派生表、不是证据，这个 MEDIUM 只等于「被一张表登记过」。"),
+ ("004CC100", "S03", "Unknown", "CTX_MEDIUM",
+  "next_re_20261112_r10/W130_atlas/function_atlas.tsv", "3055",
+  "004cc100  526  180  2  2  0   0", "M1", "AGREE",
+  "同上的 M1 形态：key 列唯一记录 + 多属性列。判定符合卡面定义，无需异议。这只证明该 entry 被 atlas 收录，且 size=526/instr=180 这些数只来自 atlas 自己的解析。"),
+ ("005B3910", "S10", "Unknown", "CTX_MEDIUM",
+  "next_re_20261112_r10/W130_atlas/function_atlas.tsv", "6125",
+  "005b3910  57  29  3  1  0   3  Sleep | Attack | Spyplane Overfly", "M1", "AGREE",
+  "该行还带 strings 列（3 个字符串 Sleep/Attack/Spyplane Overfly），说明图集把该函数的字符串引用也记了。仍是 key 列唯一记录 + 多属性，M1 成立。附带价值：这条比别的 atlas 行信息多一点，但依然不是四环证据。"),
+ ("006C4D90", "S06", "Unknown", "CTX_MEDIUM",
+  "next_re_20261112_r10/W130_atlas/function_atlas.tsv", "9334",
+  "006c4d90  114  48  0  2  1   0", "M1", "AGREE",
+  "M1 形态成立（is_fnptr=1 也说明它被当成函数指针目标）。判定与自动一致；提醒后手：is_fnptr=1 这类 Atlas 判定是推断，不能反过来当 ④ 证据用。"),
+ ("006ABCD0", "S09", "SidebarClass::GetObjectTabIdx", "CTX_MEDIUM",
+  "next_re_20261112_r10/W130_atlas/function_atlas.tsv", "8804",
+  "006abcd0  53  18  1  0  0   0", "M1", "AGREE（反向核）",
+  "反向核：手工复核了它的全部命中——external 侧只有 uncovered_runs.tsv:8242 的区间表行 006ABCC7/006ABCD0/9、atlas 行、以及 dropped611/dis_0045E970.txt 里一条指令行；其余 120 余处全在 _hygiene/M*_before/coverage.tsv 台账副本。确认「没有专属锚点」不是我脚本漏搜，是确实只有表和顺带提及。"),
+ ("00465D40", "S12", "BuildingTypeClass::IsVehicle", "CTX_MEDIUM",
+  "next_re_20261112_r10/W130_atlas/function_atlas.tsv", "1465",
+  "00465d40  46  14  3  0  0   0", "M1", "AGREE（反向核）",
+  "反向核：external 命中除 atlas 行外，只有 uncovered_runs.tsv:1397 的区间行和 dis_0045E970.txt:9157 的一条指令（那段 dump 从 0045E970 起、线性扫过 00465D40）。没有任何以它为主体的文件。自动判 MEDIUM（因 atlas）符合定义，但实质上与 CTX_NONE 的可回收价值相同。"),
+]
+
+path = os.path.join(OUT, "sample18.tsv")
+with open(path, "w", encoding="utf-8", newline="") as fh:
+    w = csv.writer(fh, delimiter="\t", lineterminator="\n", quoting=csv.QUOTE_MINIMAL)
+    w.writerow(HDR)
+    for r in R:
+        assert len(r) == len(HDR), (len(r), r[0])
+        w.writerow([c.replace("\t", " ").replace("\n", " ") for c in r])
+
+rows = list(csv.reader(open(path, encoding="utf-8"), delimiter="\t"))
+print(f"[out] {path}: {len(rows)-1} 行，列数 {set(len(r) for r in rows)}")
+print("verdicts:", [r[8] for r in rows[1:]])

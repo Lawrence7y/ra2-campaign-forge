@@ -1,0 +1,87 @@
+=== A. 逐层分子分母（独立实算，不采信上游摘要）===
+n = 74  nE (expect=CATCH) = 39  nN (expect=PASS) = 35  pi = 39/74 = 0.527027027027027
+  r10   fp=20 fp_rate=4/7     =0.571429 | fn=19 q_i=19/39   =0.487179 | c_i=3/7     =0.428571
+  r12   fp= 0 fp_rate=0       =0.000000 | fn=35 q_i=35/39   =0.897436 | c_i=1       =1.000000
+  n13   fp= 0 fp_rate=0       =0.000000 | fn= 3 q_i=1/13    =0.076923 | c_i=1       =1.000000
+  chain fp= 2 fp_rate=2/35    =0.057143 | fn= 3 q_i=1/13    =0.076923 | c_i=33/35   =0.942857
+
+=== B. 正确口径乘积 vs 错误口径乘积 ===
+  q10*q13       = 19/507 = 0.03747534516765286
+  q10*q12*q13   = 665/19773 = 0.033631720022252565
+  fp_rate(r10)*fp_rate(r12)*fp_rate(n13) = 0.571428571 * 0.000000000 * 0.000000000 = 0.000000000
+  零来自 fp_rate(r12)=0 与 fp_rate(r13)=0；其分母是 nN=35 且方向是 P(CATCH|notE)
+
+=== C. 观测事件 / 2 层 vs 3 层 / R12 下游 ===
+  all3PASS = 18  其中 expect=CATCH = 3 ['GP-A1', 'GP-A2', 'GP-A3']
+  r10&n13 双 PASS 集合 == 三层 PASS 集合 ? True （|A2|=18 |S3|=18）
+  P(r12=PASS|n13=PASS) = 1  n13=PASS 中 r12=CATCH 行数 = 0
+  r12=CATCH 的 4 行全部 r10=PASS ? True
+  P(all3PASS|E) = 1/13 = 0.07692307692307693
+  P(E|allPASS)  = 1/6 = 0.16666666666666666
+  P(correct|allPASS) = 5/6 = 0.8333333333333334
+  Fréchet min_i q_i = 1/13 = 实测联合漏报 ? True
+
+=== D. Bayes 后验与四个倍数（全部分子分母显式）===
+  P(E|2 独立层全PASS) = 0.08878504672897196  宣称正确率 = 0.9112149532710281
+  P(E|3 独立层全PASS) = 0.0804111245465538  宣称正确率 = 0.9195888754534461
+  1.8772 (后验/2层Bayes)                          = 1.877192982
+  2.0727 (后验/3层Bayes)                          = 2.072681704
+  2.0526 (似然/2层乘积)                             = 2.052631579
+  2.2872 (似然/3层乘积)                             = 2.287218045
+  4.4474 (后验/2层乘积=类别错误)                        = 4.447368421
+  4.4474 / 2.0526 = 2.1666666666666665 = P(E|allPASS)/P(allPASS|E) = 2.1666666666666665 （含 π 与 c_i，非纯放大倍数）
+  pp gap 2层 = 7.78816199376947  3层 = 8.625554212011286
+
+=== E. EVIDENCE_INDEPENDENCE.md:131 的 '乐观 2.0526 倍' 在 JSON 里怎么算 ===
+  _eind_verify.py:218 observed_over_indep = q13/(q13*q10) = 2.052631578947368 = 1/q10 (约掉 q13)
+  JSON 记 = 2.052631578947368
+  与似然口径 (3/39)/(q10*q13) = 2.0526315789473686 数值相等（因 3/39 == q13），但分子分母定义不同
+
+=== F. CHAIN_VS_SINGLE '似然比(后验压低倍数)' 的分子分母 ===
+  报告 p1/p0 = 0.14979757085020243  p2/p1 = 2.111111111111111  p3/p2 = 1.0
+  真 LR(n13=PASS)              = (0.07692307692307693, 1.0, 0.07692307692307693)
+  真 LR(r10=PASS | n13=PASS)   = (1.0, 0.42857142857142855, 2.3333333333333335)
+  真 LR(r12=PASS | n13&r10P)   = (1.0, 1.0, 1.0)
+  ⇒ 0.150/2.111/1.000 是后验 P(CATCH|条件) 之比，不是 P(PASS|E)/P(PASS|notE) 的 LR
+
+=== G. 90% 框架的两个 n_eff 口径 + pp 分解的非唯一性 ===
+  H(0.9) = 0.4689955935892812
+  n_eff(ρ̄=ρ_eff=0.8, n=2) = 1.1111111111111112   n_eff(ρ̄=标签一致率0.9, n=2) = 1.0526315789473684
+  n_eff(ρ̄≈1, n=18) = 1.0
+  两独立 acc=0.95 分类器的标签一致率 = 0.9049999999999999
+  pp 总差 = 26.57657657657658
+  分解A(先用72分母) = 29.166666667 + (-2.590090090) = 26.576576577
+  分解B(先用74分母) = 28.378378378 + (-1.801801802) = 26.576576577
+
+=== H. 配对 b/c / exact p / CI / SE 两口径 ===
+  p_two = 2*2^-18 = 7.62939453125e-06  p_one = 3.814697265625e-06
+  CP lower = (0.025)^(1/18) = 0.8146980318621477
+  Wilson lower on discordant-pair p=b/(b+c)=18/18 (n=18) = 0.8241207763533424
+  Wilson lower on paired-acc-diff p=18/68 (n=68)          = 0.17449740669878902
+  ↑ 两个 Wilson 分母不同：18=不一致对数，68=冻结行数；文档 CP/Wilson 用前者，bootstrap 用后者
+  z = 1.9599639845400536
+  SE sqrt(p(1-p)/n) [p=18/68] = 0.05350050552272051
+  SE sqrt(samplevar/n) = 0.053898284274840544  samplevar = 0.19754170324846357
+  族级/全单元 倍数 = 32768.0
+
+=== I. 只读取件指纹（hashlib 现盘重算；与编排方 9 件基线对照）===
+  MATCH 4ad16cdb7dbb4b9e97ea306b55af6d51e2c262a52b10c75e56e1f5ffa1126e16 34964 lead/keff_calc_20261109/KEFF_CALC.md
+被核对象 SHA256 = 4ad16cdb7dbb4b9e97ea306b55af6d51e2c262a52b10c75e56e1f5ffa1126e16，字节数 = 34964
+  MATCH a56c9b2aa478ab2fd1ef425f39fecf1b5d933ebe65869d142c0ff9c12aacc042 14609 lead/keff_calc_20261109/_ke_REPORT.md
+被核对象 SHA256 = a56c9b2aa478ab2fd1ef425f39fecf1b5d933ebe65869d142c0ff9c12aacc042，字节数 = 14609
+  MATCH 76cc3f5e60c63b9c2d7a7c6e25a6a6fb0352a5223821fad8ef27441786108d78 17397 lead/keff_calc_20261109/_ke_calc_stdout.txt
+被核对象 SHA256 = 76cc3f5e60c63b9c2d7a7c6e25a6a6fb0352a5223821fad8ef27441786108d78，字节数 = 17397
+  MATCH aeab4fc30822dfde9c21489aef9a42a1558dde1f21f091f486bbd94453f7a523 36194 lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md
+被核对象 SHA256 = aeab4fc30822dfde9c21489aef9a42a1558dde1f21f091f486bbd94453f7a523，字节数 = 36194
+  MATCH dfe7f68692eb7ae752358782acaaa1fc5a42ecbd0a6930205e0dcfe4f6544dcb 42573 lead/score_decomp_20261109/SCORE_DECOMP.md
+被核对象 SHA256 = dfe7f68692eb7ae752358782acaaa1fc5a42ecbd0a6930205e0dcfe4f6544dcb，字节数 = 42573
+  MATCH d3543657aa4f9914c9023710f6daef8348a12ca0aa11957110e8b7c45baec6fe 38575 lead/gate_pipeline_20261109/_gp_regression_out.json
+被核对象 SHA256 = d3543657aa4f9914c9023710f6daef8348a12ca0aa11957110e8b7c45baec6fe，字节数 = 38575
+  MATCH c00833b3fef5b8b5f93cdfd9d5223f22149878dd868200c1a070d76e553d8ae1 51927 lead/comparability_20261109/COMPARABILITY_AUDIT.md
+被核对象 SHA256 = c00833b3fef5b8b5f93cdfd9d5223f22149878dd868200c1a070d76e553d8ae1，字节数 = 51927
+  MATCH 3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 52419 lead/PENDING_DECISIONS.md
+被核对象 SHA256 = 3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7，字节数 = 52419
+  MATCH 2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede 759518 lead/GOAL_THREE_TARGETS_20261018.md
+被核对象 SHA256 = 2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede，字节数 = 759518
+  FP_ALL_MATCH = True  count = 9
+DONE

@@ -1,0 +1,29 @@
+T1 d_final>=100 runs=1704 ; of those matching a real event START = 1681 ; non-real = 23
+T1 real events whose own start-run has d_final>=100 = 1681 / 1681
+T1 CRITERIA_COMPARE.md:197 says 23 isRealMatch=False among d>=100 -> computed=23
+T2 _dD_align.py:288-289 =
+     'out("全部游程中 d_final>=100ms 的条数=%d；其中 isRealMatch==True 条数=%d" % ('
+     '    sum(1 for r in all_runs if r["d_final_ms"] >= 100.0), len(real)))'
+T3 _dD_check.py B4 block lines 128-137 (count of out() calls that interpolate a computed value):
+     computed=0 literal_prose=10
+T3 B3 block lines 114-125:
+     computed=0 literal_prose=12
+T4 main doc :6-9 command list:
+     '- **本轮实跑命令**（退出码均为 0）：'
+     '  1. `python -I -X utf8 -c "..."`（7 个上游指纹 hashlib 复核，全部 OK）'
+     '  2. `python -I -X utf8 D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/_dD_align.py` → `_dD_align_out.txt`'
+     '  3. `python -I -X utf8 D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/_dD_check.py` → `_dD_check_out.txt`'
+T5 doc:126 = '| **O1** | 逐事件物理停滞起点 `S` | 主逻辑帧推进停止的**第一时刻**，在统一单调时间坐标下的逐事件读数；须与既有 `(t, f)` 序列的观测首拍 `S_hat` 可逐事件配对，保留区间校验 `S ∈ (S_low, S_hat]`；覆盖声明母体内的每条事件 | 时间分辨率 ≤ 1 ms；逐事件不确定度上界 ≤ 1 ms（合计 ≤ :177 的 50 ms 预算的 2%，且 ≤ `STALL_EVENT_DEFINITION.md:190` 的 20 ms 安全裕量） |'
+T5 1ms+1ms=2ms -> 4.00% of 50ms (doc says 2%)
+T5 O1+O2+O3 worst-case = 1+1+1+1+1 = 5ms -> 10.00% of 50ms
+T6 STALL_EVENT_DEFINITION.md:190 = '- **设计指标**：从帧停滞被检测到、到采样动作在目标线程生效的**端到端延迟必须 $< 50\\text{ ms}$（安全裕量要求 $\\le 20\\text{ ms}$）**；'
+T6 doc:111 (claims :190 orthogonal to S) = '2. `:190` 的时间核算 —— 起算点是检测确认时刻 D，探针自身精确离散事件，与 S 正交（`S_OBSERVABILITY.md:32,152-158`；`S_UNCERTAINTY.md:137-140`）；'
+T7 wording scan:
+     _dD_align.py : {'物理采不到': 1}
+     _dD_align_out.txt : {'物理采不到': 1}
+     _dD_check.py : {}
+     _dD_check_out.txt : {}
+     _dD_PHYSICAL_S_ALIGNMENT.md : {'可行': 2, '批准': 1, '已证明合规': 1, '物理采不到': 2}
+T8 doc:120 = '**目标命题 P**：对声明覆盖的每条真实事件，`C − S ≤ 50.0 ms`，且保存的是 `STALL_EVENT_DEFINITION.md:177` 要求的上下文（主线程 EIP/RIP 虚拟地址、模块偏移、前 5 层调用栈指针）。'
+T8 doc:130 = '| **O5**（条件项） | 窗首 / 跨窗**无断档前序连续时序** | 从对局初始化起至事件起点的连续 `(t, f)` 流（`STALL_EVENT_DEFINITION.md:178` 已登记该缺口），使窗首事件的 `S` 落在观测时间轴内 | 事件起点前 ≥ 50 ms（:177 预算）的连续覆盖，断档数 = 0，时间分辨率 ≤ 1 ms；**仅当 P 覆盖 4 条 `startTick=0` 事件时必需**（`_dD_align_out.txt:49`）；若只声明 1677 条窗内可还原事件，则非必需，但必须在结论中**显式声明覆盖母体** |'
+T8 doc:122 = '**最小集 = O1–O4（缺一即 P 不可闭合）**，O5 为声明范围的条件项。逐项必要性见 `_dD_check_out.txt:46-55`。'

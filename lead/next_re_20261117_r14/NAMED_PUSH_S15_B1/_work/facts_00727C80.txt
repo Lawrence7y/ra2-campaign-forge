@@ -1,0 +1,40 @@
+# ROW 00727C80   TriggerTypeClass::slot6   形态=SAVE
+
+## 环① 入口与函数边界
+entry=00727C80  atlas_size=29  n_decoded=11  首=00727C80  8b 44 24 0c          mov eax, dword ptr [esp + 0xc]  末=00727C9A  c2 0c 00             ret 0xc
+in_text=True  span=29 覆盖==29 ; 末尾 ret 操作数=0xc
+
+## 环② 类身份（RTTI 链，独立取证）
+vt_base=007F5904  slot#6(+0x18)  slot_va=007F591C  u32(slot_va)=00727C80  ==entry? True
+slot_va 原始字节: 80 7c 72 00
+slot0=00410260 (主虚表判据 00410260)  slot0 原始: 60 02 41 00
+u32(vt_base-4)=COL=0080CA20  (绝对 VA，非 RVA)
+COL 原始字节(sig,off,cd,td,chd): 00 00 00 00 00 00 00 00 00 00 00 00 08 2d 84 00 10 ca 80 00
+COL.sig=00000000  COL.pTD=00842D08  COL.pCHD=0080CA10
+TD 原始字节(+0..+15): 94 95 7f 00 00 00 00 00 2e 3f 41 56 54 72 69 67
+TD.pVFTable=007F9594  TD.spare=00000000
+TD+8 内联名串（不是指针）= '.?AVTriggerTypeClass@@'  name_va=00842D10
+CHD.nBaseClasses=10  基类链=['.?AVTriggerTypeClass@@', '.?AVAbstractTypeClass@@', '.?AVAbstractClass@@', '.?AUIPersistStream@@', '.?AUIPersist@@', '.?AUIUnknown@@', '.?AUIRTTITypeInfo@@', '.?AUIUnknown@@', '.?AVINoticeSink@@', '.?AVINoticeSource@@']
+
+## 环③b 站点（call 后返回约定被分支消费）
+  00727C8F  e8 8c 86 ce ff       call 0x410320
+  00727C94  85 c0                test eax, eax
+  00727C96  7c 02                jl 0x727c9a   -> 00727C9A
+  00727C98  33 c0                xor eax, eax   (fall-through 清零路)
+      失败落点 00727C9A: 00727C9A  c2 0c 00             ret 0xc
+      被调 00410320 size=87  eax 立即数写入=[('0041032B', '80004003')]  jl 站点=[('0041034D', '00410372'), ('00410364', '00410372')]
+      被调体内间接 call 站点=['00410348', '00410358', '0041035E']
+
+## 环④ 使用见证（构造器装活表；与 ② 不同源）
+构造器=00726C80 atlas_size=374
+  00726C80  8b 44 24 04          mov eax, dword ptr [esp + 4]
+  00726C84  53                   push ebx
+  00726C85  56                   push esi
+  00726C86  8b f1                mov esi, ecx
+  00726C88  50                   push eax
+  00726C89  e8 72 9b ce ff       call 0x410800
+  ...
+装表指令=00726CD2  c7 06 04 59 7f 00    mov dword ptr [esi], 0x7f5904
+atexit 注册=无
+装表点在行体[00727C80,00727C9D)之外? True
+

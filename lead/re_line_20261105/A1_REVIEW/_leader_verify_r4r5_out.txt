@@ -1,0 +1,61 @@
+======================================================================
+独立验证：A1 合规复核 R4 / R5 报出的缺陷是否属实
+======================================================================
+
+--- [100, None, 100] ---
+  seq = [(0.0, 100), (0.01, None), (0.02, 100)]
+  events = []
+  counts = {'samples': 3, 'first': 1, 'edge': 0, 'edge_missed': 0, 'unjudgeable': 0, 'null_frames': 1, 'null_fields': 0, 'cross_frame': 0}
+  missed_frames_lower_bound = 0
+  freeze_max_s = 0.02
+  ⇒ R4-1 属实？True（freeze_max_s=0.0200，真实冻结应为 0）
+
+--- [100, None, 150] ---
+  seq = [(0.0, 100), (0.01, None), (0.02, 150)]
+  events = [(150, 'edge_missed', 50)]
+  counts = {'samples': 3, 'first': 1, 'edge': 0, 'edge_missed': 1, 'unjudgeable': 0, 'null_frames': 1, 'null_fields': 0, 'cross_frame': 0}
+  missed_frames_lower_bound = 49
+  freeze_max_s = 0.0
+  ⇒ R4-2 属实？True（missed=49，但只在 10 ms 内发生，物理不可能）
+     该事件的 dt = 0.02 s，df = 50 ⇒ 隐含每帧 0.4000 ms = 2500000 fps
+
+--- [100, None×5, 100]（读失败跨 5 s） ---
+  seq = [(0.0, 100), (1.0, None), (2.0, None), (3.0, None), (4.0, None), (5.0, None), (6.0, 100)]
+  events = []
+  counts = {'samples': 7, 'first': 1, 'edge': 0, 'edge_missed': 0, 'unjudgeable': 0, 'null_frames': 5, 'null_fields': 0, 'cross_frame': 0}
+  missed_frames_lower_bound = 0
+  freeze_max_s = 6.0
+  ⇒ R4-3 属实？True（freeze_max_s=6.000，但真正可判的冻结仅 0 s）
+
+--- R4-4 天真修复验证：读失败时置 prev_f=None ---
+  counts = {'samples': 2, 'first': 2, 'edge': 0, 'edge_missed': 0, 'unjudgeable': 0, 'null_frames': 1, 'null_fields': 0, 'cross_frame': 0}
+  ⇒ 天真修复把「中途恢复」误记成第二次 first？True（first=2）
+  ⇒ 天真修复丢失 unjudgeable 计数？True（unjudgeable=0）
+
+--- R5：下游自动化只提取数值型顶层键 ---
+  提取到的数值键 = {'missed_frames_lower_bound': 0, 'freeze_max_s': 0.02}
+  note 是否被带走？ False
+  ⇒ R5 属实？True（freeze_max_s 这个键名可被直接误读为业务冻结）
+
+--- 附加发现（复核未提，我自己验）：无 dt 合理性守卫 ---
+
+--- [100, 150] 无读失败，10 ms 内 df=50 ---
+  seq = [(0.0, 100), (0.01, 150)]
+  events = [(150, 'edge_missed', 50)]
+  counts = {'samples': 2, 'first': 1, 'edge': 0, 'edge_missed': 1, 'unjudgeable': 0, 'null_frames': 0, 'null_fields': 0, 'cross_frame': 0}
+  missed_frames_lower_bound = 49
+  freeze_max_s = 0.0
+  ⇒ 这条也属实：df=50 落在 10 ms 内 = 5000 fps，物理不可能，
+     但候选件照样记 edge_missed 且 missed_frames=49，无任何告警。
+     （与 R4-2 同源：都缺「dt 与 df 是否相容」的检查）
+
+======================================================================
+汇总
+======================================================================
+  R4-1 虚报冻结      : 属实
+  R4-2 虚报漏沿      : 属实
+  R4-3 冻结大幅虚增  : 属实
+  R5   命名可穿透    : 属实
+  附加 dt/df 无守卫  : 属实（我自己发现的）
+
+DONE

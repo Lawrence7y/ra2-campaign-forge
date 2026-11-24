@@ -1,0 +1,89 @@
+id	item	quantity	card_value	recomputed_value	match	recompute_reason	evidence_path
+N001	1	镜像 sha256 头尾	73201CC0/F67476	73201CC0/F67476	MATCH	按整文件摘要复算后只截取首 8 与末 6 个 hex 字符比对。	ra2youli\gamemd.exe
+N002	1	.text 逐字节扫描窗口 B	4060041	4060041	MATCH	按 PE 节 VA 区间长度减 5 字节指令容纳量独立求差，不采用报告中的 raw 长度。	R17_AUDIT_R23\_audit_result.json; PE 节表
+N003	1	直接 call 0x43B740 处数	14	14	MATCH	逐 VA 读 E8 后按 site+5+rel32 解目标，只计目标恰等于 0x43B740 的位置。	R17_AUDIT_R23\VERDICT.md; 镜像字节
+N004	1	直接 call 0x43B680 处数	1	1	MATCH	同一 E8 解算器在同一扫描窗口内改以 0x43B680 为目标计数。	R17_AUDIT_R23\VERDICT.md; 镜像字节
+N005	1	构造点合计	15	15	MATCH	把两个互斥目标的直接调用计数相加，并与 15 行 TSV 数据行数交叉核对。	R17_R23_CALLER_PATH\ctor_sites.tsv
+N006	1	E9/0F8x 补扫命中	0	0	MATCH	另扫 5 字节相对跳转与 6 字节条件跳转目标，确认没有绕开 E8 口径的同类转移。	R17_AUDIT_R23\VERDICT.md
+N007	1	0x7E3EBC 立即数出现次数	3	3	MATCH	在 .text 虚拟尺寸范围内逐字节搜索小端四字节序列 BC 3E 7E 00，按出现位置计数。	R17_AUDIT_R23\VERDICT.md; 镜像字节
+N008	1	vptr 写点字节	C706BC3E7E00	C706BC3E7E00	MATCH	对唯一 [esi] 写点地址直接取 6 字节并与 C7 06 imm32 形态比对。	R17_AUDIT_R23\VERDICT.md
+N009	1	host 入口	0x5A6510	0x5A6510	MATCH	以 0x5A64FF 的 ret 4、14 个 0x90 填充与 0x5A6510 的 sub esp,0x70 序列定位真实序言。	R17_AUDIT_R23\chain_bytes.tsv; R17_AUDIT_R23\VERDICT.md
+N010	1	fn_end	0x5A691C	0x5A691C	MATCH	以审计实测末尾 ret 的结束地址作为函数尾界，不采用伪入口推导。	R17_AUDIT_R23\_audit_result.json
+N011	1	host 指令条数	308	308	MATCH	读取审计 JSON 中从真实入口线性解码到 fn_end 的 insn_count 字段。	R17_AUDIT_R23\_audit_result.json
+N012	1	0x5A652D 所处指令	C1E81F@0x5A652A	0x5A652A	MATCH	从已对齐的 0x5A652A 起取 3 字节，验证 0x5A652D 是该 shr 指令的第四字节。	R17_AUDIT_R23\VERDICT.md; 镜像字节
+N013	1	call rel32 字节	E86750E9FF	E86750E9FF	MATCH	对 0x5A66D4 取 5 字节，按小端 rel32 解出 0x43B740 作为目标。	R17_AUDIT_R23\chain_bytes.tsv
+N014	1	ebp 装对象字节	8BE8	8BE8	MATCH	读取 0x5A66D9 的 2 字节，确认紧随 call 的 mov ebp,eax。	R17_AUDIT_R23\chain_bytes.tsv
+N015	1	edx 取 vptr 字节	8B5500	8B5500	MATCH	读取 0x5A684D 的 3 字节，确认 mov edx,[ebp]。	R17_AUDIT_R23\chain_bytes.tsv
+N016	1	派发点字节	FF9224010000	FF9224010000	MATCH	读取 0x5A6860 的 6 字节并按 disp32 得 0x124。	R17_AUDIT_R23\chain_bytes.tsv
+N017	1	vtable slot 号	73	73	MATCH	将 FF /2 的 disp32 0x124 除以 4，得 32 位槽号 73。	R17_AUDIT_R23\VERDICT.md
+N018	1	slot #73 值	0x43F180	0x43F180	MATCH	从 0x7E3EBC+4*73 直接读 dword；槽值等于目标函数地址。	R17_AUDIT_R23\VERDICT.md
+N019	1	邻槽 #72	0x70ADC0	0x70ADC0	MATCH	从 0x7E3EBC+4*72 读 dword，与 slot73 左邻槽并列核验。	R17_AUDIT_R23\VERDICT.md
+N020	1	邻槽 #74	0x5F4730	0x5F4730	MATCH	从 0x7E3EBC+4*74 读 dword，与 slot73 右邻槽并列核验。	R17_AUDIT_R23\VERDICT.md
+N021	1	ebp 写点计数	6	6	MATCH	读取审计写点表中 ebp 的六条记录（含 push ebp 的分类项），不改其 effect 标签。	R17_AUDIT_R23\reg_writes.tsv; _audit_result.json
+N022	1	链条窗口 ebp 写点	1	1	MATCH	在 0x5A66D9 之后至 0x5A6860 之前只数 effect=write 的 ebp 记录，得 0x5A66E6。	R17_AUDIT_R23\reg_writes.tsv
+N023	1	链条窗口 edx 写点	0	0	MATCH	在 0x5A684D 之后至 0x5A6860 之前筛 effect=write 的 edx 记录，结果为空。	R17_AUDIT_R23\reg_writes.tsv
+N024	1	same_object 命中数	1	1	MATCH	统计 dispatch_hits.tsv 中 same_object=YES 的数据行，只作存在性而非唯一性证据。	R17_R23_CALLER_PATH\dispatch_hits.tsv
+N025	2	函数体长度 B	51	51	MATCH	用尾界 0x6F4AA3 减入口 0x6F4A70，按十六进制差值转十进制。	R17_R21_6F4A70_SEM\disasm.txt
+N026	2	最后 ret 地址	0x6F4AA0	0x6F4AA0	MATCH	从锚点反汇编最后一条 C2 04 00 地址读取，并确认其结束为 0x6F4AA3。	R17_R21_6F4A70_SEM\disasm.txt
+N027	2	尾部 NOP 个数	13	13	MATCH	读取 0x6F4AA3 起 13 字节并逐字节断言全为 0x90。	R17_R21_6F4A70_SEM\disasm.txt
+N028	2	下一锚点字节	83EC0C	83EC0C	MATCH	读取 0x6F4AB0 的 3 字节，确认 sub esp,0xc 锚点。	R17_R21_6F4A70_SEM\disasm.txt
+N029	2	call 条数	2	2	MATCH	在锚点对齐反汇编文本中数带 CALL 标记的行，避免把 ret 或 jcc 混入。	R17_R21_6F4A70_SEM\disasm.txt
+N030	2	ret 出口数	2	2	MATCH	在锚点对齐反汇编文本中数带 RET-EXIT 标记的行。	R17_R21_6F4A70_SEM\disasm.txt
+N031	2	回边数	0	0	MATCH	先取全部 je 行，再剔除目标地址大于当前地址的前向跳转，剩余即回边。	R17_R21_6F4A70_SEM\disasm.txt
+N032	2	间接槽偏移	0x274	0x274	MATCH	从 0x6F4A91 的 FF 92 disp32 读取 disp=0x274，不从语义猜测。	R17_R21_6F4A70_SEM\calls.tsv
+N033	2	虚槽号	157	157	MATCH	以 32 位槽宽把字节偏移 0x274 折算为槽号 157。	R17_R21_6F4A70_SEM\REPORT.md
+N034	2	0x5F5850 的 .rdata 代码指针引用	8	8	MATCH	对 .rdata 按 4 字节对齐逐个读 dword，计数恰等于 0x5F5850 的槽。	R17_R21_6F4A70_SEM\REPORT.md; 镜像字节
+N035	2	0x5F5850 符号名	未取得	未取得	MATCH	以 vtable[-4]→COL→TD 链在该地址未取得可核验类名，报告亦明确写未取得。	R17_R21_6F4A70_SEM\REPORT.md
+N036	2	拒绝块调用/覆盖地址	0x43F5DB/0x43F5E3	0x43F5DB/0x43F5E3	MATCH	按报告给出的拒绝块调用点与随后 xor al,al 地址并列核对，语义值被覆盖丢弃。	R17_R21_6F4A70_SEM\REPORT.md
+N037	3	第 1 版 COVERAGE_ONLY	220	220	MATCH	从 R19 逐行桶列重新计数；旧表的 220 是历史口径而非本节点权威值。	R17_R19_RTTI_XCHECK\reconcile.tsv; R17_GLM_TXT_4\VERDICT.md
+N038	3	第 2 版 COVERAGE_ONLY	26	26	MATCH	读取 R20 纠正版的桶计数及审计复现值，确认第二版给出 26。	R17_R20_RECON\REPORT.md; R17_AUDIT_R20\VERDICT.md
+N039	3	审计抽查条数	22	22	MATCH	从审计 A2 声明的抽查规模读取，并核对 norm_spotcheck.tsv 数据行数。	R17_AUDIT_R20\norm_spotcheck.tsv
+N040	3	审计判过度消解条数	6	6	MATCH	在抽查表中只计判定为过度的下划线取段样本。	R17_AUDIT_R20\VERDICT.md
+N041	3	下划线规则错误率分子/分母	6/6	6/6	MATCH	被抽查的下划线条目全部过度，规则性错误而非个别误差。	R17_AUDIT_R20\VERDICT.md
+N042	3	in-binary TD 条目	988	988	MATCH	独立扫描 .rdata/.data 中 (0x7F9594,0,".?") 三段式 TypeDescriptor 并计数。	R17_R24_RECON_FINAL\_stage1_compound.json
+N043	3	.?AV / .?AU 前缀计数	962/26	962/26	MATCH	按 TD 装饰名前缀分桶累加，两个桶互斥且和为 988。	R17_AUDIT_R20\VERDICT.md
+N044	3	coverage 数据行	18498	18498	MATCH	按 TSV 非空数据行计数，不把表头或空尾行计入。	COVERAGE\coverage.tsv
+N045	3	不同 coverage token 数	429	429	MATCH	对每行第 4 列正则取词、逐行去重后按 token 去重计数。	R17_R24_RECON_FINAL\_stage2_coverage.json
+N046	3	复合名总数	660	660	MATCH	在独立扫描的 988 个 TD 裸名中筛含 @ 的条目计数。	R17_R24_RECON_FINAL\compound_names.tsv
+N047	3	模板态复合名	634	634	MATCH	在含 @ 的 TD 裸名中筛以 ?$ 开头者，按条目计数。	R17_R24_RECON_FINAL\REPORT.md
+N048	3	非模板复合名	26	26	MATCH	按非模板且含 @ 的裸名完整字符串建键后统计不同键数。	R17_R24_RECON_FINAL\compound_names.tsv
+N049	3	S 口径 BOTH	397	397	MATCH	严格基名口径：原词精确、P/A/V 剥离后缀、模板基名三类命中后按 token 计数。	R17_R24_RECON_FINAL\_stage3_buckets.json
+N050	3	S 口径 COVERAGE_ONLY	32	32	MATCH	以 429 个 token 为分母减去 S 口径已解析 token 数。	R17_R24_RECON_FINAL\REPORT.md
+N051	3	S 口径 RTTI_ONLY	383	383	MATCH	以 988 个 TD 条目为分母减去 S 口径已覆盖的 TD 地址集合大小。	R17_R24_RECON_FINAL\_stage3_buckets.json
+N052	3	C 口径 BOTH	403	403	MATCH	在 S 之上允许 X_Y 与 X@Y 完整相等匹配，再按 token 计数。	R17_R24_RECON_FINAL\_stage3_buckets.json
+N053	3	C 口径 COVERAGE_ONLY	26	26	MATCH	以 429 个 token 为分母减去 C 口径已解析 token 数。	R17_R24_RECON_FINAL\REPORT.md
+N054	3	C 口径 RTTI_ONLY	377	377	MATCH	以 988 个 TD 条目为分母减去 C 口径已覆盖的 TD 地址集合大小。	R17_R24_RECON_FINAL\_stage3_buckets.json
+N055	3	双口径机制 exact/prefix/compound/template	209/186/6/2	209/186/6/2	MATCH	把各机制的 token 命中数分列，compound 只在 C 口径出现。	R17_R24_RECON_FINAL\_stage3_buckets.json
+N056	3	93.94% 分子/分母	403/429	403/429	MATCH	按 C 口径 BOTH 除以不同 token 分母复算；按出现次数不是该比例。	R17_AUDIT_R20\VERDICT.md
+N057	3	前缀剥离悬挂 token 数	186	186	MATCH	按 P/A/V 后缀剥离命中但归一化键已由其他 token 精确命中的机制计数。	R17_AUDIT_R20\VERDICT.md
+N058	3	无独立 vtable 6 条的 ASCII 零出现	RulesClass=0;ScenarioClass=0	RulesClass=0;ScenarioClass=0	MATCH	在整个镜像 latin1 文本视图中逐字计数两个类名字符串。	R17_AUDIT_R20\VERDICT.md
+N059	4	[已证] 行	1654	1654	MATCH	按 coverage.tsv 第 5 列精确等于 [已证] 过滤数据行。	R17_AUDIT_R22\_measure.json
+N060	4	类名可定位行	1094	1094	MATCH	用主口径类键索引（含模板基名别名）对语义列 token 逐级剥离后命中计数。	R17_AUDIT_R22\VERDICT.md
+N061	4	地址闭合行	433	433	MATCH	entry 数值落入该行定位类任一 vtable 连续 .text 槽值集合时计一行。	R17_AUDIT_R22\VERDICT.md
+N062	4	跨类出现行	141	141	MATCH	entry 落入任一 vtable 但不属于该行定位类集合时按行计，可与闭合重叠。	R17_AUDIT_R22\VERDICT.md
+N063	4	敏感性四数	1085/397/168/91	1085/397/168/91	MATCH	改用精确裸名、不展开模板基名别名的索引重跑同一测量函数。	R17_AUDIT_R22\VERDICT.md
+N064	4	141 重分类	81/56/4	81/56/4	MATCH	从 inherit_vs_mismatch.tsv 的 verdict 列逐行计数三类判定。	R17_AUDIT_R22\inherit_vs_mismatch.tsv
+N065	4	真正可疑中行名类抽取错位	3	3	MATCH	四条真正可疑里三条是行名类抽取口径问题，剩一条 004A88C0 需人工定夺。	R17_AUDIT_R22\VERDICT.md
+N066	4	YRPP_PROXY_RE 命中	0	0	MATCH	在 A4 证据中按 mine=仅 YRpp 代理且 yrpp_hit=true 复算，显式 YRPP 正则命中为 0；yrpp_hit=true 的 54 行均被双命中优先级归入审计链。	R17_AUDIT_R22\_a4_evidence.json
+N067	4	仅 YRpp 代理桶	40	40	MATCH	统计执行标签为仅 YRpp 代理的行，确认其来源是兜底而非显式正则。	R17_AUDIT_R22\VERDICT.md
+N068	4	抽查错标	4	4	MATCH	检查抽查点名的四个 entry 在 A4 证据中均被标成仅 YRpp 代理。	R17_AUDIT_R22\VERDICT.md; _a4_evidence.json
+N069	4	coverage.tsv 写前后 sha	C2EE063FD4F61F784585EF2ABCC4FF563FA09EC1B1F7F5079643076E359C744A	C2EE063FD4F61F784585EF2ABCC4FF563FA09EC1B1F7F5079643076E359C744A	MATCH	对只读输入文件重算整文件 SHA-256，与审计记录值逐字符比对。	COVERAGE\coverage.tsv
+N070	4	coverage.tsv mtime	2026-11-21T04:56:21Z	2026-11-21T04:56:21Z	MATCH	读取文件系统修改时间并截到秒，精度不足处不补造小数。	COVERAGE\coverage.tsv
+N071	5	§1061 旧 COVERAGE_ONLY	220	220	MATCH	从 §1061 所引 R19 reconcile.tsv 按 bucket 列重数，旧值确为 220。	_cards\R17-LEDGER-1061.md; R17_R19_RTTI_XCHECK\reconcile.tsv
+N072	5	§1060 旧 0x4264C0 类数	17	17	MATCH	在 §1060 卡片原文按“17 个类”短语定位，确认旧值确实写在卡面。	_cards\R17-LEDGER-1060.md:30
+N073	5	§1060 更正后的 0x4264C0 类数	15	15	MATCH	在 reverse_map.tsv 中筛 function_value=0x004264C0 且 slot=107 的不同类行数。	R17_R17_SLOT73_MAP\reverse_map.tsv
+N074	5	§1061 已明写 15	15	15	MATCH	检查 §1061 第 3 项“0x4264C0 出现在 15 个类（不是 17）”的更正文本。	_cards\R17-LEDGER-1061.md:21
+N075	6	GLM 八项计数	7 AGREE + 1 DISAGREE	7 AGREE + 1 DISAGREE	MATCH	只统计以 #数字 开头且含 AGREE/DISAGREE 的八条结论，排除额外一条。	R17_GLM_TXT_4\VERDICT.md
+N076	6	DISAGREE 项号	7	7	MATCH	从八项结论里筛 DISAGREE 行并读取其编号。	R17_GLM_TXT_4\VERDICT.md
+N077	6	edi_writes.tsv 数据行	11	11	MATCH	按非空数据行计数表头以下全部记录，不先按窗口过滤。	R17_R18_EDI_GAP\edi_writes.tsv
+N078	6	edi_writes 窗口内	4	4	MATCH	用路径列排除 initial 与 outside window 后，余下四条恰落在窗口内。	R17_R18_EDI_GAP\edi_writes.tsv
+N079	6	edi_writes initial/outside	1	1	MATCH	按路径列 initial (excluded) 单独计数，避免与窗口内四条混淆。	R17_R18_EDI_GAP\edi_writes.tsv
+N080	6	edi_writes 窗口外	6	6	MATCH	按路径列 outside window 标记计数，与 initial、窗口内三类互斥。	R17_R18_EDI_GAP\edi_writes.tsv
+N081	6	COVERAGE_ONLY 的 AV 前缀 token	107	107	MATCH	在 R19 COVERAGE_ONLY 行的 class_name 上按字面 AV 前缀过滤计数。	R17_R19_RTTI_XCHECK\reconcile.tsv
+N082	6	去 AV 后与 BOTH 同名	106	106	MATCH	对每个 AV 前缀 token 去掉 AV 并归一裸名，再查 BOTH 裸名集合。	R17_R19_RTTI_XCHECK\reconcile.tsv
+N083	6	唯一未命中 AV token	1	1	MATCH	用 AV 总数减去去前缀后命中 BOTH 的数，余量对应 AVRTacticalClass。	R17_R19_RTTI_XCHECK\reconcile.tsv
+N084	6	COVERAGE_ONLY 的 PAV 前缀 token	26	26	MATCH	在同一 COVERAGE_ONLY 子集上按字面 PAV 前缀过滤计数。	R17_R19_RTTI_XCHECK\reconcile.tsv
+N085	6	自报模型身份	bigmodel-api/GLM-5.3-Flash	bigmodel-api/GLM-5.3-Flash	MATCH	读取 GLM 第二意见首行 provider 与 model id 的原串并记录与 zcode/ 请求前缀不一致。	R17_GLM_TXT_4\VERDICT.md
+N086	7	Lead 复核链子节点	5	5	MATCH	按 chain_bytes.tsv 四行加 slot 值一项组成五个可核子节点。	R17_AUDIT_R23\chain_bytes.tsv
+N087	7	0x5A6510 序言字节	83EC70	83EC70	MATCH	读取真实入口前三字节，确认 sub esp,0x70。	R17_AUDIT_R23\VERDICT.md
+N088	7	0x5A652A 指令字节	C1E81F	C1E81F	MATCH	读取伪入口所在指令的三字节，确认 0x5A652D 落在指令内部。	R17_AUDIT_R23\VERDICT.md

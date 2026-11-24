@@ -1,0 +1,26 @@
+event	metric	card_value	recomputed_value	source_path	method	status	note
+1	6F4A63 C3 + NOP数	C3 后 12×90	C3 后 12×90	lead\next_re_20261117_r14\R17_R16_SLOT73_SEM\byte_checks.tsv	annex 字节逐字比对 anchor 行	一致	0x6F4A63=5E? 否：C3；0x6F4A64..6F4A6F 共12个90
+1	函数入口起点	0x6F4A70	0x6F4A70	lead\next_re_20261117_r14\R17_R16_SLOT73_SEM\DIS_6F4A70_body.txt	12×90 后首条指令地址	一致	8B 44 24 04 起
+1	thiscall 证据 8B F1	8B F1(mov esi,ecx)	8B F1 @ 0x6F4A75	lead\next_re_20261117_r14\R17_R16_SLOT73_SEM\DIS_6F4A70_body.txt	反汇编逐条	一致	ecx 作 this
+1	thiscall 栈参数读取 [esp+4]	取 [esp+4]	8B 44 24 04 @ 0x6F4A70	lead\next_re_20261117_r14\R17_R16_SLOT73_SEM\DIS_6F4A70_body.txt	反汇编逐条	一致	1 个栈参数
+1	ret 4 证据	C2 04 00	C2 04 00 ×2 (0x6F4A9A/0x6F4AA0)	lead\next_re_20261117_r14\R17_R16_SLOT73_SEM\DIS_6F4A70_body.txt	反汇编收尾	一致	与 1 栈参数相符
+1	自身装 vtable 指令数	0（非构造器）	0	lead\next_re_20261117_r14\R17_R16_SLOT73_SEM\REPORT.md	Q1 装表检查 0x6F4A70..0x6F4AA2 逐条	一致	仅 0x6F4A8B 8B 16 读 vptr，无写
+1	TechnoClass 主表 0x7F4960 中 0x6F4A70 命中	1 (#73 @ 0x7F4A84)	1 (#73 @ 0x7F4A84)	lead\next_re_20261117_r14\R17_R16_SLOT73_SEM\vtable_hits.tsv	按镜像 VA 逐槽比对 309 槽	一致	镜像复算 #73=0x6F4A70，其余槽无
+1	BuildingClass 主表 0x7E3EBC 中 0x6F4A70 命中	0	0	lead\next_re_20261117_r14\R17_R16_SLOT73_SEM\REPORT.md	按镜像 VA 逐槽比对 322 槽	一致	其 #73=0x43F180（镜像复算）
+2	窗口 [0x43F191,0x43F5D8) edi 写点数	4（不含初始 mov）	4（不含初始 mov）	lead\next_re_20261117_r14\R17_R18_EDI_GAP\edi_writes.tsv	按地址区间过滤后剔除 initial 行	一致	0x43F1DA/0x43F387/0x43F3DA/0x43F5C9
+2	到达 0x43F5D8 的路径数	恰 2	2	lead\next_re_20261117_r14\R17_R18_EDI_GAP\REPORT.md	§3 分支扫描 0x43F220 jne 与 0x43F5B1 je	一致	两条路径 edi 均 == 入口 this
+3	0x4264C0 出现在 #107 的类数	15（不是 17）	15	lead\next_re_20261117_r14\R17_R17_SLOT73_MAP\reverse_map.tsv	function_value=0x004264C0 且 slot=107 精确计数	一致	卡面 15 与复算一致；17 为前轮误记（§1060 已并列）
+3	0x7E22A4(Aircraft) slot0	0x414290	0x414290	lead\next_re_20261117_r14\R17_AUDIT_R13\VERDICT.md	A4 表 slot0 列 + 镜像 VA 读 dword 复核	一致	0x7E22A4-0x400000 处 dword=0x414290
+3	0x7E8C94(Foot) slot0	0x410260	0x410260	lead\next_re_20261117_r14\R17_AUDIT_R13\VERDICT.md	A4 表 slot0 列 + 镜像 VA 读 dword 复核	一致	与 Aircraft 不同值
+3	A4 同 slot0 对	0x7E4EEC(Cell) 与 0x7E8C94(Foot)	0x7E4EEC=0x410260 / 0x7E8C94=0x410260	lead\next_re_20261117_r14\R17_AUDIT_R13\VERDICT.md	A4 表 slot0 列 + 镜像 VA 读 dword 复核	一致	二者同为 0x410260；与 Aircraft 0x414290 区分
+4	TD 装饰名总数	988	988	lead\next_re_20261117_r14\R17_R19_RTTI_XCHECK\rtti_names.tsv	数据行计数	一致	唯一裸名 988
+4	.?AV 前缀数	962	962	lead\next_re_20261117_r14\R17_R19_RTTI_XCHECK\rtti_names.tsv	prefix 列精确计数	一致	
+4	.?AU 前缀数	26	26	lead\next_re_20261117_r14\R17_R19_RTTI_XCHECK\rtti_names.tsv	prefix 列精确计数	一致	962+26=988
+4	coverage 第4列 Class 后缀不同类名	429	429	lead\next_re_20261117_r14\R17_R19_RTTI_XCHECK\coverage_classnames.tsv	数据行计数 = distinct 类名数	一致	429 行 / 429 distinct
+4	BOTH 桶	209	209	lead\next_re_20261117_r14\R17_R19_RTTI_XCHECK\reconcile.tsv	bucket=BOTH 精确计数	一致	
+4	COVERAGE_ONLY 桶	220	220	lead\next_re_20261117_r14\R17_R19_RTTI_XCHECK\reconcile.tsv	bucket=COVERAGE_ONLY 精确计数	一致	不等于「名字错」
+4	RTTI_ONLY 桶	779	779	lead\next_re_20261117_r14\R17_R19_RTTI_XCHECK\reconcile.tsv	bucket=RTTI_ONLY 精确计数	一致	209+220+779=1208
+5	必改项条数	3	3	lead\next_re_20261117_r14\R17_AUDIT_R13\VERDICT.md	「必改项」小节条数	一致	均属报告表述，不推翻类名结论
+5	data_va_refs 限定 .text 立即数分布	3/3/3/3/3/3/3/3/26	3/3/3/3/3/3/3/3/26	lead\next_re_20261117_r14\R17_AUDIT_R13\VERDICT.md	必改1 + .text 全节按 vtable VA 扫 dword	一致	九个 VA 在 .text 内命中数逐字复算
+6	R17_GLM_TXT_3 目录存在性	（若存在则 8 项+OVERALL）	未取得（产物未落盘）	lead\next_re_20261117_r14\R17_GLM_TXT_3	目录存在性检查（不存在）	未取得	目录未落盘，不编造结论
+SUMMARY	与卡面不一致的数字个数	0	0	lead\next_re_20261117_r14\R17_LEDGER_1061\numbers.tsv	统计 status=差异 行数	一致	本轮所有可复算数字均与卡面一致；红线另在 SECTION 文字判定

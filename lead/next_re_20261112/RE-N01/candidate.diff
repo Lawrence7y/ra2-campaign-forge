@@ -1,0 +1,1073 @@
+### _run_hl_match.py  →  candidate/_run_hl_match_candidate.py
+### 原件 SHA-256 与体积见 FACT_CHECK.md（实算比对，零字节改动）
+--- a/lead/re_d13_ruling_20261112/_run_hl_match.py
++++ b/lead/next_re_20261112/RE-N01/candidate/_run_hl_match_candidate.py
+@@ -10,51 +10,112 @@
+   N6 BM_CLICK StartGame
+   N7 轮询 G_FRAME，停滞即抓栈
+ 
++===============================================================================
++RE-N01 候选副本（由 lead/re_d13_ruling_20261112/_run_hl_match.py 复制后最小改动）
++===============================================================================
++本轮 run_id = NEXT_RE_20261112_R01。本副本**只做离线候选与离线测试**：
++  * 未启动游戏、未 attach 活进程、未 ReadProcessMemory 活进程、
++    未 SuspendThread / ResumeThread / StackWalk64 / 断点 / 注入 / 部署 / taskkill；
++  * main() 的 N1-N6 导航代码与原件逐字相同（保留原 CLI 语义），
++    但本轮**不执行 main() 的游戏路径**；离线测试只调用可注入的 run_monitor()；
++  * 所有 Win32 调用在离线测试中均为 stub / fake，真实 Win32 行为未验。
++
++相对原件的关键修正（详见 DIFF.md；FACT_CHECK.md 逐条对账前代理声称）：
++  A  --only-tid 与全线程路径互斥（绝不先调 sample(pid) 再丢弃结果）
++  B  单线程入口改为 sampler.sample_single()：preflight_target() 显式契约、
++     恢复返回值/异常/预算/线程数/归属校验全部入事件、try/except 不穿透循环
++  C  逐条流式 NDJSON（每行 flush，可选 fsync），异常退出仍保留此前原始记录；
++     摘要可由 replay_re_n01.py 从同一 NDJSON 离线重算
++  C2 读失败区间分段并保留真实时间间隔，不把两端同值拼成连续冻结
++  D  计时统一 perf_counter_ns()；不再输出「median(非零Δ)/interval ⇒ fps」伪帧率
++
++   E  不再把结果写回**只读原件目录** BASE；全部产物落在本轮写域
++
++★ 对账提示：本副本的第一版**只改了本 docstring**，N7 循环仍是原件逻辑
++  （无条件 sampler.sample(pid) → 再判 --only-tid → 直接 sample_one_thread）。
++  本轮续做才把 A/C/C2/E 真正落到代码里（委托 re_n01_monitor.run_monitor）；
++  详见 FACT_CHECK.md「原代理声称 / 实际」。
++
+ 用法：
+-  python -I -X utf8 _run_hl_match.py --pattern H1 --seconds 240
++  python -I -X utf8 _run_hl_match_candidate.py --pattern H1 --seconds 240
+ """
+ import argparse
+ import ctypes
+ import ctypes.wintypes as wt
++import datetime
+ import importlib.util
+ import json
++import os
+ import statistics
+ import subprocess
+ import sys
+ import time
+ from pathlib import Path
+ 
++# RE-N01：从本副本所在目录的上一级导入只读重算器（纯 Python，无 Win32）
++_RE_N01_ROOT = Path(__file__).resolve().parent.parent
++if str(_RE_N01_ROOT) not in sys.path:
++    sys.path.insert(0, str(_RE_N01_ROOT))
++
++RUN_ID = "NEXT_RE_20261112_R01"
++
+ BASE = Path(r"D:\Project\ra2-campaign-forge\lead\re_d13_ruling_20261112")
+ GAME_DIR = r"D:\Project\ra2-campaign-forge\ra2youli"
+-
+-u = ctypes.WinDLL("user32", use_last_error=True)
+-k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+-
+-for fn, rt, at in [
+-    ("PostMessageW", wt.BOOL, [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM]),
+-    ("SendMessageTimeoutW", ctypes.c_void_p,
+-     [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM, wt.UINT, wt.UINT,
+-      ctypes.POINTER(ctypes.c_size_t)]),
+-    ("GetWindowThreadProcessId", wt.DWORD, [wt.HWND, ctypes.POINTER(wt.DWORD)]),
+-    ("GetWindowTextLengthW", ctypes.c_int, [wt.HWND]),
+-    ("GetWindowTextW", ctypes.c_int, [wt.HWND, wt.LPWSTR, ctypes.c_int]),
+-    ("GetClassNameW", ctypes.c_int, [wt.HWND, wt.LPWSTR, ctypes.c_int]),
+-    ("EnumWindows", wt.BOOL, [ctypes.c_void_p, wt.LPARAM]),
+-    ("EnumChildWindows", wt.BOOL, [wt.HWND, ctypes.c_void_p, wt.LPARAM]),
+-    ("IsWindowVisible", wt.BOOL, [wt.HWND]),
+-]:
+-    f = getattr(u, fn)
+-    f.restype = rt
+-    f.argtypes = at
+-
+-k32.OpenProcess.restype = wt.HANDLE
+-k32.OpenProcess.argtypes = [wt.DWORD, wt.BOOL, wt.DWORD]
+-k32.ReadProcessMemory.restype = wt.BOOL
+-k32.ReadProcessMemory.argtypes = [wt.HANDLE, ctypes.c_void_p, ctypes.c_void_p,
+-                                  ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)]
+-k32.CloseHandle.argtypes = [wt.HANDLE]
+-k32.IsWow64Process.restype = wt.BOOL
+-k32.IsWow64Process.argtypes = [wt.HANDLE, ctypes.POINTER(wt.BOOL)]
++# RE-N01：候选件母本目录（Sampling r2 与本驱动副本同目录）
++CANDIDATE_DIR = Path(__file__).resolve().parent
++if str(CANDIDATE_DIR) not in sys.path:
++    sys.path.insert(0, str(CANDIDATE_DIR))
++
++# 纯 Python 的流式记录 / 分段 / 在线摘要模块（无任何 Win32）
++import re_n01_monitor as mon  # noqa: E402
++
++
++def _load_sampler_module():
++    """从候选目录加载 r2 采样器（不触碰只读原件目录）。"""
++    spec = importlib.util.spec_from_file_location(
++        "re_n01_sampler_r2", str(CANDIDATE_DIR / "e3_stack_sampler_candidate_r2.py"))
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++    return mod
++
++# RE-N01：Win32 绑定**延迟到 main()**，离线 import 本模块不加载任何 DLL、
++# 不产生任何 Win32 副作用；离线测试注入的 rd / sampler / clock 全是假对象。
++u = None
++k32 = None
++
++
++def _bind_win32():
++    global u, k32
++    if u is not None and k32 is not None:
++        return
++    u = ctypes.WinDLL("user32", use_last_error=True)
++    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
++
++    for fn, rt, at in [
++        ("PostMessageW", wt.BOOL, [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM]),
++        ("SendMessageTimeoutW", ctypes.c_void_p,
++         [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM, wt.UINT, wt.UINT,
++          ctypes.POINTER(ctypes.c_size_t)]),
++        ("GetWindowThreadProcessId", wt.DWORD, [wt.HWND, ctypes.POINTER(wt.DWORD)]),
++        ("GetWindowTextLengthW", ctypes.c_int, [wt.HWND]),
++        ("GetWindowTextW", ctypes.c_int, [wt.HWND, wt.LPWSTR, ctypes.c_int]),
++        ("GetClassNameW", ctypes.c_int, [wt.HWND, wt.LPWSTR, ctypes.c_int]),
++        ("EnumWindows", wt.BOOL, [ctypes.c_void_p, wt.LPARAM]),
++        ("EnumChildWindows", wt.BOOL, [wt.HWND, ctypes.c_void_p, wt.LPARAM]),
++        ("IsWindowVisible", wt.BOOL, [wt.HWND]),
++    ]:
++        f = getattr(u, fn)
++        f.restype = rt
++        f.argtypes = at
++
++    k32.OpenProcess.restype = wt.HANDLE
++    k32.OpenProcess.argtypes = [wt.DWORD, wt.BOOL, wt.DWORD]
++    k32.ReadProcessMemory.restype = wt.BOOL
++    k32.ReadProcessMemory.argtypes = [wt.HANDLE, ctypes.c_void_p, ctypes.c_void_p,
++                                      ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)]
++    k32.CloseHandle.argtypes = [wt.HANDLE]
++    k32.IsWow64Process.restype = wt.BOOL
++    k32.IsWow64Process.argtypes = [wt.HANDLE, ctypes.POINTER(wt.BOOL)]
+ 
+ ENUM = ctypes.WINFUNCTYPE(wt.BOOL, wt.HWND, wt.LPARAM)
+ BM_CLICK = 0x00F5
+@@ -204,7 +265,12 @@
+     ap.add_argument("--list-only", action="store_true")
+     ap.add_argument("--only-tid", action="store_true",
+                     help="只采游戏窗口线程（1 线程），用于压进 <=50ms 预算")
++    ap.add_argument("--ndjson", default=None,
++                    help="流式原始 NDJSON 输出路径（默认 out/run_<pid>.ndjson）")
++    ap.add_argument("--summary", default=None,
++                    help="在线摘要 JSON 输出路径；可由 replay_re_n01.py 离线重算")
+     a = ap.parse_args()
++    _bind_win32()
+ 
+     pid = a.pid
+     if not pid:
+@@ -305,7 +371,10 @@
+     print("    等待加载 15s")
+     time.sleep(15)
+ 
+-    # ---- 监测 ----
++    # ---- 监测（RE-N01：委托给可注入的 run_monitor；P1/P2/P3/P5/P6 都在此实现）----
++    # 与原件的关键差别：不再无条件先调 sample(pid) 再丢弃结果（问题 A），
++    # 不再用 time.monotonic() 只记最后一次函数调用耗时（问题 B），
++    # 不再把摘要写进只读原件目录 BASE；全部原始记录流式落进本轮写域。
+     print("[N7] 监测 %.0fs（停滞阈值 %.1fs）" % (a.seconds, a.stall_n))
+     hproc = k32.OpenProcess(0x0010 | 0x0400, False, pid)
+     if not hproc:
+@@ -315,17 +384,9 @@
+         flag = wt.BOOL(0)
+         k32.IsWow64Process(hproc, ctypes.byref(flag))
+         is32 = bool(flag.value)
+-        spec = importlib.util.spec_from_file_location(
+-            "cand", str(BASE / "e3_stack_sampler_candidate.py"))
+-        cand = importlib.util.module_from_spec(spec)
+-        sys.argv = ["x"]
+-        try:
+-            spec.loader.exec_module(cand)
+-        except SystemExit:
+-            pass
++        cand = _load_sampler_module()
+         cand.bind_real_ops()
+         sampler = cand.StackSampler(budget_ms=a.budget)
+-        sampler._target_is32 = is32
+         wok, werr = cand.attach_stackwalker(sampler, hproc, pid, is32)
+         print("    StackWalker=%s %s" % (wok, werr or ""))
+         det = cand.StallDetector(n_seconds=a.stall_n, min_obs=6)
+@@ -339,95 +400,37 @@
+ 
+         want_tid = game_window_thread(pid)
+         print("    游戏窗口线程 tid=%s" % want_tid)
+-        t0 = time.monotonic()
+-        samples, events = [], []
+-        while time.monotonic() - t0 < a.seconds:
+-            now = time.monotonic()
+-            v = rd(0x00A8ED84)
+-            samples.append((round(now - t0, 3), v))
+-            if det.observe(now, v):
+-                print("  ★★ 停滞 @ t=%.2fs frame=%s → 抓栈" % (now - t0, v))
+-                res = sampler.sample(pid)
+-                if a.only_tid and want_tid:
+-                    t1 = time.monotonic()
+-                    one = sampler.sample_one_thread(want_tid)
+-                    cost = (time.monotonic() - t1) * 1000.0
+-                    ev = {"t": round(now - t0, 3), "frame": v,
+-                          "mode": "single_thread",
+-                          "paused_ms": round(cost, 1),
+-                          "errors": one.get("errors") if isinstance(one, dict) else None,
+-                          "picked_by": "only_tid"}
+-                    if isinstance(one, dict) and one.get("frames"):
+-                        ev["stack"] = {"tid": want_tid,
+-                                       "bits": (one.get("ctx") or {}).get("bits"),
+-                                       "n": len(one["frames"]),
+-                                       "frames": one["frames"]}
+-                        print("      单线程采样 tid=%d %d 帧  cost=%.1fms"
+-                              % (want_tid, len(one["frames"]), cost))
+-                        for i2, f2 in enumerate(one["frames"][:12]):
+-                            nm = f2.get("name") if isinstance(f2, dict) else f2
+-                            ad = f2.get("addr") if isinstance(f2, dict) else 0
+-                            print("        #%-2d %s" % (i2, nm or hex(ad)))
+-                    else:
+-                        print("      单线程采样无帧 cost=%.1fms %s" % (cost, one))
+-                    events.append(ev)
+-                    time.sleep(a.interval)
+-                    continue
+-                threads = res.get("threads", [])
+-                got = [x for x in threads if x.get("frames")]
+-                best, how = pick_thread(threads, want_tid)
+-                ev = {"t": round(now - t0, 3), "frame": v,
+-                      "errors": res.get("errors"), "paused_ms": res.get("paused_ms"),
+-                      "picked_by": how,
+-                      "all_threads": [{"tid": x["tid"],
+-                                        "bits": x["ctx"]["bits"],
+-                                        "n": len(x["frames"])} for x in threads]}
+-                if best:
+-                    ev["stack"] = {"tid": best["tid"],
+-                                   "bits": best["ctx"]["bits"],
+-                                   "n": len(best["frames"]),
+-                                   "frames": best["frames"]}
+-                    print("      采 %d 线程，选中 tid=%d（%s）%d 帧 paused=%sms"
+-                          % (len(got), best["tid"], how, len(best["frames"]),
+-                             res.get("paused_ms")))
+-                    for i2, f in enumerate(best["frames"][:12]):
+-                        nm = f.get("name") if isinstance(f, dict) else f
+-                        ad = f.get("addr") if isinstance(f, dict) else 0
+-                        print("        #%-2d %s" % (i2, nm or hex(ad)))
+-                events.append(ev)
+-            time.sleep(a.interval)
+-
+-        vals = [v for _, v in samples if v is not None]
+-        print("\n[结果] 采样 %d 可读 %d" % (len(samples), len(vals)))
+-        if vals:
+-            d = [vals[i + 1] - vals[i] for i in range(len(vals) - 1)]
+-            nz = [x for x in d if x != 0]
+-            print("  frame %s→%s  Δ中位=%s  ⇒ %.1f fps" %
+-                  (vals[0], vals[-1],
+-                   statistics.median(nz) if nz else "-",
+-                   (statistics.median(nz) / a.interval) if nz else 0))
+-            runs, cur = [], 0
+-            for x in d:
+-                if x == 0:
+-                    cur += 1
+-                else:
+-                    if cur:
+-                        runs.append(cur)
+-                    cur = 0
+-            if cur:
+-                runs.append(cur)
+-            if runs:
+-                print("  零Δ段 %d 个，最长 %.2fs，≥%.1fs 的 %d 个"
+-                      % (len(runs), max(runs) * a.interval, a.stall_n,
+-                         sum(1 for r in runs if r * a.interval >= a.stall_n)))
+-        print("  停滞事件 = %d" % len(events))
+-        p = BASE / ("_hl_match_%d.json" % pid)
+-        p.write_text(json.dumps({"pid": pid, "pattern": a.pattern,
+-                                 "target": target, "is32": is32,
+-                                 "n_samples": len(samples),
+-                                 "n_readable": len(vals), "events": events},
+-                                ensure_ascii=False, indent=1), encoding="utf-8")
+-        print("  落盘 %s" % p)
++        ndjson_path = Path(a.ndjson) if a.ndjson else (
++            _RE_N01_ROOT / "out" / ("run_%d.ndjson" % pid))
++        summary_path = Path(a.summary) if a.summary else (
++            _RE_N01_ROOT / "out" / ("online_summary_%d.json" % pid))
++        cfg = mon.default_cfg(
++            run_id=RUN_ID, provenance="live_run_not_executed_this_round")
++        cfg["stall_n_ns"] = int(a.stall_n * 1e9)
++        cfg["nominal_interval_ns"] = int(a.interval * 1e9)
++        cfg["gap_max_ns"] = int(3 * a.interval * 1e9)
++        sink = mon.NDJSONSink(ndjson_path)
++
++        def rd_frame(_i):
++            return {"frame": rd(0x00A8ED84), "pid": pid}
++
++        out = mon.run_monitor(
++            pid=pid, want_tid=want_tid,
++            only_tid=bool(a.only_tid and want_tid),
++            sampler=sampler, detector=det, rd=rd_frame, sink=sink, cfg=cfg,
++            interval_s=a.interval,
++            max_ticks=max(1, int(a.seconds / max(a.interval, 1e-6))),
++            summary_path=summary_path)
++        s = out["summary"]
++        print("\n[结果] 原始记录 %d 行（frame_read=%d event=%d 段=%d）"
++              % (s["n_records"], s["n_frame_reads"], s["n_events"],
++                 s["n_segments"]))
++        print("  已证实连续冻结=%d 缺测打断段=%d 事件数=%d"
++              % (s["n_confirmed_continuous_freezes"],
++                 s["n_gap_interrupted_runs"], len(out["events"])))
++        print("  NDJSON  %s" % ndjson_path)
++        print("  在线摘要 %s（可由 replay_re_n01.py 离线重算逐字段比对）"
++              % summary_path)
+         try:
+             if wok:
+                 sampler.stack_walker.cleanup()
+
+### e3_stack_sampler_candidate.py  →  candidate/e3_stack_sampler_candidate_r2.py
+### 原件 SHA-256 与体积见 FACT_CHECK.md（实算比对，零字节改动）
+--- a/lead/re_d13_ruling_20261112/e3_stack_sampler_candidate.py
++++ b/lead/next_re_20261112/RE-N01/candidate/e3_stack_sampler_candidate_r2.py
+@@ -74,7 +74,6 @@
+ import json
+ import os
+ import sys
+-import tempfile
+ import time
+ from pathlib import Path
+ 
+@@ -114,6 +113,20 @@
+ CONTEXT_i386 = 0x00010000
+ CONTEXT_CONTROL = CONTEXT_i386 | 0x00000001
+ MAX_STACK_DEPTH = 32
++
++
++# ---------------------------------------------------------------- RE-N01 状态契约
++# 四态 + 显式 error（见 SAMPLER_CONTRACT.md / DISAGREE.md）：
++#   not_attempted      未采集（零线程挂起；前置/归属拒绝）
++#   ok                 无错误（errors=[] 但**没有**逐线程恢复正面证据）
++#   resume_verified_ok 恢复成功（resume_ret 有效 + resume_ok=True + 无恢复错误）
++#   resume_failed      恢复失败（恢复返回值无效/异常/_resume_errors 非空）
++#   error              采样异常或预算超限（显式失败，绝不塞进 ok）
++# **禁止**用 null / 空列表兼表上述任一状态。
++SAMPLE_STATES = ("not_attempted", "ok", "resume_verified_ok",
++                 "resume_failed", "error")
++# 与 sample_state 正交：专门表达「恢复成功」的正面证据（B1/B2）。
++RESUME_STATES = ("not_applicable", "verified_ok", "failed", "unknown")
+ 
+ 
+ class E3Fail(Exception):
+@@ -175,6 +188,88 @@
+ # ---------------------------------------------------------------- OPS 抽象
+ # 全部 Win32 调用经 OPS 注入 ⇒ 离线单测可完全 stub（母本 run_fault_tests 同款模式）。
+ OPS = {}
++
++
++def _now_ns():
++    """RE-N01：事件级计时统一用 perf_counter_ns（可经 OPS["now_ns"] 注入假时钟）。
++
++    原件 sample() 的预算闸仍用 OPS["now"]（time.monotonic），**保持 47 项原单测不变**；
++    本函数只服务于新增的单线程入口 / 分项计时，不改动原有任何判据。
++    """
++    fn = OPS.get("now_ns")
++    if fn is not None:
++        return int(fn())
++    return time.perf_counter_ns()
++
++
++class EventTimer(object):
++    """RE-N01：单一 perf_counter_ns 时钟的整数里程碑。
++
++    所有分项时间由**同一组整数时间戳做差**（望远镜求和），因此
++    「端到端 ≥ 分项之和」在数学上精确成立，不依赖浮点换算。
++    离线测试可注入假 now_ns，构造「采样函数本身慢 + 后续步骤慢」场景（T-A3）。
++    """
++
++    def __init__(self, now_ns=None):
++        self._now = now_ns or _now_ns
++        self.marks = {}
++
++    def mark(self, name):
++        v = int(self._now())
++        self.marks[name] = v
++        return v
++
++    def get(self, name):
++        return self.marks.get(name)
++
++
++def cost_from_marks(marks, t_candidate_ns=None):
++    """由整数里程碑构造 cost_ns（缺失项记 0，不静默丢弃字段）。
++
++    字段（单位 ns）：
++      detect_ns       检测延迟：候选发现 → 检测判定成立
++      preflight_ns    前置校验：判定成立 → preflight/位宽查询完成
++      ownership_ns    PID/TID 归属校验（Toolhelp 快照）
++      open_ns         OpenThread + SuspendThread
++      context_ns      取上下文
++      walk_ns         走栈
++      resume_ns       恢复
++      overhead_ns     收尾（组事件/序列化等，恢复完成 → 事件结束）
++      suspend_held_ns 实际线程挂起时长 suspend→resume（**重叠子区间**，
++                      不是可加的分项；见 SAMPLER_CONTRACT.md）
++      end_to_end_ns   检测判定成立 → 事件结束（任务卡口径）
++      event_total_ns  候选发现 → 事件结束（整事件，含检测延迟）
++    """
++    def g(k):
++        v = marks.get(k)
++        return int(v) if v is not None else 0
++
++    t_cand = g("candidate") if t_candidate_ns is None else int(t_candidate_ns)
++    t_verd = g("verdict")
++    t_pref = g("preflight")
++    t_own = g("ownership")
++    t_susp = g("suspend")
++    t_ctx = g("context")
++    t_walk = g("walk")
++    t_res = g("resume")
++    t_end = g("end")
++
++    def d(a, b):
++        return max(0, int(b) - int(a)) if (a and b) else 0
++
++    return {
++        "detect_ns": d(t_cand, t_verd),
++        "preflight_ns": d(t_verd, t_pref),
++        "ownership_ns": d(t_pref, t_own),
++        "open_ns": d(t_own, t_susp),
++        "context_ns": d(t_susp, t_ctx),
++        "walk_ns": d(t_ctx, t_walk),
++        "resume_ns": d(t_walk, t_res),
++        "overhead_ns": d(t_res, t_end),
++        "suspend_held_ns": d(t_susp, t_res),
++        "end_to_end_ns": d(t_verd, t_end),
++        "event_total_ns": d(t_cand, t_end),
++    }
+ 
+ 
+ def bind_real_ops():
+@@ -222,6 +317,7 @@
+ 
+     OPS["now"] = time.monotonic
+     OPS["sleep"] = time.sleep
++    OPS["now_ns"] = time.perf_counter_ns        # RE-N01：事件级分项计时（真实路径）
+     OPS["open_process"] = lambda access, pid: k32.OpenProcess(access, False, pid)
+     OPS["close_handle"] = k32.CloseHandle
+     OPS["read_mem"] = _real_read_mem(k32)
+@@ -346,6 +442,125 @@
+         if not has_ctx:
+             return "context_not_bound"
+         return None
++
++    # -------- RE-N01：公开入口，把隐式私有属性写成显式契约 --------
++    def preflight_target(self, pid, tid=None, timer=None):
++        """**一次**完成：进程级位宽查询 + preflight() + 目标 PID/TID 归属校验。
++
++        对应任务卡「完整事件入口统一验证目标 PID/TID 归属、位宽、所需 API 和 walker」。
++        与原件 sample() 的差别（B4/B5）：sample_one_thread() 自身不调 preflight()，
++        _get_context() 又依赖私有属性 self._target_is32 —— 原件只由驱动在 :328
++        外部赋私有属性，或由 sample() 内部查询。本入口把这三件事收进一个**公开方法**，
++        调用方不需要、也不应该再写私有属性。
++
++        **绝不挂起任何线程**：全部校验在任何 SuspendThread 之前完成；
++        返回 ok=False 时调用方必须放弃本次采样（T-B3/T-B4）。
++
++        Toolhelp 归属校验用 CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD) 快照
++        （即 enumerate_threads 的同一通道），校验 tid 是否属于 pid。
++        离线测试中该通道由 OPS stub 提供，不触碰真实 Win32。
++
++        返回 dict（**永不返回 None**，避免用 null 兼表状态）：
++          {ok, reason, pid, tid, is32, target_bits, preflight:{ok,reason},
++           ownership:{pid,tid,validated,tid_belongs_to_pid,n_threads_in_pid,reason},
++           walker_ready, n_threads_in_pid, phase_ms}
++        """
++        t0 = _now_ns()
++        if timer is not None:
++            timer.mark("preflight")
++            timer.mark("ownership")   # 占位：早退路径未做归属校验 ⇒ ownership_ns=0
++        out = {
++            "ok": False, "reason": "", "pid": int(pid),
++            "tid": int(tid) if tid is not None else None,
++            "is32": None, "target_bits": None,
++            "preflight": {"ok": False, "reason": ""},
++            "ownership": {"pid": int(pid), "tid": int(tid) if tid is not None else None,
++                          "validated": False, "tid_belongs_to_pid": False,
++                          "n_threads_in_pid": 0, "reason": ""},
++            "walker_ready": self.stack_walker is not None,
++            "n_threads_in_pid": 0,
++            "phase_ms": {},
++        }
++        # --- (1) preflight：context 通道等硬前置（原件 :336-348 的语义，逐字保留） ---
++        pf = self.preflight()
++        t1 = _now_ns()
++        if pf is not None:
++            out["reason"] = "preflight:" + pf
++            out["preflight"] = {"ok": False, "reason": pf}
++            out["phase_ms"] = {"preflight_ms": (t1 - t0) / 1e6,
++                               "total_ms": (_now_ns() - t0) / 1e6}
++            return out
++        out["preflight"] = {"ok": True, "reason": "ok"}
++
++        # --- (2) 进程级位宽查询（一次；显式写入 self._target_is32） ---
++        is32 = None
++        self._target_is32 = None
++        if "is_wow64" in OPS:
++            try:
++                hproc = OPS["open_process"](0x1000, pid)
++                if hproc:
++                    try:
++                        is32 = OPS["is_wow64"](hproc)
++                    finally:
++                        OPS["close_handle"](hproc)
++            except Exception:                                # noqa: BLE001
++                is32 = None
++        t2 = _now_ns()
++        self._target_is32 = is32
++        out["is32"] = is32
++        out["target_bits"] = 32 if is32 else (64 if is32 is False else None)
++        if is32 is None and "get_context_stub" not in OPS:
++            # 与原件 sample() :541-543 同判据：无 context stub 又查不到位宽 ⇒ 拒绝
++            out["reason"] = "wow64_query_failed"
++            out["phase_ms"] = {"preflight_ms": (t1 - t0) / 1e6,
++                               "wow64_ms": (t2 - t1) / 1e6,
++                               "total_ms": (_now_ns() - t0) / 1e6}
++            return out
++
++        # --- (3) PID/TID 归属校验（Toolhelp 快照） ---
++        tids = []
++        try:
++            tids = self.enumerate_threads(pid)
++        except E3Fail as e:
++            out["reason"] = "enumerate_threads_fail:" + str(e)
++            out["ownership"]["reason"] = str(e)
++            out["phase_ms"] = {"preflight_ms": (t1 - t0) / 1e6,
++                               "wow64_ms": (t2 - t1) / 1e6,
++                               "ownership_ms": (_now_ns() - t2) / 1e6,
++                               "total_ms": (_now_ns() - t0) / 1e6}
++            return out
++        t3 = _now_ns()
++        if timer is not None:
++            timer.mark("ownership")   # Toolhelp 快照归属校验实际完成点
++        tidset = set(int(x) for x in tids)
++        out["n_threads_in_pid"] = len(tidset)
++        out["ownership"]["n_threads_in_pid"] = len(tidset)
++        if tid is None:
++            out["ownership"]["validated"] = True
++            out["ownership"]["tid_belongs_to_pid"] = None
++            out["ownership"]["reason"] = "tid_not_requested"
++        elif int(tid) in tidset:
++            out["ownership"]["validated"] = True
++            out["ownership"]["tid_belongs_to_pid"] = True
++            out["ownership"]["reason"] = "toolhelp_snapshot_tid_in_pid"
++        else:
++            out["reason"] = "tid_not_in_pid:tid=%d,pid=%d" % (int(tid), int(pid))
++            out["ownership"]["validated"] = True
++            out["ownership"]["tid_belongs_to_pid"] = False
++            out["ownership"]["reason"] = "tid_not_in_toolhelp_snapshot"
++            out["phase_ms"] = {"preflight_ms": (t1 - t0) / 1e6,
++                               "wow64_ms": (t2 - t1) / 1e6,
++                               "ownership_ms": (t3 - t2) / 1e6,
++                               "total_ms": (_now_ns() - t0) / 1e6}
++            return out
++        t4 = _now_ns()
++        out["ok"] = True
++        out["reason"] = "ok"
++        out["phase_ms"] = {"preflight_ms": (t1 - t0) / 1e6,
++                           "wow64_ms": (t2 - t1) / 1e6,
++                           "ownership_ms": (t4 - t2) / 1e6,
++                           "total_ms": (t4 - t0) / 1e6}
++        return out
+ 
+     # -------- 线程枚举 --------
+     def enumerate_threads(self, pid):
+@@ -373,19 +588,44 @@
+         return out
+ 
+     # -------- 单线程安全采样（D1/D2/D3/D4） --------
+-    def sample_one_thread(self, tid):
++    def sample_one_thread(self, tid, timer=None):
+         """挂起单个线程 → 取上下文 → 走栈 → **严格恢复**。
+ 
+         返回 dict；任何失败都不抛给调用方以外的地方（E3Fail 由 sample() 捕获）。
++
++        RE-N01 增量（**控制流与错误串逐字保留**，只增补返回字段）：
++          * errors          : list[str]，本次调用自身的恢复/采样错误（B2：原件单线程
++                              路径永不汇总 _resume_errors；这里显式带出，不再靠 null）
++          * resume_ok       : bool | None（None 仅当本次没有发起恢复）
++          * resume_ret      : int | None（ResumeThread 原始返回值）
++          * prev            : int（SuspendThread 的上次挂起计数；两分支都带）
++          * suspend_held_ms : float | None（suspend→resume 的实测挂起时长）
++          * phase_ms        : dict（open/suspend/context/walk/resume/total 分项）
++        注意：Ctx 原始寄存器值仍在 ctx 里（不替换成类型名，见任务卡 §3.5）。
+         """
++        t_open0 = _now_ns()
+         h = OPS["open_thread"](THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT |
+                                THREAD_QUERY_INFORMATION, False, tid)
++        t_open1 = _now_ns()
+         if not h:
+             raise E3Fail("open_thread_fail:tid=%d" % tid)
+         prev = None
+         suspended_by_us = False
++        out = None
++        err_base = len(self._resume_errors)
++        resume_ret = None
++        resume_ok = None
++        t_suspend = None
++        phase = {"open_ms": (t_open1 - t_open0) / 1e6,
++                 "suspend_ms": None, "context_ms": None,
++                 "walk_ms": None, "resume_ms": None,
++                 "suspend_held_ms": None, "total_ms": None}
+         try:
+             prev = OPS["suspend_thread"](h)
++            t_suspend = _now_ns()
++            if timer is not None:
++                timer.mark("suspend")
++            phase["suspend_ms"] = (t_suspend - t_open1) / 1e6
+             # MF-1 修复：失败判据必须同时覆盖 None / -1 / 0xFFFFFFFF。
+             # 设了 restype=DWORD 后失败为 0xFFFFFFFF；未设时为 -1（旧版的 bug 根源）。
+             if prev is None or prev == SUSPEND_FAILED or prev == -1:
+@@ -394,25 +634,58 @@
+             if prev > 0:
+                 # 一次 ResumeThread 只抵消我们自己的 +1，不会释放别人的挂起（D2 已核）
+                 r0 = OPS["resume_thread"](h)
++                resume_ret = r0
++                resume_ok = not (r0 is None or r0 == SUSPEND_FAILED or r0 == -1)
+                 if r0 is None or r0 == SUSPEND_FAILED or r0 == -1:
+                     # MF-6：恢复失败不可静默（否则留下不可见残余挂起）
+                     raise E3Fail("resume_restore_fail:tid=%d" % tid)
+-                return {"tid": tid, "skipped": "already_suspended", "prev": int(prev)}
++                out = {"tid": tid, "skipped": "already_suspended", "prev": int(prev),
++                       "errors": [], "resume_ok": resume_ok, "resume_ret": r0,
++                       "suspend_held_ms": 0.0, "phase_ms": dict(phase)}
++                return out
+             suspended_by_us = True
+ 
++            t_ctx0 = _now_ns()
+             ctx = self._get_context(h)
++            t_ctx1 = _now_ns()
++            if timer is not None:
++                timer.mark("context")
++            phase["context_ms"] = (t_ctx1 - t_ctx0) / 1e6
+             frames = self._walk(ctx, hthread=h)
+-            return {"tid": tid, "prev": int(prev), "ctx": ctx, "frames": frames}
++            t_walk1 = _now_ns()
++            if timer is not None:
++                timer.mark("walk")
++            phase["walk_ms"] = (t_walk1 - t_ctx1) / 1e6
++            out = {"tid": tid, "prev": int(prev), "ctx": ctx, "frames": frames,
++                   "errors": [], "resume_ok": None, "resume_ret": None,
++                   "suspend_held_ms": None, "phase_ms": dict(phase)}
++            return out
+         finally:
+             # D3 兜底：无论成功/异常，若我们挂起了它就必须恢复
+             if suspended_by_us:
++                t_resume0 = _now_ns()
+                 try:
+                     r = OPS["resume_thread"](h)
++                    resume_ret = r
++                    resume_ok = not (r is None or r == SUSPEND_FAILED or r == -1)
+                     # MF-6：恢复返回值校验（失败记入 errors 由上层汇总）
+                     if r is None or r == SUSPEND_FAILED or r == -1:
+                         self._resume_errors.append("resume_fail:tid=%d" % tid)
+                 except Exception:                       # noqa: BLE001
+                     self._resume_errors.append("resume_exc:tid=%d" % tid)
++                t_resume1 = _now_ns()
++                if timer is not None:
++                    timer.mark("resume")
++                phase["resume_ms"] = (t_resume1 - t_resume0) / 1e6
++                if t_suspend is not None:
++                    phase["suspend_held_ms"] = (t_resume1 - t_suspend) / 1e6
++            phase["total_ms"] = (_now_ns() - t_open0) / 1e6
++            if out is not None:
++                out["errors"] = list(self._resume_errors[err_base:])
++                out["resume_ok"] = resume_ok
++                out["resume_ret"] = resume_ret
++                out["suspend_held_ms"] = phase.get("suspend_held_ms")
++                out["phase_ms"] = dict(phase)
+             OPS["close_thread_handle"](h)
+ 
+     def _get_context(self, h):
+@@ -503,8 +776,149 @@
+         self.frames_is_single = True
+         return [ip]
+ 
++    # -------- RE-N01：事件级单线程入口（互斥于 sample() 的全线程路径） --------
++    def sample_single(self, tid, pid, budget_ms=None, timer=None):
++        """**一次**事件级单线程采样；与整体 sample(pid) 严格互斥。
++
++        任务卡 §3.1/§3.2：完整事件入口统一验证 PID/TID 归属、位宽、所需 API；
++        每事件单独收集挂起前计数、恢复返回值、异常、预算超限、实际采样线程数；
++        恢复失败必须可见；null / 空列表 / 确认成功分开表达。
++
++        与原件驱动 :350-375 的关键差别：
++          * **绝不**调用 sample(pid)（全线程）；只走一次 sample_one_thread；
++          * preflight_target() 在**任何 SuspendThread 之前**完成（B3/B4/B5）；
++          * 整个采样包在 try/except 内，E3Fail/任意异常都落到事件里，
++            **不穿透监测循环**（原件 B3：一次恢复失败丢整趟结果）；
++          * 恢复结果 / 预算 / 异常 / 线程数 / 归属 / 分项计时全部显式字段。
++
++        返回 dict（永不 None）。sample_state 四态（+ 显式 error）见模块常量
++        SAMPLE_STATES；resume_state 与 sample_state 正交，专门表达「恢复成功」
++        的**正面证据**，不把 errors=[] 当作恢复成功（B1/B2）。
++        """
++        timer = timer or EventTimer()
++        budget = float(self.budget_ms if budget_ms is None else budget_ms)
++        timer.mark("verdict")
++
++        ev = {
++            "mode": "single_thread",
++            "pid": int(pid), "tid": int(tid),
++            "sample_state": "not_attempted",
++            "resume_state": "not_applicable",
++            "resume_ret": None, "resume_ret_present": False,
++            "resume_ok": None, "prev": None,
++            "errors": [], "exception": "",
++            "budget_exceeded": False, "budget_state": "within", "budget_ms": budget,
++            "n_threads_sampled": 0, "n_threads_attempted": 0,
++            "preflight": {}, "ownership": {},
++            "one": None, "frames": [], "ctx": None,
++            "phase_ms": {}, "suspend_held_ms": None,
++            "cost_ns": {}, "ns_marks": {},
++            "sample_called": False,         # 恒 False：本入口不碰全线程 sample()
++            "sample_one_thread_calls": 0,
++        }
++
++        # --- (1) 前置契约：一次完成位宽 + preflight + PID/TID 归属校验 ---
++        pf = self.preflight_target(pid, tid, timer=timer)
++        ev["preflight"] = {
++            "ok": bool(pf["ok"]), "reason": pf["reason"],
++            "is32": pf["is32"], "target_bits": pf["target_bits"],
++            "preflight": dict(pf["preflight"]),
++            "walker_ready": bool(pf["walker_ready"]),
++            "n_threads_in_pid": pf["n_threads_in_pid"],
++            "phase_ms": dict(pf["phase_ms"]),
++        }
++        ev["ownership"] = dict(pf["ownership"])
++        ev["phase_ms"].update(pf["phase_ms"])
++        if not pf["ok"]:
++            ev["sample_state"] = "not_attempted"
++            ev["resume_state"] = "not_applicable"
++            ev["errors"] = ["preflight_rejected:" + pf["reason"]]
++            ev["budget_state"] = "not_checked"
++            timer.mark("suspend")      # 占位：零线程被挂起
++            timer.mark("context")
++            timer.mark("walk")
++            timer.mark("resume")
++            timer.mark("end")
++            ev["cost_ns"] = cost_from_marks(timer.marks)
++            ev["ns_marks"] = dict(timer.marks)
++            return ev
++
++        # --- (2) 唯一一次单线程采样；异常必须落进事件，不得穿透 ---
++        ev["sample_one_thread_calls"] = 1
++        ev["n_threads_attempted"] = 1
++        one = None
++        try:
++            one = self.sample_one_thread(int(tid), timer=timer)
++        except E3Fail as e:
++            ev["exception"] = "E3Fail:" + str(e)
++            ev["errors"].append("sample_one_thread_fail:" + str(e))
++            ev["sample_state"] = "error"
++        except Exception as e:                              # noqa: BLE001
++            ev["exception"] = type(e).__name__ + ":" + str(e)
++            ev["errors"].append("sample_one_thread_unexpected:" + type(e).__name__)
++            ev["sample_state"] = "error"
++        finally:
++            # 若采样过程中途抛异常，补齐里程碑，保证 cost_ns 六个字段都在
++            for mk in ("suspend", "context", "walk", "resume"):
++                if timer.get(mk) is None:
++                    timer.mark(mk)
++        timer.mark("end")
++
++        if one is not None:
++            ev["one"] = one
++            ev["prev"] = one.get("prev")
++            ev["ctx"] = one.get("ctx")
++            ev["frames"] = one.get("frames") or []
++            ev["phase_ms"].update(one.get("phase_ms") or {})
++            ev["suspend_held_ms"] = one.get("suspend_held_ms")
++            ev["n_threads_sampled"] = 1
++            errs = list(one.get("errors") or [])
++            ev["errors"].extend(errs)
++            r = one.get("resume_ret")
++            ev["resume_ret"] = r
++            ev["resume_ret_present"] = one.get("resume_ret") is not None
++            ev["resume_ok"] = one.get("resume_ok")
++
++            if one.get("resume_ok") is True and not errs and not ev["exception"]:
++                # 正面证据：ResumeThread 返回有效值 + 无恢复错误 ⇒ 恢复成功
++                ev["resume_state"] = "verified_ok"
++                ev["sample_state"] = "resume_verified_ok"
++            elif (one.get("resume_ok") is False or errs
++                  or one.get("resume_ret") in (SUSPEND_FAILED, -1)):
++                ev["resume_state"] = "failed"
++                ev["sample_state"] = "resume_failed"
++            elif one.get("resume_ok") is None:
++                ev["resume_state"] = "unknown"
++                ev["sample_state"] = "ok"
++            else:
++                ev["resume_state"] = "unknown"
++                ev["sample_state"] = "ok"
++        elif not ev["exception"]:
++            # 理论上不可达；显式保留为可区分状态，不用 null
++            ev["sample_state"] = "ok"
++            ev["resume_state"] = "unknown"
++            ev["errors"].append("no_result_returned")
++
++        # --- (3) 预算状态（事件级；超限保留且不扩大采样） ---
++        ev["cost_ns"] = cost_from_marks(timer.marks)
++        ev["ns_marks"] = dict(timer.marks)
++        e2e = int(ev["cost_ns"].get("end_to_end_ns", 0))
++        if e2e / 1e6 > budget:
++            ev["budget_exceeded"] = True
++            ev["budget_state"] = "exceeded"
++            ev["errors"].append("budget_exceeded:%.3fms>%.3fms"
++                                % (e2e / 1e6, budget))
++            if ev["sample_state"] not in ("error", "resume_failed", "not_attempted"):
++                ev["sample_state"] = "error"
++        return ev
++
+     # -------- 整体采样（C3/D6 预算双闸） --------
+-    def sample(self, pid):
++    def sample(self, pid, timer=None):
++        """全线程入口。timer 可选：驱动传入 EventTimer 以记录事件级分项里程碑。
++
++        RE-N01：新增可选参数**不改变**原有调用语义（--selftest 的 47 项逐字未改）；
++        驱动的全线程路径只调本方法，**从不**直接调 sample_one_thread（P1）。
++        """
+         self._resume_errors = []
+         t_entry = OPS["now"]()
+         result = {"pid": pid, "t": round(t_entry, 3), "threads": [], "errors": [],
+@@ -512,6 +926,8 @@
+                   "budget_ms": self.budget_ms}
+         # MF-4（P1）：挂起任何线程**之前**做前置校验，避免逐线程「先挂后败再恢复」
+         pf = self.preflight()
++        if timer is not None:
++            timer.mark("preflight")
+         if pf is not None:
+             result["errors"].append("preflight:" + pf)
+             return result
+@@ -520,6 +936,8 @@
+         except E3Fail as e:
+             result["errors"].append(str(e))
+             return result
++        if timer is not None:
++            timer.mark("ownership")
+         if self.max_threads > 0 and len(tids) > self.max_threads:
+             result["truncated_from"] = len(tids)
+             tids = tids[:self.max_threads]
+@@ -556,7 +974,8 @@
+                 result["errors"].append("budget_exceeded")
+                 break
+             try:
+-                result["threads"].append(self.sample_one_thread(tid))
++                result["threads"].append(self.sample_one_thread(
++                    tid, timer=timer if timer is not None else None))
+             except E3Fail as e:
+                 # C5：记录错误码，不重试、不强杀
+                 result["errors"].append(str(e))
+@@ -972,7 +1391,13 @@
+         t("MF8-a 未声明窗口 → 默认拒绝", reflexive_guard_ok() == (False, "windows_not_declared"))
+         t("MF8-b 窗口重叠 → 拒绝", reflexive_guard_ok((0, 10), (5, 15)) == (False, "windows_overlap"))
+         t("MF8-c 窗口不重叠 → 通过", reflexive_guard_ok((0, 10), (10, 20)) == (True, "ok"))
+-        tmpout = Path(tempfile.mkdtemp(prefix="e3_out_"))
++        # RE-N01 / §四：原用 tempfile.mkdtemp() 落在 %TEMP%。DSH 在
++        # workspace-write 策略下把 %TEMP% 映射成 dsh-* 临时根：允许建目录、
++        # 拒绝**在该目录内新建文件** ⇒ 该项假红（PermissionError），与采样器无关。
++        # 现改为被测工作区内的临时子目录，断言性质（写入独立目录成功）不变，
++        # 同时不再越出本轮写域 lead/next_re_20261112/RE-N01/。
++        tmpout = Path(__file__).resolve().parent.parent / "out" / "_selftest_scratch"
++        tmpout.mkdir(parents=True, exist_ok=True)
+         pth, werr = write_e3_output({"pid": 4242, "threads": []}, out_dir=tmpout)
+         t("MF8-d 输出写入独立目录成功", pth is not None and werr is None, str(werr))
+         t("MF8-e 输出目录在写域内（非②读数路径）",
+@@ -1010,6 +1435,195 @@
+         with _cl.redirect_stderr(_b2):
+             rc_self = main_live(["--live", "--pid", str(os.getpid())])
+         t("AUTH-b 自 pid 拒绝并返回 4（防自死锁）", rc_self == 4, "rc=%d" % rc_self)
++
++        # ============================================================
++        # RE-N01 新增项（**单独编号 N01-xx**；上面 47 项逐字未改）
++        # 全部离线 stub，零真机、零 Win32 调用。
++        # ============================================================
++        print("\n-- RE-N01 新增项（N01-xx，最小增量验证） --")
++
++        def _mk_ops2(threads=(30668,), pid=14412, resume_fail=False,
++                     ctx_bound=True, now_ns=None):
++            st = {"t": [0], "suspend_calls": 0, "resume_calls": 0,
++                  "sample_calls": 0, "open_calls": 0, "closed": []}
++            clock = now_ns or (lambda: (st["t"].__setitem__(0, st["t"][0] + 1_000_000),
++                                        st["t"][0])[1])
++            idx = {"i": -1}
++
++            def _tf(_snap, ptr):
++                e = ctypes.cast(ptr, ctypes.POINTER(_ThreadEntry32)).contents
++                e.dwSize = ctypes.sizeof(_ThreadEntry32)
++                idx["i"] = 0
++                if not threads:
++                    return 0
++                e.th32ThreadID = threads[0]
++                e.th32OwnerProcessID = pid
++                return 1
++
++            def _tn(_snap, ptr):
++                e = ctypes.cast(ptr, ctypes.POINTER(_ThreadEntry32)).contents
++                idx["i"] += 1
++                if idx["i"] >= len(threads):
++                    return 0
++                e.dwSize = ctypes.sizeof(_ThreadEntry32)
++                e.th32ThreadID = threads[idx["i"]]
++                return 1
++
++            o = {
++                "now": lambda: st["t"][0] / 1e9,
++                "now_ns": clock,
++                "create_snapshot": lambda a, b: 4242,
++                "thread_first": _tf,
++                "thread_next": _tn,
++                "close_handle": lambda h: 1,
++                "open_process": lambda a, p: 9999,
++                "is_wow64": lambda h: True,
++                "open_thread": lambda a, b, tid: (st.__setitem__("open_calls", st["open_calls"] + 1), 10000 + tid)[1],
++                "close_thread_handle": lambda h: 1,
++                "suspend_thread": lambda h: (st.__setitem__("suspend_calls", st["suspend_calls"] + 1), 0)[1],
++                "resume_thread": lambda h: (st.__setitem__("resume_calls", st["resume_calls"] + 1),
++                                            (0xFFFFFFFF if resume_fail else 0))[1],
++            }
++            if ctx_bound:
++                o["get_context_stub"] = lambda h: {"bits": 32, "ip": 0x401000,
++                                                   "sp": 0x1000, "bp": 0x1100,
++                                                   "eflags": 0x202, "cs": 0x1b}
++                o["walk_stub"] = lambda c, depth: [c["ip"], c["ip"] + 4]
++            return o, st
++
++        # N01-01 新返回字段齐全（B1/B2）
++        o, st = _mk_ops2()
++        OPS.clear(); OPS.update(o)
++        s = StackSampler()
++        one = s.sample_one_thread(30668)
++        need = ("errors", "resume_ok", "resume_ret", "prev",
++                "suspend_held_ms", "phase_ms")
++        t("N01-01 sample_one_thread 六新字段齐全（含 errors 非 null）",
++          all(k in one for k in need) and isinstance(one["errors"], list)
++          and one["resume_ok"] is True and one["resume_ret"] == 0,
++          str({k: one.get(k) for k in need}))
++
++        # N01-02 preflight_target 一次完成位宽+preflight+归属，且不挂起
++        o, st = _mk_ops2()
++        OPS.clear(); OPS.update(o)
++        s = StackSampler()
++        pf = s.preflight_target(14412, 30668)
++        t("N01-02 preflight_target ok：位宽+preflight+TID∈PID，零挂起",
++          pf["ok"] is True and pf["is32"] is True
++          and pf["ownership"]["tid_belongs_to_pid"] is True
++          and pf["preflight"]["ok"] is True and st["suspend_calls"] == 0,
++          "reason=%s susp=%d" % (pf["reason"], st["suspend_calls"]))
++
++        # N01-03 TID 不属于 PID ⇒ 拒绝（Toolhelp 快照）
++        o, st = _mk_ops2(threads=(30668, 30669))
++        OPS.clear(); OPS.update(o)
++        s = StackSampler()
++        pf = s.preflight_target(14412, 77777)
++        t("N01-03 TID∉PID 被拒且写明原因",
++          pf["ok"] is False
++          and pf["ownership"]["tid_belongs_to_pid"] is False
++          and "tid_not_in_pid" in pf["reason"]
++          and st["suspend_calls"] == 0, pf["reason"])
++
++        # N01-04 恢复失败必须进入事件（不是 null、不是空）
++        o, st = _mk_ops2(resume_fail=True)
++        OPS.clear(); OPS.update(o)
++        s = StackSampler()
++        ev = s.sample_single(30668, 14412)
++        t("N01-04 恢复失败 → sample_state=resume_failed，errors 非空",
++          ev["sample_state"] == "resume_failed"
++          and ev["resume_state"] == "failed"
++          and len(ev["errors"]) > 0 and ev["sample_state"] is not None,
++          "state=%s errors=%s" % (ev["sample_state"], ev["errors"]))
++
++        # N01-05 preflight 失败 ⇒ 零线程挂起 + 事件写明原因
++        o, st = _mk_ops2(ctx_bound=False)
++        OPS.clear(); OPS.update(o)
++        s = StackSampler()
++        ev = s.sample_single(30668, 14412)
++        t("N01-05 preflight 失败：零挂起 + not_attempted + 原因",
++          st["suspend_calls"] == 0
++          and ev["sample_state"] == "not_attempted"
++          and "context_not_bound" in ev["preflight"]["reason"],
++          "susp=%d reason=%s" % (st["suspend_calls"], ev["preflight"]["reason"]))
++
++        # N01-06 sample_single 绝不调用全线程 sample()（互斥）
++        o, st = _mk_ops2()
++        OPS.clear(); OPS.update(o)
++        s = StackSampler()
++        calls = {"sample": 0}
++        orig_sample = StackSampler.sample
++
++        def _spy_sample(self, pid):
++            calls["sample"] += 1
++            return orig_sample(self, pid)
++
++        StackSampler.sample = _spy_sample
++        try:
++            ev = s.sample_single(30668, 14412)
++        finally:
++            StackSampler.sample = orig_sample
++        t("N01-06 sample_single 全线程 sample() 调用数==0",
++          calls["sample"] == 0 and ev["sample_called"] is False,
++          "calls=%d" % calls["sample"])
++
++        # N01-07 干净单线程 ⇒ 恢复成功正面证据
++        o, st = _mk_ops2()
++        OPS.clear(); OPS.update(o)
++        s = StackSampler()
++        ev = s.sample_single(30668, 14412)
++        t("N01-07 干净采样 ⇒ resume_verified_ok（正面证据，非仅 errors=[]）",
++          ev["sample_state"] == "resume_verified_ok"
++          and ev["resume_state"] == "verified_ok"
++          and ev["resume_ret_present"] is True
++          and ev["errors"] == [] and ev["n_threads_sampled"] == 1,
++          "state=%s resume=%s" % (ev["sample_state"], ev["resume_state"]))
++
++        # N01-08 cost_from_marks：六字段齐全 + 端到端 ≥ 分项之和
++        fake = EventTimer(now_ns=lambda: 0)
++        marks = {"candidate": 0, "verdict": 100, "preflight": 200,
++                 "ownership": 300, "suspend": 400, "context": 600,
++                 "walk": 900, "resume": 1000, "end": 1100}
++        fake.marks = dict(marks)
++        c = cost_from_marks(fake.marks, t_candidate_ns=marks["candidate"])
++        six = ("detect_ns", "context_ns", "walk_ns", "resume_ns",
++               "end_to_end_ns", "suspend_held_ns")
++        t("N01-08 六计时字段存在且 end_to_end ≥ 在窗口内分项之和",
++          all(k in c for k in six)
++          and c["end_to_end_ns"] >= (c["preflight_ns"] + c["ownership_ns"]
++                                    + c["open_ns"] + c["context_ns"]
++                                    + c["walk_ns"] + c["resume_ns"]
++                                    + c["overhead_ns"])
++          and c["suspend_held_ns"] <= c["end_to_end_ns"],
++          "e2e=%d susp=%d" % (c["end_to_end_ns"], c["suspend_held_ns"]))
++
++        # N01-09 异常被收进事件，不穿透监测循环（B3）
++        o, st = _mk_ops2()
++        OPS.clear(); OPS.update(o)
++        OPS["open_thread"] = lambda a, b, tid: None
++        s = StackSampler()
++        ev = s.sample_single(30668, 14412)
++        t("N01-09 E3Fail 被事件吸收，不逃逸（修 B3）",
++          ev["sample_state"] == "error" and ev["exception"].startswith("E3Fail")
++          and len(ev["errors"]) > 0, ev["exception"])
++
++        # N01-10 四态 + error 两两不同、无 None/空串
++        states = ("not_attempted", "ok", "resume_verified_ok", "resume_failed",
++                  "error")
++        t("N01-10 五取值两两不同且均非 null/空（四态可区分）",
++          len(set(states)) == 5 and all(x for x in states)
++          and all(x in SAMPLE_STATES for x in states),
++          str(states))
++
++        # N01-11 单线程入口不依赖外部私有属性写入（B5）
++        o, st = _mk_ops2()
++        OPS.clear(); OPS.update(o)
++        s = StackSampler()
++        # 故意不写 s._target_is32 —— 原件 sample_one_thread 会 wow64_query_not_done
++        ev = s.sample_single(30668, 14412)
++        t("N01-11 不写私有 _target_is32 也能完整单线程采样",
++          ev["sample_state"] == "resume_verified_ok" and s._target_is32 is True,
++          "is32=%s state=%s" % (s._target_is32, ev["sample_state"]))
+ 
+     finally:
+         OPS.clear()
+

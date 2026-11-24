@@ -1,0 +1,56 @@
+# 005F5E80 (MissionClass::slot5) ④ 终裁
+PE entry point = 0x007CD80F
+## 1) 函数体 005F5E80 (size=125) 全反汇编，标注间接 call
+  005F5E80 8b 44 24 08            mov eax, dword ptr [esp + 8]
+  005F5E84 56                     push esi
+  005F5E85 8b 74 24 08            mov esi, dword ptr [esp + 8]
+  005F5E89 50                     push eax
+  005F5E8A 56                     push esi
+  005F5E8B e8 f0 a4 e1 ff         call 0x410380 [DIRECT 0x410380]
+  005F5E90 85 c0                  test eax, eax
+  005F5E92 7c 65                  jl 0x5f5ef9
+  005F5E94 8d 4e 30               lea ecx, [esi + 0x30]
+  005F5E97 51                     push ecx
+  005F5E98 68 10 c1 b0 00         push 0xb0c110
+  005F5E9D e8 9e 93 0d 00         call 0x6cf240 [DIRECT 0x6CF240]
+  005F5EA2 8d 56 34               lea edx, [esi + 0x34]
+  005F5EA5 52                     push edx
+  005F5EA6 68 10 c1 b0 00         push 0xb0c110
+  005F5EAB e8 90 93 0d 00         call 0x6cf240 [DIRECT 0x6CF240]
+  005F5EB0 8d 46 38               lea eax, [esi + 0x38]
+  005F5EB3 50                     push eax
+  005F5EB4 68 10 c1 b0 00         push 0xb0c110
+  005F5EB9 e8 82 93 0d 00         call 0x6cf240 [DIRECT 0x6CF240]
+  005F5EBE 8d 4e 18               lea ecx, [esi + 0x18]
+  005F5EC1 51                     push ecx
+  005F5EC2 68 10 c1 b0 00         push 0xb0c110
+  005F5EC7 e8 74 93 0d 00         call 0x6cf240 [DIRECT 0x6CF240]
+  005F5ECC 8d 96 88 00 00 00      lea edx, [esi + 0x88]
+  005F5ED2 52                     push edx
+  005F5ED3 68 10 c1 b0 00         push 0xb0c110
+  005F5ED8 e8 63 93 0d 00         call 0x6cf240 [DIRECT 0x6CF240]
+  005F5EDD 8d 4e 3c               lea ecx, [esi + 0x3c]
+  005F5EE0 e8 fb fc e0 ff         call 0x405be0 [DIRECT 0x405BE0]
+  005F5EE5 8d 4e 50               lea ecx, [esi + 0x50]
+  005F5EE8 e8 f3 fc e0 ff         call 0x405be0 [DIRECT 0x405BE0]
+  005F5EED c7 86 a8 00 00 00 00 00 00 00 mov dword ptr [esi + 0xa8], 0
+  005F5EF7 33 c0                  xor eax, eax
+  005F5EF9 5e                     pop esi
+  005F5EFA c2 08 00               ret 8
+body 内间接 call（虚表派发）数 = 0
+## 2) 正向可达性（从 PE entry 沿 E8/E9 direct call BFS）
+12 caller 所属函数起点: ['00425270', '0043676C', '0046AE19', '00543780', '005FD6A0', '0062D5E0', '0062FDA6', '0065AB80', '006B4DD0', '0071CB90', '0074A934', '0075F5C0']
+BFS 访问函数起点数 = 7716
+  caller-func 00425270 reachable from EP = True
+  caller-func 0043676C reachable from EP = True
+  caller-func 0046AE19 reachable from EP = True
+  caller-func 00543780 reachable from EP = False
+  caller-func 005FD6A0 reachable from EP = False
+  caller-func 0062D5E0 reachable from EP = False
+  caller-func 0062FDA6 reachable from EP = False
+  caller-func 0065AB80 reachable from EP = True
+  caller-func 006B4DD0 reachable from EP = False
+  caller-func 0071CB90 reachable from EP = False
+  caller-func 0074A934 reachable from EP = False
+  caller-func 0075F5C0 reachable from EP = True
+12 caller 中从 PE entry 可达数 = 5 / 12

@@ -1,0 +1,1834 @@
+====================================================================================================
+gamemd.exe — 100% 分块覆盖重验: 全 .text「call dword ptr [reg+8]」普查与 slot2 候选 (只读)
+文件: D:\Project\ra2-campaign-forge\ra2bench\gamemd.exe
+sha256: 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  size: 4825360 B
+====================================================================================================
+
+[T1 覆盖率复现]
+  .text = [0x401000..0x7E038D] (4060045 B)
+  单次 disasm      : 155215 条, 末条 0x46F59D, 覆盖 452000 B (11.13% .text 字节) — 陷阱复现(155215)
+  分块 0x10000 独立块: 1150117 条 (× 62 块) — 复现 ask 给数 1150117
+  分块 seg-extend  : 1392527 条, 65 个自然停点, 覆盖至 0x7E038D (主普查流, 无重复计数)
+
+[T4 直接调用复核]
+  → 0x0054A4F0: 指令级 A流 [] / B流 []; 字节级 E8/E9 []; 全镜像 dword 位点 ['0x7ecc04']; slot2 单元引用 []
+  → 0x0054A630: 指令级 A流 [] / B流 []; 字节级 E8/E9 []; 全镜像 dword 位点 ['0x7ecbe4']; slot2 单元引用 []
+
+[字节级值闸门]
+  G1a: 全镜像值==0x54A4F0 的 dword 仅 1 处: 0x7ECC04 (=vtable 0x7ECBFC slot2) → 无第二虚表/无回调表/无立即数
+  G1a: 全镜像值==0x54A630 的 dword 仅 1 处: 0x7ECBE4 (=vtable 0x7ECBDC slot2)
+  G1b: 无任何指令 call/jmp [slot2单元] 或从其装载(FF15/FF25/A1/8B/89/SIB-abs 全编码 = 0) → 函数指针值无法运行期复制到其它单元
+  G3 存储指令锚点解码确认: mov dword ptr [0xaa1078], 0x7ecbdc | mov dword ptr [0xaa1078], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc
+  G2: 值 0x7ECBFC×3 + 0x7ECBDC×1 共 4 处全落在 c7 存储立即数内: 0x543EC4 ← imm of mov dword ptr [0xaa1078], 0x7ecbfc; 0x54A7B8 ← imm of mov dword ptr [esi], 0x7ecbfc; 0x54A808 ← imm of mov dword ptr [esi], 0x7ecbfc; 0x543E93 ← imm of mov dword ptr [0xaa1078], 0x7ecbdc → 无 mov reg,vtable值,无 .rdata/.data 值单元 → 寄存器持有 0x7ECBFC/0x7ECBDC 的唯一途径 = 装载 [0xAA1078]
+  G3: vptr 写入点(c7 /0)全镜像重扫一致 — 0x7ECBDC: [0x543E8D]→[0xAA1078](动态初始化器 0x543E70 体内); 0x7ECBFC: [0x543EBE]→[0xAA1078](atexit 析构器 0x543EB0 体内), [0x54A7B6]/[0x54A806]→[esi](deleting dtor 体内)
+  G3 归属: 0x543E8D ∈ 动态初始化器 0x543E70 体内; 0x543EBE ∈ atexit 析构器 0x543EB0 体内 (ask 前提的初始化/析构归属复核)
+  G3 支撑: 两 deleting dtor (0x54A7B0/0x54A800) 无直接 call/jmp 进入 → [esi] 写只作用于经 slot0 虚派发到达的 this, 而 slot0 派发要求 reg 已持这两个 vptr 值 → 归纳: 唯一实例 0xAA1078
+  G4: 全镜像 imm32/disp32 引用 0xAA1078 恰 4 处(立即数字节地址): 0x543E8F(init 存储)/0x543EC0(atexit 存储)/0x546060(vptr 装载 @0x54605F)/0x546065(this 装载 @0x546064)
+  G4-load: 全编码扫「load r32 ← [0xAA1078]」恰 1 处 = 0x54605F (mov eax, dword ptr [0xAA1078]); 「store reg → [0xAA1078]」= 0 (vptr 单元只被 2 条 c7 立即数写) — 字节级,与解码流无关
+  G5: .rdata/.data 无 dword==0xAA1078 → 不存在指向该全局对象的指针变量(指针值不逃逸前提)
+  G4b: 基址立即数装载中仅 0x546064 恰为 0xAA1078(this 装载); 其余装载值均 ≠ 0xAA1078 → 无别名合成路径读取 vptr 单元
+
+[T2 普查]
+  字节级(解码无关): call [reg+8] 1715, jmp [reg+8] 1, 异形(变址) 2
+  主流(seg-extend): call+jmp [reg+8] 1714 (call 1713, jmp 1), 异形 2
+  对照流(0x10000块): 1311 (call 1310)
+  对账: 字节级命中总数 1716, 其中两流均非 site 0; 主流∉字节级 0; A/B 流差集 403
+  底源分布(回溯 10 条): {'thiscall_this_of_enclosing_fn': 124, 'mem_of': 98, 'clobbered_by_call': 10, 'vptr_of_imm': 420, 'undef_in_window': 465, 'lea_other': 16, 'mov_other': 23, 'stack_src': 542, 'pop': 13, 'zero': 2, 'imm': 1}
+  寄存器分布: {'eax': 344, 'edx': 1029, 'ecx': 315, 'ebp': 6, 'ebx': 8, 'esi': 5, 'edi': 7}
+
+[T5 唯一性判定 — 污点传播]
+  GROW = 0x545150..0x546D90; 唯一 vptr 装载 0x54605F; 消费者 = [('0x546069', 'dword ptr [eax + 8]')]; 逃逸 = []
+  GROW 直接调用者: ['0x4ad048', '0x59a1e9', '0x5be647']
+
+[候选点(可能指向 0x54A4F0/0x54A630)]
+  ★ 0x546069  call dword ptr [eax + 8]
+      this 来源 : ecx = 0xAA1078 (0x546064 mov ecx, 0xaa1078 — 全镜像唯一 this 装载)
+      vptr 来源 : eax = [0xAA1078] (0x54605F mov eax, dword ptr [0xaa1078] — 全镜像唯一)
+      派发去向  : 常态 vptr=0x7ECBDC → 0x54A630; atexit 析构后 vptr=0x7ECBFC → 0x54A4F0
+
+[0x546069 锚定上下文]
+  00546030 mov eax, dword ptr [0xaa1080]
+  00546035 mov ecx, dword ptr [0xaa1088]
+  0054603B add esp, 4
+  0054603E cmp ecx, eax
+  00546040 jl 0x546070
+  00546042 mov cl, byte ptr [0xaa1085]
+  00546048 test cl, cl
+  0054604A jne 0x546050
+  0054604C test eax, eax
+  0054604E jne 0x54608c
+  00546050 mov ecx, dword ptr [0xaa108c]
+  00546056 test ecx, ecx
+  00546058 jle 0x54608c
+  0054605A add eax, ecx
+  0054605C push 0
+  0054605E push eax
+  0054605F mov eax, dword ptr [0xaa1078]
+  00546064 mov ecx, 0xaa1078
+  00546069 call dword ptr [eax + 8]
+  0054606C test al, al
+  0054606E je 0x54608c
+  00546070 mov ecx, dword ptr [0xaa1088]
+  00546076 mov edx, dword ptr [esp + 0x34]
+  0054607A mov eax, ecx
+  0054607C inc ecx
+  0054607D mov dword ptr [0xaa1088], ecx
+  00546083 mov ecx, dword ptr [0xaa107c]
+  00546089 mov dword ptr [ecx + eax*4], edx
+  0054608C mov eax, dword ptr [esp + 0x30]
+  00546090 jmp 0x54609c
+  00546092 mov ecx, dword ptr [esp + 0x28]
+  00546096 mov eax, dword ptr [esp + 0x2c]
+  0054609A add eax, ecx
+
+[全部 1714 个主流 slot2 点清单]
+  0x40198c call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x402152 call edx  mem_of                           EXCLUDED | mov edx, dword ptr [ebx + 0xd4]
+  0x402179 call eax  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0xd4]
+  0x4025a2 call edx  mem_of                           EXCLUDED | mov edx, dword ptr [esi + 0xd4]
+  0x409ffc call ecx  clobbered_by_call                EXCLUDED | call 0xc0c5a07e
+  0x40a247 call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x87e8a0]
+  0x40a323 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x64]
+  0x40a4a0 call ecx  undef_in_window                  EXCLUDED | 
+  0x40d22c call ecx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x87f7b8]
+  0x410929 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8e968]
+  0x4118f9 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x8c]
+  0x411ad8 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x8c]
+  0x411d6e call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x8c]
+  0x411ec0 call edx  lea_other                        EXCLUDED | lea edi, [esi + 0x8c]
+  0x412365 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x8c]
+  0x412910 call edx  undef_in_window                  EXCLUDED | 
+  0x412939 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x889e08]
+  0x412a11 call edx  undef_in_window                  EXCLUDED | 
+  0x41356f call edx  undef_in_window                  EXCLUDED | 
+  0x413734 call ebp  mov_other                        EXCLUDED | mov ebp, dword ptr [esi - 8]
+  0x41381e call edx  undef_in_window                  EXCLUDED | 
+  0x413845 call edx  lea_other                        EXCLUDED | lea esi, [ebp + 0x2580]
+  0x413a0a call edx  undef_in_window                  EXCLUDED | 
+  0x413a98 call edx  undef_in_window                  EXCLUDED | 
+  0x413dd0 call edx  lea_other                        EXCLUDED | lea edi, [esi + 0x674]
+  0x413e11 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x413e69 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8e390]
+  0x416b9e call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x674]
+  0x416c01 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x416c10 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x41b528 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x41b52e call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x41bd13 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x41bdac call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x41c25d call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x41c2b0 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x41c953 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8b218]
+  0x41d359 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x889fb8]
+  0x41d3d9 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x889fb8]
+  0x41e452 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8b200]
+  0x420230 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x88a080]
+  0x4209fc call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x88a0f0]
+  0x420a52 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f720]
+  0x420b5c call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x88a0f0]
+  0x420baf call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f720]
+  0x42208b call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8e9a8]
+  0x422896 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8e9a8]
+  0x4268fb call edx  undef_in_window                  EXCLUDED | 
+  0x4277b0 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b4150]
+  0x427803 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x42cabf call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x42ce3b call ebx  mov_other                        EXCLUDED | mov ebx, dword ptr [esi - 8]
+  0x42cf5e call edx  undef_in_window                  EXCLUDED | 
+  0x42d129 call edx  undef_in_window                  EXCLUDED | 
+  0x42d858 call edx  undef_in_window                  EXCLUDED | 
+  0x42ed06 call edx  undef_in_window                  EXCLUDED | 
+  0x42ef02 call edx  undef_in_window                  EXCLUDED | 
+  0x42efa2 call edx  undef_in_window                  EXCLUDED | 
+  0x42f021 call edx  undef_in_window                  EXCLUDED | 
+  0x431f5c call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x432dec call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x433323 call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x54]
+  0x435900 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b4190]
+  0x43732b call edx  undef_in_window                  EXCLUDED | 
+  0x4378c1 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x94]
+  0x437de4 call edx  undef_in_window                  EXCLUDED | 
+  0x437fa3 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 8]
+  0x437fc9 call ecx  pop                              EXCLUDED | pop ecx
+  0x43864a call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x89c668]
+  0x438f37 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x89c668]
+  0x438fb4 call edx  undef_in_window                  EXCLUDED | 
+  0x439058 call edx  undef_in_window                  EXCLUDED | 
+  0x4390a9 call edx  undef_in_window                  EXCLUDED | 
+  0x43912a call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x439142 call edx  undef_in_window                  EXCLUDED | 
+  0x4392ca call edx  undef_in_window                  EXCLUDED | 
+  0x439373 call edx  undef_in_window                  EXCLUDED | 
+  0x43a3c5 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f5d8]
+  0x43a41b call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x43a73b call edx  undef_in_window                  EXCLUDED | 
+  0x43a8a5 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f5d8]
+  0x43a8f8 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x43a951 call edx  undef_in_window                  EXCLUDED | 
+  0x43bb08 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8eb40]
+  0x43bb62 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f640]
+  0x43bbb5 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f5b8]
+  0x43c048 call eax  lea_other                        EXCLUDED | lea ebp, [esi + 0x66c]
+  0x43c069 call eax  lea_other                        EXCLUDED | lea edi, [esi + 0x684]
+  0x441210 call edx  undef_in_window                  EXCLUDED | 
+  0x441267 call edx  undef_in_window                  EXCLUDED | 
+  0x4412be call edx  undef_in_window                  EXCLUDED | 
+  0x44131f call edx  undef_in_window                  EXCLUDED | 
+  0x441376 call edx  undef_in_window                  EXCLUDED | 
+  0x4413d6 call edx  undef_in_window                  EXCLUDED | 
+  0x44142d call edx  undef_in_window                  EXCLUDED | 
+  0x441484 call edx  undef_in_window                  EXCLUDED | 
+  0x4414db call edx  undef_in_window                  EXCLUDED | 
+  0x441532 call edx  undef_in_window                  EXCLUDED | 
+  0x441581 call edx  undef_in_window                  EXCLUDED | 
+  0x441e11 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x4c]
+  0x442334 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x442622 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x442d66 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b41e0]
+  0x4486af call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x48]
+  0x448eaf call edx  undef_in_window                  EXCLUDED | 
+  0x448f06 call edx  undef_in_window                  EXCLUDED | 
+  0x448f67 call edx  undef_in_window                  EXCLUDED | 
+  0x448fbe call edx  undef_in_window                  EXCLUDED | 
+  0x44901e call edx  undef_in_window                  EXCLUDED | 
+  0x449075 call edx  undef_in_window                  EXCLUDED | 
+  0x4490cc call edx  undef_in_window                  EXCLUDED | 
+  0x449123 call edx  undef_in_window                  EXCLUDED | 
+  0x44917a call edx  undef_in_window                  EXCLUDED | 
+  0x4491bf call edx  undef_in_window                  EXCLUDED | 
+  0x4493dd call edx  undef_in_window                  EXCLUDED | 
+  0x449fbb call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x3c]
+  0x44c7d5 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x44c816 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x44d539 call ecx  pop                              EXCLUDED | pop edi
+  0x44dff1 call ecx  undef_in_window                  EXCLUDED | 
+  0x44e0eb call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x44e0fd call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x44e12e call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x44e19c call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x44e1aa call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x44e1d7 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x24]
+  0x452882 call edx  undef_in_window                  EXCLUDED | 
+  0x454029 call edx  undef_in_window                  EXCLUDED | 
+  0x4540d8 call edx  undef_in_window                  EXCLUDED | 
+  0x4561aa call edx  undef_in_window                  EXCLUDED | 
+  0x4564d8 call edx  undef_in_window                  EXCLUDED | 
+  0x457b84 call edx  undef_in_window                  EXCLUDED | 
+  0x457bd5 call edx  undef_in_window                  EXCLUDED | 
+  0x457c1b call edx  zero                             EXCLUDED | xor eax, eax
+  0x457c4d call edx  undef_in_window                  EXCLUDED | 
+  0x4581c6 call eax  undef_in_window                  EXCLUDED | 
+  0x458722 call eax  lea_other                        EXCLUDED | lea edi, [esi + 0x684]
+  0x458b91 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x34]
+  0x45a169 call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x45aecc call ecx  undef_in_window                  EXCLUDED | 
+  0x45aeea call edx  pop                              EXCLUDED | pop esi
+  0x45af06 call ecx  pop                              EXCLUDED | pop esi
+  0x45af4c call ecx  undef_in_window                  EXCLUDED | 
+  0x45af6a call edx  pop                              EXCLUDED | pop esi
+  0x45af86 call ecx  pop                              EXCLUDED | pop esi
+  0x45e321 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83c68]
+  0x464964 call edx  mem_of                           EXCLUDED | mov edx, dword ptr [ebp + 0x1784]
+  0x46518c call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x46649b call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8ed40]
+  0x467f7a call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f5b8]
+  0x46af17 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f5b8]
+  0x46b2b7 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x89de18]
+  0x46bd65 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83c80]
+  0x46bdb8 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x46cbcc call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83cf8]
+  0x46cf18 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83cf8]
+  0x471868 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x89e0f0]
+  0x47191f call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x89e0f0]
+  0x471e18 call edx  undef_in_window                  EXCLUDED | 
+  0x472867 call edx  undef_in_window                  EXCLUDED | 
+  0x473db5 call eax  undef_in_window                  EXCLUDED | 
+  0x475e11 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 8]
+  0x47611e call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 8]
+  0x4765cb call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x47687f call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x4768f8 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x476c4e call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x477194 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x4771f2 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x477250 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x4772ae call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x47730c call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x47736a call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x477ee8 call edx  undef_in_window                  EXCLUDED | 
+  0x47af42 call edx  undef_in_window                  EXCLUDED | 
+  0x47de0c call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f8bc]
+  0x481733 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x483adb call edx  undef_in_window                  EXCLUDED | 
+  0x48529e call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x880944]
+  0x486b0f call edx  zero                             EXCLUDED | xor edi, edi
+  0x488885 call edx  undef_in_window                  EXCLUDED | 
+  0x48952a call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x38]
+  0x48999a call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x38]
+  0x489b0f call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x38]
+  0x48d0a7 call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb45b5c]
+  0x48ebb7 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x89ecf8]
+  0x494d7c call eax  undef_in_window                  EXCLUDED | 
+  0x49be03 call edx  undef_in_window                  EXCLUDED | 
+  0x49c018 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x68]
+  0x49c807 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xd0]
+  0x49df5b call edx  undef_in_window                  EXCLUDED | 
+  0x49e03e call edx  undef_in_window                  EXCLUDED | 
+  0x49e0de call edx  undef_in_window                  EXCLUDED | 
+  0x49e172 call edx  undef_in_window                  EXCLUDED | 
+  0x49e255 call edx  undef_in_window                  EXCLUDED | 
+  0x49e2f5 call edx  undef_in_window                  EXCLUDED | 
+  0x49e766 call eax  stack_src                        EXCLUDED | mov edi, dword ptr [esp + 0x10]
+  0x49fa1a call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x49fa8a call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x49fafa call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x49fc33 call edx  undef_in_window                  EXCLUDED | 
+  0x49fca0 call edx  pop                              EXCLUDED | pop esi
+  0x4a0050 call edx  mov_other                        EXCLUDED | mov eax, dword ptr [ecx + esi*8]
+  0x4a046f call ecx  mov_other                        EXCLUDED | mov eax, dword ptr [eax + edi*8]
+  0x4a0574 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [edi + 0x18]
+  0x4a06a9 call edx  undef_in_window                  EXCLUDED | 
+  0x4a08e0 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x18]
+  0x4a09f0 call edx  mov_other                        EXCLUDED | mov eax, dword ptr [ecx + esi*4]
+  0x4a0dcf call ecx  mov_other                        EXCLUDED | mov eax, dword ptr [eax + edi*4]
+  0x4a28f1 call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 8]
+  0x4a2928 call eax  mem_of                           EXCLUDED | mov esi, dword ptr [esi + 8]
+  0x4a2a66 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 4]
+  0x4a2a81 call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 4]
+  0x4a2b47 call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 4]
+  0x4a3192 call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 8]
+  0x4a31c9 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 8]
+  0x4a337d call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x74]
+  0x4a3391 call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x70]
+  0x4a40cf call ecx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8a0094]
+  0x4a4259 call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8a0094]
+  0x4a4566 call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8a0094]
+  0x4a4895 call edx  undef_in_window                  EXCLUDED | 
+  0x4a71f6 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f698]
+  0x4a726f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f698]
+  0x4a7948 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f698]
+  0x4a79a8 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f698]
+  0x4a7a0e call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f698]
+  0x4a7a9e call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8a0208]
+  0x4a8008 call edx  undef_in_window                  EXCLUDED | 
+  0x4a83a0 call edx  stack_src                        EXCLUDED | mov ebx, dword ptr [esp + 0x14]
+  0x4aa8ed call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x48]
+  0x4ad303 call edx  undef_in_window                  EXCLUDED | 
+  0x4af601 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x68]
+  0x4af685 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x4af711 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x4af7db call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x68]
+  0x4af886 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4af8b8 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4af912 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4b4d21 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x68]
+  0x4b4d59 call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4b4d69 call ecx  clobbered_by_call                EXCLUDED | call dword ptr [ecx + 8]
+  0x4b5b21 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x2c]
+  0x4b5cdd call ecx  mem_of                           EXCLUDED | mov ebp, dword ptr [edi + 8]
+  0x4b5d9a call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4b5e92 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4b629b call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x2c]
+  0x4b6344 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x4b6377 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x4b63e2 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4b6555 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x4b65e1 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x4b6711 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x2c]
+  0x4b710d call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x78]
+  0x4b71f9 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x70]
+  0x4b7b55 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x90]
+  0x4b7bd4 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xcc]
+  0x4b7d08 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xb0]
+  0x4b8030 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xb0]
+  0x4b8290 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x88]
+  0x4b8450 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x88]
+  0x4ba6e1 call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8a0dcc]
+  0x4ba703 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x1c]
+  0x4c1a40 call ecx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8a0dfc]
+  0x4c1a55 call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8a0df8]
+  0x4c1a6a call ecx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8a0df4]
+  0x4c1a7f call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8a0e00]
+  0x4c1af1 call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8a0dcc]
+  0x4c1b1b call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x1c]
+  0x4c2ae0 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8a0e88]
+  0x4c3e25 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4c41af call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8a3770]
+  0x4c46e3 call eax  clobbered_by_call                EXCLUDED | jmp 0x4c4721
+  0x4c46ff call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x4c471e call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x4c5330 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8a3870]
+  0x4c996d call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83e30]
+  0x4c99dc call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f720]
+  0x4c9d1b call edx  undef_in_window                  EXCLUDED | 
+  0x4ca349 call edx  undef_in_window                  EXCLUDED | 
+  0x4cce0f call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x20]
+  0x4ccfb6 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x24]
+  0x4cde1a call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4cde34 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4cdeb8 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4ce2e2 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4ce829 call edx  stack_src                        EXCLUDED | mov ebp, dword ptr [esp + 0x10]
+  0x4cebf1 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4cef9b call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4cf5fd call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x4cf92a call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4d0069 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x10]
+  0x4d00ab call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x28]
+  0x4d0292 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 8]
+  0x4d02a4 call edx  clobbered_by_call                EXCLUDED | call dword ptr [ecx + 8]
+  0x4d036c call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x4d037d call ecx  clobbered_by_call                EXCLUDED | call dword ptr [edx + 8]
+  0x4d0439 call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4d04bc call ecx  undef_in_window                  EXCLUDED | 
+  0x4d04da call edx  pop                              EXCLUDED | pop esi
+  0x4d04f6 call ecx  pop                              EXCLUDED | pop esi
+  0x4d0956 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8b3d10]
+  0x4d0b6f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b3d10]
+  0x4d0dab call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b3d10]
+  0x4d101a call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8b3d10]
+  0x4d113e call edx  undef_in_window                  EXCLUDED | 
+  0x4d12cb call edx  undef_in_window                  EXCLUDED | 
+  0x4d14ab call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b3d10]
+  0x4d14fc call edx  undef_in_window                  EXCLUDED | 
+  0x4d2605 call edx  undef_in_window                  EXCLUDED | 
+  0x4d34bb call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b3dc0]
+  0x4d3515 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f5d8]
+  0x4d3690 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x674]
+  0x4d5a3f call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x4d5ab0 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x4d68d9 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x4d6a88 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x4d8042 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa83e00]
+  0x4d8350 call ecx  undef_in_window                  EXCLUDED | 
+  0x4d83d7 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x4d8454 call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x28]
+  0x4d8549 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x4d9356 call edx  undef_in_window                  EXCLUDED | 
+  0x4d93e0 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x4d966d call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x30]
+  0x4da0c5 call edx  undef_in_window                  EXCLUDED | 
+  0x4da144 call edx  undef_in_window                  EXCLUDED | 
+  0x4daeb9 call ecx  undef_in_window                  EXCLUDED | 
+  0x4daefd call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4db3d8 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x674]
+  0x4db477 call edx  undef_in_window                  EXCLUDED | 
+  0x4db525 call edx  undef_in_window                  EXCLUDED | 
+  0x4db783 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4db79f call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4db7d1 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4db975 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4db988 call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x10]
+  0x4db996 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 8]
+  0x4db9a0 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4dd76e call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x28]
+  0x4df5cc call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x38]
+  0x4df9d5 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4dfa20 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4dfa2e call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x4e02c9 call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4e0c68 call edx  undef_in_window                  EXCLUDED | 
+  0x4e14c5 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4e14d0 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4e14d9 call eax  clobbered_by_call                EXCLUDED | call dword ptr [edx + 8]
+  0x4f20f1 call edx  undef_in_window                  EXCLUDED | 
+  0x4f21f1 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x4f22d9 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 8]
+  0x4f245c call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x4f24dc call edx  mov_other                        EXCLUDED | mov ecx, dword ptr [eax + ecx*4]
+  0x4f24eb call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x28]
+  0x4f2588 call edx  mov_other                        EXCLUDED | mov ecx, dword ptr [edx + eax*4]
+  0x4f2597 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x34]
+  0x4f26b9 call edx  undef_in_window                  EXCLUDED | 
+  0x4f271e call eax  mov_other                        EXCLUDED | mov ecx, dword ptr [ecx + edx*4]
+  0x4f272d call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 4]
+  0x4f27bd call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 4]
+  0x4f3cdb call edx  undef_in_window                  EXCLUDED | 
+  0x4f3f34 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x4f4b7b call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x4f5e99 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f670]
+  0x4f5eec call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f640]
+  0x4f5f3f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f5f0]
+  0x4f5f92 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f618]
+  0x4f5fe5 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f720]
+  0x4f606c call edx  undef_in_window                  EXCLUDED | 
+  0x4f60bc call edx  undef_in_window                  EXCLUDED | 
+  0x4f6112 call edx  undef_in_window                  EXCLUDED | 
+  0x4f6167 call edx  undef_in_window                  EXCLUDED | 
+  0x4f61d0 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa80228]
+  0x4f6269 call edx  undef_in_window                  EXCLUDED | 
+  0x4f650a call edx  undef_in_window                  EXCLUDED | 
+  0x4f652b call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x4f71f2 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x57e0]
+  0x4f725a call edx  mov_other                        EXCLUDED | mov eax, dword ptr [ecx + edi*4]
+  0x4f726d call ecx  mov_other                        EXCLUDED | mov eax, dword ptr [eax + edi*4]
+  0x4f86c0 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x4fc5ec call edx  undef_in_window                  EXCLUDED | 
+  0x4fe1bd call edx  undef_in_window                  EXCLUDED | 
+  0x4fe344 call edx  undef_in_window                  EXCLUDED | 
+  0x4fe808 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x30]
+  0x4fe8e6 call ebx  undef_in_window                  EXCLUDED | 
+  0x501817 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x501876 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x501897 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x5018a1 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x5018ab call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x50197a call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x5019d5 call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x5019f6 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x501a00 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x501a0a call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x503036 call edx  mem_of                           EXCLUDED | mov edx, dword ptr [esi + 0x5700]
+  0x503129 call edx  mov_other                        EXCLUDED | mov eax, dword ptr [ecx + edi*4]
+  0x50313c call ecx  mov_other                        EXCLUDED | mov eax, dword ptr [eax + edi*4]
+  0x5033e8 call edx  undef_in_window                  EXCLUDED | 
+  0x50347c call edx  undef_in_window                  EXCLUDED | 
+  0x503521 call edx  undef_in_window                  EXCLUDED | 
+  0x5035fa call edx  undef_in_window                  EXCLUDED | 
+  0x5036c6 call edx  undef_in_window                  EXCLUDED | 
+  0x50375a call edx  undef_in_window                  EXCLUDED | 
+  0x5037f7 call edx  undef_in_window                  EXCLUDED | 
+  0x503894 call edx  undef_in_window                  EXCLUDED | 
+  0x503931 call edx  undef_in_window                  EXCLUDED | 
+  0x5039ce call edx  undef_in_window                  EXCLUDED | 
+  0x503a6b call edx  undef_in_window                  EXCLUDED | 
+  0x503b08 call edx  undef_in_window                  EXCLUDED | 
+  0x503ba5 call edx  undef_in_window                  EXCLUDED | 
+  0x503c42 call edx  undef_in_window                  EXCLUDED | 
+  0x503cdf call edx  undef_in_window                  EXCLUDED | 
+  0x503dd0 call edx  undef_in_window                  EXCLUDED | 
+  0x5046d9 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x504c6a call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x4c]
+  0x505048 call edx  undef_in_window                  EXCLUDED | 
+  0x505661 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x50]
+  0x5056a7 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x68]
+  0x505766 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x5057c2 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x50591c call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x505992 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x505ad4 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x505bc2 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x2c]
+  0x505c11 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x2c]
+  0x505c6d call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x2c]
+  0x505d3e call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x2c]
+  0x505e09 call edx  undef_in_window                  EXCLUDED | 
+  0x505e83 call edx  undef_in_window                  EXCLUDED | 
+  0x5064df call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x3c]
+  0x5070a9 call edx  undef_in_window                  EXCLUDED | 
+  0x507333 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x70]
+  0x50796c call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x44]
+  0x507c82 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x507e72 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x508062 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x508755 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x30]
+  0x50881b call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x4c]
+  0x50895f call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x30]
+  0x508a36 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x4c]
+  0x508aec call edx  undef_in_window                  EXCLUDED | 
+  0x508b68 call edx  undef_in_window                  EXCLUDED | 
+  0x50aa74 call edx  undef_in_window                  EXCLUDED | 
+  0x50ad5b call edx  undef_in_window                  EXCLUDED | 
+  0x50c4e9 call edx  undef_in_window                  EXCLUDED | 
+  0x50c593 call edx  undef_in_window                  EXCLUDED | 
+  0x50c679 call edx  undef_in_window                  EXCLUDED | 
+  0x50c722 call edx  undef_in_window                  EXCLUDED | 
+  0x50d023 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x40]
+  0x50d071 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x38]
+  0x50d5a8 call edx  undef_in_window                  EXCLUDED | 
+  0x50d695 call edx  undef_in_window                  EXCLUDED | 
+  0x50eb98 call edx  undef_in_window                  EXCLUDED | 
+  0x50ff78 call edx  undef_in_window                  EXCLUDED | 
+  0x5115cc call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83c98]
+  0x511eb1 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x10]
+  0x511fe7 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x10]
+  0x512133 call edx  undef_in_window                  EXCLUDED | 
+  0x512f48 call edx  undef_in_window                  EXCLUDED | 
+  0x513318 call edx  undef_in_window                  EXCLUDED | 
+  0x5136e8 call edx  undef_in_window                  EXCLUDED | 
+  0x517b1e call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa83de8]
+  0x517b63 call edx  lea_other                        EXCLUDED | lea edi, [esi + 0x674]
+  0x517ba3 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x518eb1 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x5192b2 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x5195f3 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x51adf8 call edx  undef_in_window                  EXCLUDED | 
+  0x51ae57 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x51b032 call ecx  undef_in_window                  EXCLUDED | 
+  0x51b0db call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x51b10a call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x14]
+  0x51b11c call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x40]
+  0x51b19a call edx  undef_in_window                  EXCLUDED | 
+  0x51b1c7 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x40]
+  0x51b84d call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x78]
+  0x520818 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x52121f call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x521a4e call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x521a54 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x521e9b call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x5220ae call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x5220bc call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x5220d4 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x5220e2 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x5221b6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x522969 call edx  undef_in_window                  EXCLUDED | 
+  0x5231ac call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x523219 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x523227 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x523391 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x5233c1 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x523402 call ecx  undef_in_window                  EXCLUDED | 
+  0x52341b call edx  undef_in_window                  EXCLUDED | 
+  0x52383b call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8e348]
+  0x5253d8 call edx  undef_in_window                  EXCLUDED | 
+  0x5254e2 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x5267f0 call eax  undef_in_window                  EXCLUDED | 
+  0x52ce6c call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x52cecb call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x52cfa2 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x530097 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x884d90]
+  0x530153 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x884d90]
+  0x530258 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x884d90]
+  0x5308b2 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x884da8]
+  0x5309f1 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x884da8]
+  0x53100c call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x884de0]
+  0x531137 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x884de0]
+  0x5321b1 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x87f658]
+  0x53221e call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x53228b call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5322f8 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532365 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5323d2 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x53243f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5324ac call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532519 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532586 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5325f3 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532664 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5326d4 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x87f658]
+  0x532741 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5327b2 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532822 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x87f658]
+  0x53288f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5328fc call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532969 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5329d6 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532a43 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532ab0 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532b1d call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532b8a call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532bf7 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532c64 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532cd1 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532d3e call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532dab call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532e18 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532e85 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532ef2 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532f5f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x532fcc call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x533039 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5330a6 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x533113 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x533187 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5331fb call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x53326f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5332e3 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x533357 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f658]
+  0x5344dd call ecx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8ed44]
+  0x5358b3 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x8872fc]
+  0x5358d2 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x535916 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x8872fc]
+  0x535935 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x53596c call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x8872fc]
+  0x53598b call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x537cf0 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x5387a8 call edx  undef_in_window                  EXCLUDED | 
+  0x539cc5 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa9fa60]
+  0x539d7f call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa9f9d0]
+  0x539e3d call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa9fa18]
+  0x53a278 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa9fa60]
+  0x53a2ce call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa9f9d0]
+  0x53a3c8 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa9fa18]
+  0x53b34b call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x50]
+  0x53cb63 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xaa0118]
+  0x541530 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x54157c call eax  lea_other                        EXCLUDED | lea ebx, [esi + 0x28]
+  0x5415c7 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x541886 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x543855 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f750]
+  0x544917 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f670]
+  0x544970 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8ed28]
+  0x544fb6 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x87f698]
+  0x5450d0 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x87f698]
+  0x546069 call eax  vptr_of_imm                      CANDIDATE | mov eax, dword ptr [0xaa1078]
+  0x549f3a call edx  undef_in_window                  EXCLUDED | 
+  0x54a0d4 call edx  undef_in_window                  EXCLUDED | 
+  0x54ad24 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x94]
+  0x54b7b4 call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x94]
+  0x54b86c call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x54b89e call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x54da32 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x54dbc5 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x54dc51 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x54dfc4 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x94]
+  0x54e315 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xabc604]
+  0x54e4b1 call edx  undef_in_window                  EXCLUDED | 
+  0x54e6c3 call eax  lea_other                        EXCLUDED | lea esi, [edi + 0xc]
+  0x54e725 call eax  lea_other                        EXCLUDED | lea esi, [edi + 0xc]
+  0x54e850 call edx  undef_in_window                  EXCLUDED | 
+  0x54ff85 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xabc878]
+  0x5519f4 call edx  undef_in_window                  EXCLUDED | 
+  0x551ab8 call edx  undef_in_window                  EXCLUDED | 
+  0x551c0b call edx  undef_in_window                  EXCLUDED | 
+  0x553329 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x553e64 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x5547fd call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xabca10]
+  0x5548b6 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xabca10]
+  0x554cc1 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xabca40]
+  0x556a9f call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xabcb78]
+  0x5576d5 call edx  undef_in_window                  EXCLUDED | 
+  0x5593d7 call eax  undef_in_window                  EXCLUDED | 
+  0x55984f call edx  undef_in_window                  EXCLUDED | 
+  0x559943 call edx  undef_in_window                  EXCLUDED | 
+  0x55b558 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x55ce1d call eax  mov_other                        EXCLUDED | mov ecx, dword ptr [esi + eax*4]
+  0x55cfb6 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x55d335 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x565ad4 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x565b8c call edx  mem_of                           EXCLUDED | mov edx, dword ptr [esi + 0x138]
+  0x569141 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x5c]
+  0x569364 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x5c]
+  0x569a61 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x5c]
+  0x569c84 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x5c]
+  0x56b8b8 call eax  stack_src                        EXCLUDED | mov esi, dword ptr [esp + 0x18]
+  0x56b926 call eax  undef_in_window                  EXCLUDED | 
+  0x56b93f call edx  undef_in_window                  EXCLUDED | 
+  0x56b94f call edx  undef_in_window                  EXCLUDED | 
+  0x56b96c call eax  undef_in_window                  EXCLUDED | 
+  0x56c5eb call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x54]
+  0x56c68e call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x54]
+  0x56c7b2 call edx  undef_in_window                  EXCLUDED | 
+  0x56cc99 call edx  undef_in_window                  EXCLUDED | 
+  0x56cdaf call edx  undef_in_window                  EXCLUDED | 
+  0x56cf69 call edx  undef_in_window                  EXCLUDED | 
+  0x56d0bd call edx  undef_in_window                  EXCLUDED | 
+  0x56d82e call edx  undef_in_window                  EXCLUDED | 
+  0x56d9c2 call edx  undef_in_window                  EXCLUDED | 
+  0x5706da call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x48]
+  0x5709b6 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x48]
+  0x571a09 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x54]
+  0x571f22 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x54]
+  0x573bfb call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x40]
+  0x573ed9 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x40]
+  0x5770fe call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x54]
+  0x57760e call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x54]
+  0x58207f call edx  undef_in_window                  EXCLUDED | 
+  0x5821f1 call edx  undef_in_window                  EXCLUDED | 
+  0x5823e8 call edx  undef_in_window                  EXCLUDED | 
+  0x582441 call edx  undef_in_window                  EXCLUDED | 
+  0x58266a call eax  undef_in_window                  EXCLUDED | 
+  0x5827fb call edx  undef_in_window                  EXCLUDED | 
+  0x582a8f call edx  undef_in_window                  EXCLUDED | 
+  0x582cd9 call edx  undef_in_window                  EXCLUDED | 
+  0x583b94 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x583d81 call edx  undef_in_window                  EXCLUDED | 
+  0x583e98 call edx  undef_in_window                  EXCLUDED | 
+  0x58431f call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x34]
+  0x5844d4 call edx  undef_in_window                  EXCLUDED | 
+  0x5846c8 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x3c]
+  0x58499a call edx  undef_in_window                  EXCLUDED | 
+  0x584bd8 call edx  undef_in_window                  EXCLUDED | 
+  0x584c35 call edx  undef_in_window                  EXCLUDED | 
+  0x585343 call edx  undef_in_window                  EXCLUDED | 
+  0x585398 call edx  undef_in_window                  EXCLUDED | 
+  0x585420 call edx  undef_in_window                  EXCLUDED | 
+  0x585475 call edx  undef_in_window                  EXCLUDED | 
+  0x5854fd call edx  undef_in_window                  EXCLUDED | 
+  0x585552 call edx  undef_in_window                  EXCLUDED | 
+  0x5859e4 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x24]
+  0x585a29 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x44]
+  0x585bfe call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x24]
+  0x58691b call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x589c78 call edx  undef_in_window                  EXCLUDED | 
+  0x589e70 call edx  undef_in_window                  EXCLUDED | 
+  0x58afa8 call edx  undef_in_window                  EXCLUDED | 
+  0x58c041 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xabdf90]
+  0x58ca60 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x44]
+  0x58d35b call edx  undef_in_window                  EXCLUDED | 
+  0x58d55d call edx  undef_in_window                  EXCLUDED | 
+  0x58dcff call edx  undef_in_window                  EXCLUDED | 
+  0x58dd59 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x84]
+  0x58ded0 call edx  undef_in_window                  EXCLUDED | 
+  0x58df22 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x58e25c call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x58e2e0 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x58e4a3 call edx  undef_in_window                  EXCLUDED | 
+  0x58e6f3 call edx  undef_in_window                  EXCLUDED | 
+  0x58e8d8 call edx  undef_in_window                  EXCLUDED | 
+  0x58ea25 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x20]
+  0x58eb57 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x24]
+  0x58ece1 call edx  undef_in_window                  EXCLUDED | 
+  0x58f23a call edx  undef_in_window                  EXCLUDED | 
+  0x5944c7 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x24]
+  0x594578 call edx  undef_in_window                  EXCLUDED | 
+  0x594698 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x28]
+  0x5949e1 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x54]
+  0x594da7 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x54]
+  0x59517a call edx  undef_in_window                  EXCLUDED | 
+  0x595211 call edx  undef_in_window                  EXCLUDED | 
+  0x5953b8 call edx  undef_in_window                  EXCLUDED | 
+  0x595d5f call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x20]
+  0x595dc2 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x18]
+  0x597740 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x599cba call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8e968]
+  0x59aa69 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x6c]
+  0x59aaaf call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x54]
+  0x59ac02 call edx  undef_in_window                  EXCLUDED | 
+  0x59b7ce call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x34]
+  0x59b8e2 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x2c]
+  0x5a0324 call edx  undef_in_window                  EXCLUDED | 
+  0x5a060e call edx  undef_in_window                  EXCLUDED | 
+  0x5a087e call edx  undef_in_window                  EXCLUDED | 
+  0x5a274c call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x80]
+  0x5a55a2 call edx  undef_in_window                  EXCLUDED | 
+  0x5a65f7 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x68]
+  0x5a83b3 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x24]
+  0x5ad7f8 call edx  undef_in_window                  EXCLUDED | 
+  0x5b3cf4 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x5b3d4a call edx  lea_other                        EXCLUDED | lea edi, [esp + 0xa4]
+  0x5b3d72 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x20]
+  0x5b3dc8 call edx  undef_in_window                  EXCLUDED | 
+  0x5b7130 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x5b71c7 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x5b9dcb call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8b8c8]
+  0x5bada4 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x5bae3c call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x5be440 call edx  undef_in_window                  EXCLUDED | 
+  0x5be562 call edx  undef_in_window                  EXCLUDED | 
+  0x5be5f5 call edx  undef_in_window                  EXCLUDED | 
+  0x5bf331 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb45b58]
+  0x5bf42b call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb45b58]
+  0x5bf93d call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x5bf983 call esi  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x5bfa21 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x5bfa8f call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x5c0187 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x5c0477 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x5c15a6 call edx  undef_in_window                  EXCLUDED | 
+  0x5c160f call edx  undef_in_window                  EXCLUDED | 
+  0x5c16ce call eax  mem_of                           EXCLUDED | mov eax, dword ptr [edi + 0x58]
+  0x5c18ed call eax  lea_other                        EXCLUDED | lea esi, [ebx + 0x324]
+  0x5c1951 call edx  undef_in_window                  EXCLUDED | 
+  0x5c276d call eax  undef_in_window                  EXCLUDED | 
+  0x5c278e call eax  lea_other                        EXCLUDED | lea edi, [esi + 0xc0]
+  0x5c2848 call edi  mov_other                        EXCLUDED | mov edi, dword ptr [ebx - 8]
+  0x5c289f call esi  mem_of                           EXCLUDED | mov esi, dword ptr [ebx + 0xb8]
+  0x5c28f7 call edi  mov_other                        EXCLUDED | mov edi, dword ptr [ebx - 8]
+  0x5c2975 call edi  mem_of                           EXCLUDED | mov edi, dword ptr [ebx + 0xb8]
+  0x5c2ac4 call eax  undef_in_window                  EXCLUDED | 
+  0x5c2ae5 call eax  lea_other                        EXCLUDED | lea edi, [esi + 0xc0]
+  0x5c2b51 call ebp  mov_other                        EXCLUDED | mov ebp, dword ptr [esi - 8]
+  0x5c2b8f call edi  mov_other                        EXCLUDED | mov edi, dword ptr [esi - 8]
+  0x5c2c08 call ebp  mem_of                           EXCLUDED | mov ebp, dword ptr [esi + 0xb8]
+  0x5c2c62 call edi  mem_of                           EXCLUDED | mov edi, dword ptr [esi + 0xb8]
+  0x5c3c2a call edx  undef_in_window                  EXCLUDED | 
+  0x5c4e50 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x5c8e0c call eax  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x10]
+  0x5c8f56 call eax  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x18]
+  0x5ca9f6 call edx  undef_in_window                  EXCLUDED | 
+  0x5caa4c call edx  undef_in_window                  EXCLUDED | 
+  0x5caaa2 call edx  undef_in_window                  EXCLUDED | 
+  0x5cb818 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x5cb95c call edx  undef_in_window                  EXCLUDED | 
+  0x5cbe9c call edx  undef_in_window                  EXCLUDED | 
+  0x5cc413 call edx  stack_src                        EXCLUDED | mov edi, dword ptr [esp + 0x34]
+  0x5cc9fe call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x28]
+  0x5ccf6d call ebx  undef_in_window                  EXCLUDED | 
+  0x5cd03b call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0x20]
+  0x5cd233 call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x38]
+  0x5cd27e call edi  undef_in_window                  EXCLUDED | 
+  0x5cdcf3 call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x3c]
+  0x5ce173 call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x1c]
+  0x5ce819 call ebx  undef_in_window                  EXCLUDED | 
+  0x5cea25 call ebx  undef_in_window                  EXCLUDED | 
+  0x5cea74 call edi  undef_in_window                  EXCLUDED | 
+  0x5cef6b call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x68]
+  0x5cf038 call edx  undef_in_window                  EXCLUDED | 
+  0x5cf350 call edx  undef_in_window                  EXCLUDED | 
+  0x5cf556 call edx  undef_in_window                  EXCLUDED | 
+  0x5cfdf7 call edx  undef_in_window                  EXCLUDED | 
+  0x5cff4b call edx  undef_in_window                  EXCLUDED | 
+  0x5d001c call edx  undef_in_window                  EXCLUDED | 
+  0x5d1b0a call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x5d1c51 call edx  undef_in_window                  EXCLUDED | 
+  0x5d1cc9 call edx  undef_in_window                  EXCLUDED | 
+  0x5d1f12 call ebp  undef_in_window                  EXCLUDED | 
+  0x5d2309 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x5d23e5 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x5d2440 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x5d255f call edx  mov_other                        EXCLUDED | mov ecx, dword ptr [eax + edi*4]
+  0x5d262a call edx  undef_in_window                  EXCLUDED | 
+  0x5d4ea7 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xabfc90]
+  0x5d4fdc call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xabfcb8]
+  0x5d66d7 call edx  undef_in_window                  EXCLUDED | 
+  0x5d6729 call edx  undef_in_window                  EXCLUDED | 
+  0x5d71eb call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x30]
+  0x5d7283 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x18]
+  0x5d7b16 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xabfda0]
+  0x5d7bcc call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xabfda0]
+  0x5dcd52 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x5dce67 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8da5c]
+  0x5de1cc call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da44]
+  0x5de255 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da5c]
+  0x5e03c3 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8da5c]
+  0x5e0666 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x5e0915 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8da74]
+  0x5e13e8 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8da44]
+  0x5e1a62 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x5e45ff call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x34]
+  0x5e86c5 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8b8c8]
+  0x5eee68 call edx  undef_in_window                  EXCLUDED | 
+  0x5f1c16 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0x38]
+  0x5f2a01 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xb72d20]
+  0x5f3586 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0x38]
+  0x5f3a1c call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8e360]
+  0x5f3a6f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f720]
+  0x5f3ac2 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x5f3b15 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f618]
+  0x5f466a call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8ecb8]
+  0x5f46f2 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8ecb8]
+  0x5f6661 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f698]
+  0x5f72ee call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xac1418]
+  0x5fb591 call eax  undef_in_window                  EXCLUDED | 
+  0x5fb890 call eax  imm                              EXCLUDED | mov eax, 0xb7883c
+  0x5fc3ef call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8ec50]
+  0x5fde76 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x5fe35e call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83d80]
+  0x5ff2aa call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xac1678]
+  0x5ff574 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x5ff6f2 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x607ec8 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x607ef1 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x60d993 call edx  undef_in_window                  EXCLUDED | 
+  0x60da93 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x60e0a0 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x61088c call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x610a08 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x610bd3 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x610c66 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x61187a call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x611fad call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x61273a call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x612893 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x612e7d call eax  undef_in_window                  EXCLUDED | 
+  0x613234 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x613376 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x613441 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x61355d call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x613bfc call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x613c68 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x613cd4 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x613d42 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6156a2 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x615826 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x615f68 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x616616 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x616be7 call eax  undef_in_window                  EXCLUDED | 
+  0x616c69 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x616d6a call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x616e40 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x616f67 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x617631 call edx  undef_in_window                  EXCLUDED | 
+  0x61cc46 call edx  undef_in_window                  EXCLUDED | 
+  0x61cd7d call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x61cf70 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x61cfd0 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x61d047 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x61d10a call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x61d860 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x61d87d call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x61ddf6 call eax  undef_in_window                  EXCLUDED | 
+  0x61de8f call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x61df78 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x61e005 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x61e0ad call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x61ee97 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x61eeda call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x6207ff call edx  undef_in_window                  EXCLUDED | 
+  0x6216a1 call edx  undef_in_window                  EXCLUDED | 
+  0x6217c9 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x622212 call eax  undef_in_window                  EXCLUDED | 
+  0x622365 call edx  undef_in_window                  EXCLUDED | 
+  0x6223b3 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x624231 call edx  undef_in_window                  EXCLUDED | 
+  0x62428c call edx  undef_in_window                  EXCLUDED | 
+  0x626bec call edx  undef_in_window                  EXCLUDED | 
+  0x626c2f call edx  undef_in_window                  EXCLUDED | 
+  0x627809 call edx  undef_in_window                  EXCLUDED | 
+  0x62787a call edx  undef_in_window                  EXCLUDED | 
+  0x6279bb call edx  undef_in_window                  EXCLUDED | 
+  0x628d38 call edx  undef_in_window                  EXCLUDED | 
+  0x62927e call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xac4910]
+  0x629360 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xac4910]
+  0x629657 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f5b8]
+  0x629953 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f5b8]
+  0x62b7b9 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa83dc8]
+  0x62bc99 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa83dc8]
+  0x62dd6a call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa80208]
+  0x62dee6 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f720]
+  0x62dff8 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa80208]
+  0x62e04b call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f720]
+  0x62e407 call edx  undef_in_window                  EXCLUDED | 
+  0x62e493 call edx  undef_in_window                  EXCLUDED | 
+  0x62e55d call edx  undef_in_window                  EXCLUDED | 
+  0x62e7d5 call edx  undef_in_window                  EXCLUDED | 
+  0x62f182 call edx  undef_in_window                  EXCLUDED | 
+  0x62fe23 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f698]
+  0x630032 call edx  undef_in_window                  EXCLUDED | 
+  0x630278 call edx  undef_in_window                  EXCLUDED | 
+  0x631004 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8db34]
+  0x631424 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8db34]
+  0x632e21 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0x10]
+  0x633217 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0x10]
+  0x634024 call edx  undef_in_window                  EXCLUDED | 
+  0x63406d call edx  undef_in_window                  EXCLUDED | 
+  0x634f1c call edx  undef_in_window                  EXCLUDED | 
+  0x6350ef call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xac4c98]
+  0x63545d call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xac4c18]
+  0x636636 call edx  undef_in_window                  EXCLUDED | 
+  0x6368d7 call edx  undef_in_window                  EXCLUDED | 
+  0x636923 call edx  undef_in_window                  EXCLUDED | 
+  0x636aa5 call edx  undef_in_window                  EXCLUDED | 
+  0x636af1 call edx  undef_in_window                  EXCLUDED | 
+  0x636e2c call edx  undef_in_window                  EXCLUDED | 
+  0x637619 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xac4b48]
+  0x6378f6 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xac4c98]
+  0x638444 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xac4c40]
+  0x638699 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xac4b48]
+  0x638a57 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xac4c18]
+  0x638b17 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xac4c78]
+  0x638df7 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xac4b30]
+  0x639b1b call edx  undef_in_window                  EXCLUDED | 
+  0x639b62 call edx  undef_in_window                  EXCLUDED | 
+  0x63ae29 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x10]
+  0x63ae9c call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x18]
+  0x63aeed call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x10]
+  0x63e568 call edx  undef_in_window                  EXCLUDED | 
+  0x63e8a8 call edx  undef_in_window                  EXCLUDED | 
+  0x63eba8 call edx  undef_in_window                  EXCLUDED | 
+  0x640887 call esi  undef_in_window                  EXCLUDED | 
+  0x640e3d call ebx  undef_in_window                  EXCLUDED | 
+  0x6410a4 call ebx  undef_in_window                  EXCLUDED | 
+  0x6441ef call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83d68]
+  0x644d43 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83d98]
+  0x644d96 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x645747 call edx  undef_in_window                  EXCLUDED | 
+  0x649fa1 call eax  undef_in_window                  EXCLUDED | 
+  0x64a090 call edx  undef_in_window                  EXCLUDED | 
+  0x64ace6 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8bb28]
+  0x64cec3 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x24]
+  0x64d117 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x64d171 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x80]
+  0x64d1c4 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x70]
+  0x653924 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x655226 call edx  undef_in_window                  EXCLUDED | 
+  0x655697 call edx  undef_in_window                  EXCLUDED | 
+  0x6556f3 call edx  undef_in_window                  EXCLUDED | 
+  0x656376 call edx  undef_in_window                  EXCLUDED | 
+  0x656523 call edx  undef_in_window                  EXCLUDED | 
+  0x65694d call edx  undef_in_window                  EXCLUDED | 
+  0x6569fb call edx  undef_in_window                  EXCLUDED | 
+  0x657353 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0x121c]
+  0x65764f call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887300]
+  0x657d2b call ebx  undef_in_window                  EXCLUDED | 
+  0x65916a call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb04a60]
+  0x65abde call edx  undef_in_window                  EXCLUDED | 
+  0x65ae82 call eax  mem_of                           EXCLUDED | mov eax, dword ptr [edi + 0xe0]
+  0x65b277 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb04bd0]
+  0x65cb3c call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x65d478 jmp  eax  mem_of                           EXCLUDED | mov ecx, dword ptr [eax + 4]
+  0x65d4a4 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 4]
+  0x65d4e9 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 4]
+  0x65d588 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x65d5e4 call eax  undef_in_window                  EXCLUDED | 
+  0x65d621 call edx  undef_in_window                  EXCLUDED | 
+  0x65f150 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x65f162 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x65f19a call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x65f23b call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x65f249 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x65fcce call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb04da8]
+  0x663c93 call edx  undef_in_window                  EXCLUDED | 
+  0x67460f call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xabf390]
+  0x67ada8 call edx  undef_in_window                  EXCLUDED | 
+  0x67b128 call edx  undef_in_window                  EXCLUDED | 
+  0x67b4a8 call edx  undef_in_window                  EXCLUDED | 
+  0x67b5fb call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x67b7cb call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x67b99b call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x67bbbb call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x67be7b call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0xc]
+  0x67d09a call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x67d0ac call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x67d110 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x20]
+  0x67d150 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x67d15e call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x67d16c call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x67d1e2 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x67d1f0 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d1fe call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x67d210 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x67d23b call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x67d26e call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x67d27c call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d28a call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x67d298 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x67d2c4 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x67d2d2 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d2e0 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x67d2ee call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x67d397 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x67d40f call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d4ae call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d527 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d5a0 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d619 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d692 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d70b call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d784 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d7fd call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d876 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d8ef call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d968 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67d9e1 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67da5a call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67dad3 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67db4c call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67dbc5 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67dc3e call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67dcb7 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67dd30 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67dda9 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67de16 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67de7f call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67def4 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67e584 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x67e592 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x67e5f4 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x67e6f3 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x67e701 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x67e70f call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x67e71d call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x67f438 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa83d50]
+  0x67f519 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8b41e0]
+  0x67fa99 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8ecb8]
+  0x67fb7d call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b40c8]
+  0x67fc3f call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8b41a8]
+  0x67fd50 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x67fd98 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x67fdac call edx  clobbered_by_call                EXCLUDED | call dword ptr [ecx + 8]
+  0x67fdd9 call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x67fde9 call ecx  clobbered_by_call                EXCLUDED | call dword ptr [ecx + 8]
+  0x67fe56 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x67fed6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x67ff56 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x67ffd6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680056 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x6800d6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680156 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x6801d6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680256 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x6802d6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680356 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x6803d6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680456 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x6804d6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680556 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x6805d6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680656 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x6806d6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680756 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x6807d6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680856 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x6808d6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680956 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x6809d6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680a56 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680ad6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680b56 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680bd6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680c56 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680cd6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680d56 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680dd6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680e56 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680ed6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680f56 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x680f9c call ecx  undef_in_window                  EXCLUDED | 
+  0x680fba call edx  pop                              EXCLUDED | pop esi
+  0x680fd6 call ecx  pop                              EXCLUDED | pop esi
+  0x681340 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681376 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6813a9 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6813db call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681411 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681447 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x68147d call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6814b3 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6814e5 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681515 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x68154b call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681581 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6815b7 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6815e6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681618 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681647 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681675 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6816a7 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6816d9 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x68170b call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x68173d call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x68176b call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681793 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6817c1 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6817ef call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x68181d call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681830 call edx  undef_in_window                  EXCLUDED | 
+  0x6818e6 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681936 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x68196c call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6819a8 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6819e4 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681a20 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681a5a call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681abb call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681b1e call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681b5a call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681b9a call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681bd3 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681c20 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681cc9 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681d5a call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681df9 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681e98 call eax  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x14]
+  0x681f2c call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681f62 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x681fbb call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x68206c call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x68213d call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6821b4 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x682227 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x682296 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6822e6 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x68232f call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x682385 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x6823c0 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x682411 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x682467 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x68249a call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x682507 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x682548 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x682559 call edx  undef_in_window                  EXCLUDED | 
+  0x6825b2 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x682608 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x68262e call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x6826ba call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682718 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 8]
+  0x682752 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682768 call ecx  undef_in_window                  EXCLUDED | 
+  0x6827d1 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682828 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x68285d call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x68286e call edx  undef_in_window                  EXCLUDED | 
+  0x6828d5 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x68290e call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x68297a call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682990 call edx  undef_in_window                  EXCLUDED | 
+  0x6829d1 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682a06 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682a6c call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682a7f call ecx  undef_in_window                  EXCLUDED | 
+  0x682ae1 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682b26 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682b5b call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682b6c call ecx  undef_in_window                  EXCLUDED | 
+  0x682bb1 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682be6 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682c4c call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682c5f call ecx  undef_in_window                  EXCLUDED | 
+  0x682cce call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x682d0f call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x682d20 call edx  undef_in_window                  EXCLUDED | 
+  0x682d79 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x682dcf call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x682dfc call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x682e61 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682ea6 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682edb call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682eec call ecx  undef_in_window                  EXCLUDED | 
+  0x682f31 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682f6a call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682fd9 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x682fec call edx  undef_in_window                  EXCLUDED | 
+  0x683059 call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x683069 call ecx  clobbered_by_call                EXCLUDED | call dword ptr [ecx + 8]
+  0x684da9 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8b41a8]
+  0x684e13 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b40c8]
+  0x684e8c call edx  undef_in_window                  EXCLUDED | 
+  0x6852e4 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8e968]
+  0x6853f3 call ecx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8e364]
+  0x68585a call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x685a2b call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8b23c]
+  0x685ada call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x685c9d call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x685fa4 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x686141 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x6862be call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0xa8b23c]
+  0x6884a0 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x28]
+  0x688603 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x30]
+  0x688931 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x40]
+  0x6889c2 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x60]
+  0x688d44 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x68a695 call edx  undef_in_window                  EXCLUDED | 
+  0x68a707 call edx  undef_in_window                  EXCLUDED | 
+  0x68c0df call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x68c288 call edx  undef_in_window                  EXCLUDED | 
+  0x68c6cb call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb054d0]
+  0x68c830 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb054d0]
+  0x68cdb1 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x64]
+  0x68cf1d call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x64]
+  0x68cf50 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x64]
+  0x68cf88 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x64]
+  0x68cfbb call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x64]
+  0x68cfee call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x64]
+  0x68d021 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x64]
+  0x68d05c call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x64]
+  0x68d08f call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x64]
+  0x68d119 call edx  undef_in_window                  EXCLUDED | 
+  0x68d188 call edx  undef_in_window                  EXCLUDED | 
+  0x68d1f7 call edx  undef_in_window                  EXCLUDED | 
+  0x68d266 call edx  undef_in_window                  EXCLUDED | 
+  0x68d2d5 call edx  undef_in_window                  EXCLUDED | 
+  0x68d344 call edx  undef_in_window                  EXCLUDED | 
+  0x68d3b3 call edx  undef_in_window                  EXCLUDED | 
+  0x68d61f call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 8]
+  0x68d63e call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68d663 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68d66c call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68d889 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x68d8a8 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68d8cd call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68d8d6 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68d9c2 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 8]
+  0x68d9e2 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68db56 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x68db75 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68db9a call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68dba3 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68ddd7 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 8]
+  0x68ddf6 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68de1b call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68de24 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68deb2 call edx  undef_in_window                  EXCLUDED | 
+  0x68df99 call edx  undef_in_window                  EXCLUDED | 
+  0x68e033 call edx  undef_in_window                  EXCLUDED | 
+  0x68e09c call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68e12a call edx  undef_in_window                  EXCLUDED | 
+  0x68e14a call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68e1d8 call edx  undef_in_window                  EXCLUDED | 
+  0x68e391 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 8]
+  0x68e3b0 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68e3d5 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68e3de call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68e473 call edx  undef_in_window                  EXCLUDED | 
+  0x68e638 call edx  undef_in_window                  EXCLUDED | 
+  0x68e6eb call edx  undef_in_window                  EXCLUDED | 
+  0x68e7a1 call edx  undef_in_window                  EXCLUDED | 
+  0x68e8b0 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0xc]
+  0x68e95a call edx  undef_in_window                  EXCLUDED | 
+  0x68e991 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x64]
+  0x68eb32 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x68ebb9 call edx  undef_in_window                  EXCLUDED | 
+  0x68f33a call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x68f37f call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x68f3e7 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0xc]
+  0x68f45a call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0xc]
+  0x68f49d call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x68f4e6 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x68f555 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0xc]
+  0x68f5c9 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0xc]
+  0x68f6a6 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x68f6df call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68f72c call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0xc]
+  0x68f779 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0xc]
+  0x68f7a9 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x68f7e6 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68f82e call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0xc]
+  0x68f878 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0xc]
+  0x68f95e call edx  undef_in_window                  EXCLUDED | 
+  0x68fa24 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [ebp + 0x10]
+  0x68faaf call edx  undef_in_window                  EXCLUDED | 
+  0x68fb7e call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [edi + 0xc]
+  0x68fc1f call edx  mov_other                        EXCLUDED | mov ecx, dword ptr [eax + edi*4]
+  0x68fd04 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x68fd21 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68fd85 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x68fda2 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68fe85 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x68fea2 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x68ff31 call edx  undef_in_window                  EXCLUDED | 
+  0x69006b call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6900dd call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x690225 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x6902d6 call edx  mov_other                        EXCLUDED | mov ecx, dword ptr [eax + esi*4]
+  0x69049c call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x69051e call edx  mov_other                        EXCLUDED | mov ecx, dword ptr [eax + edi*4]
+  0x69067b call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp]
+  0x6906d8 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp]
+  0x690735 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp]
+  0x690de0 call edx  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0x28]
+  0x690e2b call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x691188 call edx  undef_in_window                  EXCLUDED | 
+  0x69142f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8872b0]
+  0x691723 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b41c8]
+  0x691aaf call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8b41c8]
+  0x691ce6 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8b41c8]
+  0x69616a call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8db4c]
+  0x696bf1 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8db4c]
+  0x697635 call edx  undef_in_window                  EXCLUDED | 
+  0x697811 call edx  undef_in_window                  EXCLUDED | 
+  0x6986e6 call edx  undef_in_window                  EXCLUDED | 
+  0x6989f4 call esi  mem_of                           EXCLUDED | mov esi, dword ptr [ebp + 0x28fc]
+  0x699aa4 call edx  undef_in_window                  EXCLUDED | 
+  0x699bf9 call edx  undef_in_window                  EXCLUDED | 
+  0x699d2d call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x884dc0]
+  0x699f6a call edx  undef_in_window                  EXCLUDED | 
+  0x69a16d call edx  undef_in_window                  EXCLUDED | 
+  0x69a5e7 call edx  undef_in_window                  EXCLUDED | 
+  0x69a730 call edx  undef_in_window                  EXCLUDED | 
+  0x69aaf4 call edx  undef_in_window                  EXCLUDED | 
+  0x69abce call edx  undef_in_window                  EXCLUDED | 
+  0x69b304 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x38]
+  0x69b3e2 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x18]
+  0x69bf35 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x54]
+  0x69ed11 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x68]
+  0x69ed95 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x69ee21 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x69eeeb call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x68]
+  0x69ef96 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x69efc8 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x69f022 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6a42d1 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x68]
+  0x6a45ea call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b4120]
+  0x6a4865 call edx  undef_in_window                  EXCLUDED | 
+  0x6a722c call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6a7312 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6a739d call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x6a742e call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887308]
+  0x6a747e call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6ad6da call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x6af2b2 call edx  undef_in_window                  EXCLUDED | 
+  0x6af32e call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0b5f0]
+  0x6af40c call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0b5f0]
+  0x6af4f2 call eax  lea_other                        EXCLUDED | lea esi, [edi + 0x38]
+  0x6b128a call edx  undef_in_window                  EXCLUDED | 
+  0x6b2470 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0b650]
+  0x6b31b5 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x74]
+  0x6b3bba call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0b650]
+  0x6b3c29 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0b650]
+  0x6b3f90 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0b650]
+  0x6b4abc call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8b1e0]
+  0x6b5318 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8ec18]
+  0x6b5a9f call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x38]
+  0x6b5b4c call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x6b5b81 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x20]
+  0x6b5d8f call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x38]
+  0x6b5e3c call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x6b5e71 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x20]
+  0x6b6dda call edx  undef_in_window                  EXCLUDED | 
+  0x6b6e69 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0b880]
+  0x6b6f69 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0b880]
+  0x6b7070 call eax  lea_other                        EXCLUDED | lea esi, [edi + 0x38]
+  0x6b8020 call edx  undef_in_window                  EXCLUDED | 
+  0x6bb745 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x6bc3f1 call edx  mov_other                        EXCLUDED | mov eax, dword ptr [ebp - 0xa3c]
+  0x6bedbd call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6bee10 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x6c61c9 call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6c6428 call edx  undef_in_window                  EXCLUDED | 
+  0x6c98f3 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [ecx + 4]
+  0x6c9ede call eax  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 8]
+  0x6ca02a call edx  undef_in_window                  EXCLUDED | 
+  0x6ca14b call esi  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x14]
+  0x6ca224 call eax  undef_in_window                  EXCLUDED | 
+  0x6ca520 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6ca96f call eax  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x14]
+  0x6caf64 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa83cb8]
+  0x6cb049 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa83cb8]
+  0x6cb09c call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x6cb0ef call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f6c8]
+  0x6cb4a9 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f5b8]
+  0x6cb61f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83d50]
+  0x6ccb27 call ecx  undef_in_window                  EXCLUDED | 
+  0x6ccb39 call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x40]
+  0x6ccb67 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6cccb9 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x30]
+  0x6cccc7 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x6cdf70 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f5b8]
+  0x6ce6c4 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8e330]
+  0x6cf28e call edx  undef_in_window                  EXCLUDED | 
+  0x6cf2f7 call edx  undef_in_window                  EXCLUDED | 
+  0x6d2a89 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0ce78]
+  0x6d3ff1 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88731c]
+  0x6d45d8 call edx  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887314]
+  0x6d5f4d call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887314]
+  0x6d6b82 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0cde8]
+  0x6dd084 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0e658]
+  0x6dd0fb call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x6dd14e call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f658]
+  0x6e4e54 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0e720]
+  0x6e4ea7 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x6e4efa call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f708]
+  0x6e5109 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f698]
+  0x6e526b call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f698]
+  0x6e552a call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f698]
+  0x6e5670 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f698]
+  0x6e5c1e call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0e780]
+  0x6e5c71 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x6e7f05 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8e8d0]
+  0x6e8b7e call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8b40e8]
+  0x6e8bd1 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x6e8c24 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f618]
+  0x6e8c77 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f720]
+  0x6e8cca call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f6f0]
+  0x6ee909 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x3c]
+  0x6ef52a call edx  undef_in_window                  EXCLUDED | 
+  0x6f084c call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8eca0]
+  0x6f08c5 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x6f0d5b call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x28]
+  0x6f0da9 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x28]
+  0x6f2608 call edx  undef_in_window                  EXCLUDED | 
+  0x6f31b6 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8ec78]
+  0x6f3209 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f6c8]
+  0x6f44ca call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8ec78]
+  0x6f5019 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x20]
+  0x6f9302 call edx  undef_in_window                  EXCLUDED | 
+  0x6f9349 call edx  undef_in_window                  EXCLUDED | 
+  0x6f94ea call edx  undef_in_window                  EXCLUDED | 
+  0x6f9531 call edx  undef_in_window                  EXCLUDED | 
+  0x6f9697 call edx  undef_in_window                  EXCLUDED | 
+  0x6f96de call edx  undef_in_window                  EXCLUDED | 
+  0x6f987c call edx  undef_in_window                  EXCLUDED | 
+  0x6f98c3 call edx  undef_in_window                  EXCLUDED | 
+  0x6f9a30 call edx  undef_in_window                  EXCLUDED | 
+  0x6f9a77 call edx  undef_in_window                  EXCLUDED | 
+  0x6fad89 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x68]
+  0x6fbba3 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x1c]
+  0x6ff021 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x6ff8cc call edx  undef_in_window                  EXCLUDED | 
+  0x6ff93f call ecx  pop                              EXCLUDED | pop ebx
+  0x702916 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x38]
+  0x709696 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x38]
+  0x7096e4 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x18]
+  0x70ca40 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x70cb93 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x70d78a call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7100f9 call ecx  undef_in_window                  EXCLUDED | 
+  0x71028a call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x7102f6 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7103e6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x30]
+  0x7103f4 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x710402 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x7117c3 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f670]
+  0x711816 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8eb00]
+  0x711ab1 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8eb00]
+  0x717cf8 call edx  undef_in_window                  EXCLUDED | 
+  0x719d17 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x48]
+  0x719dc6 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x719df8 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x719ec2 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x719ff5 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x71a081 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x71a13d call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x48]
+  0x71a4b7 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0ec60]
+  0x71a569 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0ec60]
+  0x71bcd7 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8e988]
+  0x71bea8 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8e988]
+  0x71db6a call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8e318]
+  0x71e70f call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f1a0]
+  0x71e786 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f658]
+  0x71e7d9 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x7206d1 call edx  undef_in_window                  EXCLUDED | 
+  0x7217fe call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f4e8]
+  0x721857 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f670]
+  0x7240db call edx  undef_in_window                  EXCLUDED | 
+  0x7241d1 call edx  undef_in_window                  EXCLUDED | 
+  0x724294 call edx  undef_in_window                  EXCLUDED | 
+  0x724641 call edx  undef_in_window                  EXCLUDED | 
+  0x7247c5 call edx  undef_in_window                  EXCLUDED | 
+  0x724bed call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x725ce8 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x72601b call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x72606e call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f708]
+  0x7260c1 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8eae8]
+  0x72675b call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb0f698]
+  0x726d21 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f658]
+  0x726d74 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x726dd0 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8b4178]
+  0x72805f call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x8b4138]
+  0x731f39 call edx  undef_in_window                  EXCLUDED | 
+  0x732014 call edx  undef_in_window                  EXCLUDED | 
+  0x7320d3 call edx  undef_in_window                  EXCLUDED | 
+  0x73268d call edx  undef_in_window                  EXCLUDED | 
+  0x73286e call edx  undef_in_window                  EXCLUDED | 
+  0x732e0a call edx  undef_in_window                  EXCLUDED | 
+  0x732ed3 call edx  undef_in_window                  EXCLUDED | 
+  0x732f9e call edx  undef_in_window                  EXCLUDED | 
+  0x733085 call edx  undef_in_window                  EXCLUDED | 
+  0x733242 call edx  undef_in_window                  EXCLUDED | 
+  0x733347 call edx  undef_in_window                  EXCLUDED | 
+  0x733dc5 call edx  undef_in_window                  EXCLUDED | 
+  0x733eee call edx  undef_in_window                  EXCLUDED | 
+  0x7343b8 call edx  undef_in_window                  EXCLUDED | 
+  0x73548f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8b4108]
+  0x735531 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x73553f call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x24]
+  0x735ec4 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x5c]
+  0x73a53d call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x73a555 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x73e876 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x741f6c call edx  undef_in_window                  EXCLUDED | 
+  0x742087 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x30]
+  0x742353 call edx  undef_in_window                  EXCLUDED | 
+  0x742564 call ecx  undef_in_window                  EXCLUDED | 
+  0x7425d8 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x74265e call ecx  undef_in_window                  EXCLUDED | 
+  0x74274c call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x74275e call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x74278f call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7427a1 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x7427af call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x18]
+  0x7427bd call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x742a59 call ecx  undef_in_window                  EXCLUDED | 
+  0x742b52 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x742b64 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x28]
+  0x742b95 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x742bf5 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x742c03 call edx  stack_src                        EXCLUDED | mov ecx, dword ptr [esp + 0x18]
+  0x742c11 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x2c]
+  0x74355f call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x743afb call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x743b3e call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x743b9f call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x743cbd call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x744081 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x744099 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x74455e call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x744564 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x744a1b call edx  undef_in_window                  EXCLUDED | 
+  0x744ad7 call edx  undef_in_window                  EXCLUDED | 
+  0x744ba4 call edx  undef_in_window                  EXCLUDED | 
+  0x744bf1 call edx  undef_in_window                  EXCLUDED | 
+  0x744dab call edx  undef_in_window                  EXCLUDED | 
+  0x7450ce call edx  undef_in_window                  EXCLUDED | 
+  0x7451e5 call edx  undef_in_window                  EXCLUDED | 
+  0x745896 call edx  undef_in_window                  EXCLUDED | 
+  0x7459ad call edx  undef_in_window                  EXCLUDED | 
+  0x745d6b call edx  undef_in_window                  EXCLUDED | 
+  0x745dbc call edx  undef_in_window                  EXCLUDED | 
+  0x745eb2 call edx  undef_in_window                  EXCLUDED | 
+  0x7462e2 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x74637a call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x74721c call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa83ce0]
+  0x7494af call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x887388]
+  0x7499bf call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0x887388]
+  0x74aeea call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x74af3d call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8eb28]
+  0x74bbda call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x74bdf9 call edx  mem_of                           EXCLUDED | mov edx, dword ptr [esi + 0xc]
+  0x74c493 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb1d290]
+  0x74c6cb call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb1d290]
+  0x74e2d9 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x28]
+  0x74e4f2 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x28]
+  0x74e606 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x30]
+  0x7503bd call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb1d378]
+  0x75138f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb1d378]
+  0x752d2e call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb1d4a0]
+  0x753146 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb1d4a0]
+  0x75ab21 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x38]
+  0x75c6db call edx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x38]
+  0x75c786 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x75c7b8 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x75c882 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x75c995 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x75ca21 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x75cc01 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x38]
+  0x75d11c call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x8874c0]
+  0x75d16f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb0f670]
+  0x75db74 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x30]
+  0x75eadd call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8ec38]
+  0x75ecfb call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8ec38]
+  0x75f516 call edx  undef_in_window                  EXCLUDED | 
+  0x75f76e call edx  undef_in_window                  EXCLUDED | 
+  0x763358 call edx  undef_in_window                  EXCLUDED | 
+  0x7637ac call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb72608]
+  0x76389a call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb72608]
+  0x763a1e call edx  undef_in_window                  EXCLUDED | 
+  0x763d42 call edx  undef_in_window                  EXCLUDED | 
+  0x764d3b call edx  undef_in_window                  EXCLUDED | 
+  0x7653d0 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x766183 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb72760]
+  0x766249 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb72760]
+  0x76630f call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb72760]
+  0x7663cb call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb72760]
+  0x766491 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xb72760]
+  0x7666ab call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x24]
+  0x766760 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x24]
+  0x766f08 call edx  undef_in_window                  EXCLUDED | 
+  0x768e4a call edx  undef_in_window                  EXCLUDED | 
+  0x769285 call edx  undef_in_window                  EXCLUDED | 
+  0x7696f5 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x3c]
+  0x76992f call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x54]
+  0x769b01 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x3c]
+  0x76b66c call edx  undef_in_window                  EXCLUDED | 
+  0x76c7aa call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x76c80e call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x1c]
+  0x76c872 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x76cb8e call edx  undef_in_window                  EXCLUDED | 
+  0x76cf19 call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x3c]
+  0x76d34f call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x18]
+  0x76d532 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 8]
+  0x76d71b call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x5c]
+  0x76d821 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x44]
+  0x76d86c call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x1c]
+  0x76d99b call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x10]
+  0x76da15 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x28]
+  0x76da36 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x38]
+  0x76dd70 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x2c]
+  0x76df2c call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 4]
+  0x76dfac call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 4]
+  0x76e043 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 8]
+  0x76e103 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x10]
+  0x76e20e call eax  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 8]
+  0x76ea5a call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x76eb4c call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x88730c]
+  0x76ec42 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 8]
+  0x76ff8f call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x14]
+  0x7706c9 call edx  undef_in_window                  EXCLUDED | 
+  0x7707e6 call edx  undef_in_window                  EXCLUDED | 
+  0x770919 call edx  undef_in_window                  EXCLUDED | 
+  0x770dd1 call edx  undef_in_window                  EXCLUDED | 
+  0x77118e call edx  undef_in_window                  EXCLUDED | 
+  0x771269 call edx  undef_in_window                  EXCLUDED | 
+  0x7713c7 call edx  undef_in_window                  EXCLUDED | 
+  0x771469 call edx  undef_in_window                  EXCLUDED | 
+  0x7715d9 call edx  undef_in_window                  EXCLUDED | 
+  0x771eca call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0x887568]
+  0x773587 call eax  mem_of                           EXCLUDED | mov esi, dword ptr [esi + 8]
+  0x77403c call ecx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xb72d0c]
+  0x7740e7 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 8]
+  0x78548d call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x10]
+  0x78549b call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0x14]
+  0x786127 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 8]
+  0x786135 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x786140 call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xac116c]
+  0x78619b call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x7861a9 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 8]
+  0x7861b4 call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xac1170]
+  0x78620f call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 0xc]
+  0x78621d call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 8]
+  0x786228 call edx  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xac1174]
+  0x78a079 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8da74]
+  0x795a01 call edx  stack_src                        EXCLUDED | mov edx, dword ptr [esp + 0x10]
+  0x796e8c call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x796f78 call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x79707a call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x79e9dd call eax  pop                              EXCLUDED | pop edi
+  0x7a258b call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8b8c8]
+  0x7a2f08 call ecx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 4]
+  0x7a2f16 call edx  stack_src                        EXCLUDED | mov eax, dword ptr [esp + 8]
+  0x7a61e9 call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8da74]
+  0x7a6d9c call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x7a707c call eax  vptr_of_imm                      EXCLUDED | mov eax, dword ptr [0xa8da74]
+  0x7a776a call edx  vptr_of_imm                      EXCLUDED | mov edx, dword ptr [0xa8da74]
+  0x7ac52a call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 0x10]
+  0x7ac679 call ecx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7ac689 call ecx  clobbered_by_call                EXCLUDED | call dword ptr [ecx + 8]
+  0x7af546 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7af6a7 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x7af7e4 call eax  vptr_of_imm                      EXCLUDED | mov ecx, dword ptr [0x887310]
+  0x7b16fe call edx  undef_in_window                  EXCLUDED | 
+  0x7b2444 call edx  undef_in_window                  EXCLUDED | 
+  0x7b248a call edx  undef_in_window                  EXCLUDED | 
+  0x7b254d call edx  undef_in_window                  EXCLUDED | 
+  0x7b2593 call edx  undef_in_window                  EXCLUDED | 
+  0x7b3083 call edx  undef_in_window                  EXCLUDED | 
+  0x7b35be call edx  undef_in_window                  EXCLUDED | 
+  0x7b37dd call edx  undef_in_window                  EXCLUDED | 
+  0x7b3823 call edx  undef_in_window                  EXCLUDED | 
+  0x7b40b8 call edx  undef_in_window                  EXCLUDED | 
+  0x7b8a58 call edx  undef_in_window                  EXCLUDED | 
+  0x7b8af0 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b8b31 call eax  undef_in_window                  EXCLUDED | 
+  0x7b8bf8 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b9027 call eax  mem_of                           EXCLUDED | mov ecx, dword ptr [esi + 0x44]
+  0x7b90ab call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b90cb call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b91fc call edx  undef_in_window                  EXCLUDED | 
+  0x7b925b call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b9287 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b92da call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b93cf call edx  undef_in_window                  EXCLUDED | 
+  0x7b965a call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b972a call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b98d0 call ebp  undef_in_window                  EXCLUDED | 
+  0x7b9a11 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b9ac4 call edx  undef_in_window                  EXCLUDED | 
+  0x7b9bef call ebp  undef_in_window                  EXCLUDED | 
+  0x7b9c93 call edx  undef_in_window                  EXCLUDED | 
+  0x7b9d2d call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b9e9f call edx  undef_in_window                  EXCLUDED | 
+  0x7b9f44 call edx  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7b9f7b call eax  undef_in_window                  EXCLUDED | 
+  0x7ba051 call eax  thiscall_this_of_enclosing_fn    EXCLUDED | 
+  0x7ba1c4 call eax  undef_in_window                  EXCLUDED | 
+  0x7ba22d call edx  undef_in_window                  EXCLUDED | 
+  0x7bbb75 call eax  undef_in_window                  EXCLUDED | 
+  0x7dc764 call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [ebp + 0xc]
+  0x7dce4e call ecx  mem_of                           EXCLUDED | mov eax, dword ptr [esi + 8]
+
+[交叉断言]
+  [FACT] sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 (与台账一致)
+  [FACT] size = 4825360 B
+  [FACT] [前提] [0x7ECBFC+8]=0x54A4F0 (vtable 0x7ECBFC slot2)
+  [FACT] [前提] [0x7ECBDC+8]=0x54A630 (vtable 0x7ECBDC slot2)
+  [FACT] [前提] RTTI @0x7ECBFC: .?AV?$VectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@
+  [FACT] [前提] RTTI @0x7ECBDC: .?AV?$DynamicVectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@
+  [FACT] [前提] 文件镜像 .data @0xAA1078 vptr/Vector/VectorMax = 0 (运行期动态初始化)
+  [FACT] T1a 复现陷阱: 单次 disasm = 155215 条, 末条 VA 0x46F59D (next undecodable 0x46F5A0)
+  [FACT] T1b 主普查流(分块 seg-extend): 1392527 条, 65 个自然停点, 覆盖至 0x7E038D (=100% .text, ≥1e6 条)
+  [FACT] T1b-bis 主流末条恰达段尾 0x7E038D
+  [FACT] T1c 复现 ask 给数: 分块(0x10000 独立块 × 62) = 1150117 条 = ask 的 1150117
+  [FACT] 对账①: 主流 1714 个 slot2 点全部有字节级编码对应(无主流多出; 编码集完备)
+  [FACT] 对账①-b: 对照流 1311 个 slot2 点全部有字节级编码对应
+  [FACT] 对账②-b: 无字节级命中落在主流未解码洞(无被错位解码藏匿的 slot2 编码)
+  [FACT] 对账②-c: 无『一流认作 site / 另一流嵌入』的分歧命中
+  [FACT] 对账②-d: 字节级 1716 个编码命中全部是至少一条流的 site (主流 slot2 1714 + 主流异形 2 + 对照流 1311 并集完整) → 普查无漏点
+  [FACT] T4: 直接/物化调用 0x0054A4F0 = 0 — 指令级(A流0/B流0) + 字节级E8/E9(0) + 全镜像dword仅vtable slot2 0x7ECC04 一处 + 无 FF 15/25 或装载该单元(0 处) — 四法一致
+  [FACT] T4: 直接/物化调用 0x0054A630 = 0 — 指令级(A流0/B流0) + 字节级E8/E9(0) + 全镜像dword仅vtable slot2 0x7ECBE4 一处 + 无 FF 15/25 或装载该单元(0 处) — 四法一致
+  [FACT] G1a: 全镜像值==0x54A4F0 的 dword 仅 1 处: 0x7ECC04 (=vtable 0x7ECBFC slot2) → 无第二虚表/无回调表/无立即数
+  [FACT] G1a: 全镜像值==0x54A630 的 dword 仅 1 处: 0x7ECBE4 (=vtable 0x7ECBDC slot2)
+  [FACT] G1b: 无任何指令 call/jmp [slot2单元] 或从其装载(FF15/FF25/A1/8B/89/SIB-abs 全编码 = 0) → 函数指针值无法运行期复制到其它单元
+  [FACT] G3 存储指令锚点解码确认: mov dword ptr [0xaa1078], 0x7ecbdc | mov dword ptr [0xaa1078], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc
+  [FACT] G2: 值 0x7ECBFC×3 + 0x7ECBDC×1 共 4 处全落在 c7 存储立即数内: 0x543EC4 ← imm of mov dword ptr [0xaa1078], 0x7ecbfc; 0x54A7B8 ← imm of mov dword ptr [esi], 0x7ecbfc; 0x54A808 ← imm of mov dword ptr [esi], 0x7ecbfc; 0x543E93 ← imm of mov dword ptr [0xaa1078], 0x7ecbdc → 无 mov reg,vtable值,无 .rdata/.data 值单元 → 寄存器持有 0x7ECBFC/0x7ECBDC 的唯一途径 = 装载 [0xAA1078]
+  [FACT] G3: vptr 写入点(c7 /0)全镜像重扫一致 — 0x7ECBDC: [0x543E8D]→[0xAA1078](动态初始化器 0x543E70 体内); 0x7ECBFC: [0x543EBE]→[0xAA1078](atexit 析构器 0x543EB0 体内), [0x54A7B6]/[0x54A806]→[esi](deleting dtor 体内)
+  [FACT] G3 归属: 0x543E8D ∈ 动态初始化器 0x543E70 体内; 0x543EBE ∈ atexit 析构器 0x543EB0 体内 (ask 前提的初始化/析构归属复核)
+  [FACT] G3 支撑: 两 deleting dtor (0x54A7B0/0x54A800) 无直接 call/jmp 进入 → [esi] 写只作用于经 slot0 虚派发到达的 this, 而 slot0 派发要求 reg 已持这两个 vptr 值 → 归纳: 唯一实例 0xAA1078
+  [FACT] G4: 全镜像 imm32/disp32 引用 0xAA1078 恰 4 处(立即数字节地址): 0x543E8F(init 存储)/0x543EC0(atexit 存储)/0x546060(vptr 装载 @0x54605F)/0x546065(this 装载 @0x546064)
+  [FACT] G4-load: 全编码扫「load r32 ← [0xAA1078]」恰 1 处 = 0x54605F (mov eax, dword ptr [0xAA1078]); 「store reg → [0xAA1078]」= 0 (vptr 单元只被 2 条 c7 立即数写) — 字节级,与解码流无关
+  [FACT] G5: .rdata/.data 无 dword==0xAA1078 → 不存在指向该全局对象的指针变量(指针值不逃逸前提)
+  [FACT] G4b: 基址立即数装载中仅 0x546064 恰为 0xAA1078(this 装载); 其余装载值均 ≠ 0xAA1078 → 无别名合成路径读取 vptr 单元
+  [FACT] 唯一 vptr 装载 0x54605F 在主流中定位成功 (idx=465556)
+  [FACT] GROW(包含唯一装载与派发的函数) = 0x545150..0x546D92 (ret@0x546D90), 体内无停点
+  [FACT] T5: 从全镜像唯一 vptr 装载 0x54605F 的污点传播 → 消费者恰 1 个 = 0x546069 (call dword ptr [eax + 8]); 无 push/store/ret 逃逸 → vptr 值不逃逸出 GROW
+  [FACT] T5-final: 1714 个主流 slot2 点中可能指向 0x54A4F0/0x54A630 的恰 1 个: 0x546069

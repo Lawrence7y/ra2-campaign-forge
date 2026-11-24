@@ -1,0 +1,58 @@
+=== 1. §544 关键对照：四个时刻逐窗独立复算（live_fps = (f1-f0)/(t1-t0)）===
+-- 2026-11-01 16:48 窗数 1
+   2026-11-01 16:48:39 w0  f 920→1699  Δf=779  Δt=24.983436s  live_fps=31.1807  units0=1225  pre=30.053  avg=31.1619
+   harness_sha16=38244d2907e7f7fa harness=qc151_trip.harness8_v4.py map=f3bb0a4efdedd067f5348d3acf01d294c602d3481203cf718809f7ec597b9a36
+-- 2026-11-03 11:20 窗数 2
+   2026-11-03 11:20:31 w0  f 925→1707  Δf=782  Δt=24.994881s  live_fps=31.2864  units0=1189  pre=31.395  avg=31.2801
+   2026-11-03 11:20:56 w1  f 1707→2487  Δf=780  Δt=24.969578s  live_fps=31.2380  units0=1189  pre=31.395  avg=31.2021
+   harness_sha16=38244d2907e7f7fa harness=qc151_trip.harness8_v4.py map=f3bb0a4efdedd067f5348d3acf01d294c602d3481203cf718809f7ec597b9a36
+-- 2026-10-21 19:03 窗数 1
+   2026-10-21 19:03:51 w0  f 957→1186  Δf=229  Δt=24.833701s  live_fps=9.2213  units0=881  pre=8.023  avg=9.1603
+   harness_sha16=None harness=qc151_trip.harness3.py map=0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc
+-- 2026-10-31 20:15 窗数 2
+   2026-10-31 20:15:34 w0  f 437→606  Δf=169  Δt=24.885573s  live_fps=6.7911  units0=1347  pre=6.676  avg=6.7872
+   2026-10-31 20:15:59 w1  f 607→725  Δf=118  Δt=24.798287s  live_fps=4.7584  units0=1347  pre=6.676  avg=4.7317
+   harness_sha16=dd5459fe0cf3461c harness=qc151_trip.harness8.py map=f3bb0a4efdedd067f5348d3acf01d294c602d3481203cf718809f7ec597b9a36
+   [独立二次读取 frame_edges 复算一致]
+
+=== 2. 快/慢 × harness 版本 2×2 列联（units0>=800 且 live>0）===
+  units0>=800 有效窗 n=39：fast(>=28)=16  mid=2  slow(<15)=21
+  FAST  n=16   {('38244d2907e7f7fa', 'qc151_trip.harness8_v4.py'): 8, ('d019e8beecfb5fd8', 'qc151_trip.harness7.py'): 5, ('NO_SHA16', None): 3}
+  MID   n=2    {('37a7c9cdf2ca97e3', 'qc151_trip.harness8_v3.py'): 1, ('38244d2907e7f7fa', 'qc151_trip.harness8_v4.py'): 1}
+  SLOW  n=21   {('NO_SHA16', 'qc151_trip.harness3.py'): 12, ('37a7c9cdf2ca97e3', 'qc151_trip.harness8_v3.py'): 5, ('dd5459fe0cf3461c', 'qc151_trip.harness8.py'): 4}
+  2x2 [fast/slow] x [v4/非v4]:  fast_v4=8 fast_nonv4=8 slow_v4=0 slow_nonv4=21
+  phi = +0.601722  (|phi|=1 ⇒ 完全共线)
+  判定：FAST 全部 v4？False ；SLOW 有任一 v4？False
+
+=== 3. 固定 map=f3bb0a4e… 内，各 harness 的 units0 / live（时序）===
+  2026-10-21 21:13  qc151_trip.harness3.py       None               units0=1342   n=2 live=10.382 (min 8.784 max 11.981)
+  2026-10-21 21:14  qc151_trip.harness3.py       None               units0=1342   n=1 live=10.213 (min 10.213 max 10.213)
+  2026-10-30 20:49  qc151_trip.harness7.py       d019e8beecfb5fd8   units0=974    n=2 live=31.217 (min 31.135 max 31.299)
+  2026-10-30 20:50  qc151_trip.harness7.py       d019e8beecfb5fd8   units0=974    n=1 live=31.218 (min 31.218 max 31.218)
+  2026-10-30 21:01  qc151_trip.harness7.py       d019e8beecfb5fd8   units0=941    n=2 live=31.210 (min 31.099 max 31.320)
+  2026-10-31 20:08  qc151_trip.harness8.py       dd5459fe0cf3461c   units0=1342   n=1 live=3.050 (min 3.050 max 3.050)
+  2026-10-31 20:15  qc151_trip.harness8.py       dd5459fe0cf3461c   units0=1347   n=2 live=5.775 (min 4.758 max 6.791)
+  2026-10-31 20:16  qc151_trip.harness8.py       dd5459fe0cf3461c   units0=1347   n=1 live=10.607 (min 10.607 max 10.607)
+  2026-11-01 07:06  qc151_trip.harness8_v3.py    37a7c9cdf2ca97e3   units0=1349   n=2 live=12.848 (min 11.625 max 14.071)
+  2026-11-01 07:07  qc151_trip.harness8_v3.py    37a7c9cdf2ca97e3   units0=1349   n=1 live=5.891 (min 5.891 max 5.891)
+  2026-11-01 07:10  qc151_trip.harness8_v3.py    37a7c9cdf2ca97e3   units0=1352   n=3 live=13.448 (min 11.217 max 16.744)
+  2026-11-01 09:45  qc151_trip.harness8_v4.py    38244d2907e7f7fa   units0=1229   n=2 live=23.478 (min 18.540 max 28.416)
+  2026-11-01 09:46  qc151_trip.harness8_v4.py    38244d2907e7f7fa   units0=1229   n=1 live=30.705 (min 30.705 max 30.705)
+  2026-11-01 16:48  qc151_trip.harness8_v4.py    38244d2907e7f7fa   units0=1225   n=1 live=31.181 (min 31.181 max 31.181)
+  2026-11-01 16:49  qc151_trip.harness8_v4.py    38244d2907e7f7fa   units0=1225   n=2 live=31.268 (min 31.267 max 31.268)
+  2026-11-03 11:20  qc151_trip.harness8_v4.py    38244d2907e7f7fa   units0=1189   n=2 live=31.262 (min 31.238 max 31.286)
+  2026-11-03 11:21  qc151_trip.harness8_v4.py    38244d2907e7f7fa   units0=1189   n=1 live=31.273 (min 31.273 max 31.273)
+
+=== 4. 全库机器/时钟/母本一致性 ===
+  schema             distinct=['MEASURE_V1']
+  t_clock            distinct=['time.perf_counter']
+  hz                 distinct=['500']
+  gamemd_sha256      distinct=['73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476']
+  map_sha256 distinct=10
+  快慢四组 map: 
+    l1c_20261021         0add791d11aea84d7876aa3f908165259ec77f681ee721f83fd9966facdf60bc
+    l3_20261031hb        f3bb0a4efdedd067f5348d3acf01d294c602d3481203cf718809f7ec597b9a36
+    l3_1101v4d           f3bb0a4efdedd067f5348d3acf01d294c602d3481203cf718809f7ec597b9a36
+    l3_1101v4e           f3bb0a4efdedd067f5348d3acf01d294c602d3481203cf718809f7ec597b9a36
+  qc151_fields.ts 时区全部 +08:00；window_stable_rect 多为 [0,0,2560,1440]；
+  carrier_creation_receipt 15 键；MANIFEST.json 89 个 sha256 条目（快/慢趟一致）

@@ -1,0 +1,22 @@
+item	address	bytes	decoded	branch_target	verdict
+B1	0x43f2b5	0F8449020000	je 0x43f504	0x43f504	je displacement +585 -> target 0x43f504 ; CONFIRMED == 0x43F504
+B2	0x43f504	8B442418	mov eax, dword ptr [esp + 0x18]		
+B2	0x43f508	46	inc esi		loop increment of esi
+B2	0x43f509	3BF0	cmp esi, eax		
+B2	0x43f50b	8974241C	mov dword ptr [esp + 0x1c], esi		
+B2	0x43f50f	0F8C54FDFFFF	jl 0x43f269	0x43f269	back-edge to loop head 0x43F269 (signed <, operands 0x43f269)
+B2	0x43f515	8B442410	mov eax, dword ptr [esp + 0x10]		
+B3	0x43f220	0F85B2030000	jne 0x43f5d8	0x43F5D8	source of jump to reject exit
+B3	0x43f5b1	7425	je 0x43f5d8	0x43F5D8	source of jump to reject exit
+B3	n=2	count=2	n/a	0x43F5D8	sources=0x43f220,0x43f5b1
+B4	0x43f5b1	7425	je 0x43f5d8	0x43f5d8	preceded by mov al, byte ptr [esp + 0x23] ; test al, al ; [esp+0x23] judge CONFIRMED
+B4	0x43f5ab	8A442423	mov al, byte ptr [esp + 0x23]		loads/tests the byte at [esp+0x23]
+B4	0x43f5af	84C0	test al, al		loads/tests the byte at [esp+0x23]
+B5	0x449459	7438	je 0x449493	0x449493	short-circuit edge to 0x449493 (NOT a direct `return 7`)
+B5	0x449460	7431	je 0x449493	0x449493	short-circuit edge to 0x449493 (NOT a direct `return 7`)
+B5	0x4494a3	FF92A8000000	call dword ptr [edx + 0xa8]		vt[0xA8] candidate
+B5	0x449490	C21400	ret 0x14		exit of 0x449440 body (returns 0 or 7 via and 0xF9 / add 7)
+B5	0x4494b2	C21400	ret 0x14		exit of 0x449440 body (returns 0 or 7 via and 0xF9 / add 7)
+B6	0x449440	1/0	n/a	writes_total/nonstack	insns=26 tot=1 nonstack=0
+B6	0x47C620	0/0	n/a	writes_total/nonstack	insns=62 tot=0 nonstack=0
+B6	0x47C3D0	8/0	n/a	writes_total/nonstack	insns=81 tot=8 nonstack=0

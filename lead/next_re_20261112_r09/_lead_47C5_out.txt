@@ -1,0 +1,75 @@
+# gamemd.exe  section=.text  range=0x0047C4D0..0x0047C560
+0x0047C4D0  a0a0e9a800               mov      al, byte ptr [0xa8e9a0]            <== ATTENTION
+0x0047C4D5  56                       push     esi                             
+0x0047C4D6  84c0                     test     al, al                          
+0x0047C4D8  57                       push     edi                             
+0x0047C4D9  7430                     je       0x47c50b                        
+0x0047C4DB  8a442410                 mov      al, byte ptr [esp + 0x10]       
+0x0047C4DF  84c0                     test     al, al                          
+0x0047C4E1  7408                     je       0x47c4eb                        
+0x0047C4E3  8bb1e8000000             mov      esi, dword ptr [ecx + 0xe8]     
+0x0047C4E9  eb06                     jmp      0x47c4f1                        
+0x0047C4EB  8bb1e4000000             mov      esi, dword ptr [ecx + 0xe4]     
+0x0047C4F1  85f6                     test     esi, esi                        
+0x0047C4F3  7416                     je       0x47c50b                        
+0x0047C4F5  8b7c240c                 mov      edi, dword ptr [esp + 0xc]      
+0x0047C4F9  8b06                     mov      eax, dword ptr [esi]            
+0x0047C4FB  8bce                     mov      ecx, esi                        
+0x0047C4FD  ff502c                   call     dword ptr [eax + 0x2c]          
+0x0047C500  3bc7                     cmp      eax, edi                        
+0x0047C502  740e                     je       0x47c512                        
+0x0047C504  8b7630                   mov      esi, dword ptr [esi + 0x30]     
+0x0047C507  85f6                     test     esi, esi                        
+0x0047C509  75ee                     jne      0x47c4f9                        
+0x0047C50B  5f                       pop      edi                             
+0x0047C50C  33c0                     xor      eax, eax                        
+0x0047C50E  5e                       pop      esi                             
+0x0047C50F  c20800                   ret      8                               
+0x0047C512  8bc6                     mov      eax, esi                        
+0x0047C514  5f                       pop      edi                             
+0x0047C515  5e                       pop      esi                             
+0x0047C516  c20800                   ret      8                               
+0x0047C519  90                       nop                                      
+0x0047C51A  90                       nop                                      
+0x0047C51B  90                       nop                                      
+0x0047C51C  90                       nop                                      
+0x0047C51D  90                       nop                                      
+0x0047C51E  90                       nop                                      
+0x0047C51F  90                       nop                                      
+0x0047C520  a0a0e9a800               mov      al, byte ptr [0xa8e9a0]         
+0x0047C525  56                       push     esi                             
+0x0047C526  84c0                     test     al, al                          
+0x0047C528  741d                     je       0x47c547                        
+0x0047C52A  8bb1e4000000             mov      esi, dword ptr [ecx + 0xe4]        <== ATTENTION
+0x0047C530  85f6                     test     esi, esi                        
+0x0047C532  7413                     je       0x47c547                        
+0x0047C534  8b06                     mov      eax, dword ptr [esi]            
+0x0047C536  8bce                     mov      ecx, esi                        
+0x0047C538  ff502c                   call     dword ptr [eax + 0x2c]             <== ATTENTION
+0x0047C53B  83f806                   cmp      eax, 6                             <== ATTENTION
+0x0047C53E  740b                     je       0x47c54b                        
+0x0047C540  8b7630                   mov      esi, dword ptr [esi + 0x30]     
+0x0047C543  85f6                     test     esi, esi                        
+0x0047C545  75ed                     jne      0x47c534                        
+0x0047C547  33c0                     xor      eax, eax                        
+0x0047C549  5e                       pop      esi                             
+0x0047C54A  c3                       ret                                      
+0x0047C54B  8bc6                     mov      eax, esi                        
+0x0047C54D  5e                       pop      esi                             
+0x0047C54E  c3                       ret                                      
+0x0047C54F  90                       nop                                      
+0x0047C550  a0a0e9a800               mov      al, byte ptr [0xa8e9a0]         
+0x0047C555  56                       push     esi                             
+0x0047C556  84c0                     test     al, al                          
+0x0047C558  742d                     je       0x47c587                        
+0x0047C55A  8a442408                 mov      al, byte ptr [esp + 8]          
+0x0047C55E  84c0                     test     al, al                          
+
+# ---- 机械核对 ----
+[0x0047C52A] mov esi, dword ptr [ecx + 0xe4]  bytes=8bb1e4000000
+    -> 首个 mem disp = 0xE4   断言 disp==0xE4 : PASS
+[0x0047C538] call dword ptr [eax + 0x2c]  bytes=ff502c
+    -> mem disp = 0x2C  间接引用=True  断言 disp==0x2C : PASS
+[算术] 0x000A0008 + 0x2C = 0x000A0034  （S1 的 Access address = 0x000A0034）: MATCH
+
+[out] lead\next_re_20261112_r09\_lead_47C5.json

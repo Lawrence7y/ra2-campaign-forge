@@ -1,0 +1,65 @@
+=== (i) P11/P12: 补词表后 _mask_quotes / _scope / DG_DROPIN_RE 逐层 ===
+  原版                 P11 | pre='"并非不宣告'
+      QUOTE_RE.search(pre)=False masked='"并非不宣告' scope='"并非不宣告'
+      DG_DROPIN_RE.search(scope)='并非不宣告'  dg_scan=CATCH
+  原版                 P12 | pre='《并不否认'
+      QUOTE_RE.search(pre)=False masked='《并不否认' scope='《并不否认'
+      DG_DROPIN_RE.search(scope)='并不否认'  dg_scan=CATCH
+  (甲)只补数据            P11 | pre='"并非不宣告'
+      QUOTE_RE.search(pre)=False masked='"并非不宣告' scope='"并非不宣告'
+      DG_DROPIN_RE.search(scope)='并非不宣告'  dg_scan=CATCH
+  (甲)只补数据            P12 | pre='《并不否认'
+      QUOTE_RE.search(pre)=False masked='《并不否认' scope='《并不否认'
+      DG_DROPIN_RE.search(scope)='并不否认'  dg_scan=CATCH
+  (甲4)+4类引号          P11 | pre='"并非不宣告'
+      QUOTE_RE.search(pre)=False masked='"并非不宣告' scope='"并非不宣告'
+      DG_DROPIN_RE.search(scope)='并非不宣告'  dg_scan=CATCH
+  (甲4)+4类引号          P12 | pre='《并不否认'
+      QUOTE_RE.search(pre)=False masked='《并不否认' scope='《并不否认'
+      DG_DROPIN_RE.search(scope)='并不否认'  dg_scan=CATCH
+  (甲Q)+改_mask_quotes P11 | pre='"并非不宣告'
+      QUOTE_RE.search(pre)=False masked='"' scope='"'
+      DG_DROPIN_RE.search(scope)=''  dg_scan=PASS
+  (甲Q)+改_mask_quotes P12 | pre='《并不否认'
+      QUOTE_RE.search(pre)=False masked='《' scope='《'
+      DG_DROPIN_RE.search(scope)=''  dg_scan=PASS
+
+=== (ii) 4 类引号歧义：甲(2类) vs 甲4(4类) 在 7 fp 上逐条 verdict ===
+  P06  甲=PASS  甲4=PASS  同=True
+  P07  甲=PASS  甲4=PASS  同=True
+  P08  甲=PASS  甲4=PASS  同=True
+  P09  甲=CATCH 甲4=CATCH 同=True
+  P10  甲=CATCH 甲4=CATCH 同=True
+  P11  甲=CATCH 甲4=CATCH 同=True
+  P12  甲=CATCH 甲4=CATCH 同=True
+  [verdict] 7 fp 上 甲 与 甲4 逐条全同 = True ⇒ 「4 类引号」歧义不改变本实验 E2 结论
+
+=== (iii) 交付形态 guard 缺失（不执行原件，仅静态 co_names + 源码行）===
+  r10_context  dg_double_neg=False _mask_quotes=False _scope=False DG_SECOND_SUBJ_RE=False DG_COORD_RE=False DG_QUOTE_RE=False DG_BREAK_RE=False
+  r12_scan     dg_double_neg=False _mask_quotes=False _scope=False DG_SECOND_SUBJ_RE=False DG_COORD_RE=False DG_QUOTE_RE=False DG_BREAK_RE=False
+  _g7_predicates.py:76 | DOUBLE_NEG_RE = re.compile(r"(不得不|并非不|并不是不|不是不|无不|没有不|不无|不能不|不可不|未曾不)")
+  _g7_predicates.py:92 |     dbl = bool(DOUBLE_NEG_RE.search(pre))
+  _g7_predicates.py:144 |             ctx = r10_context(text, m.start(), m.end())
+  DNEG_GENERATIVE.md:173 |   `guard dg_double_neg/_mask_quotes/_scope/DG_SECOND_SUBJ_RE/DG_COORD_RE/DG_QUOTE_RE/DG_BREAK_RE 在 r10_context 中 = False ; 在 r12_scan 中 = False`（`_dgv_struct_out.json:40-57`）。即**只换 `:76` 一行后，7 条不变式里 4 条 guard 一个都不执行**，正则内只剩 PSEUDO_DN / COMP / GOVERN。
+
+=== (iv) P09/P10 veto 作用域文本（原版 hit_text vs 各候选 zone）===
+  P09 pre='旧稿并不否认与监理方不宣告'
+     scope='旧稿并不否认与监理方不宣告'  hit='并不否认'  m.start=2 m.end=6
+     hit_text-only zone = '并不否认' ; SECOND=False COORD=False
+     whole-scope zone   = '旧稿并不否认与监理方不宣告' ; SECOND=False COORD=False
+     N2-tail zone       = '与监理方不宣告' ; SECOND=False COORD=False
+     before-hit zone    = '旧稿' ; SECOND=False COORD=False
+     含「监理方」=True 含「与」=True 含「或」=False 含「本件」=False
+  P10 pre='本件不承认或并不否认'
+     scope='本件不承认或并不否认'  hit='并不否认'  m.start=6 m.end=10
+     hit_text-only zone = '并不否认' ; SECOND=False COORD=False
+     whole-scope zone   = '本件不承认或并不否认' ; SECOND=True COORD=True
+     N2-tail zone       = '' ; SECOND=False COORD=False
+     before-hit zone    = '本件不承认或' ; SECOND=True COORD=True
+     含「监理方」=False 含「与」=False 含「或」=True 含「本件」=True
+
+=== (v) 4 类未登记引号：DG_ADVERSARIAL.md:184 原文 ===
+  DG_ADVERSARIAL.md:181 | ### ② 引证跨度屏蔽（`_mask_quotes`）—— **点名形态正确，但另 4 类未登记 ⇒ 绕过**
+  DG_ADVERSARIAL.md:184 | - 但 `DG_QUOTE_RE`（`_dg_core.py:92`）只认 4 类：`「」『』“”`` `。实跑 `:119-123`：ASCII 双引号 `"…"`、书名号《》、ASCII 括号 `(…)`、ASCII 单引号 `'…'` 四类**全部 `DG_pure=CATCH`（应 PASS）**。
+  DG_ADVERSARIAL.md:185 | - 结论：② 的屏蔽是「4 类引号 + 纯函数」双限定；未登记引号 + 交付形态两处均可绕过。
+  FP_PATTERN_ANALYSIS.md:104 | - **E2 消融（直接判「补护栏」还是「删构式」）**：均不动构式表 —— (甲) 只把 14 个边界词 + 4 类引号登记进 `DG_BREAK_RE`/`DG_QUOTE_RE`；(乙) 只把 7 条 fp 命中的构式从 `NEG1/MID/NEG2` 删掉。若 (甲) 让 7/7 fp→PASS 且真阳不退化 ⇒ 根因是护栏未穷尽；若必须 (乙) 才消 fp ⇒ 才支持「表内构式本身带毒性」。**最推荐的判别实验**（`DG_ADVERSARIAL.md:308` 已列修复项但未执行）。

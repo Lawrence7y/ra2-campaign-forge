@@ -1,0 +1,101 @@
+== 1 编排方指纹独立复核（hashlib）==
+  MATCH 83f8217fb9a194befdd389f0fd9e699660d3240f0cf1eec365cc3d612fdf8f75 15723 lead/r11_f2_fix_20261109/_f2_r11plus.py
+  MATCH 12e55acf42441aca846986a2447abffef77d774ee694cedf56a012c1c8907106 4821 lead/r11_f2_fix_20261109/_f2_compare.py
+  MATCH 148ea8d689eaaf582af05ea1bf4650605e104d6d74f8c7765e75a6eec662c7b1 44958 lead/r11_f2_fix_20261109/_f2_compare_out.json
+  MATCH 23c5eebb77b43e9e187be6b4736fe1f0b3f5d8eb7f46a9ee2f8af1bbbce53514 2189 lead/r11_f2_fix_20261109/_f2w_checks.py
+  MATCH 1eb22164c78330e825d053f665934e9ef1e4eba14e2b101c884de68a91aad701 1564 lead/r11_f2_fix_20261109/_f2w_extract.py
+  MATCH 625704697e412c30a278c616cf8be594b8b870a2734df2219aa0607aa74a19bd 8579 lead/r11_f2_fix_20261109/_f2_selftest.py
+  MATCH 7ca339c6beb728f488903e1b0c748708accf45cd5e3bce45d532290c0c755b52 19481 lead/r33e_merge_20261109/_re_linked.py
+  MATCH 8b0be4a59bd3e88ffd908a234e9c8382a724478d93409fddf3814d5bb5aa3367 33762 lead/merged_consumer_audit_20261109/_mc_AUDIT.md
+  MATCH bc5eb5d0d13e1fbe8a67451141476c7f077ec49e0d8e9a6bbab34bc569110c44 34299 lead/merged_safety_20261109/_ms_DESIGN.md
+  MATCH 3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 52419 lead/PENDING_DECISIONS.md
+  MATCH 2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede 759518 lead/GOAL_THREE_TARGETS_20261018.md
+  ALL_ELEVEN_MATCH = True
+
+== 2 接入点 _f2_r11plus.py:298-306 逐字 ==
+298 |             elif t2_spans or t2n_cands or t3_cands:
+299 |                 rec["match"] = False
+300 |                 rec["tier"] = "T2/T2N/T3"
+301 |                 warnings.append("采集到候选锚但均不在盘：%s（R11+/F2，仅警告）"
+302 |                                 % ", ".join((t2_spans + t2n_cands + t3_cands)[:4]))
+303 |             else:
+304 |                 rec["tier"] = None
+305 |                 warnings.append("绑定行缺显式路径，需人工锚定（R11/R3-3b）")
+306 |         bindings.append(rec)
+
+== 3 link 家族字面计数（整文件）==
+  link_triple      = 0
+  _re_linked       = 0
+  samedoc          = 0
+  verified_path    = 2
+  recomputed       = 2
+  _mc_AUDIT.md:170 grep pattern 命中行 = 0
+  verified_path 命中行 = [238, 270]
+  import/装载语句 = [(45, 'import hashlib'), (46, 'import importlib.util'), (47, 'import re'), (48, 'from pathlib import Path'), (70, 'spec = importlib.util.spec_from_file_location("_g7_predicates_f2plus", G7_PREDICATES_PATH)'), (72, 'spec.loader.exec_module(mod)')]
+
+== 4 _re_linked.py 中写入 problems 的语句 ==
+  count = 0 []
+  docstring :47 = ★ 一律 warning 级：任何分支都不产出 problem（problems 恒为空列表，merged 亦然）。
+
+== 5 link_triple 实跑（6 个 fixture）==
+  --- Pu_unique_with_decl verdict=unique ---
+      problems=[]  warnings_n=1  rec_keys=['bytes', 'declared', 'match', 'path', 'recomputed', 'samedoc_link', 'tier', 'verified_path']
+      tier='SAMEDOC_LINK' path='D:\\Project\\ra2-campaign-forge\\lead\\r33e_merge_20261109\\_re_fixtures\\Pu_unique_with_decl\\a_one.py' match=True
+      single_obj_keys={'verified_path': True, 'recomputed': True, 'bytes': True}  members=ABSENT  decl_lines='ABSENT'  reverify={'path': 'D:\\Project\\ra2-campaign-forge\\lead\\r33e_merge_20261109\\_re_fixtures\\Pu_unique_with_decl\\a_one.py', 'sha': 'cb61d2f23c4a4fc4f57d9737e6d48f6e99c57032fe74eafd7a03e28a15e09b2e', 'bytes': 28, 'ok_sha': True, 'ok_len': True, 'ok': True}
+  --- Ffull_merged verdict=merged ---
+      problems=[]  warnings_n=1  rec_keys=['decl_lines', 'declared', 'match', 'members', 'path', 'samedoc_link', 'tier']
+      tier='SAMEDOC_LINK_EQ' path=None match=True
+      single_obj_keys={'verified_path': False, 'recomputed': False, 'bytes': False}  members=2  decl_lines=[4]  reverify=None
+  --- Fp1_decl_covers_one verdict=multi ---
+      problems=[]  warnings_n=1  rec_keys=['declared', 'match', 'path', 'samedoc_link', 'tier']
+      tier='SAMEDOC_LINK' path=None match=None
+      single_obj_keys={'verified_path': False, 'recomputed': False, 'bytes': False}  members=ABSENT  decl_lines='ABSENT'  reverify=None
+  --- Pz_zero_with_decl verdict=zero ---
+      problems=[]  warnings_n=1  rec_keys=['declared', 'match', 'path', 'samedoc_link', 'tier']
+      tier=None path=None match=None
+      single_obj_keys={'verified_path': False, 'recomputed': False, 'bytes': False}  members=ABSENT  decl_lines='ABSENT'  reverify=None
+  --- Pi_invalid_hex_with_decl verdict=zero ---
+      problems=[]  warnings_n=1  rec_keys=['declared', 'match', 'path', 'samedoc_link', 'tier']
+      tier=None path=None match=None
+      single_obj_keys={'verified_path': False, 'recomputed': False, 'bytes': False}  members=ABSENT  decl_lines='ABSENT'  reverify=None
+  --- Fd_equiv_words verdict=multi ---
+      problems=[]  warnings_n=1  rec_keys=['declared', 'match', 'path', 'samedoc_link', 'tier']
+      tier='SAMEDOC_LINK' path=None match=None
+      single_obj_keys={'verified_path': False, 'recomputed': False, 'bytes': False}  members=ABSENT  decl_lines='ABSENT'  reverify=None
+
+== 6 _f2_compare_out.json totals 与 schema ==
+  top_keys = ['totals', 'results']
+  totals = {"bindings": 19, "orig_match": 0, "orig_path": 1, "orig_problems": 24, "plus_match": 9, "plus_path": 9, "plus_problems": 23}
+  n_results = 30
+  result_keys = ['file', 'other_predicates_fail', 'orig', 'plus', 'orig_overall', 'plus_overall']
+  orig_keys = ['bindings', 'problems', 'verdict', 'warnings']
+  plus_keys = ['bindings', 'problems', 'verdict', 'warnings']
+  totals 由 results[] 重算 = {"bindings": 19, "orig_match": 0, "orig_path": 1, "orig_problems": 24, "plus_match": 9, "plus_path": 9, "plus_problems": 23}
+  RECOMPUTED_EQUALS_STORED = True
+  plus.bindings 全量键集 = ['alt', 'bytes', 'citation', 'declared', 'match', 'path', 'recomputed', 'suffix_stripped', 'tier', 'tried', 'verified_path']
+  含 merged 字段 = {'members': False, 'decl_lines': False, 'samedoc_link': False, 'SAMEDOC_LINK_EQ': False}
+  plus tier 分布 = {'T2N': 2, None: 10, 'T3': 1, 'T2': 5, 'T1': 1}
+  tier=None（:303-305 else 分支）条数 = 10
+
+== 7 消费者面（逐件实读）==
+  -- 读 _f2_compare_out.json 的 4 件：是否出现 'totals' --
+     _f2w_checks.py       totals=False
+     _f2w_extract.py      totals=False
+     _f2w_pass.py         totals=False
+     _f2w_final.py        totals=False
+  -- 直调 r11_scan_plus 的件 --
+     _f2_compare.py           calls=1
+     _f2_selftest.py          calls=6
+     _f2v_edge.py             calls=4
+     _f2v_final.py            calls=2
+     _f2v_run.py              calls=1
+     _f2v_verify9.py          calls=1
+     _f2w_dogfood.py          calls=1
+  -- _g9_gate.py 是否调 r11_scan_plus --
+     has_r11_scan_plus = False  :155 = r11_problems, r11_warnings, bindings = g7.r11_scan(text, d_dir, root=root)
+  -- 硬编码 _f2_compare_out.json 指纹的脚本 --
+      lead\f2d_rootcause_20261109\_f2d_fpcheck.py
+      lead\f2d_rootcause_20261109\_f2dv_fpcheck.py
+      lead\f2d_rootcause_20261109\_f2dw_fpcheck.py
+
+== END ==

@@ -1,0 +1,129 @@
+# -*- coding: utf-8 -*-
+"""生成 delta.tsv / base_rate.tsv（只放四环齐全的行；每行独立语义与地址，不共用 reason）。"""
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import core as C
+
+WORK = os.path.dirname(os.path.abspath(__file__))
+OUTDIR = os.path.dirname(WORK)
+ROWS = {r["entry"]: r for r in json.load(open(os.path.join(WORK, "b1_rows.json"), encoding="utf-8"))}
+
+EV = "D:/Project/ra2-campaign-forge/lead/next_re_20261117_r14/NAMED_PUSH_S20_B1/EVIDENCE/ROW_%s.txt"
+
+DELTA = [
+    ("00423AC0", "S20", "AnimClass::vslot23",
+     "AnimClass::vslot23 —— ③b④ 成立（完整循环 + 边界检查 + 循环体内非栈写）：爆炸半径取自 [Type+0x33C]，外层循环 "
+     "`0042400C mov ecx,eax/neg ecx/cmp ecx,eax` + 回边 `00424269 0f8e9dfdffff jle 0x42400C`，内层 "
+     "`0042402A fild [esp+0x18]` + 回边 `0042424C 0f8ed8fdffff jle 0x42402A`；边界检查 "
+     "`00424051 3b823c030000 cmp eax,[edx+0x33C]` → `00424057 0f8fd8010000 jg 0x424235`（越界即跳过本格）；"
+     "循环体内非栈写 `00424155 88871e010000 mov byte ptr [edi+0x11E],al`（写回被查到的对象，不是栈槽）；"
+     "读→判→写→推进齐备（`004240BB call 0x5657A0` 取格内对象 / `004240CB test al,al` 判 / `0042423F inc eax` + "
+     "`0042424A cmp eax,edx` 推进）。② 槽 007E33B0（vt 007E3354 +0x5C，slot#23，表共 124 槽）4B 值 = 本 entry，"
+     "COL=007FBA60(sig=0)→TD=008182C8→` .?AVAnimClass@@`，槽号与 name 栏 vslot23 自洽；④ 活表构造安装点 "
+     "0042201C（in_func=00421EA0，宿主首条出向调用 00421EAE `call 0x5F3900` 基类构造 → 其后装表，"
+     "atexit=False、行外、in_self=False），②④ 不同源（.rdata RTTI 描述符 vs .text 装表指令）。"),
+    ("00428EA0", "S20", "AnimTypeClass::vslot8",
+     "AnimTypeClass::vslot8 —— ③b② 成立（容器 Find 未命中返 -1 可伪证，且命中/未命中动作真不同）：站点 "
+     "`00428ED3 ff5210 call [edx+0x10]`（edx=[0xB0F670]，活表 007E91EC 的 vt[#4]=004E0550）→ 零间隔 "
+     "`00428ED6 83f8ff cmp eax,-1` / `00428ED9 742d je 0x428F08`（其间无 eax 覆写）；被调字节可伪证："
+     "`004E056F 83c8ff or eax,-1` + `004E0573 c20400 ret 4`（未命中返 -1，命中返下标）；命中路动作 "
+     "`00428EE8 mov [0xB0F680],ecx`（计数减一）+ `00428EFA 895481fc mov [ecx+eax*4-4],edx`（前移压缩数组）+ "
+     "`00428F06 7ce8 jl` 回边，未命中直接跳 00428F08 做第二个注册表；第二站点 `00428F1C ff5210` / "
+     "`00428F1F 83f8ff` / `00428F22 742d`（容器 0x8B4150，活表 007EA2E4 的 vt[#4]=004EE1B0，"
+     "`004EE1CF 83c8ff or eax,-1`）；收尾 `00428F53 call 0x5F7400` 基类析构、"
+     "`00428F58 f644240c01 test byte [esp+0xC],1` + `00428F60 call 0x7C8B3D` 按 delete 标志释放。"
+     "语义：标量删除析构——复位 4 张虚表，从 DynamicVectorClass<AnimTypeClass*>（0xB0F670 与 0x8B4150）"
+     "两个注册表各自摘链，再调基类析构、按标志释放自身。② 槽 007E3628（vt 007E3608 +0x20，slot#8）4B 值 = "
+     "本 entry，COL=007FBBB0(sig=0)→TD=00818330→`.?AVAnimTypeClass@@`；④ 00427731（in_func=00427530，"
+     "宿主 0042753A `call 0x5F7090` 基类构造后装表，atexit=False、行外）。"),
+    ("004A7C90", "S20", "DiskLaserClass::slot8",
+     "DiskLaserClass::slot8 —— ③b② 成立：站点 `004A7CC3 ff5210 call [edx+0x10]`（edx=[0x8A0208]，活表 007E5EDC）"
+     "→ 零间隔 `004A7CC6 83f8ff cmp eax,-1` / `004A7CC9 742d je 0x4A7CF8`（无 eax 覆写）；被调 "
+     "`004A7FB0`（= 0x8A0208 活表 vt[#4]）末尾 `004A7FCF 83c8ff or eax,-1` + `004A7FD3 c20400 ret 4` ⇒ "
+     "未命中 -1 / 命中下标；命中路 `004A7CD8 mov [0x8A0218],ecx` 计数减一 + `004A7CEA 895481fc "
+     "mov [ecx+eax*4-4],edx` 前移压缩 + `004A7CF6 7ce8 jl` 回边，未命中跳过；收尾 "
+     "`004A7CFA call 0x4101F0` 基类析构、`004A7CFF f644240c01 test byte [esp+0xC],1` + `004A7D07 call 0x7C8B3D` "
+     "按 delete 标志释放。语义：标量删除析构——复位 4 张虚表，从 DynamicVectorClass<DiskLaserClass*>"
+     "（0x8A0208，计数 0x8A0218 / 数组 0x8A020C）摘链，调基类析构后按标志释放。② 槽 007E5FD8"
+     "（vt 007E5FB8 +0x20，slot#8）4B 值 = 本 entry，COL=007FFBF0(sig=0)→TD=0081FF90→"
+     "`.?AVDiskLaserClass@@`；④ 004A7A3A（in_func=004A7A30，宿主 004A7A33 `call 0x410170` 基类构造后装表，"
+     "atexit=False、行外；注意行内 004A7C9D 自身装表已排除）。"),
+    ("004C5A30", "S20", "EMPulseClass::slot5",
+     "EMPulseClass::slot5 —— ③b② 成立（流**读入**，方向已按槽位复算）：站点 "
+     "`004C5A3B e840a9f4ff call 0x410380`，该 helper 内部 `0041039E ff500c call [eax+0xC]`（走流虚表 **+0xC = "
+     "Read**），与 `0x410320`（内部 `00410348/0041035E ff5010 call [eax+0x10]` = Write）方向相反；失败常量字节可见："
+     "`00410389 b803400080 mov eax,0x80004003`（E_POINTER，前置 `00410385 test edi,edi` / `00410387 jne`）；"
+     "零间隔 `004C5A40 85c0 test eax,eax` / `004C5A42 7c2d jl 0x4C5A71`（无 eax 覆写）——失败路原样返回负 HRESULT，"
+     "成功路真做别的事：`004C5A4F call 0x4101C0` 构造基类子对象，再 `004C5A54 c706a8877e00` 等 4 条把 "
+     "0x7E87A8/0x7E878C/0x7E8784/0x7E877C 装上，`004C5A6F 33c0` 返 0。语义："
+     "EMPulseClass 流读入构造——从流读入（+0xC），失败原样返回错误码，成功则构造基类子对象、装 4 表、返 0。"
+     "② 槽 007E87BC（vt 007E87A8 +0x14，slot#5）4B 值 = 本 entry，COL=008004D8(sig=0)→TD=008208D0→"
+     "`.?AVEMPulseClass@@`；④ 004C537D（in_func=004C5370，宿主 004C5373 `call 0x410170` 基类构造后装表，"
+     "atexit=False、行外；行内 004C5A54 自身装表已排除）。"),
+    ("004C5AC0", "S20", "EMPulseClass::slot8",
+     "EMPulseClass::slot8 —— ③b② 成立：站点 `004C5B0A ff5210 call [edx+0x10]`（edx=[0x8A3870]）→ 零间隔 "
+     "`004C5B0D 83f8ff cmp eax,-1` / `004C5B10 742d je 0x4C5B3F`（无 eax 覆写）；被调未命中路径 "
+     "`or eax,-1` + `ret 4`（同族容器 0x8A3870 的 vt[#4]，见 EVIDENCE 内 FindItemIndex dump）；命中路 "
+     "`004C5B1F mov [0x8A3880],ecx` 计数减一 + `004C5B31 895481fc mov [ecx+eax*4-4],edx` 前移压缩 + "
+     "`004C5B3D 7ce8 jl` 回边，未命中跳过；收尾 `004C5B41 call 0x4101F0` 基类析构 + "
+     "`004C5B46 f644240c01 test byte [esp+0xC],1` + `004C5B4E call 0x7C8B3D` 按 delete 标志释放。"
+     "语义：标量删除析构——复位 4 张虚表、按全局开关 0xA8E9A0 决定是否做格子占用清理、经 0x7258D0 解除单例引用，"
+     "再在 DynamicVectorClass<EMPulseClass*>（0x8A3870，计数 0x8A3880 / 数组 0x8A3874）里摘链，"
+     "调基类析构后按标志释放自身。② 槽 007E87C8（vt 007E87A8 +0x20，slot#8）4B 值 = 本 entry，"
+     "COL=008004D8(sig=0)→TD=008208D0→`.?AVEMPulseClass@@`；④ 004C537D（in_func=004C5370，"
+     "atexit=False、行外；行内 004C5AC4 自身装表已排除）。"),
+    ("005F44A0", "S20", "AnimClass::slot84",
+     "AnimClass::slot84 —— ③b② 成立（非析构，注册注销方法）：前置守卫 `005F44A4 mov al,[esi+0x83]` / "
+     "`005F44AC 746a je 0x5F4518`；站点 `005F44AE mov edx,[0xA8ECB8]` + `005F44C2 ff5210 call [edx+0x10]` → "
+     "零间隔 `005F44C5 83f8ff cmp eax,-1` / `005F44C8 742d je 0x5F44F7`（无 eax 覆写）；被调 = 活表 007E4F64 的 "
+     "vt[#4] `0040CF00`，未命中 `0040CF1F 83c8ff or eax,-1` + `0040CF23 c20400 ret 4`（㉓ 成对已辨：init "
+     "`004E7D40` 在 `004E7D5D` 写活表 007E4F64 **之后**才 `004E7D76 call 0x7C978A` 注册 dtor `004E7D80`，"
+     "dtor 在 `004E7D88` 写的是死表 007E192C ⇒ 本行取的是活表）；命中路 `005F44D7 mov [0xA8ECC8],ecx` 计数减一 + "
+     "`005F44E9 895481fc mov [ecx+eax*4-4],edx` 前移压缩 + `005F44F5 7ce8 jl` 回边，未命中跳过；随后 "
+     "`005F44FC mov byte [esi+0x83],0` 清标志、`005F4503 call 0x4AEB10` 读管理器当前对象、"
+     "`005F4508 cmp eax,esi` / `005F450A jne` / `005F4513 call 0x4AEB30` 命中则清空。语义："
+     "从全局动画管理器注销自身——在 DynamicVectorClass<AnimClass*>（0xA8ECB8，计数 0xA8ECC8 / 数组 0xA8ECBC）"
+     "里 Find 自身并压缩摘链、清 [this+0x83]；若管理器 0x87F7E8 的当前对象正是 this 则置空。"
+     "② 槽 007E34A4（vt 007E3354 +0x150，slot#84；本 entry 共驻 21 张表，取 RTTI 类名同族那张）4B 值 = "
+     "本 entry，COL=007FBA60(sig=0)→TD=008182C8→`.?AVAnimClass@@`；④ 0042201C（in_func=00421EA0，"
+     "宿主 00421EAE `call 0x5F3900` 基类构造后装表，atexit=False、行外）。"),
+    ("0062D7A0", "S20", "ParticleClass::slot5",
+     "ParticleClass::slot5 —— ③b② 成立（流**读入**构造）：站点 `0062D7AB e8d086fcff call 0x5F5E80`，"
+     "该 helper 首条即 `005F5E8B e8f0a4e1ff call 0x410380`（流读封装，内部 `0041039E ff500c` 走 **+0xC = Read**），"
+     "其失败路径 `005F5E92 7c65 jl 0x5F5EF9` 原样抛出（空指针时 `00410389 b803400080 mov eax,0x80004003` = "
+     "E_POINTER）；零间隔 `0062D7B0 85c0 test eax,eax` / `0062D7B2 7c4f jl 0x62D803`（无 eax 覆写）——"
+     "失败路直接收尾返错误码，成功路真做别的事：`0062D7BF call 0x5F3B50` 构造基类、"
+     "`0062D7C4 c70654f97e00` 等 4 条装 0x7EF954/0x7EF938/0x7EF930/0x7EF928、"
+     "`0062D7EB`/`0062D7FC` 两次 `0x6CF240` 构造 [+0xAC] 与 [+0x124] 成员、`0062D801 33c0` 返 0。语义："
+     "ParticleClass 流读入构造——先经 0x5F5E80 从流读入并对 5 个成员做读入构造，失败原样返回错误码；"
+     "成功则构造基类、装 4 表、再构造两个成员对象，返 0。② 槽 007EF968（vt 007EF954 +0x14，slot#5）4B 值 = "
+     "本 entry，COL=00807BE8(sig=0)→TD=008366E8→`.?AVParticleClass@@`；④ 0062B767（in_func=0062B5E0，"
+     "宿主 0062B5E9 `call 0x5F3900` 基类构造后装表，atexit=False、行外；行内 0062D7C4 自身装表已排除）。"),
+]
+
+hdr = "entry\tsubsystem\tname\tone_line_semantics\tgrade\tevidence_path"
+lines = [hdr]
+for entry, sub, name, sem in DELTA:
+    # 硬性格式自检：entry 大写十六进制、无 0x、必须是 8 位
+    assert entry == entry.upper() and not entry.startswith("0x") and len(entry) == 8, entry
+    assert ROWS[entry]["name"] == name, (entry, name, ROWS[entry]["name"])
+    lines.append("%s\t%s\t%s\t%s\t[已证]\t%s" % (entry, sub, name, sem, EV % entry))
+open(os.path.join(OUTDIR, "delta.tsv"), "w", encoding="utf-8").write("\n".join(lines) + "\n")
+
+# base_rate
+rows_checked = 18
+ring1_ok = 18
+ring2_ok = 18
+ring3b_ok = len(DELTA)
+ring4_ok = 18
+all_four = len(DELTA)
+with open(os.path.join(OUTDIR, "base_rate.tsv"), "w", encoding="utf-8") as f:
+    f.write("batch\trows_checked\tring2_ok\tring3b_ok\tring4_ok\tall_four\trate\n")
+    f.write("S20_B1\t%d\t%d\t%d\t%d\t%d\t%.4f\n" % (
+        rows_checked, ring2_ok, ring3b_ok, ring4_ok, all_four, all_four / rows_checked))
+print("delta rows = %d" % len(DELTA))
+print("base_rate: %d %d %d %d %d %.4f" % (rows_checked, ring2_ok, ring3b_ok, ring4_ok, all_four,
+                                          all_four / rows_checked))

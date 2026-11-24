@@ -1,0 +1,147 @@
+{
+ "exe": {
+  "path": "D:\\Project\\ra2-campaign-forge\\ra2bench\\gamemd.exe",
+  "size": 4825360,
+  "sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
+ },
+ "substring_scan": {
+  "maxplayer": [
+   {
+    "va": "0x831cab",
+    "context": "ion.ScenarioMaxPlayers = %d\n"
+   },
+   {
+    "va": "0x83407e",
+    "context": "T:WOLNewGameMaxPlayers"
+   },
+   {
+    "va": "0x83f3f0",
+    "context": "No Digest"
+   }
+  ],
+  "minplayer": [
+   {
+    "va": "0x83f3fc",
+    "context": "MaxPlayers"
+   }
+  ]
+ },
+ "strings": {
+  "PlayerControl": [
+   "0x824e28"
+  ],
+  "PercentBuilt": [
+   "0x8189a0"
+  ],
+  "NodeCount": [
+   "0x818994"
+  ],
+  "MultiplayPassive": [
+   "0x825444"
+  ],
+  "MaxPlayer": [],
+  "MinPlayer": [],
+  "MaxPlayers": [
+   "0x83407e",
+   "0x83f3f0"
+  ],
+  "MinPlayers": [
+   "0x83f3fc"
+  ]
+ },
+ "xrefs": {
+  "PlayerControl": [
+   "0x500bbf",
+   "0x5012ed"
+  ],
+  "PercentBuilt": [
+   "0x42ec05",
+   "0x42ed80"
+  ],
+  "NodeCount": [
+   "0x42ec14",
+   "0x42ed93"
+  ],
+  "MultiplayPassive": [
+   "0x511a7f"
+  ],
+  "MaxPlayers": [],
+  "MinPlayers": [
+   "0x6997d7",
+   "0x69a549"
+  ]
+ },
+ "chunk_scan": {
+  "instructions": 1328762,
+  "max_va": "0x7e0ffe",
+  "trap_va": "0x46f59d",
+  "passed": true
+ },
+ "n_call_targets": 7279,
+ "read_ini": {
+  "va": "0x500b40",
+  "players_store": "HouseClass+0x1ED",
+  "branch_yes": "0x500BEE..0x500C4F (campaign human credits recomputed by difficulty)",
+  "branch_no": "0x500C51 (credits = stored Credits*100)"
+ },
+ "wrapper": {
+  "va": "0x5009b0",
+  "loop1": "0x5009D1..0x500A83 one HouseClass per [Houses] entry",
+  "loop2": "0x500A94..0x500AEB Read_INI + difficulty apply",
+  "loop3": "0x500AF1..0x500B32 fallback per HouseType"
+ },
+ "percent_built": {
+  "string_va": "0x8189a0",
+  "reader": "0x42ebe0",
+  "writer": "0x42ed60",
+  "store": "HouseClass+0x571C (BaseClass+0x1C)",
+  "default": 0,
+  "runtime_consumers": 0
+ },
+ "creation_sites": [
+  "0x500a30",
+  "0x500b19",
+  "0x59a198",
+  "0x687fc3",
+  "0x6881a0",
+  "0x6882fe",
+  "0x688351",
+  "0x6c3ed1"
+ ],
+ "dispatch": {
+  "scenario_fn": "0x686b20",
+  "mp_factory": "0x687f10",
+  "campaign_wrapper": "0x5009b0",
+  "gate": "[0xA8B238]==0 -> wrapper (0x6877B5 cmp, 0x6877B9 jne)"
+ },
+ "runtime_flags": {
+  "difficulty_setter": "0x4f6ec0",
+  "to_computer_fn": "0x50a5c0"
+ },
+ "maxmin": {
+  "map_key_strings": "absent from image (exact match, any case)",
+  "readers": {
+   "fn_0x6994F0": [
+    "0x6997D7",
+    "0x6997F9"
+   ],
+   "fn_0x69A3B0": [
+    "0x69A549",
+    "0x69A561"
+   ]
+  },
+  "relation_to_house_count": "none (session/lobby only)"
+ },
+ "verdict": {
+  "playercontrol_creation_link": "NONE — never tested at any HouseClass creation site",
+  "playercontrol_branches": [
+   "Read_INI 0x500BE3/0x500BEA: yes&&campaign -> difficulty-adjusted start credits",
+   "wrapper loop2 0x500ABF: !PlayerControl -> Scen+0x610 difficulty else Scen+0x60C",
+   "0x50A5C0: clearing the flag renames house to \"Computer\""
+  ],
+  "percentbuilt": "parsed to HouseClass+0x571C, default 0, no runtime reader in .text",
+  "houseclass_count_driver": "loop bounds: [Houses] entries (campaign) / session slots+AI list+Neutral+Special (MP)",
+  "best_expl_4_houses": "MP/skirmish path 0x687F10: 2 slot houses + Neutral + Special = 4",
+  "breakpoint": "bp 0x4F54A0 log return-address + [0xA8B238]"
+ }
+}

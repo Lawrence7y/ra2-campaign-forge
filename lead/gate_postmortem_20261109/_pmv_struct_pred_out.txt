@@ -1,0 +1,37 @@
+== P-A normalization (class 5/10): join_backtick + norm, both sides same fn ==
+  tv7  raw=False normalized=True (expect False->True)
+  tv7b raw=True normalized=True (expect True/True)
+  tv1  raw=False normalized=False (expect False->False: true missing)
+== P-B binding line (class 8/10): two-question split on CANDIDATE:122 ==
+  strict adjacency parse: False  (False => naive FP 'missing binding' reproduced)
+  tolerant parse: True
+  infix='（审阅回件 `lead/n4_yi_final_20261108/_cs_semantic_review_GLM_20261108.md`）'
+  path-extracted=lead/n4_yi_final_20261108/_cs_semantic_review_GLM_20261108.md declared=ee27b4caf4fa.../11948
+  R3-3a recompute: sha256=ee27b4caf4fa... bytes=11948 MATCH=True
+  class-10 bold-only: backtick-requiring naive=False (False=FP); after decoration-strip=True (True)
+  R3-4 qianfenwei: naive grabs '26'; comma-strip -> 26435
+== P-E id normalization (class 9) ==
+  D-01  -> D01
+  D01   -> D01
+  D_01  -> D01
+  D.01  -> D01
+  D 01  -> D01
+  DIM-style line L101: naive D-digit regex hits=0 (0=FP reproduced); normalized D01 present=True
+  whole-file idtok D[0-9]{2}: distinct=29 legit-covered=13/13 spurious=16
+  spurious tokens: ['D14', 'D15', 'D17', 'D24', 'D41', 'D43', 'D46', 'D53', 'D62', 'D68', 'D75', 'D85', 'D89', 'D90', 'D94', 'D99']
+== P-F paired blocks (class 11): generic label extraction, NO hardcoded words ==
+  contiguous 4-char 'gaiqian-gaihou' count in N11 = 0 (0 => naive keyword FP reproduced)
+  labels extracted (data-driven): ['改前', '改后', '行', '要点', '适用']
+  adjacent differing pairs: {('行', '改前'): 2, ('改前', '改后'): 2, ('改后', '要点'): 2, ('要点', '行'): 1, ('要点', '适用'): 1}
+  recurring>=2: [('改前', '改后'), ('改后', '要点'), ('行', '改前')]  structure-verdict: YES
+  control A (unrelated label words x2): verdict=YES  <- word-independence proven
+  control B (same label only):          verdict=NO (expect NO)
+  control C (pair only once):           verdict=NO (expect NO)
+== P-H self-check counter (class 3) ==
+  gate_run([]) -> FAIL: 0 checks executed (empty run must not pass)
+  gate_run([(binding,CANDIDATE:122,True)]) -> OK: 1 checks executed, each with (rule,target,found) artifact
+== class 1 mini-demo: naive substring vs AST edges on static test data (never executed) ==
+  naive banned-substring problems=7 ; AST banned-API edges=0 []
+== appendix counts ==
+  APPROVE_SCOPE occurrences in CANDIDATE = 5 (postmortem says 9)
+  N11 lines with 【改前】/【改后】: [81, 82, 88, 89]

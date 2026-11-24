@@ -1,0 +1,19 @@
+=== ③(c)3 差 1 但 2 条 merged ===
+plus_path=10 plus_match=11 diff=1
+E(merged_tier)=2  M=2  merged_present=True
+INDEPENDENT alerts = ['INV-06 plus_path=10 != plus_match=11']
+_ci_gate.py --expect-merged rc=1 ['- INV-06 plus_match-plus_path != merged_eq=2', 'ALERT violations=1']
+
+=== ③(d) 最强保证的作用域 ===
+真实 merged 投影：_ci_checks.py violations=1 ['INV-06 plus_path=17 != plus_match=18 (baseline identity broken; must reconcile with plus_match_by_kind)']
+真实 merged 投影：_ci_gate.py --expect-merged violations=0 []
+真实 merged 投影：_ci_gate.py (baseline 态) violations=2 ['INV-07 merged_present=True != expected=False', 'INV-06 baseline identity broken without merged']
+=> §3(d)「任何 merged 出现必触发至少一条报警」在 --expect-merged 态不成立（0 报警）
+
+畸形 merged 行（match=None、无 members、M==E==1）：
+  merged-tier row = [(19, 0, {'path': None, 'match': None, 'members': None, 'tier': 'SAMEDOC_LINK_EQ'})]
+  _ci_checks.py violations=1 ['INV-06 plus_path=9 != plus_match=10 (baseline identity broken; must reconcile with plus_match_by_kind)']
+  _ci_gate.py --expect-merged violations=0 []
+  INDEPENDENT violations=3 ['INV-06 plus_path=9 != plus_match=10', 'INV-07 (19,0) merged-tier row not match=True/path=None', 'INV-07 (19,0) merged-tier row missing members>=2']
+=> §3(d) 全称量词（∀ merged 行形状合规）在 _ci_gate.py / §4(d) 可粘贴代码里完全缺失
+TEMP: C:\Users\Administrator\AppData\Local\Temp\_civ_final_bpmiiggt

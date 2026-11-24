@@ -1,0 +1,1862 @@
+== 基线1：_c7_selfcheck.py --selftest ==
+SELFTEST PASS（解析/占位/计划号判定逻辑正常；对照已登ID基数=1）
+selftest_exit=0
+
+== 基线2：未填模板直接过两器 ==
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — '<来源会话签发角色>'
+  [PASS] H06 reviewerSessionId非空非拒填值  — '<来源会话sessionId>'
+  [PASS] H06 sourceTaskId非空非拒填值  — '<来源会话任务ID>'
+  [FAIL] H07 记录内无占位符残留  — 残留=['<来源会话签发角色>', '<来源会话sessionId>', '<来源会话任务ID>']
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [FAIL] H11 inputHashes四件实算复核  — 格式错(需 64hex/字节数):lead/d13d14_cards_20261108/DECISION_QUESTIONS.md; 格式错(需 64hex/字节数):lead/pending_factpack_20261108/_fp_N10-C07_Q6.md; 格式错(需 64hex/字节数):lead/perf_repair_n11_20261108/PERF_REPAIR_HANDOFF.md; 格式错(需 64hex/字节数):lead/nextstep_plan_20261106/NEXT_STEPS_20261106.md
+  [FAIL] H12 timestamp ISO8601可解析  — '<补登时点 ISO8601，来源会话填时实生成>'
+  [FAIL] H13 容器层无占位符残留  — 残留=['<登记后由来源会话定档：如 REGISTERED；若仍有不可闭合面如实定 PARTIAL，不评高于实际>', '<另一上下文独立复核回件摘要；未做则如实写「未做」——复核只验格式/一致性/非冒用，ID 真值由来源会话自证>', '<来源会话签发角色>']
+GATE FAIL checks=15 failed=4
+被核对象 SHA256 = `3d763a8b679370ade8999a23a18679c7296909bf8a020b71694c0ccca7e8b062`，字节数 = 3812
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_tpl_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [FAIL] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=['.grade=<登记后由来源会话定档：如 REGISTERED；若仍有不可闭合面如实定 PARTIAL，不评高于实际>', '.independentReview=<另一上下文独立复核回件摘要；未做则如实写「未做」——复核只验格式/一致性/非冒用，ID 真值由来源会话自证>', '.reviewer.role=<来源会话签发角色>']
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — '<来源会话签发角色>'
+  [PASS] I06 reviewerSessionId非空非拒填值  — '<来源会话sessionId>'
+  [PASS] I06 sourceTaskId非空非拒填值  — '<来源会话任务ID>'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [FAIL] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — '<来源会话任务ID>'
+  [FAIL] I13 inputHashes全键实算复核（含额外键）  — 格式错(需64hex/字节数):lead/d13d14_cards_20261108/DECISION_QUESTIONS.md; 格式错(需64hex/字节数):lead/pending_factpack_20261108/_fp_N10-C07_Q6.md; 格式错(需64hex/字节数):lead/perf_repair_n11_20261108/PERF_REPAIR_HANDOFF.md; 格式错(需64hex/字节数):lead/nextstep_plan_20261106/NEXT_STEPS_20261106.md
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [FAIL] I15 timestamp ISO8601可解析  — '<补登时点 ISO8601，来源会话填时实生成>'
+  [FAIL] I16 decision∈{REGISTERED,PARTIAL}  — '<登记决定，如 REGISTERED——来源会话身份补登完成（Q6 行政动作，非技术裁决，不升格技术结论）>'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — '<登记后由来源会话定档：如 REGISTERED；若仍有不可闭合面如实定 PARTIAL，不评高于实际>'
+  [INFO] I17 grade未取REGISTERED/PARTIAL  — '<登记后由来源会话定档：如 REGISTERED；若仍有不可闭合面如实定 PARTIAL，不评高于实际>'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — '<来源会话补登写域（建议 lead/c07_slot_20261109/ 就地填用，或来源会话自指新写域；不得写入任何既有只读域）>'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [FAIL] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 形制不符
+I-GATE FAIL checks=24 failed=6
+被核对象 SHA256 = 3d763a8b679370ade8999a23a18679c7296909bf8a020b71694c0ccca7e8b062，字节数 = 3812
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_tpl_exit=1
+
+===SAMPLE T01_empty_trio.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [FAIL] H06 reviewerRole非空非拒填值  — ''
+  [FAIL] H06 reviewerSessionId非空非拒填值  — ''
+  [FAIL] H06 sourceTaskId非空非拒填值  — ''
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [FAIL] H08 记录内无unknown/TODO等拒填值  — 命中=['', '', '']
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=4
+被核对象 SHA256 = `44bed9e443fb1c17ab77e72b537f32662eb3e4da659f2e97321648be54918d9f`，字节数 = 3120
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [FAIL] I08 全件无unknown/TODO等拒填值  — 命中=['.records[0].reviewerRole=', '.records[0].reviewerSessionId=', '.records[0].sourceTaskId=']
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [FAIL] I06 reviewerRole非空非拒填值  — ''
+  [FAIL] I06 reviewerSessionId非空非拒填值  — ''
+  [FAIL] I06 sourceTaskId非空非拒填值  — ''
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [FAIL] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — ''
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录=''
+I-GATE FAIL checks=24 failed=5
+被核对象 SHA256 = 44bed9e443fb1c17ab77e72b537f32662eb3e4da659f2e97321648be54918d9f，字节数 = 3120
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T02a_sid_unknown.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [FAIL] H06 reviewerSessionId非空非拒填值  — 'unknown'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [FAIL] H08 记录内无unknown/TODO等拒填值  — 命中=['unknown']
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=2
+被核对象 SHA256 = `9b6d9f062e70398308fb842f1dba4d55fedfe9533d5d4b7ae7e544ce58d39a37`，字节数 = 3177
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [FAIL] I08 全件无unknown/TODO等拒填值  — 命中=['.records[0].reviewerSessionId=unknown']
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [FAIL] I06 reviewerSessionId非空非拒填值  — 'unknown'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [FAIL] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录='unknown'
+I-GATE FAIL checks=24 failed=3
+被核对象 SHA256 = 9b6d9f062e70398308fb842f1dba4d55fedfe9533d5d4b7ae7e544ce58d39a37，字节数 = 3177
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T02b_sid_todo.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [FAIL] H06 reviewerSessionId非空非拒填值  — 'TODO'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [FAIL] H08 记录内无unknown/TODO等拒填值  — 命中=['TODO']
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=2
+被核对象 SHA256 = `10a93a88328aae6524984453bc2bf3b84d419308a9dd09832bdd8f7b2ca90e9d`，字节数 = 3174
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [FAIL] I08 全件无unknown/TODO等拒填值  — 命中=['.records[0].reviewerSessionId=TODO']
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [FAIL] I06 reviewerSessionId非空非拒填值  — 'TODO'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [FAIL] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录='TODO'
+I-GATE FAIL checks=24 failed=3
+被核对象 SHA256 = 10a93a88328aae6524984453bc2bf3b84d419308a9dd09832bdd8f7b2ca90e9d，字节数 = 3174
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T02c_sid_na.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [FAIL] H06 reviewerSessionId非空非拒填值  — 'N/A'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [FAIL] H08 记录内无unknown/TODO等拒填值  — 命中=['N/A']
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=2
+被核对象 SHA256 = `928b92cce276e94559c807b29ba524a0d6c910d3c2dec18445c57b54cfeb3948`，字节数 = 3173
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [FAIL] I08 全件无unknown/TODO等拒填值  — 命中=['.records[0].reviewerSessionId=N/A']
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [FAIL] I06 reviewerSessionId非空非拒填值  — 'N/A'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [FAIL] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录='N/A'
+I-GATE FAIL checks=24 failed=3
+被核对象 SHA256 = 928b92cce276e94559c807b29ba524a0d6c910d3c2dec18445c57b54cfeb3948，字节数 = 3173
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T03_sid_copied_n1r2.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-324c613e-fb0e-42f5-9883-805fef5b80de-actor_3_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [FAIL] H09 sessionId不冒用他件已登ID  — 与a_residual两件已登ID冲突
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `9ba0be2f3b5c040e023b2141d4e6370b1802fff23bb4ab82814c374859b1e2fb`，字节数 = 3232
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-324c613e-fb0e-42f5-9883-805fef5b80de-actor_3_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [FAIL] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 精确照抄已登ID
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录='sess_dwf-dwfrun-324c613e-fb0e-42f5-9883-805fef5b80de-actor_3_1'
+I-GATE FAIL checks=24 failed=1
+被核对象 SHA256 = 9ba0be2f3b5c040e023b2141d4e6370b1802fff23bb4ab82814c374859b1e2fb，字节数 = 3232
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T04_n11_no_registration.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'N-11'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [FAIL] H10 sourceTaskId为计划号时unresolved必非空  — 计划号须在unresolved登记「正式任务书编号未落实」（先例教训 YI_SUPERSEDE:90）
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `990ab2fd828a6224b12efec5e309f10d9d2d81cf87d46d3dcf0a8f52a536a53d`，字节数 = 3216
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'N-11'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [FAIL] I12 计划号须在unresolved登记「正式任务书编号未落实」  — sourceTaskId='N-11'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 990ab2fd828a6224b12efec5e309f10d9d2d81cf87d46d3dcf0a8f52a536a53d，字节数 = 3216
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T05_n11_registered_gap.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'N-11'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId为计划号时unresolved必非空  — 计划号须在unresolved登记「正式任务书编号未落实」（先例教训 YI_SUPERSEDE:90）
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `8a3bfad6a4b3ffb86d331b622aaa9fcc8d199a0299a02c9829e70c058217b400`，字节数 = 3325
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'N-11'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 计划号须在unresolved登记「正式任务书编号未落实」  — sourceTaskId='N-11'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE PASS checks=23 failed=0
+被核对象 SHA256 = 8a3bfad6a4b3ffb86d331b622aaa9fcc8d199a0299a02c9829e70c058217b400，字节数 = 3325
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=0
+===SAMPLE T06a_role_kadun.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — '卡顿分流员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `e76e0e6d5788492809f8033c7c7c6469952bf5b0a1615f8612a3a946999ed10e`，字节数 = 3222
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — '卡顿分流员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [FAIL] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）  — 记录层='卡顿分流员·GLM'
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = e76e0e6d5788492809f8033c7c7c6469952bf5b0a1615f8612a3a946999ed10e，字节数 = 3222
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T06b_role_fenliu.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — '分流报告撰写员'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `6572cfccde54e0edac1d99e47f7db10e9867a8f54fa5c2ceb3b5b92d433f0300`，字节数 = 3223
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — '分流报告撰写员'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [FAIL] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）  — 记录层='分流报告撰写员'
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 6572cfccde54e0edac1d99e47f7db10e9867a8f54fa5c2ceb3b5b92d433f0300，字节数 = 3223
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T06c_role_fuhe.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — '独立复核员'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `f0bfe001bfeeebf780973a0cfe5f7c23ae1c056022f9042e8f241aaf65c441db`，字节数 = 3217
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — '独立复核员'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [FAIL] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）  — 记录层='独立复核员'
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = f0bfe001bfeeebf780973a0cfe5f7c23ae1c056022f9042e8f241aaf65c441db，字节数 = 3217
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T07_sid_placeholder.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — '<来源会话sessionId>'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [FAIL] H07 记录内无占位符残留  — 残留=['<来源会话sessionId>']
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `5161c8a1bea977bb3b987bef5e8d995c3bc0fbd7251f2f3e41e1e366e9900fef`，字节数 = 3193
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [FAIL] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=['.records[0].reviewerSessionId=<来源会话sessionId>']
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — '<来源会话sessionId>'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [FAIL] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录='<来源会话sessionId>'
+I-GATE FAIL checks=24 failed=2
+被核对象 SHA256 = 5161c8a1bea977bb3b987bef5e8d995c3bc0fbd7251f2f3e41e1e366e9900fef，字节数 = 3193
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T08a_records_zero.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [FAIL] H04 records恰1条  — len=0
+  [FAIL] H05  — 记录缺失，未检
+  [FAIL] H06  — 记录缺失，未检
+  [FAIL] H07  — 记录缺失，未检
+  [FAIL] H08  — 记录缺失，未检
+  [FAIL] H09  — 记录缺失，未检
+  [FAIL] H10  — 记录缺失，未检
+  [FAIL] H11  — 记录缺失，未检
+  [FAIL] H12  — 记录缺失，未检
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=13 failed=9
+被核对象 SHA256 = `c386ce974dd78db630ec2463a30965c01fe243e98cfe15cd5353f2f8b697b51e`，字节数 = 2280
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [FAIL] I04 records恰1条dict  — len=0
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [FAIL] I05 9字段名与顺序  — 记录缺失，未检
+  [FAIL] I06 三身份字段  — 记录缺失，未检
+  [FAIL] I09 sessionId冒用面  — 记录缺失，未检
+  [FAIL] I10 sessionId形制  — 记录缺失，未检
+  [FAIL] I12 计划号登记  — 记录缺失，未检
+  [FAIL] I13 inputHashes  — 记录缺失，未检
+  [FAIL] I14 artifactHashes  — 记录缺失，未检
+  [FAIL] I15 timestamp  — 记录缺失，未检
+  [FAIL] I16 decision值域  — 记录缺失，未检
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录=None
+I-GATE FAIL checks=22 failed=10
+被核对象 SHA256 = c386ce974dd78db630ec2463a30965c01fe243e98cfe15cd5353f2f8b697b51e，字节数 = 2280
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T08b_records_two.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [FAIL] H04 records恰1条  — len=2
+  [FAIL] H05  — 记录缺失，未检
+  [FAIL] H06  — 记录缺失，未检
+  [FAIL] H07  — 记录缺失，未检
+  [FAIL] H08  — 记录缺失，未检
+  [FAIL] H09  — 记录缺失，未检
+  [FAIL] H10  — 记录缺失，未检
+  [FAIL] H11  — 记录缺失，未检
+  [FAIL] H12  — 记录缺失，未检
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=13 failed=9
+被核对象 SHA256 = `3a29f5ff6bf184abf21f5960f2112a4b6ad5236ac9012e16102d4f45846688df`，字节数 = 4184
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [FAIL] I04 records恰1条dict  — len=2
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [FAIL] I05 9字段名与顺序  — 记录缺失，未检
+  [FAIL] I06 三身份字段  — 记录缺失，未检
+  [FAIL] I09 sessionId冒用面  — 记录缺失，未检
+  [FAIL] I10 sessionId形制  — 记录缺失，未检
+  [FAIL] I12 计划号登记  — 记录缺失，未检
+  [FAIL] I13 inputHashes  — 记录缺失，未检
+  [FAIL] I14 artifactHashes  — 记录缺失，未检
+  [FAIL] I15 timestamp  — 记录缺失，未检
+  [FAIL] I16 decision值域  — 记录缺失，未检
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录=None
+I-GATE FAIL checks=22 failed=10
+被核对象 SHA256 = 3a29f5ff6bf184abf21f5960f2112a4b6ad5236ac9012e16102d4f45846688df，字节数 = 4184
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T09a_container_missing_grade.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [FAIL] H02 容器13键齐（N-1/2形制）  — 缺=['grade']
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `117e89412ac9c1ffd5e7e59140b8429c4064e129aa939fd226d61704f0a5da1d`，字节数 = 3207
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [FAIL] I02 容器键集合==13键精确相等  — 缺=['grade'] 
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [FAIL] I17 grade非空且无APPROVE/放行语汇  — None
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=2
+被核对象 SHA256 = 117e89412ac9c1ffd5e7e59140b8429c4064e129aa939fd226d61704f0a5da1d，字节数 = 3207
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T09b_container_extra_key.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `f25aa47fcbd480139b76665b8de7dce46eda4137c18f6a547e57fb094ce38b5f`，字节数 = 3317
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [FAIL] I02 容器键集合==13键精确相等  — 多=['extraApprovalClaim']
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = f25aa47fcbd480139b76665b8de7dce46eda4137c18f6a547e57fb094ce38b5f，字节数 = 3317
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T10_field_order.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [FAIL] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'timestamp', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'decision', 'unresolved', 'inputHashes', 'artifactHashes']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `3398442366b6a801d825860007acbdfab8c0d263f6811ed42cf0880cb8af865f`，字节数 = 3232
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [FAIL] I05 9字段名与顺序精确相等  — 实际=['itemId', 'timestamp', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'decision', 'unresolved', 'inputHashes', 'artifactHashes']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 3398442366b6a801d825860007acbdfab8c0d263f6811ed42cf0880cb8af865f，字节数 = 3232
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T11a_ts_bad.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [FAIL] H12 timestamp ISO8601可解析  — '2026-11-09 40:70:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `726aa986e40c4caf2c7650162230079827b2b6b4f22dd6a8de7b626e581ed7e4`，字节数 = 3226
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [FAIL] I15 timestamp ISO8601可解析  — '2026-11-09 40:70:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 726aa986e40c4caf2c7650162230079827b2b6b4f22dd6a8de7b626e581ed7e4，字节数 = 3226
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T11b_ts_int.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [FAIL] H12 timestamp ISO8601可解析  — 20261109
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `7483d46e15b99fd2be3053d524457ef6bdda2187cf66a1ed71ca02c01b03ad94`，字节数 = 3213
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [FAIL] I15 timestamp ISO8601可解析  — 20261109
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 7483d46e15b99fd2be3053d524457ef6bdda2187cf66a1ed71ca02c01b03ad94，字节数 = 3213
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T11c_ts_text.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [FAIL] H12 timestamp ISO8601可解析  — '不是时间'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `8fc70c8ac33404aab1b008b1cc0a03029e86cb93c10a877ff7877b4665125c8d`，字节数 = 3219
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [FAIL] I15 timestamp ISO8601可解析  — '不是时间'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 8fc70c8ac33404aab1b008b1cc0a03029e86cb93c10a877ff7877b4665125c8d，字节数 = 3219
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T12a_hash_wrong_hex.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [FAIL] H11 inputHashes四件实算复核  — 复算不符:lead/d13d14_cards_20261108/DECISION_QUESTIONS.md 记=fa709f2da12e… 实=0a709f2da12e…/27172
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `46ddcbe9edaf9bd4c85238418e6d0bb8c79b659d182eb40ce54e63fbd3195d51`，字节数 = 3232
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [FAIL] I13 inputHashes全键实算复核（含额外键）  — 复算不符:lead/d13d14_cards_20261108/DECISION_QUESTIONS.md 记=fa709f2da12e…/27172 实=0a709f2da12e…/27172
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 46ddcbe9edaf9bd4c85238418e6d0bb8c79b659d182eb40ce54e63fbd3195d51，字节数 = 3232
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T12b_hash_wrong_bytes.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [FAIL] H11 inputHashes四件实算复核  — 复算不符:lead/d13d14_cards_20261108/DECISION_QUESTIONS.md 记=0a709f2da12e… 实=0a709f2da12e…/27172
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `452505c2e5e39279253b9f4b4e3210238eb3325f34d323c51124bd7e3e3ef160`，字节数 = 3232
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [FAIL] I13 inputHashes全键实算复核（含额外键）  — 复算不符:lead/d13d14_cards_20261108/DECISION_QUESTIONS.md 记=0a709f2da12e…/27173 实=0a709f2da12e…/27172
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 452505c2e5e39279253b9f4b4e3210238eb3325f34d323c51124bd7e3e3ef160，字节数 = 3232
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T12c_hash_missing_binding.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [FAIL] H11 inputHashes四件实算复核  — 缺必绑件:lead/perf_repair_n11_20261108/PERF_REPAIR_HANDOFF.md
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE FAIL checks=15 failed=1
+被核对象 SHA256 = `472c957bb026109bdcd4d4a82c393adce6de97270926435a7ea9a10e6ec49d42`，字节数 = 3094
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=1
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [FAIL] I13 inputHashes全键实算复核（含额外键）  — 缺必绑件:lead/perf_repair_n11_20261108/PERF_REPAIR_HANDOFF.md
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 472c957bb026109bdcd4d4a82c393adce6de97270926435a7ea9a10e6ec49d42，字节数 = 3094
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T13_positive.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `3a6b74e635dc51fb13094caf523025262650bc54f30c5bf29e43a1085379c255`，字节数 = 3232
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE PASS checks=23 failed=0
+被核对象 SHA256 = 3a6b74e635dc51fb13094caf523025262650bc54f30c5bf29e43a1085379c255，字节数 = 3232
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=0
+===SAMPLE T14_decision_approve_scope.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `19e775f58889538f6b99737a5f63eca8b4fc4e1a6b7bdf7f7610943a7edbc920`，字节数 = 3235
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [FAIL] I16 decision∈{REGISTERED,PARTIAL}  — 'APPROVE_SCOPE'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 19e775f58889538f6b99737a5f63eca8b4fc4e1a6b7bdf7f7610943a7edbc920，字节数 = 3235
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T16_decisionsemantics_tampered.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `1075876467af3d73aeebcc21ac9e4c05232701a3da7de3791c59446939fd498a`，字节数 = 3235
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [FAIL] I18 六固定字段与模板逐字一致（照抄）  — decisionSemantics
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 1075876467af3d73aeebcc21ac9e4c05232701a3da7de3791c59446939fd498a，字节数 = 3235
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T17_artifacthash_fake.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `c2b88ca4c95bb7a1e04dc43c7b7e66b66c5d6cd06cb8c8c3364a2f45c48bd22d`，字节数 = 3370
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [FAIL] I14 artifactHashes全键实算复核（模板口径为空{}）  — 复算不符:lead/d13d14_cards_20261108/DECISION_QUESTIONS.md
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = c2b88ca4c95bb7a1e04dc43c7b7e66b66c5d6cd06cb8c8c3364a2f45c48bd22d，字节数 = 3370
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T18a_sid_dash.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — '-'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `282fb0adae0879e0cc4001f54f6c55b5dae48954d9d702b01aa1a7e8998d70c7`，字节数 = 3171
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — '-'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [FAIL] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录='-'
+I-GATE FAIL checks=24 failed=1
+被核对象 SHA256 = 282fb0adae0879e0cc4001f54f6c55b5dae48954d9d702b01aa1a7e8998d70c7，字节数 = 3171
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T18b_sid_digits.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — '12345'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `1c9e8b0612911c1ca6fe9d9ec8f9642ddf2974395efad0e61fb0dfb7daf87ed7`，字节数 = 3175
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — '12345'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [FAIL] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录='12345'
+I-GATE FAIL checks=24 failed=1
+被核对象 SHA256 = 1c9e8b0612911c1ca6fe9d9ec8f9642ddf2974395efad0e61fb0dfb7daf87ed7，字节数 = 3175
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T19_sid_nearcopy.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-324c613e-fb0e-42f5-9883-805fef5b80de-actor_3_1 '
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `4f223ce20f25639308b9694dcf5483ea6d3786e975094616d4c755bf6484ba9d`，字节数 = 3233
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-324c613e-fb0e-42f5-9883-805fef5b80de-actor_3_1 '
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [FAIL] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 近似照抄（去空白/忽略大小写后同已登ID）
+  [FAIL] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录='sess_dwf-dwfrun-324c613e-fb0e-42f5-9883-805fef5b80de-actor_3_1 '
+I-GATE FAIL checks=24 failed=2
+被核对象 SHA256 = 4f223ce20f25639308b9694dcf5483ea6d3786e975094616d4c755bf6484ba9d，字节数 = 3233
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T20_n11_decorated.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'N-11（计划号）'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `645a1a61ce800215e7b41531272a9ea23ca73460108ce17b98b290180cc8ce80`，字节数 = 3231
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'N-11（计划号）'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [FAIL] I12 计划号须在unresolved登记「正式任务书编号未落实」  — sourceTaskId='N-11（计划号）'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 645a1a61ce800215e7b41531272a9ea23ca73460108ce17b98b290180cc8ce80，字节数 = 3231
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T22_fullwidth_placeholder.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — '＜来源会话sessionId＞'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `96002e7487e64213c0c5890a3e0213eb85cf8584677f43a5a26451c145bf5f34`，字节数 = 3197
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [FAIL] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=['.records[0].reviewerSessionId=＜来源会话sessionId＞']
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — '＜来源会话sessionId＞'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [FAIL] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录='＜来源会话sessionId＞'
+I-GATE FAIL checks=24 failed=2
+被核对象 SHA256 = 96002e7487e64213c0c5890a3e0213eb85cf8584677f43a5a26451c145bf5f34，字节数 = 3197
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T23_unresolved_wrong_phrase.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'N-11'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId为计划号时unresolved必非空  — 计划号须在unresolved登记「正式任务书编号未落实」（先例教训 YI_SUPERSEDE:90）
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `253c916775be32a5a1459cb9d3cf527a8b1dc6596ece25abeeff805723c69d65`，字节数 = 3300
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'N-11'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [FAIL] I12 计划号须在unresolved登记「正式任务书编号未落实」  — sourceTaskId='N-11'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 253c916775be32a5a1459cb9d3cf527a8b1dc6596ece25abeeff805723c69d65，字节数 = 3300
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T24_inputhash_extra_fake.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `2c4bf2d26e416a3a819c0842468425f6fe082fc06421f72225c975f58956b44d`，字节数 = 3370
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [FAIL] I13 inputHashes全键实算复核（含额外键）  — 文件不存在:lead/c07_gate_audit_20261109/_c7a_nonexistent_binding.md
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 2c4bf2d26e416a3a819c0842468425f6fe082fc06421f72225c975f58956b44d，字节数 = 3370
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T26_container_role_fuhe.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `7dca0ef8c33e1fb1c84b14a62effa5638af212f3bfd636cc9b9b4d7dcf7c6fdf`，字节数 = 3217
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [FAIL] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）  — 容器reviewer.role='独立复核员'
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=23 failed=1
+被核对象 SHA256 = 7dca0ef8c33e1fb1c84b14a62effa5638af212f3bfd636cc9b9b4d7dcf7c6fdf，字节数 = 3217
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T27_grade_approve_scope.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `4d99af85661ebf18a5ea6da14be4b5023fdc0291df24d3e72db135fd31ffe3e5`，字节数 = 3235
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [FAIL] I17 grade非空且无APPROVE/放行语汇  — 'APPROVE_SCOPE'
+  [INFO] I17 grade未取REGISTERED/PARTIAL  — 'APPROVE_SCOPE'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层一致
+I-GATE FAIL checks=24 failed=1
+被核对象 SHA256 = 4d99af85661ebf18a5ea6da14be4b5023fdc0291df24d3e72db135fd31ffe3e5，字节数 = 3235
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=1
+===SAMPLE T29_sid_fabricated_shape.json
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-00000000-0000-0000-0000-000000000000-actor_9_9'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `25b15149834cc865eac1a669e110e72386190ff165041afd93322c47cfa70f8a`，字节数 = 3232
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+gate_exit=0
+-----
+== C07 身份补登件独立校验器（审计实现 I 系列）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键集合==13键精确相等
+  [PASS] I03 schema==N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条dict  — len=1
+  [PASS] I07 全件无占位符残留（半角/全角/裸角括号）  — 残留=[]
+  [PASS] I08 全件无unknown/TODO等拒填值  — 命中=[]
+  [PASS] I05 9字段名与顺序精确相等  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 reviewerRole非空非拒填值  — 'C07 身份补登签发员·GLM'
+  [PASS] I06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-00000000-0000-0000-0000-000000000000-actor_9_9'
+  [PASS] I06 sourceTaskId非空非拒填值  — 'TASK-20261108-C07-01'
+  [PASS] I09 sessionId不冒用他件已登ID（精确+归一化近似）  — 对照基数=7
+  [PASS] I10 sessionId符合运行态先例形制  — 真值真伪仍由来源会话自证；本项只拦「不像运行态ID」的值
+  [PASS] I12 sourceTaskId非计划号（规则未触发）  — 'TASK-20261108-C07-01'
+  [PASS] I13 inputHashes全键实算复核（含额外键）
+  [PASS] I14 artifactHashes全键实算复核（模板口径为空{}）
+  [PASS] I15 timestamp ISO8601可解析  — '2026-11-09T12:00:00+08:00'
+  [PASS] I16 decision∈{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I11 签发角色不冒用内部角色（记录层+容器reviewer.role）
+  [PASS] I17 grade非空且无APPROVE/放行语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致（照抄）
+  [PASS] I19 writeDomain非空且非既有只读域  — 'lead/c07_slot_20261109'
+  [PASS] I20 revisionOf=null（不替代既有件）
+  [PASS] I21 容器reviewer.sessionId不冒用已登ID且符合形制  — 与记录层不一致（另见INFO）
+  [INFO] I21 容器reviewer.sessionId与记录层不一致  — 容器='sess_dwf-dwfrun-9f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f-actor_1_1' 记录='sess_dwf-dwfrun-00000000-0000-0000-0000-000000000000-actor_9_9'
+I-GATE PASS checks=24 failed=0
+被核对象 SHA256 = 25b15149834cc865eac1a669e110e72386190ff165041afd93322c47cfa70f8a，字节数 = 3232
+独立实现口径：任务书填写规则 + 模板固定值；ID 真值真伪由来源会话自证，本器不代证。
+mine_exit=0

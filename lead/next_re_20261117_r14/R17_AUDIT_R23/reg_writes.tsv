@@ -1,0 +1,9 @@
+va	bytes	insn	effect_on_reg	note
+5a6598	8b e8	mov ebp, eax	write ebp	栈帧内第一次 ebp 赋值（外层）
+5a6640	8b 6c 24 2c	mov ebp, [esp+0x2c]	write ebp	外层 ebp 重载，与外层 ebp 循环变量同名复用
+5a66d9	8b e8	mov ebp, eax	write ebp	★链条起点：ebp := ctor 返回对象
+5a66e6	33 ed	xor ebp, ebp	write ebp	★备用分支：ctor 返回 0 时 ebp=0；被 0x5A66E4 jmp 0x5A66FC 跳过，不在 live-in 路径上
+5a66e4	eb 16	jmp 0x5a66fc	(control)	live-in 路径必经；使 0x5A66E6 成为 dead-branch
+5a6901	5d	pop ebp	write ebp	函数尾声恢复
+5a684d	8b 55 00	mov edx, [ebp]	write edx	★链条：edx := vptr
+(none)	-	-	-	0x5A684D 之后至 0x5A6860 之间 edx 无任何写点（全量统计）

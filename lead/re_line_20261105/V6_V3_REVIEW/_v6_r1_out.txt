@@ -1,0 +1,102 @@
+================================================================================
+V6_V3_REVIEW - R1 复用前读读次独立探针实跑
+================================================================================
+================================================================================
+[0. 被核对象 SHA256 与字节数实算]
+================================================================================
+被核对象路径 = D:/Project/ra2-campaign-forge/lead/re_line_20261105/A1_SAMPLER_CANDIDATE/frame_edge_sampler.py
+被核对象 SHA256 = b382e893bafc6a7f38d08572affaa663eaef56a8de7c3f361eea38cc34185f3e，字节数 = 21411
+复核时刻 = 2026-11-05 21:13:52
+SHA256 与字节数与任务书基准严格相符。
+
+================================================================================
+[1. 可计数 reader 实测两种模式的读次与读序]
+================================================================================
+--- 1.1 默认模式 (f_pre=None) ---
+  总读取次数: 6 (预期 6)
+  FRAME_VA (0x00A8ED84) 读次: 2 (预期 2)
+  业务 VA gen_stamp (0x0087E8E0) 读次: 1 (预期 1)
+  业务 VA threat_calls (0x00A8EC34) 读次: 1 (预期 1)
+  业务 VA dirty_rect_count (0x00B0CE88) 读次: 1 (预期 1)
+  业务 VA bullet_count (0x00A8ED50) 读次: 1 (预期 1)
+  样本返回字段: f_pre_reused=False, reads_per_sample=6
+  样本读数: f_pre=100, f_post=101, cross_frame=True
+  读取时序轨迹:
+    [1] FRAME_VA (read #1) -> 100
+    [2] 0x0087E8E0 -> 21845
+    [3] 0x00A8EC34 -> 21845
+    [4] 0x00B0CE88 -> 21845
+    [5] 0x00A8ED50 -> 21845
+    [6] FRAME_VA (read #2) -> 101
+  >> 默认模式 6 读核验: PASS
+
+--- 1.2 复用前读模式 (f_pre=100, t_pre=199.5) ---
+  总读取次数: 5 (预期 5)
+  FRAME_VA (0x00A8ED84) 读次: 1 (预期 1，仅 f_post)
+  业务 VA gen_stamp (0x0087E8E0) 读次: 1 (预期 1)
+  业务 VA threat_calls (0x00A8EC34) 读次: 1 (预期 1)
+  业务 VA dirty_rect_count (0x00B0CE88) 读次: 1 (预期 1)
+  业务 VA bullet_count (0x00A8ED50) 读次: 1 (预期 1)
+  样本返回字段: f_pre_reused=True, reads_per_sample=5
+  样本读数: f_pre=100, f_post=100, cross_frame=False
+  读取时序轨迹:
+    [1] 0x0087E8E0 -> 26214
+    [2] 0x00A8EC34 -> 26214
+    [3] 0x00B0CE88 -> 26214
+    [4] 0x00A8ED50 -> 26214
+    [5] FRAME_VA (read #1) -> 100
+  >> 复用模式 5 读核验: PASS
+
+================================================================================
+[2. 反例探针：只在 FRAME_VA 上计数的探针验证 0 次前帧号读]
+================================================================================
+--- 2.1 复用模式下 FrameVaOnlyCountingProbe 实测结果 ---
+  pre_frame_reads (业务读前 FRAME_VA 读次)  = 0  (断言必须 == 0)
+  post_frame_reads (业务读后 FRAME_VA 读次) = 1 (断言必须 == 1)
+  total_frame_reads (FRAME_VA 总读次)       = 1 (断言必须 == 1)
+  FRAME_VA 读记录清单: [{'read_id': 1, 'va': '0xa8ed84', 'phase': 'POST_BUSINESS (后帧号读)', 'val': 700}]
+  >> 复用模式 0 次前帧号读断言: PASS
+
+--- 2.2 默认模式下 FrameVaOnlyCountingProbe 实测对照 ---
+  pre_frame_reads (业务读前 FRAME_VA 读次)  = 1  (断言必须 == 1)
+  post_frame_reads (业务读后 FRAME_VA 读次) = 1 (断言必须 == 1)
+  total_frame_reads (FRAME_VA 总读次)       = 2 (断言必须 == 2)
+  FRAME_VA 读记录清单: [{'read_id': 1, 'va': '0xa8ed84', 'phase': 'PRE_BUSINESS (前帧号读)', 'val': 700}, {'read_id': 2, 'va': '0xa8ed84', 'phase': 'POST_BUSINESS (后帧号读)', 'val': 700}]
+  >> 默认模式 1 次前帧号读断言: PASS
+
+--- 2.3 严苛反例：PreReadForbiddenProbe 互斥验证 ---
+  A. 复用模式调用 PreReadForbiddenProbe: 未触发异常，执行成功 [PASS]
+  B. 默认模式调用 PreReadForbiddenProbe: 如期捕获预期异常 [FORBIDDEN_PRE_READ: reader(FRAME_VA) called before business fields!] [PASS]
+
+================================================================================
+[3. 边界与防御测试：f_pre=0 假值陷阱与 t_pre=None]
+================================================================================
+--- 3.1 f_pre=0 (帧号恰为 0 时) ---
+  f_pre_reused = True (断言必须为 True)
+  reads_per_sample = 5 (断言必须为 5)
+  pre_frame_reads = 0 (断言必须为 0)
+  total_frame_reads = 1 (断言必须为 1)
+  cross_frame = True (0 != 1 必须为 True)
+  >> f_pre=0 假值陷阱测试: PASS (未发生 0 误判为 None 回退 6 读)
+
+--- 3.2 传 f_pre 但 t_pre=None ---
+  f_pre_reused = True (必须为 True)
+  reads_per_sample = 5 (必须为 5)
+  pre_frame_reads = 0 (必须为 0)
+  ts.f_pre = None (必须为 None)
+  ts.f_pre_anchor_known = False (必须为 False)
+  >> t_pre=None 读次与契约测试: PASS (仍为 5 读且 0 次前读，时间戳安全置 None)
+
+================================================================================
+[4. 多沿流式模拟：连续 10 沿触发累计读次与前帧号读次核对]
+================================================================================
+复用模式 10 沿触发:
+  累计 pre_frame_reads (前帧号读) = 0 (预期 0)
+  累计 post_frame_reads (后帧号读) = 10 (预期 10)
+  累计 total_frame_reads (FRAME_VA) = 10 (预期 10)
+  累计总追加读取次数 (reads_per_sample 累计) = 50 (预期 50)
+  >> 10 沿流式复用模式读次核验: PASS (严格 0 次前帧号读，总计 50 读)
+
+================================================================================
+R1 全部核验项执行完毕，判定: PASS (未发现实质缺陷)
+================================================================================

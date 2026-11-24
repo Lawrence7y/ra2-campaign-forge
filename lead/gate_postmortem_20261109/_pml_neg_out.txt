@@ -1,0 +1,81 @@
+== S1 six-cell reconcile: total / A_negated / B kinds vs orchestrator ==
+    已生效 L150 A=neg B=negated
+    可应用母本 L155 A=neg B=mention_quote
+    放行 N-5 L17 A=neg B=negated
+    放行 N-5 L130 A=plain B=mention_quote
+    放行 N-5 L150 A=neg B=negated
+    放行 N-5 L155 A=neg B=mention_quote
+  -- CANDIDATE --
+    已生效 total=1 A_negated=1 B{'negated': 1} [MATCH]
+    可应用母本 total=1 A_negated=1 B{'mention_quote': 1} [MATCH]
+    放行 N-5 total=4 A_negated=3 B{'negated': 2, 'mention_quote': 2} [MATCH]
+    授实施权 total=0
+    解除 PAUSE total=0
+    改前改后 total=0
+    已生效 L146 A=neg B=mention_quote
+    已生效 L177 A=neg B=negated
+    已生效 L194 A=neg B=mention_quote
+  -- LEDGER --
+    已生效 total=3 A_negated=3 B{'mention_quote': 2, 'negated': 1} [MATCH]
+    可应用母本 total=0
+    放行 N-5 total=0
+    授实施权 total=0
+    解除 PAUSE total=0
+    改前改后 total=0
+  -- DIM --
+    已生效 total=0
+    可应用母本 total=0
+    放行 N-5 total=0
+    授实施权 total=0
+    解除 PAUSE total=0
+    改前改后 total=0
+    授实施权 L5 A=neg B=mention_code
+    授实施权 L44 A=neg B=negated
+    授实施权 L348 A=neg B=mention_quote
+    授实施权 L425 A=neg B=negated
+    解除 PAUSE L348 A=neg B=mention_quote
+  -- RULING --
+    已生效 total=0
+    可应用母本 total=0
+    放行 N-5 total=0
+    授实施权 total=4 A_negated=4 B{'mention_code': 1, 'negated': 2, 'mention_quote': 1} [MATCH]
+    解除 PAUSE total=1 A_negated=1 B{'mention_quote': 1} [MATCH]
+    改前改后 total=0
+  -- S604 --
+    已生效 total=0
+    可应用母本 total=0
+    放行 N-5 total=0
+    授实施权 total=0
+    解除 PAUSE total=0
+    改前改后 total=0
+  -- N11 --
+    已生效 total=0
+    可应用母本 total=0
+    放行 N-5 total=0
+    授实施权 total=0
+    解除 PAUSE total=0
+    改前改后 total=0
+S2 reconcile: 6/6 orch cells matched
+== S3 aggregate: naive fulltext-scan FP rate ==
+  CANDIDATE  hits=6 A_neg=5 B_nonassert=6
+  LEDGER     hits=3 A_neg=3 B_nonassert=3
+  DIM        hits=0 A_neg=0 B_nonassert=0
+  RULING     hits=5 A_neg=5 B_nonassert=5
+  S604       hits=0 A_neg=0 B_nonassert=0
+  N11        hits=0 A_neg=0 B_nonassert=0
+  TOTAL hits=14 A_negated=13 B_nonassert=14 -> naive FP rate = 14/14
+== S4 tv3 (fp7 real vector, double negation = true violations) ==
+  L8 A=neg B=assertion_dblneg
+  L10 A=neg B=negated
+  L12 A=neg B=assertion_dblneg
+  (header: true violations = 2 dblneg L8/L12, 1 single-neg exempt L10)
+== S5 dblneg battery: correct order (L1 before L2) vs reversed ==
+  审阅不得不承认本候选已生效。               correct=assertion_dblneg reversed=negated
+  本件并非不宣告已生效                   correct=assertion_dblneg reversed=negated
+  不能不承认已生效                     correct=assertion_dblneg reversed=negated
+  上一轮回件不宣告已生效（单重否定，应豁免）        correct=negated reversed=negated
+  未尝不承认已生效                     correct=negated reversed=negated
+  难道不应该已生效吗                    correct=negated reversed=negated
+== S6 parity counting falsified both ways (R12 counterexamples) ==
+  c1 parity=assertion (compliant text -> FP)   layered=mention_quote
+  c2 parity=negated (true violation -> miss) layered=assertion_dblneg

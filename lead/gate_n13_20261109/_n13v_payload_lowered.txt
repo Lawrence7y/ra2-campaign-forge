@@ -1,0 +1,223 @@
+const DIR = "lead/gate_n13_20261109/";
+const DOC = "lead/gate_n13_20261109/GATE_N13_QUOTED_ASSERTION.md";
+const IRON = [
+    "【铁律】零真机：不启动 gamemd.exe / ra2loader / YURI.exe，不 taskkill，不读活进程内存。",
+    "零采样代码：不写 hook / MiniDump / SuspendThread / StackWalk / 探针注入；不写动态内存解析。",
+    "★ 绝对只读：lead/ledger_bound_20261109/、lead/ledger_appendix_20261108/、lead/gate_fp7_20261108/、lead/r9r12_20261109/、.zcode/workflow-runs/ 全部 mjs（历史 payload 绝对不改）、两件台账，一律不得修改、追加、覆盖。",
+    "唯一写域 = lead/gate_n13_20261109/。",
+    "不 commit、不 push。Python 一律 python -I -X utf8 + 绝对路径；指纹用 hashlib。",
+    "引用必须追到「实跑命令+输出」或「文件:行」；拿不到写「未验」，不补造。",
+    "★ 复核回件必须含绑定行，格式固定：写「被核对象 SHA256 = 」，紧跟完整 64 位十六进制，中间不得插入任何路径、括号、星号、反引号或空格；随后写「，字节数 = 」再写数字。",
+    "★★ 不许为了让门禁通过而放宽判据。谓词必须能同时做到：放过引用/否定/清单三类语境，且抓住三类语境之外的真正断言。放过与抓住都要有样本证明。",
+    "★ 三处已知误报的具体位置由编排方实跑给出。你必须自己复跑并核对行号与语境，不得直接采信。",
+].join("\n");
+const FP_CODE = [
+    "import json,pathlib,hashlib",
+    "root=pathlib.Path('D:/Project/ra2-campaign-forge')",
+    "T=['lead/ledger_bound_20261109/LEDGER_BOUND_VOLUME.md',",
+    "'lead/ledger_bound_20261109/_lb_BOUND_VOLUME.md',",
+    "'lead/ledger_appendix_20261108/LEDGER_APPENDIX_DRAFT.md',",
+    "'lead/gate_fp7_20261108/_g7_predicates.py',",
+    "'lead/r9r12_20261109/_g9_gate.py',",
+    "'lead/PENDING_DECISIONS.md',",
+    "'lead/GOAL_THREE_TARGETS_20261018.md']",
+    "o={}",
+    "for t in T:",
+    " p=root/t",
+    " if p.is_file():",
+    "  b=p.read_bytes(); o[t]={'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)}",
+    " else:",
+    "  o[t]={'sha256':'MISSING','bytes':0}",
+    "print(json.dumps(o,ensure_ascii=False))",
+].join("\n");
+const CTX_CODE = [
+    "import json,pathlib,re",
+    "root=pathlib.Path('D:/Project/ra2-campaign-forge')",
+    "T=['lead/ledger_bound_20261109/LEDGER_BOUND_VOLUME.md',",
+    "'lead/ledger_bound_20261109/_lb_BOUND_VOLUME.md']",
+    "WORDS=['已入账','已追加','已生效']",
+    "o={}",
+    "for t in T:",
+    " p=root/t",
+    " if not p.is_file(): o[t]={'miss':True}; continue",
+    " L=p.read_text(encoding='utf-8').splitlines()",
+    " hits=[]",
+    " for i,s in enumerate(L,1):",
+    "  for w in WORDS:",
+    "   if w in s: hits.append({'line':i,'word':w,'text':s[:220]})",
+    " o[t]={'bytes':p.stat().st_size,'hits':hits,'hitCount':len(hits)}",
+    "print(json.dumps(o,ensure_ascii=False))",
+].join("\n");
+__host.enterPhase("\u6293\u4E03\u4EF6\u6307\u7EB9\u5E76\u9010\u884C\u5B9A\u4F4D\u4E09\u5904\u8BEF\u62A5\u8BED\u5883");
+const fpRun = await __host.worldRead("world-read#1", "run", ["python", ["-I", "-X", "utf8", "-c", FP_CODE], { output: { tail: 8192 } }]);
+let fps = {};
+try {
+    fps = JSON.parse(fpRun.stdout.trim());
+}
+catch {
+    fps = {};
+}
+const fpText = JSON.stringify(fps);
+const pubSha = (fps["lead/ledger_bound_20261109/LEDGER_BOUND_VOLUME.md"] ?? { sha256: "MISSING" }).sha256;
+const headSha = (fps["lead/PENDING_DECISIONS.md"] ?? { sha256: "MISSING" }).sha256;
+const goalSha = (fps["lead/GOAL_THREE_TARGETS_20261018.md"] ?? { sha256: "MISSING" }).sha256;
+const g7Sha = (fps["lead/gate_fp7_20261108/_g7_predicates.py"] ?? { sha256: "MISSING" }).sha256;
+const g9Sha = (fps["lead/r9r12_20261109/_g9_gate.py"] ?? { sha256: "MISSING" }).sha256;
+__host.log("七件指纹 exit=" + fpRun.exitCode + "，合订本 " + pubSha.slice(0, 12));
+const ctxRun = await __host.worldRead("world-read#2", "run", ["python", ["-I", "-X", "utf8", "-c", CTX_CODE], { output: { tail: 24576 } }]);
+const ctxText = ctxRun.stdout.trim();
+__host.log("三处误报语境 exit=" + ctxRun.exitCode + "，长度 " + ctxText.length);
+const ASK_ANALYST = [
+    IRON,
+    "",
+    "【编排方实跑指纹】" + fpText,
+    "【合订本与草案里三个词的逐行命中原文（编排方实跑）】" + ctxText,
+    "",
+    "【背景】台账合订本 lead/ledger_bound_20261109/LEDGER_BOUND_VOLUME.md（§609 草案合订，已交付 70,587 B）门禁 FAIL，四条问题里两条是「含越权断言 已入账 / 已生效」。编排方已实跑确认失败来源是那道门禁的朴素字面判断 `for bad in ['已入账','已追加','已生效']: if bad in t: P.append('含越权断言 '+bad)`——它**没有语境分类，命中即 FAIL**。三处命中的语境分别是：",
+    "  · :28 / :275 属小节标题与总览里的检索动作描述（「有没有已入账的？」「已入账 grep=0」）；",
+    "  · :54 / :77 / :79 / :87 / :338 属「已入账 grep 结果」这类核查动作与小节标题；",
+    "  · :174 / :209 / :242 属引用限定里的「不宣告…已生效」否定式；",
+    "  · 真正的越权断言形如「本笔已于 §605 入账」「已生效，可应用母本」。",
+    "",
+    "  这与台账合订本自己记录的既有 13 类误报是同一族（第 2/6/7/12/14 类：措辞不匹配、否定式自指、含完成词的否定句、过度断言、既成事实断言）。",
+    "",
+    "  ★★ 编排方已实读现有谓词库 lead/gate_fp7_20261108/_g7_predicates.py 并确认两件关键事实，你的方案必须建立在这两条之上：",
+    "    (一) 失败的那道门禁**不是** R10，而是朴素字面判断 `for bad in ['已入账','已生效']: if bad in t: P.append(...)`。也就是说它根本没有语境分类，命中即 FAIL。真正的改造不是「再造一个谓词」，而是把这类门禁**改走谓词层**。",
+    "    (二) R10 已经实现了 C 类（否定语境）豁免与短引证跨度豁免，R12 已实现双重否定构型。所以 C 类**不需要重做**。R10 现在**没有**的是：A 类（检索动作：grep 结果行、提问句、「有没有 X 的」）与 B 类（小节标题、表格列名）。",
+    "    ⇒ 你真正要交付的是：A/B 两类的判别规则，加上「朴素字面门禁 → R10+R12+R13 词表化流程」的迁移配方。不要重写 C 类。若你实读后发现 R10 其实没能覆盖 C 类的某类写法，指出具体是哪一种并给反例。",
+    "",
+    "【任务：设计 N13 谓词——引用/否定/清单语境下的完成词不算断言】",
+    "",
+    "第一步 复现误报。自己逐行扫这两件里的「已入账 / 已追加 / 已生效」，给出每一处：行号、原句、语境分类。语境分类必须落进下面四类之一（可以新增类别，但要说明）：",
+    "  A 检索动作（grep 结果、是否存在的提问、核对命令）",
+    "  B 小节标题（###...或表格列名）",
+    "  C 否定式（不宣告、不得写成、未见；或「不」字否定的完成词）——**注意 R10 已覆盖此类的多数写法**，你只需标注哪些落在 R10 能力内、哪些不在",
+    "  D 真断言（主语是被登记的那一笔，谓语是完成词，且无所属限定）",
+    "  只有 D 类应当 FAIL。逐处判类并给依据。逐处还要标「现有 R10 会判成哪一类」，漏判/误判的才需要新规则。",
+    "",
+    "第二步 给可粘贴的实现。分两部分：",
+    "  (a) **R13 谓词（A/B 两类）**：纯正则 + 位置的 Python 片段，能对单个文本返回 (是否含 A/B 类语境命中, 命中明细)，供 R10 前置过滤或并入其分类链；",
+    "  (b) **迁移配方**：给一个把现有朴素字面门禁改造成谓词化门禁的最小改动模板（改前 3 行 → 改后 5 行），要求保持调用方接口不变、且在不引入 import 时能给降级形态。",
+    "  明确写出各类的判别顺序（先排 A/B 再交 R10 判 C/D），以及每一类的正则与理由。",
+    "  (c) 处理边界：同一行里既有否定又有肯定（如「不宣告 X 已生效，但 Y 已入账」）必须判 D；行首缩进/列表符号/表格竖线不影响判类；",
+    "  (d) 给「拿不准时怎么办」的默认：默认判 FAIL（宁可误拦不可放过），但要输出命中原文供人工看。",
+    "",
+    "第三步 建正负样本集并回归。至少给：",
+    "  (a) 正样本（应当放过）≥12 条，覆盖 A/B/C 三类，每条标明来源行号或构造说明；",
+    "  (b) 负样本（应当抓住）≥12 条，覆盖 D 类，尤其是同句混用、被动式、时间副词修饰、表格单元格内断言；",
+    "  (c) 在真件上跑一遍：LEDGER_BOUND_VOLUME.md 与 _lb_BOUND_VOLUME.md 应当 0 命中 D 类；然后把旧门禁的四条问题逐条重判，说明哪几条消失、哪几条仍在。",
+    "",
+    "第四步 与既有 14 类的关系。现有 R9–R12 四个谓词在 lead/gate_fp7_20261108/_g7_predicates.py，r9r12 回归在 lead/gate_r9r12_20261109/_g9_gate.py（注意：不是 lead/r9r12/lead/... 那条路径）。说明：",
+    "  (a) N13 与 R10（越权词语境分类）是否重复？★ 你必须实读 _g7_predicates.py 的 r10_context 与 r10_scan 源码再回答；编排方预判是「C 类重复、A/B 类不重复」，你要用源码验证或推翻这个预判；",
+    "  (b) N13 会不会引入新的误报族？自己举一个反例试试；",
+    "  (c) 给出并入顺序建议：N13 应当在 R10 之前（做 A/B 前置过滤）还是之后（做补充判定）？给理由。",
+    "",
+    "第五步 给这条谓词的适用边界。哪些写法它判不了（如跨行断言、跨小节的语义承接、同义词），如实列出，不要宣称完备。",
+    "",
+    "【纪律】不改任何既有件、不改历史 payload。产出落本任务写域，前缀 _n13_。零真机、零采样代码、不 commit、不 push。",
+].join("\n");
+const REVIEW_RULES = [
+    "【复核】默认怀疑，独立实现：",
+    "① 自己实算七件指纹，核对是否等于编排方基线。",
+    "② 自己逐行扫两件合订本，核对三处误报的行号与语境判类（不得采信撰写人的分类表）。若撰写人把某处 D 类判成 C 类，指出并给原句。",
+    "③ ★ 自己写一份独立的 A/B 类判别实现（不要看撰写人的正则），在撰写人的正负样本集上跑，比较两者的判定差异。差异处逐一说明谁对。",
+    "④ ★ 自己构造 5 条撰写人样本集里没有的负样本（真断言），看撰写人的谓词能不能抓住。抓不住即报 partial 并列出漏网样本。",
+    "⑤ 核第三步的真件回归：撰写人说「0 命中 D 类」必须能复现；说「哪几条消失」必须逐条对上旧门禁的四条问题。",
+    "⑥ 核第四步与 R10 的关系判断有没有依据：★ 必须自己实读 lead/gate_fp7_20261108/_g7_predicates.py 的 r10_context/r10_scan 源码，再核对撰写人「C 类已覆盖、A/B 类是缺口」的预判。若撰写人把 R10 已有的能力重复实现了一遍却不自知，报 partial。",
+    "⑦ 核迁移配方：把撰写人的改后片段粘进一个最小样例，实跑一次，确认调用方接口不变、且删掉文件时能 FAIL。",
+    "⑦ 检查有没有越界：有没有改任何既有件、有没有改历史 payload、有没有为了让谓词通过而放宽判据。",
+    "★ 回件必须含绑定行，格式固定：写「被核对象 SHA256 = 」，紧跟完整 64 位十六进制（中间不得插入路径、括号、星号、反引号或空格），随后写「，字节数 = 」与数字。",
+    "只读，核验脚本只能落本任务写域且前缀 _n13v_。",
+].join("\n");
+__host.enterPhase("N13 \u8C13\u8BCD\u8BBE\u8BA1\uFF1A\u5F15\u7528\u4E0E\u5426\u5B9A\u8BED\u5883\u7684\u5B8C\u6210\u8BCD\u4E0D\u7B97\u65AD\u8A00");
+const analyst = __host.createActor("actor#1", "N13 谓词设计员", { system: "你是门禁谓词设计员。把「引用/否定/清单语境下的完成词」与「真断言」分开，给可粘贴实现与正负样本，自己回归。" });
+const finding = await __host.ask("ask#1", analyst, ASK_ANALYST);
+const reviewer = __host.createActor("actor#2", "N13 谓词复核员", { system: "你是独立复核员。自己写一份独立实现，与撰写人的在正负样本上对跑。盯「为了让谓词通过而放宽判据」。", model: "magpie/work/cn:hy4free$high" });
+const confirmation = await __host.ask("ask#2", reviewer, [IRON, "", "【被核对象】设计方案回件：" + JSON.stringify(finding), "", "【编排方指纹】" + fpText, "", REVIEW_RULES].join("\n"));
+__host.enterPhase("N13 \u8C13\u8BCD\u64B0\u5199\u4E0E\u5B9E\u6D4B\u56DE\u5F52");
+const writer = __host.createActor("actor#3", "N13 谓词撰写员", { system: "你是门禁谓词撰写员。写谓词、写正负样本、写回归实测，如实记录哪几条旧问题消失、哪几条仍在。" });
+const writeResult = await __host.ask("ask#3", writer, [
+    IRON,
+    "",
+    "【编排方指纹】" + fpText,
+    "【三处误报原文】" + ctxText,
+    "【设计】" + JSON.stringify(finding),
+    "【复核】" + JSON.stringify(confirmation),
+    "",
+    "【交付】写 GATE_N13_QUOTED_ASSERTION.md 到本任务写域，六节「## 1」到「## 6」：1 目的与边界（只做 A/B 两类谓词 + 迁移配方，不改草案正文、不改历史 payload、不重写 R10 的 C 类）；2 上游指纹（七件）+ 三处误报逐行语境判类表（A/B/C/D 四类，逐处给行号、依据、以及「现有 R10 会判成哪一类」）；3 实现（R13 谓词完整可粘贴片段 + 朴素门禁→谓词化门禁的迁移配方改前改后对照 + 判别顺序 + 边界处理 + 拿不准默认 FAIL）；4 正负样本集与回归（正样本≥12 / 负样本≥12 / 真件 0 命中 D 类 / 旧门禁四条问题逐条重判）；5 与 R9–R12 的关系（★基于源码实读判断 C 类是否重复、A/B 类缺口是否为真、并入顺序 N13 在 R10 前还是后）与适用边界（判不了的写法如实列）；6 复核回件（绑定行格式）+ 未改既有件声明 + 未验项。",
+    "",
+    "必现要素：A 检索动作 / B 小节标题 / C 否定式 / D 真断言 / R10 已覆盖 / 迁移配方 / 正样本 / 负样本 / 同句混用 / 默认 FAIL / R10 / 并入顺序 / 判不了 / 未验。必须给完整可粘贴的谓词片段与改前改后对照，不许用「已实现」概括。复核 verdict 如实记；refuted 或 partial 标 unconfirmed。",
+].join("\n"));
+__host.enterPhase("\u95E8\u7981\u4E0E\u53D1\u5E03");
+const GATE_CODE = [
+    "import json,pathlib,re,hashlib",
+    "root=pathlib.Path('D:/Project/ra2-campaign-forge')",
+    "wd=root/'lead/gate_n13_20261109'",
+    "P=[];NB=0;DOC=None;B=0",
+    "expected=wd/'GATE_N13_QUOTED_ASSERTION.md'",
+    "if not expected.is_file(): P.append('主交付件未按约定命名 GATE_N13_QUOTED_ASSERTION.md')",
+    "else:",
+    " DOC=expected; t=DOC.read_text(encoding='utf-8');NB=DOC.stat().st_size",
+    " for s in ['## 1','## 2','## 3','## 4','## 5','## 6']:",
+    "  if s not in t: P.append('缺小节 '+s)",
+    " for k in ['A 检索动作','B 小节标题','C 否定式','D 真断言','正样本','负样本','同句混用','默认 FAIL','R10','并入顺序','判不了','未验']:",
+    "  if k not in t: P.append('缺要素 '+k)",
+    " B=len(re.findall(r'被核对象 SHA256 = [0-9a-fA-F]{64}',t))",
+    " if B<1: P.append('缺规范格式绑定行')",
+    "PRE_PUB='" + pubSha + "'",
+    "PRE_H='" + headSha + "'",
+    "PRE_G='" + goalSha + "'",
+    "PRE_G7='" + g7Sha + "'",
+    "PRE_G9='" + g9Sha + "'",
+    "for lbl,rel,pre in [('合订本','lead/ledger_bound_20261109/LEDGER_BOUND_VOLUME.md',PRE_PUB),('台账','lead/PENDING_DECISIONS.md',PRE_H),('目标台账','lead/GOAL_THREE_TARGETS_20261018.md',PRE_G),('g7谓词','lead/gate_fp7_20261108/_g7_predicates.py',PRE_G7),('g9回归','lead/r9r12_20261109/_g9_gate.py',PRE_G9)]:",
+    " p=root/rel",
+    " cur=hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'MISSING'",
+    " if cur!=pre: P.append(lbl+' 被改动 pre='+pre[:12]+' cur='+cur[:12])",
+    "print(json.dumps({'ok':not P,'problems':P,'bindings':(B if expected.is_file() else 0),'docBytes':NB},ensure_ascii=False))",
+].join("\n");
+const gateRun = await __host.worldRead("world-read#3", "run", ["python", ["-I", "-X", "utf8", "-c", GATE_CODE], { output: { tail: 4096 }, timeoutMs: 120000 }]);
+let gateOk = false;
+let gateProblems = "";
+try {
+    const g = JSON.parse(gateRun.stdout.trim());
+    gateOk = gateRun.exitCode === 0 && g.ok === true;
+    gateProblems = (g.problems ?? []).join("；");
+    __host.log("门禁 exit=" + gateRun.exitCode + " ok=" + gateOk + " " + gateProblems);
+}
+catch {
+    gateProblems = "门禁输出不可解析（exit=" + gateRun.exitCode + "）";
+}
+const realDoc = DIR + "GATE_N13_QUOTED_ASSERTION.md";
+let published = false;
+try {
+    await __host.publishArtifact("artifact#1", "file", ["gate-n13", realDoc, { title: "N13 谓词：引用与否定语境的完成词不算断言", description: "四类语境判别、正负样本回归、与 R10 的关系", primary: true }]);
+    published = true;
+}
+catch {
+    await __host.ask("ask#4", writer, "主交付件 GATE_N13_QUOTED_ASSERTION.md 缺失，请按此前内容重建并回复「已重建」。");
+    await __host.publishArtifact("artifact#2", "file", ["gate-n13", realDoc, { title: "N13 谓词：引用与否定语境的完成词不算断言", description: "重建后重新发布", primary: true }]);
+    published = true;
+}
+return {
+    conclusion: "N13 谓词完成，复核 verdict=" + confirmation.verdict + "，交付件" + (published ? "已发布" : "未发布") + "，门禁" + (gateOk ? "通过" : "未通过") + "。" + (gateOk ? "" : "门禁问题：" + gateProblems) + " 三处误报判类：" + finding.threeCases + " 负向对照：" + finding.negativeControls + " ★ 未改草案正文、未改历史 payload。",
+    findings: [{
+            where: realDoc + " §3-§4",
+            what: finding.what,
+            evidence: (confirmation.sha256Line + "；" + finding.evidence + "；复核=" + confirmation.verdict + "；破绽=" + confirmation.whatBreaksIt).slice(0, 1400),
+            status: confirmation.verdict === "confirmed" ? "verified" : "unconfirmed",
+            severity: finding.severity,
+        }],
+    verified: [
+        "python -I -X utf8 -c <指纹脚本>：7 件（exit=" + fpRun.exitCode + "）",
+        "python -I -X utf8 -c <逐行语境定位>：2 件合订本（exit=" + ctxRun.exitCode + "）",
+        "设计员 " + finding.ranCommands + " 条、复核员 " + confirmation.ranCommands + " 条确定性命令",
+        "python -I -X utf8 -c <门禁>：六节/十二要素/绑定行/五件零漂移（exit=" + gateRun.exitCode + ", ok=" + gateOk + "）",
+    ],
+    notCovered: [
+        "只做谓词，不改草案正文与历史 payload",
+        "谓词适用边界外的写法（跨行断言、跨小节语义承接）未覆盖",
+        "零真机：运行期证据仍缺",
+        ...(!gateOk ? ["门禁未通过：" + gateProblems] : []),
+    ],
+    gateOk: gateOk,
+};

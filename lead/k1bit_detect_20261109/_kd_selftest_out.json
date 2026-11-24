@@ -1,0 +1,415 @@
+{
+ "n": 10,
+ "passed": 10,
+ "failed": 0,
+ "negatives": 6,
+ "positives": 4,
+ "all_negatives_correct": true,
+ "all_positives_correct": true,
+ "rows": [
+  {
+   "name": "N1_all_AND_over_k_tokens",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "has_k": false,
+   "collapse": [],
+   "legal": [
+    {
+     "line": 5,
+     "kind": "AND_aggregate",
+     "expr": "all((word in body for word in words))",
+     "why": "all() requires every input => AND_k, no OR loss"
+    }
+   ],
+   "output": {
+    "agg_pass": [
+     8
+    ],
+    "per_token_print": [],
+    "per_any_print": [],
+    "hits_retained": [],
+    "onebit": [
+     {
+      "line": 9,
+      "expr": "0"
+     },
+     {
+      "line": 7,
+      "expr": "1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "N2_all_bound_bool_list",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "has_k": false,
+   "collapse": [],
+   "legal": [
+    {
+     "line": 5,
+     "kind": "AND_aggregate",
+     "expr": "all(present)",
+     "why": "all() requires every input => AND_k, no OR loss"
+    }
+   ],
+   "output": {
+    "agg_pass": [
+     8
+    ],
+    "per_token_print": [],
+    "per_any_print": [],
+    "hits_retained": [],
+    "onebit": [
+     {
+      "line": 9,
+      "expr": "0"
+     },
+     {
+      "line": 7,
+      "expr": "1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "N3_any_over_samples_single_literal",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "has_k": false,
+   "collapse": [],
+   "legal": [
+    {
+     "line": 4,
+     "kind": "any_over_samples",
+     "expr": "any(('本次不授权' in body for body in bodies))",
+     "why": "quantifies over samples/bodies with a fixed predicate, not over k inputs"
+    }
+   ],
+   "output": {
+    "agg_pass": [
+     7
+    ],
+    "per_token_print": [],
+    "per_any_print": [],
+    "hits_retained": [],
+    "onebit": [
+     {
+      "line": 8,
+      "expr": "0"
+     },
+     {
+      "line": 6,
+      "expr": "1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "N4_count_preserving_sum",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "has_k": false,
+   "collapse": [],
+   "legal": [
+    {
+     "line": 5,
+     "kind": "count_preserving",
+     "expr": "len(hits)",
+     "why": "cardinality/order retained, not 1 bit"
+    },
+    {
+     "line": 8,
+     "kind": "count_preserving",
+     "expr": "len(hits)",
+     "why": "cardinality/order retained, not 1 bit"
+    }
+   ],
+   "output": {
+    "agg_pass": [
+     8
+    ],
+    "per_token_print": [],
+    "per_any_print": [],
+    "hits_retained": [
+     {
+      "line": 4,
+      "name": "hits"
+     }
+    ],
+    "onebit": [
+     {
+      "line": 9,
+      "expr": "0"
+     },
+     {
+      "line": 7,
+      "expr": "1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "N5_OR_with_per_token_attribution",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "has_k": false,
+   "collapse": [
+    {
+     "line": 8,
+     "kind": "OR_COLLAPSE_gen",
+     "quantifies": "k_tokens",
+     "k": "?",
+     "expr": "any((word in body for word in words))"
+    }
+   ],
+   "legal": [],
+   "output": {
+    "agg_pass": [
+     11
+    ],
+    "per_token_print": [],
+    "per_any_print": [],
+    "hits_retained": [
+     {
+      "line": 4,
+      "name": "hits"
+     },
+     {
+      "line": 6,
+      "name": "hits[]"
+     },
+     {
+      "line": 7,
+      "name": "hits[]"
+     }
+    ],
+    "onebit": [
+     {
+      "line": 12,
+      "expr": "0"
+     },
+     {
+      "line": 10,
+      "expr": "1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "N6_no_any_at_all_d25_style",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "has_k": false,
+   "collapse": [],
+   "legal": [],
+   "output": {
+    "agg_pass": [
+     9
+    ],
+    "per_token_print": [],
+    "per_any_print": [],
+    "hits_retained": [],
+    "onebit": [
+     {
+      "line": 10,
+      "expr": "0"
+     },
+     {
+      "line": 8,
+      "expr": "1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "P1_generator_any",
+   "want": "CONFIRMED_K1BIT",
+   "got": "CONFIRMED_K1BIT",
+   "ok": true,
+   "has_k": true,
+   "collapse": [
+    {
+     "line": 6,
+     "kind": "OR_COLLAPSE_gen",
+     "quantifies": "k_tokens",
+     "k": 2,
+     "expr": "any((keyword in body for body in bodies.get(title, []) for keyword in keywords))"
+    }
+   ],
+   "legal": [],
+   "output": {
+    "agg_pass": [
+     10
+    ],
+    "per_token_print": [],
+    "per_any_print": [],
+    "hits_retained": [],
+    "onebit": [
+     {
+      "line": 11,
+      "expr": "0"
+     },
+     {
+      "line": 9,
+      "expr": "1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "P2_bound_bool_list_any_Name",
+   "want": "CONFIRMED_K1BIT",
+   "got": "CONFIRMED_K1BIT",
+   "ok": true,
+   "has_k": true,
+   "collapse": [
+    {
+     "line": 6,
+     "kind": "TERNARY_OR_BRANCH",
+     "quantifies": "k_tokens(via present)",
+     "k": 2,
+     "expr": "all(present) if require_all else any(present)"
+    },
+    {
+     "line": 6,
+     "kind": "OR_COLLAPSE_bound_list",
+     "quantifies": "k_tokens(via present)",
+     "k": 2,
+     "expr": "any(present)"
+    }
+   ],
+   "legal": [
+    {
+     "line": 6,
+     "kind": "AND_aggregate",
+     "expr": "all(present)",
+     "why": "all() requires every input => AND_k, no OR loss"
+    }
+   ],
+   "output": {
+    "agg_pass": [
+     9
+    ],
+    "per_token_print": [],
+    "per_any_print": [],
+    "hits_retained": [],
+    "onebit": [
+     {
+      "line": 10,
+      "expr": "0"
+     },
+     {
+      "line": 8,
+      "expr": "1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "P3_ternary_any_matches",
+   "want": "CONFIRMED_K1BIT",
+   "got": "CONFIRMED_K1BIT",
+   "ok": true,
+   "has_k": true,
+   "collapse": [
+    {
+     "line": 10,
+     "kind": "OR_COLLAPSE_ternary_list",
+     "quantifies": "k_tokens(via matches)",
+     "k": 2,
+     "expr": "any(matches)"
+    },
+    {
+     "line": 7,
+     "kind": "OR_COLLAPSE_gen",
+     "quantifies": "k_tokens",
+     "k": 2,
+     "expr": "any((word in body for word in words))"
+    }
+   ],
+   "legal": [
+    {
+     "line": 6,
+     "kind": "AND_aggregate",
+     "expr": "all((word in body for word in words))",
+     "why": "all() requires every input => AND_k, no OR loss"
+    }
+   ],
+   "output": {
+    "agg_pass": [
+     13
+    ],
+    "per_token_print": [],
+    "per_any_print": [],
+    "hits_retained": [],
+    "onebit": [
+     {
+      "line": 14,
+      "expr": "0"
+     },
+     {
+      "line": 12,
+      "expr": "1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "P4_ok_bitand_and_argmin_carrier",
+   "want": "CONFIRMED_K1BIT",
+   "got": "CONFIRMED_K1BIT",
+   "ok": true,
+   "has_k": true,
+   "collapse": [
+    {
+     "line": 4,
+     "kind": "ARGMIN_REVERSE_MASK",
+     "quantifies": "k_tokens",
+     "k": "?",
+     "expr": "min((line.find(n) for n in needles if n in line), default=-1)"
+    },
+    {
+     "line": 16,
+     "kind": "BIT_ACCUM_AugAssign_BitAnd",
+     "quantifies": "aggregate_cases",
+     "k": "?",
+     "expr": "ok &= good"
+    },
+    {
+     "line": 10,
+     "kind": "OR_COLLAPSE_gen",
+     "quantifies": "k_tokens",
+     "k": "runtime",
+     "expr": "any((n in txt for n in a.needle))"
+    }
+   ],
+   "legal": [],
+   "output": {
+    "agg_pass": [
+     17
+    ],
+    "per_token_print": [],
+    "per_any_print": [],
+    "hits_retained": [],
+    "onebit": [
+     {
+      "line": 18,
+      "expr": "0 if ok else 1"
+     },
+     {
+      "line": 12,
+      "expr": "1"
+     }
+    ]
+   }
+  }
+ ]
+}

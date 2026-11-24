@@ -1,0 +1,11 @@
+=== all [esp+N] displacements used in 0x55AFB0 ===
+  offsets: [0, 4, 12, 16, 20, 24, 29, 32, 36, 40, 45, 48, 52]
+
+  栈帧：sub esp,0x28 → 局部区 [esp+0x00..0x27]；4 次 push → 保存区 [esp+0x28..0x37]
+  ⇒ 若有栈参数，首个参数应在 [esp+0x38]。实测最大偏移 = 0x34
+  判定：**无任何 >= 0x38 的访问 ⇒ 该函数不接受栈参数 ⇒ [esp+0x10] 必为局部区第一个 dword = this**
+
+=== 该区间内所有访问 [esp+0x10] 的指令（仅 2 写 1 读，全部 > 读点）===
+   read  0055B5FB  mov      edi, dword ptr [esp + 0x10]
+   WRITE 0055B6EF  mov      dword ptr [esp + 0x10], eax
+   WRITE 0055B6FC  mov      dword ptr [esp + 0x10], 0x7e9f84

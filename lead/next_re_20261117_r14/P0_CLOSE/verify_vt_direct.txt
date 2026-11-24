@@ -1,0 +1,53 @@
+# 任务 B 校核
+
+## 1 · 与既有独立报告对账
+  slice        既有报告 本卡 distinct       一致
+  C06            31         31      YES
+  C07            24         24      YES
+  C09            17         17      YES
+  C10             6          6      YES
+  镜像级：既有 C10 审计报 413，本卡 distinct = 413  ⇒ YES
+  虚表定界自校：1214 张 / 14044 槽（Lead 基线 1214 / 14,044）⇒ YES
+
+## 2 · 「atlas size 低估」假说检验：目标相对上一 entry 末尾的偏移
+  不同地址合计 413
+  delta = S − (上一entry + size)：min=0 max=856
+  分布（按 8 字节桶）：{0: 238, 8: 165, 56: 2, 64: 1, 128: 1, 192: 1, 216: 1, 256: 1, 280: 1, 504: 1, 856: 1}
+  delta ∈ [0,16) = 403/413 (97.6%)；delta < 0（=落在上一函数内部，说明 size 未低估而是真重叠）= 0
+  到下一 entry 的距离：min=16
+
+## 3 · 是否为任何直接分支目标（三通道结构性盲区验证）
+  直接目标全集 = 94688；413 个中同时是 call/jmp/jcc 目标的 = 0（0.0%）
+  ⇒ 413 个不被任何直接分支引用（虚表独有），三通道（call32/jmp32/jmp8）结构性不可见
+
+## 4 · 形态抽样（前 24 个）
+  target    prev   前 3 条指令                      到上entry末   类名/槽
+  0040B690 nop @0040B68F+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] +5         T_DynamicVectorClass_PAVBombClass__
+  0040B6F0 nop @0040B6EF+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] +5         T_DynamicVectorClass_PAVTechnoClass__
+  0040BEA0 nop @0040BE9F+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] +5         T_DynamicVectorClass_PBVCommandClass__
+  0040C870 nop @0040C86F+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] +5         T_DynamicVectorClass_PAVIsometricTileClass__
+  0041B860 nop @0041B85F+1 mov ecx, dword ptr [esp + 4] ; xor eax, eax ; mov al, byte ptr [ecx + 0x12] +9         AircraftClass
+  0041DE30 nop @0041DE2F+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] +5         T_DynamicVectorClass_PAVAirstrikeClass__
+  00421850 nop @0042184F+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] +5         T_DynamicVectorClass_PAVAlphaShapeClass__
+  00426A80 nop @00426A7F+1 xor eax, eax ; mov ax, word ptr [ecx + 0xa2] ; ret  +6         AnimFile
+  0042F470 nop @0042F46F+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 8] ; mov edx, dword ptr [eax + ecx*4] +5         T_DynamicVectorClass_VCell__
+  0043AB20 nop @0043AB1F+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] +8         T_VectorClass_PAVNeuronClass__
+  00452250 nop @0045224F+1 xor eax, eax ; ret  ; nop    +10        BuildingClass
+  00465960 nop @0046595F+1 sub esp, 0x1e0 ; push esi ; mov esi, ecx +61        BuildingTypeClass
+  0046B630 nop @0046B62F+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] +5         T_DynamicVectorClass_PAVBulletClass__
+  0046FC00 nop @0046FBFF+1 sub esp, 0x904 ; mov eax, dword ptr [esp + 0x918] ; push ebx +60        CampaignScoreClass
+  00472B30 nop @00472B2F+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] +5         T_DynamicVectorClass_PAVCaptureManagerClass__
+  00488520 nop @0048851F+1 sub esp, 0xf0 ; push esi ; mov esi, ecx +10        CheckListClass
+  00491360 nop @0049135F+1 mov edx, dword ptr [esp + 0x1c] ; push 0 ; push edx +3         T_BlitTransXlat_G
+  004913E0 nop @004913DF+1 mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] +5         T_DynamicVectorClass_PAVConvertClass__
+  00491490 nop @0049148F+1 mov edx, dword ptr [esp + 0x1c] ; push 0 ; push edx +3         T_BlitPlainXlat_E
+  00491560 nop @0049155F+1 mov edx, dword ptr [esp + 0x1c] ; push 0 ; push edx +3         T_BlitTransXlat_E
+  00491640 nop @0049163F+1 mov edx, dword ptr [esp + 0x1c] ; push 0 ; push edx +3         T_BlitTransZRemapXlat_E
+  00491710 nop @0049170F+1 mov edx, dword ptr [esp + 0x1c] ; push 0 ; push edx +3         T_BlitTransRemapDest_E
+  004917F0 nop @004917EF+1 mov edx, dword ptr [esp + 0x1c] ; push 0 ; push edx +3         T_BlitTransRemapXlat_E
+  004918A0 nop @0049189F+1 mov edx, dword ptr [esp + 0x28] ; mov eax, dword ptr [ecx] ; push edx +2         T_RLEBlitTransXlat_E
+
+## 5 · 槽号分布（判断是否集中在末槽）
+  槽号 top12 = {4: 136, 6: 124, 8: 54, 2: 53, 7: 8, 3: 7, 1: 6, 23: 5, 5: 4, 49: 3, 50: 2, 9: 2}
+  末槽（slot_idx == n_slots-1 - 上一表末尾误算）无法直接判；给出 slot_idx vs 表槽数：
+  {'slot4/5': 136, 'slot6/7': 124, 'slot8/9': 54, 'slot2/3': 53, 'slot7/8': 8, 'slot3/4': 7, 'slot1/2': 6, 'slot23/24': 5, 'slot5/6': 4, 'slot49/50': 3}

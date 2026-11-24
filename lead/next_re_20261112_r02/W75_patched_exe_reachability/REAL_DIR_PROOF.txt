@@ -1,0 +1,68 @@
+W75 · REAL_DIR_PROOF.txt  (真目录零改动自证 + 沙箱还原自证)
+==============================================================
+执行者 Hy4 (W75) | 生成 2026-11-14T02:37:58.386+08:00
+全部数值由 out/real_pre.json / out/real_post.json / out/sandbox_pre.json / out/sandbox_post.json / out/FINALIZE.json 实算，非自述。
+
+--------------------------------------------------------------
+A. 真目录 ra2youli 零改动（红线：绝不写真目录）
+--------------------------------------------------------------
+REAL = D:\Project\ra2-campaign-forge\ra2youli
+PRE  : out/real_pre.json  (离线阶段、取锁之前)
+POST : out/real_post.json (两趟真机 + 配置还原 + 清理之后)
+
+PRE  summary: file_count=647  total_bytes=1989215270
+POST summary: file_count=647  total_bytes=1989215270
+
+FULL-TREE DIFF (by rel + size + sha256 + mtime_ns):
+  added       = 0
+  removed     = 0
+  changed     = 0
+  mtime_diff  = 0
+  IDENTICAL_TREE = True   <-- [本次实测]
+
+锚哈希 PRE == POST（逐字节 SHA-256）:
+  RA2MD.INI                  c91c6a475b81 == c91c6a475b81  True
+  gamemd.exe                 73201cc02149 == 73201cc02149  True
+  ddraw.dll                  85e0f7d530df == 85e0f7d530df  True
+  ddraw.ini                  c983abadc116 == c983abadc116  True
+  ra2forge_install.json      fe3bdf62f4e8 == fe3bdf62f4e8  True
+  BATTLEMD.INI               7e40691a3480 == 7e40691a3480  True
+
+注：gamemd.exe 基线 73201cc0... 全程不变 => 真目录 exe 从未被覆盖；
+    路线 (c) 只在本卡 sandbox_game/ 内换过该 exe。
+
+--------------------------------------------------------------
+B. 沙箱还原自证（sandbox_game 是真目录 robocopy 副本，只写副本）
+--------------------------------------------------------------
+robocopy REAL -> GAME  rc=1（成功码）/E /COPY:DAT /DCOPY:DAT [cmd_robocopy_sandbox.log]
+sandbox_pre : 647 文件 / 1989215270 B（与 real_pre 逐字节一致）
+两趟各自收尾：28 项可写配置逐字节还原 + 沙箱 gamemd.exe 还原为原版
+  [restore_configs all_match=True / sandbox_exe_restored_to_original]
+
+finalize 前沙箱 vs 真目录 diff (compare_mtime=False):
+  added=[] removed=[] changed=[]
+finalize 还原动作: 0 项（copy_from_real / restore_removed / delete_created）
+finalize 后沙箱 vs 真目录 diff:
+  added=0 removed=0 changed=0  IDENTICAL_TREE=True  [本次实测]
+
+--------------------------------------------------------------
+C. 锁 / 进程 / 外部产物
+--------------------------------------------------------------
+每趟一趟一锁：
+  TRIP A 取锁 owner=w75 @2026-11-14T02:30:55+08:00 -> 放锁 owner=lead @02:31:36+08:00
+  TRIP B 取锁 owner=w75 @2026-11-14T02:35:01+08:00 -> 放锁 owner=lead @02:35:39+08:00
+最终 .game_instance.lock owner = lead
+最终 gamemd.exe 活体进程 = 0  [本次实测]
+只关闭本卡 WMI 启动的 pid 32364 (A) / 21188 (B)，未 blanket taskkill，未触碰任何他人/用户进程。
+W61 产物 work/gamemd_v14r.exe SHA = b9021544a369fc8db77b1d0500de335e703886c5633dadc73c836dee9f891287（未改动）
+本卡自有副本 out/gamemd_patched.exe SHA = b9021544a369fc8db77b1d0500de335e703886c5633dadc73c836dee9f891287
+沙箱 gamemd.exe 最终 SHA = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476（原版）
+真目录 gamemd.exe 最终 SHA = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476（原版）
+
+--------------------------------------------------------------
+D. 结论
+--------------------------------------------------------------
+[本次实测] 真目录 ra2youli 全程零写入：IDENTICAL_TREE=True，added/removed/changed/mtime_diff 全 0，锚哈希 PRE==POST，gamemd.exe=73201cc0... 不变。
+[本次实测] 沙箱副本已逐字节还原到与真目录一致（True）。
+[本次实测] 唯一真机写者是本卡（w75），锁按「每趟」释放回 lead，残留进程 0。
+

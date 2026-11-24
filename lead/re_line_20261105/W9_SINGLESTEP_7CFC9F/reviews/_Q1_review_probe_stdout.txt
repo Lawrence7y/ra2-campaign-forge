@@ -1,0 +1,108 @@
+==============================================================================
+Q1 INDEPENDENT REVIEW PROBE -- 0x7CFC9F
+run: python -I -X utf8 <this file>   at 2026-11-06 03:11:29
+==============================================================================
+
+[R1] SHA256 / size (independently computed)
+gamemd.exe SHA256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  bytes = 4825360
+EXCEPT      SHA256 = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251  bytes = 26405
+
+[R2] Engine self-attestation
+Engine.sha = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  (== self SHA: True)
+IMAGEBASE = 0x400000
+fo(VA) = 0x3cfc9f ; VA-0x400000 = 0x3cfc9f
+COVERAGE = 99.998375677293% / 1394120 insns / 66 resync-fails
+TLO/THI/TSZ = 0x401000 / 0x7e1000 / 0x3e0000
+
+[R3] raw bytes + 3-source byte comparison
+rd(VA,32)  = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+rd(VA,0x30)= 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A 04 3B 4A 08 75 61 83 FF 20 7D 2B BB 00 00 00 80
+EXCEPT L17 bytes (32) = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+TASK.md:40  bytes (32) = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+rd32 == EXCEPT : True ; diff idx = []
+EXCEPT == TASK : True
+len(raw32)=32 len(EXCEPT)=32 len(TASK)=32
+
+[R4] E1 linear disasm(VA,0x30) / E2 resync by() walk; addr+bytes+mnemonic+op_str
+E1 count = 18, bytes covered = 48
+  E1[ 0] 0x007CFC9F  8B0A           mov     ecx, dword ptr [edx]
+  E1[ 1] 0x007CFCA1  2B4DF0         sub     ecx, dword ptr [ebp - 0x10]
+  E1[ 2] 0x007CFCA4  8BF1           mov     esi, ecx
+  E1[ 3] 0x007CFCA6  894DF8         mov     dword ptr [ebp - 8], ecx
+  E1[ 4] 0x007CFCA9  C1FE04         sar     esi, 4
+  E1[ 5] 0x007CFCAC  4E             dec     esi
+  E1[ 6] 0x007CFCAD  83FE3F         cmp     esi, 0x3f
+  E1[ 7] 0x007CFCB0  7E03           jle     0x7cfcb5
+  E1[ 8] 0x007CFCB2  6A3F           push    0x3f
+  E1[ 9] 0x007CFCB4  5E             pop     esi
+  E1[10] 0x007CFCB5  3BF7           cmp     esi, edi
+  E1[11] 0x007CFCB7  0F840D010000   je      0x7cfdca
+  E1[12] 0x007CFCBD  8B4A04         mov     ecx, dword ptr [edx + 4]
+  E1[13] 0x007CFCC0  3B4A08         cmp     ecx, dword ptr [edx + 8]
+  E1[14] 0x007CFCC3  7561           jne     0x7cfd26
+  E1[15] 0x007CFCC5  83FF20         cmp     edi, 0x20
+  E1[16] 0x007CFCC8  7D2B           jge     0x7cfcf5
+  E1[17] 0x007CFCCA  BB00000080     mov     ebx, 0x80000000
+E2 count = 18, bytes covered = 48, end VA = 0x007CFCCF
+  E2[ 0] 0x007CFC9F  8B0A           mov     ecx, dword ptr [edx]     bytes_ok=True
+  E2[ 1] 0x007CFCA1  2B4DF0         sub     ecx, dword ptr [ebp - 0x10] bytes_ok=True
+  E2[ 2] 0x007CFCA4  8BF1           mov     esi, ecx                 bytes_ok=True
+  E2[ 3] 0x007CFCA6  894DF8         mov     dword ptr [ebp - 8], ecx bytes_ok=True
+  E2[ 4] 0x007CFCA9  C1FE04         sar     esi, 4                   bytes_ok=True
+  E2[ 5] 0x007CFCAC  4E             dec     esi                      bytes_ok=True
+  E2[ 6] 0x007CFCAD  83FE3F         cmp     esi, 0x3f                bytes_ok=True
+  E2[ 7] 0x007CFCB0  7E03           jle     0x7cfcb5                 bytes_ok=True
+  E2[ 8] 0x007CFCB2  6A3F           push    0x3f                     bytes_ok=True
+  E2[ 9] 0x007CFCB4  5E             pop     esi                      bytes_ok=True
+  E2[10] 0x007CFCB5  3BF7           cmp     esi, edi                 bytes_ok=True
+  E2[11] 0x007CFCB7  0F840D010000   je      0x7cfdca                 bytes_ok=True
+  E2[12] 0x007CFCBD  8B4A04         mov     ecx, dword ptr [edx + 4] bytes_ok=True
+  E2[13] 0x007CFCC0  3B4A08         cmp     ecx, dword ptr [edx + 8] bytes_ok=True
+  E2[14] 0x007CFCC3  7561           jne     0x7cfd26                 bytes_ok=True
+  E2[15] 0x007CFCC5  83FF20         cmp     edi, 0x20                bytes_ok=True
+  E2[16] 0x007CFCC8  7D2B           jge     0x7cfcf5                 bytes_ok=True
+  E2[17] 0x007CFCCA  BB00000080     mov     ebx, 0x80000000          bytes_ok=True
+E1==E2 first 18 (addr,mnem,op_str) : True
+
+[R5] first 8 instructions + ±32B window CC/F1/F0 byte positions
+  1. 0x007CFC9F  8B0A           mov     ecx, dword ptr [edx]
+  2. 0x007CFCA1  2B4DF0         sub     ecx, dword ptr [ebp - 0x10]
+  3. 0x007CFCA4  8BF1           mov     esi, ecx
+  4. 0x007CFCA6  894DF8         mov     dword ptr [ebp - 8], ecx
+  5. 0x007CFCA9  C1FE04         sar     esi, 4
+  6. 0x007CFCAC  4E             dec     esi
+  7. 0x007CFCAD  83FE3F         cmp     esi, 0x3f
+  8. 0x007CFCB0  7E03           jle     0x7cfcb5
+rd(0x007CFC7F,64) = CE 75 0D 8B 8C 90 C4 00 00 00 6A 20 23 4D F8 5F 85 C9 7C 05 D1 E1 47 EB F7 8B 4D F4 8B 54 F9 04 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+  0xCC positions = NONE
+  0xF1 positions = ['0x7cfca5']
+  0xF0 positions = ['0x7cfca3']
+  ±32 window instruction starts with opcode0 in CC/F1/F0 = NONE
+
+[R6] in by() + preceding sequential context
+VA in by() = True
+by()[VA] = size=2 bytes=8B0A mov ecx, dword ptr [edx]
+  ctx 0x007CFC80  750D           jne     0x7cfc8f
+  ctx 0x007CFC82  8B8C90C4000000 mov     ecx, dword ptr [eax + edx*4 + 0xc4]
+  ctx 0x007CFC89  6A20           push    0x20
+  ctx 0x007CFC8B  234DF8         and     ecx, dword ptr [ebp - 8]
+  ctx 0x007CFC8E  5F             pop     edi
+  ctx 0x007CFC8F  85C9           test    ecx, ecx
+  ctx 0x007CFC91  7C05           jl      0x7cfc98
+  ctx 0x007CFC93  D1E1           shl     ecx, 1
+  ctx 0x007CFC95  47             inc     edi
+  ctx 0x007CFC96  EBF7           jmp     0x7cfc8f
+  ctx 0x007CFC98  8B4DF4         mov     ecx, dword ptr [ebp - 0xc]
+  ctx 0x007CFC9B  8B54F904       mov     edx, dword ptr [ecx + edi*8 + 4]
+  prev insn end = 0x007CFC9F ; adjacent to VA = True
+
+[R7] direct-branch targets to VA (local window + full .text)
+local window [0x007CF000,0x007D1000): scanned=2815 insns, j/call=501, imm-typed=452
+local direct refs to VA = 0 []
+full .text (1394120 insns) direct refs to VA = 0 []
+indirect branch / jump-table landing: NOT EXAMINED (未验)
+rd(0x7CFC9B,4) = 8B 54 F9 04
+
+[R8] note: reviewer reruns _w9_q1.py separately; this probe is independent.
+PROBE DONE
+wrote D:\Project\ra2-campaign-forge\lead\re_line_20261105\W9_SINGLESTEP_7CFC9F\reviews\_Q1_review_probe_out.txt

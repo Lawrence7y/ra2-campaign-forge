@@ -1,0 +1,414 @@
+dirsVisited=7040 scannedPy=10955 pruned=492 DANGER_WINDOWS=32
+
+--- lead\gate_doc_name_fix_20261109\_dnv_boundary.py : GATE_LINE=48 ---
+     46 | # 找出本会话新建的 _dnv_* 与原有 _dn_* 分界（按 mtime 排序，列出最后 20 件）
+     47 | last=sorted(wdom,key=lambda r:r["mtime"])[-20:]
+     48 | out={"upstream_recheck":{"total":len(up),"matches":sum(1 for r in up if r["match"]),"rows":up},
+     49 |      "workflow_runs":{"files":len(wfrows),"mjs":sum(1 for r in wfrows if r["file"].endswith(".mjs")),
+     50 |                       "rolling_sha256":wf_roll,"untracked_by_git":True},
+     51 |      "diagnostic_domain":{"files":len(diag),"rolling_sha256":hashlib.sha256("\n".join(r["file"]+":"+r["sha256"] for r in diag).encode()).hexdigest()},
+     52 |      "write_domain":{"files":len(wdom),"newest_20":[{"file":r["file"],"bytes":r["bytes"]} for r in last]},
+     53 |      "new_dnv_files":[r["file"] for r in wdom if "/_dnv_" in r["file"] or r["file"].endswith("_dnv_sandbox36")],
+     54 |      "preexisting_dn_files":[r["file"] for r in wdom if "/_dn_" in r["file"] and "/_dnv_" not in r["file"]],
+     55 |      "diag_files":diag}
+     56 | OUT.write_text(json.dumps(out,ensure_ascii=False,indent=2),encoding="utf-8")
+
+--- lead\gate_doc_name_fix_20261109\_dnv_fp8.py : GATE_LINE=38 ---
+     36 | report["match"] = (report["sha256"] == report["expected_sha256"] and report["bytes"] == report["expected_bytes"])
+     37 | 
+     38 | out = {"upstream": rows, "upstream_matches": sum(1 for r in rows if r["match"]), "upstream_total": len(rows),
+     39 |        "reviewed_report": report}
+     40 | pathlib.Path("D:/Project/ra2-campaign-forge/lead/gate_doc_name_fix_20261109/_dnv_fp8_out.json").write_text(
+     41 |     json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+     42 | print(json.dumps(out, ensure_ascii=False, indent=2))
+
+--- lead\gate_fp7_20261108\_gv_pred_check.py : GATE_LINE=50 ---
+     48 |     check("A", rel.split("/")[-1] + " R11", r11p, [])
+     49 |     print("      warn R10=%d R11=%d  bindings=%s" % (len(r10w), len(r11w),
+     50 |           [(b["path"] and b["path"][-40:], b["match"]) for b in r11b]))
+     51 | 
+     52 | # ---------- B 绑定回验独立重算 ----------
+     53 | print("== B 绑定行回验独立重算（自算 hashlib，不经 R11）==")
+     54 | CASES = [
+     55 |     (FILES[0], "lead/n4_yi_final_20261108/_cs_semantic_review_GLM_20261108.md", "ee27b4ca"),
+     56 |     (FILES[1], "_lv_subject_reply.txt", "6888379a"),
+     57 |     (FILES[3], "_review_reply_transcript.json", "91d1317f"),
+     58 |     (FILES[3], "_verify_reply.json", "1fe6b1b6"),
+
+--- lead\gate_r9r12_20261109\_g9_gate.py : GATE_LINE=158 ---
+    156 |     bindings = [dict(b) for b in bindings]
+    157 |     n_reverified = sum(1 for b in bindings if b.get("path"))
+    158 |     n_match = sum(1 for b in bindings if b.get("match") is True)
+    159 |     r11_items = 1 + len(bindings)  # 存在性强制项 1 + 每条绑定行回验
+    160 |     r11_verdict = "FAIL" if r11_problems else "PASS"
+    161 |     predicates["R11"] = {
+    162 |         "rule_id": "R11", "name": "绑定行路径隔断容忍 + 引用锚回验（第 8 类）",
+    163 |         "items": r11_items, "bindings": len(bindings), "reverified": n_reverified,
+    164 |         "match_true": n_match,
+    165 |         "problems": list(r11_problems), "warnings": list(r11_warnings),
+    166 |         "binding_details": bindings, "verdict": r11_verdict,
+
+--- lead\r11_f2_fix_20261109\_f2v_final.py : GATE_LINE=52 ---
+     50 | pp, pw, pb = plus.r11_scan_plus(text, W, root=REPO)
+     51 | print("orig: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     52 |     len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+     53 | print("plus: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     54 |     len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+     55 | tiers = {}
+     56 | for b in pb:
+     57 |     if b.get("match") is True:
+     58 |         tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+     59 | print("plus match tiers:", tiers)
+     60 | newp = [m for m in pp if m not in op]
+
+--- lead\r11_f2_fix_20261109\_f2v_final.py : GATE_LINE=54 ---
+     52 |     len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+     53 | print("plus: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     54 |     len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+     55 | tiers = {}
+     56 | for b in pb:
+     57 |     if b.get("match") is True:
+     58 |         tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+     59 | print("plus match tiers:", tiers)
+     60 | newp = [m for m in pp if m not in op]
+     61 | print("plus new problems vs orig:", newp)
+
+--- lead\r11_f2_fix_20261109\_f2v_run.py : GATE_LINE=63 ---
+     61 |     tot["orig_collected"] += sum(1 for b in ob if b["path"])
+     62 |     tot["plus_collected"] += sum(1 for b in pb if b.get("path"))
+     63 |     tot["orig_match"] += sum(1 for b in ob if b["match"] is True)
+     64 |     tot["plus_match"] += sum(1 for b in pb if b.get("match") is True)
+     65 |     tot["orig_problems"] += len(op)
+     66 |     tot["plus_problems"] += len(pp)
+     67 |     tot["orig_warnings"] += len(ow)
+     68 |     tot["plus_warnings"] += len(pw)
+     69 | 
+     70 | (W / "_f2v_run_out.json").write_text(
+     71 |     json.dumps({"totals": tot, "declared_mismatch_files": declared_mismatch,
+
+--- lead\r11_f2_fix_20261109\_f2v_run.py : GATE_LINE=64 ---
+     62 |     tot["plus_collected"] += sum(1 for b in pb if b.get("path"))
+     63 |     tot["orig_match"] += sum(1 for b in ob if b["match"] is True)
+     64 |     tot["plus_match"] += sum(1 for b in pb if b.get("match") is True)
+     65 |     tot["orig_problems"] += len(op)
+     66 |     tot["plus_problems"] += len(pp)
+     67 |     tot["orig_warnings"] += len(ow)
+     68 |     tot["plus_warnings"] += len(pw)
+     69 | 
+     70 | (W / "_f2v_run_out.json").write_text(
+     71 |     json.dumps({"totals": tot, "declared_mismatch_files": declared_mismatch,
+     72 |                 "results": out}, ensure_ascii=False, indent=1), encoding="utf-8")
+
+--- lead\r11_f2_fix_20261109\_f2w_checks.py : GATE_LINE=28 ---
+     26 | for r in cmp_["results"]:
+     27 |     for b in r["plus"]["bindings"]:
+     28 |         if b.get("match") is True:
+     29 |             sha_ok = (b.get("recomputed") or "").lower() == b["declared"].lower()
+     30 |             b_ok = True  # bytes 由谓词内部判定（ok_len），match=True 已含
+     31 |             print("%s | declared=%s/%s | recomputed=%s/%s | sha逐字一致=%s" % (
+     32 |                 r["file"].replace(str(REPO) + "\\", ""), b["declared"][:16] + "...",
+     33 |                 b.get("bytes_decl", "?") if "bytes_decl" in b else b.get("bytes", "?"),
+     34 |                 (b.get("recomputed") or "")[:16] + "...", b.get("bytes"),
+     35 |                 sha_ok))
+     36 |             if sha_ok:
+
+--- lead\r11_f2_fix_20261109\_f2w_dogfood.py : GATE_LINE=24 ---
+     22 | print("== dogfood：R11_F2_COVERAGE_FIX.md 自扫 ==")
+     23 | print("orig: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     24 |     len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+     25 | print("plus: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     26 |     len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+     27 | tiers = {}
+     28 | for b in pb:
+     29 |     if b.get("match") is True:
+     30 |         tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+     31 | print("plus match tiers:", tiers)
+     32 | print("plus new problems vs orig:", [m for m in pp if m not in op])
+
+--- lead\r11_f2_fix_20261109\_f2w_dogfood.py : GATE_LINE=26 ---
+     24 |     len(ob), sum(1 for b in ob if b["path"]), sum(1 for b in ob if b["match"] is True), len(op), len(ow)))
+     25 | print("plus: bindings=%d collected=%d match=%d problems=%d warnings=%d" % (
+     26 |     len(pb), sum(1 for b in pb if b.get("path")), sum(1 for b in pb if b.get("match") is True), len(pp), len(pw)))
+     27 | tiers = {}
+     28 | for b in pb:
+     29 |     if b.get("match") is True:
+     30 |         tiers[b.get("tier")] = tiers.get(b.get("tier"), 0) + 1
+     31 | print("plus match tiers:", tiers)
+     32 | print("plus new problems vs orig:", [m for m in pp if m not in op])
+     33 | print("plus warnings:", pw)
+     34 | 
+
+--- lead\r11_f2_fix_20261109\_f2_compare.py : GATE_LINE=68 ---
+     66 |     tot["orig_path"] += sum(1 for b in o_bind if b["path"])
+     67 |     tot["plus_path"] += sum(1 for b in n_bind if b.get("path"))
+     68 |     tot["orig_match"] += sum(1 for b in o_bind if b["match"] is True)
+     69 |     tot["plus_match"] += sum(1 for b in n_bind if b.get("match") is True)
+     70 |     tot["orig_problems"] += len(o_prob)
+     71 |     tot["plus_problems"] += len(n_prob)
+     72 | 
+     73 | print("== 30 件汇总 ==")
+     74 | print(json.dumps(tot, ensure_ascii=False, indent=2))
+     75 | print()
+     76 | print("== 逐条绑定行表（file 短名 / L 行号 / declared 前 12 / 原 path / 新 path / 新 tier / 新 match）==")
+
+--- lead\r11_f2_fix_20261109\_f2_compare.py : GATE_LINE=69 ---
+     67 |     tot["plus_path"] += sum(1 for b in n_bind if b.get("path"))
+     68 |     tot["orig_match"] += sum(1 for b in o_bind if b["match"] is True)
+     69 |     tot["plus_match"] += sum(1 for b in n_bind if b.get("match") is True)
+     70 |     tot["orig_problems"] += len(o_prob)
+     71 |     tot["plus_problems"] += len(n_prob)
+     72 | 
+     73 | print("== 30 件汇总 ==")
+     74 | print(json.dumps(tot, ensure_ascii=False, indent=2))
+     75 | print()
+     76 | print("== 逐条绑定行表（file 短名 / L 行号 / declared 前 12 / 原 path / 新 path / 新 tier / 新 match）==")
+     77 | for row in results:
+
+--- lead\r11_f2_fix_20261109\_f2_repro.py : GATE_LINE=49 ---
+     47 |     orig_bd = r["predicates"]["R11"].get("binding_details", [])
+     48 |     # 断言：本跑 binding_details 与回归 JSON 逐条一致（declared/path/match）
+     49 |     mine = [(b["declared"], b["path"], b["match"]) for b in bindings]
+     50 |     theirs = [(b["declared"], b["path"], b["match"]) for b in orig_bd]
+     51 |     if mine != theirs:
+     52 |         mismatch_json.append({"file": str(p), "mine": mine, "json": theirs})
+     53 |     lines = text.split("\n")
+     54 |     # 逐条绑定行定位原文语境
+     55 |     for bi, m in enumerate(BIND_RE.finditer(text)):
+     56 |         line_start = text.rfind("\n", 0, m.start()) + 1
+     57 |         line_end = text.find("\n", m.end())
+
+--- lead\r11_f2_fix_20261109\_f2_repro.py : GATE_LINE=50 ---
+     48 |     # 断言：本跑 binding_details 与回归 JSON 逐条一致（declared/path/match）
+     49 |     mine = [(b["declared"], b["path"], b["match"]) for b in bindings]
+     50 |     theirs = [(b["declared"], b["path"], b["match"]) for b in orig_bd]
+     51 |     if mine != theirs:
+     52 |         mismatch_json.append({"file": str(p), "mine": mine, "json": theirs})
+     53 |     lines = text.split("\n")
+     54 |     # 逐条绑定行定位原文语境
+     55 |     for bi, m in enumerate(BIND_RE.finditer(text)):
+     56 |         line_start = text.rfind("\n", 0, m.start()) + 1
+     57 |         line_end = text.find("\n", m.end())
+     58 |         if line_end == -1:
+
+--- lead\r11_f2_fix_20261109\_f2_selftest.py : GATE_LINE=109 ---
+    107 |     plus_sha, plus_bytes, anchor)
+    108 | n_p, n_w, nb = run(t)
+    109 | check("S4_多候选any-match-wins", not n_p and nb[0]["match"] is True
+    110 |       and nb[0].get("verified_path", "").endswith("_f2_r11plus.py"),
+    111 |       "problems=%r verified=%r" % (n_p, nb[0].get("verified_path")))
+    112 | 
+    113 | # ============ S5 原版行为保留 ============
+    114 | # (a) raw 可解析（doc_dir 相对）→ 两版同 MATCH
+    115 | t = "被核对象 `_f2_r11plus.py` SHA256 = %s，字节数 = %d" % (plus_sha, plus_bytes)
+    116 | o_p, o_w, o_b = g7.r11_scan(t, F2PLUS.parent, root=REPO)
+    117 | n_p, n_w, n_b = f2p.r11_scan_plus(t, F2PLUS.parent, root=REPO)
+
+--- lead\r33e_merge_20261109\_rev_cases.py : GATE_LINE=335 ---
+    333 |     and item3["decl_text"] == [item3["line13_actual"]], item3["decl_text"])
+    334 | chk("item3_members2_disciplines", item3["members_n"] == 2 and rec3["path"] is None
+    335 |     and rec3["tier"] == "SAMEDOC_LINK_EQ" and rec3["match"] is True
+    336 |     and not ({"verified_path", "recomputed", "bytes"} & set(rec3))
+    337 |     and "禁止由 merged 推导任何授权结论" in rm3["warning"])
+    338 | chk("item3_runner_coverage", an3["kset_n"] == 2 and an3["cover_ge2_lines"] == [13]
+    339 |     and an3["decl_hits_ge2"] == [{"line": 13, "covers_n": 2, "covers_all": True}])
+    340 | 
+    341 | Q4HEX = "6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251"
+    342 | q4path = ROOT / "lead" / "re_line_20261105" / "W9_SINGLESTEP_7CFC9F" / "Q4_RELATION.md"
+    343 | q4 = q4path.read_bytes().decode("utf-8")
+
+--- lead\r33e_merge_20261109\_re_j4_cases.py : GATE_LINE=113 ---
+    111 | pm, wm, recm = RE.link_triple(t3, doc3.parent, CAND, 412759)
+    112 | chk("a_item3_triple_shape",
+    113 |     recm["tier"] == "SAMEDOC_LINK_EQ" and recm["match"] is True and recm["path"] is None
+    114 |     and len(recm.get("members", [])) == 2 and recm.get("decl_lines") == [13])
+    115 | chk("a_item3_runner_crosscheck",
+    116 |     an["kset_n"] == 2 and 13 in an["decl_word_lines"]
+    117 |     and an["cover_ge2_lines"] == [13]
+    118 |     and [d for d in an["decl_cover_detail"] if d["covers_n"] >= 2]
+    119 |     == [{"line": 13, "covers_n": 2, "covers_all": True}])
+    120 | 
+    121 | # ---- (b) Q4 六趟 except 转储 -> 保持 multi ----
+
+--- lead\r33e_merge_20261109\_re_run10_diff.py : GATE_LINE=143 ---
+    141 | chk("triple_t3_merged_shape",
+    142 |     trip["t3"]["merged"]["tier"] == "SAMEDOC_LINK_EQ"
+    143 |     and trip["t3"]["merged"]["match"] is True
+    144 |     and trip["t3"]["merged"]["path"] is None
+    145 |     and trip["t3"]["merged"]["members_n"] == 2
+    146 |     and trip["t3"]["merged"]["no_single_object_fields"] is True)
+    147 | 
+    148 | 
+    149 | def vc(rs):
+    150 |     d = {}
+    151 |     for r in rs:
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\audit_cov_criteria\scripts\u16_gate_and_rollup.py : GATE_LINE=190 ---
+    188 |                   "raw_value": bc["bytes"], "ok": bc["bytes"] == "8B 85 50 02 00 00"})
+    189 |     recon.append({"key": "gamemd_sha", "report_asserts": True, "raw_value": ex["gamemd"]["sha_match"],
+    190 |                   "ok": ex["gamemd"]["sha_match"] is True})
+    191 |     recon.append({"key": "spec_absent", "report_asserts": 0, "raw_value": ex["out_census"]["target_hits"],
+    192 |                   "ok": ex["out_census"]["target_hits"] == 0})
+    193 |     recon.append({"key": "pins_match_count", "report_asserts": 11,
+    194 |                   "raw_value": ex["pins"]["match"], "ok": ex["pins"]["match"] == 11})
+    195 |     bad_recon = [r for r in recon if not r["ok"]]
+    196 |     if bad_recon:
+    197 |         fatal.append("rollup mismatch: %s" % json.dumps(bad_recon, ensure_ascii=False)[:900])
+    198 |     res["rollup_reconciliation"] = {"checked": len(recon), "ok": len(recon) - len(bad_recon),
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\audit_noname_owner_f\scripts\a02_recompute.py : GATE_LINE=92 ---
+     90 | b9d = data[off_of(0x00528B9D):off_of(0x00528B9D) + 3]
+     91 | R['8b4e10'] = {'off': off_of(0x00528B9D), 'off_claim': 1215389, 'bytes': hexs(b9d), 'match': hexs(b9d) == '8B 4E 10'}
+     92 | L.append('8B4E10 off=%d bytes=%s match=%s' % (R['8b4e10']['off'], R['8b4e10']['bytes'], R['8b4e10']['match']))
+     93 | 
+     94 | # ---------- call sites: verify at declared VA and independently locate E8 after each push ----------
+     95 | sites = [('S1', 0x005460AA, 0x005460C0), ('S2', 0x00699849, 0x00699858), ('S3', 0x0069A060, 0x0069A073)]
+     96 | R['calls'] = []
+     97 | for nm, push_va, call_va in sites:
+     98 |     cb = data[off_of(call_va):off_of(call_va) + 5]
+     99 |     rel = struct.unpack('<i', cb[1:5])[0]
+    100 |     tgt = call_va + 5 + rel
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\audit_rc4_resolve\scripts\02_verdict_recheck.py : GATE_LINE=105 ---
+    103 |         rec["verdict_in_A"] = r["verdict"]
+    104 |         rec["conflict_fields_in_A"] = r["conflict_fields"]
+    105 |         rec["conflict_fields_mine"] = [k for k, v in (("entry", rec["entry"]["match"]),
+    106 |                                                       ("orig_bytes", rec["bytes"]["match"]),
+    107 |                                                       ("guard_reg", rec["guard"]["match"]),
+    108 |                                                       ("mem_access", rec["mem"]["match"]),
+    109 |                                                       ("body_end", rec["body"]["match"])) if v is False]
+    110 |         if not r["verbatim_ran"]:
+    111 |             rec["conflict_fields_mine"].insert(0, "verbatim_funcrecalc_crashed")
+    112 |         mine.append(rec)
+    113 |         log("  #%-2d %-14s entry=%s bytes=%s guard=%s(%s/%s) mem=%s(%s/%s) body=%s(%s) verbatim=%s" % (
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\audit_rc4_resolve\scripts\02_verdict_recheck.py : GATE_LINE=106 ---
+    104 |         rec["conflict_fields_in_A"] = r["conflict_fields"]
+    105 |         rec["conflict_fields_mine"] = [k for k, v in (("entry", rec["entry"]["match"]),
+    106 |                                                       ("orig_bytes", rec["bytes"]["match"]),
+    107 |                                                       ("guard_reg", rec["guard"]["match"]),
+    108 |                                                       ("mem_access", rec["mem"]["match"]),
+    109 |                                                       ("body_end", rec["body"]["match"])) if v is False]
+    110 |         if not r["verbatim_ran"]:
+    111 |             rec["conflict_fields_mine"].insert(0, "verbatim_funcrecalc_crashed")
+    112 |         mine.append(rec)
+    113 |         log("  #%-2d %-14s entry=%s bytes=%s guard=%s(%s/%s) mem=%s(%s/%s) body=%s(%s) verbatim=%s" % (
+    114 |             r["id"], r["name"], rec["entry"]["match"], rec["bytes"]["match"],
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\audit_rc4_resolve\scripts\02_verdict_recheck.py : GATE_LINE=107 ---
+    105 |         rec["conflict_fields_mine"] = [k for k, v in (("entry", rec["entry"]["match"]),
+    106 |                                                       ("orig_bytes", rec["bytes"]["match"]),
+    107 |                                                       ("guard_reg", rec["guard"]["match"]),
+    108 |                                                       ("mem_access", rec["mem"]["match"]),
+    109 |                                                       ("body_end", rec["body"]["match"])) if v is False]
+    110 |         if not r["verbatim_ran"]:
+    111 |             rec["conflict_fields_mine"].insert(0, "verbatim_funcrecalc_crashed")
+    112 |         mine.append(rec)
+    113 |         log("  #%-2d %-14s entry=%s bytes=%s guard=%s(%s/%s) mem=%s(%s/%s) body=%s(%s) verbatim=%s" % (
+    114 |             r["id"], r["name"], rec["entry"]["match"], rec["bytes"]["match"],
+    115 |             rec["guard"]["match"], rec["guard"]["auth"], rec["guard"]["ghidra"],
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\audit_rc4_resolve\scripts\02_verdict_recheck.py : GATE_LINE=108 ---
+    106 |                                                       ("orig_bytes", rec["bytes"]["match"]),
+    107 |                                                       ("guard_reg", rec["guard"]["match"]),
+    108 |                                                       ("mem_access", rec["mem"]["match"]),
+    109 |                                                       ("body_end", rec["body"]["match"])) if v is False]
+    110 |         if not r["verbatim_ran"]:
+    111 |             rec["conflict_fields_mine"].insert(0, "verbatim_funcrecalc_crashed")
+    112 |         mine.append(rec)
+    113 |         log("  #%-2d %-14s entry=%s bytes=%s guard=%s(%s/%s) mem=%s(%s/%s) body=%s(%s) verbatim=%s" % (
+    114 |             r["id"], r["name"], rec["entry"]["match"], rec["bytes"]["match"],
+    115 |             rec["guard"]["match"], rec["guard"]["auth"], rec["guard"]["ghidra"],
+    116 |             rec["mem"]["match"], rec["mem"]["auth"], rec["mem"]["ghidra"],
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\audit_rc4_resolve\scripts\02_verdict_recheck.py : GATE_LINE=109 ---
+    107 |                                                       ("guard_reg", rec["guard"]["match"]),
+    108 |                                                       ("mem_access", rec["mem"]["match"]),
+    109 |                                                       ("body_end", rec["body"]["match"])) if v is False]
+    110 |         if not r["verbatim_ran"]:
+    111 |             rec["conflict_fields_mine"].insert(0, "verbatim_funcrecalc_crashed")
+    112 |         mine.append(rec)
+    113 |         log("  #%-2d %-14s entry=%s bytes=%s guard=%s(%s/%s) mem=%s(%s/%s) body=%s(%s) verbatim=%s" % (
+    114 |             r["id"], r["name"], rec["entry"]["match"], rec["bytes"]["match"],
+    115 |             rec["guard"]["match"], rec["guard"]["auth"], rec["guard"]["ghidra"],
+    116 |             rec["mem"]["match"], rec["mem"]["auth"], rec["mem"]["ghidra"],
+    117 |             rec["body"]["match"], rec["body"]["auth"] + " vs " + rec["body"]["ghidra"]
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\ghidra_func\scripts\05_compare.py : GATE_LINE=65 ---
+     63 |             ghv, None if pev is None else "%s match=%s section=%s" %
+     64 |             (pev["bytes"], pev["match"], pev["section"]),
+     65 |             "YI_ZHI" if (ghv.endswith("/true") and pev and pev["match"]) else "EVIDENCE_MISS")
+     66 | 
+     67 |     # --- entry recognition --------------------------------------------------
+     68 |     ea = need(A, "target_0x00724580_entry_recognised")
+     69 |     eb = need(A, "target_0x00724730_entry_recognised")
+     70 |     add("A1_ENTRY_724580", "is 0x00724580 a function ENTRY for Ghidra?",
+     71 |         "yes (hand function body starts there)", str(ea) + " name=" + A["target_0x00724580_symbolAt"],
+     72 |         "n/a (PE has no function concept)", "YI_ZHI" if ea else "BU_SHI")
+     73 |     add("A1_ENTRY_724730", "is 0x00724730 a function ENTRY for Ghidra?",
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\lessons_round8\scripts\u07_ladder_corrected.py : GATE_LINE=148 ---
+    146 |             fh.write(f"{r['mtime_iso']}\t{r['sha256'][:16]}\t{r['card']}/{r['run']}\t"
+    147 |                      f"处={r['处']}\t位置={r['位置']}\t键={r['键']}\tbytes={r['bytes']}\n")
+    148 |     n_match = sum(1 for v in value_checks.values() if v["match"])
+    149 |     print(f"\nvalue checks: {n_match}/{len(value_checks)} match; "
+    150 |           f"P1 bracket ok={p1['rewrite_falls_strictly_between']}; "
+    151 |           f"P2 varies={p2['varies_with_instrument_version']}")
+    152 |     return 0 if n_match == len(value_checks) and p1["rewrite_falls_strictly_between"] else 1
+    153 | 
+    154 | 
+    155 | if __name__ == "__main__":
+    156 |     sys.exit(main())
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\qc17_e5_threshold\scripts\qc17_c1_controls.py : GATE_LINE=157 ---
+    155 | bench = [r for r in byte_rows if r.get("path", "").lower().endswith(os.path.join("ra2bench", "gamemd.exe"))]
+    156 | chk("C1-ctl2-bytes", "ra2bench/gamemd.exe VA 0x00724737 == 8B 85 50 02 00 00",
+    157 |     len(bench) == 1 and bench[0].get("match") is True, bench)
+    158 | chk("C2-ctl2-uniq", "byte string 8B8550020000 occurs exactly once in ra2bench/gamemd.exe",
+    159 |     len(bench) == 1 and bench[0].get("uniq_hits_in_file") == 1,
+    160 |     {"hits": bench[0].get("uniq_hits_in_file") if bench else None})
+    161 | 
+    162 | # ================= E5 three-arm recompute from rows =================
+    163 | def recompute_timeline(p):
+    164 |     j = json.load(open(p, encoding="utf-8"))
+    165 |     rows = j["rows"]
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\qc2_noname_close\raw\q7_raw_nodes_recount.py : GATE_LINE=86 ---
+     84 |     out['nodes_30'] = {'total_field': n30['total'], 'len_nodes': len(n30['nodes']),
+     85 |                        'all_match_field': n30['all_match'],
+     86 |                        'count_match_true': sum(1 for e in n30['nodes'] if e['match']),
+     87 |                        'recomputed_all_reproduce': len(set(disagree)) == 0,
+     88 |                        'disagree_nodes': sorted(set(disagree)),
+     89 |                        'asm_render_caliber_only': sorted(set(render_only)),
+     90 |                        'per_node': recs}
+     91 |     out['nodes_30']['verdict'] = 'MATCH' if (
+     92 |         n30['total'] == 30 == len(n30['nodes']) and n30['all_match']
+     93 |         and out['nodes_30']['count_match_true'] == 30 and not set(disagree)) else 'DIFF'
+     94 | 
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\qc9_rc4_wtv_apply2\raw\p04_qc7_claims.py : GATE_LINE=165 ---
+    163 |                   "qc7_P2_yes": "✅" in c[8], "mine_P2_yes": m["diff"] == 2})
+    164 | res["u15_compare"] = cmp41
+    165 | res["u15_verdict"] = {"windows": len(cmp41), "match": sum(1 for r in cmp41 if r["match"]),
+    166 |                       "qc7_diff_seq": [r["qc7"]["diff"] for r in cmp41],
+    167 |                       "mine_diff_seq": [r["mine"]["diff"] for r in cmp41],
+    168 |                       "seq_equal": [r["qc7"]["diff"] for r in cmp41] == [r["mine"]["diff"] for r in cmp41],
+    169 |                       "qc7_P2_yes_windows": [r["window"] for r in cmp41 if r["qc7_P2_yes"]],
+    170 |                       "mine_P2_yes_windows": [r["window"] for r in cmp41 if r["mine_P2_yes"]]}
+    171 | 
+    172 | # ---------------- §5 : published vs recomputed retention ----------------
+    173 | cmp5 = []
+
+--- out\re_work\work_chain\CONTINUE_20261003\lead\rc4_gap\scripts\09_selfgate.py : GATE_LINE=151 ---
+    149 |     hp = doc["handover_criterion_probe"]
+    150 |     gate("GT16", "handover criterion bytes 0x006D3D99 = 0f 8d 98 00 00 00 recomputed off disk",
+    151 |          hp.get("match") is True, hp.get("disk_hex"))
+    152 | 
+    153 |     # GATE 17 primary pins complete
+    154 |     gate("GT17", "19 primary inputs pinned (sha256+lines), none missing",
+    155 |          len(doc["primary_file_pins"]) == 19 and not doc["pin_missing"],
+    156 |          f"pins={len(doc['primary_file_pins'])}, missing={doc['pin_missing']}")
+    157 | 
+    158 |     # GATE 18 exitcode hygiene: pure digits, one per instrument
+    159 |     ecs = sorted(x for x in os.listdir(RAW) if x.endswith(".exitcode"))
+
+EXIT=0

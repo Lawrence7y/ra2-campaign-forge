@@ -1,0 +1,34 @@
+EXE sha256 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476 size 4825360
+.text VA 00401000 VSZ 4060045 RAW 4096 END 007E038D
+
+=== (a) every call record: recompute rel32 at the recorded site ===
+records 68253 site_opcode_bad 0 target_recompute_ok 68253 target_mismatch 0
+
+=== (b1) inside-.text and outside-.text split ===
+targets inside .text 68244 targets outside .text (i.e. the 9 truncation artefacts) 9
+  OUT C0C5A07E from 00409FF2
+  OUT 46533E39 from 0052EB58
+  OUT E2E0EC18 from 0052EBC1
+  OUT D45A5A67 from 005A0074
+  OUT E971FEAB from 006DFE39
+  OUT E8D3E98A from 0070E915
+  OUT FA78B3A7 from 00783B68
+  OUT F07D1E7E from 007CA1D8
+  OUT D87E4995 from 007DCBC8
+
+=== (b2) bounds == instruction-start set? (two independent decoders) ===
+bounds n 1392592 uniq 1392592 ascending True
+call sites 68253 all in bounds? True
+bounds minus call sites 1324339 call sites minus bounds 0
+raw E8 bytes in .text 81715
+E8 at a bounds position 68253
+a2_scan.json reported {'text_va': '0x401000', 'text_vsz_end': '0x7e038d', 'text_raw_end': '0x7e1000', 'insn_count': 1392592, 'bounds_span': ['0x401000', '0x7e038c'], 'raw_e8': 81715, 'e8_at_boundary': 68253, 'call_targets': 6728, 'total_call_sites': 68253}
+
+=== (c) cross-check with 5 other callmaps (different formats/decoders) ===
+a2_sites (target,site) pairs 68253
+  S16_N1/_audit/callmap.json                 keys=6728   pairs=68253   | mine∩=68253   mine-only=0     theirs-only=0    
+  S09_KPROVED3/AUDIT_SWEEP.json              keys=6728   pairs=68253   | mine∩=68253   mine-only=0     theirs-only=0    
+  S16-K1/work/calls_map.json                 keys=6728   pairs=68253   | mine∩=0       mine-only=68253 theirs-only=68253
+  C01_census/EVIDENCE/callgraph.json         keys=6273   pairs=57577   | mine∩=57576   mine-only=10677 theirs-only=1    
+  S09_KPROVED7/e8_sites_audit.json           keys=68253  pairs=68253   | mine∩=68253   mine-only=0     theirs-only=0    
+  S21_DIRECT/scan_mine.json                  keys=68253  pairs=68253   | mine∩=68253   mine-only=0     theirs-only=0    

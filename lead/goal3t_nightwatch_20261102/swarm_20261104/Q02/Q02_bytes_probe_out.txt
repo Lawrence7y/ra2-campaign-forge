@@ -1,0 +1,353 @@
+== coverage == (99.99837567729335, 1394120, 66)
+
+== MLF head: InGame early-out + focus-wait loop (0x55D360..0x55D3D0) ==
+  0055D360  a0a0e9a800               mov al, byte ptr [0xa8e9a0]
+  0055D365  81ecb4010000             sub esp, 0x1b4
+  0055D36B  84c0                     test al, al
+  0055D36D  53                       push ebx
+  0055D36E  55                       push ebp
+  0055D36F  56                       push esi
+  0055D370  57                       push edi
+  0055D371  0f84580b0000             je 0x55decf
+  0055D377  a080eda800               mov al, byte ptr [0xa8ed80]
+  0055D37C  c60558cdab0001           mov byte ptr [0xabcd58], 1
+  0055D383  84c0                     test al, al
+  0055D385  7534                     jne 0x55d3bb
+  0055D387  8b35f0117e00             mov esi, dword ptr [0x7e11f0]
+  0055D38D  a138b2a800               mov eax, dword ptr [0xa8b238]
+  0055D392  85c0                     test eax, eax
+  0055D394  7405                     je 0x55d39b
+  0055D396  83f805                   cmp eax, 5
+  0055D399  7517                     jne 0x55d3b2
+  0055D39B  68f4010000               push 0x1f4
+  0055D3A0  ffd6                     call esi
+  0055D3A2  e8a9790700               call 0x5d4d50
+  0055D3A7  a080eda800               mov al, byte ptr [0xa8ed80]
+  0055D3AC  84c0                     test al, al
+  0055D3AE  74dd                     je 0x55d38d
+  0055D3B0  eb09                     jmp 0x55d3bb
+  0055D3B2  6a0a                     push 0xa
+  0055D3B4  ffd6                     call esi
+  0055D3B6  e895790700               call 0x5d4d50
+  0055D3BB  a184eda800               mov eax, dword ptr [0xa8ed84]
+  0055D3C0  8b0de4e2a800             mov ecx, dword ptr [0xa8e2e4]
+  0055D3C6  3bc1                     cmp eax, ecx
+  0055D3C8  7c0a                     jl 0x55d3d4
+  0055D3CA  b938b2a800               mov ecx, 0xa8b238
+
+== MLF frozen body 0x55D877 path (0x55D830..0x55D880) ==
+  0055D830  e81b750700               call 0x5d4d50
+  0055D835  e846f8f2ff               call 0x48d080
+  0055D83A  e821ddfdff               call 0x53b560
+  0055D83F  8b0d24738800             mov ecx, dword ptr [0x887324]
+  0055D845  8b11                     mov edx, dword ptr [ecx]
+  0055D847  ff525c                   call dword ptr [edx + 0x5c]
+  0055D84A  b9e8f78700               mov ecx, 0x87f7e8
+  0055D84F  e82c6cf9ff               call 0x4f4480
+  0055D854  e807090000               call 0x55e160
+  0055D859  8a0da0e9a800             mov cl, byte ptr [0xa8e9a0]
+  0055D85F  33c0                     xor eax, eax
+  0055D861  5f                       pop edi
+  0055D862  5e                       pop esi
+  0055D863  84c9                     test cl, cl
+  0055D865  5d                       pop ebp
+  0055D866  c60558cdab0000           mov byte ptr [0xabcd58], 0
+  0055D86D  0f94c0                   sete al
+  0055D870  5b                       pop ebx
+  0055D871  81c4b4010000             add esp, 0x1b4
+  0055D877  c3                       ret 
+  0055D878  8b0df8d5a800             mov ecx, dword ptr [0xa8d5f8]
+
+== MLF normal tail: four-flag gate -> inc -> throttle -> rets (0x55DE40..0x55DEE0) ==
+  0055DE40  e81b940e00               call 0x647260
+  0055DE45  e806970d00               call 0x637550
+  0055DE4A  e831f2f2ff               call 0x48d080
+  0055DE4F  a0493da800               mov al, byte ptr [0xa83d49]
+  0055DE54  84c0                     test al, al
+  0055DE56  7570                     jne 0x55dec8
+  0055DE58  a0d0eca800               mov al, byte ptr [0xa8ecd0]
+  0055DE5D  84c0                     test al, al
+  0055DE5F  7567                     jne 0x55dec8
+  0055DE61  a0c0418b00               mov al, byte ptr [0x8b41c0]
+  0055DE66  84c0                     test al, al
+  0055DE68  755e                     jne 0x55dec8
+  0055DE6A  a0483da800               mov al, byte ptr [0xa83d48]
+  0055DE6F  84c0                     test al, al
+  0055DE71  7555                     jne 0x55dec8
+  0055DE73  8b1584eda800             mov edx, dword ptr [0xa8ed84]
+  0055DE79  a18477b000               mov eax, dword ptr [0xb07784]
+  0055DE7E  42                       inc edx
+  0055DE7F  3bc7                     cmp eax, edi
+  0055DE81  891584eda800             mov dword ptr [0xa8ed84], edx
+  0055DE87  7411                     je 0x55de9a
+  0055DE89  8bca                     mov ecx, edx
+  0055DE8B  3bc1                     cmp eax, ecx
+  0055DE8D  7d0b                     jge 0x55de9a
+  0055DE8F  e8fc631200               call 0x684290
+  0055DE94  893d8477b000             mov dword ptr [0xb07784], edi
+  0055DE9A  e8c1020000               call 0x55e160
+  0055DE9F  e8cc7d1c00               call 0x725c70
+  0055DEA4  e8c7930d00               call 0x637270
+  0055DEA9  8a0da0e9a800             mov cl, byte ptr [0xa8e9a0]
+  0055DEAF  33c0                     xor eax, eax
+  0055DEB1  5f                       pop edi
+  0055DEB2  5e                       pop esi
+  0055DEB3  84c9                     test cl, cl
+  0055DEB5  5d                       pop ebp
+  0055DEB6  c60558cdab0000           mov byte ptr [0xabcd58], 0
+  0055DEBD  0f94c0                   sete al
+  0055DEC0  5b                       pop ebx
+  0055DEC1  81c4b4010000             add esp, 0x1b4
+  0055DEC7  c3                       ret 
+  0055DEC8  c60558cdab0000           mov byte ptr [0xabcd58], 0
+  0055DECF  5f                       pop edi
+  0055DED0  5e                       pop esi
+  0055DED1  5d                       pop ebp
+  0055DED2  b001                     mov al, 1
+  0055DED4  5b                       pop ebx
+  0055DED5  81c4b4010000             add esp, 0x1b4
+  0055DEDB  c3                       ret 
+  0055DEDC  90                       nop 
+  0055DEDD  90                       nop 
+  0055DEDE  90                       nop 
+  0055DEDF  90                       nop 
+
+== throttle 0x55E160 head (0x55E160..0x55E1A0) ==
+  0055E160  8b0d48738800             mov ecx, dword ptr [0x887348]
+  0055E166  83ec18                   sub esp, 0x18
+  0055E169  53                       push ebx
+  0055E16A  55                       push ebp
+  0055E16B  83cbff                   or ebx, 0xffffffff
+  0055E16E  33ed                     xor ebp, ebp
+  0055E170  56                       push esi
+  0055E171  8b3550738800             mov esi, dword ptr [0x887350]
+  0055E177  3bcb                     cmp ecx, ebx
+  0055E179  741c                     je 0x55e197
+  0055E17B  b94c738800               mov ecx, 0x88734c
+  0055E180  e8bbaa1600               call 0x6c8c40
+  0055E185  8b0d48738800             mov ecx, dword ptr [0x887348]
+  0055E18B  2bc1                     sub eax, ecx
+  0055E18D  3bc6                     cmp eax, esi
+  0055E18F  7d04                     jge 0x55e195
+  0055E191  2bf0                     sub esi, eax
+  0055E193  eb02                     jmp 0x55e197
+  0055E195  33f6                     xor esi, esi
+  0055E197  a138b2a800               mov eax, dword ptr [0xa8b238]
+  0055E19C  57                       push edi
+
+== throttle 0x55E160 SP branch + tail (0x55E2A0..0x55E350) ==
+  0055E2A0  0000                     add byte ptr [eax], al
+  0055E2A2  2bf0                     sub esi, eax
+  0055E2A4  3bf5                     cmp esi, ebp
+  0055E2A6  0f848f000000             je 0x55e33b
+  0055E2AC  55                       push ebp
+  0055E2AD  ffd7                     call edi
+  0055E2AF  e90effffff               jmp 0x55e1c2
+  0055E2B4  8b3550738800             mov esi, dword ptr [0x887350]
+  0055E2BA  3bcb                     cmp ecx, ebx
+  0055E2BC  7416                     je 0x55e2d4
+  0055E2BE  b94c738800               mov ecx, 0x88734c
+  0055E2C3  e878a91600               call 0x6c8c40
+  0055E2C8  2b0548738800             sub eax, dword ptr [0x887348]
+  0055E2CE  3bc6                     cmp eax, esi
+  0055E2D0  7d69                     jge 0x55e33b
+  0055E2D2  2bf0                     sub esi, eax
+  0055E2D4  3bf5                     cmp esi, ebp
+  0055E2D6  7463                     je 0x55e33b
+  0055E2D8  e85365f4ff               call 0x4a4830
+  0055E2DD  8b3df0117e00             mov edi, dword ptr [0x7e11f0]
+  0055E2E3  8b0d48738800             mov ecx, dword ptr [0x887348]
+  0055E2E9  8b3550738800             mov esi, dword ptr [0x887350]
+  0055E2EF  3bcb                     cmp ecx, ebx
+  0055E2F1  7418                     je 0x55e30b
+  0055E2F3  b94c738800               mov ecx, 0x88734c
+  0055E2F8  e843a91600               call 0x6c8c40
+  0055E2FD  8b0d48738800             mov ecx, dword ptr [0x887348]
+  0055E303  2bc1                     sub eax, ecx
+  0055E305  3bc6                     cmp eax, esi
+  0055E307  7d32                     jge 0x55e33b
+  0055E309  2bf0                     sub esi, eax
+  0055E30B  3bf5                     cmp esi, ebp
+  0055E30D  742c                     je 0x55e33b
+  0055E30F  8b3550738800             mov esi, dword ptr [0x887350]
+  0055E315  3bcb                     cmp ecx, ebx
+  0055E317  741d                     je 0x55e336
+  0055E319  b94c738800               mov ecx, 0x88734c
+  0055E31E  e81da91600               call 0x6c8c40
+  0055E323  2b0548738800             sub eax, dword ptr [0x887348]
+  0055E329  3bc6                     cmp eax, esi
+  0055E32B  7d07                     jge 0x55e334
+  0055E32D  2bf0                     sub esi, eax
+  0055E32F  56                       push esi
+  0055E330  ffd7                     call edi
+  0055E332  ebaf                     jmp 0x55e2e3
+  0055E334  33f6                     xor esi, esi
+  0055E336  56                       push esi
+  0055E337  ffd7                     call edi
+  0055E339  eba8                     jmp 0x55e2e3
+  0055E33B  a094cdab00               mov al, byte ptr [0xabcd94]
+  0055E340  5f                       pop edi
+  0055E341  a801                     test al, 1
+  0055E343  752d                     jne 0x55e372
+  0055E345  8ad0                     mov dl, al
+  0055E347  b98ccdab00               mov ecx, 0xabcd8c
+  0055E34C  80ca01                   or dl, 1
+
+initial .data: [0x887328]=00000000 [0x887330]=00000000 [0x887348]=00000000 [0x887350]=00000000
+
+== census: call 0x5D4D50 (MessagePump) sites ==
+  call site 0046FD5C  in-normal-body[no]  prev2=
+  call site 0048D230  in-normal-body[no]  prev2=
+  call site 0048D2A2  in-normal-body[no]  prev2=
+  call site 0048D36B  in-normal-body[no]  prev2=0048D366 call
+  call site 0048D4D6  in-normal-body[no]  prev2=0048D4D4 jle
+  call site 0048DAD3  in-normal-body[no]  prev2=0048DACE call
+  call site 0054EE9F  in-normal-body[no]  prev2=0054EE9D jne
+  call site 0054F020  in-normal-body[no]  prev2=0054F01E je
+  call site 0054F071  in-normal-body[no]  prev2=0054F06F je
+  call site 0054F09C  in-normal-body[no]  prev2=0054F09A jne
+  call site 0054F740  in-normal-body[no]  prev2=0054F73E je
+  call site 0054F768  in-normal-body[no]  prev2=0054F763 inc | 0054F766 je
+  call site 0055D3A2  in-normal-body[no]  prev2=0055D39B push | 0055D3A0 call
+  call site 0055D3B6  in-normal-body[no]  prev2=0055D3B4 call
+  call site 0055D830  in-normal-body[no]  prev2=0055D82E je
+  call site 005B7047  in-normal-body[no]  prev2=005B7040 je | 005B7042 call
+  call site 005B72B3  in-normal-body[no]  prev2=005B72AC jae | 005B72AE call
+  call site 005BAC17  in-normal-body[no]  prev2=005BAC10 je | 005BAC12 call
+  call site 005BAFFD  in-normal-body[no]  prev2=005BAFF6 jae | 005BAFF8 call
+  call site 005BB065  in-normal-body[no]  prev2=005BB05E add | 005BB060 call
+  call site 005D2464  in-normal-body[no]  prev2=005D245F call
+  call site 005D258D  in-normal-body[no]  prev2=005D2586 push | 005D258B call
+  call site 005F33B6  in-normal-body[no]  prev2=005F33AF nop | 005F33B1 call
+  call site 006081D8  in-normal-body[no]  prev2=
+  call site 0060D3D9  in-normal-body[no]  prev2=0060D3D7 jne
+  call site 00623120  in-normal-body[no]  prev2=00623119 add
+  call site 00623D44  in-normal-body[no]  prev2=00623D42 jge
+  call site 00624243  in-normal-body[no]  prev2=0062423C call | 00624241 jne
+  call site 0068FC00  in-normal-body[no]  prev2=
+  call site 00690245  in-normal-body[no]  prev2=00690240 call
+  call site 006902B7  in-normal-body[no]  prev2=006902B0 push | 006902B5 call
+  call site 006904FF  in-normal-body[no]  prev2=006904F8 push | 006904FD call
+  call site 006943A3  in-normal-body[no]  prev2=
+  call site 0069452F  in-normal-body[no]  prev2=0069452A jmp
+  call site 00694DBD  in-normal-body[no]  prev2=
+  call site 00694FBB  in-normal-body[no]  prev2=00694FB6 jmp
+  call site 0069B062  in-normal-body[no]  prev2=0069B060 call
+  call site 006BDD03  in-normal-body[no]  prev2=006BDCFE call
+  call site 006BDD2E  in-normal-body[no]  prev2=006BDD27 push | 006BDD29 call
+  call site 006BE0DC  in-normal-body[no]  prev2=006BE0D5 push
+  call site 006BEC87  in-normal-body[no]  prev2=006BEC85 je
+  call site 007B3858  in-normal-body[no]  prev2=007B3851 push
+  call site 007B38DE  in-normal-body[no]  prev2=007B38D7 add | 007B38DC jl
+pump call sites total: 43, inside MLF normal body [0x55D878,0x55DEE0): 0
+
+== G_PUMPCNT 0xAA0430 accesses ==
+  00432CD2 R mov ecx, dword ptr [0xaa0430]
+  00432CDD W mov dword ptr [0xaa0430], ecx
+  0053E7EF R mov eax, dword ptr [0xaa0430]
+  0053E9AC R mov eax, dword ptr [0xaa0430]
+  0053EBB0 R mov ecx, dword ptr [0xaa0430]
+  005D4D64 R mov ebx, dword ptr [0xaa0430]
+  005D4D77 W mov dword ptr [0xaa0430], ebx
+  005DC44E R mov ecx, dword ptr [0xaa0430]
+  005DC459 W mov dword ptr [0xaa0430], ecx
+  00759200 R mov edx, dword ptr [0xaa0430]
+  00759210 W mov dword ptr [0xaa0430], edx
+  00759A36 R mov edx, dword ptr [0xaa0430]
+  00759A3F W mov dword ptr [0xaa0430], edx
+  00775A74 R mov edx, dword ptr [0xaa0430]
+  00775A7F W mov dword ptr [0xaa0430], edx
+  0077F911 R mov eax, dword ptr [0xaa0430]
+  0077F925 W mov dword ptr [0xaa0430], eax
+
+== census: call 0x55E160 (throttle) sites ==
+  call site 0055D854 (frozen body)
+  call site 0055DE9A (normal body)
+
+== 0x55CFD0 flag-state-machine head (0x55CFD0..0x55D030) ==
+  0055CFD0  a184eda800               mov eax, dword ptr [0xa8ed84]
+  0055CFD5  83ec7c                   sub esp, 0x7c
+  0055CFD8  a9ff030000               test eax, 0x3ff
+  0055CFDD  53                       push ebx
+  0055CFDE  56                       push esi
+  0055CFDF  eb78                     jmp 0x55d059
+  0055CFE1  e8ba27f4ff               call 0x49f7a0
+  0055CFE6  84c0                     test al, al
+  0055CFE8  756f                     jne 0x55d059
+  0055CFEA  a14c3da800               mov eax, dword ptr [0xa83d4c]
+  0055CFEF  6a08                     push 8
+  0055CFF1  8b4830                   mov ecx, dword ptr [eax + 0x30]
+  0055CFF4  51                       push ecx
+  0055CFF5  8d4c241c                 lea ecx, [esp + 0x1c]
+  0055CFF9  e8c296f6ff               call 0x4c66c0
+  0055CFFE  813dc802a80080000000     cmp dword ptr [0xa802c8], 0x80
+  0055D008  7d4f                     jge 0x55d059
+  0055D00A  8b0dd002a800             mov ecx, dword ptr [0xa802d0]
+  0055D010  57                       push edi
+  0055D011  8bf0                     mov esi, eax
+  0055D013  8d14c9                   lea edx, [ecx + ecx*8]
+  0055D016  8d0c91                   lea ecx, [ecx + edx*4]
+  0055D019  8dbc49d402a800           lea edi, [ecx + ecx*2 + 0xa802d4]
+  0055D020  b91b000000               mov ecx, 0x1b
+  0055D025  f3a5                     rep movsd dword ptr es:[edi], dword ptr [esi]
+  0055D027  66a5                     movsw word ptr es:[edi], word ptr [esi]
+  0055D029  a4                       movsb byte ptr es:[edi], byte ptr [esi]
+  0055D02A  ff1530157e00             call dword ptr [0x7e1530]
+
+== flag 0xA8ECD0: all accesses ==
+  004F86F7 W mov    byte ptr [0xa8ecd0], 1       [elsewhere]
+  004F879C W mov    byte ptr [0xa8ecd0], 1       [elsewhere]
+  004F87B2 W mov    byte ptr [0xa8ecd0], 1       [elsewhere]
+  0052DA7F W mov    byte ptr [0xa8ecd0], 0       [elsewhere]
+  0055D064 R cmp    byte ptr [0xa8ecd0], bl      [0x55CFD0]
+  0055D094 R cmp    byte ptr [0xa8ecd0], bl      [0x55CFD0]
+  0055D0B9 R cmp    byte ptr [0xa8ecd0], bl      [0x55CFD0]
+  0055D123 W mov    byte ptr [0xa8ecd0], bl      [0x55CFD0]
+  0055D17D R cmp    byte ptr [0xa8ecd0], bl      [0x55CFD0]
+  0055D1B7 W mov    byte ptr [0xa8ecd0], bl      [0x55CFD0]
+  0055D21F W mov    byte ptr [0xa8ecd0], bl      [0x55CFD0]
+  0055D262 W mov    byte ptr [0xa8ecd0], bl      [0x55CFD0]
+  0055DE58 R mov    al, byte ptr [0xa8ecd0]      [MLF-gate]
+
+== flag 0xA83D49: all accesses ==
+  004F867C W mov    byte ptr [0xa83d49], 1       [elsewhere]
+  004F8692 W mov    byte ptr [0xa83d49], 1       [elsewhere]
+  004F86EE W mov    byte ptr [0xa83d49], 1       [elsewhere]
+  004F87BB W mov    byte ptr [0xa83d49], 1       [elsewhere]
+  0052DA78 W mov    byte ptr [0xa83d49], 0       [elsewhere]
+  0055D059 R mov    al, byte ptr [0xa83d49]      [0x55CFD0]
+  0055D08B R mov    al, byte ptr [0xa83d49]      [0x55CFD0]
+  0055D0B0 R mov    al, byte ptr [0xa83d49]      [0x55CFD0]
+  0055D0E8 R mov    al, byte ptr [0xa83d49]      [0x55CFD0]
+  0055D129 W mov    byte ptr [0xa83d49], bl      [0x55CFD0]
+  0055D1B1 W mov    byte ptr [0xa83d49], bl      [0x55CFD0]
+  0055D219 W mov    byte ptr [0xa83d49], bl      [0x55CFD0]
+  0055D25C W mov    byte ptr [0xa83d49], bl      [0x55CFD0]
+  0055DE4F R mov    al, byte ptr [0xa83d49]      [MLF-gate]
+
+== flag 0x8B41C0: all accesses ==
+  0048CB2E W mov    byte ptr [0x8b41c0], 1       [elsewhere]
+  0052DA86 W mov    byte ptr [0x8b41c0], 0       [elsewhere]
+  0055D06C R cmp    byte ptr [0x8b41c0], bl      [0x55CFD0]
+  0055D12F W mov    byte ptr [0x8b41c0], bl      [0x55CFD0]
+  0055D1BD W mov    byte ptr [0x8b41c0], bl      [0x55CFD0]
+  0055D20C R cmp    byte ptr [0x8b41c0], bl      [0x55CFD0]
+  0055D225 W mov    byte ptr [0x8b41c0], bl      [0x55CFD0]
+  0055D268 W mov    byte ptr [0x8b41c0], bl      [0x55CFD0]
+  0055DE61 R mov    al, byte ptr [0x8b41c0]      [MLF-gate]
+
+== flag 0xA83D48: all accesses ==
+  004C7917 W mov    byte ptr [0xa83d48], 1       [elsewhere]
+  0052DA8D W mov    byte ptr [0xa83d48], 0       [elsewhere]
+  0055D074 R cmp    byte ptr [0xa83d48], bl      [0x55CFD0]
+  0055D135 W mov    byte ptr [0xa83d48], bl      [0x55CFD0]
+  0055D1C3 W mov    byte ptr [0xa83d48], bl      [0x55CFD0]
+  0055D22B W mov    byte ptr [0xa83d48], bl      [0x55CFD0]
+  0055D250 R cmp    byte ptr [0xa83d48], bl      [0x55CFD0]
+  0055D26E W mov    byte ptr [0xa83d48], bl      [0x55CFD0]
+  0055DE6A R mov    al, byte ptr [0xa83d48]      [MLF-gate]
+
+MLF rets: ['0x55d877', '0x55dec7', '0x55dedb']
+rets reachable without inc-block: ['0x55d877', '0x55dedb']
+bytes @0x55DEC8: c60558cdab00005f5e5db0015b81c4b4010000c3
+bytes @0x55DECF..0x55DEE0: 5f5e5db0015b81c4b4010000c390909090

@@ -1,0 +1,301 @@
+== T2 门①+写链 (0x007778A0, 56 bytes) ==
+   raw: 3b3d5035b7000f859d0000008b44241c33c93bc30f95c133d28a1580eda8003bd10f84820000003bc30f95c03ac3a280eda800755b68949e
+   007778A0  3b3d5035b700       cmp edi, dword ptr [0xb73550]
+   007778A6  0f859d000000       jne 0x777949
+   007778AC  8b44241c           mov eax, dword ptr [esp + 0x1c]
+   007778B0  33c9               xor ecx, ecx
+   007778B2  3bc3               cmp eax, ebx
+   007778B4  0f95c1             setne cl
+   007778B7  33d2               xor edx, edx
+   007778B9  8a1580eda800       mov dl, byte ptr [0xa8ed80]
+   007778BF  3bd1               cmp edx, ecx
+   007778C1  0f8482000000       je 0x777949
+   007778C7  3bc3               cmp eax, ebx
+   007778C9  0f95c0             setne al
+   007778CC  3ac3               cmp al, bl
+   007778CE  a280eda800         mov byte ptr [0xa8ed80], al
+   007778D3  755b               jne 0x777930
+
+== T2 消息链头 (0x0077782B, 32 bytes) ==
+   raw: 3d050200000f87240100000f841601000083f81c745f3d120100000f856d0100
+   0077782B  3d05020000         cmp eax, 0x205
+   00777830  0f8724010000       ja 0x77795a
+   00777836  0f8416010000       je 0x777952
+   0077783C  83f81c             cmp eax, 0x1c
+   0077783F  745f               je 0x7778a0
+   00777841  3d12010000         cmp eax, 0x112
+
+== T1 WndProc 头 (0x007775C0, 18 bytes) ==
+   raw: 518b0d287688005333db563bcb5774578b01
+   007775C0  51                 push ecx
+   007775C1  8b0d28768800       mov ecx, dword ptr [0x887628]
+   007775C7  53                 push ebx
+   007775C8  33db               xor ebx, ebx
+   007775CA  56                 push esi
+   007775CB  3bcb               cmp ecx, ebx
+   007775CD  57                 push edi
+   007775CE  7457               je 0x777627
+   007775D0  8b01               mov eax, dword ptr [ecx]
+
+== T1 注册点 (0x00777C70, 64 bytes) ==
+   raw: 00c744242403000000c7442428c0757700895c242c895c243089742434894c24388944243c895c2440895c2444c7442448489f8400ff15d8147e00a078f98900
+   00777C70  00c7               add bh, al
+   00777C72  44                 inc esp
+   00777C73  2424               and al, 0x24
+   00777C75  0300               add eax, dword ptr [eax]
+   00777C77  0000               add byte ptr [eax], al
+   00777C79  c7442428c0757700   mov dword ptr [esp + 0x28], 0x7775c0
+   00777C81  895c242c           mov dword ptr [esp + 0x2c], ebx
+   00777C85  895c2430           mov dword ptr [esp + 0x30], ebx
+   00777C89  89742434           mov dword ptr [esp + 0x34], esi
+   00777C8D  894c2438           mov dword ptr [esp + 0x38], ecx
+   00777C91  8944243c           mov dword ptr [esp + 0x3c], eax
+   00777C95  895c2440           mov dword ptr [esp + 0x40], ebx
+   00777C99  895c2444           mov dword ptr [esp + 0x44], ebx
+   00777C9D  c7442448489f8400   mov dword ptr [esp + 0x48], 0x849f48
+   00777CA5  ff15d8147e00       call dword ptr [0x7e14d8]
+   00777CAB  a078f98900         mov al, byte ptr [0x89f978]
+
+== hwnd 写点 A (0x00777CC8, 20 bytes) ==
+   raw: 840068489f840053ff15d4147e00a35035b7008d
+   00777CC8  8400               test byte ptr [eax], al
+   00777CCA  68489f8400         push 0x849f48
+   00777CCF  53                 push ebx
+   00777CD0  ff15d4147e00       call dword ptr [0x7e14d4]
+   00777CD6  a35035b700         mov dword ptr [0xb73550], eax
+
+== hwnd 写点 B (0x00777D70, 20 bytes) ==
+   raw: 0068489f84006a08ff15d4147e00a35035b7008b
+   00777D70  006848             add byte ptr [eax + 0x48], ch
+   00777D73  9f                 lahf 
+   00777D74  8400               test byte ptr [eax], al
+   00777D76  6a08               push 8
+   00777D78  ff15d4147e00       call dword ptr [0x7e14d4]
+   00777D7E  a35035b700         mov dword ptr [0xb73550], eax
+
+== WM_PAINT 门 (0x007776B5, 24 bytes) ==
+   raw: 391da0eda8000f85b3000000803d80eda80001740d803d78
+   007776B5  391da0eda800       cmp dword ptr [0xa8eda0], ebx
+   007776BB  0f85b3000000       jne 0x777774
+   007776C1  803d80eda80001     cmp byte ptr [0xa8ed80], 1
+   007776C8  740d               je 0x7776d7
+
+== str Focus_Loss @0x00849E94 == 'Focus_Loss()\n'
+== str Focus_Restore @0x00849ECC == 'Focus_Restore()\n'
+== str Focus gained @0x00849EF8 == 'Focus gained\n'
+== str Focus lost @0x00849F08 == 'Focus lost\n'
+== str 窗口类/名 @0x00849F48 == "Yuri's Revenge"
+
+== WinMain 自旋环 A (0x006BDCF0, 48 bytes) ==
+   raw: 008bd08b0d5035b700e8e2720700e85d0f0000e84870f1ffa080eda80084c074f2e80a19deff84c0751468f00b8400e8
+   006BDCF0  008bd08b0d50       add byte ptr [ebx + 0x500d8bd0], cl
+   006BDCF6  35b700e8e2         xor eax, 0xe2e800b7
+   006BDCFB  7207               jb 0x6bdd04
+   006BDCFD  00e8               add al, ch
+   006BDCFF  5d                 pop ebp
+   006BDD00  0f0000             sldt word ptr [eax]
+   006BDD03  e84870f1ff         call 0x5d4d50
+   006BDD08  a080eda800         mov al, byte ptr [0xa8ed80]
+   006BDD0D  84c0               test al, al
+   006BDD0F  74f2               je 0x6bdd03
+   006BDD11  e80a19deff         call 0x49f620
+   006BDD16  84c0               test al, al
+   006BDD18  7514               jne 0x6bdd2e
+   006BDD1A  68f00b8400         push 0x840bf0
+
+== WinMain 自旋环 B (0x006BDD1B, 48 bytes) ==
+   raw: f00b8400e8bc8bd4ff83c4046a01e8aee01000e81d70f1ffa080eda80084c074f2c605a0008a0000a078f9890084c075
+   006BDD1B  f00b8400e8bc8bd4   lock or eax, dword ptr [eax + eax - 0x2b744318]
+   006BDD23  ff83c4046a01       inc dword ptr [ebx + 0x16a04c4]
+   006BDD29  e8aee01000         call 0x7cbddc
+   006BDD2E  e81d70f1ff         call 0x5d4d50
+   006BDD33  a080eda800         mov al, byte ptr [0xa8ed80]
+   006BDD38  84c0               test al, al
+   006BDD3A  74f2               je 0x6bdd2e
+   006BDD3C  c605a0008a0000     mov byte ptr [0x8a00a0], 0
+   006BDD43  a078f98900         mov al, byte ptr [0x89f978]
+   006BDD48  84c0               test al, al
+
+== 泵包装 0x53E770 (0x0053E770, 352 bytes) ==
+   raw: 83ec34a14404aa0053555657bf0100000033ed3bc7895424108bf10f85d5000000392d407688000f84c90000008d44241450ff15c0137e008b4c24148b542418890d3404aa008b0d4076880089153804aa00683804aa008b01683404aa00ff50448b0d3404aa00a13c04aa003bc8750f8b153804aa00a14004aa003bd07477a13004aa008b0d84eda800897c24248b3de8117e00680004aa0089442424894c2420ffd7a13804aa008b0d4076880050a13404aa008b1150ff5238a13404aa008b0d3804aa00680004aa008944242c894c2430a33c04aa00890d4004aa00ff15ec117e008b0d6004aa008d54241c6a14e87ca6ecffeb068b3de8117e00833d4404aa00020f85880200008b1d84147e006a0155555556ffd385c074288b46043d000100007506837e081b744583f80f750756ff15c0147e006a0155555556ffd385c075d8392d7804aa000f85e70000008b0d6404aa00e856aaecff3bc50f85af00
+   0053E770  83ec34             sub esp, 0x34
+   0053E773  a14404aa00         mov eax, dword ptr [0xaa0444]
+   0053E778  53                 push ebx
+   0053E779  55                 push ebp
+   0053E77A  56                 push esi
+   0053E77B  57                 push edi
+   0053E77C  bf01000000         mov edi, 1
+   0053E781  33ed               xor ebp, ebp
+   0053E783  3bc7               cmp eax, edi
+   0053E785  89542410           mov dword ptr [esp + 0x10], edx
+   0053E789  8bf1               mov esi, ecx
+   0053E78B  0f85d5000000       jne 0x53e866
+   0053E791  392d40768800       cmp dword ptr [0x887640], ebp
+   0053E797  0f84c9000000       je 0x53e866
+   0053E79D  8d442414           lea eax, [esp + 0x14]
+   0053E7A1  50                 push eax
+   0053E7A2  ff15c0137e00       call dword ptr [0x7e13c0]
+   0053E7A8  8b4c2414           mov ecx, dword ptr [esp + 0x14]
+   0053E7AC  8b542418           mov edx, dword ptr [esp + 0x18]
+   0053E7B0  890d3404aa00       mov dword ptr [0xaa0434], ecx
+   0053E7B6  8b0d40768800       mov ecx, dword ptr [0x887640]
+   0053E7BC  89153804aa00       mov dword ptr [0xaa0438], edx
+   0053E7C2  683804aa00         push 0xaa0438
+   0053E7C7  8b01               mov eax, dword ptr [ecx]
+   0053E7C9  683404aa00         push 0xaa0434
+   0053E7CE  ff5044             call dword ptr [eax + 0x44]
+   0053E7D1  8b0d3404aa00       mov ecx, dword ptr [0xaa0434]
+   0053E7D7  a13c04aa00         mov eax, dword ptr [0xaa043c]
+   0053E7DC  3bc8               cmp ecx, eax
+   0053E7DE  750f               jne 0x53e7ef
+   0053E7E0  8b153804aa00       mov edx, dword ptr [0xaa0438]
+   0053E7E6  a14004aa00         mov eax, dword ptr [0xaa0440]
+   0053E7EB  3bd0               cmp edx, eax
+   0053E7ED  7477               je 0x53e866
+   0053E7EF  a13004aa00         mov eax, dword ptr [0xaa0430]
+   0053E7F4  8b0d84eda800       mov ecx, dword ptr [0xa8ed84]
+   0053E7FA  897c2424           mov dword ptr [esp + 0x24], edi
+   0053E7FE  8b3de8117e00       mov edi, dword ptr [0x7e11e8]
+   0053E804  680004aa00         push 0xaa0400
+   0053E809  89442424           mov dword ptr [esp + 0x24], eax
+   0053E80D  894c2420           mov dword ptr [esp + 0x20], ecx
+   0053E811  ffd7               call edi
+   0053E813  a13804aa00         mov eax, dword ptr [0xaa0438]
+   0053E818  8b0d40768800       mov ecx, dword ptr [0x887640]
+   0053E81E  50                 push eax
+   0053E81F  a13404aa00         mov eax, dword ptr [0xaa0434]
+   0053E824  8b11               mov edx, dword ptr [ecx]
+   0053E826  50                 push eax
+   0053E827  ff5238             call dword ptr [edx + 0x38]
+   0053E82A  a13404aa00         mov eax, dword ptr [0xaa0434]
+   0053E82F  8b0d3804aa00       mov ecx, dword ptr [0xaa0438]
+   0053E835  680004aa00         push 0xaa0400
+   0053E83A  8944242c           mov dword ptr [esp + 0x2c], eax
+   0053E83E  894c2430           mov dword ptr [esp + 0x30], ecx
+   0053E842  a33c04aa00         mov dword ptr [0xaa043c], eax
+   0053E847  890d4004aa00       mov dword ptr [0xaa0440], ecx
+   0053E84D  ff15ec117e00       call dword ptr [0x7e11ec]
+   0053E853  8b0d6004aa00       mov ecx, dword ptr [0xaa0460]
+   0053E859  8d54241c           lea edx, [esp + 0x1c]
+   0053E85D  6a14               push 0x14
+   0053E85F  e87ca6ecff         call 0x408ee0
+   0053E864  eb06               jmp 0x53e86c
+   0053E866  8b3de8117e00       mov edi, dword ptr [0x7e11e8]
+   0053E86C  833d4404aa0002     cmp dword ptr [0xaa0444], 2
+   0053E873  0f8588020000       jne 0x53eb01
+   0053E879  8b1d84147e00       mov ebx, dword ptr [0x7e1484]
+   0053E87F  6a01               push 1
+   0053E881  55                 push ebp
+   0053E882  55                 push ebp
+   0053E883  55                 push ebp
+   0053E884  56                 push esi
+   0053E885  ffd3               call ebx
+   0053E887  85c0               test eax, eax
+   0053E889  7428               je 0x53e8b3
+   0053E88B  8b4604             mov eax, dword ptr [esi + 4]
+   0053E88E  3d00010000         cmp eax, 0x100
+   0053E893  7506               jne 0x53e89b
+   0053E895  837e081b           cmp dword ptr [esi + 8], 0x1b
+   0053E899  7445               je 0x53e8e0
+   0053E89B  83f80f             cmp eax, 0xf
+   0053E89E  7507               jne 0x53e8a7
+   0053E8A0  56                 push esi
+   0053E8A1  ff15c0147e00       call dword ptr [0x7e14c0]
+   0053E8A7  6a01               push 1
+   0053E8A9  55                 push ebp
+   0053E8AA  55                 push ebp
+   0053E8AB  55                 push ebp
+   0053E8AC  56                 push esi
+   0053E8AD  ffd3               call ebx
+   0053E8AF  85c0               test eax, eax
+   0053E8B1  75d8               jne 0x53e88b
+   0053E8B3  392d7804aa00       cmp dword ptr [0xaa0478], ebp
+   0053E8B9  0f85e7000000       jne 0x53e9a6
+   0053E8BF  8b0d6404aa00       mov ecx, dword ptr [0xaa0464]
+   0053E8C5  e856aaecff         call 0x409320
+   0053E8CA  3bc5               cmp eax, ebp
+
+== 泵包装 0x53E730 (0x0053E730, 64 bytes) ==
+   raw: 538b5c24085556578b7c24188bea8bf16a0157538bd58bcee82300000085c074ef8b4e045f5e5d83f9125b750233c0c208009090909090909090909090909090
+   0053E730  53                 push ebx
+   0053E731  8b5c2408           mov ebx, dword ptr [esp + 8]
+   0053E735  55                 push ebp
+   0053E736  56                 push esi
+   0053E737  57                 push edi
+   0053E738  8b7c2418           mov edi, dword ptr [esp + 0x18]
+   0053E73C  8bea               mov ebp, edx
+   0053E73E  8bf1               mov esi, ecx
+   0053E740  6a01               push 1
+   0053E742  57                 push edi
+   0053E743  53                 push ebx
+   0053E744  8bd5               mov edx, ebp
+   0053E746  8bce               mov ecx, esi
+   0053E748  e823000000         call 0x53e770
+   0053E74D  85c0               test eax, eax
+   0053E74F  74ef               je 0x53e740
+   0053E751  8b4e04             mov ecx, dword ptr [esi + 4]
+   0053E754  5f                 pop edi
+   0053E755  5e                 pop esi
+   0053E756  5d                 pop ebp
+   0053E757  83f912             cmp ecx, 0x12
+   0053E75A  5b                 pop ebx
+   0053E75B  7502               jne 0x53e75f
+   0053E75D  33c0               xor eax, eax
+   0053E75F  c20800             ret 8
+   0053E762  90                 nop 
+   0053E763  90                 nop 
+   0053E764  90                 nop 
+   0053E765  90                 nop 
+   0053E766  90                 nop 
+   0053E767  90                 nop 
+   0053E768  90                 nop 
+   0053E769  90                 nop 
+   0053E76A  90                 nop 
+   0053E76B  90                 nop 
+   0053E76C  90                 nop 
+   0053E76D  90                 nop 
+   0053E76E  90                 nop 
+   0053E76F  90                 nop 
+
+== 泵内 0x49F740 (0x0049F740, 48 bytes) ==
+   raw: 568bf1817e04efbe0000754a681cf58100e88a71f6ff8b460c83c4046a006a006a006a00681f000f0050ff1544127e00
+   0049F740  56                 push esi
+   0049F741  8bf1               mov esi, ecx
+   0049F743  817e04efbe0000     cmp dword ptr [esi + 4], 0xbeef
+   0049F74A  754a               jne 0x49f796
+   0049F74C  681cf58100         push 0x81f51c
+   0049F751  e88a71f6ff         call 0x4068e0
+   0049F756  8b460c             mov eax, dword ptr [esi + 0xc]
+   0049F759  83c404             add esp, 4
+   0049F75C  6a00               push 0
+   0049F75E  6a00               push 0
+   0049F760  6a00               push 0
+   0049F762  6a00               push 0
+   0049F764  681f000f00         push 0xf001f
+   0049F769  50                 push eax
+   0049F76A  ff1544127e00       call dword ptr [0x7e1244]
+
+== MLF 帧体泵调用 (0x0055D820, 32 bytes) ==
+   raw: 00a130b2a8008b882c06000085c97448e81b750700e846f8f2ffe821ddfdff8b
+   0055D820  00a130b2a800       add byte ptr [ecx + 0xa8b230], ah
+   0055D826  8b882c060000       mov ecx, dword ptr [eax + 0x62c]
+   0055D82C  85c9               test ecx, ecx
+   0055D82E  7448               je 0x55d878
+   0055D830  e81b750700         call 0x5d4d50
+   0055D835  e846f8f2ff         call 0x48d080
+   0055D83A  e821ddfdff         call 0x53b560
+
+== 激活沿后继 (0x00777930, 36 bytes) ==
+   raw: e8ebfaffff68f89e8400e8a1efc8ff83c404c605a0008a00015f5e33c05b59c21000881d
+   00777930  e8ebfaffff         call 0x777420
+   00777935  68f89e8400         push 0x849ef8
+   0077793A  e8a1efc8ff         call 0x4068e0
+   0077793F  83c404             add esp, 4
+   00777942  c605a0008a0001     mov byte ptr [0x8a00a0], 1
+   00777949  5f                 pop edi
+   0077794A  5e                 pop esi
+   0077794B  33c0               xor eax, eax
+   0077794D  5b                 pop ebx
+   0077794E  59                 pop ecx
+   0077794F  c21000             ret 0x10
+

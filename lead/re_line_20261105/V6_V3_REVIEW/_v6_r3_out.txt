@@ -1,0 +1,112 @@
+================================================================================
+V6 R3 调用点独立复核探针
+复核时刻: 2026-11-05T20:57:08.311025
+被核对象路径: D:\Project\ra2-campaign-forge\lead\re_line_20261105\W5_HARNESS_EXT\qc151_trip.harness8_v4_ext.py
+================================================================================
+
+[§1 物理量实测]
+  实测 SHA256 : 5081780c5a2e3da5c934efff4665ed248ad01b1c4c883887eb1a66cc7d83f161
+  实测 字节数 : 499047
+  SHA256 吻合预期 (5081780c5a2e3da5c934efff4665ed248ad01b1c4c883887eb1a66cc7d83f161): PASS
+  字节数 吻合预期 (499047): PASS
+
+[§2 poll-span-hook 定界块定位与调用点上下文分析]
+  poll-span-hook 块范围: 行 4128 ~ 行 4200 (共 73 行)
+  关键时序行定位:
+    - t_now 读前时刻采样行 : 4151 (t_now = time.perf_counter())
+    - f 外层帧号读取行     : 4154 (f = reader(MEASURE_CURRENT_FRAME_VA))
+    - 沿触发判断分支行     : 4162 (if prev_f is not None and f != prev_f:)
+    - read_sample 调用起始 : 4166 (sample = frame_edge_sampler.read_sample()
+    - tracker.feed 调用行  : 4168 (ev = tracker.feed(t_now, f, sample=sample))
+  [时序分析判定] t_now 在外层读取 f 之前立即采样，传给 read_sample 的 t_pre=t_now 严格代表外层读前锚定时刻: PASS
+
+[§3 被核对象 AST 语法树全量分析 (qc151_trip.harness8_v4_ext.py)]
+  AST 检测到 read_sample 调用总数: 1
+    [1] 行 4166:25
+        函数: frame_edge_sampler.read_sample
+        位置参数: ['reader', 'time.perf_counter']
+        关键字参数: {'f_pre': 'f', 't_pre': 't_now'}
+        完整调用: frame_edge_sampler.read_sample(reader, time.perf_counter, f_pre=f, t_pre=t_now)
+  [AST 调用点参数判定] 严格传 reader, time.perf_counter, f_pre=f, t_pre=t_now: PASS
+  [唯一性判定] 副本中 AST 调用点严格唯一 (count=1)，无任何其它漏改调用: PASS
+
+[§4 被核对象文本 Grep 逐行核验 (qc151_trip.harness8_v4_ext.py)]
+  Grep 'read_sample' 命中文本行数: 2
+    行 4164 [注释]: #   本拍只新增 5 次读（四 VA + f_post），不再让 read_sample 自读前帧号。
+    行 4166 [代码]: sample = frame_edge_sampler.read_sample(
+  [Grep 代码行判定] 纯代码行仅 1 处，位于行 4166，其余均为说明性注释: PASS
+
+[§5 W5_HARNESS_EXT 目录下全部 Python 文件全景核查]
+
+  * 文件: _build_ext.py
+    AST 执行级调用点数: 0
+    Grep 文本命中行数: 1
+      - L147: sample = frame_edge_sampler.read_sample(reader, time.perf_counter)
+
+  * 文件: _leader_reads_and_beat.py
+    AST 执行级调用点数: 0
+    Grep 文本命中行数: 8
+      - L32: n_read_sample = sum(1 for l in body if 'read_sample(' in l)
+      - L34: print("  read_sample( 调用次数:", n_read_sample)
+      - L36: # read_sample 内部读几次？
+      - L39: sstart = ss.index('def read_sample(')
+      - L44: print("\n  read_sample 内部 read_one 调用点（静态）:", sbody.count('read_one(reader'))
+      ... 还有 3 行未展示
+
+  * 文件: _leader_s4_assert_check.py
+    AST 执行级调用点数: 0
+    Grep 文本命中行数: 0
+
+  * 文件: _w5_burden.py
+    AST 执行级调用点数: 0
+    Grep 文本命中行数: 2
+      - L39: # W5 扩项副本实际读取数（按 frame_edge_sampler.py 的 read_sample 规范：f_pre + 4 VA + f_post）
+      - L201: read_sample() 逻辑：在读取 4 VA 前后各读一次 CurrentFrame（f_pre 与 f_post），
+
+  * 文件: _w5_diff_proof.py
+    AST 执行级调用点数: 0
+    Grep 文本命中行数: 0
+
+  * 文件: _w5_test.py
+    AST 执行级调用点数: 4
+      - 行 204: fes.read_sample(spy_reader, vclock)
+      - 行 224: fes.read_sample(spy_reader2, VirtualClock(300.0, step=0.0001), f_pre=100, t_pre=299.5)
+      - 行 303: fes.read_sample(fake_reader_loop, vclock_loop, f_pre=f, t_pre=t_now)
+      - 行 421: fes.read_sample(composite_fail_reader, vclock)
+    Grep 文本命中行数: 7
+      - L195: # 2.1 候选件 read_sample() 纯函数级读序与读次证明
+      - L204: sample_direct = fes.read_sample(spy_reader, vclock)
+      - L214: assert order_log == expected_order, f"read_sample 读序不符合规范: {order_log} vs {expec
+      - L215: logger.log("  [2.1] 纯函数级 read_sample() 自读前帧号模式读序: [f_pre, 四VA, f_post] (共 6 读) [
+      - L224: sample_reuse = fes.read_sample(spy_reader2, VirtualClock(300.0, step=0.0001),
+      ... 还有 2 行未展示
+
+  * 文件: qc151_trip.harness8_v4_ext.py
+    AST 执行级调用点数: 1
+      - 行 4166: frame_edge_sampler.read_sample(reader, time.perf_counter, f_pre=f, t_pre=t_now)
+    Grep 文本命中行数: 2
+      - L4164: #   本拍只新增 5 次读（四 VA + f_post），不再让 read_sample 自读前帧号。
+      - L4166: sample = frame_edge_sampler.read_sample(
+
+[§6 特别审计发现与说明]
+  1. _w5_test.py 包含 4 处 read_sample 调用:
+     - 行 204: fes.read_sample(spy_reader, vclock)
+       -> 用例 2.1 针对默认缺省模式 (f_pre=None) 的向后兼容 6 读断言；
+     - 行 224: fes.read_sample(spy_reader2, ..., f_pre=100, t_pre=299.5)
+       -> 用例 2.1b 针对 D-21 裁 A 复用前读模式的 5 读独立断言；
+     - 行 303: fes.read_sample(fake_reader_loop, vclock_loop, f_pre=f, t_pre=t_now)
+       -> 用例 2.2 模拟 10 拍轮询中检测跳变时的 5 读追加驱动断言；
+     - 行 421: fes.read_sample(composite_fail_reader, vclock)
+       -> 用例 3.2 读失败记 null 逻辑测试；
+     结论: _w5_test.py 中的调用均为测试套件针对不同分支行为的有意设计，且包含复用模式专项。
+
+  2. _build_ext.py 审计结果:
+     - AST 级执行调用数: 0 (无运行期执行代码)
+     - 文本命中: 发现其 block4 代码生成模板字符串中包含未更新的旧调用 (read_sample(reader, time.perf_counter))
+     - 风险提示: _build_ext.py 系 W5 初版一次性生成脚本，当前并非执行入口，亦不在运行期调用链路；
+       但若运维人员未来重新运行该脚本生成副本，将导致 v4_ext 覆盖退回旧版 6 读。
+       此项作为 [维护性提示 / 运维隐患]，不影响被核对象 qc151_trip.harness8_v4_ext.py 当前已修复生效的结论。
+
+================================================================================
+R3 复核探针综合判定: CONFIRMED (PASS)
+================================================================================

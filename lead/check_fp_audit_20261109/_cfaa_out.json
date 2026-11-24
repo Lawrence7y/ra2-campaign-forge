@@ -1,0 +1,712 @@
+{
+ "A_fingerprints": {
+  "rows": [
+   {
+    "file": "lead/falsifiable_no_relax_20261109/_fnr_check.py",
+    "sha256": "94d89881f6a2e1afdea3ca78f56006ca27f1cabe1ec6384a9194718c327b00c2",
+    "bytes": 28811,
+    "match": true
+   },
+   {
+    "file": "lead/falsifiable_no_relax_20261109/_fnr_check_out.json",
+    "sha256": "f3112b225b1de35183ad4604554cb25689ed252b6a5a95d96d17fce53c8c140e",
+    "bytes": 8733,
+    "match": true
+   },
+   {
+    "file": "lead/falsifiable_no_relax_20261109/_fnr_REPORT.md",
+    "sha256": "80641e7dcc0cc3ebc61c2c39afe6757814fc6eb694a9559c4903ab9241ee6f06",
+    "bytes": 43390,
+    "match": true
+   },
+   {
+    "file": "lead/falsifiable_no_relax_20261109/_fnr_replay_out.json",
+    "sha256": "877f4ced0ab99562f776faa82015f742588c76fa9a63ee23b735f2fed61bd9fd",
+    "bytes": 27535,
+    "match": true
+   },
+   {
+    "file": "lead/whitelist_audit_20261109/_WL_WHITELIST_AUDIT.md",
+    "sha256": "f9d00b7c9a12a996bac9d89b0bf5a948dfe026e21f472bd825d7924d35a47adc",
+    "bytes": 52705,
+    "match": true
+   },
+   {
+    "file": "lead/gate_r9sem_20261109/_r9s_regress_out.json",
+    "sha256": "5bfb169acc58221ac74873dd99e1236931ac1b08d1eedc8dfb43076cc5b05e25",
+    "bytes": 75673,
+    "match": true
+   },
+   {
+    "file": "lead/PENDING_DECISIONS.md",
+    "sha256": "3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7",
+    "bytes": 52419,
+    "match": true
+   },
+   {
+    "file": "lead/GOAL_THREE_TARGETS_20261018.md",
+    "sha256": "2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede",
+    "bytes": 759518,
+    "match": true
+   }
+  ],
+  "ALL_EIGHT_MATCH": true
+ },
+ "B_three_layers": {
+  "VERDICT": "ALARM",
+  "L1": {
+   "ok": false,
+   "problems": [
+    "L1: SELF_CERTIFIED -- whitelist token multiset == predicate spec keys; 'outside=0' is a design consequence, not evidence"
+   ],
+   "detail": {
+    "n_items": 302,
+    "n_flips": 5,
+    "outside_whitelist": 0,
+    "n_structurally_untested": 292,
+    "coverage_ratio": 0.0331,
+    "self_certified": true,
+    "verdict_note": "L1 alone can only ALARM on set changes; it can never validate semantic truth. L2+L3 are mandatory."
+   }
+  },
+  "L2": {
+   "ok": true,
+   "n_rows": 5,
+   "all_ok": true
+  },
+  "L3": {
+   "ok": false,
+   "n_problems": 6,
+   "problems": [
+    "L3i: adversarial CF3 (改前改后) judged PRESENT -- semantic leak",
+    "L3i: adversarial CF5 (可重建) judged PRESENT -- semantic leak",
+    "L3i: adversarial WCF5 (可重建) judged PRESENT -- semantic leak",
+    "L3i: adversarial V2 (需谁批准) judged PRESENT -- semantic leak",
+    "L3i: adversarial V3 (改前改后) judged PRESENT -- semantic leak",
+    "L3i: adversarial V6 (可重建) judged PRESENT -- semantic leak"
+   ],
+   "n_caught": 7,
+   "n_total": 13,
+   "leaked_ids": [
+    "CF3",
+    "CF5",
+    "WCF5",
+    "V2",
+    "V3",
+    "V6"
+   ],
+   "n_mutations": 15,
+   "n_mutation_alarms": 15
+  },
+  "l1_recompute": {
+   "rows": 32,
+   "n_items": 302,
+   "n_flips": 5,
+   "n_whitelist": 5,
+   "n_spec_keys": 5,
+   "tested_token_counts": {
+    "需谁批准": 6,
+    "实跑输出": 1,
+    "改前改后": 1,
+    "脚本存在性": 1,
+    "可重建": 1
+   },
+   "n_tested": 10,
+   "n_structurally_untested": 292,
+   "coverage_ratio": 0.0331,
+   "wl_tokens_eq_spec_keys": true,
+   "self_certified_formula": "set(wl tokens) == set(predicate_spec_keys)  [_fnr_check.py:137-138]"
+  }
+ },
+ "C_prohibition_lines": {
+  "WHITELIST_AUDIT.md:506": {
+   "text": "1. `WHITELIST` 不得与 `SPECS` 同源：判据作者不得写白名单；白名单由第三方盲标注、单独签名并以 SHA256 预注册封印，回归脚本先验封印再读。",
+   "total_lines": 558
+  },
+  "_WL_WHITELIST_AUDIT.md:476": {
+   "text": "1. `WHITELIST` 不得与 `SPECS` 同源：判据作者不得写白名单；白名单文件单独由第三方签名并以 SHA256 封印，回归脚本先验封印再读。",
+   "total_lines": 516
+  },
+  "FALSIFIABLE_NO_RELAX.md:458": {
+   "text": "2. **解同源**：白名单 token 集合 ≠ `V1.spec_keys`；白名单作者 ≠ 谓词作者；`:113-119` 的 5 对与 `_r9s_predicates.py:371-402` 的 5 键必须解耦。",
+   "total_lines": 497
+  },
+  "_fnr_REPORT.md:256": {
+   "text": "**修复需要**：①第三方盲标注 302 项真值表并封 SHA 预注册；②白名单与 `SPECS` 解同源；③每个翻案项交逐角色正面证据证书（拒绝指针/未决值）；④把 CF/WCF/V 系列纳入必跑回归；⑤按 2(e) 跑元检验，元检验不过则不得声称「没放松」。**本会话只给方案，未实施、未改任何谓词。**",
+   "total_lines": 448
+  },
+  "_fnr_check.py:85": {
+   "text": "#     (E) WHITELIST PROVENANCE  whitelist is sealed, pre-registered, and its",
+   "total_lines": 554
+  },
+  "_fnr_check.py:86": {
+   "text": "#         token multiset is NOT identical to the new predicate's spec keys.",
+   "total_lines": 554
+  },
+  "WHITELIST_AUDIT.md:467": {
+   "text": "- **净评**：**整体窄、局部宽**。292 项 token 未登记 ⇒ R9S≡R9（结构性不动），把「放松面」钉得很小；但已登记的 5 个 token 内，判据用黑名单校验值而非正面证据 ⇒ 反而在自己负责的小面上过宽。★ 白名单机制恰好只覆盖那 5 个局部，所以对「局部过宽」毫无检出能力——这与 §4 的自证循环是同一个结构缺陷的两面。对预置 5 条真实例，本会话独立裁决 5/5 语义在场（§3），不过宽也不过窄；但这一结论来自**人工独立读原文",
+   "total_lines": 558
+  },
+  "WHITELIST_AUDIT.md:498": {
+   "text": "**应保留 5 / 应移除 0 / 需补证据 0（到需移除程度）**。②⑤ 的「展示不全 / 未重跑数值探针 / 对象为正确算法非原脚本本体」记作**边界注记与本会话未验项**，不升级为「需补证据」。★ 判定「某条不该在白名单」只写结论与依据，**不执行移除**；本会话 0 项判不该在白名单，故无移除动作。",
+   "total_lines": 558
+  },
+  "WHITELIST_AUDIT.md:516": {
+   "text": "| 5 条白名单内容 | 可信 | 本会话不采信上一轮、自读 4 主件原文 + 解 4 份任务书 payload + 自跑逐行 `==`，5/5 独立判语义在场（§3） |",
+   "total_lines": 558
+  },
+  "WHITELIST_AUDIT.md:517": {
+   "text": "| 「没放松」的证明 | **不可信** | 白名单由派发方预置且与 SPECS 同源（`[E_r9sem:94]`）；`no_relaxation` 只查集合包含（`:204-206`）；292 项结构性不可能翻案；5 条全换「形式像而实质空」仍 `VERDICT=PASS`（`_wlw_stepC_stdout.txt:34-40`） |",
+   "total_lines": 558
+  },
+  "WHITELIST_AUDIT.md:522": {
+   "text": "**总评：部分可信。** 可采信的是「这 5 处确实是语义在场、字面缺的真误报」和「升级在预置语料上数字可复现」；**不可采信**的是「白名单外 0 ⇒ 没放松」这一推论，以及「24/24 负样本 ⇒ 对真缺失仍 FAIL 无条件成立」。按 `GATE_R9_SEMANTIC_ELEMENT.md:317` 自身口径（复核 partial ⇒ unconfirmed），本会话独立结论：**升级本身 `unconfirmed`（局部过宽已实证），白名单验证机",
+   "total_lines": 558
+  },
+  "_WL_WHITELIST_AUDIT.md:517": {
+   "text": "<OUT OF RANGE>",
+   "total_lines": 516
+  },
+  "_fnr_REPORT.md:338": {
+   "text": "  0. assert checker(good_world) == PASS              # 已知-好世界必须通过",
+   "total_lines": 448
+  },
+  "_fnr_REPORT.md:239": {
+   "text": "元检验的基线必须是**已知-好世界**，不能拿现盘当基线：现盘本身有真实缺陷，第一次实跑时把现盘当基线，2 个「良性变化」被误记为 `false_alarm`、`CHECKER_VALID=false`（`_fnr_check_stdout.txt` 已被第二次实跑覆盖，该中间态如实记于此）。改用写域内构造的 `repaired_predicate` 世界（13/13 对抗全抓、`spec_keys` 多一个预留键以消除 self-certificatio",
+   "total_lines": 448
+  },
+  "_fnr_REPORT.md:427": {
+   "text": "4. **未改任何谓词、回归脚本、白名单**；`_fnr_check.py` 的 `repaired_predicate` 与 5 份 `CERTS` 是**演示性假设输入**，只在内存中构造，明确标注为本会话自造，不是第三方盲标注的真实 ORACLE。⇒ 本文 2 的检验是**设计与可行性验证**，不构成对现盘 R9 升级的重新认证。",
+   "total_lines": 448
+  },
+  "_fnr_check.py:137": {
+   "text": "    wl_tokens = {k for _, k in wl}",
+   "total_lines": 554
+  },
+  "_fnr_check.py:149": {
+   "text": "        problems.append(\"L1: SELF_CERTIFIED -- whitelist token multiset == predicate \"",
+   "total_lines": 554
+  },
+  "_fnr_check.py:238": {
+   "text": "    ok = l1_ok and l2_ok and l3_ok",
+   "total_lines": 554
+  },
+  "_fnr_check.py:280": {
+   "text": "        \"CHECKER_VALID\": (n_caught == len(wrong_rows) and n_false == 0),",
+   "total_lines": 554
+  },
+  "_fnr_check.py:486": {
+   "text": "    good_base[\"spec_keys\"] = set(R9S.SPECS.keys()) | {\"额外预留要素\"}",
+   "total_lines": 554
+  },
+  "_fnr_check.py:548": {
+   "text": "    (WDIR / \"_fnr_check_out.json\").write_text(",
+   "total_lines": 554
+  }
+ },
+ "D_benign_and_factorial": {
+  "scenarios": [
+   {
+    "VERDICT": "PASS",
+    "L1_ok": true,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [],
+    "L1_coverage": 0.0331,
+    "L1_self_certified": false,
+    "L3_caught": 13,
+    "L3_total": 13,
+    "id": "B1",
+    "name": "理想世界:满足(E)且有第6个真实注册要素",
+    "class": "spec_consistent",
+    "trigger_layers": []
+   },
+   {
+    "VERDICT": "PASS",
+    "L1_ok": true,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [],
+    "L1_coverage": 1.0,
+    "L1_self_certified": false,
+    "L3_caught": 13,
+    "L3_total": 13,
+    "id": "B3",
+    "name": "全覆盖:registered_tokens=全部item token",
+    "class": "spec_consistent",
+    "trigger_layers": []
+   },
+   {
+    "VERDICT": "PASS",
+    "L1_ok": true,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [],
+    "L1_coverage": 0.0331,
+    "L1_self_certified": false,
+    "L3_caught": 13,
+    "L3_total": 13,
+    "id": "B4",
+    "name": "第三方ORACLE真值表(旁路真sha256封印)",
+    "class": "spec_consistent",
+    "trigger_layers": []
+   },
+   {
+    "VERDICT": "PASS",
+    "L1_ok": true,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [],
+    "L1_coverage": 0.0331,
+    "L1_self_certified": false,
+    "L3_caught": 16,
+    "L3_total": 16,
+    "id": "B5",
+    "name": "对抗样本含3条novel全抓(16/16)",
+    "class": "spec_consistent",
+    "trigger_layers": []
+   },
+   {
+    "VERDICT": "PASS",
+    "L1_ok": true,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [],
+    "L1_coverage": 0.0331,
+    "L1_self_certified": false,
+    "L3_caught": 13,
+    "L3_total": 13,
+    "id": "B6",
+    "name": "追加1条真语义等价翻案",
+    "class": "spec_consistent",
+    "trigger_layers": []
+   },
+   {
+    "VERDICT": "PASS",
+    "L1_ok": true,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [],
+    "L1_coverage": 0.0331,
+    "L1_self_certified": false,
+    "L3_caught": 13,
+    "L3_total": 13,
+    "id": "B7",
+    "name": "良性引文改写",
+    "class": "spec_consistent",
+    "trigger_layers": []
+   },
+   {
+    "VERDICT": "PASS",
+    "L1_ok": true,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [],
+    "L1_coverage": 0.0331,
+    "L1_self_certified": false,
+    "L3_caught": 13,
+    "L3_total": 13,
+    "id": "B8",
+    "name": "删1对白名单并同步删flip/证书",
+    "class": "spec_consistent",
+    "trigger_layers": []
+   },
+   {
+    "VERDICT": "PASS",
+    "L1_ok": true,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [],
+    "L1_coverage": 1.0,
+    "L1_self_certified": false,
+    "L3_caught": 16,
+    "L3_total": 16,
+    "id": "B9",
+    "name": "真第6要素+全覆盖+full adversarial+全独立标志",
+    "class": "spec_consistent",
+    "trigger_layers": []
+   },
+   {
+    "VERDICT": "ALARM",
+    "L1_ok": false,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [
+     "L1: SELF_CERTIFIED -- whitelist token multiset == predicate spec keys; 'outside=0' is a design consequence, not evidence"
+    ],
+    "L1_coverage": 0.0331,
+    "L1_self_certified": true,
+    "L3_caught": 13,
+    "L3_total": 13,
+    "id": "S05",
+    "name": "合规同源(自造范畴):SPECS是白名单展开",
+    "class": "same_source_variant",
+    "trigger_layers": [
+     "L1"
+    ]
+   },
+   {
+    "VERDICT": "ALARM",
+    "L1_ok": false,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [
+     "L1: SELF_CERTIFIED -- whitelist token multiset == predicate spec keys; 'outside=0' is a design consequence, not evidence"
+    ],
+    "L1_coverage": 1.0,
+    "L1_self_certified": true,
+    "L3_caught": 13,
+    "L3_total": 13,
+    "id": "S06",
+    "name": "同源+全覆盖+自声明第三方封印",
+    "class": "same_source_variant",
+    "trigger_layers": [
+     "L1"
+    ]
+   },
+   {
+    "VERDICT": "ALARM",
+    "L1_ok": false,
+    "L2_ok": true,
+    "L3_ok": true,
+    "L1_problems": [
+     "L1: SELF_CERTIFIED -- whitelist token multiset == predicate spec keys; 'outside=0' is a design consequence, not evidence"
+    ],
+    "L1_coverage": 1.0,
+    "L1_self_certified": true,
+    "L3_caught": 13,
+    "L3_total": 13,
+    "id": "S07",
+    "name": "同源+白名单第三方封印且作者独立",
+    "class": "same_source_variant",
+    "trigger_layers": [
+     "L1"
+    ]
+   }
+  ],
+  "factorial": {
+   "n_axes": 7,
+   "n_worlds": 64,
+   "same_source_5": {
+    "n": 32,
+    "n_ALARM": 32,
+    "ALARM_rate": 1.0,
+    "n_L1_false": 32,
+    "n_non_L1_false": 0
+   },
+   "plus_dummy_6": {
+    "n": 32,
+    "n_ALARM": 0,
+    "ALARM_rate": 0.0,
+    "n_L1_false": 0,
+    "n_non_L1_false": 0
+   }
+  },
+  "fp_spec_consistent_8": {
+   "n": 8,
+   "n_false_alarms": 0,
+   "wilson95": [
+    0.0,
+    0.324408
+   ]
+  },
+  "fp_if_same_source_counted_11": {
+   "n": 11,
+   "n_false_alarms": 3,
+   "wilson95": [
+    0.097461,
+    0.565645
+   ]
+  }
+ },
+ "E_independence": {
+  "ast_io": {
+   "certificate_ok": {
+    "lineno": 95,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "check_l1": {
+    "lineno": 127,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "check_l2": {
+    "lineno": 161,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "check_l3": {
+    "lineno": 179,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "no_relaxation_check": {
+    "lineno": 227,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "meta_test": {
+    "lineno": 249,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "main": {
+    "lineno": 354,
+    "opens_file": true,
+    "computes_hash": false,
+    "writes_file": true
+   },
+   "run": {
+    "lineno": 255,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "cp": {
+    "lineno": 382,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "w_all5_empty": {
+    "lineno": 385,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "w_3of5_empty": {
+    "lineno": 396,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "w_1_oracle_false": {
+    "lineno": 406,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "w_drop_cert": {
+    "lineno": 414,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "w_oracle_same_author": {
+    "lineno": 421,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "w_unsealed_whitelist": {
+    "lineno": 429,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "w_extra_true_flip": {
+    "lineno": 432,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "w_adversarial_leak": {
+    "lineno": 438,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "g_reworded_quote": {
+    "lineno": 449,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "g_extra_adversarial_caught": {
+    "lineno": 458,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "repaired_predicate": {
+    "lineno": 471,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   },
+   "leaky": {
+    "lineno": 442,
+    "opens_file": false,
+    "computes_hash": false,
+    "writes_file": false
+   }
+  },
+  "signatures": {
+   "no_relaxation_check": [
+    "items",
+    "flips",
+    "whitelist",
+    "registered_tokens",
+    "spec_keys",
+    "certificates",
+    "spec_roles",
+    "predicate",
+    "adversarial_corpus",
+    "predicate_author",
+    "whitelist_author",
+    "whitelist_sealed",
+    "mutation_payload"
+   ],
+   "check_l1": [
+    "items",
+    "flips",
+    "whitelist",
+    "registered_tokens",
+    "predicate_spec_keys",
+    "whitelist_sealed",
+    "whitelist_author"
+   ],
+   "certificate_ok": [
+    "cert",
+    "required_roles"
+   ]
+  },
+  "P1_forged_certs": {
+   "VERDICT": "PASS",
+   "L1_ok": true,
+   "L2_ok": true,
+   "L3_ok": true,
+   "L1_problems": [],
+   "L1_coverage": 0.0331,
+   "L1_self_certified": false,
+   "L3_caught": 13,
+   "L3_total": 13,
+   "anchor_files_exist": [
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  },
+  "P5_artifact_slot": {
+   "extra_kwarg_accepted": false,
+   "TypeError": "no_relaxation_check() got an unexpected keyword argument 'artifact_text'"
+  },
+  "P10_per_layer_recall": {
+   "n_wrong": 9,
+   "counts": {
+    "L1": 3,
+    "L2": 6,
+    "L3": 1
+   }
+  },
+  "P11_coverage_zero": {
+   "ok": true,
+   "coverage": 0.0,
+   "problems": []
+  },
+  "P2_guard_fit": {
+   "n_fitted": 13,
+   "n_total": 13
+  },
+  "P2_novel": [
+   {
+    "id": "N-EMPTY-1",
+    "author_guard_hit": false,
+    "present_r9s": true,
+    "present_author_guard": true
+   },
+   {
+    "id": "N-EMPTY-2",
+    "author_guard_hit": false,
+    "present_r9s": true,
+    "present_author_guard": true
+   },
+   {
+    "id": "N-EMPTY-3",
+    "author_guard_hit": false,
+    "present_r9s": false,
+    "present_author_guard": false
+   }
+  ],
+  "P2_author_guard_caught": "14/16",
+  "P2_upstream_fragment_hits": "13/13",
+  "oracle_seal_files_found": []
+ },
+ "F_meta": {
+  "P3_empty_lists_on_ALARM_baseline": {
+   "baseline_VERDICT": "ALARM",
+   "n_wrong": 0,
+   "n_good": 0,
+   "CHECKER_VALID": true
+  },
+  "P4_wrong_baseline": {
+   "baseline_VERDICT": "ALARM",
+   "n_false_alarms": 2,
+   "CHECKER_VALID": false
+  },
+  "P7_power_bounds": {
+   "n_wrong": 9,
+   "n_wrong_caught": 9,
+   "sensitivity_lower_95": 0.716871,
+   "n_good": 2,
+   "n_false_alarms": 0,
+   "fp_upper_95": 0.776393
+  },
+  "P9_padding": {
+   "with_dummy_key": "PASS",
+   "without_dummy_key": "ALARM",
+   "dummy_key": "额外预留要素"
+  },
+  "shipped_meta": {
+   "baseline_VERDICT": "PASS",
+   "synthetic_baseline_VERDICT": "PASS",
+   "CHECKER_VALID": true,
+   "synthetic_catch": "13/13"
+  }
+ },
+ "G_readonly_recheck": {
+  "recomputed": {
+   "_fnr_check.py": {
+    "sha256": "94d89881f6a2e1afdea3ca78f56006ca27f1cabe1ec6384a9194718c327b00c2",
+    "bytes": 28811
+   },
+   "_fnr_check_out.json": {
+    "sha256": "f3112b225b1de35183ad4604554cb25689ed252b6a5a95d96d17fce53c8c140e",
+    "bytes": 8733
+   },
+   "_fnr_REPORT.md": {
+    "sha256": "80641e7dcc0cc3ebc61c2c39afe6757814fc6eb694a9559c4903ab9241ee6f06",
+    "bytes": 43390
+   },
+   "_fnr_replay_out.json": {
+    "sha256": "877f4ced0ab99562f776faa82015f742588c76fa9a63ee23b735f2fed61bd9fd",
+    "bytes": 27535
+   },
+   "_WL_WHITELIST_AUDIT.md": {
+    "sha256": "f9d00b7c9a12a996bac9d89b0bf5a948dfe026e21f472bd825d7924d35a47adc",
+    "bytes": 52705
+   },
+   "_r9s_regress_out.json": {
+    "sha256": "5bfb169acc58221ac74873dd99e1236931ac1b08d1eedc8dfb43076cc5b05e25",
+    "bytes": 75673
+   },
+   "PENDING_DECISIONS.md": {
+    "sha256": "3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7",
+    "bytes": 52419
+   },
+   "GOAL_THREE_TARGETS_20261018.md": {
+    "sha256": "2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede",
+    "bytes": 759518
+   }
+  }
+ }
+}

@@ -1,0 +1,192 @@
+====================================================================================================
+W2 FRAMETIME ATTRIBUTION PROBE - CENSUS MATRIX & CONTRAST PAIRS
+====================================================================================================
+Data root: D:/Project/ra2-campaign-forge/out/re_work/work_chain/CONTINUE_20261003/lead/qc161_u0400_trip
+Total measure_w*.json found recursively: 104
+Inventory breakdown:
+  - Non-MEASURE_V1: 0
+  - span_s < 20s (excluded): 15
+  - Root loose files (span_s >= 20s, unarchived): 2
+  - Subdirectory trip windows (canonical N=87): 87
+
+Wrote canonical TSV to D:/Project/ra2-campaign-forge/lead/re_line_20261105/W2_FRAMETIME_ATTRIB\_w2_matrix.tsv (87 rows + header)
+
+====================================================================================================
+SECTION (A): TABLE ROW COUNT & FILTER CONDITIONS
+====================================================================================================
+Canonical row count (denominator N): 87 rows
+Trip subdirectories: 29 trips (each having exactly 3 windows: w0, w1, w2)
+Filter conditions:
+  1. Schema constraint: schema == 'MEASURE_V1'
+  2. Span duration: span_s >= 20.0s (all 87 canonical windows have span_s == 25.0s)
+  3. Location constraint: inside trip subdirectory qc161_u0400_trip/*/
+     (Note: 2 loose files in root qc161_u0400_trip/ measure_w1.json & measure_w2.json also have span_s=25.0s,
+      but logic_frames=0 and p50=None; per TASK.md line 29 '每趟子目录下', the canonical table has 87 rows)
+Valid frame_ms_p50 rows: 58
+None frame_ms_p50 rows (logic_frames <= 0 / frozen / menu): 29
+
+====================================================================================================
+SECTION (B): PAIRS OF SAME MAP_SHA8 & UNITS0 DIFF <= 10% BUT P50 RATIO > 1.5x
+====================================================================================================
+Total contrast pairs under max-based relative difference (|u1-u2|/max(u1,u2) <= 10%): 107
+Total contrast pairs under min-based relative difference (|u1-u2|/min(u1,u2) <= 10%): 82
+Boundary pairs (rel_max <= 10% but rel_min > 10%): 25
+Note: TASK.md lines 44-45 explicitly anchors v4d(1225) vs v3a(1349) as 'units 只差 10%',
+where |1349-1225|/1349 = 9.19% <= 10% (max-based) and |1349-1225|/1225 = 10.12% (min-based).
+Hence max-based formula is the canonical definition that includes the primary target pairs.
+
+Idx  Map        Window 1               u1    p50_1(ms)  Window 2               u2    p50_2(ms)  u_diff%  p50_ratio  Boundary?
+-------------------------------------------------------------------------------------------------------------------
+1    0add791d   l1c_20261021/w1        881   110.40     l1e_20261021/w2        866   60.61      1.70     1.82       normal
+2    0add791d   l1c_20261021/w0        881   103.25     l1e_20261021/w2        866   60.61      1.70     1.70       normal
+3    0add791d   l1c_20261021/w1        881   110.40     l1d_20261021/w2        874   69.62      0.79     1.59       normal
+4    0add791d   l1d_20261021/w1        874   95.24      l1e_20261021/w2        866   60.61      0.92     1.57       normal
+5    0add791d   l1c_20261021/w2        881   92.40      l1e_20261021/w2        866   60.61      1.70     1.52       normal
+6    f3bb0a4e   l3_1101v4d/w2          1225  32.15      l3_20261031hb/w1       1347  182.86     9.06     5.69       normal
+7    f3bb0a4e   l3_1101v4d/w1          1225  32.27      l3_20261031hb/w1       1347  182.86     9.06     5.67       normal
+8    f3bb0a4e   l3_1101v4d/w0          1225  32.31      l3_20261031hb/w1       1347  182.86     9.06     5.66       normal
+9    f3bb0a4e   l3_1101v4c/w2          1229  32.42      l3_20261031hb/w1       1347  182.86     8.76     5.64       normal
+10   f3bb0a4e   l3_1101v4c/w1          1229  33.11      l3_20261031hb/w1       1347  182.86     8.76     5.52       normal
+11   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_1101v4d/w2          1225  32.15      9.19     5.19       rel_min=10.1%
+12   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_1101v4d/w1          1225  32.27      9.19     5.17       rel_min=10.1%
+13   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_1101v4d/w0          1225  32.31      9.19     5.16       rel_min=10.1%
+14   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_1101v4c/w2          1229  32.42      8.90     5.15       normal
+15   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_1101v4c/w1          1229  33.11      8.90     5.04       normal
+16   f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_20261031hb/w1       1347  182.86     8.76     3.62       normal
+17   f3bb0a4e   l3_1101v4d/w2          1225  32.15      l3_20261031hb/w0       1347  106.62     9.06     3.32       normal
+18   f3bb0a4e   l3_1101v3b/w0          1352  55.27      l3_20261031hb/w1       1347  182.86     0.37     3.31       normal
+19   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_1101v4c/w0          1229  50.48      8.90     3.31       normal
+20   f3bb0a4e   l3_1101v4d/w1          1225  32.27      l3_20261031hb/w0       1347  106.62     9.06     3.30       normal
+21   f3bb0a4e   l3_1101v4d/w0          1225  32.31      l3_20261031hb/w0       1347  106.62     9.06     3.30       normal
+22   f3bb0a4e   l3_1101v4c/w2          1229  32.42      l3_20261031hb/w0       1347  106.62     8.76     3.29       normal
+23   f3bb0a4e   l3_1101v3b/w1          1352  55.65      l3_20261031hb/w1       1347  182.86     0.37     3.29       normal
+24   f3bb0a4e   l3_1101v4d/w2          1225  32.15      l3_20261021/w0         1342  105.24     8.72     3.27       normal
+25   f3bb0a4e   l3_1101v4d/w1          1225  32.27      l3_20261021/w0         1342  105.24     8.72     3.26       normal
+26   f3bb0a4e   l3_1101v4d/w0          1225  32.31      l3_20261021/w0         1342  105.24     8.72     3.26       normal
+27   f3bb0a4e   l3_1101v4c/w2          1229  32.42      l3_20261021/w0         1342  105.24     8.42     3.25       normal
+28   f3bb0a4e   l3_1101v4c/w1          1229  33.11      l3_20261031hb/w0       1347  106.62     8.76     3.22       normal
+29   f3bb0a4e   l3_1101v4c/w1          1229  33.11      l3_20261021/w0         1342  105.24     8.42     3.18       normal
+30   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_1101v3b/w0          1352  55.27      0.22     3.02       normal
+31   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_1101v3b/w1          1352  55.65      0.22     3.00       normal
+32   f3bb0a4e   l3_1101v4d/w2          1225  32.15      l3_20261021/w2         1342  92.34      8.72     2.87       normal
+33   f3bb0a4e   l3_1101v4d/w1          1225  32.27      l3_20261021/w2         1342  92.34      8.72     2.86       normal
+34   f3bb0a4e   l3_1101v4d/w0          1225  32.31      l3_20261021/w2         1342  92.34      8.72     2.86       normal
+35   f3bb0a4e   l3_1101v4c/w2          1229  32.42      l3_20261021/w2         1342  92.34      8.42     2.85       normal
+36   f3bb0a4e   l3_1101v4c/w1          1229  33.11      l3_20261021/w2         1342  92.34      8.42     2.79       normal
+37   f3bb0a4e   l3_1101v3a/w1          1349  70.30      l3_20261031hb/w1       1347  182.86     0.15     2.60       normal
+38   f3bb0a4e   l3_1101v3a/w0          1349  82.50      l3_1101v4d/w2          1225  32.15      9.19     2.57       rel_min=10.1%
+39   f3bb0a4e   l3_1101v3a/w0          1349  82.50      l3_1101v4d/w1          1225  32.27      9.19     2.56       rel_min=10.1%
+40   f3bb0a4e   l3_1101v3a/w0          1349  82.50      l3_1101v4d/w0          1225  32.31      9.19     2.55       rel_min=10.1%
+41   f3bb0a4e   l3_1101v3a/w0          1349  82.50      l3_1101v4c/w2          1229  32.42      8.90     2.54       normal
+42   f3bb0a4e   l3_20261031hb/w1       1347  182.86     l3_20261031hb/w2       1347  72.04      0.00     2.54       normal (intra-trip)
+43   f3bb0a4e   l3_20261021/w1         1342  72.85      l3_20261031hb/w1       1347  182.86     0.37     2.51       normal
+44   f3bb0a4e   l3_1101v3a/w0          1349  82.50      l3_1101v4c/w1          1229  33.11      8.90     2.49       normal
+45   f3bb0a4e   l3_1101v3b/w2          1352  76.07      l3_20261031hb/w1       1347  182.86     0.37     2.40       normal
+46   f3bb0a4e   l3_1101v3a/w1          1349  70.30      l3_1101v3a/w2          1349  166.83     0.00     2.37       normal (intra-trip)
+47   f3bb0a4e   l3_1101v3b/w2          1352  76.07      l3_1101v4d/w2          1225  32.15      9.39     2.37       rel_min=10.1%
+48   f3bb0a4e   l3_1101v3b/w2          1352  76.07      l3_1101v4d/w1          1225  32.27      9.39     2.36       rel_min=10.1%
+49   f3bb0a4e   l3_1101v3b/w2          1352  76.07      l3_1101v4d/w0          1225  32.31      9.39     2.35       rel_min=10.1%
+50   f3bb0a4e   l3_1101v3b/w2          1352  76.07      l3_1101v4c/w2          1229  32.42      9.10     2.35       rel_min=10.1%
+51   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_20261031hb/w2       1347  72.04      0.15     2.32       normal
+52   f3bb0a4e   l3_1101v3b/w2          1352  76.07      l3_1101v4c/w1          1229  33.11      9.10     2.30       rel_min=10.1%
+53   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_20261021/w1         1342  72.85      0.52     2.29       normal
+54   f3bb0a4e   l3_1101v4d/w2          1225  32.15      l3_20261021/w1         1342  72.85      8.72     2.27       normal
+55   f3bb0a4e   l3_1101v4d/w1          1225  32.27      l3_20261021/w1         1342  72.85      8.72     2.26       normal
+56   f3bb0a4e   l3_1101v4d/w0          1225  32.31      l3_20261021/w1         1342  72.85      8.72     2.26       normal
+57   f3bb0a4e   l3_1101v4c/w2          1229  32.42      l3_20261021/w1         1342  72.85      8.42     2.25       normal
+58   f3bb0a4e   l3_1101v4d/w2          1225  32.15      l3_20261031hb/w2       1347  72.04      9.06     2.24       normal
+59   f3bb0a4e   l3_1101v4d/w1          1225  32.27      l3_20261031hb/w2       1347  72.04      9.06     2.23       normal
+60   f3bb0a4e   l3_1101v4d/w0          1225  32.31      l3_20261031hb/w2       1347  72.04      9.06     2.23       normal
+61   f3bb0a4e   l3_1101v4c/w2          1229  32.42      l3_20261031hb/w2       1347  72.04      8.76     2.22       normal
+62   f3bb0a4e   l3_1101v3a/w0          1349  82.50      l3_20261031hb/w1       1347  182.86     0.15     2.22       normal
+63   f3bb0a4e   l3_1101v4c/w1          1229  33.11      l3_20261021/w1         1342  72.85      8.42     2.20       normal
+64   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_1101v3b/w2          1352  76.07      0.22     2.19       normal
+65   f3bb0a4e   l3_1101v3a/w1          1349  70.30      l3_1101v4d/w2          1225  32.15      9.19     2.19       rel_min=10.1%
+66   f3bb0a4e   l3_1101v3a/w1          1349  70.30      l3_1101v4d/w1          1225  32.27      9.19     2.18       rel_min=10.1%
+67   f3bb0a4e   l3_1101v3a/w1          1349  70.30      l3_1101v4d/w0          1225  32.31      9.19     2.18       rel_min=10.1%
+68   f3bb0a4e   l3_1101v4c/w1          1229  33.11      l3_20261031hb/w2       1347  72.04      8.76     2.18       normal
+69   f3bb0a4e   l3_1101v3a/w1          1349  70.30      l3_1101v4c/w2          1229  32.42      8.90     2.17       normal
+70   f3bb0a4e   l3_1101v3a/w1          1349  70.30      l3_1101v4c/w1          1229  33.11      8.90     2.12       normal
+71   f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_20261031hb/w0       1347  106.62     8.76     2.11       normal
+72   f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_20261021/w0         1342  105.24     8.42     2.08       normal
+73   f3bb0a4e   l3_1101v3a/w0          1349  82.50      l3_1101v3a/w2          1349  166.83     0.00     2.02       normal (intra-trip)
+74   f3bb0a4e   l3_20261021/w2         1342  92.34      l3_20261031hb/w1       1347  182.86     0.37     1.98       normal
+75   f3bb0a4e   l3_1101v3b/w0          1352  55.27      l3_20261031hb/w0       1347  106.62     0.37     1.93       normal
+76   f3bb0a4e   l3_1101v3b/w1          1352  55.65      l3_20261031hb/w0       1347  106.62     0.37     1.92       normal
+77   f3bb0a4e   l3_1101v3b/w0          1352  55.27      l3_20261021/w0         1342  105.24     0.74     1.90       normal
+78   f3bb0a4e   l3_1101v3b/w1          1352  55.65      l3_20261021/w0         1342  105.24     0.74     1.89       normal
+79   f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_20261021/w2         1342  92.34      8.42     1.83       normal
+80   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_20261021/w2         1342  92.34      0.52     1.81       normal
+81   f3bb0a4e   l3_20261021/w0         1342  105.24     l3_20261031hb/w1       1347  182.86     0.37     1.74       normal
+82   f3bb0a4e   l3_1101v3b/w1          1352  55.65      l3_1101v4d/w2          1225  32.15      9.39     1.73       rel_min=10.1%
+83   f3bb0a4e   l3_1101v3b/w1          1352  55.65      l3_1101v4d/w1          1225  32.27      9.39     1.72       rel_min=10.1%
+84   f3bb0a4e   l3_1101v3b/w1          1352  55.65      l3_1101v4d/w0          1225  32.31      9.39     1.72       rel_min=10.1%
+85   f3bb0a4e   l3_1101v3b/w0          1352  55.27      l3_1101v4d/w2          1225  32.15      9.39     1.72       rel_min=10.1%
+86   f3bb0a4e   l3_1101v3b/w1          1352  55.65      l3_1101v4c/w2          1229  32.42      9.10     1.72       rel_min=10.1%
+87   f3bb0a4e   l3_20261031hb/w0       1347  106.62     l3_20261031hb/w1       1347  182.86     0.00     1.72       normal (intra-trip)
+88   f3bb0a4e   l3_1101v3b/w0          1352  55.27      l3_1101v4d/w1          1225  32.27      9.39     1.71       rel_min=10.1%
+89   f3bb0a4e   l3_1101v3b/w0          1352  55.27      l3_1101v4d/w0          1225  32.31      9.39     1.71       rel_min=10.1%
+90   f3bb0a4e   l3_1101v3b/w0          1352  55.27      l3_1101v4c/w2          1229  32.42      9.10     1.70       rel_min=10.1%
+91   f3bb0a4e   l3_1101v3b/w1          1352  55.65      l3_1101v4c/w1          1229  33.11      9.10     1.68       rel_min=10.1%
+92   f3bb0a4e   l3_1101v3b/w0          1352  55.27      l3_20261021/w2         1342  92.34      0.74     1.67       normal
+93   f3bb0a4e   l3_1101v3b/w0          1352  55.27      l3_1101v4c/w1          1229  33.11      9.10     1.67       rel_min=10.1%
+94   f3bb0a4e   l3_1101v3b/w1          1352  55.65      l3_20261021/w2         1342  92.34      0.74     1.66       normal
+95   f3bb0a4e   l3_1101v3a/w0          1349  82.50      l3_1101v4c/w0          1229  50.48      8.90     1.63       normal
+96   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_20261021/w0         1342  105.24     0.52     1.59       normal
+97   f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_1101v4d/w2          1225  32.15      0.33     1.57       normal
+98   f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_1101v4e/w0          1189  32.24      3.25     1.57       normal
+99   f3bb0a4e   l3_1101v3a/w2          1349  166.83     l3_20261031hb/w0       1347  106.62     0.15     1.56       normal
+100  f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_1101v4d/w1          1225  32.27      0.33     1.56       normal
+101  f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_1101v4d/w0          1225  32.31      0.33     1.56       normal
+102  f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_1101v4e/w1          1189  32.33      3.25     1.56       normal
+103  f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_1101v4c/w2          1229  32.42      0.00     1.56       normal (intra-trip)
+104  f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_1101v4e/w2          1189  32.43      3.25     1.56       normal
+105  f3bb0a4e   l3_1101v4c/w0          1229  50.48      l3_1101v4c/w1          1229  33.11      0.00     1.52       normal (intra-trip)
+106  f3bb0a4e   l3_1101v3a/w1          1349  70.30      l3_20261031hb/w0       1347  106.62     0.15     1.52       normal
+107  f3bb0a4e   l3_1101v3b/w2          1352  76.07      l3_1101v4c/w0          1229  50.48      9.10     1.51       rel_min=10.1%
+
+--- Trip-Pair Summary on Map f3bb0a4e (Max-Based) ---
+  l3_1101v3a vs l3_1101v3a:  2 window pairs | units: 1349 vs 1349 | ratio: 2.02x .. 2.37x
+  l3_1101v3a vs l3_1101v3b:  3 window pairs | units: 1349 vs 1352 | ratio: 2.19x .. 3.02x
+  l3_1101v3a vs l3_1101v4c:  8 window pairs | units: 1349 vs 1229 | ratio: 1.63x .. 5.15x
+  l3_1101v3a vs l3_1101v4d:  9 window pairs | units: 1349 vs 1225 | ratio: 2.18x .. 5.19x
+  l3_1101v3a vs l3_20261021:  3 window pairs | units: 1349 vs 1342 | ratio: 1.59x .. 2.29x
+  l3_1101v3a vs l3_20261031hb:  5 window pairs | units: 1349 vs 1347 | ratio: 1.52x .. 2.60x
+  l3_1101v3b vs l3_1101v4c:  7 window pairs | units: 1352 vs 1229 | ratio: 1.51x .. 2.35x
+  l3_1101v3b vs l3_1101v4d:  9 window pairs | units: 1352 vs 1225 | ratio: 1.71x .. 2.37x
+  l3_1101v3b vs l3_20261021:  4 window pairs | units: 1352 vs 1342 | ratio: 1.66x .. 1.90x
+  l3_1101v3b vs l3_20261031hb:  5 window pairs | units: 1352 vs 1347 | ratio: 1.92x .. 3.31x
+  l3_1101v4c vs l3_1101v4c:  2 window pairs | units: 1229 vs 1229 | ratio: 1.52x .. 1.56x
+  l3_1101v4c vs l3_1101v4d:  3 window pairs | units: 1229 vs 1225 | ratio: 1.56x .. 1.57x
+  l3_1101v4c vs l3_1101v4e:  3 window pairs | units: 1229 vs 1189 | ratio: 1.56x .. 1.57x
+  l3_1101v4c vs l3_20261021:  8 window pairs | units: 1229 vs 1342 | ratio: 1.83x .. 3.25x
+  l3_1101v4c vs l3_20261031hb:  8 window pairs | units: 1229 vs 1347 | ratio: 2.11x .. 5.64x
+  l3_1101v4d vs l3_20261021:  9 window pairs | units: 1225 vs 1342 | ratio: 2.26x .. 3.27x
+  l3_1101v4d vs l3_20261031hb:  9 window pairs | units: 1225 vs 1347 | ratio: 2.23x .. 5.69x
+  l3_20261021 vs l3_20261031hb:  3 window pairs | units: 1342 vs 1347 | ratio: 1.74x .. 2.51x
+  l3_20261031hb vs l3_20261031hb:  2 window pairs | units: 1347 vs 1347 | ratio: 1.72x .. 2.54x
+
+--- Trip-Pair Summary on Map 0add791d ---
+  l1c_20261021 vs l1d_20261021:  1 window pairs | units: 881 vs 874 | ratio: 1.59x .. 1.59x
+  l1c_20261021 vs l1e_20261021:  3 window pairs | units: 881 vs 866 | ratio: 1.52x .. 1.82x
+  l1d_20261021 vs l1e_20261021:  1 window pairs | units: 874 vs 866 | ratio: 1.57x .. 1.57x
+
+====================================================================================================
+SECTION (C): P50 MEDIAN TABLE GROUPED BY MAP_SHA8
+====================================================================================================
+map_sha8   n_trips  total_wins   valid_p50_n  p50_med(ms)  min(ms)    max(ms)    p90(ms)   
+----------------------------------------------------------------------------------------
+0add791d   5        15           13           75.72        32.19      110.40     107.54    
+60cb0262   2        6            2            32.14        31.90      32.38      32.38     
+6fac3a3e   2        6            4            32.20        31.91      32.44      32.44     
+93c2974b   3        9            5            32.30        32.14      32.37      32.37     
+9a249526   4        12           4            32.18        32.12      32.31      32.31     
+be07d2b4   1        3            1            31.64        31.64      31.64      31.64     
+e3acc130   1        3            1            32.21        32.21      32.21      32.21     
+e7dee568   2        6            2            32.18        32.12      32.24      32.24     
+f3bb0a4e   9        27           26           41.79        31.90      182.86     124.68    
+
+--- b_valid Separation Statistics across 87 Windows ---
+b_valid == 0.0: total 24 windows (across 8 trips), valid p50 = 24, median = 73.88 ms
+b_valid == 1.0: total 61 windows (across 21 trips), valid p50 = 33, median = 32.24 ms
+b_valid mixed: total 2 windows, valid p50 = 1

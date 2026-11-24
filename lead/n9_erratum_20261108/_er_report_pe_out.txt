@@ -1,0 +1,88 @@
+== D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+R0 SHA256=73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 bytes=4825360 MACHINE=0x014C NSEC=5 IMAGEBASE=0x00400000
+SEC .text    VA=0x00401000 VSZ=0x3DF38D RAWPTR=0x001000 RAWSZ=0x3E0000 
+SEC .rdata   VA=0x007E1000 VSZ=0x030074 RAWPTR=0x3E1000 RAWSZ=0x031000 
+SEC .data    VA=0x00812000 VSZ=0x367BE4 RAWPTR=0x412000 RAWSZ=0x06C000 ZEROINIT_TAIL=YES tail_len=0x2FBBE4
+SEC .rsrc    VA=0x00B7A000 VSZ=0x018128 RAWPTR=0x47E000 RAWSZ=0x019000 
+SEC .detour  VA=0x00B93000 VSZ=0x002718 RAWPTR=0x497000 RAWSZ=0x003000 
+SEC HAS_INDEPENDENT_.bss_SECTION=False
+-- VA 判定 --
+CHK VA=0x00B0CD48 P6 争议地址    sec=.data d=0x2FAD48 d>=RAWSZ(0x06C000) -> 文件镜像无字节（零初始化域）qword=不可读
+CHK VA=0x00B0CD78 fdiv 除数    sec=.data d=0x2FAD78 d>=RAWSZ(0x06C000) -> 文件镜像无字节（零初始化域）qword=不可读
+CHK VA=0x00B0CD88 call 实参1   sec=.data d=0x2FAD88 d>=RAWSZ(0x06C000) -> 文件镜像无字节（零初始化域）qword=不可读
+CHK VA=0x00B0CD8C call 实参2   sec=.data d=0x2FAD8C d>=RAWSZ(0x06C000) -> 文件镜像无字节（零初始化域）qword=不可读
+CHK VA=0x00B0CE18 fmul 暂存槽   sec=.data d=0x2FAE18 d>=RAWSZ(0x06C000) -> 文件镜像无字节（零初始化域）qword=不可读
+CHK VA=0x007E1728 fld 常量     sec=.rdata d=0x000728 off=0x3E1728 qword=0x404E000000000000 double=60.0
+CHK VA=0x007E1738 已闭常量       sec=.rdata d=0x000738 off=0x3E1738 qword=0x3FE0000000000000 double=0.5
+CHK VA=0x007E27F8 校验锚点       sec=.rdata d=0x0017F8 off=0x3E27F8 qword=0x408C200000000000 double=900.0
+TAIL .data 零初始化尾 VA 域=[0x0087E000,0x00B79BE4) 尾长=0x2FBBE4；0xB0CD48 线性假想文件偏移=0x70CD48（超出该节 RAW 末端 0x28ED48 字节；全文件=0x49A110）
+-- 写者链指令字节（文件镜像直读）--
+BYT 0x006D1BB0 fld qword [0x7E1728] got=dd0528177e00 exp=dd0528177e00 OK
+BYT 0x006D1BB6 fdiv qword [0xB0CD78] got=dc3578cdb000 exp=dc3578cdb000 OK
+BYT 0x006D1BBC mov eax,[0xB0CD8C]   got=a18ccdb000 exp=a18ccdb000 OK
+BYT 0x006D1BC1 mov ecx,[0xB0CD88]   got=8b0d88cdb000 exp=8b0d88cdb000 OK
+BYT 0x006D1BC9 fstp qword [0xB0CE18] got=dd1d18ceb000 exp=dd1d18ceb000 OK
+BYT 0x006D1BCF call 操作码             got=e8 exp=e8 OK
+BYT 0x006D1BD4 fmul qword [0xB0CE18] got=dc0d18ceb000 exp=dc0d18ceb000 OK
+BYT 0x006D1BDA add esp,8            got=83c408 exp=83c408 OK
+BYT 0x006D1BDD fstp qword [0xB0CD48] got=dd1d48cdb000 exp=dd1d48cdb000 OK
+CALL E8@0x6D1BCF rel32=0xFFDF90DC(-2125604) target=0x004CACB0 OK(target=0x4CACB0)
+-- 全文件 disp32 0x48CDB000 (=0xB0CD48) 扫描 --
+SCAN raw hits=12
+HIT off=0x2D1BDF VA=0x006D1BDF sec=.text pre2=dd1d -> fstp 写
+HIT off=0x2D1FB1 VA=0x006D1FB1 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D2105 VA=0x006D2105 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D21E4 VA=0x006D21E4 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D24E0 VA=0x006D24E0 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D8D13 VA=0x006D8D13 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D9713 VA=0x006D9713 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D9C79 VA=0x006D9C79 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D9E07 VA=0x006D9E07 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2DB097 VA=0x006DB097 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2DBC73 VA=0x006DBC73 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2DBC95 VA=0x006DBC95 sec=.text pre2=dc0d -> fmul 读
+
+== D:\Project\ra2-campaign-forge\ra2bench\gamemd.exe
+R0 SHA256=73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 bytes=4825360 MACHINE=0x014C NSEC=5 IMAGEBASE=0x00400000
+SEC .text    VA=0x00401000 VSZ=0x3DF38D RAWPTR=0x001000 RAWSZ=0x3E0000 
+SEC .rdata   VA=0x007E1000 VSZ=0x030074 RAWPTR=0x3E1000 RAWSZ=0x031000 
+SEC .data    VA=0x00812000 VSZ=0x367BE4 RAWPTR=0x412000 RAWSZ=0x06C000 ZEROINIT_TAIL=YES tail_len=0x2FBBE4
+SEC .rsrc    VA=0x00B7A000 VSZ=0x018128 RAWPTR=0x47E000 RAWSZ=0x019000 
+SEC .detour  VA=0x00B93000 VSZ=0x002718 RAWPTR=0x497000 RAWSZ=0x003000 
+SEC HAS_INDEPENDENT_.bss_SECTION=False
+-- VA 判定 --
+CHK VA=0x00B0CD48 P6 争议地址    sec=.data d=0x2FAD48 d>=RAWSZ(0x06C000) -> 文件镜像无字节（零初始化域）qword=不可读
+CHK VA=0x00B0CD78 fdiv 除数    sec=.data d=0x2FAD78 d>=RAWSZ(0x06C000) -> 文件镜像无字节（零初始化域）qword=不可读
+CHK VA=0x00B0CD88 call 实参1   sec=.data d=0x2FAD88 d>=RAWSZ(0x06C000) -> 文件镜像无字节（零初始化域）qword=不可读
+CHK VA=0x00B0CD8C call 实参2   sec=.data d=0x2FAD8C d>=RAWSZ(0x06C000) -> 文件镜像无字节（零初始化域）qword=不可读
+CHK VA=0x00B0CE18 fmul 暂存槽   sec=.data d=0x2FAE18 d>=RAWSZ(0x06C000) -> 文件镜像无字节（零初始化域）qword=不可读
+CHK VA=0x007E1728 fld 常量     sec=.rdata d=0x000728 off=0x3E1728 qword=0x404E000000000000 double=60.0
+CHK VA=0x007E1738 已闭常量       sec=.rdata d=0x000738 off=0x3E1738 qword=0x3FE0000000000000 double=0.5
+CHK VA=0x007E27F8 校验锚点       sec=.rdata d=0x0017F8 off=0x3E27F8 qword=0x408C200000000000 double=900.0
+TAIL .data 零初始化尾 VA 域=[0x0087E000,0x00B79BE4) 尾长=0x2FBBE4；0xB0CD48 线性假想文件偏移=0x70CD48（超出该节 RAW 末端 0x28ED48 字节；全文件=0x49A110）
+-- 写者链指令字节（文件镜像直读）--
+BYT 0x006D1BB0 fld qword [0x7E1728] got=dd0528177e00 exp=dd0528177e00 OK
+BYT 0x006D1BB6 fdiv qword [0xB0CD78] got=dc3578cdb000 exp=dc3578cdb000 OK
+BYT 0x006D1BBC mov eax,[0xB0CD8C]   got=a18ccdb000 exp=a18ccdb000 OK
+BYT 0x006D1BC1 mov ecx,[0xB0CD88]   got=8b0d88cdb000 exp=8b0d88cdb000 OK
+BYT 0x006D1BC9 fstp qword [0xB0CE18] got=dd1d18ceb000 exp=dd1d18ceb000 OK
+BYT 0x006D1BCF call 操作码             got=e8 exp=e8 OK
+BYT 0x006D1BD4 fmul qword [0xB0CE18] got=dc0d18ceb000 exp=dc0d18ceb000 OK
+BYT 0x006D1BDA add esp,8            got=83c408 exp=83c408 OK
+BYT 0x006D1BDD fstp qword [0xB0CD48] got=dd1d48cdb000 exp=dd1d48cdb000 OK
+CALL E8@0x6D1BCF rel32=0xFFDF90DC(-2125604) target=0x004CACB0 OK(target=0x4CACB0)
+-- 全文件 disp32 0x48CDB000 (=0xB0CD48) 扫描 --
+SCAN raw hits=12
+HIT off=0x2D1BDF VA=0x006D1BDF sec=.text pre2=dd1d -> fstp 写
+HIT off=0x2D1FB1 VA=0x006D1FB1 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D2105 VA=0x006D2105 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D21E4 VA=0x006D21E4 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D24E0 VA=0x006D24E0 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D8D13 VA=0x006D8D13 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D9713 VA=0x006D9713 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D9C79 VA=0x006D9C79 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2D9E07 VA=0x006D9E07 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2DB097 VA=0x006DB097 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2DBC73 VA=0x006DBC73 sec=.text pre2=dc0d -> fmul 读
+HIT off=0x2DBC95 VA=0x006DBC95 sec=.text pre2=dc0d -> fmul 读
+

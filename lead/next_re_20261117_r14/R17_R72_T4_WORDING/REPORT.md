@@ -1,0 +1,16 @@
+Q1 | 逐数出处: 23,791=R16_MEASURE_EVID675/REPORT.md:35(primary 权威行)+FACT_INDEX.tsv(R17_R71 F24 行25)+R17_R70_T1_REPRO/REPORT.md:140 ; 1,383,739,755=R16_MEASURE_EVID675/REPORT.md:35+FACT_INDEX.tsv(R17_R71 F24 行25)+R17_R70_T1_REPRO/REPORT.md:140 ; 24,693=R17_R70_T1_REPRO/scale_vs_baseline.json:4(files_total)+R17_R70_T1_REPRO/REPORT.md:143 ; 1,586,613,509=R17_R70_T1_REPRO/scale_vs_baseline.json:5(bytes_total)+R17_R70_T1_REPRO/REPORT.md:143 ; 80,580,525=R17_R70_T1_REPRO/scale_vs_baseline.json:10(artifacts[0].bytes)+R17_R70_T1_REPRO/REPORT.md:146+GOAL_THREE_TARGETS_20261018.md:41456 ; 24,692=R17_R70_T1_REPRO/scale_vs_baseline.json:13(files_clean)+R17_R70_T1_REPRO/REPORT.md:150+GOAL_THREE_TARGETS_20261018.md:41478 ; 1,506,032,984=R17_R70_T1_REPRO/scale_vs_baseline.json:14(bytes_clean)+R17_R70_T1_REPRO/REPORT.md:150+GOAL_THREE_TARGETS_20261018.md:41478 ; 1.506033 GB=R17_R70_T1_REPRO/scale_vs_baseline.json:15(GB_decimal_clean)+R17_R70_T1_REPRO/REPORT.md:150 ; 1.402603 GiB=R17_R70_T1_REPRO/scale_vs_baseline.json:16(GiB_clean)+R17_R70_T1_REPRO/REPORT.md:150 ; 无出处项: 无
+Q2 | 1506032984B = 1.506033 GB / 1.402603 GiB ; 1383739755B = 1.38374 GB / 1.288708 GiB | 与文一致: 1506032984B 的 1.506033 GB、1.402603 GiB（保留 6 位）与候选文字完全吻合；1383739755B÷1024³=1.288708 GiB≈1.29，÷1e9=1.38374 GB≈1.38，故「当时按 /1024³ 记作 1.29 实为 GiB」成立（mev675.py:281 用 total/1024/1024/1024 却标为 GB）。两减法亦对: 24693−1=24692；1586613509−80580525=1506032984。
+Q3 | 「历史值也被污染」成立吗: 不成立 | 依据=23,791 / 1,383,739,755 出自 R16_MEASURE_EVID675/REPORT.md:35（该文件 mtime 实测 2026-11-21 12:07:43），R17_R70_T1_REPRO/REPORT.md:140 将该行明确标注为「无产物」；而 _hits_primary.tsv 的 mtime 实测为 2026-11-22 11:53:46，系次日 search/judge 事故时新建（GOAL_THREE_TARGETS_20261018.md:41455-41456）。23,791 测量时该产物尚未存在，故不能被自身产物污染；自污染只成立于 2026-11-22 的 24,693 / 1,586,613,509 复测。候选文字把「被度量自身产物污染」作为「规模数」的统称并紧接历史值，属过度声称。
+Q4 | 误读风险: 有 ; 最小修补建议=把「剔除后为 24,692 文件」改为「仅剔除 `_hits_primary.tsv` 这一个文件后为 24,692 文件」（并可加「未逐项核实其他自身产物」），以免被读成「不含任何自身产物」的干净值——实际只剔了一个文件。
+Q5 | 异常字符: U+200B ZERO WIDTH SPACE 一处——位于候选文字第 16 行「扩展名」的「扩」与「展」之间（卡文件原始行第 4 个字符；去掉 blockquote『> 』后为该行第 2 个字符）。未发现 U+FEFF/U+00A0。另注: 第 13 行「1024³」中 U+00B3 上标 3 为合法数学记号，非异常不可见字符。
+OVERALL | 需改后再写；必改项: ①把「被度量自身产物污染」限定为仅 2026-11-22 复测、不得覆盖历史值 23,791（Q3 不成立）；②删除「扩展名」中的 U+200B（Q5）；③「剔除后」改「仅剔除该文件后」避免「全干净值」误读（Q4）。Q1 九数均有出处、Q2 换算全部一致，无需改。
+
+--- 附: 证据逐字引用与出处（备查） ---
+- 候选文字: R40-T4-WORDING.md:12-16；不可见字符在 :16「扩|展名」。
+- F24 现值: R17_R71_FACTINDEX_V514/FACT_INDEX.tsv:25。
+- 历史值原始行: R16_MEASURE_EVID675/REPORT.md:35「| **primary（卡面指定，权威）** | .tsv .txt .json .md .csv .log | **23,791** | **1,383,739,755 B = 1.29 GB** | 未超限 | 单趟 rg |」。
+- 「1.29」实为 GiB: mev675.py:281「f"= {total/1024/1024/1024:.2f} GB"」（÷1024³ 却标 GB）。
+- 复测数: R17_R70_T1_REPRO/scale_vs_baseline.json:4-16（files_total=24693, bytes_total=1586613509, artifacts[0].bytes=80580525, files_clean=24692, bytes_clean=1506032984, GB_decimal_clean=1.506033, GiB_clean=1.402603）；REPORT.md:140-150 对照表。
+- 时间线: REPORT.md(mtime 2026-11-21 12:07:43) / R17_R70_T1_REPRO/REPORT.md:140「2026-11-21 12:07（正文） | 23,791 | 1,383,739,755 | 无产物」；_hits_primary.tsv(mtime 2026-11-22 11:53:46)；GOAL_THREE_TARGETS_20261018.md:41453-41456 事故叙述。
+- 只排除自身产物: mev675.py:259-261「dirs[:] = [d for d in dirs if d.lower() != ".git" and ... != out_excl]」。
+- 未复核每一个字节: GOAL_THREE_TARGETS_20261018.md:41497-41498（24,692 为执行员测量，Lead 核方法与产物、未逐字节复核）。

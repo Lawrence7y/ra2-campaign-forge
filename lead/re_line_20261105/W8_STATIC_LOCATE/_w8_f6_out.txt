@@ -1,0 +1,460 @@
+==============================================================================
+[A] 自证
+SHA256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+SIZE_BYTES 4825360
+IMAGEBASE 0x400000
+COVERAGE pct=99.99837567729335 insns=1394120 resync=66 .text_size=4063232
+==============================================================================
+[B] F6-1: 函数边界 0x432750..0x432A50（含 0x432A35），IAT 判名，调用者
+-- head/tail
+00432750  83ec68                 sub esp, 0x68
+00432753  53                     push ebx
+00432754  55                     push ebp
+00432755  56                     push esi
+00432756  8bf1                   mov esi, ecx
+00432758  57                     push edi
+00432759  33ed                   xor ebp, ebp
+0043275B  8b7e20                 mov edi, dword ptr [esi + 0x20]
+0043275E  3bfd                   cmp edi, ebp
+00432760  7413                   je 0x432775
+00432762  8bcf                   mov ecx, edi
+00432764  e877732900             call 0x6c9ae0
+00432A35  a108738800             mov eax, dword ptr [0x887308]
+00432A3A  8b401c                 mov eax, dword ptr [eax + 0x1c]
+00432A3D  50                     push eax
+00432A3E  ff15a8157e00           call dword ptr [0x7e15a8]
+00432A44  894608                 mov dword ptr [esi + 8], eax
+00432A47  5f                     pop edi
+00432A48  5e                     pop esi
+00432A49  5d                     pop ebp
+00432A4A  b001                   mov al, 1
+00432A4C  5b                     pop ebx
+00432A4D  83c468                 add esp, 0x68
+00432A50  c20400                 ret 4
+00432A53  90                     nop 
+00432A54  90                     nop 
+00432A55  90                     nop 
+00432A56  90                     nop 
+00432A57  90                     nop 
+00432A58  90                     nop 
+00432A59  90                     nop 
+00432A5A  90                     nop 
+00432A5B  90                     nop 
+00432A5C  90                     nop 
+00432A5D  90                     nop 
+00432A5E  90                     nop 
+00432A5F  90                     nop 
+00432A60  56                     push esi
+00432A61  8bf1                   mov esi, ecx
+-- 0x432A16..0x432A35（矩形写入现场：4 个 dword，非 8 个）
+00432A16  8b442414               mov eax, dword ptr [esp + 0x14]
+00432A1A  8b4c2418               mov ecx, dword ptr [esp + 0x18]
+00432A1E  8b54241c               mov edx, dword ptr [esp + 0x1c]
+00432A22  8b7c2420               mov edi, dword ptr [esp + 0x20]
+00432A26  8d5e10                 lea ebx, [esi + 0x10]
+00432A29  894610                 mov dword ptr [esi + 0x10], eax
+00432A2C  894b04                 mov dword ptr [ebx + 4], ecx
+00432A2F  895308                 mov dword ptr [ebx + 8], edx
+00432A32  897b0c                 mov dword ptr [ebx + 0xc], edi
+IAT 0x7E14C4 -> ('USER32.dll', 'GetClientRect')
+IAT 0x7E11BC -> ('KERNEL32.dll', 'CreateFileA')
+IAT 0x7E11C0 -> ('KERNEL32.dll', 'SetFilePointer')
+IAT 0x7E11E0 -> ('KERNEL32.dll', 'CloseHandle')
+IAT 0x7E1590 -> ('binkw32.dll', '_BinkSetSoundSystem@8')
+IAT 0x7E1594 -> ('binkw32.dll', '_BinkOpenDirectSound@4')
+IAT 0x7E1598 -> ('binkw32.dll', '_BinkGetError@0')
+IAT 0x7E159C -> ('binkw32.dll', '_BinkOpen@8')
+IAT 0x7E15A0 -> ('binkw32.dll', '_BinkSetVolume@8')
+IAT 0x7E15A4 -> ('binkw32.dll', '_BinkClose@4')
+IAT 0x7E15A8 -> ('binkw32.dll', '_BinkDDSurfaceType@4')
+str 0x818B2C: 'Bink Error: %s\n'
+str 0x818B40: 'me bink movie\n'
+DIRECT CALLERS of 0x432750: ['0x4326b3', '0x4326e9']
+-- wrapper ctor 0x4326C0
+004326C0  8b542404               mov edx, dword ptr [esp + 4]
+004326C4  56                     push esi
+004326C5  8bf1                   mov esi, ecx
+004326C7  33c0                   xor eax, eax
+004326C9  8b4c240c               mov ecx, dword ptr [esp + 0xc]
+004326CD  52                     push edx
+004326CE  894e0c                 mov dword ptr [esi + 0xc], ecx
+004326D1  8bce                   mov ecx, esi
+004326D3  8806                   mov byte ptr [esi], al
+004326D5  894604                 mov dword ptr [esi + 4], eax
+004326D8  894620                 mov dword ptr [esi + 0x20], eax
+004326DB  c74628ffffffff         mov dword ptr [esi + 0x28], 0xffffffff
+004326E2  c6462c01               mov byte ptr [esi + 0x2c], 1
+004326E6  88462d                 mov byte ptr [esi + 0x2d], al
+004326E9  e862000000             call 0x432750
+004326EE  8bc6                   mov eax, esi
+004326F0  5e                     pop esi
+004326F1  c20800                 ret 8
+callers of 0x4326C0: ['0x5c0878', '0x5cc7f6']
+callers of 0x432700: ['0x5beef3', '0x5c0613', '0x5c0a43', '0x5cc833', '0x5cec83']
+==============================================================================
+[C] F6-2: DSurface+0x1C 类型
+vtable 0x7E85D4 COL=0x800260  TD name='.?AVDSurface@@'
+DSurface vtable write sites: 6 -> ['0x4ba5d0', '0x4ba6b9', '0x4ba740', '0x4ba814', '0x4bac86', '0x4c1ac6']
+-- DSurface ctor 0x4BA5A0 关键行
+004BA5A0  8b442404               mov eax, dword ptr [esp + 4]
+004BA5A4  53                     push ebx
+004BA5A5  55                     push ebp
+004BA5A6  56                     push esi
+004BA5A7  8bf1                   mov esi, ecx
+004BA5A9  57                     push edi
+004BA5AA  8b4c2418               mov ecx, dword ptr [esp + 0x18]
+004BA5AE  33db                   xor ebx, ebx
+004BA5B0  8d6e1c                 lea ebp, [esi + 0x1c]
+004BA5B3  6a6c                   push 0x6c
+004BA5B5  894604                 mov dword ptr [esi + 4], eax
+004BA5B8  894e08                 mov dword ptr [esi + 8], ecx
+004BA5BB  895e0c                 mov dword ptr [esi + 0xc], ebx
+004BA5BE  895e10                 mov dword ptr [esi + 0x10], ebx
+004BA5C1  895e14                 mov dword ptr [esi + 0x14], ebx
+004BA5C4  885e18                 mov byte ptr [esi + 0x18], bl
+004BA5C7  885e19                 mov byte ptr [esi + 0x19], bl
+004BA5CA  895d00                 mov dword ptr [ebp], ebx
+004BA5CD  895e20                 mov dword ptr [esi + 0x20], ebx
+004BA5D0  c706d4857e00           mov dword ptr [esi], 0x7e85d4
+004BA5D6  e83ce83000             call 0x7c8e17
+004BA645  a194008a00             mov eax, dword ptr [0x8a0094]
+004BA64A  8b5620                 mov edx, dword ptr [esi + 0x20]
+004BA64D  53                     push ebx
+004BA64E  55                     push ebp
+004BA64F  8b08                   mov ecx, dword ptr [eax]
+004BA651  52                     push edx
+004BA652  50                     push eax
+004BA653  ff5118                 call dword ptr [ecx + 0x18]
+004BA656  395d00                 cmp dword ptr [ebp], ebx
+004BA659  743d                   je 0x4ba698
+004BA65B  8b7e20                 mov edi, dword ptr [esi + 0x20]
+004BA65E  b91b000000             mov ecx, 0x1b
+004BA663  33c0                   xor eax, eax
+004BA665  f3ab                   rep stosd dword ptr es:[edi], eax
+004BA667  8b4620                 mov eax, dword ptr [esi + 0x20]
+004BA66A  c7006c000000           mov dword ptr [eax], 0x6c
+004BA670  8b4500                 mov eax, dword ptr [ebp]
+004BA673  8b5620                 mov edx, dword ptr [esi + 0x20]
+004BA676  8b08                   mov ecx, dword ptr [eax]
+004BA678  52                     push edx
+004BA679  50                     push eax
+004BA67A  ff5158                 call dword ptr [ecx + 0x58]
+004BA67D  8b4620                 mov eax, dword ptr [esi + 0x20]
+004BA680  8b4854                 mov ecx, dword ptr [eax + 0x54]
+004BA683  83c107                 add ecx, 7
+004BA686  c1e903                 shr ecx, 3
+004BA689  894e10                 mov dword ptr [esi + 0x10], ecx
+004BA68C  8b5068                 mov edx, dword ptr [eax + 0x68]
+004BA68F  c1ea0e                 shr edx, 0xe
+004BA692  80e201                 and dl, 1
+004BA695  885619                 mov byte ptr [esi + 0x19], dl
+004BA698  8bc6                   mov eax, esi
+004BA69A  5f                     pop edi
+004BA69B  5e                     pop esi
+004BA69C  5d                     pop ebp
+004BA69D  5b                     pop ebx
+-- Bink 消费方 0x432A35..0x432A44
+00432A35  a108738800             mov eax, dword ptr [0x887308]
+00432A3A  8b401c                 mov eax, dword ptr [eax + 0x1c]
+00432A3D  50                     push eax
+00432A3E  ff15a8157e00           call dword ptr [0x7e15a8]
+00432A44  894608                 mov dword ptr [esi + 8], eax
+00432A47  5f                     pop edi
+IAT 0x7E15A8 -> ('binkw32.dll', '_BinkDDSurfaceType@4')
+==============================================================================
+[D] F6-3: 可见世界矩形
+-- TacticalClass vtable 0x7F4348 槽位
+vtable[23] (+0x5C) = 0x006D2540
+vtable[5] (+0x14) = 0x006DBD20
+vtable[8] (+0x20) = 0x006DC470
+-- ctor 0x6D1C20 关键行（零初始化 +0xB0/0xB4/0xD64..0xD7C，vtable，[A8]=-1）
+006D1C20  53                     push ebx
+006D1C21  56                     push esi
+006D1C22  57                     push edi
+006D1C23  8bf1                   mov esi, ecx
+006D1C25  e846e5d3ff             call 0x410170
+006D1C2A  33db                   xor ebx, ebx
+006D1C2C  c786a8000000ffffffff   mov dword ptr [esi + 0xa8], 0xffffffff
+006D1C36  889eac000000           mov byte ptr [esi + 0xac], bl
+006D1C3C  889ead000000           mov byte ptr [esi + 0xad], bl
+006D1C42  899ec0000000           mov dword ptr [esi + 0xc0], ebx
+006D1C48  899eb0000000           mov dword ptr [esi + 0xb0], ebx
+006D1C4E  899eb4000000           mov dword ptr [esi + 0xb4], ebx
+006D1C54  899eb8000000           mov dword ptr [esi + 0xb8], ebx
+006D1C5A  899ebc000000           mov dword ptr [esi + 0xbc], ebx
+006D1C60  c786c40000000000f03f   mov dword ptr [esi + 0xc4], 0x3ff00000
+006D1CAA  899e640d0000           mov dword ptr [esi + 0xd64], ebx
+006D1CB0  899e680d0000           mov dword ptr [esi + 0xd68], ebx
+006D1CB6  899e6c0d0000           mov dword ptr [esi + 0xd6c], ebx
+006D1CBC  899e700d0000           mov dword ptr [esi + 0xd70], ebx
+006D1CC2  899e740d0000           mov dword ptr [esi + 0xd74], ebx
+006D1CC8  899e780d0000           mov dword ptr [esi + 0xd78], ebx
+006D1CCE  c6867c0d000001         mov byte ptr [esi + 0xd7c], 1
+006D1CD5  889e7d0d0000           mov byte ptr [esi + 0xd7d], bl
+006D1CDB  889e7e0d0000           mov byte ptr [esi + 0xd7e], bl
+006D1CE1  8b1560cdb000           mov edx, dword ptr [0xb0cd60]
+006D1CE7  8d8e800d0000           lea ecx, [esi + 0xd80]
+006D1CED  8996800d0000           mov dword ptr [esi + 0xd80], edx
+006D1CF3  a164cdb000             mov eax, dword ptr [0xb0cd64]
+006D1CF8  894104                 mov dword ptr [ecx + 4], eax
+006D1CFB  8b1568cdb000           mov edx, dword ptr [0xb0cd68]
+006D1D54  c70648437f00           mov dword ptr [esi], 0x7f4348
+006D1D5A  c746042c437f00         mov dword ptr [esi + 4], 0x7f432c
+006D1E1E  893524738800           mov dword ptr [0x887324], esi
+006D1E24  8bc6                   mov eax, esi
+006D1E26  5f                     pop edi
+006D1E27  5e                     pop esi
+006D1E28  5b                     pop ebx
+006D1E29  c3                     ret 
+-- 实例创建/销毁点（new 0xE18 + ctor 调用者 + 写 0x887324 的 W 点）
+callers of ctor 0x6D1C20: ['0x52c694', '0x599d80', '0x6853b4', '0x687617', '0x6bf84f']
+REFS 0x887324 total=461 W=11
+  0052C69B W mov dword ptr [0x887324], eax
+  0052C6BC W mov dword ptr [0x887324], ebx
+  0053498B W mov dword ptr [0x887324], ebx
+  00599D8B W mov dword ptr [0x887324], eax
+  0067E8EE W mov dword ptr [0x887324], ebx
+  006853BF W mov dword ptr [0x887324], eax
+  00687627 W mov dword ptr [0x887324], eax
+  006BEA10 W mov dword ptr [0x887324], ebx
+  006D1E1E W mov dword ptr [0x887324], esi
+  006D1E9B W mov dword ptr [0x887324], 0
+  006DC48E W mov dword ptr [0x887324], 0
+-- 逐帧驱动：MainLogicFrame 0x55D847
+0055D83F  8b0d24738800           mov ecx, dword ptr [0x887324]
+0055D845  8b11                   mov edx, dword ptr [ecx]
+0055D847  ff525c                 call dword ptr [edx + 0x5c]
+0055D84A  b9e8f78700             mov ecx, 0x87f7e8
+-- 视口像素原点写者 0x6D8B30 关键行
+006D8B30  83ec18                 sub esp, 0x18
+006D8B33  56                     push esi
+006D8B34  8bf1                   mov esi, ecx
+006D8B36  57                     push edi
+006D8B37  c744241c00000000       mov dword ptr [esp + 0x1c], 0
+006D8B3F  8b8e640d0000           mov ecx, dword ptr [esi + 0xd64]
+006D8B45  8bbe680d0000           mov edi, dword ptr [esi + 0xd68]
+006D8B4B  898eb0000000           mov dword ptr [esi + 0xb0], ecx
+006D8B51  89beb4000000           mov dword ptr [esi + 0xb4], edi
+006D8B57  a130ceb000             mov eax, dword ptr [0xb0ce30]
+006D8B5C  99                     cdq 
+006D8B5D  2bc2                   sub eax, edx
+006D8B5F  d1f8                   sar eax, 1
+006D8B61  2bc8                   sub ecx, eax
+006D8B63  898eb0000000           mov dword ptr [esi + 0xb0], ecx
+006D8B69  a134ceb000             mov eax, dword ptr [0xb0ce34]
+006D8B6E  99                     cdq 
+006D8B6F  2bc2                   sub eax, edx
+006D8B71  8b96b0000000           mov edx, dword ptr [esi + 0xb0]
+006D8B77  8bc8                   mov ecx, eax
+006D8B79  83ea3c                 sub edx, 0x3c
+006D8B7C  d1f9                   sar ecx, 1
+006D8B7E  8bc7                   mov eax, edi
+006D8B80  89542408               mov dword ptr [esp + 8], edx
+006D8B84  db442408               fild dword ptr [esp + 8]
+006D8B88  2bc1                   sub eax, ecx
+006D8B8A  8d96e40d0000           lea edx, [esi + 0xde4]
+006D8B90  8986b4000000           mov dword ptr [esi + 0xb4], eax
+006D8B96  83c0e2                 add eax, -0x1e
+006D8BF0  8986800d0000           mov dword ptr [esi + 0xd80], eax
+006D8BF6  8bc1                   mov eax, ecx
+006D8BF8  99                     cdq 
+006D8BF9  81e2ff000000           and edx, 0xff
+006D8BFF  03c2                   add eax, edx
+006D8C01  c1f808                 sar eax, 8
+006D8C04  8986840d0000           mov dword ptr [esi + 0xd84], eax
+006D8C0A  8b0d30ceb000           mov ecx, dword ptr [0xb0ce30]
+006D8C10  b889888888             mov eax, 0x88888889
+006D8C15  f7e9                   imul ecx
+006D8C17  03d1                   add edx, ecx
+006D8C19  b889888888             mov eax, 0x88888889
+006D8C1E  c1fa05                 sar edx, 5
+006D8C21  8bca                   mov ecx, edx
+006D8C23  c1e91f                 shr ecx, 0x1f
+006D8C26  8d540a02               lea edx, [edx + ecx + 2]
+006D8C2A  8996880d0000           mov dword ptr [esi + 0xd88], edx
+006D8C30  8b0d34ceb000           mov ecx, dword ptr [0xb0ce34]
+006D8C36  f7e9                   imul ecx
+006D8C38  03d1                   add edx, ecx
+006D8C3A  c1fa03                 sar edx, 3
+006D8C3D  8bc2                   mov eax, edx
+006D8C3F  c1e81f                 shr eax, 0x1f
+006D8C42  8d4c0204               lea ecx, [edx + eax + 4]
+006D8C46  898e8c0d0000           mov dword ptr [esi + 0xd8c], ecx
+006D8C4C  5e                     pop esi
+006D8C4D  83c418                 add esp, 0x18
+-- 读方1：TacticalClass::IsVisible 0x6D2140 关键行
+006D2140  83ec08                 sub esp, 8
+006D2143  53                     push ebx
+006D2144  8b5c2410               mov ebx, dword ptr [esp + 0x10]
+006D2202  8b8db0000000           mov ecx, dword ptr [ebp + 0xb0]
+006D2208  8badb4000000           mov ebp, dword ptr [ebp + 0xb4]
+006D220E  8b38                   mov edi, dword ptr [eax]
+006D2210  8b7004                 mov esi, dword ptr [eax + 4]
+006D2213  2bf9                   sub edi, ecx
+006D2215  2bf5                   sub esi, ebp
+006D2217  8938                   mov dword ptr [eax], edi
+006D2219  8bcf                   mov ecx, edi
+006D221B  897004                 mov dword ptr [eax + 4], esi
+006D221E  8bc6                   mov eax, esi
+006D2220  5f                     pop edi
+006D2221  5e                     pop esi
+006D2222  5d                     pop ebp
+006D2223  81f998feffff           cmp ecx, 0xfffffe98
+006D2229  5b                     pop ebx
+006D222A  7d08                   jge 0x6d2234
+006D222C  32c0                   xor al, al
+006D222E  83c408                 add esp, 8
+006D2231  c20800                 ret 8
+006D2234  8b1530ceb000           mov edx, dword ptr [0xb0ce30]
+006D223A  81c268010000           add edx, 0x168
+006D2240  3bca                   cmp ecx, edx
+006D2242  7e08                   jle 0x6d224c
+006D2244  32c0                   xor al, al
+006D2246  83c408                 add esp, 8
+006D2249  c20800                 ret 8
+006D224C  3d4cffffff             cmp eax, 0xffffff4c
+006D2251  7d08                   jge 0x6d225b
+006D2253  32c0                   xor al, al
+006D2255  83c408                 add esp, 8
+006D2258  c20800                 ret 8
+006D225B  8b0d34ceb000           mov ecx, dword ptr [0xb0ce34]
+006D2261  81c1b4000000           add ecx, 0xb4
+006D2267  3bc1                   cmp eax, ecx
+006D2269  0f9ec0                 setle al
+006D226C  83c408                 add esp, 8
+006D226F  c20800                 ret 8
+direct callers of IsVisible 0x6D2140: 139
+-- 读方2：格矩形判定 0x6D8AE0（CellInViewport 形态）
+006D8AE0  8b542404               mov edx, dword ptr [esp + 4]
+006D8AE4  56                     push esi
+006D8AE5  0fbf02                 movsx eax, word ptr [edx]
+006D8AE8  0fbf7202               movsx esi, word ptr [edx + 2]
+006D8AEC  8b91800d0000           mov edx, dword ptr [ecx + 0xd80]
+006D8AF2  3bc2                   cmp eax, edx
+006D8AF4  7c2a                   jl 0x6d8b20
+006D8AF6  57                     push edi
+006D8AF7  8bb9880d0000           mov edi, dword ptr [ecx + 0xd88]
+006D8AFD  03fa                   add edi, edx
+006D8AFF  3bc7                   cmp eax, edi
+006D8B01  5f                     pop edi
+006D8B02  7d1c                   jge 0x6d8b20
+006D8B04  8b81840d0000           mov eax, dword ptr [ecx + 0xd84]
+006D8B0A  3bf0                   cmp esi, eax
+006D8B0C  7c12                   jl 0x6d8b20
+006D8B0E  8b898c0d0000           mov ecx, dword ptr [ecx + 0xd8c]
+006D8B14  03c8                   add ecx, eax
+006D8B16  3bf1                   cmp esi, ecx
+006D8B18  7d06                   jge 0x6d8b20
+006D8B1A  b001                   mov al, 1
+006D8B1C  5e                     pop esi
+006D8B1D  c20400                 ret 4
+006D8B20  32c0                   xor al, al
+006D8B22  5e                     pop esi
+006D8B23  c20400                 ret 4
+-- 滚动当前/目标 [T+0xD64/0xD68]/[T+0xD74/0xD78] 的 Tactical 族写点
+W sites +0xD64 curX: total=11  Tactical族(0x6D1C00..0x6DC500)=7 -> ['0x6d1caa', '0x6d2663', '0x6d275e', '0x6d5fd0', '0x6d6040', '0x6d613f', '0x6dbdc7']
+W sites +0xD68 curY: total=10  Tactical族(0x6D1C00..0x6DC500)=7 -> ['0x6d1cb0', '0x6d266f', '0x6d276a', '0x6d5fdc', '0x6d604c', '0x6d614d', '0x6dbdd3']
+W sites +0xD74 tgtX: total=12  Tactical族(0x6D1C00..0x6DC500)=8 -> ['0x6d1cc2', '0x6d2669', '0x6d2764', '0x6d5fd6', '0x6d6046', '0x6d6145', '0x6d861a', '0x6dbdcd']
+W sites +0xD78 tgtY: total=11  Tactical族(0x6D1C00..0x6DC500)=8 -> ['0x6d1cc8', '0x6d2675', '0x6d2770', '0x6d5fe2', '0x6d6052', '0x6d6153', '0x6d8622', '0x6dbdd9']
+W sites +0xB0 viewX: total=196  Tactical族(0x6D1C00..0x6DC500)=5 -> ['0x6d1c48', '0x6d744b', '0x6d8b4b', '0x6d8b63', '0x6db7d9']
+W sites +0xB4 viewY: total=165  Tactical族(0x6D1C00..0x6DC500)=7 -> ['0x6d1c4e', '0x6d42e2', '0x6d434b', '0x6d7460', '0x6d8b51', '0x6d8b90', '0x6db7e9']
+-- 屏幕宽高全局 0xB0CE30/0xB0CE34 写点
+  0x006D1A4C W mov dword ptr [0xb0ce30], eax
+  0x006D5F7E W mov dword ptr [0xb0ce30], ecx
+  0x006D1A51 W mov dword ptr [0xb0ce34], eax
+  0x006D5F87 W mov dword ptr [0xb0ce34], edx
+-- 屏幕矩形源 0x886FA0（W 点）
+  0x0040DA2C W mov dword ptr [0x886fa0], eax
+  0x004A8987 W mov dword ptr [0x886fa0], ecx
+-- 0x6D5F60（Rect→0xB0CE28..34 + 视口同步）关键行
+006D5F60  83ec08                 sub esp, 8
+006D5F63  8b44240c               mov eax, dword ptr [esp + 0xc]
+006D5F67  56                     push esi
+006D5F68  8bf1                   mov esi, ecx
+006D5F6A  8b08                   mov ecx, dword ptr [eax]
+006D5F6C  890d28ceb000           mov dword ptr [0xb0ce28], ecx
+006D5F72  8b5004                 mov edx, dword ptr [eax + 4]
+006D5F75  89152cceb000           mov dword ptr [0xb0ce2c], edx
+006D5F7B  8b4808                 mov ecx, dword ptr [eax + 8]
+006D5F7E  890d30ceb000           mov dword ptr [0xb0ce30], ecx
+006D5F84  8b500c                 mov edx, dword ptr [eax + 0xc]
+006D5F87  891534ceb000           mov dword ptr [0xb0ce34], edx
+006D5F8D  8b8e780d0000           mov ecx, dword ptr [esi + 0xd78]
+006D5F93  8b86740d0000           mov eax, dword ptr [esi + 0xd74]
+006D5F99  8d542404               lea edx, [esp + 4]
+006D5F9D  894c2408               mov dword ptr [esp + 8], ecx
+006D5FA1  52                     push edx
+006D5FA2  8bce                   mov ecx, esi
+006D5FA4  89442408               mov dword ptr [esp + 8], eax
+006D5FA8  e893260000             call 0x6d8640
+006D5FAD  84c0                   test al, al
+006D5FAF  7413                   je 0x6d5fc4
+006D5FB1  a06beda800             mov al, byte ptr [0xa8ed6b]
+006D5FB6  84c0                   test al, al
+006D5FB8  750a                   jne 0x6d5fc4
+006D5FBA  8b442404               mov eax, dword ptr [esp + 4]
+006D5FBE  8b4c2408               mov ecx, dword ptr [esp + 8]
+006D5FC2  eb0c                   jmp 0x6d5fd0
+006D5FC4  8b86740d0000           mov eax, dword ptr [esi + 0xd74]
+006D5FCA  8b8e780d0000           mov ecx, dword ptr [esi + 0xd78]
+006D5FD0  8986640d0000           mov dword ptr [esi + 0xd64], eax
+006D5FD6  8986740d0000           mov dword ptr [esi + 0xd74], eax
+006D5FDC  898e680d0000           mov dword ptr [esi + 0xd68], ecx
+006D5FE2  898e780d0000           mov dword ptr [esi + 0xd78], ecx
+006D5FE8  8bce                   mov ecx, esi
+006D5FEA  e8412b0000             call 0x6d8b30
+006D5FEF  c6867d0d000001         mov byte ptr [esi + 0xd7d], 1
+006D5FF6  5e                     pop esi
+006D5FF7  83c408                 add esp, 8
+callers of 0x6D5F60: ['0x4a89bd', '0x68762c']
+-- 跳视口 0x6D6070 尾部（[D64]=[D74] 立即同步）
+006D613F  89b7640d0000           mov dword ptr [edi + 0xd64], esi
+006D6145  89b7740d0000           mov dword ptr [edi + 0xd74], esi
+006D614B  8bcf                   mov ecx, edi
+006D614D  899f680d0000           mov dword ptr [edi + 0xd68], ebx
+006D6153  899f780d0000           mov dword ptr [edi + 0xd78], ebx
+006D6159  e8d2290000             call 0x6d8b30
+006D615E  c6877d0d000001         mov byte ptr [edi + 0xd7d], 1
+006D6165  5f                     pop edi
+006D6166  5e                     pop esi
+006D6167  5d                     pop ebp
+006D6168  5b                     pop ebx
+006D6169  83c408                 add esp, 8
+callers of 0x6D6070 count: 14
+-- AI 内同步+重算（0x6D2540 体, vtable[23]）
+006D2540  a0f8d5a800             mov al, byte ptr [0xa8d5f8]
+006D2545  83ec14                 sub esp, 0x14
+006D2548  53                     push ebx
+006D2549  32db                   xor bl, bl
+006D254B  56                     push esi
+006D254C  8bf1                   mov esi, ecx
+006D254E  a802                   test al, 2
+006D2550  0f852e020000           jne 0x6d2784
+006D2556  8b86a8000000           mov eax, dword ptr [esi + 0xa8]
+006D255C  8b0d84eda800           mov ecx, dword ptr [0xa8ed84]
+006D2562  3bc1                   cmp eax, ecx
+006D2564  57                     push edi
+006D2565  0f8482010000           je 0x6d26ed
+006D2752  8b86740d0000           mov eax, dword ptr [esi + 0xd74]
+006D2758  8b8e780d0000           mov ecx, dword ptr [esi + 0xd78]
+006D275E  8986640d0000           mov dword ptr [esi + 0xd64], eax
+006D2764  8986740d0000           mov dword ptr [esi + 0xd74], eax
+006D276A  898e680d0000           mov dword ptr [esi + 0xd68], ecx
+006D2770  898e780d0000           mov dword ptr [esi + 0xd78], ecx
+006D2776  8bce                   mov ecx, esi
+006D2778  e8b3630000             call 0x6d8b30
+006D277D  c6867d0d000001         mov byte ptr [esi + 0xd7d], 1
+-- AI 体外的第二重算路径 0x6DBD20（vtable[5]）尾部
+006DBDBB  8b86640d0000           mov eax, dword ptr [esi + 0xd64]
+006DBDC1  8b8e680d0000           mov ecx, dword ptr [esi + 0xd68]
+006DBDC7  8986640d0000           mov dword ptr [esi + 0xd64], eax
+006DBDCD  8986740d0000           mov dword ptr [esi + 0xd74], eax
+006DBDD3  898e680d0000           mov dword ptr [esi + 0xd68], ecx
+006DBDD9  898e780d0000           mov dword ptr [esi + 0xd78], ecx
+006DBDDF  8bce                   mov ecx, esi
+006DBDE1  e84acdffff             call 0x6d8b30
+006DBDE6  c6867d0d000001         mov byte ptr [esi + 0xd7d], 1
+006DBDED  33c0                   xor eax, eax
+006DBDEF  5e                     pop esi
+==============================================================================
+ELAPSED 160.5s

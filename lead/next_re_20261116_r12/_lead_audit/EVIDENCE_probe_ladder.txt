@@ -1,0 +1,54 @@
+==========================================================================================
+CHANNEL A : pure byte regex scan
+==========================================================================================
+hits = 11
+  [ 0] block 0055B8F0  Count=00A8E9B8  Items=00A8E9AC  skip=+0x98  push_esi=True  blockbytes=28
+  [ 1] block 0055B918  Count=008B41A0  Items=008B4194  skip=+0x98  push_esi=False  blockbytes=27
+  [ 2] block 0055B93F  Count=00A8ED50  Items=00A8ED44  skip=+0x98  push_esi=False  blockbytes=27
+  [ 3] block 0055B966  Count=00A8EB50  Items=00A8EB44  skip=+0x98  push_esi=False  blockbytes=27
+  [ 4] block 0055B98D  Count=00A8E3A0  Items=00A8E394  skip=+0x98  push_esi=False  blockbytes=27
+  [ 5] block 0055B9B4  Count=00A83DF8  Items=00A83DEC  skip=+0x98  push_esi=False  blockbytes=27
+  [ 6] block 0055B9DB  Count=008B4118  Items=008B410C  skip=+0x98  push_esi=False  blockbytes=27
+  [ 7] block 0055BA02  Count=00A80218  Items=00A8020C  skip=+0x98  push_esi=False  blockbytes=27
+  [ 8] block 0055BA29  Count=00A8E998  Items=00A8E98C  skip=+0x98  push_esi=False  blockbytes=27
+  [ 9] block 0055BA50  Count=00887398  Items=0088738C  skip=+0x98  push_esi=False  blockbytes=27
+  [10] block 0055BA77  Count=00A8EC48  Items=00A8EC3C  skip=+0x98  push_esi=False  blockbytes=27
+
+==========================================================================================
+CHANNEL B : linear disasm from 0x55B8F0
+==========================================================================================
+blocks = 11, ladder ends at 0055BA9E
+  [ 0] block 0055B8F0  Count=00A8E9B8  Items=00A8E9AC  call[vtbl+0x5C]@0055B912  blocklen=0x28
+  [ 1] block 0055B918  Count=008B41A0  Items=008B4194  call[vtbl+0x5C]@0055B939  blocklen=0x27
+  [ 2] block 0055B93F  Count=00A8ED50  Items=00A8ED44  call[vtbl+0x5C]@0055B960  blocklen=0x27
+  [ 3] block 0055B966  Count=00A8EB50  Items=00A8EB44  call[vtbl+0x5C]@0055B987  blocklen=0x27
+  [ 4] block 0055B98D  Count=00A8E3A0  Items=00A8E394  call[vtbl+0x5C]@0055B9AE  blocklen=0x27
+  [ 5] block 0055B9B4  Count=00A83DF8  Items=00A83DEC  call[vtbl+0x5C]@0055B9D5  blocklen=0x27
+  [ 6] block 0055B9DB  Count=008B4118  Items=008B410C  call[vtbl+0x5C]@0055B9FC  blocklen=0x27
+  [ 7] block 0055BA02  Count=00A80218  Items=00A8020C  call[vtbl+0x5C]@0055BA23  blocklen=0x27
+  [ 8] block 0055BA29  Count=00A8E998  Items=00A8E98C  call[vtbl+0x5C]@0055BA4A  blocklen=0x27
+  [ 9] block 0055BA50  Count=00887398  Items=0088738C  call[vtbl+0x5C]@0055BA71  blocklen=0x27
+  [10] block 0055BA77  Count=00A8EC48  Items=00A8EC3C  call[vtbl+0x5C]@0055BA98  blocklen=0x27
+
+==========================================================================================
+CROSS-CHECK : A vs B
+==========================================================================================
+A blocks in 0x55B000-0x55C000 : ['0x55b8f0', '0x55b918', '0x55b93f', '0x55b966', '0x55b98d', '0x55b9b4', '0x55b9db', '0x55ba02', '0x55ba29', '0x55ba50', '0x55ba77']
+B blocks                      : ['0x55b8f0', '0x55b918', '0x55b93f', '0x55b966', '0x55b98d', '0x55b9b4', '0x55b9db', '0x55ba02', '0x55ba29', '0x55ba50', '0x55ba77']
+identical sequence            : True
+
+==========================================================================================
+FUNCTION EXTENT / ATLAS MEMBERSHIP
+==========================================================================================
+ladder span: 0055B8F0 .. 0055BA9D  (430 bytes)
+is 0x55B8F0 an atlas entry : False
+nearest atlas entry <= it  : 0055B880  size=97 (decimal) -> ends 0055B8E1
+boundary_check from 0055B880   : is_boundary=True why=ok
+  tail 0055BA96  mov      edx, dword ptr [ecx]
+  tail 0055BA98  call     dword ptr [edx + 0x5c]
+  tail 0055BA9B  dec      esi
+  tail 0055BA9C  jns      0x55ba83
+  tail 0055BA9E  pop      esi
+  tail 0055BA9F  ret      
+  tail 0055BAA0  push     esi
+  tail 0055BAA1  mov      esi, dword ptr [esp + 8]

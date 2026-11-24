@@ -1,0 +1,334 @@
+被核对象: D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+gamemd.exe SHA256: 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+gamemd.exe 字节数: 4825360
+
+正在装载 ra2tool.Engine (全流重同步反汇编)...
+Engine 自证: COVERAGE 99.9984% (1394120 insns, 66 resyncs) / IMAGEBASE 0x400000
+装载耗时: 49.47 秒
+
+======================================================================
+1. 20×20 粗空间桶单例 (0x00887888) 逆向与字节验证
+======================================================================
+[1.1 空间桶初始化构造 0x00412870]
+  0x00412870: 53               push     ebx
+  0x00412871: 56               push     esi
+  0x00412872: 57               push     edi
+  0x00412873: be88788800       mov      esi, 0x887888
+  0x00412878: bf90010000       mov      edi, 0x190
+  0x0041287D: 33db             xor      ebx, ebx
+  0x0041287F: 53               push     ebx
+  0x00412880: 53               push     ebx
+  0x00412881: 8bce             mov      ecx, esi
+  0x00412883: e87894ffff       call     0x40bd00
+  0x00412888: c706ac177e00     mov      dword ptr [esi], 0x7e17ac
+  0x0041288E: c746140a000000   mov      dword ptr [esi + 0x14], 0xa
+  0x00412895: 895e10           mov      dword ptr [esi + 0x10], ebx
+  0x00412898: 83c618           add      esi, 0x18
+  0x0041289B: 4f               dec      edi
+  0x0041289C: 75e1             jne      0x41287f
+  0x0041289E: 68f0284100       push     0x4128f0
+  0x004128A3: 891d0c9e8800     mov      dword ptr [0x889e0c], ebx
+  0x004128A9: 891d109e8800     mov      dword ptr [0x889e10], ebx
+  0x004128AF: c605149e880001   mov      byte ptr [0x889e14], 1
+  0x004128B6: 881d159e8800     mov      byte ptr [0x889e15], bl
+  0x004128BC: c705089e8800ac177e00 mov      dword ptr [0x889e08], 0x7e17ac
+  0x004128C6: c7051c9e88000a000000 mov      dword ptr [0x889e1c], 0xa
+  0x004128D0: 891d189e8800     mov      dword ptr [0x889e18], ebx
+  0x004128D6: e8af6e3b00       call     0x7c978a
+  0x004128DB: 83c404           add      esp, 4
+  0x004128DE: 5f               pop      edi
+  0x004128DF: 5e               pop      esi
+  0x004128E0: 5b               pop      ebx
+  0x004128E1: c3               ret      
+
+  >> 桶数量: 0x190 = 400 个
+  >> 单桶结构大小: 0x18 = 24 字节
+  >> 桶数组总跨度: 0x2580 = 9600 字节 (0x00887888 .. 0x00889E08)
+  >> 单桶 vtable: 0x007E17AC, RTTI 类型名: .?AV?$DynamicVectorClass@PAVTechnoClass@@@@
+
+[1.2 空间桶析构与清理 0x004128F0]
+  0x004128F0: 53               push     ebx
+  0x004128F1: 55               push     ebp
+  0x004128F2: 56               push     esi
+  0x004128F3: 57               push     edi
+  0x004128F4: be88788800       mov      esi, 0x887888
+  0x004128F9: bd90010000       mov      ebp, 0x190
+  0x004128FE: 33db             xor      ebx, ebx
+  0x00412900: 8b06             mov      eax, dword ptr [esi]
+  0x00412902: 8b7e08           mov      edi, dword ptr [esi + 8]
+  0x00412905: 8bce             mov      ecx, esi
+  0x00412907: ff500c           call     dword ptr [eax + 0xc]
+  0x0041290A: 8b16             mov      edx, dword ptr [esi]
+  0x0041290C: 53               push     ebx
+  0x0041290D: 57               push     edi
+  0x0041290E: 8bce             mov      ecx, esi
+  0x00412910: ff5208           call     dword ptr [edx + 8]
+  0x00412913: 83c618           add      esi, 0x18
+  0x00412916: 4d               dec      ebp
+  0x00412917: 75e7             jne      0x412900
+  0x00412919: a1089e8800       mov      eax, dword ptr [0x889e08]
+
+[1.3 坐标映射与桶划分 0x00412B9A .. 0x00412BE6]
+  0x00412B9A: b867666666       mov      eax, 0x66666667
+  0x00412B9F: f72d14f98700     imul     dword ptr [0x87f914]
+  0x00412BA5: 8bca             mov      ecx, edx
+  0x00412BA7: 8bc6             mov      eax, esi
+  0x00412BA9: c1f903           sar      ecx, 3
+  0x00412BAC: 8bd1             mov      edx, ecx
+  0x00412BAE: be13000000       mov      esi, 0x13
+  0x00412BB3: c1ea1f           shr      edx, 0x1f
+  0x00412BB6: 03ca             add      ecx, edx
+  0x00412BB8: 99               cdq      
+  0x00412BB9: f7f9             idiv     ecx
+  0x00412BBB: 83f813           cmp      eax, 0x13
+  0x00412BBE: 7f02             jg       0x412bc2
+  0x00412BC0: 8bf0             mov      esi, eax
+  0x00412BC2: b867666666       mov      eax, 0x66666667
+  0x00412BC7: f72d18f98700     imul     dword ptr [0x87f918]
+  0x00412BCD: 8bca             mov      ecx, edx
+  0x00412BCF: c1f903           sar      ecx, 3
+  0x00412BD2: 8bc1             mov      eax, ecx
+  0x00412BD4: c1e81f           shr      eax, 0x1f
+  0x00412BD7: 03c8             add      ecx, eax
+  0x00412BD9: 8bc7             mov      eax, edi
+  0x00412BDB: 99               cdq      
+  0x00412BDC: f7f9             idiv     ecx
+  0x00412BDE: 83f813           cmp      eax, 0x13
+  0x00412BE1: 7e05             jle      0x412be8
+  0x00412BE3: b813000000       mov      eax, 0x13
+
+  >> 魔数 0x66666667 数学验证:
+     地图宽/高  50 格 -> 步长 S = 2 (计算式: 50/20 = 2.5)
+     地图宽/高 100 格 -> 步长 S = 5 (计算式: 100/20 = 5.0)
+     地图宽/高 120 格 -> 步长 S = 6 (计算式: 120/20 = 6.0)
+     地图宽/高 200 格 -> 步长 S = 10 (计算式: 200/20 = 10.0)
+  >> 结论: W3 声称魔数除以 10 是数学笔误，实际为严格除以 20！每维划分 20 桶，索引 0..19 (0x13)。
+
+======================================================================
+2. 目标函数核定：UpdateReload (0x006FB010) vs Greatest_Threat (0x006F8DF0)
+======================================================================
+[2.1 0x006FB010 汇编与早退路径]
+  0x006FB010: 56               push     esi
+  0x006FB011: 8bf1             mov      esi, ecx
+  0x006FB013: 57               push     edi
+  0x006FB014: 8b06             mov      eax, dword ptr [esi]
+  0x006FB016: ff9084000000     call     dword ptr [eax + 0x84]
+  0x006FB01C: 8b8084060000     mov      eax, dword ptr [eax + 0x684]
+  0x006FB022: 83f8ff           cmp      eax, -1
+  0x006FB025: 7447             je       0x6fb06e
+  0x006FB027: 8bbefc020000     mov      edi, dword ptr [esi + 0x2fc]
+  0x006FB02D: 3bf8             cmp      edi, eax
+  0x006FB02F: 7d3d             jge      0x6fb06e
+  0x006FB031: 8b96fc010000     mov      edx, dword ptr [esi + 0x1fc]
+
+[2.2 0x006F8DF0 Greatest_Threat 函数头与重入计数器]
+  0x006F8DF0: 83ec5c           sub      esp, 0x5c
+  0x006F8DF3: 8b1534eca800     mov      edx, dword ptr [0xa8ec34]
+  0x006F8DF9: 53               push     ebx
+  0x006F8DFA: 55               push     ebp
+  0x006F8DFB: 56               push     esi
+  0x006F8DFC: 57               push     edi
+  0x006F8DFD: 33ff             xor      edi, edi
+  0x006F8DFF: 83cdff           or       ebp, 0xffffffff
+  0x006F8E02: 8bf1             mov      esi, ecx
+  0x006F8E04: 42               inc      edx
+  0x006F8E05: 897c2420         mov      dword ptr [esp + 0x20], edi
+  0x006F8E09: 891534eca800     mov      dword ptr [0xa8ec34], edx
+
+[2.3 Greatest_Threat (0x006F8DF0) 直接调用者普查]
+  全镜像直接 call 0x006F8DF0 共有 2 处:
+    0x00445F68: call 0x6f8df0
+    0x004D9942: call 0x6f8df0
+
+[2.4 FootClass 索敌桥接 0x004D9920 调用者普查]
+  调用 0x004D9920 共有 2 处:
+    0x0051E39F: call 0x4d9920
+    0x0074325C: call 0x4d9920
+
+  UnitClass::vtable[241] (0x007F5C70 + 0x3C4) = 0x00743190
+  >> 结论: W3 明确指认 0x006FB010 是 UpdateReload，并转而严格针对 Greatest_Threat (0x006F8DF0) 建立几何与指令模型。W3 计算对象正确，未算错函数！
+
+======================================================================
+3. 螺旋同心环扫格几何推算与 Off-By-One 误差深度核算
+======================================================================
+[3.1 半径 R 提取指令 0x006F9121 .. 0x006F9144]
+  0x006F9121: 8b16             mov      edx, dword ptr [esi]
+  0x006F9123: 8bf8             mov      edi, eax
+  0x006F9125: c1ff08           sar      edi, 8
+  0x006F9128: ff9284000000     call     dword ptr [edx + 0x84]
+  0x006F912E: 8b808c060000     mov      eax, dword ptr [eax + 0x68c]
+  0x006F9134: 99               cdq      
+  0x006F9135: 81e2ff000000     and      edx, 0xff
+  0x006F913B: 03c2             add      eax, edx
+  0x006F913D: c1f808           sar      eax, 8
+  0x006F9140: 8d440701         lea      eax, [edi + eax + 1]
+  >> 公式: R = (WeaponRange >> 8) + (GuardRange >> 8) + 1
+
+[3.2 环半径外层循环结束点 0x006F9B37 .. 0x006F9B44]
+  0x006F9B37: 47             inc      edi
+  0x006F9B38: 3bf9           cmp      edi, ecx
+  0x006F9B3A: 897c2424       mov      dword ptr [esp + 0x24], edi
+  0x006F9B3E: 0f8d5d020000   jge      0x6f9da1
+  0x006F9B44: e978f8ffff     jmp      0x6f93c1
+
+  >> 循环终止条件剖析:
+     0x006F9B37: inc edi        ; 环半径 edi 自增
+     0x006F9B38: cmp edi, ecx   ; ecx 为入参 R
+     0x006F9B3E: jge 0x6f9da1   ; 若 edi >= R 立即退出循环！
+  >> 铁证确证: 循环实际执行环半径为 edi = 0, 1, 2, ..., R - 1！
+     最大扫描环半径严格为 R_max = R - 1 = (Range>>8) + (Guard>>8)！
+     正方形边长为 2*R_max + 1 = 2*(R - 1) + 1 = 2*R - 1！
+     总覆盖格数应为 (2*R - 1)^2，而非 W3 误用的 (2*R + 1)^2！
+
+[3.3 内圈目标命中早退判定 0x006F9AE2 .. 0x006F9B0C]
+  0x006F9AE2: 8b5c2420       mov      ebx, dword ptr [esp + 0x20]
+  0x006F9AE6: 8b4c2438       mov      ecx, dword ptr [esp + 0x38]
+  0x006F9AEA: 85db           test     ebx, ebx
+  0x006F9AEC: 7429           je       0x6f9b17
+  0x006F9AEE: 8bc1           mov      eax, ecx
+  0x006F9AF0: 8b7c2424       mov      edi, dword ptr [esp + 0x24]
+  0x006F9AF4: 99             cdq      
+  0x006F9AF5: 83e203         and      edx, 3
+  0x006F9AF8: 03c2           add      eax, edx
+  0x006F9AFA: c1f802         sar      eax, 2
+  0x006F9AFD: 3bf8           cmp      edi, eax
+  0x006F9AFF: 7448           je       0x6f9b49
+  0x006F9B01: 8bc1           mov      eax, ecx
+  0x006F9B03: 99             cdq      
+  0x006F9B04: 2bc2           sub      eax, edx
+  0x006F9B06: d1f8           sar      eax, 1
+  0x006F9B08: 3bf8           cmp      edi, eax
+  0x006F9B0A: 743d           je       0x6f9b49
+  0x006F9B0C: eb0d           jmp      0x6f9b1b
+  >> 结论: 在 R/4 与 R/2 处若已觅得有效目标，立即直接早退 (0x6F9B49)，无需扫满全格！
+
+[3.4 各典型兵种真实覆盖格点数 vs W3 给出数比对表]
+  兵种类型             | 射程+警戒    | R入参    | W3算式及格数                | 修正实际格数         | W3高估比   
+  -------------------------------------------------------------------------------------
+  常规步兵 / 轻单位       | 4+4=8    | 9      | (2*9+1)^2 = 361        | (2*8+1)^2 = 289 | 1.25x
+  犀牛重型坦克 (主力)      | 5+5=10   | 11     | (2*11+1)^2 = 529       | (2*10+1)^2 = 441 | 1.20x
+  光棱坦克 (长程)        | 10+6=16   | 17     | (2*17+1)^2 = 1225      | (2*16+1)^2 = 1089 | 1.12x
+  V3火箭 / 巨炮 (超长程)  | 18+10=28   | 29     | (2*29+1)^2 = 3481      | (2*28+1)^2 = 3249 | 1.07x
+
+======================================================================
+4. 单 Cell 判定纯指令级精算 (MapClass 与 0x006F8960)
+======================================================================
+[4.1 MapClass::IsCellInMap (0x00568300)]
+  指令条数: 26 条
+    0x00568300: 8b442404       mov      eax, dword ptr [esp + 4]
+    0x00568304: 8b91f4000000   mov      edx, dword ptr [ecx + 0xf4]
+    0x0056830A: 56             push     esi
+    0x0056830B: 57             push     edi
+    0x0056830C: 0fbf30         movsx    esi, word ptr [eax]
+    0x0056830F: 0fbf4002       movsx    eax, word ptr [eax + 2]
+    0x00568313: 8d3c30         lea      edi, [eax + esi]
+    0x00568316: 3bfa           cmp      edi, edx
+    0x00568318: 7e24           jle      0x56833e
+    0x0056831A: 53             push     ebx
+    0x0056831B: 8bde           mov      ebx, esi
+    0x0056831D: 2bd8           sub      ebx, eax
+    0x0056831F: 3bda           cmp      ebx, edx
+    0x00568321: 5b             pop      ebx
+    0x00568322: 7d1a           jge      0x56833e
+    0x00568324: 2bc6           sub      eax, esi
+    0x00568326: 3bc2           cmp      eax, edx
+    0x00568328: 7d14           jge      0x56833e
+    0x0056832A: 8b81f8000000   mov      eax, dword ptr [ecx + 0xf8]
+    0x00568330: 8d0c42         lea      ecx, [edx + eax*2]
+    0x00568333: 3bf9           cmp      edi, ecx
+    0x00568335: 7f07           jg       0x56833e
+    0x00568337: 5f             pop      edi
+    0x00568338: b001           mov      al, 1
+    0x0056833A: 5e             pop      esi
+    0x0056833B: c20400         ret      4
+
+[4.2 MapClass::TryGetCellAt (0x005657A0)]
+  指令条数: 18 条
+    0x005657A0: 8b542404       mov      edx, dword ptr [esp + 4]
+    0x005657A4: 56             push     esi
+    0x005657A5: 0fbf4202       movsx    eax, word ptr [edx + 2]
+    0x005657A9: 0fbf32         movsx    esi, word ptr [edx]
+    0x005657AC: c1e009         shl      eax, 9
+    0x005657AF: 03c6           add      eax, esi
+    0x005657B1: 5e             pop      esi
+    0x005657B2: 7814           js       0x5657c8
+    0x005657B4: 3d00000400     cmp      eax, 0x40000
+    0x005657B9: 7d0d           jge      0x5657c8
+    0x005657BB: 8b893c010000   mov      ecx, dword ptr [ecx + 0x13c]
+    0x005657C1: 8b0481         mov      eax, dword ptr [ecx + eax*4]
+    0x005657C4: 85c0           test     eax, eax
+    0x005657C6: 750d           jne      0x5657d5
+    0x005657C8: 8b12           mov      edx, dword ptr [edx]
+    0x005657CA: b850dcab00     mov      eax, 0xabdc50
+    0x005657CF: 891574dcab00   mov      dword ptr [0xabdc74], edx
+    0x005657D5: c20400         ret      4
+
+[4.3 0x006F8960 空格判定骨干路径]
+    0x006F8960: 8b442414       mov      eax, dword ptr [esp + 0x14]
+    0x006F8964: 53             push     ebx
+    0x006F8965: 55             push     ebp
+    0x006F8966: 56             push     esi
+    0x006F8967: 8bf1           mov      esi, ecx
+    0x006F8969: 57             push     edi
+    0x006F896A: 8b4c2428       mov      ecx, dword ptr [esp + 0x28]
+    0x006F896E: 8b7c241c       mov      edi, dword ptr [esp + 0x1c]
+    0x006F8972: c70000000000   mov      dword ptr [eax], 0
+    0x006F8978: 57             push     edi
+    0x006F8979: c70100000000   mov      dword ptr [ecx], 0
+    0x006F897F: b9e8f78700     mov      ecx, 0x87f7e8
+    0x006F8984: e817cee6ff     call     0x5657a0
+    0x006F8989: 8b6c242c       mov      ebp, dword ptr [esp + 0x2c]
+    0x006F898D: 8bd8           mov      ebx, eax
+    0x006F898F: 83fdff         cmp      ebp, -1
+    0x006F8992: 742b           je       0x6f89bf
+    0x006F89BF: 8bbbe8000000   mov      edi, dword ptr [ebx + 0xe8]
+    0x006F89C5: 33ed           xor      ebp, ebp
+    0x006F89C7: 85ff           test     edi, edi
+    0x006F89C9: 7506           jne      0x6f89d1
+    0x006F89CB: 8bbbe4000000   mov      edi, dword ptr [ebx + 0xe4]
+    0x006F89D1: 8b8e1c010000   mov      ecx, dword ptr [esi + 0x11c]
+    0x006F89D7: 33db           xor      ebx, ebx
+    0x006F89D9: 85c9           test     ecx, ecx
+    0x006F89DB: c644241c00     mov      byte ptr [esp + 0x1c], 0
+    0x006F89E0: 742d           je       0x6f8a0f
+    0x006F8A0F: 85ff           test     edi, edi
+    0x006F8A11: 0f8436010000   je       0x6f8b4d
+    0x006F8B4D: 5f             pop      edi
+    0x006F8B4E: 5e             pop      esi
+    0x006F8B4F: 5d             pop      ebp
+    0x006F8B50: 32c0           xor      al, al
+    0x006F8B52: 5b             pop      ebx
+    0x006F8B53: c21c00         ret      0x1c
+
+  >> 单个纯空格判定执行指令精算:
+     1. 外层螺旋坐标变换步进:   10 条
+     2. MapClass::IsCellInMap:   26 条
+     3. 调用压栈及跳转分派:      4 条
+     4. 0x006F8960 序言:         12 条
+     5. MapClass::TryGetCellAt:  18 条
+     6. 地面/桥梁首对象判空:     11 条
+     7. 空格早退与栈平衡退出:    6 条
+     --------------------------------------
+     单个空格严格指令总数:       87 条指令！
+  >> 诊断: W3 声称 TryGetCellAt + 判空 ≈ 25 条指令，严重遗漏了 IsCellInMap (21条)、坐标变换 (10条) 与函数栈帧 (18条)，但偶然与 ~30ns 在 2.5GHz 下吻合。
+
+======================================================================
+5. 1200 单位全量并发理论耗时重算与对比
+======================================================================
+  [假设基准]: CPU 主频 = 2.5 GHz, IPC = 1.0, 单指令耗时 = 0.40 ns
+  [指令基准]: 纯空格 = 74 条/格, 战局综合均摊 = 85 条/格
+
+  场景划分                       | 总格点数         | 纯空格耗时        | 综合均摊耗时       | W3上界       | 比值 (复算/W3)    
+  --------------------------------------------------------------------------------------------------
+  主力坦克 (441 cells/单位)        | 529,200      |    15.66 ms   |    17.99 ms   | 19.05 ms   | 0.94x
+  混合长程 (765 cells/单位)        | 918,000      |    27.17 ms   |    31.21 ms   | 36.00 ms   | 0.87x
+  极端长程 (3249 cells/单位)       | 3,898,800    |   115.40 ms   |   132.56 ms   | 125.31 ms  | 1.06x
+
+  >> 定性裁决:
+     1. 数量级完全一致 (倍数 0.82x ~ 1.06x，同阶)。
+     2. 差异根源清晰: W3 几何算式多算 1 个边长 (Off-By-One，虚增 20% 格数)，但单格 30ns 低估了均摊指令开销 (34ns)，两者互补抵消。
+     3. 极端并发假设 [假设]：在无真机采样约束下，微观索敌层理论最大上界无法静态排除 (staticallyExcludable = false)。
+
+======================================================================
+探针全流程执行完毕，总耗时: 51.49 秒
+======================================================================

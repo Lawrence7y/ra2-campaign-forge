@@ -1,0 +1,273 @@
+====================================================================================================
+【候选触发判据离线比较探针 · 全量 104 窗】
+口径：在线因果判据；d_final>=100ms 仅用于事后计费，绝不参与触发。
+====================================================================================================
+语料文件 n=104，总采样点 n=1125992，全部 hz=[500]
+sha256 lead/stall_event_def_20261106/STALL_EVENTS.json = 5bf152842b2c343bc6cf046fa824bf0a0f3eb7a0c83245339f449921ed053cad
+sha256 lead/early_trigger_feasibility_20261106/_feasibility_probe.py = 1e37ea992e4fd61d48fd4b8d6dc5c55b2851e714974f5681381e090b977bb295
+sha256 lead/d30_ruling_20261106/RULING_D30.md = d5afc90c50bbf57be1e58bf9000b1940392337b6c57a444e3b084fe57983d04f
+STALL_EVENTS 全量 n=1737，isRealMatch==True n=1681（不与 1737 混为同口径）
+moving64 推进窗 n=64（D30 核证同口径）
+推进窗内全部帧号游程 n=28381（评分母体；每游程最多触发一次）
+
+【历史帧间隔总体分布（moving64 窗内全部已完成帧推进，n=28317）】
+  P50 = 32.779 ms
+  P75 = 37.764 ms
+  P90 = 79.608 ms
+  P95 = 112.442 ms
+  P99 = 189.267 ms
+  P100 = 5571.591 ms
+  注：这是全语料离线描述，不是在线可用基线；在线基线必须按下方滑窗因果取。
+
+【冷启动不可触发的游程数（runStart 处历史不足 N 条）】
+  N=16: 1065/28381 条游程无基线（占比 3.75%）
+  N=32: 2013/28381 条游程无基线（占比 7.09%）
+  N=64: 3813/28381 条游程无基线（占比 13.44%）
+  N=128: 7360/28381 条游程无基线（占比 25.93%）
+
+【判据清单】共 17 档
+
+====================================================================================================
+【主表：每档判据的触发数 / 事后误报率 / 真实命中 / 触发等待(ms) / 越过50ms截止数】
+====================================================================================================
+id                |    触发n|    误报n|     误报率|    真实命中|    漏|   wait中位|  waitP90|  waitMax|   >50ms数|   >50占比
+-----------------------------------------------------------------------------------------------------------
+C1-k10            |  28294|  26590|  93.98%|    1681|    0|   17.613|   18.673|   95.186|       12|   0.04%
+C1-k25            |   5343|   3639|  68.11%|    1681|    0|   47.766|   48.634|  417.105|      103|   1.93%
+C1-k50            |   1866|    162|   8.68%|    1681|    0|   97.750|   98.900|  417.556|     1811|  97.05%
+C2-P95x2          |     27|      4|  14.81%|       7| 1674|   73.378|  196.034|  331.407|       27| 100.00%
+C2-P95x3          |     19|      0|   0.00%|       3| 1678|  107.699|  131.120|  459.564|       19| 100.00%
+C2-P99x2          |     24|      4|  16.67%|       4| 1677|   75.441|   82.702|  463.197|       24| 100.00%
+C2-P99x3          |     18|      0|   0.00%|       2| 1679|  111.754|  121.146|  143.369|       18| 100.00%
+C2-abs-P95x2      |     29|      5|  17.24%|       8| 1673|   70.931|  181.578|  321.002|       29| 100.00%
+C3-r4             |     24|      0|   0.00%|       8| 1673|  127.491|  346.357|  440.389|       24| 100.00%
+C3-r8             |     16|      0|   0.00%|       1| 1680|  256.261|  257.453|  258.378|       16| 100.00%
+C3-r12            |     15|      0|   0.00%|       0| 1681|  385.601|  386.776|  387.990|       15| 100.00%
+C4-t16            |  28282|  26578|  93.97%|    1681|    0|   17.569|   17.893|  134.545|       50|   0.18%
+C4-t24            |  27370|  25666|  93.77%|    1681|    0|   25.126|   25.836|  134.545|       65|   0.24%
+C4-t30            |  16016|  14312|  89.36%|    1681|    0|   30.448|   32.286|  134.545|       76|   0.47%
+C4-t40            |   6031|   4327|  71.75%|    1681|    0|   40.500|   42.411|  416.911|      133|   2.21%
+C4-t48            |   5168|   3464|  67.03%|    1681|    0|   49.973|   50.448|  416.911|     2492|  48.22%
+C5-k10t30         |  16016|  14312|  89.36%|    1681|    0|   30.448|   32.286|  134.545|       77|   0.48%
+
+【逐档明细（含 waitMin / P99 / 额外等待 / 未触发游程数）】
+
+  C1-k10  [连续k拍同帧]
+    rule       : 游程内帧号不变连续 >= 10 拍时在第 10 拍触发（k点=k-1间隔，名义 18ms）
+    needsHistory: 无
+    extraWaitNote: 无额外等待；阈值本身即等待 k-1 个间隔
+    nTrig=28294  nFalse(d<100ms)=26590  falseRate=0.9398  precision=0.0602
+    strictRealHits=1681/1681  missedReal=0
+    waitAfterS_hat(ms): min=0.101 med=17.613 P90=18.673 P99=19.874 max=95.186
+    nTriggersBeyond50ms=12/28294 (0.04%)  >=50ms含边界=12
+    extraWait(ms): med=0.000 max=0.000
+    未触发游程数(含冷启动缺基线)=87
+
+  C1-k25  [连续k拍同帧]
+    rule       : 游程内帧号不变连续 >= 25 拍时在第 25 拍触发（k点=k-1间隔，名义 48ms）
+    needsHistory: 无
+    extraWaitNote: 无额外等待；阈值本身即等待 k-1 个间隔
+    nTrig=5343  nFalse(d<100ms)=3639  falseRate=0.6811  precision=0.3189
+    strictRealHits=1681/1681  missedReal=0
+    waitAfterS_hat(ms): min=0.196 med=47.766 P90=48.634 P99=54.978 max=417.105
+    nTriggersBeyond50ms=103/5343 (1.93%)  >=50ms含边界=103
+    extraWait(ms): med=0.000 max=0.000
+    未触发游程数(含冷启动缺基线)=23038
+
+  C1-k50  [连续k拍同帧]
+    rule       : 游程内帧号不变连续 >= 50 拍时在第 50 拍触发（k点=k-1间隔，名义 98ms）
+    needsHistory: 无
+    extraWaitNote: 无额外等待；阈值本身即等待 k-1 个间隔
+    nTrig=1866  nFalse(d<100ms)=162  falseRate=0.0868  precision=0.9132
+    strictRealHits=1681/1681  missedReal=0
+    waitAfterS_hat(ms): min=0.349 med=97.750 P90=98.900 P99=120.747 max=417.556
+    nTriggersBeyond50ms=1811/1866 (97.05%)  >=50ms含边界=1811
+    extraWait(ms): med=0.000 max=0.000
+    未触发游程数(含冷启动缺基线)=26515
+
+  C2-P95x2  [相对帧间隔]
+    rule       : 帧号不变 且 自观测首拍起已持续 > P95(近64条帧间隔)×2；逐拍首次满足即触发
+    needsHistory: 滑窗=runStart-1及之前最近64条已完成帧间隔；不含当前停；冷启动<64条不触发
+    extraWaitNote: 必须等到实测时长越过阈值本身（这就是阈值等待）
+    nTrig=27  nFalse(d<100ms)=4  falseRate=0.1481  precision=0.8519
+    strictRealHits=7/1681  missedReal=1674
+    waitAfterS_hat(ms): min=68.847 med=73.378 P90=196.034 P99=316.472 max=331.407
+    nTriggersBeyond50ms=27/27 (100.00%)  >=50ms含边界=27
+    extraWait(ms): med=73.378 max=331.407
+    未触发游程数(含冷启动缺基线)=28354
+
+  C2-P95x3  [相对帧间隔]
+    rule       : 帧号不变 且 自观测首拍起已持续 > P95(近64条帧间隔)×3；逐拍首次满足即触发
+    needsHistory: 滑窗=runStart-1及之前最近64条已完成帧间隔；不含当前停；冷启动<64条不触发
+    extraWaitNote: 必须等到实测时长越过阈值本身（这就是阈值等待）
+    nTrig=19  nFalse(d<100ms)=0  falseRate=0.0000  precision=1.0000
+    strictRealHits=3/1681  missedReal=1678
+    waitAfterS_hat(ms): min=103.419 med=107.699 P90=131.120 P99=131.161 max=459.564
+    nTriggersBeyond50ms=19/19 (100.00%)  >=50ms含边界=19
+    extraWait(ms): med=107.699 max=459.564
+    未触发游程数(含冷启动缺基线)=28362
+
+  C2-P99x2  [相对帧间隔]
+    rule       : 帧号不变 且 自观测首拍起已持续 > P99(近64条帧间隔)×2；逐拍首次满足即触发
+    needsHistory: 滑窗=runStart-1及之前最近64条已完成帧间隔；不含当前停；冷启动<64条不触发
+    extraWaitNote: 必须等到实测时长越过阈值本身（这就是阈值等待）
+    nTrig=24  nFalse(d<100ms)=4  falseRate=0.1667  precision=0.8333
+    strictRealHits=4/1681  missedReal=1677
+    waitAfterS_hat(ms): min=69.912 med=75.441 P90=82.702 P99=95.643 max=463.197
+    nTriggersBeyond50ms=24/24 (100.00%)  >=50ms含边界=24
+    extraWait(ms): med=75.441 max=463.197
+    未触发游程数(含冷启动缺基线)=28357
+
+  C2-P99x3  [相对帧间隔]
+    rule       : 帧号不变 且 自观测首拍起已持续 > P99(近64条帧间隔)×3；逐拍首次满足即触发
+    needsHistory: 滑窗=runStart-1及之前最近64条已完成帧间隔；不含当前停；冷启动<64条不触发
+    extraWaitNote: 必须等到实测时长越过阈值本身（这就是阈值等待）
+    nTrig=18  nFalse(d<100ms)=0  falseRate=0.0000  precision=1.0000
+    strictRealHits=2/1681  missedReal=1679
+    waitAfterS_hat(ms): min=104.018 med=111.754 P90=121.146 P99=143.346 max=143.369
+    nTriggersBeyond50ms=18/18 (100.00%)  >=50ms含边界=18
+    extraWait(ms): med=111.754 max=143.369
+    未触发游程数(含冷启动缺基线)=28363
+
+  C2-abs-P95x2  [相对帧间隔(距上次推进锚)]
+    rule       : 帧号不变 且 t[idx]-t[上一帧沿] > P95(近64条)×2
+    needsHistory: 同 C2；距离锚改为上一帧沿而非观测首拍（多含 onset 观测滞后）
+    extraWaitNote: 同上，且锚点更早，阈值更早被突破
+    nTrig=29  nFalse(d<100ms)=5  falseRate=0.1724  precision=0.8276
+    strictRealHits=8/1681  missedReal=1673
+    waitAfterS_hat(ms): min=66.334 med=70.931 P90=181.578 P99=316.472 max=321.002
+    nTriggersBeyond50ms=29/29 (100.00%)  >=50ms含边界=29
+    extraWait(ms): med=70.931 max=321.002
+    未触发游程数(含冷启动缺基线)=28352
+
+  C3-r4  [帧间隔变化率]
+    rule       : (t[idx]-t[上一帧沿]) / median(近64条帧间隔) > 4
+    needsHistory: 滑窗=runStart-1及之前最近64条帧间隔的中位数；不含当前停；冷启动<64不触发
+    extraWaitNote: 阈值随实测时长增长，须等比值突破（阈值等待）
+    nTrig=24  nFalse(d<100ms)=0  falseRate=0.0000  precision=1.0000
+    strictRealHits=8/1681  missedReal=1673
+    waitAfterS_hat(ms): min=125.884 med=127.491 P90=346.357 P99=436.314 max=440.389
+    nTriggersBeyond50ms=24/24 (100.00%)  >=50ms含边界=24
+    extraWait(ms): med=127.491 max=440.389
+    未触发游程数(含冷启动缺基线)=28357
+
+  C3-r8  [帧间隔变化率]
+    rule       : (t[idx]-t[上一帧沿]) / median(近64条帧间隔) > 8
+    needsHistory: 滑窗=runStart-1及之前最近64条帧间隔的中位数；不含当前停；冷启动<64不触发
+    extraWaitNote: 阈值随实测时长增长，须等比值突破（阈值等待）
+    nTrig=16  nFalse(d<100ms)=0  falseRate=0.0000  precision=1.0000
+    strictRealHits=1/1681  missedReal=1680
+    waitAfterS_hat(ms): min=251.709 med=256.261 P90=257.453 P99=257.557 max=258.378
+    nTriggersBeyond50ms=16/16 (100.00%)  >=50ms含边界=16
+    extraWait(ms): med=256.261 max=258.378
+    未触发游程数(含冷启动缺基线)=28365
+
+  C3-r12  [帧间隔变化率]
+    rule       : (t[idx]-t[上一帧沿]) / median(近64条帧间隔) > 12
+    needsHistory: 滑窗=runStart-1及之前最近64条帧间隔的中位数；不含当前停；冷启动<64不触发
+    extraWaitNote: 阈值随实测时长增长，须等比值突破（阈值等待）
+    nTrig=15  nFalse(d<100ms)=0  falseRate=0.0000  precision=1.0000
+    strictRealHits=0/1681  missedReal=1681
+    waitAfterS_hat(ms): min=377.385 med=385.601 P90=386.776 P99=387.774 max=387.990
+    nTriggersBeyond50ms=15/15 (100.00%)  >=50ms含边界=15
+    extraWait(ms): med=385.601 max=387.990
+    未触发游程数(含冷启动缺基线)=28366
+
+  C4-t16  [绝对时长]
+    rule       : 帧号不变持续毫秒数 > 16ms（且至少3拍）
+    needsHistory: 无
+    extraWaitNote: 须等实测毫秒数越过阈值；与 k 拍不等价（采样抖动）
+    nTrig=28282  nFalse(d<100ms)=26578  falseRate=0.9397  precision=0.0603
+    strictRealHits=1681/1681  missedReal=0
+    waitAfterS_hat(ms): min=16.000 med=17.569 P90=17.893 P99=18.571 max=134.545
+    nTriggersBeyond50ms=50/28282 (0.18%)  >=50ms含边界=50
+    extraWait(ms): med=17.569 max=134.545
+    未触发游程数(含冷启动缺基线)=99
+
+  C4-t24  [绝对时长]
+    rule       : 帧号不变持续毫秒数 > 24ms（且至少3拍）
+    needsHistory: 无
+    extraWaitNote: 须等实测毫秒数越过阈值；与 k 拍不等价（采样抖动）
+    nTrig=27370  nFalse(d<100ms)=25666  falseRate=0.9377  precision=0.0623
+    strictRealHits=1681/1681  missedReal=0
+    waitAfterS_hat(ms): min=24.000 med=25.126 P90=25.836 P99=26.695 max=134.545
+    nTriggersBeyond50ms=65/27370 (0.24%)  >=50ms含边界=65
+    extraWait(ms): med=25.126 max=134.545
+    未触发游程数(含冷启动缺基线)=1011
+
+  C4-t30  [绝对时长]
+    rule       : 帧号不变持续毫秒数 > 30ms（且至少3拍）
+    needsHistory: 无
+    extraWaitNote: 须等实测毫秒数越过阈值；与 k 拍不等价（采样抖动）
+    nTrig=16016  nFalse(d<100ms)=14312  falseRate=0.8936  precision=0.1064
+    strictRealHits=1681/1681  missedReal=0
+    waitAfterS_hat(ms): min=30.000 med=30.448 P90=32.286 P99=36.270 max=134.545
+    nTriggersBeyond50ms=76/16016 (0.47%)  >=50ms含边界=76
+    extraWait(ms): med=30.448 max=134.545
+    未触发游程数(含冷启动缺基线)=12365
+
+  C4-t40  [绝对时长]
+    rule       : 帧号不变持续毫秒数 > 40ms（且至少3拍）
+    needsHistory: 无
+    extraWaitNote: 须等实测毫秒数越过阈值；与 k 拍不等价（采样抖动）
+    nTrig=6031  nFalse(d<100ms)=4327  falseRate=0.7175  precision=0.2825
+    strictRealHits=1681/1681  missedReal=0
+    waitAfterS_hat(ms): min=40.000 med=40.500 P90=42.411 P99=67.486 max=416.911
+    nTriggersBeyond50ms=133/6031 (2.21%)  >=50ms含边界=133
+    extraWait(ms): med=40.500 max=416.911
+    未触发游程数(含冷启动缺基线)=22350
+
+  C4-t48  [绝对时长]
+    rule       : 帧号不变持续毫秒数 > 48ms（且至少3拍）
+    needsHistory: 无
+    extraWaitNote: 须等实测毫秒数越过阈值；与 k 拍不等价（采样抖动）
+    nTrig=5168  nFalse(d<100ms)=3464  falseRate=0.6703  precision=0.3297
+    strictRealHits=1681/1681  missedReal=0
+    waitAfterS_hat(ms): min=48.000 med=49.973 P90=50.448 P99=78.372 max=416.911
+    nTriggersBeyond50ms=2492/5168 (48.22%)  >=50ms含边界=2492
+    extraWait(ms): med=49.973 max=416.911
+    未触发游程数(含冷启动缺基线)=23213
+
+  C5-k10t30  [复合(k拍+绝对时长)]
+    rule       : 连续10拍同帧 且 绝对时长 >30ms，取较晚者触发
+    needsHistory: 无
+    extraWaitNote: 若 30ms 阈值晚于第10拍则产生额外等待
+    nTrig=16016  nFalse(d<100ms)=14312  falseRate=0.8936  precision=0.1064
+    strictRealHits=1681/1681  missedReal=0
+    waitAfterS_hat(ms): min=30.000 med=30.448 P90=32.286 P99=36.270 max=134.545
+    nTriggersBeyond50ms=77/16016 (0.48%)  >=50ms含边界=77
+    extraWait(ms): med=12.652 max=134.295
+    未触发游程数(含冷启动缺基线)=12365
+
+====================================================================================================
+【物理起点 S 的可观测性 · 诚实账】
+====================================================================================================
+游程首拍前一采样间隔 e=t[runStart]-t[runStart-1] 有效样本 n=28317（首拍游程 64 条无前序）
+  min=0.008 med=2.511 P95=2.667 P99=4.145 max=488.616 ms
+  说明：e 是「观测起点滞后上界」的代理量，不是实测物理 S 误差；物理 S 落在 (t[runStart-1], t[runStart]] 内。
+  所有 waitAfterS 均以观测首拍 S_hat=t[runStart] 为锚；真实 S 更早，故相对 S 的等待 = waitAfterS_hat + (S_hat-S)，
+  其中 (S_hat-S) ∈ [0, e]，e 实测中位 2.511ms、最大 488.616ms（最大值为采样掉拍，不证明线程被卡）。
+  因此本表 waitAfterS_hat 是「相对物理 S 等待」的下界估计；:177 的 S+50ms 严格核算需物理 S，本次语料不可得。
+
+【k 点 = k-1 个间隔 · 名义等待核对】
+  k=10: 名义 (k-1)*2ms = 18ms；与题给 D30 的 18/48/98ms 同值
+  k=25: 名义 (k-1)*2ms = 48ms；与题给 D30 的 18/48/98ms 同值
+  k=50: 名义 (k-1)*2ms = 98ms；与题给 D30 的 18/48/98ms 同值
+  C1-k10 语料实测触发等待中位 17.613ms / 最大 95.186ms（抖动使实测≠名义）
+  C1-k25 语料实测触发等待中位 47.766ms / 最大 417.105ms（抖动使实测≠名义）
+  C1-k50 语料实测触发等待中位 97.750ms / 最大 417.556ms（抖动使实测≠名义）
+
+====================================================================================================
+【D30 基线自跑复现核对（本探针独立统计，非抄文档）】
+====================================================================================================
+  k=10: total=28294 false=26590 d>=100=1704 falseRate=93.98%
+  k=25: total=5343 false=3639 d>=100=1704 falseRate=68.11%
+  k=50: total=1866 false=162 d>=100=1704 falseRate=8.68%
+
+【C4 绝对时长 与 C1 k拍 不等价实证（同一游程两判据触发时刻差）】
+  k=10 与 abs>20ms 在同一游程触发时刻相差>1ms 的游程数 = 27954
+    archive_T32 w0 runStart=4: k10_wait=17.282ms  abs20_wait=22.343ms
+    archive_T32 w0 runStart=19: k10_wait=17.794ms  abs20_wait=20.324ms
+    archive_T32 w0 runStart=33: k10_wait=17.324ms  abs20_wait=21.958ms
+    archive_T32 w0 runStart=50: k10_wait=18.308ms  abs20_wait=20.803ms
+    archive_T32 w0 runStart=65: k10_wait=18.73ms  abs20_wait=21.267ms

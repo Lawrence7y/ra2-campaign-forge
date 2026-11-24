@@ -1,0 +1,24 @@
+=== 纯函数 guard 逐条实跑（_mask_quotes / _scope / 二次 veto）===
+  ★二次 veto 触发: C08 tok=已生效 pos=12 scope='非登记一或二不可才算本件' hit='非登记一或二不可' reason=命中链内含并列标记：两个独立否定项
+  guard 明细条数 = 43 ; 二次 veto 触发次数 = 1
+  → 唯一触发来自 C08「非登记一或二不可」：并列否决把【真 DN】误否决（fn），而对 P10「本件不承认或并不否认」不触发（并列标记在 hit_text 之外）
+
+=== 一行替换形态：r10_context / r12_scan 是否调用任何 guard（co_names 实查）===
+  r10_context  {'dg_double_neg': False, '_mask_quotes': False, '_scope': False, 'DG_SECOND_SUBJ_RE': False, 'DG_COORD_RE': False, 'DG_QUOTE_RE': False, 'DG_BREAK_RE': False, 'dg_scan': False}
+  r12_scan     {'dg_double_neg': False, '_mask_quotes': False, '_scope': False, 'DG_SECOND_SUBJ_RE': False, 'DG_COORD_RE': False, 'DG_QUOTE_RE': False, 'DG_BREAK_RE': False, 'dg_scan': False}
+  → 全部 False：一行替换只把 DOUBLE_NEG_RE 换成生成式正则，7 条不变式里靠纯函数实现的 4 条 guard 一个都不执行。与 DNEG_GENERATIVE.md:173 一致（本会话独立实跑）
+
+=== 一行替换 vs 纯函数：逐条差异（应判非 AMBIG）===
+  P17  expect=PASS  pure=PASS  dropin=CATCH | 「 并非不宣告已生效 」只是引文，本件不采信该说法
+  C08  expect=CATCH pure=PASS  dropin=CATCH | 非登记一或二不可才算本件已生效
+  差异条数 = 2 （其中 P17 引证屏蔽、C08 并列否决只在一侧生效）
+
+=== 一行替换：r10_context『dbl』布尔来源逐条（前 5 例）===
+  P01  ctxs=[('已生效', 11, False)]
+  P02  ctxs=[('已生效', 12, False)]
+  P03  ctxs=[('已生效', 26, False), ('放行 N-5', 10, False)]
+  P04  ctxs=[('已生效', 14, False)]
+  P05  ctxs=[('已生效', 10, False)]
+  → 一行替换的 dbl 只看 pre 内的正则 .search()，无引证/微句/主语/并列 guard
+
+written: _dga_delivery_probe_out.json

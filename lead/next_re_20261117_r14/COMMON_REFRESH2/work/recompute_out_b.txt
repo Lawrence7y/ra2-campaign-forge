@@ -1,0 +1,47 @@
+== A. 池构成（atlas 内，按 grade） ==
+  S13: {'[静态推断]': 115, '[已证]': 100, '[未证]': 25}  合计 240
+  S15: {'[未证]': 14, '[静态推断]': 38, '[已证]': 106}  合计 158
+  S16: {'[静态推断]': 36, '[已证]': 47, '[未证]': 7}  合计 90
+  S15+S16 [静态推断] = 74（S15 38 + S16 36）
+
+== B. S13 现态与 delta 是否已并表 ==
+  S13 atlas 内 240 行；[已证] 100；proved_strict 99
+  S13_delta.tsv 数据行 = 6：['004684E0', '00629FD0', '0075E0C0', '0075E2C0', '00772CD0', '00772EB0']
+  其中已在 coverage 里带 S13_PUSH 证据且 [已证] 的 = 0 → 并表状态：未并（Lead 裁定不予并表，与盘上一致）
+
+== C. 基础率复算（分母为卡面池） ==
+  S13 池内 ③b② 机械命中                                 13 / 140 = 0.0929 (9.29%)
+  S13 剔 eax 覆写陷阱后真③b②                              9 / 140 = 0.0643 (6.43%)
+  S13 字面四环齐全                                       6 / 140 = 0.0429 (4.29%)
+Traceback (most recent call last):
+  File "D:\Project\ra2-campaign-forge\lead\next_re_20261117_r14\COMMON_REFRESH2\work\recompute_refresh2b.py", line 119, in <module>
+  S13 D-40 严格口径                                    0 / 140 = 0.0000 (0.00%)
+  S13 ③b① 跳转表                                      0 / 140 = 0.0000 (0.00%)
+  S15 ③b② P1∧P2∧P3                                20 /  44 = 0.4545 (45.45%)
+  S16 ③b② P1∧P2∧P3                                 3 /  38 = 0.0789 (7.89%)
+  S15+S16 合计                                      23 /  82 = 0.2805 (28.05%)
+
+  S13 base_rate.tsv 原表：
+    channel	pool	hits	defensible	rate
+    A_③b②_raw	140	13	13	0.0929
+    A_③b②_no_eax_trap	140	9	9	0.0643
+    A_③b②_four_rings_literal	140	9	6	0.0429
+    A_③b②_four_rings_D40_strict	140	9	0	0.0000
+    B_③b①_jumptable	140	0	0	0.0000
+  S15S16 base_rate.tsv 原表：
+    subsystem	pool	screen_p1	screen_p1p2	screen_p1p2p3	rate
+    S15	44	22	20	20	0.4545
+    S16	38	6	6	3	0.0789
+    ALL	82	28	26	23	0.2805
+
+== D. 异族审计 PASS/FAIL 计数（S15S16_3B2/_audit/verdict.tsv） ==
+  数据行 = 11；逐行=['006E3DB0:PASS', '006E3E30:FAIL', '006E4660:PASS', '006E56E0:FAIL', '006E5730:PASS', '006E57A0:FAIL', '006E6080:PASS', '006E6410:PASS', '00727240:PASS', '007276A0:FAIL', '006CE800:PASS']
+  PASS = 7、FAIL = 4；FAIL/行数 = 4/11 = 36.3636 (36.4%)
+  执行器自报 delta 行数：S15_delta.tsv + S16_delta.tsv = 10 + 1 = 11
+
+== E. Save_VectorBlock 族 34 行（TIEBREAK_ENGFAM/EVIDENCE/rows34.tsv） ==
+  rows34.tsv 数据行 = 34
+  语义尾缀全部 'class name unproven (arg .bss obj)' = True
+    print("  ģ���ŷ�Χ = %d..%d��ȱ�� = %s" % (nums[0], nums[-1],
+                                                  ~~~~^^^
+IndexError: list index out of range

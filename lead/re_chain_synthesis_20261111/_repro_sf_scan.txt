@@ -1,0 +1,77 @@
+[FACT] sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 (与台账一致)
+[FACT] size = 4825360 B
+.text [0x401000..0x7E038D] (4060045 B)
+[FACT] [前提] [0x7ECBFC+8]=0x54A4F0 (vtable 0x7ECBFC slot2)
+[FACT] [前提] [0x7ECBDC+8]=0x54A630 (vtable 0x7ECBDC slot2)
+[FACT] [前提] RTTI @0x7ECBFC: .?AV?$VectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@
+[FACT] [前提] RTTI @0x7ECBDC: .?AV?$DynamicVectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@
+[FACT] [前提] 文件镜像 .data @0xAA1078 vptr/Vector/VectorMax = 0 (运行期动态初始化)
+[FACT] T1a 复现陷阱: 单次 disasm = 155215 条, 末条 VA 0x46F59D (next undecodable 0x46F5A0)
+[T1] 单次覆盖字节: 452000 / 4060045 = 11.13% (按指令数/字节计 3.82%)
+[FACT] T1b 主普查流(分块 seg-extend): 1392527 条, 65 个自然停点, 覆盖至 0x7E038D (=100% .text, ≥1e6 条)
+[FACT] T1b-bis 主流末条恰达段尾 0x7E038D
+[FACT] T1c 复现 ask 给数: 分块(0x10000 独立块 × 62) = 1150117 条 = ask 的 1150117
+[T2-byte] 字节级 call [reg+8] = 1715, jmp [reg+8] = 1 (含异形 2)
+[T2-stream] 主流 call/jmp [reg+8] = 1714 (call 1713, jmp 1); 对照流(0x10000块) = 1311 (call 1310)
+[FACT] 对账①: 主流 1714 个 slot2 点全部有字节级编码对应(无主流多出; 编码集完备)
+[FACT] 对账①-b: 对照流 1311 个 slot2 点全部有字节级编码对应
+[对账②] 字节级 1716 点: 含 site 判定 1716; 纯 embedded 巧合 0; A流gap 0; A=site/B=gap(块尾遗留, A 已覆盖) 405; 一site一embedded 分歧 0
+   [可疑示例] 0048EBB7 call [edx] len=3 A=site B=gap
+   [可疑示例] 004C996D call [edx] len=3 A=site B=gap
+   [可疑示例] 004C99DC call [edx] len=3 A=site B=gap
+   [可疑示例] 004C9D1B call [edx] len=3 A=site B=gap
+   [可疑示例] 004CA349 call [edx] len=3 A=site B=gap
+   [可疑示例] 004CCE0F call [ecx] len=3 A=site B=gap
+   [可疑示例] 004CCFB6 call [edx] len=3 A=site B=gap
+   [可疑示例] 004CDE1A call [ecx] len=3 A=site B=gap
+   [可疑示例] 004CDE34 call [ecx] len=3 A=site B=gap
+   [可疑示例] 004CDEB8 call [ecx] len=3 A=site B=gap
+   [可疑示例] 004CE2E2 call [eax] len=3 A=site B=gap
+   [可疑示例] 004CE829 call [edx] len=3 A=site B=gap
+[FACT] 对账②-b: 无字节级命中落在主流未解码洞(无被错位解码藏匿的 slot2 编码)
+[FACT] 对账②-c: 无『一流认作 site / 另一流嵌入』的分歧命中
+[FACT] 对账②-d: 字节级 1716 个编码命中全部是至少一条流的 site (主流 slot2 1714 + 主流异形 2 + 对照流 1311 并集完整) → 普查无漏点
+[对账③] 主流 vs 对照流 site 差集: 403 个 (漂移/块尾差异, 逐点带 in_A/in_B 标志)
+[对账] 字节级异形(+变址)点: [('0x7cc172', 'call', 'ebx+esi*4'), ('0x7cc257', 'call', 'edi+ecx*4')]
+[FACT] T4: 直接/物化调用 0x0054A4F0 = 0 — 指令级(A流0/B流0) + 字节级E8/E9(0) + 全镜像dword仅vtable slot2 0x7ECC04 一处 + 无 FF 15/25 或装载该单元(0 处) — 四法一致
+[FACT] T4: 直接/物化调用 0x0054A630 = 0 — 指令级(A流0/B流0) + 字节级E8/E9(0) + 全镜像dword仅vtable slot2 0x7ECBE4 一处 + 无 FF 15/25 或装载该单元(0 处) — 四法一致
+[FACT] G1a: 全镜像值==0x54A4F0 的 dword 仅 1 处: 0x7ECC04 (=vtable 0x7ECBFC slot2) → 无第二虚表/无回调表/无立即数
+[FACT] G1a: 全镜像值==0x54A630 的 dword 仅 1 处: 0x7ECBE4 (=vtable 0x7ECBDC slot2)
+[FACT] G1b: 无任何指令 call/jmp [slot2单元] 或从其装载(FF15/FF25/A1/8B/89/SIB-abs 全编码 = 0) → 函数指针值无法运行期复制到其它单元
+[FACT] G3 存储指令锚点解码确认: mov dword ptr [0xaa1078], 0x7ecbdc | mov dword ptr [0xaa1078], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc | mov dword ptr [esi], 0x7ecbfc
+[FACT] G2: 值 0x7ECBFC×3 + 0x7ECBDC×1 共 4 处全落在 c7 存储立即数内: 0x543EC4 ← imm of mov dword ptr [0xaa1078], 0x7ecbfc; 0x54A7B8 ← imm of mov dword ptr [esi], 0x7ecbfc; 0x54A808 ← imm of mov dword ptr [esi], 0x7ecbfc; 0x543E93 ← imm of mov dword ptr [0xaa1078], 0x7ecbdc → 无 mov reg,vtable值,无 .rdata/.data 值单元 → 寄存器持有 0x7ECBFC/0x7ECBDC 的唯一途径 = 装载 [0xAA1078]
+[FACT] G3: vptr 写入点(c7 /0)全镜像重扫一致 — 0x7ECBDC: [0x543E8D]→[0xAA1078](动态初始化器 0x543E70 体内); 0x7ECBFC: [0x543EBE]→[0xAA1078](atexit 析构器 0x543EB0 体内), [0x54A7B6]/[0x54A806]→[esi](deleting dtor 体内)
+[FACT] G3 归属: 0x543E8D ∈ 动态初始化器 0x543E70 体内; 0x543EBE ∈ atexit 析构器 0x543EB0 体内 (ask 前提的初始化/析构归属复核)
+[FACT] G3 支撑: 两 deleting dtor (0x54A7B0/0x54A800) 无直接 call/jmp 进入 → [esi] 写只作用于经 slot0 虚派发到达的 this, 而 slot0 派发要求 reg 已持这两个 vptr 值 → 归纳: 唯一实例 0xAA1078
+[FACT] G4: 全镜像 imm32/disp32 引用 0xAA1078 恰 4 处(立即数字节地址): 0x543E8F(init 存储)/0x543EC0(atexit 存储)/0x546060(vptr 装载 @0x54605F)/0x546065(this 装载 @0x546064)
+[FACT] G4-load: 全编码扫「load r32 ← [0xAA1078]」恰 1 处 = 0x54605F (mov eax, dword ptr [0xAA1078]); 「store reg → [0xAA1078]」= 0 (vptr 单元只被 2 条 c7 立即数写) — 字节级,与解码流无关
+[FACT] G5: .rdata/.data 无 dword==0xAA1078 → 不存在指向该全局对象的指针变量(指针值不逃逸前提)
+[G4b] mov reg, 0xAA10xx 全集(主流): [('0x5452be', 'esi', '0xaa1060'), ('0x546064', 'ecx', '0xaa1078'), ('0x5472a2', 'ecx', '0xaa102c'), ('0x547c9e', 'ecx', '0xaa102c')]
+[FACT] G4b: 基址立即数装载中仅 0x546064 恰为 0xAA1078(this 装载); 其余装载值均 ≠ 0xAA1078 → 无别名合成路径读取 vptr 单元
+[T3] 主流 1714 点回溯完成
+[FACT] 唯一 vptr 装载 0x54605F 在主流中定位成功 (idx=465556)
+[FACT] GROW(包含唯一装载与派发的函数) = 0x545150..0x546D92 (ret@0x546D90), 体内无停点
+[T5] 污点消费者: [('0x546069', 'call', 'dword ptr [eax + 8]')]
+[T5] 逃逸事件: []
+[FACT] T5: 从全镜像唯一 vptr 装载 0x54605F 的污点传播 → 消费者恰 1 个 = 0x546069 (call dword ptr [eax + 8]); 无 push/store/ret 逃逸 → vptr 值不逃逸出 GROW
+[FACT] T5-final: 1714 个主流 slot2 点中可能指向 0x54A4F0/0x54A630 的恰 1 个: 0x546069
+[候选] 0x546069 锚定上下文(前 8 条+本体+后 4 条):
+   00546050 mov ecx, dword ptr [0xaa108c]
+   00546056 test ecx, ecx
+   00546058 jle 0x54608c
+   0054605A add eax, ecx
+   0054605C push 0
+   0054605E push eax
+   0054605F mov eax, dword ptr [0xaa1078]
+   00546064 mov ecx, 0xaa1078
+   00546069 call dword ptr [eax + 8]
+   0054606C test al, al
+   0054606E je 0x54608c
+   00546070 mov ecx, dword ptr [0xaa1088]
+[上下文] GROW 0x545150 直接调用者: ['0x4ad048', '0x59a1e9', '0x5be647']
+[异形] 007CC172 dword ptr [ebx + esi*4 + 8] → EXCLUDED (SEH)
+[异形] 007CC257 dword ptr [edi + ecx*4 + 8] → EXCLUDED (SEH)
+
+WROTE D:\Project\ra2-campaign-forge\lead\slot2_fullscan_20261111\_sf_scan_out.txt
+WROTE D:\Project\ra2-campaign-forge\lead\slot2_fullscan_20261111\_sf_scan_out.json
+MISMATCH count: 0

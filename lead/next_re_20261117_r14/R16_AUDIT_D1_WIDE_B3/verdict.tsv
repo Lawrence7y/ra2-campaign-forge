@@ -1,0 +1,21 @@
+# R16-AUDIT-D1-WIDE-B3 逐行判决 — 独立复算（自写 PE/RTTI/装表点/宿主身份）
+# verdict: PASS=该行 ④ 可用；WITHDRAW=应随行从宽读集合剔除并撤回 ④（Lead 已裁定）
+entry	name	vt	slot	install_site	fields_form	my_form	fields_status	A	B	C	D	E	F	verdict	note
+005B3A60	MissionClass::scalar_deleting_destructor	007EDCC0	8	005B2DE9	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	entry 本身是 scalar deleting dtor；宿主 005B2DA0 为真 ctor（mov esi,ecx→call ObjectClass ctor 005F3900→4 个 vptr→returns this）
+005F4B10	ObjectClass::DrawWrapper(slot65);ObjectClass::DrawIfVisible(shared)	007EF060	65	005F39BA	ctor_body	ctor_body	CLASS_FIX	PASS	PASS	PASS	PASS	PASS	PASS	WITHDRAW	撤回：④ 字节真（007EF060 slot65=005F4B10，RTTI .?AVObjectClass@@）但行名类无 ② 链支持——② 原文归属 BuildingLightClass vt 007E3AD0 slot65 且 verdict_polarity=NEG、证据路径在 W174_dirty80；且 slot65 被 16 张表共有，类归属不可由 ④ 单独支撑
+0062AF70	ParasiteClass::slot8_deleting_dtor	007EF890	8	00629231	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	宿主 00629210 为真 ctor（call 0x410170 基类 ctor，4 个 vptr）
+0062B250	DynamicVectorClass<ParasiteClass*>::SetCapacity	007EF824	2	006291AD	mov_abs	mov_abs	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	mov_abs：目标 0xAC4910 在 .data（VirtualSize 域 0x812000..0xB79BE4）；宿主 00629190 为静态初始化器（非 ctor，mov_abs 不要求 ctor）
+0062B300	DynamicVectorClass<ParasiteClass*>::FindItemIndex	007EF824	4	006291AD	mov_abs	mov_abs	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	同上（同 vt/同装表点，slot 4）
+00631CC0	FilePipe::slot3	007E4DA0	3	007BA426	reg	reg	CLASS_FIX	PASS	PASS	PASS	PASS	PASS	PASS	PASS	reg：宿主 007BA420 写 this@disp0 但为析构器——被 scalar-deleting 包装器 00477790 调用（test@00477798/call 0x7C8B3D@004777A0/ret 4），体内释成员后尾调基类析构 00631C80；该表无任何 ctor 写 this 的装表点
+0063FEA0	PowerClass::slot10	007EFF54	10	0063F71C	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	宿主 0063F6B0 为真 ctor（call 0x652960 基类 ctor，returns this）
+00653850	RadarClass::slot10	007F0344	10	00652B45	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	宿主 00652960（atlas 670B）为真 ctor；★执行器原取的 00652A83 是本审计初版启发式的假起点，已用 atlas+clean-decode 交叉确认 00652960
+0065C0D0	DynamicVectorClass<RadSiteClass*>::SetCapacity	007F07A4	2	0065B17D	mov_abs	mov_abs	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	mov_abs：目标 0xB04BD0 在 .data；宿主 0065B160 为静态初始化器
+0065C180	DynamicVectorClass<RadSiteClass*>::FindItemIndex	007F07A4	4	0065B17D	mov_abs	mov_abs	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	同上（同 vt/同装表点，slot 4）
+0065CAC0	RawFileClass::slot2	007F0904	2	0065CAA8	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	SITE_FIX：旧点 0065CA03/宿主 0065CA00 为析构器（尾 0065CA5F mov [esi],0x7f08bc 写基类 vptr，被 00432610 删除包装器调用）→ 改取真 ctor 0065CAA8/0065CA80
+0065CDD0	RawFileClass::slot12	007F0904	12	0065CAA8	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	SITE_FIX：同 0065CAC0
+0065CF00	RawFileClass::slot10	007F0904	10	0065CAA8	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	SITE_FIX：同 0065CAC0
+0065D0D0	RawFileClass::slot11	007F0904	11	0065CAA8	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	SITE_FIX：同 0065CAC0
+0065D150	CDFileClass::slot3	007E1668	3	0047AA3C	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	SITE_FIX：旧点 004014C4 实测 mov [esp+0x20],0x7e1668 为栈临时写（宿主 004011C0 非 ctor）→ 改取真 ctor 0047AA3C/0047AA30（call 0x431B20 基类 ctor，returns this）
+0065D190	CDFileClass::slot4	007E1668	4	0047AA3C	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	SITE_FIX：同 0065D150
+006AC210	SidebarClass::slot33	007F3058	33	006A4EDF	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	宿主 006A4E60 为真 ctor（call 0x63F6B0 PowerClass ctor）
+006B8140	SpawnManagerClass::scalar_deleting_destructor	007F3650	8	006B6CEF	ctor_body	ctor_body	OK	PASS	PASS	PASS	PASS	PASS	PASS	PASS	entry 本身是 scalar deleting dtor；宿主 006B6C90（atlas 516B）为真 ctor（call 0x410170 基类 ctor）

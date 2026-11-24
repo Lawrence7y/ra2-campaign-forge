@@ -1,0 +1,464 @@
+{
+ "minpatch_diff": [
+  "--- ",
+  "+++ ",
+  "@@ -103,6 +103,7 @@",
+  "     # ---- R9 要素在场（包裹归一化） ----",
+  "-    r9_problems, r9_warnings = g7.r9_check(text, req)",
+  "+    import _r9s_predicates as r9s   # 新增层：R9 保持只读不改",
+  "+    r9_problems, r9_warnings = r9s.r9s_check(text, req)",
+  "     r9_present = r9_raw = 0",
+  "     for k in req:",
+  "-        ok, layer = g7.r9_element_present(text, k)",
+  "+        ok, layer, _ = r9s.r9s_element_present(text, k)",
+  "         if ok:",
+  "@@ -114,3 +115,3 @@",
+  "     predicates[\"R9\"] = {",
+  "-        \"rule_id\": \"R9\", \"name\": \"包裹归一化要素匹配（第 5 类）\",",
+  "+        \"rule_id\": \"R9\", \"name\": \"包裹归一化 + 语义要素匹配（R9 + R9S）\",",
+  "         \"items\": r9_items, \"present\": r9_present, \"raw_hits\": r9_raw,"
+ ],
+ "check_deliverable_calls": [
+  {
+   "file": "lead/gate_r9r12_20261109/_g9_gate.py",
+   "line": 70,
+   "text": "def check_deliverable(path, required_elements, forbidden_words,",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/gate_r9r12_20261109/_g9_gate.py",
+   "line": 213,
+   "text": "r = check_deliverable(probe, [], [])",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/gate_r9r12_20261109/_g9_gate.py",
+   "line": 220,
+   "text": "r2 = check_deliverable(probe, [\"「被核对象」\"], [\"已生效\"])",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/gate_r9r12_20261109/_g9_regression.py",
+   "line": 93,
+   "text": "r = check_deliverable(p, req, forb)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/gate_r9r12_20261109/_g9v_corpus.py",
+   "line": 74,
+   "text": "r = check_deliverable(REPO_ROOT / rel, REQ, FORB)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/gate_r9r12_20261109/_g9v_empty.py",
+   "line": 18,
+   "text": "r = check_deliverable(REPO_ROOT / rel, [], [])",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/gate_r9r12_20261109/_g9v_empty.py",
+   "line": 26,
+   "text": "r = check_deliverable(REPO_ROOT / probes[0], [\"被核对象\"], [])",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/gate_r9r12_20261109/_g9v_regress.py",
+   "line": 71,
+   "text": "return check_deliverable(REPO_ROOT / rel, req, forb)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/gate_r9r12_20261109/_g9v_subset.py",
+   "line": 59,
+   "text": "r = check_deliverable(REPO_ROOT / rel, REQ, FORB)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/gate_r9r12_20261109/_g9v_verify.py",
+   "line": 30,
+   "text": "r = check_deliverable(REPO_ROOT / rel, req, FORB)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/gate_v1v2_20261109/_v12_gate_compare.py",
+   "line": 39,
+   "text": "r = g9.check_deliverable(str(path), [], bans, old_gate_contrast=False)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/gate_v1v2_20261109/_v12v_r10.py",
+   "line": 114,
+   "text": "r = g9.check_deliverable(str(path), req, bans, old_gate_contrast=False)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_counterexample.py",
+   "line": 79,
+   "text": "r_old = show(\"OLD\", OLD.check_deliverable(DELIV, REQ, FORB, root=REPO, doc_dir=W))",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_counterexample.py",
+   "line": 80,
+   "text": "r_new = show(\"NEW\", NEWMOD.check_deliverable(DELIV, REQ, FORB, root=REPO, doc_dir=W))",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_counterexample.py",
+   "line": 94,
+   "text": "i_old = show(\"OLD+\", OLD.check_deliverable(DELIV, REQ, FORB, root=REPO, doc_dir=W))",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_counterexample.py",
+   "line": 95,
+   "text": "i_new = show(\"NEW+\", NEWMOD.check_deliverable(DELIV, REQ, FORB, root=REPO, doc_dir=W))",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_g9_candidate.py",
+   "line": 70,
+   "text": "def check_deliverable(path, required_elements, forbidden_words,",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_g9_candidate.py",
+   "line": 217,
+   "text": "r = check_deliverable(probe, [], [])",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_g9_candidate.py",
+   "line": 224,
+   "text": "r2 = check_deliverable(probe, [\"「被核对象」\"], [\"已生效\"])",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_probe.py",
+   "line": 430,
+   "text": "r_old = OLD.check_deliverable(DELIVERABLE, REQ, FORB, root=REPO, doc_dir=FIX)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_probe.py",
+   "line": 457,
+   "text": "i_old = OLD.check_deliverable(DELIVERABLE, REQ, FORB, root=REPO, doc_dir=FIX)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_regress.py",
+   "line": 50,
+   "text": "ro = OLD.check_deliverable(p, REQ, FORB)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_ms_regress.py",
+   "line": 51,
+   "text": "rn = NEW.check_deliverable(p, REQ, FORB)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_check.py",
+   "line": 327,
+   "text": "ro = OLD.check_deliverable(p, REQ, FORB, **kw)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_check.py",
+   "line": 328,
+   "text": "rn = NEW.check_deliverable(p, REQ, FORB, **kw)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_check.py",
+   "line": 329,
+   "text": "rz = OWN.check_deliverable(p, REQ, FORB, **kw)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_check.py",
+   "line": 355,
+   "text": "rio = OLD_I.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_check.py",
+   "line": 356,
+   "text": "rin = NEW_I.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_check.py",
+   "line": 357,
+   "text": "riz = OWN_I.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_check.py",
+   "line": 393,
+   "text": "(OLD.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)[\"verdict\"],",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_check.py",
+   "line": 394,
+   "text": "NEW.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)[\"verdict\"]))",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_confirm.py",
+   "line": 112,
+   "text": "rio = OI.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_confirm.py",
+   "line": 113,
+   "text": "rin = NI.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_confirm.py",
+   "line": 114,
+   "text": "riz = ZI.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_confirm.py",
+   "line": 150,
+   "text": "ro = OLD.check_deliverable(fp, REQ30, FORB30)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_confirm.py",
+   "line": 151,
+   "text": "rn = NEW.check_deliverable(fp, REQ30, FORB30)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_confirm.py",
+   "line": 152,
+   "text": "rz = OWN.check_deliverable(fp, REQ30, FORB30)",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_final.py",
+   "line": 66,
+   "text": "rio = OI.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_final.py",
+   "line": 67,
+   "text": "rin = NI.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_final.py",
+   "line": 68,
+   "text": "riz = ZI.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_g9_own.py",
+   "line": 70,
+   "text": "def check_deliverable(path, required_elements, forbidden_words,",
+   "consumes_problems_text": false
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_g9_own.py",
+   "line": 217,
+   "text": "r = check_deliverable(probe, [], [])",
+   "consumes_problems_text": true
+  },
+  {
+   "file": "lead/merged_safety_20261109/_msv_g9_own.py",
+   "line": 224,
+   "text": "r2 = check_deliverable(probe, [\"「被核对象」\"], [\"已生效\"])",
+   "consumes_problems_text": true
+  }
+ ],
+ "check_deliverable_by_file": {
+  "lead/gate_r9r12_20261109/_g9_gate.py": 3,
+  "lead/gate_r9r12_20261109/_g9_regression.py": 1,
+  "lead/gate_r9r12_20261109/_g9v_corpus.py": 1,
+  "lead/gate_r9r12_20261109/_g9v_empty.py": 2,
+  "lead/gate_r9r12_20261109/_g9v_regress.py": 1,
+  "lead/gate_r9r12_20261109/_g9v_subset.py": 1,
+  "lead/gate_r9r12_20261109/_g9v_verify.py": 1,
+  "lead/gate_v1v2_20261109/_v12_gate_compare.py": 1,
+  "lead/gate_v1v2_20261109/_v12v_r10.py": 1,
+  "lead/merged_safety_20261109/_ms_counterexample.py": 4,
+  "lead/merged_safety_20261109/_ms_g9_candidate.py": 3,
+  "lead/merged_safety_20261109/_ms_probe.py": 2,
+  "lead/merged_safety_20261109/_ms_regress.py": 2,
+  "lead/merged_safety_20261109/_msv_check.py": 8,
+  "lead/merged_safety_20261109/_msv_confirm.py": 6,
+  "lead/merged_safety_20261109/_msv_final.py": 3,
+  "lead/merged_safety_20261109/_msv_g9_own.py": 3
+ },
+ "fuzzy_comment_lines": [
+  104,
+  368
+ ],
+ "admission_rules_lines": [
+  "新增一个 spec 必须**同时**满足以下 7 条（缺一不批）：",
+  "",
+  "1. **任务书要素**：key 必须是任务书【交付】里已写明的必现要素字面串；不得为「让某个交付件通过」临时造 key。",
+  "2. **真值条件可写**：能写成一阶式（∀/∃/◇/¬/合取），并给出该式与 token 语义的等价论证（如 §2.3 的问答语义 / 摹状词 / 情态逻辑）。**「看起来像」不构成依据**。",
+  "3. **角色 ≥2 且可独立观测**：每个角色是文本中可定位的结构证据（角色头 / 算子 / 具值 / 载荷 / 极性），不得只有一个词面。",
+  "4. **最小消融必 FAIL**：删掉任一角色构造的样本必须判缺失（角色消融，§3.4 实跑 7/7 FAIL）。",
+  "5. **负样本 ≥ 正样本数**：每条 spec 至少配「只给一半 / 否定 / 待定 / 占位符 / 跨小节」五类负样本，全部仍 FAIL。",
+  "6. **闭合边界**：不得使用模糊匹配、通配、编辑距离或 embedding；`SPECS.get(token)` 是精确字典查表，未登记 token 一律 R9S ≡ R9。",
+  "7. **全量不放松回归**：新 spec 必须重跑 §3.4 的 32 域白名单检查，`flips_outside_whitelist` 必须为空，且 `n_flips` 恰等于白名单数。",
+  "",
+  "**为什么这能止住膨胀**：新措辞（「批准方」「原文/改为」「能重建」「可唯一复现」）不产生新条目，因为它们满足**同一个真值条件**——P06/P07/P08/P10/P12/P15/P17/P18 共 8 条构造变体实跑全部 `semantic` 命中，而 `SPECS` 仍是 5 条。反过来，若有人想为「已批准」「已分析」「已实跑」加词，第 4/5 条会直接拒绝（它们是负样本 N01/N18/N06）。**词表增长的上界 = 任务书里「语义型必现要素」的个数，而不是语料里的措辞数。**"
+ ],
+ "five_contexts": [
+  {
+   "file": "lead/matrix_ab_ruling_20261109/RULING_MATRIX_AB.md",
+   "line": 108,
+   "text": "### 5.2 可执行改动清单（★ 处方，未实施；批准人一律 = **乙设计责任人**，pf2:200；改后立即做登记 7/8，顺序不可倒）"
+  },
+  {
+   "file": "lead/matrix_ab_ruling_20261109/RULING_MATRIX_AB.md",
+   "line": 138,
+   "text": "若批准人不采随批：B 核心仍成立，但 **W2 必须在台账如实登记为未关闭**，不得声称已关闭。"
+  },
+  {
+   "file": "lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md",
+   "line": 12,
+   "text": "矩阵连带评估件对五处缺陷（W1/W2/O1/O2/W3）各下了「可达 / 不可达」判断。本件把这些判断逐处对到实码：构造输入 → 实际调用候选函数 → 记录真实返回值 → 落到矩阵哪一行 → 与矩阵声称是否一致。可达只认「实跑走到过」，不认「理论上可以」；不可达必须附控制流证明。"
+  },
+  {
+   "file": "lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md",
+   "line": 26,
+   "text": "3. **交付轮（本件，本轮实跑）**：`python -I -X utf8 D:\\Project\\ra2-campaign-forge\\lead\\matrix_reach_20261109\\_mr_delivery_fp.py` → `_mr_delivery_fp_out.txt`（上游 7 件指纹 7/7 逐字节一致，见 §2）；`python -I -X utf8 …\\lead\\matrix_reach_20261109\\_mr"
+  },
+  {
+   "file": "lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md",
+   "line": 65,
+   "text": "- **构造输入 → 实跑返回**：classify 直调，pre 八变体（None/{}/缺state/脏值/显式unknown/absent_confirmed/present/error）× read_error 两型（exists=None / exists=True），16/16 格实跑："
+  },
+  {
+   "file": "lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md",
+   "line": 67,
+   "text": "```"
+  },
+  {
+   "file": "lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md",
+   "line": 69,
+   "text": "  pre=None(未采集)      × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: :2]"
+  },
+  {
+   "file": "lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md",
+   "line": 70,
+   "text": "  pre=absent_confirmed × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='absent_confirmed'  [矩阵归属: 无行=O1 / exists=True 型被:6字面误claim=O1']"
+  },
+  {
+   "file": "lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md",
+   "line": 71,
+   "text": "  pre=error          × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='error'  [矩阵归属: :4=W2]"
+  },
+  {
+   "file": "lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md",
+   "line": 74,
+   "text": "- **落哪一行 / 与矩阵声称是否一致**：四未采集变体 × read_error 按 :2 匹配，矩阵声称 `unknown`，实码 `post_read_error` → **不一致，W1 错盖坐实**（16/16，out:159-174；复核 45 格全表中 18 个 read_error 格全部 PRE，R:112）。显式 unknown 两型按严格键 :2 前件不含、:3 要跑后无件 → 无行（out:167-168 记 W"
+  },
+  {
+   "file": "lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md",
+   "line": 80,
+   "text": "- **构造输入 → 实跑返回**：pre=error 用**真实 make_pre 产物**（`Path(None)` → TypeError → error，out:147）："
+  },
+  {
+   "file": "lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md",
+   "line": 84,
+   "text": "  error × read_error(exists=None) -> verdict='post_read_error' conf='none' pre_state='error' note='★ 跑后件读/复制失败（独立 error 出口，禁止静默）：PermissionError: [Errno 13] fake-lock (探针构'"
+  },
+  {
+   "file": "lead/n11_wording_fix_20261108/N11_WORDING_FIX.md",
+   "line": 76,
+   "text": "## 4 订正草案（改前/改后逐处对照）"
+  },
+  {
+   "file": "lead/n11_wording_fix_20261108/N11_WORDING_FIX.md",
+   "line": 81,
+   "text": "- 【改前】本件按 **13 项分写**，与裁决列名一一对应，无缺漏、无新增：拆分只改颗粒度、不改内容。"
+  },
+  {
+   "file": "lead/n11_wording_fix_20261108/N11_WORDING_FIX.md",
+   "line": 82,
+   "text": "- 【改后】本件按 **13 项分写**，与裁决列名逐项对应（其中「帧数/重复性/阈值论证」一项拆为 D-08/D-09/D-10 三维，故 11 项列名展开为 13 维），无缺漏、无新增：拆分只改颗粒度、不改内容。"
+  },
+  {
+   "file": "lead/n11_wording_fix_20261108/N11_WORDING_FIX.md",
+   "line": 88,
+   "text": "- 【改前】同 §4.1【改前】"
+  },
+  {
+   "file": "lead/n11_wording_fix_20261108/N11_WORDING_FIX.md",
+   "line": 89,
+   "text": "- 【改后】本件按 **13 项分写**：裁决列名共 11 项，其中「帧数/重复性/阈值论证」一项拆为 D-08/D-09/D-10 三维、其余 10 项逐项承接（11 = 10 + 1，13 = 10 + 3）；无缺漏、无新增，拆分只改颗粒度、不改内容。"
+  },
+  {
+   "file": "lead/n11_wording_fix_20261108/N11_WORDING_FIX.md",
+   "line": 97,
+   "text": "**三案均只处理 _ps:54 一句；13 维结构、维度内容、其余 368 行一律不碰。方案 A 已同时满足「准确」与「最小改动」。**"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 10,
+   "text": "1. **只查两件事**：(a) 台账 §604（「同一窗内慢 1/3 帧 vs 快 1/3 帧对照」）的**生成脚本**是否在盘、能否重建；(b) 该表「单向压缩」的数字行为能否归属到某一候选错误类、哪些候选可证伪、哪些筛不出。"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 32,
+   "text": "## 3 脚本搜索全结果与存在性判定（四路逐路）"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 44,
+   "text": "- **逐路结论：lead/ 与 out/re_work/ 均无 §604 生成器。**"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 51,
+   "text": "- **逐路结论：32 件全为 2026-11-07 之后的复核/复算/锚点件，无一生成器。**"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 59,
+   "text": "- **逐路结论：两轮上游产物均明载脚本未落盘。**"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 67,
+   "text": "- **逐路结论：台账自身即证明脚本从未写入台账，亦未引用任何在盘脚本。**"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 69,
+   "text": "### 3.5 存在性判定"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 71,
+   "text": "**§604 生成脚本【不存在且从未落盘】**——四条独立证据链（文件名、内容、产物反查、台账实读）在本轮全部独立复跑/复读，方向一致，无一矛盾。与上轮调查（`_sg_FINDINGS.md:13-23`）及复核回件（verdict = confirmed）判定一致。"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 73,
+   "text": "## 4 重建可行性与单向压缩候选筛选"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 77,
+   "text": "| # | 口径项 | 台账文本 | 唯一性 | 钉死证据 |"
+  },
+  {
+   "file": "lead/s604_script_gap_20261109/S604_SCRIPT_GAP.md",
+   "line": 87,
+   "text": "**判定：正确算法【可唯一重建】。** 已有四重独立实现逐位一致（N-8、R3 蓝本、`_verify_r3_gapdiff.py` 第三方、上轮探针 [0] 三窗逐位复现 R3 [B]，`_sg_probe_compression_out.txt:1-4`【实读】），复核轮另有第 5 重独立实现与 R3 [B] 逐位一致（max|Δ|=0.000000）【转述：复核回件】。"
+  }
+ ]
+}

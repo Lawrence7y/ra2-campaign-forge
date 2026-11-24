@@ -1,0 +1,607 @@
+
+==============================================================================
+### 0. B1 被核对象 SHA256 / 字节数 / 复核时刻（本人实算）
+==============================================================================
+被核对象 = Q2_ALPHA.md
+绝对路径 = D:\Project\ra2-campaign-forge\lead\re_line_20261105\W4_FIELD_SPEC\sections\Q2_ALPHA.md
+SIZE = 31712
+SHA256 = 27055e6b94f892c6a53facc07adf908688c151eca82cfe56da8133cee8507663
+复核时刻 = 2026-11-05T23:12:31.729145+08:00
+文件 mtime = 2026-11-05T19:29:07.081299+08:00
+任务书参照 SHA256 = 27055e6b94f892c6a53facc07adf908688c151eca82cfe56da8133cee8507663  一致 = True
+任务书参照 字节数 = 31712  一致 = True
+OBJECT_CHANGED = False
+
+==============================================================================
+### 1. ra2tool.Engine 装载 + 目标二进制哈希（TASK.md:120/111 指定读法）
+==============================================================================
+Engine().sha = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+gamemd.exe SIZE/SHA256 (本人实算) = 4825360 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+Q2_ALPHA.md:93 自报 SHA256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+三者一致 = True
+.text coverage(%, insns, resync_fails) = (99.99837567729335, 1394120, 66)
+节表:
+   .text    VA=0x00401000 vsize=0x3DF38D raw_ptr=0x1000 raw_size=0x3E0000
+   .rdata   VA=0x007E1000 vsize=0x30074 raw_ptr=0x3E1000 raw_size=0x31000
+   .data    VA=0x00812000 vsize=0x367BE4 raw_ptr=0x412000 raw_size=0x6C000
+   .rsrc    VA=0x00B7A000 vsize=0x18128 raw_ptr=0x47E000 raw_size=0x19000
+   .detour  VA=0x00B93000 vsize=0x2718 raw_ptr=0x497000 raw_size=0x3000
+
+==============================================================================
+### 2. 独立反汇编复核 Q2_ALPHA.md §2.2 的四段（逐字节比对自报输出）
+==============================================================================
+
+-- [1] 0x42A5F0..0x42A610 GenerationStamp inc/写回 --
+0x0042a5f0 7497               je     0x42a589
+0x0042a5f2 fc                 cld    
+0x0042a5f3 8b38               mov    edi, dword ptr [eax]
+0x0042a5f5 3bd7               cmp    edx, edi
+0x0042a5f7 7ef2               jle    0x42a5eb
+0x0042a5f9 8930               mov    dword ptr [eax], esi
+0x0042a5fb 8b4128             mov    eax, dword ptr [ecx + 0x28]
+0x0042a5fe 40                 inc    eax
+0x0042a5ff 894128             mov    dword ptr [ecx + 0x28], eax
+0x0042a602 0f8580000000       jne    0x42a688
+0x0042a608 a1dcc28900         mov    eax, dword ptr [0x89c2dc]
+0x0042a60d 0fafc0             imul   eax, eax
+
+-- [2] 0x42CC70..0x42CC90 同步重试再次调用 0x42A5B0 --
+0x0042cc70 3c56               cmp    al, 0x56
+0x0042cc72 47                 inc    edi
+0x0042cc73 8bcd               mov    ecx, ebp
+0x0042cc75 897c2440           mov    dword ptr [esp + 0x40], edi
+0x0042cc79 e852000000         call   0x42ccd0
+0x0042cc7e 8bcd               mov    ecx, ebp
+0x0042cc80 e82bd9ffff         call   0x42a5b0
+0x0042cc85 8a5538             mov    dl, byte ptr [ebp + 0x38]
+0x0042cc88 8b4c241c           mov    ecx, dword ptr [esp + 0x1c]
+0x0042cc8c 84d2               test   dl, dl
+
+-- [3] 0x55B93F..0x55B965 Bullet +0x98 活跃门控 --
+0x0055b93f a150eda800         mov    eax, dword ptr [0xa8ed50]
+0x0055b944 8d70ff             lea    esi, [eax - 1]
+0x0055b947 85f6               test   esi, esi
+0x0055b949 7c1b               jl     0x55b966
+0x0055b94b 8b0d44eda800       mov    ecx, dword ptr [0xa8ed44]
+0x0055b951 8b0cb1             mov    ecx, dword ptr [ecx + esi*4]
+0x0055b954 8a8198000000       mov    al, byte ptr [ecx + 0x98]
+0x0055b95a 84c0               test   al, al
+0x0055b95c 7405               je     0x55b963
+0x0055b95e 8b11               mov    edx, dword ptr [ecx]
+0x0055b960 ff525c             call   dword ptr [edx + 0x5c]
+0x0055b963 4e                 dec    esi
+
+-- [4] 0x6F8DF0..0x6F8E10 索敌入口 inc/写回 --
+0x006f8df0 83ec5c             sub    esp, 0x5c
+0x006f8df3 8b1534eca800       mov    edx, dword ptr [0xa8ec34]
+0x006f8df9 53                 push   ebx
+0x006f8dfa 55                 push   ebp
+0x006f8dfb 56                 push   esi
+0x006f8dfc 57                 push   edi
+0x006f8dfd 33ff               xor    edi, edi
+0x006f8dff 83cdff             or     ebp, 0xffffffff
+0x006f8e02 8bf1               mov    esi, ecx
+0x006f8e04 42                 inc    edx
+0x006f8e05 897c2420           mov    dword ptr [esp + 0x20], edi
+0x006f8e09 891534eca800       mov    dword ptr [0xa8ec34], edx
+
+==============================================================================
+### 2b. 复核 §4.1/§4.4 反例所需的「回绕/构造初值/重置」字节
+==============================================================================
+
+-- 0x42A5F9..0x42A610 (inc + jne 回绕分支) --
+0x0042a5f9 8930               mov    dword ptr [eax], esi
+0x0042a5fb 8b4128             mov    eax, dword ptr [ecx + 0x28]
+0x0042a5fe 40                 inc    eax
+0x0042a5ff 894128             mov    dword ptr [ecx + 0x28], eax
+0x0042a602 0f8580000000       jne    0x42a688
+0x0042a608 a1dcc28900         mov    eax, dword ptr [0x89c2dc]
+0x0042a60d 0fafc0             imul   eax, eax
+0x0042a610 48                 dec    eax
+
+-- 0x42A67F..0x42A68D (回绕后再自增跳过 0) --
+0x0042a67f 8b4128             mov    eax, dword ptr [ecx + 0x28]
+0x0042a682 5d                 pop    ebp
+0x0042a683 40                 inc    eax
+0x0042a684 5b                 pop    ebx
+0x0042a685 894128             mov    dword ptr [ecx + 0x28], eax
+0x0042a688 5f                 pop    edi
+0x0042a689 5e                 pop    esi
+0x0042a68a 83c408             add    esp, 8
+0x0042a68d c3                 ret    
+0x0042a68e 90                 nop    
+0x0042a68f 90                 nop    
+
+-- 0x42A6D0..0x42A710 (构造体: ecx=-1, [esi+0x28]=-1) --
+0x0042a6d0 83ec0c             sub    esp, 0xc
+0x0042a6d3 b001               mov    al, 1
+0x0042a6d5 53                 push   ebx
+0x0042a6d6 55                 push   ebp
+0x0042a6d7 56                 push   esi
+0x0042a6d8 8bf1               mov    esi, ecx
+0x0042a6da 33db               xor    ebx, ebx
+0x0042a6dc 83c9ff             or     ecx, 0xffffffff
+0x0042a6df 57                 push   edi
+0x0042a6e0 881e               mov    byte ptr [esi], bl
+0x0042a6e2 885e01             mov    byte ptr [esi + 1], bl
+0x0042a6e5 885e02             mov    byte ptr [esi + 2], bl
+0x0042a6e8 884603             mov    byte ptr [esi + 3], al
+0x0042a6eb c746040000803f     mov    dword ptr [esi + 4], 0x3f800000
+0x0042a6f2 884608             mov    byte ptr [esi + 8], al
+0x0042a6f5 895e18             mov    dword ptr [esi + 0x18], ebx
+0x0042a6f8 895e1c             mov    dword ptr [esi + 0x1c], ebx
+0x0042a6fb 895e20             mov    dword ptr [esi + 0x20], ebx
+0x0042a6fe 895e24             mov    dword ptr [esi + 0x24], ebx
+0x0042a701 894e28             mov    dword ptr [esi + 0x28], ecx
+0x0042a704 894e2c             mov    dword ptr [esi + 0x2c], ecx
+0x0042a707 884638             mov    byte ptr [esi + 0x38], al
+0x0042a70a 895e3c             mov    dword ptr [esi + 0x3c], ebx
+0x0042a70d 894e6c             mov    dword ptr [esi + 0x6c], ecx
+
+-- 0x40AFA0..0x40AFAF (静态构造 thunk call 0x42A6D0) --
+0x0040afa0 b9b8e88700         mov    ecx, 0x87e8b8
+0x0040afa5 e826f70100         call   0x42a6d0
+0x0040afaa 68c0af4000         push   0x40afc0
+
+-- 0x6F8E09 写点附近 --
+0x006f8e00 cdff               int    0xff
+0x006f8e02 8bf1               mov    esi, ecx
+0x006f8e04 42                 inc    edx
+0x006f8e05 897c2420           mov    dword ptr [esp + 0x20], edi
+0x006f8e09 891534eca800       mov    dword ptr [0xa8ec34], edx
+0x006f8e0f 8b06               mov    eax, dword ptr [esi]
+
+==============================================================================
+### 2c. 全镜像绝对地址访存普查（写点 / 是否有清零指令）
+==============================================================================
+
+0x00A8EC34 (ΔThreatCalls) : disp_hits 共 2 条
+   0x006f8df3 R mov      edx, dword ptr [0xa8ec34]
+   0x006f8e09 W mov      dword ptr [0xa8ec34], edx
+
+0x0087E8E0 (ΔGenStamp) : disp_hits 共 0 条
+
+0x00B0CE88 (DirtyAreas.Count) : disp_hits 共 27 条
+   0x006d1a91 W mov      dword ptr [0xb0ce88], eax
+   0x006d2793 R mov      ecx, dword ptr [0xb0ce88]
+   0x006d2983 R mov      eax, dword ptr [0xb0ce88]
+   0x006d2995 W mov      dword ptr [0xb0ce88], eax
+   0x006d29b8 R cmp      edx, dword ptr [0xb0ce88]
+   0x006d2a01 R mov      ecx, dword ptr [0xb0ce88]
+   0x006d2a94 R mov      ecx, dword ptr [0xb0ce88]
+   0x006d2aa1 W mov      dword ptr [0xb0ce88], ecx
+   0x006d2b75 R mov      esi, dword ptr [0xb0ce88]
+   0x006d2c93 R mov      eax, dword ptr [0xb0ce88]
+   0x006d2ca1 W mov      dword ptr [0xb0ce88], eax
+   0x006d2cc2 R cmp      edx, dword ptr [0xb0ce88]
+   0x006d2f84 R mov      eax, dword ptr [0xb0ce88]
+   0x006d31dd R mov      eax, dword ptr [0xb0ce88]
+   0x006d33c1 R mov      eax, dword ptr [0xb0ce88]
+   0x006d35ad R mov      eax, dword ptr [0xb0ce88]
+   0x006d378e R mov      eax, dword ptr [0xb0ce88]
+   0x006d3850 R mov      edx, dword ptr [0xb0ce88]
+   0x006d3988 R mov      eax, dword ptr [0xb0ce88]
+   0x006d3bd8 R mov      eax, dword ptr [0xb0ce88]
+   0x006d3df0 R mov      eax, dword ptr [0xb0ce88]
+   0x006d44fc R mov      ecx, dword ptr [0xb0ce88]
+   0x006d451c W mov      dword ptr [0xb0ce88], ecx
+   0x006d453c R mov      ecx, dword ptr [0xb0ce88]
+   0x006da980 R mov      ecx, dword ptr [0xb0ce88]
+   0x006da993 W mov      dword ptr [0xb0ce88], ecx
+   0x006da9b5 R mov      ecx, dword ptr [0xb0ce88]
+
+0x00A8ED50 (BulletCount) : disp_hits 共 15 条
+   0x0046646d R mov      ecx, dword ptr [0xa8ed50]
+   0x004664a2 R mov      ecx, dword ptr [0xa8ed50]
+   0x004664ab W mov      dword ptr [0xa8ed50], ecx
+   0x00466623 R mov      ecx, dword ptr [0xa8ed50]
+   0x00466630 W mov      dword ptr [0xa8ed50], ecx
+   0x00466646 R mov      ecx, dword ptr [0xa8ed50]
+   0x004e6891 W mov      dword ptr [0xa8ed50], eax
+   0x005344cb R cmp      dword ptr [0xa8ed50], ebx
+   0x005344e0 R cmp      dword ptr [0xa8ed50], ebx
+   0x0055b93f R mov      eax, dword ptr [0xa8ed50]
+   0x00650534 R mov      eax, dword ptr [0xa8ed50]
+   0x00650571 R mov      eax, dword ptr [0xa8ed50]
+   0x0067cc5f R mov      eax, dword ptr [0xa8ed50]
+   0x0067cc7d R mov      eax, dword ptr [0xa8ed50]
+   0x007193cc R mov      eax, dword ptr [0xa8ed50]
+
+==============================================================================
+### 2d. BSS 几何：0x00A8EC34 是否零填充（进程重启 ⇒ 向下跳变）
+==============================================================================
+.data VA=0x812000 vsize=0x367BE4 raw_size=0x6C000
+   VA=0x00A8EC34  delta=0x27CC34  in_raw=False  (delta>=raw_size ⇒ 文件侧零填充)
+   VA=0x0087E8E0  delta=0x6C8E0  in_raw=False  (delta>=raw_size ⇒ 文件侧零填充)
+   VA=0x00B0CE88  delta=0x2FAE88  in_raw=False  (delta>=raw_size ⇒ 文件侧零填充)
+   VA=0x00A8ED50  delta=0x27CD50  in_raw=False  (delta>=raw_size ⇒ 文件侧零填充)
+Engine().u32(0xA8EC34) 文件侧 = 0
+
+==============================================================================
+### 3. §5.2 构造性反证：任给观测，任意 T 分解都能自洽（用 Fraction 精确验算）
+==============================================================================
+固定观测 y = ['120', '7', '45', '310']  ΔT_deficit = 200
+  C1 占 98.5%   T=['197', '1', '1', '1']  ΣT=200  alpha=['120/197', '7', '45', '310']  5式全成立(+ε=0)=True
+  C2 占 98.5%   T=['1', '197', '1', '1']  ΣT=200  alpha=['120', '7/197', '45', '310']  5式全成立(+ε=0)=True
+  均分           T=['50', '50', '50', '50']  ΣT=200  alpha=['12/5', '7/50', '9/10', '31/5']  5式全成立(+ε=0)=True
+  偏 C3/C4      T=['1', '1', '99', '99']  ΣT=200  alpha=['120', '7', '5/11', '310/99']  5式全成立(+ε=0)=True
+=> 4/4 组分解全部精确成立; 五个方程对 T 的分解零约束 = True
+
+==============================================================================
+### 3b. W3 :177 矩阵的秩（sympy 符号/数值双算）
+==============================================================================
+符号矩阵 M(5x4) =
+⎡a₁  0   0   0 ⎤
+⎢              ⎥
+⎢0   a₂  0   0 ⎥
+⎢              ⎥
+⎢0   0   a₃  0 ⎥
+⎢              ⎥
+⎢0   0   0   a₄⎥
+⎢              ⎥
+⎣1   1   1   1 ⎦
+rank(M) 当 alpha_i 为已知非零常数 = 4
+数值实例 rank = 4  (W3 所称 Rank=4 对该【已知系数】矩阵成立)
+若 alpha_i 还原为未知 ⇒ 未知量 4(T)+4(alpha)+1(eps)=9, 方程 4+1=5; y_i=alpha_i*T_i 为双线性，rank 只是对假定矩阵的性质，不足以推出 T 可辨识。
+计数核验: 4+4+1 = 9  未知; 4+1 = 5  方程; 自由度(泛称) = 4
+
+==============================================================================
+### 4. 批评③：W3 :177 是否把 alpha 当已知常数、Rank=4 是否「前提不是结论」
+==============================================================================
+
+[W3 Q3_SAMPLE_PLAN.md] alpha / Rank / 唯一解 / 超定 命中:
+  Q3_SAMPLE_PLAN.md:149| 要彻底消除 3 个自由度并实现唯一解（正定化定谳），依据信息论与测量系统理论（Shannon Information / Full Rank Measurement Matrix），必须引入与各个成本中心严格正交的**微观状态观测量向量 $\mathbf{y} = [y_1, y_2, y_3, y_4]^T$**。
+  Q3_SAMPLE_PLAN.md:175| 2. **观测矩阵满秩化（Full Rank）**：
+  Q3_SAMPLE_PLAN.md:176| 引入这组观测后，测量方程构筑为满秩线性系统：
+  Q3_SAMPLE_PLAN.md:177| $$\begin{bmatrix} y_1 (\Delta\text{GenStamp}) \\ y_2 (\text{DirtyAreas}) \\ y_3 (\text{BulletCount}) \\ y_4 (\Delta\text{ThreatCalls}) \\ \Delta T_{\text{deficit}} \end{bmatrix} = \begin{bmatrix} \alpha_1 & 0 & 0 & 0 \\ 0 & \alpha
+  Q3_SAMPLE_PLAN.md:178| 矩阵的秩严格为 $\text{Rank} = 4$。系统从原本的欠定系统跃迁为**超定系统（Overdetermined System，4 未知数，5 方程）**。
+  Q3_SAMPLE_PLAN.md:185| - 只有对 4 个成本中心全部实施直接物理观测，才能通过超定方程的残差范数 $\|\mathbf{e}\|$ 实施交叉一致性校验（Cross-Check Validation），彻底杜绝假阳性。
+  Q3_SAMPLE_PLAN.md:227| - 目标定位：定谳 C1~C4 宏观主犯                     - 目标定位：单帧微观动态时序拟合
+
+[W3 :144-178 原文（逐行）]
+  :143| - **未知自由度**：系统的代数自由度为 $k = 4 - 1 = 3$；
+  :144| - **解空间形态**：在无先验物理约束下，解空间是由无穷多组非负向量构成的 3 维单纯形（Simplex）；
+  :145| - **宏观采样的极限**：无论将外部帧时采样的频率提高到多少（500Hz、10kHz 乃至纳秒级时间戳），外部时差 $\Delta t$ 始终属于四大成本中心的投影总和。**纯宏观时间序列在信息论上缺少至少 3 个维度的独立信息，因此在物理上永远无法定谳具体谁是主犯**。
+  :146| 
+  :147| ### 2.2 正交物理观测量与解空间正定化
+  :148| 
+  :149| 要彻底消除 3 个自由度并实现唯一解（正定化定谳），依据信息论与测量系统理论（Shannon Information / Full Rank Measurement Matrix），必须引入与各个成本中心严格正交的**微观状态观测量向量 $\mathbf{y} = [y_1, y_2, y_3, y_4]^T$**。
+  :150| 
+  :151| 我们选取的 4 个 VA 具有**无可替代的正交物理独立性**：
+  :152| 
+  :153| ```text
+  :154| ┌───────────────────────────────┐
+  :155| │ 待定量系统：4 个未知成本中心  │
+  :156| └──────────────┬────────────────┘
+  :157| │
+  :158| ┌───────────────────┬───────┴───────────┬───────────────────┐
+  :159| ▼                   ▼                   ▼                   ▼
+  :160| 【 C1 寻路 】       【 C2 渲染 】       【 C3 物理 】       【 C4 索敌 】
+  :161| │                   │                   │                   │
+  :162| 0x0087E8E0          0x00B0CE88          0x00A8ED50          0x00A8EC34
+  :163| GenerationStamp     DirtyAreas.Count      BulletCount       ThreatCallCount
+  :164| │                   │                   │                   │
+  :165| ▼                   ▼                   ▼                   ▼
+  :166| 正交独立物理计数    正交独立图元更新    正交独立实体池      正交独立扫描频次
+  :167| ```
+  :168| 
+  :169| 1. **正交性证明（Orthogonality）**：
+  :170| - $\text{GenStamp}$（`0x0087E8E0`）仅在 `PathFinder::FindPath` 执行，与渲染视口位置、索敌扫描完全解耦；
+  :171| - $\text{ThreatCalls}$（`0x00A8EC34`）仅在 `Greatest_Threat` 执行，即使单位寻路卡死或视口在外，只要不执行自主索敌，该计数绝对不动；
+  :172| - $\text{DirtyAreas.Count}$（`0x00B0CE88`）直接受视口内单位活跃状态门控，视口外的千军万马无论如何寻路或索敌，均无法增加该计数；
+  :173| - $\text{BulletCount}$（`0x00A8ED50`）仅受武器射频与弹道存活约束。
+  :174| 
+  :175| 2. **观测矩阵满秩化（Full Rank）**：
+  :176| 引入这组观测后，测量方程构筑为满秩线性系统：
+  :177| $$\begin{bmatrix} y_1 (\Delta\text{GenStamp}) \\ y_2 (\text{DirtyAreas}) \\ y_3 (\text{BulletCount}) \\ y_4 (\Delta\text{ThreatCalls}) \\ \Delta T_{\text{deficit}} \end{bmatrix} = \begin{bmatrix} \alpha_1 & 0 & 0 & 0 \\ 
+  :178| 矩阵的秩严格为 $\text{Rank} = 4$。系统从原本的欠定系统跃迁为**超定系统（Overdetermined System，4 未知数，5 方程）**。
+
+[Q2_ALPHA.md] 是否出现字面「前提不是结论」:
+  (0 命中) 前提不是结论|前提是|不是结论
+
+[Q2_ALPHA.md] 批评③相关原句:
+  Q2_ALPHA.md:10| **不可解。** 静态字节只能给出「条件化的符号界」，且除平凡界 `alpha_i ≥ 0`（对两个**差分**字段连这个都保不住——重置/进程重启可使 `Δy ≤ 0`）以外，所有非平凡界的数值化都要靠一个**未校准、且在原理上随窗口变化**的「单次事件墙钟耗时」；而 `W3 Q3_SAMPLE_PLAN.md:177` 的 `y_i = alpha_i·T_i` 把 `alpha_i` 当作**已知常数**放进测量矩阵，是在假设了待求的校准量之后才算出
+  Q2_ALPHA.md:23| 矩阵的秩严格为 Rank = 4。系统从原本的欠定系统跃迁为超定系统（4 未知数，5 方程）。
+  Q2_ALPHA.md:291| $$ \underbrace{y_i = \alpha_i T_{Ci}\ (i=1..4)}_{\text{4 个双线性方程}},\qquad \underbrace{\textstyle\sum_i T_{Ci} = \Delta T_\text{deficit} - \epsilon}_{\text{1 个和方程}} .$$
+  Q2_ALPHA.md:293| 未知量至少 `T_{C1..C4}`(4) + `alpha_{1..4}`(4) + `ε`(1) = **9 个**，方程 **5 个** ⇒ 至少 4 个自由度；`y_i = alpha_i T_i` 是**两个未知量的乘积**，不是线性方程，因此 `Q3_SAMPLE_PLAN.md:178` 所算的「5×4 矩阵 Rank = 4」是**在假设了待求校准量之后**才算出来的秩，对真实系统不成立（`RULING_D19.md:20`(F4)、`:3
+  Q2_ALPHA.md:295| 更直接地：**任给**一组观测 `(y_1..y_4, ΔT)`（`ΔT>0`）与任意满足 `T_{Ci}>0`、`ΣT_{Ci}=ΔT` 的向量（这是一个 3 维单纯形，无穷多组），令 `alpha_i := y_i / T_{Ci}`，则五个方程**全部精确成立**，`ε=0`。也就是说，对**任何**观测结果，四种成本中心可以任意分配 `ΔT`（可以让 C1 占 99%，也可以让 C2 占 99%），都能找到一组 `alpha_i` 自洽。⇒ **这
+  Q2_ALPHA.md:306| ⇒ 在「不采帧内数据」+ 现有授权边界下，**没有任何途径把 `alpha_i` 变成已知常数**。
+
+[W3 全文 + D19_RULING 目录] 是否存在 alpha 数值/测量方法/配对样本:
+  FACTBASE_D19.md:47| "detail": "亲读D-17:18、:44、:59及原始W2_FRAMETIME_ATTRIB.md:298-326，三条按名称是视口/可见对象、寻路、索敌（不同文档C编号不同）。W3的0x87E8E0对应寻路尝试/代际代理，0xA8EC34对应索敌入口调用代理，0xB0CE88对应渲染脏队列，确有三类交集；0xA8ED50是额外的物理对象数量。D-17:44、:59、:148所说索敌计数尚未定位是D-17当时文书状态，现可补充确认0xA8EC34入
+   -> FACTBASE_D19.md : 1 行含 alpha
+  RULING_D19.md:20| | F4 | 满秩矩阵直接置入各代理量与成本时间的 alpha 映射。原文给出形式，不等于已校准固定映射；地址彼此不同不能证明时间成本可辨识。空间映射与时间采样均需补证。 | 我亲验矩阵与论证存在；采信底稿对校准缺口的核证 | Q3_SAMPLE_PLAN.md:169–185；lead/re_line_20261105/D19_RULING/FACTBASE_D19.md:46–48 |
+  RULING_D19.md:66| 2. 方案逐项区分空间映射与时间充分性；不把代理量套入未校准alpha宣布满秩实证，也不设无来源10 Hz下界（F4、F10）。
+  RULING_D19.md:83| {"verdict":"APPROVED","issues":[],"basis":["清单1：未发现脱离既有选项或用一维掩盖另一维。亲读 lead/PENDING_DECISIONS.md:168–175：A的主干是采纳字段清单、充分性降为未证，括注另声称W3未给频率论证；亲读 lead/re_line_20261105/W3_COSTBOUND/sections/Q3_SAMPLE_PLAN.md:193–238，实际存在充分性论证及两档设计。被审裁决
+   -> RULING_D19.md : 3 行含 alpha
+  (0 命中) Q1_C1_PATHFIND.md
+  (0 命中) Q1_C2_RENDER.md
+  (0 命中) Q1_C3C4_PHYS_TARGET.md
+  (0 命中) Q2_FRAME_EDGES.md
+  Q3_SAMPLE_PLAN.md:177| $$\begin{bmatrix} y_1 (\Delta\text{GenStamp}) \\ y_2 (\text{DirtyAreas}) \\ y_3 (\text{BulletCount}) \\ y_4 (\Delta\text{ThreatCalls}) \\ \Delta T_{\text{deficit}} \end{bmatrix} = \begin{bmatrix} \alpha_1 & 0 & 0 & 0 \\ 0 & \alpha
+   -> Q3_SAMPLE_PLAN.md : 1 行含 alpha
+  (0 命中) Q4_HOLD_VS_SLOW.md
+
+[D19 定谳对同一批评的表述]
+  RULING_D19.md:20| | F4 | 满秩矩阵直接置入各代理量与成本时间的 alpha 映射。原文给出形式，不等于已校准固定映射；地址彼此不同不能证明时间成本可辨识。空间映射与时间采样均需补证。 | 我亲验矩阵与论证存在；采信底稿对校准缺口的核证 | Q3_SAMPLE_PLAN.md:169–185；lead/re_line_20261105/D19_RULING/FACTBASE_D19.md:46–48 |
+  RULING_D19.md:39| 理由有两个独立维度：第一，代理量到成本时间的映射未校准，不能凭一个形式满秩矩阵承诺真实系统可分解；第二，时间充分性没有由可验证的事件模型、信号分布和误差目标建立（F4–F10）。W3不是没有论证，而是其阈值、冻结前提及强性能承诺不足以支撑结论。不能用提高频率补成空间成本映射，也不能用增加字段消除时间混叠。
+  RULING_D19.md:56| 2. 纠正D-19待决描述：撤回“W3未给频率论证”、两段直接自相矛盾、跨窗变化必推至少10 Hz等解释；明确W3存在两档，但1 Hz充分性未证。保留空间映射未校准与时间充分性未证两栏（F1–F4、F10）。
+  RULING_D19.md:66| 2. 方案逐项区分空间映射与时间充分性；不把代理量套入未校准alpha宣布满秩实证，也不设无来源10 Hz下界（F4、F10）。
+  RULING_D19.md:83| {"verdict":"APPROVED","issues":[],"basis":["清单1：未发现脱离既有选项或用一维掩盖另一维。亲读 lead/PENDING_DECISIONS.md:168–175：A的主干是采纳字段清单、充分性降为未证，括注另声称W3未给频率论证；亲读 lead/re_line_20261105/W3_COSTBOUND/sections/Q3_SAMPLE_PLAN.md:193–238，实际存在充分性论证及两档设计。被审裁决
+  RULING_D19.md:149| > **★ 定谳（2026-11-05）——D-19选 A（限定版）。** 裁决人模型=magpie/codex/gpt-6.1-sol（medium），run id=dwfrun-1682f511-de08-44ec-9d60-88112fd33e3f；裁决书 `lead/re_line_20261105/D19_RULING/RULING_D19.md` 第0–5节；给定审校APPROVED、issues=[]，通过范围限逻辑、授权边界与待办规格。四V
+
+[FACTBASE_D19.md:47]
+  :46| "supportsOption": "双方有观测对象交集；D-17的不保证完整分解仍有事实依据",
+  :47| "detail": "亲读D-17:18、:44、:59及原始W2_FRAMETIME_ATTRIB.md:298-326，三条按名称是视口/可见对象、寻路、索敌（不同文档C编号不同）。W3的0x87E8E0对应寻路尝试/代际代理，0xA8EC34对应索敌入口调用代理，0xB0CE88对应渲染脏队列，确有三类交集；0xA8ED50是额外的物理对象数量。D-17:44、:59、:148所说索敌计数尚未定位是D-17当时文书状态，现可补充确认0xA8EC34入口自增，不能继续笼统说不存在有效候选计数地址。但交集不等于解开红线：代际戳有重试/失败与回绕口径；索敌计数不含每次扫描单元数/耗时；脏矩形可合并、删除，Count不等于真实视口坐标、可见单位数或绘制耗时；额外Bullet Count不直接分解上述三项。Q3:175-178直接假设y_i=alpha_i*T_i并据此宣布满秩，文件没有给经校准固定alpha_i或实际测得各成本时间。故不能由四个地址存在推得科学归因『完全解耦并绝对定谳』；D-17限制的是分解保证，不是宣称未来新增观测永远无效。",
+  :48| "provenance": "我亲验"
+
+==============================================================================
+### 5. 反例②：重置/进程重启 ⇒ Δy ≤ 0 的字节与底稿依据
+==============================================================================
+
+[Q2_ALPHA.md] 反例②原句:
+  Q2_ALPHA.md:10| **不可解。** 静态字节只能给出「条件化的符号界」，且除平凡界 `alpha_i ≥ 0`（对两个**差分**字段连这个都保不住——重置/进程重启可使 `Δy ≤ 0`）以外，所有非平凡界的数值化都要靠一个**未校准、且在原理上随窗口变化**的「单次事件墙钟耗时」；而 `W3 Q3_SAMPLE_PLAN.md:177` 的 `y_i = alpha_i·T_i` 把 `alpha_i` 当作**已知常数**放进测量矩阵，是在假设了待求的校准量之后才算出
+  Q2_ALPHA.md:229| - 条件 ② 被 `TASK.md:23`（回绕跳 0、重置）与 `FACTBASE_D19.md:37`（对 `0x00A8EC34` 的同类告诫「不穷尽间接别名写、加载/进程重启，**不背书跨生命周期无条件单调**」）直接破坏。重置可使 `Δ y_1 ≤ 0` 而 `T_{C1} > 0` ⇒ **`alpha_1` 可为 0 甚至为负**。
+  Q2_ALPHA.md:258| **(a) 条件化下界。** 本次实跑 ① 确证 `0x6F8DF3` 读、`0x6F8E04 inc edx`、`0x6F8E09` 写回 —— **每次进入 `Greatest_Threat` 恰好 +1**（`k_4 = 1`，入口单次自增、函数内无减法，`Q3_SAMPLE_PLAN.md:71-75`）。若窗口内无重置/进程重启且 `τ_{4,max}` 已知：
+  Q2_ALPHA.md:279| **结论：没有任何一个 `alpha_i` 获得非平凡、可数值化的静态上下界。** 唯一普遍成立的是平凡的非负性（且对两个差分字段连非负性都要附加生命周期条件）。`TASK.md:63` 的范例 `alpha ≥ 1/单次搜索耗时` 是一条**条件化符号式**，不是可代入的约束；把它代入 Q1 的 2.80 ms / 18.2 ms 等模型数字会同时违反 `TASK.md:30`（禁引非实测阈值）、`TASK.md:110`（数字须可追到实跑或文件:行且不
+  Q2_ALPHA.md:323| | 6 | **字段生命周期闭合**：重置、回绕跳 0、进程重启、间接别名写的排除规则，使 `Δ y_1`/`Δ y_4` 成为合法差分 | 否则 `alpha_1`/`alpha_4` 连非负性都不保 | `TASK.md:23-24`；`FACTBASE_D19.md:31-32,37`；`RULING_D19.md:59` |
+
+[card_0087E8E0.md] 回绕/构造初值/重置:
+  card_0087E8E0.md:9| > **已定谳前提直接采用，不推翻**：`TASK.md:20-34`，尤其 `:23`「工作区代际**尝试**代理（回绕跳 0、重置、入口覆盖不全）」、
+  card_0087E8E0.md:24| 1. **回绕跳 0 且那一次是 +2**：`0x42A602 0f8580000000`（非零即退）为零时进入全清分支，
+  card_0087E8E0.md:25| 清完在 `0x42A67F 8b4128`／`0x42A683 40`／`0x42A685 894128` 再增一次 ⇒ `0xFFFFFFFF → 0 → 1`。
+  card_0087E8E0.md:26| 且构造 `0x42A701 894e28` 把初值置为 **`-1`（`0x42A6DC 83c9ff`）** ⇒ 按字节链**首次调用即走回绕分支**。
+  card_0087E8E0.md:27| 2. **重置点不止回绕**：静态构造 thunk `0x40AFA0` → `0x42A6D0` 把字段重置为 `0xFFFFFFFF`；
+  card_0087E8E0.md:76| `inc` 的 ZF 判 `0xFFFFFFFF+1==0`，即按**模 2³² 回绕**处理；构造初值 `-1`
+  card_0087E8E0.md:77| （`0x42A6DC 83c9ff` = `or ecx,0xffffffff`）也是无符号 `0xFFFFFFFF` 的写法。
+  card_0087E8E0.md:99| | W3 | `0x42A701` | `89 4E 28` | `mov dword ptr [esi+0x28], ecx` | **构造初始化**，值为 `0xFFFFFFFF`（`0x42A6DC 83c9ff`）；`0x42A6D8 8bf1` 令 `esi=this` |
+  card_0087E8E0.md:170| ### 5.1 静态构造（初始化 = 重置点 R1）
+  card_0087E8E0.md:186| **`0x42A701 894e28`（本字段 = `0xFFFFFFFF`）**、`0x42A704 894e2c`（`+0x2C=-1`）、
+  card_0087E8E0.md:194| ### 5.2 运行期重置点（R2：回绕）
+  card_0087E8E0.md:205| 即 `0xFFFFFFFF + 1 = 0` ⇒ 立即走上述全清分支并落到 `1`。
+  card_0087E8E0.md:210| ### 5.3 工作区重建（不写本字段，但是「重置点」的实际语义边界）
+  card_0087E8E0.md:225| - 初始化：`0x42A701` 置 `0xFFFFFFFF`（进程/静态对象生命周期起点）。
+  card_0087E8E0.md:226| - 每次「进入会调 `0x42A5B0` 的入口/重试」：W1 `+1`；回绕那次 W1+W2 合计 `+2` 且跳 0。
+  card_0087E8E0.md:229| - ⇒ **跨进程/跨读档的无条件单调性不成立**（`TASK.md:23`；`ERRATA_D18_20261105.md:26-28`）。
+  card_0087E8E0.md:240| | 对差分的影响 | **回绕那次 Δ = 2（从 `0xFFFFFFFF` 到 `1`），不是 1**；若按 `S_t − S_{t−1}` 直接算将得 `1−0xFFFFFFFF = −4294967294`（有符号）或巨大正数（无符号）⇒ 必须单独判为「不可判」而非补值 | 由上列字节直接推出；`RULING_D19.md:59`、`D17_STATIC_FIELDS.md:47` 要求「必须处理回绕跳 0」 |
+  card_0087E8E0.md:241| | 构造初值 | `0xFFFFFFFF` ⇒ **按字节链首次调用即触发回绕全清**（见 §5.2） | `0x42A6DC 83c9ff` + `0x42A701 894e28` |
+  card_0087E8E0.md:243| | 重置/生命周期不可判区间 | 构造回到 `0xFFFFFFFF`、进程重启、读档重建 ⇒ 该区间标**不可判**，不补造逐帧值 | `RULING_D19.md:59`；`RULING_D17_D18.md:70` |
+  card_0087E8E0.md:327| 2. 每次调用 `0x42A5B0` 至少使字段 `+1`（W1）；回绕那次 `+2` 且跳过 0（W1+W2）；
+  card_0087E8E0.md:328| 构造把它重置为 `0xFFFFFFFF`（W3）。
+  card_0087E8E0.md:347| | 6 | ❌ 「跨进程/读档无条件单调」「无界累加」「每次严格 +1」 | W3 构造重置 `0xFFFFFFFF`；回绕 `+2` 跳 0；`FACTBASE_D19.md:37`「不背书跨生命周期无条件单调」；`FACTBASE_D17.md:28` |
+  card_0087E8E0.md:357| - 回绕／重置／进程生命周期变化**不能判明的区间标「不可判」**，不补造逐帧值
+  card_0087E8E0.md:434| | `D17D18_RULING/RULING_D17_D18.md:21`、`:59-62`、`:70`、`:148`、`:185` | F17-5「重置、全部写点与间接调用仍需排查」；`:61`「读失败记 `null`」、`:70`「生成戳差分必须说明入口覆盖、回绕跳 0、重置和采样缺口」 |
+  card_0087E8E0.md:455| ② 补出构造初值 `0xFFFFFFFF` ⇒ 首次调用即走回绕分支，与 `deep_dive.md:47/104` 的文字表述不一致；
+
+[card_00A8EC34.md] 进程重启/BSS/无清零:
+  card_00A8EC34.md:34| | 所在节 | `.data`，VA `0x812000`，VirtualSize `0x367BE4`，RawSize `0x6C000`，delta `0x27CC34 ≥ 0x6C000` ⇒ **零填充 BSS，无文件字节** | 本次实跑 `Engine()` 节表输出（§8 A1/A6）；静态文件侧 `u32(0xA8EC34)=0x0`（零填充回落） |
+  card_00A8EC34.md:116| `FACTBASE_D19.md:37` 已明确「此检查不穷尽间接别名写、加载/进程重启」，
+  card_00A8EC34.md:150| | **初始化** | PE 加载器**零填充 BSS** ⇒ 进程启动时静态初值 `0`。本次节表实算：`.data` VA `0x812000` / VirtualSize `0x367BE4` / RawSize `0x6C000`，`VA−0x812000 = 0x27CC34 ≥ 0x6C000`；`Engine().u32(VA)` 文件侧得 `0x0` | §8 A1/A6 |
+  card_00A8EC34.md:152| | **重置 / 清零** | **未发现任何** `mov [0xA8EC34], 0` 或等价清零/复位指令（全镜像直接写点仅 W1）。无「回绕跳 0」补写（对比 `0x0087E8E0` 在 `0x42A67F..85` 有） | §3.1；`FACTBASE_D19.md:32` |
+  card_00A8EC34.md:154| | **析构 / 终止** | 静态全局，无对象析构、无释放路径；随进程终止消亡。**进程重启会重新零填充** ⇒ 跨进程比较会出现非回绕的向下跳变 | §8 A1/A6；`RULING_D19.md:22`(F6) |
+  card_00A8EC34.md:208| **进程重启**导致的向下跳变**不是**回绕，必须与回绕区分并标「不可判」
+  card_00A8EC34.md:251| 理由：进程重启重新零填充（§5）、模 2³² 回绕（§7）、读档恢复未验（§5）、
+  card_00A8EC34.md:280| ④ 回绕与跨进程生命周期单调性无运行期数据（§5、§7）；
+  card_00A8EC34.md:295| | 4 | 实际发生 `0xFFFFFFFF→0` 回绕与否；跨进程/跨局单调性 | 无运行期数据（§5、§7） |
+  card_00A8EC34.md:302| **本次明确已验**：目标 SHA256、节表/BSS 几何、序言全字节、唯一写点与唯一 `inc`、
+  card_00A8EC34.md:334| BSS_CHECK .data delta 0x27cc34 rawsize 0x6c000 in_raw False
+  card_00A8EC34.md:395| BSS: section .data VA 0x812000 vsize 0x367be4 rawsize 0x6c000 delta 0x27cc34 zero_fill True
+
+[FACTBASE_D19.md:37] 生命周期告诫:
+  :37| "detail": "四地址本次PE检查均映射.data，见附录A。①0x0087E8E0=0x0087E8B8+0x28，0x4CBC2C/31设置this并调用搜索，0x42A5FB..FF操作该偏移，工作区代际戳语义成立；不等同一搜一次、成功次数、实际展开量或耗时，见第4项重试与回绕。②0x00A8EC34：0x6F8DF3=8b1534eca800读取，0x6F8E04=42递增，0x6F8E09=891534eca800写回，确认0x6F8DF0入口调用累计代理。扫描.text中该4字节绝对地址仅命中操作数字段0x6F8DF5与0x6F8E0B；此检查不穷尽间接别名写、加载/进程重启，因此不背书跨生命周期无条件单调。③0x00B0CE88确实存在，是0x00B0CE78脏矩形向量当前条目数：0x6D1A60..0x6D1A9C初始化Items/容量/Count；0x6D2A94..0x6D2AB8取Count、递增回写、按20字节复制条目；0x6D2983..0x6D29BE删除/搬移，0x6DA980..0x6DA9BD也递减并搬移。与亲读docs/re/dirty_rect_l4.md:179-218的结构/合并去重注释相符，故『别处从没出现过』不属实，至少该文:19、:189、:513明确已有。它是瞬时队列长度，不是可见单位数、单位调用次数或耗时。Q3:100-102抄录有误：真实0x6D3DF0=a188ceb000；0x6D3DF5=756e是jne 0x6D3E65；test eax,eax实际在0x6D3DFF=85c0，随后的0x6D3E01=7566才jne 0x6D3E69。Render还检查其他标志和视口位移，因此少量/零队列不自动证明全部光栅化短路，更不证明<0.05ms。④0x00A8ED50确实是BulletClass对象向量Count：RTTI经0x7E46E0→0x7FC7B0→0x81AF70得到.?AVBulletClass@@，该虚表+0x5C槽0x7E4740=0x4666E0；0x466425=c706e4467e00装入同虚表；0x4664A2..0x4664B7把Count递增并向Items[旧Count]插对象；0x466623..0x46664E删除对象并递减/搬移；0x55B93F=a150eda800读取Count，0x55B94B=8b0d44eda800读取Items，再检查对象+0x98活跃标志后于0x55B960=ff525c调更新。因循环另有活跃标志门控，更精确名称是注册Bullet对象数，而非无条件等于本帧实际活跃更新数。该地址亦已有本次亲读Q1_C3C4_PHYS_TARGET.md:189-233记载。Count不会直接提供动画/伤害耗时或推出≤60就<0.1ms。",
+
+==============================================================================
+### 6. 量纲分层④：文件自述是否前后一致 + 与四张卡/W3 是否一致
+==============================================================================
+
+[Q2_ALPHA.md] 全部 差分/水位/流量/瞬时 分类行:
+  Q2_ALPHA.md:30| | 1 | `ΔGenStamp` (`0x0087E8E0`) | **窗口差分 / 流量** | C1 | 工作区代际**尝试**代理（回绕跳 0、重置、入口覆盖不全） |
+  Q2_ALPHA.md:31| | 2 | `DirtyAreas.Count` (`0x00B0CE88`) | **瞬时水位 / 状态** | C2 | 脏矩形向量**当前 Count**（瞬时队列量，**非**可见单位数） |
+  Q2_ALPHA.md:32| | 3 | `BulletCount` (`0x00A8ED50`) | **瞬时水位 / 状态** | C3 | **注册** Bullet 对象 Count（实际更新另受活跃标志门控） |
+  Q2_ALPHA.md:33| | 4 | `ΔThreatCalls` (`0x00A8EC34`) | **窗口差分 / 流量** | C4 | 索敌**入口调用累计**代理（**无每次工作量**） |
+  Q2_ALPHA.md:195| - **流量型**（`i=1,4`）：若每次事件产生 `k_i` 个计数增量，则 `y_i = k_i · n_i`，于是
+  Q2_ALPHA.md:199| - **水位型**（`i=2,3`）：`y_i = L_i(t_\text{sample})` 是**某一采样瞬间**的队列/容器长度，与窗口积分 `T_Ci` 不是同一泛函，上式**根本不成立**（详见 §4.2、§4.3）。
+  Q2_ALPHA.md:221| ### 4.1 `alpha_1`（`y_1 = ΔGenStamp`，C1 寻路：流量型）
+  Q2_ALPHA.md:236| ### 4.2 `alpha_2`（`y_2 = DirtyAreas.Count`，C2 渲染：**水位型**）
+  Q2_ALPHA.md:242| **(c) 更根本：`y_2 = alpha_2 · T_{C2}` 这一行模型不成立。** 左端是**瞬时水位**，右端是**窗口累计耗时**；二者之间还隔着「脏矩形 → 可见单位数 → `DrawIfVisible` 调用数 → VXL 光栅化」整条链（`Q1_C2_RENDER.md:147,252-255`），而 `TASK.md:25,27` 明定它**不是可见单位数、不得换算为耗时**；`RULING_D19.md:103` 明定「不以 D-1
+  Q2_ALPHA.md:246| ### 4.3 `alpha_3`（`y_3 = BulletCount`，C3 物理：**水位型**）
+  Q2_ALPHA.md:256| ### 4.4 `alpha_4`（`y_4 = ΔThreatCalls`，C4 索敌：流量型）
+  Q2_ALPHA.md:274| | `alpha_1` | 差分（代际尝试） | `≥ 1/τ_{1,max}`（`k≥1`，未回绕/未重置/写点穷尽） | `≤ k_{1,max}/τ_{1,min}`，`k_{1,max}≥5`，无有限静态值 | `(-∞, +∞)`（重置/回绕可负） | 形式成立但语义有缺口 | **否**，两端未校准 |
+  Q2_ALPHA.md:275| | `alpha_2` | **水位**（脏矩形 Count） | `= 0`（队列排空与任意大 `T_C2` 相容） | `= +∞`（`L_2>0` 与 `T_C2=0` 静态不可排除） | `[0, +∞]`（平凡） | **否**（水位 ≠ 累计耗时） | **否** |
+  Q2_ALPHA.md:276| | `alpha_3` | **水位**（注册 Bullet Count） | `= 0`（Anim/DamageArea 另算） | `= +∞`（`+0x98` 门控使注册数 ≠ 更新数） | `[0, +∞]`（平凡） | **否**（水位 ≠ 累计耗时） | **否** |
+  Q2_ALPHA.md:277| | `alpha_4` | 差分（入口调用） | `≥ 1/τ_{4,max}`（`k=1`，未重置/未重启） | `≤ 1/τ_{4,min}`，无有限静态值 | `(-∞, +∞)`（重启可负） | 形式成立但无每次工作量 | **否**，两端未校准 |
+  Q2_ALPHA.md:321| | 4 | **`alpha_i` 的函数形式与误差模型**：是否有截距 `b_i`、水位型到底该用 `L_i(t)` 的什么泛函、噪声 `ε` 的分布、窗口长度、采样瞬间与帧边界的对齐 | 当前 `y=alpha·T` 是**无截距、无噪声、水位当流量**的误设 | §4.2(c)、§4.3(c)；`RULING_D19.md:59-60` |
+  Q2_ALPHA.md:340| - 未独立重跑对 `0x00B0CE88` 初始化/插入/删除/合并、以及 `0x00A8ED50` 的 RTTI/写点全集的字节核证；本文对这两个水位型 VA 的语义为**采信** D-19 底稿、`RULING_D19.md:23`(F7)/`:24`(F8)，以及同目录既有卡的记载（见 §2.1）。
+
+[Q2_ALPHA.md §1 表 :28-33 与 §4.5 表 :272-277 原文]
+  :28| | i | `y_i` | 量纲类型 | 对应成本中心 | 本次采用的受限语义（`TASK.md:23-27`） |
+  :29| |:--:|:--|:--|:--|:--|
+  :30| | 1 | `ΔGenStamp` (`0x0087E8E0`) | **窗口差分 / 流量** | C1 | 工作区代际**尝试**代理（回绕跳 0、重置、入口覆盖不全） |
+  :31| | 2 | `DirtyAreas.Count` (`0x00B0CE88`) | **瞬时水位 / 状态** | C2 | 脏矩形向量**当前 Count**（瞬时队列量，**非**可见单位数） |
+  :32| | 3 | `BulletCount` (`0x00A8ED50`) | **瞬时水位 / 状态** | C3 | **注册** Bullet 对象 Count（实际更新另受活跃标志门控） |
+  :33| | 4 | `ΔThreatCalls` (`0x00A8EC34`) | **窗口差分 / 流量** | C4 | 索敌**入口调用累计**代理（**无每次工作量**） |
+  :272| | `alpha_i` | `y_i` 类型 | 条件化符号下界 | 条件化符号上界 | **严格无条件界** | 该行模型是否成立 | 数值可否给出 |
+  :273| |:--:|:--|:--|:--|:--|:--|:--|
+  :274| | `alpha_1` | 差分（代际尝试） | `≥ 1/τ_{1,max}`（`k≥1`，未回绕/未重置/写点穷尽） | `≤ k_{1,max}/τ_{1,min}`，`k_{1,max}≥5`，无有限静态值 | `(-∞, +∞)`（重置/回绕可负） | 形式成立但语义有缺口 | **否**，两端未校准 |
+  :275| | `alpha_2` | **水位**（脏矩形 Count） | `= 0`（队列排空与任意大 `T_C2` 相容） | `= +∞`（`L_2>0` 与 `T_C2=0` 静态不可排除） | `[0, +∞]`（平凡） | **否**（水位 ≠ 累计耗时） | **否** |
+  :276| | `alpha_3` | **水位**（注册 Bullet Count） | `= 0`（Anim/DamageArea 另算） | `= +∞`（`+0x98` 门控使注册数 ≠ 更新数） | `[0, +∞]`（平凡） | **否**（水位 ≠ 累计耗时） | **否** |
+  :277| | `alpha_4` | 差分（入口调用） | `≥ 1/τ_{4,max}`（`k=1`，未重置/未重启） | `≤ 1/τ_{4,min}`，无有限静态值 | `(-∞, +∞)`（重启可负） | 形式成立但无每次工作量 | **否**，两端未校准 |
+  :278| 
+  :279| **结论：没有任何一个 `alpha_i` 获得非平凡、可数值化的静态上下界。** 唯一普遍成立的是平凡的非负性（且对两个差分字段连非负性都要附加生命周期条件）。`TASK.md:63` 的范例 `alpha ≥ 1/单次搜索耗时` 是一条**条件化符号式**，不是可代入的约束；把它代入 Q1 的 2.80 ms / 18.2 ms 等模型数字会同时违反 `TASK.md:30`（禁引非实测阈值）、`TASK.md:110`（数字须可追到实跑或文件:行且不许补造）与 `FACTBASE_D19.
+
+[card_00B0CE88.md] 自述量纲:
+  card_00B0CE88.md:11| `0x00B0CE88` 是**全局静态** `DynamicVectorClass<DirtyAreaStruct>` 对象（`0x00B0CE78`）的 `+0x10` **Count** 槽，即「待重绘脏矩形队列的**瞬时条目数**」；它**不是 `TacticalClass` 的成员**，**不是屏内可见单位数**，与可见单位数之间**没有已校准的定量映射**。W3 的 `Q3_SAMPLE_PLAN.md:100-102`、`W3_COSTBOU
+  card_00B0CE88.md:163| | 是否累加计数器 | **否**，是**队列长度**，不是 `GenerationStamp` 那种单调积分器。`inc`/`dec` 双向、可增可减、每帧可归零 | §3 写点 W2/W4/W5/W6 均有 `dec`；`0x6D44FC` 逐条弹空 |
+  card_00B0CE88.md:203| 4. 「它是一个**双向变化的瞬时队列量**，每帧可归零；不是单调累加器」—— §3、§7。
+
+[card_00A8ED50.md] 自述量纲:
+  card_00A8ED50.md:191| | 是否累加计数器 | **否**，是**双向变化的瞬时容器长度**（`inc`/`dec` 成对，不每帧归零） | W2 `0x4664AA=41 inc ecx`、W3 `0x46662D=49 dec ecx`；§3 |
+  card_00A8ED50.md:232| 4. 「它是**双向变化的瞬时容器长度**，不每帧归零，无已见 32 位回绕」—— §3、§7。
+
+[W3 Q3_SAMPLE_PLAN.md:177 矩阵左端 y 记号]
+  :176| 引入这组观测后，测量方程构筑为满秩线性系统：
+  :177| $$\begin{bmatrix} y_1 (\Delta\text{GenStamp}) \\ y_2 (\text{DirtyAreas}) \\ y_3 (\text{BulletCount}) \\ y_4 (\Delta\text{ThreatCalls}) \\ \Delta T_{\text{deficit}} \end{bmatrix} = \begin{bmatrix} \alpha_1 & 0 & 0 & 0 \\ 0 & \alpha_2 & 0 & 0 \\ 0 & 0 & \alpha_3 & 0 \\ 0 & 0 & 0 & \alpha_4 \\ 1 & 1 & 1 & 1 \end{bmatrix} \begin{bmatrix} T_{\text{C1}} \\ T_{\text{C2}} \\ T_{\text{C3}} \\ T_{\text{C4}}
+  :178| 矩阵的秩严格为 $\text{Rank} = 4$。系统从原本的欠定系统跃迁为**超定系统（Overdetermined System，4 未知数，5 方程）**。
+
+==============================================================================
+### 7. Q2_ALPHA.md 诚实账（§7 :331-347）原文比对
+==============================================================================
+  :331| ## 7 诚实账
+  :332| 
+  :333| **本次已跑（命令 + 输出见 §2.2 / §2.3 / §2.4）**
+  :334| - 只读 PE 反汇编 4 段（`0x42A5F0`、`0x42CC70`、`0x55B93F`、`0x6F8DF0`），并核对 SHA256 = `73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476`；`python -I -X utf8`，按 `TASK.md:111` 用 `ra2tool.Engine`。
+  :335| - `rg` 核对既有 harness 的 `MEASURE_*_VA` 常量与四 VA 命中数（各 0）。
+  :336| - `rg` 核对 W3/D-19 中 `alpha|校准|系数|映射|满秩` 的分布。
+  :337| - `Read` 亲读 §2.1 表列文件的指定行段（含 `TASK.md` §2 Q2、`Q3_SAMPLE_PLAN.md` 全文、`RULING_D19.md` 全文、`FACTBASE_D19.md` 全文、三份 Q1 全文、`W1_HOLD_SURFACE.md` 的挂起门段落、`harness8_v4.py:3979-4033`）。
+  :338| 
+  :339| **本次未跑 / 未独立复验（不冒称通过）**
+  :340| - 未独立重跑对 `0x00B0CE88` 初始化/插入/删除/合并、以及 `0x00A8ED50` 的 RTTI/写点全集的字节核证；本文对这两个水位型 VA 的语义为**采信** D-19 底稿、`RULING_D19.md:23`(F7)/`:24`(F8)，以及同目录既有卡的记载（见 §2.1）。
+  :341| - 未重算 Q1 的指令数→毫秒换算、未做微基准、未复算三窗 p50、未普查 87 窗 / 22 慢窗。
+  :342| - 未运行测试套件、未构建、未启动 `gamemd.exe` / `ra2loader` / `YURI.exe`、未 `taskkill`、未读任何活进程内存。
+  :343| - 未编写任何 `ReadProcessMemory` / hook / 注入 / dump / 挂线程 / StackWalk 的可运行实现；§2.2 的脚本是**只读静态反汇编**，不是采样器。
+  :344| - 未修改 `W4_FIELD_SPEC/sections/Q2_ALPHA.md` 以外的任何文件；未 commit、未 push。
+  :345| - 未给出任何 `alpha_i` 的数值或任何 `T_{Ci}` 分解；按 `TASK.md:110`，拿不到就写「未验」，不补造。
+  :346| 
+  :347| **边界声明**：本文是 D-19 定谳下的静态补证与设计判定，**不是观测卡、不是采集许可、不是成本分解结论**；实现与真机采集须用户分项明示授权（`TASK.md:34`；`RULING_D19.md:61,75`）。
+
+==============================================================================
+### 8. 结论摘要（探针自动给出的事实）
+==============================================================================
+A. SHA256 绑定与任务书一致 = True
+B. 目标二进制 SHA 与 Q2_ALPHA 自报一致 = True
+C. §5.2 构造性反证 4/4 组成立 = True
+D. W3 :177 矩阵在 alpha 已知非零时 rank = 4
+E. Q2_ALPHA 字面是否写「前提不是结论」 = False
+
+DONE
+===== SUPPLEMENT (separate command, appended to _w7_b1_out.txt) =====
+--- S1: §2.3 reproduce MEASURE_*_VA constants ---
+  3831: MEASURE_CURRENT_FRAME_VA = 0x00A8ED84         # ★ CurrentFrame（逻辑帧计数器 u32）
+  3834: MEASURE_UNITS_VA = 0x008B4118        # units    / file_off 0x004B4118
+  3835: MEASURE_INFANTRY_VA = 0x00A83DF8     # infantry / file_off 0x00683DF8
+  3836: MEASURE_AIRCRAFT_VA = 0x00A8E3A0     # aircraft / file_off 0x0068E3A0
+  3837: MEASURE_G_VA = 0x008A03A0            # G（Items=0x008A0394；形状自检 D-3：Items!=0 ∧ Count≤100000）
+  3838: MEASURE_G_ITEMS_VA = 0x008A0394
+  3839: MEASURE_B_VA = 0x00A8EB50            # B（Items=0x00A8EB44）
+  3840: MEASURE_B_ITEMS_VA = 0x00A8EB44
+  3841: MEASURE_TECHNO_VA = 0x00A8EC88       # Techno   / file_off 0x0068EC88
+--- S2: §2.3 four candidate VA hit counts in harness ---
+  0087E8E0 : 0
+  00A8EC34 : 0
+  00B0CE88 : 0
+  00A8ED50 : 0
+--- S3: §2.1 W1_HOLD_SURFACE 挂起门 rg reproduce ---
+  file=W1_HOLD_SURFACE.md total_lines=467 hits=11
+  :1| # W1_HOLD_SURFACE · 挂起计数器 `[Scenario+0x62C]` 来源完备性普查（汇总报告）
+  :42| - **每帧泵**：`0x48D091 mov eax,[0xB45B68]` → `test/jle` → `Items[0]` → `0x48D0A7 call [edx+8]`；`0x55D835`（冻结体）与 `0x55DE4A`（正常体）都调 `0x48D080`，故冻结帧也泵影片（`Q1_B45B68.md:299-400`）。本人本次复核 `0x48D080` 的入边总数 **170
+  :43| - **±20 条反汇编**：重同步解码 `0x48D000..0x48D200` 得 `insns=185, fails=0`，`index(0x48D091)=52`（复核 Q1 实跑）。**按复核意见修正 `Q1_B45B68.md:323-325` 的计数笔误**：前 20 条里属上一函数尾（6 条：`0x48D06A call` / `06F test` / `071 jg` / `07
+  :71| `0x6579E0..0x657CDB`（`0x657CDB ret`）是 **HUD/侧边栏—雷达小地图渲染子系统（`RadarClass` 一族）的每帧影片队列显示状态机**，不是输入/网络/AI 层；它消费全局 `0xB45B58` 影片队列，把「队列非空 ∧ 当前项 `pause=1`」的沿翻译成 `0x684060(0)` 挂起 / `0x684180()` 释放，因此是**玩家可见的侧
+  :78| - **与动作族的关系**：动作 **117** `0x6DF916 mov dl,1; call 0x5BF390` 与从属 `0x6E1748` 入队 `pause=1`，**直接同链**；动作 **100** `0x6DF54E xor dl,dl; call 0x5BF390` 同队列但不暂停；动作 **10** `0x6DE755 call 0x5BF260` 是并行的全屏 Bink 族
+  :85| 2. **`+0x14BD` 字段语义**（复核 Q2「字段标注错」）：`Q2_6579E0.md:48` 注释「上帧 pause 状态」、`:71`「保存新 pause 状态」**不成立**。按字节：`dl` 来自 `0x657B2D mov [esp+0x12],al`（vtable+0x14 的 still_playing），`0x657C8B test dl,dl` → `0x657C8D
+  :97| **写点完备性**（`Q3_SOURCES.md:88-91`；本人本次缓存流独立得内存 `[reg+0x62C]` 访存 **18 处 / W 7**）：挂到 `[0xA8B230]` Scenario 的写点恰 3 处——`0x6836D2`（复位 0）、`0x684174 inc`、`0x684195 dec 后写回`。**除 `0x684174` 外，静态可见指令没有一条能把 `+0x62
+  :103| | S3 | **动作 127 StartChronoScreenEffect** `0x6DFAC5 → 0x53B460 → 0x53B560(state2) → 0x53B612 → 0x684060(0)` | 含 kind 127、`Value`=渐变刻数 >0；`[0xA9FAB0]=1` 由 `0x53B4F7` 写入，state2→3 由 `0x55D83A`（冻结体）每帧推进 |
+  :111| | S11 | `0x684240`（7 call 点）/ `0x684290`（4 call 点） | 只改 `[+0x35A2]` / `[0xA8ED9C]` / `[0xB07784]`，**不加不减不读 `+0x62C`**；对 `0x55D877` 冻结出口无间接影响 | 部分 ✔（46/47/1/2/67/68/43/127 等） | 本人：`call 0x684240 = 7`、`
+  :129| - **链 A（冻结出口）** `0x55D7C2..0x55D877`：门 = `GameMode∈{0,5}` ∧ `[Scenario+0x62C]≠0`，`0x55D826 mov ecx,[eax+0x62c]` / `0x55D82E je 0x55d878`（本人逐址复核）。
+  :132| - `0x684240/0x684290` 只影响链 B 的表现变量；`0x55DE8F`（正常体尾部）在 `0x55D878` 之后，冻结体整体跳过 ⇒ 不可能回喂链 A。复核 Q3 `probe5_out:254-261` 得 `+0x35A2` 在冻结段内访问 0、`[0xA8ED9C]` 在 MLF/主循环判定段内 R 为 `[]`、`[0xA8ED80]` 唯一 W `0x7778CE`
+  line 42 = - **每帧泵**：`0x48D091 mov eax,[0xB45B68]` → `test/jle` → `Items[0]` → `0x48D0A7 call [edx+8]`；`0x55D835`（冻结体）与 `0x55DE4A`（正常体）都调 `0x48D080`，故冻结帧也泵影片（`Q1_B45B68.md:299-400`）。本人本次复核 `0x48D080` 的入边总数 **170
+  line 97 = **写点完备性**（`Q3_SOURCES.md:88-91`；本人本次缓存流独立得内存 `[reg+0x62C]` 访存 **18 处 / W 7**）：挂到 `[0xA8B230]` Scenario 的写点恰 3 处——`0x6836D2`（复位 0）、`0x684174 inc`、`0x684195 dec 后写回`。**除 `0x684174` 外，静态可见指令没有一条能把 `+0x62
+  line 129 = - **链 A（冻结出口）** `0x55D7C2..0x55D877`：门 = `GameMode∈{0,5}` ∧ `[Scenario+0x62C]≠0`，`0x55D826 mov ecx,[eax+0x62c]` / `0x55D82E je 0x55d878`（本人逐址复核）。
+--- S4: Q2_ALPHA D-19 citation line spot-check ---
+  RULING_D19.md:9| **裁决：选 A（限定版）。采纳四 VA 为有静态依据、语义受限的候选字段清单；W3 的“1 Hz 已完全充分”“四字段即可完全解耦并绝对定谳”降为未证，维持 D-17 的申请路线和不保证分解边界。纠正 A 括注“W3 未给频率论证”及相关失实转述。优先完善复用既有帧号轮询的帧沿触发候选规格；不设未经证明的至少 10 Hz 下界，不授候选代码、真机或活进程采
+  RULING_D19.md:20| | F4 | 满秩矩阵直接置入各代理量与成本时间的 alpha 映射。原文给出形式，不等于已校准固定映射；地址彼此不同不能证明时间成本可辨识。空间映射与时间采样均需补证。 | 我亲验矩阵与论证存在；采信底稿对校准缺口的核证 | Q3_SAMPLE_PLAN.md:169–185；lead/re_line_20261105/D19_RULING/FACTBAS
+  RULING_D19.md:39| 理由有两个独立维度：第一，代理量到成本时间的映射未校准，不能凭一个形式满秩矩阵承诺真实系统可分解；第二，时间充分性没有由可验证的事件模型、信号分布和误差目标建立（F4–F10）。W3不是没有论证，而是其阈值、冻结前提及强性能承诺不足以支撑结论。不能用提高频率补成空间成本映射，也不能用增加字段消除时间混叠。
+  RULING_D19.md:41| 三窗p50变化不等于某一25秒窗内变化频谱；不能从1.56倍跨窗变化推导至少10 Hz，也不能断言1 Hz的25个点一定无法区分所有恒定与起伏情形（F10）。Q3纯宏观与新增微观的两段并非直接矛盾（F3）。因此维持D-17“不保证分解”，不把它扩写为未来观测永远无效。
+  RULING_D19.md:59| 5. 在观测卡写定读序、每字段或读段起止时间戳、帧号前后读与跨帧标记、观测延迟与逻辑帧对应边界；df>1记漏沿/跨帧聚合，不补造逐帧值；帧号冻结记持续时段，不宣称业务字段冻结；重置/回绕/进程生命周期变化不能判明的区间标不可判；读失败保留null、不补0（F5、F6、F11、F12）。这些是未来规格要求，本次未实现。
+  RULING_D19.md:60| 6. 对计数差分与瞬时Count分别规定分析方法和误差目标；如需视口坐标、对象列表、动画数、额外帧号校验或质量抽样，逐项另列读取范围及成本，不混入“四字段仅16字节”。建立字段语义证伪后的撤回规则；没有成本映射证据只能报告关联、代理变化与残余缺证（F2、F4、F7、F8；Q3_SAMPLE_PLAN.md:22–23、:122、:126）。
+  RULING_D19.md:61| 7. 延续D-17两闸：先回退用户决定候选代码及离线验证权限，再另批指定批次真机/活进程采集、频率、时段、停止条件及事前数值扰动判据。对应授权之前不得编写相应候选代码或采集；E3、dump、挂线程等独立授权。获准后先验字段有效性与扰动，再评估频率与分解能力，失败停采挂账（F12）。
+  RULING_D19.md:66| 2. 方案逐项区分空间映射与时间充分性；不把代理量套入未校准alpha宣布满秩实证，也不设无来源10 Hz下界（F4、F10）。
+  RULING_D19.md:75| - 是否批准指定批次真机发射/活进程读取及字段范围、频率、窗口、停止与数值扰动判据；普通RPM也需此闸，E3及扩大手段另批。
+  RULING_D19.md:99| 1. 不裁实际慢帧主因、四成本时间占比、优化排序或完整因果闭环。代理量缺成本映射，地址有效不等于成本可解（F4–F8）。
+  RULING_D19.md:103| 5. 不以D-19采纳四VA替代真实视口坐标、可见单位数、动画数或实际展开/扫描工作量定位；附加字段需另补证，D-17关于当时索敌候选未定位的状态可更新为已有入口累计代理，不扩成耗时已定位（F6–F8；FACTBASE_D19.md:46–48）。
+DONE_SUPP
+===== SUPPLEMENT 2 (exact Q2_ALPHA §2.4 command + precision checks) =====
+--- S5: exact §2.4 rg (alpha|校准|标定|系数|映射|解耦|满秩|不可解) over W3 sections + D19_RULING ---
+  FACTBASE_D19.md:47 [含alpha]| "detail": "亲读D-17:18、:44、:59及原始W2_FRAMETIME_ATTRIB.md:298-326，三条按名称是视口/可见对象、寻路、索敌（不同文档C编号不同）。W3的0x87E8E0对应寻路尝试/代际代理，0xA8EC34对应索敌入口调用代理，0xB0CE88对应渲染脏队列
+  RULING_D19.md:20 [含alpha]| | F4 | 满秩矩阵直接置入各代理量与成本时间的 alpha 映射。原文给出形式，不等于已校准固定映射；地址彼此不同不能证明时间成本可辨识。空间映射与时间采样均需补证。 | 我亲验矩阵与论证存在；采信底稿对校准缺口的核证 | Q3_SAMPLE_PLAN.md:169–185；lead/re_li
+  RULING_D19.md:66 [含alpha]| 2. 方案逐项区分空间映射与时间充分性；不把代理量套入未校准alpha宣布满秩实证，也不设无来源10 Hz下界（F4、F10）。
+  RULING_D19.md:83 [含alpha]| {"verdict":"APPROVED","issues":[],"basis":["清单1：未发现脱离既有选项或用一维掩盖另一维。亲读 lead/PENDING_DECISIONS.md:168–175：A的主干是采纳字段清单、充分性降为未证，括注另声称W3未给频率论证；亲读 lead/re_l
+  Q3_SAMPLE_PLAN.md:177 [含alpha]| $$\begin{bmatrix} y_1 (\Delta\text{GenStamp}) \\ y_2 (\text{DirtyAreas}) \\ y_3 (\text{BulletCount}) \\ y_4 (\Delta\text{ThreatCalls}) \\ \Delta T_{\t
+  TOTAL hits=40 ; 含 alpha 的行(上面列出) 只出现在 Q3_SAMPLE_PLAN.md:177 矩阵 + RULING_D19.md:20/66/83 + FACTBASE_D19.md:47
+  => 无一处给出 alpha_i 数值 / 测量方法 / 配对样本，Q2_ALPHA §2.4 结论成立
+--- S6: Q2_ALPHA 是否给出任何 alpha_i 数值或 T_Ci 分解 ---
+  numeric-alpha-assignment hits = 1 [(238, '**(a) 下界 = 0，且这是可实现的。** `FACTBASE_D19.md:37`：该 VA 是 `0x00B0CE78` 脏矩形向量**当前条目数**，有初始化 `0x6D1A60..0x6D1A9C`、插入递增 `0x6D2A94')]
+--- S7: 任务书抗辩点③「Rank=4 是前提不是结论」的原文对应 ---
+  Q2_ALPHA.md:10| **不可解。** 静态字节只能给出「条件化的符号界」，且除平凡界 `alpha_i ≥ 0`（对两个**差分**字段连这个都保不住——重置/进程重启可使 `Δy ≤ 0`）以外，所有非平凡界的数值化都要靠一个**未校准、且在原理上随窗口变化**的「单次事件墙钟耗时」；而 `W3 Q3_SAMPLE_PLAN.md:177` 的 `y_i = alpha_i·T_i` 把 `alpha_i` 当作**已知常数**放进测量矩阵，是在假设了待求的校准量之后才算出的「Rank = 4」。把 `alpha_i` 还原为未知量
+  Q2_ALPHA.md:291| $$ \underbrace{y_i = \alpha_i T_{Ci}\ (i=1..4)}_{\text{4 个双线性方程}},\qquad \underbrace{\textstyle\sum_i T_{Ci} = \Delta T_\text{deficit} - \epsilon}_{\text{1 个和方程}} .$$
+  Q2_ALPHA.md:293| 未知量至少 `T_{C1..C4}`(4) + `alpha_{1..4}`(4) + `ε`(1) = **9 个**，方程 **5 个** ⇒ 至少 4 个自由度；`y_i = alpha_i T_i` 是**两个未知量的乘积**，不是线性方程，因此 `Q3_SAMPLE_PLAN.md:178` 所算的「5×4 矩阵 Rank = 4」是**在假设了待求校准量之后**才算出来的秩，对真实系统不成立（`RULING_D19.md:20`(F4)、`:39`、`:66`）。
+  Q2_ALPHA.md:295| 更直接地：**任给**一组观测 `(y_1..y_4, ΔT)`（`ΔT>0`）与任意满足 `T_{Ci}>0`、`ΣT_{Ci}=ΔT` 的向量（这是一个 3 维单纯形，无穷多组），令 `alpha_i := y_i / T_{Ci}`，则五个方程**全部精确成立**，`ε=0`。也就是说，对**任何**观测结果，四种成本中心可以任意分配 `ΔT`（可以让 C1 占 99%，也可以让 C2 占 99%），都能找到一组 `alpha_i` 自洽。⇒ **这五个方程对 `T_{Ci}` 的分解零约束**，`Q3_SA
+  Q2_ALPHA.md:299| 形式上，若 (i) `alpha_i` 在 `W` 个窗间**是同一个常数**、(ii) 每窗都测到 `y_{iw}` 与 `ΔT_w`、(iii) `ε=0`、(iv) 四行模型都成立，则代入 `T_{iw}=y_{iw}/alpha_i` 得 `Σ_i y_{iw}·β_i = ΔT_w`（`β_i := 1/alpha_i`），当 `W ≥ 4` 且 `y` 矩阵满秩时 `β` 可解 —— 这相当于用跨窗变化把 `ΔT` 回归到四个代理量上。这条退路**在本案全部四个前提上都失败**：
+  Q2_ALPHA.md:306| ⇒ 在「不采帧内数据」+ 现有授权边界下，**没有任何途径把 `alpha_i` 变成已知常数**。
+  Q2_ALPHA.md:327| **缺项 1、2、5 本质上就是「帧内 / 插桩级数据」**；因此本问的严格答案是：在「不采帧内数据」的前提下，`alpha_i` **不能被非平凡地约束**，「四方程四未知」**不可解**。
+  字面「前提不是结论」出现次数 = 0
+--- S8: W3 :177 矩阵原文 + :178 Rank 断言 ---
+  Q3_SAMPLE_PLAN.md:177| $$\begin{bmatrix} y_1 (\Delta\text{GenStamp}) \\ y_2 (\text{DirtyAreas}) \\ y_3 (\text{BulletCount}) \\ y_4 (\Delta\text{ThreatCalls}) \\ \Delta T_{\text{deficit}} \end{bmatrix} = \begin{bmatrix} \alpha_1 & 0 & 0 & 0 \\ 0 & \alpha_2 & 0 & 0 \\ 0 & 0 & \alpha_3 & 0 \\ 0 & 0 & 0 & \alpha_4 \\ 1 & 1 & 1 & 1 \end{bmatrix} \begin{bmatrix} T_{\text{C1}} \\ T_{\text{C2}} \\ T_{\text{C3}} \\ T_{\text{C4}} \end{bmatrix} + \mathbf{e}$$
+  Q3_SAMPLE_PLAN.md:178| 矩阵的秩严格为 $\text{Rank} = 4$。系统从原本的欠定系统跃迁为**超定系统（Overdetermined System，4 未知数，5 方程）**。
+DONE_SUPP2
+===== SUPPLEMENT 3: 避免「查不到当不存在」——0x0087E8E0 是寄存器相对访存 =====
+disp_hits(0x87E8E0) 绝对地址访存命中数 = 0 (0 命中 ≠ 字段不存在)
+[reg+0x28] 家族在 0x42A5F0..0x42A710 内的写点:
+  0x0042a5ff W mov    dword ptr [ecx + 0x28], eax
+  0x0042a685 W mov    dword ptr [ecx + 0x28], eax
+  0x0042a701 W mov    dword ptr [esi + 0x28], ecx
+this 单例设置:
+  0x004cbc2c b9b8e88700   mov    ecx, 0x87e8b8
+  0x004cbc31 e8ca0cf6ff   call   0x42c900
+  0x004cbc36 5f           pop    edi
+  0x004cbc37 5e           pop    esi
+  0x0040afa0 b9b8e88700   mov    ecx, 0x87e8b8
+  0x0040afa5 e826f70100   call   0x42a6d0
+=> 0x87E8B8+0x28=0x87E8E0 由 [ecx+0x28]/[esi+0x28] 访问；绝对地址普查 0 命中不构成反证。
+DONE_SUPP3
+===== SUPPLEMENT 4: 0x42CC80 是否落在 0x42C900 函数体内（无中间 ret） =====
+  0x42C900..0x42CD00 内指令数 = 346
+  首个 ret/jmp = [('0x42c961', 'jmp', '0x42c973'), ('0x42c997', 'jmp', '0x42c9ad'), ('0x42ca2d', 'jmp', '0x42ca43'), ('0x42cb3f', 'ret', '0x1c'), ('0x42cccb', 'ret', '0x1c')]
+  0x42C900 首指令 = [('0x42c900', 'sub', 'esp, 0x20'), ('0x42c903', 'push', 'ebx'), ('0x42c904', 'push', 'ebp')]
+  0x42CC80 处 = [('0x42cc80', 'call', '0x42a5b0')]
+  => 0x42C900 与 0x42CC80 之间 ret 数 = 4
+  (注：线性重同步解码流，非 CFG 可达性证明；函数边界严格闭合未验)
+DONE_SUPP4
+===== SUPPLEMENT 5: 0x42CB3F ret 上下文（多返回函数 vs 函数边界） =====
+  0x0042cb20 4c             dec    esp
+  0x0042cb21 008b54243c8b   add    byte ptr [ebx - 0x74c3dbac], cl
+  0x0042cb27 44             inc    esp
+  0x0042cb28 241c           and    al, 0x1c
+  0x0042cb2a 3bc2           cmp    eax, edx
+  0x0042cb2c 8a44244c       mov    al, byte ptr [esp + 0x4c]
+  0x0042cb30 7410           je     0x42cb42
+  0x0042cb32 84c0           test   al, al
+  0x0042cb34 7455           je     0x42cb8b
+  0x0042cb36 5f             pop    edi
+  0x0042cb37 5e             pop    esi
+  0x0042cb38 5d             pop    ebp
+  0x0042cb39 33c0           xor    eax, eax
+  0x0042cb3b 5b             pop    ebx
+  0x0042cb3c 83c420         add    esp, 0x20
+  0x0042cb3f c21c00         ret    0x1c
+  0x0042cb42 84c0           test   al, al
+  0x0042cb44 7445           je     0x42cb8b
+  0x0042cb46 8b442448       mov    eax, dword ptr [esp + 0x48]
+  0x0042cb4a 56             push   esi
+  0x0042cb4b 8d4c2414       lea    ecx, [esp + 0x14]
+  0x0042cb4f 50             push   eax
+  0x0042cb50 8d54241c       lea    edx, [esp + 0x1c]
+  0x0042cb54 51             push   ecx
+  0x0042cb55 52             push   edx
+  0x0042cb56 8bcd           mov    ecx, ebp
+  0x0042cb58 e833f7ffff     call   0x42c290
+  0x0042cb5d 84c0           test   al, al
+  0x0042cb5f 752a           jne    0x42cb8b
+  0x0042cb61 0fbf442412     movsx  eax, word ptr [esp + 0x12]
+  0x0042cb66 0fbf4c2410     movsx  ecx, word ptr [esp + 0x10]
+  0x0042cb6b 0fbf542416     movsx  edx, word ptr [esp + 0x16]
+  0x0042cb70 50             push   eax
+  0x0042cb71 51             push   ecx
+  0x0042cb72 0fbf44241c     movsx  eax, word ptr [esp + 0x1c]
+  0x0042cb77 52             push   edx
+  0x0042cb78 50             push   eax
+  0x0042cb79 6820888100     push   0x818820

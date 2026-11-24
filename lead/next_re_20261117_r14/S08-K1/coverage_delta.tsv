@@ -1,0 +1,19 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+00586360	S08	MapClass::IsLocationShrouded	Coord转格经[0x87F924+idx*4]取CellClass判[+0x12C]&8清=未探索返回1,this=MapClass单例	已证	EVIDENCE/E01_predicates_raw.txt
+005864A0	S08	MapClass::IsLocationFogged	同索引路径判[cell+0x13C]>0返回1(灰雾),唯一调用者雷达DrawCell	已证	EVIDENCE/E01_predicates_raw.txt
+005865E0	S08	IsCellShrouded_stub	恒假桩xor al,al;ret 4,25调用者,对象绘制簇迷雾门恒不生效	已证	EVIDENCE/E01_predicates_raw.txt
+00487950	S08	CellClass::IsShrouded	this=CellClass读自身+0x24 MapCoords转Coord转调0x586360,9调用者	已证	EVIDENCE/E02_api_raw.txt
+006D8700	S08	MapClass::GetCellShroudedness	按Cell+0x140位与邻格计算遮蔽档(-2/-1/0..48),19调用者,which=0/1分Shroud/Fog	已证	EVIDENCE/E02_api_raw.txt
+004A9890	S08	MapClass::RevealArea0	揭示路径写[+0x12C]|=8,+0x120/+0x121调6D8700,1调用者0x653810	已证	EVIDENCE/E01_predicates_raw.txt
+005678E0	S08	MapClass::RevealArea2	圆域逐格揭示写+0x12C|=0x18/+0x130=0/+0x134=0,22调用者	已证	EVIDENCE/E08_reveal_chain.txt
+00487690	S08	MapClass::ReshroudCell	单格重遮,2调用者	静态推断	EVIDENCE/E01_predicates_raw.txt
+00508F60	S08	HouseClass::UpdateSpySat	每帧迷雾状态更新入口,查SpySat开关做全图Reveal/Reshroud,调用者数1	已证	EVIDENCE/E08_reveal_chain.txt
+004F8440	S08	HouseClass::Update	主帧House虚槽23(0x55E269 call[eax+0x5C]),atlas洞,调0x508F60	已证	EVIDENCE/E09_houseupdate.txt
+004801F0	S08	CellClass::Draw	逐可见格调用(2调用者)内0x480202算Shroudedness写+0x120并call 0x47EFE0叠加黑幕	已证	EVIDENCE/E07_perframe.txt
+0047EFE0	S08	MapClass::DrawShroudFogLayer	黑幕/灰雾叠加层SHROUD.SHP/FOG.SHP逐格覆盖,唯一调用者0x480230	已证	EVIDENCE/E13_verify.txt
+00655C50	S08	RadarClass::DrawCell	雷达格内层:反算格->迷雾判定->RTactical哈希查Techno->House色->SetPixel,3调用者	已证	EVIDENCE/E04_radar_raw.txt
+00656EC0	S08	RadarClass::DrawMap	雷达小地图协调:五道脏门(+0x14d9/视口4dword/事件/脏点/脏格/屏幕脏),非每帧全量,1调用者	已证	EVIDENCE/E05_radar_focus.txt
+00657CE0	S08	RadarClass::RedrawAll	雷达全量重建,遍历Surface全宽全高逐点DrawCell,10调用者	已证	EVIDENCE/E05_radar_focus.txt
+00653100	S08	RadarClass::Draw_It	雷达面板绘制入口(v16),1调用者0x63FDAC,脏标志+0x14da/+0x14d9	已证	EVIDENCE/E04_radar_raw.txt
+00652960	S08	RadarClass::RadarClass	雷达对象构造:初始化Surface指针+0x121C/+0x1220,色缓存+0x123C,脏向量+0x1260/+0x125C,1调用者	已证	EVIDENCE/E10_radar_instance.txt
+0050B6F0	S08	HouseClass::RadarVisible	雷达上House可见性过滤(线索),被DrawCell调用	静态推断	EVIDENCE/E04_radar_raw.txt

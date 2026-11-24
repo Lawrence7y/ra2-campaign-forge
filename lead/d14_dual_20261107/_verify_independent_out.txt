@@ -1,0 +1,59 @@
+独立复核 _verify_independent.py  运行时刻 2026-11-07 21:33:39
+零真机/零采样代码/只读语料；不 import 复算员或上游 .py。
+
+## 窗口集构造规则核对
+   os.walk 全递归命中 = 104；phase 规则命中 = 104
+   两规则归一化后集合差异：walk-only=[] phase-only=[]
+   mtime 晚于公布输出(2026-11-04 00:25:57)的件 = 3 -> ['l3_1101v4f/measure_w0.json', 'l3_1101v4g/measure_w0.json', 'l3_1101v4h/measure_w0.json']
+   冻结语料命中=101 有效窗=97 剔除=4 -> ['l1_20261023c/measure_w0.json', 'l3_1101v3c/measure_w0.json', 'l3_1101v4b/measure_w0.json', 'l3_20261023/measure_w0.json']
+   span==0 的有效窗 = 0
+   有推进 moving = 64 / 97
+
+## 四系数独立复算（冻结语料）
+   64 moving rho(window,B%)   本算=-0.040267761014621269  复算员repr=-0.040267761014621269  |dev|=0.000e+00
+   64 moving rho(uptime,B%)   本算=+0.039451035387878627  复算员repr=+0.039451035387878627  |dev|=0.000e+00
+   97 全量   rho(window,B%)     本算=+0.34743245948287199  复算员repr=+0.34743245948287199  |dev|=0.000e+00
+   97 全量   rho(uptime,B%)     本算=+0.34611928786066748  复算员repr=+0.34611928786066748  |dev|=0.000e+00
+   逐位比对：MATCH, MATCH, MATCH, MATCH
+
+## B%% 逐窗核对（15 个公布值，_xbatch_verify_out.txt:35-49）
+   archive_T32/measure_w0.json            公布= 38.30000  本算=   38.299996  |dev|=4.14e-06
+   archive_T33/measure_w0.json            公布= 43.25877  本算=   43.258769  |dev|=1.01e-06
+   archive_T34/measure_w0.json            公布= 98.93967  本算=   98.939673  |dev|=3.21e-06
+   archive_T36/measure_w0.json            公布= 77.33598  本算=   77.335979  |dev|=1.27e-06
+   archive_T38/measure_w1.json            公布= 96.31241  本算=   96.312407  |dev|=2.84e-06
+   archive_T39/measure_w1.json            公布= 95.92992  本算=   95.929923  |dev|=3.29e-06
+   archive_T43/measure_w0.json            公布= 76.75764  本算=   76.757635  |dev|=4.67e-06
+   archive_T47/measure_w0.json            公布= 26.47454  本算=   26.474541  |dev|=8.61e-07
+   archive_T49_u0800/measure_w0.json      公布= 59.28170  本算=   59.281698  |dev|=2.36e-06
+   l1_20261023e1/measure_w0.json          公布= 94.49626  本算=   94.496260  |dev|=4.89e-07
+   l1_20261023hb/measure_w0.json          公布= 63.91013  本算=   63.910132  |dev|=2.23e-06
+   l1_20261023hc/measure_w0.json          公布= 82.17387  本算=   82.173873  |dev|=3.15e-06
+   l1_20261023k/measure_w0.json           公布= 88.57199  本算=   88.571995  |dev|=4.55e-06
+   l3_20261023q/measure_w2.json           公布= 84.62417  本算=   84.624167  |dev|=3.46e-06
+   l3_20261023r/measure_w1.json           公布= 37.74596  本算=   37.745962  |dev|=1.51e-06
+   最大偏差 = 4.666e-06
+
+## C1 旁证（Pearson/Spearman 独立实现）
+   n=64  Pearson r=-0.200527 (公布 -0.200527)  Spearman rho=-0.170611 (公布 -0.170611)
+
+## BOOT / P2 / P3
+   BOOT 数 = 11
+   10-16 12:10    n=16 rho(uptime,B)=-0.2176  rho(window,B)=+0.4920
+   10-19 14:31    n= 6 rho(uptime,B)=+0.6547  rho(window,B)=+0.5477
+   10-21 09:45    n=12 rho(uptime,B)=-0.4685  rho(window,B)=-0.3844
+   10-26 15:14    n= 3 rho(uptime,B)=-0.5000  rho(window,B)=+0.0000
+   10-30 13:10    n= 5 rho(uptime,B)=+0.4472  rho(window,B)=+0.8250
+   10-31 08:26    n=13 rho(uptime,B)=-0.8061  rho(window,B)=+0.0058
+   11-01 15:51    n= 3 rho(uptime,B)=+nan  rho(window,B)=+nan
+   11-03 08:54    n= 3 rho(uptime,B)=+nan  rho(window,B)=+nan
+   uptime 列：正 2 / 负 4 / nan 2
+   D-26 更正中位（滤 nan、偶数取中央均值）= -0.34308926367749898
+   原缺陷 sorted(within)[len//2]（含 nan，8 个）= +0.44721359549995793
+   P3 BOOT 间 rho = -0.23690266474066671 (n=11)
+
+## 语料漂移（现状全量，仅披露）
+   现状命中=104 有效=99 moving=64
+   全量 n=99: rho(window)=+0.314679 rho(uptime)=+0.305584
+   moving n=64: rho(window)=-0.040268 rho(uptime)=+0.039451
+完。

@@ -1,0 +1,72 @@
+== S1 正向消误报（四真实件，期望全部 problems=0）==
+PASS  [S1] CANDIDATE_RESIGN_YES_V2.md R9(APPROVE_SCOPE)  got=[]
+PASS  [S1] CANDIDATE_RESIGN_YES_V2.md R10  got=[]
+PASS  [S1] CANDIDATE_RESIGN_YES_V2.md R12  got=[]
+PASS  [S1] CANDIDATE_RESIGN_YES_V2.md R11  got=[]
+    detail CANDIDATE_RESIGN_YES_V2.md: R10 hits=[{"token": "已生效", "pos": 13731, "kind": "negation", "neg_count": 1, "in_span": false}, {"token": "可应用母本", "pos": 14127, "kind": "negation", "neg_count": 2, "in_span": true}, {"token": "放行 N-5", "pos": 1150, "kind": "negation", "neg_count": 1, "in_span": false}, {"token": "放行 N-5", "pos": 10932, "kind": "quote_mention", "neg_count": 0, "in_span": true}, {"token": "放行 N-5", "pos": 13617, "kind": "negation", "neg_count": 1, "in_span": false}, {"token": "放行 N-5", "pos": 14135, "kind": "negation", "neg_count": 1, "in_span": true}] | R11 bindings=[{"path": "lead/n4_yi_final_20261108/_cs_semantic_review_GLM_20261108.md", "match": true}] warn=0 R10warn=6
+PASS  [S1] LEDGER_APPENDIX_DRAFT.md R9(APPROVE_SCOPE)  got=[]
+PASS  [S1] LEDGER_APPENDIX_DRAFT.md R10  got=[]
+PASS  [S1] LEDGER_APPENDIX_DRAFT.md R12  got=[]
+PASS  [S1] LEDGER_APPENDIX_DRAFT.md R11  got=[]
+    detail LEDGER_APPENDIX_DRAFT.md: R10 hits=[{"token": "已生效", "pos": 18495, "kind": "negation", "neg_count": 1, "in_span": true}, {"token": "已生效", "pos": 22852, "kind": "negation", "neg_count": 1, "in_span": false}, {"token": "已生效", "pos": 24175, "kind": "negation", "neg_count": 1, "in_span": true}] | R11 bindings=[{"path": "_lv_subject_reply.txt", "match": true}] warn=0 R10warn=3
+PASS  [S1] OBSERVATION_PROTOCOL_SPEC.md R9(复核)  got=[]
+PASS  [S1] OBSERVATION_PROTOCOL_SPEC.md R10  got=[]
+PASS  [S1] OBSERVATION_PROTOCOL_SPEC.md R12  got=[]
+PASS  [S1] OBSERVATION_PROTOCOL_SPEC.md R11  got=[]
+    detail OBSERVATION_PROTOCOL_SPEC.md: R10 hits=[] | R11 bindings=[{"path": null, "match": null}] warn=1 R10warn=0
+PASS  [S1] C97_SCOPE_RECHECK.md R9(复核)  got=[]
+PASS  [S1] C97_SCOPE_RECHECK.md R10  got=[]
+PASS  [S1] C97_SCOPE_RECHECK.md R12  got=[]
+PASS  [S1] C97_SCOPE_RECHECK.md R11  got=[]
+    detail C97_SCOPE_RECHECK.md: R10 hits=[] | R11 bindings=[{"path": "_review_reply_transcript.json", "match": true}, {"path": "_verify_reply.json", "match": true}] warn=0 R10warn=0
+== S2 朴素门禁在真实件上复现第 5/8 类误报（期望 problems 非空）==
+    CANDIDATE_RESIGN_YES_V2.md
+      既有858e5e0b正则: ['缺 SHA256 绑定行']
+      编排方bind_naive : ['缺 SHA256 绑定行']
+PASS  [S2] CANDIDATE_RESIGN_YES_V2.md 858e5e0b正则复现缺绑定行  got=True
+PASS  [S2] CANDIDATE_RESIGN_YES_V2.md bind_naive复现缺绑定行  got=True
+    LEDGER_APPENDIX_DRAFT.md
+      既有858e5e0b正则: ['缺 SHA256 绑定行']
+      编排方bind_naive : ['缺 SHA256 绑定行']
+PASS  [S2] LEDGER_APPENDIX_DRAFT.md 858e5e0b正则复现缺绑定行  got=True
+PASS  [S2] LEDGER_APPENDIX_DRAFT.md bind_naive复现缺绑定行  got=True
+    第5类：CANDIDATE 用包裹字面量「APPROVE_SCOPE」当要素 → ['缺要素 「APPROVE_SCOPE」', '缺 SHA256 绑定行']
+PASS  [S2] CANDIDATE 包裹字面量复现缺要素  got=True
+== S3 真违规样本逐个 FAIL ==
+PASS  [S3] TV1 缺要素 → R9 fail  got=True
+PASS  [S3] TV2 正面越权断言 ×5 → R10 fail  got=5
+PASS  [S3] TV5 伪造绑定（hex≠现盘）→ R11 fail  got=True
+PASS  [S3] TV6 绑定指向不在盘 → R11 fail  got=True
+PASS  [S3] TV4 无绑定行（仅指纹引证）→ R11 fail  got=True
+== S4 双重否定：编排方式否定回看会漏判，R12 拦下 ==
+    TV3 编排式否定回看判定为「否定语境」的已生效命中 = 3 / 3（漏判对照：三处全豁）
+PASS  [S4] TV3 编排式回看全部豁免（复现漏判）  got=3
+PASS  [S4] TV3 R10 不报（分工：双重否定交 R12）  got=0
+PASS  [S4] TV3 R12 拦下双重否定 ×2（单重否定对照不拦）  got=2
+    TV2 对照：编排式回看会把正面断言「已追加至台账」前的「无需再登记」之「无」
+    误当否定语境（跨句污染）——R10 子句边界修正后仍判违规。
+PASS  [S4] TV2 编排式回看误豁免 ≥1（复现跨句污染漏判）  got=True
+== S5 bind_any 对照：全域 SHA256=hex 会放走 TV4，R11 不会 ==
+PASS  [S5] TV4 bind_any 命中 ≥1（若只查全域会 PASS）  got=True
+PASS  [S5] TV4 R11 仍 FAIL  got=True
+== S6 第 5 类：拆断/包裹形态 naive 漏判、R9 命中 ==
+PASS  [S6] TV7 拆断形态 naive 裸字面漏判（缺要素 FP）  got=True
+PASS  [S6] TV7 R9 判要素在场  got=[]
+PASS  [S6] TV7b 包裹字面门禁漏判反引号形态（缺要素 FP）  got=True
+PASS  [S6] TV7b R9 判要素在场  got=[]
+PASS  [S6] CANDIDATE R9 要素在场（raw 层）  got=(True, 'raw')
+    （对照事实：裸子串门禁不会漏反引号/全角包裹形态——包裹符不与 token 相交；
+      实测 CANDIDATE 裸写 2 处、反引号 3 处，LEDGER 裸写 1 处、反引号 5 处，
+      故第 5 类漏判只发生在门禁字面量带包裹符或要素被拆断两种形态。）
+== S7 保护件指纹核对（编排方清单 9 件）==
+PASS  [S7] GOAL_THREE_TARGETS_20261018.md 未改动  got=('2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede', 759518)
+PASS  [S7] PENDING_DECISIONS.md 未改动  got=('3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7', 52419)
+PASS  [S7] C97_SCOPE_RECHECK.md 未改动  got=('6d88fc9241e31e0d6ed7af4988ab712c8e0f4e4caa9d3d92e4f736bf23f46395', 21690)
+PASS  [S7] GATE_FALSE_POSITIVES.md 未改动  got=('2011cb866e8a6e857c7c3fcd08e7270e0cc062f8eed47610fa025bf15b5f3244', 25841)
+PASS  [S7] GATE_TEMPLATE_FIXED.py.txt 未改动  got=('543e79184258f9f96517fdc8d61d42e46a7cd544f11ce0ab3b78d9fd505e9abe', 28128)
+PASS  [S7] GATE_TEMPLATE_REGRESSION.md 未改动  got=('c9093cab4f708d3f2bfd721095e9d8458818dd9d36019d996fd952b24e1a5a19', 31507)
+PASS  [S7] LEDGER_APPENDIX_DRAFT.md 未改动  got=('724458d9e2fdaab8ba34d6c7f64612e722f62618381768132246a5cbaa155f4e', 45719)
+PASS  [S7] OBSERVATION_PROTOCOL_SPEC.md 未改动  got=('c0dfb0d17edab4d0d89c43dc48bce4b84354fd13bd89cae7277aa15e82cf65f2', 54351)
+PASS  [S7] CANDIDATE_RESIGN_YES_V2.md 未改动  got=('1950d3f31048b9a0503f3e026392ca9e15326c39a76104c5cc3fbbdd0455925b', 23129)
+
+==== verdict: total=46 pass=46 fail=0 ====

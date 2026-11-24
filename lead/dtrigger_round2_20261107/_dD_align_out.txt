@@ -1,0 +1,105 @@
+====================================================================================================
+【_dD · 物理 S 可观测量对齐 · 独立离线重算】
+====================================================================================================
+
+## 0. 被核对象 SHA256 / 字节数（本机 Python hashlib 实跑）
+被核对象 SHA256 = 1d90325ca899c0611ac03dd49a6fb07ede4e21cde2062a5a793a7ea694c9da29，字节数 = 20133    <- lead/dstart_observable_20261107/S_OBSERVABILITY.md
+被核对象 SHA256 = 1554aa0e53e0cef9c78eccabd24b7769fc37d3cb56149420d71527c55ed24f9d，字节数 = 12770    <- lead/dstart_observable_20261107/S_UNCERTAINTY.md
+被核对象 SHA256 = 89df455a3295eaf67ef38ae41ae63ba053d425e3141d7d7bcdf77834232f4900，字节数 = 10223    <- lead/dstart_observable_20261107/AUDIT_S_OBSERVABLE_20261107.md
+被核对象 SHA256 = 6a50b209ab59a9ea5db8939091a211f15dedc8b6614a56b39dc8f1975a822b28，字节数 = 447469    <- lead/dstart_observable_20261107/S_ESTIMATES.json
+被核对象 SHA256 = 06143d4edb2e3628fad6dfd8eb91574efd2ab22dc93618230085543017bb8dbc，字节数 = 21950    <- lead/dstart_observable_20261107/_s_estimator_probe.py
+被核对象 SHA256 = 82fa323cc99f3d2d344e13595cbb40bd92998b6be44061c9ce7e6bf99d96299a，字节数 = 10290    <- lead/dstart_observable_20261107/_independent_audit_probe.py
+被核对象 SHA256 = 4a3424050125b98c0dd3a9a76ec6603fc03ad976e0b9fdecfb34d3b683b94726，字节数 = 48343    <- lead/dtrigger_compare_20261107/CRITERIA_COMPARE.md
+被核对象 SHA256 = 7e2533eabf795e8aa0063a16ee875d95742880dcefab55d596cfc5aa6e7f958b，字节数 = 17926    <- lead/dtrigger_compare_20261107/CRITERIA_METRICS.json
+被核对象 SHA256 = e6c26896319acb0387f06384665d5db3668e0f15e29f7328cac97f4931c03cac，字节数 = 111044    <- lead/dtrigger_compare_20261107/_cost_quota_data.json
+被核对象 SHA256 = f0177d2cbafdb4dbd388d6b38b97d14ae73688f36f58df4f0fff7edc31a59b66，字节数 = 5088    <- lead/dtrigger_compare_20261107/_dtrigger_supplement_out.txt
+被核对象 SHA256 = 3be36ba259b50c88751d2c1fca73a242421671e27676f3b629e8f523b8383a51，字节数 = 17525    <- lead/dtrigger_compare_20261107/_dtrigger_probe_out.txt
+被核对象 SHA256 = c6f7bd0ecc9d0f16afd8db75b72675a641ab5fc7601247381e9663f66d758677，字节数 = 6637    <- lead/dtrigger_compare_20261107/_dtrigger_analysis_out.txt
+被核对象 SHA256 = d5afc90c50bbf57be1e58bf9000b1940392337b6c57a444e3b084fe57983d04f，字节数 = 13197    <- lead/d30_ruling_20261106/RULING_D30.md
+被核对象 SHA256 = ed8951e72bd61cd322b1687c4496ec9fc0e8a362c1425d4020901228d885a001，字节数 = 27271    <- lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md
+被核对象 SHA256 = 5bf152842b2c343bc6cf046fa824bf0a0f3eb7a0c83245339f449921ed053cad，字节数 = 659297    <- lead/stall_event_def_20261106/STALL_EVENTS.json
+
+## 1. 语料载入
+文件 n=104，总采样点 n=1125992，hz=[500]
+moving64 推进窗 n=64
+
+## 2. 母体 A（CRITERIA_COMPARE.md §2.1 的 e）独立重算
+全部帧号游程 n=28381；有前序(i>0)游程 n=28317；窗首(i=0)游程 n=64
+e 分布：min=0.008 med(statistics.median)=2.511 P50(最近秩)=2.511 P95=2.667 P99=4.145 max=488.616 ms
+e>0 计数=28317 / 28317（比例=100.000000%）
+e>6.0ms 计数=248；e>50ms 计数=84；e>=50ms 计数=84；e>100ms 计数=36
+e>50ms 占母体A比例=0.296642%
+帧沿间隔 hist 总体 n=28317，P50=32.779 P95=112.442 P99=189.267 ms
+
+## 3. 母体 B（S 估计/不确定性件的 U）独立重算
+STALL_EVENTS 全量 n=1737；isRealMatch==True n=1681；S_ESTIMATES.json 记录 n=1681
+逐字段重算 vs S_ESTIMATES.json：不匹配项数=0 / 1681 条
+quality 档位：full=1495 bounded=182 unknown=4 合计=1681
+U(有效 n=1677, 3位小数)：min=0.008 med(statistics.median)=2.515 P50(最近秩)=2.515 P95=35.367 P99=111.495 max=488.616 ms
+U(有效 n=1677, 原始精度)：min=0.008000 med=2.515000 P99=111.495000 max=488.616000 ms
+U 算术均值=7.943 ms
+U>6.0ms 计数=182（=bounded）；U>50ms 计数=56；U>=50ms 计数=56；U>100ms 计数=22
+U>50ms 占 1677 有效=3.3393%；占 1681 全集=3.3314%
+按 1681 全集计 sUncertaintyMs>50 计数=56，占=3.3314%
+full 子集 U 中位=2.510 ms，P99=4.636 ms
+
+## 4. 母体 A / 母体 B 的集合关系（两套统计母体的口径差）
+逐事件 U 值落在母体 A 多重集内的条数=1677 / 1677
+逐事件 U 与同 (trip,win,startTick) 游程 onset gap 相等的条数=1677 / 1677
+窗首(i=0)游程 n=64；其中 isRealMatch==True 且 startTick==0 的真实事件 n=4（在窗首游程内=4）
+全部游程中 d_final>=100ms 的条数=1704；其中 isRealMatch==True 条数=1681
+母体 A 中 e>50ms 的游程数=84；这些游程里 isRealMatch==True 事件数=56
+
+## 5. 与 CRITERIA_COMPARE.md §2.1 逐条对齐
+  [A1 区间定义 S in (t[i-1], t[i]]]
+       S件/实跑：S_OBSERVABILITY.md:57 / S_UNCERTAINTY.md:33 同为 (sLowerBoundMs, sUpperBoundMs]
+       对齐判定：一致（同一夹逼区间；符号不同）
+  [A2 S_hat-S in [0,e]]
+       S件/实跑：S_OBSERVABILITY.md:163 等价式 C-S_obs <= C-S <= (C-S_obs)+U；S_UNCERTAINTY.md:110-118
+       对齐判定：等价；但 S in (t[i-1],t[i]] 严格给出 [0,e) 上界开，§2.1 写 [0,e] 为保守松弛
+  [A3 e 有效 n=28317]
+       S件/实跑：本轮实跑母体 A 有前序游程 n=28317；母体 B 有效 n=1677 / 全集 n=1681
+       对齐判定：数值可复现，但统计母体不同：A=全部游程，B=仅 1681 真实停滞事件
+  [A4 中位 2.511]
+       S件/实跑：本轮 e 中位=2.511；U 中位=2.515
+       对齐判定：e 可复现；U 为 2.515，属不同母体，不是矛盾也不是同一统计量
+  [A5 P99 4.145]
+       S件/实跑：本轮 e P99=4.145；U P99=111.495
+       对齐判定：e 可复现；S 件的 P99 是 111.495，两者相差 107.350ms，不可互代
+  [A6 max 488.616]
+       S件/实跑：本轮 e max=488.616；U max=488.616
+       对齐判定：一致；同一极值事件 l3_20261031hb/w1:samples[1377]
+
+  [A7 下界语义] §2.1:96 所有 waitAfterS_hat/latency* 都是下界；
+       S_OBSERVABILITY.md:163-165 / S_UNCERTAINTY.md:116-118 给同一不等式（乐观锚 vs 保守预算）。
+       对齐判定：一致；且本轮实跑 e>0 计数=28317/28317，即所有事件的观测锚都可能严格晚于物理 S。
+  [A8 硬阻断] §2.1:97「:177 的严格 S+50ms 核算需物理 S，本次语料不可得」；
+       S_OBSERVABILITY.md:194「没有任何在线抓栈与保存动作的完成时刻 C 的实测数据」；
+       CRITERIA_COMPARE.md:414（§7 第2项）物理 S 与实际保存时刻 C 未验。
+       对齐判定：一致；两份件共同登记 C 缺席，S 缺席只是其中一个缺口。
+  [A9 掉拍定性] §2.1:98「e 的最大值 488.616ms 是采样掉拍，不证明线程被卡」；
+       S_OBSERVABILITY.md:106-118 / S_UNCERTAINTY.md:89-100 / RULING_D30.md:78。
+       对齐判定：一致。
+
+## 6. 结论判定所需的确定性量
+(1) 观测锚下界不足：e>0 的游程=28317/28317；全部 waitAfterS_hat 均为下界（§2.1:96）。
+(2) 保守确证条件 C <= S_obs + (50 - U)（S_UNCERTAINTY.md:113）；
+    U>50ms 的真实事件=56 条，其 50-U 净裕量为负，故这些事件在离线语料上无法给出合规闭环证明。
+(3) 已证明不合规方向的独立证据（观测锚下界已越 50ms，真实值 >= 下界）：
+    _dtrigger_supplement_out.txt:11-24,29 与 CRITERIA_COMPARE.md:34-35,145-147；
+    CRITERIA_COMPARE.md:216 明写 ≤50% 不是对 :177 的合规证明（S 不可测、:190 端到端延迟未验）。
+(4) 语料中无任何 C：CRITERIA_METRICS.json:542-558 U4-EndToEndSave 为 notImplementable 占位；
+    CRITERIA_COMPARE.md:398（§6 第4项）语料无现场快照耗时、无实际保存时刻 C。
+(5) D-30 §2（RULING_D30.md:30）原文：「物理S与实际保存时刻C仍未知，不能判成物理采不到」。
+
+## 7. 未验项（本轮单列，不并入任何结论）
+未验：真机 / 活进程任何量（本轮零真机，未启动任何进程、未读活进程内存）。
+未验：物理 S 的逐事件点值、现场快照实际保存完成时刻 C、:190 端到端延迟、Q5 四项工程依赖、内部状态旗标。
+未验：既有探针 _s_estimator_probe.py / _independent_audit_probe.py / _dtrigger_probe.py /
+      _dtrigger_analysis.py / _dtrigger_supplement.py 本轮未重跑（它们会覆写只读既有件，铁律禁止）；
+      本轮只引用其已落盘输出，并自写 _dD_align.py 从原始语料独立重算两套母体。
+未验：S_UNCERTAINTY.md:126「U>50ms 共 62 例」与 S_OBSERVABILITY.md:171「56 条」两处差异的成因；
+      本轮实跑值见第 3 节（可判定哪个计数与重算相符，但成因不可判定）。
+未验：n=1681 与 n=1737 的同口径对照（裁决边界明令禁止，本轮未做）。
+
+【_dD_align.py 运行完成 · 输出落盘 D:\Project\ra2-campaign-forge\lead\dtrigger_round2_20261107\_dD_align_out.txt】

@@ -1,0 +1,54 @@
+=== C9-REDO 绕过 _f2v_verify9.py:24 后 :29 崩点 ===
+C9R EXIT=1 stdout='CASE 0 merged'
+C9R stderr: File "D:\Project\ra2-campaign-forge\lead\merged_safety_20261109\_msv_v9_bypass24_redo.py", line 29, in <module>
+C9R stderr: KeyError: 'bytes'
+C9R_EXPECT : line 29 KeyError 'bytes' = True
+
+=== E9-REDO 精确返回值结构签名（键集 + 容器类型） ===
+E9 顶层键集 old==new==own : True
+E10 R11 键集 old==new==own : True
+E11 键集签名（忽略列表元素个数）old==new==own : False
+E12 old problems 长度=0 new problems 长度=1（值变化，非键增删）
+E13 新增 problem 元素的键集 = ['msg', 'rule_id']（既有契约 rule_id/msg）
+E_RESULT STRUCTURE_UNCHANGED_REDO = False
+
+=== E14 30 件全量回归（结构 + verdict 漂移） ===
+E14 corpus n=30 found=30 ; verdict 全同=30 ; 键集全同=30 ; 漂移件=[]
+E15 old/new/own self_test all_pass = True / True / True
+
+=== G-REDO 安全集边界：原文逐字核对 ===
+G-R DESIGN   含 '静默错比崩更该进安全集' : True
+G-R DESIGN   含 '崩 = **fail-closed**' : True
+G-R DESIGN   含 '静默错 = **fail-open**' : True
+G-R DESIGN   含 '两处不足以称「够」' : True
+G-R DESIGN   含 '并非「只有这两处」' : True
+G-R DESIGN   含 '6 件静默误读全读' : True
+G-R DESIGN   含 '一处汇聚点覆盖 6 件' : True
+G-R _mc_AUDIT 含 '1 处崩 + 7 处静默误读' : False
+G-R _mc_AUDIT 含 '1 处已实证会崩、7 处会静默误读' : True
+G-R MERGED_CONSUMER_AUDIT 含 '8 静默误读' : True
+G-R MERGED_CONSUMER_AUDIT 含 '读者=这 3 件（加 `_f2w_extract.py:13`）' : True
+G-R MERGED_CONSUMER_AUDIT 含 '1–3（代码必做）+ 5–6（治理/审计必做）' : True
+G-R DESIGN §四(a) 表格行数 = 8（回件称『6 件静默误读』）
+G-R 读 _f2_compare_out.json 的件数=4 ['_f2w_checks.py', '_f2_compare.py', '_f2w_extract.py', '_f2w_pass.py']
+G-R 直接调 r11_scan_plus 的件数=5 ['_f2_selftest.py', '_f2_compare.py', '_f2v_final.py', '_f2v_run.py', '_f2w_dogfood.py']
+G-R 两者交集=['_f2_compare.py'] ；既非 JSON 读者也非直接调用者=[]
+G-R 结论：DESIGN『6 件全读同一 JSON』与逐件实读不符；直接调 plus 的 4 件（_f2_selftest/_f2v_final/_f2v_run/_f2w_dogfood）不经该 JSON，单靠『④ 计数口径裁决』覆盖不到它们
+
+=== H-REDO 只读域 .pyc 时间戳（是否本会话新增） ===
+H-R now = 2026-11-09T11:44:21.892702
+H-R lead\r11_f2_fix_20261109\__pycache__\_f2_r11plus.cpython-312.pyc       mtime=2026-11-09T04:52:03.858453 size=16837
+H-R lead\gate_r9r12_20261109\__pycache__\_g9_gate.cpython-312.pyc          mtime=2026-11-09T01:52:47.003642 size=14169
+H-R lead\r33e_merge_20261109\__pycache__\_re_linked.cpython-312.pyc        mtime=2026-11-09T10:59:15.041289 size=20453
+H-R 本会话所有 Python 均带 -B 且 sys.dont_write_bytecode=True；上列 .pyc 的 mtime 若早于本会话首条命令即属既存件（本次未新增）
+
+=== H-R2 末轮八件指纹 ===
+H-R2 lead/r11_f2_fix_20261109/_f2v_verify9.py                               c22f28ad4228d028c16d8558a8dd9a0980947631ab5bcf5c9cd84e529cf439e3 1618 MATCH=True
+H-R2 lead/gate_r9r12_20261109/_g9_gate.py                                   a83081eeffc56e830c84ebcfe945114b5e2ac1082467ed04d97634912dacd2a6 11623 MATCH=True
+H-R2 lead/gate_fp7_20261108/_g7_predicates.py                               02c17e49764a6f87f2b0d26c6689f0cbeb96498509e5c75bf843104829c51120 11743 MATCH=True
+H-R2 lead/r33e_merge_20261109/_re_linked.py                                 7ca339c6beb728f488903e1b0c748708accf45cd5e3bce45d532290c0c755b52 19481 MATCH=True
+H-R2 lead/merged_consumer_audit_20261109/_mc_AUDIT.md                       8b0be4a59bd3e88ffd908a234e9c8382a724478d93409fddf3814d5bb5aa3367 33762 MATCH=True
+H-R2 lead/merged_consumer_audit_20261109/MERGED_CONSUMER_AUDIT.md           85de273758a6b87915f9735a07e1b9e1d11c594de50f41d83f5e70145257c263 40884 MATCH=True
+H-R2 lead/PENDING_DECISIONS.md                                              3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 52419 MATCH=True
+H-R2 lead/GOAL_THREE_TARGETS_20261018.md                                    2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede 759518 MATCH=True
+H-R2 ALL_EIGHT_UNCHANGED = True

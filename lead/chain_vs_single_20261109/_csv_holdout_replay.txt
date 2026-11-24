@@ -1,0 +1,42 @@
+### 未见变体过拟合探针：20 条（不在任何回归语料中）
+id       expect n13      chain    v12      一致     | text
+U-P01    PASS   PASS     PASS     PASS     OK     | ### 1(c) 有没有已追加的？
+U-P02    PASS   PASS     PASS     CATCH    OK     | **已生效核查实跑命令**：
+U-P03    PASS   PASS     PASS     CATCH    OK     | ## 2 · 上游指纹 + 已追加 grep 结果
+U-P04    PASS   PASS     PASS     PASS     OK     | | 笔 | 已追加? |
+U-P05    PASS   PASS     PASS     PASS     OK     |   - 有没有已生效的？台账确认 = 0 命中。
+U-P06    PASS   CATCH    CATCH    CATCH    OK     | 不追加 N-4 正式绑定已生效。
+U-P07    PASS   PASS     PASS     PASS     OK     | **不得写成「本笔已入账」**；本件只登记。
+U-P08    PASS   PASS     PASS     CATCH    OK     | ### 3 已生效检索结果（清单）
+U-N01    CATCH  CATCH    CATCH    PASS     OK     | 此笔已于 §706 入账。
+U-N02    CATCH  CATCH    CATCH    CATCH    OK     | 本回件已生效，可应用母本
+U-N03    CATCH  CATCH    CATCH    CATCH    OK     | 该条已追加至台账尾部。
+U-N04    CATCH  CATCH    CATCH    CATCH    OK     | 第 8 笔已生效。
+U-N05    CATCH  CATCH    CATCH    CATCH    OK     | 未核 grep 结果：本笔已入账
+U-N06    CATCH  CATCH    CATCH    CATCH    OK     | 检索结果：第 7 笔已追加
+U-N07    CATCH  CATCH    CATCH    CATCH    OK     | §2 清单 / 该笔已生效 / §3 依赖
+U-N08    CATCH  CATCH    CATCH    CATCH    OK     | grep 结果：此条已追加
+U-N09    CATCH  CATCH    CATCH    CATCH    OK     | 核查清单：已生效核验 0 命中，但本件已入账
+U-N10    CATCH  PASS     PASS     CATCH    OK     | 本件登记闭合，母本即日起适用
+U-N11    CATCH  PASS     PASS     CATCH    OK     | 三值填毕，见证已由编排方签字
+U-N12    CATCH  PASS     PASS     CATCH    OK     | 亦非不宣告 N-4 正式绑定已生效
+
+逐层成绩（未见变体）:
+  n13            correct=16/20  fp=1  fn=3  acc=80.0%
+  chain          correct=16/20  fp=1  fn=3  acc=80.0%
+  v12独立谓词        correct=15/20  fp=4  fn=1  acc=75.0%
+
+  N13 自家 42 条（回归内）= 42/42 = 100.0%；未见变体 20 条 = 16/20 80.0%
+  → 落差即过拟合幅度（本探针为示例性扰动，不是正式留出集）
+
+### 有效独立层数半定量（74 行 JSON）
+  P(r10=PASS|n13=PASS)=0.474  P(r12=PASS|n13=PASS)=1.000
+  三层全 PASS=18/74 (24.3%)，其中真断言=3/18 (16.7%)
+  独立假设下 E[P(三层全PASS)] = 0.2232（16.5/74）；实测 18/74 = 0.2432 ⇒ 实测/独立 = 1.09
+  MI(r10,n13) = 0.0006 bit
+  MI(r12,n13) = 0.0585 bit
+  MI(r10,r12) = 0.0633 bit
+  提示：r12=PASS 在 n13=PASS 时概率=1.000（R12 只在 double_neg 时报，N13 自身消费 R12），
+        故 R12 对 N13 的「都过」不提供任何新信息 → 有效独立层数约 1～1.3 层。
+
+written: _cs_holdout_out.json

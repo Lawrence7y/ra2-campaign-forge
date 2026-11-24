@@ -1,0 +1,94 @@
+N-1 r2 独立验收 · 实跑证据日志（验收员会话 sess_dwf-dwfrun-01a1190d-62d0-4b75-b05b-4044a79a82be-actor_1_1，2026-11-08）
+全部命令为只读；Python 一律 python -I -X utf8 + 绝对路径；哈希用 hashlib。零真机、零采样代码、未 commit、未 push、未改被验收件。
+
+【#01】python -I -X utf8 -c "hashlib 三件指纹"
+输出：
+A_RESIDUAL_REFERENCES.md SHA256 = 1209ca4c8149722fffd1731a0f435637a2988a6e90993f87ef632eb4763b585e bytes = 33431
+ACCEPTANCE_RECORDS.json SHA256 = d847de88bb0c0c04290c877180a9c45c502df773ba297a36406bffecbe66796b bytes = 27965
+_n1_records.py SHA256 = b089d809d6a7ae9f729fdbaa1437ef8613d4512ce1e257c50154fdf3de005275 bytes = 11968
+→ 与编排方指纹三项逐位一致（MATCH×3）。
+
+【#02】ls -la lead/a_residual_n1_20261108/
+→ ACCEPTANCE_RECORDS.json 27965 B (Nov 8 10:50)；A_RESIDUAL_REFERENCES.md 33431 B (Nov 8 10:47)；
+  _n1_hashcheck.py 1291 B (09:22)；_n1_records.py 11968 B (10:04)；_n1_records_out.txt 419 B (10:04)；_verify_writescope.py 882 B (10:12)。
+→ r1 时代辅助件 mtime 均早于 r2 覆写窗口（10:47+）。
+
+【#03】rg -n "environ|getenv" lead/a_residual_n1_20261108/_n1_records.py
+→ 零命中，exit=1。缺口②机制面证实。
+
+【#04】rg -c "1209ca4c|d847de88" lead/a_residual_n1_20261108/A_RESIDUAL_REFERENCES.md
+→ 零命中，exit=1。r2 MD 全文无现盘两件指纹 → MD 无指向自身的绑定行（缺口①事实面）。
+
+【#05】rg -c "1209ca4c" lead/a_residual_n1_20261108/ACCEPTANCE_RECORDS.json
+→ 8 次（7 条记录 artifactHashes + writeDomain 一处）。JSON→现盘 MD 绑定存在。
+
+【#06】python -I -X utf8 -c "hashlib 八件指纹"
+NEXT_STEPS c364467dea90… 27225 | A1_ERRATA_MAP d00979943bc6… 48180 | ERRATA_W8 660a9ecec48c… 28443 |
+RULING_D24 56167a5e8695… 15301 | W8_STATIC_LOCATE 20e4eeac4925… 26485 | W9_SINGLESTEP 13fa9fe35339… 40592 |
+PENDING_DECISIONS 7f68fc6c6ed1… 50194 | a_residual_20261106/ACCEPTANCE_RECORDS.json d421f8bc5cc0… 37517
+→ 前 3 件与编排方指纹一致；全部与 r2 JSON inputHashes / r2 MD:18 声明一致。
+
+【#07】ls -la lead/a_residual_20261106/
+→ 全部旧件 mtime = Nov 6（12:14–12:53），晚于该时点未改动。
+
+【#08】python 实读 lead/a_residual_20261106/ACCEPTANCE_RECORDS.json
+→ type=list，count=17；record keys = [itemId, itemClass, originalClaim, boundedClaim, evidence, tier, citeAs,
+  unresolved, reviewerRole, inputHashes, artifactHashes, decision, timestamp]（无 reviewerSessionId/sourceTaskId 键）；
+  全部 17 条 .get 两键 = None（键缺位）；R3-W8-7 decision=PARTIAL、R3-W8-8 decision=ACCEPT、R2-W8-7 decision=PARTIAL 在列。
+
+【#09】python 对照旧记录 originalClaim 与 W8_STATIC_LOCATE.md 行
+→ R2-W8-6 vs :177、R2/R3-W8-7 vs :178、R2/R3-W8-8 vs :179、R2-W8-11 vs :185：strip 后逐字相等 = False；
+  差异 = 列表编号（"6. "等）、行内反引号、**加粗**星号；句文一致。
+  其余 8 条（R2-W8-1/2/3/4/5/9/10/12）originalClaim 实读均为 W8-1/2/3/4/5/9/10/12 主题，与 7 条新记录不同题。
+
+【#10】rg -n "BASELINE_A4_PROPOSAL|74-87" W9_SINGLESTEP.md → 仅命中 :193（本条自身），exit=0
+【#11】rg -n "02:15:47|02:10:46" W9_SINGLESTEP.md → 仅命中 :210，exit=0
+【#12】rg -n "6FB03D|6FB040|6FB048" W8_STATIC_LOCATE.md → 仅命中 :177，exit=0
+【#13】rg -n "NEXT_INSN" W8_STATIC_LOCATE.md → 仅命中 :185，exit=0
+【#14】sed -n '198p' W8_STATIC_LOCATE.md | rg -c "节略|存疑|NEXT_INSN|House|740B6" → 0，exit=1
+【#15】rg -in "740B51" F7_TARGETING.md → 0 命中，exit=1
+【#16】rg -in "740B51" _w8_f7_out.txt → 0 命中，exit=1
+【#17】rg -in "fn 0x740B51" W8 目录 → 仅 W8_STATIC_LOCATE.md:178 与 reviews/F7_review.md:193 两处
+【#18】sed -n '433,434p' reviews/_f7rev_out.txt → "00740b50  c3  ret" / "00740b51  90  nop"
+【#10–#18】与 r2 MD §3.1/§3.3/§3.4/§3.5/§4.1/:110 逐项吻合。
+
+【#19】env | rg -i "ZCODE|CLAUDE|SESSION"（验收员会话实跑）
+→ ZCODE_SESSION_ID = CLAUDE_SESSION_ID = CLAUDE_CODE_SESSION_ID = sess_dwf-dwfrun-01a1190d-62d0-4b75-b05b-4044a79a82be-actor_1_1
+→ 三变量机制真实且会话内一致；验收员会话 ≠ r1 作者（actor_1_1@324c613e）≠ r2 作者自称（actor_3_1@324c613e）。
+  作者 env 输出无法由交付件复现（固有，r2 已登记 unresolved）。
+
+【#20】python 结构校验 ACCEPTANCE_RECORDS.json
+→ top keys 含 schema/schemaNote/natureNote/grade/revisionOf/independentReview/replacementNote/reviewer/sourceTask/
+  writeDomain/hashMethod/decisionSemantics/records；records=7；每条 keys 顺序 == 9 固定字段；
+  decision 分布 = {ACCEPT:5, PARTIAL:2}（W9-9、W8-7 为 PARTIAL）；timestamp 正则通过；
+  unresolved 条数 = 6/5/5/5/5/5/6，每条含「身份核证」=1、「sourceTaskId 按计划任务号 N-1」=1；
+  全部 inputHashes 与 #06 实算逐键一致；全部 artifactHashes = 1209ca4c…/33431B 与 #01 一致。
+
+【#21】sed 行抽读（GBK 乱码，后被 #23 python 复验取代）：W8:96/97/112/147/196、W9:151/155-157/182/184/200/230。
+
+【#22】python 实读 _n1_records_out.txt
+→ :1-8 records=7 及 r1 决策分布（W9-2…W8-7：ACCEPT×5 + W9-9 PARTIAL + W8-7 ACCEPT）；
+  :9 "A_RESIDUAL_REFERENCES.md  SHA256 = 3343cfbe467d38f442cd9e422e691d0123fc046938c4d242f57c629bd41d4125 字节数 = 26435"
+→ r1 MD 指纹与 r1 决策分布的 r1 时代旁证（mtime 10:04，非全文副本，r1 JSON 指纹无 trace）。
+
+【#23】python -I -X utf8 _v_line_checks.py（71 项行锚断言：W8/W9/ERRATA_W8/A1_ERRATA_MAP）
+→ PASS=57 FAIL=14。
+  FAIL 甄别：13 项为关键词格式差（A1:97 实为 ":155, :156, :157, :230"；A1:144/145/146 行首 "② /③ /④ "；
+  EW:39 "① 被 :198 破折号清单显式点名"；EW:48-49 跨行 "完全无落点的是 W8-6 与 W8-11"；EW:52-53 "通吃" 在 :53；
+  EW:109/110、118/119、156/157 原位置与逐字分行；A1:86 表头；W9:151 实含 "`:4575` 有 `if not src.exists(): return None` 守卫"、
+  文件名以 qc151_trip.py:4561-4578 同句给出）——实际行内容均支持 r2 引用。
+  1 项为 r2 引用精度瑕疵：r2 MD:111 将短语「PARTIAL（被修原文定位未验）」并挂 ERRATA_W8.md:121 与 A1:285；
+  实读该短语逐字在 A1_ERRATA_MAP.md:285（PASS），ERRATA_W8.md:121 为规则正文（起点表述作废+出处挂
+  F7_review.md:94-95/:193+不得挂 F7_TARGETING.md 行号），无该短语字样。
+【#24】python 复印 W9:151-153 / EW:46-53 / EW:121-122 / EW:118-119 / EW:156-157 / A1:86-90 全文（甄别依据）。
+
+【#25】rg -in "740B51" W8 目录（全目录大小写不敏感）
+→ 恰 5 处：W8_STATIC_LOCATE.md:112、:178、reviews/F7_review.md:94、:193、reviews/_f7rev_out.txt:434
+→ 与 ERRATA_W8.md:120「全 W8 目录仅 5 处」逐处吻合。
+
+【未验/未跑项（如实登记）】
+- 作者会话 env 输出（…actor_3_1）无法由交付件复现核证——固有，r2 已登记 unresolved。
+- r1 两件全文指纹 3343cfbe…/15e4731c… 不可复算（无独立副本）；旁证仅 #22（且 r1 JSON 指纹无 trace）。
+- PENDING_DECISIONS.md 现盘仅验指纹（7f68fc6c…/50,194 ≠ A1:14 记载 08:57 版），未逐行重查内容。
+- W9 其余 17 条、W8 其余 6 条、W7/G5 各条按 N-1 联引条款不重查（NEXT_STEPS_20261106.md:25）。
+- QC124 运行期写出事件等零真机未复现项维持 r2 未验登记。

@@ -1,0 +1,20 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+0047BBF0	S06	CellClass::CellClass	CellClass ctor: writes 4 vptables + initializes 61 fields incl MapCoords(+0x24/+0x26), next(+0x30), list heads(+0xE4/+0xE8), ore type(+0x44)=-1	[已证]	EVIDENCE/cell_ctor_disasm.txt
+0047BB60	S06	CellClass::~CellClass	CellClass dtor: deletes sub-objects at +0x28/+0xFC, clears +0xE4, reads MapCoords vs InvalidCell coords, decrements owner refcount at +0x34->+0x194	[已证]	EVIDENCE/cell_ctor_disasm.txt
+0047FF80	S06	CellClass::GetCenterCoords	Maps MapCoords(+0x24/+0x26)*256+128 to cell center CoordStruct; applies level(+0x11B)*15 to Y offset; checks tile type(+0x38)==0xFFFF	[已证]	EVIDENCE/cell_methods_disasm.txt
+00486840	S06	CellClass::GetCellCenterCoord	Reads MapCoords(+0x24/+0x26)*256+128 -> CoordStruct via 0x47B3A0 allocator (vt18)	[已证]	EVIDENCE/cell_methods_disasm.txt
+004867E0	S06	CellClass::IsOnMapTileType	Reads tile type +0x38, range-compares against global 0xAA0738 [..+0xE) (vt20)	[静态推断]	EVIDENCE/cell_methods_disasm.txt
+005FDD20	S06	TiberiumClass::GetIndexByTypeID	Given type ID (ecx), validates via 0xA83D84 table + type+0x2A9 flag, linear-scans DVC<TiberiumClass*>(Count 0xB0F4F8/Items 0xB0F4EC) matching ID, returns index or -1	[已证]	EVIDENCE/ore_func_disasm.txt
+00485020	S06	CellClass::GetOreValue	Ore value: +0x44 typeID->5FDD20->DVC(0xB0F4EC) TibClass, returns [tib+0xB8]*([cell+0x11E]+1), 0 if no ore	[已证]	EVIDENCE/ore_func_disasm.txt
+00485060	S06	CellClass::CheckTileTypeRange	Reads +0x38 dword and compares in [0xAA0738, +0xE) range, returns 1 if inside	[静态推断]	EVIDENCE/cell_methods_disasm.txt
+00557E10	S06	CellClass::SerializeSubObjects	vt41: gate +0x54 byte, then virtual-call slot+0xC on embedded objects +0x118/+0xB8/+0x58	[静态推断]	EVIDENCE/cell_methods_disasm.txt
+005656D0	S06	MapClass::IsValidCellStruct	Uses CellStruct(Y<<9)+X idx; checks cell array slot non-null (setne al) (vt3 of MapClass)	[已证]	EVIDENCE/getcellat_disasm.txt
+005657A0	S06	MapClass::GetCellAt	this=0x87F7E8; idx=(short)Y<<9+(short)X; valid 0<=idx<0x40000; pCell=[+0x13C base + idx*4]; null->InvalidCell 0xABDC50	[已证]	EVIDENCE/getcellat_disasm.txt
+005657E0	S06	MapClass::IsCellOccupied	Boolean variant of GetCellAt: returns cell array slot != 0 for CellStruct	[已证]	EVIDENCE/getcellat_disasm.txt
+00565800	S06	MapClass::InitDimensions	Allocates cell array; sets +0x14C=0x200 width, +0x150=0x200 height, +0x154=0x40000 count	[已证]	EVIDENCE/getcellat_disasm.txt
+00565090	S06	MapClass::MapClass	MapClass base ctor: writes vft 0x7ED404 at end, inits embedded vectors +0x50/+0x8C/+0xA4/+0xBC/+0xD4, +0x13C=0, +0x148=0xD, tail fields to +0x1170	[已证]	EVIDENCE/map_ctor3_output.txt
+004A8730	S06	DisplayClass::DisplayClass	Derived ctor: calls MapClass ctor, writes vft 0x7E6114, adds fields +0x1174..+0x11E0 (proves MapClass size 0x1174)	[已证]	EVIDENCE/map_ctor3_output.txt
+005683C0	S06	MapClass::AttachCellToList	Attach wrapper -> 0x47E8A0; uses cell +0x30 next, +0xE4/+0xE8 list heads	[已证]	EVIDENCE/cell_fields_raw.txt
+005687F0	S06	MapClass::DetachCellFromList	Detach wrapper -> 0x47EA90; uses cell +0x30 next, +0xE4/+0xE8 list heads	[已证]	EVIDENCE/cell_fields_raw.txt
+00487E70	S06	CellClass::GetSize	Returns 0x148 (328) via B8 48 01 00 00 C3; matches ctor push 0x148 cross-check	[已证]	EVIDENCE/core_numbers.txt
+004F4410	S06	MapClass::(no GetSize)	MapClass v[12] is a normal function (calls v[11], compares global), NOT GetSize; MapClass has no B8/C3 GetSize in 179 vtable slots	[已证]	EVIDENCE/core_numbers.txt

@@ -1,0 +1,16 @@
+0x4739F0	S03	CCFileClass::CCFileClass	构造 CCFileClass：基类CDFileClass构造+内嵌BufferClass@+0x58+置vft 0x7E16B0，ret4	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E09_basefields.txt
+0x473C50	S03	CCFileClass::Open	打开：已就绪则真；否则试GetFileName→MIX探测0x5B4430→磁盘0x431F10，置状态+0x68=1/2	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E03_ccfile_methods.txt
+0x473D10	S03	CCFileClass::Get_File	取数据主路径：mode&2或磁盘0x431F10成功走磁盘，否则回落MixFileClass::Find 0x5B4430	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E03_ccfile_methods.txt
+0x473C00	S03	CCFileClass::Size	返回缓冲长度[+0x5C]（内存模式）或磁盘大小/MIX条目大小	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E03_ccfile_methods.txt
+0x473BA0	S03	CCFileClass::Seek	定位：MIX内改当前位置[+0x64]，支持SEEK_SET/END(从[+0x5C])/CUR	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E03_ccfile_methods.txt
+0x5B3C20	S03	MixFileClass::MixFileClass	构造MIX：明文/加密头解析+numFiles*12索引new+PKStraw解密+尾插优先级链表，ret8	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E04_mixfile_methods.txt
+0x5B4430	S03	MixFileClass::Find	按CRC32 id在MIX链表中二分查找条目，输出MIX指针/偏移/大小/缓存体	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E04_mixfile_methods.txt
+0x4A1DE0	S03	CRC32_Hash	标准反射CRC-32：init 0xFFFFFFFF/poly 0xEDB88320(表0x81F7B4)/final xor 0xFFFFFFFF	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E05_hash_chain_alloc.txt
+0x7DCFC4	S03	strupr	文件名大写归一（MIX哈希前处理）	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E05_hash_chain_alloc.txt
+0x65CBF0	S03	RawFileClass::Open	磁盘打开：读文件名[+0x18]→CreateFileA→句柄存[+0x14]	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E09_basefields.txt
+0x4741F0	S03	INIClass::Load	INI装载外壳：经FileStraw包装FileClass调内层解析器0x525A60；散装/MIX两路径汇合点	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E07_ini_convergence.txt
+0x525A60	S03	INIClass::Parse_Inner	INI内层解析器（Load 0x47422B调用），按段/键解析流	[静态推断]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E07_ini_convergence.txt
+0x52CB90	S03	LoadBattleMDIni	BATTLEMD*.INI通配枚举(FS)+回退BATTLEMD.INI，逐个ctor+Load+归并0x46CE10	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E07_ini_convergence.txt
+0x52CD70	S03	LoadRuleMDIni	RULEMD*.INI通配枚举+DialogBox选择+RULESMD回退，逐个ctor+Load	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E07_ini_convergence.txt
+0x633050	S03	PKStraw::PKStraw	加密MIX解密流构造：内嵌BlowStraw(0x7EDF40)+公钥结构绑定	[静态推断]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E04_mixfile_methods.txt
+0x5B4630	S03	MixFileClass::~MixFileClass	析构：vft改BlowStraw，free文件名[+0xC]与缓存体	[已证]	lead/next_re_20261117_r14/S03-K1/EVIDENCE/E04_mixfile_methods.txt

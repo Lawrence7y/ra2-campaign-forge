@@ -1,0 +1,12 @@
+# in progress
+- 2026-11-14T10:09:19.7892549+08:00 step1: alive files written
+- 2026-11-14T10:12:04.4672372+08:00 recon: W79 toolchain located (work/tools/*.py), lock file at round root (.game_instance.lock, owner=lead idle)
+- 2026-11-14T10:18:23.7255650+08:00 design fixed: db/dbc (destroy_all_buildings exp/ctrl), tb/tbc (destroy_building exp/ctrl), hw (hunt_wave alone); V15 compile semantics read (tag trigger + ev_destroyed_by_any for destroy_building; ev_all_buildings_destroyed for destroy_all_buildings; act_all_to_hunt event-only for hunt_wave)
+- 2026-11-14T10:25:30.7517826+08:00 tools ready (w83c_lib/common/build/offline/run/finalize), starting offline build of 5 packages
+- 2026-11-14T10:27:13.2477186+08:00 BUILD OK: 5 packages (db/dbc/tb/tbc/hw) all verify PASS, exp-vs-ctrl object lines identical
+- 2026-11-14T10:36:03.1295582+08:00 trip1(db v1 GAPOWR) = NO_RESULT_150s: tanks FROZEN whole run (t10/t30/t60 screenshots byte-identical); [Units]/[Houses]/[British] byte-equal to W79 ann => Hunt ignores defenseless buildings; v2 redesign: enemy buildings -> ATSLA (armed), rebuild+reinstall+rerun
+- 2026-11-14T10:40:21.8291496+08:00 trip2(db v2 ATSLA) = VICTORY frame 90, towers absent on screen: rules probe (EVIDENCE/rules_probe.py) proves ATSLA does NOT exist in rulesmd.ini; ATESLA is the real prism tower. v3=ATESLA rebuilt+reinstalled
+- 2026-11-14T10:45:27.3744470+08:00 trip3(db v3 ATESLA)=WIN frame 314; trip4(dbc ctrl)=WIN (frame in TRIP_trip4.json); trip4 close latency residual cleared, gamemd=[] now
+- 2026-11-14T10:53:37.8005716+08:00 trip5b(tb)=WIN frame 201 (E1 far alive => named-building semantics); trip6(tbc)=WIN (frame in json); trip5 first attempt BLOCKED (menu flake, kept as evidence)
+- 2026-11-14T10:57:54.7098265+08:00 FINALIZE ok=True: real_identical_tree=True, sandbox restored+deleted, residual=0, lock owner=lead. All 5 arms measured.
+- 2026-11-14T11:00:35.0272127+08:00 deliverables written: OTHER_VICTORY_CONDITIONS.md, REAL_DIR_PROOF.txt, UNKNOWNS.md, DISAGREE.md. Card W83c COMPLETE.

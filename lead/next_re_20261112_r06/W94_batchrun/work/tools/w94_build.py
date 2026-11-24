@@ -1,0 +1,364 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+r"""W94 BUILD - offline, NO LOCK required beyond owner gate, NO gamemd.exe.
+
+Builds ONE matrix cell package from a cell spec JSON (written by
+batch_runner.py), generalizing the W88 C-ladder knobs (W88_build.py is the
+proven source; geometry constants copied verbatim):
+
+  spec = {
+    "cell": "c3",                     # cell id (dir/file name component)
+    "arm": {
+      "hunt_all": true,               # all 3 enemy houses Hunt
+      "hunt_british": 0,              # minimal-dose knob (British n units)
+      "napowr_step": 3,               # NAPOWR col spacing 2 or 3
+      "crewed": false                 # append [NAPOWR] Crewed=no to built map
+    }
+  }
+
+Presets (resolved by batch_runner.py from arm_template + overrides):
+  C6  = hunt_all, step3          C2  = hunt_all, step2
+  C1  = hunt_british=30, step2   C7  = hunt_all, step2, crewed
+  C0/CTRL = all Guard (hunt_all=false, hunt_british=0)
+
+Outputs (per cell):
+  work/w94_design_<cell>.json      design JSON (input to ra2forge build)
+  work/pkg_<cell>/W94Probe/        built package
+  out/inputs/<cell>/               D4 archive: design + built map/INIs + sha256
+  out/BUILD_<cell>.json            build proof
+
+The frozen W85 TESLA grid is 2x2-overlapping by the naive check but is the
+SIGNED GREEN baseline - asserted only for NAPOWR, the factor actually under
+test (verbatim W88 note).
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+import sys
+import traceback
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import w94_lib as L
+import w94_common as C
+
+TAG = "build"
+
+# ---- W85 control-arm geometry (signed green; verbatim W88) ------------------
+MAP_N = 100
+NACNST_CELL = (54, 50)
+NAPOWR_CELLS_STEP2 = [(56, 46), (56, 48), (56, 50), (56, 52), (56, 54), (56, 56)]
+NAPOWR_CELLS_STEP3 = [(56, 46), (56, 49), (56, 52), (56, 55), (56, 58), (56, 61)]
+TESLA_CELLS = [(62, 44), (62, 48), (62, 52), (62, 56),
+               (63, 42), (63, 46), (63, 50), (63, 54), (63, 58),
+               (61, 45), (61, 49), (61, 53)]
+PLAYER_UNIT_GRID = (66, 95, 32, 50)
+PLAYER_MTNK_N = 300
+ENEMY_ZONE_COLS = {"British": (2, 17), "Confederation": (42, 57), "Arabs": (82, 97)}
+ENEMY_UNIT_ROWS = (12, 41)
+ENEMY_PER_HOUSE = 400
+CREWED_OVERRIDE = ("[NAPOWR]\r\nCrewed=no\r\n")
+
+VALID_ARM_KEYS = ("hunt_all", "hunt_british", "napowr_step", "crewed")
+
+
+def grid_slots(row0, row1, col0, col1):
+    return [(r, c) for r in range(row0, row1 + 1) for c in range(col0, col1 + 1)]
+
+
+def overlap_cells(cells):
+    """2x2 footprint check: (r,c) covers rows r..r+1, cols c..c+1."""
+    occ = set()
+    for r, c in cells:
+        for rr in (r, r + 1):
+            for cc in (c, c + 1):
+                if (rr, cc) in occ:
+                    return (r, c)
+                occ.add((rr, cc))
+    return None
+
+
+def sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def base_design(cell, arm):
+    brief = ("W94 matrix cell %s: W85 green control geometry; NAPOWR spacing "
+             "step %d; Hunt units: British %d%s; Crewed override %s."
+             % (cell, arm["napowr_step"], arm["hunt_british"],
+                " + all houses" if arm["hunt_all"] else "",
+                "ON" if arm["crewed"] else "OFF"))
+    return {
+        "package": {"id": "org.ra2forge.w94.%s" % cell.lower(), "version": "1.0"},
+        "campaign": {
+            "id": "RA2F1",
+            "name": "W94Probe",
+            "description": "W94 matrix cell " + cell,
+            "side": "soviet",
+        },
+        "missions": [{
+            "name": "RA2F_M1",
+            "title": "W94 %s M1" % cell,
+            "briefing": brief,
+            "theater": "TEMPERATE",
+            "size": [MAP_N, MAP_N],
+            "player": {"house": "Russians", "credits": 10000, "enemy_credits": 0},
+            "waypoints": {"0": [52, 50], "1": [8, 50], "2": [8, 9]},
+            "structures": [], "units": [], "infantry": [],
+            "objectives": [{"type": "text", "text": "W94 %s PROBE" % cell,
+                            "at_second": 1}],
+        }],
+    }
+
+
+def spec_design(cell, arm):
+    """Effective design from the normalized arm dict."""
+    d = base_design(cell, arm)
+    m = d["missions"][0]
+    napowr = NAPOWR_CELLS_STEP2 if arm["napowr_step"] == 2 else NAPOWR_CELLS_STEP3
+    m["structures"] = (
+        [{"owner": "Russians", "type": "NACNST", "row": NACNST_CELL[0],
+          "col": NACNST_CELL[1]}]
+        + [{"owner": "Russians", "type": "NAPOWR", "row": r, "col": c}
+           for r, c in napowr]
+        + [{"owner": "Russians", "type": "TESLA", "row": r, "col": c}
+           for r, c in TESLA_CELLS]
+        + [{"owner": house, "type": "GAPOWR", "row": 8,
+            "col": ENEMY_ZONE_COLS[house][0] + 7}
+           for house in ENEMY_ZONE_COLS])
+    units = []
+    # player 300 MTNK Guard (always - guaranteed NOT a forced-loss scenario)
+    pslots = grid_slots(*PLAYER_UNIT_GRID)
+    assert len(pslots) >= PLAYER_MTNK_N
+    units += [{"owner": "Russians", "type": "MTNK", "row": r, "col": c,
+               "mission": "Guard"} for r, c in pslots[:PLAYER_MTNK_N]]
+    # enemy 3x400 MTNK; Hunt dose per arm
+    for house, (c0, c1) in ENEMY_ZONE_COLS.items():
+        slots = grid_slots(ENEMY_UNIT_ROWS[0], ENEMY_UNIT_ROWS[1], c0, c1)
+        assert len(slots) >= ENEMY_PER_HOUSE, (house, len(slots))
+        for i, (r, c) in enumerate(slots[:ENEMY_PER_HOUSE]):
+            hunt = arm["hunt_all"] or (house == "British"
+                                       and i < arm["hunt_british"])
+            units.append({"owner": house, "type": "MTNK", "row": r, "col": c,
+                          "mission": "Hunt" if hunt else "Guard"})
+    m["units"] = units
+    ov_nap = overlap_cells([(s["row"], s["col"]) for s in m["structures"]
+                            if s["type"] == "NAPOWR"])
+    assert ov_nap is None or napowr == NAPOWR_CELLS_STEP2, \
+        ("NAPOWR overlap at %r in cell %s with step3" % (ov_nap, cell))
+    return d
+
+
+def apply_crewed_override(pkg: Path):
+    """Append a rules-override section to the BUILT PACKAGE map (verbatim W88
+    C4/C5 caveat: whether the scenario INI is parsed through the rules
+    database is NOT statically provable - recorded, not resolved)."""
+    p = pkg / "RA2F_M1.MAP"
+    b = p.read_bytes()
+    if b"[NAPOWR]" in b:
+        raise RuntimeError("map already contains [NAPOWR] section")
+    if not b.endswith(b"\r\n"):
+        b += b"\r\n"
+    b += CREWED_OVERRIDE.encode("ascii")
+    p.write_bytes(b)
+    return {"file": "RA2F_M1.MAP", "appended": CREWED_OVERRIDE.replace("\r\n", "\\r\\n"),
+            "size": len(b), "sha256": sha(b)}
+
+
+def verify_pkg(sink, cell: str, pkg: Path, arm: dict) -> dict:
+    dsn = spec_design(cell, arm)   # independent re-derivation for expectations
+    rep = {"cell": cell, "pkg": str(pkg)}
+    files = []
+    for p in sorted(pkg.rglob("*"), key=lambda x: x.as_posix().lower()):
+        if p.is_file():
+            files.append({"rel": p.relative_to(pkg).as_posix(),
+                          "size": p.stat().st_size, "sha256": L.sha256_file(p)})
+    rep["files"] = files
+    names = {f["rel"] for f in files}
+    assert {"BATTLEMD.INI", "RA2F_M1.MAP", "MAPSELMD.INI", "expandmd98.mix",
+            "ra2forge_package.json"} <= names, names
+    b = (pkg / "BATTLEMD.INI").read_bytes()
+    rep["battlemd"] = {"size": len(b), "sha256": sha(b),
+                       "bare_lf": b.count(b"\n") - b.count(b"\r\n"),
+                       "ra2f_scenario": b.count(b"Scenario=RA2F_M1.MAP"),
+                       "official_scenario": b.count(b"Scenario=SOV01umd.MAP")}
+    t = (pkg / "RA2F_M1.MAP").read_bytes().decode("latin-1")
+    d = {}
+    for ln in t.splitlines():
+        for k in ("NextScenario", "EndOfGame", "SkipMapSelect", "Size"):
+            if ln.startswith(k + "="):
+                d[k] = ln.split("=", 1)[1]
+    d["russian_mtnk"] = t.count("=Russians,MTNK,")
+    d["british_mtnk"] = t.count("=British,MTNK,")
+    d["confederation_mtnk"] = t.count("=Confederation,MTNK,")
+    d["arabs_mtnk"] = t.count("=Arabs,MTNK,")
+    d["russian_tesla"] = t.count("=Russians,TESLA,")
+    d["russian_nacnst"] = t.count("=Russians,NACNST,")
+    d["russian_napowr"] = t.count("=Russians,NAPOWR,")
+    d["gapowr_total"] = sum(t.count("=%s,GAPOWR," % h) for h in ENEMY_ZONE_COLS)
+    d["hunt_mission"] = t.count(",Hunt,")
+    d["guard_mission"] = t.count(",Guard,")
+    d["winner_is_action"] = bool(re.search(r",1,0,8(?!\d)", t))
+    d["loser_action"] = bool(re.search(r",2,0,8(?!\d)", t))
+    d["all_destroyed_russians_event"] = bool(re.search(r",11,0,8(?!\d)", t))
+    d["elapsed_1"] = bool(re.search(r",13,0,1(?!\d)", t))
+    d["survive_tag"] = ("Objective: survive" in t)
+    d["crewed_override_present"] = bool(re.search(
+        r"\[NAPOWR\]\s*.*?Crewed=no", t, re.S))
+    rep["map"] = d
+    ms = (pkg / "MAPSELMD.INI").read_bytes()
+    rep["mapselmd"] = {"size": len(ms), "sha256": sha(ms),
+                       "scenario_m1": ms.count(b"Scenario=RA2F_M1.MAP")}
+
+    assert rep["battlemd"]["ra2f_scenario"] == 1, rep["battlemd"]
+    assert rep["battlemd"]["official_scenario"] == 0, rep["battlemd"]
+    assert rep["battlemd"]["bare_lf"] == 0, rep["battlemd"]
+    assert d.get("NextScenario") == "", d
+    assert d.get("EndOfGame") == "yes", d
+    assert d.get("SkipMapSelect") == "no", d
+    assert "0,0,%d,%d" % (MAP_N, MAP_N) in d.get("Size", ""), d
+    assert rep["mapselmd"]["scenario_m1"] >= 1, rep["mapselmd"]
+    assert d["loser_action"] and d["all_destroyed_russians_event"], d
+    assert d["elapsed_1"], d
+    assert not d["survive_tag"] and not d["winner_is_action"], d
+    assert d["russian_nacnst"] == 1, d
+    assert d["russian_napowr"] == 6, d
+    assert d["russian_tesla"] == 12, d
+    assert d["russian_mtnk"] == PLAYER_MTNK_N, d
+    assert d["gapowr_total"] == 3, d
+    for house, want in (("british", ENEMY_PER_HOUSE),
+                        ("confederation", ENEMY_PER_HOUSE),
+                        ("arabs", ENEMY_PER_HOUSE)):
+        assert d["%s_mtnk" % house] == want, (house, d)
+    hunt_expected = (arm["hunt_all"] and 3 * ENEMY_PER_HOUSE) \
+        or (arm["hunt_british"] or 0)
+    assert d["hunt_mission"] == hunt_expected, (cell, d["hunt_mission"])
+    assert d["guard_mission"] == PLAYER_MTNK_N + 3 * ENEMY_PER_HOUSE \
+        - hunt_expected, (cell, d["guard_mission"])
+    assert arm["crewed"] == d["crewed_override_present"], (cell, d)
+    nap = NAPOWR_CELLS_STEP2 if arm["napowr_step"] == 2 else NAPOWR_CELLS_STEP3
+    if nap == NAPOWR_CELLS_STEP3:
+        assert overlap_cells(nap) is None, nap
+    rep["verdict"] = "PASS"
+    sink.step("package_verify_" + cell, **rep)
+    return rep
+
+
+def archive_inputs(sink, cell: str, design: dict, pkg: Path):
+    adir = C.OUT / "inputs" / cell
+    adir.mkdir(parents=True, exist_ok=True)
+    rows = []
+    dpath = adir / ("w94_design_%s.json" % cell)
+    dpath.write_text(json.dumps(design, ensure_ascii=False, indent=2),
+                     encoding="utf-8")
+    rows.append({"file": dpath.name, "sha256": L.sha256_file(dpath)})
+    for name in ("RA2F_M1.MAP", "BATTLEMD.INI", "MAPSELMD.INI",
+                 "expandmd98.mix", "ra2forge_package.json"):
+        src = pkg / name
+        if src.is_file():
+            dst = adir / name
+            dst.write_bytes(src.read_bytes())
+            rows.append({"file": name, "sha256": L.sha256_file(dst),
+                         "size": dst.stat().st_size})
+    sink.step("inputs_archived", cell=cell, dir=str(adir), rows=rows)
+    return rows
+
+
+def normalize_arm(raw: dict) -> dict:
+    unknown = set(raw) - set(VALID_ARM_KEYS)
+    if unknown:
+        raise RuntimeError("unknown arm keys: %r (valid: %r)"
+                           % (sorted(unknown), VALID_ARM_KEYS))
+    arm = {"hunt_all": bool(raw.get("hunt_all", False)),
+           "hunt_british": int(raw.get("hunt_british", 0) or 0),
+           "napowr_step": int(raw.get("napowr_step", 2) or 2),
+           "crewed": bool(raw.get("crewed", False))}
+    if arm["napowr_step"] not in (2, 3):
+        raise RuntimeError("napowr_step must be 2 or 3: %r" % arm["napowr_step"])
+    if not 0 <= arm["hunt_british"] <= ENEMY_PER_HOUSE:
+        raise RuntimeError("hunt_british out of range: %r" % arm["hunt_british"])
+    if arm["hunt_all"] and arm["hunt_british"]:
+        raise RuntimeError("hunt_all and hunt_british are mutually exclusive")
+    return arm
+
+
+def main() -> int:
+    spec_path = os.environ.get("W94_CELL_SPEC", "").strip()
+    if not spec_path:
+        raise SystemExit("W94_CELL_SPEC (path to cell spec JSON) required")
+    spec = json.loads(Path(spec_path).read_text(encoding="utf-8"))
+    cell = str(spec["cell"]).strip()
+    if not re.fullmatch(r"[A-Za-z0-9_\-]+", cell):
+        raise SystemExit("invalid cell id %r" % cell)
+    arm = normalize_arm(spec.get("arm") or {})
+
+    sink = L.Sink("build_" + cell)
+    ok = False
+    rep = {"cell": cell, "arm": arm}
+    try:
+        sink.step("meta_start", kind="meta_start", phase=TAG,
+                  note="offline build of ONE matrix cell: NO gamemd.exe; "
+                       "W85 green geometry generalized from W88 (D4 archive "
+                       "per cell)", cell=cell, arm=arm, v15=str(C.V15),
+                  feature_set=str(C.FEATURE_SET))
+        residual = L.list_gamemd()
+        sink.step("pre_launch_guard_offline", gamemd_processes=residual, n=len(residual))
+        if residual:
+            raise RuntimeError("residual gamemd at offline build phase: %r" % residual)
+
+        design = spec_design(cell, arm)
+        dpath = C.design_path(cell)
+        dpath.parent.mkdir(parents=True, exist_ok=True)
+        dpath.write_text(json.dumps(design, ensure_ascii=False, indent=2),
+                         encoding="utf-8")
+        rep["design"] = {"path": str(dpath),
+                         "n_struct": len(design["missions"][0]["structures"]),
+                         "n_units": len(design["missions"][0]["units"]),
+                         "size": design["missions"][0]["size"]}
+        out_dir = C.WORK / ("pkg_" + cell)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        rec = C.v15_cmd(sink, "build_" + cell,
+                        ["build", "--design", str(dpath), "--out", str(out_dir),
+                         "--feature-set", str(C.FEATURE_SET)])
+        if rec["exit_code"] != 0:
+            raise RuntimeError("build cell %s exit %s: %s" %
+                               (cell, rec["exit_code"], rec["stderr_tail"][-2500:]))
+        pkg = C.pkg_path(cell)
+        assert pkg.is_dir(), pkg
+        (pkg / "ra2forge_package.json").write_text(
+            json.dumps({"tool": "ra2forge",
+                        "package_id": design["package"]["id"],
+                        "package_version": "1.0"}, ensure_ascii=False, indent=2),
+            encoding="utf-8")
+        crewed_edit = None
+        if arm["crewed"]:
+            crewed_edit = apply_crewed_override(pkg)
+            sink.step("crewed_override_applied", cell=cell, **crewed_edit)
+        rep["build"] = {"pkg": str(pkg), "exit_code": rec["exit_code"],
+                        "crewed_edit": crewed_edit}
+        rep["verify"] = verify_pkg(sink, cell, pkg, arm)
+        rep["inputs"] = archive_inputs(sink, cell, design, pkg)
+        rep["w59_offsets"] = {"scen_ptr": "0x00A8B230",
+                              "filename": "+0x125C", "stage_idx": "+0x35A0",
+                              "end_of_game": "+0x34AC", "skip_score": "+0x34AE",
+                              "skip_mapsel": "+0x34B0", "battle_idx": "+0x34CC",
+                              "frame": "0x00A8ED84"}
+        ok = True
+        sink.step("build_result", ok=ok, cell=cell)
+    except Exception as e:
+        sink.step("FATAL", error=repr(e), traceback=traceback.format_exc()[-6000:])
+    finally:
+        (C.OUT / ("BUILD_%s.json" % cell)).write_text(
+            json.dumps(rep, ensure_ascii=False, indent=2, default=str),
+            encoding="utf-8")
+        sink.step("meta_end", kind="meta_end", phase=TAG, ok=ok, cell=cell,
+                  gamemd_residual=L.list_gamemd(), lock_content=C.lock_read())
+        sink.close()
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,92 @@
+[M1] coverage 自证
+eng.coverage = 100.00% / 1394120 insns / 66 resync
+sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+
+[M2] 0xA8ED80 绝对全局访存普查
+总引用 = 46（基线 46）| 写 = 1（基线 1）
+  W 007778CE  mov      byte ptr [0xa8ed80], al
+
+[M3] 0x55D360 头部门控（原始字节 + 反汇编）
+raw[0x55D360:0x55D3A0] = a0a0e9a80081ecb401000084c0535556570f84580b0000a080eda800c60558cdab000184c075348b35f0117e00a138b2a80085c0740583f805751768f4010000
+  0055D360  a0a0e9a800            mov      al, byte ptr [0xa8e9a0]
+  0055D365  81ecb4010000          sub      esp, 0x1b4
+  0055D36B  84c0                  test     al, al
+  0055D36D  53                    push     ebx
+  0055D36E  55                    push     ebp
+  0055D36F  56                    push     esi
+  0055D370  57                    push     edi
+  0055D371  0f84580b0000          je       0x55decf
+  0055D377  a080eda800            mov      al, byte ptr [0xa8ed80]
+  0055D37C  c60558cdab0001        mov      byte ptr [0xabcd58], 1
+  0055D383  84c0                  test     al, al
+  0055D385  7534                  jne      0x55d3bb
+  0055D387  8b35f0117e00          mov      esi, dword ptr [0x7e11f0]
+  0055D38D  a138b2a800            mov      eax, dword ptr [0xa8b238]
+  0055D392  85c0                  test     eax, eax
+  0055D394  7405                  je       0x55d39b
+  0055D396  83f805                cmp      eax, 5
+  0055D399  7517                  jne      0x55d3b2
+  0055D39B  68f4010000            push     0x1f4
+  0055D3A0  ffd6                  call     esi
+  0055D3A2  e8a9790700            call     0x5d4d50
+  0055D3A7  a080eda800            mov      al, byte ptr [0xa8ed80]
+  0055D3AC  84c0                  test     al, al
+  0055D3AE  74dd                  je       0x55d38d
+  0055D3B0  eb09                  jmp      0x55d3bb
+  0055D3B2  6a0a                  push     0xa
+  0055D3B4  ffd6                  call     esi
+  0055D3B6  e895790700            call     0x5d4d50
+  0055D3BB  a184eda800            mov      eax, dword ptr [0xa8ed84]
+[M3] 0x55D371 je rel32=+743556 → 目标=0x612BFB（报告称 0x55DECF）
+[M3] 0x55D385 jne rel8=+52 → 目标=0x55D3BB（报告称 0x55D3BB）
+[M3] 0x55D3AE je rel8=-35 → 目标=0x55D38D（报告称环回 0x55D38D）
+
+[M4] 早退目标 0x55DECF 处（应为 epilogue/ret，不含 inc）
+  0055DECF  5f                    pop      edi
+  0055DED0  5e                    pop      esi
+  0055DED1  5d                    pop      ebp
+  0055DED2  b001                  mov      al, 1
+  0055DED4  5b                    pop      ebx
+  0055DED5  81c4b4010000          add      esp, 0x1b4
+  0055DEDB  c3                    ret      
+  0055DEDC  90                    nop      
+  0055DEDD  90                    nop      
+  0055DEDE  90                    nop      
+  0055DEDF  90                    nop      
+  0055DEE0  83ec08                sub      esp, 8
+
+[M5] IAT
+  [0x007E11F0] -> ('KERNEL32.dll', 'Sleep')
+  [0x007E1530] -> ('WINMM.dll', 'timeGetTime')
+
+[M6] 写者 0x7778CE 上下文（沿触发：旧==新跳写）
+raw[0x7778B0:0x7778F0] = 33c93bc30f95c133d28a1580eda8003bd10f84820000003bc30f95c03ac3a280eda800755b68949e8400e801f0c8ff83c404b101e8177ce4ffe832f7c8ff8b0d
+  007778B0  33c9                  xor      ecx, ecx
+  007778B2  3bc3                  cmp      eax, ebx
+  007778B4  0f95c1                setne    cl
+  007778B7  33d2                  xor      edx, edx
+  007778B9  8a1580eda800          mov      dl, byte ptr [0xa8ed80]
+  007778BF  3bd1                  cmp      edx, ecx
+  007778C1  0f8482000000          je       0x777949
+  007778C7  3bc3                  cmp      eax, ebx
+  007778C9  0f95c0                setne    al
+  007778CC  3ac3                  cmp      al, bl
+  007778CE  a280eda800            mov      byte ptr [0xa8ed80], al
+  007778D3  755b                  jne      0x777930
+  007778D5  68949e8400            push     0x849e94
+  007778DA  e801f0c8ff            call     0x4068e0
+
+[M7] frame 推进点 0x55DE7E inc / 0x55DE81 写回
+raw[0x55DE70:0x55DE90] = c075558b1584eda800a18477b000423bc7891584eda80074118bca3bc17d0be8
+  0055DE79  a18477b000            mov      eax, dword ptr [0xb07784]
+  0055DE7E  42                    inc      edx
+  0055DE7F  3bc7                  cmp      eax, edi
+  0055DE81  891584eda800          mov      dword ptr [0xa8ed84], edx
+  0055DE87  7411                  je       0x55de9a
+
+[M8] 0xA8E9A0 头部读 + GameMode 0xA8B238 环判据
+0xA8E9A0 全镜像引用 = 123 | 0x55D360..0x55D380 内 = 1
+0xA8B238 全镜像引用 = 570 | 0x55D38D..0x55D3BB 环内 = 1
+  0055D38D R mov      eax, dword ptr [0xa8b238]
+
+[VERIFY_MECH DONE]

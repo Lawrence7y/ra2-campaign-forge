@@ -1,0 +1,58 @@
+== P1 normalization: class 5, real fp7 fixtures tv7(split token) / tv1(true missing) ==
+tv7 raw contains 'APPROVE_SCOPE': False
+tv7 after backtick-line-join contains 'APPROVE_SCOPE': True
+tv1 after same normalization contains 'APPROVE_SCOPE': False (must stay False: true missing)
+
+== P2 binding line: class 8 real instance CANDIDATE:122 + class 10 bold variant ==
+strict(no-path-infix) parse: False -> naive gate says: missing binding [FP reproduced]
+tolerant(with-path-infix) parse: True; extracted path=审阅回件 lead/n4_yi_final_20261108/_cs_semantic_review_GLM_20261108.md bytes=11948 hex=ee27b4caf4fa...
+R3-3c target not on disk
+class10 bold line parse after decoration-strip: True
+
+== P3 id normalization: class 9 ==
+  D-01   -> D01
+  D01    -> D01
+  D_01   -> D01
+  D.01   -> D01
+  D 01   -> D01
+naive D(\d+) hits on DIM-style line: 0  (naive gate -> FP 'no numbering')
+normalized token D01 found in same line: True
+DIM full-file normalized D-token set (29 distinct): D01,D02,D03,D04,D05,D06,D07,D08,D09,D10,D11,D12,D13,D14,D15,D17,D24,D41,D43,D46,D53,D62,D68,D75,D85,D89,D90,D94,D99
+
+== P4 paired before/after blocks: class 11, real file N11_WORDING_FIX ==
+contiguous token count 改前改后 = 0  (naive gate -> FP 'missing')
+labels extracted from text (no hardcoded synonyms): ['改前', '改后', '行', '要点', '适用']
+  adjacent differing label-pair (改前,改后) x2
+  adjacent differing label-pair (改后,要点) x2
+  adjacent differing label-pair (行,改前) x2
+  adjacent differing label-pair (要点,行) x1
+  adjacent differing label-pair (要点,适用) x1
+structure-exists verdict: YES (recurring adjacent pair system found: [('行', '改前'), ('改前', '改后'), ('改后', '要点')])
+
+== P5 polarity on real fp7 vectors: tv2(true violations) / tv3(double negation) ==
+tv2 word=已生效 hits=1  A(orch-window24): neg=0 plain=1  B(layered): {'assertion': 1}
+tv3 word=已生效 hits=3  A(orch-window24): neg=3 plain=0  B(layered): {'assertion_dblneg': 2, 'negated': 1}
+tv2 header: 5 positive assertions expected-FAIL (3 use banned words) -> B flags all 3 as assertion
+tv3 header: true violations = 2 double-negations, 1 single-negation exempt ->
+  A flags all 3 as negated (misses 2 true violations); B catches 2 dblneg + exempts 1
+
+== P6 empty-run guard: class 3 ==
+gate_run([])                    -> FAIL: 0 checks executed (empty run must not pass)
+gate_run([('binding','CANDIDATE:122',True)]) -> OK: 1 checks executed, each with (name, target, found) triple
+
+== P2-fix: re-extract path with path-shaped regex inside the paren group, then recompute ==
+paren group content: 审阅回件 lead/n4_yi_final_20261108/_cs_semantic_review_GLM_20261108.md
+path-shaped extraction: lead/n4_yi_final_20261108/_cs_semantic_review_GLM_20261108.md
+R3-3a recompute: declared=ee27b4caf4fa/11948 recomputed=ee27b4caf4fa/11948 MATCH=True
+
+== P3-note: over-broad id normalization collects noise tokens (design caveat) ==
+DIM 29 distinct tokens include D14..D99: contamination from path/date fragments like
+'d13d14_cards_20261108' (lowercase in text, uppercased by idtok). Correct design: scope
+id extraction to table-first-column / heading patterns, not whole text. This is why
+scope-limitation (class 1/4 predicate) must accompany normalization (class 9).
+
+== P5-note: precision of tv2 claim ==
+P5 scanned only the word 已生效 in tv2 (1 hit, B=assertion, caught). The other two
+banned words in tv2 (放行 N-5 / 可应用母本) were not scanned in this demo; same rule
+would classify them from their clause prefix 本 YES / 本候选 (no negation), but that
+extension is inference, not a run. A(orch) on tv2 已生效: plain -> caught too.

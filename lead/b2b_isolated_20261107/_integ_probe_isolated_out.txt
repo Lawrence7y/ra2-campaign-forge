@@ -1,0 +1,67 @@
+========================================================================
+== [1] 指纹与逐字节同一性（hashlib 实算） ==
+母本:     sha256=517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636 bytes=399508 LF=7291 CR=0
+候选:     sha256=ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2 bytes=412759 LF=7533 CR=0
+隔离副本: sha256=ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2 bytes=412759 LF=7533 CR=0
+候选diff: sha256=72b108021637cf7d225a9b109a542ec10c934abb1a8e40b8850a82c6bea9cdb9 bytes=18454
+批准设计: sha256=565771d8b31c516dc7a1e0100ea047484406a203390492df9f57170a6532feaf bytes=66735
+[PASS] 母本 == 绑定记录 517889c6.../399508 | 517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636/399508
+[PASS] 候选 == 绑定记录 ca23c116.../412759 | ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2/412759
+[PASS] 候选diff == 绑定记录 72b10802.../18454 | 72b108021637cf7d225a9b109a542ec10c934abb1a8e40b8850a82c6bea9cdb9/18454
+[PASS] 批准设计 == 绑定记录 565771d8.../66735 | 565771d8b31c516dc7a1e0100ea047484406a203390492df9f57170a6532feaf/66735
+[PASS] ★ 隔离副本 SHA256 == 候选 SHA256（逐字节同一） | ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2/412759 vs ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2/412759
+[PASS] 隔离副本 CR=0（纯 LF，N-1 不复发） | CR=0
+========================================================================
+== [2] ast.parse 静态解析（隔离副本） ==
+[PASS] ast.parse(隔离副本) 成功（0 语法错误） | 顶层节点=333 顶层函数=135 顶层类=4
+[PASS] AST 顶层定义存在: make_pre_freshness_snapshot
+[PASS] AST 顶层定义存在: classify_except_freshness
+[PASS] AST 顶层定义存在: copy_post_except_evidence
+[PASS] AST 顶层定义存在: finalize_trip
+[PASS] AST 顶层定义存在: main
+[PASS] AST 顶层定义存在: Recorder
+========================================================================
+== [3] 隔离加载（与 R3 同法：importlib + DPI patch，模块名独立，不触发 __main__） ==
+模块加载成功，__name__ = qc151_trip_isolated_integ
+[PASS] 模块名独立 == 'qc151_trip_isolated_integ'（未触发 __main__ 入口）
+[PASS] 模块命名空间符号存在: make_pre_freshness_snapshot
+[PASS] 模块命名空间符号存在: classify_except_freshness
+[PASS] 模块命名空间符号存在: copy_post_except_evidence
+[PASS] 模块命名空间符号存在: finalize_trip
+[PASS] 模块命名空间符号存在: main
+[PASS] 模块命名空间符号存在: Recorder
+[PASS] 模块命名空间符号存在: FRESHNESS_GROUP
+[PASS] FRESHNESS_GROUP == 'FRESHNESS' | 'FRESHNESS'
+[PASS] FRESHNESS_SNAPSHOT_STATES = 4 态 | ('unknown', 'absent_confirmed', 'present', 'error')
+[PASS] FRESHNESS_VERDICTS = 9 值 | ('unknown', 'absent_both', 'new_first_appearance', 'vanished', 'leftover_unchanged', 'new_write', 'rewritten_same_content', 'error_pre_snapshot', 'post_read_error')
+[PASS] FRESHNESS_CONFIDENCES = 4 值 | ('high', 'medium', 'low', 'none')
+========================================================================
+== [4] 函数级离线冒烟（隔离模块真实函数；纯内存/只读输入，零写盘） ==
+[PASS] F01 absent_confirmed+跑后在 → new_first_appearance/high/is_new=True/usable=False | {'verdict': 'new_first_appearance', 'confidence': 'high', 'is_new': True, 'note': '★ 跑前确认无件 + 跑后在地 ⇒ F=本趟新出现（存在性）；是否新崩溃仍只由 :672-708 集合差裁定', 'usable_as_crash_evidence': False, 'pre_snapshot_state': 'absent_confirmed'}
+[PASS] F02 absent_confirmed+跑后无 → absent_both/low/is_new=False | {'verdict': 'absent_both', 'confidence': 'low', 'is_new': False, 'note': '★ 跑前确认无件 + 跑后无件 ⇒ F=未见新出现；但「文件未出现」不能证无崩溃（E 口径另算）', 'usable_as_crash_evidence': False, 'pre_snapshot_state': 'absent_confirmed'}
+[PASS] F03 present+sha同+mtim同 → leftover_unchanged/high/is_new=False | {'verdict': 'leftover_unchanged', 'confidence': 'high', 'is_new': False, 'note': '★ 跑前在 + sha 同 + mtime 未变 ⇒ 原样遗留（非本趟写入）', 'usable_as_crash_evidence': False, 'pre_snapshot_state': 'present'}
+[PASS] 未采集 4 形态置信恒非 high（C2 同形态） | ['none', 'none', 'none', 'none']
+[PASS] 三态可分：unknown / new_first_appearance / new_write 两两不等 | unknown / new_first_appearance / new_write
+[PASS] 快照采集：不存在路径 → absent_confirmed | {'state': 'absent_confirmed', 'exists': False, 'size': None, 'sha256': None, 'mtime_pre': None, 'captured_at_epoch': 179
+[PASS] 快照采集：隔离副本自身为只读输入 → present 且 sha256 一致 | sha=ca23c116064b25a6... 双时刻=True
+========================================================================
+== [5] diff 统计（隔离副本 vs 母本，difflib 行文本口径） ==
+母本 split 行数 = 7292（LF=7291）  隔离副本 split 行数 = 7534（LF=7533）
+[PASS] 变更 opcode 块 = 12 | ['insert', 'insert', 'insert', 'replace', 'replace', 'replace', 'insert', 'replace', 'replace', 'insert', 'insert', 'replace']
+[PASS] +255 / -13（与 R3 :85 候选口径一致） | +255 / -13
+========================================================================
+== [6] 决定性重建：母本 + 九 hunk == 隔离副本（逐字节） ==
+[PASS] 设计 §4 ```diff 块数 = 9 | 实际 9
+[PASS] 设计九 hunk 母本区间 == B2B_DESIGN.md:635 实算区间 | [(212, 6), (4458, 6), (4558, 8), (4572, 20), (5906, 7), (5936, 7), (6294, 6), (6386, 6), (7122, 7)]
+[PASS] 设计九 hunk ± 计数 = +255 / -13 | +255 / -13
+[PASS] ★ 母本 + 设计 §4 九 hunk == 隔离副本（逐字符串 == 逐字节） | 重建 sha256=ca23c116064b25a6...
+[PASS] CANDIDATE_LF.diff @@ 头数 = 9 | 实际 9
+[PASS] CANDIDATE_LF.diff 头两行 --- +++ 指向母本/候选 | ['--- a/out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py', '+++ b/lead/b2b_candidate_lf_20261107/qc151_trip.candidate_lf.py']
+[PASS] CANDIDATE_LF.diff ± 计数 = +255 / -13 | +255 / -13
+[PASS] ★ 母本 + CANDIDATE_LF.diff == 隔离副本（逐字符串 == 逐字节） | 重建 sha256=ca23c116064b25a6...
+========================================================================
+== [7] 九锚点定位（门禁 _check_candidate_r3.py:84-94 ANCHORS 同源） ==
+[PASS] 9/9 锚点全部可定位 | H1–H9 全命中
+========================================================================
+== 汇总: PASS=43 FAIL=0 ==
+INTEG_PROBE_DONE

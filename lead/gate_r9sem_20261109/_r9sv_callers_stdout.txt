@@ -1,0 +1,95 @@
+=== (1) _r9s_g9_candidate.py vs _g9_gate.py diff ===
+    --- 
+    +++ 
+    @@ -103,6 +103,7 @@
+         # ---- R9 要素在场（包裹归一化） ----
+    -    r9_problems, r9_warnings = g7.r9_check(text, req)
+    +    import _r9s_predicates as r9s   # 新增层：R9 保持只读不改
+    +    r9_problems, r9_warnings = r9s.r9s_check(text, req)
+         r9_present = r9_raw = 0
+         for k in req:
+    -        ok, layer = g7.r9_element_present(text, k)
+    +        ok, layer, _ = r9s.r9s_element_present(text, k)
+             if ok:
+    @@ -114,3 +115,3 @@
+         predicates["R9"] = {
+    -        "rule_id": "R9", "name": "包裹归一化要素匹配（第 5 类）",
+    +        "rule_id": "R9", "name": "包裹归一化 + 语义要素匹配（R9 + R9S）",
+             "items": r9_items, "present": r9_present, "raw_hits": r9_raw,
+  diff lines = 17
+
+=== (2) check_deliverable 调用方消息消费形态 ===
+  n_calls = 43
+  calls whose ±3..+6 line window mentions 缺要素/problems/msg = 20
+     lead/gate_r9r12_20261109/_g9_gate.py:213  r = check_deliverable(probe, [], [])
+     lead/gate_r9r12_20261109/_g9_gate.py:220  r2 = check_deliverable(probe, ["「被核对象」"], ["已生效"])
+     lead/gate_r9r12_20261109/_g9_regression.py:93  r = check_deliverable(p, req, forb)
+     lead/gate_r9r12_20261109/_g9v_empty.py:18  r = check_deliverable(REPO_ROOT / rel, [], [])
+     lead/gate_r9r12_20261109/_g9v_empty.py:26  r = check_deliverable(REPO_ROOT / probes[0], ["被核对象"], [])
+     lead/gate_r9r12_20261109/_g9v_subset.py:59  r = check_deliverable(REPO_ROOT / rel, REQ, FORB)
+     lead/gate_r9r12_20261109/_g9v_verify.py:30  r = check_deliverable(REPO_ROOT / rel, req, FORB)
+     lead/gate_v1v2_20261109/_v12_gate_compare.py:39  r = g9.check_deliverable(str(path), [], bans, old_gate_contrast=False)
+     lead/gate_v1v2_20261109/_v12v_r10.py:114  r = g9.check_deliverable(str(path), req, bans, old_gate_contrast=False)
+     lead/merged_safety_20261109/_ms_g9_candidate.py:217  r = check_deliverable(probe, [], [])
+     lead/merged_safety_20261109/_ms_g9_candidate.py:224  r2 = check_deliverable(probe, ["「被核对象」"], ["已生效"])
+     lead/merged_safety_20261109/_ms_regress.py:50  ro = OLD.check_deliverable(p, REQ, FORB)
+     lead/merged_safety_20261109/_ms_regress.py:51  rn = NEW.check_deliverable(p, REQ, FORB)
+     lead/merged_safety_20261109/_msv_check.py:356  rin = NEW_I.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)
+     lead/merged_safety_20261109/_msv_check.py:357  riz = OWN_I.check_deliverable(DOC_M, REQ, FORB, doc_dir=W)
+     lead/merged_safety_20261109/_msv_confirm.py:150  ro = OLD.check_deliverable(fp, REQ30, FORB30)
+     lead/merged_safety_20261109/_msv_confirm.py:151  rn = NEW.check_deliverable(fp, REQ30, FORB30)
+     lead/merged_safety_20261109/_msv_confirm.py:152  rz = OWN.check_deliverable(fp, REQ30, FORB30)
+     lead/merged_safety_20261109/_msv_g9_own.py:217  r = check_deliverable(probe, [], [])
+     lead/merged_safety_20261109/_msv_g9_own.py:224  r2 = check_deliverable(probe, ["「被核对象」"], ["已生效"])
+  n_files = 17
+
+=== (3) 模糊匹配实证（区分注释字样与真实调用） ===
+   L104: # S5 的 NEG_CANCEL 在 S5 常量段之后重建（避免前向引用）；这里放通配兜底。
+   L368: # 闭合注册表：key = 门禁必现要素的**精确字面串**（不做模糊/通配/embedding 匹配）
+  -> 全部为注释字样，无 import/调用（见 _r9sv_extra_out.json imports / fuzzy_library_calls）
+
+=== (4) 设计回件 §2.4 准入 7 条原文 ===
+   L149: 新增一个 spec 必须**同时**满足以下 7 条（缺一不批）：
+   L150: 
+   L151: 1. **任务书要素**：key 必须是任务书【交付】里已写明的必现要素字面串；不得为「让某个交付件通过」临时造 key。
+   L152: 2. **真值条件可写**：能写成一阶式（∀/∃/◇/¬/合取），并给出该式与 token 语义的等价论证（如 §2.3 的问答语义 / 摹状词 / 情态逻辑）。**「看起来像」不构成依据**。
+   L153: 3. **角色 ≥2 且可独立观测**：每个角色是文本中可定位的结构证据（角色头 / 算子 / 具值 / 载荷 / 极性），不得只有一个词面。
+   L154: 4. **最小消融必 FAIL**：删掉任一角色构造的样本必须判缺失（角色消融，§3.4 实跑 7/7 FAIL）。
+   L155: 5. **负样本 ≥ 正样本数**：每条 spec 至少配「只给一半 / 否定 / 待定 / 占位符 / 跨小节」五类负样本，全部仍 FAIL。
+   L156: 6. **闭合边界**：不得使用模糊匹配、通配、编辑距离或 embedding；`SPECS.get(token)` 是精确字典查表，未登记 token 一律 R9S ≡ R9。
+   L157: 7. **全量不放松回归**：新 spec 必须重跑 §3.4 的 32 域白名单检查，`flips_outside_whitelist` 必须为空，且 `n_flips` 恰等于白名单数。
+   L158: 
+   L159: **为什么这能止住膨胀**：新措辞（「批准方」「原文/改为」「能重建」「可唯一复现」）不产生新条目，因为它们满足**同一个真值条件**——P06/P07/P08/P10/P12/P15/P17/P18 共 8 条构造变体实跑全部 `semantic` 命中，而 `SPECS` 仍是 5 条。反过来，若有人想为「已批准」「已分析」「已实跑」加词，第 4/5 条会直接拒绝（它们是负样本 N01/N18/N06）。**词表增长的上界 = 任务书里「语义型必现要素
+
+=== (5) 五处原句 + 关键上下文（独立实读） ===
+   RULING_MATRIX_AB.md:108  ### 5.2 可执行改动清单（★ 处方，未实施；批准人一律 = **乙设计责任人**，pf2:200；改后立即做登记 7/8，顺序不可倒）
+   RULING_MATRIX_AB.md:138  若批准人不采随批：B 核心仍成立，但 **W2 必须在台账如实登记为未关闭**，不得声称已关闭。
+   MATRIX_DEFECT_REACHABILITY.md:12  矩阵连带评估件对五处缺陷（W1/W2/O1/O2/W3）各下了「可达 / 不可达」判断。本件把这些判断逐处对到实码：构造输入 → 实际调用候选函数 → 记录真实返回值 → 落到矩阵哪一行 → 与矩阵声称是否一致。可达只认「实跑走到过」，不认「理论上可以」；不可达必须附控制流证明。
+   MATRIX_DEFECT_REACHABILITY.md:26  3. **交付轮（本件，本轮实跑）**：`python -I -X utf8 D:\Project\ra2-campaign-forge\lead\matrix_reach_20261109\_mr_delivery_fp.py` → `_mr_delivery_fp_out.txt`（上游 7 件指纹 7/7 逐字节一致，见 §2）；`
+   MATRIX_DEFECT_REACHABILITY.md:65  - **构造输入 → 实跑返回**：classify 直调，pre 八变体（None/{}/缺state/脏值/显式unknown/absent_confirmed/present/error）× read_error 两型（exists=None / exists=True），16/16 格实跑：
+   MATRIX_DEFECT_REACHABILITY.md:67  ```
+   MATRIX_DEFECT_REACHABILITY.md:69    pre=None(未采集)      × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='unknown'  [矩阵归属: :2]
+   MATRIX_DEFECT_REACHABILITY.md:70    pre=absent_confirmed × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='absent_confirmed'  [矩阵归属: 无行=O1 / exists=True 型被:6字面误claim
+   MATRIX_DEFECT_REACHABILITY.md:71    pre=error          × read_error·exists=None -> verdict='post_read_error' conf='none' is_new=None pre_state='error'  [矩阵归属: :4=W2]
+   MATRIX_DEFECT_REACHABILITY.md:74  - **落哪一行 / 与矩阵声称是否一致**：四未采集变体 × read_error 按 :2 匹配，矩阵声称 `unknown`，实码 `post_read_error` → **不一致，W1 错盖坐实**（16/16，out:159-174；复核 45 格全表中 18 个 read_error 格全部 PRE，R:112）。显式 un
+   MATRIX_DEFECT_REACHABILITY.md:80  - **构造输入 → 实跑返回**：pre=error 用**真实 make_pre 产物**（`Path(None)` → TypeError → error，out:147）：
+   MATRIX_DEFECT_REACHABILITY.md:84    error × read_error(exists=None) -> verdict='post_read_error' conf='none' pre_state='error' note='★ 跑后件读/复制失败（独立 error 出口，禁止静默）：PermissionError: [Errno 13] fake-lock (探针
+   N11_WORDING_FIX.md:76  ## 4 订正草案（改前/改后逐处对照）
+   N11_WORDING_FIX.md:81  - 【改前】本件按 **13 项分写**，与裁决列名一一对应，无缺漏、无新增：拆分只改颗粒度、不改内容。
+   N11_WORDING_FIX.md:82  - 【改后】本件按 **13 项分写**，与裁决列名逐项对应（其中「帧数/重复性/阈值论证」一项拆为 D-08/D-09/D-10 三维，故 11 项列名展开为 13 维），无缺漏、无新增：拆分只改颗粒度、不改内容。
+   N11_WORDING_FIX.md:88  - 【改前】同 §4.1【改前】
+   N11_WORDING_FIX.md:89  - 【改后】本件按 **13 项分写**：裁决列名共 11 项，其中「帧数/重复性/阈值论证」一项拆为 D-08/D-09/D-10 三维、其余 10 项逐项承接（11 = 10 + 1，13 = 10 + 3）；无缺漏、无新增，拆分只改颗粒度、不改内容。
+   N11_WORDING_FIX.md:97  **三案均只处理 _ps:54 一句；13 维结构、维度内容、其余 368 行一律不碰。方案 A 已同时满足「准确」与「最小改动」。**
+   S604_SCRIPT_GAP.md:10  1. **只查两件事**：(a) 台账 §604（「同一窗内慢 1/3 帧 vs 快 1/3 帧对照」）的**生成脚本**是否在盘、能否重建；(b) 该表「单向压缩」的数字行为能否归属到某一候选错误类、哪些候选可证伪、哪些筛不出。
+   S604_SCRIPT_GAP.md:32  ## 3 脚本搜索全结果与存在性判定（四路逐路）
+   S604_SCRIPT_GAP.md:44  - **逐路结论：lead/ 与 out/re_work/ 均无 §604 生成器。**
+   S604_SCRIPT_GAP.md:51  - **逐路结论：32 件全为 2026-11-07 之后的复核/复算/锚点件，无一生成器。**
+   S604_SCRIPT_GAP.md:59  - **逐路结论：两轮上游产物均明载脚本未落盘。**
+   S604_SCRIPT_GAP.md:67  - **逐路结论：台账自身即证明脚本从未写入台账，亦未引用任何在盘脚本。**
+   S604_SCRIPT_GAP.md:69  ### 3.5 存在性判定
+   S604_SCRIPT_GAP.md:71  **§604 生成脚本【不存在且从未落盘】**——四条独立证据链（文件名、内容、产物反查、台账实读）在本轮全部独立复跑/复读，方向一致，无一矛盾。与上轮调查（`_sg_FINDINGS.md:13-23`）及复核回件（verdict = confirmed）判定一致。
+   S604_SCRIPT_GAP.md:73  ## 4 重建可行性与单向压缩候选筛选
+   S604_SCRIPT_GAP.md:77  | # | 口径项 | 台账文本 | 唯一性 | 钉死证据 |
+   S604_SCRIPT_GAP.md:87  **判定：正确算法【可唯一重建】。** 已有四重独立实现逐位一致（N-8、R3 蓝本、`_verify_r3_gapdiff.py` 第三方、上轮探针 [0] 三窗逐位复现 R3 [B]，`_sg_probe_compression_out.txt:1-4`【实读】），复核轮另有第 5 重独立实现与 R3 [B] 逐位一致（max|Δ|=
+
+wrote _r9sv_callers_out.json

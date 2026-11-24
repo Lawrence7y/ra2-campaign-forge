@@ -1,0 +1,20 @@
+===== L1632 00473B10 S03 grade=[已证] =====
+CCFileClass 虚表槽 9(+0x24)：文件系统/MIX/压缩加密 方法（③b 仅靠 D-42 细则#1（5 道互斥闸动作各异）；严格口径（只认跳表/循环/错误码）下本行不成立）
+===== L2649 004AAD30 S09 grade=[已证] =====
+TabClass 虚表槽 49(+0xC4)：UI/侧栏/菜单/对话框/输入 方法（③b①细则#1 按 7 个状态标志选择 7 个互异 helper 之一做取消/复位、各支路互斥收尾后统一经 [vt+0x48] 刷新〔锚 +0xC test [esi+0x11a4],eax / +0x60 call 0x4AC8C0 / +0x4A call [edx+0x48]〕）
+===== L2651 004AB9B0 S09 grade=[已证] =====
+byte-checked: u32(0x7E6114+48*4)=0x004AB9B0, so v[48] slot identity proven at instruction level (S09-F1 VERDICT §7 lists v[48] as '可升级'); semantics LMBUp from R8_ui_crt.md §21.1; this row supplies the missing slot-identity byte support for the prior 'no source support' note（③b 细则#1 级：多路守卫链，非跳表）
+===== L3352 004E2690 S09 grade=[已证] =====
+GaugeClass 虚表槽 27(+0x6C)：UI/侧栏/菜单/对话框/输入 方法（③b①细则#1 把 gauge 值域按字节/字两种字形源之一绘制到裁剪矩形内、必要时上拉刷新显示〔锚 +0xC0 cmp [eax+4],ebx / +0xCD mov bl,[eax+ecx] / +0xDC mov ax,[ebx+ecx*2] / +0x166 call [edx+0x14]〕）
+===== L5393 005576A0 S09 grade=[已证] =====
+ListClass 虚表槽 34(+0x88)：UI/侧栏/菜单/对话框/输入/命令派发 方法（③b①【细则#1级】向列表追加元素：空输入早退，容量不足经虚扩容成功后写入元素与计数，再按状态标志分别触发两个不同的虚通知回调并返回新元素下标——四道闸动作各异(跳过/扩容/写元素/两路不同通知)整体合同；②全表 1 张 vt7ED10C ListClass、name栏同类；锚 +0x0A je 空输入早退、+0x35 call [edx+8] 扩容、+0x45 mov [esi+0x10],ecx、+0x48 mov [edx+eax*4],ebx、+0x4F call [eax+0x48]、+0x61 call [edx+0x8c]、+0x7E call [eax+0x88]、+0x88 dec eax；④direct E8@48832E/48833C/4888A6）
+===== L5396 00557830 S09 grade=[已证] =====
+[已证] ②全1214张RTTI可解表枚举命中2张同slot31: vt7E5054/slot31/ColorListClass(TD+8逐字.?AVColorListClass@@); vt7ED10C/slot31/ListClass(TD+8逐字.?AVListClass@@)；按L1/⑯归共同基类ListClass，name栏ListClass一致。③b③b①【细则#1级】+③b②硬档: 多路互斥闸且各真支动作不同: test bl,4/je(+0x0008/+0x000B)→写[eax]=0(+0x0018)+call 0x48e5a0(+0x001E)+mov eax,1(+0x0024)+ret; test bh,1/je(+0x0032/+0x0035)→cmp eax,0x26/jne(+0x0039/+0x003C)分支 push -1+call [eax+0xa4](+0x0040/+0x0044),cmp eax,0x28/jne(+0x0061/+0x0064)分支 push 1+call [edx+0xa4](+0x0068/+0x006C),默认仅call 0x48e5a0; 否则分支 call [eax+0x30](+0x00A5)+idiv(+0x00B5)+写[esi+0x16c](+0x00BA/+0x00CD)+cmp eax,-1哨兵(+0x00CA)+写0夹取(+0x00D5)。各支写目标不同([eax]/[edi]/[esi+0x16c])、被调目标不同([eax+0xa4]/0x48e5a0/[eax+0x30]),非仅参数不同汇同一call；入口相对偏移 +0x0008,+0x000B,+0x0018,+0x001E,+0x0024,+0x0032,+0x0035,+0x0039,+0x0044,+0x0061,+0x006C,+0x00A5,+0x00BA,+0x00CA,+0x00CD,+0x00D5。④direct E8@004884C3，全部 site+5+rel32==entry、E8@指令边界、体外(body=[00557830,00557920)自写CFG区间包含)、非自环。
+===== L7520 00631CC0 S03 grade=[已证] =====
+FilePipe 虚表槽 3(+0xC)：文件系统/MIX/压缩加密 方法（③b 细则#1 级 对称解除旧 pipe 与 straw 的双向绑定并把 straw 重新绑定到新 pipe：解绑走 vt+0xC、对旧 straw 发 vt+4 虚通知、再双向写回指针〔锚 +0xB je 幂等闸 / +0x1C call [vt+0xC] / +0x39 call [vt+4] / +0x43 mov [esi+8],edi〕）
+===== L8679 0069DE00 S09 grade=[已证] =====
+ShapeButtonClass 虚表槽 34(+0x88)：UI/侧栏/菜单/对话框/输入/命令派发 方法（③b①【细则#1级】设置按钮文本与坐标：旧串存在则释放并清空四个字段，按新串指针解析两字节坐标写入，再用可选的两个入参分别覆盖横纵坐标——四道互斥闸动作各异(释放/设串取坐标/覆盖X/覆盖Y)整体合同；②全表 1 张 vt7E8088 ShapeButtonClass、name栏同类；锚 +0x06 cmp byte[esi+0x5c],0、+0x13 call 7C8B3D 释放、+0x1B mov [esi+0x58],ebx、+0x2D mov [esi+0x58],eax、+0x32 movsx ecx,[eax+2]、+0x50 mov [esi+0x14],eax、+0x5B mov [esi+0x18],eax；④direct E8@65307B/6530E2/6A58E8 等 12 站点）
+===== L9444 006C9890 S03 grade=[已证] =====
+FileStraw 虚表槽 1(+0x4)：文件系统/MIX/压缩加密 方法（③b 细则#1 级 对称解除旧 pipe 与 straw 的双向绑定并把 straw 绑定到新 pipe：5 道互斥闸覆盖幂等/解绑/清回指/双向写四类动作〔锚 +0xB je 幂等闸 / +0x1C call [vt+4] / +0x2D mov [eax+8],0 / +0x3B mov [esi+8],edi〕）
+===== L10008 006F4AB0 S05 grade=[已证] =====
+[已证] ①entry 006F4AB0 16B对齐+E8体外直调见证;②全.rdata原始命中=1表全部同槽:007F4960[101]=entry,COL0080C058→TD+8逐字'.?AVTechnoClass@@'与name类一致,DV/V同slot别名=无(单表非容器族),错源⑯归属=TechnoClass级;③b①物理跳表:+0x000A lea eax,[ebx-3]/+0x000F cmp eax,0x1c/+0x0012 ja默认@+0x038F/+0x001A mov cl,byte[eax+绝对表6F4E88](29项byte索引表→0..10)/+0x0020 jmp dword[ecx*4+绝对表6F4E5C](11项dword跳表,目标0x6F4B1F..0x6F4E3F全体内,28路输入归并11路); 严格档直接成立(不依细则#1);④direct E8边界@外体站点8处(0043C305,0043C7F6,0043CCED,0043CD17...),site+5+rel32==entry/体外/非自环;CFG extent+0x0000..+0x03AA

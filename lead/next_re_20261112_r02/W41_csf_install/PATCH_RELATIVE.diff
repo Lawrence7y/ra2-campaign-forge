@@ -1,0 +1,1344 @@
+# W41 v12 relative-path patch (v11 -> v12)
+# base: lead/next_re_20261112_r02/W34_mapselmd/ra2forge_patched_v11/ra2forge
+# target: lead/next_re_20261112_r02/W41_csf_install/ra2forge_patched_v12/ra2forge
+# apply from the package root: paths are a/ra2forge/<name> b/ra2forge/<name>
+# 4 modified .py modules + 2 new data files; verify.py and the other 9
+# .py modules are byte-identical (see V12_FILES.sha256.txt).
+
+--- a/ra2forge/builder.py
+
++++ b/ra2forge/builder.py
+
+@@ -39,7 +39,10 @@
+
+ from . import csf as csf_mod
+
+ from . import design as design_mod
+
+ from . import mapselmd as mapselmd_mod
+
+-from .install import PACKAGE_MANIFEST_NAME
+
++from .install import (
+
++    PACKAGE_MANIFEST_NAME, MANIFEST_NAME, SEAL_NAME, BACKUP_SUFFIX,
+
++    STAGE_INFIX,
+
++)
+
+ from .maplib import MissionMap, STANDARD_HOUSES, read_basic_section
+
+ from . import triggers as tg
+
+ from .mixlib import MixFile, crc_hash, write_mix
+
+@@ -64,7 +67,9 @@
+
+           csf_out: str | Path | None = None,
+
+           csf_base: str | Path | None = None,
+
+           mapselmd: bool = False,
+
+-          mapselmd_base: str | Path | None = None) -> Path:
+
++          mapselmd_base: str | Path | None = None,
+
++          install_game_dir: str | Path | None = None,
+
++          allow_csf_out_in_game: bool = False) -> Path:
+
+     """Compile design into <out_dir>/<CampaignName>/ and return the MIX path.
+
+ 
+
+     Self-checks (hard failures, not warnings):
+
+@@ -88,6 +93,21 @@
+
+     warnings = design_mod.validate(design)
+
+     camp = design["campaign"]
+
+     missions = design["missions"]
+
++    raw_desc = design_mod.description_for(camp)
+
++
+
++    # W41 (W38 CRITICAL): the --csf-out ownership guard runs BEFORE the first
+
++    # byte of the build is written. A --csf-out landing inside a game directory
+
++    # is an install-level write entry and is REFUSED by default, so a refused
+
++    # build leaves ZERO output (not even a partial package dir).
+
++    check_lines: list[str] = []
+
++    csf_guard: dict | None = None
+
++    if csf_out is not None and raw_desc:
+
++        csf_guard = _csf_out_ownership_guard(
+
++            Path(csf_out),
+
++            install_game_dir=(Path(install_game_dir)
+
++                              if install_game_dir is not None else None),
+
++            allow_csf_out_in_game=allow_csf_out_in_game,
+
++            check_lines=check_lines)
+
+ 
+
+     out = Path(out_dir) / _fs_safe(camp["name"])
+
+     out.mkdir(parents=True, exist_ok=True)
+
+@@ -121,11 +141,10 @@
+
+         _write_map_file(out / map_name, text)
+
+ 
+
+     # --- 2. P0 self-check: read the maps back from disk, verify the chain ---
+
+-    check_lines = _verify_next_scenario_chain(out, compiled, chain)
+
++    check_lines.extend(_verify_next_scenario_chain(out, compiled, chain))
+
+ 
+
+     # --- 3. campaign registry: a loose, additive BATTLEMD98.INI -----------
+
+     battle_id = battle_id_for(camp)
+
+-    raw_desc = design_mod.description_for(camp)
+
+     desc_override: str | None = None
+
+     csf_label: str | None = None
+
+     if csf_out is not None and raw_desc:
+
+@@ -167,6 +186,10 @@
+
+                 battle_id=battle_id,
+
+                 pkg_id=pkg_id_str,
+
+                 check_lines=check_lines,
+
++                guard_report=csf_guard,
+
++                install_game_dir=(Path(install_game_dir)
+
++                                  if install_game_dir is not None else None),
+
++                allow_csf_out_in_game=allow_csf_out_in_game,
+
+             )
+
+         else:
+
+             csf_info = {
+
+@@ -415,6 +438,84 @@
+
+     return f"RA2F:{short_hash}"
+
+ 
+
+ 
+
++def _csf_out_ownership_guard(csf_out: Path, *, install_game_dir: Path | None,
+
++                             allow_csf_out_in_game: bool,
+
++                             check_lines: list[str]) -> dict:
+
++    """W41 (closes W38 CRITICAL): --csf-out landing INSIDE a game directory is
+
++    an install-level write entry - it must never be written silently.
+
++
+
++    W38 WRITE_ENTRY_AUDIT flagged builder.py:434-437 / cli.py:140-146 as a
+
++    direct write to an arbitrary user path with ZERO identity/target checks.
+
++    A game directory is detected the same way install.preinstall_plan() does:
+
++    a directory containing gamemd.exe. Both an explicit --install game dir and
+
++    any gamemd.exe-bearing ancestor of csf_out are considered.
+
++
+
++    Default (allow_csf_out_in_game=False): REFUSE with BuildError before the
+
++    first byte is written. The correct channel is the `install` command, which
+
++    routes ra2md.csf through preflight / backup / manifest / uninstall.
+
++
+
++    With the explicit, dangerous --allow-csf-out-in-game flag the write is
+
++    permitted ONLY after target-identity checks (plain file name, no reserved
+
++    slot, no symlink/alias) and is loudly logged in the build report.
+
++    """
+
++    resolved = csf_out.resolve()
+
++    game_dirs: list[Path] = []
+
++    if install_game_dir is not None:
+
++        gd = Path(install_game_dir).resolve()
+
++        if (gd / "gamemd.exe").is_file():
+
++            game_dirs.append(gd)
+
++    # any ancestor that looks like a game directory (W29 disk-first override)
+
++    for parent in resolved.parents:
+
++        if (parent / "gamemd.exe").is_file() and parent not in game_dirs:
+
++            game_dirs.append(parent)
+
++    if not game_dirs:
+
++        return {"in_game_dir": False, "game_dirs": [], "confirmed": False}
+
++
+
++    if not allow_csf_out_in_game:
+
++        gd = game_dirs[0]
+
++        raise BuildError(
+
++            f"--csf-out {csf_out} resolves inside the game directory {gd} "
+
++            "(gamemd.exe present). Writing a loose ra2md.csf there is an "
+
++            "install-level write entry and is REFUSED by default: a partial "
+
++            "CSF would break game startup (W29), and a silent overwrite would "
+
++            "bypass install preflight/backup/manifest. Use the guarded "
+
++            "channel instead: 'python -m ra2forge build ... --install "
+
++            f"\"{gd}\"' (or 'python -m ra2forge install --package <pkg> "
+
++            f"--game \"{gd}\"'), which routes ra2md.csf through the full "
+
++            "preflight/backup/uninstall chain. If you deliberately want this "
+
++            "build to write into the game directory anyway, re-run with the "
+
++            "explicit --allow-csf-out-in-game flag (dangerous; still refuses "
+
++            "aliases and reserved slots). NO file has been written.")
+
++
+
++    # explicit confirmation path: install-grade target identity checks
+
++    name = resolved.name
+
++    if (not name or name in (".", "..") or Path(name).name != name
+
++            or "/" in name or "\\" in name):
+
++        raise BuildError(f"--csf-out target name {name!r} is not a plain "
+
++                         "file name - refusing the in-game-dir write")
+
++    reserved = (MANIFEST_NAME, SEAL_NAME)
+
++    if name in reserved or STAGE_INFIX in name or name.endswith(BACKUP_SUFFIX):
+
++        raise BuildError(
+
++            f"--csf-out target {name!r} collides with an install-reserved slot "
+
++            "(manifest / seal / backup / staging) - refusing the in-game-dir "
+
++            "write")
+
++    if csf_out.is_symlink():
+
++        raise BuildError(
+
++            f"--csf-out {csf_out} is a symbolic link - refusing to write a "
+
++            "loose ra2md.csf through an alias")
+
++    check_lines.append(
+
++        f"  [WARN] --csf-out {csf_out} is INSIDE a game directory "
+
++        f"{game_dirs[0]} and --allow-csf-out-in-game was given explicitly: "
+
++        "treated as an install-level write entry (target identity checked, "
+
++        "no reserved slot, no alias). This BYPASSES install preflight/backup/"
+
++        "manifest, so the written ra2md.csf is UNTRACKED: a later "
+
++        "'uninstall' will NOT remove it (W21 orphan risk). The safe channel "
+
++        "is the install command, which records it in ra2forge_install.json.")
+
++    return {"in_game_dir": True,
+
++            "game_dirs": [str(g) for g in game_dirs],
+
++            "confirmed": True}
+
++
+
++
+
+ def _emit_csf_artifacts(
+
+     *,
+
+     out: Path,
+
+@@ -425,22 +526,70 @@
+
+     battle_id: str,
+
+     pkg_id: str,
+
+     check_lines: list[str],
+
++    guard_report: dict | None = None,
+
++    install_game_dir: Path | None = None,
+
++    allow_csf_out_in_game: bool = False,
+
+ ) -> dict:
+
+-    """Write/update csf_out and emit package ra2md.csf + csf_patch.json."""
+
++    """W41: write a COMPLETE official-base ra2md.csf clone + our label.
+
++
+
++    Closes the W30 UNCOVERED §2 gap's build side and the W29 "minimal CSF is
+
++    dangerous" hazard. The ONLY allowed production path is "clone a complete
+
++    official CSF base, then append/set our label":
+
++
+
++      * --csf-base B          : B must be a complete official clone; it is
+
++                                cloned to csf_out (overwriting it).
+
++      * no --csf-base, csf_out already exists : it must ALREADY be a complete
+
++                                official clone (update-in-place); a corrupt or
+
++                                minimal/partial file is REFUSED untouched.
+
++      * no --csf-base, csf_out missing : clone the BUNDLED byte-exact official
+
++                                ra2md.csf (extracted read-only from
+
++                                ra2bench\\langmd.mix in W41/EVIDENCE/step1).
+
++
+
++    A from-scratch / create_if_missing minimal CSF is NO LONGER possible -
+
++    every write goes through csf.assert_complete_csf() (magic ' FSC', version 3,
+
++    header/label/value count consistency, and the full 5,211-label official
+
++    baseline set). The path-ownership guard runs first (W38 CRITICAL).
+
++    """
+
++    # (0) W38 CRITICAL: install-level ownership guard. Normally pre-computed
+
++    # at the very top of build() (before ANY write); the defensive fallback
+
++    # keeps this function self-contained for direct callers.
+
++    guard = guard_report if guard_report is not None else \
+
++        _csf_out_ownership_guard(
+
++            csf_out, install_game_dir=install_game_dir,
+
++            allow_csf_out_in_game=allow_csf_out_in_game,
+
++            check_lines=check_lines)
+
++
+
+     try:
+
++        # (1) obtain / write the COMPLETE base clone at csf_out.
+
+         if csf_base is not None:
+
+             base_csf = csf_mod.read_csf(csf_base, strict=True)
+
++            csf_mod.assert_complete_csf(base_csf)
+
+             if csf_out.resolve() != csf_base.resolve():
+
+-                csf_mod.write_csf(csf_out, base_csf)
+
++                csf_mod.write_csf(csf_out, base_csf, require_complete=True)
+
++        elif csf_out.is_file():
+
++            # "update in place": the existing file must already be complete.
+
++            existing = csf_mod.read_csf(csf_out, strict=True)
+
++            csf_mod.assert_complete_csf(existing)
+
++        else:
+
++            # no base + no target: clone the bundled byte-exact official CSF.
+
++            base_csf = csf_mod.load_official_csf()
+
++            csf_mod.write_csf(csf_out, base_csf, require_complete=True)
+
++
+
++        # (2) append/set our label; require_complete guards the final write.
+
+         res = csf_mod.append_or_set_label(
+
+-            csf_out, csf_label, csf_text, create_if_missing=True, verify=True
+
++            csf_out, csf_label, csf_text,
+
++            create_if_missing=False, verify=True, require_complete=True,
+
+         )
+
++        # (3) final re-read + mandatory completeness check of the artifact.
+
++        final_csf = csf_mod.read_csf(csf_out, strict=True)
+
++        complete = csf_mod.assert_complete_csf(final_csf)
+
+     except (OSError, csf_mod.CsfError) as exc:
+
+         raise BuildError(f"CSF emission failed for {csf_out}: {exc}") from exc
+
+ 
+
++    # (4) package copy - also routed through the completeness-guarded writer.
+
+     pkg_csf = out / "ra2md.csf"
+
+     if csf_out.resolve() != pkg_csf.resolve():
+
+-        pkg_csf.write_bytes(csf_out.read_bytes())
+
++        csf_mod.write_csf(pkg_csf, final_csf, require_complete=True)
+
+ 
+
+     patch_payload = {
+
+         "target_csf": "ra2md.csf",
+
+@@ -451,6 +600,8 @@
+
+         "csf_out": str(csf_out),
+
+         "action": res["action"],
+
+         "num_labels": res["num_labels"],
+
++        "complete_baseline_labels": complete["baseline_labels"],
+
++        "csf_out_in_game_dir": guard["in_game_dir"],
+
+     }
+
+     (out / "csf_patch.json").write_text(
+
+         json.dumps(patch_payload, indent=2, ensure_ascii=False) + "\n",
+
+@@ -458,7 +609,8 @@
+
+     )
+
+     check_lines.append(
+
+         f"  [PASS] ra2md.csf: label {csf_label} -> {res['action']} "
+
+-        f"(num_labels={res['num_labels']}, readback verified)"
+
++        f"(num_labels={res['num_labels']}, complete official clone of "
+
++        f"{complete['baseline_labels']} baseline labels, readback verified)"
+
+     )
+
+     return {
+
+         "enabled": True,
+
+
+--- a/ra2forge/cli.py
+
++++ b/ra2forge/cli.py
+
+@@ -145,8 +145,19 @@
+
+                               "the package directory (omit to keep legacy "
+
+                               "raw-text Description=)")
+
+     p_build.add_argument("--csf-base", metavar="CSF_PATH", default=None,
+
+-                         help="optional existing CSF (e.g. extracted ra2md.csf) "
+
+-                              "to clone to --csf-out before appending the label")
+
++                         help="optional COMPLETE official CSF (e.g. extracted "
+
++                              "ra2md.csf) to clone to --csf-out before "
+
++                              "appending the label (W41: a minimal/partial "
+
++                              "base is refused; omit -> bundled official "
+
++                              "byte-exact clone is used)")
+
++    p_build.add_argument("--allow-csf-out-in-game", action="store_true",
+
++                         help="W41 DANGEROUS: allow --csf-out to write into a "
+
++                              "game directory (install-level write entry). "
+
++                              "Default REFUSES with zero writes; the safe "
+
++                              "channel is --install / the install command, "
+
++                              "which routes ra2md.csf through preflight, "
+
++                              "backup, manifest and uninstall. Even with this "
+
++                              "flag, aliases and reserved slots are refused")
+
+     p_build.add_argument("--mapselmd", action="store_true",
+
+                          help="W34: also emit a COMPLETE MAPSELMD.INI (byte-exact "
+
+                               "clone of the official file + this campaign's "
+
+@@ -301,7 +312,9 @@
+
+                              csf_out=args.csf_out,
+
+                              csf_base=args.csf_base,
+
+                              mapselmd=args.mapselmd,
+
+-                             mapselmd_base=args.mapselmd_base)
+
++                             mapselmd_base=args.mapselmd_base,
+
++                             install_game_dir=args.install,
+
++                             allow_csf_out_in_game=args.allow_csf_out_in_game)
+
+         except (BuildError, design_mod.DesignError) as exc:
+
+             print(f"error: {exc}", file=sys.stderr)
+
+             return 1
+
+
+--- a/ra2forge/csf.py
+
++++ b/ra2forge/csf.py
+
+@@ -34,6 +34,7 @@
+
+ 
+
+ from __future__ import annotations
+
+ 
+
++import hashlib
+
+ import os
+
+ import secrets
+
+ import struct
+
+@@ -64,9 +65,48 @@
+
+ 
+
+ _XOR_TRANS = bytes(b ^ 0xFF for b in range(256))
+
+ 
+
++# ---------------------------------------------------------------------------
+
++# W41: official CSF baseline + "complete & legal" guard
+
++#
+
++# W29 (static, signed): a LOOSE ra2md.csf in the game directory overrides the
+
++# copy inside langmd.mix (disk-first CCFileClass::Get_File 0x473D10). The
+
++# engine's " FSC" check at 0x734799 fails on a minimal/partial CSF and
+
++# 0x6BD85A pops "Unable to initialize 'ra2.csf'" -> startup failure. So a
+
++# loose ra2md.csf MUST be a COMPLETE legal CSF carrying every official label.
+
++# The only safe production path is therefore "clone the official base, then
+
++# append our label" - a from-scratch / minimal CSF is refused outright.
+
++#
+
++# The official ra2md.csf below was extracted READ-ONLY from
+
++#   D:\Project\ra2-campaign-forge\ra2bench\langmd.mix
+
++# (index id 0xBD835079 = ts_crc_hash("ra2md.csf"), 332,973 bytes), measured
+
++# in W41/EVIDENCE/step1_extract_official_csf.py. Byte-exact clone, not a
+
++# reconstruction. It is bundled so the guard and the builder need no live MIX.
+
++# ---------------------------------------------------------------------------
+
++OFFICIAL_CSF_FILE = (Path(__file__).resolve().parent / "data"
+
++                     / "RA2MD.OFFICIAL.CSF")
+
++OFFICIAL_CSF_LABELS_FILE = (Path(__file__).resolve().parent / "data"
+
++                            / "RA2MD.OFFICIAL.LABELS.txt")
+
++OFFICIAL_CSF_SIZE = 332973
+
++OFFICIAL_CSF_SHA256 = (
+
++    "1b90bb0756137f46ff529af043fe798d7f1f9fa1713a4110f17e1d674de81f1c")
+
++OFFICIAL_CSF_LABEL_COUNT = 5211
+
++OFFICIAL_CSF_VERSION = 3
+
++OFFICIAL_CSF_LANGUAGE = 9
+
++# Value-type magics measured in the official CSF (W41 step1): only these two.
+
++OFFICIAL_VALUE_KINDS = frozenset((STR_MAGIC, WRTS_MAGIC))
+
++
+
+ 
+
+ class CsfError(ValueError):
+
+     """Raised when a CSF file is malformed, truncated, or unsupported."""
+
++
+
++
+
++class CsfIncompleteError(CsfError):
+
++    """W41: a CSF that is not a complete, legal official-baseline clone.
+
++
+
++    Raised by assert_complete_csf() / write_csf(require_complete=True) /
+
++    append_or_set_label(require_complete=True). Subclasses CsfError so the
+
++    builder's existing `except (OSError, csf_mod.CsfError)` already catches it.
+
++    """
+
+ 
+
+ 
+
+ @dataclass
+
+@@ -404,13 +444,24 @@
+
+     return parse_csf(p.read_bytes(), strict=strict)
+
+ 
+
+ 
+
+-def write_csf(path: str | Path, csf: CsfFile) -> Path:
+
+-    """Serialize a CsfFile and write it safely via a staged temporary file."""
+
++def write_csf(path: str | Path, csf: CsfFile, *,
+
++              require_complete: bool = False) -> Path:
+
++    """Serialize a CsfFile and write it safely via a staged temporary file.
+
++
+
++    W41: when require_complete=True the payload must ALSO pass the mandatory
+
++    "complete & legal" guard (assert_complete_csf) BEFORE any byte reaches
+
++    disk. Default False keeps the primitive writer general-purpose (the W30
+
++    low-level CSF1..CSF6 unit cases build minimal CSFs on purpose); the
+
++    install-artifact production path in builder._emit_csf_artifacts() passes
+
++    require_complete=True so no minimal CSF can ever become a loose ra2md.csf.
+
++    """
+
+     p = Path(path)
+
+     p.parent.mkdir(parents=True, exist_ok=True)
+
+     payload = csf.to_bytes()
+
+     # In-memory verification before touching disk
+
+     parse_csf(payload, strict=True)
+
++    if require_complete:
+
++        assert_complete_csf(payload)
+
+     stage = p.parent / f"{p.name}.tmp-{secrets.token_hex(6)}"
+
+     try:
+
+         stage.write_bytes(payload)
+
+@@ -449,6 +500,7 @@
+
+     create_if_missing: bool = False,
+
+     case_insensitive: bool = False,
+
+     verify: bool = True,
+
++    require_complete: bool = False,
+
+ ) -> dict:
+
+     """Append or update `label` -> `text` in `csf_path` without corrupting existing entries.
+
+ 
+
+@@ -456,6 +508,10 @@
+
+     CsfError without modifying the file on disk. After writing atomically,
+
+     re-reads the file from disk using read_csf() and asserts byte-exact text
+
+     equality for `label` as well as full preservation of every pre-existing label.
+
++
+
++    W41: require_complete=True additionally enforces the mandatory "complete &
+
++    legal" guard on every write (see write_csf). Default False preserves the
+
++    W30 low-level semantics; the install-artifact path passes True.
+
+     """
+
+     p = Path(csf_path)
+
+     if p.exists():
+
+@@ -472,7 +528,7 @@
+
+     ]
+
+ 
+
+     action = csf.set(label, text, extra=extra, case_insensitive=case_insensitive)
+
+-    write_csf(p, csf)
+
++    write_csf(p, csf, require_complete=require_complete)
+
+ 
+
+     if verify:
+
+         readback = read_csf(p, strict=True)
+
+@@ -525,3 +581,135 @@
+
+         "num_strings": csf.num_strings,
+
+         "language": csf.language,
+
+     }
+
++
+
++
+
++# ---------------------------------------------------------------------------
+
++# W41: official baseline + mandatory "complete & legal" guard
+
++# ---------------------------------------------------------------------------
+
++
+
++def official_baseline_labels() -> frozenset[str]:
+
++    """Return the 5,211 official label names (case-folded) measured in W41.
+
++
+
++    Source of truth: the sorted unique label-name list bundled next to the
+
++    byte-exact official CSF (data/RA2MD.OFFICIAL.LABELS.txt), produced by
+
++    W41/EVIDENCE/step1_extract_official_csf.py from ra2bench\\langmd.mix.
+
++    Names are case-folded because the engine resolves CSF labels
+
++    case-insensitively (get_label(case_insensitive=True) / append_or_set_label).
+
++    """
+
++    if not OFFICIAL_CSF_LABELS_FILE.is_file():
+
++        raise CsfIncompleteError(
+
++            f"official CSF baseline label set is missing at "
+
++            f"{OFFICIAL_CSF_LABELS_FILE}")
+
++    names = [ln.strip() for ln in
+
++             OFFICIAL_CSF_LABELS_FILE.read_text(encoding="utf-8").splitlines()]
+
++    names = [n for n in names if n]
+
++    if len(names) != OFFICIAL_CSF_LABEL_COUNT:
+
++        raise CsfIncompleteError(
+
++            f"official CSF baseline label set has {len(names)} names, expected "
+
++            f"{OFFICIAL_CSF_LABEL_COUNT} - bundled resource is corrupt")
+
++    return frozenset(n.upper() for n in names)
+
++
+
++
+
++def load_official_csf() -> CsfFile:
+
++    """Return a fresh CsfFile parsed from the bundled byte-exact official CSF.
+
++
+
++    Self-checks size + SHA-256 against the measured values, then strict-parses
+
++    and runs assert_complete_csf() on it - so a damaged bundled resource can
+
++    never silently become a "complete" base.
+
++    """
+
++    if not OFFICIAL_CSF_FILE.is_file():
+
++        raise CsfIncompleteError(
+
++            f"bundled official ra2md.csf is missing at {OFFICIAL_CSF_FILE}")
+
++    raw = OFFICIAL_CSF_FILE.read_bytes()
+
++    if (len(raw) != OFFICIAL_CSF_SIZE
+
++            or hashlib.sha256(raw).hexdigest() != OFFICIAL_CSF_SHA256):
+
++        raise CsfIncompleteError(
+
++            "bundled official ra2md.csf is not the measured byte-exact clone "
+
++            "(size/sha256 mismatch) - refusing to use it as a base")
+
++    csf = parse_csf(raw, strict=True)
+
++    assert_complete_csf(csf)
+
++    return csf
+
++
+
++
+
++def assert_complete_csf(csf_or_bytes: "CsfFile | bytes | bytearray",
+
++                        *, baseline_labels: frozenset[str] | None = None) -> dict:
+
++    """W41 mandatory completeness guard: refuse a minimal / partial CSF.
+
++
+
++    A loose ra2md.csf is a WHOLE-FILE override (W29), so it MUST be a complete
+
++    legal CSF carrying every official label. This is the single choke point:
+
++    builder._emit_csf_artifacts() and write_csf(require_complete=True) route
+
++    every install-artifact write through it.
+
++
+
++    Checks (all mandatory, in order):
+
++      1. strict parse (magic b" FSC", version in {2,3}, no truncation, no
+
++         trailing bytes, num_strings self-consistency, no unknown value tails);
+
++      2. version == 3 (official ra2md.csf is v3; a v2 CSF is not this base);
+
++      3. header num_labels == parsed label count AND header num_strings ==
+
++         parsed value count ("标签数一致");
+
++      4. every value kind is b" RTS" or b"WRTS" (the only kinds measured in
+
++         the official file), and no warnings/unknown records;
+
++      5. the case-folded label-name set is a SUPERSET of the official baseline
+
++         label set extracted from langmd.mix - any missing label is refused.
+
++
+
++    Returns a report dict. Raises CsfIncompleteError (a CsfError) otherwise.
+
++    Accepts either a CsfFile or raw bytes; when bytes are given they are
+
++    strict-parsed first. `baseline_labels` can be injected for testing.
+
++    """
+
++    if isinstance(csf_or_bytes, CsfFile):
+
++        csf = csf_or_bytes
+
++    else:
+
++        csf = parse_csf(bytes(csf_or_bytes), strict=True)
+
++
+
++    # (2) version 3
+
++    if csf.version != OFFICIAL_CSF_VERSION:
+
++        raise CsfIncompleteError(
+
++            f"CSF version is {csf.version}, expected "
+
++            f"{OFFICIAL_CSF_VERSION} - a complete loose ra2md.csf must be "
+
++            "the official v3 base")
+
++    # (3) header/label/value count consistency ("标签数一致")
+
++    if csf.header_num_labels is not None and \
+
++            csf.header_num_labels != csf.num_labels:
+
++        raise CsfIncompleteError(
+
++            f"CSF header num_labels={csf.header_num_labels} disagrees with "
+
++            f"parsed label count {csf.num_labels} - refusing an inconsistent CSF")
+
++    if csf.header_num_strings is not None and \
+
++            csf.header_num_strings != csf.num_strings:
+
++        raise CsfIncompleteError(
+
++            f"CSF header num_strings={csf.header_num_strings} disagrees with "
+
++            f"parsed value count {csf.num_strings} - refusing an inconsistent CSF")
+
++    # (4) value kinds + clean parse
+
++    if csf.warnings or csf.unknown_records or csf.has_unparsed_tail:
+
++        raise CsfIncompleteError(
+
++            "CSF has warnings / unknown value records / an unparsed tail - "
+
++            "not a clean complete official clone")
+
++    bad_kinds = sorted({v.kind for lbl in csf.labels for v in lbl.values}
+
++                       - OFFICIAL_VALUE_KINDS)
+
++    if bad_kinds:
+
++        raise CsfIncompleteError(
+
++            f"CSF contains non-official value kinds {bad_kinds!r}; the official "
+
++            "base has only b' RTS' / b'WRTS'")
+
++    # (5) official baseline label set (from langmd.mix)
+
++    base = (official_baseline_labels() if baseline_labels is None
+
++            else frozenset(n.upper() for n in baseline_labels))
+
++    present = frozenset(lbl.name.upper() for lbl in csf.labels)
+
++    missing = base - present
+
++    if missing:
+
++        sample = sorted(missing)[:12]
+
++        raise CsfIncompleteError(
+
++            f"CSF is PARTIAL: {len(missing)} of {len(base)} official baseline "
+
++            "labels are missing (e.g. " + ", ".join(sample) + "). A loose "
+
++            "ra2md.csf overrides the copy inside langmd.mix; a partial/minimal "
+
++            "file makes the engine's \" FSC\" check fail and the game refuses "
+
++            "to start. Only a complete official-base clone is allowed.")
+
++    if csf.num_labels < len(base):
+
++        raise CsfIncompleteError(
+
++            f"CSF has {csf.num_labels} labels, fewer than the "
+
++            f"{len(base)}-label official baseline")
+
++    return {
+
++        "version": csf.version,
+
++        "language": csf.language,
+
++        "num_labels": csf.num_labels,
+
++        "num_strings": csf.num_strings,
+
++        "baseline_labels": len(base),
+
++        "extra_labels": csf.num_labels - len(base),
+
++    }
+
+
+--- a/ra2forge/install.py
+
++++ b/ra2forge/install.py
+
+@@ -382,6 +382,14 @@
+
+ # official clone + our appended stages and treats a foreign one as a
+
+ # never-releasable definite conflict in the preflight.
+
+ MAPSEL_NAME = "MAPSELMD.INI"
+
++# W41: a loose ra2md.csf is a WHOLE-FILE override of the copy inside
+
++# langmd.mix (W29 disk-first). A MINIMAL/partial CSF makes the engine's
+
++# " FSC" check fail and the game refuses to start, so v12 ONLY ships a
+
++# complete official-baseline clone (builder._emit_csf_artifacts enforces it).
+
++# A foreign loose ra2md.csf is a never-releasable definite preflight conflict,
+
++# exactly like MAPSELMD.INI. Original-absent semantics: the official game dir
+
++# has NO loose ra2md.csf, so install is CREATE and uninstall is DELETE.
+
++CSF_NAME = "ra2md.csf"
+
+ LEGACY_MANIFEST = "ra2forge_uninstall.txt"
+
+ LEGACY_BATTLE_INI = "BATTLEMD.INI"
+
+ FORGE_MARKER = b"Generated by RA2 Campaign Forge"
+
+@@ -716,6 +724,12 @@
+
+     mapsel = package_dir / MAPSEL_NAME
+
+     if mapsel.is_file():
+
+         files.append(mapsel)
+
++    # W41: ra2md.csf is a loose whole-file override. It only ships when the
+
++    # build was made with --csf-out (complete official-baseline clone), so a
+
++    # v11/no-CSF package is unaffected -> backward compatibility is preserved.
+
++    csf = package_dir / CSF_NAME
+
++    if csf.is_file():
+
++        files.append(csf)
+
+     files += sorted(p for p in package_dir.glob("*.MAP") if p.is_file())
+
+     mix = package_dir / MIX_NAME
+
+     if mix.is_file():
+
+@@ -1112,6 +1126,9 @@
+
+       mapsel_conflicts : W34 - definite MAPSELMD.INI conflicts that
+
+                   --allow-content-conflict must NEVER release (a foreign
+
+                   whole-file campaign-progression registration);
+
++      csf_conflicts : W41 - definite ra2md.csf conflicts that
+
++                  --allow-content-conflict must NEVER release (a foreign
+
++                  loose whole-file CSF override of langmd.mix);
+
+       steps : the write plan - dicts {name, src, action, backup, conflict,
+
+               recorded_backup, new_sha, dest_sha, size, original_absent};
+
+               action is one of created/unchanged/replaced, backup is
+
+@@ -1152,6 +1169,8 @@
+
+     # release (a whole-file override of another mod's / the official
+
+     # registration must not be silently overwritten).
+
+     mapsel_conflicts: list[str] = []
+
++    # W41: the same never-releasable rule for a foreign loose ra2md.csf.
+
++    csf_conflicts: list[str] = []
+
+     steps: list[dict] = []
+
+ 
+
+     manifest_path = game / MANIFEST_NAME
+
+@@ -1321,10 +1340,10 @@
+
+                     "keep the changed file unless --force is given.")
+
+             else:
+
+                 conflict = True
+
+-                # W34: MAPSELMD.INI gets one precise, never-releasable
+
+-                # conflict message from the post-loop pass below; do not
+
+-                # also emit the generic releasable wording for it.
+
+-                if name != MAPSEL_NAME:
+
++                # W34/W41: MAPSELMD.INI and ra2md.csf get one precise,
+
++                # never-releasable conflict message from the post-loop pass
+
++                # below; do not also emit the generic releasable wording.
+
++                if name not in (MAPSEL_NAME, CSF_NAME):
+
+                     conflicts.append(
+
+                         f"{name}: would replace a file that {MANIFEST_NAME} does "
+
+                         "not record as ours (another campaign/mod or a user file) "
+
+@@ -1389,6 +1408,31 @@
+
+             mapsel_conflicts.append(msg)
+
+             step["conflict"] = True
+
+ 
+
++    # W41: a ra2md.csf that already exists and is NOT one of ours (not
+
++    # recorded in the current install record) is a definite preflight content
+
++    # conflict that defaults to a refusal and stays refused even when the user
+
++    # passes --allow-content-conflict. It is a loose WHOLE-FILE override of
+
++    # the copy inside langmd.mix (W29): overwriting a foreign one would
+
++    # destroy another mod's / a hand-edited string table, and a partial one
+
++    # breaks startup. Covers created/replaced and the byte-identical-but-
+
++    # unrecorded "adopt" case alike (same shape as the W34 MAPSELMD rule).
+
++    for step in steps:
+
++        if (step["name"] == CSF_NAME and step["dest_sha"] is not None
+
++                and step["name"] not in old_entries):
+
++            msg = (
+
++                f"{CSF_NAME}: a non-ra2forge {CSF_NAME} already exists in the "
+
++                f"game directory (not recorded as ours in {MANIFEST_NAME}). "
+
++                "It is a WHOLE-FILE override of the official string table "
+
++                "inside langmd.mix; overwriting it would destroy another "
+
++                "mod's / a hand-edited CSF, and a partial file makes the game "
+
++                "fail to start (W29). Back it up and resolve the conflict by "
+
++                "hand, then re-run the install. This definite conflict is NOT "
+
++                "releasable by --allow-content-conflict.")
+
++            if msg not in conflicts:
+
++                conflicts.append(msg)
+
++            csf_conflicts.append(msg)
+
++            step["conflict"] = True
+
++
+
+     # ORPHAN-FIX01: plan the exit of files the CURRENT record names and this
+
+     # package dropped. Read-only; dangerous shapes become hard blockers here,
+
+     # a file changed after install becomes a risk (strict refuses), the rest
+
+@@ -1433,6 +1477,7 @@
+
+ 
+
+     return {"blockers": blockers, "conflicts": conflicts,
+
+             "mapsel_conflicts": mapsel_conflicts,
+
++            "csf_conflicts": csf_conflicts,
+
+             "risks": risks, "notices": notices, "steps": steps, "manifest": manifest,
+
+             "corrupt_manifest": corrupt, "orphans": orphans,
+
+             "identity": {
+
+@@ -1470,6 +1515,11 @@
+
+                      "override of a foreign registration; refused even with "
+
+                      "--allow-content-conflict):")
+
+         lines += [f"    - {c}" for c in plan["mapsel_conflicts"]]
+
++    if plan.get("csf_conflicts"):
+
++        lines.append("  NEVER-releasable ra2md.csf conflicts (a loose "
+
++                     "WHOLE-FILE override of the official string table inside "
+
++                     "langmd.mix; refused even with --allow-content-conflict):")
+
++        lines += [f"    - {c}" for c in plan["csf_conflicts"]]
+
+     if plan["risks"]:
+
+         lines.append("  unresolvable risks (state cannot be judged reliably; "
+
+                      "strict mode refuses; resolve the state instead):")
+
+@@ -1865,6 +1915,12 @@
+
+     # escape hatch must never release - no silent overwrite of a whole-file
+
+     # campaign-progression registration.
+
+     if plan.get("mapsel_conflicts"):
+
++        raise InstallBlocked(_refusal_text(plan), kind="content_conflict",
+
++                             report=plan)
+
++    # W41: a foreign loose ra2md.csf is a definite content conflict that the
+
++    # escape hatch must never release - no silent overwrite of a whole-file
+
++    # string-table override (same never-releasable rule as MAPSELMD.INI).
+
++    if plan.get("csf_conflicts"):
+
+         raise InstallBlocked(_refusal_text(plan), kind="content_conflict",
+
+                              report=plan)
+
+     allowed: list[str] = []
+
+
+# ---- NEW bundled data files (not inlined: binary / 85 KB text) ----
+# Both are byte-exact products of EVIDENCE/step1_extract_official_csf.py
+# (read-only from ra2bench\langmd.mix, index id 0xBD835079).
+# NEW data/RA2MD.OFFICIAL.CSF | 332973 bytes | sha256=1b90bb0756137f46ff529af043fe798d7f1f9fa1713a4110f17e1d674de81f1c
+# NEW data/RA2MD.OFFICIAL.LABELS.txt | 85527 bytes | sha256=b463d6ed80d34b7aa4ec27de96723e08e76010ed8b102824814129233e9e173a

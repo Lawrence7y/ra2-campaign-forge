@@ -1,0 +1,294 @@
+====================================================================================================
+R16-AUDIT-F1-B2 · 审计员独立复算（B2 = 派生集合第 19-36 行）
+====================================================================================================
+gamemd.exe sha256 : 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476
+  expect          : 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476  OK
+coverage 快照 sha : 95DFAC9E6CEC2D464691D84DF1EF64A0AD850C86500A4CD1348275F0FBC419D1  (4040803 B)
+ImageBase         : 00400000（卡面 0x400000）OK
+.text             : [00401000,007E038D)  卡面 [0x401000,0x7E038D)
+PE 段清单         : .text[00401000,+3DF38D], .rdata[007E1000,+30074], .data[00812000,+367BE4], .rsrc[00B7A000,+18128], .detour[00B93000,+2718]
+
+--- 派生集合复现（卡面 §2 判据）---
+  S0 all F1 gap rows             : 122
+  S1 same_source==no             : 108
+  S2 +install decoded            : 76
+  S3 +install outside body       : 76
+  S4 +[已证] & no ④ witness       : 76  <== derived set
+  derived=76（卡面 76）  B1=1-18  B2=19-36  → B2 18 行
+  B2 = 005FEAF0 00629FD0 0062D7A0 0062D9A0 0062FE90 00630090 00644960 006457A0 00645950 006B5850 006C2B10 006C2C90 006C2E10 006C2F90 006C3110 006C3290 006C3410 006C3590
+
+delta.tsv         : 表头 ['entry', 'subsystem', 'name', 'one_line_semantics', 'grade', 'evidence_path', 'n_sources', 'conflict']
+                    数据行 18（应 18）
+  OK  delta entry 序列 == 派生集合第 19-36 行（顺序也一致）
+fields.tsv        : 14 列 ['entry', 'class', 'slot_no', 'vtaddr', 'source_of_vtaddr', 'coladdr', 'col_offset', 'rtti_addr', 'rtti_mangled', 'install_site', 'install_func', 'status(OK|SKIP)', 'same_source', 'note']
+
+--- 独立跑 capstone 全 .text 反汇编 ---
+  insn 1392527 / skip 65  (区间 [00401000,007E038D))
+  atlas 函数体 12916 个
+
+--- 独立口径 2：枚举 .rdata/.data 内全部表起点 ---
+  合法表起点 1218 个（t-4 均为自洽 COL）
+  建索引：1218 个表、6692 个不同槽值
+
+====================================================================================================
+逐行审计（18/18，不抽样）
+====================================================================================================
+
+#19 005FEAF0  OverlayTypeClass::slot5  (same_source=no)
+   §C hits=1  同槽(5)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007EF600', 5)]；同槽(5) [('007EF600', 5)]；其中活 [('007EF600', 5)]；类一致 [('007EF600', 5)]  → 与口径1 一致
+      table vt=007EF600 slot=5 live=True sites=5 slots=43 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加487B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7ef600   imm=007EF600  func=005FE250  体内self-install=['005FEB21']
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#20 00629FD0  ParasiteClass::slot23  (same_source=no)
+   §C hits=1  同槽(23)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007EF890', 23)]；同槽(23) [('007EF890', 23)]；其中活 [('007EF890', 23)]；类一致 [('007EF890', 23)]  → 与口径1 一致
+      table vt=007EF890 slot=23 live=True sites=6 slots=25 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加479B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7ef890   imm=007EF890  func=00629210  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#21 0062D7A0  ParticleClass::slot5  (same_source=no)
+   §C hits=1  同槽(5)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007EF954', 5)]；同槽(5) [('007EF954', 5)]；其中活 [('007EF954', 5)]；类一致 [('007EF954', 5)]  → 与口径1 一致
+      table vt=007EF954 slot=5 live=True sites=5 slots=123 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加475B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7ef954   imm=007EF954  func=0062B5E0  体内self-install=['0062D7C4']
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#22 0062D9A0  ParticleClass::slot8  (same_source=no)
+   §C hits=1  同槽(8)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007EF954', 8)]；同槽(8) [('007EF954', 8)]；其中活 [('007EF954', 8)]；类一致 [('007EF954', 8)]  → 与口径1 一致
+      table vt=007EF954 slot=8 live=True sites=5 slots=123 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加475B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7ef954   imm=007EF954  func=0062B5E0  体内self-install=['0062D9A4']
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#23 0062FE90  ParticleSystemClass::slot10  (same_source=no)
+   §C hits=1  同槽(10)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007EFB9C', 10)]；同槽(10) [('007EFB9C', 10)]；其中活 [('007EFB9C', 10)]；类一致 [('007EFB9C', 10)]  → 与口径1 一致
+      table vt=007EFB9C slot=10 live=True sites=4 slots=122 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加503B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7efb9c   imm=007EFB9C  func=0062DC50  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#24 00630090  ParticleSystemClass::slot6  (same_source=no)
+   §C hits=1  同槽(6)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007EFB9C', 6)]；同槽(6) [('007EFB9C', 6)]；其中活 [('007EFB9C', 6)]；类一致 [('007EFB9C', 6)]  → 与口径1 一致
+      table vt=007EFB9C slot=6 live=True sites=4 slots=122 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加499B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7efb9c   imm=007EFB9C  func=0062DC50  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#25 00644960  ParticleSystemTypeClass::slot8  (same_source=no)
+   §C hits=1  同槽(8)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F00A8', 8)]；同槽(8) [('007F00A8', 8)]；其中活 [('007F00A8', 8)]；类一致 [('007F00A8', 8)]  → 与口径1 一致
+      table vt=007F00A8 slot=8 live=True sites=5 slots=41 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加515B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7f00a8   imm=007F00A8  func=006440A0  体内self-install=['00644966']
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#26 006457A0  ParticleTypeClass::slot6  (same_source=no)
+   §C hits=1  同槽(6)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F0188', 6)]；同槽(6) [('007F0188', 6)]；其中活 [('007F0188', 6)]；类一致 [('007F0188', 6)]  → 与口径1 一致
+      table vt=007F0188 slot=6 live=True sites=5 slots=40 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加491B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7f0188   imm=007F0188  func=00644BE0  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#27 00645950  ParticleTypeClass::slot8  (same_source=no)
+   §C hits=1  同槽(8)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F0188', 8)]；同槽(8) [('007F0188', 8)]；其中活 [('007F0188', 8)]；类一致 [('007F0188', 8)]  → 与口径1 一致
+      table vt=007F0188 slot=8 live=True sites=5 slots=40 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加491B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7f0188   imm=007F0188  func=00644BE0  体内self-install=['00645956']
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#28 006B5850  SmudgeTypeClass::slot5  (same_source=no)
+   §C hits=1  同槽(5)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F3528', 5)]；同槽(5) [('007F3528', 5)]；其中活 [('007F3528', 5)]；类一致 [('007F3528', 5)]  → 与口径1 一致
+      table vt=007F3528 slot=5 live=True sites=5 slots=43 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加483B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [esi], 0x7f3528   imm=007F3528  func=006B5260  体内self-install=['006B5874']
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#29 006C2B10  T_TClassFactory_VAircraftTypeClass__::slot3  (same_source=no)
+   §C hits=1  同槽(3)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F3B28', 3)]；同槽(3) [('007F3B28', 3)]；其中活 [('007F3B28', 3)]；类一致 [('007F3B28', 3)]  → 与口径1 一致
+      table vt=007F3B28 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加567B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3b28   imm=007F3B28  func=006C2A40  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#30 006C2C90  T_TClassFactory_VInfantryTypeClass__::slot3  (same_source=no)
+   §C hits=1  同槽(3)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F3B40', 3)]；同槽(3) [('007F3B40', 3)]；其中活 [('007F3B40', 3)]；类一致 [('007F3B40', 3)]  → 与口径1 一致
+      table vt=007F3B40 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加567B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3b40   imm=007F3B40  func=006C2BC0  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#31 006C2E10  T_TClassFactory_VBulletTypeClass__::slot3  (same_source=no)
+   §C hits=1  同槽(3)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F3B58', 3)]；同槽(3) [('007F3B58', 3)]；其中活 [('007F3B58', 3)]；类一致 [('007F3B58', 3)]  → 与口径1 一致
+      table vt=007F3B58 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加559B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3b58   imm=007F3B58  func=006C2D40  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#32 006C2F90  T_TClassFactory_VIsometricTileTypeClass__::slot3  (same_source=no)
+   §C hits=1  同槽(3)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F3B70', 3)]；同槽(3) [('007F3B70', 3)]；其中活 [('007F3B70', 3)]；类一致 [('007F3B70', 3)]  → 与口径1 一致
+      table vt=007F3B70 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加587B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3b70   imm=007F3B70  func=006C2EC0  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#33 006C3110  T_TClassFactory_VOverlayTypeClass__::slot3  (same_source=no)
+   §C hits=1  同槽(3)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F3B88', 3)]；同槽(3) [('007F3B88', 3)]；其中活 [('007F3B88', 3)]；类一致 [('007F3B88', 3)]  → 与口径1 一致
+      table vt=007F3B88 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加563B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3b88   imm=007F3B88  func=006C3040  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#34 006C3290  T_TClassFactory_VSmudgeTypeClass__::slot3  (same_source=no)
+   §C hits=1  同槽(3)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F3BA0', 3)]；同槽(3) [('007F3BA0', 3)]；其中活 [('007F3BA0', 3)]；类一致 [('007F3BA0', 3)]  → 与口径1 一致
+      table vt=007F3BA0 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加559B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3ba0   imm=007F3BA0  func=006C31C0  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#35 006C3410  T_TClassFactory_VUnitClass__::slot3  (same_source=no)
+   §C hits=1  同槽(3)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F3BB8', 3)]；同槽(3) [('007F3BB8', 3)]；其中活 [('007F3BB8', 3)]；类一致 [('007F3BB8', 3)]  → 与口径1 一致
+      table vt=007F3BB8 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加535B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3bb8   imm=007F3BB8  func=006C3340  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+#36 006C3590  T_TClassFactory_VBuildingClass__::slot3  (same_source=no)
+   §C hits=1  同槽(3)表=1  其中活=1  其中类一致=1  → 定表唯一性 成立
+      §C 口径2（全表起点枚举）: 该 entry 在镜像内共出现在 1 个表位 [('007F3BD0', 3)]；同槽(3) [('007F3BD0', 3)]；其中活 [('007F3BD0', 3)]；类一致 [('007F3BD0', 3)]  → 与口径1 一致
+      table vt=007F3BD0 slot=3 live=True sites=1 slots=5 cls=match
+   §A cols8=True other7_byte_same=True col4_prefix=True grade=True 追加551B
+   §B 1_slot_val=True 2_col=True 3_off=True 4_td=True 5_mangled=True 6_install=True 7_func_ok=True 8_class=match  all8=True
+      asm@site: mov dword ptr [eax], 0x7f3bd0   imm=007F3BD0  func=006C34C0  体内self-install=[]
+   §D parse=True slot_ok=True entry_ok=True d47=True no_124=True
+      §D 交叉：slot==name:True cls==name:True/True/True func==实测:True td==实测:True col==实测:True vt∈表枚举:True → D_ALL=True
+
+====================================================================================================
+§E 格式合先例（对照前三次并表 43 行「④ 活表槽位见证 + D-47」与三条先例 00464AC0/004DE630/004F42F0）
+====================================================================================================
+  盘上含「④ 活表槽位见证」行 134；其中带 §12.6 披露 43；三条先例取到 3
+  B2 18 行 ④ 段骨架种类 : 1（应 1）
+    骨架: ④ 活表槽位见证：<CLS>::slot<N>（vt=<H>，槽 <N> 值=<H>，COL=<H> offset=<N>，RTTI=<H>→<M>；装表点 <H> 位于 <H> 体内，entry 体外） ④升级句：<CLS>::slot<N>（④ 表属类与行名类一致，均为 <CLS>；该槽即其 vt=<H> 表 slot<N>，无归属歧义）
+    骨架外残留种类: {(True, '')}
+  三条先例 ④ 段骨架全部可解析 : True
+    先例骨架 == B2 骨架        : True（先例无 D-47 后缀）
+    先例 D-47 后缀              : [False, False, False]（应全 False，先例属前批）
+    先例骨架外残留              : {''}（应为空串）
+  43 行 D-47 行 ④ 骨架种类    : 1
+    B2 骨架 ∩ 43 行骨架        : 1（应 1，即同骨架）
+  追加段以「；④ 活表槽位见证」起 : 18/18
+  ④ 段位于第 4 列末尾           : 18/18
+
+====================================================================================================
+§D 汇总：披露指针 / 文本-事实一致
+====================================================================================================
+  含 §12.6 = 18/18 ; 含 §12.4 = 0/18 ; D-47 披露指针完整 = 18/18
+
+====================================================================================================
+§F 反抄袭（entry 归一为占位符后两两不同）
+====================================================================================================
+  原文 18 行 set 大小 : 18
+  entry 归一后 set 大小: 18
+  全地址归一后 set 大小: 18
+  全地址归一重复文本 : 0 组
+
+====================================================================================================
+汇总
+====================================================================================================
+  A_other7_bad     0
+  A_prefix_bad     0
+  A_grade_bad      0
+  A_cols8_bad      0
+  B_all8_bad       0
+  B1_bad           0
+  B2_bad           0
+  B3_bad           0
+  B4_bad           0
+  B5_bad           0
+  B6_bad           0
+  B7_bad           0
+  B8_bad           0
+  B8s_bad          0
+  D_parse_bad      0
+  D_all_bad        0
+  A_only_col4_bad  0
+  D_d47_bad        0
+  D_124_bad        0
+  C_not_unique     0
+  C_multi          0
+  C2_disagree      0
+  C2_multi         0
+  self_install     6
+  not_live_solely_by_entry 0
+
+  §C 同槽多表行：
+
+  同槽有表但「活着」的只有 0 张的行：
+
+  体内 self-install 同表行（证据强度附注项）：
+    005FEAF0 OverlayTypeClass::slot5  体内装表点=['005FEB21']  采用的体外装表点=005FE2F1
+    0062D7A0 ParticleClass::slot5  体内装表点=['0062D7C4']  采用的体外装表点=0062B767
+    0062D9A0 ParticleClass::slot8  体内装表点=['0062D9A4']  采用的体外装表点=0062B767
+    00644960 ParticleSystemTypeClass::slot8  体内装表点=['00644966']  采用的体外装表点=0064419C
+    00645950 ParticleTypeClass::slot8  体内装表点=['00645956']  采用的体外装表点=00644CF4
+    006B5850 SmudgeTypeClass::slot5  体内装表点=['006B5874']  采用的体外装表点=006B529B
+
+  槽号/类名一致性：
+
+====================================================================================================
+第三口径（raw 文件偏移直读，不经虚拟缓冲）复核 6 项核心事实
+====================================================================================================
+  raw 口径不一致行数 : 0 （全部一致）
+
+wrote bytecheck.tsv / verify_out.json  (D:\Project\ra2-campaign-forge\lead\next_re_20261117_r14\R16_AUDIT_F1_B2)

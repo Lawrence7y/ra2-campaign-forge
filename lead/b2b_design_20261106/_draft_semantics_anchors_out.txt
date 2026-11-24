@@ -1,0 +1,61 @@
+========================================================================================
+PHASE anchors · 逐锚点打印母本原文（1-based）
+========================================================================================
+  212: # ★ 载体内五个文件（`QC141:152-160`）
+  213: CARRIER_FILES = ("gamemd.exe", "ra2loader.exe", "ra2render.dll",
+  214:                  "ra2opt_play.bat", "except.txt")
+  215: 
+  216: # ===========================================================================
+  4458:         dst.write_bytes(src.read_bytes())
+  4459:         h = sha256_file(dst)
+  4460:         bak[name] = {"path": str(dst), "size": dst.stat().st_size, "sha256": h}
+  4461:         rec.add("RESTORE", f"backup_sha256:{name}", h, f"{dst}:file")
+  4462:     return bak
+  4558:         encoding="utf-8")
+  4559: 
+  4560: 
+  4561: def copy_post_except_evidence(rec: Recorder, carrier_dir: Path,
+  4562:                               out_dir: Path) -> dict | None:
+  4572:     ★ 返回证据元信息（`None` = 载体 `except.txt` 不存在）。
+  4573:     """
+  4574:     src = carrier_dir / "except.txt"
+  4583:     info = {"source": str(src), "evidence_path": str(dst),
+  4587:     rec.add("EXCEPT", "evidence_copy", info, f"{src}:file",
+  4599:     return info
+  5906:                   mother_baseline: dict | None = None,
+  5907:                   carrier_identity: dict | None = None,
+  5908:                   handover: Path | None = None,
+  5909:                   created_receipt: dict | None = None) -> int:
+  5936:     state: dict = {"evidence": None, "pre_manifest": None, "delete": None}
+  5937: 
+  5938:     def _except_evidence_copy() -> None:
+  5939:         copy_post_except_evidence(rec, carrier_dir, out_dir)
+  6294:     bak: dict = {}
+  6295:     t0: list = []
+  6296:     pre_except_txt = None
+  6386:         budget.begin_stage("backup")
+  6387:         bak = backup_carrier(rec, carrier_dir)
+  6388:         budget.end_stage("backup")
+  6389: 
+  7122:                 carrier_identity=(TRIP_CARRIER.get("identity")),
+  7123:                 handover=(Path(args.carrier_handover) if args.carrier_handover
+  7124:                           else None),
+  7125:                 created_receipt=(TRIP_CARRIER.get("receipt") or created_receipt))
+--- 与探针 _b2b_probe_out.txt 已建立的结构锚点交叉核对 ---
+  探针含 5900: -> True
+  探针含 4561: -> True
+  探针含 5939: -> True
+  探针含 6185: -> True
+  探针含 6387: -> True
+  探针含 6313: -> True
+  探针含 7030: -> True
+  探针含 7038: -> True
+  探针含 7117: -> True
+  探针含 4447: -> True
+  探针含 4460: -> True
+  探针含 672: -> True
+  探针含 677: -> True
+  探针含 5985: -> True
+  探针含 4583: -> True
+  探针含 446: -> True
+ANCHORS_DONE

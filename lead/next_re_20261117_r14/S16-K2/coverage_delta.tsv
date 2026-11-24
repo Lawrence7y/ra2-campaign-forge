@@ -1,0 +1,15 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+00539EB0	S16	LightningStorm::Start	闪电风暴启动: 比较云层中心坐标全局 0xA9F9F8/0xA9F9FA, 两次 call RandomRanged(0x65C7E0), 写 0xA9F9CC/0xA9FACC; 由 Launch case2(0x6CCD3F) 调用	[静态推断]	EVIDENCE/E03_unnamed_analysis.txt; docs/re/superweapon_re.md:780,808; docs/re/re_sprint_S2_report.md:136,164
+0053A6C0	S16	LightningStorm::sub_0053A6C0	闪电风暴接近告警: 函数体内引用 EVA_LightningStormCreated 与 TXT_LIGHTNING_STORM_APPROACHING, 源文件串 Ion.cpp	[静态推断]	EVIDENCE/E03_unnamed_analysis.txt; function_atlas.tsv:0053a6c0(strings)
+0053AE00	S16	LightningStorm::AnnounceActive	派发 LightningStormActive 消息: mov ecx,0x82809C('Msg:LightningStormActive') -> call 0x734E60(消息串查表) -> 结果传 0x5D3BA0(消息派发), 源码行 push 0x463/Ion.cpp	[静态推断]	EVIDENCE/E04_proof_candidates.txt; EVIDENCE/E03_unnamed_analysis.txt
+0053B410	S16	PsychicDominator::AnnounceActive	派发 DominatorActive 消息: mov ecx,0x8280B8('Msg:DominatorActive') -> call 0x734E60 -> 结果传 0x5D3BA0, 源码行 push 0x53B/Ion.cpp	[静态推断]	EVIDENCE/E04_proof_candidates.txt; EVIDENCE/E03_unnamed_analysis.txt
+0053A0E0	S16	LightningStorm::sub_0053A0E0	LightningStorm 状态谓词: 读 byte [0xA9FAB4] 与 dword [0xA9FAB8], 两者任一满足返回 1 否则 0; 由 SuperClass::ClickFire(0x6CB920)+0xAA 调用	[未证]	EVIDENCE/E03_unnamed_analysis.txt
+0053AE50	S16	LightningStorm::sub_0053AE50	闪电风暴落雷动画生成: Launch case2 调用; 取格(0x5657A0)后经虚槽 [vptr+0x48] 取坐标, 分配 0x1C8 -> AnimClass::Create_At(0x421EA0), 结果存 0xA9FAC4	[未证]	EVIDENCE/E03_unnamed_analysis.txt
+00430BA0	S16	BeaconClass::sub_00430BA0	Beacon 对象构造/创建: thiscall(ecx=this), 分配 0x114(operator new 0x7C8E17) 后写 3 个 vptr; 引用 Beacon.CPP + EVA_BeaconPlaced/EVA_BeaconDetected	[静态推断]	EVIDENCE/E03_unnamed_analysis.txt; re_atlas/evidence/r036_r13_deliverable.txt:150-151; function_atlas.tsv:00430ba0(strings)
+006CE280	S16	SuperClass::sub_006CE280	SuperClass 倒计时剩余帧: 由 CurrentFrame(0xA8ED84) - [this] 与 [this+8] 比较, 夹取后回写; 由 SuperClass::Grant(0x6CB560)+0x21C 调用	[未证]	EVIDENCE/E04_proof_candidates.txt; EVIDENCE/E03_unnamed_analysis.txt
+006CE2C0	S16	SuperClass::sub_006CE2C0	SuperClass 计时起点初始化: 若 [this]==-1 则写 CurrentFrame(0xA8ED84); 由 SuperClass::Grant(0x6CB560)+0x1B8 调用	[未证]	EVIDENCE/E04_proof_candidates.txt; EVIDENCE/E03_unnamed_analysis.txt
+006CE2D0	S16	SuperClass::sub_006CE2D0	SuperClass 向量按键删除: call [vptr+0x10] 取键, 按结果左移 [this+4] 元素数组并 Count--([this+0x10]); 由 Grant/ClickFire/Launch 调用	[未证]	EVIDENCE/E04_proof_candidates.txt; EVIDENCE/E03_unnamed_analysis.txt
+006CDFD0	S16	SuperClass::Save	IPersistStream::Save 转发: 3 栈参(this,pStm,fClearDirty) -> call 0x410320(AbstractClass::Save), ret 0xC	[已证]	EVIDENCE/E04_proof_candidates.txt; docs/re/superweapon_re.md:708-721
+006CE220	S16	~SuperClass	标量删除析构: call dtor 0x6CB120; test byte [esp+8]&1 -> 条件 call operator delete 0x7C8B3D; ret 4	[已证]	EVIDENCE/E04_proof_candidates.txt; docs/re/superweapon_re.md:47,327
+006CE8D0	S16	SuperWeaponTypeClass::Save	IPersistStream::Save 转发: 3 栈参 -> call 0x410320(AbstractClass::Save), ret 0xC	[已证]	EVIDENCE/E04_proof_candidates.txt
+006CEFE0	S16	~SuperWeaponTypeClass	标量删除析构: call dtor 0x4109C0; test byte [esp+0xC]&1 -> 条件 call operator delete 0x7C8B3D; ret 4	[已证]	EVIDENCE/E04_proof_candidates.txt

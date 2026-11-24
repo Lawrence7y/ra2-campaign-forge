@@ -1,0 +1,28 @@
+== 独立初始化 #1 ==
+image sha256: 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+sha==EXPECT_SHA: True
+coverage: (99.99837567729335, 1394120, 66)
+== 独立初始化 #2 ==
+coverage: (99.99837567729335, 1394120, 66)
+== ③ 原始字节 ==
+rd(0x55DE7E,1).hex = 42 (期望 42 = inc edx)
+rd(0x55DE81,6).hex = 891584eda800 (期望 891584eda800 = mov [0xa8ed84],edx)
+== ④ 指令流上下文 0x55DE73..0x55DE8C ==
+0055DE71  7555               jne 0x55dec8
+0055DE73  8b1584eda800       mov edx, dword ptr [0xa8ed84]
+0055DE79  a18477b000         mov eax, dword ptr [0xb07784]
+0055DE7E  42                 inc edx
+0055DE7F  3bc7               cmp eax, edi
+0055DE81  891584eda800       mov dword ptr [0xa8ed84], edx
+0055DE87  7411               je 0x55de9a
+0055DE89  8bca               mov ecx, edx
+0055DE8B  3bc1               cmp eax, ecx
+0055DE8D  7d0b               jge 0x55de9a
+0055DE8F  e8fc631200         call 0x684290
+== ② func_rets(0x55D360,0x55DF00) ==
+['0x55d877', '0x55dec7', '0x55dedb']
+== ⑤ reach_without ==
+0x55D877 in R = True
+0x55DEC7 in R = False
+0x55DEDB in R = True
+|R| = 787

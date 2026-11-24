@@ -1,0 +1,3 @@
+# a-S17-ENGFAM — SUMMARY
+
+**34 行中实质 PASS 34 行 / FAIL 0 行**（verdict.tsv 同步；无一行 FAIL，无一行属「措辞掩盖了实质」）。模板成立，范围 = 35 个物理实例（01–35 连号，含被名族排除的 #17 槽 0x6805F0 = `DynamicVectorClass<PAVSideClass>` 的「Sides」块）；实例间唯一差异是 Save_Core(0x67D300) 传入的 edx .bss 向量，35 个向量已逐个用构造写入 + RTTI TD 名定死元素类（FactoryClass…RadSiteClass）——语义尾缀「class name unproven (arg .bss obj)」属**当时没查**，现已查实。③ 按 ③b④（完整循环 I/O：Write(&Count,4,NULL) → 有界循环 QI(IID_IPersistStream)→OleSaveToStream→Release，栈外写）+ ③b②（HRESULT 可证伪返回）成立；④ 的调用链自 PE 入口 0x7CD80F 正向可达（3 根全达）且反向闭包含 81 个 RTTI 虚表成员，非 direct-only 死链。**计数：若按读法 Y 全剔，S17 为 21；若按实质复核结果，S17 为 21 + 34 = 55**（即原有 proved_strict=55 全数获得实质背书）。

@@ -1,0 +1,56 @@
+=== A. 0x4D3E37.. call 0x4CBBA0 (caller pushes 0x7D0) ===
+004D3E37 51                 push ecx
+004D3E38 53                 push ebx
+004D3E39 6a00               push 0
+004D3E3B 68d0070000         push 0x7d0
+004D3E40 8d8424c01f0000     lea eax, [esp + 0x1fc0]
+004D3E47 52                 push edx
+004D3E48 50                 push eax
+004D3E49 8bcd               mov ecx, ebp
+
+=== B. 0x4CBBA0..0x4CBC3B (CallFindPath body) ===
+004CBBA0 83ec14             sub esp, 0x14
+004CBBA3 56                 push esi
+004CBBA4 8bf1               mov esi, ecx
+004CBBA6 57                 push edi
+004CBBA7 8d4c2410           lea ecx, [esp + 0x10]
+004CBBAB 8b06               mov eax, dword ptr [esi]
+004CBBAD 6a00               push 0
+004CBBAF 51                 push ecx
+004CBBB0 8bce               mov ecx, esi
+004CBBB2 ff504c             call dword ptr [eax + 0x4c]
+004CBBB5 8bc8               mov ecx, eax
+004CBBB7 8b7c2424           mov edi, dword ptr [esp + 0x24]
+004CBBBB 8b01               mov eax, dword ptr [ecx]
+004CBBBD 99                 cdq 
+004CBBBE 81e2ff000000       and edx, 0xff
+004CBBC4 03c2               add eax, edx
+004CBBC6 c1f808             sar eax, 8
+004CBBC9 668944240c         mov word ptr [esp + 0xc], ax
+004CBBCE 8b4104             mov eax, dword ptr [ecx + 4]
+004CBBD1 99                 cdq 
+004CBBD2 81e2ff000000       and edx, 0xff
+004CBBD8 03c2               add eax, edx
+004CBBDA c1f808             sar eax, 8
+004CBBDD 668944240e         mov word ptr [esp + 0xe], ax
+004CBBE2 8b54240c           mov edx, dword ptr [esp + 0xc]
+004CBBE6 85ff               test edi, edi
+004CBBE8 89542408           mov dword ptr [esp + 8], edx
+004CBBEC 750a               jne 0x4cbbf8
+004CBBEE 5f                 pop edi
+004CBBEF 33c0               xor eax, eax
+004CBBF1 5e                 pop esi
+004CBBF2 83c414             add esp, 0x14
+004CBBF5 c21800             ret 0x18
+
+=== C. 0x429D51..0x429D65 (SearchCore budget rewrite) ===
+00429D51 8b442470           mov eax, dword ptr [esp + 0x70]
+00429D55 85c0               test eax, eax
+00429D57 7d08               jge 0x429d61
+00429D59 c7442470f7ff0000   mov dword ptr [esp + 0x70], 0xfff7
+00429D61 8b442414           mov eax, dword ptr [esp + 0x14]
+00429D65 85c0               test eax, eax
+
+=== D. raw bytes check ===
+0x429D59..0x429D60 = c7442470f7ff00008b44
+0x4CBC1B..0x4CBC22 = 506aff6aff8954241457

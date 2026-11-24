@@ -1,0 +1,694 @@
+W7_C_PROBE_START 2026-11-05T22:17:31
+PYTHON 3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]
+
+==============================================================================
+0. 被核对象 SHA256 / 字节数（本次实算，二进制读流）
+==============================================================================
+card_0087E8E0.md           size= 44403 sha256=e3afe2abb9bcac4be6f7e9666a836c6dff3499e4be9796ab568c6347bd1534b8
+card_00A8EC34.md           size= 31647 sha256=6cde19c881ab09f6f7b1246fe75dbc41d7538d0dbba59c9b528db9b35d821b46
+card_00B0CE88.md           size= 32262 sha256=c16cf1f3a3e5c254f8c232534a738ca24ced23803051f0fdb1e6145fc33ea578
+card_00A8ED50.md           size= 37864 sha256=a5926b6398879f880c7fe0c1726fec4a29306c9670bfcc67dad67aca36f3325e
+Q2_ALPHA.md                size= 31712 sha256=27055e6b94f892c6a53facc07adf908688c151eca82cfe56da8133cee8507663
+Q3_FRAME_EDGE_SPEC.md      size= 38799 sha256=0d3e13875855ea4b5d36f22e6f622916ac15b479944767fe4d067aaee5639c5d
+Q4_REDLINE.md              size= 23037 sha256=2189d17a115249e20d9f31465d7ec38535b10c10904db5c32212a5ecc886c329
+TOTAL_BYTES_7 239724
+COMPOSITE_SHA256_of_concat_in_table_order f323f77dd0f64fc9c1a2edfb138ece70667418ed11bac0987ef1918e7ac0b579
+
+==============================================================================
+1. 目标镜像 Engine() 绑定与覆盖率
+==============================================================================
+EXE_SHA256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+EXPECT_SHA256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+EXE_SHA_MATCH True
+IMAGE_BASE 0x400000
+COVERAGE(pct,insns,resync) (99.99837567729335, 1394120, 66)
+SECTIONS [('.text', '0x401000', '0x3df38d', '0x1000', '0x3e0000'), ('.rdata', '0x7e1000', '0x30074', '0x3e1000', '0x31000'), ('.data', '0x812000', '0x367be4', '0x412000', '0x6c000'), ('.rsrc', '0xb7a000', '0x18128', '0x47e000', '0x19000'), ('.detour', '0xb93000', '0x2718', '0x497000', '0x3000')]
+-- building direct-call census over full stream (single pass) --
+  CALLERS 0x42A5B0 count=3 ['0x42c90d', '0x42cc80', '0x42d17d']
+  CALLERS 0x42C900 count=2 ['0x4cbc31', '0x504dae']
+  CALLERS 0x42D170 count=18 ['0x4d3c9c', '0x4d4401', '0x4d4727', '0x4d4828', '0x4d48e3', '0x4d4907', '0x4d4a5e', '0x4d679e', '0x4d684a', '0x4dcda8', '0x504b6a', '0x522314', '0x587e84', '0x587f0a', '0x587f7a', '0x587ff2', '0x64d64b', '0x7460dd']
+  CALLERS 0x6D2790 count=58 ['0x42428f', '0x442184', '0x445d70', '0x44e591', '0x4807b4', '0x480c8f', '0x480e0c', '0x485384', '0x485a0f', '0x485ad3', '0x486124', '0x486270', '0x486366', '0x486fd1', '0x48735d', '0x4875fd', '0x48a094', '0x48a20f', '0x4a1a78', '0x4a1bdc', '0x4d1338', '0x4d184b', '0x56c1c7', '0x56ea98', '0x56ec53']
+  CALLERS 0x6D3D10 count=3 ['0x4f44df', '0x4f44f4', '0x4f4515']
+  CALLERS 0x6F8DF0 count=2 ['0x445f68', '0x4d9942']
+
+==============================================================================
+2. 对① C1 判定：代际戳「尝试代理 / 不能说展开很多节点」的字节底座
+==============================================================================
+-- ResetWorkspace W1 自增/写回 + 回绕早退 jne : disasm(0x42A5F0, 0x20) --
+  0x0042a5f0 7497                     je       0x42a589
+  0x0042a5f2 fc                       cld      
+  0x0042a5f3 8b38                     mov      edi, dword ptr [eax]
+  0x0042a5f5 3bd7                     cmp      edx, edi
+  0x0042a5f7 7ef2                     jle      0x42a5eb
+  0x0042a5f9 8930                     mov      dword ptr [eax], esi
+  0x0042a5fb 8b4128                   mov      eax, dword ptr [ecx + 0x28]
+  0x0042a5fe 40                       inc      eax
+  0x0042a5ff 894128                   mov      dword ptr [ecx + 0x28], eax
+  0x0042a602 0f8580000000             jne      0x42a688
+  0x0042a608 a1dcc28900               mov      eax, dword ptr [0x89c2dc]
+  0x0042a60d 0fafc0                   imul     eax, eax
+-- 回绕全清分支尾部 W2 第二次自增（+2 跳 0） : disasm(0x42A67F, 0x10) --
+  0x0042a67f 8b4128                   mov      eax, dword ptr [ecx + 0x28]
+  0x0042a682 5d                       pop      ebp
+  0x0042a683 40                       inc      eax
+  0x0042a684 5b                       pop      ebx
+  0x0042a685 894128                   mov      dword ptr [ecx + 0x28], eax
+  0x0042a688 5f                       pop      edi
+  0x0042a689 5e                       pop      esi
+  0x0042a68a 83c408                   add      esp, 8
+  0x0042a68d c3                       ret      
+  0x0042a68e 90                       nop      
+-- 构造函数体：初值 -1 / W3 写 +0x28 : disasm(0x42A6D0, 0x38) --
+  0x0042a6d0 83ec0c                   sub      esp, 0xc
+  0x0042a6d3 b001                     mov      al, 1
+  0x0042a6d5 53                       push     ebx
+  0x0042a6d6 55                       push     ebp
+  0x0042a6d7 56                       push     esi
+  0x0042a6d8 8bf1                     mov      esi, ecx
+  0x0042a6da 33db                     xor      ebx, ebx
+  0x0042a6dc 83c9ff                   or       ecx, 0xffffffff
+  0x0042a6df 57                       push     edi
+  0x0042a6e0 881e                     mov      byte ptr [esi], bl
+  0x0042a6e2 885e01                   mov      byte ptr [esi + 1], bl
+  0x0042a6e5 885e02                   mov      byte ptr [esi + 2], bl
+  0x0042a6e8 884603                   mov      byte ptr [esi + 3], al
+  0x0042a6eb c746040000803f           mov      dword ptr [esi + 4], 0x3f800000
+  0x0042a6f2 884608                   mov      byte ptr [esi + 8], al
+  0x0042a6f5 895e18                   mov      dword ptr [esi + 0x18], ebx
+  0x0042a6f8 895e1c                   mov      dword ptr [esi + 0x1c], ebx
+  0x0042a6fb 895e20                   mov      dword ptr [esi + 0x20], ebx
+  0x0042a6fe 895e24                   mov      dword ptr [esi + 0x24], ebx
+  0x0042a701 894e28                   mov      dword ptr [esi + 0x28], ecx
+  0x0042a704 894e2c                   mov      dword ptr [esi + 0x2c], ecx
+-- 同步重试层 0x42CC80 再次 call 0x42A5B0 : disasm(0x42CC70, 0x30) --
+  0x0042cc70 3c56                     cmp      al, 0x56
+  0x0042cc72 47                       inc      edi
+  0x0042cc73 8bcd                     mov      ecx, ebp
+  0x0042cc75 897c2440                 mov      dword ptr [esp + 0x40], edi
+  0x0042cc79 e852000000               call     0x42ccd0
+  0x0042cc7e 8bcd                     mov      ecx, ebp
+  0x0042cc80 e82bd9ffff               call     0x42a5b0
+  0x0042cc85 8a5538                   mov      dl, byte ptr [ebp + 0x38]
+  0x0042cc88 8b4c241c                 mov      ecx, dword ptr [esp + 0x1c]
+  0x0042cc8c 84d2                     test     dl, dl
+  0x0042cc8e 0f95c0                   setne    al
+  0x0042cc91 3bf9                     cmp      edi, ecx
+  0x0042cc93 8844244c                 mov      byte ptr [esp + 0x4c], al
+  0x0042cc97 7d27                     jge      0x42ccc0
+  0x0042cc99 84c0                     test     al, al
+-- 另一入口 0x42D170 prologue : disasm(0x42D170, 0x14) --
+  0x0042d170 83ec08                   sub      esp, 8
+  0x0042d173 53                       push     ebx
+  0x0042d174 55                       push     ebp
+  0x0042d175 8bd9                     mov      ebx, ecx
+  0x0042d177 56                       push     esi
+  0x0042d178 57                       push     edi
+  0x0042d179 c6433801                 mov      byte ptr [ebx + 0x38], 1
+  0x0042d17d e82ed4ffff               call     0x42a5b0
+-- 另一入口：递增早于可能失败的检查 0x42D229 : disasm(0x42D220, 0x14) --
+  0x0042d220 8bcb                     mov      ecx, ebx
+  0x0042d222 e869f0ffff               call     0x42c290
+  0x0042d227 84c0                     test     al, al
+  0x0042d229 0f8423020000             je       0x42d452
+  0x0042d22f 8b7c241c                 mov      edi, dword ptr [esp + 0x1c]
+-- SearchCore 栈局部 [esp+0x28]（节点轮数，非本 VA） : disasm(0x429AB0, 0x10) --
+  0x00429ab0 00c1                     add      cl, al
+  0x00429ab2 e109                     loope    0x429abd
+  0x00429ab4 03ca                     add      ecx, edx
+  0x00429ab6 c744242800000000         mov      dword ptr [esp + 0x28], 0
+IMM_mov_ecx_0x87E8B8 count=28 ['0x40afa0', '0x40afc0', '0x4cbc2c', '0x4d3c97', '0x4d43fc', '0x4d4722', '0x4d4823', '0x4d48de', '0x4d48fe', '0x4d4a59', '0x4d6799', '0x4d6845', '0x4dcda3', '0x504b61', '0x504da9', '0x52230f', '0x5671a0', '0x56721a', '0x581f77', '0x584d86', '0x584e2b', '0x587e76', '0x587efc', '0x587f6c', '0x587fe4', '0x64d646', '0x68519c', '0x7460d8']
+RAW_E8_to_0x42A5B0 count=3 ['0x42c90d', '0x42cc80', '0x42d17d']
+C1_NOTE 节点展开量在 SearchCore 的 [esp+0x28]（见 0x429AB6/0x42A3D4），不是 [this+0x28]
+
+==============================================================================
+3. 对② C2 判定：脏矩形 Count 语义 + W3 抄录订正 + DrawIfVisible 零 call
+==============================================================================
+-- Render 判脏段：0x6D3DF0 读 Count / 0x6D3DF5 / 0x6D3DFF / 0x6D3E01 : disasm(0x6D3DE8, 0x28) --
+  0x006d3de8 8a857c0d0000             mov      al, byte ptr [ebp + 0xd7c]
+  0x006d3dee 84c0                     test     al, al
+  0x006d3df0 a188ceb000               mov      eax, dword ptr [0xb0ce88]
+  0x006d3df5 756e                     jne      0x6d3e65
+  0x006d3df7 84c9                     test     cl, cl
+  0x006d3df9 0f859c000000             jne      0x6d3e9b
+  0x006d3dff 85c0                     test     eax, eax
+  0x006d3e01 7566                     jne      0x6d3e69
+  0x006d3e03 8a8d7d0d0000             mov      cl, byte ptr [ebp + 0xd7d]
+  0x006d3e09 84c9                     test     cl, cl
+-- CRT 构造 0x6D1A60：Count 置 0、vptr 绝对地址 : disasm(0x6D1A60, 0x40) --
+  0x006d1a60 33c0                     xor      eax, eax
+  0x006d1a62 68a01a6d00               push     0x6d1aa0
+  0x006d1a67 a37cceb000               mov      dword ptr [0xb0ce7c], eax
+  0x006d1a6c a380ceb000               mov      dword ptr [0xb0ce80], eax
+  0x006d1a71 c60584ceb00001           mov      byte ptr [0xb0ce84], 1
+  0x006d1a78 a285ceb000               mov      byte ptr [0xb0ce85], al
+  0x006d1a7d c70578ceb0009c427f00     mov      dword ptr [0xb0ce78], 0x7f429c
+  0x006d1a87 c7058cceb0000a000000     mov      dword ptr [0xb0ce8c], 0xa
+  0x006d1a91 a388ceb000               mov      dword ptr [0xb0ce88], eax
+  0x006d1a96 e8ef7c0f00               call     0x7c978a
+  0x006d1a9b 59                       pop      ecx
+  0x006d1a9c c3                       ret      
+  0x006d1a9d 90                       nop      
+  0x006d1a9e 90                       nop      
+  0x006d1a9f 90                       nop      
+-- RegisterDirtyArea 序言：ecx 被绝对地址覆盖（证明非 TacticalClass 成员） : disasm(0x6D2790, 0x10) --
+  0x006d2790 83ec58                   sub      esp, 0x58
+  0x006d2793 8b0d88ceb000             mov      ecx, dword ptr [0xb0ce88]
+  0x006d2799 53                       push     ebx
+  0x006d279a 33c0                     xor      eax, eax
+  0x006d279c 55                       push     ebp
+  0x006d279d 56                       push     esi
+  0x006d279e 3bc8                     cmp      ecx, eax
+-- 追加新条目：读 Count / inc / 写回 W3 : disasm(0x6D2A90, 0x20) --
+  0x006d2a90 a4                       movsb    byte ptr es:[edi], byte ptr [esi]
+  0x006d2a91 0000                     add      byte ptr [eax], al
+  0x006d2a93 008b0d88ceb0             add      byte ptr [ebx - 0x4f3177f3], cl
+  0x006d2a99 008d7424548b             add      byte ptr [ebp - 0x74abdb8c], cl
+  0x006d2a9f c141890d                 rol      dword ptr [ecx - 0x77], 0xd
+  0x006d2aa3 88ce                     mov      dh, cl
+  0x006d2aa5 b000                     mov      al, 0
+  0x006d2aa7 8b0d7cceb000             mov      ecx, dword ptr [0xb0ce7c]
+  0x006d2aad 8d0480                   lea      eax, [eax + eax*4]
+-- 独立 Clear 例程 0x6DA980 : disasm(0x6DA980, 0x18) --
+  0x006da980 8b0d88ceb000             mov      ecx, dword ptr [0xb0ce88]
+  0x006da986 85c9                     test     ecx, ecx
+  0x006da988 7e3b                     jle      0x6da9c5
+  0x006da98a 56                       push     esi
+  0x006da98b 57                       push     edi
+  0x006da98c 7e35                     jle      0x6da9c3
+  0x006da98e 49                       dec      ecx
+  0x006da98f 33d2                     xor      edx, edx
+  0x006da991 85c9                     test     ecx, ecx
+DISP_HITS_0xB0CE88 [('0x6d1a91', 'W', 'mov', 'dword ptr [0xb0ce88], eax'), ('0x6d2793', 'R', 'mov', 'ecx, dword ptr [0xb0ce88]'), ('0x6d2983', 'R', 'mov', 'eax, dword ptr [0xb0ce88]'), ('0x6d2995', 'W', 'mov', 'dword ptr [0xb0ce88], eax'), ('0x6d29b8', 'R', 'cmp', 'edx, dword ptr [0xb0ce88]'), ('0x6d2a01', 'R', 'mov', 'ecx, dword ptr [0xb0ce88]'), ('0x6d2a94', 'R', 'mov', 'ecx, dword ptr [0xb0ce88]'), ('0x6d2aa1', 'W', 'mov', 'dword ptr [0xb0ce88], ecx'), ('0x6d2b75', 'R', 'mov', 'esi, dword ptr [0xb0ce88]'), ('0x6d2c93', 'R', 'mov', 'eax, dword ptr [0xb0ce88]'), ('0x6d2ca1', 'W', 'mov', 'dword ptr [0xb0ce88], eax'), ('0x6d2cc2', 'R', 'cmp', 'edx, dword ptr [0xb0ce88]'), ('0x6d2f84', 'R', 'mov', 'eax, dword ptr [0xb0ce88]'), ('0x6d31dd', 'R', 'mov', 'eax, dword ptr [0xb0ce88]'), ('0x6d33c1', 'R', 'mov', 'eax, dword ptr [0xb0ce88]'), ('0x6d35ad', 'R', 'mov', 'eax, dword ptr [0xb0ce88]'), ('0x6d378e', 'R', 'mov', 'eax, dword ptr [0xb0ce88]'), ('0x6d3850', 'R', 'mov', 'edx, dword ptr [0xb0ce88]'), ('0x6d3988', 'R', 'mov', 'eax, dword ptr [0xb0ce88]'), ('0x6d3bd8', 'R', 'mov', 'eax, dword ptr [0xb0ce88]'), ('0x6d3df0', 'R', 'mov', 'eax, dword ptr [0xb0ce88]'), ('0x6d44fc', 'R', 'mov', 'ecx, dword ptr [0xb0ce88]'), ('0x6d451c', 'W', 'mov', 'dword ptr [0xb0ce88], ecx'), ('0x6d453c', 'R', 'mov', 'ecx, dword ptr [0xb0ce88]'), ('0x6da980', 'R', 'mov', 'ecx, dword ptr [0xb0ce88]'), ('0x6da993', 'W', 'mov', 'dword ptr [0xb0ce88], ecx'), ('0x6da9b5', 'R', 'mov', 'ecx, dword ptr [0xb0ce88]')]
+RDA_callers_in_[0x5F4B10,0x5F4D30) count=0 []
+RDA_callers_total count=58
+RET_in_[0x5F4B10,0x5F4D40) [('0x5f4b85', 'c20c00', 'ret', '0xc'), ('0x5f4d0c', 'c20c00', 'ret', '0xc'), ('0x5f4d2d', 'c3', 'ret', '')]
+RAW_0x6D3DF5_8B 756e84c90f859c00
+RAW_0x6D3DFF_8B 85c075668a8d7d0d
+
+==============================================================================
+4. 对③ C4 判定：唯一写点 / 入口无条件自增 / 早退在写回之后
+==============================================================================
+-- Greatest_Threat 序言：读 / inc / 写回 / 早退 ret : disasm(0x6F8DF0, 0x60) --
+  0x006f8df0 83ec5c                   sub      esp, 0x5c
+  0x006f8df3 8b1534eca800             mov      edx, dword ptr [0xa8ec34]
+  0x006f8df9 53                       push     ebx
+  0x006f8dfa 55                       push     ebp
+  0x006f8dfb 56                       push     esi
+  0x006f8dfc 57                       push     edi
+  0x006f8dfd 33ff                     xor      edi, edi
+  0x006f8dff 83cdff                   or       ebp, 0xffffffff
+  0x006f8e02 8bf1                     mov      esi, ecx
+  0x006f8e04 42                       inc      edx
+  0x006f8e05 897c2420                 mov      dword ptr [esp + 0x20], edi
+  0x006f8e09 891534eca800             mov      dword ptr [0xa8ec34], edx
+  0x006f8e0f 8b06                     mov      eax, dword ptr [esi]
+  0x006f8e11 896c241c                 mov      dword ptr [esp + 0x1c], ebp
+  0x006f8e15 896c243c                 mov      dword ptr [esp + 0x3c], ebp
+  0x006f8e19 ff9084000000             call     dword ptr [eax + 0x84]
+  0x006f8e1f 8a88200d0000             mov      cl, byte ptr [eax + 0xd20]
+  0x006f8e25 84c9                     test     cl, cl
+  0x006f8e27 741b                     je       0x6f8e44
+  0x006f8e29 8b8e1c020000             mov      ecx, dword ptr [esi + 0x21c]
+  0x006f8e2f e8fc28e1ff               call     0x50b730
+  0x006f8e34 84c0                     test     al, al
+  0x006f8e36 740c                     je       0x6f8e44
+  0x006f8e38 5f                       pop      edi
+  0x006f8e39 5e                       pop      esi
+  0x006f8e3a 5d                       pop      ebp
+  0x006f8e3b 33c0                     xor      eax, eax
+  0x006f8e3d 5b                       pop      ebx
+  0x006f8e3e 83c45c                   add      esp, 0x5c
+  0x006f8e41 c20c00                   ret      0xc
+  0x006f8e44 8b5c2470                 mov      ebx, dword ptr [esp + 0x70]
+  0x006f8e48 f6c301                   test     bl, 1
+  0x006f8e4b 757b                     jne      0x6f8ec8
+  0x006f8e4d 8b16                     mov      edx, dword ptr [esi]
+DISP_HITS_0xA8EC34 [('0x6f8df3', 'R', 'mov', 'edx, dword ptr [0xa8ec34]'), ('0x6f8e09', 'W', 'mov', 'dword ptr [0xa8ec34], edx')]
+CALLERS_0x6F8DF0 count=2 ['0x445f68', '0x4d9942']
+JCC_CMP_TEST_CALL_between_0x6F8DF0_and_0x6F8E09 count=0 []
+RET_in_[0x6F8DF0,0x6F9DB0) ['0x6f8e41', '0x6f9b52', '0x6f9b6b', '0x6f9dac']
+RAW_LE_DWORD_0xA8EC34_whole_file_count 2
+-- hook source line existence --
+  EXISTS ra2render\dllmain.cpp lines=53 range=(20, 35)
+    L27 case DLL_PROCESS_ATTACH:
+    L31 InstallVTableHooks();
+  EXISTS ra2render\blitter_hooks.cpp lines=3887 range=(1340, 1420)
+    L1342 // 006F8DF0: 83 EC 5C          sub esp, 0x5C           (3 字节)
+    L1345 static uint8_t s_origGreatestThreatBytes[9] = {0};
+    L1346 static uint8_t s_greatestThreatTrampoline[16] = {0};
+    L1360 uint32_t unitHash = ThrottleKey(pThis);   // 缺陷2：确定性分片键
+    L1362 int interval = GetEffectiveTargetScanInterval();
+    L1363 if (interval > 1 && currentFrame > 0) {
+    L1364 if (((unitHash + currentFrame) % static_cast<uint32_t>(interval)) != 0) {
+    L1365 g_telemetry.throttledTargetScans++;
+    L1374 if (g_pOrigTechnoGreatestThreat) {
+    L1375 return g_pOrigTechnoGreatestThreat(pThis, arg1, arg2, arg3);
+    L1384 static bool InstallGreatestThreatHook() {
+    L1385 memcpy(s_origGreatestThreatBytes, reinterpret_cast<void*>(ADDR_ORIG_TECHNO_GREATEST_THREAT), 9);
+    L1388 if (!VirtualProtect(s_greatestThreatTrampoline, sizeof(s_greatestThreatTrampoline), PAGE_EXECUTE_READWRITE, &oldProtect)) {
+    L1389 LogMessage("[ra2render-target] 错误：无法设置 Greatest_Threat Trampoline 内存权限");
+    L1394 memcpy(s_greatestThreatTrampoline, s_origGreatestThreatBytes, 9);
+    L1395 s_greatestThreatTrampoline[9] = 0xE9; // JMP rel32
+    L1396 int32_t jmpBack = static_cast<int32_t>((ADDR_ORIG_TECHNO_GREATEST_THREAT + 9) - (reinterpret_cast<uintptr_t>(s_greatestThreatTrampoline) + 14));
+    L1397 memcpy(&s_greatestThreatTrampoline[10], &jmpBack, sizeof(int32_t));
+    L1399 g_pOrigTechnoGreatestThreat = reinterpret_cast<FnGreatestThreat>(reinterpret_cast<void*>(s_greatestThreatTrampoline));
+    L1406 // 安装 9 字节 Inline Hook：E9 <rel32> + 4 个 0x90 (NOP)
+    L1408 patch[0] = 0xE9;
+  EXISTS ra2render\blitter_hooks.cpp lines=3887 range=(3775, 3790)
+    L3782 InstallGreatestThreatHook();
+  EXISTS ra2render\ra2render.ini lines=262 range=(18, 30)
+    L22 ; TargetScanInterval: 分散敌对目标全图扫描频率（帧数），默认 8（约 0.25 秒轮询一次）
+    L25 TargetScanInterval=8
+
+==============================================================================
+5. 对④ Bullet 量纲：瞬时水位 / 注册对象 Count / +0x98 与 +0x90 二道门
+==============================================================================
+-- 主更新循环：Count 作倒序边界 + 对象 +0x98 一字节活跃标志门控 : disasm(0x55B93F, 0x30) --
+  0x0055b93f a150eda800               mov      eax, dword ptr [0xa8ed50]
+  0x0055b944 8d70ff                   lea      esi, [eax - 1]
+  0x0055b947 85f6                     test     esi, esi
+  0x0055b949 7c1b                     jl       0x55b966
+  0x0055b94b 8b0d44eda800             mov      ecx, dword ptr [0xa8ed44]
+  0x0055b951 8b0cb1                   mov      ecx, dword ptr [ecx + esi*4]
+  0x0055b954 8a8198000000             mov      al, byte ptr [ecx + 0x98]
+  0x0055b95a 84c0                     test     al, al
+  0x0055b95c 7405                     je       0x55b963
+  0x0055b95e 8b11                     mov      edx, dword ptr [ecx]
+  0x0055b960 ff525c                   call     dword ptr [edx + 0x5c]
+  0x0055b963 4e                       dec      esi
+  0x0055b964 79e5                     jns      0x55b94b
+  0x0055b966 a150eba800               mov      eax, dword ptr [0xa8eb50]
+  0x0055b96b 8d70ff                   lea      esi, [eax - 1]
+-- BulletClass::Update 体：+0x90 二道门 je 0x467FEE 早退 : disasm(0x4666E0, 0x30) --
+  0x004666e0 55                       push     ebp
+  0x004666e1 8bec                     mov      ebp, esp
+  0x004666e3 83e4f8                   and      esp, 0xfffffff8
+  0x004666e6 81ec98010000             sub      esp, 0x198
+  0x004666ec 53                       push     ebx
+  0x004666ed 55                       push     ebp
+  0x004666ee 56                       push     esi
+  0x004666ef 57                       push     edi
+  0x004666f0 8be9                     mov      ebp, ecx
+  0x004666f2 e879d71800               call     0x5f3e70
+  0x004666f7 8a8590000000             mov      al, byte ptr [ebp + 0x90]
+  0x004666fd 84c0                     test     al, al
+  0x004666ff 0f84e9180000             je       0x467fee
+  0x00466705 8a8558010000             mov      al, byte ptr [ebp + 0x158]
+  0x0046670b 84c0                     test     al, al
+  0x0046670d 747a                     je       0x466789
+-- 二道门早退落点 pop/ret : disasm(0x467FEE, 0x10) --
+  0x00467fee 5f                       pop      edi
+  0x00467fef 5e                       pop      esi
+  0x00467ff0 5d                       pop      ebp
+  0x00467ff1 5b                       pop      ebx
+  0x00467ff2 8be5                     mov      esp, ebp
+  0x00467ff4 5d                       pop      ebp
+  0x00467ff5 c3                       ret      
+  0x00467ff6 90                       nop      
+  0x00467ff7 90                       nop      
+  0x00467ff8 90                       nop      
+  0x00467ff9 90                       nop      
+  0x00467ffa 90                       nop      
+  0x00467ffb 90                       nop      
+  0x00467ffc 90                       nop      
+  0x00467ffd 90                       nop      
+-- 基类构造：+0x90 初值 1 / +0x98 初值 0 : disasm(0x5F3928, 0x10) --
+  0x005f3928 46                       inc      esi
+  0x005f3929 7888                     js       0x5f38b3
+  0x005f392b 868100000088             xchg     byte ptr [ecx - 0x78000000], al
+  0x005f3931 869000000088             xchg     byte ptr [eax - 0x78000000], dl
+DISP_HITS_0xA8ED50 [('0x46646d', 'R', 'mov', 'ecx, dword ptr [0xa8ed50]'), ('0x4664a2', 'R', 'mov', 'ecx, dword ptr [0xa8ed50]'), ('0x4664ab', 'W', 'mov', 'dword ptr [0xa8ed50], ecx'), ('0x466623', 'R', 'mov', 'ecx, dword ptr [0xa8ed50]'), ('0x466630', 'W', 'mov', 'dword ptr [0xa8ed50], ecx'), ('0x466646', 'R', 'mov', 'ecx, dword ptr [0xa8ed50]'), ('0x4e6891', 'W', 'mov', 'dword ptr [0xa8ed50], eax'), ('0x5344cb', 'R', 'cmp', 'dword ptr [0xa8ed50], ebx'), ('0x5344e0', 'R', 'cmp', 'dword ptr [0xa8ed50], ebx'), ('0x55b93f', 'R', 'mov', 'eax, dword ptr [0xa8ed50]'), ('0x650534', 'R', 'mov', 'eax, dword ptr [0xa8ed50]'), ('0x650571', 'R', 'mov', 'eax, dword ptr [0xa8ed50]'), ('0x67cc5f', 'R', 'mov', 'eax, dword ptr [0xa8ed50]'), ('0x67cc7d', 'R', 'mov', 'eax, dword ptr [0xa8ed50]'), ('0x7193cc', 'R', 'mov', 'eax, dword ptr [0xa8ed50]')]
+-- Q2_ALPHA §2.2 segment [3] reproduced --
+  0x0055b93f a150eda800               mov      eax, dword ptr [0xa8ed50]
+  0x0055b944 8d70ff                   lea      esi, [eax - 1]
+  0x0055b947 85f6                     test     esi, esi
+  0x0055b949 7c1b                     jl       0x55b966
+  0x0055b94b 8b0d44eda800             mov      ecx, dword ptr [0xa8ed44]
+  0x0055b951 8b0cb1                   mov      ecx, dword ptr [ecx + esi*4]
+  0x0055b954 8a8198000000             mov      al, byte ptr [ecx + 0x98]
+  0x0055b95a 84c0                     test     al, al
+  0x0055b95c 7405                     je       0x55b963
+  0x0055b95e 8b11                     mov      edx, dword ptr [ecx]
+  0x0055b960 ff525c                   call     dword ptr [edx + 0x5c]
+  0x0055b963 4e                       dec      esi
+-- Add 路径 inc ecx / 写回 Count（+1） : disasm(0x4664A0, 0x10) --
+  0x004664a0 7418                     je       0x4664ba
+  0x004664a2 8b0d50eda800             mov      ecx, dword ptr [0xa8ed50]
+  0x004664a8 8bc1                     mov      eax, ecx
+  0x004664aa 41                       inc      ecx
+-- Del 路径 dec ecx / 写回 Count（-1） : disasm(0x466623, 0x14) --
+  0x00466623 8b0d50eda800             mov      ecx, dword ptr [0xa8ed50]
+  0x00466629 3bc1                     cmp      eax, ecx
+  0x0046662b 7d23                     jge      0x466650
+  0x0046662d 49                       dec      ecx
+  0x0046662e 3bc1                     cmp      eax, ecx
+  0x00466630 890d50eda800             mov      dword ptr [0xa8ed50], ecx
+
+==============================================================================
+6. 对⑤ 5 读口径与 alpha 不可解：算术与文本口径
+==============================================================================
+FOUR_VA_ASC ['0x87e8e0', '0xa8ec34', '0xa8ed50', '0xb0ce88']
+SPAN_max_minus_min 2680232 = 0x28E5A8
+PAYLOAD_4x4 16 B ; READS_incl_f_post 20 B nominal
+BASELINE 500 calls/s *4 = 2000 B/s ; +1Hz*8 = 32 B/s ; total 508 calls/s 2032 B/s
+LAMBDA 5.9952     Q2:52 1000/166.8         20B/s=   119.90 5calls/s=   29.98 24B/s=   143.88 6calls/s=   35.97
+LAMBDA 6.0000     W3:237                   20B/s=   120.00 5calls/s=   30.00 24B/s=   144.00 6calls/s=   36.00
+LAMBDA 19.8112    FB:165 1000/50.4764      20B/s=   396.22 5calls/s=   99.06 24B/s=   475.47 6calls/s=  118.87
+LAMBDA 30.2016    FB:166 1000/33.1108      20B/s=   604.03 5calls/s=  151.01 24B/s=   724.84 6calls/s=  181.21
+LAMBDA 30.8426    FB:167 1000/32.4227      20B/s=   616.85 5calls/s=  154.21 24B/s=   740.22 6calls/s=  185.06
+LAMBDA 31.2500    W3:237                   20B/s=   625.00 5calls/s=  156.25 24B/s=   750.00 6calls/s=  187.50
+LAMBDA 500.0000   cap                      20B/s= 10000.00 5calls/s= 2500.00 24B/s= 12000.00 6calls/s= 3000.00
+P50 166.80000000000001     -> lambda 5.995204
+P50 50.47639999247622      -> lambda 19.811239
+P50 33.11079999548383      -> lambda 30.201626
+P50 32.42269999464042      -> lambda 30.842589
+GAP 0x0087E8E0 -> 0x00A8EC34 = 2163540 B = 0x210354
+GAP 0x00A8EC34 -> 0x00A8ED50 = 284 B = 0x11C
+GAP 0x00A8ED50 -> 0x00A8ED84 = 52 B = 0x34
+GAP 0x00A8ED84 -> 0x00B0CE88 = 516356 B = 0x7E104
+REF_EXISTS lead\re_line_20261105\D21_RULING\RULING_D21.md True
+   contains '每沿新增 5 次'         -> False
+   contains '20 B'             -> True
+   contains 'S0'               -> True
+REF_EXISTS lead\re_line_20261105\V6_V3_REVIEW\V6_V3_REVIEW.md True
+   contains 'CONFIRMED'        -> True
+   contains '5 次'              -> True
+REF_EXISTS lead\re_line_20261105\W4_FIELD_SPEC\TASK.md True
+   contains '每沿'               -> False
+
+==============================================================================
+7. C2 项：逐文件「未验/未核实」标记、诚实账落点、同句强断言扫描
+==============================================================================
+
+### FILE card_0087E8E0.md  lines=462  marker_lines=39  ledger_heads=4  marker+strong_cooccur=4
+  LEDGER_HEADS [311, 413, 444, 450]
+  MARKER+LONG_LEDGER_LINES []
+  CO_L10 > `:27`「不得换算为可见单位数、实际工作量或耗时」、`:28-29`「1 Hz 充分／满秩解耦降未证；≥10 Hz 非定谳」、
+  CO_L314 本次只穷尽 `E8/E9` rel32，**未验**（`FACTBASE_D17.md:79` 自陈「未声称全体交叉引用已穷尽」）。
+  CO_L374 1. **运行期有效性未验**：零真机，未读活进程，未验证实测值、回绕是否发生、重试触发频率
+  CO_L433 | `D17D18_RULING/FACTBASE_D17.md:1-5`、`:26-29`、`:39-50`、`:52-79` | 开头「仅静态读取原文和原始 PE；未运行游戏、未读写活进程」；`:28`「未声称已穷尽所有间接调用与字段写点」；`:79` 诚实账 |
+  M_L10 > `:27`「不得换算为可见单位数、实际工作量或耗时」、`:28-29`「1 Hz 充分／满秩解耦降未证；≥10 Hz 非定谳」、
+  M_L36 运行期有效性／间接别名写／读档生命周期／符号名与符号性／两级授权均未闭合
+  M_L48 | **符号名** | **未定名** | 见下 |
+  M_L50 **为什么填「未定名」而不是 `GenerationStamp` / `PathFinder::Instance.GenerationStamp`**：
+  M_L59 - 按 `TASK.md:44`「若符号名无法确定，写『未定名』，**不得编造**」⇒ **未定名**。
+  M_L74 - **符号性：按字节是「无符号回绕计数器」，但严格符号性未验**。
+  M_L102 `FACTBASE_D19.md:32` 都只列 W1/W2，且 `D17_STATIC_FIELDS.md:68` 明写「入口覆盖是否穷尽」未验、
+  M_L106 ### 3.2 穷尽性的边界（不冒称全穷尽）
+  M_L114 - **未穷尽项（标未验）**：① 通过寄存器别名／虚表／函数指针间接写 `this+0x28`；
+  M_L143 > **其实际调用链未验**；`docs/re/path_cache_oracle_spec.md:53` 的 `IsNodeVisited` 锚
+  M_L153 - **既有 harness 从未采样本 VA**。本次实跑
+  M_L158 与之互证：`W3_COSTBOUND/_w3_probe.py:384`「未采寻路 GenerationStamp(0x87E8B8+0x28)」、
+  M_L176 0x40AFAF  e8 d6 e7 3b 00        call 0x7c978a            ; 注册析构（atexit 形态，函数体未验）
+  M_L190 **CRT 初始化表的遍历时机未验**：`disp_hits(0x8120A8)=[]`（§11 A6），
+  M_L191 本次未进 `0x7C978A`／CRT `initterm` 函数体，故「构造必然在任何搜索之前完成」**未验**；
+  M_L208 **该首次回绕在运行期是否真实发生，取决于构造是否被绕过／加载器是否改写字段——本次零真机，标未验。**
+  M_L220 **该路径是否伴随本字段重置、读档是否恢复该字段，均未验**（`RULING_D19.md:59`、
+  M_L244 | 实际发生次数 | **未验**（零真机） | `FACTBASE_D19.md:32`「未采集活进程83快照」；本卡 §10 |
+  M_L256 | G3 | 重试轮限 | `0x42CB8B..0x42CBA1`：`0x42CB9E 83 c0 05 add eax,5`、`0x42CBA1 89 44 24 1c` ⇒ 上限 5；`0x42CC91 cmp edi,ecx` 比较 | 一次 `FindPath` 内最多 1（入口）+ 4（重试）= 5 次 `ResetWorkspace` 调用（按字节上界，**实际触
+  M_L311 ### 8.4 仍未覆盖（标未验）
+  M_L314 本次只穷尽 `E8/E9` rel32，**未验**（`FACTBASE_D17.md:79` 自陈「未声称全体交叉引用已穷尽」）。
+  M_L315 - `0x42A690`（`IsNodeVisited`）的调用链：`E8/E9` xref = 0，**未验**（§11 A7）。
+  M_L316 - 各入口的**运行期实际触发频率**、场景（读档/切图/多人同步）下的调用分布：**未验**（零真机）。
+  M_L349 | 8 | ❌ 「1 Hz 已完全充分」「四字段满秩完全解耦」「至少 10 Hz」 | `TASK.md:28-29`；`RULING_D19.md:41`、`:100`；`Q3_SAMPLE_PLAN.md:177` alpha 未校准（`RULING_D19.md:20` F4） |
+  M_L353 | 12 | ❌ 「符号名 = `GenerationStamp`」「类型 = 已证实 `uint32_t`」 | §1（无符号表，未定名）、§2（符号性未验） |
+  M_L359 - `df>1` 记漏沿/跨帧聚合；帧号冻结只记持续时段、不宣称业务字段冻结；读失败记 `null` 不补 0
+  M_L374 1. **运行期有效性未验**：零真机，未读活进程，未验证实测值、回绕是否发生、重试触发频率
+  M_L376 2. **间接调用/别名写未穷尽**（§3.2、§8.4）；`FACTBASE_D17.md:79`、
+  M_L378 3. **读档/切图/进程生命周期**下字段是否重置、CRT 初始化链是否必然先于搜索（§5.1、§5.3）**未验**。
+  M_L379 4. **符号名未定名、符号性未验**（§1、§2）；`RULING_D19.md:57` 列为待办。
+  M_L393 全部命令 `python -I -X utf8`，一律只读 `ra2youli/gamemd.exe`，未启动游戏、未读活进程、
+  M_L413 **本次未运行**：游戏/`gamemd.exe`/`ra2loader`/`YURI.exe`、任何活进程内存读取、任何
+  M_L415 未独立复算三窗 p50、未普查 87 窗、未做动态扰动/频率/字段有效性验证。
+  M_L428 | `W3_COSTBOUND/sections/Q3_SAMPLE_PLAN.md:3-5`、`:15-23`、`:27-54`、`:206-211`、`:258-275` | 开头「**本清单是纯方案设计，不是实现！**」；`:22-23` 辅助校验另列视口坐标（附加读）；`:271-275`「我未验」与阈值待授权 |
+  M_L430 | `W3_COSTBOUND/ERRATA_D19_20261105.md:3-7`、`:22-33`、`:45-52`、`:56-64` | 「**`Q3_SAMPLE_PLAN.md` 原文一字未改**；勘误以本文件为准」；`:50-52`「同步重试路径实际触发频率**我未验**」；`:60-61` 诚实账 |
+  M_L432 | `D17_STATIC_FIELDS.md:1-6`、`:17`、`:44-50`、`:63-72` | 开头「**不含任何采样代码、不启动游戏、不读活进程**」；`:68`「我未验：F1 的『入口覆盖』是否穷尽」 |
+  M_L433 | `D17D18_RULING/FACTBASE_D17.md:1-5`、`:26-29`、`:39-50`、`:52-79` | 开头「仅静态读取原文和原始 PE；未运行游戏、未读写活进程」；`:28`「未声称已穷尽所有间接调用与字段写点」；`:79` 诚实账 |
+  M_L450 - **本次未验**：运行期真值、重试/回绕实际触发频率、间接调用与别名写、CRT 初始化时机、
+  M_L452 87 窗普查、任何动态扰动/频率/有效性测试。以上一律标「未验」，未补造数值。
+
+### FILE card_00A8EC34.md  lines=442  marker_lines=35  ledger_heads=3  marker+strong_cooccur=0
+  LEDGER_HEADS [120, 288, 292]
+  MARKER+LONG_LEDGER_LINES [138, 153]
+  M_L24 读档/进程生命周期、以及仓内 `ra2render.dll` 的 9 字节 Inline Hook 门控均未闭合，且授权闸未开。
+  M_L35 | **符号名** | **未定名** | 见下 |
+  M_L46 - 按 `TASK.md:44`「若符号名无法确定，写「未定名」，**不得编造**」⇒ **未定名**。
+  M_L60 - **符号性：未验 / 无静态依据**。`inc edx`（`0x6F8E04`，`42`）对有符号/无符号中性；
+  M_L62 因此无法由指令判 `int32` 还是 `uint32`。`Q3_SAMPLE_PLAN.md:61` 写 `uint32_t` 属假设，不采信为字节结论。
+  M_L113 ### 3.3 未穷尽的部分（**不冒充穷尽**）
+  M_L120 该虚调用目标本次未做间接 CFG/虚表求解 ⇒ **不能排除**它经指针副本覆盖 `[0xA8EC30..0xA8EC37]`。
+  M_L121 `rep movsd` / `memset` 整块拷贝覆盖 `.data` 该区间的可能性同样未穷尽（参照
+  M_L122 `W1_HOLD_SURFACE/W1_HOLD_SURFACE.md:459` 对同型残余的处置：判「静态证据不支持、无已知路径，未验」）。
+  M_L127 > *全部可能的运行期写* **未穷尽**，残余如上，标「未验」，不补造。
+  M_L138 | 既有 Harness | **不读** | `qc151_trip.harness8_v4.py:3831-3841` 的 9 个 `MEASURE_*_VA` 无 `0xA8EC34`；对该文件 `grep -c "A8EC34\|a8ec34"` = **0** | §8 A8；`Q1_C3C4_PHYS_TARGET.md:318-319` 亦记「历史 `measur
+  M_L142 14 处 `call [reg+0x3c4]` 是否全部落到 `0x6F8DF0`（派生类可能覆写该虚槽）本次**未逐一解虚表** ⇒ 标未验。
+  M_L153 | **读档 / 反序列化** | **未验**。存档块 #26 `0x680A70` 的调用点 `0x67E248 ba38eca800` 传的是 `0xA8EC38`（`docs/re/savegame_block_manifest.md:294-301`、`:328`、`:907` 及紧邻注释 `:339-343`）；本次只核到该块函数前 `0x80` 字节（首条 `mo
+  M_L155 | **运行期有效性** | **未验**。D-19 明确「候选清单不等于运行期有效性通过」、需分项授权后先验字段有效性（`RULING_D19.md:37`、`:61`、`:70`、`:104`） | `RULING_D19.md` |
+  M_L195 ⇒ **本卡未检查任何具体趟件的 S4 记录**，无法断言历史/未来趟件中该 DLL 必然缺席（标未验）。
+  M_L210 - **是否实际发生回绕：未验**（无运行期数据；需约 4.29×10⁹ 次入口）。
+  M_L226 3. **能说**：在**同一进程、同一未改码镜像、无回绕、无未验间接写**的前提下，
+  M_L230 没有活跃标志门控（§6.1）；符号名「未定名」（§1）。
+  M_L251 理由：进程重启重新零填充（§5）、模 2³² 回绕（§7）、读档恢复未验（§5）、
+  M_L252 间接别名写未穷尽（§3.3）；`FACTBASE_D19.md:37` 自陈「不背书跨生命周期无条件单调」，
+  M_L255 —— `TASK.md:28`、`:31-33` 与 `RULING_D19.md:41` 已把这些降为未证/反证；
+  M_L276 ① 运行期字段有效性与扰动未验、且 D-17/D-19 双闸（候选代码、真机/活进程采集）
+  M_L277 **均须用户明示授权**，当前未授（`TASK.md:34`；`RULING_D19.md:61`、`:104`、`:149`）；
+  M_L278 ② `ra2render.dll` 运行时 Hook 门控在具体趟件中是否缺席未验（§6.2）；
+  M_L279 ③ 间接别名写 / 整对象拷贝 / 读档反序列化未穷尽（§3.3、§5）；
+  M_L282 `measure_w*.json` 从未采它；`D-19` 明令「不用旧 measure 验证新增字段真值」（`RULING_D19.md:57`）。
+  M_L288 ## 10. 未验 / 诚实账
+  M_L290 | # | 未验项 | 边界 |
+  M_L292 | 1 | 间接别名写 / `rep movsd`·`memset` 整块拷贝 / `push 0xA8EC30` 三处 `call [vtable+0x27c]` 目标求解 | 本次未做间接 CFG / 虚表求解；绝对地址写点穷尽，全部运行期写**未穷尽**（§3.3） |
+  M_L293 | 2 | 任一具体测量趟件的 S4 记录、`--allow-loader` 授权趟件中 `ra2render.dll` 是否在场 | 未检查（§6.2） |
+  M_L294 | 3 | 读档/存档反序列化是否把本 dword 恢复为其它值 | 只核 `0x680A70` 前 `0x80` 字节，未穷尽（§5） |
+  M_L297 | 6 | 14 处 `call [reg+0x3c4]` 是否全部落到 `0x6F8DF0`（派生类覆写） | 未逐表解（§4） |
+  M_L298 | 7 | 运行期字段有效性、数值分布、读数扰动、频率充分性 | D-19 明列未验且需授权（`RULING_D19.md:70`、`:100-103`） |
+  M_L299 | 8 | 全量 `measure_w*.json` 的 `counters` 键逐一枚举 | 本次只核 Harness v4 常量表与 grep count=0（§4）；文档记载采信 `Q1_C3C4_PHYS_TARGET.md:319` |
+  M_L435 **未运行**：`gamemd.exe` / `ra2loader.exe` / `YURI.exe` 启动、`taskkill`、任何活进程内存读、
+
+### FILE card_00B0CE88.md  lines=267  marker_lines=29  ledger_heads=3  marker+strong_cooccur=2
+  LEDGER_HEADS [118, 238, 255]
+  MARKER+LONG_LEDGER_LINES [67, 92, 106, 118, 123, 187]
+  CO_L106 | `lead/re_line_20261105/A1_SAMPLER_CANDIDATE/frame_edge_sampler.py:61-67` | 把本 VA 列为第 3 个字段 `dirty_rect_count`；同处已写「能说/不能说」边界。文件头 `:2-24` 明示：内建 `MARKER_ALPHA_UNCALIBRATED` / `MARKER_SUFFICIENCY_UNPROVEN`、**候选、未定谳、未校准、不是已验收观测卡、真机使
+  CO_L212 5. **不能**称「1 Hz 已完全充分」「满秩完全解耦」「至少 10 Hz 必要」「帧内计数器完全冻结」「83 次重复信息熵增益为 0」—— `TASK.md:28-34` 已定谳降为未证/已破坏；`FACTBASE_D19.md:31-33`。
+  M_L4 > 本次为**独立二进制复验**（未采信底稿结论作为亲验），零真机、零活进程内存、零采样实现。
+  M_L22 | **符号名** | **未定名** | 变量名/全局符号在本次可读材料中拿不到，按纪律不编造 |
+  M_L67 `0x6DA980` 的直接 rel32 调用者本次实跑恰 **2 处**：`0x599D90`、`0x6853C4`；两者上下文均在 `0x6d1c20` 之后写 `mov [0x887324],eax`（`TacticalClass::Instance`）邻域（本次实读 `0x599D80..0x599DA2`、`0x6853B4..0x6853D6`），疑为战局初始化/退
+  M_L76 ### 3.3 **不宣称写点全集穷尽**
+  M_L79 - **未闭合**：经其它寄存器/指针别名传入 `0xB0CE78` 的间接写、`rep movsd`/`memset` 整对象拷贝、读档反序列化、CRT 初始化/退出全闭包、进程重启时的 BSS 归零。
+  M_L81 - 对照 D-19 的诚实账：`RULING_D19.md:102` 亦登记「未验证每条业务间接写点、重置与全生命周期单调性」；本卡不销该项。
+  M_L92 | `0x6D2B60`（视口位移平移/裁剪脏区，未定名） | `0x6D2B75`、`0x6D2C93`、`0x6D2CC2` | 倒序取末条 `Items[Count-1]`（`0x6D2B90=8d2cb6 lea ebp,[esi+esi*4]` / `0x6D2B93=c1e502 shl ebp,2` = ×20），加 `ViewBounds`（`0x886FA0/
+  M_L106 | `lead/re_line_20261105/A1_SAMPLER_CANDIDATE/frame_edge_sampler.py:61-67` | 把本 VA 列为第 3 个字段 `dirty_rect_count`；同处已写「能说/不能说」边界。文件头 `:2-24` 明示：内建 `MARKER_ALPHA_UNCALIBRATED` / `MARKER_SUFFICI
+  M_L110 **没有已授权的在线采集器**：`RULING_D19.md:58`（执行步骤 4）、`FACTBASE_D19.md:71` 明确「现有沿表事后提取 ≠ 在线四字段触发采集器」，四 VA 不连续、不能称一次连续 16 字节读取。本卡未运行任何采样代码。
+  M_L118 | **进程加载 / 静态初值** | PE 零填充 BSS（见 §2，`fo()`=`None`）；`.data` 中 `0x814E94` 存 `0x6D1A60`（本次实读 `u32(0x814E94)=0x6d1a60`，邻项 `0x814E84..0x814EA4` 为一串连续函数指针 `0x6D19E0/1A00/1A20/1A40/1A60/1B00/1B10/1
+  M_L123 | **每局重置** | 场景开局 `0x68466B=893584eda800 mov [0xa8ed84],esi`（`CurrentFrame=0`）、`0x684675` 置 `Scenario+0x3598=1`（`docs/re/dirty_rect_l4.md:447`；本次实读 `0x684660..0x6846B0`）—— **这一段不写 `0xB0CE88`
+  M_L165 | 下溢为负 | 已见路径有界保护；**间接路径/整块拷贝未验** | §3.3 |
+  M_L168 | `0x7FFFFFFF` 溢出/饱和 | **未验**：未见饱和检查 | 本次反汇编范围内未找到，不宣称不存在 |
+  M_L187 1. `RegisterDirtyArea 0x6D2790` 的**直接 rel32 调用者共 58 处**（本次实跑枚举，VA 清单见 §9 未验栏口径）：分布 `0x42428F`、`0x442184`、…、`0x486FD1`（`CellClass::MarkForRedraw 0x486E70` 尾部，本次实读 `0x486FC5=8b0d24738800 mov e
+  M_L198 **能说什么**（仅限静态语义，且须带目标哈希与「候选、未授权」限定）
+  M_L209 2. **不能**换算为**实际工作量、绘制调用数、耗时或成本时间占比**（`TASK.md:27`；`RULING_D19.md:99` F4；`Q3_SAMPLE_PLAN.md:177` 的 `y_i=alpha_i*T_i` alpha **未校准**，`TASK.md:59`；`RULING_D19.md:39,60`）。
+  M_L212 5. **不能**称「1 Hz 已完全充分」「满秩完全解耦」「至少 10 Hz 必要」「帧内计数器完全冻结」「83 次重复信息熵增益为 0」—— `TASK.md:28-34` 已定谳降为未证/已破坏；`FACTBASE_D19.md:31-33`。
+  M_L225 | 是否满足 D-17「未定位字段不得进入可采清单」 | ✔ 满足（故**不判「不可采」**） | `RULING_D17_D18.md:61`；`RULING_D19.md:28` F12 |
+  M_L228 | 观测卡细则 | ✘ 读序/每字段起止时间戳/帧号前后读/`df>1` 漏沿/冻结/重置回绕/`null`（不补 0）/附加读取/非原子性/停止与清理条件 —— 均为**未来规格要求，本次未实现、未验收** | `RULING_D19.md:59-60,68`；`TASK.md:73` |
+  M_L229 | 运行期有效性 / 扰动 / 数值判据 | ✘ 未验；无真机数据，只能验收文书与静态补证 | `RULING_D19.md:70,102-103,143` |
+  M_L230 | alpha 映射 | ✘ 未校准（F4）；代理量→成本时间不可辨识 | `RULING_D19.md:20,39,99`；`TASK.md:59` |
+  M_L231 | 与可见单位数的定量关系 | ✘ **未验/未校准** | `D20_B_VISIBILITY_GAP.md:114`；`GOAL_THREE_TARGETS_20261018.md:6832`；`RULING_D19.md:103` |
+  M_L255 **本次未验 / 未做**（一律不补造）：
+  M_L257 1. 未启动 `gamemd.exe` / `ra2loader` / `YURI.exe`，未 `taskkill`，**未读活进程内存**，未写任何 RPM/hook/注入/dump/挂线程实现；未运行任何采样代码。
+  M_L258 2. **写点全集未穷尽**：66 个未解码字节、指针别名间接写、`rep movsd`/`memset` 整对象拷贝、读档反序列化、CRT 初始化/退出全闭包、进程重启归零路径（§3.3）。
+  M_L259 3. `0x814E94` 函数指针表由哪段 CRT 代码遍历消费，未追；`0x6D1A96 call 0x7c978a` 的 CRT 语义（本次只反汇编了 `0x7C978A..0x7C97B8`），未闭合。
+  M_L260 4. 58 个 `RegisterDirtyArea` 调用者中，除 `0x486FD1`、`0x5F4E8F`、`0x5F5146` 外**未逐个进函数体核实各自业务性质**；本节只宣称「58 个直接 call 点存在」，不宣称它们各自产生什么。
+  M_L261 5. `0x6D2B60`、`0x6D2DE0/3290/3470`、`0x6D3660`、`0x6D3AC0`、`0x6DA980` 的**精确业务名/符号名未定名**；本卡按用途描述，不编造函数名。
+  M_L262 6. 每局开局是否必走两个 Clear 调用点、`0x7FFFFFFF` 上溢饱和、运行期真值/分布/扰动/跨帧归属/读失败率、与可见单位数的定量关系、alpha 校准 —— 全部**未验**。
+
+### FILE card_00A8ED50.md  lines=300  marker_lines=35  ledger_heads=5  marker+strong_cooccur=3
+  LEDGER_HEADS [103, 122, 150, 270, 288]
+  MARKER+LONG_LEDGER_LINES [74, 103, 109, 121, 122, 126, 137, 175, 193, 239]
+  CO_L109 | `lead/re_line_20261105/A1_SAMPLER_CANDIDATE/frame_edge_sampler.py:68-75` | 把本 VA 列为第 4 个字段 `bullet_count`，同处已写「能说：注册表里有几个 Bullet 对象 / 不能说：本帧实际活跃更新数（更新另受对象 +0x98 活跃标志门控）、动画/伤害总成本」。文件头 `:2-24` 明示 `MARKER_ALPHA_UNCALIBRATED`、`MARKE
+  CO_L241 5. **不能**称「1 Hz 已完全充分」「满秩完全解耦」「至少 10 Hz 必要」「帧内计数器完全冻结」「83 次重复信息熵增益为 0」—— `TASK.md:28-34` 已定谳降为未证/已破坏；`FACTBASE_D19.md:31-33`（`0x42CC80` 同步重试可再次推进代际戳）。
+  CO_L247 11. **不能**把 W3 的 `BulletClass::Array.Count` 当作已核实的二进制符号名 —— §1，符号名未定名。
+  M_L23 | **符号名** | **未定名** | 变量名/全局符号在本次可读材料中拿不到，按 `TASK.md:44` 纪律不编造 |
+  M_L74 | **W4** | `0x46B5E9` | `895e10` | `mov [esi+0x10], ebx`（`ebx=0`） | 向量 vptr `0x7E4678 +0xC = 0x46B5E0` 的清空/释放方法：`0x46B5E2=8bf1 mov esi,ecx`、`0x46B5E4=33db xor ebx,ebx`、**`0x46B5E9` Count 置 0
+  M_L79 ### 3.3 **不宣称写点全集穷尽**
+  M_L82 - **未闭合**：经其它寄存器/指针别名传入 `0xA8ED40` 的间接写、`rep movsd`/`memset` 整对象拷贝、读档反序列化、CRT 初始化/退出全闭包、进程重启时的 BSS 归零。
+  M_L83 - `0x5344CB..0x5344E6` 的清场循环反复调用对象 `vtable+0x08`（BulletClass 为 `0x46AFF0`，本次进其函数体读到 `0x46AFF0..0x46B024` 的释放逻辑），直到 `Count==0`；**但 `0x46AFF0` → W3 的具体调用链本次未逐层闭合，标未验**。
+  M_L84 - 对照 D-19 诚实账：`RULING_D19.md:102` 登记「未验证每条业务间接写点、重置与全生命周期单调性」；本卡不销该项。
+  M_L103 **重要边界（不把「A 调用 B」当性质）**：`0x55B8F0` 位于 `0x55D360` 之前，本次 rel32 普查对 `0x55B8F0`/`0x55B8E0`/`0x55B8D0`/`0x55B8C0` 均 **n=0 个直接调用者**（`_probe_00A8ED50_c_out.txt:141-147`）；`0x55B880` 有 3 个（`0x7259CF`
+  M_L109 | `lead/re_line_20261105/A1_SAMPLER_CANDIDATE/frame_edge_sampler.py:68-75` | 把本 VA 列为第 4 个字段 `bullet_count`，同处已写「能说：注册表里有几个 Bullet 对象 / 不能说：本帧实际活跃更新数（更新另受对象 +0x98 活跃标志门控）、动画/伤害总成本」。文件头 `:2-2
+  M_L113 **没有已授权的在线采集器**：`RULING_D19.md:58`（执行步骤 4）、`FACTBASE_D19.md:71` 明确「现有沿表事后提取 ≠ 在线四字段触发采集器」，四 VA 不连续、不能称一次连续 16 字节读取。本卡未运行任何采样代码。
+  M_L121 | **进程加载 / 静态初值** | PE 零填充 BSS（§2：`fo()=None`）；本次再核实 `.data` 函数指针表 `0x813214` 存 `0x4E6860`（原始 `60684e00`），邻项 `0x813200..0x81322C` 为连续 CRT 初始化器指针序列 `0x4E65E0/6660/66E0/6760/67E0/6860/68E0/696
+  M_L122 | **构造 / 初始化** | W1 `0x4E6860..0x4E689C`（§3.1）：Items=0、Capacity=0、`0xA8ED4C=1`、`0xA8ED4D=0`、vptr=`0x7E4678`、GrowthStep=10、**Count=0**；`0x4E6896 call 0x7C978A`（`RULING`/兄弟卡口径为 CRT 注册，**本次未进 `
+  M_L126 | **每局重置** | 开局段 `0x68466B=893584eda800 mov [0xa8ed84],esi`（`CurrentFrame=0`）、`0x684675=c6819835000001`（本次实读 `0x684660..0x6846C5`）—— **这一段不写 `0xA8ED50`**。清场循环 `0x5344CB..0x5344E6` 会把 Count 循
+  M_L137 | **哪个标志** | **每个 Bullet 对象偏移 `+0x98` 处的 1 字节活跃标志（未定名）**，`test al,al` 非 0 才调 Update。它**不是** `0x00A8ED50` 的位，也**不是**向量自身的 `0x00A8ED4C/4D` 标志 | `0x55B954=8a8198000000 mov al, byte ptr [ecx+0x9
+  M_L150 | `0x4666F2` | `e879d71800` | `call 0x5f3e70` | 前置调用（**本次未进 `0x5F3E70` 函数体，标未验**） |
+  M_L175 **未验**：这 22 个 `+0x98` 字节写点中，除上列外**未逐个进函数体核实各自业务性质**；`+0x98` / `+0x90` 的**布尔语义与符号名未定名**（全仓 `rg` 命中的 `+0x98` 多属 `WarheadTypeClass::Deform`、`TriggerTypeClass::ArrayIndex` 等**其它类**，不能移植到对象级标志）。本
+  M_L193 | 下溢为负 | 已见路径有界保护：W3 先 `0x466629=3bc1 cmp eax,ecx` + `0x46662B=7d23 jge` 保证 `index<Count`，且 `IndexOf` 只返回 −1 或 ≥0（`0x46B8AF=83c8ff`），故 `dec` 后 `Count≥0`；`0x5344CB` 清场循环用 `cmp [count],0 / je`
+  M_L196 | `0x7FFFFFFF` 溢出/饱和 | **未验**：本次反汇编范围内未见饱和检查，不宣称不存在 | — |
+  M_L227 **能说什么**（仅限静态语义，且须带目标哈希与「候选、未授权」限定）
+  M_L239 3. **不能**用 `BulletCount ≤ 60 ⇒ <0.1ms / C3 绝对排除`、`≥2000 ⇒ C3 异常` 之类阈值判 C3（`Q3_SAMPLE_PLAN.md:20,126-130`；`W3_COSTBOUND.md:285`）—— **D-19 F8 明确否定「≤60 就 <0.1ms」**（`RULING_D19.md:24`）；`Q3_SAMPL
+  M_L241 5. **不能**称「1 Hz 已完全充分」「满秩完全解耦」「至少 10 Hz 必要」「帧内计数器完全冻结」「83 次重复信息熵增益为 0」—— `TASK.md:28-34` 已定谳降为未证/已破坏；`FACTBASE_D19.md:31-33`（`0x42CC80` 同步重试可再次推进代际戳）。
+  M_L245 9. **不能**说 `+0x98` 活跃标志有固定全局 VA、或给它编造 `IsActive` 之类符号名 —— **未定名**，其地址是堆上 `Items[i]+0x98`（§6.1、§6.3）。
+  M_L247 11. **不能**把 W3 的 `BulletClass::Array.Count` 当作已核实的二进制符号名 —— §1，符号名未定名。
+  M_L256 | 是否满足 D-17「未定位字段不得进入可采清单」 | ✔ 满足（故**不判「不可采」**） | `RULING_D17_D18.md:61`；`RULING_D19.md:28` F12 |
+  M_L259 | 观测卡细则 | ✘ 读序/每字段起止时间戳/帧号前后读/`df>1` 漏沿/冻结/重置回绕/`null`（不补 0）/附加读取/非原子性/停止与清理条件 —— **均为未来规格要求，本次未实现、未验收** | `RULING_D19.md:59-60,68`；`TASK.md:73` |
+  M_L260 | 运行期有效性 / 扰动 / 数值判据 | ✘ 未验；无真机数据，只能验收文书与静态补证 | `RULING_D19.md:70,102-103,143` |
+  M_L261 | alpha 映射 | ✘ 未校准（F4）；代理量→成本时间不可辨识 | `RULING_D19.md:20,39,99`；`TASK.md:59` |
+  M_L262 | 门控标志语义 | ✘ `+0x98`/`+0x90` 未定名；22 个 `+0x98` 字节写点未逐个进函数体 | §6.3 |
+  M_L263 | 写点全集 / 生命周期闭环 | ✘ 未穷尽（66 未解码字节、别名间接写、读档反序列化、CRT 全闭包、每局重置路径未闭合） | §3.3、§5 |
+  M_L288 **本次未验 / 未做**（一律不补造）：
+  M_L290 1. 未启动 `gamemd.exe` / `ra2loader` / `YURI.exe`，未 `taskkill`，**未读活进程内存**，未写任何 RPM/hook/注入/dump/挂线程实现；未运行任何采样代码。
+  M_L291 2. **写点全集未穷尽**：66 个未解码字节、指针别名间接写、`rep movsd`/`memset` 整对象拷贝、读档反序列化、CRT 初始化/退出全闭包（尤其 `0x7C978A` 函数体未进）、进程重启归零路径（§3.3）。
+  M_L292 3. `+0x98` / `+0x90` 的**符号名与精确布尔语义未定名**；22 个 `+0x98` 字节写点除 §6.3 所列外未逐个进函数体。
+  M_L293 4. `0x55B8F0` 更新循环块的**上层调用者未闭合**（rel32 直接调用者 0 个）；未把它断定为 `MainLogicFrame(0x55D360)` 函数体内部。
+  M_L294 5. `0x650534`、`0x67CC5F`、`0x7193CC`、`0x5344CB`、`0x725C70`、`0x5F3E70`、`0x468430`、`0x7CA7D8` 的**精确业务名/符号名未定名**；`0x5344DD` → W3 的删除链未闭合。
+  M_L295 6. 每局开局是否必走清场循环、`0x7FFFFFFF` 上溢饱和、运行期真值/分布/扰动/跨帧归属/读失败率、alpha 校准 —— 全部**未验**。
+
+### FILE Q2_ALPHA.md  lines=348  marker_lines=18  ledger_heads=2  marker+strong_cooccur=5
+  LEDGER_HEADS [331, 339]
+  MARKER+LONG_LEDGER_LINES [10, 38, 66, 175, 302, 322]
+  CO_L38 D-19 已就这一点定谳：`RULING_D19.md:20`（F4）「满秩矩阵直接置入各代理量与成本时间的 alpha 映射。原文给出形式，**不等于已校准固定映射**；地址彼此不同不能证明时间成本可辨识」；`:39`「代理量到成本时间的映射未校准，不能凭一个形式满秩矩阵承诺真实系统可分解」；`:66`「不把代理量套入未校准 alpha 宣布满秩实证」；`FACTBASE_D19.md:47`「Q3:175-178 直接假设 `y_i=alpha_i*T
+  CO_L61 | `Q1_C2_RENDER.md:18-20,240,252-255,293-297` | 单单位 30–80 μs 系理论估算、可见单位数未验、无探针实测 |
+  CO_L66 **同目录既有规格卡（本次 `rg` 命中，未逐行亲读全文）**：`sections/card_00B0CE88.md:11,177,209,230,234` 与 `sections/card_00A8ED50.md:205,239,261,266` 已各自写明「与可见单位数/活跃更新数之间**没有已校准的定量映射**」「`Q3_SAMPLE_PLAN.md:177` 的 alpha **未校准**」「与可见单位数的定量关系 **未验/未校准**」「alp
+  CO_L322 | 5 | **目标机器上的实测定时**：`τ_{i,max}` / `τ_{i,min}`（含缓存、缺页、OS 抢占、DVFS、挂起窗） | §4.1–4.4 的所有非平凡界的端点都挂在这两个量上；Q1 的 ns/ms 是假设模型，**未验** | `Q1_C1_PATHFIND.md:143`；`Q1_C2_RENDER.md:297`；`FACTBASE_D19.md:26-28`；`TASK.md:30,110` |
+  CO_L339 **本次未跑 / 未独立复验（不冒称通过）**
+  M_L10 **不可解。** 静态字节只能给出「条件化的符号界」，且除平凡界 `alpha_i ≥ 0`（对两个**差分**字段连这个都保不住——重置/进程重启可使 `Δy ≤ 0`）以外，所有非平凡界的数值化都要靠一个**未校准、且在原理上随窗口变化**的「单次事件墙钟耗时」；而 `W3 Q3_SAMPLE_PLAN.md:177` 的 `y_i = alpha_i·T_i` 把 `al
+  M_L38 D-19 已就这一点定谳：`RULING_D19.md:20`（F4）「满秩矩阵直接置入各代理量与成本时间的 alpha 映射。原文给出形式，**不等于已校准固定映射**；地址彼此不同不能证明时间成本可辨识」；`:39`「代理量到成本时间的映射未校准，不能凭一个形式满秩矩阵承诺真实系统可分解」；`:66`「不把代理量套入未校准 alpha 宣布满秩实证」；`FACTBASE_D
+  M_L60 | `Q1_C1_PATHFIND.md:38-55,69-71,80,93,112-113,119,135,141-149,211-216` | `0x7D0` 被丢弃、重试上限 5、节点上限 `0xFFF7`/`0x2710`、500–1500 指令/节点、**假设** CPU/IPC、明确未验项 |
+  M_L61 | `Q1_C2_RENDER.md:18-20,240,252-255,293-297` | 单单位 30–80 μs 系理论估算、可见单位数未验、无探针实测 |
+  M_L66 **同目录既有规格卡（本次 `rg` 命中，未逐行亲读全文）**：`sections/card_00B0CE88.md:11,177,209,230,234` 与 `sections/card_00A8ED50.md:205,239,261,266` 已各自写明「与可见单位数/活跃更新数之间**没有已校准的定量映射**」「`Q3_SAMPLE_PLAN.md:177` 的 al
+  M_L175 `_rpm_counters`（`:3979-4001`）实际只读上述 9 个 VA + `_rpm_mem_kb`，**四个候选 VA 在既有 harness 中 0 命中**。与 `Q1_C3C4_PHYS_TARGET.md:318-319`「历史 `measure_w*.json` 的 `counters` 从未读取该 VA」一致。⇒ **不存在任何历史 `(y_i, 
+  M_L185 实际输出中 `alpha` 只出现在 `Q3_SAMPLE_PLAN.md:177`（矩阵本身）、`RULING_D19.md:20,66,83`（质疑 / 禁用）、`FACTBASE_D19.md:47`（「文件没有给经校准固定 alpha_i」）；**没有一处给出 `alpha_i` 的数值、测量方法或配对数据**。完整输出见本次会话记录；此处只报告检索结论，不冒称逐行复核
+  M_L234 **(c) 严格无条件界：`alpha_1 ∈ (-∞, +∞)`，即无约束。** 只有附加「无重置/回绕、写点穷尽、`Δ ≥ 1`、`T_{C1}>0`」后才退到 `alpha_1 ∈ [1/τ_{1,max},\; k_{1,max}/τ_{1,min})`，且两个端点**均未校准**。
+  M_L268 **(c) 严格无条件界：`alpha_4 ∈ (-∞, +∞)`**（可负、可 0）；附加条件下退到 `[1/τ_{4,max},\, 1/τ_{4,min})`，两端**均未校准**。
+  M_L274 | `alpha_1` | 差分（代际尝试） | `≥ 1/τ_{1,max}`（`k≥1`，未回绕/未重置/写点穷尽） | `≤ k_{1,max}/τ_{1,min}`，`k_{1,max}≥5`，无有限静态值 | `(-∞, +∞)`（重置/回绕可负） | 形式成立但语义有缺口 | **否**，两端未校准 |
+  M_L277 | `alpha_4` | 差分（入口调用） | `≥ 1/τ_{4,max}`（`k=1`，未重置/未重启） | `≤ 1/τ_{4,min}`，无有限静态值 | `(-∞, +∞)`（重启可负） | 形式成立但无每次工作量 | **否**，两端未校准 |
+  M_L302 2. **(ii) 当前没有数据、也没有采集权**：§2.3 实跑证实既有 harness 四个 VA **0 命中**；`Q1_C3C4_PHYS_TARGET.md:318-319` 记「历史 `measure_w*.json` 的 `counters` 从未读取该 VA」。任何新增采集须走 `TASK.md:34`、`RULING_D19.md:61,75` 的双闸（候选
+  M_L322 | 5 | **目标机器上的实测定时**：`τ_{i,max}` / `τ_{i,min}`（含缓存、缺页、OS 抢占、DVFS、挂起窗） | §4.1–4.4 的所有非平凡界的端点都挂在这两个量上；Q1 的 ns/ms 是假设模型，**未验** | `Q1_C1_PATHFIND.md:143`；`Q1_C2_RENDER.md:297`；`FACTBASE_D19.md:2
+  M_L339 **本次未跑 / 未独立复验（不冒称通过）**
+  M_L340 - 未独立重跑对 `0x00B0CE88` 初始化/插入/删除/合并、以及 `0x00A8ED50` 的 RTTI/写点全集的字节核证；本文对这两个水位型 VA 的语义为**采信** D-19 底稿、`RULING_D19.md:23`(F7)/`:24`(F8)，以及同目录既有卡的记载（见 §2.1）。
+  M_L341 - 未重算 Q1 的指令数→毫秒换算、未做微基准、未复算三窗 p50、未普查 87 窗 / 22 慢窗。
+  M_L342 - 未运行测试套件、未构建、未启动 `gamemd.exe` / `ra2loader` / `YURI.exe`、未 `taskkill`、未读任何活进程内存。
+  M_L345 - 未给出任何 `alpha_i` 的数值或任何 `T_{Ci}` 分解；按 `TASK.md:110`，拿不到就写「未验」，不补造。
+
+### FILE Q3_FRAME_EDGE_SPEC.md  lines=486  marker_lines=38  ledger_heads=2  marker+strong_cooccur=2
+  LEDGER_HEADS [373, 460]
+  MARKER+LONG_LEDGER_LINES []
+  CO_L63 | 名义 500 Hz **不等于实达**：源码自记「真机等待期实测 284–347 Hz」，且裁决明写「未验证实际达到 500 Hz」 | `qc151_trip.harness8_v4.py:5169`；`RULING_D19.md:27(F11)` |
+  CO_L465 - 未重跑 PE 反汇编、未重算目标 SHA256、未独立复验 F7/F8 两个重点 VA 的二进制核证
+  M_L9 > 零真机、零活进程读取、零母本改动；**不宣称零扰动**；**四地址不连续，16 字节是总载荷、不是一次连续读**。
+  M_L17 - 目标二进制（采信核证底稿，本次**未重算哈希**）：`ra2youli/gamemd.exe` SHA256
+  M_L44 | 是否达成根因/成本分解 | **否**。`alpha` 未校准、充分性未证，只能报告关联与代理变化 | `RULING_D19.md:20(F4),39,60,99`；`TASK.md:59-65` |
+  M_L45 | 视口坐标等附加字段 | **不进入本规格**。`Q3_SAMPLE_PLAN.md:23,92-95` 所附视口/分辨率/对象列表属四 VA 之外，且真实视口坐标未定位；逐项另列、另申请，**不混入「四字段仅 16 字节」** | `RULING_D19.md:60,103`；`RULING_D17_D18.md:59-61` |
+  M_L47 | 两个未证标记 | 每条记录须带 `alpha_uncalibrated` 与 `sampling_sufficiency_unproven`，不得移除 | `RULING_D19.md:39,60,99`；`TASK.md:28-30` |
+  M_L63 | 名义 500 Hz **不等于实达**：源码自记「真机等待期实测 284–347 Hz」，且裁决明写「未验证实际达到 500 Hz」 | `qc151_trip.harness8_v4.py:5169`；`RULING_D19.md:27(F11)` |
+  M_L70 **不宣称零扰动**：即使不新起探测器，追加读、逐字段时间戳、记录序列化与宿主轮询回路内的额外工作
+  M_L97 | `d = 0` | `same_frame`（帧号冻结） | 否 | 累计**帧号**冻结持续时段（从该值段起点到值变化时刻，口径同 `max_stall_s`，`harness8_v4.py:4742-4743,4781-4783`）；**不宣称业务字段冻结** | `TASK.md:31-33`；`FACTBASE_D19.md:32` |
+  M_L109 本规格同时**不宣称**帧沿档已充分、不宣称 500 Hz 必要或最优（`RULING_D19.md:41,100`）。
+  M_L116 轮询间隔的宿主侧发现延迟；**名义 2 ms，实达未验**（`:5169`；`RULING_D19.md:27`）。
+  M_L168 不计入 §8 的「系统调用次数」口径，但计入未量化负担（§8.5）。
+  M_L240 - `threat_calls` 为纯模 2³² 回绕；进程重启的向下跳变**不是**回绕；读档恢复未验（`card_00A8EC34.md:150-154,206-210`）。
+  M_L272 | 任一四 VA 语义被证伪（尤其 F7 脏矩形 Count、F8 注册 Bullet Count） | **撤回或修订四 VA 采纳及本读取规格**；方法学边界（充分性未证、10 Hz 下界未证、D-17 保留、不得执行）不随之撤销（`RULING_D19.md:31,149`） |
+  M_L276 **失败不得写成根因已明**：未通过字段有效性/扰动验收 ⇒ 停采挂账，三项归因继续缺证
+  M_L285 3. **记录收口**：flush 并封存已有记录；保留每条记录的两个未证标记、读序标识、六组时间戳、归属标签与
+  M_L290 5. **挂账**：把「未通过 / 未验 / 撤项」写入结果，保留 `alpha_uncalibrated` 与
+  M_L300 `harness8_v4.py:3928-3944`）。宿主时钟读取、JSON 序列化、文件写入**不计入该口径**，另在 §8.5 披露未量化项。
+  M_L304 （`harness8_v4.py:3843`），但**实达 500 Hz 未验**（`RULING_D19.md:27`；`harness8_v4.py:5169`）。
+  M_L355 既漏了 `S5` 括弧读，也把 30 Hz 当固定值，且被 `RULING_D19.md:18,69,101` 判未获动态认证；本规格不沿用。
+  M_L357 ### 8.5 未量化的新增负担（必须披露，不许补造数字）
+  M_L361 但确为新增宿主工作，其耗时**未验**。
+  M_L362 2. 每次触发的记录构造、序列化与落盘字节数：**未量化**；取决于记录格式（六组时间戳、读序标识、
+  M_L363 归属标签、两个未证标记、`null` 字段），须在授权申请中按实际格式给出上界。
+  M_L365 （`harness8_v4.py:4010,4762`）：**未验**。
+  M_L366 4. 目标进程侧可能的缓存/TLB/页表影响、跨进程读的上下文切换：**未验**。
+  M_L367 5. 记录体积、磁盘与 `edge_missed`/`unjudgeable` 率的运行期分布：**未验**。
+  M_L368 6. ⇒ **不宣称零扰动，不宣称「淹没在本底底噪」，不给出 μs / % / 纳秒级数字**。
+  M_L373 ## 9. 诚实账（本次实际读/跑，与未做的事）
+  M_L392 `sections/Q2_ALPHA.md`、`sections/Q4_REDLINE.md` 仅作结论一致性核对（本次 `rg` 命中，未逐行全文复核）。
+  M_L460 ### 9.3 本次未做（不得记为通过）
+  M_L463 - 未运行任何测试套件、构建、离线单测（`A1_OFFLINE_DELIVERABLE.md:30-42` 的 67 项单测是**该件作者**的实跑，
+  M_L465 - 未重跑 PE 反汇编、未重算目标 SHA256、未独立复验 F7/F8 两个重点 VA 的二进制核证
+  M_L466 （`RULING_D19.md:23-24,31,102` 明载为采信）；四字段语义取自已读规格卡与裁决。
+  M_L467 - 未重算三窗 p50、未普查 87 窗/22 慢窗；表中 p50 直接引用 `FACTBASE_D19.md:165-167` 与
+  M_L469 - **未启动游戏、未读活进程内存、未写目标进程、未注入/hook/挂线程/dump/截图**；
+  M_L472 **全部未定/未验**，按 `RULING_D17_D18.md:61` 留待授权申请事前写定，本规格不虚构。
+  M_L482 不宣称零扰动，不宣称原子 16 字节快照，不宣称根因或成本分解。
+  M_L483 沿用 D-19 的两个未证标记：`alpha_uncalibrated`、`sampling_sufficiency_unproven`。
+
+### FILE Q4_REDLINE.md  lines=166  marker_lines=16  ledger_heads=3  marker+strong_cooccur=2
+  LEDGER_HEADS [159, 163, 164]
+  MARKER+LONG_LEDGER_LINES [31, 54, 76, 123, 162, 163, 164]
+  CO_L31 另需保留两条 D-19 边界：① `Q3_SAMPLE_PLAN.md:177` 的 `y_i = alpha_i * T_i` alpha 未校准，地址不同不能证明成本时间可辨识（`RULING_D19.md:20`、`:39`、`:99`；`TASK.md:59-65`）；② `Q3_SAMPLE_PLAN.md:203`、`:275` 的「300–1500 次/秒」「闲置 ≤10 次/秒」被 `TASK.md:30` 判为非实测、不得引用。
+  CO_L76 本 ask 给定 `0x0087E8E0 = 代际尝试`；`TASK.md:23` 定谳为「工作区代际**尝试**代理（回绕跳 0、重置、入口覆盖不全）」；`RULING_D19.md:21` F5、`:57` 同。`FACTBASE_D19.md:31-33`、`:37` 记录 `0x42A5FB..FF` 的读/增/写、`0x42A67F..85` 回绕再增、`0x42C90D`/`0x42CC80`/`0x42D17D` 三个直接调用点，以及 `0x
+  M_L7 > 合规口径：本次只亲读既有裁决、底稿、W3 报告、W4 四张字段规格卡并写本文；**未启动游戏、未读活进程内存、未写任何采样实现、未重跑 PE、未跑测试套件/构建、未 commit/push**。铁律见 `TASK.md:99-109`。本 ask 没有点名任何须实跑的检查；本文件不把任何未跑检查记为通过。
+  M_L29 - **不能**：字段语义与目标量不同，机制上多对一/多对多、旁路、合并/清空/门控或未校准映射使其无法推出目标量；或 D-19 已明令不得换算。
+  M_L31 另需保留两条 D-19 边界：① `Q3_SAMPLE_PLAN.md:177` 的 `y_i = alpha_i * T_i` alpha 未校准，地址不同不能证明成本时间可辨识（`RULING_D19.md:20`、`:39`、`:99`；`TASK.md:59-65`）；② `Q3_SAMPLE_PLAN.md:203`、`:275` 的「300–1500 次/秒」「闲置
+  M_L54 5. **可见单位数本身没有现成计数 VA**：`D20_B_VISIBILITY_GAP.md:9-15` 明说全镜像找不到「可见单位数」现成计数 VA；`:49-55` 记渲染簇零全局 dword 写、139 个 `IsVisible` 调用点不维护计数；`:63-79` 判为「需遍历推导」，且视口参数未定位；`:95-104` 明说 C2 在不实现外部判定前提下无法用单一
+  M_L62 | 语义同一或有经校准的 `V=f(D)` 映射 | 无；`D20_B_VISIBILITY_GAP.md:114`、`RULING_D19.md:103` 明记未验/未定位。 |
+  M_L76 本 ask 给定 `0x0087E8E0 = 代际尝试`；`TASK.md:23` 定谳为「工作区代际**尝试**代理（回绕跳 0、重置、入口覆盖不全）」；`RULING_D19.md:21` F5、`:57` 同。`FACTBASE_D19.md:31-33`、`:37` 记录 `0x42A5FB..FF` 的读/增/写、`0x42A67F..85` 回绕再增、`0x42C9
+  M_L105 | 尝试 → 工作量/耗时的校准映射 | **不满足**：alpha/单次成本未校准，D-19 明禁换算 | `TASK.md:27`；`RULING_D19.md:20`、`:39`、`:99` |
+  M_L122 3. **真实并发/目标保持状态未验**：`Q1_C3C4_PHYS_TARGET.md:315-321` 明列目标保持、CDTimer 错峰、历史 `measure_w*.json` 从未读取 `0x00A8EC34`、空间桶冲突深度等都未验。`card_00A8EC34.md:277-284` 也列运行期有效性、Hook 门控、间接别名写、读档生命周期、回绕等缺证。
+  M_L123 4. **主犯判定需要成本时间/占比，而 alpha 映射未校准**：`Q3_SAMPLE_PLAN.md:138-145` 的待解释赤字是 `ΔT_deficit = T_C1+T_C2+T_C3+T_C4+ε`；`:175-178` 用 `y_i=alpha_i*T_i` 宣布满秩，但 `RULING_D19.md:20`、`:39`、`:99` 判 alpha 未校准、代
+  M_L131 | 每次扫描耗时或 `alpha_4` | 无；alpha 未校准 | `RULING_D19.md:20`、`:39`、`:99`；`TASK.md:59-65` |
+  M_L133 | 排除早退、Hook 节流、目标保持、运行期有效性缺口 | 未验 | `card_00A8EC34.md:106-109`、`:170-197`、`:277-284`；`Q1_C3C4_PHYS_TARGET.md:315-321` |
+  M_L136 **结论**：**不能**。该字段至多可报告「`Greatest_Threat` 入口被进入的累计次数/相对变化」及与其它量的关联；不能单独、也不能与当前四 VA 的未校准 alpha 矩阵一起判定 C4 是主犯。`Q1_C3C4_PHYS_TARGET.md:180-183` 的「静态不可排除」只能保留为研究可能性，不能越过 D-19 写成根因闭合。
+  M_L159 ## 7. 诚实账 / 本次未验
+  M_L162 2. **本次实跑的文件发现命令**：`rg --files "D:/Project/ra2-campaign-forge/lead/re_line_20261105" | rg "D19_RULING.(RULING_D19|FACTBASE_D19)\\.md$|W3_COSTBOUND.sections.(Q1_C1_PATHFIND|Q1_C2_RENDER|Q1_C3
+  M_L163 3. **本次未运行的检查**：未运行任何 `python -I -X utf8` 只读 PE 探针；未重跑 `FACTBASE_D19.md:75-148` 附录 A 的 PE/RTTI/反汇编命令；未复算三窗 p50；未跑测试套件、构建、动态扰动/频率/字段有效性测试；未启动 `gamemd.exe`/`ra2loader`/`YURI.exe`，未 `taskkill`，
+  M_L164 4. **本次未定位/未验**：屏内可见单位数的现成计数 VA 与视口参数组合仍按 `D20_B_VISIBILITY_GAP.md:63-79`、`:114` 标「需遍历推导/定量关系未验」；`0x00B0CE88 → V(t)`、`0x0087E8E0 → 实际展开节点数`、`0x00A8EC34 → 每次扫描工作量/耗时` 的 alpha 或工作量映射均未校准/未验；候选
+
+==============================================================================
+8. 五对关键断言原文抽取（供人工逐对比对）
+==============================================================================
+
+### Q4_REDLINE.md
+  PAT 'C2 渲染'          count=2 first=[(15, '| **C2 渲染** | **不能** | `0x00B0CE88` 只能说「当前脏矩形队列条目数」，不能代理「屏内可见单位数」；两者无 1:1、无单调、无已校准映射，最多是渲染侧脏区活动的弱关联候选。 |'), (35, '## 2. C2 渲染：脏矩形 Count 能否代理「屏内可见单位数」？')]
+  PAT 'C1 寻路'          count=2 first=[(16, '| **C1 寻路** | **部分能** | 在严格排除回绕/重置/入口缺口后，代际戳 Δ 只能说「发生了会推进工作区代际的入口/同步重试尝试」；它**不能**说 Dijkstra 真被调用、完成、成功，更**不能**说展开了很多节点。 |'), (72, '## 3. C1 寻路：代际戳能区分「Dijkstra 被调用」与「Dijkstra 真的展开了很多节点」吗？')]
+  PAT 'C4 索敌'          count=2 first=[(17, '| **C4 索敌** | **不能** | `0x00A8EC34` 只有 `Greatest_Threat` 入口调用累计，没有每次扫描格数、候选评估数、早退分布或耗时；不足以判定 C4 是主犯。 |'), (112, '## 4. C4 索敌：只有调用次数、没有工作量，足以判定 C4 是主犯吗？')]
+  PAT '部分能'            count=9 first=[(3, '> 交付范围：本文件只回答 `W4_FIELD_SPEC/TASK.md:81-91` 的 §2 Q4。任务要求把 D-19 已采纳、但**语义受限**的四 VA 重新放回三条红线上，逐项给「能 / 不能 / 部分能」和判据。'), (16, '| **C1 寻路** | **部分能** | 在严格排除回绕/重置/入口缺口后，代际戳 Δ 只能说「发生了会推进工作区代际的入口/同步重试尝试」；它**不能**说 Dijkstra 真被调用、完成、成功，更**不能**说展开了很多节点。 |'), (28, '- **部分能**：字段只能覆盖目标问题的一侧（例如「入口/尝试是否发生」「队列是否非空」），但不能覆盖工作量、耗时、因果占比或主犯判定；且必须显式写出排除条件。')]
+  PAT '不能'             count=26 first=[(3, '> 交付范围：本文件只回答 `W4_FIELD_SPEC/TASK.md:81-91` 的 §2 Q4。任务要求把 D-19 已采纳、但**语义受限**的四 VA 重新放回三条红线上，逐项给「能 / 不能 / 部分能」和判据。'), (15, '| **C2 渲染** | **不能** | `0x00B0CE88` 只能说「当前脏矩形队列条目数」，不能代理「屏内可见单位数」；两者无 1:1、无单调、无已校准映射，最多是渲染侧脏区活动的弱关联候选。 |'), (16, '| **C1 寻路** | **部分能** | 在严格排除回绕/重置/入口缺口后，代际戳 Δ 只能说「发生了会推进工作区代际的入口/同步重试尝试」；它**不能**说 Dijkstra 真被调用、完成、成功，更**不能**说展开了很多节点。 |')]
+  PAT '未验'             count=6 first=[(54, '5. **可见单位数本身没有现成计数 VA**：`D20_B_VISIBILITY_GAP.md:9-15` 明说全镜像找不到「可见单位数」现成计数 VA；`:49-55` 记渲染簇零全局 dword 写、139 个 `IsVisible` 调用点不维护计数；`:63-79` 判为「需遍历推导」，且视口参数未定位；`:95-104` 明说'), (62, '| 语义同一或有经校准的 `V=f(D)` 映射 | 无；`D20_B_VISIBILITY_GAP.md:114`、`RULING_D19.md:103` 明记未验/未定位。 |'), (122, '3. **真实并发/目标保持状态未验**：`Q1_C3C4_PHYS_TARGET.md:315-321` 明列目标保持、CDTimer 错峰、历史 `measure_w*.json` 从未读取 `0x00A8EC34`、空间桶冲突深度等都未验。`card_00A8EC34.md:277-284` 也列运行期有效性、Hook 门控、间接别')]
+  PAT '未重跑'            count=3 first=[(7, '> 合规口径：本次只亲读既有裁决、底稿、W3 报告、W4 四张字段规格卡并写本文；**未启动游戏、未读活进程内存、未写任何采样实现、未重跑 PE、未跑测试套件/构建、未 commit/push**。铁律见 `TASK.md:99-109`。本 ask 没有点名任何须实跑的检查；本文件不把任何未跑检查记为通过。'), (76, '本 ask 给定 `0x0087E8E0 = 代际尝试`；`TASK.md:23` 定谳为「工作区代际**尝试**代理（回绕跳 0、重置、入口覆盖不全）」；`RULING_D19.md:21` F5、`:57` 同。`FACTBASE_D19.md:31-33`、`:37` 记录 `0x42A5FB..FF` 的读/增/写、`0x42A6'), (163, '3. **本次未运行的检查**：未运行任何 `python -I -X utf8` 只读 PE 探针；未重跑 `FACTBASE_D19.md:75-148` 附录 A 的 PE/RTTI/反汇编命令；未复算三窗 p50；未跑测试套件、构建、动态扰动/频率/字段有效性测试；未启动 `gamemd.exe`/`ra2loader`/`YUR')]
+
+### card_0087E8E0.md
+  PAT '尝试代理'           count=2 first=[(60, '需指称时用 D-19 已定谳措辞「工作区代际尝试代理」（`TASK.md:23`；`RULING_D19.md:21` F5、`:57`）。'), (331, '**受限尝试代理**——仅此而已，与 `TASK.md:23` 的定谳措辞一致。')]
+  PAT '不能说'            count=3 first=[(320, '## 9. 语义边界（**能说什么 / 不能说什么**）'), (338, '### 9.2 不能说什么（逐条给依据）'), (340, '| # | 不能说 | 依据 |')]
+  PAT '展开节点'           count=1 first=[(343, '| 2 | ❌ 「Δ = 实际展开节点数 / 搜索工作量」 | 字段是代际标记，节点轮数是 `SearchCore` 的 `[esp+0x28]` 栈局部（`0x429AB6`、`0x42A3D4`，`FACTBASE_D18.md:127` 清单4），二者不同地址；`ERRATA_D18_20261105.md:48-56` 明列「不支')]
+  PAT '未验'             count=24 first=[(74, '- **符号性：按字节是「无符号回绕计数器」，但严格符号性未验**。'), (102, '`FACTBASE_D19.md:32` 都只列 W1/W2，且 `D17_STATIC_FIELDS.md:68` 明写「入口覆盖是否穷尽」未验、'), (114, '- **未穷尽项（标未验）**：① 通过寄存器别名／虚表／函数指针间接写 `this+0x28`；')]
+  PAT '穷尽'             count=8 first=[(93, '### 3.1 本次可判定的写点（**在该静态口径下穷尽 = 3 条**）'), (102, '`FACTBASE_D19.md:32` 都只列 W1/W2，且 `D17_STATIC_FIELDS.md:68` 明写「入口覆盖是否穷尽」未验、'), (106, '### 3.2 穷尽性的边界（不冒称全穷尽）')]
+
+### card_00B0CE88.md
+  PAT '可见单位数'          count=7 first=[(11, '`0x00B0CE88` 是**全局静态** `DynamicVectorClass<DirtyAreaStruct>` 对象（`0x00B0CE78`）的 `+0x10` **Count** 槽，即「待重绘脏矩形队列的**瞬时条目数**」；它**不是 `TacticalClass` 的成员**，**不是屏内可见单位数**，与可见单位数之'), (175, '### 8.1 与「屏内可见单位数」的关系（本 ask 重点）'), (179, '| 维度 | 脏矩形 Count `0x00B0CE88` | 屏内可见单位数 |')]
+  PAT '不能'             count=15 first=[(106, '| `lead/re_line_20261105/A1_SAMPLER_CANDIDATE/frame_edge_sampler.py:61-67` | 把本 VA 列为第 3 个字段 `dirty_rect_count`；同处已写「能说/不能说」边界。文件头 `:2-24` 明示：内建 `MARKER_ALPHA_UNCALIBRATE'), (110, '**没有已授权的在线采集器**：`RULING_D19.md:58`（执行步骤 4）、`FACTBASE_D19.md:71` 明确「现有沿表事后提取 ≠ 在线四字段触发采集器」，四 VA 不连续、不能称一次连续 16 字节读取。本卡未运行任何采样代码。'), (173, '## 8. 语义边界 —— **能说什么 / 不能说什么**（本卡最重要栏）')]
+  PAT '未验'             count=12 first=[(67, '`0x6DA980` 的直接 rel32 调用者本次实跑恰 **2 处**：`0x599D90`、`0x6853C4`；两者上下文均在 `0x6d1c20` 之后写 `mov [0x887324],eax`（`TacticalClass::Instance`）邻域（本次实读 `0x599D80..0x599DA2`、`0x6853B4..'), (81, '- 对照 D-19 的诚实账：`RULING_D19.md:102` 亦登记「未验证每条业务间接写点、重置与全生命周期单调性」；本卡不销该项。'), (118, '| **进程加载 / 静态初值** | PE 零填充 BSS（见 §2，`fo()`=`None`）；`.data` 中 `0x814E94` 存 `0x6D1A60`（本次实读 `u32(0x814E94)=0x6d1a60`，邻项 `0x814E84..0x814EA4` 为一串连续函数指针 `0x6D19E0/1A00/1A20/1')]
+  PAT '穷尽'             count=5 first=[(52, '## 3. 写点全集（VA + 字节；**注明是否穷尽**）'), (56, '### 3.1 绝对地址写点（6 个，在此解码口径下**穷尽**）'), (76, '### 3.3 **不宣称写点全集穷尽**')]
+
+### card_00A8EC34.md
+  PAT '主犯'             count=2 first=[(243, '3. **不能**据 `Δ` 换算为可见单位数、实际工作量或耗时，也**不能**据此判定 C4 是主犯、'), (248, '也不能用 `:79-80` 的「`Δ≤50/s` ⇒ C4 排除、`Δ≥500/s` ⇒ C4 主犯」判据')]
+  PAT '不能'             count=16 first=[(120, '该虚调用目标本次未做间接 CFG/虚表求解 ⇒ **不能排除**它经指针副本覆盖 `[0xA8EC30..0xA8EC37]`。'), (153, '| **读档 / 反序列化** | **未验**。存档块 #26 `0x680A70` 的调用点 `0x67E248 ba38eca800` 传的是 `0xA8EC38`（`docs/re/savegame_block_manifest.md:294-301`、`:328`、`:907` 及紧邻注释 `:339-343`）；本次只核到该块'), (209, '（`RULING_D19.md:59` 要求「重置/回绕/进程生命周期变化不能判明的区间标不可判」）。')]
+  PAT '未验'             count=15 first=[(60, '- **符号性：未验 / 无静态依据**。`inc edx`（`0x6F8E04`，`42`）对有符号/无符号中性；'), (122, '`W1_HOLD_SURFACE/W1_HOLD_SURFACE.md:459` 对同型残余的处置：判「静态证据不支持、无已知路径，未验」）。'), (127, '> *全部可能的运行期写* **未穷尽**，残余如上，标「未验」，不补造。')]
+  PAT '穷尽'             count=14 first=[(23, '可采性判「**需补证**」：静态直接写点已穷尽且可复核，但运行期有效性、间接别名写、'), (74, '### 3.1 直接绝对地址写点：**穷尽 = 恰 1 处**'), (80, '**穷尽性自证（本次实跑，命令与输出见 §8）**：')]
+  PAT 'Hook'           count=9 first=[(24, '读档/进程生命周期、以及仓内 `ra2render.dll` 的 9 字节 Inline Hook 门控均未闭合，且授权闸未开。'), (173, '**无条件**调 `InstallVTableHooks()`（`ra2render/dllmain.cpp:25-31`，紧邻注释 `:29-30` 自述「模块已成功注入」），'), (175, '`InstallGreatestThreatHook()`；`blitter_hooks.cpp:1406-1416` 把 `0x6F8DF0` 起 9 字节')]
+
+### card_00A8ED50.md
+  PAT '水位'             count=0 first=[]
+  PAT '瞬时'             count=2 first=[(191, '| 是否累加计数器 | **否**，是**双向变化的瞬时容器长度**（`inc`/`dec` 成对，不每帧归零） | W2 `0x4664AA=41 inc ecx`、W3 `0x46662D=49 dec ecx`；§3 |'), (232, '4. 「它是**双向变化的瞬时容器长度**，不每帧归零，无已见 32 位回绕」—— §3、§7。')]
+  PAT '不能'             count=19 first=[(12, '`0x00A8ED50` 是全局静态 `DynamicVectorClass<BulletClass*>` 对象（基址 **`0x00A8ED40`）的 `+0x10` **Count** 槽，即「**已注册 Bullet 对象指针的条目数**」。主循环 `0x55B93F` 用它作**倒序遍历边界**，但每个对象真正调用 `Bullet'), (109, '| `lead/re_line_20261105/A1_SAMPLER_CANDIDATE/frame_edge_sampler.py:68-75` | 把本 VA 列为第 4 个字段 `bullet_count`，同处已写「能说：注册表里有几个 Bullet 对象 / 不能说：本帧实际活跃更新数（更新另受对象 +0x98 活跃标志门控）'), (113, '**没有已授权的在线采集器**：`RULING_D19.md:58`（执行步骤 4）、`FACTBASE_D19.md:71` 明确「现有沿表事后提取 ≠ 在线四字段触发采集器」，四 VA 不连续、不能称一次连续 16 字节读取。本卡未运行任何采样代码。')]
+  PAT '未验'             count=14 first=[(74, '| **W4** | `0x46B5E9` | `895e10` | `mov [esi+0x10], ebx`（`ebx=0`） | 向量 vptr `0x7E4678 +0xC = 0x46B5E0` 的清空/释放方法：`0x46B5E2=8bf1 mov esi,ecx`、`0x46B5E4=33db xor ebx,ebx`、**'), (83, '- `0x5344CB..0x5344E6` 的清场循环反复调用对象 `vtable+0x08`（BulletClass 为 `0x46AFF0`，本次进其函数体读到 `0x46AFF0..0x46B024` 的释放逻辑），直到 `Count==0`；**但 `0x46AFF0` → W3 的具体调用链本次未逐层闭合，标未验**。'), (84, '- 对照 D-19 诚实账：`RULING_D19.md:102` 登记「未验证每条业务间接写点、重置与全生命周期单调性」；本卡不销该项。')]
+  PAT '门控'             count=21 first=[(6, '> 本 ask 重点：**D-19「活跃标志门控」具体是哪个标志、哪个字节、哪个 VA —— 见 §6，结论是「对象 `+0x98` 的一字节，没有固定全局 VA」**。'), (12, '`0x00A8ED50` 是全局静态 `DynamicVectorClass<BulletClass*>` 对象（基址 **`0x00A8ED40`）的 `+0x10` **Count** 槽，即「**已注册 Bullet 对象指针的条目数**」。主循环 `0x55B93F` 用它作**倒序遍历边界**，但每个对象真正调用 `Bullet'), (66, '**W2 的扩容门控（写可能不发生）**：`0x466468=a148eda800`（Capacity）→ `0x46646D=8b0d50eda800`（Count）→ `0x466473=3bc8` → `0x466475=7c2b jl 0x4664a2`（Count<Capacity 直接追加）；否则 `0x466477=381d')]
+
+### Q2_ALPHA.md
+  PAT '水位'             count=12 first=[(31, '| 2 | `DirtyAreas.Count` (`0x00B0CE88`) | **瞬时水位 / 状态** | C2 | 脏矩形向量**当前 Count**（瞬时队列量，**非**可见单位数） |'), (32, '| 3 | `BulletCount` (`0x00A8ED50`) | **瞬时水位 / 状态** | C3 | **注册** Bullet 对象 Count（实际更新另受活跃标志门控） |'), (199, '- **水位型**（`i=2,3`）：`y_i = L_i(t_\\text{sample})` 是**某一采样瞬间**的队列/容器长度，与窗口积分 `T_Ci` 不是同一泛函，上式**根本不成立**（详见 §4.2、§4.3）。')]
+  PAT '不可解'            count=4 first=[(10, '**不可解。** 静态字节只能给出「条件化的符号界」，且除平凡界 `alpha_i ≥ 0`（对两个**差分**字段连这个都保不住——重置/进程重启可使 `Δy ≤ 0`）以外，所有非平凡界的数值化都要靠一个**未校准、且在原理上随窗口变化**的「单次事件墙钟耗时」；而 `W3 Q3_SAMPLE_PLAN.md:177` 的 `y_i '), (182, 'rg -n "alpha|校准|标定|系数|映射|解耦|满秩|不可解" lead/re_line_20261105/W3_COSTBOUND/sections/ lead/re_line_20261105/D19_RULING/ | head -80'), (285, '### 5.1 判定：**不可解**')]
+  PAT '未验'             count=5 first=[(60, '| `Q1_C1_PATHFIND.md:38-55,69-71,80,93,112-113,119,135,141-149,211-216` | `0x7D0` 被丢弃、重试上限 5、节点上限 `0xFFF7`/`0x2710`、500–1500 指令/节点、**假设** CPU/IPC、明确未验项 |'), (61, '| `Q1_C2_RENDER.md:18-20,240,252-255,293-297` | 单单位 30–80 μs 系理论估算、可见单位数未验、无探针实测 |'), (66, '**同目录既有规格卡（本次 `rg` 命中，未逐行亲读全文）**：`sections/card_00B0CE88.md:11,177,209,230,234` 与 `sections/card_00A8ED50.md:205,239,261,266` 已各自写明「与可见单位数/活跃更新数之间**没有已校准的定量映射**」「`Q3_SAMP')]
+  PAT '未独立复验'          count=1 first=[(339, '**本次未跑 / 未独立复验（不冒称通过）**')]
+  PAT '平凡界'            count=5 first=[(10, '**不可解。** 静态字节只能给出「条件化的符号界」，且除平凡界 `alpha_i ≥ 0`（对两个**差分**字段连这个都保不住——重置/进程重启可使 `Δy ≤ 0`）以外，所有非平凡界的数值化都要靠一个**未校准、且在原理上随窗口变化**的「单次事件墙钟耗时」；而 `W3 Q3_SAMPLE_PLAN.md:177` 的 `y_i '), (213, '⇒ **本文不给任何 `alpha_i` 的数值界**；只给条件化符号界，并标出它退化为平凡界的位置。数值化属于「补造约束」，按 `TASK.md:110` 不许。'), (244, '⇒ **`alpha_2 ∈ [0, +∞]`，完全不受约束（平凡界）；且该行方程本身是误设。**')]
+
+### Q3_FRAME_EDGE_SPEC.md
+  PAT '5 次'            count=2 first=[(191, '**不采用**「每个字段前后各读一次帧号」：那会把跨进程读调用从 5 次/沿提高到 ≥9 次/沿，'), (328, '⇒ `6λ 次/秒`、`24λ B/秒`。本规格选 5 次式，理由见 §5.2(2)。')]
+  PAT '20 B'           count=0 first=[]
+  PAT '名义操作数'          count=2 first=[(29, '`≤10 000 B/s、≤2500 次/秒`）。这是**名义操作数算账，不是耗时、CPU% 或扰动实测**。'), (301, '- 以下全部是**按设计数出来的名义操作数**，不是耗时、CPU%、微秒数、百分比或扰动实测；')]
+  PAT '未验'             count=10 first=[(63, '| 名义 500 Hz **不等于实达**：源码自记「真机等待期实测 284–347 Hz」，且裁决明写「未验证实际达到 500 Hz」 | `qc151_trip.harness8_v4.py:5169`；`RULING_D19.md:27(F11)` |'), (116, '轮询间隔的宿主侧发现延迟；**名义 2 ms，实达未验**（`:5169`；`RULING_D19.md:27`）。'), (240, '- `threat_calls` 为纯模 2³² 回绕；进程重启的向下跳变**不是**回绕；读档恢复未验（`card_00A8EC34.md:150-154,206-210`）。')]
+  PAT 'alpha'          count=4 first=[(44, '| 是否达成根因/成本分解 | **否**。`alpha` 未校准、充分性未证，只能报告关联与代理变化 | `RULING_D19.md:20(F4),39,60,99`；`TASK.md:59-65` |'), (47, '| 两个未证标记 | 每条记录须带 `alpha_uncalibrated` 与 `sampling_sufficiency_unproven`，不得移除 | `RULING_D19.md:39,60,99`；`TASK.md:28-30` |'), (290, '5. **挂账**：把「未通过 / 未验 / 撤项」写入结果，保留 `alpha_uncalibrated` 与')]
+  PAT '未做'             count=2 first=[(373, '## 9. 诚实账（本次实际读/跑，与未做的事）'), (460, '### 9.3 本次未做（不得记为通过）')]
+
+W7_C_PROBE_END 2026-11-05T22:19:41

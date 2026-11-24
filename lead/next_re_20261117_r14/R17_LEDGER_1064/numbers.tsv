@@ -1,0 +1,10 @@
+item	metric	card_value	recomputed_value	status	evidence_path	recompute_reason
+2	0x449440 函数体长度（字节）	117	117	MATCH	R17_R30_SLOT107_BODY/disasm.txt	capstone 线性解码：末指令 ret 0x14 @0x4494B2 占 C2 14 00 共 3 字节，止于 0x4494B5；0x4494B5-0x449440=0x75=117，按指令边界推进而非字节扫描
+2	函数体精确尾界	0x4494B5	0x4494B5	MATCH	R17_AUDIT_R30/body_bytes.tsv	末条 ret 0x14 起 0x4494B2 之后首字节；其后 0x4494B5..BF 为 11 个 90 填充，下一入口 0x4494C0 push esi，三处锚点一致
+2	ret 出口条数（ret 0x14）	2	2	MATCH	R17_R30_SLOT107_BODY/disasm.txt	按 mnemonic=ret 且操作数 0x14 过滤解码流，得 0x449490 与 0x4494B2 两处，均 C2 14 00
+2	call 指令条数	3	3	MATCH	R17_AUDIT_R30/VERDICT.md	按 mnemonic=call 过滤解码流得三条：0x44947B(E8 20 C3 11 00→0x5657A0)、0x449482(E8 99 31 03 00→0x47C620)、0x4494A3(FF 92 A8 00 00 00→[edx+0xA8])
+4	R14_COMMON.md 字节数（§2.10 后）	244511	244511	MATCH	R14_COMMON.md	fs.readFile 后 Buffer.byteLength 直读整文件得 244511；与 241825 之差为 +2686
+4	R14_COMMON.md CR 计数	1081	1081	MATCH	R14_COMMON.md	全文逐字节统计 0x0D 个数得 1081，与 before_2.10 备份计数相同（追加段只含 LF）
+6	ctor_sites.tsv host 列数据行数	15	15	MATCH	R17_R23_CALLER_PATH/ctor_sites.tsv	去表头后逐行计数得 15 行（site 0x44fb22..0x7396c3）
+6	ctor_sites.tsv host 列不同值个数	14	14	MATCH	R17_R23_CALLER_PATH/ctor_sites.tsv	对 host 列取值建集合，大小 14；0x44f820 出现在 0x44fb22 与 0x44fd8a 两行重复一次
+6	看板文件实际行数（现态）	257	257	MATCH	STATUS_BOARD.md	统计 LF=257 且末行以换行结尾得实际 257 行；split('\n') 把尾部空串算一行才得 258，Lead 已改为 257

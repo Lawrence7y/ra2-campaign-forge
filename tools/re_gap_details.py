@@ -5,7 +5,8 @@ tools/re_gap_details.py
 Detailed analysis of Gap Generator methods, vtable slots, and CellClass shroud logic.
 """
 import sys, os, struct, json
-sys.path.insert(0, r"D:\Project\ra2-campaign-forge\tools")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from xref_scan import Scanner, classify_names
 from re_gap_spysat_deep import read_bytes, read_u32, disasm_func, names, md, base, image
 

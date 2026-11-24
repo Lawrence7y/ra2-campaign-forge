@@ -1,0 +1,183 @@
+== S. INI key strings + reader fn ==
+STR 0083d334 = b'CreditReserve'
+STR 0083d344 = b'PatrolScan'
+STR 0083d350 = b'AttackDelay'
+STR 0083d35c = b'AttackInterval'
+STR 0083d328 = b'PathDelay'
+-- disasm 005283d0 (0x5283D0 head (Get-Double?)) --
+  005283d0  83ec0c               sub esp, 0xc
+  005283d3  33c0                 xor eax, eax
+  005283d5  53                   push ebx
+  005283d6  55                   push ebp
+  005283d7  8b6c2418             mov ebp, dword ptr [esp + 0x18]
+  005283db  8bd9                 mov ebx, ecx
+  005283dd  3be8                 cmp ebp, eax
+  005283df  0f84b1010000         je 0x528596
+  005283e5  8b54241c             mov edx, dword ptr [esp + 0x1c]
+  005283e9  3bd0                 cmp edx, eax
+  005283eb  0f84a5010000         je 0x528596
+  005283f1  8b4b04               mov ecx, dword ptr [ebx + 4]
+  005283f4  56                   push esi
+  005283f5  3be9                 cmp ebp, ecx
+  005283f7  57                   push edi
+  005283f8  0f859e000000         jne 0x52849c
+  005283fe  8b7308               mov esi, dword ptr [ebx + 8]
+  00528401  3bf0                 cmp esi, eax
+  00528403  0f847f010000         je 0x528588
+  00528409  89442410             mov dword ptr [esp + 0x10], eax
+  0052840d  89442414             mov dword ptr [esp + 0x14], eax
+  00528411  89442418             mov dword ptr [esp + 0x18], eax
+  00528415  8bfa                 mov edi, edx
+  00528417  83c9ff               or ecx, 0xffffffff
+  0052841a  33c0                 xor eax, eax
+  0052841c  f2ae                 repne scasb al, byte ptr es:[edi]
+  0052841e  f7d1                 not ecx
+
+-- disasm 005276d0 (0x5276D0 head (Get-Integer?)) --
+  005276d0  83ec0c               sub esp, 0xc
+  005276d3  33c0                 xor eax, eax
+  005276d5  53                   push ebx
+  005276d6  55                   push ebp
+  005276d7  8b6c2418             mov ebp, dword ptr [esp + 0x18]
+  005276db  8bd9                 mov ebx, ecx
+  005276dd  3be8                 cmp ebp, eax
+  005276df  0f84f3010000         je 0x5278d8
+  005276e5  8b54241c             mov edx, dword ptr [esp + 0x1c]
+  005276e9  3bd0                 cmp edx, eax
+  005276eb  0f84e7010000         je 0x5278d8
+  005276f1  8b4b04               mov ecx, dword ptr [ebx + 4]
+  005276f4  56                   push esi
+  005276f5  3be9                 cmp ebp, ecx
+  005276f7  57                   push edi
+  005276f8  0f859e000000         jne 0x52779c
+most-targeted VAs in [0x672000,0x674500) by E8: [('0x6722f0', 3), ('0x6728b0', 2), ('0x672660', 2), ('0x672440', 2), ('0x673f6d', 1), ('0x67418d', 1), ('0x672360', 1), ('0x6723d0', 1)]
+
+== T. v+0x27C shared impl 0x65A970 (arg2=0xA8EC30 write-through hunt) ==
+-- disasm 0065a9c9 (0x65A970 second half (after arg2 load)) --
+  0065a9c9  8b4c2418             mov ecx, dword ptr [esp + 0x18]
+  0065a9cd  8b1f                 mov ebx, dword ptr [edi]
+  0065a9cf  51                   push ecx
+  0065a9d0  52                   push edx
+  0065a9d1  8bce                 mov ecx, esi
+  0065a9d3  e89833dbff           call 0x40dd70
+  0065a9d8  50                   push eax
+  0065a9d9  8bcf                 mov ecx, edi
+  0065a9db  ff9394010000         call dword ptr [ebx + 0x194]
+  0065a9e1  5f                   pop edi
+  0065a9e2  5e                   pop esi
+  0065a9e3  5d                   pop ebp
+  0065a9e4  5b                   pop ebx
+  0065a9e5  c20c00               ret 0xc
+  0065a9e8  83fa02               cmp edx, 2
+  0065a9eb  75dc                 jne 0x65a9c9
+  0065a9ed  8b96e8000000         mov edx, dword ptr [esi + 0xe8]
+  0065a9f3  83cbff               or ebx, 0xffffffff
+  0065a9f6  33c0                 xor eax, eax
+  0065a9f8  85d2                 test edx, edx
+  0065a9fa  7e23                 jle 0x65aa1f
+  0065a9fc  8b8ee4000000         mov ecx, dword ptr [esi + 0xe4]
+  0065aa02  83fbff               cmp ebx, -1
+  0065aa05  7507                 jne 0x65aa0e
+  0065aa07  833900               cmp dword ptr [ecx], 0
+  0065aa0a  7502                 jne 0x65aa0e
+  0065aa0c  8bd8                 mov ebx, eax
+  0065aa0e  3939                 cmp dword ptr [ecx], edi
+  0065aa10  744b                 je 0x65aa5d
+  0065aa12  40                   inc eax
+  0065aa13  83c104               add ecx, 4
+  0065aa16  3bc2                 cmp eax, edx
+  0065aa18  7ce8                 jl 0x65aa02
+  0065aa1a  83fbff               cmp ebx, -1
+  0065aa1d  7517                 jne 0x65aa36
+  0065aa1f  8b86e4000000         mov eax, dword ptr [esi + 0xe4]
+  0065aa25  8b16                 mov edx, dword ptr [esi]
+  0065aa27  8b08                 mov ecx, dword ptr [eax]
+  0065aa29  51                   push ecx
+  0065aa2a  6a03                 push 3
+  0065aa2c  8bce                 mov ecx, esi
+  0065aa2e  ff9278020000         call dword ptr [edx + 0x278]
+  0065aa34  33db                 xor ebx, ebx
+  0065aa36  8b542418             mov edx, dword ptr [esp + 0x18]
+  0065aa3a  8b2f                 mov ebp, dword ptr [edi]
+  0065aa3c  52                   push edx
+  0065aa3d  6a02                 push 2
+  0065aa3f  8bce                 mov ecx, esi
+  0065aa41  e82a33dbff           call 0x40dd70
+  0065aa46  50                   push eax
+  0065aa47  8bcf                 mov ecx, edi
+  0065aa49  ff9594010000         call dword ptr [ebp + 0x194]
+  0065aa4f  83f801               cmp eax, 1
+  0065aa52  7515                 jne 0x65aa69
+  0065aa54  8b86e4000000         mov eax, dword ptr [esi + 0xe4]
+  0065aa5a  893c98               mov dword ptr [eax + ebx*4], edi
+  0065aa5d  5f                   pop edi
+  0065aa5e  5e                   pop esi
+  0065aa5f  5d                   pop ebp
+  0065aa60  b801000000           mov eax, 1
+  0065aa65  5b                   pop ebx
+  0065aa66  c20c00               ret 0xc
+  0065aa69  5f                   pop edi
+  0065aa6a  5e                   pop esi
+  0065aa6b  5d                   pop ebp
+  0065aa6c  b80a000000           mov eax, 0xa
+  0065aa71  5b                   pop ebx
+  0065aa72  c20c00               ret 0xc
+  0065aa75  90                   nop 
+  0065aa76  90                   nop 
+  0065aa77  90                   nop 
+  0065aa78  90                   nop 
+  0065aa79  90                   nop 
+  0065aa7a  90                   nop 
+  0065aa7b  90                   nop 
+  0065aa7c  90                   nop 
+  0065aa7d  90                   nop 
+  0065aa7e  90                   nop 
+  0065aa7f  90                   nop 
+  0065aa80  56                   push esi
+  0065aa81  8bf1                 mov esi, ecx
+  0065aa83  8a8681000000         mov al, byte ptr [esi + 0x81]
+  0065aa89  84c0                 test al, al
+  0065aa8b  750a                 jne 0x65aa97
+  0065aa8d  8b06                 mov eax, dword ptr [esi]
+  0065aa8f  6a03                 push 3
+  0065aa91  ff9080020000         call dword ptr [eax + 0x280]
+  0065aa97  8bce                 mov ecx, esi
+  0065aa99  e892a2f9ff           call 0x5f4d30
+  0065aa9e  5e                   pop esi
+  0065aa9f  c3                   ret 
+
+== U. enclosing function of 0x736689 ==
+heuristic fstart: 00736664 (boundary 00736663 ret)
+RAW_E8 -> 0x736664: []
+-- disasm 00736664 (enclosing fn head) --
+  00736664  8b86c4060000         mov eax, dword ptr [esi + 0x6c4]
+  0073666a  8a88180e0000         mov cl, byte ptr [eax + 0xe18]
+  00736670  84c9                 test cl, cl
+  00736672  750a                 jne 0x73667e
+  00736674  8a88190e0000         mov cl, byte ptr [eax + 0xe19]
+  0073667a  84c9                 test cl, cl
+  0073667c  7407                 je 0x736685
+  0073667e  8bce                 mov ecx, esi
+  00736680  e8fb0a0000           call 0x737180
+  00736685  8b06                 mov eax, dword ptr [esi]
+  00736687  8bce                 mov ecx, esi
+  00736689  ff9024040000         call dword ptr [eax + 0x424]
+  0073668f  8b8ec4060000         mov ecx, dword ptr [esi + 0x6c4]
+  00736695  8b81e0050000         mov eax, dword ptr [ecx + 0x5e0]
+  0073669b  85c0                 test eax, eax
+  0073669d  7e4c                 jle 0x7366eb
+
+== V. sixth vtable attribution ==
+u32(0x7E2668) = 004d9920  ; candidate vtable@0x7E22A4 slot241
+u32(0x7E2640) = 00709820  ; slot231 of same vtable
+dwords [0x7E2294..0x7E22B4):
+   007e2294: 00410210
+   007e2298: 00410220
+   007e229c: 00410230
+   007e22a0: 007fb4c0
+   007e22a4: 00414290
+   007e22a8: 004142f0
+   007e22ac: 00414300
+   007e22b0: 0041c190
+
+### F7-REVIEW PROBE4 end 70.4s

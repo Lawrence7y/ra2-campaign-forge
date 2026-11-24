@@ -1,0 +1,133 @@
+M72 VERIFY — 并表 NAMED_PUSH_AUDIT13 PASS 7 行（S07）+ NAMED_PUSH_AUDIT14 PASS 4 行（S11）
+复算时间：2026-11-20T15:28:15+08:00
+复算脚本：MERGE_M72\verify.py；apply_coverage.py / apply_panel.py（含前置断言）
+
+=====================================================================
+一、卡片硬指标（两组并行数必须 7 与 4，不符即停）
+=====================================================================
+A 组并行数                    : 7（NAMED_PUSH_AUDIT13 verdict.tsv 7 行 / NAMED_PUSH_S07_B1 delta.tsv 7 行，交集正好 7）
+B 组并行数                    : 4（NAMED_PUSH_AUDIT14 verdict.tsv 4 行 / NAMED_PUSH_S11_B1 delta.tsv 4 行，交集正好 4）
+审计 verdict                  : A 组 7/7 全 S07 PASS；B 组 4/4 全 S11 PASS
+交集                          : A=7、B=4；两组不重叠；verdict 与 delta 两集合各自完全相等
+atlas 内（entry 小写归一）     : 11/11 全在 atlas 内（function_atlas.tsv 数据行 12,916）
+不进并表                      : NAMED_PUSH_S09_B1/delta.tsv 的 1 行（004F45B0）未审，不并
+
+=====================================================================
+二、coverage.tsv 行数与列
+=====================================================================
+数据行数                      : 18,498（不增不减）
+总行数（含表头 1 行）          : 18,499
+列结构                        : 数据行均 8 列、TAB 分隔（表头 1 行逗号）
+11 行改动                     : 仅第 4/5/6 列
+  第 4 列 one_line_semantics   ← 对应 delta.tsv 第 4 列原文照抄（逐字节一致）
+  第 5 列 grade                → [已证]（原均 [静态推断]）
+  第 6 列 evidence_path        → A 组 NAMED_PUSH_AUDIT13/VERDICT.md；B 组 NAMED_PUSH_AUDIT14/VERDICT.md
+  第 1/2/3/7/8 列              : 逐字节不动（apply_coverage.py 逐行断言 + 本脚本复核）
+
+=====================================================================
+三、全表 / atlas 内 / atlas 外 [已证]（盘上实算）
+=====================================================================
+全表 [已证]                   : 1613（改前 1,602 → +11）
+atlas 内 [已证]               : 1607（改前 1,596 → +11）
+atlas 外 [已证]               : 6（改前 6 → 不变）
+
+=====================================================================
+四、S07 / S11 的 atlas 内 proved 与 strict（strict 用带方括号字面 [未证] 口径）
+=====================================================================
+S07 proved                    : 74（改前 67 → +7）= 74/804 = 9.20%
+S07 strict                    : 51（改前 44 → +7）= 51/804 = 6.34%
+S11 proved                    : 32（改前 28 → +4）= 32/368 = 8.70%
+S11 strict                    : 31（改前 27 → +4）= 31/368 = 8.42%
+  strict 口径                 : `if "[未证]" not in sem:` 带方括号字面 [未证]；
+                                11 行新语义逐行核 delta 第 4 列均不含字面 [未证]，strict 随 proved 同增。
+TOTAL atlas 内 proved         : 1607（1,596 → +11）= 1607/12,916 = 12.44%
+TOTAL atlas 内 strict         : 1290（1,279 → +11）= 1290/12,916 = 9.99%
+
+=====================================================================
+五、有无达标翻转（不得改变；若翻转须停下报告）
+=====================================================================
+有无达标翻转                  : 无
+名义达标（named_S(R14)∧proved）：3/22 = S15 / S16 / S17（未变）
+严格达标（named_S(R14)∧strict）：1/22 = S17（未变）
+S07 门槛 402（74/51 远低）、S11 门槛 184（32/31 远低），均不参与达标排名。
+
+=====================================================================
+六、S09_B1 那 1 行 grade 未变
+=====================================================================
+entry 004F45B0（NAMED_PUSH_S09_B1/delta.tsv 唯一行）
+  改前 grade                  : [静态推断]
+  改后 grade                  : [静态推断]（未变；整行不动）
+
+=====================================================================
+七、PANEL ㉓ 正向记录
+=====================================================================
+PANEL.md 第 161 行             : > 📌 **M72 ㉓ 正向记录**：S07 有 2 行真触发㉓陷阱（同一虚表也被析构器写入 00490406 / 006DC475），因执行器 ④ 锚点取在行外构造器（0048E93B / 006D1D54）而未触雷 ⇒ ㉓ 不是形式检查，是真会命中的判据。
+逐字节核对                    : 与卡片 M72-MERGE.md 原文完全一致（含 00490406/006DC475、0048E93B/006D1D54）
+位置                          : 紧接 M72 并表实算说明（第 160 行）之后；M71 披露（第 155–159 行）之后
+
+=====================================================================
+八、strict 口径字面
+=====================================================================
+全程使用带方括号字面 [未证]（proved_strict = atlas 内 [已证] 且语义栏不含 [未证]）。
+
+=====================================================================
+九、两文件 sha256（改后）
+=====================================================================
+coverage.tsv sha256           : b25b7c253827ab950c2d562d6d22b48224c93759f66a16cb28953cf31dd392c3
+PANEL.md sha256               : eebdb3d727db81d885d0fbd387b7e0888ae83e714aa7aacab176091627d4bc67
+
+=====================================================================
+十、verify.py 全量 PASS 输出
+=====================================================================
+PASS audit verdict rows A=7 B=4
+PASS AUDIT13 all 7 S07 PASS
+PASS AUDIT14 all 4 S11 PASS
+PASS delta rows A=7 B=4
+PASS S09_B1 delta has exactly 1 row
+PASS A intersection exactly 7 expected
+PASS B intersection exactly 4 expected
+PASS no overlap between groups
+PASS S09 row not merged
+PASS A verdict/delta sets equal
+PASS B verdict/delta sets equal
+PASS atlas data rows 12,916
+PASS all 11 target entries atlas-in (lowercase normalized)
+PASS coverage data rows 18,498
+PASS all data rows 8 tab-separated cols
+PASS 11 rows col4 = delta original verbatim
+PASS 11 rows col5 = [已证]
+PASS 11 rows col6 = correct audit VERDICT path
+PASS 11 rows col3 = delta name (unchanged)
+PASS 11 rows col2 subsystem intact
+PASS 11 rows col7/8 intact (1/0)
+PASS no new semantics contains literal [未证]
+PASS full [已证] = 1613
+PASS atlas-in [已证] = 1607
+PASS atlas-out [已证] = 6 (unchanged)
+PASS S07 proved=74 strict=51
+PASS S11 proved=32 strict=31
+PASS TOTAL proved=1607 strict=1290
+PASS S09_B1 entry 004F45B0 grade unchanged = [静态推断]
+PASS nominal 达标 = S15/S16/S17 (3/22), no flip
+PASS strict 达标 = S17 (1/22), no flip
+PASS PANEL contains: # PANEL — R14 coverageM72 并表 11 行（NAMED_PUSH_A
+PASS PANEL contains: | 全表 `[已证]` / atlas 内 `[已证]` | **1,613 / 1,607
+PASS PANEL contains: | S07 | 804 | 587 | 73.01 | 587 | 73.01 | 64 |
+PASS PANEL contains: | S11 | 368 | 358 | 97.28 | 358 | 97.28 | 29 |
+PASS PANEL contains: | **TOTAL** | **12,916** | **7210** | **55.82*
+PASS PANEL contains: | S07 | 804 | 74 | 9.20 | **51** | **6.34** | 
+PASS PANEL contains: | S11 | 368 | 32 | 8.70 | **31** | **8.42** | 
+PASS PANEL contains: | **TOTAL** | **12916** | **1607** | **12.44**
+PASS PANEL contains: M72 并表 NAMED_PUSH_AUDIT13 PASS 7 行（S07）+ NAMED
+PASS PANEL old string gone: | 全表 `[已证]` / atlas 内 `[已证]` | **1,602 / 1,596
+PASS PANEL old string gone: | S07 | 804 | 587 | 73.01 | 587 | 73.01 | 64 |
+PASS PANEL old string gone: | S11 | 368 | 358 | 97.28 | 358 | 97.28 | 29 |
+PASS PANEL old string gone: | **TOTAL** | **12,916** | **7210** | **55.82*
+PASS PANEL old string gone: | S07 | 804 | 67 | 8.33 | **44** | **5.47** | 
+PASS PANEL old string gone: | S11 | 368 | 28 | 7.61 | **27** | **7.34** | 
+PASS PANEL old string gone: | **TOTAL** | **12916** | **1596** | **12.36**
+PASS card has exactly one ㉓ record line
+PASS PANEL ㉓ note verbatim-identical to card
+PASS PANEL has exactly one M72 ㉓ note
+PASS PANEL has exactly one M72 strict note
+OVERALL: ALL PASS (51 checks)

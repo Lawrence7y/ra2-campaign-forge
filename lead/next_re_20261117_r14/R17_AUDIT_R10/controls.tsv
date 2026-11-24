@@ -1,0 +1,12 @@
+control_id	type	target	expected	measured	result	notes
+A2-POS	positive	0x756843 FF 14 B5 40 68 84 00	real FF14 SIB scale=4 hit	ff 14 b5 40 68 84 00 anchored@0x756590	PASS	direct call [esi*4+0x846840]
+A2-NARROW	negative	executor byte set FF14{80..B8 base=eax}	0	0	PASS	narrow pattern only; not general claim
+A2-GENERAL	negative	all FF /2 SIB scale=4 mod00 base+index	real instruction count	1 raw (0x418DDB), 0 real; 0x756843 base=5 disp32	DISAGREE	general 0-hit claim false/unsupported
+A2-ANTI-ALIGN	anti-alignment	bytewise scan from every offset	no 4-byte alignment gate	implemented	PASS	find_all increments by 1
+A2-ANTI-BOUND	anti-boundary	synthetic 7-byte pattern at start/middle/end	3/3 found	True/True/True	PASS	truncated ignored=True
+A2-ANTI-FILE	anti-truncation	.text raw range <= file size	true	True; scanned 4063232 B	PASS	0x1000..0x3E1000
+A3-387	control	387 jmp [reg*4+disp32]	no slot-table hit	count=387 range 0x4059d0..0x87d44e slot_hits=0	PASS	sections={'.data': 1, '.text': 386}
+A3-RANGE	control	executor table range 0x8069D0..0xC7E44E all .data	true	false: true range +0x401000 inflation; 386 .text +1 .data	DISAGREE	no slot hit still true
+A5-POS	positive	0x5A9C83 push 0x5A9940	real immediate ref	True push 0x5a9940 anchor=0x5a9c40 005a9c83: 68 40 99 5a 00  push 0x5a9940	PASS	decoder/scanner can find a true push imm32
+A5-RAWNEG	negative	decorative-name VA raw 4-byte matches	real immediate refs	raw=6, valid=0	DISAGREE	six raw matches are false positives, not immediate operands
+A5-HOSTNEG	negative	host bodies and +-4KB	0 raw name-VA matches	host1=0 host2=0 host3=0	PASS	negative conclusion survives, but controls must be corrected

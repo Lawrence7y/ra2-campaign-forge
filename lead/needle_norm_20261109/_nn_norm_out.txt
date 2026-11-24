@@ -1,0 +1,109 @@
+### 归一化原型 / 漏检量化 / 边界反例
+corpus: lead/ depth<=2 *.md ; scanned files = 633
+
+=== 1. 归一化键：6 变体各归到哪个键（覆盖类判定） ===
+  angle_corner   '只能判「不可复现」'            -> key='只能判\x01不可复现\x02'  covered_by_L1=True
+  curly_corner   '只能判『不可复现』'            -> key='只能判\x01不可复现\x02'  covered_by_L1=True
+  curly_double   '只能判“不可复现”'            -> key='只能判\x01不可复现\x02'  covered_by_L1=True
+  no_quote       '只能判不可复现'              -> key='只能判不可复现'  covered_by_L1=False
+  half_paren     '只能判(不可复现)'            -> key='只能判(不可复现)'  covered_by_L1=False
+  no_punct       '只能判 不可复现'             -> key='只能判 不可复现'  covered_by_L1=False
+  canonical key = '只能判\x01不可复现\x02'
+  => L1(仅引号归一) 覆盖 3/6 变体；另 3 类属于「去引号 / 换括注 / 插空白」，
+     不是引号变体，不得由 L1 强行归一（见第 5 节反例）。
+
+=== 2. 归一化前后召回（同一语料、同一单位 (file,line)） ===
+  raw angle_corner        : files=18 lines=48
+  L1 normalized canonical : files=22 lines=79
+  raw union(all 6)        : files=22 lines=88
+  L1 gain over baseline   : +31 lines (+35.23% vs union), +4 NEW files
+  L1 == raw(angle+curly+curlydouble) union ? True
+  L1 仍未覆盖 (union - L1)  : lines=9 files=7
+  -- 残余明细（应由「非引号变体」规则单独处理，不得靠过度归一） --
+     ledger_bound_20261109/_lb_BOUND_VOLUME.md:226 <- no_quote | - 笔3 说「只能判不可复现、不能定位当年错误步骤」（`_la_draft3_s604_gapdiff.md:25`），第五笔说「错误在撰写轮内联脚本 `dur` 字典推导错位、表值系如实转录」（`_ve_DRAFT_S609.md:13-15/:22`）。
+     s604_refsync_20261109/S604_REFSYNC_DRAFT.md:137 <- no_quote | 1. §604 空档列**当年真实生成代码**——台账 :9751 自述内联脚本未落盘（:9752-9755 两次自认错误），语料不存在，**只能判不可复现、不能定位错误源头**。
+     s604_refsync_20261109/S604_REFSYNC_DRAFT.md:143 <- no_quote | 1. §604 空档列**当年真实生成代码**——台账 :9751 自述内联脚本未落盘（:9752-9755 两次自认错误），语料不存在，**只能判不可复现、不能定位错误源头**。（2026-11-09 注：「语料不存在 / 不能定位错误源头」已被码形定谳推翻——脚本全文逐字存于 CLI 会话库 p
+     s604_refsync_20261109/_rs_REFSYNC_DRAFT.md:46 <- no_quote | 1. §604 空档列**当年真实生成代码**——台账 :9751 自述内联脚本未落盘（:9752-9755 两次自认错误），语料不存在，**只能判不可复现、不能定位错误源头**。
+     s604_refsync_20261109/_rs_REFSYNC_DRAFT.md:50 <- no_quote | 1. §604 空档列**当年真实生成代码**——台账 :9751 自述内联脚本未落盘（:9752-9755 两次自认错误），语料不存在，**只能判不可复现、不能定位错误源头**。（2026-11-09 注：「语料不存在 / 不能定位错误源头」已被码形定谳推翻——脚本全文逐字存于 CLI 会话库 p
+     s604_refsync_full_20261109/S604_REFSYNC_FULL.md:148 <- no_quote | - 原文逐字（亲读；双反引号代码跨）：``- `S604_GAP_RECHECK.md:153`：「§604 空档列**当年真实生成代码**——台账 :9751 自述内联脚本未落盘……语料不存在，**只能判不可复现、不能定位错误源头**」；``
+     s604_script_gap_20261109/S604_SCRIPT_GAP.md:56 <- no_quote | - `S604_GAP_RECHECK.md:153`：「§604 空档列**当年真实生成代码**——台账 :9751 自述内联脚本未落盘……语料不存在，**只能判不可复现、不能定位错误源头**」；
+     s604_verdict_entry_20261109/_ve_DRAFT_S609.md:54 <- no_quote | 2. 同件 `:153`「语料不存在，只能判不可复现、不能定位错误源头」——「语料不存在/不能定位」过时。
+     slowframe_r3_20261108/S604_GAP_RECHECK.md:153 <- no_quote | 1. §604 空档列**当年真实生成代码**——台账 :9751 自述内联脚本未落盘（:9752-9755 两次自认错误），语料不存在，**只能判不可复现、不能定位错误源头**。
+
+=== 3. 位置映射可回溯验证（逐命中核对原文片段） ===
+  mapped hits checked = 85 ; all(orig_slice == reported_text) = True
+  sample ledger_appendix_20261108/LEDGER_APPENDIX_DRAFT.md:123 orig[47:56] = '只能判「不可复现」'
+  sample ledger_appendix_20261108/LEDGER_APPENDIX_DRAFT.md:215 orig[39:48] = '只能判「不可复现」'
+  sample ledger_appendix_20261108/_la_draft3_s604_gapdiff.md:25 orig[47:56] = '只能判「不可复现」'
+
+=== 4. 两段式失效量化（needle 先过滤 -> 角色后判） ===
+  file-level prefilter (line 229) 会整件跳过的「含变体但无直角引号」文件 = 4
+     ledger_bound_20261109/_lb2_TEMPLATE.md (union lines=[152, 202])
+     s604_attribution_20261108/S604_ATTRIBUTION.md (union lines=[138])
+     s604_script_gap_20261109/S604_SCRIPT_GAP.md (union lines=[55, 56])
+     s604_script_gap_20261109/_sg_FINDINGS.md (union lines=[21])
+  这些件里的漏检行数 = 6
+  通过 file gate 但被 line-level gate (classify_line line 165) 跳过的行 = 34
+  其中 :22 是否在内 = True
+  => 双闸：任一闸漏即 <not-scanned>，角色判定 (R5) 根本没有机会执行。
+
+=== 5. 过度归一化的构造反例（>=3）；每条都用本文件的 normalize_line 实跑 ===
+  CE1 去引号合并：裸断言 vs 引述否定
+     A = '**只能判「不可复现」、不能定位当年错误步骤**'
+     B = '其边界句「只能判不可复现、不能定位当年错误步骤」自本节起不再成立'
+     过度归一 key(A)='**只能判不可复现不能定位当年错误步骤**' key(B)='其边界句只能判不可复现不能定位当年错误步骤自本节起不再成立' MERGED=False
+     L1  key(A)='**只能判\x01不可复现\x02、不能定位当年错误步骤**'
+     L1  key(B)='其边界句\x01只能判不可复现、不能定位当年错误步骤\x02自本节起不再成立' ; L1_MERGED=False
+  CE2 删标点+删引号：并列两结论 vs 整句被引用
+     A = '只能判「不可复现」、不能定位当年错误步骤'
+     B = '只能判「不可复现、不能定位当年错误步骤」'
+     过度归一 key(A)='只能判不可复现不能定位当年错误步骤' key(B)='只能判不可复现不能定位当年错误步骤' MERGED=True
+     L1  key(A)='只能判\x01不可复现\x02、不能定位当年错误步骤'
+     L1  key(B)='只能判\x01不可复现、不能定位当年错误步骤\x02' ; L1_MERGED=False
+  CE3 同义扩展：数值复现 vs 载体恢复
+     A = '只能判「不可复现」'
+     B = '只能判「不可复原」'
+     过度归一 key(A)='只能判不可复现' key(B)='只能判不可复原' MERGED=False
+     L1  key(A)='只能判\x01不可复现\x02'
+     L1  key(B)='只能判\x01不可复原\x02' ; L1_MERGED=False
+  CE4 空白删除：表格两列 vs 散文断言
+     A = '| 只能判 | 不可复现 |'
+     B = '只能判不可复现'
+     过度归一 key(A)='|只能判|不可复现|' key(B)='只能判不可复现' MERGED=False
+     L1  key(A)='| 只能判 | 不可复现 |'
+     L1  key(B)='只能判不可复现' ; L1_MERGED=False
+  -- NFKC 单独反例（全半角字面量，项目按码位比对，见 GATE_LITERAL_MATCH_POSTMORTEM.md:70） --
+     A='规则 APPROVE_SCOPE 已生效'
+     B='规则 ＡＰＰＲＯＶＥ＿ＳＣＯＰＥ 已生效'
+     NFKC(A)='规则 APPROVE_SCOPE 已生效' NFKC(B)='规则 APPROVE_SCOPE 已生效' MERGED=True
+     L1(A)='规则 APPROVE_SCOPE 已生效' L1(B)='规则 ＡＰＰＲＯＶＥ＿ＳＣＯＰＥ 已生效' MERGED=False
+
+=== 6. 真实语料里的「不可复原」（CE3 不是构造孤例） ===
+     gate_doc_name_fix_20261109/GATE_DOC_NAME_FIX.md:316 1. 35 处门禁**当时**的实跑输出（exit / problems / 读了谁）不可复原、未逐发断言；时序 36/36 `run_mtime < main_mtime` 只证明派发时刻早于主件落盘，不能反推门禁读了谁。
+     gate_doc_name_fix_20261109/GATE_DOC_NAME_FIX.md:319 4. `n4_yi_final` 门禁时刻是否另有第二个 `CANDIDATE_RESIGN*` 文件不可复原；现域只 1 匹配为**现值**。
+     gate_doc_name_fix_20261109/_dn_glm_final.md:274 - 35 处「门禁当时实际读了谁」不可复原（§5.1(iii)），不作逐发断言。
+     gate_rejudge32_20261109/GATE_REJUDGE_32.md:290 2. **判不了**：35 处历史门禁**当时**的实跑输出（exit / problems / 读了谁）不可复原（`GATE_DOC_NAME_FIX.md:316` 逐字），本轮只判现盘主件文本，不判当时是否误判。
+     gate_rejudge32_20261109/_rj_findings.md:151 - **判不了 / 未验**：①「10 个域」「5 个 bindings=0」的出处：我复核为 13 / 6，已交付件自述也是 13；编排方未给 10 域枚举，无法逐域对齐，我测过的 6 种口径都得不出 10（7/6/6/9/9/24）。②35 处历史门禁**当时**实跑输出不可复原（`GATE_DOC_NAME_FIX.md:316-317`），本轮只判现
+
+=== 7. 宽泛捞候选的量（噪声评估） ===
+  broad(不可复现)      lines=187 files=44
+  broad(只能判)        lines= 94 files=28
+  broad(两者同现)      lines= 88 files=22
+  L1 归一召回          lines= 79 files=22
+  broad(不可复现) - L1 lines=108 files=39  <-- 需角色判定/主题判定收窄的候选
+  broad(只能判)   - L1 lines= 15 files=13
+  broad(两者同现) - L1 lines=  9 files= 7
+  (b1-L1) 中同时含「只能判」的 = 9 行（多为无引号/换标点的真变体或引述）
+
+=== 8. 归一化自检注入样本（合成 fixture，全部在内存，不写文件） ===
+  PASS POS-angle      expect=True  got=True  '**只能判「不可复现」、不能定位当年错误步骤**'
+  PASS POS-curly      expect=True  got=True  '其边界句「只能判『不可复现』、不能定位当年错误步骤」（:123）自本节起不再成立'
+  PASS POS-curlyDbl   expect=True  got=True  '只能判“不可复现”'
+  PASS POS-nested     expect=True  got=True  '其边界句「只能判『不可复现』、不能定位当年错误步骤」自本节起不再成立'
+  PASS NEG-noquote    expect=False got=False '只能判不可复现、不能定位错误源头'
+  PASS NEG-halfparen  expect=False got=False '只能判(不可复现)'
+  PASS NEG-nopunct    expect=False got=False '只能判 不可复现'
+  PASS NEG-word       expect=False got=False '只能判「不可复原」'
+  PASS NEG-other      expect=False got=False '两列不可复现，时长列与倍率复现'
+  PASS NEG-table      expect=False got=False '| 只能判 | 不可复现 |'
+  FIXTURE_SELF_TEST = PASS

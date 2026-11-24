@@ -1,0 +1,47 @@
+=== 1. gap disasm 0x6403fb..0x640443 (0x6403a8 guard block vs 0x640431 reload) ===
+  0x6403fb  mov    dword ptr [esp + 0x10], esi
+  0x6403ff  mov    eax, dword ptr [edx + 0x34b8]
+  0x640405  mov    edx, dword ptr [0x886f94]
+  0x64040b  mov    dword ptr [esp + 8], eax
+  0x64040f  mov    eax, dword ptr [0xb0b504]
+  0x640414  add    edx, 0x45
+  0x640417  mov    dword ptr [esp + 0x14], edx
+  0x64041b  mov    dword ptr [esp + 0x18], 8
+  0x640423  mov    dword ptr [esp + 0x1c], eax
+  0x640427  call   0x724730
+  0x64042c  lea    ecx, [esp + 8]
+  0x640430  push   ecx
+  0x640431  mov    ecx, dword ptr [0x887368]
+  0x640437  call   0x724580
+  0x64043c  pop    esi
+  0x64043d  add    esp, 0x20
+  0x640440  ret    
+  0x640441  nop    
+  0x640442  nop    
+  0x640443  nop    
+  0x640444  nop    
+  0x640445  nop    
+  0x640446  nop    
+  0x640447  nop    
+  0x640448  nop    
+  0x640449  nop    
+  0x64044a  nop    
+
+=== 2. TSV integrity + independent byte-level E8->0x724730 check for all A rows ===
+  total lines (incl header): 70 (expect 70)
+  A rows byte-verified (raw E8 rel32 recomputed == 0x724730): 28/28 ; failures: none
+
+=== 3. census: every direct E8 call / E9 jmp to FUN_00724730 in .text ===
+  direct call/jmp sites to 0x724730: 30
+  accounted by audit (28 A rows + probe-found ['0x4a8b75', '0x640427']): 30 ; UNMATCHED: 0
+
+=== 4. supplementary backward hunt: guard register provably zeroed upstream? ===
+  0x6a707f  reg=ebx : linear walk from 0x6a703f -> reg NOT provably zero on this path (candidates: 0x6a700f(zeroed@-) ; 0x6a702f(zeroed@-) ; 0x6a703f(zeroed@-))
+  0x7777f3  reg=ebx : linear walk from 0x7777b3 -> reg NOT provably zero on this path (candidates: 0x777773(zeroed@-) ; 0x777783(zeroed@-) ; 0x7777a3(zeroed@-) ; 0x7777b3(zeroed@-))
+  0x68639f  reg=esi : linear walk from 0x68635f -> reg NOT provably zero on this path (candidates: 0x68631f(zeroed@-) ; 0x68632f(zeroed@-) ; 0x68634f(zeroed@-) ; 0x68635f(zeroed@-))
+  0x48ce4c  reg=ebx : linear walk from 0x48ce0c -> reg NOT provably zero on this path (candidates: 0x48cdcc(zeroed@-) ; 0x48cddc(zeroed@-) ; 0x48cdfc(zeroed@-) ; 0x48ce0c(zeroed@-))
+  0x52daf9  reg=ebx : linear walk from 0x52dab9 -> reg NOT provably zero on this path (candidates: 0x52da79(zeroed@-) ; 0x52da89(zeroed@-) ; 0x52daa9(zeroed@-) ; 0x52dab9(zeroed@-))
+  0x55d0a0  reg=ebx : linear walk from 0x55d060 -> reg NOT provably zero on this path (candidates: 0x55d020(zeroed@0x1) ; 0x55d030(zeroed@0x1) ; 0x55d050(zeroed@0x1) ; 0x55d060(zeroed@-))
+  0x55d159  reg=ebx : linear walk from 0x55d119 -> reg NOT provably zero on this path (candidates: 0x55d0d9(zeroed@-) ; 0x55d0e9(zeroed@-) ; 0x55d109(zeroed@-) ; 0x55d119(zeroed@-))
+  0x55d1e7  reg=ebx : linear walk from 0x55d1a7 -> reg NOT provably zero on this path (candidates: 0x55d167(zeroed@-) ; 0x55d177(zeroed@-) ; 0x55d197(zeroed@-) ; 0x55d1a7(zeroed@-))
+  0x4a8b18  reg=ebx : linear walk from 0x4a8ad8 -> reg NOT provably zero on this path (candidates: 0x4a8a98(zeroed@-) ; 0x4a8aa8(zeroed@-) ; 0x4a8ac8(zeroed@-) ; 0x4a8ad8(zeroed@-))

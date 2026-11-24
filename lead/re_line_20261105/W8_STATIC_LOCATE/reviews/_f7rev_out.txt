@@ -1,0 +1,570 @@
+== A. INDEPENDENT SELF-CERT ==
+SHA256(indep hashlib) = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+FILE_BYTES = 4825360
+IMAGE_BASE = 0x400000
+sections: [('.text', '0x401000', '0x3e0000'), ('.rdata', '0x7e1000', '0x31000'), ('.data', '0x812000', '0x6c000'), ('.rsrc', '0xb7a000', '0x19000'), ('.detour', '0xb93000', '0x3000')]
+
+== B. WHOLE-FILE LE-DWORD SCAN (imm/vtable bypass hunt) ==
+DWORD 00445f00 (BLDG_v241_wrap): 1 hits
+   file_off=003e4280 VA=007e4280 sec=.rdata
+DWORD 004d9920 (FOOT_v241_wrap): 2 hits
+   file_off=003e2668 VA=007e2668 sec=.rdata
+   file_off=003e9058 VA=007e9058 sec=.rdata
+DWORD 0051e140 (INF_v241_wrap): 1 hits
+   file_off=003eb41c VA=007eb41c sec=.rdata
+DWORD 006f8df0 (Greatest_Threat): 1 hits
+   file_off=003f4d24 VA=007f4d24 sec=.rdata
+DWORD 006fb010 (fn_6FB010(UpdateReload)): 5 hits
+   file_off=003e26c8 VA=007e26c8 sec=.rdata
+   file_off=003e42e0 VA=007e42e0 sec=.rdata
+   file_off=003e90b8 VA=007e90b8 sec=.rdata
+   file_off=003eb47c VA=007eb47c sec=.rdata
+   file_off=003f4d84 VA=007f4d84 sec=.rdata
+DWORD 00736ca0 (UNIT_v265_wrap): 1 hits
+   file_off=003f6094 VA=007f6094 sec=.rdata
+DWORD 00743190 (UNIT_v241_wrap): 1 hits
+   file_off=003f6034 VA=007f6034 sec=.rdata
+
+== C. RAW E8/E9 SCAN in .text ==
+RAW_E8 -> 006f8df0 (Greatest_Threat): ['0x445f68', '0x4d9942']
+RAW_E9 -> 006f8df0 (Greatest_Threat): []
+RAW_E8 -> 006fb010 (fn_6FB010): ['0x736d3e']
+RAW_E9 -> 006fb010 (fn_6FB010): []
+RAW_E8 -> 006ecce0 (pct14-host): ['0x6e962a']
+RAW_E9 -> 006ecce0 (pct14-host): []
+RAW_E8 -> 00736ca0 (UNIT_v265_wrap): []
+RAW_E9 -> 00736ca0 (UNIT_v265_wrap): []
+RAW_E8 -> 00445f00 (BLDG_v241_wrap): []
+RAW_E9 -> 00445f00 (BLDG_v241_wrap): []
+RAW_E8 -> 004d9920 (FOOT_v241_wrap): ['0x51e39f', '0x74325c']
+RAW_E9 -> 004d9920 (FOOT_v241_wrap): []
+
+== D/E. STREAM CENSUS (resynced linear decode) ==
+stream insns=1394120
+census pass done 107.5s
+
+-- E1. imm32 materialization of function addresses (indirect-call channel hunt) --
+IMM 004d9920 count=2: [('0x51e39f', 'call', '0x4d9920'), ('0x74325c', 'call', '0x4d9920')]
+IMM 006f8df0 count=2: [('0x445f68', 'call', '0x6f8df0'), ('0x4d9942', 'call', '0x6f8df0')]
+IMM 006fb010 count=1: [('0x736d3e', 'call', '0x6fb010')]
+IMM in [A8EC00,A8ED00) count=58
+   0049f889 mov ecx, 0xa8ece0 imm=0xa8ece0
+   0049f986 mov ecx, 0xa8ece0 imm=0xa8ece0
+   004c8a0e mov ecx, 0xa8ece0 imm=0xa8ece0
+   004e7dc0 mov ecx, 0xa8ece0 imm=0xa8ece0
+   004e7e10 mov ecx, 0xa8ecd8 imm=0xa8ecd8
+   0052dbd6 push 0xa8ec90 imm=0xa8ec90
+   0052e4c8 push 0xa8ec90 imm=0xa8ec90
+   0052e921 push 0xa8ec90 imm=0xa8ec90
+   00531928 push 0xa8ec90 imm=0xa8ec90
+   005319b0 push 0xa8ec90 imm=0xa8ec90
+   00531ab2 mov ecx, 0xa8ece0 imm=0xa8ece0
+   00531fc7 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005b55ef mov ecx, 0xa8ece0 imm=0xa8ece0
+   005b6218 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005b632d mov ecx, 0xa8ece0 imm=0xa8ece0
+   005b6d14 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005b6d25 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005b8acf mov ecx, 0xa8ece0 imm=0xa8ece0
+   005ba278 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005ba3f0 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005ba6c5 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005ba6d6 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005dcb28 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005dec31 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005df771 mov ecx, 0xa8ece0 imm=0xa8ece0
+   005df77f mov ecx, 0xa8ece0 imm=0xa8ece0
+   005e184f mov ecx, 0xa8ece0 imm=0xa8ece0
+   005e18da mov ecx, 0xa8ece0 imm=0xa8ece0
+   005f44b9 mov ecx, 0xa8ecb8 imm=0xa8ecb8
+   005f4665 mov ecx, 0xa8ecb8 imm=0xa8ecb8
+   005f46ed mov ecx, 0xa8ecb8 imm=0xa8ecb8
+   005fc3ea mov ecx, 0xa8ec50 imm=0xa8ec50
+   005fc501 mov ecx, 0xa8ec50 imm=0xa8ec50
+   005fdfa1 mov ecx, 0xa8ec50 imm=0xa8ec50
+   0064df60 mov ecx, 0xa8ece0 imm=0xa8ece0
+   006517a4 mov ecx, 0xa8ece0 imm=0xa8ece0
+   0065aaab push 0xa8ec30 imm=0xa8ec30
+   0065acc3 push 0xa8ec30 imm=0xa8ec30
+   0065ad05 push 0xa8ec30 imm=0xa8ec30
+   0067e040 mov edx, 0xa8ec18 imm=0xa8ec18
+
+-- E2. stream call/jmp to targets --
+STREAM_CALL 00445f00: []
+STREAM_JMP  00445f00: []
+STREAM_CALL 004d9920: [('0x51e39f', 'e87cb5fbff'), ('0x74325c', 'e8bf66d9ff')]
+STREAM_JMP  004d9920: []
+STREAM_CALL 006ecce0: [('0x6e962a', 'e8b1360000')]
+STREAM_JMP  006ecce0: []
+STREAM_CALL 006f8df0: [('0x445f68', 'e8832e2b00'), ('0x4d9942', 'e8a9f42100')]
+STREAM_JMP  006f8df0: []
+STREAM_CALL 006fb010: [('0x736d3e', 'e8cd42fcff')]
+STREAM_JMP  006fb010: []
+STREAM_CALL 00736ca0: []
+STREAM_JMP  00736ca0: []
+
+-- E3. virtual dispatch sites --
+call [reg+0x3C4] count=14: ['0x414b24', '0x414b64', '0x417481', '0x4d4314', '0x4d4686', '0x4d49a3', '0x4d4e3e', '0x4de056', '0x50d1d2', '0x51f382', '0x6ece06', '0x6ed15e', '0x6f0253', '0x709932']
+call [reg+0x424] count=1: ['0x736689']
+
+-- E4. [0xA8EC34] accesses --
+count=2
+   006f8df3 R mov edx, dword ptr [0xa8ec34] [8b1534eca800]
+   006f8e09 W mov dword ptr [0xa8ec34], edx [891534eca800]
+
+-- E5. abs-disp WRITES disp in [A8EC00,A8ED00) --
+count=111
+   004e6460 disp=00a8ec94 mov dword ptr [0xa8ec94], eax [a394eca800]
+   004e64a5 disp=00a8ec70 mov dword ptr [0xa8ec70], 0 [c70570eca80000000000]
+   004e64af disp=00a8ec68 mov dword ptr [0xa8ec68], eax [a368eca800]
+   004e64b4 disp=00a8ec6c mov dword ptr [0xa8ec6c], eax [a36ceca800]
+   004e67e7 disp=00a8ec3c mov dword ptr [0xa8ec3c], eax [a33ceca800]
+   004e67ec disp=00a8ec40 mov dword ptr [0xa8ec40], eax [a340eca800]
+   004e67f1 disp=00a8ec44 mov byte ptr [0xa8ec44], 1 [c60544eca80001]
+   004e67f8 disp=00a8ec45 mov byte ptr [0xa8ec45], al [a245eca800]
+   004e67fd disp=00a8ec38 mov dword ptr [0xa8ec38], 0x7e9ce4 [c70538eca800e49c7e00]
+   004e6807 disp=00a8ec4c mov dword ptr [0xa8ec4c], 0xa [c7054ceca8000a000000]
+   004e6811 disp=00a8ec48 mov dword ptr [0xa8ec48], eax [a348eca800]
+   004e6828 disp=00a8ec38 mov dword ptr [0xa8ec38], 0x7e9d04 [c70538eca800049d7e00]
+   004e6847 disp=00a8ec3c mov dword ptr [0xa8ec3c], ebx [891d3ceca800]
+   004e684d disp=00a8ec45 mov byte ptr [0xa8ec45], bl [881d45eca800]
+   004e6853 disp=00a8ec40 mov dword ptr [0xa8ec40], ebx [891d40eca800]
+   004e68e7 disp=00a8ec54 mov dword ptr [0xa8ec54], eax [a354eca800]
+   004e68ec disp=00a8ec58 mov dword ptr [0xa8ec58], eax [a358eca800]
+   004e68f1 disp=00a8ec5c mov byte ptr [0xa8ec5c], 1 [c6055ceca80001]
+   004e68f8 disp=00a8ec5d mov byte ptr [0xa8ec5d], al [a25deca800]
+   004e68fd disp=00a8ec50 mov dword ptr [0xa8ec50], 0x7e9d24 [c70550eca800249d7e00]
+   004e6907 disp=00a8ec64 mov dword ptr [0xa8ec64], 0xa [c70564eca8000a000000]
+   004e6911 disp=00a8ec60 mov dword ptr [0xa8ec60], eax [a360eca800]
+   004e6928 disp=00a8ec50 mov dword ptr [0xa8ec50], 0x7e9d44 [c70550eca800449d7e00]
+   004e6947 disp=00a8ec54 mov dword ptr [0xa8ec54], ebx [891d54eca800]
+   004e694d disp=00a8ec5d mov byte ptr [0xa8ec5d], bl [881d5deca800]
+   004e6953 disp=00a8ec58 mov dword ptr [0xa8ec58], ebx [891d58eca800]
+   004e70e7 disp=00a8eca4 mov dword ptr [0xa8eca4], eax [a3a4eca800]
+   004e70ec disp=00a8eca8 mov dword ptr [0xa8eca8], eax [a3a8eca800]
+   004e70f1 disp=00a8ecac mov byte ptr [0xa8ecac], 1 [c605aceca80001]
+   004e70f8 disp=00a8ecad mov byte ptr [0xa8ecad], al [a2adeca800]
+   004e70fd disp=00a8eca0 mov dword ptr [0xa8eca0], 0x7ea0e4 [c705a0eca800e4a07e00]
+   004e7107 disp=00a8ecb4 mov dword ptr [0xa8ecb4], 0xa [c705b4eca8000a000000]
+   004e7111 disp=00a8ecb0 mov dword ptr [0xa8ecb0], eax [a3b0eca800]
+   004e7128 disp=00a8eca0 mov dword ptr [0xa8eca0], 0x7ea104 [c705a0eca80004a17e00]
+   004e7147 disp=00a8eca4 mov dword ptr [0xa8eca4], ebx [891da4eca800]
+   004e714d disp=00a8ecad mov byte ptr [0xa8ecad], bl [881dadeca800]
+   004e7153 disp=00a8eca8 mov dword ptr [0xa8eca8], ebx [891da8eca800]
+   004e7267 disp=00a8ec1c mov dword ptr [0xa8ec1c], eax [a31ceca800]
+   004e726c disp=00a8ec20 mov dword ptr [0xa8ec20], eax [a320eca800]
+   004e7271 disp=00a8ec24 mov byte ptr [0xa8ec24], 1 [c60524eca80001]
+   004e7278 disp=00a8ec25 mov byte ptr [0xa8ec25], al [a225eca800]
+   004e727d disp=00a8ec18 mov dword ptr [0xa8ec18], 0x7ea1a4 [c70518eca800a4a17e00]
+   004e7287 disp=00a8ec2c mov dword ptr [0xa8ec2c], 0xa [c7052ceca8000a000000]
+   004e7291 disp=00a8ec28 mov dword ptr [0xa8ec28], eax [a328eca800]
+   004e72a8 disp=00a8ec18 mov dword ptr [0xa8ec18], 0x7ea1c4 [c70518eca800c4a17e00]
+   004e72c7 disp=00a8ec1c mov dword ptr [0xa8ec1c], ebx [891d1ceca800]
+   004e72cd disp=00a8ec25 mov byte ptr [0xa8ec25], bl [881d25eca800]
+   004e72d3 disp=00a8ec20 mov dword ptr [0xa8ec20], ebx [891d20eca800]
+   004e79e7 disp=00a8ec7c mov dword ptr [0xa8ec7c], eax [a37ceca800]
+   004e79ec disp=00a8ec80 mov dword ptr [0xa8ec80], eax [a380eca800]
+   004e79f1 disp=00a8ec84 mov byte ptr [0xa8ec84], 1 [c60584eca80001]
+   004e79f8 disp=00a8ec85 mov byte ptr [0xa8ec85], al [a285eca800]
+   004e79fd disp=00a8ec78 mov dword ptr [0xa8ec78], 0x7e17ac [c70578eca800ac177e00]
+   004e7a07 disp=00a8ec8c mov dword ptr [0xa8ec8c], 0xa [c7058ceca8000a000000]
+   004e7a11 disp=00a8ec88 mov dword ptr [0xa8ec88], eax [a388eca800]
+   004e7a28 disp=00a8ec78 mov dword ptr [0xa8ec78], 0x7e180c [c70578eca8000c187e00]
+   004e7a47 disp=00a8ec7c mov dword ptr [0xa8ec7c], ebx [891d7ceca800]
+   004e7a4d disp=00a8ec85 mov byte ptr [0xa8ec85], bl [881d85eca800]
+   004e7a53 disp=00a8ec80 mov dword ptr [0xa8ec80], ebx [891d80eca800]
+   004e7d47 disp=00a8ecbc mov dword ptr [0xa8ecbc], eax [a3bceca800]
+   004e7d4c disp=00a8ecc0 mov dword ptr [0xa8ecc0], eax [a3c0eca800]
+   004e7d51 disp=00a8ecc4 mov byte ptr [0xa8ecc4], 1 [c605c4eca80001]
+   004e7d58 disp=00a8ecc5 mov byte ptr [0xa8ecc5], al [a2c5eca800]
+   004e7d5d disp=00a8ecb8 mov dword ptr [0xa8ecb8], 0x7e4f64 [c705b8eca800644f7e00]
+   004e7d67 disp=00a8eccc mov dword ptr [0xa8eccc], 0xa [c705cceca8000a000000]
+   004e7d71 disp=00a8ecc8 mov dword ptr [0xa8ecc8], eax [a3c8eca800]
+   004e7d88 disp=00a8ecb8 mov dword ptr [0xa8ecb8], 0x7e192c [c705b8eca8002c197e00]
+   004e7da7 disp=00a8ecbc mov dword ptr [0xa8ecbc], ebx [891dbceca800]
+   004e7dad disp=00a8ecc5 mov byte ptr [0xa8ecc5], bl [881dc5eca800]
+   004e7db3 disp=00a8ecc0 mov dword ptr [0xa8ecc0], ebx [891dc0eca800]
+   004e7de0 disp=00a8ece0 mov dword ptr [0xa8ece0], 0x7ea57c [c705e0eca8007ca57e00]
+   004e7df7 disp=00a8ecd8 mov dword ptr [0xa8ecd8], eax [a3d8eca800]
+   004e7dfc disp=00a8ecdc mov dword ptr [0xa8ecdc], eax [a3dceca800]
+   004f86f7 disp=00a8ecd0 mov byte ptr [0xa8ecd0], 1 [c605d0eca80001]
+   004f879c disp=00a8ecd0 mov byte ptr [0xa8ecd0], 1 [c605d0eca80001]
+   004f87b2 disp=00a8ecd0 mov byte ptr [0xa8ecd0], 1 [c605d0eca80001]
+   0052da7f disp=00a8ecd0 mov byte ptr [0xa8ecd0], 0 [c605d0eca80000]
+   00530cf9 disp=00a8ec74 mov byte ptr [0xa8ec74], 1 [c60574eca80001]
+   00531788 disp=00a8ecd8 mov dword ptr [0xa8ecd8], eax [a3d8eca800]
+   005317cc disp=00a8ecd8 mov dword ptr [0xa8ecd8], ebx [891dd8eca800]
+   005317fe disp=00a8ecdc mov dword ptr [0xa8ecdc], eax [a3dceca800]
+   00531843 disp=00a8ecdc mov dword ptr [0xa8ecdc], ebx [891ddceca800]
+   0055d123 disp=00a8ecd0 mov byte ptr [0xa8ecd0], bl [881dd0eca800]
+   0055d1b7 disp=00a8ecd0 mov byte ptr [0xa8ecd0], bl [881dd0eca800]
+   0055d21f disp=00a8ecd0 mov byte ptr [0xa8ecd0], bl [881dd0eca800]
+   0055d262 disp=00a8ecd0 mov byte ptr [0xa8ecd0], bl [881dd0eca800]
+   005f44d7 disp=00a8ecc8 mov dword ptr [0xa8ecc8], ecx [890dc8eca800]
+   005f46a4 disp=00a8ecc8 mov dword ptr [0xa8ecc8], eax [a3c8eca800]
+   005f4702 disp=00a8ecc8 mov dword ptr [0xa8ecc8], ecx [890dc8eca800]
+   005fc3ff disp=00a8ec60 mov dword ptr [0xa8ec60], ecx [890d60eca800]
+   005fc51f disp=00a8ec60 mov dword ptr [0xa8ec60], ecx [890d60eca800]
+   005fdfbf disp=00a8ec60 mov dword ptr [0xa8ec60], ecx [890d60eca800]
+   0067faaf disp=00a8ecc8 mov dword ptr [0xa8ecc8], ecx [890dc8eca800]
+   006855a7 disp=00a8ecc8 mov dword ptr [0xa8ecc8], ebx [891dc8eca800]
+   006855c0 disp=00a8ecbc mov dword ptr [0xa8ecbc], ebx [891dbceca800]
+   006855cb disp=00a8ecc5 mov byte ptr [0xa8ecc5], bl [881dc5eca800]
+   006855d1 disp=00a8ecc0 mov dword ptr [0xa8ecc0], ebx [891dc0eca800]
+   006b5327 disp=00a8ec28 mov dword ptr [0xa8ec28], eax [a328eca800]
+   006b540e disp=00a8ec28 mov dword ptr [0xa8ec28], ecx [890d28eca800]
+   006b61ce disp=00a8ec28 mov dword ptr [0xa8ec28], ecx [890d28eca800]
+   006f085c disp=00a8ecb0 mov dword ptr [0xa8ecb0], ecx [890db0eca800]
+   006f093f disp=00a8ecb0 mov dword ptr [0xa8ecb0], ecx [890db0eca800]
+   006f211f disp=00a8ecb0 mov dword ptr [0xa8ecb0], ecx [890db0eca800]
+   006f31c6 disp=00a8ec88 mov dword ptr [0xa8ec88], ecx [890d88eca800]
+   006f44da disp=00a8ec88 mov dword ptr [0xa8ec88], ecx [890d88eca800]
+   006f8e09 disp=00a8ec34 mov dword ptr [0xa8ec34], edx [891534eca800]
+   0074fc3e disp=00a8ece8 mov word ptr [0xa8ece8], 1 [66c705e8eca8000100]
+   0075eaed disp=00a8ec48 mov dword ptr [0xa8ec48], ecx [890d48eca800]
+   0075ed0b disp=00a8ec48 mov dword ptr [0xa8ec48], ecx [890d48eca800]
+   0075ed80 disp=00a8ec48 mov dword ptr [0xa8ec48], ecx [890d48eca800]
+   0076324f disp=00a8ec48 mov dword ptr [0xa8ec48], ecx [890d48eca800]
+
+-- E6. inc/add/sub/or/xor with abs mem disp & write access (RMW accumulator universe) --
+disp -7eff831d n=1: [('0x7ce9cd', 'add')]
+disp -71ff9217 n=1: [('0x6dfe6b', 'add')]
+disp -6fffb549 n=1: [('0x4ab99f', 'add')]
+disp -6fff9161 n=1: [('0x6ea073', 'add')]
+disp -6fff8f1b n=1: [('0x70e593', 'add')]
+disp -5effb7cf n=1: [('0x4833ef', 'add')]
+disp -45ffb54b n=1: [('0x4ab897', 'add')]
+disp -41ffad21 n=1: [('0x52eb7b', 'add')]
+disp -28ff91c4 n=1: [('0x6e3cc7', 'add')]
+disp -25ffbb1a n=1: [('0x44e79f', 'add')]
+disp -1cff91c4 n=1: [('0x6e3c9b', 'add')]
+disp 000057b9 n=1: [('0x57b94b', 'add')]
+disp 0000792a n=1: [('0x792b07', 'add')]
+disp 0087c7a8 n=1: [('0x7d13f0', 'or')]
+disp 0087caf8 n=1: [('0x7d4d41', 'or')]
+disp 0087cb08 n=1: [('0x7d4d3a', 'or')]
+disp 0087cb14 n=1: [('0x7cd65b', 'inc')]
+disp 0087dd70 n=1: [('0x7dd2eb', 'or')]
+disp 0087e730 n=1: [('0x40702e', 'inc')]
+disp 0089e058 n=2: [('0x470027', 'inc'), ('0x4702cf', 'inc')]
+disp 00a8b54c n=3: [('0x5b714f', 'inc'), ('0x5b71e6', 'inc'), ('0x5c4e6f', 'inc')]
+disp 00a8b550 n=1: [('0x795028', 'add')]
+disp 00a8d667 n=1: [('0x55f00d', 'or')]
+disp 00a8dab4 n=2: [('0x55d080', 'inc'), ('0x64b498', 'inc')]
+disp 00a8dab8 n=1: [('0x5f3310', 'or')]
+disp 00a8e7ac n=1: [('0x52e0be', 'inc')]
+disp 00abfdb0 n=1: [('0x5d7c14', 'inc')]
+disp 00ac1cac n=1: [('0x60a218', 'inc')]
+disp 00ac4894 n=1: [('0x60a2e8', 'inc')]
+disp 00ac4c00 n=1: [('0x63b008', 'inc')]
+disp 00afa400 n=2: [('0x647fbe', 'add'), ('0x6483c1', 'add')]
+disp 00b77780 n=1: [('0x64b026', 'inc')]
+disp 00b77dd4 n=1: [('0x7a5cf5', 'inc')]
+disp 00b781c0 n=3: [('0x7d2ba8', 'inc'), ('0x7d2d8a', 'inc'), ('0x7d7710', 'inc')]
+disp 00b783a8 n=1: [('0x7d4cff', 'inc')]
+disp 00b7855c n=6: [('0x7d701d', 'or'), ('0x7d7063', 'or'), ('0x7d7094', 'or'), ('0x7d7278', 'or'), ('0x7d7335', 'or'), ('0x7d735a', 'or')]
+disp 00b7855d n=2: [('0x7d70f9', 'or'), ('0x7d7161', 'or')]
+disp 00b78b80 n=2: [('0x7d3210', 'add'), ('0x7d9475', 'add')]
+disp 00b78b84 n=1: [('0x7cfe4e', 'add')]
+disp 00b78b94 n=1: [('0x7cfebc', 'inc')]
+disp 00b78ba0 n=1: [('0x7cdb3c', 'inc')]
+disp 00b78bbc n=1: [('0x7c9778', 'add')]
+disp 09004c7f n=1: [('0x4c819f', 'add')]
+disp 09021e19 n=1: [('0x6e3d40', 'add')]
+disp 09090909 n=1: [('0x71f36a', 'or')]
+disp 09092222 n=1: [('0x6e3cec', 'or')]
+disp 0d3c007d n=1: [('0x7d0d08', 'sub')]
+disp 0f0052e1 n=1: [('0x52eb83', 'add')]
+disp 100070e5 n=1: [('0x70e57b', 'add')]
+disp 13006e3c n=1: [('0x6e3c8f', 'add')]
+disp 15004ab6 n=1: [('0x4ab8af', 'add')]
+disp 1b005c4a n=1: [('0x5c4c7b', 'add')]
+disp 1d004ab7 n=2: [('0x4ab81f', 'add'), ('0x4ab98b', 'add')]
+disp 2300418d n=1: [('0x418dab', 'add')]
+disp 240054fb n=1: [('0x54fb57', 'add')]
+disp 2b0041e9 n=1: [('0x41ead3', 'add')]
+disp 2c004ff9 n=1: [('0x4ff94b', 'add')]
+disp 2e3f0079 n=1: [('0x792e54', 'xor')]
+disp 35006cbe n=1: [('0x6cbebb', 'add')]
+disp 360070e5 n=1: [('0x70e583', 'add')]
+disp 3800647d n=1: [('0x648333', 'add')]
+disp 4600615e n=1: [('0x61630f', 'add')]
+disp 47005186 n=1: [('0x518d5b', 'add')]
+disp 510054f9 n=1: [('0x54fb63', 'add')]
+disp 59006cbe n=1: [('0x6cbecf', 'add')]
+disp 5e0052e5 n=1: [('0x52ebe3', 'add')]
+disp 60005a15 n=1: [('0x5a1793', 'add')]
+disp 750041ed n=1: [('0x41ee3b', 'add')]
+disp 790050b5 n=1: [('0x50b6ab', 'add')]
+
+-- E7. writes with disp==0x1150 (Rules+0x1150) --
+count=0
+
+== F. FIXED DISASMS ==
+-- disasm 006fb010 (0x6FB010 head (UpdateReload?)) --
+  006fb010  56                   push esi
+  006fb011  8bf1                 mov esi, ecx
+  006fb013  57                   push edi
+  006fb014  8b06                 mov eax, dword ptr [esi]
+  006fb016  ff9084000000         call dword ptr [eax + 0x84]
+  006fb01c  8b8084060000         mov eax, dword ptr [eax + 0x684]
+  006fb022  83f8ff               cmp eax, -1
+  006fb025  7447                 je 0x6fb06e
+  006fb027  8bbefc020000         mov edi, dword ptr [esi + 0x2fc]
+  006fb02d  3bf8                 cmp edi, eax
+  006fb02f  7d3d                 jge 0x6fb06e
+  006fb031  8b96fc010000         mov edx, dword ptr [esi + 0x1fc]
+
+-- disasm 006f8df0 (Greatest_Threat head (RMW)) --
+  006f8df0  83ec5c               sub esp, 0x5c
+  006f8df3  8b1534eca800         mov edx, dword ptr [0xa8ec34]
+  006f8df9  53                   push ebx
+  006f8dfa  55                   push ebp
+  006f8dfb  56                   push esi
+  006f8dfc  57                   push edi
+  006f8dfd  33ff                 xor edi, edi
+  006f8dff  83cdff               or ebp, 0xffffffff
+  006f8e02  8bf1                 mov esi, ecx
+  006f8e04  42                   inc edx
+  006f8e05  897c2420             mov dword ptr [esp + 0x20], edi
+  006f8e09  891534eca800         mov dword ptr [0xa8ec34], edx
+  006f8e0f  8b06                 mov eax, dword ptr [esi]
+
+-- disasm 006f9d90 (GT tail boundary (census window check)) --
+  006f9d90  44                   inc esp
+  006f9d91  241c                 and al, 0x1c
+  006f9d93  a188eca800           mov eax, dword ptr [0xa8ec88]
+  006f9d98  43                   inc ebx
+  006f9d99  3bd8                 cmp ebx, eax
+  006f9d9b  0f8cd9feffff         jl 0x6f9c7a
+  006f9da1  8b442420             mov eax, dword ptr [esp + 0x20]
+  006f9da5  5f                   pop edi
+  006f9da6  5e                   pop esi
+  006f9da7  5d                   pop ebp
+  006f9da8  5b                   pop ebx
+  006f9da9  83c45c               add esp, 0x5c
+  006f9dac  c20c00               ret 0xc
+  006f9daf  90                   nop 
+  006f9db0  8b811c020000         mov eax, dword ptr [ecx + 0x21c]
+  006f9db6  8b4030               mov eax, dword ptr [eax + 0x30]
+  006f9db9  c3                   ret 
+  006f9dba  90                   nop 
+  006f9dbb  90                   nop 
+  006f9dbc  90                   nop 
+  006f9dbd  90                   nop 
+  006f9dbe  90                   nop 
+  006f9dbf  90                   nop 
+  006f9dc0  8b811c020000         mov eax, dword ptr [ecx + 0x21c]
+  006f9dc6  c3                   ret 
+  006f9dc7  90                   nop 
+  006f9dc8  90                   nop 
+  006f9dc9  90                   nop 
+  006f9dca  90                   nop 
+  006f9dcb  90                   nop 
+  006f9dcc  90                   nop 
+  006f9dcd  90                   nop 
+  006f9dce  90                   nop 
+  006f9dcf  90                   nop 
+
+-- disasm 006ecd40 (pct14 gate bytes) --
+  006ecd40  8b15e0718800         mov edx, dword ptr [0x8871e0]
+  006ecd46  dd8250110000         fld qword ptr [edx + 0x1150]
+  006ecd4c  dc0df8277e00         fmul qword ptr [0x7e27f8]
+  006ecd52  e8a9910d00           call 0x7c5f00
+  006ecd57  8bc8                 mov ecx, eax
+  006ecd59  a184eda800           mov eax, dword ptr [0xa8ed84]
+  006ecd5e  99                   cdq 
+  006ecd5f  f7f9                 idiv ecx
+  006ecd61  85d2                 test edx, edx
+  006ecd63  0f85be000000         jne 0x6ece27
+  006ecd69  8b7754               mov esi, dword ptr [edi + 0x54]
+  006ecd6c  55                   push ebp
+  006ecd6d  83cdff               or ebp, 0xffffffff
+
+-- disasm 006ecdf0 (pct14 dispatch tail (push 1 -> call)) --
+  006ecdf0  41                   inc ecx
+  006ecdf1  0489                 add al, 0x89
+  006ecdf3  44                   inc esp
+  006ecdf4  2420                 and al, 0x20
+  006ecdf6  8d44241c             lea eax, [esp + 0x1c]
+  006ecdfa  8b4908               mov ecx, dword ptr [ecx + 8]
+  006ecdfd  50                   push eax
+  006ecdfe  894c2428             mov dword ptr [esp + 0x28], ecx
+  006ece02  6a01                 push 1
+  006ece04  8bcb                 mov ecx, ebx
+  006ece06  ff92c4030000         call dword ptr [edx + 0x3c4]
+  006ece0c  85c0                 test eax, eax
+  006ece0e  7403                 je 0x6ece13
+  006ece10  50                   push eax
+  006ece11  eb0d                 jmp 0x6ece20
+  006ece13  8b4c2428             mov ecx, dword ptr [esp + 0x28]
+  006ece17  8b4740               mov eax, dword ptr [edi + 0x40]
+  006ece1a  3bc1                 cmp eax, ecx
+  006ece1c  7409                 je 0x6ece27
+  006ece1e  6a00                 push 0
+
+raw@0x666E09 = c78650110000fca9f1d2
+raw@0x666E1A = c786541100004d62903f
+Rules+0x1150 default double = lo=d2f1a9fc hi=3f90624d -> 0.016
+raw@0x7E27F8 = 0000000000208c40 -> 900
+int(0.0160 * 900.0) = 14 ; round = 14
+
+-- disasm 00740b10 (fn_740B10 full (v151?) + boundary to next fn) --
+  00740b10  56                   push esi
+  00740b11  8bf1                 mov esi, ecx
+  00740b13  57                   push edi
+  00740b14  8dbe50030000         lea edi, [esi + 0x350]
+  00740b1a  c686d206000000       mov byte ptr [esi + 0x6d2], 0
+  00740b21  8bcf                 mov ecx, edi
+  00740b23  e8a846d6ff           call 0x4a51d0
+  00740b28  84c0                 test al, al
+  00740b2a  751b                 jne 0x740b47
+  00740b2c  8b86c4060000         mov eax, dword ptr [esi + 0x6c4]
+  00740b32  8b88cc030000         mov ecx, dword ptr [eax + 0x3cc]
+  00740b38  51                   push ecx
+  00740b39  8bcf                 mov ecx, edi
+  00740b3b  8b90c8030000         mov edx, dword ptr [eax + 0x3c8]
+  00740b41  52                   push edx
+  00740b42  e8f946d6ff           call 0x4a5240
+  00740b47  8bce                 mov ecx, esi
+  00740b49  e83237d9ff           call 0x4d4280
+  00740b4e  5f                   pop edi
+  00740b4f  5e                   pop esi
+  00740b50  c3                   ret 
+  00740b51  90                   nop 
+  00740b52  90                   nop 
+  00740b53  90                   nop 
+  00740b54  90                   nop 
+  00740b55  90                   nop 
+  00740b56  90                   nop 
+  00740b57  90                   nop 
+  00740b58  90                   nop 
+  00740b59  90                   nop 
+  00740b5a  90                   nop 
+  00740b5b  90                   nop 
+  00740b5c  90                   nop 
+  00740b5d  90                   nop 
+  00740b5e  90                   nop 
+  00740b5f  90                   nop 
+
+-- disasm 00740bd0 (and-ecx,7 region context (0x740BED attribution)) --
+
+-- disasm 00736640 (v[265] dispatch host 0x736664) --
+  00736640  07                   pop es
+  00736641  c6808200000001       mov byte ptr [eax + 0x82], 1
+  00736648  8b06                 mov eax, dword ptr [esi]
+  0073664a  8bce                 mov ecx, esi
+  0073664c  ff90a0030000         call dword ptr [eax + 0x3a0]
+  00736652  8b16                 mov edx, dword ptr [esi]
+  00736654  8bce                 mov ecx, esi
+  00736656  ff92f8000000         call dword ptr [edx + 0xf8]
+  0073665c  5f                   pop edi
+  0073665d  5e                   pop esi
+  0073665e  5d                   pop ebp
+  0073665f  5b                   pop ebx
+  00736660  83c420               add esp, 0x20
+  00736663  c3                   ret 
+  00736664  8b86c4060000         mov eax, dword ptr [esi + 0x6c4]
+  0073666a  8a88180e0000         mov cl, byte ptr [eax + 0xe18]
+  00736670  84c9                 test cl, cl
+  00736672  750a                 jne 0x73667e
+  00736674  8a88190e0000         mov cl, byte ptr [eax + 0xe19]
+  0073667a  84c9                 test cl, cl
+  0073667c  7407                 je 0x736685
+  0073667e  8bce                 mov ecx, esi
+  00736680  e8fb0a0000           call 0x737180
+  00736685  8b06                 mov eax, dword ptr [esi]
+  00736687  8bce                 mov ecx, esi
+  00736689  ff9024040000         call dword ptr [eax + 0x424]
+  0073668f  8b8ec4060000         mov ecx, dword ptr [esi + 0x6c4]
+  00736695  8b81e0050000         mov eax, dword ptr [ecx + 0x5e0]
+  0073669b  85c0                 test eax, eax
+  0073669d  7e4c                 jle 0x7366eb
+
+-- disasm 0050b730 (0x50B730 head (owner predicate)) --
+  0050b730  a138b2a800           mov eax, dword ptr [0xa8b238]
+  0050b735  85c0                 test eax, eax
+  0050b737  8a81ec010000         mov al, byte ptr [ecx + 0x1ec]
+  0050b73d  7513                 jne 0x50b752
+  0050b73f  84c0                 test al, al
+  0050b741  750d                 jne 0x50b750
+  0050b743  8a81ed010000         mov al, byte ptr [ecx + 0x1ed]
+  0050b749  84c0                 test al, al
+  0050b74b  7503                 jne 0x50b750
+  0050b74d  32c0                 xor al, al
+  0050b74f  c3                   ret 
+  0050b750  b001                 mov al, 1
+  0050b752  c3                   ret 
+  0050b753  90                   nop 
+  0050b754  90                   nop 
+  0050b755  90                   nop 
+  0050b756  90                   nop 
+  0050b757  90                   nop 
+  0050b758  90                   nop 
+  0050b759  90                   nop 
+  0050b75a  90                   nop 
+  0050b75b  90                   nop 
+  0050b75c  90                   nop 
+  0050b75d  90                   nop 
+  0050b75e  90                   nop 
+  0050b75f  90                   nop 
+  0050b760  a138b2a800           mov eax, dword ptr [0xa8b238]
+  0050b765  83ec08               sub esp, 8
+  0050b768  85c0                 test eax, eax
+  0050b76a  53                   push ebx
+  0050b76b  55                   push ebp
+  0050b76c  56                   push esi
+  0050b76d  57                   push edi
+  0050b76e  8bf9                 mov edi, ecx
+  0050b770  750c                 jne 0x50b77e
+  0050b772  5f                   pop edi
+  0050b773  5e                   pop esi
+  0050b774  5d                   pop ebp
+  0050b775  b001                 mov al, 1
+  0050b777  5b                   pop ebx
+  0050b778  83c408               add esp, 8
+  0050b77b  c20800               ret 8
+
+-- disasm 00714160 (PipWrap binding region 0x714180) --
+  00714160  85e0                 test eax, esp
+  00714162  0300                 add eax, dword ptr [eax]
+  00714164  005068               add byte ptr [eax + 0x68], dl
+  00714167  c03d8400538bce       sar byte ptr [0x8b530084], 0xce
+  0071416e  e85d35e1ff           call 0x5276d0
+  00714173  8985e0030000         mov dword ptr [ebp + 0x3e0], eax
+  00714179  8b8de4030000         mov ecx, dword ptr [ebp + 0x3e4]
+  0071417f  51                   push ecx
+  00714180  68b83d8400           push 0x843db8
+  00714185  53                   push ebx
+  00714186  8bce                 mov ecx, esi
+  00714188  e84335e1ff           call 0x5276d0
+  0071418d  83ec1c               sub esp, 0x1c
+  00714190  8dbd38060000         lea edi, [ebp + 0x638]
+  00714196  8bcc                 mov ecx, esp
+  00714198  8985e4030000         mov dword ptr [ebp + 0x3e4], eax
+  0071419e  57                   push edi
+  0071419f  894c2430             mov dword ptr [esp + 0x30], ecx
+  007141a3  e83838d6ff           call 0x4779e0
+
+== G. U32 VTABLE SLOTS ==
+u32(007f4d24) = 006f8df0   ; Techno v241
+u32(007f4d84) = 006fb010   ; Techno v265
+u32(007f6094) = 00736ca0   ; Unit v265
+u32(007f5ecc) = 00740b10   ; Unit v151 (claimed 0x740B10)
+u32(007f6034) = 00743190   ; Unit v241
+u32(007e9058) = 004d9920   ; Foot v241
+u32(007eb41c) = 0051e140   ; Infantry v241
+u32(007e4280) = 00445f00   ; Building v241
+u32(007f5d94) = 004d3780   ; Unit v73
+u32(007eb17c) = 004d3780   ; Infantry v73
+u32(007e8db8) = 004d3780   ; Foot v73
+
+== H. MOD8 GATE + 0x4F8E24 DECODABILITY ==
+raw 0x4F8F87..0x4F8F9C = 8b1584eda80081e20700008079054a83caf8427522
+raw 0x4F8E1E..0x4F8E2C = 570000c68646020000008b866402
+-- disasm 004f8e21 (aligned decode at 0x4F8E21 (0x4F8E24 inside?)) --
+  004f8e21  c6864602000000       mov byte ptr [esi + 0x246], 0
+  004f8e28  8b8664020000         mov eax, dword ptr [esi + 0x264]
+  004f8e2e  33db                 xor ebx, ebx
+
+### F7-REVIEW PROBE end 107.9s

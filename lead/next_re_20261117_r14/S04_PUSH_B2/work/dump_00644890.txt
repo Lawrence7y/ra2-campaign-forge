@@ -1,0 +1,77 @@
+# EVIDENCE entry 6572176 name=sub_00644890 grade=[未证]  (S04_PUSH_B2)
+## ① 入口
+  entry=0x00644890 in_text=True tva=0x401000 tend=0x7E038D atlas_size=131
+  bytes@entry = 56 57 8b f9 57 68 74 74 81 00 e8 81 44 18 00 83 c4 08 85 c0 74 68 57 68 94 76 81 00 e8 6f 44 18
+  disasm insns=52 last_ret_end=0x644913 body_end=0x644913
+## ② 类身份（RTTI 链 + 虚表归属）
+  未取得（entry2slots 无命中 —— 无 RTTI 虚表槽，②不成立）
+## ④ 使用见证（direct call 站点 / 活虚表派发）
+  direct E8 sites count=17: 0x66CAE2 0x66CB20 0x66CB5F 0x66CB9E 0x66CBDC 0x66CC1B 0x66CC5A 0x66CC98 0x66CCD7 0x66D802 0x672ABC 0x713BAF 0x713BE8 0x713C76 0x713D73 0x74B479
+  livevt witnesses count=0
+  (all vtable slots v==entry from index; livevt is subset with install+dispatch)
+## ③ 整体合同（③b 形态检测）
+  ③b② 候选站点数=4
+    call@0x64489A -> test@0x6448A2 ('TEST_EAX', 0) -> je@0x6448A4 -> tgt=0x64490E | eax_trap_gap=False path_diff=True
+      sig_t=([], [0], True, 0) sig_f=([8162592], [], False, None)
+    call@0x6448AC -> test@0x6448B4 ('TEST_EAX', 0) -> je@0x6448B6 -> tgt=0x64490E | eax_trap_gap=False path_diff=True
+      sig_t=([], [0], True, 0) sig_f=([8162592], [], False, None)
+    call@0x6448D0 -> test@0x6448D8 ('TEST_EAX', 0) -> je@0x6448DA -> tgt=0x644902 | eax_trap_gap=False path_diff=True
+      sig_t=([], [], True, None) sig_f=([6570144, 8162839], [], True, None)
+    call@0x6448EB -> test@0x6448F3 ('TEST_EAX', 0) -> je@0x6448F5 -> tgt=0x64490E | eax_trap_gap=False path_diff=True
+      sig_t=([], [0], True, 0) sig_f=([6570144], [], True, None)
+  jump-table(indirect jmp mem) count=0
+  backward-branch count=1
+    jl@0x6448E4 -> 0x6448C3 (back)
+## full disassembly (entry-relative, atlas size)
+  +0x0000  56                   push esi
+  +0x0001  57                   push edi
+  +0x0002  8bf9                 mov edi, ecx
+  +0x0004  57                   push edi
+  +0x0005  6874748100           push 0x817474
+  +0x000A  e881441800           call 0x7c8d20
+  +0x000F  83c408               add esp, 8
+  +0x0012  85c0                 test eax, eax
+  +0x0014  7468                 je 0x64490e
+  +0x0016  57                   push edi
+  +0x0017  6894768100           push 0x817694
+  +0x001C  e86f441800           call 0x7c8d20
+  +0x0021  83c408               add esp, 8
+  +0x0024  85c0                 test eax, eax
+  +0x0026  7456                 je 0x64490e
+  +0x0028  a1783da800           mov eax, dword ptr [0xa83d78]
+  +0x002D  33f6                 xor esi, esi
+  +0x002F  85c0                 test eax, eax
+  +0x0031  7e23                 jle 0x6448e6
+  +0x0033  a16c3da800           mov eax, dword ptr [0xa83d6c]
+  +0x0038  57                   push edi
+  +0x0039  8b0cb0               mov ecx, dword ptr [eax + esi*4]
+  +0x003C  83c124               add ecx, 0x24
+  +0x003F  51                   push ecx
+  +0x0040  e84b441800           call 0x7c8d20
+  +0x0045  83c408               add esp, 8
+  +0x0048  85c0                 test eax, eax
+  +0x004A  7426                 je 0x644902
+  +0x004C  a1783da800           mov eax, dword ptr [0xa83d78]
+  +0x0051  46                   inc esi
+  +0x0052  3bf0                 cmp esi, eax
+  +0x0054  7cdd                 jl 0x6448c3
+  +0x0056  6810030000           push 0x310
+  +0x005B  e827451800           call 0x7c8e17
+  +0x0060  83c404               add esp, 4
+  +0x0063  85c0                 test eax, eax
+  +0x0065  7417                 je 0x64490e
+  +0x0067  57                   push edi
+  +0x0068  8bc8                 mov ecx, eax
+  +0x006A  e8a1f7ffff           call 0x6440a0
+  +0x006F  5f                   pop edi
+  +0x0070  5e                   pop esi
+  +0x0071  c3                   ret 
+  +0x0072  8b156c3da800         mov edx, dword ptr [0xa83d6c]
+  +0x0078  5f                   pop edi
+  +0x0079  8b04b2               mov eax, dword ptr [edx + esi*4]
+  +0x007C  5e                   pop esi
+  +0x007D  c3                   ret 
+  +0x007E  5f                   pop edi
+  +0x007F  33c0                 xor eax, eax
+  +0x0081  5e                   pop esi
+  +0x0082  c3                   ret 

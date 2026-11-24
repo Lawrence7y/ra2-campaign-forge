@@ -1,0 +1,39 @@
+=== 基线（无替换）===
+  n_items=302 n_flips=5 outside=0 no_relaxation=True samples_all_pass=True VERDICT=PASS
+
+=== (D1) 第三步(d)：白名单 5 条中『有 1 条是错的』（该域该 token 换成语义空文本，白名单不动）===
+  wrong=lead/matrix_ab_ruling_20261109/                需谁批准     → n_flips=5 outside=0 no_relaxation=True VERDICT=PASS
+  wrong=lead/matrix_reach_20261109/                    实跑输出     → n_flips=5 outside=0 no_relaxation=True VERDICT=PASS
+  wrong=lead/n11_wording_fix_20261108/                 改前改后     → n_flips=5 outside=0 no_relaxation=True VERDICT=PASS
+  wrong=lead/s604_script_gap_20261109/                 可重建      → n_flips=5 outside=0 no_relaxation=True VERDICT=PASS
+  wrong=lead/s604_script_gap_20261109/                 脚本存在性    → n_flips=5 outside=0 no_relaxation=True VERDICT=PASS
+
+=== (D2) 5 条全换成语义空片段 ===
+  n_items=302 n_flips=5 outside=0 no_relaxation=True samples_all_pass=True VERDICT=PASS
+     FLIP lead/matrix_ab_ruling_20261109/                需谁批准     语义空=True
+     FLIP lead/matrix_reach_20261109/                    实跑输出     语义空=True
+     FLIP lead/n11_wording_fix_20261108/                 改前改后     语义空=True
+     FLIP lead/s604_script_gap_20261109/                 脚本存在性    语义空=True
+     FLIP lead/s604_script_gap_20261109/                 可重建      语义空=True
+  ★ 5 条全错仍 PASS ? True
+
+=== (D4) 集合敏感性：白名单移除 1 项 / 多加 1 项（文本不动）===
+  移除 需谁批准     → no_relaxation=False outside=1 VERDICT=FAIL
+  移除 实跑输出     → no_relaxation=False outside=1 VERDICT=FAIL
+  移除 改前改后     → no_relaxation=False outside=1 VERDICT=FAIL
+  移除 可重建      → no_relaxation=False outside=1 VERDICT=FAIL
+  移除 脚本存在性    → no_relaxation=False outside=1 VERDICT=FAIL
+  多加 1 项        → no_relaxation=False outside=0 VERDICT=FAIL
+
+=== (D3) 第四步：5 条『形式像而实质空』对抗样本逐条独立实跑 ===
+  WCF1 需谁批准     R9=True/raw        R9S=False/(none)     misjudged=no
+  WCF2 实跑输出     R9=False/(none)     R9S=False/(none)     misjudged=no
+  WCF3 改前改后     R9=False/(none)     R9S=True/semantic   misjudged=★YES
+     evidence = [{"role": "R1(BEFORE)∧R2(AFTER)∧R3(对照)", "section": "## 4 订正草案（改前/改后逐处对照）", "before": {"label": "【改前】", "value": "本件按 13 项分写，与裁决列名一一对应，无缺漏、无新增。", "line": 5}, "after": {"label": "【改后】", "value": "改后句见方案 B 的对应行，本件不重录。", "line": 6}, "n_before": 1, "n_after": 1}]
+  WCF4 脚本存在性    R9=True/raw        R9S=False/(none)     misjudged=no
+  WCF5 可重建      R9=False/(none)     R9S=True/semantic   misjudged=★YES
+     evidence = [{"role": "R1(重建)∧R2(肯定情态)∧R3(确定性证据)", "section": "## 4 重建可行性", "modal": "【可唯一重建】", "evidence": "五项口径", "line": 9, "clause": "**待判：正确算法是否【可唯一重建】，尚需与台账逐位核对"}]
+
+  → 误判在场 = 2/5   misjudged_ids=['WCF3', 'WCF5']
+
+WROTE _wlv_counterfactual_out.json

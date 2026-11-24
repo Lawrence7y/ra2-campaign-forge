@@ -1,0 +1,29 @@
+TEMP: C:\Users\Administrator\AppData\Local\Temp\_ci_hard_pb7_aqbf
+
+=== CASE A: baseline 副本，plus_match=9（与真值相同，故意改坏无从体现） ===
+  _f2w_checks.py rc=0  output_has_totals=False
+  _f2w_pass.py rc=0  output_has_totals=False
+  _f2w_extract.py rc=0  output_has_totals=False
+  _f2w_final.py rc=0  output_has_totals=False
+  --- 指纹锁实跑（对原件，非副本；A 副本不改原件） ---
+  _f2d_fpcheck.py rc=0  compare_out_line=[' "lead/r11_f2_fix_20261109/_f2_compare_out.json": {']
+  _f2dw_fpcheck.py rc=0  compare_out_line=['MATCH  lead/r11_f2_fix_20261109/_f2_compare_out.json 44958 148ea8d689eaaf582af05ea1bf4650605e104d6d74f8c7765e75a6eec662c7b1']
+  _f2dv_fpcheck.py rc=0  compare_out_line=['MATCH\tlead\\r11_f2_fix_20261109\\_f2_compare_out.json\t148ea8d689eaaf582af05ea1bf4650605e104d6d74f8c7765e75a6eec662c7b1\t44958\texpected=148ea8d689eaaf582af05ea1bf4650605e104d6d74f8c7765e75a6eec662c7b1/44958']
+
+=== CASE B: merged 投影（真值 18），硬编码 totals.plus_match=9 ===
+  _f2w_checks.py rc=0  output_has_totals=False  verdict_lines=['sha 逐字一致条数 = 8']
+  _f2w_pass.py rc=0  output_has_totals=False  verdict_lines=['R11 PASS: orig=6 plus=7 | overall PASS: orig=6 plus=7']
+  _f2w_extract.py rc=0  output_has_totals=False  verdict_lines=[]
+  _f2w_final.py rc=0  output_has_totals=False  verdict_lines=[]
+  --- _ci_checks.py 对 B ---
+  _ci_checks rc=1
+    FILE: C:\Users\Administrator\AppData\Local\Temp\_ci_hard_pb7_aqbf\B_merged_hard9\_f2_compare_out.json
+    FACTS: {"E_merged_tier": 1, "M_match_no_path": 1, "bindings": 19, "has_totals_7": true, "match_true": 18, "merged_present": true, "n_results": 30, "path_and_match": 17, "path_true": 17, "plus_match": 9, "plus_match_recomputed": 18, "plus_path": 17, "plus_path_recomputed": 17, "recomputed": {"bindings": 19, "orig_match": 0, "orig_path": 1, "orig_problems": 24, "plus_match": 18, "plus_path": 17, "plus_problems": 23}, "set_equal": false, "tiers": {"NONE": 1, "SAMEDOC_LINK": 8, "SAMEDOC_LINK_EQ": 1, "T1": 1, "T2": 5, "T2N": 2, "T3": 1}}
+    ALERT violations=2
+      - INV-01 totals.plus_match=9 != recomputed=18
+      - INV-06 plus_path=17 != plus_match=9 (baseline identity broken; must reconcile with plus_match_by_kind)
+
+=== CASE C: merged 投影写回 totals=18（正确值），看现有消费者是否区分 merged/unique ===
+  _f2w_checks rc=0  sha逐字一致条数 line = ['sha 逐字一致条数 = 8']
+  _f2w_pass rc=0  verdict line = ['R11 PASS: orig=6 plus=7 | overall PASS: orig=6 plus=7']
+  _ci_checks rc=1  alerts = ['ALERT violations=1', '- INV-06 plus_path=17 != plus_match=18 (baseline identity broken; must reconcile with plus_match_by_kind)']

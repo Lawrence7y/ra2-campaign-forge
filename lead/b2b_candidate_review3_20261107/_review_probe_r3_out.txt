@@ -1,0 +1,188 @@
+==============================================================================
+== [1] 五件指纹实算（hashlib，本探针实跑） ==
+母本: sha256=517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636 bytes=399508 LF=7291 CR=0 path=D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\qc151_u0400_trip\qc151_trip.py
+候选: sha256=ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2 bytes=412759 LF=7533 CR=0 path=D:\Project\ra2-campaign-forge\lead\b2b_candidate_lf_20261107\qc151_trip.candidate_lf.py
+候选diff: sha256=72b108021637cf7d225a9b109a542ec10c934abb1a8e40b8850a82c6bea9cdb9 bytes=18454 LF=339 CR=0 path=D:\Project\ra2-campaign-forge\lead\b2b_candidate_lf_20261107\CANDIDATE_LF.diff
+设计: sha256=565771d8b31c516dc7a1e0100ea047484406a203390492df9f57170a6532feaf bytes=66735 LF=693 CR=0 path=D:\Project\ra2-campaign-forge\lead\b2b_design_20261106\B2B_DESIGN.md
+N1绑定: sha256=00ea6fe87ee5508b84332447b23951d4db86a1682ee36aaa48a3bd9cf774d310 bytes=8493 LF=133 CR=0 path=D:\Project\ra2-campaign-forge\lead\b2b_n1_binding_20261107\N1_BINDING.md
+[PASS] 母本指纹 == 绑定记录 517889c6.../399508
+[PASS] 候选指纹 == 绑定记录 ca23c116.../412759
+[PASS] N-1 已解除：候选 CR=0（纯 LF） | CR=0
+[PASS] N-1 已解除：母本 CR=0（纯 LF） | CR=0
+[PASS] CANDIDATE_LF.diff 指纹 == 72b10802.../18454
+[PASS] 设计指纹 == 565771d8.../66735
+mother splitlines=7291 cand splitlines=7533
+==============================================================================
+== [2] AST 全量扫描（ast.parse，不加载模块） ==
+[PASS] 候选 ast.parse 成功
+-- 2a. copy_post_except_evidence 调用点 --
+调用点个数 = 1
+  调用行=6167 位置实参=['rec', 'carrier_dir', 'out_dir'] 关键字实参=[('pre_freshness_snapshot', 'pre_freshness_snapshot')]
+[PASS] copy_post_except_evidence 调用点恰 1 处
+[PASS] 唯一调用点关键字传参 pre_freshness_snapshot=pre_freshness_snapshot
+copy_post_except_evidence def @:4701 参数=['rec', 'carrier_dir', 'out_dir', 'pre_freshness_snapshot'] 默认值个数=1
+[PASS] def 末参 = pre_freshness_snapshot 且默认 None
+-- 2b. finalize_trip 签名 / 调用点 / 静态绑定模拟 --
+finalize_trip def @:6127 共 14 参=['rec', 'carrier_dir', 'bak', 't0', 'pre_except_txt', 'out_dir', 'ownership', 'terminated_ok', 'main_return_code', 'mother_baseline', 'carrier_identity', 'handover', 'created_receipt', 'pre_freshness_snapshot']
+默认值个数=9 末参=pre_freshness_snapshot
+[PASS] finalize_trip 末形参 = pre_freshness_snapshot 带默认
+finalize_trip 调用点个数 = 1
+  调用行=7358 位置实参(5) 关键字(9)=['out_dir', 'ownership', 'terminated_ok', 'main_return_code', 'mother_baseline', 'carrier_identity', 'handover', 'created_receipt', 'pre_freshness_snapshot'] => OK（不抛 TypeError）
+[PASS] finalize_trip 所有调用点兼容新形参（静态绑定模拟）
+[PASS] finalize_trip 调用点含 pre_freshness_snapshot 关键字
+-- 2c. 退出码判据是否读 freshness_* --
+含 no_new_exception 的 If 判据节点 = 1
+  判据 If @:6214-6219 含'freshness'(ci)=False
+[PASS] 退出码判据块（no_new_exception If 整块）零 freshness_*
+候选判据块 :6214-6219 vs 母本 :5985-5990 逐字相等 = True
+[PASS] E 判据块逐字未改（候选==母本 :5985-5990）
+  note_cleanup_failure @:403-408 含'freshness'(ci)次数=0
+[PASS] 退出码相关函数 note_cleanup_failure 体零 freshness
+  merge_cleanup_code @:411-425 含'freshness'(ci)次数=0
+[PASS] 退出码相关函数 merge_cleanup_code 体零 freshness
+  except_set_diff @:687-723 含'freshness'(ci)次数=0
+[PASS] 退出码相关函数 except_set_diff 体零 freshness
+  run_guarded_steps @:4526-4553 含'freshness'(ci)次数=0
+[PASS] 退出码相关函数 run_guarded_steps 体零 freshness
+  _main_wrapper @:7381-7444 含'freshness'(ci)次数=0
+[PASS] 退出码相关函数 _main_wrapper 体零 freshness
+  main @:6414 含'freshness'(ci)行数=7（应全为 H07/H08/H09 数据行）
+    :6528 _pre_freshness_snapshot: dict | None = None
+    :6623 _pre_freshness_snapshot = make_pre_freshness_snapshot(
+    :6625 rec.add(FRESHNESS_GROUP, "captured_at_iso_pre",
+    :6626 _pre_freshness_snapshot["captured_at_iso"],
+    :6627 "script:make_pre_freshness_snapshot",
+    :6629 f"{_pre_freshness_snapshot['state']}")
+    :7367 pre_freshness_snapshot=_pre_freshness_snapshot)
+-- 2d. _emit_f rec.add 计数 --
+_emit_f @:4724-4753 内 rec.add 调用数 = 7
+  :4730 group=FRESHNESS_GROUP key=FRESHNESS_KEY_PREFIX + 'verdict'
+  :4733 group=FRESHNESS_GROUP key=FRESHNESS_KEY_PREFIX + 'confidence'
+  :4736 group=FRESHNESS_GROUP key=FRESHNESS_KEY_PREFIX + 'is_new'
+  :4740 group=FRESHNESS_GROUP key=FRESHNESS_KEY_PREFIX + 'note'
+  :4743 group=FRESHNESS_GROUP key='pre_snapshot_state'
+  :4747 group=FRESHNESS_GROUP key='usable_as_crash_evidence'
+  :4751 group=FRESHNESS_GROUP key='captured_at_iso'
+[PASS] _emit_f 固定 7 个 rec.add（设计 :83） | 实际=7
+[PASS] _emit_f 7 个全部写 FRESHNESS_GROUP
+  带前缀键(4)=["FRESHNESS_KEY_PREFIX + 'verdict'", "FRESHNESS_KEY_PREFIX + 'confidence'", "FRESHNESS_KEY_PREFIX + 'is_new'", "FRESHNESS_KEY_PREFIX + 'note'"]
+  独立名键(3)=["'pre_snapshot_state'", "'usable_as_crash_evidence'", "'captured_at_iso'"]
+[PASS] 4 键带前缀 + 3 键同 group 独立名（设计 §5 精确口径）
+模块全量 rec.add(FRESHNESS_GROUP, ...) 次数 = 8
+  :4730 key=FRESHNESS_KEY_PREFIX + 'verdict'
+  :4733 key=FRESHNESS_KEY_PREFIX + 'confidence'
+  :4736 key=FRESHNESS_KEY_PREFIX + 'is_new'
+  :4740 key=FRESHNESS_KEY_PREFIX + 'note'
+  :4743 key='pre_snapshot_state'
+  :4747 key='usable_as_crash_evidence'
+  :4751 key='captured_at_iso'
+  :6625 key='captured_at_iso_pre'
+[PASS] 全文件 FRESHNESS_GROUP rec.add = 8（7 _emit_f + 1 H08）
+==============================================================================
+== [3] difflib 全量 diff（母本 vs 候选）+ 逐 hunk 归因 H1–H9 ==
+变更 opcode 块数 = 12  +行 = 255  -行 = 13
+设计稿 ```diff 块数 = 9
+设计 hunk 头数 = 9  设计+行 = 255  设计-行 = 13
+  @@ -212,6 +212,21 @@
+  @@ -4458,6 +4473,10 @@
+  @@ -4558,8 +4577,131 @@
+  @@ -4572,20 +4714,105 @@
+  @@ -5906,7 +6133,8 @@
+  @@ -5936,7 +6164,8 @@
+  @@ -6294,6 +6523,9 @@
+  @@ -6386,6 +6618,15 @@
+  @@ -7122,7 +7363,8 @@
+[PASS] 候选+ 行多重集 == 设计+ 行多重集 | 候选独有=0 设计独有=0
+[PASS] 候选- 行多重集 == 设计- 行多重集
+[PASS] +行=255 / -行=13（设计 §4 口径）
+由 hunk 头解析的母本 '-侧' 区间：
+  母本 212-217  <- @@ -212,6 +212,21 @@
+  母本 4458-4463  <- @@ -4458,6 +4473,10 @@
+  母本 4558-4565  <- @@ -4558,8 +4577,131 @@
+  母本 4572-4591  <- @@ -4572,20 +4714,105 @@
+  母本 5906-5912  <- @@ -5906,7 +6133,8 @@
+  母本 5936-5942  <- @@ -5936,7 +6164,8 @@
+  母本 6294-6299  <- @@ -6294,6 +6523,9 @@
+  母本 6386-6391  <- @@ -6386,6 +6618,15 @@
+  母本 7122-7128  <- @@ -7122,7 +7363,8 @@
+-- 逐变更块归因 --
+  insert   母本:215-214 候选:215-229 => ⊆H区间(母本212-217)
+  insert   母本:4461-4460 候选:4476-4479 => ⊆H区间(母本4458-4463)
+  insert   母本:4561-4560 候选:4580-4700 => ⊆H区间(母本4558-4565)
+  replace  母本:4562-4562 候选:4702-4704 => ⊆H区间(母本4558-4565)
+  replace  母本:4575-4582 候选:4717-4791 => ⊆H区间(母本4572-4591)
+  replace  母本:4586-4586 候选:4795-4812 => ⊆H区间(母本4572-4591)
+  insert   母本:4589-4588 候选:4815-4815 => ⊆H区间(母本4572-4591)
+  replace  母本:5909-5909 候选:6136-6137 => ⊆H区间(母本5906-5912)
+  replace  母本:5939-5939 候选:6167-6168 => ⊆H区间(母本5936-5942)
+  insert   母本:6297-6296 候选:6526-6528 => ⊆H区间(母本6294-6299)
+  insert   母本:6389-6388 候选:6621-6629 => ⊆H区间(母本6386-6391)
+  replace  母本:7125-7125 候选:7366-7367 => ⊆H区间(母本7122-7128)
+[PASS] 所有变更块均归入 H1–H9 区间（行文本口径） | 未归入块数=0
+字节级 keepends：变更块=12 +行=255 -行=13
+[PASS] 字节级口径与行文本口径一致（无行尾噪声，N-1 不复发）
+[PASS] 决定性①：母本 + 设计 §4 九 hunk 重建 == 候选（逐字节） | 重建sha16=ca23c116064b25a6 候选sha16=ca23c116064b25a6
+[PASS] CANDIDATE_LF.diff @@ 头恰 9 个 | 实际=9
+[PASS] 决定性②：母本 + CANDIDATE_LF.diff == 候选（逐字节）
+==============================================================================
+== [4] 语义验证（importlib 隔离加载 + DPI patch，同 tests/test_candidate.py:40-57） ==
+模块加载成功（模块名 qc151_candidate_mod_r3，未触发 __main__ 入口）
+[PASS] FRESHNESS_SNAPSHOT_STATES = (unknown, absent_confirmed, present, error)
+[PASS] FRESHNESS_VERDICTS 9 值
+[PASS] FRESHNESS_CONFIDENCES = (high, medium, low, none)
+-- 4a. STATE_MATRIX.json 14 行逐行比对 --
+[PASS] STATE_MATRIX.json 共 14 行 | 实际=14
+  行 1 unknown                -> verdict=unknown                conf=none    is_new=None  crash_ev=False match=True
+  行 2 unknown                -> verdict=unknown                conf=none    is_new=None  crash_ev=False match=True
+  行 3 error                  -> verdict=error_pre_snapshot     conf=none    is_new=None  crash_ev=False match=True
+  行 4 post_read_error        -> verdict=post_read_error        conf=none    is_new=None  crash_ev=False match=True
+  行 5 absent_confirmed       -> verdict=new_first_appearance   conf=high    is_new=True  crash_ev=False match=True
+  行 6 absent_both            -> verdict=absent_both            conf=low     is_new=False crash_ev=False match=True
+  行 7 leftover_unchanged     -> verdict=leftover_unchanged     conf=high    is_new=False crash_ev=False match=True
+  行 8 leftover_unchanged     -> verdict=leftover_unchanged     conf=medium  is_new=False crash_ev=False match=True
+  行 9 new_write              -> verdict=new_write              conf=high    is_new=True  crash_ev=False match=True
+  行10 rewritten_same_content -> verdict=rewritten_same_content conf=medium  is_new=True  crash_ev=False match=True
+  行11 rewritten_same_content -> verdict=rewritten_same_content conf=low     is_new=True  crash_ev=False match=True
+  行12 missing_sha            -> verdict=error_pre_snapshot     conf=none    is_new=None  crash_ev=False match=True
+  行13 missing_sha            -> verdict=post_read_error        conf=none    is_new=None  crash_ev=False match=True
+  行14 vanished               -> verdict=vanished               conf=none    is_new=None  crash_ev=False match=True
+[PASS] 14/14 状态矩阵逐行 match（verdict+conf+crash_ev+is_new）
+-- 4b. 三态可分（状态值层面） --
+  unknown          -> unknown/none
+  absent_confirmed -> new_first_appearance/high
+  present          -> new_write/high
+[PASS] 三态 verdict 两两不等（状态值层面可分） | ('unknown', 'new_first_appearance', 'new_write')
+[PASS] 裁定一验收点：absent_confirmed 与 unknown 输出不同
+[PASS] 原始输入 None/{}/{'exists':False} 归一 = 设计意图（不阻断）
+-- 4c. unknown 恒 none 穷举 --
+  组合数=36 泄漏(unknown+非none 或 crash_ev≠False)=0
+[PASS] unknown 恒 none 且 crash_ev 恒 False（穷举 36 组零泄漏）
+-- 4d. make_pre_freshness_snapshot（纯只读输入） --
+  候选自身文件 -> state=present exists=True sha==真实指纹=True epoch=set iso=set
+  不存在路径 -> state=absent_confirmed exists=False
+[PASS] snapshot: 在场文件 -> present + sha 与实算一致 + 双时刻齐
+[PASS] snapshot: 不存在 -> absent_confirmed（非 unknown）
+==============================================================================
+== [5] copy_post_except_evidence 三路径落盘（全内存 stub，零磁盘写） ==
+正常: FRESHNESS行=7 键序=['freshness_verdict', 'freshness_confidence', 'freshness_is_new', 'freshness_note', 'pre_snapshot_state', 'usable_as_crash_evidence', 'captured_at_iso']
+      evidence_copy行=1 value为dict=True
+      12键=True
+      ERROR行=0 raise=None
+[PASS] 正常路径: 7 个 F 字段落盘
+[PASS] 正常路径: EXCEPT.evidence_copy 为 12 键 dict
+[PASS] 正常路径: 无 ERROR 行、不抛
+src_missing: FRESHNESS行=7 evidence_copy行=1 value=None ERROR行=0 stage=['stage=src_missing'] raise=None
+[PASS] src_missing: 7 个 F 字段落盘（stage=src_missing）
+[PASS] src_missing: evidence_copy 行在且 value=None（设计 :434-435 / :605）
+[PASS] src_missing: 无 ERROR 行、不抛
+copy_failed: FRESHNESS行=7 evidence_copy行=0 ERROR行=3 ERROR键=['freshness_copy_failed', 'freshness_copy_stage', 'freshness_copy_traceback'] stage=['stage=copy_failed'] verdict=['post_read_error'] conf=['none'] raise=OSError('boom-read')
+[PASS] copy_failed: 7 F 落盘（stage=copy_failed，verdict=post_read_error/none）
+[PASS] copy_failed: 3 条 ERROR 留痕（failed/stage/traceback）
+[PASS] copy_failed: 无 evidence_copy 行 + 原异常重抛（设计 :434-435，裁定二不阻断）
+汇总: 7F三路径=[True, True, True]  info12键dict[正常,src_missing,copy_failed]=[True, False, False]  ec行存在[正常,src_missing,copy_failed]=[True, True, False]  ec次数=[1, 1, 0]
+[PASS] 7F 三路径全落盘 = [True,True,True]
+[PASS] 12键info value [正常,src_missing,copy_failed] = [True,False,False]（裁定二口径）
+[PASS] evidence_copy 行落点 [正常,src_missing,copy_failed] = [有,有,无]（裁定二/设计 :434-435）
+==============================================================================
+== [6] 汇总: PASS=55 FAIL=0 ==
+PROBE_DONE

@@ -1,0 +1,80 @@
+coverage: (99.99837567729335, 1394120, 66)
+
+=== M. 0x887328 / 0x887330（G_TICKLAST / G_TICKTGT，ra2tool 常量）读写点 ===
+  00887328 hits=21 W=6
+      W 0040EB9F mov dword ptr [0x887328], eax
+      W 0055D4E0 mov dword ptr [0x887328], ecx
+      W 0055D54E mov dword ptr [0x887328], ecx
+      R 0055D56D mov eax, dword ptr [0x887328]
+      R 0055D587 sub eax, dword ptr [0x887328]
+      R 0055D606 mov eax, dword ptr [0x887328]
+      R 0055D622 sub eax, dword ptr [0x887328]
+      W 0055D653 mov dword ptr [0x887328], ecx
+      R 0055D681 mov eax, dword ptr [0x887328]
+      R 0055D69A sub eax, dword ptr [0x887328]
+      W 0055D6CB mov dword ptr [0x887328], ecx
+      R 0055D6FD mov eax, dword ptr [0x887328]
+      R 0055D716 sub eax, dword ptr [0x887328]
+      W 0055D747 mov dword ptr [0x887328], ecx
+      R 0055E1C2 mov eax, dword ptr [0x887328]
+      R 0055E1DB sub eax, dword ptr [0x887328]
+      R 0055E211 mov eax, dword ptr [0x887328]
+      R 0055E22E sub eax, dword ptr [0x887328]
+      R 0055E27B mov eax, dword ptr [0x887328]
+      R 0055E294 sub eax, dword ptr [0x887328]
+      R 0055F599 mov ecx, dword ptr [0x887328]
+  00887330 hits=14 W=6
+      W 0040EBAE mov dword ptr [0x887330], 0
+      W 0055D4F0 mov dword ptr [0x887330], eax
+      W 0055D55E mov dword ptr [0x887330], esi
+      R 0055D572 mov esi, dword ptr [0x887330]
+      R 0055D60B mov esi, dword ptr [0x887330]
+      W 0055D667 mov dword ptr [0x887330], eax
+      R 0055D686 mov esi, dword ptr [0x887330]
+      W 0055D6DF mov dword ptr [0x887330], eax
+      R 0055D702 mov esi, dword ptr [0x887330]
+      W 0055D75B mov dword ptr [0x887330], eax
+      R 0055E1C7 mov esi, dword ptr [0x887330]
+      R 0055E216 mov esi, dword ptr [0x887330]
+      R 0055E280 mov esi, dword ptr [0x887330]
+      R 0055F5AC mov ecx, dword ptr [0x887330]
+
+=== N. 0xA8B55C（MLF timeGetTime 存点，P03 §2.2）读写点 ===
+  W 0055D3DA mov dword ptr [0xa8b55c], eax
+  R 0055DE13 sub eax, dword ptr [0xa8b55c]
+
+=== O. 0xA8E2E4（帧阈值，P03 称全镜像无写者）读写点 ===
+hits=1 W=0
+  R 0055D3C0 mov ecx, dword ptr [0xa8e2e4]
+
+=== P. MLF 帧阈值/节流块 0x55D3BB..0x55D3F0 ===
+0055D3BB  a184eda800         mov eax, dword ptr [0xa8ed84]
+0055D3C0  8b0de4e2a800       mov ecx, dword ptr [0xa8e2e4]
+0055D3C6  3bc1               cmp eax, ecx
+0055D3C8  7c0a               jl 0x55d3d4
+0055D3CA  b938b2a800         mov ecx, 0xa8b238
+0055D3CF  e82ccf1300         call 0x69a300
+0055D3D4  ff1530157e00       call dword ptr [0x7e1530]
+0055D3DA  a35cb5a800         mov dword ptr [0xa8b55c], eax
+0055D3DF  a108e3a800         mov eax, dword ptr [0xa8e308]
+0055D3E4  85c0               test eax, eax
+0055D3E6  7407               je 0x55d3ef
+0055D3E8  c60572eda80001     mov byte ptr [0xa8ed72], 1
+
+=== Q. 0x48C8B0 函数是否覆盖 0x48CB2E（四旗标写者归属）===
+rets in [0x48C8B0,0x48CCC0): ['0x48c997', '0x48cc81', '0x48cc89', '0x48cc91', '0x48ccad', '0x48ccb5']
+0x48CB2E 前 最近 ret: 0x48c997
+
+=== R. 0x48CB2E 上下文（写 0x8B41C0=1 的守卫）===
+0048CB00  89048d543aa800     mov dword ptr [ecx*4 + 0xa83a54], eax
+0048CB07  8b15d002a800       mov edx, dword ptr [0xa802d0]
+0048CB0D  a1c802a800         mov eax, dword ptr [0xa802c8]
+0048CB12  42                 inc edx
+0048CB13  83e27f             and edx, 0x7f
+0048CB16  40                 inc eax
+0048CB17  8915d002a800       mov dword ptr [0xa802d0], edx
+0048CB1D  a3c802a800         mov dword ptr [0xa802c8], eax
+0048CB22  c605fc2c820000     mov byte ptr [0x822cfc], 0
+0048CB29  e903010000         jmp 0x48cc31
+
+Q04_probe2 done.

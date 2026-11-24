@@ -1,0 +1,25 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+0087F7E8	S12	MapClass_singleton	MapClass 单例；§951 取格链的宿主对象	[已证·复用]	EVIDENCE/m13_ingame.json
+0087F924	S12	CellArray_ptr	dword[0x87F924]=CellClass* 数组基址(stride4)，配合 idx=(Y<<9)+X 取格	[已证]	EVIDENCE/m11_ingame.json
+5657A0	S12	GetCellAt	取格函数(ecx=MapClass,arg=CellStruct)；本卡用其等价数组公式而非调用	[未证·未调用]	work/wc_probe.py
+41BEA0	S12	GetMapCoords	obj->vtable[+0x1B8] 取地图坐标；本卡用 Location>>8 等价路径	[未证·未调用]	work/wb_probe.py
+A8ED84	S12	FrameCounter	全局帧计数，只读采样确认递增(192→12096)	[已证]	EVIDENCE/m13_ingame.json
+A8B238	S12	GameMode	模式字，进局后=5	[已证]	EVIDENCE/m13_ingame.json
+A83D4C	S12	PlayerHousePtr	PlayerHouse(HouseClass*) 全局指针；局1=0x10d4ba50/局2=0x10d50d30	[已证]	EVIDENCE/m11_ingame.json
+0000030C	S12	HouseCredits	HouseClass+0x30C=当前额度(带动画逼近)，局2收尾=5200	[已证]	EVIDENCE/m16_final_state.json
+0000021C	S12	ObjectOwner	BuildingClass+0x21C=owner HouseClass*，10次放置均指向玩家House	[已证]	EVIDENCE/A_final.jsonl
+00000081	S12	LimboFlag	BuildingClass+0x81(o1)=1 表limbo待放置；成功落格后=0；拒绝态恒1	[已证]	EVIDENCE/B02_reject_conyard.json
+00000074	S12	InCellLatch	BuildingClass+0x74(o2)=0未入格/1已入格；成功落格后=1；拒绝态恒0	[已证]	EVIDENCE/A01_place.json
+000001AC	S12	CanPlaceField	BuildingClass+0x1AC(can-place候选)，拒绝前后 u8=0/u32=0，未随点击变化	[已证·观测]	EVIDENCE/B02_reject_conyard.json
+000000E4	S12	CellHeadA	CellClass+0xE4=格链A头；成功后指向该对象，拒绝前后不变	[已证]	EVIDENCE/B02_reject_conyard.json
+000000E8	S12	CellHeadB	CellClass+0xE8=格链B头；本样本多为0	[已证]	EVIDENCE/m16_final_state.json
+00000030	S12	CellNext	格链元素 next=+0x30，遍历链长用	[已证·复用]	work/wb_probe.py
+0047C620	S12	CanPlaceCheck	逐格可放置校验；拒绝时无副作用回滚、成功时允许入格(可观测后果，未取EIP)	[推断·可观测]	REJECT_MACHINE.md
+00886FA0	S12	CameraOriginX	相机滚动原点X只读读数恒0(疑非本build有效地址)	[已证读数]	EVIDENCE/B02_reject_conyard.json
+00886FA4	S12	CameraOriginY	相机滚动原点Y只读读数恒0	[已证读数]	EVIDENCE/B02_reject_conyard.json
+000009C	S12	ObjLocationX	BuildingClass+0x9C=Location.X(lepton)，>>8=cellX	[已证·复用]	work/wb_probe.py
+000000A0	S12	ObjLocationY	BuildingClass+0xA0=Location.Y(lepton)，>>8=cellY	[已证·复用]	work/wb_probe.py
+00000520	S12	ObjTypePtr	BuildingClass+0x520=BuildingTypeClass*，+0x24短ID串判NAPOWR	[已证·复用]	EVIDENCE/m13_ingame.json
+A8EB50	S12	BuildingArray	BuildingClass::Array 基址，枚举BuildingClass	[已证·复用]	work/w177_core.py
+B0F724	S12	AbstractItems	AbstractClass::Array.Items(+4)，配合Count枚举分类	[已证·复用]	work/wb_probe.py
+B0F730	S12	AbstractCount	AbstractClass::Array.Count(+0x10)	[已证·复用]	work/wb_probe.py

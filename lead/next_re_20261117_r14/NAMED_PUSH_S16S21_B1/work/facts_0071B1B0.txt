@@ -1,0 +1,23 @@
+① 入口
+  entry=0071B1B0  .text=[00401000,007E038D)  in_text=True  atlas_size=134  atlas_end=0071B236
+  反汇编条数=40  skipdata空洞=0  首条=push ecx  末条=ret 4  末条末字节=0071B236
+  末 3 条：
+    0071B231  5E                   pop esi
+    0071B232  59                   pop ecx
+    0071B233  C2 04 00             ret 4
+
+② 类身份（.rdata 虚表槽 → RTTI）
+  槽 007F51A0 = B0 B1 71 00   （vt 007F5180 + 0x20 = slot#8，与线索 slot8 一致）
+  [vt-4] = 007F517C → COL 28 C3 80 00 = 0080C328
+  COL.+0 = 00 00 00 00  (sig=0)
+  COL+0xC (pTD, 绝对VA) = C8 45 84 00 ; COL+0x10 (pCHD) = 18 C3 80 00 → CHD 0080C318 sig=00000000 attr=00000001
+  TD 008445C8 = 94 95 7F 00 00 00 00 00 ; TD+8 内联装饰名 008445D0 = '.?AVTemporalClass@@'
+  vt slot0 = 00410260 (=主表标志 00410260 : YES)
+
+④ 使用见证（.text 构造器活表安装点；与 ② 不同源）
+  安装点 0071A467 : 0071A467 C7 06 80 51 7F 00    mov dword ptr [esi], 0x7f5180
+  所在函数 = 构造器 0071A450（首条 0071A450 56                   push esi）
+  构造器调用者 006C073C : 006C073C 6A 50                push 0x50
+  紧邻 operator new 0x7C8E17 调用 006C073E : 006C073E E8 D4 86 10 00       call 0x7c8e17
+  构造调用 = 006C074C : 006C074C E8 FF 9C 05 00       call 0x71a450
+  ㉓ 排除：删除析构器 0071B1B0 体内写点 0071B1BD : 0071B1BD C7 06 80 51 7F 00    mov dword ptr [esi], 0x7f5180（本条 entry 自身）

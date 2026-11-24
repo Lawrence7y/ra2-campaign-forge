@@ -1,0 +1,6 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+0x5657A0	S12	MapClass_GetCellAt	thiscall(ecx=MapClass 0x87F7E8, arg=CellStruct* ptr) 返回 CellClass*；0x5657A2 movsx eax,word[edx+2] 读 Y、随后读 X，印证 packed CellStruct 布局	[已证]	CLOSED_LOOP.md; work/t1_step.py; EVIDENCE/t1_steps.json
+0x6DBE20	S12	hover_GetCellAt_caller	函数 prologue(push ebp)；+0x6DBEB2 mov ecx,[0x88095C] 把 hover packed cell 作 CellStruct 入参 call 0x5657A0 取格，用于建筑足迹逐格处理	[已证]	work/t1_xref.py(derived); CLOSED_LOOP.md §0; EVIDENCE/t1_goto_112_56.json
+0x47C620	S12	CanPlaceOccupancyCheck	逐格占用检查入口(mov eax,[0xA8E7AC] 旁路开关)；拒集 WhatAmI {6 Building,0x24 Terrain,2 Aircraft}，15/1 不比较；引用前卡字节审计未独立复验	[静态推断]	DISAGREE.md D4/D7; UNKNOWNS U2; PROGRESS C4
+0x43F180	S12	PlacementFootprintCellLoop	函数 prologue(sub esp,0xB0);return 双层格循环入口(0x43F2AE 在内 call 0x47C620, test al,al;je 0x43F504 中止放置)，引用前卡	[静态推断]	DISAGREE.md D1; UNKNOWNS U2
+0x449440	S12	SingleCellCanPlaceQuery	单格 can-place 查询入口(mov eax,[esp+4];mov edx,[eax+0x24]);vcall 经 0x47C620，引用前卡审计，"返0=画绿"未证	[静态推断]	DISAGREE.md D6; UNKNOWNS U2

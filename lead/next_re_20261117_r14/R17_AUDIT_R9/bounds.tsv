@@ -1,0 +1,7 @@
+item	start	end	slots	left_neighbour	right_neighbour	judgement
+AUDITOR text-pointer-domain recompute	0x7E3EBC	0x7E43C4 (excl)	322	0x7E3EB8=0x7FC360 (non-.text)	0x7E43C4=0x7FC298 (non-.text)	ground truth for value-in-.text domain
+R8 claim [0x7E3EBC,0x7E43C4)	0x7E3EBC	0x7E43C4 (excl)	322	same	same	CORRECT: exactly matches independent .text-pointer run (322 slots); both boundary neighbours are non-.text values.
+R9 claim [0x7E3E8C,0x7E4403]	0x7E3E8C	0x7E4403 (incl) = 0x7E4404 excl	350	0x7E3E88=0x818CE8 (.data ptr)	0x7E4404=0x0	WRONG for .text-only domain: left edge is 12 slots too early and right edge 16 slots too late (28 extra slots); the run contains non-.text values (0x7E3E8C=0x7FC2B0, 0x7E3EB8=0x7FC360, 0x7E43C4=0x7FC298).
+AUDITOR image-pointer-domain recompute (widened: any image pointer incl .rdata/.data/gap)	0x7E3E88	0x7E4404 (excl)	351	0x7E3E84=0x3F91DF46 (non-image)	0x7E4404=0x0 (non-image)	Widening extends LEFT by 1 slot (0x7E3E88=0x818CE8 .data pointer); right boundary unchanged at 0x7E4404.
+R9 slot numbers recomputed against correct start 0x7E3EBC	0x7E3FE0 slot#	0x7E4068 slot#	-	-	-	#73 (not #85) and #107 (not #119); R9 numbers were computed from the wrong run start.
+B2 judgement sentences	-	-	-	-	-	R8: right. R9: wrong (image-pointer run mislabelled as .text-only); its 350-slot window straddles 28 non-run slots.

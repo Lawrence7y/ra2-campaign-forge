@@ -1,0 +1,167 @@
+{
+ "a_admission_conditions": [
+  "C1 模块间零 import / 零属性引用（双向），且编排层不得把 A 的返回容器作参数注入 B；代码级判据见 _ei_05_admission.py:assert_independent A1/A3。",
+  "C2 零共享词表常量与零共享正则对象（按字面量与 re.compile 模式字符串精确比对，A2）。",
+  "C3 输入表征正交：不同 tokenizer / 不同特征提取（如 V12 用句法-语义 V1/V2 分类，R10 用 24 字否定回看窗），不得共用同一个 extract_spans / 同一个 tokens 变量。",
+  "C4 数据来源正交：不同真值来源（人工标注 / 结构回验 hashlib / 另一套语料），且各自在盲留出集上有独立的 fp/fn 记录。",
+  "C5 失败模式正交：在既有共同盲区上单层命中率 > 0，且在既有舒适样本上不触发新 FP 上限。",
+  "C6 误差相关可测：给出两两 MI / phi / 联合漏报率；准入阈值 MI ≤ 0.05 bit 且 P(两层同错 | 真值) ≤ 各层漏报率之积的 1.5 倍。",
+  "C7 声明输入契约并锁指纹：每层固定 (predicate_sha, tokens_sha, text_sha)，缺列判该行无效，不得参与「一致」计数。"
+ ],
+ "a_assert_result": {
+  "V12_vs_G7": {
+   "PASS": true,
+   "checks": {
+    "A1_no_import_dependency": true,
+    "A2_no_shared_literal_or_regex": true,
+    "A3_no_output_forwarding": true,
+    "A4_no_shared_function_name": true,
+    "A5_distinct_source_files": true
+   },
+   "shared_literals": [],
+   "shared_function_names": [],
+   "pipeline_injections": []
+  },
+  "V12_vs_N13": {
+   "PASS": false,
+   "checks": {
+    "A1_no_import_dependency": true,
+    "A2_no_shared_literal_or_regex": false,
+    "A3_no_output_forwarding": true,
+    "A4_no_shared_function_name": true,
+    "A5_distinct_source_files": true
+   },
+   "shared_literals": [
+    "已入账"
+   ],
+   "shared_function_names": [],
+   "pipeline_injections": []
+  }
+ },
+ "b_machine_assert": {
+  "assertion": "assert_independent(mod_a, mod_b, pipeline) is True for each pair counted as two independent layers",
+  "V12|G7": true,
+  "V12|N13": false,
+  "G7|N13": "FAIL by A3 (pipeline injects g7.r10_scan/g7.r12_scan into n13 at _gp_pipeline.py:80-81; N13 signature accepts them at :183)",
+  "R10|R12": "FAIL by A3/A2 (r12_scan calls r10_context at _g7_predicates.py:144 — same module)"
+ },
+ "c_confidence": {
+  "formula_miss": "P(all n PASS | E) = Π q_i ≤ q_max^n ; with m spans, P(any missed) ≤ m·q_max^n (union bound)",
+  "formula_posterior": "P(E | all PASS) = π Π(1−s_i) / [π Π(1−s_i) + (1−π) Π c_i]",
+  "assumptions": [
+   "H1 errors conditionally independent given truth E",
+   "H2 each layer's miss rate ≤ q_i on the target population (not the training set)",
+   "H3 no layer's ABSENT is silently folded into PASS",
+   "H4 sensitivity/specificity measured on a blind holdout, not train=test"
+  ],
+  "q_n13_empirical": 0.07692307692307693,
+  "q_r10_empirical": 0.48717948717948717,
+  "q_n13_Wilson95CI": [
+   0.026506914073495688,
+   0.2032137312805527
+  ],
+  "n_independent_2_error_bound": 0.037475345167652864,
+  "n_independent_2_error_bound_pct": 3.747534516765286,
+  "observed_joint_miss": 0.07692307692307693,
+  "observed_over_indep_bound": 2.052631578947368,
+  "posterior_all_PASS_given_2_indep_layers": 0.0887850467289718,
+  "derivation": "If E=true, layer i says PASS with prob q_i; independence multiplies. If E=false, all say PASS with prob Π c_i; Bayes gives posterior. If q_i are only upper bounds, replace equality by ≤.",
+  "warning": "The 74-row corpus is train=test (see CHAIN_VS_SINGLE.md:129,282); q values are descriptive, NOT valid confidence bounds for production."
+ },
+ "d_correlation_correction": {
+  "rho=0.0": {
+   "n_eff_for_n2": 2.0,
+   "joint_miss_equicorr_approx": 0.037475345167652864,
+   "Frechet_upper_bound": 0.07692307692307693
+  },
+  "rho=0.3": {
+   "n_eff_for_n2": 1.5384615384615383,
+   "joint_miss_equicorr_approx": 0.0774326067443017,
+   "Frechet_upper_bound": 0.07692307692307693
+  },
+  "rho=0.6": {
+   "n_eff_for_n2": 1.25,
+   "joint_miss_equicorr_approx": 0.11738986832095055,
+   "Frechet_upper_bound": 0.07692307692307693
+  },
+  "rho=0.9": {
+   "n_eff_for_n2": 1.0526315789473684,
+   "joint_miss_equicorr_approx": 0.15734712989759939,
+   "Frechet_upper_bound": 0.07692307692307693
+  },
+  "general": {
+   "design_effect": "n_eff = n / (1 + (n−1)·ρ̄), ρ̄ = mean pairwise error correlation",
+   "correlated_miss_bound": "P(all PASS|E) ≤ min_i q_i (Fréchet–Hoeffding, distribution-free); under equicorrelated probit: Φ_n(Φ⁻¹(q);ρ) = ∫ Φ((Φ⁻¹(q)−√ρ·t)/√(1−ρ))^n φ(t)dt",
+   "likelihood_ratio_discount": "log LR_2|1 = (1−ρ_eff)·log LR_2 ; i.e. P(E|C1,C2) uses LR1·LR2^(1−ρ)",
+   "rho_estimation": "on a labeled holdout: ρ = corr(1{err_i}, 1{err_j}); equivalently MI / H: MI=0.00062 bit ⇒ ρ≈0.001 on 74 rows for the CATCH/PASS label, but code-level dependence (N13.C forwards R10) imposes a structural ρ=1 on that subpopulation — measured on the C-only rows.",
+   "measured_phi": 0.029325639294907786,
+   "measured_MI_bit": 0.0006204988812550678,
+   "measured_joint_miss_over_indep": 2.052631578947368
+  }
+ }
+}
+e_scoped_4th_layer = {
+ "policy": "V1V2 consulted ONLY when spans==0 OR all three layers say PASS; otherwise chain verdict unchanged (V1V2 is a rescue layer, not a voter)",
+ "trigger_n": 23,
+ "spans0_n": 9,
+ "all_three_PASS_n": 18,
+ "base_chain": {
+  "correct": 69,
+  "fp": 2,
+  "fn": 3,
+  "acc": 0.9324324324324325
+ },
+ "gated_final": {
+  "correct": 62,
+  "fp": 7,
+  "fn": 5,
+  "acc": 0.8378378378378378
+ },
+ "gated_monotone_OR": {
+  "correct": 67,
+  "fp": 7,
+  "fn": 0,
+  "acc": 0.9054054054054054
+ },
+ "rescued_ids": [
+  "GP-A1",
+  "GP-A2",
+  "GP-A3"
+ ],
+ "new_fp_ids": [
+  "N13-P09",
+  "R10-REAL-OBSERVATION_PROTOCOL_SPEC",
+  "R10-CTX-01",
+  "GP-C05",
+  "GP-C06"
+ ],
+ "new_fn_ids": [
+  "N13-N01",
+  "N13-N03",
+  "N13-N09",
+  "N13-N14",
+  "N13-N15"
+ ],
+ "naive_OR": {
+  "correct": 47,
+  "fp": 18,
+  "fn": 9,
+  "acc": 0.6351351351351351
+ },
+ "net_delta_correct": -7,
+ "net_delta_errors": 7,
+ "monotone_net_delta_correct": -2,
+ "monotone_net_delta_errors": 2,
+ "monotone_rescued_ids": [
+  "GP-A1",
+  "GP-A2",
+  "GP-A3"
+ ],
+ "monotone_new_fp_ids": [
+  "N13-P09",
+  "R10-REAL-OBSERVATION_PROTOCOL_SPEC",
+  "R10-CTX-01",
+  "GP-C05",
+  "GP-C06"
+ ]
+}

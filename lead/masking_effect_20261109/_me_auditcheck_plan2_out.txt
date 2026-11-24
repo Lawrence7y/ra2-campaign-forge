@@ -1,0 +1,52 @@
+=== CORRECTED distinguishable-PASS designs (this ask, unmodified scanner) ===
+scanner sha256 = 9ccca808d52f44aaee895e30f9a84f6f3b6ae5ee292ea71281e2b46e627a1c57 bytes = 16053
+GATE = AND_k(REAL per-needle self-test: EXIT=0 AND 6/6 controls match WANT)
+HITSET / MASKED_LINES / EXCLUSIVE / EXCLUSIVE_CONTROLS = DIAGNOSTICS (not gating)
+
+--- S1_delivered_double : needles=['只能判「不可复现」', '不能定位当年错误步骤'] (expect FAIL) : 掩蔽 PASS：N1 在 :22 漏检，靠 N2 撞对 ---
+  PLAN_A' verdict=FAIL AND_k=False
+     per-needle '只能判「不可复现」'                    EXIT=1 SELF_TEST=FAIL | scanned files = 647 ; carrier occurrences = 87 ; distinct files = 21
+     per-needle '不能定位当年错误步骤'                   EXIT=0 SELF_TEST=PASS | scanned files = 647 ; carrier occurrences = 92 ; distinct files = 21
+  PLAN_B' verdict=FAIL (per-needle SELF_TEST, 6-controls-ok)=[('FAIL', False), ('PASS', True)]
+  PLAN_C' verdict=FAIL PER_NEEDLE_SELFTEST(REAL)={0: 'FAIL', 1: 'PASS'}
+     HITSET={'(0,)': 44, '(0, 1)': 43, '(1,)': 49} TOTAL=136 MASKED_LINES=43 EXCLUSIVE=[44, 49] EXCLUSIVE_CONTROLS=[0, 1]
+
+--- S2_single_N1 : needles=['只能判「不可复现」'] (expect FAIL) : 字面单 needle FAIL：:22 <not-scanned> ---
+  PLAN_A' verdict=FAIL AND_k=False
+     per-needle '只能判「不可复现」'                    EXIT=1 SELF_TEST=FAIL | scanned files = 647 ; carrier occurrences = 87 ; distinct files = 21
+  PLAN_B' verdict=FAIL (per-needle SELF_TEST, 6-controls-ok)=[('FAIL', False)]
+  PLAN_C' verdict=FAIL PER_NEEDLE_SELFTEST(REAL)={0: 'FAIL'}
+     HITSET={'(0,)': 87} TOTAL=87 MASKED_LINES=0 EXCLUSIVE=[87] EXCLUSIVE_CONTROLS=[5]
+
+--- S3_true_pass : needles=['只能判', '不能定位当年'] (expect PASS) : 两根各自独立 6/6 PASS（真通过） ---
+  PLAN_A' verdict=PASS AND_k=True
+     per-needle '只能判'                          EXIT=0 SELF_TEST=PASS | scanned files = 647 ; carrier occurrences = 177 ; distinct files = 31
+     per-needle '不能定位当年'                       EXIT=0 SELF_TEST=PASS | scanned files = 647 ; carrier occurrences = 93 ; distinct files = 22
+  PLAN_B' verdict=PASS (per-needle SELF_TEST, 6-controls-ok)=[('PASS', True), ('PASS', True)]
+  PLAN_C' verdict=PASS PER_NEEDLE_SELFTEST(REAL)={0: 'PASS', 1: 'PASS'}
+     HITSET={'(0,)': 108, '(0, 1)': 69, '(1,)': 24} TOTAL=201 MASKED_LINES=69 EXCLUSIVE=[108, 24] EXCLUSIVE_CONTROLS=[0, 0]
+
+--- S4_broken : needles=['不能定位当年', 'TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ'] (expect FAIL) : 坏针注入：一根保证零命中 ---
+  PLAN_A' verdict=FAIL AND_k=False
+     per-needle '不能定位当年'                       EXIT=0 SELF_TEST=PASS | scanned files = 647 ; carrier occurrences = 93 ; distinct files = 22
+     per-needle 'TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ' EXIT=1 SELF_TEST=FAIL | scanned files = 647 ; carrier occurrences = 3 ; distinct files = 1
+  PLAN_B' verdict=FAIL (per-needle SELF_TEST, 6-controls-ok)=[('PASS', True), ('FAIL', False)]
+  PLAN_C' verdict=FAIL PER_NEEDLE_SELFTEST(REAL)={0: 'PASS', 1: 'FAIL'}
+     HITSET={'(0,)': 91, '(0, 1)': 2, '(1,)': 1} TOTAL=94 MASKED_LINES=2 EXCLUSIVE=[91, 1] EXCLUSIVE_CONTROLS=[6, 0]
+
+=== verification matrix ===
+  scenario               expect   A'       B'       C'      
+  S1_delivered_double    FAIL     FAIL     FAIL     FAIL      OK
+  S2_single_N1           FAIL     FAIL     FAIL     FAIL      OK
+  S3_true_pass           PASS     PASS     PASS     PASS      OK
+  S4_broken              FAIL     FAIL     FAIL     FAIL      OK
+  ALL_SCENARIOS_MATCH_EXPECTATION = True
+
+=== 掩蔽检测判据 (diagnostics for the delivered S1 double-needle PASS) ===
+  HITSET = {'(0,)': 44, '(0, 1)': 43, '(1,)': 49}
+  EXCLUSIVE(k) = [44, 49] ; EXCLUSIVE_CONTROLS(k) = [0, 1]
+  MASKED_LINES = 43 / 136
+  MASKED_NEEDLES = 0
+  DISTINGUISHABLE_PASS(现行交付口径) = FALSE  (SELF_TEST 不是 AND_k 得出)
+  DISTINGUISHABLE_PASS(甲'/乙'/丙' 口径) = FALSE (S1 => FAIL, 正确拒绝)
+

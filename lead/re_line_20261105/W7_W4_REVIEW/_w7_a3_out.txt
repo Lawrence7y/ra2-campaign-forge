@@ -1,0 +1,338 @@
+==============================================================================
+SECTION 0  引擎绑定
+==============================================================================
+EXE_SHA256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+ASSERT_MATCH True
+IMAGE_BASE 0x400000
+TEXT 0x401000 0x7e1000 raw_ptr 0x1000 raw_size 0x3e0000
+COVERAGE (99.99837567729335, 1394120, 66)
+SECTIONS [('.text', '0x401000', '0x3df38d', '0x3e0000'), ('.rdata', '0x7e1000', '0x30074', '0x31000'), ('.data', '0x812000', '0x367be4', '0x6c000'), ('.rsrc', '0xb7a000', '0x18128', '0x19000'), ('.detour', '0xb93000', '0x2718', '0x3000')]
+fo(0xB0CE88) = None  (None => BSS/零填充, 无文件字节)
+u32(0x814E94) = 0x6d1a60
+
+==============================================================================
+SECTION 1  ①-a  不是 TacticalClass::DirtyAreas 的字节依据
+==============================================================================
+RAW 0x6D2790 (16B) = 83ec588b0d88ceb0005333c055563bc8
+------------------------------------------------------------------------------
+DISASM RegisterDirtyArea 0x6D2790 序言（ecx 被覆盖?） 0x6d2790 .. 0x6d27c0
+------------------------------------------------------------------------------
+006D2790  83ec58                  sub      esp, 0x58
+006D2793  8b0d88ceb000            mov      ecx, dword ptr [0xb0ce88]
+006D2799  53                      push     ebx
+006D279A  33c0                    xor      eax, eax
+006D279C  55                      push     ebp
+006D279D  56                      push     esi
+006D279E  3bc8                    cmp      ecx, eax
+006D27A0  57                      push     edi
+006D27A1  c7442418ffffffff        mov      dword ptr [esp + 0x18], 0xffffffff
+006D27A9  c744241cffffff7f        mov      dword ptr [esp + 0x1c], 0x7fffffff
+006D27B1  89442414                mov      dword ptr [esp + 0x14], eax
+006D27B5  0f8e6d020000            jle      0x6d2a28
+006D27BB  89442410                mov      dword ptr [esp + 0x10], eax
+006D27BF  a17cceb000              mov      eax, dword ptr [0xb0ce7c]
+
+RAW 0x6D1A60 (64B) = 33c068a01a6d00a37cceb000a380ceb000c60584ceb00001a285ceb000c70578ceb0009c427f00c7058cceb0000a000000a388ceb000e8ef7c0f0059c3909090
+------------------------------------------------------------------------------
+DISASM 全局向量 CRT 静态构造 0x6D1A60（绝对地址写 vptr/各槽） 0x6d1a60 .. 0x6d1aa0
+------------------------------------------------------------------------------
+006D1A60  33c0                    xor      eax, eax
+006D1A62  68a01a6d00              push     0x6d1aa0
+006D1A67  a37cceb000              mov      dword ptr [0xb0ce7c], eax
+006D1A6C  a380ceb000              mov      dword ptr [0xb0ce80], eax
+006D1A71  c60584ceb00001          mov      byte ptr [0xb0ce84], 1
+006D1A78  a285ceb000              mov      byte ptr [0xb0ce85], al
+006D1A7D  c70578ceb0009c427f00    mov      dword ptr [0xb0ce78], 0x7f429c
+006D1A87  c7058cceb0000a000000    mov      dword ptr [0xb0ce8c], 0xa
+006D1A91  a388ceb000              mov      dword ptr [0xb0ce88], eax
+006D1A96  e8ef7c0f00              call     0x7c978a
+006D1A9B  59                      pop      ecx
+006D1A9C  c3                      ret      
+006D1A9D  90                      nop      
+006D1A9E  90                      nop      
+006D1A9F  90                      nop      
+
+------------------------------------------------------------------------------
+DISASM 扩容路径 0x6D2A84 mov ecx,0xB0CE78 + call [edx+8] 0x6d2a70 .. 0x6d2a95
+------------------------------------------------------------------------------
+006D2A71  85c9                    test     ecx, ecx
+006D2A73  0f8ebf000000            jle      0x6d2b38
+006D2A79  8b1578ceb000            mov      edx, dword ptr [0xb0ce78]
+006D2A7F  03c1                    add      eax, ecx
+006D2A81  6a00                    push     0
+006D2A83  50                      push     eax
+006D2A84  b978ceb000              mov      ecx, 0xb0ce78
+006D2A89  ff5208                  call     dword ptr [edx + 8]
+006D2A8C  84c0                    test     al, al
+006D2A8E  0f84a4000000            je       0x6d2b38
+006D2A94  8b0d88ceb000            mov      ecx, dword ptr [0xb0ce88]
+
+RAW 0x6D3DF0 (5B) = a188ceb000  <- TacticalClass::Render 内也是**绝对地址**读 Count
+
+原始 LE `78 CE B0 00` (= 0xB0CE78 对象基址) 全镜像命中：
+   file_off 0x2d1a7f VA 0x6d1a7f
+   file_off 0x2d1ab0 VA 0x6d1ab0
+   file_off 0x2d2a7b VA 0x6d2a7b
+   file_off 0x2d2a85 VA 0x6d2a85
+原始 `B9 78 CE B0 00` (= mov ecx,0xB0CE78) 全镜像命中：
+   file_off 0x2d2a84 VA 0x6d2a84
+
+disp_hits(0xB0CE88) 全量普查（绝对 disp32 访存，重同步解码口径）:
+   total 27 W 6 R 21
+   006D1A91 W mov      dword ptr [0xb0ce88], eax
+   006D2793 R mov      ecx, dword ptr [0xb0ce88]
+   006D2983 R mov      eax, dword ptr [0xb0ce88]
+   006D2995 W mov      dword ptr [0xb0ce88], eax
+   006D29B8 R cmp      edx, dword ptr [0xb0ce88]
+   006D2A01 R mov      ecx, dword ptr [0xb0ce88]
+   006D2A94 R mov      ecx, dword ptr [0xb0ce88]
+   006D2AA1 W mov      dword ptr [0xb0ce88], ecx
+   006D2B75 R mov      esi, dword ptr [0xb0ce88]
+   006D2C93 R mov      eax, dword ptr [0xb0ce88]
+   006D2CA1 W mov      dword ptr [0xb0ce88], eax
+   006D2CC2 R cmp      edx, dword ptr [0xb0ce88]
+   006D2F84 R mov      eax, dword ptr [0xb0ce88]
+   006D31DD R mov      eax, dword ptr [0xb0ce88]
+   006D33C1 R mov      eax, dword ptr [0xb0ce88]
+   006D35AD R mov      eax, dword ptr [0xb0ce88]
+   006D378E R mov      eax, dword ptr [0xb0ce88]
+   006D3850 R mov      edx, dword ptr [0xb0ce88]
+   006D3988 R mov      eax, dword ptr [0xb0ce88]
+   006D3BD8 R mov      eax, dword ptr [0xb0ce88]
+   006D3DF0 R mov      eax, dword ptr [0xb0ce88]
+   006D44FC R mov      ecx, dword ptr [0xb0ce88]
+   006D451C W mov      dword ptr [0xb0ce88], ecx
+   006D453C R mov      ecx, dword ptr [0xb0ce88]
+   006DA980 R mov      ecx, dword ptr [0xb0ce88]
+   006DA993 W mov      dword ptr [0xb0ce88], ecx
+   006DA9B5 R mov      ecx, dword ptr [0xb0ce88]
+
+旁证：全 .text 中 [reg+0xD7C]/[reg+0xD7D] 形态的 TacticalClass 成员读（说明成员用 [ebp+off]，向量用绝对地址）：
+   004ABCAF c6817d0d000001       mov      byte ptr [ecx + 0xd7d], 1
+   004AC41C c6827d0d000001       mov      byte ptr [edx + 0xd7d], 1
+   004AC4C0 88817d0d0000         mov      byte ptr [ecx + 0xd7d], al
+   004F42F9 c6807d0d000001       mov      byte ptr [eax + 0xd7d], 1
+   0054AD82 8b807c0d0000         mov      eax, dword ptr [eax + 0xd7c]
+   005745C3 c6817c0d000001       mov      byte ptr [ecx + 0xd7c], 1
+   005751DF c6817c0d000001       mov      byte ptr [ecx + 0xd7c], 1
+   00575532 c6827c0d000001       mov      byte ptr [edx + 0xd7c], 1
+   00575854 c6827c0d000001       mov      byte ptr [edx + 0xd7c], 1
+   00575B91 c6827c0d000001       mov      byte ptr [edx + 0xd7c], 1
+   00575EC3 c6827c0d000001       mov      byte ptr [edx + 0xd7c], 1
+   00666846 c7867c0d000032000000 mov      dword ptr [esi + 0xd7c], 0x32
+   0066FFF6 8b8e7c0d0000         mov      ecx, dword ptr [esi + 0xd7c]
+   0067001B 89867c0d0000         mov      dword ptr [esi + 0xd7c], eax
+   006D1CCE c6867c0d000001       mov      byte ptr [esi + 0xd7c], 1
+   006D1CD5 889e7d0d0000         mov      byte ptr [esi + 0xd7d], bl
+   006D2682 c6867d0d000001       mov      byte ptr [esi + 0xd7d], 1
+   006D277D c6867d0d000001       mov      byte ptr [esi + 0xd7d], 1
+   006D3DE8 8a857c0d0000         mov      al, byte ptr [ebp + 0xd7c]
+   006D3E03 8a8d7d0d0000         mov      cl, byte ptr [ebp + 0xd7d]
+   006D3E69 8a8d7d0d0000         mov      cl, byte ptr [ebp + 0xd7d]
+   006D4B30 c6857c0d000000       mov      byte ptr [ebp + 0xd7c], 0
+   006D4B37 c6857d0d000000       mov      byte ptr [ebp + 0xd7d], 0
+   006D5FEF c6867d0d000001       mov      byte ptr [esi + 0xd7d], 1
+   006D605F c6867d0d000001       mov      byte ptr [esi + 0xd7d], 1
+   006D615E c6877d0d000001       mov      byte ptr [edi + 0xd7d], 1
+   006DA968 c6837d0d000001       mov      byte ptr [ebx + 0xd7d], 1
+   006DBDE6 c6867d0d000001       mov      byte ptr [esi + 0xd7d], 1
+   007115CD 89867c0d0000         mov      dword ptr [esi + 0xd7c], eax
+   00715110 d9857c0d0000         fld      dword ptr [ebp + 0xd7c]
+   00715130 d99d7c0d0000         fstp     dword ptr [ebp + 0xd7c]
+   0073EE40 8b917c0d0000         mov      edx, dword ptr [ecx + 0xd7c]
+   count 32
+
+==============================================================================
+SECTION 2  ①-b  0x6D3DF5 抄录订正（W3 Q3_SAMPLE_PLAN.md:100-102）
+==============================================================================
+RAW 0x6D3DE8 .. 0x6D3E10 (40 B) = 8a857c0d000084c0a188ceb000756e84c90f859c00000085c075668a8d7d0d000084c90f858a0000
+------------------------------------------------------------------------------
+DISASM Render 判脏段 0x6D3DE8..0x6D3E10 0x6d3de8 .. 0x6d3e10
+------------------------------------------------------------------------------
+006D3DE8  8a857c0d0000            mov      al, byte ptr [ebp + 0xd7c]
+006D3DEE  84c0                    test     al, al
+006D3DF0  a188ceb000              mov      eax, dword ptr [0xb0ce88]
+006D3DF5  756e                    jne      0x6d3e65
+006D3DF7  84c9                    test     cl, cl
+006D3DF9  0f859c000000            jne      0x6d3e9b
+006D3DFF  85c0                    test     eax, eax
+006D3E01  7566                    jne      0x6d3e69
+006D3E03  8a8d7d0d0000            mov      cl, byte ptr [ebp + 0xd7d]
+006D3E09  84c9                    test     cl, cl
+006D3E0B  0f858a000000            jne      0x6d3e9b
+
+逐址断言（从重同步解码流取，不从固定偏移猜）：
+   006D3DF0  bytes=a188ceb000   mnem=mov    op=eax, dword ptr [0xb0ce88]           RAW=a188ceb000
+        expect_bytes=a188ceb000 expect_mnem=mov
+   006D3DF5  bytes=756e         mnem=jne    op=0x6d3e65                            RAW=756e
+        expect_bytes=756e expect_mnem=jne
+   006D3DF7  bytes=84c9         mnem=test   op=cl, cl                              RAW=84c9
+        expect_bytes=84c9 expect_mnem=test
+   006D3DFF  bytes=85c0         mnem=test   op=eax, eax                            RAW=85c0
+        expect_bytes=85c0 expect_mnem=test
+   006D3E01  bytes=7566         mnem=jne    op=0x6d3e69                            RAW=7566
+        expect_bytes=7566 expect_mnem=jne
+
+W3 原抄录（Q3_SAMPLE_PLAN.md:100-102）: 0x6D3DF5=`85 C0 test eax,eax`; 0x6D3DF7=`75 70 jne 0x6D3E69`
+W3_COSTBOUND.md:284 同样写 `0x006D3DF5 test eax, eax`
+
+==============================================================================
+SECTION 3  ②  DrawIfVisible 0x5F4B10 函数体内零处 call 0x6D2790
+==============================================================================
+全 .text 原始字节级 E8 rel32 -> 0x6D2790 的直接调用点总数 = 58
+清单（VA, 5字节编码）:
+   0042428F  e8fce42a00
+   00442184  e807062900
+   00445D70  e81bca2800
+   0044E591  e8fa412800
+   004807B4  e8d71f2500
+   00480C8F  e8fc1a2500
+   00480E0C  e87f192500
+   00485384  e807d42400
+   00485A0F  e87ccd2400
+   00485AD3  e8b8cc2400
+   00486124  e867c62400
+   00486270  e81bc52400
+   00486366  e825c42400
+   00486FD1  e8bab72400
+   0048735D  e82eb42400
+   004875FD  e88eb12400
+   0048A094  e8f7862400
+   0048A20F  e87c852400
+   004A1A78  e8130d2300
+   004A1BDC  e8af0b2300
+   004D1338  e853142000
+   004D184B  e8400f2000
+   0056C1C7  e8c4651600
+   0056EA98  e8f33c1600
+   0056EC53  e8383b1600
+   0057079E  e8ed1f1600
+   00570825  e8661f1600
+   00570A7B  e8101d1600
+   00571481  e80a131600
+   00573CC1  e8caea1500
+   00573D48  e843ea1500
+   00573F9E  e8ede71500
+   00576B8B  e800bc1500
+   0057C220  e86b651500
+   0057C7E0  e8ab5f1500
+   0057D496  e8f5521500
+   0057DA59  e8324d1500
+   0057E1D3  e8b8451500
+   0057E6C8  e8c3401500
+   0057EC2D  e85e3b1500
+   0057F132  e859361500
+   0057FA76  e8152d1500
+   0057FF8D  e8fe271500
+   005804AF  e8dc221500
+   005809D6  e8b51d1500
+   00581641  e84a111500
+   00581D49  e8420a1500
+   005F4E8F  e8fcd80d00
+   005F5146  e845d60d00
+   006B366A  e821f10100
+   006B37E8  e8a3ef0100
+   006D9B15  e8768cffff
+   006E077A  e81120ffff
+   006E21AF  e8dc05ffff
+   006FACC1  e8ca7afdff
+   0071BB5E  e82d6cfbff
+   0074A59F  e8ec81f8ff
+   0074CBE5  e8a65bf8ff
+
+重同步解码流中 `call 0x6D2790` 总数 = 58
+两种口径集合是否一致 = True
+
+------------------------------------------------------------------------------
+DISASM 0x5F4B10..0x5F4D60 中全部 call / ret（用于定函数边界）
+------------------------------------------------------------------------------
+   005F4B5D  ff92ac000000         call     dword ptr [edx + 0xac]
+   005F4B6A  e8d1d50d00           call     0x6d2140 -> 0x6d2140
+   005F4B77  ff522c               call     dword ptr [edx + 0x2c]
+   005F4B85  c20c00               ret      0xc -> 0xc
+   005F4C38  eb04                 jmp      0x5f4c3e -> 0x5f4c3e
+   005F4C6A  eb04                 jmp      0x5f4c70 -> 0x5f4c70
+   005F4C99  eb04                 jmp      0x5f4c9f -> 0x5f4c9f
+   005F4CFD  ff9014010000         call     dword ptr [eax + 0x114]
+   005F4D0C  c20c00               ret      0xc -> 0xc
+   005F4D28  e8c3f5efff           call     0x4f42f0 -> 0x4f42f0
+   005F4D2D  c3                   ret      
+   005F4D55  ff9050010000         call     dword ptr [eax + 0x150]
+
+RAW 0x5F4D0C (8B) = c20c00908a818000
+RAW 0x5F4D20 (32B) = 016a00b9e8f78700e8c3f5efffc39090a0a0e9a80083ec2084c05356578bf10f
+
+------------------------------------------------------------------------------
+DrawIfVisible 函数体 [0x5F4B10, 0x5F4D0F) 内全部 call 指令
+------------------------------------------------------------------------------
+   005F4B5D  ff92ac000000         call     dword ptr [edx + 0xac]
+   005F4B6A  e8d1d50d00           call     0x6d2140
+   005F4B77  ff522c               call     dword ptr [edx + 0x2c]
+   005F4CFD  ff9014010000         call     dword ptr [eax + 0x114]
+   body call 总数 = 4
+
+RDA direct callers in [0x5F4B10,0x5F4D0C) 严格函数体(ret 0xC 之前)                = []
+RDA direct callers in [0x5F4B10,0x5F4D0F) 含 ret 0xC 三字节                    = []
+RDA direct callers in [0x5F4B10,0x5F4D30) 卡 §8.1.3 所用窗口                    = []
+RDA direct callers in [0x5F4B10,0x5F4E90) 宽窗口（含相邻函数）                       = ['0x5f4e8f']
+
+独立原始字节级窗口扫描（直接对 [0x5F4B10,0x5F4D30) 的文件字节找 E8->RDA）:
+   window_hits = []
+   窗口字节 = 83ec20a06beda800568bf184c0897424087525a15035b70085c0741c8a44242c84c0750a8a868000000084c074418a868100000084c075378b168d44240c508d442418508bcec6868000000000ff92ac0000008b0d2473880050e8d1d50d0084c075158b168bceff522c83f818740932c05e83c420c20c00538b1da46f8800895c241c8b1da86f8800895c24208b1dac6f8800895c24248b5c242c5533c08b6b0833c933d233f6578b3da06f880085ed896c24100f8eea0000008b6b0c85ed0f8edf0000008b2da86f880085ed0f8ed10000008b2dac6f880085ed0f8ec30000008b2b3bfd896c24387d102bfd8b6c242803ef8b7c2438896c2428837c2428010f8c9e0000008b5b048b6c24243beb7d192beb8b5c242c03dd895c242c8b5c24348b6b04896c2424eb048b5c2434837c242c017c6f8b5c24388b6c241003dd8b6c242803ef3beb7e138b6c24388b5c24342bef036b08896c2428eb048b5c2434837c2428017c3d8b6b0c8b5b0403dd8b6c2424895c24388b5c242c03eb8b5c24383beb7e062b5c2424eb048b5c242c83fb017c0c8b4c24248b5424288bc78bf38b5c24348bfb8907894f0489570889770c8b038b0da06f88003bc17e0c2bc88b44241803c1894424188b4b04a1a46f88003bc87e0c2bc18b4c241c03c8894c241c8b4c24148d54241853528b01ff90140100005f5d5bb0015e83c420c20c00908a818000000084c07513c68180000000016a00b9e8f78700e8c3f5efffc39090
+
+0x5F4B00..0x5F5300 内的 RDA 直接调用点 = ['0x5f4e8f', '0x5f5146']
+   005F4E8F RAW e8fcd80d00
+   005F5146 RAW e845d60d00
+
+结论打印见 _w7_a3_out.txt 末尾 SECTION 4
+
+==============================================================================
+SECTION 4  机读判定行
+==============================================================================
+V_1a_global_object_base_4hits = 4
+V_1a_rda_prologue_overwrites_ecx = True
+V_1a_ctor_abs_vptr = True
+V_1a_expand_mov_ecx_base = True
+V_1b_6D3DF5_is_jne = True
+V_1b_6D3DF7_is_test_cl_cl = True
+V_1b_6D3DFF_is_test_eax_eax = True
+V_1b_6D3E01_is_jne = True
+V_2_total_direct_RDA_callers = 58
+V_2_RDA_callers_in_strict_body = 0
+V_2_RDA_callers_in_card_window = 0
+V_2_two_methods_agree = True
+
+==============================================================================
+SUPPLEMENTAL RUN - separate fast command, appended to _w7_a3_out.txt
+==============================================================================
+SHA 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 IB 0x400000
+VTABLE 0x7f429c col([v-4]) 0x80b830 type_descriptor(col+12) 0x842988 name b'.?AV?$DynamicVectorClass@UDirtyAreaStruct@@@@'
+VTABLE 0x7f42bc col([v-4]) 0x80b860 type_descriptor(col+12) 0x842958 name b'.?AV?$VectorClass@UDirtyAreaStruct@@@@'
+VTABLE 0x7F429C slots[0..3] ['0x6dcc80', '0x6dc5e0', '0x6dc850', '0x6dc4e0']
+CTOR 0x6D1A7D raw(10) c70578ceb0009c427f00 -> imm32 = 0x7f429c
+RAW 88 CE B0 00 total 27 in .text 27 VAs ['0x6d1a92', '0x6d2795', '0x6d2984', '0x6d2996', '0x6d29ba', '0x6d2a03', '0x6d2a96', '0x6d2aa3', '0x6d2b77', '0x6d2c94', '0x6d2ca2', '0x6d2cc4', '0x6d2f85', '0x6d31de', '0x6d33c2', '0x6d35ae', '0x6d378f', '0x6d3852', '0x6d3989', '0x6d3bd9', '0x6d3df1', '0x6d44fe', '0x6d451e', '0x6d453e', '0x6da982', '0x6da995', '0x6da9b7']
+--- 0x5F4E8F caller ctx 0x5f4e80 0x5f4e98
+   005F4E80 897b04             mov    dword ptr [ebx + 4], edi
+   005F4E83 894308             mov    dword ptr [ebx + 8], eax
+   005F4E86 894b0c             mov    dword ptr [ebx + 0xc], ecx
+   005F4E89 8b0d24738800       mov    ecx, dword ptr [0x887324]
+   005F4E8F e8fcd80d00         call   0x6d2790
+   005F4E94 8b16               mov    edx, dword ptr [esi]
+   005F4E96 8bce               mov    ecx, esi
+--- 0x486FD1 caller ctx 0x486fb8 0x486fdc
+   00486FB8 f283ec10           sub    esp, 0x10
+   00486FBC 2bcf               sub    ecx, edi
+   00486FBE 8bd4               mov    edx, esp
+   00486FC0 8932               mov    dword ptr [edx], esi
+   00486FC2 894a04             mov    dword ptr [edx + 4], ecx
+   00486FC5 8b0d24738800       mov    ecx, dword ptr [0x887324]
+   00486FCB 895a08             mov    dword ptr [edx + 8], ebx
+   00486FCE 89420c             mov    dword ptr [edx + 0xc], eax
+   00486FD1 e8bab72400         call   0x6d2790
+   00486FD6 8b442410           mov    eax, dword ptr [esp + 0x10]
+--- 0x6D3D48..0x6D3D60 (cl 来源)
+   006D3D48 894808             mov    dword ptr [eax + 8], ecx
+   006D3D4B 8bcd               mov    ecx, ebp
+   006D3D4D 89500c             mov    dword ptr [eax + 0xc], edx
+   006D3D50 e8fb5d0000         call   0x6d9b50
+   006D3D55 8b9db8000000       mov    ebx, dword ptr [ebp + 0xb8]

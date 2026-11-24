@@ -1,0 +1,49 @@
+W83c REAL DIR ZERO-CHANGE PROOF  (真目录零改动自证)
+=====================================================
+Card:   lead\next_re_20261112_r02\W83c_other_victory
+Runner: GLM-5.3-Flash, 2026-11-14, third dispatch
+Tool:   work\tools\w83c_finalize.py  (FINALIZE.json / real_pre.json / real_post.json)
+
+SCOPE
+-----
+* Real game dir  D:\Project\ra2-campaign-forge\ra2youli  : NEVER written, NEVER ran.
+  All 7 game launches ran in the card sandbox  W83c_other_victory\sandbox_game\
+  (robocopy /E of the real dir made at offline setup, real dir used read-only source).
+* Sandbox writable configs: byte copies + SHA-256 saved to out\pristine\ BEFORE the
+  first launch (21 items); restored byte-by-byte at finalize with real SHA self-proof.
+
+REAL DIR MANIFEST DIFF (out\real_pre.json -> out\real_post.json)
+----------------------------------------------------------------
+  file_count   : 647            -> 647
+  total_bytes  : 1989215270     -> 1989215270
+  maplike_count: 277            -> 277
+  added=0  removed=0  changed=0  mtime_diff=0
+  IDENTICAL_TREE = True
+
+ANCHOR HASHES (pre == post)
+---------------------------
+  RA2MD.INI            c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d  == signed W44 baseline c91c6a47
+  gamemd.exe           73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  == signed W44 baseline 73201cc0 (unpatched)
+  ddraw.dll            85e0f7d530dfda134793a57cb3e76b0287dcc96892ee57162dd68f47283b03a9  == signed W44 baseline 85e0f7d5
+  ra2forge_install.json fe3bdf62f4e871b61bf0d1b1d451b090af1c0b1804440c093089436253cc3914 == signed W44 baseline fe3bdf62
+  BATTLEMD.INI         7e40691a3480b1e5ffe6d1cdfccb83f67da4447157607ec3ecb5d2278acf0791  == official 2733 B baseline
+
+SANDBOX RESTORE (out\FINALIZE.json)
+-----------------------------------
+  * uninstall v15 inplace: exit 0; BATTLEMD.INI byte-restored,
+    restored == manifest original == official baseline == pristine copy == real dir file;
+    Scenario=RA2F_M1.MAP gone, Scenario=SOV01umd.MAP back.
+  * all pristine configs restored: byte_identical=True (absent-baseline items removed).
+  * sandbox POST manifest vs sandbox_pre.json: identical_tree=True (game-generated
+    leftovers removed), then sandbox dir deleted (cleaned=True).
+  * verify --game sandbox --json after restore: exit 0.
+
+PROCESSES
+---------
+  * Only self-launched gamemd pids touched: 34792/16708/5096/7844/1156/26612/41068/8704.
+    WM_CLOSE -> taskkill /PID <own> -> taskkill /F /PID <own>; no blanket taskkill.
+  * Final gamemd residual: 0.  (trip4 showed a 2 s teardown latency in its immediate
+    residual check; re-checked process list right after: empty.)
+  * Final .game_instance.lock: owner=lead.
+
+VERDICT: IDENTICAL_TREE=True  --  real dir zero-change self-proof PASSED.

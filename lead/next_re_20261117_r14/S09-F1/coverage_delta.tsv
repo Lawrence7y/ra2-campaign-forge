@@ -1,0 +1,31 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+7775c0	S09	WndProc_registered	Top-level registered window procedure; dispatches to InputManager and Mouse handler	已证	EVIDENCE/E03_wndproc_dispatch.txt
+54f790	S09	InputManager::WndProc	InputManager sub-window-procedure; converts coords via WWMouse and pushes events to ring	已证	EVIDENCE/E02_wndproc_iat_msgtable.txt
+54f050	S09	InputManager::GetEvent	Dequeues one input event word from ring at [this+0x114]	已证	EVIDENCE/E01_input_iat.txt
+54f1c0	S09	InputManager::PushWord	Pushes a 16-bit word into input ring [this+tail*2+0x114]	已证	EVIDENCE/E03_wndproc_dispatch.txt
+54f200	S09	InputManager::PushEventCode	Pushes event code with modifier bits into input ring	已证	EVIDENCE/E03_wndproc_dispatch.txt
+54f2f0	S09	InputManager::PushMouseState	Pushes right/mouse button state word into ring	已证	EVIDENCE/E03_wndproc_dispatch.txt
+6930a0	S09	MouseInputHandler	Main mouse WM_ handler (ecx=0x87F7E8); calls ProcessClickCoords/DecideAction/LMBUp	已证	EVIDENCE/E04_wndproc_chain_inputpump.txt
+692300	S09	ProcessClickCoords	Resolves pixel click to cell/object; adds scroll origin then calls PixelCoordToCell	已证	EVIDENCE/E06_processclickcoords.txt
+692610	S09	DecideAction	Decides command Action from click context and house controllability	已证	EVIDENCE/E04_wndproc_chain_inputpump.txt
+6d6590	S09	TacticalClass::PixelCoordToCell	Maps screen pixel + scroll origin 0x886FA0/0x886FA4 to cell via transform matrix and /256	已证	EVIDENCE/E07_pixel_to_cell.txt
+6d2280	S09	TacticalClass::PixelCoordToCoord	Maps screen pixel to 12-byte world coordinate	已证	EVIDENCE/E06_processclickcoords.txt
+4ab9b0	S09	DisplayClass::LMBUp	v[48]; left-button-up selection/box-select capture; generates command events	已证	EVIDENCE/E08_selection_sidebar_command.txt
+4ac380	S09	DisplayClass::LMBDown	v[47]; left-button-down placement/drag state setup	已证	EVIDENCE/E09_vtables_dispatcher_eventring.txt
+4ac310	S09	DisplayClass::ClearDrag	v[45]; clears drag rectangle state fields 0x11D0..0x11E0	已证	EVIDENCE/E09_vtables_dispatcher_eventring.txt
+6d9ff0	S09	Tactical::ForEachInRect_wrapper	Builds rect from Tactical+0xD90 and calls ForEachInRect	已证	EVIDENCE/E10_boxselect_tabbase_fillevents.txt
+6da5c0	S09	Tactical::ForEachInRect	Box-select O(N) scan of 0xB0CEC8 12-byte entries with house/vtable filters	已证	EVIDENCE/E10_boxselect_tabbase_fillevents.txt
+732600	S09	SelectObject_Add	Adds object to selection set DynamicVectorClass<ObjectClass*> at 0xA8EC78	已证	EVIDENCE/E08_selection_sidebar_command.txt
+7327d0	S09	SelectObject_Remove	Removes object from selection set at 0xA8EC78	已证	EVIDENCE/E08_selection_sidebar_command.txt
+50b6f0	S09	House::IsControllableByPlayer	House control filter for selection (217 direct call sites)	已证	EVIDENCE/E10_boxselect_tabbase_fillevents.txt
+6a6c30	S09	SidebarClass::Draw	v[16]; per-frame sidebar draw coordinator; calls Cameo strip draw	已证	EVIDENCE/E09_vtables_dispatcher_eventring.txt
+6a9540	S09	SidebarClass::DrawCameoStrip	Draws cameo strip (tab+0x1C/0x3C dirty gate); ItemType==0x1F superweapon branch	已证	EVIDENCE/E09_vtables_dispatcher_eventring.txt
+6a7590	S09	SetActiveTab	Switches sidebar active tab; tab stride 0xF94, gadget array 0xB07E80 stride 0x3C	已证	EVIDENCE/E11_tabstride.txt
+48dcd0	S09	GetTechnoType	Maps AbstractType+index to BuildingTypeClass/UnitTypeClass via 40-entry jump table 0x48DD10	已证	EVIDENCE/E09_vtables_dispatcher_eventring.txt
+6aad00	S09	SelectClass::CameoClick	v[31]; Cameo click: ItemIndex/ItemType to production, SW branch at cmp 0x1F	已证	EVIDENCE/E08_selection_sidebar_command.txt
+4c6970	S09	FillEvent_Produce	Builds Produce/Suspend/Abandon event; 9 sidebar call sites	已证	EVIDENCE/E08_selection_sidebar_command.txt
+4c65e0	S09	FillEvent_Generic	Builds generic command Event (move/attack/select); 7 call sites incl 0x4AC187	已证	EVIDENCE/E10_boxselect_tabbase_fillevents.txt
+4c6cb0	S09	EventDispatcher	Replays NetworkEvent; Kind-1 dispatch via jump table 0x4C8114 (46 classes) - S18 interface	已证	EVIDENCE/E09_vtables_dispatcher_eventring.txt
+4c9150	S09	CommandClass::Execute_stub	Abstract base Execute stub; 46 subclasses override v[8]	已证	EVIDENCE/E09_vtables_dispatcher_eventring.txt
+535e50	S09	SetDefenseTabCommand::Execute	CommandClass example Execute; sets sidebar active tab	静态推断	EVIDENCE/E02_wndproc_iat_msgtable.txt
+6abd30	S09	SidebarClass::Tooltip	v[34]; sidebar hover tooltip	已证	EVIDENCE/E09_vtables_dispatcher_eventring.txt

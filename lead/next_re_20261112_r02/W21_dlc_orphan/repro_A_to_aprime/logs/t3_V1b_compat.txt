@@ -1,0 +1,56 @@
+### V1b: SAME-path upgrade (package dir mutated in place; same_install=True, no conflict flag) ###
+CMD: install pkgs_same (state A)
+  written    ra2forge_install.json
+  notice (does not block): BATTLEMD.INI present (normal install state) and left untouched; the campaign is appended by BATTLEMD98.INI (the engine merges both by battle id). This is NOT a conflict.
+EXIT CODE: 0
+package mutated in place to A-prime (path unchanged)
+CMD: install pkgs_same (state A-prime, same path, NO flag)
+installed into D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\sandbox\game:
+  backup     BATTLEMD98.INI -> BATTLEMD98.INI.ra2forge.bak
+  replaced   BATTLEMD98.INI (413 bytes)
+  backup     Y.MAP -> Y.MAP.ra2forge.bak
+  replaced   Y.MAP (4280 bytes)
+  created    Z.MAP (4267 bytes)
+  backup     expandmd98.mix -> expandmd98.mix.ra2forge.bak
+  replaced   expandmd98.mix (8581 bytes)
+  removed    X.MAP (orphan: recorded by the previous install, absent from this package)
+  written    ra2forge_install.json
+  notice (does not block): BATTLEMD.INI present (normal install state) and left untouched; the campaign is appended by BATTLEMD98.INI (the engine merges both by battle id). This is NOT a conflict.
+EXIT CODE: 0
+CHECK: X.MAP present? False (expect False)
+
+  version: 0.5  installed_at: 2026-11-13T07:00:31
+  entry: BATTLEMD98.INI     action=replaced  backup=BATTLEMD98.INI.ra2forge.bak original_absent=True sha256=19ae4e208273b3e2
+  entry: Y.MAP              action=replaced  backup=Y.MAP.ra2forge.bak original_absent=True sha256=9880b19059f23b8e
+  entry: Z.MAP              action=created   backup=None original_absent=None sha256=d0cb854487f9ca2c
+  entry: expandmd98.mix     action=replaced  backup=expandmd98.mix.ra2forge.bak original_absent=True sha256=11139b22b1ff6fb4
+  removed_orphans: [{'name': 'X.MAP', 'action': 'removed'}]
+
+### COMPAT-1: manifest written by ORIGINAL v0.4 code, uninstalled by PATCHED code ###
+  notice (does not block): BATTLEMD.INI present (normal install state) and left untouched; the campaign is appended by BATTLEMD98.INI (the engine merges both by battle id). This is NOT a conflict.
+install-A-with-ORIGINAL EXIT CODE: 0
+manifest version: 0.4
+CMD: python -m ra2forge uninstall --game <game>   (PATCHED code, v0.4 manifest)
+uninstalled from D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\sandbox\game:
+  removed    expandmd98.mix
+  removed    Y.MAP
+  removed    X.MAP
+  removed    BATTLEMD98.INI
+  removed    ra2forge_install.json
+EXIT CODE: 0
+IDENTICAL: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v3_00_initial.sha.txt == D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\compat1_final.sha.txt
+DIFF EXIT CODE: 0 (0 = old manifest handled identically)
+### COMPAT-2: manifest written by PATCHED v0.5 (with original_absent), read by ORIGINAL code -> must not crash; documents the known over-restore ###
+upgrade-with-PATCHED EXIT CODE: 0
+CMD: python -m ra2forge uninstall --game <game>   (ORIGINAL code, v0.5 manifest)
+uninstalled from D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\sandbox\game:
+  removed    expandmd98.mix
+  restored   expandmd98.mix.ra2forge.bak -> expandmd98.mix
+  removed    Z.MAP
+  removed    Y.MAP
+  restored   Y.MAP.ra2forge.bak -> Y.MAP
+  removed    BATTLEMD98.INI
+  restored   BATTLEMD98.INI.ra2forge.bak -> BATTLEMD98.INI
+  removed    ra2forge_install.json
+EXIT CODE: 0
+CHECK: X.MAP orphan still left by ORIGINAL uninstaller? False (True documents why the patch must be applied)

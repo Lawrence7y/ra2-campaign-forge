@@ -1,0 +1,155 @@
+{
+ "coverage": {
+  "before_sha": "89edbd91e5ec5d4d72954cbc2251df5292090d624137dfd3c193abe5e260d919",
+  "after_sha": "b84d53dd046c71c15a36d3425981974a227175cb09e0f8e1a8d7fcebc1d3527f",
+  "before_bytes": 4119324,
+  "after_bytes": 4129477
+ },
+ "panel": {
+  "before_sha": "f069339cd29c1e50cbc0b44795640752b21c63a1cf82092002599ba82e2677f9",
+  "after_sha": "5a5a6742d44ec974346bf08721b1936f97271b22ace722cfb3a18def281a55a6",
+  "before_bytes": 196867,
+  "after_bytes": 201071,
+  "inserted_after_line": 313,
+  "inserted_before_line": 314,
+  "inserted_lines": 9,
+  "m101_text": [
+   "> ✅ **M101 补记：R16-D1-WIDE-B3 并入 17 行（D-52 宽读集合 65 行待做部分的第 37–54 行；1 行经裁定剔除，实并 17 行）**",
+   "> 本批 18 行取自 `R16_SIEVE_D1_WIDE` 按用户 D-52 宽读口径筛出的 81 行集合：其中 has_ring4_on_disk==是 16 行跳过，待做 65 行，本批为按 entry 升序第 37–54 行（`no_rows[36:54]`，与 B1/B2 entry 集合交集为 0）。其中 1 行（`005F4B10`）经 Lead 裁定与异族审计复核后**剔除**，实并 17 行；17 行第 4 列取 `R16_D1_WIDE_B3/delta.tsv`，均为严格前缀（新第 4 列 = 原第 4 列 + `；④ 活表槽位见证：…`），只改 coverage 第 4 列，第 1/2/3/5/6/7/8 列逐字节相同、grade 未改 `[已证]`；被剔的 `005F4B10` 在盘上原样未动（第 4 列仍为 `ObjectClass slot65 wrapper (consumes NeedsRedraw)`）。",
+   "> ① **剔除 `005F4B10` 的理由（Lead 裁定 + 异族审计 `R16_AUDIT_D1_WIDE_B3/AUDIT_REPORT.md` §5.2 独立复核成立）**：其 ② 审计原文（`C06_census/_audit/VERDICT.md:15`）只写「`005F4B10 <- BuildingLightClass vt 007E3AD0 slot 65`」、全文不含 `ObjectClass`，`verdict_polarity=NEG`（本批唯一负极性行）；该 entry 在 slot65 被 **16 张表**共有（含 AircraftClass / BuildingLightClass / ObjectClass 等），无任何 ② 产物支持归到 ObjectClass。其 ④ 字节**为真**（`007EF060` slot65 确为该 entry，RTTI `.?AVObjectClass@@`），故剔除理由是**「这行不该在集合里」**（不满足 D-52 的 ② 独立审计链），**不是「④ 写错」**；未并、未改其盘上任何字节。",
+   "> ② **本批 6 行 SITE_FIX 经审计 6/6 成立（`AUDIT_REPORT.md` §4）**：4 行 `RawFileClass`（`0065CAC0`/`0065CDD0`/`0065CF00`/`0065D0D0`）旧决定性装表点 `0065CA03` 实为析构器写（尾回写基类 `FileClass` vptr、被 scalar-deleting 包装器调用），2 行 `CDFileClass`（`0065D150`/`0065D190`）旧点 `004014C4` 实为栈临时写（`mov [esp+0x20],0x7e1668`，与 B1/B2 翻车的 `00473B10` 同一函数同一栈槽）；执行器已改取真构造器 `0065CAA8`（宿主 `0065CA80`）与 `0047AA3C`（宿主 `0047AA30`），审计独立复算两族缺陷与改取点全真。",
+   "> ③ **2 行 CLASS_FIX：`00631CC0` 成立、`005F4B10` 撤回（`AUDIT_REPORT.md` §5）**：`00631CC0`（FilePipe::slot3）原表 `007E4D78` RTTI 为 `SHAPipe` 类不符、6 处装表点全是栈写，改取 `007E4DA0`（`.?AVFilePipe@@`）唯一写 `this` 点 `007BA426` 且宿主确为析构器，标 `reg` 诚实有据，成立；`005F4B10` 按上条撤回收场（非「成立/不成立」，是行不该在集合里）。",
+   "> ④ **审计如实指出的口径限制（`AUDIT_REPORT.md` §E）**：本批 ④ 正文完整串 18/18 互异、8 位十六进制归一为 `ENTRY` 后仍 18/18 不同；但若把 `slotN`/`槽 N` 也归一，则**只有 12/18 互异**，收敛成 **4 组**（`0062B250/0062B300`、`0065C0D0/0065C180`、`0065CAC0/0065CDD0/0065CF00/0065D0D0`、`0065D150/0065D190`）同 class / 同 vt / 同装表点、仅差 slot 与 entry，且差异逐条字节可验为真 ⇒ **属事实同源而非抄袭，判 E 通过**；**不得声称「slot 归一后仍 18/18 不同」**（本批做不到）。",
+   "> 数字（口径 A/B 实测，改前→改后）：口径 A（`[已证]` 且第 4 列含字符 `④`）由 **430 / 1,654（26.00%）**升至 **447 / 1,654（27.03%）**，本批净增 **17 行**（17 行改前 `④` 计数全 0，N_pre_A=0；`005F4B10` 未并、其原第 4 列无 `④`）；口径 B（`[已证]` 且第 4 列含 `④ 活表槽位见证`）由 **263 / 1,654（15.90%）**升至 **280 / 1,654（16.93%）**，净增 **17 行**（17 行均写入 `④ 活表槽位见证` 子串，实测非推算）。",
+   "> §12.6 命中（第 4 列字面 `§12.6`）：命中行数 **206 → 223（+17）**、命中次数 **238 → 255（+17）**；17 行各追加 1 处 D-47 披露指向 §12.6（被剔的 `005F4B10` 不计，实测非推算）。",
+   "> 判定与计数均未变：coverage 18,498 数据行、列分布 `{8:18498}`、全表 `[已证]` 1,654、atlas 内 1,648、atlas 外 6；名义仍 S15/S16/S17、严格仍 S17，**达标判定未翻转**。"
+  ]
+ },
+ "measure_before": {
+  "rows": 18498,
+  "col_dist": "[8]",
+  "proved": 1654,
+  "atlas_in": 1648,
+  "atlas_out": 6,
+  "cal_A": 430,
+  "cal_B": 263,
+  "sec126_lines": 206,
+  "sec126_occ": 238
+ },
+ "measure_after": {
+  "rows": 18498,
+  "col_dist": "[8]",
+  "proved": 1654,
+  "atlas_in": 1648,
+  "atlas_out": 6,
+  "cal_A": 447,
+  "cal_B": 280,
+  "sec126_lines": 223,
+  "sec126_occ": 255
+ },
+ "excluded_entry": "005F4B10",
+ "changed_rows": {
+  "005B3A60": {
+   "line": 6134,
+   "old_col4_sha": "dbc23ad23678c67e06ecde6b34c82a8feca287513c542c5407ab4daa3eadad95",
+   "new_col4_len": 698,
+   "old_col4_len": 122
+  },
+  "0062AF70": {
+   "line": 7447,
+   "old_col4_sha": "79e422c04329980652432836d926fc2df150847259ac69abc2fba26d0dee0246",
+   "new_col4_len": 826,
+   "old_col4_len": 246
+  },
+  "0062B250": {
+   "line": 7455,
+   "old_col4_sha": "7d9a0241cb5e85636e3adc4b667368b0314bfd1674df0e6c4aadfb70d8eac9b5",
+   "new_col4_len": 700,
+   "old_col4_len": 44
+  },
+  "0062B300": {
+   "line": 7456,
+   "old_col4_sha": "c9624b43d8c3cac36562814f17f2b76439a36605e06da5b6e9f256d82bc31bec",
+   "new_col4_len": 700,
+   "old_col4_len": 44
+  },
+  "00631CC0": {
+   "line": 7520,
+   "old_col4_sha": "26f3b8f4b8401556201f2c0adac150937ca0df6d5d983667f5b0d728348e4290",
+   "new_col4_len": 942,
+   "old_col4_len": 341
+  },
+  "0063FEA0": {
+   "line": 7750,
+   "old_col4_sha": "251bab4eaa3ac9d73a9dc45d7fd80c5c1832ad21733cfb1553fb2a346cc71df5",
+   "new_col4_len": 851,
+   "old_col4_len": 279
+  },
+  "00653850": {
+   "line": 7893,
+   "old_col4_sha": "79f248b11dcac085b31ba7c623be52f3b421ae3ec89facebee2cf07438eaecdd",
+   "new_col4_len": 1001,
+   "old_col4_len": 429
+  },
+  "0065C0D0": {
+   "line": 8031,
+   "old_col4_sha": "256589e4f9d938e37dac2c24381ea47db4f256bc60805563aa7826c2c861fb92",
+   "new_col4_len": 695,
+   "old_col4_len": 43
+  },
+  "0065C180": {
+   "line": 8032,
+   "old_col4_sha": "5413535a652b804d82e5dcaf788b21b554061e86d6e2cddcb5c48780c0086154",
+   "new_col4_len": 695,
+   "old_col4_len": 43
+  },
+  "0065CAC0": {
+   "line": 8064,
+   "old_col4_sha": "f8ca90194372206b354dbdaccc1078bc3b5a779c8929b47e0c6d275c9402dd32",
+   "new_col4_len": 883,
+   "old_col4_len": 307
+  },
+  "0065CDD0": {
+   "line": 8070,
+   "old_col4_sha": "6f85d870f4a8ba041dcdfbb32d5d545d41acb9352de917d4f0c97a237498c9ac",
+   "new_col4_len": 931,
+   "old_col4_len": 351
+  },
+  "0065CF00": {
+   "line": 8071,
+   "old_col4_sha": "489764396893e345e4f14099c6f5690d55eac98bc03334447b86ddea20c6553d",
+   "new_col4_len": 940,
+   "old_col4_len": 360
+  },
+  "0065D0D0": {
+   "line": 8072,
+   "old_col4_sha": "d4599c068016b4a0f2b31abd36afa0fca7314ea4fa157c0ff1e6a6c2c8d1fa0a",
+   "new_col4_len": 909,
+   "old_col4_len": 329
+  },
+  "0065D150": {
+   "line": 8073,
+   "old_col4_sha": "30a70ee03ceb539566f0cc930ce5bf467196eb38d74e2c1918c0b0636382fe49",
+   "new_col4_len": 877,
+   "old_col4_len": 305
+  },
+  "0065D190": {
+   "line": 8074,
+   "old_col4_sha": "75edcd6f990f0041d39d0797bfe377e4a39e6882d54517fd07981cb4a40c9d43",
+   "new_col4_len": 882,
+   "old_col4_len": 310
+  },
+  "006AC210": {
+   "line": 8809,
+   "old_col4_sha": "8a4de764a1a8884efc5e35150cefa7d961ce3e5af1f5c9c6175b187a00d3cfd9",
+   "new_col4_len": 990,
+   "old_col4_len": 410
+  },
+  "006B8140": {
+   "line": 8964,
+   "old_col4_sha": "9805b4c6734fc2e8ea833413b116c84e622c7a0afa06ed8fea951d0319f4d73c",
+   "new_col4_len": 718,
+   "old_col4_len": 122
+  }
+ }
+}

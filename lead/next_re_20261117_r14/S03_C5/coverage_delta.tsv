@@ -1,0 +1,6 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+0055C7C0	S03	LZOStraw::slot2	[已证] LZOStraw read(buffer,count)：buf 空或 count<1 返回 0；先 memmove 已解码余量并推进四指针，余量不足则 Read 4 字节头（长度!=4 收尾）、字节序转换、Read 压缩块（短读则释放并返回）、LZO 解压、复位余量后回跳续循环，直到 count 用尽。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#0055C7C0
+0065CF00	S03	RawFileClass::slot10	[已证] RawFileClass seek(offset,origin)：句柄为 -1 走错误报告；origin 0/1/2 三路分别算偏移（SET 夹紧到 size、CUR 直接、END 加 size），映射 Win32 FILE_BEGIN/CURRENT/END 后调 SetFilePointer，返回 -1 则 GetLastError 经虚错误报告器报错；再按缓冲窗决定只改窗内索引或冲刷重读。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#0065CF00
+0065CB50	S03	RawFileClass::slot7	[已证] RawFileClass open(filename,mode)：未开且 filename 非空才继续（否则虚报错误码 2）；mode 1/2/3 三路各以不同 CreateFileA 实参（GENERIC_READ / GENERIC_WRITE / READ|WRITE）打开并存句柄；句柄字段为 -1 判失败，返回句柄有效性布尔。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#0065CB50
+00473B10	S03	CCFileClass::slot9	[已证] CCFileClass read(buffer,count)：未开先 seek(1) 补开并置标志；自有缓冲非空则按可用量夹紧 count、memmove 后推进读位，缓冲空则委托 CDFileClass::vslot9；零长度跳过，补开过则经虚方法提交；返回实际读出字节数。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#00473B10
+0065CCE0	S03	RawFileClass::slot9	[已证] RawFileClass read(buffer,count)：未开先 seek 补开（失败返 0）；句柄有效且读量按剩余夹紧后，循环 ReadFile→判成功→推进指针/剩余/累计，遇全局 abort 标志或错误则经 GetLastError 虚报错并退出，回跳至 count 用尽；末了复位 abort 标志返回累计字节数。	[已证]	EVIDENCE/THREE_B_DETERMINATION.md#0065CCE0

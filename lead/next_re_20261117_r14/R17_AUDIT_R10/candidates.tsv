@@ -1,0 +1,9 @@
+site	anchor	bytes	anchored_cover	instruction_boundary	real_instruction	relation	reason
+0x418ddb	-	ff 14 89 41 00 01 89 41	NO_ANCHORED_INSTRUCTION	False	false	data	FF 14 89 lies inside a repeated jump-table data record at 0x418DD8; no anchored instruction
+0x59c97b	0x59c920	ff 64 8b f7 7f 05 be 64	0059c97a: 83 ff 64  cmp edi, 0x64	False	false	misaligned	real flow 0x59C97A 83 FF 64 cmp edi,0x64; 0x59C97D 8B F7 mov esi,edi
+0x59c9be	0x59c920	ff 64 8b c7 7f 05 b8 64	0059c9bd: 83 ff 64  cmp edi, 0x64	False	false	misaligned	real flow 0x59C9BD 83 FF 64 cmp edi,0x64; 0x59C9C0 8B C7 mov eax,edi
+0x5c64c3	0x5c62b0	ff 24 80 74 04 84 c9 74	005c64c2: 33 ff  xor edi, edi	False	false	misaligned	anchored at 0x5C62B0; site inside 0x5C64C2 33 FF xor edi,edi; FF 24 80 is jmp not call
+0x756843	0x756590	ff 14 b5 40 68 84 00 83	00756843: ff 14 b5 40 68 84 00  call dword ptr [esi*4 + 0x846840]	True	true	unrelated	anchored at 0x756590: call [esi*4+0x846840]; 32 code pointers then 0/small ints
+0x7cc172	0x7cc0dc	ff 54 b3 08 eb c3 64 8f	007cc172: ff 54 b3 08  call dword ptr [ebx + esi*4 + 8]	True	true	unrelated	anchored at 0x7CC0DC: call [ebx+esi*4+8]; stack SEH node array, not slot segment
+0x7cc21b	0x7cc0dc	ff 54 8f 04 5d 5e 8b 5d	007cc21b: ff 54 8f 04  call dword ptr [edi + ecx*4 + 4]	True	true	unrelated	anchored at 0x7CC0DC: call [edi+ecx*4+4]; ecx=3*esi, node stride 12; SEH chain
+0x7cc257	0x7cc0dc	ff 54 8f 08 8b 7b 08 8d	007cc257: ff 54 8f 08  call dword ptr [edi + ecx*4 + 8]	True	true	unrelated	anchored at 0x7CC0DC: call [edi+ecx*4+8]; same SEH chain

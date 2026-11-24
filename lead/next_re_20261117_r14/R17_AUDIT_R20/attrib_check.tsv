@@ -1,0 +1,27 @@
+name	R20_category	my_verdict	reason
+RulesClass	(a) 无独立 vtable 的类	DISAGREE：应改归 (f) 名字在镜像中不存在	全镜像 ASCII 检索 "RulesClass" 命中 0 次（连字符串都不存在），RTTI 裸名/模板实参均无；"无独立 vtable" 只能解释"没有 TD"，解释不了"名字零出现"；coverage 行自标 [已证] YRpp/kb 地址名 —— 名字来源在镜像外（YRpp/kb 知识库），in-binary 无法证否
+ScenarioClass	(a) 无独立 vtable 的类	DISAGREE：同上	全镜像 "ScenarioClass" 命中 0 次，RTTI 裸名无；不能从"表内无同名 TD"推出"无独立 vtable"
+InputManagerClass	(a) 无独立 vtable 的类	PARTIAL	全镜像零出现；归因(无 vtable)是猜测，应降为 (f)/无法判定
+GameOptionsClass	(a) 无独立 vtable 的类	PARTIAL	全镜像零出现；同上
+CDDriveManagerClass	(a) 无独立 vtable 的类	PARTIAL	coverage 行名是 CD::CDDriveManagerClass（命名空间形态），全镜像零出现；归因无证据
+ZBufferClass	(a) 无独立 vtable 的类	N/A口径	coverage 行名 Drawing::ZBufferClass，零出现；(a) 也只是猜测
+MPGameModeClass	(d) 疑似命名差异	DISAGREE：不是"疑似"，而是重复计数	coverage 自身 SEM 已写死"行名类 MPGameModeClass 在本镜像无 RTTI 表（连字符串均不存在）"，且该类的 36 行实际都见证在 MultiplayerBattle/FreeForAll/MultiplayerSiege/UnholyAlliance 等活表上 —— MultiplayerGameMode 就是这组类的共同基类；"疑似命名差异"把已证事实降级成猜测，且把 1 个基类算成新未解析名
+MPBattleClass	(d) 疑似命名差异	DISAGREE：应归 (g) 已由已验证 IID 解决	同机 SEM 写明 RTTI=0082DAA8→.?AVMultiplayerBattle@@ 活表 slot0 见证；镜像实测 0x82daa8 = .?AVMultiplayerBattle@@。coverage 类名 MPBattleClass 是 /MPBattleClass/ 子命名空间，MultiplayerBattle 是对应 RTTI 类名。事实已在 coverage 里证过，不该再算 unresolved
+MPMegawealthClass	(d) 疑似命名差异	DISAGREE：(g)	SEM: RTTI=0082FCE8→.?AVMegawealth@@；实测 0x82fce8 = .?AVMegawealth@@ 且同名类有 TClassFactory 实例
+MPSiegeClass	(d) 疑似命名差异	DISAGREE：(g)	SEM: RTTI=0082FEC8→.?AVMultiplayerSiege@@；实测 0x82fec8 = .?AVMultiplayerSiege@@
+MPUnholyAllianceClass	(d) 疑似命名差异	DISAGREE：(g)	SEM: RTTI=00830058→.?AVUnholyAlliance@@；实测 0x830058 = .?AVUnholyAlliance@@
+TacticalClass	(b) 多重继承/嵌套片段	DISAGREE：是派生类基段的正常写法，且镜像有直接证据	8 行 coverage 的 name 列就是 TacticalClass::xxx；in-binary 存在 .?AVTacticalClass@DisplayClass@@（BD 0x820048 实测）；"嵌套片段"的说法掩盖了这是 10 行（含 1 类仅见于不完整复合名）的实际条目
+RTacticalClass	(b)	PARTIAL：复合名写法	in-binary .?AVRTacticalClass@RadarClass@@（0x839298 实测）；无独立 RTacticalClass TD，按"派生@基"写法本就该带 @RadarClass
+AVRTacticalClass	(b)	PARTIAL：复合名写法	同 RTacticalClass，唯一的 1 行（L7894）就是该复合 TD 的 slot31；"AV" 是又一层前缀，与 A2 的 AVRTacticalClass 警告同源
+VocClass	(c) 模板类	DISAGREE：应归 (h) 名字来源在镜像外	coverage 的 4 行 name 列写明 VocClass::PlayGlobal/PlayAt/PlayIndexAtPos/FindIndex；镜像内 "VocClass" 仅 2 次、且都在 ?$VectorClass@PAVVocClass@@ 模板实参里；把"仅在模板实参中出现"当成"类本身是模板"是错误推论
+VoxClass	(c) 模板类	DISAGREE：同上	5 行 name 列写明 VoxClass::*；镜像内仅 2 次模板实参
+IonBlastClass	(c) 模板类	DISAGREE：同上	3 行 name 列写明 IonBlastClass::IonBlastClass / 另有 T_VectorClass_PAVIonBlastClass 容器行
+LaserDrawClass	(c) 模板类	DISAGREE：同上	name 列有 LaserDrawClass::LaserDrawClass（1 行），另 2 行是模板实参
+SpotlightClass	(c) 模板类	DISAGREE：同上	2 行 name 列写明 SpotlightClass::SpotlightClass
+RadarEventClass	(c) 模板类	DISAGREE：同上	2 行 name 列写明 RadarEventClass::RadarEventClass
+PlanningTokenClass	(c) 模板类	DISAGREE：同上	name 列写明 PlanningTokenClass::Clear
+PBVAnimClass	(c) 模板类	PARTIAL	该 token 只出现在 T_DynamicVectorClass_PBVAnimClass__ 表行名里，与 LaserDraw/PAVLaserDraw 同型；(c) 的"模板类"措辞错，但"仅容器实参"这一事实对
+PAVLaserDrawClass	(c) 模板类	PARTIAL：重复计数	它是 LaserDrawClass 的前缀变体，与 LaserDrawClass 同源同证；按 token 计 2 条，按类计只多 0 个
+MissionControlClass	(e) 无法判定	PARTIAL	1 行，name 列 MissionClass::MissionControlClass（成员函数名含类名），可能是成员名而非独立类 —— (e) 保守但正确
+MessageListClass	(e) 无法判定	AGREE	1 行 name 列 MessageListClass::MessageListClass；镜像零出现；(e) 成立
+ABufferClass	(e) 无法判定	AGREE	1 行 name 列 ABufferClass::ABufferClass；镜像零出现；(e) 成立

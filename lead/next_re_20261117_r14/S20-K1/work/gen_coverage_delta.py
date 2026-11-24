@@ -1,0 +1,43 @@
+"""Generate coverage_delta.tsv from byte-proven S20 facts."""
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import CARD
+
+# entry(hex8), subsystem, name, one_line_semantics, grade, evidence_path
+ROWS = [
+ # GetSize (mov eax,imm;ret) — byte proven
+ ("00426530","S20","AnimClass::GetSize","v[12] returns 0x1C8 (456), mov eax,imm;ret","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("00426580","S20","AnimClass::WhatAmI","v[11] returns 4 (RTTI AnimClass)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("0062D970","S20","ParticleClass::GetSize","v[12] returns 0x138 (312)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("0062D980","S20","ParticleClass::WhatAmI","v[11] returns 22 (0x16)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("00630200","S20","ParticleSystemClass::GetSize","v[12] returns 0x100 (256)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("00630210","S20","ParticleSystemClass::WhatAmI","v[11] returns 24 (0x18)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("0074AB10","S20","VoxelAnimClass::GetSize","v[12] returns 0x148 (328)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("0074AB20","S20","VoxelAnimClass::WhatAmI","v[11] returns 41 (0x29)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("00428E70","S20","AnimTypeClass::GetSize","v[12] returns 0x378 (888)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("00645910","S20","ParticleTypeClass::GetSize","v[12] returns 0x318 (792)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("00644920","S20","ParticleSystemTypeClass::GetSize","v[12] returns 0x310 (784)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ ("0074BA00","S20","VoxelAnimTypeClass::GetSize","v[12] returns 0x308 (776)","[已证]","EVIDENCE/T2_getsize_channelA.txt"),
+ # Constructors (vtable-install byte proven)
+ ("00421EA0","S20","AnimClass::ctor","installs main vtable 0x7E3354 at +0; writes +0x184/+0xC8/+0xCC","[已证]","EVIDENCE/T2_vtable_writes.txt"),
+ ("0062B5E0","S20","ParticleClass::ctor","installs 0x7EF954; writes Type@+0xAC from param","[已证]","EVIDENCE/T2_vtable_writes.txt"),
+ ("0062DC50","S20","ParticleSystemClass::ctor","installs 0x7EFB9C; writes Type@+0xAC, SpotlightRadius@+0xF4=29","[已证]","EVIDENCE/T2_vtable_writes.txt"),
+ ("007493B0","S20","VoxelAnimClass::ctor","installs 0x7F6318","[已证]","EVIDENCE/T2_vtable_writes.txt"),
+ # Draw / DrawIfVisible (slot + body byte proven)
+ ("00422C70","S20","AnimClass::DrawIfVisible","v[65] wrapper: reads +0x184, returns false if DelayTimer>0, ret 0xC","[已证]","EVIDENCE/T3_field_semantic_windows.txt"),
+ ("00422CA0","S20","AnimClass::Draw","v[69] impl (0 direct callers, vtable dispatched)","[已证]","EVIDENCE/T4_vtable_slots.tsv"),
+ ("0062CEC0","S20","ParticleClass::Draw","v[69] impl; reads Type@+0xAC and Location@+0x9C","[已证]","EVIDENCE/T3_field_semantic_functions.txt"),
+ ("0062E280","S20","ParticleSystemClass::Draw","v[69] impl; reads Type@+0xAC, SpotlightRadius@+0xF4","[已证]","EVIDENCE/T3_field_semantic_functions.txt"),
+ ("00749B70","S20","VoxelAnimClass::Draw","v[69] impl","[已证]","EVIDENCE/T4_vtable_slots.tsv"),
+ ("005F4B10","S20","ObjectClass::DrawIfVisible(shared)","v[65] shared body used by Particle/PSys, ret 0xC","[已证]","EVIDENCE/T4_vtable_slots.tsv"),
+ # Update entry (vtable slot + call sites byte proven; precise semantics partly inferred)
+ ("00423AC0","S20","AnimClass::AI/Update","v[23]; 0 direct callers (vtable dispatch); writes +0x19D","[静态推断]","EVIDENCE/T4_update_callsites.tsv"),
+ ("0062DF20","S20","ParticleSystemClass::Update_A","called from 0x6C59CF (logic path); reads +0xBC vector","[静态推断]","EVIDENCE/T4_update_callsites.tsv"),
+ ("0062E070","S20","ParticleSystemClass::Update_B","called from 0x630233; Update/Draw separated","[静态推断]","EVIDENCE/T4_update_callsites.tsv"),
+]
+hdr="entry\tsubsystem\tname\tone_line_semantics\tgrade\tevidence_path"
+lines=[hdr]+["\t".join(r) for r in ROWS]
+path=os.path.join(CARD,"coverage_delta.tsv")
+with open(path,"w",encoding="utf-8",newline="\n") as f:
+    f.write("\n".join(lines)+"\n")
+print("wrote",path,"rows",len(ROWS))

@@ -1,0 +1,186 @@
+SHA256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+COVERAGE (99.99837567729335, 1394120, 66)
+
+=== A) +0x98 标志：找对齐的 ObjectClass ctor 写点 ===
+ align 0x5f38f0 hits [] first [('0x5f38f0', 'add', 'byte ptr [ebx + 0xac135c], ah'), ('0x5f38f6', 'ret', ''), ('0x5f38f7', 'nop', '')]
+ align 0x5f3900 hits [] first [('0x5f3900', 'push', 'ebx'), ('0x5f3901', 'push', 'esi'), ('0x5f3902', 'mov', 'esi, ecx')]
+ align 0x5f3910 hits [] first [('0x5f3910', 'mov', 'dword ptr [esi + 0x24], ebx'), ('0x5f3913', 'mov', 'dword ptr [esi + 0x28], ebx'), ('0x5f3916', 'mov', 'dword ptr [esi + 0x2c], ebx')]
+ align 0x5f3920 hits [('0x5f398d', '889e98000000', 'mov', 'byte ptr [esi + 0x98], bl')] first [('0x5f3920', 'add', 'dword ptr [eax], eax'), ('0x5f3922', 'add', 'byte ptr [eax], al'), ('0x5f3924', 'or', 'ecx, 0xffffffff')]
+ align 0x5f3928 hits [('0x5f398c', '00889e980000', 'add', 'byte ptr [eax + 0x989e], cl')] first [('0x5f3928', 'inc', 'esi'), ('0x5f3929', 'js', '0x5f38b3'), ('0x5f392b', 'xchg', 'byte ptr [ecx - 0x78000000], al')]
+ align 0x5f3930 hits [('0x5f398d', '889e98000000', 'mov', 'byte ptr [esi + 0x98], bl')] first [('0x5f3930', 'mov', 'byte ptr [esi + 0x90], al'), ('0x5f3936', 'mov', 'byte ptr [esi + 0x99], al'), ('0x5f393c', 'mov', 'dword ptr [esi + 0x30], ebx')]
+
+--- aligned_5F3920 0x5f3920 + 0x80 ---
+  0x5f3920 0100 add dword ptr [eax], eax
+  0x5f3922 0000 add byte ptr [eax], al
+  0x5f3924 83c9ff or ecx, 0xffffffff
+  0x5f3927 894678 mov dword ptr [esi + 0x78], eax
+  0x5f392a 888681000000 mov byte ptr [esi + 0x81], al
+  0x5f3930 888690000000 mov byte ptr [esi + 0x90], al
+  0x5f3936 888699000000 mov byte ptr [esi + 0x99], al
+  0x5f393c 895e30 mov dword ptr [esi + 0x30], ebx
+  0x5f393f 895e34 mov dword ptr [esi + 0x34], ebx
+  0x5f3942 895e38 mov dword ptr [esi + 0x38], ebx
+  0x5f3945 894e64 mov dword ptr [esi + 0x64], ecx
+  0x5f3948 885e68 mov byte ptr [esi + 0x68], bl
+  0x5f394b 885e74 mov byte ptr [esi + 0x74], bl
+  0x5f394e 895e7c mov dword ptr [esi + 0x7c], ebx
+  0x5f3951 889e80000000 mov byte ptr [esi + 0x80], bl
+  0x5f3957 889e82000000 mov byte ptr [esi + 0x82], bl
+  0x5f395d 889e83000000 mov byte ptr [esi + 0x83], bl
+  0x5f3963 889e84000000 mov byte ptr [esi + 0x84], bl
+  0x5f3969 899e88000000 mov dword ptr [esi + 0x88], ebx
+  0x5f396f 889e8c000000 mov byte ptr [esi + 0x8c], bl
+  0x5f3975 889e8d000000 mov byte ptr [esi + 0x8d], bl
+  0x5f397b 889e8e000000 mov byte ptr [esi + 0x8e], bl
+  0x5f3981 889e8f000000 mov byte ptr [esi + 0x8f], bl
+  0x5f3987 898e94000000 mov dword ptr [esi + 0x94], ecx
+  0x5f398d 889e98000000 mov byte ptr [esi + 0x98], bl
+  0x5f3993 8b0d8013ac00 mov ecx, dword ptr [0xac1380]
+  0x5f3999 8d869c000000 lea eax, [esi + 0x9c]
+
+=== B) 更新循环函数边界与间接调用者 ===
+RAW 0x55B8D0..0x55B8F8: 00403bc17ce84a423bd17ccc5e5fc20800909090909090909090909090909090a1b8e9a800568d70
+first rets after 0x55B8F0 ['0x55ba9f', '0x55bab2', '0x55bacd', '0x55bad3', '0x55bb2f', '0x55bb6e'] insns 402
+RAW_f0b85500 count 0 []
+
+=== C) 0x7193CC 读循环：是否也过 +0x98 ===
+
+--- ctx_7193CC 0x7193cc + 0x60 ---
+  0x7193cc a150eda800 mov eax, dword ptr [0xa8ed50]
+  0x7193d1 8d78ff lea edi, [eax - 1]
+  0x7193d4 3bfb cmp edi, ebx
+  0x7193d6 7c1e jl 0x7193f6
+  0x7193d8 8b0d44eda800 mov ecx, dword ptr [0xa8ed44]
+  0x7193de 8b4608 mov eax, dword ptr [esi + 8]
+  0x7193e1 8b0cb9 mov ecx, dword ptr [ecx + edi*4]
+  0x7193e4 8b910c010000 mov edx, dword ptr [ecx + 0x10c]
+  0x7193ea 3bd0 cmp edx, eax
+  0x7193ec 7505 jne 0x7193f3
+  0x7193ee e83df0d4ff call 0x468430
+  0x7193f3 4f dec edi
+  0x7193f4 79e2 jns 0x7193d8
+  0x7193f6 68c8010000 push 0x1c8
+  0x7193fb e817fa0a00 call 0x7c8e17
+  0x719400 83c404 add esp, 4
+  0x719403 3bc3 cmp eax, ebx
+  0x719405 7440 je 0x719447
+  0x719407 8b4e08 mov ecx, dword ptr [esi + 8]
+  0x71940a 53 push ebx
+  0x71940b 81c19c000000 add ecx, 0x9c
+  0x719411 53 push ebx
+  0x719412 6800060000 push 0x600
+  0x719417 6a01 push 1
+  0x719419 8b11 mov edx, dword ptr [ecx]
+  0x71941b 53 push ebx
+  0x71941c 89542428 mov dword ptr [esp + 0x28], edx
+  0x719420 8b5104 mov edx, dword ptr [ecx + 4]
+  0x719423 8954242c mov dword ptr [esp + 0x2c], edx
+  0x719427 8d542428 lea edx, [esp + 0x28]
+
+=== D) 0x650534 / 0x67CC5F 循环是否过 +0x98 ===
+
+--- ctx_650534 0x650534 + 0x54 ---
+  0x650534 a150eda800 mov eax, dword ptr [0xa8ed50]
+  0x650539 33ff xor edi, edi
+  0x65053b 3bc3 cmp eax, ebx
+  0x65053d 7e3f jle 0x65057e
+  0x65053f 8b1544eda800 mov edx, dword ptr [0xa8ed44]
+  0x650545 55 push ebp
+  0x650546 8b0cba mov ecx, dword ptr [edx + edi*4]
+  0x650549 8b01 mov eax, dword ptr [ecx]
+  0x65054b ff5034 call dword ptr [eax + 0x34]
+  0x65054e 83ec0c sub esp, 0xc
+  0x650551 8bcd mov ecx, ebp
+  0x650553 8bd4 mov edx, esp
+  0x650555 8b01 mov eax, dword ptr [ecx]
+  0x650557 57 push edi
+  0x650558 8902 mov dword ptr [edx], eax
+  0x65055a 68e8878300 push 0x8387e8
+  0x65055f 8b4104 mov eax, dword ptr [ecx + 4]
+  0x650562 56 push esi
+  0x650563 894204 mov dword ptr [edx + 4], eax
+  0x650566 8b4908 mov ecx, dword ptr [ecx + 8]
+  0x650569 894a08 mov dword ptr [edx + 8], ecx
+  0x65056c e867a21700 call 0x7ca7d8
+  0x650571 a150eda800 mov eax, dword ptr [0xa8ed50]
+  0x650576 83c418 add esp, 0x18
+  0x650579 47 inc edi
+  0x65057a 3bf8 cmp edi, eax
+  0x65057c 7cc1 jl 0x65053f
+  0x65057e 6838818300 push 0x838138
+  0x650583 56 push esi
+
+--- ctx_67CC5F 0x67cc5f + 0x30 ---
+  0x67cc5f a150eda800 mov eax, dword ptr [0xa8ed50]
+  0x67cc64 33f6 xor esi, esi
+  0x67cc66 85c0 test eax, eax
+  0x67cc68 7e1d jle 0x67cc87
+  0x67cc6a 8b0d44eda800 mov ecx, dword ptr [0xa8ed44]
+  0x67cc70 8d442408 lea eax, [esp + 8]
+  0x67cc74 50 push eax
+  0x67cc75 8b0cb1 mov ecx, dword ptr [ecx + esi*4]
+  0x67cc78 8b11 mov edx, dword ptr [ecx]
+  0x67cc7a ff5234 call dword ptr [edx + 0x34]
+  0x67cc7d a150eda800 mov eax, dword ptr [0xa8ed50]
+  0x67cc82 46 inc esi
+  0x67cc83 3bf0 cmp esi, eax
+  0x67cc85 7ce3 jl 0x67cc6a
+  0x67cc87 a11826b700 mov eax, dword ptr [0xb72618]
+  0x67cc8c 33f6 xor esi, esi
+
+=== E) 确认 0x4664AB 与 0x466630 的确切字节 + 前置 inc/dec ===
+
+--- write_ctx 0x4664a2 + 0x20 ---
+  0x4664a2 8b0d50eda800 mov ecx, dword ptr [0xa8ed50]
+  0x4664a8 8bc1 mov eax, ecx
+  0x4664aa 41 inc ecx
+  0x4664ab 890d50eda800 mov dword ptr [0xa8ed50], ecx
+  0x4664b1 8b0d44eda800 mov ecx, dword ptr [0xa8ed44]
+  0x4664b7 893481 mov dword ptr [ecx + eax*4], esi
+  0x4664ba 8bc6 mov eax, esi
+  0x4664bc 5e pop esi
+  0x4664bd 5b pop ebx
+  0x4664be c3 ret 
+  0x4664bf 90 nop 
+
+--- write_ctx 0x46662d + 0x20 ---
+  0x46662d 49 dec ecx
+  0x46662e 3bc1 cmp eax, ecx
+  0x466630 890d50eda800 mov dword ptr [0xa8ed50], ecx
+  0x466636 7d18 jge 0x466650
+  0x466638 8b0d44eda800 mov ecx, dword ptr [0xa8ed44]
+  0x46663e 40 inc eax
+  0x46663f 8b1481 mov edx, dword ptr [ecx + eax*4]
+  0x466642 895481fc mov dword ptr [ecx + eax*4 - 4], edx
+  0x466646 8b0d50eda800 mov ecx, dword ptr [0xa8ed50]
+
+=== F) 0xA8ED50 是否被 atexit 析构写回（0x4E68A0 全函数体） ===
+
+--- dtor_4E68A0 0x4e68a0 + 0x3c ---
+  0x4e68a0 a144eda800 mov eax, dword ptr [0xa8ed44]
+  0x4e68a5 53 push ebx
+  0x4e68a6 33db xor ebx, ebx
+  0x4e68a8 c70540eda80098467e00 mov dword ptr [0xa8ed40], 0x7e4698
+  0x4e68b2 3bc3 cmp eax, ebx
+  0x4e68b4 7417 je 0x4e68cd
+  0x4e68b6 381d4deda800 cmp byte ptr [0xa8ed4d], bl
+  0x4e68bc 740f je 0x4e68cd
+  0x4e68be 50 push eax
+  0x4e68bf e879222e00 call 0x7c8b3d
+  0x4e68c4 83c404 add esp, 4
+  0x4e68c7 891d44eda800 mov dword ptr [0xa8ed44], ebx
+  0x4e68cd 881d4deda800 mov byte ptr [0xa8ed4d], bl
+  0x4e68d3 891d48eda800 mov dword ptr [0xa8ed48], ebx
+  0x4e68d9 5b pop ebx
+  0x4e68da c3 ret 
+  0x4e68db 90 nop 
+
+=== G) vtable 里 [vptr+8] / [vptr+0x10] 槽（Add/Del 用到的扩容与 IndexOf） ===
+SLOT 0x7e46e4 u32 0x410260
+SLOT 0x7e46e8 u32 0x46afd0
+SLOT 0x7e46ec u32 0x46aff0
+SLOT 0x7e46f0 u32 0x46b560
+SLOT 0x7e46f4 u32 0x410450
+SLOT 0x7e4740 u32 0x4666e0
+
+DONE4

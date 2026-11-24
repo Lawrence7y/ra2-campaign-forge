@@ -1,0 +1,82 @@
+A0 rows = 74  corpus_n = 74
+A0 expect counts = {'CATCH': 39, 'PASS': 35}
+
+A1 逐层（原始计数 / 分母显式 / 约分后分数）
+  r10    q_i=P(PASS|E)=19/39=19/39=0.487179487  fp_rate=P(CATCH|notE)=20/35=4/7=0.571428571  c_i=15/35=3/7
+  r12    q_i=P(PASS|E)=35/39=35/39=0.897435897  fp_rate=P(CATCH|notE)= 0/35=0=0.000000000  c_i=35/35=1
+  n13    q_i=P(PASS|E)= 3/39=1/13=0.076923077  fp_rate=P(CATCH|notE)= 0/35=0=0.000000000  c_i=35/35=1
+  chain  q_i=P(PASS|E)= 3/39=1/13=0.076923077  fp_rate=P(CATCH|notE)= 2/35=2/35=0.057142857  c_i=33/35=33/35
+
+A2 q_r10*q_n13      = 19/507 = 0.03747534516765286
+A2 q_r10*q_r12*q_n13= 665/19773 = 0.033631720022252565
+A2 差 pp            = 0.38436251454002934
+A2 fp_rate 乘积      = 0 = 0.0  因子 = ['4/7', '0', '0']
+A3 r12=CATCH 行数 = 4 ids = ['R10-TV3', 'R10-CTX-05', 'R10-CTX-06', 'GP-C04']
+A3 r12=CATCH 全在 expect=CATCH ? True
+A3 这些行全 r10=PASS ? True
+A3 n13=CATCH 且 expect=PASS 行数 = 0
+
+A4 |all3PASS| = 18  其中 expect=CATCH = 3 ['GP-A1', 'GP-A2', 'GP-A3']
+A4 |r10&n13 双PASS| = 18  集合相等 ? True
+A4 |n13=PASS| = 38  其中 r12=CATCH = 0
+A4 P(r12=PASS|n13=PASS) = 1
+A4 P(all3PASS|E) = 1/13
+A4 P(E|allPASS)  = 1/6
+A4 FRECHET min(q10,q12,q13) = 1/13  == 实测联合漏报 ? True
+
+A5 pi = 39/74  P(E|2独立层全PASS) = 0.08878504672897196  P(E|3独立层全PASS) = 0.0804111245465538
+A5 宣称正确率 2层 = 0.9112149532710281  3层 = 0.9195888754534461  实测 = 0.8333333333333334
+A5 pp gaps = -7.788161993769471 -8.625554212011286
+
+A6 四倍数 + 附项（分子分母都写全）
+   1.8772 后验/Bayes2层                  = 107/57 = 1.877192982
+   2.0526 似然/2层乘积                     = 39/19 = 2.052631579
+   2.0727 后验/Bayes3层                  = 827/399 = 2.072681704
+   2.2872 似然/3层乘积                     = 1521/665 = 2.287218045
+   4.4474 后验/2层乘积(禁用)                 = 169/38 = 4.447368421
+   4.4474/2.0526 = 2.1666666666666665  P(E|allPASS)/P(allPASS|E) = 2.1666666666666665
+   2.0727/2.0526 = 1.0097680097680097
+
+A7 _eind_verify_out.json posterior keys = ['pi', 'q_n13', 'q_r10', 'q_product', 'ladder', 'R12_increment_bit', 'k_eff_posterior_odds', 'k_eff_probability_ratio_upstream', 'I1_linear', 'I3_linear', 'info_gain_ratio_linear', 'allPASS_error_observed', 'observed_over_indep']
+A7 q_n13 = 0.07692307692307693  q_r10 = 0.48717948717948717
+A7 q13/(q13*q10) = 2.052631578947368  1/q10 = 2.0526315789473686  JSON observed_over_indep = 2.052631578947368
+A8 _ei_05_admission_out.json 含 bound 的键 = [('/c_confidence/n_independent_2_error_bound', 0.037475345167652864), ('/c_confidence/n_independent_2_error_bound_pct', 3.747534516765286), ('/c_confidence/observed_over_indep_bound', 2.052631578947368), ('/d_correlation_correction/rho=0.0/Frechet_upper_bound', 0.07692307692307693), ('/d_correlation_correction/rho=0.3/Frechet_upper_bound', 0.07692307692307693), ('/d_correlation_correction/rho=0.6/Frechet_upper_bound', 0.07692307692307693), ('/d_correlation_correction/rho=0.9/Frechet_upper_bound', 0.07692307692307693), ('/d_correlation_correction/general/correlated_miss_bound', 'P(all PASS|E) ≤ min_i q_i (Fréchet–Hoeffding, distribution-free); under equicorrelated probit: Φ_n(Φ⁻¹(q);ρ) = ∫ Φ((Φ⁻¹(q)−√ρ·t)/√(1−ρ))^n φ(t)dt')]
+
+A9 后验阶梯 vs 真似然比
+   后验 p0,p1,p2,p3 = 0.527027027027027 0.07894736842105263 0.16666666666666666 0.16666666666666666
+   后验比 p1/p0,p2/p1,p3/p2 = 0.14979757085020243 2.111111111111111 1.0
+   真 LR(n13|全74) = P(PASS|E)=0.07692307692307693 / P(PASS|notE)=1.0 = 0.076923077
+   真 LR(r10|n13=PASS) = P(PASS|E)=1.0 / P(PASS|notE)=0.42857142857142855 = 2.333333333
+   真 LR(r12|n13&r10 PASS) = P(PASS|E)=1.0 / P(PASS|notE)=1.0 = 1.000000000
+A10 k_eff 概率比/后验几率比/信息增益比 = 0.6064124084365424 0.6696629280720958 0.8042328042328043
+
+A11 Wilson 两个分母
+   Wilson(18,18) lo = 0.8241207763533424  Wilson(18,68) lo = 0.17449740669878908
+   CP (0.025)^(1/18) = 0.8146980318621477
+A12 pp 分解 A 100*21/72 + 100*(69/74-69/72) = 29.166666666666668 -2.5900900900900914 26.576576576576578
+A12 pp 分解 B 100*21/74 + 100*(48/74-48/72) = 28.37837837837838 -1.8018018018017945 26.576576576576585
+A12 总差 100*(69/74-48/72) = 26.57657657657658
+A13 n_eff(ρ_eff=0.8,n=2) = 1.1111111111111112  n_eff(标签一致率0.9,n=2) = 1.0526315789473684  n_eff(ρ̄=1,n=18) = 1.0
+
+A14 九件指纹独立重算
+   MATCH 4ad16cdb7dbb4b9e97ea306b55af6d51e2c262a52b10c75e56e1f5ffa1126e16 34964 lead/keff_calc_20261109/KEFF_CALC.md
+被核对象 SHA256 = 4ad16cdb7dbb4b9e97ea306b55af6d51e2c262a52b10c75e56e1f5ffa1126e16，字节数 = 34964
+   MATCH a56c9b2aa478ab2fd1ef425f39fecf1b5d933ebe65869d142c0ff9c12aacc042 14609 lead/keff_calc_20261109/_ke_REPORT.md
+被核对象 SHA256 = a56c9b2aa478ab2fd1ef425f39fecf1b5d933ebe65869d142c0ff9c12aacc042，字节数 = 14609
+   MATCH 76cc3f5e60c63b9c2d7a7c6e25a6a6fb0352a5223821fad8ef27441786108d78 17397 lead/keff_calc_20261109/_ke_calc_stdout.txt
+被核对象 SHA256 = 76cc3f5e60c63b9c2d7a7c6e25a6a6fb0352a5223821fad8ef27441786108d78，字节数 = 17397
+   MATCH aeab4fc30822dfde9c21489aef9a42a1558dde1f21f091f486bbd94453f7a523 36194 lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md
+被核对象 SHA256 = aeab4fc30822dfde9c21489aef9a42a1558dde1f21f091f486bbd94453f7a523，字节数 = 36194
+   MATCH dfe7f68692eb7ae752358782acaaa1fc5a42ecbd0a6930205e0dcfe4f6544dcb 42573 lead/score_decomp_20261109/SCORE_DECOMP.md
+被核对象 SHA256 = dfe7f68692eb7ae752358782acaaa1fc5a42ecbd0a6930205e0dcfe4f6544dcb，字节数 = 42573
+   MATCH d3543657aa4f9914c9023710f6daef8348a12ca0aa11957110e8b7c45baec6fe 38575 lead/gate_pipeline_20261109/_gp_regression_out.json
+被核对象 SHA256 = d3543657aa4f9914c9023710f6daef8348a12ca0aa11957110e8b7c45baec6fe，字节数 = 38575
+   MATCH c00833b3fef5b8b5f93cdfd9d5223f22149878dd868200c1a070d76e553d8ae1 51927 lead/comparability_20261109/COMPARABILITY_AUDIT.md
+被核对象 SHA256 = c00833b3fef5b8b5f93cdfd9d5223f22149878dd868200c1a070d76e553d8ae1，字节数 = 51927
+   MATCH 3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 52419 lead/PENDING_DECISIONS.md
+被核对象 SHA256 = 3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7，字节数 = 52419
+   MATCH 2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede 759518 lead/GOAL_THREE_TARGETS_20261018.md
+被核对象 SHA256 = 2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede，字节数 = 759518
+A14 FP_ALL_MATCH = True
+A15 报告绑定行 strict-format 条数 = 9  与九件基线全等 ? True
+DONE

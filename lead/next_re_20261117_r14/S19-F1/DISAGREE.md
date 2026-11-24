@@ -1,0 +1,9 @@
+# S19-F1 · DISAGREE（与线索/工具的分歧）
+
+| # | 对象 | 说法 A | 说法 B（本卡实测） | 裁决 |
+|---|---|---|---|---|
+| D1 | `VocClass::PlayGlobal` 直呼数 | 线索 `audio_input_hotspots.md`/`audio_throttle_landing.md`：116；本次 capstone 线性 sweep 亦 116 | Ghidra 12 `getReferencesTo(0x750920)` = 110；atlas `n_callers`=110 | **已裁决（非矛盾）**：Ghidra 110 是 capstone 116 的真子集；差 6 处 `0x63A2FF/0x63A352/0x63A3E4/0x63A437/0x6E1772/0x6EDEA6` 全在 atlas gap，但均为合法 `E8 call 0x750920`（`EVIDENCE/task2_dual_channel_gap_analysis.txt`）。116 用于「调用点数」；110 用于「Ghidra 建出的引用数」，二者不可互换。§962「部分独立」成立。 |
+| D2 | 音量字段偏移 | YRpp `GameOptionsClass.h`：`SoundVolume@+0x30`/`VoiceVolume@+0x34`/`MovieVolume@+0x38`（即 `0xA8EB90/94/98`） | 本卡 `sweep_abs`：`0xA8EB90` 被 `mov eax/edx,dword` 读（整数用途），`0xA8EB94` 被 `cmp/mov byte` 读（非 float）；真正的 `fld dword` 浮点在 `0xA8EB98/9C/A0`（14/3/7 refs 对应位置） | 本卡 `[静态推断]` 采 `0xA8EB98/9C/A0`；YRpp 头为只读线索，不据其定偏移。需 `RulesClass::Load_INI` 写点定谳（U4）。 |
+| D3 | `Control`/`Type` 偏移 | `audio_input_hotspots.md` §1.3 表：`Control@+0x30`、`Type@+0x32`、`MinDelay@+0x54`、`MaxDelay@+0x58`、`Range@+0x4C`、`MinVolume@+0x50` | 本卡逐指令：`Control@+0x10`(写 `0x406570`)、`Type@+0x14`(写 `0x4065C0`)、`MinVolume@+0x54`(写 `0x4065F0`)、`MinDelay@+0x58`/`MaxDelay@+0x5C`(写 `0x406600`)、`Range@+0x50`(写 `0x4065E0`)、`Limit@+0x48`、`Loop@+0x4C` | **线索错**：`audio_input_hotspots.md` 那一行六个偏移全错（除 Priority@+0x40 外）。采本卡 `EVIDENCE/task2_ini_writers_406500.txt` 与 parse fn `0x750440`。`audio_engine_deep_dive.md` §2 表偏移与本卡一致。 |
+| D4 | VQA 是否阻塞主循环 | 线索文档未给明确结论（只说"过场"） | 本卡 `[已证]` 阻塞：`0x432C70` 自持消息泵 + 4 条回边到 `0x432CB8`，主循环 `0x52D9A0` 期间不推进 | 采本卡。注意不是"硬冻结"（消息仍泵），是**独占式模态循环**。 |
+| D5 | `EVA::QueueVoice` 参数 | 线索 `audio_engine_deep_dive.md` §7.2：`QueueVoice@0x752700` → `0x752480`；EVA 语音走独立 AudioStream | 本卡确认入口 77 sites/42 fns；`ECX=EVA_* 名串`、`EDX=优先级/-1`；表 `[0xB1D4A4]/[0xB1D4B0]` 用 `0x7C8D20` stricmp 得索引；`0x752760` → `0x407B60` | 一致（补充参数语义与表地址）。 |

@@ -1,0 +1,33 @@
+=== ASK 4: independent reverse-masking verification ===
+scanner sha256 = 9ccca808d52f44aaee895e30f9a84f6f3b6ae5ee292ea71281e2b46e627a1c57
+
+--- (1)(2) REAL :22, min(pos) / quoted_containing / role ---
+  [N2]            present=[('不能定位当年错误步骤', 172)] min_pos=172  q=quote@「 role=REFUTING_QUOTE
+  [N1,N2]         present=[('不能定位当年错误步骤', 172)] min_pos=172  q=quote@「 role=REFUTING_QUOTE
+  [N1,N2,N3]      present=[('不能定位当年错误步骤', 172), ('登记效力说明', 17)] min_pos=17   q=None role=ANALYSIS_MENTION
+  [N3,N2]         present=[('登记效力说明', 17), ('不能定位当年错误步骤', 172)] min_pos=17   q=None role=ANALYSIS_MENTION
+  [N1,N2,N3B]     present=[('不能定位当年错误步骤', 172), ('与既有草案', 4)] min_pos=4    q=None role=ANALYSIS_MENTION
+  => N3 pos=17 outside quotes; N3B pos=4 outside quotes
+
+--- (3) monotonicity of carrier inclusion ---
+  N=2 needles=2 union lines=136
+  N=3 needles=3 union lines=137
+  N=4 needles=4 union lines=141
+  N=2 subset of N=3 = True ; N=3 subset of N=4 = True
+  (scanned/carrier inclusion monotone == the report's claim)
+
+--- (4) synthetic ASSERTION -> QUOTED flip (needs_fix True->False) ---
+  line='「核对」 只能判「不可复现」'
+    [N]      pos=5   role=ASSERTION        needs_fix(role==ASSERTION)=True
+    [N,'核对'] pos=1   role=QUOTED           needs_fix(role==ASSERTION)=False
+    FLIP=True
+  line='「逐字」 复算数字 只能判「不可复现」'
+    [N]      pos=10  role=ANALYSIS_MENTION needs_fix(role==ASSERTION)=False
+    [N,'逐字'] pos=1   role=REFUTING_QUOTE   needs_fix(role==ASSERTION)=False
+    FLIP=True
+
+--- (5) honest negative: real-corpus ASSERTION flips ---
+  ASSERTION lines under [N1,N2] = 29 ; extra needles = 9 ; flip count = 0
+  (author reported 24 / 9 / 0 at their corpus snapshot; my snapshot differs
+   because new .md artifacts now exist -- see _mev_forensics_out.txt)
+

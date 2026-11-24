@@ -1,0 +1,36 @@
+# 任务 B 判别：413 个未覆盖虚表目标是「size 低估」还是「真漏收函数」
+
+## 1 · 判别结果（413 个不同地址）
+  B: 上一函数已终结 ⇒ 真漏收                           413  (100.0%)
+
+## 2 · 上一 entry 在 pend 处的终结指令分布
+  ret        411
+  jmp          2
+
+## 3 · 目标前填充长度分布
+  {0: 2, 1: 10, 2: 7, 3: 69, 4: 6, 5: 130, 6: 7, 7: 12, 8: 8, 9: 65, 10: 20, 11: 19, 12: 11, 13: 3, 14: 31, 15: 13}
+
+## 4 · 判为「真漏收」的样例（前 20）
+  slice  target    prevEntry prevEnd   末端指令     pad   d    形态
+  C01    0040B690 0040B670 0040B68B ret      5     5    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] ; ret 4
+  C01    0040B6F0 0040B6D0 0040B6EB ret      5     5    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] ; ret 4
+  C01    0040BEA0 0040BE80 0040BE9B ret      5     5    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] ; ret 4
+  C01    0040C870 0040C850 0040C86B ret      5     5    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] ; ret 4
+  C01    0041B860 0041B840 0041B857 ret      9     9    mov ecx, dword ptr [esp + 4] ; xor eax, eax ; mov al, byte ptr [ecx + 0x12] ; ret 4
+  C01    0041DE30 0041DE10 0041DE2B ret      5     5    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] ; ret 4
+  C01    00421850 00421830 0042184B ret      5     5    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] ; ret 4
+  C01    00426A80 00426A70 00426A7A ret      6     6    xor eax, eax ; mov ax, word ptr [ecx + 0xa2] ; ret  ; nop 
+  C01    0042F470 0042F450 0042F46B ret      5     5    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 8] ; mov edx, dword ptr [eax + ecx*4] ; mov eax, dword ptr [esp + 4]
+  C01    0043AB20 0043AA90 0043AB18 ret      8     8    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] ; ret 4
+  C01    00452250 00452210 00452246 ret      10    10   xor eax, eax ; ret  ; nop  ; nop 
+  C02    00465960 00465920 00465923 ret      13    61   sub esp, 0x1e0 ; push esi ; mov esi, ecx ; mov eax, dword ptr [esi + 0xe00]
+  C02    0046B630 0046B610 0046B62B ret      5     5    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] ; ret 4
+  C02    0046FC00 0046FB50 0046FBC4 ret      15    60   sub esp, 0x904 ; mov eax, dword ptr [esp + 0x918] ; push ebx ; push ebp
+  C02    00472B30 00472B10 00472B2B ret      5     5    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] ; ret 4
+  C02    00488520 004884A0 00488516 ret      10    10   sub esp, 0xf0 ; push esi ; mov esi, ecx ; mov eax, dword ptr [esi]
+  C02    00491360 00491330 0049135D ret      3     3    mov edx, dword ptr [esp + 0x1c] ; push 0 ; push edx ; mov edx, dword ptr [esp + 0x20]
+  C02    004913E0 004913C0 004913DB ret      5     5    mov eax, dword ptr [ecx + 4] ; mov ecx, dword ptr [esp + 4] ; mov eax, dword ptr [eax + ecx*4] ; ret 4
+  C02    00491490 00491460 0049148D ret      3     3    mov edx, dword ptr [esp + 0x1c] ; push 0 ; push edx ; mov edx, dword ptr [esp + 0x20]
+  C02    00491560 00491530 0049155D ret      3     3    mov edx, dword ptr [esp + 0x1c] ; push 0 ; push edx ; mov edx, dword ptr [esp + 0x20]
+
+## 5 · 判为「size 低估」的全部清单

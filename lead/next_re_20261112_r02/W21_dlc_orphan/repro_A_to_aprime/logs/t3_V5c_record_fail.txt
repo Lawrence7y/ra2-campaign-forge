@@ -1,0 +1,19 @@
+### V5c: install A -> install A-prime with injected failure at the MANIFEST WRITE (orphan X already removed) -> rollback must re-install X from the old package ###
+install A EXIT CODE: 0
+CMD: python tools/v5_fail_driver.py <pkgs\ORPHAN PROBE TWO> <game> @record
+using install module: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\ra2forge_patched\ra2forge\install.py
+install failed as expected (exit 1). exception type: OSError
+--- exception message ---
+simulated manifest-write failure (injected at _stage_text_and_replace)
+  install aborted mid-write; best-effort rollback of what this run wrote:
+    rolled back the orphan removal of X.MAP (re-installed from the previous package D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\sandbox\pkgs\ORPHAN PROBE)
+    rolled back expandmd98.mix (restored from expandmd98.mix.ra2forge.bak)
+    rolled back Z.MAP (created file removed)
+    rolled back Y.MAP (restored from Y.MAP.ra2forge.bak)
+    rolled back BATTLEMD98.INI (restored from BATTLEMD98.INI.ra2forge.bak)
+--- end exception message ---
+EXIT CODE: 1 (expect 1)
+CHECK: old manifest still present? True
+CMD: diffsnap v5c_11_after_install_A vs v5c_31_after_rollback
+IDENTICAL: D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v5c_11_after_install_A.sha.txt == D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W21_dlc_orphan\repro_A_to_aprime\snaps\v5c_31_after_rollback.sha.txt
+DIFF EXIT CODE: 0 (0 = orphan removal undone, exact post-A state)

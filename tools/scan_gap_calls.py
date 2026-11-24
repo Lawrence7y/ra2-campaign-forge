@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys, os, struct
-sys.path.insert(0, r"D:\Project\ra2-campaign-forge\tools")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from re_gap_spysat_deep import read_bytes, md, base, names, secs
 
 text = next(s for s in secs if s['name'] == '.text')

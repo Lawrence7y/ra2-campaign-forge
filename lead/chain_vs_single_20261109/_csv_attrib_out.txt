@@ -1,0 +1,91 @@
+P.load_predicates() T = ['已入账', '已追加', '已生效']
+N13.DEFAULT_TOKENS = ['已入账', '已追加', '已生效']
+REAL exists REAL-SLOT    True bytes=20651
+REAL exists REAL-TRUTH   True bytes=38232
+REAL exists REAL-BOUND   True bytes=70587
+
+=== [A] 两件 FP：逐 span 独立重放 gate_check ===
+-- REAL-SLOT expect=PASS chain_verdict=FAIL spans=6 conflicts=0 unresolved=0
+   catch_like 规则组合: {('K6',): 5}
+   L79   pos=6240   tok=已填     r10=CATCH  r12=ABSENT n13=ABSENT kind=None  => CATCH      rules=K6 | **填用流程**：① 复制 `_c7_record_template.json` 到落点名 `ACCEPTANCE_RECORDS_C07.
+   L103  pos=7722   tok=已填     r10=CATCH  r12=ABSENT n13=ABSENT kind=None  => CATCH      rules=K6 | 1. 三个身份字段已填、全件无 `<` 占位残留（含容器层）；2. `reviewerSessionId` 是**本会话**运行态 ID，非
+   L110  pos=8315   tok=已填     r10=CATCH  r12=ABSENT n13=ABSENT kind=None  => CATCH      rules=K6 | ### 5.4 多处同步排查表（哪件/哪行/需什么字段/是否已填）
+   L112  pos=8344   tok=已填     r10=CATCH  r12=ABSENT n13=ABSENT kind=None  => CATCH      rules=K6 | | # | 件 | 行 | 需什么字段 | 是否已填 |
+   L120  pos=9417   tok=已填     r10=CATCH  r12=ABSENT n13=ABSENT kind=None  => CATCH      rules=K6 | | 7 | `a_residual_n1_20261108/ACCEPTANCE_RECORDS.json`（先例件，非 C07 落点） |
+   L120  pos=9456   tok=已填     r10=PASS   r12=ABSENT n13=ABSENT kind=None  => PASS       rules=K6 | | 7 | `a_residual_n1_20261108/ACCEPTANCE_RECORDS.json`（先例件，非 C07 落点） |
+   span 中落在 N13 三词内 = 0  词表外 = 6
+   词表外 span 裁决分布: {('CATCH', 'K6'): 5, ('PASS', 'K6'): 1}
+   N13(固定三词) problems=0 details=0 => PASS
+   N13(该行词表) problems=6 details=6 => CATCH
+   R10 hits kinds: {'assertion': 5, 'negation': 1}
+   chain final = CATCH (ADJUDICATED/NEEDS_HUMAN = 5 )
+-- REAL-TRUTH expect=PASS chain_verdict=FAIL spans=3 conflicts=0 unresolved=0
+   catch_like 规则组合: {('K6',): 2}
+   L151  pos=10460  tok=已填     r10=CATCH  r12=ABSENT n13=ABSENT kind=None  => CATCH      rules=K6 | - 处置：已填 → 见证同为声明、非密码学证明，但其价值在独立性（记账方 ≠ 值的主张方，满足 NEXT:23「验收者与作者不得相同」）与可
+   L228  pos=16839  tok=已填     r10=CATCH  r12=ABSENT n13=ABSENT kind=None  => CATCH      rules=K6 | | G 见证与两处落笔 | 3 | 见证槽已填（见证人≠来源会话≠核验者）；见证缺席处置；两处落笔同值复用 | 代填见证→**拒绝**；N-
+   L240  pos=17175  tok=已填     r10=PASS   r12=ABSENT n13=ABSENT kind=None  => PASS       rules=K6 | | **通过** | A-G 全部可核项 PASS、无未验残留、（G1 见证已填 或 S1 有 ≥1 处先于补登的外部独立记载）、无存疑项 
+   span 中落在 N13 三词内 = 0  词表外 = 3
+   词表外 span 裁决分布: {('CATCH', 'K6'): 2, ('PASS', 'K6'): 1}
+   N13(固定三词) problems=0 details=0 => PASS
+   N13(该行词表) problems=3 details=3 => CATCH
+   R10 hits kinds: {'assertion': 2, 'negation': 1}
+   chain final = CATCH (ADJUDICATED/NEEDS_HUMAN = 2 )
+
+=== [B] GP-A1/A2/A3：K7 死分支 / K5 放行 ===
+-- GP-A1 text='亦非不宣告 N-4 正式绑定已生效' spans=1 verdict=FAIL
+   pos=14  tok=已生效    r10=PASS   r12=ABSENT n13=PASS   kind=C     => PASS       rules=K5
+   R10 hits=[('已生效', 'negation')]  N13 details kinds=['C']  problems=0
+   chain final = PASS
+   ★ rows=1 且 rules=K5
+-- GP-A2 text='本件登记闭合，母本即日起适用' spans=0 verdict=FAIL
+   R10 hits=[]  N13 details kinds=[]  problems=0
+   chain final = PASS
+   ★ rows==0 ⇒ resolve_conflicts 的 for 循环不进 ⇒ K7(:183-184) 无对象 ⇒ gate_check(:253) 默认 PASS
+-- GP-A3 text='三值填毕，见证已由编排方签字' spans=0 verdict=FAIL
+   R10 hits=[]  N13 details kinds=[]  problems=0
+   chain final = PASS
+   ★ rows==0 ⇒ resolve_conflicts 的 for 循环不进 ⇒ K7(:183-184) 无对象 ⇒ gate_check(:253) 默认 PASS
+
+=== [C] 输入契约分叉：judge_one 源码行逐字 ===
+  _gp_regression.py:47| g7, n13, T = P.load_predicates()
+  _gp_regression.py:48| T_C07_SLOT = ["已补登", "已填入", "已填", "已代填"]
+  _gp_regression.py:49| T_C07_TRUTH = ["已填", "已代填", "已提交"]
+  _gp_regression.py:50| BAD_BAN = ["已生效", "可应用母本", "放行 N-5", "已入账", "已追加"]
+  _gp_regression.py:135|     text, toks = item["text"], item["tokens"]
+  _gp_regression.py:139|         return "CATCH" if g7.r10_scan(text, toks)[0] else "PASS"
+  _gp_regression.py:141|         return "CATCH" if g7.r12_scan(text, toks)[0] else "PASS"
+  _gp_regression.py:143|         p, _ = n13.r13_assertions(text, T, r10_scan=g7.r10_scan, r12_scan=g7.r12_scan)
+  _gp_regression.py:145|     r = P.gate_check(text, toks, WD, g7, n13, T)
+  逐行核对 74 行 tokens 与 T 不同的行数：
+   tokens != T 的行数 = 19 → ['R10-TV2', 'R10-TV3', 'R10-REAL-CANDIDATE_RESIGN_YES_V2', 'R10-REAL-LEDGER_APPENDIX_DRAFT', 'R10-REAL-OBSERVATION_PROTOCOL_SPEC', 'R10-REAL-C97_SCOPE_RECHECK', 'R10-CTX-01', 'R10-CTX-02', 'R10-CTX-03', 'R10-CTX-04', 'R10-CTX-05', 'R10-CTX-06', 'R10-CTX-07', 'R10-CTX-08', 'R10-CTX-09', 'R10-CTX-10', 'R10-CTX-11', 'REAL-SLOT', 'REAL-TRUTH']
+   REAL3 中非 T 的: ['REAL-SLOT', 'REAL-TRUTH']
+
+=== [D] 三条不独立路径：实跑 ===
+-- (1) N13 C 类是否由 R10 决定
+   不宣告 N-4 正式绑定已生效。                       R10 kinds=['negation'] N13 kinds=['C']    rules=['C 否定式（R10 negation 已覆盖，微段内直接'] | 无R10注入 kinds=['D']
+   亦非不宣告 N-4 正式绑定已生效                      R10 kinds=['negation'] N13 kinds=['C']    rules=['C 否定式（R10 negation 已覆盖，微段内直接'] | 无R10注入 kinds=['D']
+   **不得写成「本笔已生效」**                        R10 kinds=['negation'] N13 kinds=['C']    rules=['C 否定式（R10 negation 已覆盖，微段内直接'] | 无R10注入 kinds=['D']
+-- (2) R12 hits 是否 ≡ R10 的 double_neg 子集
+   本件并非不宣告已生效                       R10_double_neg=[('已生效', 7)]         R12_hits=[('已生效', 7)]         相同=True
+   审阅不得不承认本候选已生效                    R10_double_neg=[('已生效', 10)]        R12_hits=[('已生效', 10)]        相同=True
+   亦非不宣告 N-4 正式绑定已生效                R10_double_neg=[]                   R12_hits=[]                   相同=True
+   并非不宣告已生效                         R10_double_neg=[('已生效', 5)]         R12_hits=[('已生效', 5)]         相同=True
+   不得写成「本笔已生效」                      R10_double_neg=[]                   R12_hits=[]                   相同=True
+   不宣告 X 已生效，但 Y 已入账                R10_double_neg=[]                   R12_hits=[]                   相同=True
+-- (3) 词表分布
+   55 行 ['已入账', '已追加', '已生效']
+   17 行 ['已生效', '可应用母本', '放行 N-5', '已入账', '已追加']
+    1 行 ['已补登', '已填入', '已填', '已代填']
+    1 行 ['已填', '已代填', '已提交']
+   N13.DEFAULT_TOKENS = ['已入账', '已追加', '已生效']
+   _gp_pipeline.py:52 load_predicates 返回 list(n13.DEFAULT_TOKENS)；:132 n13_vocab=set(n13_tokens)；:135 tok_set=set(tokens)|n13_vocab
+
+=== [E] 半定量：条件错误率 / P(r12=PASS|n13=PASS) ===
+   三层全 PASS = 18  其中 expect=CATCH = 3 ['GP-A1', 'GP-A2', 'GP-A3']
+   四层全 PASS = 4  其中 expect=CATCH = 2
+   P(r12=PASS | n13=PASS) = 38/38
+   先验 P(CATCH) = 39/74 = 0.5270
+   N13=PASS: P(CATCH|cond)=3/38=0.0789
+   +R10=PASS +R12=PASS: P(CATCH|cond)=3/18=0.1667
+   有层间冲突的行(layer_conflicts>0): 25  chain 全对 = True
+   无层间冲突的行: 49  chain 错 = 5 ['REAL-SLOT', 'REAL-TRUTH', 'GP-A1', 'GP-A2', 'GP-A3']

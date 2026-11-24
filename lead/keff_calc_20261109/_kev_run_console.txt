@@ -1,0 +1,204 @@
+=== A. 指纹独立重算 (hashlib, 9 件; 并按 evidence 绑定行顺序校验) ===
+  lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md                  sha256=aeab4fc30822dfde9c21489aef9a42a1558dde1f21f091f486bbd94453f7a523 bytes=36194 match=True
+  lead/gate_pipeline_20261109/_gp_regression_out.json                    sha256=d3543657aa4f9914c9023710f6daef8348a12ca0aa11957110e8b7c45baec6fe bytes=38575 match=True
+  lead/evidence_indep_20261109/_ei_04_v12_layer_out.json                 sha256=3253eb8456ceab54df1b41629caa4eaee8fcabff5e016e18fd71a3a3606b4546 bytes=51602 match=True
+  lead/gate_n13_20261109/_n13_predicates.py                              sha256=e1195b3b220ad97b5b91b8746a24e332b02ce28085452e947554f99b7f2f3079 bytes=16649 match=True
+  lead/gate_v1v2_20261109/_v12_rule.py                                   sha256=15e4211ffe8397027757aa4d0fb9b9cc5dc41126a08024b9f6cb5bbd8be4a1c0 bytes=9148 match=True
+  lead/gate_fp7_20261108/_g7_predicates.py                               sha256=02c17e49764a6f87f2b0d26c6689f0cbeb96498509e5c75bf843104829c51120 bytes=11743 match=True
+  lead/falsifiable_no_relax_20261109/_fnr_check_out.json                 sha256=f3112b225b1de35183ad4604554cb25689ed252b6a5a95d96d17fce53c8c140e bytes=8733 match=True
+  lead/PENDING_DECISIONS.md                                              sha256=3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 bytes=52419 match=True
+  lead/GOAL_THREE_TARGETS_20261018.md                                    sha256=2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede bytes=759518 match=True
+  FP_ALL_MATCH True count 9
+  BINDING_LINES_ORDER_CHECK (evidence 顺序与 stdout:2-10 顺序一致):
+    stdout 指纹行数(前9) = 0
+=== B. 只读完整性 (现盘 hashlib vs _eind_manifest_after.json 快照) ===
+  manifest before/after equal = True ; n_files = 169
+  manifest 覆盖件现盘不一致数 = 0 ; 明细 = []
+  git status --porcelain -- <只读路径> (输出, 空=无新增未跟踪/无已跟踪改动) :
+    'MM lead/GOAL_THREE_TARGETS_20261018.md\nMM lead/PENDING_DECISIONS.md\n?? lead/chain_vs_single_20261109/\n?? lead/evidence_indep_20261109/\n?? lead/falsifiable_no_relax_20261109/\n?? lead/gate_fp7_20261108/\n?? lead/gate_n13_20261109/\n?? lead/gate_pipeline_20261109/\n?? lead/gate_v1v2_20261109/'
+  git exit = 0
+=== C. 数据一致性 (独立实现) ===
+  rows=74 ; corpus_n=74 ; id序列全等=True ; 5列逐行全等=True
+  expect CATCH=39 PASS=35 pi=0.527027027
+  ★ 编排方 n_pos=35/n_neg=39 标签对调: 文件 fp_rate 分母=35 miss_rate 分母=39
+  r10   CATCH=40 PASS=34 fp=20/35=0.571429 fn=19/39=0.487179 q=0.487179487 c=0.428571429
+  r12   CATCH= 4 PASS=70 fp= 0/35=0.000000 fn=35/39=0.897436 q=0.897435897 c=1.000000000
+  n13   CATCH=36 PASS=38 fp= 0/35=0.000000 fn= 3/39=0.076923 q=0.076923077 c=1.000000000
+  chain CATCH=38 PASS=36 fp= 2/35=0.057143 fn= 3/39=0.076923 q=0.076923077 c=0.942857143
+=== D. ★★ 自己重算 16.7% / 3.75% / 2.05 倍 (不得采信) ===
+  all3_pass=18 wrong=3 wrong_ids=['GP-A1', 'GP-A2', 'GP-A3']
+  P(E|all3PASS)=3/18=0.166666667 = 16.6667%  [16.7% 核对]
+  P(correct|all3PASS)=15/18=0.833333333 = 83.3333%
+  q10=19/39=0.487179487 q12=35/39=0.897435897 q13=3/39=0.076923077
+  q10*q13 = 0.037475345 = 3.747535%  [3.75% 核对: 是两层乘积, 非三层]
+  q10*q12*q13 = 0.033631720 = 3.363172%  [硬乘三层]
+  fp_rate 乘积 = 0.571428571*0.000000000*0.000000000 = 0.000000000  [编排方 indep_wrong_prob=0.0 来源=口径错置]
+  P(all3PASS|E)=3/39=0.076923077 (似然, 7.69%) ; 放大 = 0.076923077/0.037475345 = 2.052631579  [2.05 倍核对]
+  ★ 类别错误核对: 后验/似然 = (3/18)/(q10*q13) = 4.447368421 ; 与 2.0526 不同, 不可用
+  Bayes2 P(E|2全PASS)=0.088785047 宣称正确率=91.121495% ; Bayes3=0.080411125 宣称正确率=91.958888%
+  实测正确率 83.333333% ; 与 Bayes2 差 7.7882 pp / Bayes3 差 8.6256 pp ; 后验错误率放大 1.8772/2.0727 倍
+  z(0.975)=1.959963985 (作者用固定 1.96)
+=== E. ★★ 第二步(d): 74 行 3 个真断言能不能支撑 k_eff 点估计? ===
+  P(E|all3PASS)=3/18 Wilson95(z=1.959964)=[0.058366,0.392220] CP95(scipy)=[0.035785,0.414177]
+  P(correct)=15/18 Wilson95=[0.607780,0.941634] CP95=[0.585823,0.964215]
+  q_n13=3/39 Wilson95=[0.026507,0.203211] CP95=[0.016153,0.208702]
+  正确率 CP95 宽度 = 37.84 pp ; Wilson95 宽度 = 33.39 pp
+  ★ 结论: 3 个错例 → 区间极宽, 点估计 0.61/0.670/0.804 本身不可靠; 但撰写人【已给区间+bootstrap+敏感性】
+     _ke_REPORT.md:52-66 有 CP95/Wilson/bootstrap/样本量; _ke_calc_stdout.txt:84-119 有实跑输出 → 非『只给点估计不给区间』
+  k_prob=0.606412408 k_odds=0.669662928 k_info=0.804232804 ; R12增量 log2(odds(p3)/odds(p2))=0.000000000
+  ★ 三者共用同一 3 错例, 非独立估计; 数量级: 均<1 方向稳健, 点值不可用于放行
+=== E2. 独立 bootstrap (numpy PCG64 seed=424242, B=10000; 与作者 LCG 不同实现) ===
+    k_prob     valid= 9550 95%=[0.3355,0.7897] median=0.6086 range=[0.0322,0.9016]
+    k_odds     valid= 9550 95%=[0.4115,0.8243] median=0.6726 range=[0.0475,0.9206]
+    k_info     valid= 9554 95%=[0.4891,0.9487] median=0.8075 range=[-0.2138,0.9811]
+    p3         valid= 9554 95%=[0.0500,0.3684] median=0.1667 range=[0.0385,0.6154]
+    P_correct  valid= 9554 95%=[0.6316,0.9500] median=0.8333 range=[0.3846,0.9615]
+    invalid={'boundary': 446}
+  ★ 独立实现同样得: 区间上限逼近/超过 1, 全距含负值, 点估计不可靠 → 与作者结论一致(数值不必相同, RNG 不同)
+  -- 样本量数量级 (独立) --
+    p=0.076923 w=0.02 → n_E≈682 真断言类 → 总行≈1294
+    p=0.076923 w=0.01 → n_E≈2728 真断言类 → 总行≈5176
+    p=0.166667 w=0.05 → n_E≈214 真断言类 → 总行≈405
+    p=0.166667 w=0.02 → n_E≈1334 真断言类 → 总行≈2531
+    p=0.076923 相对半宽=10% → n_E≈4610 真断言类 → 总行≈8747
+    p=0.076923 相对半宽=5% → n_E≈18440 真断言类 → 总行≈34987
+=== F. ★★ 第四步(a): P(r12=PASS|n13=PASS)=1.000 是精确还是观测? 自己算 ===
+  n13=PASS 行数=38 ; 其中 r12=CATCH 行数=0 ; r12=PASS 行数=38
+  观测 P(r12=PASS|n13=PASS) = 38/38 = 1.000000000
+  零命中 38 次: CP 单侧95%上界(beta.ppf)=0.075808 ; 闭式 1-0.05^(1/38)=0.075808 ; rule-of-three 3/38=0.078947 ; Wilson95上界=0.091810
+  ★ 撰写人报 CP95 上界 0.092513 / Wilson 0.091813 / rule-of-three 0.078947 → 复核一致
+  ★ 判定: 1.000 是【74 行观测值】, 不是精确/定理; 反例比例 95%% 水平仍可高达 ~9%%
+  契约分叉核对: tokens != 三词T3 的行 = 19 ; 其中三词超集 = 17 ; 其它 = 2
+  ★ 代码: _gp_regression.py:141 R12 用行 tokens; :143 N13 恒用固定 T; _ei_n13_predicates_src.py:200 内部 r12_scan 也用 T
+  ★ → R12命中⇒N13判D⇒CATCH 只在 N13 自己词表内成立; 记录列 r12=CATCH 与 n13=PASS 可共存(机制存在)
+=== G. 第三步(e) 置信度声明模板: 能不能直接贴进报告用? ===
+  模板字数=675 ; 含 <填> 占位符数=3 ; 含 '三层独立'=True ; 含 '不得作为自动放行依据'=True
+  模板逐行:
+     1 [三层结论置信度声明]  结论：R10/R12/N13 全 PASS（chain=PASS）
+     2 1 证据结构：3 个判据 / 1 个独立证据根（R10→{R12,N13.C}）；k_eff 描述值 0.61–0.80，bootstrap95 上限达 0.95，不可用。
+     3 2 观测：本 74 行 train=test 上三层全 PASS 共 18 行，其中 3 行是真断言（GP-A1/A2/A3）；
+     4         P(结论正确|全 PASS)=15/18=83.3%，Wilson95=[60.8%, 94.2%]，CP95=[58.6%, 96.4%]。
+     5 3 与独立宣称的差：三层独立应报正确率 92.0%（两层口径 91.1%），实测低 8.6 pp；
+     6         后验错误率放大 2.07×；2.05× 是似然口径，不得与后验混用。
+     7 4 兜底：Fréchet min q_i=7.69% 仅为样本内天花板，非生产置信界；不得写 Πq_i 为上界。
+     8 5 输入契约：(predicate_sha, tokens_sha, text_sha) = (<填>, <填>, <填>)；缺列则该行不计入一致计数。
+     9 6 覆盖：本链判不了词表外同义改写 / 枚举外双重否定 / 跨行共指；spans==0 时 K7 循环体不执行。
+    10 7 处置：本结论不得作为自动放行依据；无层间冲突时按风险信号处理，必须人工复核 + coverage_note。
+    11 8 未验：生产 q_i/ρ、盲留出集误差相关、Cohen's κ、正交层增益、真机运行态 —— 全部未验。
+  ★ 逐项核对模板数字(与本报告独立实算对照):
+    15/18=83.3%                    True
+    Wilson95=[60.8%,94.2%]         True
+    CP95=[58.6%,96.4%]             True
+    三层独立 92.0%                     True
+    低 8.6 pp                       True
+    2.07×                          True
+    Fréchet 7.69%                  True
+    1 个独立证据根                       True
+    bootstrap95 上限达 0.95           True
+  ★ 模板需填 3 个 SHA (<填>), 缺列规则已写, 覆盖/处置/未验齐备 → 【可贴, 但必须先填 SHA 且随语料/版本更新】
+=== H. ★ 第五步(b): 需重新表述清单有没有漏? 全 lead 检索『三层都过』类措辞 ===
+  全 lead 命中行数 = 506 (排除写域/排除 keff_calc)
+    HIT lead/GOAL_THREE_TARGETS_20261018.md:784: v2 故障注入未证的三层空白——真 GDI 桌面截屏 3584×967 走同一判定器（S1 规范可解+
+    HIT lead/chain_vs_single_20261109/CHAIN_VS_SINGLE.md:12: **目的**：把「合成链 69/74 不如 N13 单层 71/74」这个比较放到同一基线上重算，逐层给成绩、判公平性、归因 2 条负收益、核三条证据不独立路径、估计「三层都过」的信息量，并给出取舍建议与评测方法改进。
+    HIT lead/chain_vs_single_20261109/CHAIN_VS_SINGLE.md:25: 6. `python -I -B -X utf8 -c "...exact binomial / k_eff / MI / conflict rows..."` → `p=0.5000 / 0.2500`、`k_eff=0.6064`、`MI=0.0006/0.0585/0.0633 bit`、`conflict rows=25 n13 correct=25/25 chain correct=25
+    HIT lead/chain_vs_single_20261109/CHAIN_VS_SINGLE.md:75: 3. **合成链算法换代**：72 版「三层 problems 朴素并集」`unresolved=22` → 74 版「逐 span K1–K9 裁决」`unresolved=0`（`_cs_recompute_out.txt:3,34`；`GATE_PIPELINE_COMPOSE.md:419-431` 自认 v1 失败、20 条 FP 全来自「N13 已判 A/B 放过、R10 宽进仍报 a
+    HIT lead/chain_vs_single_20261109/CHAIN_VS_SINGLE.md:171: 3. GP-A1/A2/A3 是**共同盲区**（三层共用词表与否定构式枚举），既不是单层对也不是链错；但「无 span 静默 PASS」属于链骨架缺陷。
+    HIT lead/chain_vs_single_20261109/CHAIN_VS_SINGLE.md:184: | ③ 三层共用字面词表 | **部分成立，须收窄** | `_n13_predicates.py:25 DEFAULT_TOKENS`；`_gp_pipeline.py:52` `list(n13.DEFAULT_TOKENS)`、`:132 n13_vocab=set(n13_tokens)`、`:135 tok_set=set(tokens)|n13_vocab`；`_gp_regressi
+    HIT lead/chain_vs_single_20261109/CHAIN_VS_SINGLE.md:190: 1. **「一致通过」概率被系统性高估**：三层共享提取器（`_gp_pipeline.py:135-137` 全量 `finditer`）、同套词表、同套否定构式；任何「词表里没有的完成断言」会让三层**同时**无 span。实测 `三层全 PASS = 18/74`，其中 `expect=CATCH` 的 3 条全是 GP-A1/A2/A3（16.7%，`_cs_holdout_out.txt
+    HIT lead/chain_vs_single_20261109/CHAIN_VS_SINGLE.md:195: ### 5.3 「三层都过」的信息量 ≈ 1 层（本会话重算）
+    HIT lead/chain_vs_single_20261109/CHAIN_VS_SINGLE.md:206: `k_eff = ln(0.1667/0.5270)/ln(0.150) = 0.6064`（本会话实算，报告写 0.61）；`MI(r10,n13)=0.0006`、`MI(r12,n13)=0.0585`、`MI(r10,r12)=0.0633 bit`；`P(r12=PASS|n13=PASS)=38/38=1.000`（本会话实算）。因果图是 `R10 → {R12, N13.C}` 一条
+    HIT lead/chain_vs_single_20261109/CHAIN_VS_SINGLE.md:263: | 需要「三层一致即通过」的自动放行 | **禁止** | 三层全 PASS 18 行里 3 行真断言（16.7%）；有效独立层数 ≈1 |
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:69: 不公平分三层，逐层给证据：
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:97: 4. **第三层不公平：N13 的考题集本身是被调过的**。`_n13_regression.py:104-112` 明写「第二轮：复核 verdict=partial 的 ④，5 条样本外真断言（**曾 5/5 漏网**）」，随后 N19–N26 八条就是按探针 `_n13v_final_probe.py V1..V5` 与 `X1..X3` 造出来的，同时 `_n13_predicates.p
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:124: - **合成链算法也换了**：72 版是「三层 problems 朴素并集」，`chain_unresolved_total=22`；74 版是「逐 span K1–K9 裁决」，`chain_unresolved_total=0`（`_cs_recompute_out.txt:3,34`）。`GATE_PIPELINE_COMPOSE.md:419-431` 自认「第一版朴素并集失败证据（保留不
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:143: ⇒ **2 条全部是 FP（误拦），0 条是新增 FN**。编排方背景里说的「合成链比单层差 2 条」，其构成是 2 条 FP；「三层全说放过但实际有真断言」的 3 条漏报，N13 单层同样全漏（`_cs_recompute_out.txt:28-31`），**不构成 chain vs N13 的差距**。`GATE_PIPELINE_COMPOSE.md:417` 也自认「合成链没有引入新漏报」
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:165: 3. GP-A1/A2/A3 是**共同盲区**（三层共用词表与否定构式枚举），既不是单层对也不是链错，不能算进两者的差距；但「`spans=0` 时静默 PASS」是链骨架的缺陷，设计稿 `_gp_DESIGN.md:285-286` 自认「K1–K9 里没有任何一条规则能凭空造出相反意见」「`spans=0` 时 K7 的 RAISE 循环体根本不执行」。
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:199: | **③ 三层共用同一套字面词表** | **部分成立，须如实收窄** | `_n13_predicates.py:25` `DEFAULT_TOKENS = ("已入账","已追加","已生效")`；`_gp_pipeline.py:52` `load_predicates()` 返回 `list(n13.DEFAULT_TOKENS)`，`:132` `n13_vocab = set(n13
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:208: 1. **「一致通过」的概率被系统性高估**：若三层误差独立，联合漏报率应为各层漏报率之积；但此处三层共享同一提取器（`_gp_pipeline.py:58-70` 的 `extract_spans` 全量 `finditer`）、同套字面词表、同套否定构式枚举，任何「词表里没有的完成断言」会**同时**让三层都没有 span。实测 `三层全 PASS=18/74`，其中 `expect=CATC
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:209: 2. **误差不独立 ⇒ 不能相互印证**：`conflicts[]` 里的「分歧」反而成了唯一有信息量的信号。实测 `_cs_info_out.txt:22-23`：**有层间冲突的 25 行，合成链 25/25 全判对；无冲突的 49 行，合成链 5 条全错（REAL-SLOT、REAL-TRUTH、GP-A1/A2/A3）**。⇒ 「三层一致」在这批数据上是**风险信号**而非可靠信号，与 
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:210: 3. **置信度不可乘**：把三层当独立表决会得出 `1-(1-p)^3` 式的虚高置信；正确的模型是共同原因（common cause）模型，误差上界由共享词表的覆盖率决定，与层数无关。
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:213: ### (c) ★ 「三层都过」的信息量等于几层？——定量估计：**约 1 层，上限 1.5 层，绝不是 3 层**
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:225: - 以 N13 单层的压低倍数 0.150 为「1 层」的标尺，三层合计 `ln(0.1667/0.5270)/ln(0.150) = 0.61`（`_cs_info_out.txt:9`）——**三层合起来的信息量还不如一个 N13 单层**。
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:228: - 半定量结论：**有效独立层数 ≈ 1～1.3 层**（乐观给到 1.5 层，因为 N13 的 A/B 微段判据 `_seg_bounds`/`_A_AFTER` 确有一小部分不来自 R10）。「三层都过」的置信度只能按 1 层算。⚠️ 该估计基于 74 条留盘样本、样本量小（三层全 PASS 仅 18 行），是**半定量**而非渐近估计，如实标注。
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:258: - 「取交集」＝只信三层都 CATCH：naive∩R10∩R12∩N13 会把 R12 单层 FN=35 的漏报全部继承（`_cs_recompute_out.txt:10`），等于用最弱的一层否决全部。
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:266: 6. **置信度按有效独立层数（§3(c) 的 ≈1 层）计**，不许按 3 层相乘。
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:277: | 需要「三层一致即通过」的自动放行 | **禁止** | 三层全 PASS 的 18 行里 3 行是真断言（16.7%，`_cs_info_out.txt:4,13`）；有效独立层数 ≈1 |
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:301: 2. **样本选择方向不一致**：GP-A1/A2/A3 是**按已知盲区定向构造**的（`_gp_regression.py:121-130` 明写「三层全说放过但实际有真断言」），属对抗样本；N13_NEG/POS 属舒适样本。两者混在一个分母里，`correct/74` 随配比任意变动——`_cs_recompute_out.txt:162-170` 已展示换个子集排名就变。
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:313: 6. **多指标而非单点 accuracy**：按 `expect` 分别报 FP/FN、按族报 macro-F1、报「三层全 PASS 时的条件错误率」（本次 3/18=16.7%）、报有效独立层数（本次 ≈1）。并给 bootstrap 置信区间（74 条下 ±2 条约 ±2.7%，故「差 2 条」在统计上本就不显著——如实记）。
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:334: 第三层：**有效独立层数 ≈1 却按 3 层叙述**（§3(c)）；`P(r12=PASS|n13=PASS)=1.000`，R12 增量信息 0 bit，「三层一致通过」被当成强证据，而实测 5 条错全落在无冲突行（`_cs_info_out.txt:23`）。
+    HIT lead/chain_vs_single_20261109/_cs_BASELINE_ALIGNMENT_20261109.md:352: | 9 | `python -I -B -X utf8 .../_cs_info.py > .../_cs_info_out.txt` | `_cs_info_out.txt`：似然比 k_eff=0.61、冲突行 25/25 全对、词表共享 74.3% |
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:10: **目的**：回答「三层（R10 / R12 / N13）一致通过能不能按 3 个独立证据计」，并把「独立」从声明降成**代码级可机检判据**，再给出相关性量化、去相关后的剩余判别力、第四层（V1V2）兜底实验、工程准入方案与折算结论。
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:55: 编排方自己已承认（`lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:272` 原文）：「三层证据**不独立**（N13 C 类直接转发 R10 kind，`_n13_predicates.py:247-263`；R12 复用 `r10_context`，`_g7_predicates.py:144`；共用同一套字面词表），一致通过≠正确」。
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:97: - **模块级常量层**：N13|G7 精确共享 **0** 条（`_eind_verify_out.json:A2_precise/G7|N13`）；N13|V12 共享 1 条；G7|V12 共享 1 条。所以「三层共用同一个 `DEFAULT_TOKENS` 常量定义」不成立。
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:131: **★ 一致率低 ≠ 误差独立**：标签层 H(N13|R10)/H(N13)=99.94% 只说明两层**判定几乎 statistically independent**，不说明**误差独立**。真值层证据：`both_CATCH=20` 全为真（0 FP），但 `both_PASS=18` 中有 **3 条 FN**（`GP-A1/GP-A2/GP-A3`），三层全 PASS 的条件错误率 *
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:152: - `k_eff`（上游概率比 `ln(p₃/π)/ln(p₁/π)`，`_cs_info.py:39`） = `0.6064124084365424`（≈0.61）
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:153: - `k_eff`（后验几率比）= `0.6696629280720958`（≈0.670）
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:155: - 三者方向一致：均 ≈1 或更少；`n_eff(ρ̄=0.9)=1.0526`。**有效独立层数 ≈ 1**。
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:156: - 去相关后的可用判别力（74 行消融）：N13 单层 `71/74` 已接近 chain `69/74`；R10 `35/74`、R12 `39/74`、AND `55/74`、OR `51/74`。「三层一致」不比 N13 单层更能判对。
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:167: | id | 三层全 PASS | spans | V12 | 硬命中 | 机制 |
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:289: ### 6.3 结论：三层分类 + 折算数字与理由
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:299: **★ 折算：三层一致按 `1 层` 计（numeric = 1），绝不可按 3 层。** 理由（全部本会话实跑或有文件:行）：
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:305: 5. 真值层：三层全 PASS 错误率 `3/18=16.67%`，独立假设期望 `3.75%`，**放大 2.0526 倍**；分布无关上界 Fréchet `min q_i = 7.69%`；
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:306: 6. 消融：N13 单层 `71/74` ≥ chain `69/74`，「三层一致」无增量判别力。
+    HIT lead/evidence_indep_20261109/EVIDENCE_INDEPENDENCE.md:310: **判不了什么**：本任务只做量化与设计，不能判定改谓词后的实际效果（未实装）；不能判定生产语料上的 `q_i/ρ`（74 行 train=test 且含定向构造对抗样本）；不能判定 V1V2 在 `spans>0` 区域的语义正确性（本次只按字面词族 + 三词做 span 扫描，无人工语义标注）；不能判定「三层是否在任何语料上都 ≈1 层」（只在这 74 行上成立）；不能判定第五层的增益（无留盘
+    HIT lead/falsifiable_no_relax_20261109/FALSIFIABLE_NO_RELAX.md:14: 把「R9 → R9S 升级**没有放松判据**」这句断言，从「看上去通过了回归」推进到「存在一个输入使它报警」的可证伪地位；并给出三层检验设计、决定性元检验模板、三结论影响评估、项目内同类断言清单与必做清单。
+    HIT lead/falsifiable_no_relax_20261109/FALSIFIABLE_NO_RELAX.md:320: - `GATE_PIPELINE_COMPOSE.md:410` — 3 条「三层无分歧地一起判错」**根本不进 `conflicts[]`**；`CHAIN_VS_SINGLE.md:263` —「三层全 PASS 18 行里 3 行真断言（16.7%）；**有效独立层数 ≈1**」。⇒ 三层不是三个独立证人。
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:1: # GATE_PIPELINE_COMPOSE.md — 三层判据合成链：顺序、冲突消解、分层回归
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:27: ## 2 上游指纹（十件）与三层现状
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:67: ### 2.3 三件真件在三层下的结果（前序 `_gp_probe.py` / 复核 `_gpv_probe.py` 实跑留盘）
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:74: - 编排方【三层组合实跑】`C07_SLOT.r10_problems=5` 复现。
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:215: | C3 R12 双否定 | `并非不宣告已生效` | `double_neg` PASS | CATCH | `D` CATCH | **CATCH，K1**。双重否定=肯定是语义事实，非严格度偏好；N13 自身也消费 R12（`:241-245`）。三层一致，非冲突 |
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:216: | C4 三层全放过 | `亦非不宣告 N-4 正式绑定已生效` | `negation` PASS（`neg_count=2,dbl=False`） | 0 命中 | `C` 放过（转发 R10） | **无冲突（无相反意见），共同盲区，判错**。见 `## 4.5` |
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:247: - 更直接的实跑反证：把三层 `problems` 做朴素并集（等价于「任一层先报即算」），合成链从 N13 单层 68/72 掉到 **48/72**（FP 0→20），证据 `_gp_regression_v1_union_out.txt:10-15`（本会话实读）。**顺序与并集都不能消解真值冲突，只会把宽进噪音灌进结论**。
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:272: 根因：①三层证据**不独立**（N13 C 类直接转发 R10 kind，`_n13_predicates.py:247-263`；R12 复用 `r10_context`，`_g7_predicates.py:144`；共用同一套字面词表），一致通过≠正确；②A1 的 `DOUBLE_NEG_RE` 是枚举表（`:76`），「亦非不」这种 GV-L 分离型不在表内；③A2/A3 词表外同义改写，
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:474: **编排层单一脚本调用多个只读谓词模块，不合进单一模块**：三层谓词分属三个写域且被铁律列为绝对只读（g7 / N13 / `_g9_gate.py`）；`_g9_gate.py:36-51` 加载前先验 sha256，复制粘贴件会立刻失配拒绝运行。词表随任务书变（C07 域、BAD_BAN 五词、N13 三词三套并存），应由编排层按域装配，不烧进谓词本体。现有 `_g9_gate.py:24,7
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:497: ### 6.7 三层都过了但人工仍有问题，说明什么
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:499: **说明「一致」不是「正确」，且问题几乎一定落在 `## 6.6` 的共同盲区，而不是某一层的 bug。** 依据：三层共用同一套字面词表与否定/标记词表（`NEG_RE`/`DOUBLE_NEG_RE`、N13 `_DIRECT_NEG`/`_A_AFTER`），是**相关失效**而非独立表决；N13 C 类直接转发 R10 kind（`_n13_predicates.py:247-263`），
+    HIT lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:501: 处置顺序：①查**词表覆盖**（同义改写/未登记 token）→ ②查**否定构式枚举**（`neg_count≥2 且 dbl=False`）→ ③查**跨行 / 共指 / 转述** → ④最后才怀疑单层判错。**不得**因「三层都过了」就给 PASS 结案，也**不得**靠加严任一层来「修」——会把 FP 重新灌回来（v1 并集 20 条 FP 的教训）。在缺口补齐前，人工复核是必需最后一道；
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:1: # _gp_DESIGN.md — 三层谓词合成链：顺序、冲突消解、分层回归
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:39: ## 1 第一步：三层现状复核
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:75: - N13 三词与 BAD_BAN 五词口径：四层全 0——**因为该件不含这三个词**。编排方给的三层组合实跑 `r10_problems: 5` 复现无误。
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:220: **裁决**：**CATCH，K1**。双重否定=肯定是语义事实（R12 用相邻构式而非奇偶计数，`_g7_predicates.py:75,135-139`），N13 自身也消费 R12 命中（`:241-245`）。三层一致，非冲突。
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:224: **裁决**：三层都放过 ⇒ 合成链也放过，**判错**。这不是冲突（无相反意见），是**共同盲区**，见 3(d)。不许用「以最严为准」假装兜住——最严的一层在这里也没报。
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:255: | **K5** | 不同行同一小节；或三层全 PASS 且无 R12 | 不传播；`PASS` | 跨行传播无依据；只记 section 供定位 |
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:271: - 更直接的实跑反证：把三层 `problems` 做朴素并集（等价于「任一层先报即算」），合成链从 N13 单层 **71/74** 掉到 **48/72**（FP 从 0 涨到 20）——证据留盘 `_gp_regression_v1_union_out.txt` / `.json`。**顺序与并集都不能消解真值冲突，只会把宽进层的噪音直接灌进结论**。
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:274: ### 3(d) 「三层全说放过但实际有真断言」构造样本 —— 兜不住，如实说
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:285: 1. **A1 是共同盲区，不是冲突**：三层给的是同一个（错的）答案，K1–K9 里没有任何一条规则能凭空造出相反意见。R12 的 `DOUBLE_NEG_RE` 是**枚举构式**（`_g7_predicates.py:76`），「亦非不」这种 GV-L 分离型不在表内；N13 的 C 类又只是转发 R10。要修必须扩谓词词表——本任务铁律**不改既有谓词模块**，故只能在 `conflict
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:344: - **「每层都修好了，串起来反而更差」确实出现过，且被本会话抓到并留证**：第一版合成链把三层 `problems` 做朴素并集，输出 `_gp_regression_v1_union_out.txt`：
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:362: - 三层谓词分属三个写域且被本任务铁律列为绝对只读：`lead/gate_fp7_20261108/_g7_predicates.py`、`lead/gate_n13_20261109/_n13_predicates.py`、`lead/gate_r9r12_20261109/_g9_gate.py`。合并成一个模块必然要改它们或复制粘贴，两者都会破坏指纹锚（`_g9_gate.py:36-51`
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:391: ### 5(d) 三层都过了但人工看仍有问题，说明什么
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:394: - 三层都用**同一套字面词表**和**同一套否定/标记词表**（R10 的 `NEG_RE`/`DOUBLE_NEG_RE`、N13 的 `_DIRECT_NEG`/`_A_AFTER`），是**相关失效**而非独立表决；N13 的 C 类甚至直接转发 R10 的 kind（`_n13_predicates.py:247-263`），R12 又复用 `r10_context`（`:144`）。所
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:395: - 3(d) 的 3 条就是活证：三层一致放过，人工一看全是真断言；`conflicts[]` 为 0 恰恰证明**冲突检测器在这里根本没被触发**。
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:396: - 因此处置顺序应为：①先查**词表覆盖**（是不是同义改写 / 未登记 token）；②再查**否定构式枚举**（`neg_count≥2 且 dbl=False`）；③再查**跨行/共指/转述**；④最后才怀疑某一层判错。**不得**因为「三层都过了」就给 PASS 结案，也不得靠加严任一层来「修」——那只会把 FP 重新灌回来（§4(d) 第一版 20 条 FP 的教训）。
+    HIT lead/gate_pipeline_20261109/_gp_DESIGN.md:405: | `_gp_probe.py` / `_gp_probe_out.txt` / `_gp_probe_out.json` | 第一步：三层契约、三真件逐件结果、逐 span 冲突面 |
+  -- 报告 §5(b) 清单(_ke_REPORT.md:120-131) 逐条与检索对照 --
+    LISTED GATE_PIPELINE_COMPOSE.md:215                                 C3 三层一致
+    LISTED _gp_DESIGN.md:220                                            C3 三层一致
+    LISTED GATE_PIPELINE_COMPOSE.md:410                                 未消解 0
+    LISTED CHAIN_VS_SINGLE.md:206                                       ≈1～1.3 层
+    LISTED CHAIN_VS_SINGLE.md:190 / _cs_BASELINE_ALIGNMENT:208          一致通过概率被高估
+    LISTED EVIDENCE_INDEPENDENCE.md:299                                 numeric=1
+    LISTED EVIDENCE_INDEPENDENCE.md:131                                 3.75%
+    LISTED GATE_PIPELINE_COMPOSE.md:247/272 / _gp_DESIGN.md:394         合成链 69/74 / 已自认不独立
+    LISTED FALSIFIABLE_NO_RELAX.md:320                                  三层不是三个独立证人
+  ★ 遗漏候选(检索到但报告未列): 下列行亦含『三层/全过』类措辞, 需人工判断是否应补
+    CAND lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:215: | C3 R12 双否定 | `并非不宣告已生效` | `double_neg` PASS | CATCH | `D` CATCH | **CATCH，K1**。双重否定=肯定是语义事实，非严格度偏好；N13 自身也消费 R12（`:241-245`）。三层一致，非冲突 |
+    CAND lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:497: ### 6.7 三层都过了但人工仍有问题，说明什么
+    CAND lead/gate_pipeline_20261109/GATE_PIPELINE_COMPOSE.md:501: 处置顺序：①查**词表覆盖**（同义改写/未登记 token）→ ②查**否定构式枚举**（`neg_count≥2 且 dbl=False`）→ ③查**跨行 / 共指 / 转述** → ④最后才怀疑单层判错。**不得**因「三层都过了」就给 PASS 结案，也**不得**靠加严任一层来「修」——会把 FP 重新灌回来（v1 并集 20 条 FP 的教训）。在缺口补齐前，人工复核是必需最后一道；
+    CAND lead/gate_pipeline_20261109/_gp_DESIGN.md:220: **裁决**：**CATCH，K1**。双重否定=肯定是语义事实（R12 用相邻构式而非奇偶计数，`_g7_predicates.py:75,135-139`），N13 自身也消费 R12 命中（`:241-245`）。三层一致，非冲突。
+    CAND lead/gate_pipeline_20261109/_gp_DESIGN.md:255: | **K5** | 不同行同一小节；或三层全 PASS 且无 R12 | 不传播；`PASS` | 跨行传播无依据；只记 section 供定位 |
+    CAND lead/gate_pipeline_20261109/_gp_DESIGN.md:391: ### 5(d) 三层都过了但人工看仍有问题，说明什么
+    CAND lead/gate_pipeline_20261109/_gp_DESIGN.md:395: - 3(d) 的 3 条就是活证：三层一致放过，人工一看全是真断言；`conflicts[]` 为 0 恰恰证明**冲突检测器在这里根本没被触发**。
+    CAND lead/gate_pipeline_20261109/_gp_DESIGN.md:396: - 因此处置顺序应为：①先查**词表覆盖**（是不是同义改写 / 未登记 token）；②再查**否定构式枚举**（`neg_count≥2 且 dbl=False`）；③再查**跨行/共指/转述**；④最后才怀疑某一层判错。**不得**因为「三层都过了」就给 PASS 结案，也不得靠加严任一层来「修」——那只会把 FP 重新灌回来（§4(d) 第一版 20 条 FP 的教训）。
+  -- 两件台账: 报告称未发现本论域『三层都过所以可信』条目 --
+    lead/PENDING_DECISIONS.md 命中 1 条:
+      :358 **D-08**=按「两臂通过、窗口臂 N/A-环境」有限升格 harness7，明确适用范围（不能写成三趟全过）；积压件须按归属、内容与门禁结果核对后分批提交，不得一揽子。
+    lead/GOAL_THREE_TARGETS_20261018.md 命中 3 条:
+      :108 - 2026-10-19 00:5x 定时任务改版+火绒速询轮（日志 §135）：**GOAL-3T 节拍驱动器定时任务按用户指示改版**（并行优先/三专属子代理偏好与换路由规则/任务拆分/卫生纪律/陈旧快照与旧真机件处置细则全部写入 prompt，标题改「15 分钟节拍驱动（并行优先·三专属子代理）」）。**火绒速询交付**（qfmodel）：①「反复复制
+      :784 v2 故障注入未证的三层空白——真 GDI 桌面截屏 3584×967 走同一判定器（S1 规范可解+
+      :8366 三条独立证据同向：
+=== I. 越界检查: 有没有改任何模块/任何语料 ===
+  git status 全量行数=235 ; 涉及写域行=['?? lead/keff_calc_20261109/']
+  ★ 撰写人 5 件产物仅 _ke_ 前缀; 本复核脚本仅 _kev_ 前缀; 只读件 169 件 manifest 全等(见 B)
+  本脚本产物: _kev_verify.py / _kev_verify_stdout.txt / _kev_verify_out.json
+=== DONE, EXIT=0 ===

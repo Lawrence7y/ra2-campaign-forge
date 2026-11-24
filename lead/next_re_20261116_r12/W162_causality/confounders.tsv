@@ -1,0 +1,75 @@
+# W162 混淆项表｜数据源：全仓 137 个 run.ndjson（2,714,525 行），本卡独立重算
+# 生成：python work\tables.py   （先跑 work\recompute.py 产出 out\windows.tsv）
+# 纪律：只报 n / 非零% / 中位 / 极差 / max / distinct；无 p 值，无置信区间
+
+## A · 样本级分布（全部 2,712,836 个带 A8ED50 的样本；每行一个计数器）
+counter	n_samples	nonzero_pct	median	max	distinct	n_files	note
+B0CE88	2712836	4.22	0	2393	63	129	台账称'脏矩形向量 Count'；非零率极低=队列每帧被清空，50/6ms 采样抓不到
+A8E9A0	280831	100.00	1	1	1	7	G_INGAME 标志，恒 1 ⇒ 无区分力，可从混淆清单删除
+87E8E0	280831	100.00	100	4294967295	819	7	schema B(r02) 的拼写；含大量 0xFFFFFFFF=读失败哨兵 ⇒ 不可用；其中 ==0xFFFFFFFF 的 5115 个（1.82%）
+X87E8E0	2432005	100.00	29906	4294967295	82252	122	schema A 的同一计数器；实为单调爬升且饱和的计数器（见 §Q2-3），等价于'趟内时钟'；其中 ==0xFFFFFFFF 的 374123 个（15.38%）
+ABCD58	280831	98.13	1	1	2	7	帧闩，取值只有 {0,1} 两种 ⇒ 信息量 1 bit
+g1	280831	0.00	0	0	1	7	恒 0（本卡独立复算确认）⇒ 零信息
+g2	280831	0.00	0	0	1	7	恒 0 ⇒ 零信息
+g3	280831	0.00	0	0	1	7	恒 0 ⇒ 零信息
+g4	280831	0.00	0	0	1	7	恒 0 ⇒ 零信息
+
+## B · 趟内配对（hi = 段 b_mean>=75，lo = 段 b_mean<25；键 = 窗内中位）
+# 只列 hi 与 lo 都存在的趟（= 全部 19 个有配对的趟）
+counter	n_paired	d_median	n_pos	n_neg	d_min	d_max	d_wall_median	usable
+B0CE88	19	0.0000	0	0	0.0000	0.0000	40.4390	否（中位恒 0；均值版 d=+0.297 但仍只有 0.3 个矩形，见 ## C）
+A8E9A0	0	-	-	-	-	-	40.4390	不可测（本语料无配对趟）
+87E8E0	0	-	-	-	-	-	40.4390	不可测（本语料无配对趟）
+X87E8E0	19	-21219.0000	0	19	-26689.0000	-19783.0000	40.4390	否（单调趟内时钟，与'时间'完全共线，见 §Q2-3）
+ABCD58	0	-	-	-	-	-	40.4390	不可测（本语料无配对趟）
+g1	0	-	-	-	-	-	40.4390	不可测（本语料无配对趟）
+g2	0	-	-	-	-	-	40.4390	不可测（本语料无配对趟）
+g3	0	-	-	-	-	-	40.4390	不可测（本语料无配对趟）
+g4	0	-	-	-	-	-	40.4390	不可测（本语料无配对趟）
+
+## C · B0CE88 换成'窗内均值'口径（复算 Lead §900-5 的 +0.30）
+trip	mean_hi	mean_lo	d_mean
+trip_burst1_r1	0.3141	0.0140	+0.3001
+trip_burst1mix_r1	0.2745	0.0061	+0.2683
+trip_c2_near_r1	0.5208	0.0353	+0.4855
+trip_c2_near_r2	0.3487	0.0162	+0.3325
+trip_carrier2_r1	0.3862	0.0168	+0.3694
+trip_ctrl_orig_r1	0.2950	0.0000	+0.2950
+trip_dense_near_r1	0.2674	0.0084	+0.2590
+trip_dense_near_r2	0.3191	0.0198	+0.2993
+trip_g_near_r1	0.2353	0.0129	+0.2224
+trip_g_near_r2	0.2677	0.0227	+0.2449
+trip_hunt_near_r1	0.3237	0.0174	+0.3063
+trip_hunt_near_r2	0.2856	0.0000	+0.2856
+trip_hunt_near_r3	0.3132	0.0162	+0.2970
+trip_rof2_r1	0.4522	0.0204	+0.4318
+trip_rof99_r1	0.2687	0.0319	+0.2368
+trip_rof_probe_r1	0.3360	0.0122	+0.3238
+trip_samesize_r1	0.3105	0.0162	+0.2944
+trip_scan_near_r1	0.3433	0.0078	+0.3355
+trip_speed99_r1	0.3109	0.0146	+0.2962
+# 汇总 n=19 d 中位=+0.2970 正/负=19/0 极差=+0.2224~+0.4855
+
+## D · 关键对照：hi/lo 窗在趟内的位置（本卡最重要的混淆证据）
+trip	hi_windows	lo_window_min	lo_window_max	时间范围重叠
+trip_burst1_r1	0,1	4	14	否
+trip_burst1mix_r1	0,1	4	14	否
+trip_c2_near_r1	0,1	4	14	否
+trip_c2_near_r2	0,1	4	14	否
+trip_carrier2_r1	0,1	4	14	否
+trip_ctrl_orig_r1	0,1	4	14	否
+trip_dense_near_r1	0,1	4	14	否
+trip_dense_near_r2	0,1	4	14	否
+trip_g_near_r1	0,1	3	14	否
+trip_g_near_r2	0,1	3	14	否
+trip_hunt_near_r1	0,1	4	14	否
+trip_hunt_near_r2	0,1	4	14	否
+trip_hunt_near_r3	0,1	4	14	否
+trip_rof2_r1	0,1	4	14	否
+trip_rof99_r1	1	4	14	否
+trip_rof_probe_r1	0,1	4	14	否
+trip_samesize_r1	0,1	4	14	否
+trip_scan_near_r1	0,1	4	14	否
+trip_speed99_r1	0,1	4	14	否
+# 读法：19/19 趟 hi 窗恒为窗 0–1，lo 窗恒为窗 3/4–14，**零交错**
+# ⇒ 趟内配对等价于'开局 20 秒 vs 其余时间'，不是'子弹多 vs 子弹少'的可分离对照

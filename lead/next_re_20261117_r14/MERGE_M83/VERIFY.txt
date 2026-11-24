@@ -1,0 +1,58 @@
+M83 VERIFY — 并后强制复算（全部断言通过；不符即停）
+
+口径：BEFORE 基线见 _before_state.json / BEFORE_AFTER.txt；PATCH 见 _apply_result.json。
+本复算只读 coverage.tsv / PANEL.md / 卡目录；resolve.py 复算输出重定向至 MERGE_M83\_verify_resolve_out，未写 EVID_RESOLVE / R14_COMMON / STATUS_BOARD / 台账 / BOARD_ARCHIVE。
+
+【计数不变量】
+  数据行数            : 18498   （期望 18,498）  ✅
+  全表 [已证]         : 1654     （期望 1,654）  ✅
+  atlas 内 [已证]     : 1648     （期望 1,648）  ✅  （atlas = next_re_20261112_r10/W130_atlas/function_atlas.tsv，entry 归一 %08X）
+
+【如何找到 13 行歧义（现盘口径）】
+  EVID_RESOLVE\resolve.tsv 是 M82 之前的快照；现盘为准。用 EVID_RESOLVE/resolve.py 的 resolve_row 对
+  当前 coverage.tsv 全部 1,654 行 [已证] 重分类：R_OK 839 / R_MISSING 13 / R_TRACE_ONLY 802 / R_EMPTY 0。
+  对这 13 行 R_MISSING 逐行按后缀（case-insensitive / 组件边界 endswith，在 r14 下）找候选，全部为多候选歧义。
+  13 个 entry 与 M82 记录完全一致：
+    0040F870, 004DF320, 004DF3A0, 004DFB70, 004DFCB0, 004DFE00, 004E0E80, 0054E890, 0054EA70, 006B6EA0, 006B6FA0, 006CDEF0, 006F4960
+  恰好 13 个（相符，未触发“不是正好 13 个就停下”）。
+
+【消歧方法：subsystem 锁定卡目录】
+  对每个歧义行：先按后缀找出全部候选文件；再只保留“目录名含该行 subsystem 编号（S<NN>）”的候选；
+  恰好剩 1 个 ⇒ 修；仍 >1 或 0 个 ⇒ 不修。
+  - 修复 4 行：
+      0040F870 [S13] four_rings.md       候选 S13_K12 / S16_PADD / S17_PADD → 仅 S13_K12 含 S13
+      0054E890 [S13] four_rings.md       同上 → S13_K12
+      0054EA70 [S13] four_rings.md       同上 → S13_K12
+      006CDEF0 [S16] E01_rtti.txt        候选 S03-K1 / S16-K1 → 仅 S16-K1 含 S16
+  - 未修 9 行（原因逐条）：
+      004DF320/004DF3A0/004DFB70/004DFCB0/004DFE00/006F4960 [S10] QUEUE_DISPATCH_AND_FALSE_KILLS.txt：
+        候选 S10_K8 与 S10_K8F 都含 S10 ⇒ 过滤后仍 2 个，不唯一。
+      004E0E80 [S10] OWNERSHIP_004E0E80.txt：
+        候选 S10_K8 与 S10_K8F 都含 S10 ⇒ 过滤后仍 2 个，不唯一。
+      006B6EA0/006B6FA0 [S22] SPAWNMANAGER_CTORS.txt：
+        候选 S10_K8 与 S10_K8F 都不含 S22 ⇒ 过滤后 0 个，无法确定（语义明确标 S22 baseline, not counted in S10）。
+
+【改动行 grade 未变（仅第 6 列）】
+  被改 4 行逐行核对：grade == [已证] 未变；第 1/2/3/4/7/8 列与 BEFORE 逐字节一致；新路径盘上 isfile 为真。
+  注记 ';M83 歧义消解：原记 <旧>，按 subsystem=<SXX> 锁定为 <新>' 均可逆回原 evidence_path。
+  未修 9 行第 6 列保持原值、无任何 M83 注记。
+  其余 18494 行整行字节不变。
+
+【证据可解析率重跑（resolve.py 原脚本，--out 指向 MERGE_M83\_verify_resolve_out，未写 EVID_RESOLVE）】
+  BEFORE : R_OK 839 / R_MISSING 13 / R_TRACE_ONLY 802 / R_EMPTY 0
+  AFTER  : R_OK 843 / R_MISSING 9  / R_TRACE_ONLY 802 / R_EMPTY 0
+  期望   : R_OK = 839 + 实修 4 = 843；R_MISSING = 13 - 4 = 9；R_TRACE_ONLY 不变 802。
+  实测   : R_OK 843 = 839 + 4 ✅ ；R_MISSING 9 = 13 - 4 ✅ ；R_TRACE_ONLY 802 = 802 ✅
+  新 resolve.tsv 数据行 811 = 9 + 802 ✅
+  剩余 9 行 R_MISSING entry 集合 == 未修 9 行 entry 集合 ✅
+  R_OK 百分比 = 843/1654 = 50.97% （≥ 839 的要求满足；BEFORE 839/1654 = 50.73%）
+
+【注记回读 / PANEL】
+  4 行注记均可解析回旧路径；新路径（含 #anchor）在盘上真实存在。
+  PANEL.md L202-203 为 M83 补记 2 行；L194-201 M81/M82 披露与补记保持完好。
+
+【达标翻转】
+  no — 纯指针修复：第 4 列语义、第 5 列 grade、subsystem 与 entry 全表未变；[已证] 1,654 与 atlas 内 1,648 均未变。
+  名义达标（S15/S16/S17，3/22）与严格达标（S17，1/22）不可能翻转。无停下理由。
+
+结论：全部强制复算通过，无“不符停下”触发；无达标翻转。

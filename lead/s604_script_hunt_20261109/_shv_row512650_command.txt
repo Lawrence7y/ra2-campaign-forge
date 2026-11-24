@@ -1,0 +1,28 @@
+cd /d/Project/ra2-campaign-forge && timeout 150 python -I -X utf8 -c "
+import io,json,statistics,collections
+def per_frame(p):
+    d=json.load(io.open(p,encoding='utf-8'))
+    fe=d['frame_edges']
+    dur={fe[i][0]:(fe[i][1]-fe[i-1][1])*1000.0 for i in range(1,len(fe))}
+    s=d['samples']; f,t=s['f'],s['t']
+    g=collections.defaultdict(list)
+    for fi,ti in zip(f,t): g[fi].append(ti)
+    out=[]
+    for fi,ts in g.items():
+        if len(ts)<4 or fi not in dur: continue
+        ts=sorted(ts)
+        gaps=[ts[i+1]-ts[i] for i in range(len(ts)-1)]
+        sp=(ts[-1]-ts[0])*1000.0
+        out.append((fi,dur[fi],sp,max(gaps)*1000.0))
+    return out
+for p in ['lead/qc161_u0400_trip/l1c_20261021/measure_w1.json','lead/t55k_20261020/measure_w0.json']:
+    rows=per_frame(p)
+    rows.sort(key=lambda r:r[1])
+    n=len(rows); k=n//3
+    lo=rows[:k]; hi=rows[-k:]
+    def stat(g,name):
+        sp=statistics.median([r[2] for r in g]); mg=statistics.median([r[3] for r in g])
+        print('  %-6s n=%3d 帧时长p50=%6.1f 帧内跨度p50=%6.1f 最大空档p50=%5.2f'%(name,len(g),statistics.median([r[1] for r in g]),sp,mg))
+    print('===',p.split('/')[-2])
+    stat(lo,'最慢1/3'); stat(hi,'最快1/3')
+" 2>&1 | head -12

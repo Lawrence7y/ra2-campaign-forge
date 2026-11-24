@@ -1,0 +1,72 @@
+[V1] 枚举（手动两层 scandir）
+    depth1 文件数 = 101 ；root-direct = 3 ；deeper = 0
+    root-direct 名单 = ['measure_w0.json', 'measure_w1.json', 'measure_w2.json']
+    断言 depth1==101 & d0==3 & deeper==0 : PASS
+[V2] 解析/纳排
+    parse_err = 0 ；纳入 = 87 ；排除 = 14
+    schema = {'MEASURE_V1': 101} ；hz = [500] ；gamemd_sha256 去重 = 1
+      73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+    断言 纳入87/排除14/parse0/schema全MEASURE_V1/hz{500}/hash1 : PASS
+    排除成因分布 = {'span=4.0': 11, 'span=0.0': 3}
+    排除逐窗：
+      l1_20261023/measure_w0.json  span=4.0 samples=2001
+      l1_20261023b/measure_w0.json  span=4.0 samples=2002
+      l1_20261023c/measure_w0.json  span=4.0 samples=0
+      l1_20261023e1/measure_w0.json  span=4.0 samples=2001
+      l1_20261023hb/measure_w0.json  span=4.0 samples=2001
+      l1_20261023hc/measure_w0.json  span=4.0 samples=2002
+      l1_20261023k/measure_w0.json  span=4.0 samples=2001
+      l3_1101v3c/measure_w0.json  span=0.0 samples=0
+      l3_1101v4b/measure_w0.json  span=0.0 samples=0
+      l3_1101v4f/measure_w0.json  span=4.0 samples=2001
+      l3_1101v4g/measure_w0.json  span=4.0 samples=2002
+      l3_1101v4h/measure_w0.json  span=0.0 samples=0
+      l3_20261023/measure_w0.json  span=4.0 samples=0
+      l3_20261031ha/measure_w0.json  span=4.0 samples=2001
+[V3] 分母与沿数
+    S=Σsamples = 1080975 ；E=Σn_edges = 28309 ；T=Σmax(0,n_edges-1) = 28222
+    E - 87 = 28222（应等于 T）
+    断言 (S,E,T)==(1080975,28309,28222) : PASS
+[V3b] 逐窗 samples 分布 = {5949: 1, 12452: 1, 12471: 1, 12501: 65, 12502: 19}
+    非 [12501,12502] 窗 = 3 ：
+      l1_20261023e4/measure_w2.json samples=5949 edges=1
+      l3_20261031hb/measure_w0.json samples=12452 edges=170
+      l3_20261031hb/measure_w1.json samples=12471 edges=116
+    断言 65×12501 + 19×12502 + 12452 + 12471 + 5949 = S : PASS
+    ★ 三个异值窗是否被计入分母：是（未裁分母）（计入则 S=1080975，剔除则 S=1050103）
+[V4] 最坏窗
+    max(n_edges) 窗：QC161-U0800-L3-20261023R w0 edges=784 samples=12502 ratio=0.062709966
+    并列数 = 1
+    按 edges/samples 最大的窗：QC161-U0800-L3-20261023R w0 edges=784 samples=12502 ratio=0.062709966
+    ★ 两种定义是否同一窗：是
+    断言 worst=(QC161-U0800-L3-20261023R,window=0,784,12502) : PASS
+[V5] 87 窗整体（Decimal/ROUND_HALF_UP）
+    4读 E : 10.475% (4dp 10.4754%, 6dp 10.475358%) 期望 +10.475% [PASS]
+    4读 T : 10.443% (4dp 10.4432%, 6dp 10.443165%) 期望 +10.443% [PASS]
+    5读 E : 13.094% (4dp 13.0942%, 6dp 13.094197%) 期望 +13.094% [PASS]
+    5读 T : 13.054% (4dp 13.0540%, 6dp 13.053956%) 期望 +13.054% [PASS]
+    6读 E : 15.713% (4dp 15.7130%, 6dp 15.713037%) 期望 +15.713% [PASS]
+    6读 T : 15.665% (4dp 15.6647%, 6dp 15.664747%) 期望 +15.665% [PASS]
+    精确分数核对（整数化简）：
+      5读沿表 100*5*28309/1080975 = 566180/43239（期望 566180/43239）
+      5读跳变 100*5*28222/1080975 = 564440/43239（期望 564440/43239）
+[V6] 最坏单窗（edges=784 samples=12502）
+    4读 E : 25.0840% (6dp 25.083987%) 期望 +25.0840% [PASS]
+    4读 T : 25.0520% (6dp 25.051992%) 期望 +25.0520% [PASS]
+    5读 E : 31.3550% (6dp 31.354983%) 期望 +31.3550% [PASS]
+    5读 T : 31.3150% (6dp 31.314990%) 期望 +31.3150% [PASS]
+    6读 E : 37.6260% (6dp 37.625980%) 期望 +37.6260% [PASS]
+    6读 T : 37.5780% (6dp 37.577988%) 期望 +37.5780% [PASS]
+      5读沿表 100*5*784/12502 = 28000/893（期望 28000/893）
+      5读跳变 100*5*783/12502 = 195750/6251（期望 195750/6251）
+[V7] 字节口径（每读 4 B）
+    5读：每沿 20B；87窗合计 566180B；最坏窗 15680B；最坏窗 627.2 B/s
+    6读：每沿 24B；87窗合计 679416B；最坏窗 18816B；最坏窗 752.6 B/s
+    断言 5读(20,566180,15680,627.2) 6读(24,679416,18816,752.6) : PASS
+[V8] 四项主数字（被核对象结论）
+    87窗5读沿表 : 实算 +13.094% vs +13.094% [PASS]
+    87窗5读跳变 : 实算 +13.054% vs +13.054% [PASS]
+    最坏窗5读沿表 : 实算 +31.3550% vs +31.3550% [PASS]
+    最坏窗5读跳变 : 实算 +31.3150% vs +31.3150% [PASS]
+    四项全复现 = True
+V_DONE

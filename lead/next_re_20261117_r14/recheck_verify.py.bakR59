@@ -1,0 +1,321 @@
+# -*- coding: utf-8 -*-
+"""recheck_verify.py -- 第 7 列「是否真回跑」自描述行的机检器（R53-T2 / C11）
+
+交付接口（§2.51 / R51-T2 约定，Lead 在 check_disc.py 增 C11 调用）：
+    verify_recheck_line(root, row) -> (ok: bool, detail: str)
+        row = DISC_RECHECK.tsv 的一行 split('\\t') 结果（7 列）
+        ok  = True / False；**无 None**——任何字段缺失/格式不符/时刻不可解析一律 False（fail-closed）
+
+自描述行格式（§2.51 逐字）：
+    DISC_RECHECK discipline=<N> round=<Rxx> at=<ISO8601> anchors=<sha256:HEX64> conclusion=<PASS|FAIL|UNKNOWN>
+
+六条校验（4 必须 + ⑤⑥ 建议）：
+    R1 行存在且恰好一条（且 token 结构合法、字段集完整、无重复键）
+    R2 discipline 十进制无前导零，等于 row[0]
+    R3 at 严格 ISO8601(+HH:MM) 可解析，且 > 立条落盘时刻（取自 DISC_ESTABLISH.tsv）
+    R4 round 形如 R\\d{2,3}，序号 > 立条轮次序号，且 at 落在该 round 的 [start,end] 窗口
+    R5 anchors == 'sha256:' + sha256(UTF-8(row[3] 『必查的现有数据锚』逐字串))
+    R6 conclusion ∈ {PASS, FAIL, UNKNOWN}
+
+关键设计（如实声明，见 REPORT FALSIFY）：
+  * DISC_ROUNDS.tsv 在本盘上 **不存在**，且本卡只允许新建两个文件（DISC_ESTABLISH.tsv、
+    本文件），故 round 窗口表 **内嵌于本模块** ROUND_WINDOWS。它不是自造数：它来自
+    R17_LEAD_BASELINE\\STATUS_BOARD.before_rNN_HHMMSS.md 的文件名时分秒（r35-r53），
+    每条注释给出来源文件名。窗口 = [本轮 before 快照时刻, 下一轮 before 快照时刻)。
+    **窗口外的 round 一律 False（fail-closed）——表只覆盖 r35-r53，不覆盖的轮次即不可验证。**
+  * 立条落盘时刻来自 DISC_ESTABLISH.tsv（第 4 列），该文件缺失/行缺失/时刻不可解析 ⇒ False。
+  * 立条落盘时刻本身是「上界推断」（中/高置信度见该表第 6 列），不是精确落盘秒；
+    R3 用的是「>= 上界」的宽松语义的反向：at 必须 **严格晚于**该上界，故 at 落在
+    上界与真实落盘之间会被误判为「非回跑」（保守方向，不与造假同向）。FALSIFY 另有详述。
+  * 本校验只证明「自述行的跨字段一致性」，不证明「真的按该纪律判据回跑过」；
+    at/anchors 皆同一行为者可自写，无外部可信时钟（lead 全树 git 未跟踪）。见 FALSIFY。
+"""
+import io
+import os
+import re
+import hashlib
+from datetime import datetime, timedelta, timezone
+
+# ---- 路径 -------------------------------------------------------------------
+# DISC_ESTABLISH.tsv 与本模块同目录（lead\next_re_20261117_r14\）
+_HERE = os.path.dirname(os.path.abspath(__file__))
+ESTABLISH_PATH = os.path.join(_HERE, 'DISC_ESTABLISH.tsv')
+
+# round 窗口表：来源 R17_LEAD_BASELINE\STATUS_BOARD.before_rNN_HHMMSS.md 文件名时分秒。
+# 每条 = (round_no, start_HHMMSS, end_HHMMSS, 起窗口来源文件名, 止窗口来源文件名)
+# 日期均为 2026-11-22，时区 +08:00。end 取「下一个存在 before 快照的轮次」的快照时刻；
+# r41 无 before 快照，故 R40 的 end 落到 R42 的 13:11:09（下一存在快照）。
+# 最后一条 R53 无后继快照 ⇒ end 取当日收盘上界 23:59:59（保守，仅用于令末轮可验证）。
+_ROUND_ROWS = [
+    (35, '112234', '112911', 'STATUS_BOARD.before_r35_112234.md', 'STATUS_BOARD.before_r36_112911.md'),
+    (36, '112234', '112911', 'STATUS_BOARD.before_r36_112911.md', 'STATUS_BOARD.before_r37_114901.md'),
+    (37, '112911', '114901', 'STATUS_BOARD.before_r37_114901.md', 'STATUS_BOARD.before_r38_120113.md'),
+    (38, '114901', '120113', 'STATUS_BOARD.before_r38_120113.md', 'STATUS_BOARD.before_r39_122622.md'),
+    (39, '120113', '122622', 'STATUS_BOARD.before_r39_122622.md', 'STATUS_BOARD.before_r40_123652.md'),
+    (40, '122622', '123652', 'STATUS_BOARD.before_r40_123652.md', 'STATUS_BOARD.before_r42_131109.md'),
+    (42, '123652', '131109', 'STATUS_BOARD.before_r42_131109.md', 'STATUS_BOARD.before_r43_132425.md'),
+    (43, '131109', '132425', 'STATUS_BOARD.before_r43_132425.md', 'STATUS_BOARD.before_r44_135348.md'),
+    (44, '132425', '135348', 'STATUS_BOARD.before_r44_135348.md', 'STATUS_BOARD.before_r45_140857.md'),
+    (45, '135348', '140857', 'STATUS_BOARD.before_r45_140857.md', 'STATUS_BOARD.before_r46_143641.md'),
+    (46, '140857', '143641', 'STATUS_BOARD.before_r46_143641.md', 'STATUS_BOARD.before_r47_152510.md'),
+    (47, '143641', '152510', 'STATUS_BOARD.before_r47_152510.md', 'STATUS_BOARD.before_r48_152809.md'),
+    (48, '152510', '152809', 'STATUS_BOARD.before_r48_152809.md', 'STATUS_BOARD.before_r49_153819.md'),
+    (49, '152809', '153819', 'STATUS_BOARD.before_r49_153819.md', 'STATUS_BOARD.before_r50_155139.md'),
+    (50, '153819', '155139', 'STATUS_BOARD.before_r50_155139.md', 'STATUS_BOARD.before_r51_160144.md'),
+    (51, '155139', '160144', 'STATUS_BOARD.before_r51_160144.md', 'STATUS_BOARD.before_r52_161750.md'),
+    (52, '160144', '161750', 'STATUS_BOARD.before_r52_161750.md', 'STATUS_BOARD.before_r53_162803.md'),
+    (53, '161750', '162803', 'STATUS_BOARD.before_r53_162803.md', 'STATUS_BOARD.before_r54_173400.md'),
+    (54, '162803', '173400', 'STATUS_BOARD.before_r54_173400.md', 'STATUS_BOARD.before_r55_174146.md'),
+    (55, '173400', '174146', 'STATUS_BOARD.before_r55_174146.md', '(open: no r56 snapshot yet)'),
+    (56, '174146', '174645', 'STATUS_BOARD.before_r55_174146.md', 'STATUS_BOARD.before_r56_174645.md'),
+    (57, '174645', '174854', 'STATUS_BOARD.before_r56_174645.md', 'STATUS_BOARD.before_r57_174854.md'),
+]
+_DATE = '2026-11-22'
+_TZ = timezone(timedelta(hours=8))
+
+
+def _hhmmss(s):
+    """'HHMMSS' -> aware datetime(+08:00)；非法即 ValueError。"""
+    if not re.fullmatch(r'\d{6}', s):
+        raise ValueError('bad HHMMSS %r' % s)
+    h, m, sec = int(s[0:2]), int(s[2:4]), int(s[4:6])
+    y, mo, d = [int(x) for x in _DATE.split('-')]
+    return datetime(y, mo, d, h, m, sec, tzinfo=_TZ)
+
+
+ROUND_WINDOWS = {}
+for _no, _s, _e, _sf, _ef in _ROUND_ROWS:
+    ROUND_WINDOWS[_no] = (_hhmmss(_s), _hhmmss(_e), _sf, _ef)
+
+# 自描述行字段集（顺序固定，单空格分隔，行首顶格）
+_FIELDS = ['discipline', 'round', 'at', 'anchors', 'conclusion']
+_PREFIX = 'DISC_RECHECK '
+_LINE_RE = re.compile(
+    r'^DISC_RECHECK '
+    r'discipline=(\d+) '
+    r'round=(R\d{2,3}) '
+    r'at=(\S+) '
+    r'anchors=(sha256:[0-9a-f]{64}) '
+    r'conclusion=(\S+)$'
+)
+_CONCLUSIONS = frozenset(('PASS', 'FAIL', 'UNKNOWN'))
+
+
+def _fail(reason):
+    return (False, reason)
+
+
+def _read_utf8(path):
+    with io.open(path, 'r', encoding='utf-8', errors='replace') as f:
+        return f.read()
+
+
+def _parse_iso8601_strict(s):
+    """严格 YYYY-MM-DDTHH:MM:SS+HH:MM；失败返回 None。"""
+    if not re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}', s):
+        return None
+    try:
+        dt = datetime.strptime(s, '%Y-%m-%dT%H:%M:%S%z')
+    except ValueError:
+        return None
+    return dt
+
+
+def _load_establish():
+    """读 DISC_ESTABLISH.tsv -> {int(纪律号): (round_no, landing_dt)}。
+    文件/TSV 结构/字段/时刻任何不合法 ⇒ 抛 ValueError（由调用方转 False）。"""
+    if not os.path.isfile(ESTABLISH_PATH):
+        raise ValueError('R3 DISC_ESTABLISH.tsv missing: %s' % ESTABLISH_PATH)
+    txt = _read_establish_text()
+    lines = [l for l in txt.split('\n') if l != '']
+    if len(lines) < 2:
+        raise ValueError('R3 DISC_ESTABLISH.tsv no data row')
+    head = lines[0].split('\t')
+    if len(head) != 6:
+        raise ValueError('R3 DISC_ESTABLISH.tsv header cols=%d' % len(head))
+    est = {}
+    for ln in lines[1:]:
+        c = ln.split('\t')
+        if len(c) != 6:
+            raise ValueError('R3 establish row cols=%d' % len(c))
+        n_s, _sec, round_s, at_s, _basis, _conf = c
+        if not re.fullmatch(r'\d+', n_s.strip()):
+            raise ValueError('R3 establish bad discipline %r' % n_s)
+        m = re.fullmatch(r'R(\d{2,3})', round_s.strip())
+        if not m:
+            raise ValueError('R3 establish bad round %r' % round_s)
+        dt = _parse_iso8601_strict(at_s.strip())
+        if dt is None:
+            raise ValueError('R3 establish bad landing time %r' % at_s)
+        est[int(n_s.strip())] = (int(m.group(1)), dt)
+    return est
+
+
+def _read_establish_text():
+    return _read_utf8(ESTABLISH_PATH)
+
+
+def verify_recheck_line(root, row):
+    """校验 row 对应产物里的 DISC_RECHECK 自描述行。
+
+    root : 项目根（check_disc.py 的 ROOT）；产物路径 row[4] 相对它解析。
+    row  : DISC_RECHECK.tsv 一行 split('\\t')，须 7 列。
+    return (ok: bool, detail: str) —— 全 fail-closed，无 None。
+    """
+    # ---- 入参结构（fail-closed）----
+    if not isinstance(row, (list, tuple)) or len(row) != 7:
+        return _fail('R0 row cols != 7')
+    n_s = row[0].strip()
+    if not re.fullmatch(r'\d+', n_s):
+        return _fail('R0 bad discipline in row: %r' % n_s)
+    N = int(n_s)
+    anchor4 = row[3]           # 逐字，不 strip：哈希绑定原文
+    rel = row[4].strip()
+    if not rel:
+        return _fail('R0 empty product path')
+    ap = rel.replace('/', '\\')
+    if not os.path.isabs(ap):
+        ap = os.path.join(root, ap)
+    if not os.path.isfile(ap):
+        return _fail('R1 product file missing: %s' % rel)
+
+    # ---- R1 行存在且唯一 + token 结构 ----
+    txt = _read_utf8(ap)
+    # R56 修（缺陷 3）：原为「该产物里 DISC_RECHECK 行必须恰好 1 条」——
+    # 但纪律 3 与 4 共用同一产物 anchor_check.txt，各写一条 ⇒ 永远满足不了。
+    # 正确语义：**本纪律**的行必须恰好 1 条（同产物可含其它纪律的行）。
+    allh = [l for l in txt.splitlines() if l.startswith(_PREFIX)]
+    hits = []
+    for _l in allh:
+        _m = re.search(r'\bdiscipline=(\d+)\b', _l)
+        if _m and int(_m.group(1)) == N:
+            hits.append(_l)
+    if len(hits) != 1:
+        return _fail('R1 line_count_for_discipline_%d=%d (must be 1; product has %d DISC_RECHECK lines total)'
+                     % (N, len(hits), len(allh)))
+    line = hits[0]
+    m = _LINE_RE.match(line)
+    if not m:
+        # 进一步定位：是字段数/顺序/重复键问题
+        toks = line.split(' ')
+        if any('=' not in t for t in toks[1:]):
+            return _fail('R1 bad_token(no =)')
+        keys = [t.split('=', 1)[0] for t in toks[1:]]
+        if len(keys) != len(set(keys)):
+            return _fail('R1 duplicate_key')
+        if set(keys) != set(_FIELDS) or len(keys) != len(_FIELDS):
+            return _fail('R1 field_set=%s' % keys)
+        return _fail('R1 regex_mismatch (format/order/width)')
+    d_s, r_s, at_s, anchors_s, concl_s = m.groups()
+
+    # ---- R2 discipline 对齐 ----
+    if not re.fullmatch(r'[1-9]\d*', d_s):       # 无前导零
+        return _fail('R2 discipline leading-zero/noncanonical: %s' % d_s)
+    if int(d_s) != N:
+        return _fail('R2 discipline %s != row %d' % (d_s, N))
+
+    # ---- 立条表（R3/R4 共同外部输入；缺失即 fail-closed）----
+    try:
+        est = _load_establish()
+    except ValueError as e:
+        return _fail(str(e))
+    if N not in est:
+        return _fail('R3 no establish row for discipline %d' % N)
+    est_round, est_at = est[N]
+
+    # ---- R3 at 严格可解析 + 晚于立条落盘上界 ----
+    at = _parse_iso8601_strict(at_s)
+    if at is None:
+        return _fail('R3 bad ISO8601 at=%s' % at_s)
+    if at <= est_at:
+        return _fail('R3 at<=establish (%s <= %s)' % (at_s, est_at.isoformat()))
+
+    # ---- R4 round 格式 / 序号 / 窗口 ----
+    if not re.fullmatch(r'R\d{2,3}', r_s):
+        return _fail('R4 bad round %s' % r_s)
+    rno = int(r_s[1:])
+    if rno <= est_round:
+        return _fail('R4 round_no %d <= establish round %d' % (rno, est_round))
+    win = ROUND_WINDOWS.get(rno)
+    if win is None:
+        return _fail('R4 no round window for R%03d (unverifiable -> False)' % rno)
+    w0, w1, _sf, _ef = win
+    if not (w0 <= at <= w1):
+        return _fail('R4 at outside R%03d window [%s, %s]' % (
+            rno, w0.isoformat(), w1.isoformat()))
+
+    # ---- R5 anchors 绑定第 4 列逐字串 ----
+    want = 'sha256:' + hashlib.sha256(anchor4.encode('utf-8')).hexdigest()
+    if anchors_s != want:
+        return _fail('R5 anchors mismatch: got %s want %s' % (anchors_s, want))
+
+    # ---- R6 conclusion 闭集合 ----
+    if concl_s not in _CONCLUSIONS:
+        return _fail('R6 conclusion not in {PASS,FAIL,UNKNOWN}: %s' % concl_s)
+
+    return (True, 'ok R1-R6; disc=%d round=%s at=%s est<=%s window=[%s,%s]' % (
+        N, r_s, at_s, est_at.isoformat(), w0.isoformat(), w1.isoformat()))
+
+
+# ===========================================================================
+# 自测：1 正控 + 4 反控（Q4 硬要求）。临时产物写在本模块目录，跑完即删。
+#   python recheck_verify.py --self-test
+# ===========================================================================
+def _self_test():
+    root = os.path.abspath(os.path.join(_HERE, '..', '..'))  # D:\Project\ra2-campaign-forge
+    here = _HERE
+    tmp = os.path.join(here, '_posctl_product.tmp')
+    disc = 11
+    # discipline 11 的立条上界 12:00:54；选 R52 窗口 [16:17:50,16:28:03]，at=16:20:00。
+    # 正控用**真实** DISC_RECHECK.tsv 第 11 行（含真实第 4 列锚），只把产物路径改向临时文件，
+    # 让「一条完全合法的自描述行」落在该临时产物里——不是凭空造 row。
+    dr_path = os.path.join(here, 'DISC_RECHECK.tsv')
+    real = None
+    if os.path.isfile(dr_path):
+        for ln in _read_utf8(dr_path).split('\n')[1:]:
+            if ln and ln.split('\t')[0].strip() == str(disc):
+                real = ln.split('\t')
+                break
+    if real is None or len(real) != 7:
+        # 退路（不应发生）：仍构造 7 列，但如实标注锚为占位
+        real = ['11', '\u00a72.24', 'judge', '\u7b49\u7ea7\u5224\u636e\u8868',
+                'x', 'grep=x', '\u6709']
+    anchor4 = real[3]                      # 真实第 4 列『必查的现有数据锚』逐字串
+    row = list(real)
+    row[4] = os.path.relpath(tmp, root)    # 仅把产物路径改向临时文件
+    good = ('DISC_RECHECK discipline=11 round=R52 at=2026-11-22T16:20:00+08:00 '
+            'anchors=sha256:%s conclusion=PASS' % hashlib.sha256(anchor4.encode('utf-8')).hexdigest())
+    # 注：R5 用 row[3]（第 4 列锚逐字串）重算 sha256，good 中 anchors 即由同一 anchor4 算出。
+
+    cases = []
+    cases.append(('POS \u5b8c\u5168\u5408\u6cd5', good, row, True))
+    cases.append(('NEG1 discipline \u53f7\u9519', good.replace('discipline=11', 'discipline=12'), row, False))
+    cases.append(('NEG2 at \u65e9\u4e8e\u7acb\u6761', good.replace('at=2026-11-22T16:20:00', 'at=2026-11-22T11:00:00'), row, False))
+    cases.append(('NEG3 at \u4e0e round \u7a97\u53e3\u77db\u76fe', good.replace('at=2026-11-22T16:20:00+08:00', 'at=2026-11-22T15:00:00+08:00'), row, False))
+    bad_hash = 'sha256:' + ('0' * 64)
+    cases.append(('NEG4 anchors \u54c8\u5e0c\u4e0d\u7b26', good.replace('anchors=sha256:' + hashlib.sha256(anchor4.encode('utf-8')).hexdigest(), 'anchors=' + bad_hash), row, False))
+
+    results = []
+    try:
+        for name, line, r, expect in cases:
+            with io.open(tmp, 'w', encoding='utf-8', newline='') as f:
+                f.write('# fixture\n' + line + '\n')
+            ok, detail = verify_recheck_line(root, r)
+            passed = (ok == expect)
+            results.append((name, ok, expect, passed, detail))
+            print('%-28s ok=%-5s expect=%-5s %s | %s' % (
+                name, ok, expect, 'PASS' if passed else 'FAIL', detail))
+    finally:
+        if os.path.isfile(tmp):
+            os.remove(tmp)
+    allok = all(p for _, _, _, p, _ in results)
+    print('SELFTEST %s (%d/%d)' % ('PASS' if allok else 'FAIL',
+                                   sum(1 for _, _, _, p, _ in results if p), len(results)))
+    return allok
+
+
+if __name__ == '__main__':
+    import sys
+    if '--self-test' in sys.argv:
+        sys.exit(0 if _self_test() else 1)
+    print(__doc__)

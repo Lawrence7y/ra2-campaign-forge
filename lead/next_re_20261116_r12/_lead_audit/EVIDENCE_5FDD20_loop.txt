@@ -1,0 +1,63 @@
+=== 0x5FDD20 剩余部分（看循环边界与返回）===
+   005FDD99  add      edi, 4
+   005FDD9C  cmp      ebx, eax
+   005FDD9E  jl       0x5fdd5a
+   005FDDA0  mov      eax, dword ptr [esp + 0x10]
+   005FDDA4  sub      esp, 0x34
+   005FDDA7  lea      esi, [eax + 0x64]
+   005FDDAA  mov      ecx, 0xc
+   005FDDAF  mov      edi, esp
+   005FDDB1  rep movsd dword ptr es:[edi], dword ptr [esi]
+   005FDDB3  push     0x833490
+   005FDDB8  movsb    byte ptr es:[edi], byte ptr [esi]
+   005FDDB9  call     0x4068e0
+   005FDDBE  add      esp, 0x38
+   005FDDC1  xor      eax, eax
+   005FDDC3  pop      edi
+   005FDDC4  pop      esi
+   005FDDC5  pop      ebp
+   005FDDC6  pop      ebx
+   005FDDC7  pop      ecx
+   005FDDC8  ret      
+   005FDDC9  mov      eax, dword ptr [eax + 0x98]
+   005FDDCF  pop      edi
+   005FDDD0  pop      esi
+   005FDDD1  pop      ebp
+   005FDDD2  pop      ebx
+   005FDDD3  pop      ecx
+   005FDDD4  ret      
+   005FDDD5  pop      edi
+   005FDDD6  pop      esi
+   005FDDD7  pop      ebp
+   005FDDD8  or       eax, 0xffffffff
+   005FDDDB  pop      ebx
+   005FDDDC  pop      ecx
+   005FDDDD  ret      
+
+=== 谁写 0xB0F4EC / 0xB0F4F8（找初始化 → 定表规模与语义）===
+  --- 00B0F4EC
+     WRITE 00721647 in fn=007213E0 : mov dword ptr [0xb0f4ec], eax
+     WRITE 007216A7 in fn=007213E0 : mov dword ptr [0xb0f4ec], ebx
+  --- 00B0F4F8
+     WRITE 00721671 in fn=007213E0 : mov dword ptr [0xb0f4f8], eax
+     WRITE 0072180E in fn=007216C0 : mov dword ptr [0xb0f4f8], ecx
+     WRITE 0072191A in fn=00721880 : mov dword ptr [0xb0f4f8], ecx
+
+=== 0x5FDD20 的 22 个调用者的函数（看是否每帧路径）===
+   fn 0047C060 size=873    strings=
+   fn 0047C620 size=1116   strings=
+   fn 0047D2B0 size=2740   strings=
+   fn 0047F6A0 size=1264   strings=
+   fn 0047FB90 size=584    strings=
+   fn 00480A80 size=556    strings=
+   fn 004818E0 size=283    strings=
+   fn 00483620 size=112    strings=
+   fn 00483690 size=125    strings=
+   fn 00483710 size=112    strings=
+   fn 00483780 size=340    strings=
+   fn 00484FF0 size=29     strings=
+   fn 00485010 size=8      strings=
+   fn 00485020 size=51     strings=
+   fn 00487190 size=1181   strings=
+   fn 005FD970 size=841    strings=
+   fn 00749F30 size=2599   strings=

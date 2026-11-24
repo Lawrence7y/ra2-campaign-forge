@@ -1,0 +1,111 @@
+### [0] 回归 harness 的 N13 调用契约核查（_gp_regression.py:142-145）
+  judge_one(mode='n13') 恒用 T = ['已入账', '已追加', '已生效'] （不看 item['tokens']）
+  judge_one(mode='chain') 用 gate_check(text, item['tokens'], ..., T)；toks = item['tokens']
+  两者不同：REAL-SLOT/TRUTH 与全部 R10_* 行，N13 单层实际是在【固定三词词表】上考的
+
+### [1] 三件真实文档：逐 span 裁决明细（找把 PASS 判成 CATCH 的 K 规则）
+
+-- REAL-SLOT  expect=PASS  chain_verdict=FAIL  spans=6  catch_like=5
+   裁决为 CATCH/FAIL_CLOSED/RAISE 的规则组合: {'K6': 5}
+   前 6 个 catch span:
+     L79   pos=6240   tok=已填         r10=CATCH   r12=ABSENT  n13=ABSENT  kind=None => CATCH        rules=K6           veto=False | **填用流程**：① 复制 `_c7_record_template.json` 到落点名 `ACCEPTANCE_RECORD
+     L103  pos=7722   tok=已填         r10=CATCH   r12=ABSENT  n13=ABSENT  kind=None => CATCH        rules=K6           veto=False | 1. 三个身份字段已填、全件无 `<` 占位残留（含容器层）；2. `reviewerSessionId` 是**本会话**运行
+     L110  pos=8315   tok=已填         r10=CATCH   r12=ABSENT  n13=ABSENT  kind=None => CATCH        rules=K6           veto=False | ### 5.4 多处同步排查表（哪件/哪行/需什么字段/是否已填）
+     L112  pos=8344   tok=已填         r10=CATCH   r12=ABSENT  n13=ABSENT  kind=None => CATCH        rules=K6           veto=False | | # | 件 | 行 | 需什么字段 | 是否已填 |
+     L120  pos=9417   tok=已填         r10=CATCH   r12=ABSENT  n13=ABSENT  kind=None => CATCH        rules=K6           veto=False | | 7 | `a_residual_n1_20261108/ACCEPTANCE_RECORDS.json`（先例件，非 C07
+   单层 N13(固定三词 T) = PASS (problems=0)
+   单层 N13(该行词表 ['已补登', '已填入', '已填', '已代填']) = CATCH (problems=6)
+   chain = CATCH
+
+-- REAL-TRUTH  expect=PASS  chain_verdict=FAIL  spans=3  catch_like=2
+   裁决为 CATCH/FAIL_CLOSED/RAISE 的规则组合: {'K6': 2}
+   前 6 个 catch span:
+     L151  pos=10460  tok=已填         r10=CATCH   r12=ABSENT  n13=ABSENT  kind=None => CATCH        rules=K6           veto=False | - 处置：已填 → 见证同为声明、非密码学证明，但其价值在独立性（记账方 ≠ 值的主张方，满足 NEXT:23「验收者与作者不得
+     L228  pos=16839  tok=已填         r10=CATCH   r12=ABSENT  n13=ABSENT  kind=None => CATCH        rules=K6           veto=False | | G 见证与两处落笔 | 3 | 见证槽已填（见证人≠来源会话≠核验者）；见证缺席处置；两处落笔同值复用 | 代填见证→**拒
+   单层 N13(固定三词 T) = PASS (problems=0)
+   单层 N13(该行词表 ['已填', '已代填', '已提交']) = CATCH (problems=3)
+   chain = CATCH
+
+-- REAL-BOUND  expect=PASS  chain_verdict=FAIL  spans=7  catch_like=0
+   裁决为 CATCH/FAIL_CLOSED/RAISE 的规则组合: {}
+   前 6 个 catch span:
+   单层 N13(固定三词 T) = PASS (problems=0)
+   单层 N13(该行词表 ['已入账', '已追加', '已生效']) = PASS (problems=0)
+   chain = PASS
+
+### [2] GP-A1/A2/A3：三层全部无 span / 无命中的根因（K7 为何未触发）
+
+-- GP-A1 : 亦非不宣告 N-4 正式绑定已生效
+   T(三词)          字面命中=[('已生效', 14)]
+   BAD_BAN(五词)    字面命中=[('已生效', 14)]
+   C07_SLOT       字面命中=无
+   C07_TRUTH      字面命中=无
+   R10 problems=0 hits=[('已生效', 'negation')] | R12 problems=0 hits=[] | N13 problems=0 details=[('已生效', 'C')]
+   chain rows=1 verdict=FAIL
+   → tok_set=set(tokens)|n13三词；finditer 无命中 ⇒ rows 空 ⇒ K7 不进入循环 ⇒ PASS
+   V1V2 独立谓词 tok=已生效    -> V2  reason=无任何 V1 形状、亦无硬性完成宣称：机器判不了，fail-closed 默认 V2（宁可误拦），须人工复核或改
+
+-- GP-A2 : 本件登记闭合，母本即日起适用
+   T(三词)          字面命中=无
+   BAD_BAN(五词)    字面命中=无
+   C07_SLOT       字面命中=无
+   C07_TRUTH      字面命中=无
+   R10 problems=0 hits=[] | R12 problems=0 hits=[] | N13 problems=0 details=[]
+   chain rows=0 verdict=FAIL
+   → tok_set=set(tokens)|n13三词；finditer 无命中 ⇒ rows 空 ⇒ K7 不进入循环 ⇒ PASS
+   V1V2 独立谓词 tok=登记闭合   -> V2  reason=U 内含硬性完成宣称，且未被紧邻否定/禁止管辖
+   V1V2 独立谓词 tok=适用     -> V2  reason=U 内含硬性完成宣称，且未被紧邻否定/禁止管辖
+
+-- GP-A3 : 三值填毕，见证已由编排方签字
+   T(三词)          字面命中=无
+   BAD_BAN(五词)    字面命中=无
+   C07_SLOT       字面命中=无
+   C07_TRUTH      字面命中=无
+   R10 problems=0 hits=[] | R12 problems=0 hits=[] | N13 problems=0 details=[]
+   chain rows=0 verdict=FAIL
+   → tok_set=set(tokens)|n13三词；finditer 无命中 ⇒ rows 空 ⇒ K7 不进入循环 ⇒ PASS
+   V1V2 独立谓词 tok=填毕     -> V2  reason=U 内含硬性完成宣称，且未被紧邻否定/禁止管辖
+   V1V2 独立谓词 tok=签字     -> V2  reason=U 内含硬性完成宣称，且未被紧邻否定/禁止管辖
+
+### [3] 三条证据不独立路径：实跑定量
+
+-- (3a) N13 的 C 类是否转发 R10：
+   不宣告 N-4 正式绑定已生效。                 R10 kinds=['negation'] | N13 kinds=['C'] rules=['C 否定式（R10 negation 已覆盖，微段内直接否定）']
+   亦非不宣告 N-4 正式绑定已生效                R10 kinds=['negation'] | N13 kinds=['C'] rules=['C 否定式（R10 negation 已覆盖，微段内直接否定）']
+   **不得写成「本笔已生效」**                  R10 kinds=['negation'] | N13 kinds=['C'] rules=['C 否定式（R10 negation 已覆盖，微段内直接否定）']
+
+-- (3b) R12 是否复用 r10_context：逐处比较 r12 hits 与 r10 double_neg hits
+   本件并非不宣告已生效                           R10_double_neg=[('已生效', 7)]           R12_hits=[('已生效', 7)]           相同=True
+   审阅不得不承认本候选已生效                        R10_double_neg=[('已生效', 10)]          R12_hits=[('已生效', 10)]          相同=True
+   亦非不宣告 N-4 正式绑定已生效                    R10_double_neg=[]                     R12_hits=[]                     相同=True
+   并非不宣告已生效                             R10_double_neg=[('已生效', 5)]           R12_hits=[('已生效', 5)]           相同=True
+   不得写成「本笔已生效」                          R10_double_neg=[]                     R12_hits=[]                     相同=True
+   不宣告 X 已生效，但 Y 已入账                    R10_double_neg=[]                     R12_hits=[]                     相同=True
+
+-- (3c) 三层共用字面词表（从 74 行 JSON 统计）:
+   55/74 行 tokens=['已入账', '已追加', '已生效']
+   17/74 行 tokens=['已生效', '可应用母本', '放行 N-5', '已入账', '已追加']
+    1/74 行 tokens=['已补登', '已填入', '已填', '已代填']
+    1/74 行 tokens=['已填', '已代填', '已提交']
+   N13.DEFAULT_TOKENS = ['已入账', '已追加', '已生效']
+   judge_one(n13) 恒用 T；gate_check 的 n13_tokens 恒传 T；extract_spans/tok_set 用 n13_vocab=T
+
+### [4] 半定量：三层「都判 PASS」时的有效独立层数（74 行实测）
+   三层(R10,R12,N13) 全 PASS 的行: 18
+   两两一致率（在 74 行上，PASS/CATCH 二值）:
+     naive  vs r10    same=49/74 = 66.2%
+     naive  vs n13    same=35/74 = 47.3%
+     r10    vs r12    same=30/74 = 40.5%
+     r10    vs n13    same=38/74 = 51.4%
+     r12    vs n13    same=42/74 = 56.8%
+   P(r10=PASS | N13=PASS) = 18/38 = 0.474
+   P(r12=PASS | N13=PASS) = 38/38 = 1.000
+   P(naive=PASS | N13=PASS) = 4/38 = 0.105
+   三层全 PASS 共 18 行，其中 expect=CATCH（一起漏）= 3 行: ['GP-A1', 'GP-A2', 'GP-A3']
+   四层(naive,R10,R12,N13)全 PASS 共 4 行，其中 expect=CATCH = 2 行: ['GP-A2', 'GP-A3']
+
+### [5] K6/K3 分支在两件真实文档上的覆盖统计（词表不对齐的后果）
+   REAL-SLOT   spans=  6  在 N13 三词内=  0  词表外(K6 仅 R10 有答案)=  6
+      词表外 span 的裁决分布: {('CATCH', 'K6'): 5, ('PASS', 'K6'): 1}
+   REAL-TRUTH  spans=  3  在 N13 三词内=  0  词表外(K6 仅 R10 有答案)=  3
+      词表外 span 的裁决分布: {('CATCH', 'K6'): 2, ('PASS', 'K6'): 1}

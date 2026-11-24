@@ -1,0 +1,31 @@
+file_bytes 17624355
+calls_section_bytes  913237 (5.18%)
+bounds_section_bytes 16711118 (94.82%)
+
+calls keys      6728
+calls site rows 68253
+bounds rows     1392592
+
+A. calls site rows whose target is recomputable from the byte at the recorded site: 68253/68253
+   (i.e. the file does NOT store "what byte/word is at that address"; it stores a relation
+    E8+rel32 @site == target.  The 5 bytes are recovered, not recorded.)
+
+B. bounds sampling rule: every 1000-th element (indices 0, 1000, 2000, ...), n=1393
+   first 3 : ['00401000', '00401A0B', '0040249C']  last 3 : ['007DE78E', '007DF320', '007DFD87']
+   of the sample, 1393/1393 fall inside .text VA range [00401000,007E038D)
+   -> the file records instruction-start ADDRESSES only; no opcode byte, no mnemonic,
+      no field value accompanies any of them.
+
+--- byte accounting ---
+bytes carried by the calls section   : 913237
+bytes carried by the bounds section  : 16711118
+sum                                   : 17624355
+bounds share of the file              : 94.82%
+
+--- two readings of Q2, both stated ---
+reading1 (strict card wording: "that address holds what bytes/values"):
+   object  0 / 1,467,573 records (0.00%%)
+   process 1,467,573 / 1,467,573 (100%%)
+reading2 (R14_COMMON §2.49 verbatim: "records the value itself, and is re-verifiable at the address"):
+   object  1,467,573 (100%%)  [all re-verifiable at the .text address, verified in Q3]
+   process 0

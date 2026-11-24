@@ -1,0 +1,188 @@
+FINGERPRINT lead/re_line_20261105/B1_HARNESS_PATCH/B2_FIX_DESIGN.md deacab49b2bc02f44ecf629036427153affee422c2059c31ecc1471b1f311a5f 11638
+FINGERPRINT out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py 517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636 399508
+FINGERPRINT lead/b2_preaudit_20261106/B2_PREAUDIT.md a108a6e45f42c449db5d228abc469e5c17d40db0b04f15aa32105adff8905449 28410
+FINGERPRINT lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md b2dc29e1c06fbdfecfd1b3e9e55cf1c74a5b16e6868cfd45198dabe250d77563 23179
+FINGERPRINT lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py e6685167f5d26030f9a2e28df06ee2fbda23c7e91687aa209f6769ac3450480b 13190
+FINGERPRINT lead/PENDING_DECISIONS.md be22211ccf7c694ff8363212aaa639737cb3b09d64293b867e677ba2e6b652ba 34403
+FINGERPRINT lead/control_20261106/D25_ENTRY_DRAFT.md 9d43a64505685b5f6084a6936bf24e348072c6e77060f575319262ce6ec1ad51 5669
+FINGERPRINT lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md d00979943bc6f26a2550340631e2d126a5b410d99a73190e1eebfcfc44e3ac13 48180
+FINGERPRINT lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md 746b66d4c0290243f57e402bc1741f49e91b56ab1bce63bf98dce1e4fde4656f 28384
+FINGERPRINT lead/re_line_20261105/D24_RULING/RULING_D24.md 56167a5e869540d7e14a7f13d29a2ed9d780d0c6352635e6e12b36cd633dcdf5 15301
+FINGERPRINT lead/nextstep_plan_20261106/NEXT_STEPS_20261106.md c364467dea909da66bca16b98d12d1d625edb80dfbf831ea9e8a1077e9dad24c 27225
+CHECK F1
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:3: **判定对象（被审设计）**：`lead/re_line_20261105/B1_HARNESS_PATCH/B2_FIX_DESIGN.md`
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:4: - 实算 SHA256：`deacab49b2bc02f44ecf629036427153affee422c2059c31ecc1471b1f311a5f`
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:5: - 实算字节数：`11638 B`（`wc -l` = 236 行）
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:6: - 实跑命令：`sha256sum lead/re_line_20261105/B1_HARNESS_PATCH/B2_FIX_DESIGN.md out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py` 与 `wc -c <同上两件>`
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:7: 
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:8: **对照母本**：`out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py`
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:9: - 实算 SHA256：`517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636`
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:10: - 实算字节数：`399508 B`（`wc -l` = 7291 行）
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:17: verdict: NO
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:18: 
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:19: **为什么是 NO（判定规则逐条对照）**：
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:20: - 六条旧错中 `E1 = NOT_FIXED`（旧规则第一条即触发 NO）。
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:21: - 新增问题中 `severity=high` 共 5 条（N1/N2/N4/N5/N11；实跑 `grep -cE '^- \*\*N[0-9]+ .*severity=high' lead/b2_preaudit_20261106/B2_PREAUDIT.md` → `5`）（旧规则第二条亦触发 NO）。
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:22: - 两条规则各自独立足以判 NO。
+CHECK F2
+SNAPSHOT_OCCURRENCES [(35, '**错误**：`_pre_freshness_snapshot` 建在 `main`（`:6387` 附近），却要在'), (63, '+                pre_freshness_snapshot=_pre_freshness_snapshot)'), (200, '1. **作用域链闭合**：`_pre_freshness_snapshot` → `finalize_trip(pre_freshness_snapshot=...)` → `_except_evidence_copy` 能否真的传到')]
+SNAPSHOT_ASSIGNMENTS []
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:28: #### E1 作用域断裂（`main` 局部变量在 `finalize_trip` 里引用）
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:29: 
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:30: - **判定：NOT_FIXED**
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:31: - **证据（文件:行）**：B2 只给了 `finalize_trip` 加形参（`B2_FIX_DESIGN.md:43-48`）与 `main` 调用点传参（`B2_FIX_DESIGN.md:52-64`，`:63` = `pre_freshness_snapshot=_pre_freshness_snapshot`）。但 `_pre_freshness_snapshot` 在 B2 全文只有 3 次出现（`:35` 叙述、`:63` 使用、`:200` 自问），**任何赋值定义形式的行 = []**（`_b2_probe_out.txt:95-99`）；B2 §2 `:190` 声称「`:6388` 后构造快照 +2 行」却无对应 diff hunk（B2 全文只有 4 个 hunk：`:43/:52/:75/:128`，`_b2_probe_out.txt:100-105`）。母本唯一调用点 `:5939` 现状仍是 `copy_post_except_evidence(rec, carrier_dir, out_dir)`（`qc151_trip.py:5939`；`_b2_probe_out.txt:15-16`），B2 全文无一处 `:5939` 传参代码块（实跑 `grep -n "pre_snapshot\|_except_evidence_copy\|5939\|6388" B2_FIX_DESIGN.md` 只命中 `:36/:114/:116/:130/:133/:184/:188/:190/:200` 的叙述或形参，无调用点 diff）。母本 `main` 有 5 个早退 `return`（`:6340/:6349/:6361/:6374/:6377`，`_b2_probe_out.txt:54`）全部早于 `bak = backup_carrier(...)` 的 `:6387`（`qc151_trip.py:6387`），却都要经 `finally`（`:7038`）→ `finalize_trip`（`:7117`）。B2 `:66`「默认值 None 向后兼容」只在调用方不传实参时成立，`:63` 明确传了实参。
+lead/b2_preaudit_20261106/B2_PREAUDIT.md:32: - **一句话后果**：按 `:63` 直接引用未绑定名字，早退/异常路径必抛 `UnboundLocalError`，B1 的 `NameError`（`PRE_AUDIT.md:117-129`）只是从 `finalize_trip` 挪到了 `main`，正式 harness 收尾链被打断、原异常被替换。
+CHECK F3
+MAIN_EARLY_RETURNS_BEFORE_6387 [6340, 6349, 6361, 6374, 6377]
+TRY 6313 FINALLY_FIRST_STATEMENT 7048
+FINALLY_HEADER     finally:
+MAIN_FINALIZE_CALLS [7117]
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6293:     # ★ 收尾所需的跑前状态（★ `finally` 里读；★ **未取到即 None/空**）
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6294:     bak: dict = {}
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6295:     t0: list = []
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6296:     pre_except_txt = None
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6297:     budget = TripBudget(rec)
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6298:     ACTIVE_REC[0] = rec       # ★ 第 3 项：★ 最外层最终落盘要用同一 rec
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6299:     # ★★ 进程身份跟踪（外部裁定：Popen 后须建立可清理所有权）
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6300:     proc = None          # type: subprocess.Popen | None
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6301:     launch_pid = None    # type: int | None
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6302:     launch_ct = None     # type: int | None
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6303:     # ★★ 第 1 项：★ 载体所有权（★ `finally` 也要用 ⇒ 先置 None，防未绑定）
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6304:     ownership: dict | None = None
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6305:     created_receipt: dict | None = None
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6306:     _main_return_code = EXIT_INTERNAL_ERROR  # ★ U-6：★ 默认非 0（异常路径）；正常 return 前覆写
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6385:         # ---- 备份载体件（供跑后逐字节还原） ----
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6386:         budget.begin_stage("backup")
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6387:         bak = backup_carrier(rec, carrier_dir)
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:6388:         budget.end_stage("backup")
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7117:             FINALIZE_CODE[0] = finalize_trip(
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7118:                 rec, fin_carrier, bak, t0, pre_except_txt, out_dir=WORKDIR,
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7119:                 ownership=fin_ownership, terminated_ok=(term_ok is not False),
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7120:                 main_return_code=_main_return_code,
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7121:                 mother_baseline=_mother_bl,
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7122:                 carrier_identity=(TRIP_CARRIER.get("identity")),
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7123:                 handover=(Path(args.carrier_handover) if args.carrier_handover
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7124:                           else None),
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7125:                 created_receipt=(TRIP_CARRIER.get("receipt") or created_receipt))
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7126:         except Exception as exc:
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7127:             # ★★ 收尾项自身抛异常（★ `run_guarded_steps` 已把每个失败的
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7128:             #   文件:行·类型·repr 落盘 `finalize_errors.txt` 后**原样重抛**，
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7129:             #   `QC157:4`）⇒ ★ 如实记账为收尾失败（★ 不吞、不改写异常本体）。
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7130:             note_cleanup_failure(EXIT_INTERNAL_ERROR, "script:main:finally",
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7131:                                  f"★ 收尾抛异常：{exc!r}", rec)
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7132:             FINALIZE_CODE[0] = merge_cleanup_code(EXIT_OK)
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7133:             write_finalize_error(rec, exc, out_dir=WORKDIR)
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:7134:             raise
+CHECK F4
+B2_HUNKS [(43, '@@ def finalize_trip(rec: Recorder, carrier_dir: Path, bak: dict,'), (52, '@@ main，:7117-7125 调用点'), (75, '@@ def backup_carrier(rec: Recorder, carrier_dir: Path) -> dict:'), (128, '@@ def copy_post_except_evidence(rec: Recorder, carrier_dir: Path,')]
+B2_COPY_NAME_LINES [(114, '| **B** | `copy_post_except_evidence`（`:4561-4562` 签名 + `:4573` 前插判定 + `:4583-4586` info） | 加 `pre_snapshot` 形参 + 判定 + info 字段 |'), (116, '| **D** | `_except_evidence_copy`（`:5939`）+ `finalize_trip` 调用点（`:7117-7125`）+ `main` 基线（`:6387` 后） | 接线 + 快照构造 |'), (128, '@@ def copy_post_except_evidence(rec: Recorder, carrier_dir: Path,'), (184, '| **B** `copy_post_except_evidence` 签名 | `:4561-4562` | 加 `pre_snapshot` 形参 | +1 行 |'), (188, '| **D** `_except_evidence_copy` | `:5939` | 传参 | 改 1 行 |')]
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:5938:     def _except_evidence_copy() -> None:
+out/re_work/work_chain/CONTINUE_20261003/lead/qc151_u0400_trip/qc151_trip.py:5939:         copy_post_except_evidence(rec, carrier_dir, out_dir)
+CHECK F5
+B2_TOKEN_COUNT freshness_confidence 0
+B2_TOKEN_COUNT freshness_note 0
+B2_TOKEN_COUNT captured_at_iso 0
+B2_FRESHNESS_VERDICT_LINES [205]
+CHECK F6
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:140:     out = {
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:141:         "is_new": None, "reason": None, "evidence": ev,
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:142:         "confidence": None, "suspect_clock_rollback": False,
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:143:         "f_vs_e_note": "内容/写入变化只回答 freshness（F）；「是否新异常」归 "
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:144:                        "except_set_diff 集合差（qc151_trip.py:677 明令不得用 "
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:145:                        "sha 变化判 crash）",
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:146:         "verdict_doc": None,
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:147:     }
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:148: 
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:149:     def _finish(reason: str) -> dict:
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:150:         out["reason"] = reason
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:151:         out["verdict_doc"] = VERDICT_DOC[reason]
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:152:         return out
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:153: 
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:154:     pre = dict(pre_snapshot or {})
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:155:     if pre.get("error"):
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:156:         ev["notes"].append("跑前快照失败 ⇒ B/A 均不可用（显式留痕，不静默）")
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:157:         return _finish("error_pre_snapshot")
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:187:     if not pre_exists and not post_exists:
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:188:         out["is_new"] = False
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:189:         out["confidence"] = "low"
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:190:         ev["notes"].append("跑前缺、跑后缺：F=未写；但「文件未出现」不能证「本趟无崩溃」")
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:191:         return _finish("absent_both")
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:192: 
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:193:     if not pre_exists and post_exists:
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:194:         out["is_new"] = True
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:195:         out["confidence"] = "hard (C-mode 存在性硬证)" if hard else "high"
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:196:         if hard:
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:197:             ev["notes"].append("policy.hard_evidence_mode=True：方案 C 需新裁定（U-5）")
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:198:         return _finish("new_first_appearance")
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:199: 
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:200:     if pre_exists and not post_exists:
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:201:         ev["notes"].append("跑前在、跑后失：异常态旗标（被删/改名/复制链中断），须人工复核")
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:202:         return _finish("vanished")          # is_new=None：F 不可判
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:203: 
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:204:     # ---- pre 在场 且 post 在场：B 主判据（sha256 字节级） ----
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:205:     if pre_sha is None:
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:206:         ev["notes"].append("pre_snapshot 缺 sha256 ⇒ B 主判据不可用（显式留痕，不静默）")
+lead/re_line_20261105/W11_EXCEPT_FRESHNESS/candidate/except_freshness.py:207:         return _finish("error_pre_snapshot")
+B2_TOKEN_COUNT error_pre_snapshot 0
+B2_TOKEN_COUNT is_new 0
+CHECK F7
+MOTHER_HASH_AND_BYTES_MATCH ('517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636', 399508)
+CHECK F8
+ALL_D_IDS [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] MAX_D 24 PENDING_ENTRY_IDS ['13', '14', '24']
+CORE_CHECKS=8/8
+ADDITIONAL: hand-transcribed B2 synthetic matrix, NOT integrated harness
+B2_SYNTH None post_exists= True => ('new_first_appearance', 'high')
+B2_SYNTH None post_exists= False => ('absent_both', 'n/a')
+B2_SYNTH {} post_exists= True => ('new_first_appearance', 'high')
+B2_SYNTH {} post_exists= False => ('absent_both', 'n/a')
+B2_SYNTH {'exists': False} post_exists= True => ('new_first_appearance', 'high')
+B2_SYNTH {'exists': False} post_exists= False => ('absent_both', 'n/a')
+B2_SYNTH {'exists': True, 'error': 'synthetic'} post_exists= True => ('leftover_unchanged', 'high')
+B2_SYNTH {'exists': True, 'error': 'synthetic'} post_exists= False => ('vanished', 'high')
+ADDITIONAL: undefined-name distinction, synthetic Python only
+BINDING_SYNTH synthetic_no_assignment early => NameError context= None
+BINDING_SYNTH synthetic_no_assignment exception => NameError context= ValueError
+BINDING_SYNTH synthetic_no_assignment normal => NameError context= None
+BINDING_SYNTH synthetic_normal_assignment early => UnboundLocalError context= None
+BINDING_SYNTH synthetic_normal_assignment exception => UnboundLocalError context= ValueError
+BINDING_SYNTH synthetic_normal_assignment normal => {}
+ADDITIONAL: authoritative high IDs and review issue count
+HIGH_IDS ['N1', 'N2', 'N4', 'N5', 'N11']
+REVIEW_ENUMERATED_ISSUES ['1', '2', '3', '4', '5']
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:9: subjectSha256: a108a6e45f42c449db5d228abc469e5c17d40db0b04f15aa32105adff8905449
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:10: subjectBytes: 28410
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:11: checkedEveryRow: true
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:12: ```
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:13: 
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:14: 指纹实跑：`sha256sum lead/b2_preaudit_20261106/B2_PREAUDIT.md` →
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:15: `a108a6e45f42c449db5d228abc469e5c17d40db0b04f15aa32105adff8905449 *lead/b2_preaudit_20261106/B2_PREAUDIT.md`；
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:16: `wc -c lead/b2_preaudit_20261106/B2_PREAUDIT.md` → `28410`。
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:17: 
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:18: **复核总判**：`verdict: NO` 成立；探针实跑输出一致；但「文件:行」断言发现 **4 处对不上 + 1 处轻微不精确**，详见 §3。专项「超额放行」**未发现**（见 §4）。
+lead/b2_preaudit_20261106/review/B2_PREAUDIT_REVIEW.md:158: **`overreachFound = false`**。
+REVIEW_HASH_BINDS_CURRENT_PREAUDIT True
+ADDITIONAL: background excerpt locations
+lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md:6: ## 0 总判
+lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md:8: **总判 = PARTIAL（降级后，非 CONFIRMED）。**
+lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md:29: ### 0.2 门槛：**若任一复核 checkedEveryRow=false，总判不得为 CONFIRMED**
+lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md:31: 四道复核的 `checkedEveryRow` **全部为 true**（W9_review.md:89、W8_review.md:42-47、W7_review.md:19、G5_review.md:45,134），故**未触发**该强制封顶条件。但 G5 复核判 PARTIAL、W8 组自身 PARTIAL，按「复核判 PARTIAL/REFUTED 的组按复核意见降级」合并，**总判取 PARTIAL**，不取 CONFIRMED。四道复核的 `shaBindingPresent` 亦全部为 true。
+lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md:217: | **V6 `dwfrun-1766d0c8`（12:49→13:21）已对 V3 重跑 R1–R5，总判 CONFIRMED** | `V6_V3_REVIEW.md:16`（最终裁决：CONFIRMED）、`:24`、`:30-35`（R1–R5 三列全 CONFIRMED、必改 0）、`:70-115`（:79/:88/:96/:104/:113 逐项终审）；`grep -c CONFIRMED` = 20；run ID 出处 `PENDING_DECISIONS.md:85`，判定书内 `grep -c dwfrun` = 0 |
+lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md:301: 4. 引用判定书本身时，同时注明总判 PARTIAL（`:14`）、phase 2 未完成（`:4-7`、`:210`）、phase 4 未跑（`:212`）；**探针落盘个数以 5 为准**（`:4` 的「4 个」为笔误）。
+lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md:350: - 合并判档的两处诚实保留：① 所有复核 `checkedEveryRow=true`，故「总判不得为 CONFIRMED」的强制条件**未触发**，总判仍取 PARTIAL 是因为 G5 复核判 PARTIAL 且 W8 组自身 PARTIAL；② G5 复核的 REFUTED 两读已在 §5.4-④ 明示，本汇总按复核意见取 PARTIAL。
+lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md:6: 根据 D-24 定谳决议（`lead/re_line_20261105/D24_RULING/RULING_D24.md:48,58,60`）及工作计划 N-1（`lead/nextstep_plan_20261106/NEXT_STEPS_20261106.md`），A 步清文档债交付件《A1 汇总》（`lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md`）总判为 **PARTIAL**。四组回件与汇总件中仍存在若干未完全闭环的落实缺口、声明覆盖缺口及原文不可定位缺口。
+lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md:7: 本账的作用是**把 A 组遗留的 17 项残余逐条固定为机器可核、可直接引用的确定性凭据**。本账作者是这两份交付件的唯一作者，本账确立各条目的合法引用边界与限定语句，供后续一切分析、代码设计及裁决直接引用。
+lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md:11: 2. **严禁借通配声明一揽子引用**：汇总件 `W8_STATIC_LOCATE.md:198` 的「口径修正生效声明」破折号清单仅显式点名 6/12 条，漏掉了 6 条。其中 W8-6 与 W8-11 在汇总件正文完全无落点，W8-8 仅半承接，W8-7 回件不可定位。引用 W8 结论时严禁依赖 `:198` 一句通吃，严禁把「正文无落点」谎称「已承接」。
+lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md:13: 4. **严禁把仓内书面记录充作真机实测**：QC124 运行期写出快照事件在当前零真机纪律下未独立复现，仅能作为仓内书面记录采信，不得单独引用汇总件正文充作真机复现现场。
+lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md:14: 5. **严禁脱离限定词单独引用原断言**：原断言（初稿中的绝对化表述）一律作废，引用时必须逐字携带本账规定的「限定表述」与「引用时怎么写」中的限定句。
+lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md:21: - **原断言**：手上这件 EXCEPT 不是任何一趟的崩溃，是历史基线残件（Q4_RELATION.md:31 通篇缺失 QC124 写入链登记而径行下断）。
+lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md:22: - **限定表述**：6694b75e… 的唯一一次真实产生 = 2026-10-16 QC124 group2 人为 DR0=0x007CFC9F 断点命中后运行期写出的 except.txt 快照，后被缺新鲜性校验的复制链反复复制；逐件引用 QC124_VERDICT.json:8,36,47-50,60-63（其寄存器 == EXCEPT L11-14）、VERDICT_T11.md:148、ERRATA_EXCEPT_RESTORE.md:12,16,17、BASELINE_A4_PROPOSAL.md:79,92,104、QC124_VERDICT.json:74-87 与 drift bin 实算（SHA256 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251 / 26,405 B / mtime 2026-10-16 19:21:11.816389100 +0800）；该运行期事件本次零真机、未独立复现，只作仓内书面证据。
+lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md:23: - **依据(文件:行)**：lead/re_line_20261105/A1_ERRATA_MAP/ERRATA_W9.md:48-55; lead/re_line_20261105/A1_ERRATA_MAP/A1_ERRATA_MAP.md:88; lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/W9_SINGLESTEP.md:155-157,193,230; reviews/Q4_review.md:425-431,436; grep -n "BASELINE_A4_PROPOSAL\|74-87" lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/W9_SINGLESTEP.md 仅命中 :193
+lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md:25: - **引用时怎么写**：引用 QC124 运行期写入链时必须联引 QC124_VERDICT.json:74-87 与 BASELINE_A4_PROPOSAL.md:79,92,104，并加注「该运行期事件仅有仓内书面记录、本次零真机未独立复现」，不得单独引用汇总件正文作已完全证实现场。
+lead/a_residual_20261106/A_RESIDUAL_REFERENCES.md:27:   1. 汇总件 W9_SINGLESTEP.md 正文 §0–§8 漏引 QC124_VERDICT.json:74-87 与 BASELINE_A4_PROPOSAL.md:79,92,104（全件仅在 §7 :193 自身命中）；
+lead/nextstep_plan_20261106/NEXT_STEPS_20261106.md:29: ### N-2 独立预审 B2 设计并固定 NO 的返工循环
+lead/nextstep_plan_20261106/NEXT_STEPS_20261106.md:69: ### N-7 在 B 后独立复算五读负担并区分交付与数值确认
+lead/nextstep_plan_20261106/NEXT_STEPS_20261106.md:77: ### N-8 核对慢窗统计并将不可识别问题送入出口任务
+READ_ONLY_SOURCES_CHANGED []
+UNVERIFIED: W11 14-test suite not rerun; full B2 integration/runtime; crash attribution; B-vs-A effort or smaller change surface; D-line zero risk; live workflow states
+RESULT=PASS; eight core facts reproduced; draft overstatements reported separately
+SCRIPT_EXIT 0

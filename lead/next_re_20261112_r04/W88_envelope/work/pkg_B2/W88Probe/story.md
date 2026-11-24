@@ -1,0 +1,8 @@
+# W88Probe
+
+W88 safe-engagement-envelope add-back step B2
+
+## Mission 1: W88 B2 M1
+
+W88 envelope step B2: 60x60 map, Russian TESLA x1, NAPOWR x0, British GAPOWR x1, British MTNK x30 all Hunt.
+

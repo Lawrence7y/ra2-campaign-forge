@@ -1,0 +1,247 @@
+==============================================================================
+[HEADER] 回件时刻 = 2026-11-06 03:21:53
+[HEADER] gamemd.exe SHA256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 字节数 = 4825360
+[HEADER] EXCEPT 件 SHA256 = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251 字节数 = 26405
+[HEADER] Engine 自证 = COVERAGE 99.9984% (1394120 insns / resync_fails=66) / IMAGEBASE 0x400000
+[HEADER] .text = 0x401000 .. 0x7E1000 (TSZ=0x3E0000)
+[HEADER] Engine.sha = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 | 与目标镜像一致 = True
+==============================================================================
+[Q2-0] 目标 EIP = 0x7CFC9F
+[Q2-0] 0x7CFC9F in e.by() = True  (指令起始 := 重同步流内)
+[Q2-0] e.rd(0x7CFC9F, 32) = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+
+==============================================================================
+### Q2-(1) 向上回溯最近的函数序言
+==============================================================================
+[回溯] 窗口 [0x7CF000,0x7CFC9F] 内全部 55 8B EC[83 EC] 序言候选（近→远）：
+    0x007CFB13  push ebp; mov ebp,esp; sub esp,imm8  bytes=55 8B EC 83 EC 14 A1 94  Δ=0x18C
+    0x007CF7E8  push ebp; mov ebp,esp; sub esp,imm8  bytes=55 8B EC 83 EC 14 8B 55  Δ=0x4B7
+    0x007CF64C  push ebp; mov ebp,esp   bytes=55 8B EC 51 51 DD 45 08  Δ=0x653
+    0x007CF51C  push ebp; mov ebp,esp   bytes=55 8B EC 51 51 DD 45 08  Δ=0x783
+    0x007CF347  push ebp; mov ebp,esp   bytes=55 8B EC 83 C4 E0 89 45  Δ=0x958
+    0x007CF330  push ebp; mov ebp,esp   bytes=55 8B EC 83 C4 E0 89 45  Δ=0x96F
+[回溯] 最近序言 HEAD = 0x7CFB13 (Δ=+0x18C)
+[回溯] 序言前 6 字节 e.rd(0x7CFB0D,6) = 00 5F 5E 5B C9 C3
+[回溯] 紧邻前 1 字节 = C3  → ret(C3/C2)/int3(CC)/leave(C9) 对齐
+[回溯] 前一函数尾声 in by(): [('0x7cfb0e', 'pop', 'edi'), ('0x7cfb0f', 'pop', 'esi'), ('0x7cfb10', 'pop', 'ebx'), ('0x7cfb11', 'leave', ''), ('0x7cfb12', 'ret', '')]
+[回溯] 序言逐条 e.disasm(0x7CFB13, 0x10):
+    0x007CFB13  55              push ebp
+    0x007CFB14  8BEC            mov ebp, esp
+    0x007CFB16  83EC14          sub esp, 0x14
+    0x007CFB19  A1948BB700      mov eax, dword ptr [0xb78b94]
+
+==============================================================================
+### Q2-(2) 函数起止 VA、长度、函数内 ret 数（e.func_rets）
+==============================================================================
+[边界] 前向 0x600 窗口内全部 ret 指令起始： [('0x7cfe1b', 'ret', ''), ('0x7cfecc', 'ret', ''), ('0x7cffc7', 'ret', '')]
+[边界] 函数起 START = 0x7CFB13
+[边界] 唯一/首个 ret @ 0x7CFE1B (ret , size=1)
+[边界] 函数止 END(不含) = 0x7CFE1C；含 ret 末字节 = 0x7CFE1B
+[边界] 长度（不含 ret 字节）= 0x308 = 776 B
+[边界] 长度（含 ret 1B）  = 0x309 = 777 B
+[边界] 0x7CFC9F 相对函数头 = +0x18C (+396 B)
+[边界] 函数体指令数（by() 内 [START,END)）= 275
+[边界] e.func_rets(0x7CFB13, 0x7CFE1C) → ret 数 = 1
+        ret @ 0x007CFE1B  ret   bytes=C3
+[边界] 交叉 e.func_rets(0x7CFB13, 0x7D0113) → ret 数 = 3，地址 = ['0x7cfe1b', '0x7cfecc', '0x7cffc7']
+[边界] 下一函数起点候选 0x7CFE1C: in by()=True, e.rd(...,8)=A1 94 8B B7 00 8B 0D 84
+        0x007CFE1C  mov eax, dword ptr [0xb78b94]
+[边界] 尾声 in by() [0x7CFE11,0x7CFE1C]:
+        0x007CFE12  89 08           mov dword ptr [eax], ecx
+        0x007CFE14  8D 42 04        lea eax, [edx + 4]
+        0x007CFE17  5F              pop edi
+        0x007CFE18  5E              pop esi
+        0x007CFE19  5B              pop ebx
+        0x007CFE1A  C9              leave 
+        0x007CFE1B  C3              ret 
+
+==============================================================================
+### Q2-(3) 既有分析覆盖情况 —— lead/ 与 docs/re/ 多口径搜索
+==============================================================================
+[搜索] cwd = D:\Project\ra2-campaign-forge | dirs = ['lead', 'docs/re']
+[搜索] 口径 A–E = 任务书点名的「至少两种写法」(7CFC9F / 0x7CFC9F / 7cfc9f)，另补 D/E
+
+[A] pattern=7CFC9F           cmd=grep -r -I -i -l -e 7CFC9F lead docs/re
+      → 命中文件数 = 115 (grep rc=0)
+        docs/re/LESSONS_20261003_RE_INSTRUMENTS.md
+        docs/re/errata_from_rtrack.md
+        docs/re/errata_result_zc11.md
+        docs/re/except_ab_protocol.md
+        docs/re/except_zc11_forensics.md
+        docs/re/iface_mimo_re.md
+        docs/re/rtrack_bridge_h1rm.md
+        docs/re/sbh_freelist_deep_dive.md
+        docs/re/sbh_uaf_writer_deep_dive.md
+        docs/re/zc11_closeout_report.md
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/ce28f7c184cfceefc76296dbb4044b1320e1984baef01f287e01f37c6426668d.source
+        lead/.mimosa/hook-state/session_0eb16a5eef41d1f46befb3ddc1512c13.mviu6b6w-13876-d02699853c.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        lead/.mimosa/hook-state/session_0eb16a5eef41d1f46befb3ddc1512c13.mviu6b6w-13876-d02699853c.baseline/ce28f7c184cfceefc76296dbb4044b1320e1984baef01f287e01f37c6426668d.source
+        ... 其余 101 个略
+[B] pattern=0x7CFC9F         cmd=grep -r -I -i -l -e 0x7CFC9F lead docs/re
+      → 命中文件数 = 63 (grep rc=0)
+        docs/re/LESSONS_20261003_RE_INSTRUMENTS.md
+        docs/re/errata_from_rtrack.md
+        docs/re/iface_mimo_re.md
+        docs/re/rtrack_bridge_h1rm.md
+        docs/re/sbh_freelist_deep_dive.md
+        docs/re/sbh_uaf_writer_deep_dive.md
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/ce28f7c184cfceefc76296dbb4044b1320e1984baef01f287e01f37c6426668d.source
+        lead/.mimosa/hook-state/session_0eb16a5eef41d1f46befb3ddc1512c13.mviu6b6w-13876-d02699853c.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        lead/.mimosa/hook-state/session_0eb16a5eef41d1f46befb3ddc1512c13.mviu6b6w-13876-d02699853c.baseline/ce28f7c184cfceefc76296dbb4044b1320e1984baef01f287e01f37c6426668d.source
+        lead/.mimosa/hook-state/session_8ecea6b999f33ab29a5b7420cc20d742.mvre7ddh-10860-7983e7e45e.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        lead/.mimosa/hook-state/session_8ecea6b999f33ab29a5b7420cc20d742.mvre7ddh-10860-7983e7e45e.baseline/ce28f7c184cfceefc76296dbb4044b1320e1984baef01f287e01f37c6426668d.source
+        lead/GOAL_THREE_TARGETS_20261018.md
+        lead/PENDING_DECISIONS.md
+        ... 其余 49 个略
+[C] pattern=7cfc9f           cmd=grep -r -I -l -e 7cfc9f lead docs/re
+      → 命中文件数 = 11 (grep rc=0)
+        lead/goal2_rc4_frameproof_20261022/REPRO_AND_RISK.txt
+        lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_ae38d56c/V3/census_check.py
+        lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_ae38d56c/V3/recheck_calc.py
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/Q2_FUNCTION.md
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/TASK.md
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/_w9_q2.py
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/_w9_q2_out.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/reviews/_q2_replay_out.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/reviews/_q2_review_counter_out.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/reviews/_q2_review_grep_out.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/reviews/_q2_review_probe_out.txt
+[D] pattern=7CFC9F           cmd=grep -r -I -l -e 7CFC9F lead docs/re
+      → 命中文件数 = 114 (grep rc=0)
+        docs/re/LESSONS_20261003_RE_INSTRUMENTS.md
+        docs/re/errata_from_rtrack.md
+        docs/re/errata_result_zc11.md
+        docs/re/except_ab_protocol.md
+        docs/re/except_zc11_forensics.md
+        docs/re/iface_mimo_re.md
+        docs/re/rtrack_bridge_h1rm.md
+        docs/re/sbh_freelist_deep_dive.md
+        docs/re/sbh_uaf_writer_deep_dive.md
+        docs/re/zc11_closeout_report.md
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/ce28f7c184cfceefc76296dbb4044b1320e1984baef01f287e01f37c6426668d.source
+        lead/.mimosa/hook-state/session_0eb16a5eef41d1f46befb3ddc1512c13.mviu6b6w-13876-d02699853c.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        lead/.mimosa/hook-state/session_0eb16a5eef41d1f46befb3ddc1512c13.mviu6b6w-13876-d02699853c.baseline/ce28f7c184cfceefc76296dbb4044b1320e1984baef01f287e01f37c6426668d.source
+        ... 其余 100 个略
+[E] pattern=007CFC9F         cmd=grep -r -I -i -l -e 007CFC9F lead docs/re
+      → 命中文件数 = 74 (grep rc=0)
+        docs/re/errata_result_zc11.md
+        docs/re/except_ab_protocol.md
+        docs/re/except_zc11_forensics.md
+        docs/re/iface_mimo_re.md
+        docs/re/sbh_freelist_deep_dive.md
+        docs/re/sbh_uaf_writer_deep_dive.md
+        docs/re/zc11_closeout_report.md
+        lead/GOAL_THREE_TARGETS_20261018.md
+        lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md
+        lead/dropped611/raw/dis_007C8E17.txt
+        lead/dropped611/raw/dis_007CA564.txt
+        lead/goal2_corpus_provenance_20261021/CORPUS_PROVENANCE_20261021.md
+        lead/goal2_poison_gen_20261018/POISON_GEN_DESIGN.md
+        lead/goal2_rc4_frameproof_20261022/REPRO_AND_RISK.txt
+        ... 其余 60 个略
+[F-HEAD] pattern=7CFB13           cmd=grep -r -I -i -l -e 7CFB13 lead docs/re
+      → 命中文件数 = 43 (grep rc=0)
+        docs/re/ARCHITECTURE_ATLAS.md
+        docs/re/asm_fix2_report.md
+        docs/re/atlas_rev/R8_ui_crt.md
+        docs/re/crt_memory_pool_deep_dive.md
+        docs/re/crt_pool_landing.md
+        docs/re/errata_result_zc11.md
+        docs/re/except_ab_protocol.md
+        docs/re/except_zc11_forensics.md
+        docs/re/iface_mimo_re.md
+        docs/re/offline_verification_alternatives.md
+        docs/re/rtrack_bridge_h1rm.md
+        docs/re/sbh_freelist_deep_dive.md
+        docs/re/sbh_uaf_residual_deep_dive.md
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        ... 其余 29 个略
+[F-HEAD0x] pattern=0x7CFB13         cmd=grep -r -I -i -l -e 0x7CFB13 lead docs/re
+      → 命中文件数 = 27 (grep rc=0)
+        docs/re/crt_memory_pool_deep_dive.md
+        docs/re/crt_pool_landing.md
+        docs/re/except_zc11_forensics.md
+        docs/re/iface_mimo_re.md
+        docs/re/rtrack_bridge_h1rm.md
+        docs/re/sbh_freelist_deep_dive.md
+        docs/re/sbh_uaf_residual_deep_dive.md
+        lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md
+        lead/dropped611/raw/dis_007C8E17.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/Q1_CODE.md
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/Q2_FUNCTION.md
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/Q3_MECHANISM.md
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/Q5_ROUTES.md
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/_w9_q2.py
+        ... 其余 13 个略
+[F-TAIL] pattern=7CFE1B           cmd=grep -r -I -i -l -e 7CFE1B lead docs/re
+      → 命中文件数 = 13 (grep rc=0)
+        lead/dropped611/raw/dis_007C8E17.txt
+        lead/dropped611/raw/dis_007CA564.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/Q1_CODE.md
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/Q2_FUNCTION.md
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/Q5_ROUTES.md
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/_w9_q2.py
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/_w9_q2_explore_out.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/_w9_q2_out.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/_w9_q5.py
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/_w9_q5_out.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/reviews/_q2_replay_out.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/reviews/_q2_review_grep_out.txt
+        lead/re_line_20261105/W9_SINGLESTEP_7CFC9F/reviews/_q2_review_probe_out.txt
+[F-NAME] pattern=sbh_alloc_block  cmd=grep -r -I -i -l -e sbh_alloc_block lead docs/re
+      → 命中文件数 = 39 (grep rc=0)
+        docs/re/ARCHITECTURE_ATLAS.md
+        docs/re/atlas_rev/R8_ui_crt.md
+        docs/re/crt_l2_class34_fix_spec.md
+        docs/re/crt_memory_pool_deep_dive.md
+        docs/re/crt_pool_landing.md
+        docs/re/errata_from_rtrack.md
+        docs/re/errata_result_zc11.md
+        docs/re/except_ab_protocol.md
+        docs/re/except_zc11_forensics.md
+        docs/re/iface_mimo_re.md
+        docs/re/rtrack_bridge_h1rm.md
+        docs/re/sbh_freelist_deep_dive.md
+        docs/re/sbh_uaf_residual_deep_dive.md
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        ... 其余 25 个略
+[F-WIN] pattern=7CFC9B           cmd=grep -r -I -i -l -e 7CFC9B lead docs/re
+      → 命中文件数 = 62 (grep rc=0)
+        docs/re/LESSONS_20261003_RE_INSTRUMENTS.md
+        docs/re/except_zc11_forensics.md
+        docs/re/iface_mimo_re.md
+        docs/re/rtrack_bridge_h1rm.md
+        docs/re/sbh_freelist_deep_dive.md
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/beb347db627705facc574f9d08f05b3164e30374e7e1c81afce45331b80012d5.source
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/ce28f7c184cfceefc76296dbb4044b1320e1984baef01f287e01f37c6426668d.source
+        lead/.mimosa/hook-state/sess_dwf-dwfrun-1a9f0fed-2f9b-4c2b-8b2b-e9d4b9b841c0-actor_3_1.mvl25o56-18592-b624489d9c.baseline/ddf8aafdc13d80b5f64600290978bc66216bf7b9ed0580418b476534878ff8f5.source
+        lead/.mimosa/hook-state/session_0eb16a5eef41d1f46befb3ddc1512c13.mviu6b6w-13876-d02699853c.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        lead/.mimosa/hook-state/session_0eb16a5eef41d1f46befb3ddc1512c13.mviu6b6w-13876-d02699853c.baseline/beb347db627705facc574f9d08f05b3164e30374e7e1c81afce45331b80012d5.source
+        lead/.mimosa/hook-state/session_0eb16a5eef41d1f46befb3ddc1512c13.mviu6b6w-13876-d02699853c.baseline/ce28f7c184cfceefc76296dbb4044b1320e1984baef01f287e01f37c6426668d.source
+        lead/.mimosa/hook-state/session_0eb16a5eef41d1f46befb3ddc1512c13.mviu6b6w-13876-d02699853c.baseline/ddf8aafdc13d80b5f64600290978bc66216bf7b9ed0580418b476534878ff8f5.source
+        lead/.mimosa/hook-state/session_8ecea6b999f33ab29a5b7420cc20d742.mvre7ddh-10860-7983e7e45e.baseline/2e9fcaeb35059645cf43c2f1ead102f2427193b48312e40617c183ef56c9d14e.source
+        ... 其余 48 个略
+
+[搜索-净数] 排除本轮 W9_SINGLESTEP_7CFC9F/ 自产物与 .mimosa hook 缓存后的既有命中：
+[A] 7CFC9F → 原始=77，排除 W9 自产物后=77，再排除 .mimosa 后=71
+      docs/re 净命中： ['docs/re/LESSONS_20261003_RE_INSTRUMENTS.md', 'docs/re/errata_from_rtrack.md', 'docs/re/errata_result_zc11.md', 'docs/re/except_ab_protocol.md', 'docs/re/except_zc11_forensics.md', 'docs/re/iface_mimo_re.md', 'docs/re/rtrack_bridge_h1rm.md', 'docs/re/sbh_freelist_deep_dive.md', 'docs/re/sbh_uaf_writer_deep_dive.md', 'docs/re/zc11_closeout_report.md']
+      lead 净命中： ['lead/GOAL_THREE_TARGETS_20261018.md', 'lead/PENDING_DECISIONS.md', 'lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md', 'lead/dropped611/raw/dis_007C8E17.txt', 'lead/dropped611/raw/dis_007CA564.txt', 'lead/goal2_corpus_provenance_20261021/CORPUS_PROVENANCE_20261021.md', 'lead/goal2_poison_gen_20261018/POISON_GEN_DESIGN.md', 'lead/goal2_rc4_frameproof_20261022/REPRO_AND_RISK.txt', 'lead/goal2_rc4_frameproof_20261022/S366_SECTION.md', 'lead/goal2_rc4_trigger_20261022/RC4_TIMELINE_REVIEW.json', 'lead/goal2_sbh_guard_20261020/sbh_guard.diff', 'lead/goal2_sbh_guard_20261020/sbh_guard_snippet.txt', 'lead/goal3_p1sbh_merge_20261020/_work/out_fuzz0.cpp', 'lead/goal3_p1sbh_merge_20261020/_work/sbh.diff', 'lead/goal3_p1sbh_merge_20261020/_work/sbh_on_p1_input.diff', 'lead/goal3_p1sbh_merge_20261020/recount_verify_hooks.py', 'lead/goal3t_nightwatch_20261102/swarm_20261104/S544_TRI_MODEL_VERDICT_20261104.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/T42E4_FORENSIC_085458ab/01_timeline.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/T42E4_FORENSIC_085458ab/02_verify.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/T42E4_FORENSIC_085458ab/04_boundary.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/T42E4_FORENSIC_085458ab/_except_census.py', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S543_0a451d0b/V2/RECHECK.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S543_0a451d0b/V2/REPORT.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S543_0a451d0b/VERDICT.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_7255362d/V3/RECHECK.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_7255362d/V3/REPORT.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_7255362d/V3/_rc/rc_a4_except.py', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_ae38d56c/V3/RECHECK.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_ae38d56c/V3/REPORT.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_ae38d56c/V3/_write_report.py', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_ae38d56c/V3/census_check.py', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_ae38d56c/V3/recheck_calc.py', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_ae38d56c/VERDICT.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_c1606d35/V3/RECHECK.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_c1606d35/V3/REPORT.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_c1606d35/V3/_recheck_census_out.txt', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_c1606d35/V3/_recheck_probe_out.txt', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_c1606d35/V3/v3_census.py', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_c1606d35/V3/v3_census_out.txt', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_c1606d35/V3/v3_probe.py', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_c1606d35/V3/v3_probe_out.txt', 'lead/goal3t_nightwatch_20261102/swarm_20261104/XVERIFY_S544_c1606d35/VERDICT.md', 'lead/goal3t_nightwatch_20261102/swarm_20261104/_append_544.py', 'lead/goal3t_nightwatch_20261102/swarm_20261104/xverify_s544.dwf.ts', 'lead/goal3t_nightwatch_20261105/EXIT_CENSUS_77a0d667/01_exit_census.md', 'lead/goal3t_nightwatch_20261105/EXIT_CENSUS_77a0d667/02_verify.md', 'lead/goal3t_nightwatch_20261105/EXIT_CENSUS_77a0d667/_verify_probe.py', 'lead/goal3t_nightwatch_20261105/EXIT_CENSUS_77a0d667/_verify_probe_out.txt', 'lead/goal3t_nightwatch_20261105/_leader_append_555.py', 'lead/goal_status_tables_20261019/STATUS_TABLES.md', 'lead/l1_u0800_20261020/evidence_r2/except_carrier_6694b75e.txt', 'lead/qc161_u0400_trip/l1b_20261021/except_post_20261021T184518530551.txt', 'lead/qc161_u0400_trip/l1c_20261021/except_post_20261021T190509073827.txt', 'lead/qc161_u0400_trip/l1d_20261021/except_post_20261021T192647245700.txt', 'lead/qc161_u0400_trip/l1e_20261021/except_post_20261021T204059731043.txt', 'lead/qc161_u0400_trip/l3_20261021/except_post_20261021T211447471728.txt', 'lead/re_line_20261105/D22_RULING/FACTCHECK.md', 'lead/re_line_20261105/D22_RULING/RULING_D22.md', 'lead/re_line_20261105/D22_RULING/_d22_facts.py', 'lead/re_line_20261105/D22_RULING/_d22_facts_out.txt', 'lead/re_line_20261105/GOAL_RE_CONTINUOUS.md']
+[F-HEAD] 7CFB13 → 原始=24，排除 W9 自产物后=24，再排除 .mimosa 后=21
+      docs/re 净命中： ['docs/re/ARCHITECTURE_ATLAS.md', 'docs/re/asm_fix2_report.md', 'docs/re/atlas_rev/R8_ui_crt.md', 'docs/re/crt_memory_pool_deep_dive.md', 'docs/re/crt_pool_landing.md', 'docs/re/errata_result_zc11.md', 'docs/re/except_ab_protocol.md', 'docs/re/except_zc11_forensics.md', 'docs/re/iface_mimo_re.md', 'docs/re/offline_verification_alternatives.md', 'docs/re/rtrack_bridge_h1rm.md', 'docs/re/sbh_freelist_deep_dive.md', 'docs/re/sbh_uaf_residual_deep_dive.md']
+      lead 净命中： ['lead/ROUND_SUBAGENT_LOG_TRIGOAL_20261017.md', 'lead/dropped611/raw/dis_007C8E17.txt', 'lead/dropped611/raw/dis_007CA564.txt', 'lead/goal2_sbh_guard_20261020/sbh_guard.diff', 'lead/goal2_sbh_guard_20261020/sbh_guard_snippet.txt', 'lead/goal3_p1sbh_merge_20261020/_work/out_fuzz0.cpp', 'lead/goal3_p1sbh_merge_20261020/_work/sbh.diff', 'lead/goal3_p1sbh_merge_20261020/_work/sbh_on_p1_input.diff']
+[F-NAME] sbh_alloc_block → 原始=29，排除 W9 自产物后=29，再排除 .mimosa 后=26
+      docs/re 净命中： ['docs/re/ARCHITECTURE_ATLAS.md', 'docs/re/atlas_rev/R8_ui_crt.md', 'docs/re/crt_l2_class34_fix_spec.md', 'docs/re/crt_memory_pool_deep_dive.md', 'docs/re/crt_pool_landing.md', 'docs/re/errata_from_rtrack.md', 'docs/re/errata_result_zc11.md', 'docs/re/except_ab_protocol.md', 'docs/re/except_zc11_forensics.md', 'docs/re/iface_mimo_re.md', 'docs/re/rtrack_bridge_h1rm.md', 'docs/re/sbh_freelist_deep_dive.md', 'docs/re/sbh_uaf_residual_deep_dive.md']
+      lead 净命中： ['lead/GOAL_THREE_TARGETS_20261018.md', 'lead/goal2_crashaddr_20261020/CRASH_ADDR_ANALYSIS.md', 'lead/goal2_poison_gen_20261018/POISON_GEN_DESIGN.md', 'lead/goal2_sbh_guard_20261020/sbh_guard.diff', 'lead/goal2_sbh_guard_20261020/sbh_guard_snippet.txt', 'lead/goal3_p1sbh_merge_20261020/_work/out_fuzz0.cpp', 'lead/goal3_p1sbh_merge_20261020/_work/sbh.diff', 'lead/goal3_p1sbh_merge_20261020/_work/sbh_on_p1_input.diff', 'lead/goal_bench_longinput_20261021/corpus_v2_240k.txt', 'lead/goal_bench_longinput_20261021/corpus_v2_60k.txt', 'lead/goal_bench_longinput_20261021/long_corpus.txt', 'lead/goal_bench_longinput_20261021/long_corpus_60k.txt', 'lead/goal_status_tables_20261019/STATUS_TABLES.md']
+
+[搜索-crashspec] 任务书问「既有的 crashspec 工作范围」；该语料实际在 out/re_work/ 下：
+  pattern=7CFC9F           → 命中文件 11 个: ['out/re_work/work_chain/CONTINUE_20261003/crashspec/RC_SPEC.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec/RC_SPEC_V2.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec/claims_rc_guard_windows.txt', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v3/AUDIT_MERGE_TABLE.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v3/RC_SPEC_V3.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/.zcode/workflow-drafts/SBH-毒值守卫实现.dwf.ts', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/.zcode/workflow-runs/dwfrun-3d9ad208-0eed-45eb-b748-bee14f51366e.mjs', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/RC_SPEC_V4.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/V3_REGRESSION_LEDGER.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/claims_rc_guard_windows.txt', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/claims_rc_guard_windows.txt.bak_pre_13_20261018']
+  pattern=7CFB13           → 命中文件 11 个: ['out/re_work/work_chain/CONTINUE_20261003/crashspec/CHANGELOG_V1_TO_V2.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec/RC_SPEC.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec/RC_SPEC_V2.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec/claims_rc_guard_windows.txt', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v3/AUDIT_MERGE_TABLE.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v3/CHANGELOG_V1_TO_V3.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v3/RC_SPEC_V3.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/M1_RULING_ANNOTATION.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/RC_SPEC_V4.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/claims_rc_guard_windows.txt', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/claims_rc_guard_windows.txt.bak_pre_13_20261018']
+  pattern=sbh_alloc_block  → 命中文件 7 个: ['out/re_work/work_chain/CONTINUE_20261003/crashspec/RC_SPEC.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec/RC_SPEC_V2.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec/claims_rc_guard_windows.txt', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v3/RC_SPEC_V3.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/RC_SPEC_V4.md', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/claims_rc_guard_windows.txt', 'out/re_work/work_chain/CONTINUE_20261003/crashspec_v4/claims_rc_guard_windows.txt.bak_pre_13_20261018']
+
+==============================================================================
+[DONE] elapsed = 73.92 s
+==============================================================================

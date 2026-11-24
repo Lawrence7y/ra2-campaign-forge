@@ -1,0 +1,237 @@
+==============================================================================
+W9 / Q3 补充探针：handler 打印值来源 + RaiseException 判别（自己实跑）
+==============================================================================
+运行时刻 = 2026-11-06 02:14:47
+
+Engine 自证 = COVERAGE 99.998375677293% (1394120 insns, 66 resync-fails) / IMAGEBASE 0x400000
+
+[J] 格式串 VA（raw.find -> 节表反查 VA）
+  Eip      raw=0x421EA0 VA=0x821EA0  str=b'Eip:%08X\tEsp:%08X\tEbp:%08X\r\n'
+  EFlags   raw=0x421E50 VA=0x821E50  str=b'EFlags:%08X \r\n'
+  Eax      raw=0x421E80 VA=0x821E80  str=b'Eax:%08X\tEbx:%08X\tEcx:%08X\r\n'
+  Reg3     raw=0x421E60 VA=0x821E60  str=b'Edx:%08X\tEsi:%08X\tEdi:%08X\r\n'
+  Bytes    raw=0x421DE6 VA=0x821DE6  str=b'Bytes at CS:EIP (%08X)  : '
+  ExcOcc   raw=0x421F78 VA=0x821F78  str=b'Exception occurred at %08X\r\n'
+  RegCS    raw=0x421E70 VA=0x821E70  str=b'X\tEdi:%08X\r\n'
+
+[K] handler 头部（找 lea/mov ebp <- CONTEXT base；即 [ebp+off] 的 off 是否=CONTEXT 字段偏移）
+-- handler entry region A : [0x4C8860,0x4C8910) 41 insns --
+  0x4C8863  85c0           test      eax, eax                                 
+  0x4C8865  7421           je        0x4c8888                                 imm=0x4C8888
+  0x4C8867  6824208200     push      0x822024                                 imm=0x822024
+  0x4C886C  ffd6           call      esi                                      
+  0x4C886E  8bf8           mov       edi, eax                                 
+  0x4C8870  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C8875  ffd6           call      esi                                      
+  0x4C8877  03f8           add       edi, eax                                 
+  0x4C8879  81ffffff0000   cmp       edi, 0xffff                              imm=0xFFFF
+  0x4C887F  7d31           jge       0x4c88b2                                 imm=0x4C88B2
+  0x4C8881  6824208200     push      0x822024                                 imm=0x822024
+  0x4C8886  eb1f           jmp       0x4c88a7                                 imm=0x4C88A7
+  0x4C8888  6810208200     push      0x822010                                 imm=0x822010
+  0x4C888D  ffd6           call      esi                                      
+  0x4C888F  8bf8           mov       edi, eax                                 
+  0x4C8891  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C8896  ffd6           call      esi                                      
+  0x4C8898  03f8           add       edi, eax                                 
+  0x4C889A  81ffffff0000   cmp       edi, 0xffff                              imm=0xFFFF
+  0x4C88A0  7d10           jge       0x4c88b2                                 imm=0x4C88B2
+  0x4C88A2  6810208200     push      0x822010                                 imm=0x822010
+  0x4C88A7  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C88AC  ff1560117e00   call      dword ptr [0x7e1160]                     [b=- d=0x7E1160]
+  0x4C88B2  b906000000     mov       ecx, 6                                   imm=0x6
+  0x4C88B7  33c0           xor       eax, eax                                 
+  0x4C88B9  8dbc2454010000 lea       edi, [esp + 0x154]                       [b=esp d=0x154]
+  0x4C88C0  f3ab           rep stosd dword ptr es:[edi], eax                  [b=edi d=0x0]
+  0x4C88C2  c784245401000018000000 mov       dword ptr [esp + 0x154], 0x18            [b=esp d=0x154] imm=0x18
+  0x4C88CD  c7842464010000e8000000 mov       dword ptr [esp + 0x164], 0xe8            [b=esp d=0x164] imm=0xE8
+  0x4C88D8  8984245c010000 mov       dword ptr [esp + 0x15c], eax             [b=esp d=0x15C]
+  0x4C88DF  8b95b8000000   mov       edx, dword ptr [ebp + 0xb8]              [b=ebp d=0xB8]
+  0x4C88E5  89942458010000 mov       dword ptr [esp + 0x158], edx             [b=esp d=0x158]
+  0x4C88EC  8b85b8000000   mov       eax, dword ptr [ebp + 0xb8]              [b=ebp d=0xB8]
+  0x4C88F2  50             push      eax                                      
+  0x4C88F3  ff15b4117e00   call      dword ptr [0x7e11b4]                     [b=- d=0x7E11B4]
+  0x4C88F9  85c0           test      eax, eax                                 
+  0x4C88FB  0f8597000000   jne       0x4c8998                                 imm=0x4C8998
+  0x4C8901  a18c3a8b00     mov       eax, dword ptr [0x8b3a8c]                [b=- d=0x8B3A8C]
+  0x4C8906  85c0           test      eax, eax                                 
+  0x4C8908  744a           je        0x4c8954                                 imm=0x4C8954
+  0x4C890A  8b85b8000000   mov       eax, dword ptr [ebp + 0xb8]              [b=ebp d=0xB8]
+-- 'Exception occurred at %08X' 打印处 : [0x4C8960,0x4C89B0) 23 insns --
+  0x4C8963  83c404         add       esp, 4                                   imm=0x4
+  0x4C8966  85c0           test      eax, eax                                 
+  0x4C8968  7416           je        0x4c8980                                 imm=0x4C8980
+  0x4C896A  6a00           push      0                                        imm=0x0
+  0x4C896C  ff1500127e00   call      dword ptr [0x7e1200]                     [b=- d=0x7E1200]
+  0x4C8972  50             push      eax                                      
+  0x4C8973  68981f8200     push      0x821f98                                 imm=0x821F98
+  0x4C8978  e863dff3ff     call      0x4068e0                                 imm=0x4068E0
+  0x4C897D  83c40c         add       esp, 0xc                                 imm=0xC
+  0x4C8980  8b95b8000000   mov       edx, dword ptr [ebp + 0xb8]              [b=ebp d=0xB8]
+  0x4C8986  8d442434       lea       eax, [esp + 0x34]                        [b=esp d=0x34]
+  0x4C898A  52             push      edx                                      
+  0x4C898B  68781f8200     push      0x821f78                                 imm=0x821F78
+  0x4C8990  50             push      eax                                      
+  0x4C8991  ffd3           call      ebx                                      
+  0x4C8993  83c40c         add       esp, 0xc                                 imm=0xC
+  0x4C8996  eb0d           jmp       0x4c89a5                                 imm=0x4C89A5
+  0x4C8998  68541f8200     push      0x821f54                                 imm=0x821F54
+  0x4C899D  e83edff3ff     call      0x4068e0                                 imm=0x4068E0
+  0x4C89A2  83c404         add       esp, 4                                   imm=0x4
+  0x4C89A5  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C89AA  ffd6           call      esi                                      
+  0x4C89AC  8d4c2434       lea       ecx, [esp + 0x34]                        [b=esp d=0x34]
+
+[L] 寄存器 printf 区（确认打印值 = CONTEXT 字段，非 pushfd）
+-- Eip/Eax/Reg3/EFlags printf : [0x4C8B79,0x4C8C79) 79 insns --
+  0x4C8B79  8b8db4000000   mov       ecx, dword ptr [ebp + 0xb4]              [b=ebp d=0xB4]
+  0x4C8B7F  8b95c4000000   mov       edx, dword ptr [ebp + 0xc4]              [b=ebp d=0xC4]
+  0x4C8B85  8b85b8000000   mov       eax, dword ptr [ebp + 0xb8]              [b=ebp d=0xB8]
+  0x4C8B8B  51             push      ecx                                      
+  0x4C8B8C  52             push      edx                                      
+  0x4C8B8D  50             push      eax                                      
+  0x4C8B8E  8d4c2444       lea       ecx, [esp + 0x44]                        [b=esp d=0x44]
+  0x4C8B92  68a01e8200     push      0x821ea0                                 imm=0x821EA0
+  0x4C8B97  51             push      ecx                                      
+  0x4C8B98  ffd3           call      ebx                                      
+  0x4C8B9A  83c418         add       esp, 0x18                                imm=0x18
+  0x4C8B9D  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C8BA2  ffd6           call      esi                                      
+  0x4C8BA4  8d542434       lea       edx, [esp + 0x34]                        [b=esp d=0x34]
+  0x4C8BA8  8bf8           mov       edi, eax                                 
+  0x4C8BAA  52             push      edx                                      
+  0x4C8BAB  ffd6           call      esi                                      
+  0x4C8BAD  03f8           add       edi, eax                                 
+  0x4C8BAF  81ffffff0000   cmp       edi, 0xffff                              imm=0xFFFF
+  0x4C8BB5  7d10           jge       0x4c8bc7                                 imm=0x4C8BC7
+  0x4C8BB7  8d442434       lea       eax, [esp + 0x34]                        [b=esp d=0x34]
+  0x4C8BBB  50             push      eax                                      
+  0x4C8BBC  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C8BC1  ff1560117e00   call      dword ptr [0x7e1160]                     [b=- d=0x7E1160]
+  0x4C8BC7  8b8dac000000   mov       ecx, dword ptr [ebp + 0xac]              [b=ebp d=0xAC]
+  0x4C8BCD  8b95a4000000   mov       edx, dword ptr [ebp + 0xa4]              [b=ebp d=0xA4]
+  0x4C8BD3  8b85b0000000   mov       eax, dword ptr [ebp + 0xb0]              [b=ebp d=0xB0]
+  0x4C8BD9  51             push      ecx                                      
+  0x4C8BDA  52             push      edx                                      
+  0x4C8BDB  50             push      eax                                      
+  0x4C8BDC  8d4c2440       lea       ecx, [esp + 0x40]                        [b=esp d=0x40]
+  0x4C8BE0  68801e8200     push      0x821e80                                 imm=0x821E80
+  0x4C8BE5  51             push      ecx                                      
+  0x4C8BE6  ffd3           call      ebx                                      
+  0x4C8BE8  83c414         add       esp, 0x14                                imm=0x14
+  0x4C8BEB  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C8BF0  ffd6           call      esi                                      
+  0x4C8BF2  8d542434       lea       edx, [esp + 0x34]                        [b=esp d=0x34]
+  0x4C8BF6  8bf8           mov       edi, eax                                 
+  0x4C8BF8  52             push      edx                                      
+  0x4C8BF9  ffd6           call      esi                                      
+  0x4C8BFB  03f8           add       edi, eax                                 
+  0x4C8BFD  81ffffff0000   cmp       edi, 0xffff                              imm=0xFFFF
+  0x4C8C03  7d10           jge       0x4c8c15                                 imm=0x4C8C15
+  0x4C8C05  8d442434       lea       eax, [esp + 0x34]                        [b=esp d=0x34]
+  0x4C8C09  50             push      eax                                      
+  0x4C8C0A  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C8C0F  ff1560117e00   call      dword ptr [0x7e1160]                     [b=- d=0x7E1160]
+  0x4C8C15  8b8d9c000000   mov       ecx, dword ptr [ebp + 0x9c]              [b=ebp d=0x9C]
+  0x4C8C1B  8b95a0000000   mov       edx, dword ptr [ebp + 0xa0]              [b=ebp d=0xA0]
+  0x4C8C21  8b85a8000000   mov       eax, dword ptr [ebp + 0xa8]              [b=ebp d=0xA8]
+  0x4C8C27  51             push      ecx                                      
+  0x4C8C28  52             push      edx                                      
+  0x4C8C29  50             push      eax                                      
+  0x4C8C2A  8d4c2440       lea       ecx, [esp + 0x40]                        [b=esp d=0x40]
+  0x4C8C2E  68601e8200     push      0x821e60                                 imm=0x821E60
+  0x4C8C33  51             push      ecx                                      
+  0x4C8C34  ffd3           call      ebx                                      
+  0x4C8C36  83c414         add       esp, 0x14                                imm=0x14
+  0x4C8C39  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C8C3E  ffd6           call      esi                                      
+  0x4C8C40  8d542434       lea       edx, [esp + 0x34]                        [b=esp d=0x34]
+  0x4C8C44  8bf8           mov       edi, eax                                 
+  0x4C8C46  52             push      edx                                      
+  0x4C8C47  ffd6           call      esi                                      
+  0x4C8C49  03f8           add       edi, eax                                 
+  0x4C8C4B  81ffffff0000   cmp       edi, 0xffff                              imm=0xFFFF
+  0x4C8C51  7d10           jge       0x4c8c63                                 imm=0x4C8C63
+  0x4C8C53  8d442434       lea       eax, [esp + 0x34]                        [b=esp d=0x34]
+  0x4C8C57  50             push      eax                                      
+  0x4C8C58  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C8C5D  ff1560117e00   call      dword ptr [0x7e1160]                     [b=- d=0x7E1160]
+  0x4C8C63  8b8dc0000000   mov       ecx, dword ptr [ebp + 0xc0]              [b=ebp d=0xC0]
+  0x4C8C69  8d542434       lea       edx, [esp + 0x34]                        [b=esp d=0x34]
+  0x4C8C6D  51             push      ecx                                      
+  0x4C8C6E  68501e8200     push      0x821e50                                 imm=0x821E50
+  0x4C8C73  52             push      edx                                      
+  0x4C8C74  ffd3           call      ebx                                      
+  0x4C8C76  83c40c         add       esp, 0xc                                 imm=0xC
+  CONTEXT (Win32 x86, winnt.h 约定) 字段偏移：
+   +0x9C Edi | +0xA0 Esi | +0xA4 Ebx | +0xA8 Edx | +0xAC Ecx | +0xB0 Eax
+   +0xB4 Ebp | +0xB8 Eip | +0xBC SegCs | +0xC0 EFlags | +0xC4 Esp | +0xC8 SegSs
+  实测打印取数：Eip=[ebp+0xB8] / Esp=[ebp+0xC4] / Ebp=[ebp+0xB4] /
+               Eax=[ebp+0xB0] / Ebx=[ebp+0xA4] / Ecx=[ebp+0xAC] /
+               Edx=[ebp+0xA8] / Esi=[ebp+0xA0] / Edi=[ebp+0x9C] / EFlags=[ebp+0xC0]
+  => 全部精确等于 CONTEXT 字段偏移 ⇒ 打印的是【异常帧 CONTEXT】，不是 handler 自己的 pushfd。
+
+[M] 候选③ RaiseException(EXCEPTION_SINGLE_STEP=0x80000004,...) 判别
+  关注的 IAT 槽 VA -> 名称：
+    0x7E1144 -> SetUnhandledExceptionFilter
+    0x7E12C0 -> RaiseException
+    0x7E12EC -> UnhandledExceptionFilter
+  全 .text 立即数 == 0x80000004 的指令数 = 0 ; 前 12 = []
+  call [RaiseException IAT] 的指令数 = 2 ; 全部 = [('0x7d2f92', 'call', 'dword ptr [0x7e12c0]', 'RaiseException'), ('0x7db8a0', 'call', 'dword ptr [0x7e12c0]', 'RaiseException')]
+  call [SetUnhandledExceptionFilter IAT] = [('0x6be084', 'call', 'dword ptr [0x7e1144]'), ('0x7d9fb1', 'call', 'dword ptr [0x7e1144]'), ('0x7d9fc3', 'call', 'dword ptr [0x7e1144]')]
+
+[N] 'Bytes at CS:EIP' 串附近的打印/字节读取（判据：字节来自 CONTEXT.Eip 指向的内存）
+  Bytes 串 VA=0x821DE6，直接立即数 xref 数 = 0
+  引用 Bytes 串 VA±8 的立即数指令 = [('0x4c8d1b', 'push', '0x821de4'), ('0x4c8d45', 'push', '0x821de0')]
+-- Bytes 打印处 @0x4C8D1B : [0x4C8CEB,0x4C8D3B) 21 insns --
+  0x4C8CEC  03f8           add       edi, eax                                 
+  0x4C8CEE  81ffffff0000   cmp       edi, 0xffff                              imm=0xFFFF
+  0x4C8CF4  7d10           jge       0x4c8d06                                 imm=0x4C8D06
+  0x4C8CF6  8d4c2434       lea       ecx, [esp + 0x34]                        [b=esp d=0x34]
+  0x4C8CFA  51             push      ecx                                      
+  0x4C8CFB  68083a8a00     push      0x8a3a08                                 imm=0x8A3A08
+  0x4C8D00  ff1560117e00   call      dword ptr [0x7e1160]                     [b=- d=0x7E1160]
+  0x4C8D06  68041e8200     push      0x821e04                                 imm=0x821E04
+  0x4C8D0B  e8d0dbf3ff     call      0x4068e0                                 imm=0x4068E0
+  0x4C8D10  8b95b8000000   mov       edx, dword ptr [ebp + 0xb8]              [b=ebp d=0xB8]
+  0x4C8D16  8d442438       lea       eax, [esp + 0x38]                        [b=esp d=0x38]
+  0x4C8D1A  52             push      edx                                      
+  0x4C8D1B  68e41d8200     push      0x821de4                                 imm=0x821DE4
+  0x4C8D20  50             push      eax                                      
+  0x4C8D21  ffd3           call      ebx                                      
+  0x4C8D23  8bbdb8000000   mov       edi, dword ptr [ebp + 0xb8]              [b=ebp d=0xB8]
+  0x4C8D29  83c410         add       esp, 0x10                                imm=0x10
+  0x4C8D2C  c744241420000000 mov       dword ptr [esp + 0x14], 0x20             [b=esp d=0x14] imm=0x20
+  0x4C8D34  6a01           push      1                                        imm=0x1
+  0x4C8D36  57             push      edi                                      
+  0x4C8D37  ff155c117e00   call      dword ptr [0x7e115c]                     [b=- d=0x7E115C]
+-- Bytes 打印处 @0x4C8D45 : [0x4C8D15,0x4C8D65) 26 insns --
+  0x4C8D16  8d442438       lea       eax, [esp + 0x38]                        [b=esp d=0x38]
+  0x4C8D1A  52             push      edx                                      
+  0x4C8D1B  68e41d8200     push      0x821de4                                 imm=0x821DE4
+  0x4C8D20  50             push      eax                                      
+  0x4C8D21  ffd3           call      ebx                                      
+  0x4C8D23  8bbdb8000000   mov       edi, dword ptr [ebp + 0xb8]              [b=ebp d=0xB8]
+  0x4C8D29  83c410         add       esp, 0x10                                imm=0x10
+  0x4C8D2C  c744241420000000 mov       dword ptr [esp + 0x14], 0x20             [b=esp d=0x14] imm=0x20
+  0x4C8D34  6a01           push      1                                        imm=0x1
+  0x4C8D36  57             push      edi                                      
+  0x4C8D37  ff155c117e00   call      dword ptr [0x7e115c]                     [b=- d=0x7E115C]
+  0x4C8D3D  85c0           test      eax, eax                                 
+  0x4C8D3F  740c           je        0x4c8d4d                                 imm=0x4C8D4D
+  0x4C8D41  8d4c2434       lea       ecx, [esp + 0x34]                        [b=esp d=0x34]
+  0x4C8D45  68e01d8200     push      0x821de0                                 imm=0x821DE0
+  0x4C8D4A  51             push      ecx                                      
+  0x4C8D4B  eb24           jmp       0x4c8d71                                 imm=0x4C8D71
+  0x4C8D4D  33d2           xor       edx, edx                                 
+  0x4C8D4F  8d842434010000 lea       eax, [esp + 0x134]                       [b=esp d=0x134]
+  0x4C8D56  8a17           mov       dl, byte ptr [edi]                       [b=edi d=0x0]
+  0x4C8D58  52             push      edx                                      
+  0x4C8D59  68d81d8200     push      0x821dd8                                 imm=0x821DD8
+  0x4C8D5E  50             push      eax                                      
+  0x4C8D5F  ffd3           call      ebx                                      
+  0x4C8D61  83c40c         add       esp, 0xc                                 imm=0xC
+  0x4C8D64  8d8c2434010000 lea       ecx, [esp + 0x134]                       [b=esp d=0x134]
+
+耗时 = 100.19 s
+EXIT=0 / 零真机 / 零活进程读取 / 零采样注入 / 唯一写域内

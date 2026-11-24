@@ -1,0 +1,29 @@
+=== 用 skipdata=True 重新做边界判定（关键：默认 skipdata=False 会提前停） ===
+  00617641 fn=006149B0  旧判定=False (span 11409 >= max_bytes 8192)   新判定=True (call dword ptr [edx + 0x5c])
+       bytes=ff 52 5c
+  0061CC5C fn=006149B0  旧判定=False (span 33452 >= max_bytes 8192)   新判定=True (call dword ptr [edx + 0x5c])
+       bytes=ff 52 5c
+  00785132 fn=00783C80  旧判定=True (ok)   新判定=True (call dword ptr [esp + 0x5c])
+       bytes=ff 54 24
+  007852CF fn=00783C80  旧判定=True (ok)   新判定=True (call dword ptr [esp + 0x5c])
+       bytes=ff 54 24
+
+=== 这两处命中点的上下文（从 fn 入口 skipdata=True 反汇编）===
+  --- 00617641 in fn 006149B0
+      00617636  xor      ecx, ecx                       
+      00617638  xor      eax, eax                       
+      0061763A  push     ecx                            
+      0061763B  push     eax                            
+      0061763C  mov      ecx, edi                       
+      0061763E  imul     ebp, esi                       
+      00617641  call     dword ptr [edx + 0x5c]           <==
+      00617644  test     ebp, ebp                       
+  --- 0061CC5C in fn 006149B0
+      0061CC54  xor      ecx, ecx                       
+      0061CC56  xor      eax, eax                       
+      0061CC58  push     ecx                            
+      0061CC59  push     eax                            
+      0061CC5A  mov      ecx, ebx                       
+      0061CC5C  call     dword ptr [edx + 0x5c]           <==
+      0061CC5F  test     ebp, ebp                       
+      0061CC62  inc      esp                            

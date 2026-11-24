@@ -1,0 +1,61 @@
+{
+ "A_runtime_read_bytes_tracer": {
+  "n_calls": 6,
+  "paths": [
+   "D:\\Project\\ra2-campaign-forge\\lead\\cert_realcheck_20261109\\_cr_seal.json",
+   "D:\\Project\\ra2-campaign-forge\\lead\\matrix_ab_ruling_20261109\\RULING_MATRIX_AB.md",
+   "D:\\Project\\ra2-campaign-forge\\lead\\matrix_reach_20261109\\MATRIX_DEFECT_REACHABILITY.md",
+   "D:\\Project\\ra2-campaign-forge\\lead\\n11_wording_fix_20261108\\N11_WORDING_FIX.md",
+   "D:\\Project\\ra2-campaign-forge\\lead\\s604_script_gap_20261109\\S604_SCRIPT_GAP.md",
+   "D:\\Project\\ra2-campaign-forge\\lead\\s604_script_gap_20261109\\S604_SCRIPT_GAP.md"
+  ],
+  "VERDICT": "PASS",
+  "note": "monkeypatched pathlib.Path.read_bytes; counted real calls"
+ },
+ "A_runtime_read_bytes_raiser": {
+  "raised": true,
+  "error": "REVIEWER: read_bytes blocked"
+ },
+ "B_L1_repair_snippet": {
+  "honest_ok": true,
+  "honest_problems": [],
+  "B1_tampered_seal_with_runtime_recomputed_expected_hash": {
+   "ok": true,
+   "problems": [],
+   "note": "expected hash recomputed from the tampered file itself -> self-attested; PASSES"
+  },
+  "B2_padded_keys_with_attacker_supplied_pre-registration": {
+   "ok": false,
+   "problems": [
+    "L1: whitelist seal sha256 mismatch"
+   ],
+   "note": "keys_bytes + keys_sha256 both caller-supplied -> PASSES"
+  },
+  "finding": "the demo downgrades SELF_CERTIFIED and reads the seal file, but its 'pre-registered' values are NOT hard-coded: seal_sha256 is computed from the disk at :210-211, and author / keys_bytes / keys_sha256 all come from the caller's provenance dict. Does NOT implement step 4(c) criteria (1)(2)(3)."
+ },
+ "C_co_located_commitment_rewrite": {
+  "VERDICT": "PASS",
+  "seal_ok": true,
+  "n_pass": 5,
+  "n_fail": 0,
+  "first_item_outcome": "PASS",
+  "first_item_problems": [],
+  "note": "both _cr_seal.json and the hard-coded constant live in the SAME write domain; editing both makes a fully fabricated 'certificate' PASS. Confirms step 5(b)'s 'self-attestation with a better pipe' caveat."
+ },
+ "D_operational_definition": {
+  "def_lines": [
+   73,
+   75,
+   78
+  ],
+  "seal_oracle_fields": [
+   "author",
+   "predicate_author",
+   "truth"
+  ],
+  "seal_has_302_labels": false,
+  "seal_n_items": 5,
+  "seal_author_is_plain_string": true,
+  "conclusion": "NO_RELAXATION requires ORACLE(i) for ALL i in I produced BEFORE V1 by an adjudicator who did not see V1 and did not author V1. The seal has 5 self-authored labels with truth=true hard-coded by the same session. Therefore step 5(b)'s 'cannot unconditionally judge' is CORRECT."
+ }
+}

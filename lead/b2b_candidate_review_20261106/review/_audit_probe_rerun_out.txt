@@ -1,0 +1,502 @@
+
+==============================================================================
+0 四件指纹实算（hashlib.sha256；字节数 = len(bytes)）
+==============================================================================
+[母本] path = D:\Project\ra2-campaign-forge\out\re_work\work_chain\CONTINUE_20261003\lead\qc151_u0400_trip\qc151_trip.py
+    sha256 = 517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636
+    bytes  = 399508   lines = 7291
+    绑定核对 (TASK.md:20-25) = MATCH  expect sha=517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636 bytes=399508
+[候选] path = D:\Project\ra2-campaign-forge\lead\b2b_candidate_20261106\qc151_trip.candidate.py
+    sha256 = 9656e432f5b571590b757bb78869c274fba40220ce57b7a70da9b4a987b967cc
+    bytes  = 420292   lines = 7533
+    绑定核对 (TASK.md:20-25) = MATCH  expect sha=9656e432f5b571590b757bb78869c274fba40220ce57b7a70da9b4a987b967cc bytes=420292
+[设计] path = D:\Project\ra2-campaign-forge\lead\b2b_design_20261106\B2B_DESIGN.md
+    sha256 = 565771d8b31c516dc7a1e0100ea047484406a203390492df9f57170a6532feaf
+    bytes  = 66735   lines = 693
+    绑定核对 (TASK.md:20-25) = MATCH  expect sha=565771d8b31c516dc7a1e0100ea047484406a203390492df9f57170a6532feaf bytes=66735
+[预审] path = D:\Project\ra2-campaign-forge\lead\b2b_preaudit_20261106\B2B_PREAUDIT.md
+    sha256 = 3f97f3a4664981961b72a91a60053fe8c867fa9d8e25442e7159c3046ccbf69f
+    bytes  = 20615   lines = 195
+    绑定核对 (TASK.md:20-25) = MATCH  expect sha=3f97f3a4664981961b72a91a60053fe8c867fa9d8e25442e7159c3046ccbf69f bytes=20615
+
+==============================================================================
+1 设计 §4 的 9 个 @@ hunk 解析（H01–H09 的锚点内容）
+==============================================================================
+设计 §4 hunk 数 = 9  (§4:202 / §7:658 声明 = 9)
+[H01] @@ -212,6 +212,21 @@  母本锚点 212-217 | +15 -0 ctx6
+      §7: `:214` 后插入 F 命名空间 5 常量
+[H02] @@ -4458,6 +4473,10 @@  母本锚点 4458-4463 | +4 -0 ctx6
+      §7: `:4460` 后追加 `RESTORE.backup_mtime_pre:{name}` 留痕（不改 `bak[name]` 三键）
+[H03] @@ -4558,8 +4577,131 @@  母本锚点 4558-4565 | +124 -1 ctx7
+      §7: `:4561` 前插入 `make_pre_freshness_snapshot` + `classify_except_freshness`；并改 `:4561-4562` def 签名加 `pre_freshness_snapshot` 形参
+[H04] @@ -4572,20 +4714,105 @@  母本锚点 4572-4591 | +94 -9 ctx11
+      §7: `:4574-4599` 函数体重写：三态判别 + 正常/错误双落盘 + 3 条 `ERROR` 留痕 + `raise` + `info` 扩到 12 键
+[H05] @@ -5906,7 +6133,8 @@  母本锚点 5906-5912 | +2 -1 ctx6
+      §7: `:5909` `finalize_trip` 签名加 `pre_freshness_snapshot` 形参
+[H06] @@ -5936,7 +6164,8 @@  母本锚点 5936-5942 | +2 -1 ctx6
+      §7: `:5939` **唯一调用点**改为关键字传参
+[H07] @@ -6294,6 +6523,9 @@  母本锚点 6294-6299 | +3 -0 ctx6
+      §7: `:6296` 后、`:6313 try` 前预初始化 `_pre_freshness_snapshot = None`
+[H08] @@ -6386,6 +6618,15 @@  母本锚点 6386-6391 | +9 -0 ctx6
+      §7: `:6388` 后构造跑前快照 + 落 `FRESHNESS.captured_at_iso_pre`
+[H09] @@ -7122,7 +7363,8 @@  母本锚点 7122-7128 | +2 -1 ctx6
+      §7: `:7125` 后把快照传给 `:7117 finalize_trip`
+设计 §4 合计: + 行 255 / - 行 13
+
+==============================================================================
+2 difflib 全量比对：母本 vs 候选
+==============================================================================
+母本行数 = 7291；候选行数 = 7533；SequenceMatcher opcode 变更块 = 12；unified_diff(n=3) hunk 头 = 9
+-- 2.1 全部 opcode 变更块（起止行号 + 行数）--
+  block#01 insert  母本 215-214 (0 行)  ->  候选 215-229 (15 行)
+      + 
+      + 
+      + # ★★ B2b/N9：F（freshness）命名空间**单一真源**。
+      + #   ★ E 恒用 "EXCEPT" group；整趟退出码唯一判据恒在 :5985-5990 的集合差，
+      + #     F 字段与 F 代码**一律不得**进入该判据（静态门禁逐 token 核）。
+      + #   ★ F 结论恒 usable_as_crash_evidence=False（:677 口径：sha 变化不判 crash）。
+      + FRESHNESS_GROUP = "FRESHNESS"
+      + FRESHNESS_KEY_PREFIX = "freshness_"
+      + FRESHNESS_VERDICTS = ("unknown", "absent_both", "new_first_appearance",
+      +                       "vanished", "leftover_unchanged", "new_write",
+      +                       "rewritten_same_content", "error_pre_snapshot",
+      +                       "post_read_error")
+      + FRESHNESS_CONFIDENCES = ("high", "medium", "low", "none")
+      + FRESHNESS_SNAPSHOT_STATES = ("unknown", "absent_confirmed", "present", "error")
+      + 
+  block#02 insert  母本 4461-4460 (0 行)  ->  候选 4476-4479 (4 行)
+      +         rec.add("RESTORE", f"backup_mtime_pre:{name}",
+      +                 float(src.stat().st_mtime), f"{src}:file",
+      +                 note="★ B2b/N10：跑前 mtime 显式留痕（★ 不进 bak[name] 三键契约）")
+      + 
+  block#03 insert  母本 4561-4560 (0 行)  ->  候选 4580-4700 (121 行)
+      + def make_pre_freshness_snapshot(except_path: Path) -> dict:
+      +     """★ B2b/F：跑前 `except.txt` **带状态标签**的基线快照（纯只读，不写载体）。
+      + 
+      +     ★★ N3 硬约束：`state` 是**唯一**判别口，`exists` 不得被用于反推状态。
+      +       `None` / `{}` / 缺 `state` / 脏值 ⇒ 一律 unknown（未采集），
+      +       **绝不等于**「跑前确认无件」。
+      +     ★ N10：`captured_at_epoch` 与 `captured_at_iso` 双时刻必留，缺一即契约失败。
+      +     ★ N1：采集抛异常 ⇒ state="error" 独立出口，不降级、不静默、不给 high。
+      +     """
+      +     snap = {"state": "unknown", "exists": None, "size": None,
+      +             "sha256": None, "mtime_pre": None,
+      +             "captured_at_epoch": None, "captured_at_iso": None,
+      +             "error": None, "traceback": None,
+      +             "source": "script:make_pre_freshness_snapshot"}
+      +     try:
+      +         p = Path(except_path)
+      +         snap["captured_at_epoch"] = time.time()
+      +         snap["captured_at_iso"] = now_iso()
+      +         if not p.exists():
+      +             snap["state"] = "absent_confirmed"
+      +             snap["exists"] = False
+      +             return snap
+      +         st = p.stat()
+      +         snap["state"] = "present"
+      +         snap["exists"] = True
+      +         snap["size"] = int(st.st_size)
+      +         snap["mtime_pre"] = float(st.st_mtime)
+      +         snap["sha256"] = sha256_file(p)
+      +     except Exception as exc:
+      +         import traceback
+      +         snap["state"] = "error"
+      +         snap["error"] = f"{type(exc).__name__}: {exc}"
+      +         snap["traceback"] = "".join(traceback.format_exception(exc))
+      +     return snap
+      + 
+      + 
+      + def classify_except_freshness(pre_freshness_snapshot, post_observed: dict) -> dict:
+      +     """★ B2b/F：只回答 **F（本趟窗口内是否被写/新出现）**。
+      + 
+      +     ★★ N9：本函数不得引用退出码判据（:5985-5990）、不得登记收尾失败、
+      +       不得引用任何退出码常量；E（新异常）唯一口径恒为母本 :672-708。
+      +       `usable_as_crash_evidence` 恒 False，任何 F verdict 都不得作为崩溃证据。
+      +     ★★ N3：`state` 判别优先于一切；unknown ⇒ 不可判，**恒不给 high**。
+      +     """
+      +     out = {"verdict": None, "confidence": "none", "is_new": None,
+      +            "note": "", "usable_as_crash_evidence": False,
+      +            "pre_snapshot_state": "unknown"}
+      + 
+      +     def _finish(verdict: str, confidence: str, is_new, note: str) -> dict:
+      +         out.update({"verdict": verdict, "confidence": confidence,
+      +                     "is_new": is_new, "note": note,
+      +                     "usable_as_crash_evidence": False})
+      +         return out
+      + 
+      +     pre = (pre_freshness_snapshot
+      +            if isinstance(pre_freshness_snapshot, dict) else {})
+      +     st = pre.get("state")
+      +     if st not in FRESHNESS_SNAPSHOT_STATES:
+      +         st = "unknown"          # ★ None / {} / 缺 state / 脏值 ⇒ 一律「未采集」
+      +     out["pre_snapshot_state"] = st
+      + 
+      +     post = post_observed if isinstance(post_observed, dict) else {}
+      +     # ★ N1：错误独立出口，优先于一切状态折叠
+      +     if post.get("read_error"):
+      +         return _finish("post_read_error", "none", None,
+      +                        "★ 跑后件读/复制失败（独立 error 出口，禁止静默）："
+      +                        f"{post['read_error']}；pre_snapshot_state={st}")
+      +     # ★★ N3/N2：unknown 与 absent_confirmed 在第一个分支就分道，禁止折叠
+      +     if st == "unknown":
+      +         return _finish("unknown", "none", None,
+      +                        "★ 跑前快照未采集/传参丢失/采集未完成 ⇒ F 不可判；"
+      +                        "未知 ≠ 不存在；不得据此输出「本趟新出现」或 high")
+      +     if st == "error":
+      +         return _finish("error_pre_snapshot", "none", None,
+      +                        f"★ 跑前采集失败（独立 error 出口）：{pre.get('error')!r}")
+      + 
+      +     post_exists = bool(post.get("exists"))
+      +     if not post_exists:
+      +         if st == "absent_confirmed":
+      +             return _finish("absent_both", "low", False,
+      +                            "★ 跑前确认无件 + 跑后无件 ⇒ F=未见新出现；"
+      +                            "但「文件未出现」不能证无崩溃（E 口径另算）")
+      +         return _finish("vanished", "none", None,
+      +                        "★ 跑前在、跑后失 ⇒ 异常态旗标（被删/改名/复制链中断），"
+      +                        "须人工复核；不给 high、不判本趟新出现")
+      + 
+      +     if st == "absent_confirmed":
+      +         return _finish("new_first_appearance", "high", True,
+      +                        "★ 跑前确认无件 + 跑后在地 ⇒ F=本趟新出现（存在性）；"
+      +                        "是否新崩溃仍只由 :672-708 集合差裁定")
+      + 
+      +     # ---- st == "present" ----
+      +     pre_sha = pre.get("sha256")
+      +     if not pre_sha:
+      +         return _finish("error_pre_snapshot", "none", None,
+      +                        "★ 跑前在场但缺 sha256 ⇒ B 主判据不可用"
+      +                        "（独立 error 出口，不降级为 high、不静默）")
+      +     post_sha = post.get("sha256")
+      +     if not post_sha:
+      +         return _finish("post_read_error", "none", None,
+      +                        "★ 跑后缺 sha256 ⇒ 无法比对（error 出口）")
+      +     if post_sha != pre_sha:
+      +         return _finish("new_write", "high", True,
+      +                        "★ 字节内容不同 ⇒ F=本趟被写；是否新异常归集合差（:677）")
+      + 
+      +     pre_mt, post_mt = pre.get("mtime_pre"), post.get("mtime_post")
+      +     if pre_mt is None or post_mt is None:
+      +         return _finish("leftover_unchanged", "medium", False,
+      +                        "★ sha 同但 mtime 侧缺失 ⇒ A 旁证不可用，"
+      +                        "同内容重写盲区此趟未覆盖（如实标注，不虚报 high）")
+      +     if abs(float(post_mt) - float(pre_mt)) <= 0.0:
+      +         return _finish("leftover_unchanged", "high", False,
+      +                        "★ 跑前在 + sha 同 + mtime 未变 ⇒ 原样遗留（非本趟写入）")
+      +     if float(post_mt) < float(pre_mt):
+      +         return _finish("rewritten_same_content", "low", True,
+      +                        "★ sha 同、mtime 变且回拨 ⇒ 疑似时钟回拨/utime 拉回，"
+      +                        "置信降级为 low，须人工复核")
+      +     return _finish("rewritten_same_content", "medium", True,
+      +                    "★ sha 同而 mtime 变 ⇒ 同内容重写（F 旁证补 B 盲区）")
+      + 
+      + 
+  block#04 replace 母本 4562-4562 (1 行)  ->  候选 4702-4704 (3 行)
+      -                               out_dir: Path) -> dict | None:
+      +                               out_dir: Path,
+      +                               pre_freshness_snapshot: dict | None = None
+      +                               ) -> dict | None:
+  block#05 replace 母本 4575-4582 (8 行)  ->  候选 4717-4791 (75 行)
+      -     if not src.exists():
+      -         rec.add("EXCEPT", "evidence_copy", None, f"{src}:path",
+      -                 note="★ 载体 except.txt 不存在 ⇒ 无原件可副本（如实记账）")
+      -         return None
+      -     blob = src.read_bytes()
+      -     h = hashlib.sha256(blob).hexdigest()
+      -     dst = out_dir / f"except_post_{datetime.now().strftime('%Y%m%dT%H%M%S%f')}.txt"
+      -     dst.write_bytes(blob)
+      +     blob = None
+      +     h = None
+      +     dst = None
+      +     post_observed = {"exists": None, "size": None, "sha256": None,
+      +                      "mtime_post": None, "captured_at_iso": None,
+      +                      "read_error": None}
+      + 
+      +     def _emit_f(fresh: dict, stage: str) -> None:
+      +         """★ N4：正常与错误**每一条**出口都落盘 F 字段（不空转）。
+      + 
+      +         ★★ N9：全部写进 FRESHNESS_GROUP，键名一律带 FRESHNESS_KEY_PREFIX；
+      +           本函数不读退出码判据、不登记收尾失败、不引用退出码常量。
+      +         """
+      +         rec.add(FRESHNESS_GROUP, FRESHNESS_KEY_PREFIX + "verdict",
+      +                 fresh["verdict"], "script:classify_except_freshness",
+      +                 note=f"stage={stage}；F 只答新鲜性，E 归 :672-708 集合差")
+      +         rec.add(FRESHNESS_GROUP, FRESHNESS_KEY_PREFIX + "confidence",
+      +                 fresh["confidence"], "script:classify_except_freshness",
+      +                 note="★ none = 不可判；unknown 恒 none，禁止映射到 high")
+      +         rec.add(FRESHNESS_GROUP, FRESHNESS_KEY_PREFIX + "is_new",
+      +                 fresh["is_new"], "script:classify_except_freshness",
+      +                 note="★ None = 未测写 null（Recorder :439-440 口径），"
+      +                      "不得写 False 表示未知")
+      +         rec.add(FRESHNESS_GROUP, FRESHNESS_KEY_PREFIX + "note",
+      +                 fresh["note"], "script:classify_except_freshness",
+      +                 note=fresh["note"])
+      +         rec.add(FRESHNESS_GROUP, "pre_snapshot_state",
+      +                 fresh["pre_snapshot_state"],
+      +                 "script:make_pre_freshness_snapshot",
+      +                 note="★ unknown / absent_confirmed / present / error 三态可分")
+      +         rec.add(FRESHNESS_GROUP, "usable_as_crash_evidence",
+      +                 fresh["usable_as_crash_evidence"],
+      +                 "script:classify_except_freshness",
+      +                 note="★★ 恒 False：F 结论不得作为本趟崩溃证据（:677）")
+      +         rec.add(FRESHNESS_GROUP, "captured_at_iso",
+      +                 post_observed.get("captured_at_iso"), "script:now_iso",
+      +                 note="★ N10：跑后观测时刻（ISO-8601）；跑前同名键在快照内")
+      + 
+      +     try:
+      +         if not src.exists():
+      +             post_observed["exists"] = False
+      +             post_observed["captured_at_iso"] = now_iso()
+      +             rec.add("EXCEPT", "evidence_copy", None, f"{src}:path",
+      +                     note="★ 载体 except.txt 不存在 ⇒ 无原件可副本（如实记账）")
+      +             # ★ N4：早退分支同样落盘 F 字段（不可只算不写）
+      +             _emit_f(classify_except_freshness(pre_freshness_snapshot,
+      +                                               post_observed), "src_missing")
+      +             return None
+      +         post_observed["captured_at_iso"] = now_iso()
+      +         blob = src.read_bytes()
+      +         st = src.stat()
+      +         h = hashlib.sha256(blob).hexdigest()
+      +         post_observed.update({"exists": True, "size": len(blob),
+      +                               "sha256": h, "mtime_post": float(st.st_mtime)})
+      +         dst = out_dir / f"except_post_{datetime.now().strftime('%Y%m%dT%H%M%S%f')}.txt"
+      +         dst.write_bytes(blob)
+      +     except Exception as exc:
+      +         # ★★ N10：复制/读取失败 ⇒ 先 rec.add("ERROR", ...) 显式留痕，再**上抛**
+      +         import traceback
+      +         where = f"{src}:file"
+      +         rec.add("ERROR", "freshness_copy_failed",
+      +                 f"{type(exc).__name__}: {exc}", where,
+      +                 note="★★ B2b/N10：复制失败显式留痕，不许静默降级")
+      +         rec.add("ERROR", "freshness_copy_stage",
+      +                 "read_bytes/stat/write_bytes", where,
+      +                 note="captured_at_iso="
+      +                      f"{post_observed.get('captured_at_iso')!r}")
+      +         rec.add("ERROR", "freshness_copy_traceback",
+      +                 "".join(traceback.format_exception(exc)), "script:traceback")
+      +         post_observed["read_error"] = f"{type(exc).__name__}: {exc}"
+      +         # ★ N4/N1：错误分支同样落盘 F 字段，且走独立 error 出口
+      +         _emit_f(classify_except_freshness(pre_freshness_snapshot,
+      +                                           post_observed), "copy_failed")
+      +         raise
+      + 
+  block#06 replace 母本 4586-4586 (1 行)  ->  候选 4795-4812 (18 行)
+      -                     "（☆ 还原之后仍存在、可复核）"}
+      +                     "（☆ 还原之后仍存在、可复核）",
+      +             # ★★ N4/N6/N10：正常路径**必须**落盘的 F 字段（B2 在此空转）
+      +             "mtime_post": post_observed["mtime_post"],
+      +             "freshness_verdict": None,
+      +             "freshness_confidence": None,
+      +             "freshness_note": None,
+      +             "captured_at_iso": None,
+      +             "pre_snapshot_state": None,
+      +             "pre_freshness_snapshot": None}
+      +     fresh = classify_except_freshness(pre_freshness_snapshot, post_observed)
+      +     info["freshness_verdict"] = fresh["verdict"]
+      +     info["freshness_confidence"] = fresh["confidence"]
+      +     info["freshness_note"] = fresh["note"]
+      +     info["captured_at_iso"] = post_observed["captured_at_iso"]
+      +     info["pre_snapshot_state"] = fresh["pre_snapshot_state"]
+      +     info["pre_freshness_snapshot"] = (
+      +         pre_freshness_snapshot
+      +         if isinstance(pre_freshness_snapshot, dict) else None)
+  block#07 insert  母本 4589-4588 (0 行)  ->  候选 4815-4815 (1 行)
+      +     _emit_f(fresh, "copied")   # ★ N4：正常路径同样落盘（非仅早退分支）
+  block#08 replace 母本 5909-5909 (1 行)  ->  候选 6136-6137 (2 行)
+      -                   created_receipt: dict | None = None) -> int:
+      +                   created_receipt: dict | None = None,
+      +                   pre_freshness_snapshot: dict | None = None) -> int:
+  block#09 replace 母本 5939-5939 (1 行)  ->  候选 6167-6168 (2 行)
+      -         copy_post_except_evidence(rec, carrier_dir, out_dir)
+      +         copy_post_except_evidence(rec, carrier_dir, out_dir,
+      +                                  pre_freshness_snapshot=pre_freshness_snapshot)
+  block#10 insert  母本 6297-6296 (0 行)  ->  候选 6526-6528 (3 行)
+      +     # ★★ B2b/E1/N3：★ **try 之前**预初始化 ⇒ 五个早退 + 异常路径均不会
+      +     #    未绑定；`None` 语义 = **未采集（unknown）**，绝不等于「跑前无件」。
+      +     _pre_freshness_snapshot: dict | None = None
+  block#11 insert  母本 6389-6388 (0 行)  ->  候选 6621-6629 (9 行)
+      +         # ★★ B2b/E1/N5/N10：载体定稿后、launch 前拍跑前 F 快照（纯只读，
+      +         #    不写载体）；captured_at_iso 显式落盘，未知态不折叠成「无件」。
+      +         _pre_freshness_snapshot = make_pre_freshness_snapshot(
+      +             carrier_dir / "except.txt")
+      +         rec.add(FRESHNESS_GROUP, "captured_at_iso_pre",
+      +                 _pre_freshness_snapshot["captured_at_iso"],
+      +                 "script:make_pre_freshness_snapshot",
+      +                 note="★ N10：跑前捕获时刻；state="
+      +                      f"{_pre_freshness_snapshot['state']}")
+  block#12 replace 母本 7125-7125 (1 行)  ->  候选 7366-7367 (2 行)
+      -                 created_receipt=(TRIP_CARRIER.get("receipt") or created_receipt))
+      +                 created_receipt=(TRIP_CARRIER.get("receipt") or created_receipt),
+      +                 pre_freshness_snapshot=_pre_freshness_snapshot)
+-- 2.2 unified_diff(n=3) 的 9 个 hunk 头（与设计 §4 逐字核对）--
+  hunk#01 candidate = @@ -212,6 +212,21 @@
+            design     = @@ -212,6 +212,21 @@   SAME
+  hunk#02 candidate = @@ -4458,6 +4473,10 @@
+            design     = @@ -4458,6 +4473,10 @@   SAME
+  hunk#03 candidate = @@ -4558,8 +4577,131 @@
+            design     = @@ -4558,8 +4577,131 @@   SAME
+  hunk#04 candidate = @@ -4572,20 +4714,105 @@
+            design     = @@ -4572,20 +4714,105 @@   SAME
+  hunk#05 candidate = @@ -5906,7 +6133,8 @@
+            design     = @@ -5906,7 +6133,8 @@   SAME
+  hunk#06 candidate = @@ -5936,7 +6164,8 @@
+            design     = @@ -5936,7 +6164,8 @@   SAME
+  hunk#07 candidate = @@ -6294,6 +6523,9 @@
+            design     = @@ -6294,6 +6523,9 @@   SAME
+  hunk#08 candidate = @@ -6386,6 +6618,15 @@
+            design     = @@ -6386,6 +6618,15 @@   SAME
+  hunk#09 candidate = @@ -7122,7 +7363,8 @@
+            design     = @@ -7122,7 +7363,8 @@   SAME
+候选实际 + 行 255 / - 行 13；设计声明 + 行 255 / - 行 13
+★ 候选 + 行中设计未声明（夹带嫌疑） = 0
+★ 设计声明 + 行候选缺失 = 0
+★ 候选 - 行中设计未声明 = 0
+★ 设计声明 - 行候选缺失 = 0
+
+==============================================================================
+3 逐差异块归因 H01–H09（按设计 §4 锚点内容匹配）
+==============================================================================
+-- 3.1 逐块归属（opcode 块 = 12 个；unified hunk = 9 个）--
+  block#01 母本 215-214 / 候选 215-229  => 归属 H01  
+  block#02 母本 4461-4460 / 候选 4476-4479  => 归属 H02  
+  block#03 母本 4561-4560 / 候选 4580-4700  => 归属 H03  
+  block#04 母本 4562-4562 / 候选 4702-4704  => 归属 H03  
+  block#05 母本 4575-4582 / 候选 4717-4791  => 归属 H04  
+  block#06 母本 4586-4586 / 候选 4795-4812  => 归属 H04  
+  block#07 母本 4589-4588 / 候选 4815-4815  => 归属 H04  
+  block#08 母本 5909-5909 / 候选 6136-6137  => 归属 H05  
+  block#09 母本 5939-5939 / 候选 6167-6168  => 归属 H06  
+  block#10 母本 6297-6296 / 候选 6526-6528  => 归属 H07  
+  block#11 母本 6389-6388 / 候选 6621-6629  => 归属 H08  
+  block#12 母本 7125-7125 / 候选 7366-7367  => 归属 H09  
+
+-- 3.2 按 unified_diff 9 个 hunk 归属（设计 §4 / §7 口径）--
+  hunk#01 @@ -212,6 +212,21 @@ => 归属 H01  [header=SAME +行=SAME(候选15/设计15) -行=SAME(候选0/设计0)]
+  hunk#02 @@ -4458,6 +4473,10 @@ => 归属 H02  [header=SAME +行=SAME(候选4/设计4) -行=SAME(候选0/设计0)]
+  hunk#03 @@ -4558,8 +4577,131 @@ => 归属 H03  [header=SAME +行=SAME(候选124/设计124) -行=SAME(候选1/设计1)]
+  hunk#04 @@ -4572,20 +4714,105 @@ => 归属 H04  [header=SAME +行=SAME(候选94/设计94) -行=SAME(候选9/设计9)]
+  hunk#05 @@ -5906,7 +6133,8 @@ => 归属 H05  [header=SAME +行=SAME(候选2/设计2) -行=SAME(候选1/设计1)]
+  hunk#06 @@ -5936,7 +6164,8 @@ => 归属 H06  [header=SAME +行=SAME(候选2/设计2) -行=SAME(候选1/设计1)]
+  hunk#07 @@ -6294,6 +6523,9 @@ => 归属 H07  [header=SAME +行=SAME(候选3/设计3) -行=SAME(候选0/设计0)]
+  hunk#08 @@ -6386,6 +6618,15 @@ => 归属 H08  [header=SAME +行=SAME(候选9/设计9) -行=SAME(候选0/设计0)]
+  hunk#09 @@ -7122,7 +7363,8 @@ => 归属 H09  [header=SAME +行=SAME(候选2/设计2) -行=SAME(候选1/设计1)]
+
+==============================================================================
+4 AST 全量扫 copy_post_except_evidence 调用点及参数（候选）
+==============================================================================
+候选里 copy_post_except_evidence 调用点总数 = 1
+  候选:6167  in finalize_trip._except_evidence_copy  copy_post_except_evidence(...)
+      位置参数 (3): ['rec', 'carrier_dir', 'out_dir']
+      关键字参数 (1): [('pre_freshness_snapshot', 'pre_freshness_snapshot')]
+      pre_freshness_snapshot 传参 = YES
+-- 4.1 定义签名 --
+  候选:4701 def copy_post_except_evidence(pos=['rec', 'carrier_dir', 'out_dir', 'pre_freshness_snapshot'], defaults=['None'], kwonly=[], kw_defaults=[])
+  候选:6127 def finalize_trip(pos=['rec', 'carrier_dir', 'bak', 't0', 'pre_except_txt', 'out_dir', 'ownership', 'terminated_ok', 'main_return_code', 'mother_baseline', 'carrier_identity', 'handover', 'created_receipt', 'pre_freshness_snapshot'], defaults=['None', 'None', 'False', 'EXIT_OK', 'None', 'None', 'None', 'None', 'None'], kwonly=[], kw_defaults=[])
+
+==============================================================================
+5 AST 扫退出码判据路径是否读 freshness_*（候选）
+==============================================================================
+候选 AST 中含 'freshness' 的标识符/字符串总数 = 32
+分布在 28 个行号上：[222, 4593, 4634, 4635, 4745, 4762, 4777, 4780, 4784, 4788, 4798, 4799, 4800, 4803, 4804, 4805, 4806, 4807, 4810, 4811, 4812, 6168, 6528, 6623, 6626, 6627, 6629, 7367]
+-- 5.1 退出码判据相关函数体区间（候选行号）--
+  _write_final_records: [(7481, 7499)]
+  except_set_diff: [(687, 723)]
+  finalize_trip: [(6127, 6282)]
+  main: [(6414, 7378)]
+  merge_cleanup_code: [(411, 425)]
+  note_cleanup_failure: [(403, 408)]
+  run_guarded_steps: [(4526, 4553)]
+-- 5.2 note_cleanup_failure 调用点 = 17 --
+  候选:1215-1217 note_cleanup_failure(...)  args=['EXIT_PID_IDENTITY_UNVERIFIED', "'script:terminate_owned_process'", "'★ 启动基线创建时间缺失 ⇒ PID 身份不可核验（fail-closed）'", 'rec']
+  候选:5921-5923 note_cleanup_failure(...)  args=['EXIT_CARRIER_DELETE_FAILED', "'script:delete_owned_carrier'", "res['refused_reason']", 'rec']
+  候选:5936-5938 note_cleanup_failure(...)  args=['EXIT_CARRIER_DELETE_FAILED', "'script:delete_owned_carrier:identity'", "res['refused_reason']", 'rec']
+  候选:5957-5959 note_cleanup_failure(...)  args=['EXIT_CARRIER_DELETE_FAILED', "'script:delete_owned_carrier:revalidate'", "res['refused_reason']", 'rec']
+  候选:5964-5966 note_cleanup_failure(...)  args=['EXIT_CARRIER_DELETE_FAILED', "'script:delete_owned_carrier'", "res['refused_reason']", 'rec']
+  候选:5972-5974 note_cleanup_failure(...)  args=['EXIT_CARRIER_DELETE_FAILED', "'script:delete_owned_carrier'", "res['refused_reason']", 'rec']
+  候选:5980-5982 note_cleanup_failure(...)  args=['EXIT_CARRIER_DELETE_FAILED', "'script:delete_owned_carrier'", "res['refused_reason']", 'rec']
+  候选:5990-5992 note_cleanup_failure(...)  args=['EXIT_CARRIER_DELETE_FAILED', "'script:delete_owned_carrier'", "res['refused_reason']", 'rec']
+  候选:6000-6002 note_cleanup_failure(...)  args=['EXIT_CARRIER_DELETE_FAILED', "'script:delete_owned_carrier'", "res['refused_reason']", 'rec']
+  候选:6173-6175 note_cleanup_failure(...)  args=['EXIT_EVIDENCE_VERIFY_FAILED', "'script:move_out_evidence_and_verify'", 'f"★ 证据搬出后逐件验 SHA 失败：{ev[\'failed\']}"', 'rec']
+  候选:6186-6187 note_cleanup_failure(...)  args=['EXIT_RESTORE_FAILED', "'script:restore_carrier'", "'★ 载体件跑后状态与备份不符（★ 不写回）'", 'rec']
+  候选:6199-6200 note_cleanup_failure(...)  args=['EXIT_T0_T1_DIFF', "'script:t_diff'", "'★ T0↔T1 逐件 sha 有差 ⇒ 零写自证失败'", 'rec']
+  候选:6218-6219 note_cleanup_failure(...)  args=['EXIT_INTERNAL_ERROR', "'script:except_set_diff'", "'★ 跑后 except.txt 出现新异常行'", 'rec']
+  候选:6233-6234 note_cleanup_failure(...)  args=['EXIT_PRECHECK_SHA_MISMATCH', "'script:control_*'", "'★ 跑后两控任一失败'", 'rec']
+  候选:7316-7318 note_cleanup_failure(...)  args=['EXIT_TERMINATE_FAILED', "'script:main:finally'", "'★ 本趟进程退出未确认 ⇒ 收尾失败（第 3 项）'", 'rec']
+  候选:7372-7373 note_cleanup_failure(...)  args=['EXIT_INTERNAL_ERROR', "'script:main:finally'", "f'★ 收尾抛异常：{exc!r}'", 'rec']
+  候选:7495-7496 note_cleanup_failure(...)  args=['EXIT_MANIFEST_FAILED', "'script:_write_final_records'", "'★ 最终记录落盘失败 ⇒ 以 26 重写并如实传播'", 'rec']
+-- 5.3 含 CLEANUP_FAILURES / merge_cleanup_code 的行 = 28 --
+  候选:358 #       PID 身份不可核验）★ **一律先进本容器**，★ 由 `merge_cleanup_code()`
+  候选:360 CLEANUP_FAILURES: list = []
+  候选:405 CLEANUP_FAILURES.append({"code": int(code), "where": where, "note": note})
+  候选:407 rec.add("CLEANUP", f"failure_{len(CLEANUP_FAILURES)}",
+  候选:411 def merge_cleanup_code(base: int) -> int:
+  候选:417 codes = [int(c) for c in [base] + [f["code"] for f in CLEANUP_FAILURES]]
+  候选:5408 #   ★ 同 `FINALIZE_CODE`/`CLEANUP_FAILURES` 的模块级容器房规 ⇒ finalize 侧可读）
+  候选:6024 and (evidence or {}).get("ok") and not CLEANUP_FAILURES)
+  候选:6034 "cleanup_failures": list(CLEANUP_FAILURES),
+  候选:6060 ★ 本函数：★ 重新计算 `cleanup_ok` / `verdict`（★ 用**当前** `CLEANUP_FAILURES`），
+  候选:6072 and not CLEANUP_FAILURES)
+  候选:6073 nb["cleanup_failures"] = list(CLEANUP_FAILURES)
+  候选:6155 （★ 它会被后续成功项覆盖）⇒ ★ 一律进**模块级容器** `CLEANUP_FAILURES`
+  候选:6156 ⇒ ★ 本函数返回 `merge_cleanup_code(EXIT_OK)`（★ 成功**不清空**既有失败）。
+  候选:6255 state.get("delete"), merge_cleanup_code(EXIT_OK),
+  候选:6259 code = merge_cleanup_code(EXIT_OK)
+  候选:6267 "cleanup_failures": list(CLEANUP_FAILURES)},
+  候选:6282 return merge_cleanup_code(EXIT_OK)
+  候选:6509 CLEANUP_FAILURES.clear()
+  候选:7374 FINALIZE_CODE[0] = merge_cleanup_code(EXIT_OK)
+  候选:7378 FINALIZE_CODE[0] = merge_cleanup_code(EXIT_OK)
+  候选:7400 ★ 已由 `note_cleanup_failure()` 写进**模块级容器** `CLEANUP_FAILURES`
+  候选:7402 ★ `merge_cleanup_code(code)` 按 `CLEANUP_CODE_PRIORITY` 取最高优先级者
+  候选:7425 internal_verdict = merge_cleanup_code(EXIT_INTERNAL_ERROR)
+  候选:7439 final = merge_cleanup_code(code)
+  候选:7468 rec.add("META", "cleanup_failures", list(CLEANUP_FAILURES),
+  候选:7473 "cleanup_failures": list(CLEANUP_FAILURES)},
+  候选:7497 written = merge_cleanup_code(EXIT_MANIFEST_FAILED)
+
+★ 退出码判据区间内读到 freshness_* 的命中数 = 0
+
+-- 5.4 判据区间源码逐行扫 'freshness_' 字面量（含注释行，从严）--
+  判据覆盖行号数 = 155；其中含 'freshness_' 字面量的行 = 0
+
+-- 5.5 E 口径实现是否被 9 个 hunk 改动（母本 :672-708 / :5984-5990）--
+  except_set_diff 母本 672-708: 与之重叠的 opcode 变更块 = []  => UNCHANGED（E 口径未被改）
+  finalize_trip._except_diff 判据块 母本 5984-5990: 与之重叠的 opcode 变更块 = []  => UNCHANGED（E 口径未被改）
+
+==============================================================================
+7 重建验证：设计 §4 的 9 个 hunk 逐字套回母本 == 候选？
+==============================================================================
+参与重建的 hunk 体数 = 9
+  [H01] 母本 212-217 窗口逐字核对 = MATCH  (ctx+'-' 6 行 -> ctx+'+' 21 行)
+  [H02] 母本 4458-4463 窗口逐字核对 = MATCH  (ctx+'-' 6 行 -> ctx+'+' 10 行)
+  [H03] 母本 4558-4565 窗口逐字核对 = MATCH  (ctx+'-' 8 行 -> ctx+'+' 131 行)
+  [H04] 母本 4572-4591 窗口逐字核对 = MATCH  (ctx+'-' 20 行 -> ctx+'+' 105 行)
+  [H05] 母本 5906-5912 窗口逐字核对 = MATCH  (ctx+'-' 7 行 -> ctx+'+' 8 行)
+  [H06] 母本 5936-5942 窗口逐字核对 = MATCH  (ctx+'-' 7 行 -> ctx+'+' 8 行)
+  [H07] 母本 6294-6299 窗口逐字核对 = MATCH  (ctx+'-' 6 行 -> ctx+'+' 9 行)
+  [H08] 母本 6386-6391 窗口逐字核对 = MATCH  (ctx+'-' 6 行 -> ctx+'+' 15 行)
+  [H09] 母本 7122-7128 窗口逐字核对 = MATCH  (ctx+'-' 7 行 -> ctx+'+' 8 行)
+  套用片段数 = 9；相邻片段重叠检查 = 无重叠
+
+重建文本行数 = 7533；候选行数 = 7533
+★ 设计 §4 逐字套用(母本) == 候选 逐行一致 = True
+重建文本 ast.parse = PASS
+
+==============================================================================
+8 汇总
+==============================================================================
+差异块总数（opcode 变更块） = 12
+unified_diff(n=3) hunk 数   = 9（对应设计 §4 的 H01–H09）
+可归属数（逐 opcode 块）     = 12
+无法归属数（逐 opcode 块）   = 0
+候选 + 行中设计未声明 = 0；设计 + 行候选缺失 = 0
+候选 - 行中设计未声明 = 0；设计 - 行候选缺失 = 0
+copy_post_except_evidence 调用点 = 1；其中传 pre_freshness_snapshot = 1
+退出码判据区间读到 freshness_* 命中 = 0；判据区间内 'freshness_' 字面量行 = 0
+重建验证（设计 §4 逐字套回母本 == 候选）= True；母本窗口逐字核对错误数 = 0
+
+判据区间口径说明：except_set_diff 函数体 + note_cleanup_failure/merge_cleanup_code 定义体 + 17 个 note_cleanup_failure 调用语句 + finalize_trip 内 _except_diff/_ctrl_post/_t0_t1_sha_diff 函数体 + 含 CLEANUP_FAILURES/merge_cleanup_code 的 28 行；另实读候选 :7421-7444 最终退出码收口段（main()/merge_cleanup_code/_write_final_records/SystemExit(written)），该段无 freshness_* 。
+
+（逐块均可归属；无夹带；退出码判据未读 freshness_*）
+
+END

@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0, r"D:\Project\ra2-campaign-forge\tools")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from xref_scan import classify_names, Scanner
 import bisect
 

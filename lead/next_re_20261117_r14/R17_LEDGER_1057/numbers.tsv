@@ -1,0 +1,62 @@
+名称	复算值	卡面值或来源
+exe_size	4825360 B	卡: 4,825,360 B（R17_R8_RESIDUAL/REPORT.md）
+exe_sha256	73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476	卡/各报告一致
+text_sec	VA 0x401000 raw 0x1000 vsize 0x3DF38D rawsize 0x3E0000	R17_ADJ/VERDICT 节表实测
+rdata_sec	VA 0x7E1000 raw 0x3E1000 vsize 0x30074 rawsize 0x31000	R17_ADJ/VERDICT 节表实测
+A1_43F249	88 5C 24 23 = mov byte [esp+0x23],bl（指令起始）	卡事项3: 0x43F249 指令起始权威值
+A1_43F24B	24 = SIB 字节（非指令起始）	卡事项3: 0x43F24B 是 SIB=0x24 位置
+A1_43F4FF	C6 44 24 23 01 = mov byte [esp+0x23],1（指令起始）	卡事项3: 0x43F4FF 权威
+A1_43F501	24 = SIB 字节	卡事项3: 0x43F501 是 SIB 位置
+A1_43F5AB	8A 44 24 23 = mov al,[esp+0x23]（指令起始）	卡事项3: 0x43F5AB 权威
+A1_43F5AD	24 = SIB 字节	卡事项3: 0x43F5AD 是 SIB 位置
+A1_jne_47C73F	0F 85 0E 01 00 00 rel=+0x10E 目标 0x47C853（指令起始）	卡事项3: jne 起始 0x47C73F，R7 挂 0x47C73D 错
+A1_47C73D	3B C5 = cmp eax,ebp（非 jne）	卡事项3: R7 误挂处
+A1_47C853	5F = pop edi	卡事项3: 0x47C853 实为 5F
+A1_47C856	32 C0 = xor al,al	卡事项3: xor 在 0x47C856，执行方对
+Q2_ret_C20C00_count	10	卡事项9: 10 条 C2 0C 00
+Q2_ret_addresses	0x47C6CA,0x47C6DA,0x47C760,0x47C833,0x47C85C,0x47C875,0x47C9A4,0x47CA30,0x47CA4A,0x47CA79	R17_R8/REPORT.md Q2 清单，逐项一致
+Q2_tail	0x47CA79=C2 0C 00；0x47CA7C..7F=90x4；0x47CA80=83 EC 68 A1 90 10 AA 00 => 尾界 0x47CA7C	卡事项9: 精确尾界 0x47CA7C
+Q1_dword_43F180	1 处 @ .rdata:0x7E3FE0	卡事项8: 恰 1 个静态数据引用
+Q1_dword_449440	1 处 @ .rdata:0x7E4068	卡事项8: 恰 1 个静态数据引用
+Q1_dword_47C620	0 处（正控：非表项）	卡事项8/R8 正控
+Q1_dword_43F1E9	2 处 @ .text:0x43FB10,0x43FB18（跳表）	R8 sites.tsv
+Q1_E8_to_43F180	0	卡事项8: E8 直接调用 0
+Q1_E9_to_43F180	0	卡事项8: E9 直接调用 0
+Q1_E8_to_449440	0	卡事项8
+Q1_E9_to_449440	0	卡事项8
+POSCTRL_E8_to_47C620	10 @ 0x43F2AE,0x449482,0x47EE93,0x58865F,0x58886E,0x5FC6FA,0x6D5A98,0x6D5D33,0x716209,0x71C554	卡/审计: 正控 10，首项 0x43F2AE
+esp23_pattern_count	3 @ 0x43F249,0x43F501,0x43F5AD（原始 24 23 disp8/SIB 位）	卡事项3: 三处 0x43F24B/501/5AD 口径
+esp23_instr_starts	0x43F249,0x43F4FF,0x43F5AB	卡事项3: 指令起始权威值
+jumptable_43FB0C	0x43F1CA,0x43F1E9,0x43F9A6,0x43F1E9	R8 REPORT Q4
+case0_al1_ret	0x43F1DD=B0 01；0x43F1E6=C2 04 00	卡事项9: case0 不拒绝，恒 al=1
+case2_al1_ret	0x43FAFC=5F 5E 5D B0 01 5B 81 C4 B0 00 00；0x43FB08=C2 04 00	卡事项9: case2 不拒绝，恒 al=1
+Q3_call_6F4A70	0x43F5DB=E8 90 54 2B 00；0x43F5E3=32 C0（返回值被丢弃）	卡事项8/事项9: 虚派发推断、语义未取得
+ADJ_text_run_A	[0x7E3EBC,0x7E43C0]闭 = [0x7E3EBC,0x7E43C4)半开 = 322 槽	卡事项5: [0x7E3EBC,0x7E43C4) 322 槽
+ADJ_text_run_B	同上，322 槽（hi=0x7E1000 口径）	卡事项5: 两口径一致
+ADJ_gray_zone	0 槽	卡事项5: 灰区槽数 0
+ADJ_slotnum_7E3FE0	73	卡事项5: #73
+ADJ_slotnum_7E4068	107	卡事项5: #107
+ADJ_left_neighbor	0x7E3EB8=0x7FC360（非 .text）	卡事项5: 非 .text 值
+ADJ_right_neighbor	0x7E43C4=0x7FC298（非 .text）	卡事项5: 非 .text 值
+ADJ_R9_left_slot_7E3E8C	0x7FC2B0（非 .text，R9 误计）	卡事项5: R9 串内含非 .text 值
+R9_claimed_run	[0x7E3E8C,0x7E4403] 350 槽；#85/#119（按 R9 起点 0x7E3E8C 复算：(0x7E3FE0-0x7E3E8C)/4=85，(0x7E4068-0x7E3E8C)/4=119）	卡事项4: R9 的 350 槽串与 #85/#119（为被裁决推翻的败方口径）
+ADJ_R9_left_early	12 槽（0x7E3EBC-0x7E3E8C=0x30/4）	卡事项5: 左端早 12 槽
+ADJ_R9_right_late	16–17 槽（0x7E4403-0x7E43C0=0x43/4≈16.75）	卡事项5: 右端晚 16–17 槽
+ADJ_R9_extra_slots	28（350-322）	卡事项5: 共多 28 槽
+B1_candidates_zero	12 个候选（含补 0x7E406C）在 .text 各 0 命中	卡事项6: 12 候选立即数各 0 命中
+B1_posctrl	0x5A9940=54；0x77D710=56；0x6A00A8=126；E8->0x47C620=10	卡事项6: 正控/反控全通过
+B3_ctor_writes_total	12 处（4 目标槽 x 3 host）	卡事项6/7: 12 处 ctor 形态立即数装表写
+B3_slot_7E3E90_content	0x410590（.text），3 处立即数写 @ imm 地址 0x43B736,0x43BA11,0x43BD16	卡事项7: 内容 0x410590，串首附近
+B3_slot_7E3E98_content	0x410580（.text），3 处 @ 0x43B72F,0x43BA0A,0x43BD0F	卡事项7: 0x410580
+B3_slot_7E3EA0_content	0x4105E0（.text），3 处 @ 0x43B728,0x43BA03,0x43BD08	卡事项7: 0x4105E0
+B3_slot_7E3EBC_content	0x410260（.text），3 处 @ 0x43B721,0x43B9FC,0x43BCFF	卡事项7: 0x410260，#0 附近
+B3_site_caliber	审计列 0x43B721 等为立即数地址；指令起始早 2–3 B（如 C7 06 BC 3E 7E 00 @0x43B71F）；两种口径均满足 host<=site<fn_end	盘复算补充（卡未列 site 值，非卡面冲突）
+B3_hosts	0x43B680-0x43B740；0x43B740-0x43BCDE；0x43BCF0-0x43C0CA	卡事项7: 三个 host，位置断言成立
+B4_rdata_decorated	.?[A-Z]=0；??_7=0	卡事项6: .rdata 装饰名 0、无 pTD
+item10_purge_version	1.7.20（tgz 规格 https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.7.20/dsh-purge-community-1.7.20.tgz；node_modules 内 version=1.7.20）	卡事项10: 1.7.20 tgz；LEAD_LOCK §R 记 1.6.93 #commit 钉死
+item10_pkg_mtime	2026-11-21T06:25:23.838Z（UTC）= 14:25:23+08:00	卡事项10: package.json mtime 晚于 LEAD_LOCK 记录
+item10_ds_pkgs_deps	0 个（dependencies 仅 @dsh-external/dsh-harness-pilot, dsh-plugin-grill-me, dsh-purge-community）	卡事项10: dependencies 已无 @deepseek-ai/*
+item10_ds_pkgs_nm	0 个（node_modules/@deepseek-ai/ 为空）	卡事项10: node_modules 已无 @deepseek-ai/*
+item10_install_source	未取得	卡事项10: 安装来源未取得，不得用 LEAD_LOCK 装后核对当当前截面
+item11_probe_receipt	OK / 自报模型: 未回报 => 身份仍不可校验	卡事项11；独立回执文件在指定目录未取得
+item11_model_count	4（cordis.patch.yml: work/cn:deepseek-v4.1-flash, work/cn:hy4flash-free, work/cn:hy4flash, zcode/GLM-5.3-Flash，均 provider=magpie-anthropic）	卡事项11: 4 个模型可选；LEAD_LOCK §S 只点名 3 个（漏 work/cn:hy4flash）

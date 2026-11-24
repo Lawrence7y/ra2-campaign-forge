@@ -1,0 +1,79 @@
+=== INPUT FINGERPRINTS (hashlib.sha256) ===
+  lead/falsifiable_no_relax_20261109/_fnr_check.py sha256=94d89881f6a2e1afdea3ca78f56006ca27f1cabe1ec6384a9194718c327b00c2 bytes=28811
+  lead/falsifiable_no_relax_20261109/_fnr_check_out.json sha256=f3112b225b1de35183ad4604554cb25689ed252b6a5a95d96d17fce53c8c140e bytes=8733
+  lead/falsifiable_no_relax_20261109/_fnr_REPORT.md sha256=80641e7dcc0cc3ebc61c2c39afe6757814fc6eb694a9559c4903ab9241ee6f06 bytes=43390
+  lead/falsifiable_no_relax_20261109/_fnr_replay_out.json sha256=877f4ced0ab99562f776faa82015f742588c76fa9a63ee23b735f2fed61bd9fd bytes=27535
+  lead/falsifiable_no_relax_20261109/_fnrd_verify_out.json sha256=c8d7b4ea521d12e9a60ced120de2b939c230e7c1a8f0c923a0422f9fd65fa263 bytes=1713
+  lead/gate_r9sem_20261109/_r9s_regress_out.json sha256=5bfb169acc58221ac74873dd99e1236931ac1b08d1eedc8dfb43076cc5b05e25 bytes=75673
+  lead/gate_r9sem_20261109/_r9s_predicates.py sha256=b0265fc57ef4facd06d92b4852344a80d983f14560a8521525ba18e533ae7034 bytes=23111
+  lead/gate_r9sem_20261109/_r9s_regress.py sha256=16612625a7a5b11aba8b19c895a612f319bd4421c9c095b2ff8285be9214c4b4 bytes=11258
+  lead/whitelist_audit_20261109/_WL_WHITELIST_AUDIT.md sha256=f9d00b7c9a12a996bac9d89b0bf5a948dfe026e21f472bd825d7924d35a47adc bytes=52705
+  lead/PENDING_DECISIONS.md sha256=3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7 bytes=52419
+  lead/GOAL_THREE_TARGETS_20261018.md sha256=2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede bytes=759518
+
+=== L1 RECOMPUTE ===
+{
+ "n_items": 302,
+ "n_flips": 5,
+ "n_whitelist": 5,
+ "n_spec_keys": 5,
+ "registered_tokens": [
+  "可重建",
+  "实跑输出",
+  "改前改后",
+  "脚本存在性",
+  "需谁批准"
+ ],
+ "n_structurally_untested": 292,
+ "n_tested": 10,
+ "coverage_ratio": 0.0331,
+ "wl_tokens": [
+  "可重建",
+  "实跑输出",
+  "改前改后",
+  "脚本存在性",
+  "需谁批准"
+ ],
+ "spec_keys": [
+  "可重建",
+  "实跑输出",
+  "改前改后",
+  "脚本存在性",
+  "需谁批准"
+ ],
+ "wl_tokens_eq_spec_keys": true,
+ "code_uses_set_not_multiset": true
+}
+
+=== 10 BENIGN SCENARIOS ===
+  S01  现状假设成立(白名单5项内容正确且语义在场)                     VERDICT=ALARM layers_false=L1,L3          FP=True
+  S02  谓词覆盖全部token(无结构性未测)                        VERDICT=PASS  layers_false=-              FP=False
+  S03  有第三方盲标注真值表(真sha256封印)                      VERDICT=PASS  layers_false=-              FP=False
+  S04  对抗样本全被抓(16/16)                             VERDICT=PASS  layers_false=-              FP=False
+  S05  合规同源:SPECS是白名单的展开                          VERDICT=ALARM layers_false=L1             FP=True
+  S06  合规同源+全覆盖+真第三方封印                            VERDICT=ALARM layers_false=L1             FP=True
+  S07  合规同源+白名单第三方封印且独立                           VERDICT=ALARM layers_false=L1             FP=True
+  S08  追加1条真语义等价翻案                                VERDICT=PASS  layers_false=-              FP=False
+  S09  良性引文改写                                     VERDICT=PASS  layers_false=-              FP=False
+  S10  删1对白名单并同步删flip                             VERDICT=PASS  layers_false=-              FP=False
+
+  FP RATE (all 10)   = 4/10 = 0.4000  wilson95=[0.16818, 0.687326]
+  FP RATE (strict 9) = 3/9 = 0.3333  wilson95=[0.120584, 0.645798]
+  false_alarm_ids = ['S01', 'S05', 'S06', 'S07']
+
+=== PROBES ===
+P1 forged certs        : {"VERDICT": "PASS", "L2_ok": true, "L1_ok": true, "L3_ok": true, "anchor_files_exist": false, "note": "L2 never resolves file:line, never verifies a hash seal; it only reads caller-supplied booleans."}
+P2 guard fit           : 13/13 corpus items contain >=1 guard word
+P2 novel empties       : [{"id": "N-EMPTY-1", "guard_hit": false, "r9s_present": true, "repaired_present": true, "caught": false}, {"id": "N-EMPTY-2", "guard_hit": false, "r9s_present": true, "repaired_present": true, "caught": false}, {"id": "N-EMPTY-3", "guard_hit": false, "r9s_present": false, "repaired_present": false, "caught": true}]
+P2 good+novel          : ALARM caught=14/16
+P3 meta baseline       : {"baseline_VERDICT": "ALARM", "n_wrong": 0, "n_wrong_caught": 0, "n_good": 0, "n_false_alarms": 0, "CHECKER_VALID": true, "note": "CHECKER_VALID=true although baseline is ALARM. The formula omits baseline entirely."}
+P4 first-run baseline  : {"baseline_VERDICT": "ALARM", "good_variations": [{"name": "reworded_quote_still_true", "VERDICT": "ALARM", "false_alarm": true, "layers": {"L1": false, "L2": true, "L3": false}}, {"name": "extra_adversarial_case_caught", "VERDICT": "ALARM", "false_alarm": true, "layers": {"L1": false, "L2": true, "L3": false}}], "n_false_alarms": 2, "CHECKER_VALID": false}
+P5 L1 signature        : {"checker_params": ["items", "flips", "whitelist", "registered_tokens", "spec_keys", "certificates", "spec_roles", "predicate", "adversarial_corpus", "predicate_author", "whitelist_author", "whitelist_sealed", "mutation_payload"], "n_params": 13, "has_artifact_text_param": false, "check_l1_params": ["items", "flips", "whitelist", "registered_tokens", "predicate_spec_keys", "whitelist_sealed", "whitelist_author"], "note": "check_l1 has no certificate / artifact / oracle parameter; it can only see set structure."}
+P6 real R9S leaks      : 7/13 caught, leaked=['CF3', 'CF5', 'WCF5', 'V2', 'V3', 'V6']
+P7 9/9 & 0/2 bounds  : {"n_wrong": 9, "n_wrong_caught": 9, "one_sided_95pct_sensitivity_lower_bound": 0.716871, "n_good": 2, "n_false_alarms": 0, "one_sided_95pct_FP_upper_bound": 0.776393, "note": "9/9 caught only supports 'sensitivity >= 71.7%'; 0/2 cannot rule out a 77.6% false-positive rate."}
+P8 all-repaired      : {"VERDICT": "ALARM", "L1_ok": false, "L2_ok": true, "L3_ok": true, "L1_problems": ["L1: SELF_CERTIFIED -- whitelist token multiset == predicate spec keys; 'outside=0' is a design consequence, not evidence"], "L1_coverage_ratio": 1.0, "L3_caught": 13, "L3_total": 13, "all_real_defects_repaired": true, "note": "All real defects repaired, yet L1 still ALARMs solely on the same-source identity. This is over-strictness."}
+P9 padding trick     : {"with_dummy_key_VERDICT": "PASS", "with_dummy_key_L1_ok": true, "without_dummy_key_VERDICT": "ALARM", "without_dummy_key_L1_ok": false, "without_dummy_key_L1_problems": ["L1: SELF_CERTIFIED -- whitelist token multiset == predicate spec keys; 'outside=0' is a design consequence, not evidence"], "dummy_key": "额外预留要素", "spec_keys_with": ["可重建", "实跑输出", "改前改后", "脚本存在性", "需谁批准", "额外预留要素"], "spec_keys_without": ["可重建", "实跑输出", "改前改后", "脚本存在性", "需谁批准"], "note": "Adding one unrelated key flips ALARM->PASS. The criterion measures set inequality, not provenance independence."}
+P10 per-layer recall : {"n_wrong": 9, "per_layer_alarm_counts": {"L1": 3, "L2": 6, "L3": 1}, "L1_alone_recall": 0.3333, "note": "L1 alone catches only 3/9 known-wrong worlds."}
+P11 coverage 0.0     : {"baseline_coverage": 0.0331, "zero_coverage_L1_ok": true, "zero_coverage_ratio": 0.0, "zero_coverage_problems": [], "VERDICT_with_zero_coverage": "PASS", "note": "coverage is decorative: 0.0 coverage still PASSes."}
+
+WROTE _cfa_out.json

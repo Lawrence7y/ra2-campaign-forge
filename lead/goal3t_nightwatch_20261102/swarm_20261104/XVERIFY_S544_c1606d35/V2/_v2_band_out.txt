@@ -1,0 +1,41 @@
+=== ① §544 对标负载带 units0∈[1180,1360] 的 快/慢 × v4/非v4 ===
+  band n=22  fast=8 mid=2 slow=12
+  FAST  n=8   {('38244d2907e7f7fa', 'qc151_trip.harness8_v4.py'): 8}
+        trips: ['l3_1101v4c', 'l3_1101v4d', 'l3_1101v4e']
+  MID   n=2   {('37a7c9cdf2ca97e3', 'qc151_trip.harness8_v3.py'): 1, ('38244d2907e7f7fa', 'qc151_trip.harness8_v4.py'): 1}
+        trips: ['l3_1101v3b', 'l3_1101v4c']
+  SLOW  n=12  {('37a7c9cdf2ca97e3', 'qc151_trip.harness8_v3.py'): 5, ('NO_SHA16', 'qc151_trip.harness3.py'): 3, ('dd5459fe0cf3461c', 'qc151_trip.harness8.py'): 4}
+        trips: ['l3_1101v3a', 'l3_1101v3b', 'l3_20261021', 'l3_20261031ha', 'l3_20261031hb']
+  2x2: fast_v4=8 fast_nonv4=0 slow_v4=0 slow_nonv4=12
+  phi = +1.000000  ⇒ 完全共线 = True
+  FAST 是否 100% v4: True ；SLOW 是否 0% v4: True
+
+=== ② 相位混淆：每趟首帧号 f0 与 h7_measure_start_frame 配置 ===
+  l1c_20261021         start_frame=None  f0(w0)=957     units0=881    live_w0=9.221     harness=qc151_trip.harness3.py
+  l1d_20261021         start_frame=None  f0(w0)=1095    units0=874    live_w0=10.266    harness=qc151_trip.harness3.py
+  l1e_20261021         start_frame=None  f0(w0)=1158    units0=866    live_w0=11.660    harness=qc151_trip.harness3.py
+  l3_20261021          start_frame=None  f0(w0)=387     units0=1342   live_w0=8.784     harness=qc151_trip.harness3.py
+  l3_20261031ha        start_frame=400   f0(w0)=400     units0=1342   live_w0=3.050     harness=qc151_trip.harness8.py
+  l3_20261031hb        start_frame=400   f0(w0)=437     units0=1347   live_w0=6.791     harness=qc151_trip.harness8.py
+  l3_1101v3a           start_frame=400   f0(w0)=434     units0=1349   live_w0=11.625    harness=qc151_trip.harness8_v3.py
+  l3_1101v3b           start_frame=400   f0(w0)=454     units0=1352   live_w0=16.744    harness=qc151_trip.harness8_v3.py
+  l3_1101v4c           start_frame=800   f0(w0)=869     units0=1229   live_w0=18.540    harness=qc151_trip.harness8_v4.py
+  l3_1101v4d           start_frame=800   f0(w0)=920     units0=1225   live_w0=31.181    harness=qc151_trip.harness8_v4.py
+  l3_1101v4e           start_frame=800   f0(w0)=925     units0=1189   live_w0=31.286    harness=qc151_trip.harness8_v4.py
+  l3_20261023q         start_frame=None  f0(w0)=2955    units0=974    live_w0=31.135    harness=qc151_trip.harness7.py
+  l3_20261023r         start_frame=None  f0(w0)=3100    units0=941    live_w0=31.320    harness=qc151_trip.harness7.py
+  t55k_20261020        start_frame=None  f0(w0)=3899    units0=842    live_w0=31.281    harness=None
+  l1a_20261020         start_frame=None  f0(w0)=3849    units0=732    live_w0=31.270    harness=None
+
+=== ③ 是否存在「完全相同 units0」既快又慢的跨时段对照 ===
+  units0=0      n=3   dates=['2026-10-24', '2026-10-25', '2026-10-26'] harness=['qc151_trip.harness7.py'] live=2.010..10.067
+  units0=1342   n=4   dates=['2026-10-21', '2026-10-31'] harness=['qc151_trip.harness3.py', 'qc151_trip.harness8.py'] live=3.050..11.981
+  具有「跨日期 + 又快又慢」的 units0 档数量 = 0
+
+=== ④ §544 点名四组的 units0 是否「同负载」===
+  11-01 16:48    units0=1225
+  11-03 11:20    units0=1189
+  10-21 19:03    units0=881
+  10-31 20:15    units0=1347
+  快组 (1225,1189) 差 36 (2.9%)；慢组 (881,1347) 差 466；快组均值 1207.0 vs 慢组均值 1114.0 差 7.7%
+  10-21 19:03 的 units0=881 是否落在 ask 所述 1180-1360 带内？ False

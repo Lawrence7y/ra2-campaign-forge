@@ -1,0 +1,31 @@
+=== 第三步(d) 反事实：白名单 5 条里有 1 条是错的（其实语义不在场） ===
+  case_1 wrong=('lead/matrix_ab_ruling_20261109/', '需谁批准')
+     A 移除白名单错条(谓词未改): no_relaxation=False outside=1
+     B 白名单不动(现状)      : no_relaxation=True outside=0  ← 仍 PASS
+  case_2 wrong=('lead/matrix_reach_20261109/', '实跑输出')
+     A 移除白名单错条(谓词未改): no_relaxation=False outside=1
+     B 白名单不动(现状)      : no_relaxation=True outside=0  ← 仍 PASS
+  case_3 wrong=('lead/n11_wording_fix_20261108/', '改前改后')
+     A 移除白名单错条(谓词未改): no_relaxation=False outside=1
+     B 白名单不动(现状)      : no_relaxation=True outside=0  ← 仍 PASS
+  case_4 wrong=('lead/s604_script_gap_20261109/', '可重建')
+     A 移除白名单错条(谓词未改): no_relaxation=False outside=1
+     B 白名单不动(现状)      : no_relaxation=True outside=0  ← 仍 PASS
+  case_5 wrong=('lead/s604_script_gap_20261109/', '脚本存在性')
+     A 移除白名单错条(谓词未改): no_relaxation=False outside=1
+     B 白名单不动(现状)      : no_relaxation=True outside=0  ← 仍 PASS
+  case_C 若谓词本应不翻案(错条其实语义不在场)，但被强行翻案：flips 仍 5、白名单仍 5 → PASS
+  case_D 白名单多 1 条(flips 不变): no_relaxation=False
+
+=== 第四步 5 条『形式像而实质空』样本逐条实跑 ===
+  CF1 [批准人待定] token=需谁批准  R9=True/raw  R9S=False/(none)  misjudged=no
+  CF2 [实跑已做但无输出数据] token=实跑输出  R9=False/(none)  R9S=False/(none)  misjudged=no
+  CF3 [改前改后并列但无对照] token=改前改后  R9=False/(none)  R9S=True/semantic  misjudged=★YES
+     evidence = [{"role": "R1(BEFORE)∧R2(AFTER)∧R3(对照)", "section": "## 4 订正草案（改前/改后逐处对照）", "before": {"label": "【改前】", "value": "本件按 13 项分写，与裁决列名一一对应，无缺漏、无新增。", "line": 5}, "after": {"label": "【改后】", "value": "改后句见方案 B 的对应行，本件不重录。", "line": 6}, "n_before": 1, "n_after": 1}]
+  CF4 [存在性待查] token=脚本存在性  R9=True/raw  R9S=False/(none)  misjudged=no
+  CF5 [重建待验证] token=可重建  R9=False/(none)  R9S=True/semantic  misjudged=★YES
+     evidence = [{"role": "R1(重建)∧R2(肯定情态)∧R3(确定性证据)", "section": "## 4 重建可行性", "modal": "【可唯一重建】", "evidence": "五项口径", "line": 9, "clause": "**待判：正确算法是否【可唯一重建】，尚需与台账逐位核对"}]
+
+  → 误判在场 = 2/5   (升级过宽? YES)
+
+WROTE _wl_step34_out.json

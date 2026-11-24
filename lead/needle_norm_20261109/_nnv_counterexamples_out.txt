@@ -1,0 +1,85 @@
+### 独立反例：撰写人 L1 方案是否把不同意思的句子当成同一句
+L1 canon key = '只能判\x01不可复现\x02'
+
+=== 逐例：L1 键 / 召回 / 原文角色 ===
+-- V1 核心汉字不同命题 --
+   A = '只能判「不可复现」'
+   B = '只能判「不可复原」'
+   L1 全行 key(A)='只能判\x01不可复现\x02'
+   L1 全行 key(B)='只能判\x01不可复原\x02' ; FULL_LINE_KEY_MERGED=False
+   find_norm(canon) 命中 A=True B=False ; W4 命中 A=True B=False ; 补充轨命中 A=True B=False
+   spans_of_quotes(原文A)=[(3, 9, '「')]
+   spans_of_quotes(原文B)=[(3, 9, '「')]
+   classify_line(原文A)=ASSERTION  classify_line(原文B)=<classify_line returned None>  (期望 A≈QUOTED / B≈QUOTED)
+   语义差异：不可复现=数值复算不出；不可复原=历史现场无法还原（真实语料 5 行）。不同命题。
+
+-- V2 引号内 vs 引号外（断言 vs 引述否定） --
+   A = '**只能判「不可复现」、不能定位当年错误步骤**'
+   B = '其边界句「只能判『不可复现』、不能定位当年错误步骤」自本节起不再成立'
+   L1 全行 key(A)='**只能判\x01不可复现\x02、不能定位当年错误步骤**'
+   L1 全行 key(B)='其边界句\x01只能判\x01不可复现\x02、不能定位当年错误步骤\x02自本节起不再成立' ; FULL_LINE_KEY_MERGED=False
+   find_norm(canon) 命中 A=True B=True ; W4 命中 A=True B=True ; 补充轨命中 A=True B=True
+   spans_of_quotes(原文A)=[(5, 11, '「')]
+   spans_of_quotes(原文B)=[(4, 26, '「'), (8, 14, '『')]
+   classify_line(原文A)=ASSERTION  classify_line(原文B)=REFUTING_QUOTE  (期望 A≈ASSERTION / B≈REFUTING_QUOTE)
+   语义差异：A 是 §607 裸断言(needs_fix 候选)；B 是 §609 引 A 来否定它(REFUTING_QUOTE)。不同 role。
+
+-- V3 无引号裸串 vs 带引号 --
+   A = '只能判不可复现、不能定位当年错误步骤'
+   B = '只能判「不可复现」、不能定位当年错误步骤'
+   L1 全行 key(A)='只能判不可复现、不能定位当年错误步骤'
+   L1 全行 key(B)='只能判\x01不可复现\x02、不能定位当年错误步骤' ; FULL_LINE_KEY_MERGED=False
+   find_norm(canon) 命中 A=False B=True ; W4 命中 A=True B=True ; 补充轨命中 A=True B=True
+   spans_of_quotes(原文A)=[]
+   spans_of_quotes(原文B)=[(3, 9, '「')]
+   classify_line(原文A)=ASSERTION  classify_line(原文B)=ASSERTION  (期望 A≈ASSERTION / B≈QUOTED)
+   语义差异：B 的 needle 落在成对引号跨度内(QUOTED)，A 无跨度(非 QUOTED)；删引号后才同键。
+
+-- V4 半错配引号（左『右」） --
+   A = '只能判「不可复现」'
+   B = '只能判『不可复现」'
+   L1 全行 key(A)='只能判\x01不可复现\x02'
+   L1 全行 key(B)='只能判\x01不可复现\x02' ; FULL_LINE_KEY_MERGED=True
+   find_norm(canon) 命中 A=True B=True ; W4 命中 A=True B=True ; 补充轨命中 A=True B=True
+   spans_of_quotes(原文A)=[(3, 9, '「')]
+   spans_of_quotes(原文B)=[]
+   classify_line(原文A)=ASSERTION  classify_line(原文B)=ASSERTION  (期望 A≈QUOTED / B≈UNKNOWN/不得猜)
+   语义差异：B 引号不成对，spans_of_quotes 找不到跨度 → 按 REPORT:250 应报 UNKNOWN，不得猜成 ASSERTION。
+
+-- V5 单弯引号 ‘’（不在 _rs_carrier_scan.py:79 PAIRS 里） --
+   A = '只能判「不可复现」'
+   B = '只能判‘不可复现’'
+   L1 全行 key(A)='只能判\x01不可复现\x02'
+   L1 全行 key(B)='只能判\x01不可复现\x02' ; FULL_LINE_KEY_MERGED=True
+   find_norm(canon) 命中 A=True B=True ; W4 命中 A=True B=True ; 补充轨命中 A=True B=False
+   spans_of_quotes(原文A)=[(3, 9, '「')]
+   spans_of_quotes(原文B)=[]
+   classify_line(原文A)=ASSERTION  classify_line(原文B)=ASSERTION  (期望 A≈QUOTED / B≈QUOTED(但 R5 会给 ASSERTION))
+   语义差异：B 的 ‘’ 不在 PAIRS=[「」,『』,``,“”] 中 → 原文 R5 判不出 quote span，会掉到 ASSERTION。
+
+-- V6 整句被引号罩住 vs 只罩核心词 --
+   A = '只能判「不可复现」、不能定位当年错误步骤'
+   B = '只能判「不可复现、不能定位当年错误步骤」'
+   L1 全行 key(A)='只能判\x01不可复现\x02、不能定位当年错误步骤'
+   L1 全行 key(B)='只能判\x01不可复现、不能定位当年错误步骤\x02' ; FULL_LINE_KEY_MERGED=False
+   find_norm(canon) 命中 A=True B=False ; W4 命中 A=True B=True ; 补充轨命中 A=True B=True
+   spans_of_quotes(原文A)=[(3, 9, '「')]
+   spans_of_quotes(原文B)=[(3, 20, '「')]
+   classify_line(原文A)=ASSERTION  classify_line(原文B)=<classify_line returned None>  (期望 A≈QUOTED / B≈QUOTED(span 不同))
+   语义差异：A 引号 span 只盖 4 字；B 盖整句。CE2 同型：span 不同 ⇒ role 不同。
+
+=== 判定口径 ===
+  1) 若把『同一归一 key』当成 merge 判据：V1/V2/V3/V6 的 L1 全行 key 不同 → 不合并。
+  2) 但 L1 是召回键(find_norm(canon))，不是全行 key：只要 B 被 canon 召回，
+     就以 canon 身份进入 carriers。检查 V4/V5 是否被 canon 召回且原文 span 无效：
+     V4 半错配引号（左『右」）: B 被 canon 召回=True ; B 原文 span=[] ; B 原文 classify_line=ASSERTION
+     V5 单弯引号 ‘’（不在 _rs_carrier_scan.py:79 PAIRS 里）: B 被 canon 召回=True ; B 原文 span=[] ; B 原文 classify_line=ASSERTION
+
+=== 附：撰写人 CE1-CE7 的 L1_MERGED 断言是否成立（全行 key 口径） ===
+  CE1 L1_MERGED=False ; find_norm(canon) A=True B=False
+  CE2 L1_MERGED=False ; find_norm(canon) A=True B=False
+  CE3 L1_MERGED=False ; find_norm(canon) A=True B=False
+  CE4 L1_MERGED=False ; find_norm(canon) A=False B=False
+  CE5 L1_MERGED=False ; find_norm(canon) A=True B=True
+  CE6 L1_MERGED=False ; find_norm(canon) A=False B=False
+  CE7 L1_MERGED=False ; find_norm(canon) A=True B=False

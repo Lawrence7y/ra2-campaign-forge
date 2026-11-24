@@ -1,0 +1,114 @@
+{
+  "ref_sha256": "5bfb169acc58221ac74873dd99e1236931ac1b08d1eedc8dfb43076cc5b05e25",
+  "my_empty_payloads": [
+    {
+      "id": "RV-E1",
+      "domain": "lead/matrix_ab_ruling_20261109/",
+      "token": "需谁批准",
+      "r9": false,
+      "r9s": true,
+      "layer": "semantic",
+      "is_flip": true,
+      "detail": {
+        "spec": "S1_WHO_APPROVER",
+        "logic": "∃x[批准人(x) ∧ Bind(x, agent)] ∧ ¬Pending ∧ agent∉Placeholder",
+        "evidence": [
+          {
+            "role": "R1∧R2∧R3",
+            "match": "批准人一律 = 归档编号A7",
+            "agent": "归档编号A7",
+            "line": 3
+          }
+        ],
+        "layer": "semantic"
+      }
+    },
+    {
+      "id": "RV-E2",
+      "domain": "lead/n11_wording_fix_20261108/",
+      "token": "改前改后",
+      "r9": false,
+      "r9s": true,
+      "layer": "semantic",
+      "is_flip": true,
+      "detail": {
+        "spec": "S3_BEFORE_AFTER_PAIR",
+        "logic": "∃t[Before(t) ∧ After(t) ∧ Compare(t)] ∧ SameSection ∧ Value(t)∉Placeholder",
+        "evidence": [
+          {
+            "role": "R1(BEFORE)∧R2(AFTER)∧R3(对照)",
+            "section": "## 4 订正草案（改前/改后逐处对照）",
+            "before": {
+              "label": "【改前】",
+              "value": "旧句共 13 项分写，与裁决列名一一对应，无缺漏、无新增。",
+              "line": 3
+            },
+            "after": {
+              "label": "【改后】",
+              "value": "新句见方案 B 的对应行，本件不重录。",
+              "line": 4
+            },
+            "n_before": 1,
+            "n_after": 1
+          }
+        ],
+        "layer": "semantic"
+      }
+    },
+    {
+      "id": "RV-E3",
+      "domain": "lead/s604_script_gap_20261109/",
+      "token": "可重建",
+      "r9": false,
+      "r9s": true,
+      "layer": "semantic",
+      "is_flip": true,
+      "detail": {
+        "spec": "S5_RECONSTRUCTIBILITY",
+        "logic": "◇Reconstruct(algo) ∧ ∃e Evidence(e,determinacy) ∧ ¬NegModal ∧ ¬Pending ∧ SameSection",
+        "evidence": [
+          {
+            "role": "R1(重建)∧R2(肯定情态)∧R3(确定性证据)",
+            "section": "## 4 重建可行性与单向压缩候选筛选",
+            "modal": "【可唯一重建】",
+            "evidence": "五项口径",
+            "line": 6,
+            "clause": "判定：正确算法【可唯一重建】"
+          }
+        ],
+        "layer": "semantic"
+      }
+    }
+  ],
+  "n_wrong": 3,
+  "old_on_my_all_wrong": {
+    "no_relaxation": true,
+    "VERDICT": "PASS"
+  },
+  "truth_preserving_perturbations": [
+    {
+      "case": "add_6th_true_flip",
+      "truth": "all 5 original semantics intact",
+      "no_relaxation": false,
+      "VERDICT": "FAIL"
+    },
+    {
+      "case": "one_flip_made_literally_present",
+      "truth": "semantics improved",
+      "no_relaxation": false,
+      "VERDICT": "FAIL"
+    },
+    {
+      "case": "drop_1_whitelist_pair",
+      "truth": "all 5 semantics intact",
+      "no_relaxation": false,
+      "VERDICT": "FAIL"
+    }
+  ],
+  "source_lines": [
+    "_r9s_regress.py:179 (_d discarded)",
+    ":183-185 (flip record)",
+    ":204-206 (no_relaxation)",
+    ":223-229 (VERDICT)"
+  ]
+}

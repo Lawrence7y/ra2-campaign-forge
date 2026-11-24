@@ -1,0 +1,20 @@
+claim	address	bytes_actual	decoded	verdict
+C1	0x43FB0C	CA F1 43 00 E9 F1 43 00 A6 F9 43 00 E9 F1 43 00	[jmp table] entries 0x43F1CA/0x43F1E9/0x43F9A6/0x43F1E9	AGREE
+C1	0x43F180	81 EC B0 00 00 00	[switch entry] sub esp,0xB0 (prologue present)	AGREE
+C1	0x43F1E6	C2 04 00	[ret before case] ret 4 = case0 epilogue, NOT function end	AGREE
+C1	0x43F1E9	8B 87 20 05 00 00	[case start no prologue] mov eax,[edi+0x520]; edi from 0x43F191	AGREE
+C2	0x47C738	E8 93 FC FF FF	[call instruction] call 0x47C3D0 (rel32 -0x36D)	AGREE
+C3	0x43F249	88 5C 24 23	[W1 write 0] mov [esp+0x23],bl ; bl=0 from 0x43F1EF xor ebx,ebx	AGREE
+C3	0x43F4FF	C6 44 24 23 01	[W2 write 1] mov [esp+0x23],1	AGREE
+C3	0x43F5AB	8A 44 24 23	[R1 read] mov al,[esp+0x23]	AGREE
+C3	[0x43F180,0x43F660)	raw: mod=01/rm=100/SIB=0x24/disp=0x23	[exhaustive] exactly 3 opcodes 43F249,43F4FF,43F5AB (2W+1R)	AGREE
+C4	0x43F249/4FF/5AB	espd=-0x4 at all three; only esp-change in body is 0x43F5CF epilogue	[frame slot] all 3 same physical slot (base 0x27; executor 0xE7 = convention)	AGREE
+C5	0x43F2AE	E8 6D D3 03 00	[per-cell call] call 0x47C620	AGREE
+C5	0x43F2B3	84 C0	[test] test al,al	AGREE
+C5	0x43F2B5	0F 84 49 02 00 00	[je loop incr] je 0x43F504	AGREE
+C6	0x47C73F	0F 85 0E 01 00 00	[jne fail branch] jne 0x47C853 (+0x10E)	AGREE
+C6	0x47C853	5F 5E 5D 32 C0 5B 83 C4 08 C2 0C 00	[fail exit] xor al,al @0x47C856 ; ret 0xC	AGREE
+C7	0x43F5B1	74 25	[reject gate] je 0x43F5D8 (+0x25)	AGREE
+C7	0x43F5E3	32 C0	[fail value] xor al,al	AGREE
+C8	.text scan	E8 rel32 ->0x47C620	[10 sites] 43F2AE;449482;47EE93;58865F;58886E;5FC6FA;6D5A98;6D5D33;716209;71C554	AGREE
+C9	.text scan	E8 rel32 ->0x43F180 / ->0x449440	[0 hits] method=bounded .text E8 pattern scan, sound -> supports 0	AGREE

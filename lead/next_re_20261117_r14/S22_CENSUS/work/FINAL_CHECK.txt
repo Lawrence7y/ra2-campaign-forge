@@ -1,0 +1,19 @@
+import sys, json, hashlib, collections
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+from pathlib import Path
+OUT=Path(r'D:/Project/ra2-campaign-forge/lead/next_re_20261117_r14/S22_CENSUS')
+c=json.load(open(OUT/'EVIDENCE/counts.json',encoding='utf-8'))
+assert c['S22_TOTAL']==4851
+assert c['ANCHORED']==2005 and c['UNANCHORED']==2846
+assert c['A1']+c['A2']+c['A3']==c['ANCHORED']
+assert c['A1']+c['A2']+c['A3']+c['A4']==c['S22_TOTAL']
+assert c['TD']==988 and c['COL']==1214 and c['vtable_tables']==1214 and c['vtable_slots']==14044
+assert c['sha256']=='73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476'
+for p,maxl in [('SUMMARY.md',50),('PROGRESS.md',30)]:
+    n=len((OUT/p).read_text(encoding='utf-8').splitlines())
+    assert n<=maxl,(p,n)
+rows=(OUT/'CENSUS.tsv').read_text(encoding='utf-8').splitlines()
+assert len(rows)==4852
+assert len((OUT/'EVIDENCE/A4_samples.tsv').read_text(encoding='utf-8').splitlines())==41
+print('FINAL CHECK PASS')
+print(json.dumps({k:c[k] for k in ['S22_TOTAL','ANCHORED','UNANCHORED','A1','A2','A3','A4','TD','COL','vtable_tables','vtable_slots','migration_suggested']},ensure_ascii=False))

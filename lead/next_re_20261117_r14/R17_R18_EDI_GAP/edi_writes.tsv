@@ -1,0 +1,12 @@
+addr	instr	bytes	path
+0x43F191	mov edi, ecx	8B F9	initial (excluded)
+0x43F1DA	pop edi	5F	case0 early-ret path (0x43F1CA->ret@0x43F1E6; never reaches 0x43F5D8)
+0x43F387	lea edi, [esi+edx]	8D 3C 16	case1/3 inner loop (0x43F379..0x43F3D4) - CLOBBER
+0x43F3DA	mov edi, [esp+0x30]	8B 7C 24 30	case1/3 after loop - RESTORE this from spill
+0x43F5C9	pop edi	5F	al!=0 ret path (ret@0x43F5D5; never reaches 0x43F5D8)
+0x43F5E0	pop edi	5F	epilogue outside window (>=0x43F5D8)
+0x43F649	pop edi	5F	tail 0x43F5EF region (outside window)
+0x43F88C	lea edi, [esi+edx]	8D 3C 16	tail loop (outside window)
+0x43F933	lea edi, [ecx+2]	8D 79 02	tail loop (outside window)
+0x43F997	pop edi	5F	tail ret (outside window)
+0x43FAFC	pop edi	5F	default ja/epilogue (outside window)

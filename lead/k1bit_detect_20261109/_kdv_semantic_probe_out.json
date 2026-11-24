@@ -1,0 +1,200 @@
+{
+ "n": 12,
+ "passed": 8,
+ "failed": 4,
+ "all_negatives_correct": true,
+ "all_positives_correct": false,
+ "mismatches": [
+  {
+   "name": "V7_true_collapse_renamed",
+   "want": "CONFIRMED_K1BIT",
+   "got": "LEGAL_AGGREGATE"
+  },
+  {
+   "name": "V8_true_collapse_no_any_keyword",
+   "want": "CONFIRMED_K1BIT",
+   "got": "LEGAL_AGGREGATE"
+  },
+  {
+   "name": "V10_true_collapse_hits_variable_not_retained",
+   "want": "CONFIRMED_K1BIT",
+   "got": "LEGAL_AGGREGATE"
+  },
+  {
+   "name": "V11_true_collapse_min_argmin",
+   "want": "CONFIRMED_K1BIT",
+   "got": "SUSPECT"
+  }
+ ],
+ "rows": [
+  {
+   "name": "V1_legal_all_generator",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "note": "Semantically legal: AND_k over 3 tokens; one term dead -> FAIL. Uses all(), no any().",
+   "has_k": false,
+   "attribution": false,
+   "onebit_exit": true,
+   "collapse": [],
+   "legal": [
+    "AND_aggregate"
+   ]
+  },
+  {
+   "name": "V2_legal_all_bound_list",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "note": "Legal: all() over a bound bool list, AND_k, no OR branch.",
+   "has_k": false,
+   "attribution": false,
+   "onebit_exit": true,
+   "collapse": [],
+   "legal": [
+    "AND_aggregate"
+   ]
+  },
+  {
+   "name": "V3_legal_all_renamed_vars",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "note": "Legal AND_k with deliberately non-tokenish names; tests name independence of LEGAL.",
+   "has_k": false,
+   "attribution": false,
+   "onebit_exit": true,
+   "collapse": [],
+   "legal": [
+    "AND_aggregate"
+   ]
+  },
+  {
+   "name": "V4_legal_any_with_all_and_attribution",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "note": "Legal: per-token attribution retained; any() present but k->vec not lost.",
+   "has_k": false,
+   "attribution": true,
+   "onebit_exit": true,
+   "collapse": [],
+   "legal": [
+    "AND_aggregate",
+    "any_other"
+   ]
+  },
+  {
+   "name": "V5_legal_any_over_samples",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "note": "Legal: existential over SAMPLES with ONE fixed literal (k=1).",
+   "has_k": false,
+   "attribution": false,
+   "onebit_exit": true,
+   "collapse": [],
+   "legal": [
+    "any_over_samples"
+   ]
+  },
+  {
+   "name": "V6_legal_ok_accum_per_item_print",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "note": "Legal: ok &= is present, but per-token prints retain attribution.",
+   "has_k": false,
+   "attribution": false,
+   "onebit_exit": true,
+   "collapse": [
+    "BIT_ACCUM_AugAssign_BitAnd"
+   ],
+   "legal": []
+  },
+  {
+   "name": "V7_true_collapse_renamed",
+   "want": "CONFIRMED_K1BIT",
+   "got": "LEGAL_AGGREGATE",
+   "ok": false,
+   "note": "Genuine k->1bit: exists over 2 tokens, one aggregate PASS, no attribution. Names are deliberately non-tokenish (zzz/x/y), no keyword/word/needle.",
+   "has_k": false,
+   "attribution": false,
+   "onebit_exit": true,
+   "collapse": [],
+   "legal": [
+    "any_over_samples"
+   ]
+  },
+  {
+   "name": "V8_true_collapse_no_any_keyword",
+   "want": "CONFIRMED_K1BIT",
+   "got": "LEGAL_AGGREGATE",
+   "ok": false,
+   "note": "Genuine k->1bit with NO any() token at all: OR of bound bools via `or`. A semantic detector should catch it; a formal any()-screen cannot.",
+   "has_k": false,
+   "attribution": false,
+   "onebit_exit": true,
+   "collapse": [],
+   "legal": [
+    "AND_aggregate"
+   ]
+  },
+  {
+   "name": "V9_false_collapse_form_without_k",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "note": "any(GeneratorExp) form is present but k=1: semantically legal existence, no k->1bit loss. Tests whether formal shape alone triggers a report.",
+   "has_k": false,
+   "attribution": false,
+   "onebit_exit": true,
+   "collapse": [],
+   "legal": [
+    "any_over_samples"
+   ]
+  },
+  {
+   "name": "V10_true_collapse_hits_variable_not_retained",
+   "want": "CONFIRMED_K1BIT",
+   "got": "LEGAL_AGGREGATE",
+   "ok": false,
+   "note": "A variable NAMED hits is assigned a scalar 0 and never used; attribution is NOT actually retained. Semantically a genuine k->1bit defect.",
+   "has_k": false,
+   "attribution": true,
+   "onebit_exit": true,
+   "collapse": [
+    "OR_COLLAPSE_gen"
+   ],
+   "legal": []
+  },
+  {
+   "name": "V11_true_collapse_min_argmin",
+   "want": "CONFIRMED_K1BIT",
+   "got": "SUSPECT",
+   "ok": false,
+   "note": "Genuine k->1bit via argmin: retains one scalar position, not which needle. No any() call.",
+   "has_k": false,
+   "attribution": false,
+   "onebit_exit": true,
+   "collapse": [
+    "ARGMIN_REVERSE_MASK"
+   ],
+   "legal": []
+  },
+  {
+   "name": "V12_legal_all_but_dead_input_invariant",
+   "want": "LEGAL_AGGREGATE",
+   "got": "LEGAL_AGGREGATE",
+   "ok": true,
+   "note": "Independent all() negative control: AND_k cannot pass with input_1 dead.",
+   "has_k": false,
+   "attribution": false,
+   "onebit_exit": true,
+   "collapse": [],
+   "legal": [
+    "AND_aggregate"
+   ]
+  }
+ ]
+}

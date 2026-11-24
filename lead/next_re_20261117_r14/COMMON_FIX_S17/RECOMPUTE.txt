@@ -1,0 +1,87 @@
+COMMON-FIX-S17 / M62 —— S17 名字口径重算留痕（RECOMPUTE）
+==============================================================================
+
+一、口径（与 COVERAGE\PANEL.md 现行表头定义、RULING-R15 D-38 一致）
+  n            = coverage.tsv 中 subsystem == S17 且 entry 属于 function_atlas.tsv 的行数
+                 （atlas 的 entry 列为小写十六进制，比对时两侧统一转小写）
+  named_L      = name 非空，且不是 sub_<hex> 占位名
+  named_S(R14) = named_L 且排除 ::sub_<hex> 复合名（DoD 判定列；D-38：slotN 计入 named）
+  named_strict = named_S(R14) 且排除 slotN 形态（参考列，不参与达标判定）
+  门槛         = ceil(0.9 × n)
+
+二、命令
+  pwsh -NoProfile -File lead\next_re_20261117_r14\COMMON_FIX_S17\01_recompute.ps1
+  （输入指纹：coverage.tsv 18,498 数据行 / function_atlas.tsv 12,916 数据行）
+
+三、输出（原样捕获）
+------------------------------------------------------------------------------
+  [COV] header : entry,subsystem,name,one_line_semantics,grade,evidence_path,n_sources,conflict
+  [COV] data rows = 18498
+  [ATL] data rows = 12916 ; unique entry set = 12916
+  [ATL] entry column is lowercase hex in file; comparison normalized to lowercase on both sides.
+  
+  [S17] coverage rows with subsystem==S17 (all) = 104
+  [S17] ... of which entry in atlas            = 102   <= n
+  [S17] ... of which entry NOT in atlas        = 2
+        outside-atlas: 006CF320  name=SwizzleManager_Compare  grade=[静态推断]
+        outside-atlas: 006CF410  name=SwizzleManagerClass::slot9  grade=[静态推断]
+  
+  ---- metric recompute (named_L / named_S(R14) / named_strict) ----
+  n                                    = 102
+  name empty                           = 0
+  sub_ form  ^sub_[0-9A-Fa-f]+$        = 8
+  ::sub_ composite (excluded by S)     = 0
+  slotN form (counted in L and S)      = 36
+  named_L         = 94 / 102
+  named_S(R14)    = 94 / 102
+  named_strict    = 58 / 102
+  threshold ceil(0.9*n)                = 92
+  margin named_S(R14) = 2 ; margin named_strict = -34
+  pct named_S(R14) = 92.16%
+  pct named_strict = 56.86%
+  
+  ---- the 8 sub_ form rows (still unnamed) ----
+    004068E0	sub_004068E0
+    0040E340	sub_0040E340
+    00427940	sub_00427940
+    0042E410	sub_0042E410
+    00433CF0	sub_00433CF0
+    0049F740	sub_0049F740
+    0049F8B0	sub_0049F8B0
+    00773450	sub_00773450
+  
+  ---- M56 merged rows present on disk? ----
+    006CF430  sub=S17  name=SwizzleManagerClass::slot0  grade=[已证]
+    004A2990  sub=S17  name=CStreamClass::slot0  grade=[已证]
+    006CF240  sub=S17  name=SwizzleManager::Here_I_Am  grade=[已证]
+------------------------------------------------------------------------------
+
+四、与 Lead 交办数字对照
+  项目                        Lead        本轮重算    一致
+  n                             102         102      True
+  named_L                        94          94      True
+  named_S(R14)                   94          94      True
+  named_strict                   58          58      True
+  name 为空                       0           0      True
+  sub_ 形态                       8           8      True
+  slotN 形态                     36          36      True
+  门槛 ceil(0.9×102)             92          92      True
+  named_S(R14) 余量               2           2      True
+
+  全部一致 = True  ⇒ 按卡面要求继续落笔，未触发「停下来报告」条件。
+  补充：94/102 = 92.16%；58/102 = 56.86%；92 - 58 = 34 行（§12.5 末句「仍差 34 行」的依据）。
+
+五、三处改动行的表格列数未破坏（防止行内追加撑出多余单元格）
+  L775: 竖线 5 -> 5（不变=True）；行长 +108 字符（= 标记 108 字符）
+  L794: 竖线 4 -> 4（不变=True）；行长 +108 字符（= 标记 108 字符）
+  L812: 竖线 4 -> 4（不变=True）；行长 +108 字符（= 标记 108 字符）
+  ⇒ 标记内含 0 个竖线，且插在收尾 `|` 之前，故各行列数与表头保持一致。
+
+六、行数变化
+  换行符计数 1263 -> 1277（+14）；新增内容 = 1 空行 + §12.5 共 13 行 = 14 行
+  §12.5 追加段行尾用 LF（与 L1083 以后 §11/§12 追加段一致）；三处行内标记不触碰行尾，原 CRLF 保留。
+
+七、本节可复现性
+  脚本：01_recompute.ps1（重算）、02_apply.ps1（写入 + 字符级插入证明）、03_hash.ps1（字节级证明与 HASH.txt）
+  备份：R14_COMMON.M62.bak（改前原件，sha256 B64536F0285CCDA7024A465D1A1F2EBDDC4D967AD404A416347F9BF525DF14EA）
+

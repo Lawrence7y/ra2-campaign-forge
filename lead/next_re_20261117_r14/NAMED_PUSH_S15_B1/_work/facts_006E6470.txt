@@ -1,0 +1,40 @@
+# ROW 006E6470   TagTypeClass::slot6   形态=SAVE
+
+## 环① 入口与函数边界
+entry=006E6470  atlas_size=29  n_decoded=11  首=006E6470  8b 44 24 0c          mov eax, dword ptr [esp + 0xc]  末=006E648A  c2 0c 00             ret 0xc
+in_text=True  span=29 覆盖==29 ; 末尾 ret 操作数=0xc
+
+## 环② 类身份（RTTI 链，独立取证）
+vt_base=007F45C4  slot#6(+0x18)  slot_va=007F45DC  u32(slot_va)=006E6470  ==entry? True
+slot_va 原始字节: 70 64 6e 00
+slot0=00410260 (主虚表判据 00410260)  slot0 原始: 60 02 41 00
+u32(vt_base-4)=COL=0080BCF0  (绝对 VA，非 RVA)
+COL 原始字节(sig,off,cd,td,chd): 00 00 00 00 00 00 00 00 00 00 00 00 b0 2c 84 00 e0 bc 80 00
+COL.sig=00000000  COL.pTD=00842CB0  COL.pCHD=0080BCE0
+TD 原始字节(+0..+15): 94 95 7f 00 00 00 00 00 2e 3f 41 56 54 61 67 54
+TD.pVFTable=007F9594  TD.spare=00000000
+TD+8 内联名串（不是指针）= '.?AVTagTypeClass@@'  name_va=00842CB8
+CHD.nBaseClasses=10  基类链=['.?AVTagTypeClass@@', '.?AVAbstractTypeClass@@', '.?AVAbstractClass@@', '.?AUIPersistStream@@', '.?AUIPersist@@', '.?AUIUnknown@@', '.?AUIRTTITypeInfo@@', '.?AUIUnknown@@', '.?AVINoticeSink@@', '.?AVINoticeSource@@']
+
+## 环③b 站点（call 后返回约定被分支消费）
+  006E647F  e8 9c 9e d2 ff       call 0x410320
+  006E6484  85 c0                test eax, eax
+  006E6486  7c 02                jl 0x6e648a   -> 006E648A
+  006E6488  33 c0                xor eax, eax   (fall-through 清零路)
+      失败落点 006E648A: 006E648A  c2 0c 00             ret 0xc
+      被调 00410320 size=87  eax 立即数写入=[('0041032B', '80004003')]  jl 站点=[('0041034D', '00410372'), ('00410364', '00410372')]
+      被调体内间接 call 站点=['00410348', '00410358', '0041035E']
+
+## 环④ 使用见证（构造器装活表；与 ② 不同源）
+构造器=006E5B60 atlas_size=314
+  006E5B60  8b 44 24 04          mov eax, dword ptr [esp + 4]
+  006E5B64  83 ec 34             sub esp, 0x34
+  006E5B67  53                   push ebx
+  006E5B68  55                   push ebp
+  006E5B69  8b e9                mov ebp, ecx
+  006E5B6B  50                   push eax
+  ...
+装表指令=006E5B8E  c7 45 00 c4 45 7f 00 mov dword ptr [ebp], 0x7f45c4
+atexit 注册=无
+装表点在行体[006E6470,006E648D)之外? True
+

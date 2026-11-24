@@ -1,0 +1,177 @@
+====================================================================================================
+gamemd.exe 静态还原 — 0x0054A56E 数据依赖链 (只读, pefile+capstone)
+文件: D:\Project\ra2-campaign-forge\ra2bench\gamemd.exe
+sha256: 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476  size: 4825360 B
+====================================================================================================
+
+[节表 / DEP 前提]
+  .data Characteristics=0xC0000040 (可读+可写+已初始化, 无 EXECUTE) 与台账一致
+  0x0084F2BA 落在 .data [0x812000..0xB79BE4]
+  .data 无 IMAGE_SCN_MEM_EXECUTE → 静态上 EIP 进入该页属取指违规(DEP)而非写失败
+  .text 含 EXECUTE (0x60000020)
+
+[RTTI 定类]
+  基类 vtable 0x7ECBFC (COL 0x804B08): .?AV?$VectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@
+    slot0..slot6: 0x54a7b0, 0x54a4b0, 0x54a4f0, 0x54a5a0, 0x54a5d0, 0x54a610, 0x54a240
+  派生 vtable 0x7ECBDC (COL 0x804AD8): .?AV?$DynamicVectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@
+    slot0..slot6: 0x54a800, 0x54a4b0, 0x54a630, 0x54a1f0, 0x54a6e0, 0x54a220, 0x54a240
+
+[唯一实例与生命周期]
+  全局对象 0xAA1078 (DynamicVectorClass<PAUTileInsertType>):
+    动态初始化器 0x543E70: vptr←0x7ECBDC@0x543E8D, Vector←0, VectorMax←0, [0xAA1084]←1, IsAllocated←0, GrowthStep←10@0x543E97
+    atexit 析构器 0x543EB0 (经 0x543EA6 call 0x7C978A 注册): vptr←0x7ECBFC@0x543EBE(永久), free(Vector)@0x543EE4, Vector←0@0x543EEC, VectorMax←0@0x543EFD
+    .text 立即数引用: 0x543e8f, 0x543ec0, 0x546060, 0x546065
+
+[0x0054A56E 附近 ±40 条 (函数 0x0054A4F0..0x54a58e, RTTI slot2 = VectorClass<TileInsertType<IsometricTileTypeClass>*>::Capacity(int,T*))]
+  0054A50C  7514                   jne 0x54a522
+  0054A50E  8d04ad00000000         lea eax, [ebp*4]
+  0054A515  50                     push eax
+  0054A516  e8fce82700             call 0x7c8e17
+  0054A51B  83c404                 add esp, 4
+  0054A51E  8bf8                   mov edi, eax
+  0054A520  eb02                   jmp 0x54a524
+  0054A522  8bfb                   mov edi, ebx
+  0054A524  85ff                   test edi, edi
+  0054A526  c6460c01               mov byte ptr [esi + 0xc], 1
+  0054A52A  7509                   jne 0x54a535
+  0054A52C  5f                     pop edi
+  0054A52D  5e                     pop esi
+  0054A52E  5d                     pop ebp
+  0054A52F  32c0                   xor al, al
+  0054A531  5b                     pop ebx
+  0054A532  c20800                 ret 8
+  0054A535  8b4604                 mov eax, dword ptr [esi + 4]
+  0054A538  85c0                   test eax, eax
+  0054A53A  7439                   je 0x54a575
+  0054A53C  8b4e08                 mov ecx, dword ptr [esi + 8]
+  0054A53F  3be9                   cmp ebp, ecx
+  0054A541  7d02                   jge 0x54a545
+  0054A543  8bcd                   mov ecx, ebp
+  0054A545  33c0                   xor eax, eax
+  0054A547  85c9                   test ecx, ecx
+  0054A549  7e10                   jle 0x54a55b
+  0054A54B  8b5604                 mov edx, dword ptr [esi + 4]
+  0054A54E  40                     inc eax
+  0054A54F  3bc1                   cmp eax, ecx
+  0054A551  8b5482fc               mov edx, dword ptr [edx + eax*4 - 4]
+  0054A555  895487fc               mov dword ptr [edi + eax*4 - 4], edx
+  0054A559  7cf0                   jl 0x54a54b
+  0054A55B  8a460d                 mov al, byte ptr [esi + 0xd]
+  0054A55E  84c0                   test al, al
+  0054A560  7413                   je 0x54a575
+  0054A562  8b4604                 mov eax, dword ptr [esi + 4]
+  0054A565  50                     push eax
+  0054A566  e8d2e52700             call 0x7c8b3d
+  0054A56B  83c404                 add esp, 4
+  0054A56E  c7460400000000         mov dword ptr [esi + 4], 0  <== TARGET 0x0054A56E
+  0054A575  33c0                   xor eax, eax
+  0054A577  897e04                 mov dword ptr [esi + 4], edi
+  0054A57A  85db                   test ebx, ebx
+  0054A57C  0f94c0                 sete al
+  0054A57F  896e08                 mov dword ptr [esi + 8], ebp
+  0054A582  88460d                 mov byte ptr [esi + 0xd], al
+  0054A585  5f                     pop edi
+  0054A586  5e                     pop esi
+  0054A587  5d                     pop ebp
+  0054A588  b001                   mov al, 1
+  0054A58A  5b                     pop ebx
+  0054A58B  c20800                 ret 8  ;<-- fn_end (ret 之后)
+  0054A58E  8b16                   mov edx, dword ptr [esi]
+  0054A590  8bce                   mov ecx, esi
+  0054A592  ff520c                 call dword ptr [edx + 0xc]
+  0054A595  5f                     pop edi
+  0054A596  5e                     pop esi
+  0054A597  5d                     pop ebp
+  0054A598  b001                   mov al, 1
+  0054A59A  5b                     pop ebx
+  0054A59B  c20800                 ret 8
+  0054A59E  90                     nop 
+  0054A59F  90                     nop 
+  0054A5A0  53                     push ebx
+  0054A5A1  56                     push esi
+  0054A5A2  8bf1                   mov esi, ecx
+  0054A5A4  33db                   xor ebx, ebx
+  0054A5A6  8b4604                 mov eax, dword ptr [esi + 4]
+  0054A5A9  3bc3                   cmp eax, ebx
+  0054A5AB  7411                   je 0x54a5be
+  0054A5AD  385e0d                 cmp byte ptr [esi + 0xd], bl
+  0054A5B0  740c                   je 0x54a5be
+  0054A5B2  50                     push eax
+  0054A5B3  e885e52700             call 0x7c8b3d
+  0054A5B8  83c404                 add esp, 4
+  0054A5BB  895e04                 mov dword ptr [esi + 4], ebx
+  0054A5BE  885e0d                 mov byte ptr [esi + 0xd], bl
+  0054A5C1  895e08                 mov dword ptr [esi + 8], ebx
+  0054A5C4  5e                     pop esi
+  0054A5C5  5b                     pop ebx
+
+[esi 来源链]
+  环0  0x0054A56E  mov dword ptr [esi + 4], 0
+        写 this->Vector = 0
+  环1  0x0054A4FA  mov esi, ecx
+        esi = this(thiscall); 函数体内 esi 唯一定义点
+  环2  0x546064  mov ecx, 0xAA1078
+        ecx = this = 全局静态对象 0xAA1078(唯一实例, 类型见 RTTI)
+  环2  0x54605F  mov eax, dword ptr [0xAA1078]
+        eax = vptr(运行期值)
+  环2  0x546069  call dword ptr [eax + 8]
+        slot2 虚派发 Capacity(int, T*): vptr=0x7ECBDC→0x54A630; vptr=0x7ECBFC→0x54A4F0; 本模块对该对象唯一虚派发点
+  环3  0x543E8D  mov dword ptr [0xAA1078], 0x7ECBDC
+        动态初始化器 0x543E70 置派生 vtable → 正常态派发去 0x54A630
+  环3  0x543EBE  mov dword ptr [0xAA1078], 0x7ECBFC
+        atexit 析构器 0x543EB0 置基类 vtable(永久) → 此后派发才可能进 0x54A4F0
+
+[链断点] 无 — esi 链在静态层闭合(esi←ecx=this←0xAA1078 全局对象唯一派发点 0x546069)
+
+[0x0054A56E 可达性]
+  normal_state: 不可达: vptr=0x7ECBDC → 走孪生 0x54A630(free@0x54A699, null@0x54A6A1)
+  post_atexit_state: 半可达: vptr=0x7ECBFC → 进 0x54A4F0, 但 Vector 已被析构器清 0 → 0x54A53A je 跳过 free+null 块; 需此后再发生一次扩容 Capacity(先重建 Vector, IsAllocated=1), 第二次扩容才触达 0x54A56E
+  corruption_state: 可达: vptr 被改写为 0x7ECBFC 且 Vector/IsAllocated 仍为活跃值(需内存破坏)
+  conclusion: 静态上 0x54A56E 只在对象处于已析构/异常状态时可达 — 这与『该指令语义正常』的评价相冲突(见 free_then_null_assessment)
+
+[『释放后置空』评估]
+  local_semantics: 支持: 0x54A565 push [esi+4] → 0x54A566 call 0x7C8B3D(释放旧数组) → 0x54A56E 将同一字段清 0; 被释放的是数组(旧 Vector 值), 置 0 的是对象字段([esi+4] 本身) — 与 Westwood VectorClass<T>::Capacity 源码形态『if (IsAllocated) { delete[] Vector; Vector = 0; } Vector = newptr;』逐句对应
+  transient: 0x54A56E 的置 0 是过渡写: 0x54A575 xor eax,eax 后 0x54A577 mov [esi+4], edi 无条件覆盖为新缓冲, 中间无 [esi+4] 读、无调用、无跳转
+  guard: 执行条件为 [esi+0xD](IsAllocated)非零(0x54A55B mov al,[esi+0xD]; 0x54A55E test; 0x54A560 je 跳过)
+  crash_context: 若 EIP 崩在 0x54A56E, 故障访问是该写本身 → this 所在页不可写; 而同页早前已有成功写(0x54A506/0x54A526 [esi+0xC])与成功读(0x54A53C/0x54A54B/0x54A55B/0x54A562), 两者之间唯一的外部操作是 0x54A566 的 free → 静态上最自洽的解释是对象本身处于已释放/页被去提交状态; 该状态归因超出静态能力, 如实报
+  verdict: 台账『释放后置空, 语义正常』: 对非崩溃路径成立(局部代码形态与原始源码一致); 但作为对『崩在 0x54A56E』这一事实的解释不成立 — 正常态该指令根本不可达(见 reachability), 能执行到它本身就说明对象状态异常
+
+[同族 free-then-null 位点]
+  孪生 Capacity 0x54A630: free 0x54A699 / null 0x54A6A1
+  基类 dtor 0x54A7B0:    free 0x54a7c8 / null 0x54a7d0
+  派生 dtor 0x54A800:    free 0x54a818 / null 0x54a820
+
+[EIP=0x0084F2BA 观察与机制注记]
+  0x0084F2BA 落 .data (无 EXECUTE) → 静态上取指违规(DEP)。该地址处的文件字节(仅记录): dd 3d c3 9c de 3d 7d 2c e0 3d 2e bc e1 3d d6 4b
+  本函数族内可见的间接控制转移: [{'va': 5547410, 'insn': 'call dword ptr [edx + 0xc]'}]
+  → 经 vptr 的 call [edx+0xC](0x54A592 / 孪生 0x54A6BE)在 vptr 指向被破坏内存时可产生『EIP=任意 dword』, 与『EIP 落 .data』机制相容; 静态不能证实因果。
+
+[交叉断言]
+  [FACT] sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 (与台账一致)
+  [FACT] size = 4825360 B (与台账一致)
+  [FACT] .data Characteristics=0xC0000040 (可读+可写+已初始化, 无 EXECUTE) 与台账一致
+  [FACT] 0x0084F2BA 落在 .data [0x812000..0xB79BE4]
+  [FACT] .data 无 IMAGE_SCN_MEM_EXECUTE → 静态上 EIP 进入该页属取指违规(DEP)而非写失败
+  [FACT] .text 含 EXECUTE (0x60000020)
+  [FACT] 0x0054A56E 处字节 = c7 46 04 00 00 00 00 = mov dword ptr [esi+4], 0 (与台账一致)
+  [FACT] 函数起点 0x0054A4F0 线性 disasm 干净到达 0x0054A56E (52 条指令)
+  [FACT] 0x0054A4F0 无直接 call/jmp xref; 被指针引用于 0x7ECC04 (.rdata vtable 项)
+  [FACT] 0x0054A4F0 全 .text 无直接 call/jmp → 只能经 vtable 派发进入
+  [FACT] RTTI: COL@0x804B08 → TypeDescriptor@0x829030 → 类名 '.?AV?$VectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@' (= VectorClass<TileInsertType<IsometricTileTypeClass>*>)
+  [FACT] 派生 RTTI: '.?AV?$DynamicVectorClass@PAUTileInsertType@IsometricTileTypeClass@@@@' (= DynamicVectorClass<TileInsertType<IsometricTileTypeClass>*>)
+  [FACT] 派生 vtable 0x7ECBDC 的写入仅 1 处: 0x543E8D → 全模块唯一实例 = 全局 0xAA1078
+  [FACT] 基类 vtable 0x7ECBFC 写入仅 3 处: 0x543EBE(全局 atexit 析构器)/0x54A7B6/0x54A806(析构函数体) → 无独立 VectorClass<PAUTileInsertType> 实例
+  [FACT]   - 0x54A7B6: mov dword ptr [esi], 0x7ECBFC (基类 deleting dtor 0x54A7B0 入口处, 作用于 this)
+  [FACT]   - 0x54A806: mov dword ptr [esi], 0x7ECBFC (派生 deleting dtor 0x54A800 入口处, 作用于 this)
+  [FACT] 全局动态初始化器 0x543E70: [0xAA1078] ← 0x7ECBDC(派生 vtable)
+  [FACT] 初始化器: [0xAA108C] ← 10 → +0x14 = GrowthStep = 10 (DynamicVectorClass 布局证据)
+  [FACT] 函数 0x0054A4F0..0x54A58E 内 esi 定义共 2 处: 0x54A4FA mov esi, ecx (=this, thiscall, 唯一可达 0x0054A56E 的定义) + 0x54A52D pop esi (edi==0 早退路径的现场恢复, 不达目标)
+  [FACT] 0x54A52A jne 0x54A535: 0x54A52D pop esi 确在早退路径上(与 0x0054A56E 无数据流)
+  [FACT] 全局 0xAA1078 在 .text 的立即数引用共 4 处(字节地址): 0x543E8F(初始化器 0x543E8D 指令)/0x543EC0(atexit 析构器 0x543EBE 指令)/0x546060+0x546065(Add 派发 0x54605F/0x546064 指令)
+  [FACT] 0x546069  call dword ptr [eax+8] = 经 vtable slot2 虚派发 Capacity, 其中 eax=[0xAA1078](vptr), ecx=0xAA1078(this) — 全模块对本对象唯一的虚派发点
+  [FACT] slot2 派发: vptr=0x7ECBFC → 0x0054A4F0(本函数); vptr=0x7ECBDC → 0x0054A630(孪生体)
+  [FACT] 孪生函数 0x54A630 同构 free-then-null: 0x54A699 call 0x7C8B3D / 0x54A6A1 mov [esi+4],0
+  [FACT] atexit 析构器 0x543EB0: [0xAA1078]←0x7ECBFC@0x543EBE(永久留基类 vtable), free 后 [0xAA107C]←0@0x543EEC, [0xAA1080](VectorMax)←0@0x543EFD; 全程未触碰 ActiveCount(0xAA1088)/GrowthStep(0xAA108C)
+  [FACT] 0x7C8B3D(释放包装 → 0x7C93E8)有 4499 个调用点; 0x7C8E17(分配包装 → 0x7C9442)有 2832 个调用点 → 全局堆原语
+  [FACT] 0x54A53A je 0x54A575: Vector==0 时整块 free+null(0x54A535..0x54A56E)被跳过 → post-dtor 状态下一次 Capacity 不触达 0x54A56E
+  [FACT] 0x54A577 mov dword ptr [esi+4], edi: 0x54A56E 的置 0 在 8 字节内被无条件覆盖(Vector = 新缓冲), 两点之间无 [esi+4] 读、无调用、无跳转

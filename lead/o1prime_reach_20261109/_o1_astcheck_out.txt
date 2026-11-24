@@ -1,0 +1,337 @@
+被核对象 SHA256 = ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2
+字节数 = 412759
+OK   行3     模块 docstring | """qc151_trip.py — QC151 · `U0400` 首趟**载体趟脚本**（★ 本卡**不运行**它）
+OK   行160   from __future__ import annotations
+OK   行162   import argparse
+OK   行163   import ast
+OK   行164   import collections
+OK   行165   import ctypes
+OK   行166   import ctypes.wintypes as wt
+OK   行167   import hashlib
+OK   行168   import json
+OK   行169   import os
+OK   行170   import shutil
+OK   行171   import subprocess
+OK   行172   import sys
+OK   行173   import time
+OK   行174   from datetime import datetime, timezone
+OK   行175   from pathlib import Path
+OK   行182   ctypes.windll.user32.SetProcessDPIAware()
+OK   行194   ROOT = Path(r"D:\Project\ra2-campaign-forge")
+OK   行195   BENCH = ROOT / "ra2bench"
+OK   行196   YOULI = ROOT / "ra2youli"
+OK   行197   LEAD = ROOT / "out" / "re_work" / "work_chain" / "CONTINUE_20261003" / "lead"
+OK   行199   OUT_DIR_ENV_VAR = "QC151_OUT_DIR"
+OK   行200   DEFAULT_OUT_DIR = (LEAD / "qc161_u0400_trip")
+OK   行207   WORKDIR = Path(os.environ.get(OUT_DIR_ENV_VAR) or DEFAULT_OUT_DIR)
+OK   行210   QC95_PATH = LEAD / "qc95_tactical_criterion" / "_probe" / "qc95_classify.py"
+OK   行213   CARRIER_FILES = ("gamemd.exe", "ra2loader.exe", "ra2render.dll",
+OK   行221   FRESHNESS_GROUP = "FRESHNESS"
+OK   行222   FRESHNESS_KEY_PREFIX = "freshness_"
+OK   行223   FRESHNESS_VERDICTS = ("unknown", "absent_both", "new_first_appearance",
+OK   行227   FRESHNESS_CONFIDENCES = ("high", "medium", "low", "none")
+OK   行228   FRESHNESS_SNAPSHOT_STATES = ("unknown", "absent_confirmed", "present", "error")
+OK   行234   CTRL1_SHA256 = "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
+OK   行235   CTRL1_SIZE = 4825360
+OK   行238   CTRL2_VA = 0x00829284
+OK   行239   CTRL2_FILE_OFF = 0x429284
+OK   行240   CTRL2_BYTES = b"\x4E\x6F\x20\x4E\x61\x6D\x65\x00"
+OK   行243   EXCEPT_MASTER = BENCH / "except.txt"
+OK   行244   EXCEPT_MASTER_SHA256 = "ca175a71c8a25228685d28bf5b3a9d883665aec429dc03c46478cf486672f39d"
+OK   行245   EXCEPT_MASTER_SIZE = 26515
+OK   行250   MAX_LAUNCHES = 5
+OK   行251   TRIP_BUDGET_S = 180.0
+OK   行252   STAGE_TIMEOUT_S = 30.0
+OK   行257   NAV_CHAIN = (("mainmenu", 700, 218), ("skirmish", 700, 304), ("start", 700, 262))
+OK   行262   CLICK_SCREEN = ((1580, 724), (1580, 682))
+OK   行264   FRAME_W, FRAME_H = 800, 600
+OK   行265   MAIN_WINDOW_TITLE = "Yuri's Revenge"
+OK   行273   _QC151FS = {"on": False, "fg_attempts": 0, "fg_fail": 0,
+OK   行287   FS_LUMA_FLOOR = 8
+OK   行288   FS_LOGO_DIFF_MIN = 15
+OK   行289   FS_SCALE = 1.0
+OK   行290   FS_RENDER_ORIGIN = (0, 0)
+OK   行294   S4_NEEDLES = ("ra2render", "ra2loader")
+OK   行302   INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
+OK   行306   S4_MAX_MODULES = 65536
+OK   行310   S4_VERDICT = {"gate": None, "exit_code": None, "err": None}
+OK   行315   EXIT_OK = 0
+OK   行316   EXIT_PRECHECK_SHA_MISMATCH = 10
+OK   行317   EXIT_PRECHECK_SIG_MISMATCH = 11
+OK   行318   EXIT_TARGET_MISSING = 12
+OK   行319   EXIT_TARGET_SHA_UNREADABLE = 13
+OK   行320   EXIT_TARGET_MISMATCH = 14
+OK   行321   EXIT_EXCEPT_MASTER_SHA_MISMATCH = 15
+OK   行322   EXIT_EXCEPT_RESET_VERIFY_FAILED = 16
+OK   行323   EXIT_LAUNCH_LIMIT = 17
+OK   行324   EXIT_TRIP_BUDGET = 18
+OK   行325   EXIT_STAGE_TIMEOUT = 19
+OK   行326   EXIT_LAUNCH_FAILED = 20
+OK   行327   EXIT_PID_NOT_FOUND = 21
+OK   行328   EXIT_WINDOW_NOT_FOUND = 22
+OK   行330   EXIT_CARRIER_NOT_OWNED = 23
+OK   行331   EXIT_TERMINATE_FAILED = 24
+OK   行332   EXIT_EVIDENCE_VERIFY_FAILED = 25
+OK   行333   EXIT_MANIFEST_FAILED = 26
+OK   行334   EXIT_CARRIER_DELETE_FAILED = 27
+OK   行335   EXIT_PID_IDENTITY_UNVERIFIED = 28
+OK   行336   EXIT_INJECTION_SUSPECTED = 62
+OK   行337   EXIT_MODULE_ENUM_FAILED = 63
+OK   行338   EXIT_T0_T1_DIFF = 64
+OK   行339   EXIT_RESTORE_FAILED = 65
+OK   行340   EXIT_INTERNAL_ERROR = 70
+OK   行343   EXIT_KEYBOARD_INTERRUPT = 130
+OK   行352   FINALIZE_CODE = [EXIT_OK]
+OK   行360   CLEANUP_FAILURES: list = []
+OK   行363   ACTIVE_REC = [None]
+OK   行368   FROZEN_MOTHER_BASELINE: list = [None]
+OK   行369   FROZEN_MOTHER_ERRORS: list = []
+OK   行374   LAST_FINAL_MANIFEST: list = [None]
+OK   行378   TRIP_CARRIER: dict = {"dir": None, "receipt": None, "identity": None}
+OK   行383   TRIP_ID: str = ""
+OK   行386   def new_trip_id() -> str:
+OK   行392   LAUNCH_TOKEN = None
+OK   行395   CLEANUP_CODE_PRIORITY = (
+OK   行403   def note_cleanup_failure(code: int, where: str, note: str, rec=None) -> None:
+OK   行411   def merge_cleanup_code(base: int) -> int:
+OK   行431   def sha256_file(p: Path) -> str:
+OK   行440   def read_bytes(p: Path, off: int, n: int) -> bytes:
+OK   行447   def now_iso() -> str:
+OK   行451   class Recorder:
+OK   行472   class TripBudget:
+OK   行522   def control_one(rec: Recorder, tag: str) -> bool:
+OK   行540   def control_two(rec: Recorder, tag: str) -> bool:
+OK   行565   def enumerate_zero_write_set(rec: Recorder) -> list:
+OK   行587   def t_snapshot(rec: Recorder, tag: str, path: Path) -> list:
+OK   行597   def t_diff(rec: Recorder, t0: list, t1: list, diff_path: Path) -> bool:
+OK   行633   def read_lines(p: Path) -> list:
+OK   行638   def except_reset(rec: Recorder, carrier_dir: Path) -> bool:
+OK   行687   def except_set_diff(rec: Recorder, pre_txt: str, post_txt: str) -> dict:
+OK   行729   def find_pids(name: str) -> list:
+OK   行781   def get_process_creation_time(pid: int) -> int | None:
+OK   行813   def s4_scan_names(names) -> dict:
+OK   行836   def s4_enum_modules(pid: int) -> tuple:
+OK   行941   def s4_injection_gate(pid: int, rec: Recorder) -> bool:
+OK   行1048  class LaunchToken:
+OK   行1087  def launch_direct(rec: Recorder, budget: TripBudget, carrier_dir: Path,
+OK   行1130  def resolve_pid(rec: Recorder, proc, expected_ct: int | None) -> int:
+OK   行1181  def terminate_owned_process(rec: Recorder, proc,
+OK   行1272  def find_main_window(pid: int) -> tuple:
+OK   行1324  def rect_of(hwnd: int) -> tuple:
+OK   行1335  def click_logical(hwnd: int, lx: int, ly: int) -> None:
+OK   行1380  def click_screen(sx: int, sy: int) -> None:
+OK   行1410  def _doze(seconds: float) -> None:
+OK   行1420  def _focus_foreground(hwnd: int) -> dict:
+OK   行1478  def capture_frame(hwnd: int, out_png: Path) -> tuple:
+OK   行1552  def _fs_ensure_foreground(hwnd: int) -> bool:
+OK   行1574  def capture_frame_desktop(hwnd: int, out_png: Path) -> tuple:
+OK   行1647  def _fs_arrival_poll(hwnd: int, rec: Recorder, mod) -> bool:
+OK   行1703  def click_logical_fullscreen(hwnd: int, lx: int, ly: int) -> None:
+OK   行1724  def write_png_no_filter(path: Path, w: int, h: int, raw: bytes, stride: int) -> None:
+OK   行1764  def classify_frame_LA(png: Path, resolution_ok: bool, rec: Recorder, label: str):
+OK   行1789  _QC95_MOD = None
+OK   行1792  def load_qc95(rec: Recorder):
+OK   行1818  SCREEN_SIG = {
+OK   行1836  TACTICAL_COLOR_FLOOR = 600
+OK   行1840  NAV_SIG_PLAN = (
+OK   行1845  NAV_WAITS_S = {"nav_menu": 3.0, "nav_setup": 3.0, "nav_start": 3.0}
+OK   行1852  def _red_button_centers(png: Path, mod) -> list:
+OK   行1881  def _tactical_color_count(png: Path, mod) -> int:
+OK   行1891  def _sig_match(got: list, want: list, tol: int = 3,
+OK   行1908  def wait_screen(hwnd: int, expect: str, timeout: float, rec: Recorder,
+OK   行1950  def _burst_battle(hwnd: int, wall: float, rec: Recorder, mod) -> dict:
+OK   行2009  _QC210_SPOT = {"on": False, "pid": None}
+OK   行2011  SPOT_HUMAN_BOX_XY = (490, 70)
+OK   行2012  SPOT_AI_BOX_XY = (490, 95)
+OK   行2013  SPOT_HUMAN_BOX_REGION = (473, 60, 508, 79)
+OK   行2014  SPOT_AI_BOX_REGION = (473, 85, 508, 104)
+OK   行2015  SPOT_ITEM_H_EST = 18
+OK   行2016  SPOT_LIST_GAP_EST = 12
+OK   行2018  SPOT_PANEL_SCAN_DY = 84
+OK   行2019  SPOT_PANEL_SCAN_DX = 45
+OK   行2020  SPOT_CLICK_DOZE_S = 0.6
+OK   行2021  SPOT_VERIFY_MIN_CHG = 8
+OK   行2027  SPOT_WINDOW_BUDGET_S = 16.0
+OK   行2038  SPOT_POSITIVE_LUM = 100
+OK   行2040  SPOT_GUARD_TRIES_PRE = 3
+OK   行2041  SPOT_GUARD_TRIES_POST = 6
+OK   行2044  SPOT_GUARD_RETRY_S = 1.0
+OK   行2052  SPOT_DROPDOWN_WINDOW_S = 3.0
+OK   行2054  QC214_BOXSIG_PATH = (LEAD / "qc214_boxsig_20261018" / "boxsig_verify.py")
+OK   行2058  def _spot_region_sig(png: Path, mod, region: tuple) -> dict:
+OK   行2076  def _spot_region_diff(png_a: Path, png_b: Path, mod, region: tuple) -> dict:
+OK   行2097  def _spot_locate_item(png_open: Path, png_base: Path, mod, box_region: tuple,
+OK   行2184  def _spot_centers_match(png: Path, mod) -> tuple:
+OK   行2199  def _spot_box_bright(png: Path, mod) -> tuple:
+OK   行2218  def _spot_positive_ok(bright: tuple) -> bool:
+OK   行2223  _spot_centers_match_qc211 = _spot_centers_match
+OK   行2226  def _spot_centers_match(png: Path, mod) -> tuple:
+OK   行2241  def _spot_screen_guard(hwnd: int, mod, tag: str, tries: int = 3) -> dict:
+OK   行2272  _spot_screen_guard_qc211 = _spot_screen_guard
+OK   行2275  def _spot_screen_guard(hwnd: int, mod, tag: str, tries: int = 0) -> dict:
+OK   行2320  _spot_screen_guard_qc212 = _spot_screen_guard
+OK   行2322  _QC214_BOXSIG = None
+OK   行2325  def _boxsig_load():
+OK   行2347  def _spot_screen_guard(hwnd: int, mod, tag: str, tries: int = 0,
+OK   行2404  def _spot_run(hwnd: int, rec: Recorder, mod, budget: TripBudget) -> dict:
+OK   行2616  _burst_battle_anchor = _burst_battle
+OK   行2619  def _burst_battle(hwnd: int, wall: float, rec: Recorder, mod) -> dict:
+OK   行2630  def _burst_battle_qc210_impl(hwnd: int, wall: float, rec: Recorder, mod,
+OK   行2734  _QC151SG = {"capture": False, "toggle": None}
+OK   行2736  SG_PRE_PNG = "navsig_skirmish_set_pre.png"
+OK   行2737  SG_POST_PNG = "navsig_skirmish_set_post.png"
+OK   行2738  SG_CLICK_DOZE_S = 1.0
+OK   行2739  SG_GUARD_TRIES = 3
+OK   行2742  def _sg_skirmish_run(hwnd: int, rec: Recorder, mod) -> dict:
+OK   行2875  MEASURE_CURRENT_FRAME_VA = 0x00A8ED84
+OK   行2876  MEASURE_CURRENT_FRAME_FILE_OFF = 0x0068ED84
+OK   行2878  MEASURE_UNITS_VA = 0x008B4118
+OK   行2879  MEASURE_INFANTRY_VA = 0x00A83DF8
+OK   行2880  MEASURE_AIRCRAFT_VA = 0x00A8E3A0
+OK   行2881  MEASURE_G_VA = 0x008A03A0
+OK   行2882  MEASURE_G_ITEMS_VA = 0x008A0394
+OK   行2883  MEASURE_B_VA = 0x00A8EB50
+OK   行2884  MEASURE_B_ITEMS_VA = 0x00A8EB44
+OK   行2885  MEASURE_TECHNO_VA = 0x00A8EC88
+OK   行2887  MEASURE_HZ = 500
+OK   行2888  MEASURE_WINDOWS = 3
+OK   行2889  MEASURE_WINDOW_S = 25.0
+OK   行2890  MEASURE_SETTLE_S = 4.0
+OK   行2891  MEASURE_GATE_FPS15_MIN = 3.0
+OK   行2892  MEASURE_GATE_SPAN_S = 1.5
+OK   行2893  MEASURE_W1_UNITS0_MIN = 150
+OK   行2894  MEASURE_TICK_MISS_FACTOR = 1.5
+OK   行2897  def _rpm_open(pid: int):
+OK   行2914  def _rpm_close(handle) -> None:
+OK   行2920  def _rpm_u32(handle, va: int):
+OK   行2939  class _PMC(ctypes.Structure):
+OK   行2952  def _rpm_mem_kb(handle):
+OK   行2971  def _rpm_counters(handle) -> dict:
+OK   行2996  def _measure_poll_span(handle, span_s: float, hz: int):
+OK   行3057  _QC213_PROBE = {
+OK   行3063  QC213_HOUSE_ITEMS_VA = 0x00A8022C
+OK   行3064  QC213_HOUSE_COUNT_VA = 0x00A80238
+OK   行3065  QC213_PLAYERPTR_VA = 0x00A83D4C
+OK   行3066  QC213_LATCH_FRAMES = (300, 600, 1800)
+OK   行3067  QC213_FREEZE_S = 2.0
+OK   行3068  QC213_ID30_FR = 2
+OK   行3069  QC213_ID30_BR = 4
+OK   行3070  QC213_ID30_RU = 8
+OK   行3071  QC213_ERR_CAP = 3
+OK   行3072  QC213_SCORE_OFF = 0x15FF4
+OK   行3073  QC213_SCORE_LEN = 0x20B
+OK   行3074  _QC213_FIELDS = (                   # (键, 种类, 偏移)；u8=4字节对齐小端取字节
+OK   行3088  def _qc213_u8(handle, base_va: int, off: int):
+OK   行3094  def _qc213_digest(handle, base_va: int, off: int, n: int):
+OK   行3114  def _qc213_err(rec, frame, kind: str) -> None:
+OK   行3126  def _qc213_snapshot(handle, frame: int, kind: str) -> None:
+OK   行3211  def _qc213_tick(handle, frame: int) -> None:
+OK   行3251  _rpm_u32_qc213_base = _rpm_u32
+OK   行3254  def _rpm_u32(handle, va: int):
+OK   行3305  _QC213P2_PROBE = {
+OK   行3311  QC213P2_RULES_VA = 0x008871E0
+OK   行3312  QC213P2_RULES_ARR8E8_OFF = 0x8E8
+OK   行3313  QC213P2_RULES_ELEM1_OFF = 0x8
+OK   行3314  QC213P2_HT_IDX_OFF = 0xDF8
+OK   行3315  QC213P2_SHORTGAME_VA = 0x00A8B262
+OK   行3316  QC213P2_SESSION_VA = 0x00A8B230
+OK   行3317  QC213P2_SESSION_SHORTGAME_OFF = 0x14B6
+OK   行3318  QC213P2_SESSION_CLEAN_MASK = 0x08
+OK   行3319  QC213P2_HOUSE_ITEMS_VA = 0x00A8022C
+OK   行3320  QC213P2_HOUSE_COUNT_VA = 0x00A80238
+OK   行3321  QC213P2_L5550_OFF = 0x5550
+OK   行3322  QC213P2_HT_IS_OBS_OFF = 0x1A6
+OK   行3323  QC213P2_ERR_CAP = 3
+OK   行3324  QC213P2_FREEZE_S = 2.0
+OK   行3325  QC213P2_LADDER_CAP = 64
+OK   行3326  QC213P2_LADDER_SRC = (10,) + tuple(range(250, 451))
+OK   行3329  def _qc213p2_ladder_effective(src):
+OK   行3337  QC213P2_LADDER, QC213P2_LADDER_DROPPED = _qc213p2_ladder_effective(QC213P2_LADDER_SRC)
+OK   行3338  QC213P2_LADDER_SET = frozenset(QC213P2_LADDER)
+OK   行3339  QC213P2_LADDER_NOTE = (
+OK   行3344  _QC213P2_HOUSE_FIELDS = (                # (键, 种类, 偏移)；u8=4 字节对齐小端取字节
+OK   行3352  def _qc213p2_u8(handle, base_va: int, off: int):
+OK   行3358  def _qc213p2_err(rec, frame, kind: str) -> None:
+OK   行3370  def _qc213p2_snapshot(handle, frame: int, kind: str) -> None:
+OK   行3493  def _qc213p2_tick(handle, frame: int) -> None:
+OK   行3538  _rpm_u32_qc213p2_base = _rpm_u32
+OK   行3541  def _rpm_u32(handle, va: int):
+OK   行3589  _QC151P3_STATE = {"on": False, "pid": None}
+OK   行3591  QC151P3_L5550_COUNT_OFF = 0x5550 + 0x10
+OK   行3592  QC151P3_MINIDUMP_NORMAL = 0x00000000
+OK   行3593  QC151P3_OPEN_RIGHTS = 0x0400 | 0x0010 | 0x0040
+OK   行3594  QC151P3_GENERIC_WRITE = 0x40000000
+OK   行3595  QC151P3_FILE_SHARE_READ = 0x00000001
+OK   行3596  QC151P3_CREATE_ALWAYS = 2
+OK   行3597  QC151P3_FILE_ATTRIBUTE_NORMAL = 0x00000080
+OK   行3600  def _qc151p3_probe_frames(spec):
+OK   行3620  def _qc151p3_frozen_dump(frame: int) -> None:
+OK   行3709  def _measure_pctl(sorted_vals, q: float):
+OK   行3722  def _measure_stats(samples):
+OK   行3813  def _measure_write_json(out_dir: Path, k: int, payload: dict) -> Path:
+OK   行3820  def _measure_error_payload(k: int, trip_id: str, map_sha256: str, err: str) -> dict:
+OK   行3840  def _measure_focus_regrab(rec: Recorder, hwnd: int, k: int) -> None:
+OK   行3869  def _measure_window_forensics(rec: Recorder, handle, hwnd, k: int,
+OK   行3923  def _measure_run(rec: Recorder, budget: TripBudget, pid: int, out_dir: Path,
+OK   行4184  def read_scen_index_lines(ini: Path) -> list:
+OK   行4210  def collect_F_fields(rec: Recorder, carrier_dir: Path, target_map: Path,
+OK   行4286  def collect_window_fields(rec: Recorder, hwnd) -> dict:
+OK   行4326  def capture_target_frame(rec: Recorder, hwnd, out_dir: Path) -> dict:
+OK   行4359  def _pid_alive_check(pid):
+OK   行4382  def _sys_window_scan():
+OK   行4428  def _render_log_probe(carrier_dir):
+OK   行4447  BACKUP_DIR = WORKDIR / "_carrier_bak"
+OK   行4450  def sync_backup_dir() -> Path:
+OK   行4462  def backup_carrier(rec: Recorder, carrier_dir: Path) -> dict:
+OK   行4484  def restore_carrier(rec: Recorder, carrier_dir: Path, bak: dict) -> bool:
+OK   行4526  def run_guarded_steps(fns, out_dir: Path | None = None) -> None:
+OK   行4556  def write_finalize_error(rec: Recorder, exc: BaseException,
+OK   行4580  def make_pre_freshness_snapshot(except_path: Path) -> dict:
+OK   行4616  def classify_except_freshness(pre_freshness_snapshot, post_observed: dict) -> dict:
+OK   行4701  def copy_post_except_evidence(rec: Recorder, carrier_dir: Path,
+OK   行4837  FILE_ATTRIBUTE_REPARSE_POINT = 0x0400
+OK   行4840  def _dump_json(obj) -> str:
+OK   行4845  def _norm_path(p) -> str:
+OK   行4851  def path_is_reparse(p: Path) -> bool:
+OK   行4863  def path_parts(name) -> list:
+OK   行4877  def unsafe_path_name_reason(name) -> str | None:
+OK   行4896  def carrier_protected_exact_roots() -> list:
+OK   行4910  def carrier_protected_subtrees() -> list:
+OK   行4924  def carrier_approved_roots() -> list:
+OK   行4933  def carrier_protected_roots() -> list:
+OK   行4941  def path_within(child, parent) -> bool:
+OK   行4948  def check_per_layer_ancestors(path_str: str) -> dict:
+OK   行4975  def check_carrier_boundary(carrier_dir: Path) -> dict:
+OK   行5052  def dir_identity_stamp(p) -> dict:
+OK   行5074  def same_dir_object(base: dict | None, now: dict) -> bool:
+OK   行5086  def tree_relative_key(root: Path, p: Path) -> str:
+OK   行5104  def sha256_dir_tree(root: Path, walk_errors: list | None = None) -> dict:
+OK   行5135  def create_isolated_carrier(rec: Recorder, src_dir: Path, trip_root: Path,
+OK   行5219  def assess_carrier_ownership(carrier_dir: Path, out_dir: Path, rec: Recorder,
+OK   行5403  EVID_DIFF_POINTER_NAME = "_EVID_REFERENCE.json"
+OK   行5404  EVID_DIFF_MANIFEST_NAME = "MANIFEST.json"
+OK   行5405  EVID_DIFF_README_NAME = "README_REBUILD.md"
+OK   行5406  EVID_DIFF_SCHEMA = "qc151.evid-diff/1"
+OK   行5409  EVID_DIFF_FLAG = {"on": False}
+OK   行5412  def _evid_ref_load(ev_dir: Path):
+OK   行5427  def _evid_ref_entry_covers(ref: dict, rel: str, src_sha: str,
+OK   行5449  def _evid_ref_record(ev_dir: Path, stamp: str, items: list) -> dict:
+OK   行5472  def _evid_write_manifest_and_readme(ev_dir: Path, stamp: str, mode: str,
+OK   行5563  def move_out_evidence_and_verify(rec: Recorder, carrier_dir: Path,
+OK   行5739  def reverify_evidence_items(items: list) -> dict:
+OK   行5772  def _compute_mother_diff(mother_baseline: dict, carrier_tree: dict) -> dict:
+OK   行5801  def write_pre_delete_manifest(rec: Recorder, carrier_dir: Path, out_dir: Path,
+OK   行5885  def delete_owned_carrier(rec: Recorder, carrier_dir: Path, ownership: dict,
+OK   行6011  def write_final_manifest(rec: Recorder, carrier_dir: Path, out_dir: Path,
+OK   行6053  def rewrite_final_manifest_with_actual(final_code: int,
+OK   行6098  def exception_process_exit_code(exc: BaseException) -> int:
+OK   行6127  def finalize_trip(rec: Recorder, carrier_dir: Path, bak: dict,
+OK   行6288  def parse_args(argv=None):
+OK   行6414  def main(argv=None) -> int:
+OK   行7381  def _main_wrapper() -> int:
+OK   行7447  def _emit_final_records(final_code: int, internal_verdict_code: int | None,
+OK   行7481  def _write_final_records(final_code: int,
+OK   行7502  def _entry() -> int:
+OK   行7532  __main__ 守卫 | if __name__ == "__main__":
+------------------------------------------------------------
+TOPLEVEL_INERT = True（顶层仅常量/定义/__main__ 守卫，import 无副作用）

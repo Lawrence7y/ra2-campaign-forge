@@ -1,0 +1,155 @@
+=== indirect-call globals (0065D240 / 0065D3A0) ===
+  GLOBAL 007E1128 (0065D254 call) sec=.rdata val=0040FD6E
+  GLOBAL 007E1130 (0065D26C call) sec=.rdata val=0040FD9A
+  GLOBAL 007E112C (0065D289 call) sec=.rdata val=0040FD8C
+  GLOBAL 007E11E0 (0065D3B7 call) sec=.rdata val=0040F908
+  GLOBAL 007E1200 (0065D3C9 call) sec=.rdata val=0040F868
+  GLOBAL 007F091C (0065D3A9 call) sec=.rdata val=0065D420
+
+=== 00410260 (main-table slot0 frequently) ===
+   00410260 8b44240c           mov eax, dword ptr [esp + 0xc]
+   00410264 53                 push ebx
+   00410265 85c0               test eax, eax
+   00410267 7509               jne 0x410272
+   00410269 b803400080         mov eax, 0x80004003
+   0041026E 5b                 pop ebx
+   0041026F c20c00             ret 0xc
+   00410272 8b54240c           mov edx, dword ptr [esp + 0xc]
+   00410276 56                 push esi
+   00410277 57                 push edi
+   00410278 b904000000         mov ecx, 4
+   0041027D bf907c7f00         mov edi, 0x7f7c90
+   00410282 8bf2               mov esi, edx
+   00410284 33db               xor ebx, ebx
+   00410286 c70000000000       mov dword ptr [eax], 0
+   0041028C 8b5c2410           mov ebx, dword ptr [esp + 0x10]
+   00410290 f3a7               repe cmpsd dword ptr [esi], dword ptr es:[edi]
+   00410292 7502               jne 0x410296
+   00410294 8918               mov dword ptr [eax], ebx
+   00410296 55                 push ebp
+   00410297 b904000000         mov ecx, 4
+
+=== installer function classification ===
+
+FUNC 00431B20 base called by CDFile ctors size=95:
+   00431B20  8bc1                 mov eax, ecx
+   00431B22  83caff               or edx, 0xffffffff
+   00431B25  33c9                 xor ecx, ecx
+   00431B27  884804               mov byte ptr [eax + 4], cl
+   00431B2A  c7400801000000       mov dword ptr [eax + 8], 1
+   00431B31  89480c               mov dword ptr [eax + 0xc], ecx
+   00431B34  895010               mov dword ptr [eax + 0x10], edx
+   00431B37  895014               mov dword ptr [eax + 0x14], edx
+   00431B3A  894818               mov dword ptr [eax + 0x18], ecx
+   00431B3D  6689481c             mov word ptr [eax + 0x1c], cx
+   00431B41  6689481e             mov word ptr [eax + 0x1e], cx
+   00431B45  884820               mov byte ptr [eax + 0x20], cl
+   00431B48  884824               mov byte ptr [eax + 0x24], cl
+   00431B4B  884825               mov byte ptr [eax + 0x25], cl
+   00431B4E  884826               mov byte ptr [eax + 0x26], cl
+   00431B51  884827               mov byte ptr [eax + 0x27], cl
+   00431B54  884828               mov byte ptr [eax + 0x28], cl
+   00431B57  884829               mov byte ptr [eax + 0x29], cl
+   00431B5A  89482c               mov dword ptr [eax + 0x2c], ecx
+   00431B5D  894830               mov dword ptr [eax + 0x30], ecx
+   00431B60  894834               mov dword ptr [eax + 0x34], ecx
+   00431B63  894838               mov dword ptr [eax + 0x38], ecx
+   00431B66  89483c               mov dword ptr [eax + 0x3c], ecx
+   00431B69  895040               mov dword ptr [eax + 0x40], edx
+   00431B6C  895044               mov dword ptr [eax + 0x44], edx
+   00431B6F  894848               mov dword ptr [eax + 0x48], ecx
+   00431B72  89484c               mov dword ptr [eax + 0x4c], ecx
+   00431B75  894850               mov dword ptr [eax + 0x50], ecx
+   00431B78  c7002c3a7e00         mov dword ptr [eax], 0x7e3a2c
+   00431B7E  c3                   ret 
+
+FUNC 00431B80 base called by CDFile dtor size=64:
+   00431B80  53                   push ebx
+   00431B81  56                   push esi
+   00431B82  8bf1                 mov esi, ecx
+   00431B84  33db                 xor ebx, ebx
+   00431B86  8b4630               mov eax, dword ptr [esi + 0x30]
+   00431B89  c7062c3a7e00         mov dword ptr [esi], 0x7e3a2c
+   00431B8F  3bc3                 cmp eax, ebx
+   00431B91  7414                 je 0x431ba7
+   00431B93  385e24               cmp byte ptr [esi + 0x24], bl
+   00431B96  740c                 je 0x431ba4
+   00431B98  50                   push eax
+   00431B99  e89f6f3900           call 0x7c8b3d ; callee=007C8B3D
+   00431B9E  83c404               add esp, 4
+   00431BA1  885e24               mov byte ptr [esi + 0x24], bl
+   00431BA4  895e30               mov dword ptr [esi + 0x30], ebx
+   00431BA7  8bce                 mov ecx, esi
+   00431BA9  895e34               mov dword ptr [esi + 0x34], ebx
+   00431BAC  885e25               mov byte ptr [esi + 0x25], bl
+   00431BAF  885e27               mov byte ptr [esi + 0x27], bl
+   00431BB2  885e28               mov byte ptr [esi + 0x28], bl
+   00431BB5  885e29               mov byte ptr [esi + 0x29], bl
+   00431BB8  e843ae2200           call 0x65ca00 ; callee=0065CA00
+   00431BBD  5e                   pop esi
+   00431BBE  5b                   pop ebx
+   00431BBF  c3                   ret 
+
+=== direct caller context ===
+
+ around caller 00473B07:
+   00473AE7  c07411578b           sal byte ptr [ecx + edx + 0x57], 0x8b
+   00473AEC  3eff5704             notrack call dword ptr ds:[edi + 4]
+   00473AF0  50                   push eax
+   00473AF1  6a00                 push 0
+   00473AF3  6a0d                 push 0xd
+   00473AF5  8bce                 mov ecx, esi
+   00473AF7  ff5740               call dword ptr [edi + 0x40]
+   00473AFA  5f                   pop edi
+   00473AFB  8b44240c             mov eax, dword ptr [esp + 0xc]
+   00473AFF  8b4c2408             mov ecx, dword ptr [esp + 8]
+   00473B03  50                   push eax
+   00473B04  51                   push ecx
+   00473B05  8bce                 mov ecx, esi
+   00473B07  e844e5fbff           call 0x432050  <== call
+   00473B0C  5e                   pop esi
+   00473B0D  c20800               ret 8
+   00473B10  53                   push ebx
+   00473B11  56                   push esi
+   00473B12  8bf1                 mov esi, ecx
+   00473B14  57                   push edi
+   00473B15  32db                 xor bl, bl
+   00473B17  8b06                 mov eax, dword ptr [esi]
+   00473B19  ff5018               call dword ptr [eax + 0x18]
+   00473B1C  84c0                 test al, al
+   00473B1E  750f                 jne 0x473b2f
+   00473B20  8b16                 mov edx, dword ptr [esi]
+   00473B22  6a01                 push 1
+   00473B24  8bce                 mov ecx, esi
+
+ around caller 00473F14:
+   00473EF4  70c3                 jo 0x473eb9
+   00473EF6  5f                   pop edi
+   00473EF7  8bc3                 mov eax, ebx
+   00473EF9  5e                   pop esi
+   00473EFA  5b                   pop ebx
+   00473EFB  83c470               add esp, 0x70
+   00473EFE  c3                   ret 
+   00473EFF  90                   nop 
+   00473F00  83ec70               sub esp, 0x70
+   00473F03  53                   push ebx
+   00473F04  55                   push ebp
+   00473F05  8b6c247c             mov ebp, dword ptr [esp + 0x7c]
+   00473F09  56                   push esi
+   00473F0A  57                   push edi
+   00473F0B  33ff                 xor edi, edi
+   00473F0D  8bf1                 mov esi, ecx
+   00473F0F  55                   push ebp
+   00473F10  897c2414             mov dword ptr [esp + 0x14], edi
+   00473F14  e827931e00           call 0x65d240  <== call
+   00473F19  8ad8                 mov bl, al
+   00473F1B  84db                 test bl, bl
+   00473F1D  0f8587000000         jne 0x473faa
+   00473F23  8b16                 mov edx, dword ptr [esi]
+   00473F25  57                   push edi
+   00473F26  8d442414             lea eax, [esp + 0x14]
+   00473F2A  57                   push edi
+   00473F2B  50                   push eax
+   00473F2C  8bce                 mov ecx, esi
+   00473F2E  ff5204               call dword ptr [edx + 4]
+   00473F31  8bc8                 mov ecx, eax

@@ -1,0 +1,19 @@
+=== corrected L1 fixture ===
+canon key = '只能判\ue000不可复现\ue001'
+PAIRS = [('「', '」'), ('『', '』'), ('`', '`'), ('“', '”')]
+  PASS  canon angle        '只能判「不可复现」'                                -> OK             expect=OK             spans=[(3, 9, '「')]
+  PASS  curly corner       '只能判『不可复现』'                                -> OK             expect=OK             spans=[(3, 9, '『')]
+  PASS  curly double       '只能判“不可复现”'                                -> OK             expect=OK             spans=[(3, 9, '“')]
+  PASS  V4 mismatched      '只能判『不可复现」'                                -> UNKNOWN        expect=UNKNOWN        spans=[]
+  PASS  V5 single curly    '只能判‘不可复现’'                                -> NOT-RECALLED   expect=NOT-RECALLED   spans=[]
+  PASS  V1 different word  '只能判「不可复原」'                                -> NOT-RECALLED   expect=NOT-RECALLED   spans=[(3, 9, '「')]
+  PASS  V3 no quote        '只能判不可复现'                                  -> NOT-RECALLED   expect=NOT-RECALLED   spans=[]
+  PASS  backtick pair      '只能判`不可复现`'                                -> OK             expect=OK             spans=[(3, 9, '`')]
+  PASS  inverted           '只能判』不可复现『'                                -> NOT-RECALLED   expect=NOT-RECALLED   spans=[]
+FIXTURE_SELF_TEST = PASS
+=== corpus check ===
+PUA sentinel collision lines = 0 []
+three quote-variant truth: lines=79 files=22
+corrected L1 OK:          lines=79 files=22
+L1 == truth ? True ; FP=0 FN=0
+mapped hits=85 ; orig_slice/norm bad=0

@@ -1,0 +1,110 @@
+== [0] R14_COMMON.md BEFORE ==
+bytes_before = 168048
+sha256_before = 669F9137CC9B24168052DF653728405E7CCA260A9094FC35758AA63AE176B715
+ends_with_newline = True
+has_utf8_bom = False
+== [A] function_atlas.tsv entry 列键格式 ==
+atlas_header = entry	size	n_instr	n_callers	n_callees	is_fnptr	first_import	n_strings	strings
+atlas data rows = 12916
+atlas entry 含小写 a-f 的行数 = 11160
+atlas entry 含大写 A-F 的行数 = 0
+atlas entry 全部匹配 ^[0-9a-f]{8}$ = True
+== [B] coverage.tsv entry 列键格式 ==
+cov_header = entry,subsystem,name,one_line_semantics,grade,evidence_path,n_sources,conflict
+cov data rows = 18498
+col count distribution = {8: 18498}
+cov entry 含小写 a-f 的行数 = 0
+cov entry 含大写 A-F 的行数 = 15870
+cov entry 全部匹配 ^[0-9A-F]{8}$ = True
+== [C] S09 交集（未归一大小写 vs 归一） ==
+S09 rows in coverage = 1102
+S09 naive intersection (未归一, 大写∩小写) = 198
+S09 normalized intersection (归一后) = 1051
+S09 naive 命中行中纯数字(不含字母)的 entry 数 = 198
+== [D] 英文措辞族 (?i)unproven|unverified|not proven ==
+全表命中行数 = 34
+subsystem 分布 = {'S17': 34}
+grade 分布 = {'[已证]': 34}
+在 atlas 内的行数（归一后比对） = 34
+全部含中文子串 [未证] 的行数 = 0
+name 为 Save_VectorBlock_NN 形态的行数 = 34
+族编号 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+编号集合 == {1..35}\{17} = True
+语义尾缀 == 'class name unproven (arg .bss obj)' 全部成立 = True
+evidence_path 分布 = {'lead/next_re_20261117_r14/S17-F1/EVIDENCE/analysis_main.txt;lead/next_re_20261117_r14/S17-F1/EVIDENCE/analysis_deep2.txt': 34}
+样例行（第 1 行）:
+  entry=0067FDF0 sub=S17 name=Save_VectorBlock_01 grade=[已证]
+  sem=Template block #1: Serialize(IStream* ecx, DynamicVector<T*> edx) Write(Count)+OleSaveToStream; class name unproven (arg .bss obj)
+  evidence=lead/next_re_20261117_r14/S17-F1/EVIDENCE/analysis_main.txt;lead/next_re_20261117_r14/S17-F1/EVIDENCE/analysis_deep2.txt
+== [E] N / W / S（atlas ∩ [已证] ∖ 含[未证]子串）与 S17 strict ==
+N (atlas ∩ [已证], 归一比对) = 1484
+W (N 中语义含子串 [未证]) = 317
+S = N - W = 1167
+全表 grade=[已证] 总数（含 atlas 外）= 1489
+atlas 外的 [已证] 行数 = 5
+全表 grade 三分级 = {'[未证]': 11024, '[已证]': 1489, '[静态推断]': 5985}
+S17 atlas_n（归一比对） = 102
+S17 [已证]∩atlas = 56
+S17 strict 计入英文族 = 55
+S17 strict 剔除英文族 = 21
+门槛 ceil(0.5*102) = 51
+措辞 A「（槽语义未证）」全表行数 = 4153
+措辞 A ∩ grade=[已证] 行数 = 10  subsystem 分布 = {'S22': 10}
+== [F] 反例行 004AB9B0 / 00522340 ==
+--- 004AB9B0 ---
+  coverage 行号(1-based 含表头) = 2651  sub=S09 name=DisplayClass::LMBUp grade=[已证] atlas=True
+  sem = byte-checked: u32(0x7E6114+48*4)=0x004AB9B0, so v[48] slot identity proven at instruction level (S09-F1 VERDICT §7 lists v[48] as '可升级'); semantics LMBUp from R8_ui_crt.md §21.1; this row supplies the missing slot-identity byte support for the prior 'no source support' note
+  sem 含 [未证] 子串 = False   sem 含英文族措辞 = False
+  evidence = S09_KPROVED/_audit/VERDICT.md#20
+--- 00522340 ---
+  coverage 行号(1-based 含表头) = 4483  sub=S10 name=InfantryClass::ApplyOccupantTargetMissionFallback_behavior grade=[已证] atlas=True
+  sem = Requires target [this+0x2B4], non-human owner and House flags +0xEC8/+0x6AC; on mission 27..30 with rejected occupant target requests state 31 via [v+0x558](31,0,0); on accepted target writes [this+0x6E4]=1, calls 005B3A00 (NOT a dtor: computes a 32-byte table-entry address from [ecx+0xAC] at 0xA8E3A8, ledger S12/[未证]/sub_) and proved RandomRanged(2,0). Ring3=external caller 004D473A in FootClass::slot151 (ecx=this, arg 0); ring4=ControlledByHuman 0050B730 [已证] + RandomRanged 0065C7E0 [已证] + RaiseError/IsDirty [已证]. Circular [v+0x558]->0051D6F0 dropped.
+  sem 含 [未证] 子串 = True   sem 含英文族措辞 = False
+  evidence = EVIDENCE/ROW_PROOFS.txt#00522340
+F3A_CLASS.tsv 中 00522340 行:
+   00522340	S10	InfantryClass::ApplyOccupantTargetMissionFallback_behavior	OTH_非模板	甲	CENSUS	Y	①	text carries ③b material; every SELF anchor re-checks ([this+0x2B4], [this+0x6E4]=1 write, +0xEC8, +0x6AC, [v+0x558], call 005B3A00, site 004D473A, 0050B730, 0065C7E0); the literal [未证] is a ledger path fragment 'S12/[未证]/sub_', not a self-declaration
+  F3A_CLASS.tsv 总行数 = 275
+PENDING_DECISIONS.md D-44 条:
+   t)` 只作参考列、不参与判定；第 ⑬ 类错源**仅用于 proved**。
+     **执行**：`COVERAGE\PANEL.md` 表头口径注改写（并修正「`Class::sub_XXXXXXXX` 在 atlas 内 = 0 条」这一前提——实测 7 行，含 6 位短形态）。
+     参考列后果已登记：按 strict 口径全表 10.62%、**22 个子系统全不达标**，不再重开。
+   - **D-44 已裁决（2026-11-19，用户）：严格读法 + 双列并列；不批量改 grade。**
+     **对外声明一律用严格列：严格达标 1/22（仅 S17）**；名义达标 3/22（S15/S16/S17）并列报告。
+     严格值：S15 101→**48（30.38%）**、S16 46→**20（22.22%）**（双双失守）、S17 54→**53（51.96%）**（仍过门槛 51）。
+     **不降级 273 行**：改用 `proved_strict` 列（atlas 内 `[已证]` 且语义栏不含 `[未证]`），机器可复算、`coverage.tsv` 零改动、可回滚。
+     **执行**：`PANEL.md` 新增「严格口径双列表」（22 行 + TOTAL，数字绑定 `coverage.tsv` sha256 `b4c998c0…be94c`）；
+     `M48` 的解封条件改为「该行语义栏不含 `[未证]`」。
+   - **D-37 已裁决（2026-11-19，用户）：(D) 授权按 `class_to_sub` 做 S22 全表再归属普查，但只作数据卫生、不作达标手段。**
+     **S13 分母保持 240**（剔 92 行后 `named 124/148 = 83.78% < 门槛 134` 仍不达标，而 proved 75/148 会达标 ⇒ 净收益 0，且制造第二个双分母争议）。
+     **执行**：派全表普查卡，产出改归前后对照表 + 「S22 4,851 行中多少类名可由 RTTI 定出」这一从未统计过的基础数；
+     任何达标声明必须两种映射下同时出
+PANEL.md L134 / L138 / L139 原文:
+  L134: > ⚠️ **`proved_strict` 是下界中的下界，不等于「合规已证」**：它只排掉**自陈 `[未证]`** 的行。
+  L138: > **M54 限定（对外引用必带）**：`proved_strict` 只是下界——它排不掉「语义引自文档、从不自陈未证」的行（`004AB9B0` 是实例）；**1,138 不是「合规已证总量」**，对外引用此数必须带此限定。
+  L139: > 📌 **界向更正（M58）**：上面 L134/L138 把 `proved_strict` 说成「下界」**方向标反**——它是**上界**。证明与两个反例见 `BOUND_DIR\REPORT.md`；本表内所有把该列当达标证据的读数，一律以该报告 §4 的改述为准。
+== [G] PATCH-D35R 可核项 ==
+orig gamemd.exe SHA-256 = 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476
+orig 期望值              = 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476
+orig SHA 未变 = True
+orig size = 4825360  r2 size = 4825360  长度相同 = True
+全文件差异字节数 = 73
+sites_wired.tsv 数据行数 = 8
+站点文件偏移区间 = ['0x2D1632..0x2D1637', '0x2D09FA..0x2D09FF', '0x240427..0x24042C', '0x2D059B..0x2D05A0', '0x2D0634..0x2D0639', '0x2D1293..0x2D1298', '0x2D0940..0x2D0945', '0xA8B75..0xA8B7A']
+洞 [0x3DF781,0x3DF7C0) 内差异数 = 49
+8 站点 5B 区间内差异数 = 24
+越界差异数 = 0
+允许集合并集大小（洞 63B ∪ 8×站点 5B）= 103
+执行器自报 hashes.txt 关键行:
+   orig_gamemd_sha256=73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476
+   r2_copy_sha256=36A875775DA89239E370AAF091DBE5D3D3C5F2F8017D9EFA6A15FCDD4801C7F4
+   total_diff_bytes=73
+   cave_diff_bytes=49
+   site_diff_bytes=24
+   outside_allowed_set_diff_count=0
+smoke_r2_diag_sites.json（桩执行只读采样证据）:
+   {"pid": 13952, "alive": true, "max_hit_count": 2, "distinct_last_rets": ["0x4a8b7a"], "hit_sites": ["4A8B75"], "unknown_rets": [], "n_samples": 641}
+== [Z] 与卡面/BOUND_DIR 对照 ==
+卡面 12,916/11,160/0/198/1,051 → 上面 [A][C]
+卡面 34/全S17/全已证/全atlas/55/21/51 → 上面 [D][E]
+卡面 1,138(PANEL 行文)/1,159(盘上重算) → [E] S 值；PANEL L129-131 行文 1,455/317/1,138
+卡面 8 站点/73=49+24/越界0/1处桩证据/崩0/原SHA未变 → [G]

@@ -1,0 +1,73 @@
+=== 1. MIX-02 公平复现（按撰写人 run_mixed 实句 + token=已交付）===
+  TEXT = 填用流程规定应按模板核对，但三值已实算，绑定行已交付。
+  classify_v12(token=已交付) => verdict=V2 override='V2_OVERRIDE:已实算/已交付' hard=[] weak=[]
+  MIXED_SAMPLES 数组里的句子 = 填用流程规定应按模板核对，但三值已实算已交付。  （与 run_mixed 实句不同，撰写人自己也不一致）
+  [MIX-02] 按 run_mixed 实句复现 = PASS
+
+=== 2. 对抗句是否「撰写人没见过」（逐字与其样本数组比对）===
+  现已填三值并过门禁，不得再改值。                                           在撰写人样本集中 = False
+  核验者不得代填，但三值现已填并已交付。                                        在撰写人样本集中 = False
+  本件三值已填，不代填见证槽。                                             在撰写人样本集中 = False
+  三值已填毕，不许事后改值。                                              在撰写人样本集中 = False
+  三值并非不已填，回件照录即可。                                            在撰写人样本集中 = False
+  三值已填，且 reviewerRole 与 PERF:151 内部三角色逐字不同。                  在撰写人样本集中 = False
+  三值已填；另附先例件一份供比对。                                           在撰写人样本集中 = False
+  三值已填，或按判定条件走 PARTIAL 档。                                    在撰写人样本集中 = False
+  三值已填 → 登记闭合，本件留存。                                          在撰写人样本集中 = False
+  [UNSEEN] 9/9 句确为撰写人样本集中没有的新句子
+
+=== 3. boundary(c)『两标记一并回报』核对（同触 HARD_V1 + V2_OVERRIDE）===
+  TEXT = 现已填三值并过门禁，不得再改值。
+  U 内实际含 V2_OVERRIDE 词族 = ['现已', '已填三值']
+  classify_v12 回报 override = '' ; hard = ['H5_否定禁止管辖']
+  『两标记一并回报』= False
+
+=== 4. boundary『只用 U/pre/post，不跨单元』核对（源码静态 + 行为）===
+  _v12_rule.py:127  if (angle or quote or any(k in U for k in H2_QUOTE) or any(k in line for k in H2_QUOTE)):
+  _v12_rule.py:129  if is_table and (any(k in U for k in H3_TABLE_HDR) or any(k in line for k in H3_TABLE_HDR)
+  _v12_rule.py:133  or any(k in U for k in H4_CTX) or any(k in line for k in H4_CTX)):
+  _v12_rule.py:137  h6 = any(k in U for k in H6_BRANCH) or any(k in line for k in H6_BRANCH)
+  TEXT = 三值已填；另附先例件一份供比对。
+  U = '三值已填；' ; 同行另一子句含『先例』= True
+  hard = ['H2_引述占位'] => 跨单元词是否造成 HARD_V1 = True
+
+=== 5. ⑦ 只读域越界检查：git status + 指纹复算 ===
+  lead/c07_slot_20261109/C07_IDENTITY_SLOT.md                    MATCH_BASELINE=True mtime=2026-11-09T02:07:11
+  lead/c07_truth_protocol_20261109/C07_TRUTH_SELF_PROOF.md       MATCH_BASELINE=True mtime=2026-11-09T06:10:16
+  lead/gate_fp7_20261108/_g7_predicates.py                       MATCH_BASELINE=True mtime=2026-11-09T00:44:32
+  lead/gate_r9r12_20261109/_g9_gate.py                           MATCH_BASELINE=True mtime=2026-11-09T01:50:04
+  lead/PENDING_DECISIONS.md                                      MATCH_BASELINE=True mtime=2026-11-08T22:26:42
+  lead/GOAL_THREE_TARGETS_20261018.md                            MATCH_BASELINE=True mtime=2026-11-06T06:53:04
+  --- git status 对只读路径 ---
+  MM lead/GOAL_THREE_TARGETS_20261018.md
+  MM lead/PENDING_DECISIONS.md
+  ?? lead/c07_slot_20261109/
+  ?? lead/c07_truth_protocol_20261109/
+  ?? lead/gate_doc_name_fix_20261109/
+  ?? lead/gate_fp7_20261108/_g7_predicates.py
+  ?? lead/gate_r9r12_20261109/_g9_gate.py
+  git log -1 = 2657458 GOAL-3T: 台账 §400→§508 与 D-07..D-11 裁决登记入账
+  --- 写域文件清单（本复核员新增一律 _v12v_ 前缀）---
+  _v12_gate_compare.py                     bytes=3414
+  _v12_gate_compare_out.txt                bytes=3183
+  _v12_probe.py                            bytes=4560
+  _v12_probe_out.txt                       bytes=5638
+  _v12_regression.json                     bytes=10484
+  _v12_REPORT.md                           bytes=30098
+  _v12_rule.py                             bytes=9148
+  _v12_verify.py                           bytes=18134
+  _v12_verify_out.txt                      bytes=18814
+  _v12v_adv.py                             bytes=8840
+  _v12v_adv_out.txt                        bytes=13763
+  _v12v_fair.py                            bytes=6179
+  _v12v_fair_out.txt                       bytes=4977
+  _v12v_fp.py                              bytes=2882
+  _v12v_fp_out.txt                         bytes=3252
+  _v12v_r10.py                             bytes=5359
+  _v12v_r10_out.txt                        bytes=6984
+  _v12w_adv_rerun.txt                      bytes=13763
+  _v12w_fair_rerun.txt                     bytes=0
+  _v12w_fpcheck.py                         bytes=3609
+  _v12w_fpcheck_out.txt                    bytes=5164
+  _v12w_verify_rerun.txt                   bytes=18814
+[V12V-FAIR-END]

@@ -1,0 +1,9 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+0x47C620	S12	CanPlaceOccupancyCheck	逐格占用检查：拒绝 WhatAmI==6(Building)/0x24(Terrain)/2(Aircraft)，15/1 不比较；放置期被 0x43F180 格循环调用	[静态推断]	lead/next_re_20261117_r14/W177-F/DISAGREE.md;D3-D4
+0x5657A0	S12	MapClass_GetCellAt	thiscall(ecx=0x87F7E8, arg=CellStruct*) 返回 CellClass*；放置期 0x43F2A7/0x44947B 调用	[已证]	lead/next_re_20261117_r14/S12-Q2/CELL_PATH.md;line51-61
+0x47E8A0	S12	AttachObjectToCellChain	挂载对象到 cell+0xE4/0xE8 链（next=+0x30），逐 foundation 格调用	[已证]	lead/next_re_20261117_r14/S12-Q2/CELL_PATH.md;line71
+0x47EA90	S12	DetachObjectFromCellChain	从 cell+0xE4/0xE8 链摘除对象并改写 next/head	[已证]	lead/next_re_20261117_r14/S12-Q2/CELL_PATH.md;line72
+0x41BEA0	S12	ObjectClass_GetMapCoords	虚槽+0x1B8：从对象 Location(+0x9C/+0xA0) 得 CellStruct{X,Y} 出参	[已证]	lead/next_re_20261117_r14/S12-Q2/CELL_PATH.md;line58-62
+0x5683C0	S12	FoundationChainAttachWrapper	多格建筑 foundation 包装：取 type+0x235 foundation、逐格 +=base 后 call 0x47E8A0 挂链	[静态推断]	lead/next_re_20261117_r14/S12-Q2/CELL_PATH.md;line66
+0x43F180	S12	BuildingClass_slot73_Place	建筑放置主循环：双层格循环内 call 0x47C620，test al,al; je 中止整次放置	[静态推断]	lead/next_re_20261117_r14/W177-F/DISAGREE.md;D4
+0x449440	S12	CanPlaceViaCellArg	以入参+0x24 的 packed CellStruct 调 0x5657A0→0x47C620 的 canPlace 包装（返回 7 或 0）	[静态推断]	lead/next_re_20261117_r14/W177-F/work/disas_getcell_calls.txt

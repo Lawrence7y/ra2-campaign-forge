@@ -1,0 +1,18 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+0087F924	S12	CellArray_ptr	dword[0x87F924]=CellClass* 格数组基址；idx=(Y<<9)+X 二次解引用取格	[静态推断]	EVIDENCE/footprint_multicell.jsonl
+0043F180	S12	BuildingClass_slot73	建筑主状态切换 slot73；mode0=Limbo摘链/1,3=Unlimbo挂链/2未证；挂链含can-place两处	[静态推断]	work/wc_place_v2.py
+0047C620	S12	CellCanPlaceScan	逐格占用校验；S12-K2称只扫headA(+0xE4)按WhatAmI判6/0x24拒；本卡旁路开关全关⇒校验全开	[静态推断]	EVIDENCE/state_bypass_final.jsonl
+0047C878	S12	CanPlaceBackupBranch	byte[0xA8ED6B]==0 进入的另一校验分支；本卡读=0	[静态推断]	EVIDENCE/state_bypass_final.jsonl
+0047E8A0	S12	CellAttachWorker	挂链worker；按对象+0x8C byte选headA/headB；本卡可放置对象+0x8C全0⇒恒headA	[静态推断]	EVIDENCE/state_bypass_final.jsonl
+0047EA90	S12	CellDetachWorker	摘链worker；与0x47E8A0成对	[静态推断]	R14_COMMON §2.2 复用
+005683C0	S12	AttachWrapper	挂链包装；内部call 0x47E8A0	[静态推断]	R14_COMMON §2.2 复用
+005687F0	S12	DetachWrapper	摘链包装；内部call 0x47EA90	[静态推断]	R14_COMMON §2.2 复用
+005684B1	S12	ChainBitReadSite	读对象+0x8C作为0x47E8A0的byte参（S12-K2 #9，静态推断）	[静态推断]	S12-K2 FEED_W177D.md
+00A8E7AC	S12	CanPlaceBypassGlobal	dword!=0⇒0x47C620立即返回1；本卡恒0	[静态推断]	EVIDENCE/state_bypass_final.jsonl
+00A8E9A0	S12	HeadAScanGate	byte==0⇒跳过WhatAmI扫描；本卡恒1（R14 §0恒1）	[静态推断]	EVIDENCE/state_bypass_final.jsonl
+00A8ED6B	S12	BackupPathGate	byte==0⇒进0x47C878分支；本卡恒0	[静态推断]	EVIDENCE/state_bypass_final.jsonl
+0000008C	S12	ChainSelectBit	对象+0x8C byte；0→headA/非0→headB；Building/Unit/Infantry实测全0	[静态推断]	EVIDENCE/state_bypass_final.jsonl
+00000094	S12	LayerIndex	ObjectClass+0x94=层索引；本卡链上对象实测=2	[静态推断]	EVIDENCE/infantry_stack_detail_1.jsonl
+0000021C	S12	ObjectOwner	对象+0x21C=owner HouseClass*；实测敌0x10d66df8/玩家0x10d50d30	[静态推断]	EVIDENCE/infantry_stack_detail_1.jsonl
+000000E4	S12	CellHeadAOffset	CellClass+0xE4 链头A偏移，元素+0x30=next	[静态推断]	EVIDENCE/scan_detail_1.jsonl
+000000E8	S12	CellHeadBOffset	CellClass+0xE8 链头B偏移；本卡可放置对象恒空	[静态推断]	EVIDENCE/state_bypass_final.jsonl

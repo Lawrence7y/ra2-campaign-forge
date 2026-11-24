@@ -1,0 +1,17 @@
+===== ④ 作者自列两条旁路（编排层，不改谓词）=====
+--- 3(d) 三条（人工真值 CATCH）---
+  GP-A1 spans=1 rows=1 conflicts=0 chain=FAIL | PATCH would_catch=True ['P2:token=已生效 pos=14 neg_count=2 dbl=False']
+  GP-A2 spans=0 rows=0 conflicts=0 chain=FAIL | PATCH would_catch=True ["P1:span=0 且含同义完成词族 '登记闭合'"]
+  GP-A3 spans=0 rows=0 conflicts=0 chain=FAIL | PATCH would_catch=True ["P1:span=0 且含同义完成词族 '填毕'"]
+
+--- 16 条 N13 正样本上的旁路误伤（人工真值 PASS）---
+  PATCH FP on N13_POS = 0 / 16
+
+--- 26 条 N13 负样本（旁路是否会误放行/无关）---
+  PATCH 触发 = 0 / 26（负样本本就应 CATCH，触发不算错）
+
+===== 作者声称『spans=0 时 K7 循环体根本不执行』核对 =====
+  GP-A2 spans=0 rows=0 raise=0 NEEDS_HUMAN=0 verdict=FAIL
+  GP-A3 spans=0 rows=0 raise=0 NEEDS_HUMAN=0 verdict=FAIL
+  resolve_conflicts 主循环 = `for tok in tok_set: for m in re.finditer...` → True
+  gate_check 是否在 rows 之外做全文扫描 = False

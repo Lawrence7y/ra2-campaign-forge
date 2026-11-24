@@ -1,0 +1,229 @@
+IMAGE      = D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+SIZE       = 4825360
+SHA256     = 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476
+ImageBase  = 0x00400000
+SizeOfImage= 0x00796000
+  SEC .text    VA 0x00401000 vsize 0x3DF38D  raw 0x1000    rsize 0x3E0000
+  SEC .rdata   VA 0x007E1000 vsize 0x30074   raw 0x3E1000  rsize 0x31000
+  SEC .data    VA 0x00812000 vsize 0x367BE4  raw 0x412000  rsize 0x6C000
+  SEC .rsrc    VA 0x00B7A000 vsize 0x18128   raw 0x47E000  rsize 0x19000
+  SEC .detour  VA 0x00B93000 vsize 0x2718    raw 0x497000  rsize 0x3000
+
+### A. RTTI: vt[-1] -> COL ; COL.pTD / COL.pCHD are absolute VA, not RVA
+vt=0x007E88D0 [FactoryClass main vt (006C5210)]
+   vt[-1] -> COL = 0x00800610 ; sig=0 off=0x0 cd=0x0 pTD=0x00822290 pCHD=0x00800600
+   pTD=0x00822290  >=ImageBase? True  in-image? True  RVA-interpretation IB+0x822290 = 0x00C22290 (OUT>=SizeOfImage)
+   pCHD=0x00800600  >=ImageBase? True  in-image? True  RVA-interpretation IB+0x800600 = 0x00C00600 (OUT>=SizeOfImage)
+vt=0x007F6B30 [WarheadTypeClass main vt (006C5390)]
+   vt[-1] -> COL = 0x0080D360 ; sig=0 off=0x0 cd=0x0 pTD=0x00847C18 pCHD=0x0080D350
+   pTD=0x00847C18  >=ImageBase? True  in-image? True  RVA-interpretation IB+0x847C18 = 0x00C47C18 (OUT>=SizeOfImage)
+   pCHD=0x0080D350  >=ImageBase? True  in-image? True  RVA-interpretation IB+0x80D350 = 0x00C0D350 (OUT>=SizeOfImage)
+vt=0x007F3D98 [TClassFactory ctor 006C5140 vt]
+   vt[-1] -> COL = 0x0080B108 ; sig=0 off=0x0 cd=0x0 pTD=0x00841CB8 pCHD=0x0080B0F8
+   pTD=0x00841CB8  >=ImageBase? True  in-image? True  RVA-interpretation IB+0x841CB8 = 0x00C41CB8 (OUT>=SizeOfImage)
+   pCHD=0x0080B0F8  >=ImageBase? True  in-image? True  RVA-interpretation IB+0x80B0F8 = 0x00C0B0F8 (OUT>=SizeOfImage)
+vt=0x007E1964 [MouseClass vt (004F45B0)]
+   vt[-1] -> COL = 0x007FAB38 ; sig=0 off=0x0 cd=0x0 pTD=0x00816C90 pCHD=0x007FAB28
+   pTD=0x00816C90  >=ImageBase? True  in-image? True  RVA-interpretation IB+0x816C90 = 0x00C16C90 (OUT>=SizeOfImage)
+   pCHD=0x007FAB28  >=ImageBase? True  in-image? True  RVA-interpretation IB+0x7FAB28 = 0x00BFAB28 (OUT>=SizeOfImage)
+   pefile.get_data(0x00847C18 as RVA): PEFormatError: "data at RVA can't be fetched. Corrupt header?"
+
+### B. RTTI: decorated name is INLINE at TD+8 (not a pointer)
+TD 0x00847C18 [TD of WarheadTypeClass vt 007F6B30]
+   first 32 bytes = 0x94957f00000000002e3f41565761726865616454797065436c61737340400000
+   bytes[+8:+20]  = 2e3f41565761726865616454
+   u32(TD+8) = 0x56413F2E ; mapped as pointer? False
+   inline NUL-terminated string at TD+8 = '.?AVWarheadTypeClass@@'
+TD 0x00815E18 [TD 0x815E18 (draft 990)]
+   first 32 bytes = 0x94957f00000000002e3f4156427566666572494f46696c65436c617373404000
+   bytes[+8:+20]  = 2e3f4156427566666572494f
+   u32(TD+8) = 0x56413F2E ; mapped as pointer? False
+   inline NUL-terminated string at TD+8 = '.?AVBufferIOFileClass@@'
+
+### C. AddRef / Release stubs and the real failure path
+0x00410300 [slot1] bytes = b801000000c2040090909090
+  00410300  b801000000             mov eax, 1
+  00410305  c20400                 ret 4
+  00410308  90                     nop 
+0x00410310 [slot2] bytes = b801000000c2040090909090
+  00410310  b801000000             mov eax, 1
+  00410315  c20400                 ret 4
+  00410318  90                     nop 
+0x00410260 [QI helper] bytes = 8b44240c5385c07509b80340
+  00410260  8b44240c               mov eax, dword ptr [esp + 0xc]
+  00410264  53                     push ebx
+  00410265  85c0                   test eax, eax
+
+-- TClassFactory<V>::CreateInstance 0x006C5210 (first 40 insns) --
+  006C5210  56                     push esi
+  006C5211  57                     push edi
+  006C5212  8b7c2418               mov edi, dword ptr [esp + 0x18]
+  006C5216  85ff                   test edi, edi
+  006C5218  750a                   jne 0x6c5224
+  006C521A  5f                     pop edi
+  006C521B  b857000780             mov eax, 0x80070057
+  006C5220  5e                     pop esi
+  006C5221  c21000                 ret 0x10
+  006C5224  8b442410               mov eax, dword ptr [esp + 0x10]
+  006C5228  c70700000000           mov dword ptr [edi], 0
+  006C522E  85c0                   test eax, eax
+  006C5230  740a                   je 0x6c523c
+  006C5232  5f                     pop edi
+  006C5233  b810010480             mov eax, 0x80040110
+  006C5238  5e                     pop esi
+  006C5239  c21000                 ret 0x10
+  006C523C  6a74                   push 0x74
+  006C523E  e8d43b1000             call 0x7c8e17
+  006C5243  83c404                 add esp, 4
+  006C5246  85c0                   test eax, eax
+  006C5248  740d                   je 0x6c5257
+  006C524A  8bc8                   mov ecx, eax
+  006C524C  e85f46e0ff             call 0x4c98b0
+  006C5251  8bf0                   mov esi, eax
+  006C5253  85f6                   test esi, esi
+  006C5255  750a                   jne 0x6c5261
+  006C5257  5f                     pop edi
+  006C5258  b80e000780             mov eax, 0x8007000e
+  006C525D  5e                     pop esi
+  006C525E  c21000                 ret 0x10
+  006C5261  8b4c2414               mov ecx, dword ptr [esp + 0x14]
+  006C5265  8b06                   mov eax, dword ptr [esi]
+  006C5267  57                     push edi
+  006C5268  51                     push ecx
+  006C5269  56                     push esi
+  006C526A  ff10                   call dword ptr [eax]
+  006C526C  8bf8                   mov edi, eax
+  006C526E  85ff                   test edi, edi
+  006C5270  7d09                   jge 0x6c527b
+
+-- main vtable 0x007E88D0 slots 0..11 --
+   vt[ 0] (vt+0x00) = 0x00410260
+   vt[ 1] (vt+0x04) = 0x00410300
+   vt[ 2] (vt+0x08) = 0x00410310
+   vt[ 3] (vt+0x0C) = 0x004CA230
+   vt[ 4] (vt+0x10) = 0x00410450
+   vt[ 5] (vt+0x14) = 0x004CA270
+   vt[ 6] (vt+0x18) = 0x004CA3C0
+   vt[ 7] (vt+0x1C) = 0x004103E0
+   vt[ 8] (vt+0x20) = 0x004CA770
+   vt[ 9] (vt+0x24) = 0x00410470
+   vt[10] (vt+0x28) = 0x004CA580
+   vt[11] (vt+0x2C) = 0x004CA750
+
+-- vt[8] = vt+0x20 target 0x004CA770 body --
+  004CA770  51                     push ecx
+  004CA771  56                     push esi
+  004CA772  8bf1                   mov esi, ecx
+  004CA774  b201                   mov dl, 1
+  004CA776  c706d0887e00           mov dword ptr [esi], 0x7e88d0
+  004CA77C  c74604b4887e00         mov dword ptr [esi + 4], 0x7e88b4
+  004CA783  c74608ac887e00         mov dword ptr [esi + 8], 0x7e88ac
+  004CA78A  c7460ca4887e00         mov dword ptr [esi + 0xc], 0x7e88a4
+  004CA791  e83ab12500             call 0x7258d0
+  004CA796  8b15303ea800           mov edx, dword ptr [0xa83e30]
+  004CA79C  8d442404               lea eax, [esp + 4]
+  004CA7A0  50                     push eax
+  004CA7A1  b9303ea800             mov ecx, 0xa83e30
+  004CA7A6  89742408               mov dword ptr [esp + 8], esi
+  004CA7AA  ff5210                 call dword ptr [edx + 0x10]
+  004CA7AD  83f8ff                 cmp eax, -1
+  004CA7B0  742d                   je 0x4ca7df
+  004CA7B2  8b0d403ea800           mov ecx, dword ptr [0xa83e40]
+  004CA7B8  3bc1                   cmp eax, ecx
+  004CA7BA  7d23                   jge 0x4ca7df
+  004CA7BC  49                     dec ecx
+  004CA7BD  3bc1                   cmp eax, ecx
+  004CA7BF  890d403ea800           mov dword ptr [0xa83e40], ecx
+  004CA7C5  7d18                   jge 0x4ca7df
+  004CA7C7  8b0d343ea800           mov ecx, dword ptr [0xa83e34]
+  004CA7CD  40                     inc eax
+  004CA7CE  8b1481                 mov edx, dword ptr [ecx + eax*4]
+  004CA7D1  895481fc               mov dword ptr [ecx + eax*4 - 4], edx
+  004CA7D5  8b0d403ea800           mov ecx, dword ptr [0xa83e40]
+  004CA7DB  3bc1                   cmp eax, ecx
+  004CA7DD  7ce8                   jl 0x4ca7c7
+  004CA7DF  a0a0e9a800             mov al, byte ptr [0xa8e9a0]
+  004CA7E4  84c0                   test al, al
+  004CA7E6  7407                   je 0x4ca7ef
+
+### D. count of 32-bit immediates equal to each vtable VA (whole file, incl. headers)
+   imm32 0x007E88D0 : 4 hit(s); .text VAs = ['0x004C991C', '0x004C9A18', '0x004CA2C9', '0x004CA778']
+   imm32 0x007F6B30 : 5 hit(s); .text VAs = ['0x0075D0BD', '0x0075D208', '0x0075D239', '0x0075E140', '0x0075E518']
+   imm32 0x007F3D98 : 1 hit(s); .text VAs = ['0x006C514B']
+   imm32 0x007E5358 : 3 hit(s); .text VAs = ['0x0048E93D', '0x00490406', '0x00491216']
+   imm32 0x007F4348 : 4 hit(s); .text VAs = ['0x006D1D56', '0x006D1E5A', '0x006D1E82', '0x006DC475']
+   imm32 0x007E1964 : 4 hit(s); .text VAs = ['0x0040D1B8', '0x0040D297', '0x005BDA4C', '0x005BE0B0']
+
+### E. 0x23 trap: enumerate every store site of a table immediate inside .text
+-- row 00491210 ConvertClass main vt : table 0x007E5358 --
+   site 0x0048E93B  mov dword ptr [esi], 0x7e5358      c70658537e00
+   site 0x00490404  mov dword ptr [esi], 0x7e5358      c70658537e00
+   site 0x00491214  mov dword ptr [esi], 0x7e5358      c70658537e00
+-- row 006DBD20 Tactical main vt : table 0x007F4348 --
+   site 0x006D1D54  mov dword ptr [esi], 0x7f4348      c70648437f00
+   site 0x006D1E58  mov dword ptr [esi], 0x7f4348      c70648437f00
+   site 0x006D1E80  mov dword ptr [ecx], 0x7f4348      c70148437f00
+   site 0x006DC473  mov dword ptr [esi], 0x7f4348      c70648437f00
+-- row 004F45B0 MouseClass vt : table 0x007E1964 --
+   site 0x0040D1B2  mov dword ptr [0x87f7e8], 0x7e1964 c705e8f7870064197e00
+   site 0x0040D295  mov dword ptr [ebx], 0x7e1964      c70364197e00
+   site 0x005BDA4A  mov dword ptr [esi], 0x7e1964      c70664197e00
+   site 0x005BE0AD  mov dword ptr [ebp], 0x7e1964      c7450064197e00
+
+-- disasm around the reported atexit/dtor sites --
+  @0x0040D190:
+  0040D190  b9e8f78700             mov ecx, 0x87f7e8
+  0040D195  e8a6081b00             call 0x5bda40
+  0040D19A  68b0d14000             push 0x40d1b0
+  0040D19F  e8e6c53b00             call 0x7c978a
+  0040D1A4  59                     pop ecx
+  0040D1A5  c3                     ret 
+  0040D1A6  90                     nop 
+  0040D1A7  90                     nop 
+  0040D1A8  90                     nop 
+  0040D1A9  90                     nop 
+  0040D1AA  90                     nop 
+  0040D1AB  90                     nop 
+  0040D1AC  90                     nop 
+  0040D1AD  90                     nop 
+  0040D1AE  90                     nop 
+  0040D1AF  90                     nop 
+  @0x00490400:
+  00490400  51                     push ecx
+  00490401  56                     push esi
+  00490402  8bf1                   mov esi, ecx
+  00490404  c70658537e00           mov dword ptr [esi], 0x7e5358
+  0049040A  e881000000             call 0x490490
+  0049040F  8b8670010000           mov eax, dword ptr [esi + 0x170]
+  00490415  50                     push eax
+  00490416  e822873300             call 0x7c8b3d
+  0049041B  8b8e78010000           mov ecx, dword ptr [esi + 0x178]
+  00490421  c7867001000000000000   mov dword ptr [esi + 0x170], 0
+  0049042B  51                     push ecx
+  0049042C  e80c873300             call 0x7c8b3d
+  @0x006DC470:
+  006DC470  56                     push esi
+  006DC471  8bf1                   mov esi, ecx
+  006DC473  c70648437f00           mov dword ptr [esi], 0x7f4348
+  006DC479  c746042c437f00         mov dword ptr [esi + 4], 0x7f432c
+  006DC480  c7460824437f00         mov dword ptr [esi + 8], 0x7f4324
+  006DC487  c7460c1c437f00         mov dword ptr [esi + 0xc], 0x7f431c
+  006DC48E  c7052473880000000000   mov dword ptr [0x887324], 0
+  006DC498  e8533dd3ff             call 0x4101f0
+  006DC49D  f644240801             test byte ptr [esp + 8], 1
+  006DC4A2  7409                   je 0x6dc4ad
+  006DC4A4  56                     push esi
+  006DC4A5  e893c60e00             call 0x7c8b3d
+  @0x0040D290:
+  0040D290  53                     push ebx
+  0040D291  8bd9                   mov ebx, ecx
+  0040D293  56                     push esi
+  0040D294  57                     push edi
+  0040D295  c70364197e00           mov dword ptr [ebx], 0x7e1964
+  0040D29B  c783185500005c197e00   mov dword ptr [ebx + 0x5518], 0x7e195c
+  0040D2A5  8db39c530000           lea esi, [ebx + 0x539c]
+  0040D2AB  bf04000000             mov edi, 4
+  0040D2B0  81ee940f0000           sub esi, 0xf94
+  0040D2B6  6860d24000             push 0x40d260
+  0040D2BB  6a4b                   push 0x4b
+  0040D2BD  6a34                   push 0x34

@@ -1,0 +1,119 @@
+=== host -> station 之间的 ret(C3/C2) 与填充 ===
+  Aircraft v138          site=0x414B24 host=0x414A80  ret_between=[('0x414ae4', 'ret', '', '0x8b')]  pad_before=90 90 90 90 90 90 90 90
+      post-ret segment start=0x414AE5 len=0x3F  E8/E9 callers=NONE
+  Aircraft v138 #2       site=0x414B64 host=0x414A80  ret_between=[('0x414ae4', 'ret', '', '0x8b')]  pad_before=90 90 90 90 90 90 90 90
+      post-ret segment start=0x414AE5 len=0x7F  E8/E9 callers=NONE
+  Foot/Inf v151 #1       site=0x4D4314 host=0x4D4280  ret_between=[('0x4d42eb', 'ret', '', '0x8d')]  pad_before=18 00 03 c6 5e c3 90 90
+      post-ret segment start=0x4D42EC len=0x28  E8/E9 callers=NONE
+  Foot/Inf v151 #2       site=0x4D4686 host=0x4D4280  ret_between=[('0x4d42eb', 'ret', '', '0x8d'), ('0x4d4527', 'ret', '', '0x8b'), ('0x4d45a1', 'ret', '', '0x39')]  pad_before=18 00 03 c6 5e c3 90 90
+      post-ret segment start=0x4D45A2 len=0xE4  E8/E9 callers=NONE
+  Foot/Inf v151 #3       site=0x4D49A3 host=0x4D4280  ret_between=[('0x4d42eb', 'ret', '', '0x8d'), ('0x4d4527', 'ret', '', '0x8b'), ('0x4d45a1', 'ret', '', '0x39'), ('0x4d4786', 'ret', '', '0x8a'), ('0x4d485d', 'ret', '', '0x8b'), ('0x4d4934', 'ret', '', '0x8b')]  pad_before=18 00 03 c6 5e c3 90 90
+      post-ret segment start=0x4D498A len=0x19  E8/E9 callers=NONE
+  Foot v132              site=0x4D4E3E host=0x4D4DC0  ret_between=NONE  pad_before=c3 90 90 90 90 90 90 90
+      post-ret segment start=0x4D4DC0 len=0x7D  E8/E9 callers=['0x51f538', '0x7447a0']
+  v150 four-class        site=0x4DE056 host=0x4DDF90  ret_between=NONE  pad_before=5e 5b 83 c4 18 c2 08 00
+      post-ret segment start=0x4DDF90 len=0xC5  E8/E9 callers=NONE
+  Infantry v266          site=0x51F382 host=0x51F330  ret_between=NONE  pad_before=90 90 90 90 90 90 90 90
+      post-ret segment start=0x51F330 len=0x51  E8/E9 callers=NONE
+
+=== 0x4D4280 起点反汇编（前 30 条）===
+  004d4280  sub      esp, 0x90
+  004d4286  push     ebx
+  004d4287  push     ebp
+  004d4288  push     esi
+  004d4289  mov      esi, ecx
+  004d428b  push     edi
+  004d428c  push     2
+  004d428e  mov      eax, dword ptr [esi]
+  004d4290  call     dword ptr [eax + 0x31c]
+  004d4296  cdq      
+  004d4297  and      edx, 0xff
+  004d429d  mov      byte ptr [esi + 0x430], 1
+  004d42a4  add      eax, edx
+  004d42a6  mov      ebp, eax
+  004d42a8  mov      eax, dword ptr [esi + 0xbc]
+  004d42ae  sar      ebp, 8
+  004d42b1  add      ebp, 6
+  004d42b4  cmp      eax, 3
+  004d42b7  ja       0x4d4569
+  004d42bd  jmp      dword ptr [eax*4 + 0x4d4b04]
+  004d42c4  mov      eax, dword ptr [esi + 0x5a4]
+  004d42ca  test     eax, eax
+  004d42cc  je       0x4d4569
+  004d42d2  mov      dword ptr [esi + 0xbc], 0
+  004d42dc  pop      edi
+  004d42dd  pop      esi
+  004d42de  pop      ebp
+  004d42df  mov      eax, 1
+  004d42e4  pop      ebx
+  004d42e5  add      esp, 0x90
+  004d42eb  ret      
+  004d42ec  lea      ecx, [esi + 0x9c]
+  004d42f2  xor      ebx, ebx
+  004d42f4  push     ebx
+  004d42f5  mov      edx, dword ptr [ecx]
+  004d42f7  mov      dword ptr [esp + 0x34], edx
+  004d42fb  mov      edx, dword ptr [esi]
+  004d42fd  mov      eax, dword ptr [ecx + 4]
+  004d4300  mov      dword ptr [esp + 0x38], eax
+  004d4304  lea      eax, [esp + 0x34]
+  004d4308  mov      ecx, dword ptr [ecx + 8]
+  004d430b  push     eax
+  004d430c  mov      dword ptr [esp + 0x40], ecx
+  004d4310  push     2
+  004d4312  mov      ecx, esi
+  004d4314  call     dword ptr [edx + 0x3c4]
+  004d431a  cmp      eax, ebx
+  004d431c  mov      dword ptr [esp + 0x14], eax
+  004d4320  jne      0x4d4326
+  004d4322  xor      edi, edi
+  004d4324  jmp      0x4d4334
+  004d4326  mov      cl, byte ptr [eax + 0x14]
+  004d4329  and      cl, 2
+  004d432c  neg      cl
+  004d432e  sbb      ecx, ecx
+  004d4330  and      ecx, eax
+  004d4332  mov      edi, ecx
+  004d4334  mov      edx, dword ptr [esi]
+  004d4336  push     edi
+  004d4337  mov      ecx, esi
+  004d4339  call     dword ptr [edx + 0x2e4]
+
+=== 0x51F330 起点反汇编（前 25 条）===
+  0051f330  sub      esp, 0xc
+  0051f333  push     esi
+  0051f334  mov      esi, ecx
+  0051f336  push     edi
+  0051f337  push     0
+  0051f339  mov      eax, dword ptr [esi]
+  0051f33b  call     dword ptr [eax + 0x2e4]
+  0051f341  mov      ecx, dword ptr [esi + 0x2b4]
+  0051f347  test     ecx, ecx
+  0051f349  je       0x51f35b
+  0051f34b  mov      edx, dword ptr [esi]
+  0051f34d  push     eax
+  0051f34e  push     ecx
+  0051f34f  mov      ecx, esi
+  0051f351  call     dword ptr [edx + 0x3a8]
+  0051f357  test     al, al
+  0051f359  jne      0x51f3d2
+  0051f35b  lea      eax, [esi + 0x9c]
+  0051f361  push     0
+  0051f363  mov      ecx, dword ptr [eax]
+  0051f365  mov      dword ptr [esp + 0xc], ecx
+  0051f369  mov      ecx, esi
+  0051f36b  mov      edx, dword ptr [eax + 4]
+  0051f36e  mov      dword ptr [esp + 0x10], edx
+  0051f372  mov      edx, dword ptr [esi]
+  0051f374  mov      eax, dword ptr [eax + 8]
+  0051f377  mov      dword ptr [esp + 0x14], eax
+  0051f37b  lea      eax, [esp + 0xc]
+  0051f37f  push     eax
+  0051f380  push     1
+  0051f382  call     dword ptr [edx + 0x3c4]
+  0051f388  mov      edi, eax
+  0051f38a  mov      eax, dword ptr [esi + 0x2b4]
+  0051f390  test     eax, eax
+  0051f392  jne      0x51f398
+
+DONE

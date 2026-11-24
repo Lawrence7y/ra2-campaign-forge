@@ -1,0 +1,44 @@
+======================================================================
+修复后独立验证：A1 复核 5 条缺陷是否已闭合
+======================================================================
+
+--- R4-1 [100, None, 100]：修复前虚报 freeze_max_s=0.02 ---
+  PASS  不虚报冻结（frame_clock_freeze_max_s == 0）
+  PASS  记 1 次 resume_after_loss
+  PASS  不产 edge/same 事件
+
+--- R4-2 [100, None, 150]：修复前虚报 missed=49 + 假聚合 ---
+  PASS  不虚报漏沿（missed_frames_lower_bound == 0）
+  PASS  不产假聚合事件
+  PASS  记 1 次 resume_after_loss
+
+--- R4-3 [100, None×5, 100]：修复前虚报 freeze=6.0 s ---
+  PASS  读失败墙钟不计入冻结
+
+--- R4-4 反证：真冻结必须仍被测到 ---
+  PASS  真冻结 ≥1.5 s 仍被测到
+  PASS  真冻结后正常出 edge
+
+--- R5 键名自解释 ---
+  PASS  旧键 freeze_max_s 已消失
+  PASS  新键 frame_clock_freeze_max_s 在场
+  PASS  下游只取数值键时看不到含业务味的 freeze_max_s
+  PASS  note 明写读失败墙钟不计入
+
+--- 附加 [100, 150] 10 ms 内 df=50（5000 fps，物理不可能）---
+  PASS  记 implausible_df=1
+  PASS  事件带 df_dt_plausible=False
+
+--- 反证：合理的 df=5/1s（5 fps）不得误报 ---
+  PASS  合理的 df 不误报
+  PASS  合理 df 仍记 edge_missed=1
+
+--- 反证：df<0 仍记 unjudgeable ---
+  PASS  df<0 仍记 unjudgeable=1
+
+--- schema 升版 ---
+  PASS  SCHEMA 已升到 V2
+
+======================================================================
+SUMMARY  PASS=19  FAIL=0
+======================================================================

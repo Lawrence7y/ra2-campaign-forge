@@ -1,0 +1,55 @@
+00644960  51                       push ecx
+00644961  56                       push esi
+00644962  8b f1                    mov esi, ecx
+00644964  b2 01                    mov dl, 1
+00644966  c7 06 a8 00 7f 00        mov dword ptr [esi], 0x7f00a8
+0064496C  c7 46 04 8c 00 7f 00     mov dword ptr [esi + 4], 0x7f008c
+00644973  c7 46 08 84 00 7f 00     mov dword ptr [esi + 8], 0x7f0084
+0064497A  c7 46 0c 7c 00 7f 00     mov dword ptr [esi + 0xc], 0x7f007c
+00644981  e8 4a 0f 0e 00           call 0x7258d0
+00644986  8b 15 68 3d a8 00        mov edx, dword ptr [0xa83d68]
+0064498C  8d 44 24 04              lea eax, [esp + 4]
+00644990  50                       push eax
+00644991  b9 68 3d a8 00           mov ecx, 0xa83d68
+00644996  89 74 24 08              mov dword ptr [esp + 8], esi
+0064499A  ff 52 10                 call dword ptr [edx + 0x10]
+0064499D  83 f8 ff                 cmp eax, -1
+006449A0  74 2d                    je 0x6449cf
+006449A2  8b 0d 78 3d a8 00        mov ecx, dword ptr [0xa83d78]
+006449A8  3b c1                    cmp eax, ecx
+006449AA  7d 23                    jge 0x6449cf
+006449AC  49                       dec ecx
+006449AD  3b c1                    cmp eax, ecx
+006449AF  89 0d 78 3d a8 00        mov dword ptr [0xa83d78], ecx
+006449B5  7d 18                    jge 0x6449cf
+006449B7  8b 0d 6c 3d a8 00        mov ecx, dword ptr [0xa83d6c]
+006449BD  40                       inc eax
+006449BE  8b 14 81                 mov edx, dword ptr [ecx + eax*4]
+006449C1  89 54 81 fc              mov dword ptr [ecx + eax*4 - 4], edx
+006449C5  8b 0d 78 3d a8 00        mov ecx, dword ptr [0xa83d78]
+006449CB  3b c1                    cmp eax, ecx
+006449CD  7c e8                    jl 0x6449b7
+006449CF  8b ce                    mov ecx, esi
+006449D1  e8 2a 2a fb ff           call 0x5f7400
+006449D6  f6 44 24 0c 01           test byte ptr [esp + 0xc], 1
+006449DB  74 09                    je 0x6449e6
+006449DD  56                       push esi
+006449DE  e8 5a 41 18 00           call 0x7c8b3d
+006449E3  83 c4 04                 add esp, 4
+006449E6  8b c6                    mov eax, esi
+006449E8  5e                       pop esi
+006449E9  59                       pop ecx
+006449EA  c2 04 00                 ret 4
+006449ED  90                       nop
+006449EE  90                       nop
+006449EF  90                       nop
+006449F0  dd 05 10 17 7e 00        fld qword ptr [0x7e1710]
+006449F6  dd 05 08 17 7e 00        fld qword ptr [0x7e1708]
+006449FC  e8 af 45 18 00           call 0x7c8fb0
+00644A01  dc c0                    fadd st(0), st(0)
+00644A03  83 ec 08                 sub esp, 8
+00644A06  dd 1c 24                 fstp qword ptr [esp]
+00644A09  e8 32 62 e8 ff           call 0x4cac40
+00644A0E  dd 1d 98 50 ac 00        fstp qword ptr [0xac5098]
+00644A14  83 c4 08                 add esp, 8
+00644A17  c3                       ret

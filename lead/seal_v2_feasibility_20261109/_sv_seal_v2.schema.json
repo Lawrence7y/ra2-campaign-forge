@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ra2-campaign-forge:seal-v2:schema",
+  "title": "seal_v2 (design only — NOT a seal instance)",
+  "description": "Format definition for the next-generation pre-V1 commitment seal. This file is a schema, not a seal; it contains no file hashes, no signatures, no keys, no timestamps. Canonicalization: CANON(x) = json.dumps(x, ensure_ascii=False, sort_keys=True, separators=(',',':')) + '\\n', UTF-8; H(x)=hashlib.sha256(CANON(x)).hexdigest(). Detached signatures cover the RAW BYTES of the seal file, not CANON(...), so a third party can verify from the bytes received.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "seal_version",
+    "subject",
+    "time_anchors",
+    "commitment",
+    "predicate_run_anchor",
+    "signers",
+    "payload_sha256",
+    "provenance"
+  ],
+  "properties": {
+    "seal_version": { "const": "seal-v2" },
+
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "items_sha256"],
+      "properties": {
+        "items_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "H(subject.items). Content binding; recomputable with hashlib only."
+        },
+        "predecessor_seal_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Optional hash chain: sha256 of the PREVIOUS seal file's raw bytes. Gives content-forced partial order without any clock (ORDERING_EVIDENCE.md:275 rule 2). null on first use."
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Each covered file. Field names mirror lead/cert_realcheck_20261109/_cr_seal.json:1-40 (file_sha256/bytes/evidence_lines/evidence_span_sha256/anchor).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256", "bytes", "anchor", "output_manifest_sha256"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1, "description": "Repo-relative POSIX path. Verifier resolves under its own root; never trust an absolute path from the seal." },
+              "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "hashlib.sha256(file.read_bytes()).hexdigest()" },
+              "bytes": { "type": "integer", "minimum": 0 },
+              "anchor": { "type": "string", "description": "file:line citation, e.g. 'lead/.../RULING.md:108'" },
+              "evidence_lines": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 2, "maxItems": 2 },
+              "evidence_span_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "output_manifest_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+                "description": "H(INPUT_MANIFEST) of the labelling/adjudication inputs. Must be disjoint from V1 outputs (ORACLE_SPEC.md:112 T3)."
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "time_anchors": {
+      "type": "array",
+      "minItems": 2,
+      "description": "At least two DIFFERENT sources AND at least one carrier outside A's write domain. fs_stat alone is weak local metadata: on this host st_ctime is creation time, mtime>ctime is normal after overwrite (verified in _sv_probe_readonly.py C/D), and os.utime can set mtime. Never use fs_stat alone for ordering.",
+      "items": {
+        "type": "object",
+        "required": ["kind", "trust", "carrier_outside_A_write_domain"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": ["fs_stat", "rfc3161", "transparency_log", "witness_archive", "independent_receipt"],
+            "description": "fs_stat/rfc3161/transparency_log are machine-checkable; witness_archive/independent_receipt are institutional and MUST NOT be reported as cryptographic."
+          },
+          "trust": {
+            "enum": ["weak_local_metadata", "third_party_time", "third_party_log", "institutional_only"]
+          },
+          "carrier_outside_A_write_domain": {
+            "type": "boolean",
+            "description": "ACL fact, not a claim. Must be true for at least one anchor (T8, _os_ORACLE_SPEC.md:182). A log on this machine cannot set this true."
+          },
+          "observed_at_utc": { "type": "string", "description": "ISO-8601 UTC. For fs_stat this is derived from the LOCAL clock and is writable; for rfc3161 it is TSA genTime." },
+          "fs": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "st_ctime": { "type": "number" },
+              "st_mtime": { "type": "number" },
+              "st_atime": { "type": "number" },
+              "writable": { "const": true },
+              "note": { "type": "string" }
+            }
+          },
+          "rfc3161": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tsa_url", "tsq_sha256", "tsr_sha256", "gen_time_utc", "tsa_cert_sha256", "tsa_ca_sha256", "imprint_sha256"],
+            "properties": {
+              "tsa_url": { "type": "string" },
+              "tsq_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "tsr_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "gen_time_utc": { "type": "string" },
+              "tsa_cert_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "tsa_ca_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "imprint_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+                "description": "messageImprint in the TSQ — must equal sha256(seal_file_raw_bytes). Binds the token to THIS seal, not to a neighbouring one."
+              },
+              "verify_command": { "type": "string" }
+            }
+          },
+          "transparency_log": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["log_url", "entry_or_sth_sha256", "log_operator"],
+            "properties": {
+              "log_url": { "type": "string" },
+              "entry_or_sth_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "log_operator": { "type": "string", "description": "Must be an entity whose write ACL excludes A." },
+              "inclusion_proof_ref": { "type": "string" }
+            }
+          },
+          "witness_archive": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["locator", "witness_ids", "receipt_sha256"],
+            "properties": {
+              "locator": { "type": "string" },
+              "witness_ids": { "type": "array", "minItems": 2, "items": { "type": "string" } },
+              "receipt_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "date_header_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+            }
+          }
+        }
+      },
+      "contains": {
+        "type": "object",
+        "properties": { "carrier_outside_A_write_domain": { "const": true } },
+        "required": ["carrier_outside_A_write_domain"]
+      }
+    },
+
+    "commitment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t0_pre_registration_sha256", "carrier", "published_before_predicate_run"],
+      "properties": {
+        "t0_pre_registration_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "H(P): SHA256 of the canonical pre-registration package (ID_REG + A_REG + LABEL_SPEC + 302-item list + kappa threshold + coverage=1.0 + isolation plan). Published at t0, BEFORE V1."
+        },
+        "seal_bytes_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "sha256 of THIS seal file's raw bytes, published out-of-band. The seal MUST NOT contain its own hash (no self-reference)."
+        },
+        "carrier": { "type": "string", "description": "Locator on a carrier whose write ACL excludes A. A gist under the SAME account as A does not qualify." },
+        "published_before_predicate_run": { "type": "boolean" },
+        "t1_labels_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "commit-then-reveal: H(labels) submitted at t1, before revealing plaintext." }
+      }
+    },
+
+    "predicate_run_anchor": {
+      "type": "object",
+      "description": "INDEPENDENT t2 anchor for the FIRST V1 run, produced by a party other than A. Without this, t0<t2 has one writable endpoint and 'seal before V1' is not established.",
+      "additionalProperties": false,
+      "required": ["produced_by_non_A_party", "source", "observed_at_utc"],
+      "properties": {
+        "produced_by_non_A_party": { "type": "boolean" },
+        "source": { "enum": ["rfc3161", "transparency_log", "independent_receipt", "unknown"] },
+        "observed_at_utc": { "type": "string" },
+        "evidence_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "note": { "type": "string" }
+      }
+    },
+
+    "signers": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Per-shard authentication material (T6, _os_ORACLE_SPEC.md:180). One shared string per seal is a FAIL. Detached signatures cover the raw seal bytes and are verifiable with public keys only.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["adjudicator_id", "mechanism", "public_key_sha256", "signature_sha256", "signature_path"],
+        "properties": {
+          "adjudicator_id": { "type": "string", "minLength": 1 },
+          "shard_ids": { "type": "array", "items": { "type": "string" } },
+          "mechanism": { "enum": ["gpg_detached", "ssh_Y_sign", "cms_detached_x509", "minisign_detached"] },
+          "public_key_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Fingerprint of the PUBLIC key / cert. The trust anchor is published out-of-band at t0, never read from the local keyring at verify time." },
+          "signature_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "signature_path": { "type": "string" },
+          "key_generated_by_this_run": { "const": false, "description": "A seal build must NEVER generate a key. Keys are provisioned separately with approval." }
+        }
+      }
+    },
+
+    "payload_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "H of everything except payload_sha256 and signers[].signature_*: a content digest of the assertion, for cheap comparison. It is NOT the published 64-hex; the published value is sha256 of the seal FILE's raw bytes."
+    },
+
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cryptographic_claims", "institutional_only_claims", "unverified"],
+      "properties": {
+        "cryptographic_claims": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "e.g. content_integrity, key_binding, non_malleability_after_signature, tsa_genTime (only if TSA token verified)."
+        },
+        "institutional_only_claims": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "MUST include 'adjudicator_did_not_see_V1_outputs' and 'key_to_person_mapping'. ORACLE_SPEC.md:123/:161/:163: these are not decidable from artifacts."
+        },
+        "unverified": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Anything not actually run in this build (e.g. TSA POST, rekor inclusion proof). Never silently drop."
+        },
+        "cognitive_independence_is_provable": { "const": false },
+        "fs_times_used_for_ordering": { "const": false }
+      }
+    }
+  }
+}

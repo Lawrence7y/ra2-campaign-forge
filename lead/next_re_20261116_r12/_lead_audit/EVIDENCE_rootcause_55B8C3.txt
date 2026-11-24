@@ -1,0 +1,34 @@
+=== 复现 R11 的错：从非法起点 0x55B8C3 开始线性反汇编 ===
+  0055B8C3  or       al, 0x86                     0c 86
+  0055B8C5  mov      ecx, dword ptr [0x8b40d8]    8b 0d d8 40 8b 00
+  0055B8CB  mov      esi, dword ptr [0x8b40cc]    8b 35 cc 40 8b 00
+  0055B8D1  inc      eax                          40
+  0055B8D2  cmp      eax, ecx                     3b c1
+  0055B8D4  jl       0x55b8be                     7c e8
+  0055B8D6  dec      edx                          4a
+  0055B8D7  inc      edx                          42
+  0055B8D8  cmp      edx, ecx                     3b d1
+  0055B8DA  jl       0x55b8a8                     7c cc
+  0055B8DC  pop      esi                          5e
+  0055B8DD  pop      edi                          5f
+  0055B8DE  ret      8                            c2 08 00
+  0055B8E1  nop                                   90
+
+=== 正确起点 0x55B8C0（0x55B8C2 是一条 3 字节指令的起点）===
+  0055B8C0  xchg     byte ptr [ecx + ecx*4], al   86 04 89
+  0055B8C3  or       al, 0x86                     0c 86
+  0055B8C5  mov      ecx, dword ptr [0x8b40d8]    8b 0d d8 40 8b 00
+  0055B8CB  mov      esi, dword ptr [0x8b40cc]    8b 35 cc 40 8b 00
+  0055B8D1  inc      eax                          40
+  0055B8D2  cmp      eax, ecx                     3b c1
+  0055B8D4  jl       0x55b8be                     7c e8
+  0055B8D6  dec      edx                          4a
+  0055B8D7  inc      edx                          42
+  0055B8D8  cmp      edx, ecx                     3b d1
+  0055B8DA  jl       0x55b8a8                     7c cc
+  0055B8DC  pop      esi                          5e
+  0055B8DD  pop      edi                          5f
+  0055B8DE  ret      8                            c2 08 00
+
+=== 结论核对：0x55B8C3 处字节 = 0c 86 8b 0d d8
+    0x55B8C2 起的合法指令 = []

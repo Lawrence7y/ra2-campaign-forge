@@ -1,0 +1,199 @@
+COMMON-REFRESH-2 / RECOMPUTE.txt
+每个写进 R14_COMMON.md §12 的数字，来源二选一：本卡自算（列出命令与输出摘要）或点名证据文件（列出文件:行）。
+环境: Windows / pwsh / Python 3.12.10（capstone 5.0.7、pefile 2024.8.26 仅在读 exe 时用到；本卡**未读 exe**，全部数字来自
+      coverage.tsv / function_atlas.tsv / PANEL.md / 各卡产物，故不涉及反汇编）。
+脚本: COMMON_REFRESH2\work\recompute_refresh2{,b,c,d}.py、verify_prefix.py
+输出: COMMON_REFRESH2\work\recompute_out{, _b, _c, _d}.txt、verify_prefix_out.txt（本文件所有「输出摘要」均摘自这些文件）
+
+================================================================
+§A  文件指纹 + grade 直方图 + 逐子系统表（用于 §12.1 / §12.4 全部 n / proved / strict）
+================================================================
+命令:
+  python lead\next_re_20261117_r14\COMMON_REFRESH2\work\recompute_refresh2.py
+  （口径逐条照 RULING_R15_20261119\work\strict_panel.py：atlas entry 归一为大写 8 位；
+    named_L = name 非空且不以 sub_ 开头；named_S(R14) 排除 *::sub_<hex>；
+    named_strict 再排除 *::v?slotN；proved_n = atlas 内 ∧ grade==[已证]；
+    proved_strict_n = proved_n ∧ 语义栏不含子串 [未证]；门槛 named=ceil(0.9n)、proved=ceil(0.5n)）
+
+输出摘要（work\recompute_out.txt）:
+  coverage.tsv        FA5637DF6C87F0327C91770FF8E478378ACDDB1E3C5E6F157B033DE11AFC3836  3749440 B
+  function_atlas.tsv  4527079B8E1556F0F34BC2C16068DDAEF7681EE2B6A5E1F2AADC61A73653DB69  427038 B
+  PANEL.md            AC1CA0E1D4E4078268AA45311C59E2AF23F4CC7D8FE43B54F4CEBDD0AC4B6166  115971 B
+  atlas 数据行 entry 数 = 12916
+  coverage 数据行 = 18498
+  grade 直方图 = {'[未证]': 11024, '[已证]': 1496, '[静态推断]': 5978}
+  S09    1051    681    681     82    114     97    946    526
+  S13     240    216    216    108    100     99    216    120
+  S15     158    144    144    102    106     53    143     79
+  S16      90     81     81     54     47     21     81     45
+  三条线定点核对:
+    S13: n=240 named_S(R14)=216(thu 216, gap 0) proved=100(thu 120, gap 20) proved_strict=99(gap 21)
+    S15: n=158 named_S(R14)=144(thu 143, gap -1) proved=106(thu 79, gap -27) proved_strict=53(gap 26)
+    S16: n=90 named_S(R14)=81(thu 81, gap 0) proved=47(thu 45, gap -2) proved_strict=21(gap 24)
+
+→ §12.4 表头三行（S13 240/216/216/100/99/120；S15 158/144/143/106/53/79；S16 90/81/81/47/21/45）全部为上式原样值。
+→ §12.1 的「三格现值 = 今日重算值」：S09=114、S15=106、S16=47，与上式 proved_n 逐一相等。
+→ 口径自证：上述 S13/S15/S16 的 (proved_n, proved_strict) = (100,99)/(106,53)/(47,21)，
+   与 PANEL.md 严格双列表 L117/L119/L120 逐格相同 ⇒ 我的复算与面板表头口径一致。
+
+================================================================
+§B  S13-PUSH delta 是否已并表（§12.3 用）+ 6 行现态
+================================================================
+命令:
+  python lead\next_re_20261117_r14\COMMON_REFRESH2\work\recompute_refresh2d.py    （§G 段）
+  python lead\next_re_20261117_r14\COMMON_REFRESH2\work\recompute_refresh2b.py    （§B 段）
+输出摘要:
+  recommpute_refresh2b §B:
+    S13 atlas 内 240 行；[已证] 100；proved_strict 99
+    S13_delta.tsv 数据行 = 6：['004684E0','00629FD0','0075E0C0','0075E2C0','00772CD0','00772EB0']
+    其中已在 coverage 里带 S13_PUSH 证据且 [已证] 的 = 0 → 并表状态：未并（Lead 裁定不予并表，与盘上一致）
+  recompute_refresh2d §G（6 行逐行）:
+    004684E0 S13 BulletClass::slot10      grade=[静态推断]
+    00629FD0 S13 ParasiteClass::slot23    grade=[静态推断]
+    0075E0C0 S13 WarheadTypeClass::slot5  grade=[静态推断]
+    0075E2C0 S13 WarheadTypeClass::slot6  grade=[静态推断]
+    00772CD0 S13 WeaponTypeClass::slot5   grade=[静态推断]
+    00772EB0 S13 WeaponTypeClass::slot6   grade=[静态推断]
+→ §12.3「6 行至今全部仍是 [静态推断] ⇒ 确未并表」由此而来。
+
+================================================================
+§C  基础率（§12.4）
+================================================================
+命令（算术复算 + 原表读取）:
+  python lead\next_re_20261117_r14\COMMON_REFRESH2\work\recompute_refresh2b.py    （§C 段）
+输出摘要:
+  S13 池内 ③b② 机械命中                        13 / 140 = 0.0929 (9.29%)
+  S13 剔 eax 覆写陷阱后真③b②                    9 / 140 = 0.0643 (6.43%)
+  S13 字面四环齐全                              6 / 140 = 0.0429 (4.29%)
+  S13 D-40 严格口径                             0 / 140 = 0.0000 (0.00%)
+  S13 ③b① 跳转表                               0 / 140 = 0.0000 (0.00%)
+  S15 ③b② P1∧P2∧P3                            20 /  44 = 0.4545 (45.45%)
+  S16 ③b② P1∧P2∧P3                             3 /  38 = 0.0789 (7.89%)
+  S15+S16 合计                                 23 /  82 = 0.2805 (28.05%)
+  原表 S13_PUSH\base_rate.tsv:
+    A_③b②_raw 140 13 13 0.0929 / A_③b②_no_eax_trap 140 9 9 0.0643 /
+    A_③b②_four_rings_literal 140 9 6 0.0429 / A_③b②_four_rings_D40_strict 140 9 0 0.0000 /
+    B_③b①_jumptable 140 0 0 0.0000
+  原表 S15S16_3B2\base_rate.tsv:
+    S15 44 22 20 20 0.4545 / S16 38 6 6 3 0.0789 / ALL 82 28 26 23 0.2805
+→ 卡面 13 / 9 / 6 / 0 / 0、9.29%、45.45%、7.89%、28.05% 全部与上式一致（分子分母皆对上）。
+
+S13 池 140 的构成（自算，recompute_refresh2c §A''）:
+  S13 atlas 内 grade 分布 {'[静态推断]': 115, '[已证]': 100, '[未证]': 25}
+  ⇒ 池（[静态推断]+[未证]）= 140
+  注：240 = 115+100+25，S13 atlas 外 0 行（与 S13_PUSH\REPORT.md 第一步「S13 coverage 总行数 240，atlas 外 0」一致）。
+
+S15/S16 池 82 的口径与时点（自算，recompute_refresh2c §A' ＋ refresh2d §H/§I）:
+  S15S16_3B2 口径（subsystem∈{S15,S16} ∧ grade=[静态推断]，**不设 atlas 过滤**）：
+    现盘: S15 38 + S16 37 = 75     （atlas 内 S15 38/38、S16 36 + atlas 外 1）
+    pool.json（该卡原始池）: 82 行 = {'S15': 44, 'S16': 38}
+    pool.json × 现盘 grade: {('S15','[静态推断]'):38, ('S15','[已证]'):6,
+                             ('S16','[静态推断]'):37, ('S16','[已证]'):1}
+    已离开池的 7 行（现非 [静态推断]）:
+      006CE800 S16 SuperWeaponTypeClass::slot5 -> [已证]
+      006E3DB0 S15 TActionClass::slot5          -> [已证]
+      006E4660 S15 TActionClass::slot8          -> [已证]
+      006E5730 S15 TagClass::slot5              -> [已证]
+      006E6410 S15 TagTypeClass::slot5          -> [已证]
+      00727240 S15 TriggerTypeClass::slot25     -> [已证]
+      006E6080 S15 TagTypeClass::slot25         -> [已证]
+  ⇒ 82 是「M59 并表前」的池；现盘同口径池 75。差 7 行 = M59 并入的审计 PASS 7 行。
+    这就是 §12.4「※ 时点警告」的依据；28.05%/45.45%/7.89% 均属旧截面，不得当作今日基础率。
+
+================================================================
+§D  异族审计 7 PASS / 4 FAIL、虚报率 36.36%（§12.4）
+================================================================
+命令:
+  python lead\next_re_20261117_r14\COMMON_REFRESH2\work\recompute_refresh2b.py    （§D 段）
+输出摘要:
+  数据行 = 11
+  逐行 = ['006E3DB0:PASS','006E3E30:FAIL','006E4660:PASS','006E56E0:FAIL','006E5730:PASS',
+          '006E57A0:FAIL','006E6080:PASS','006E6410:PASS','00727240:PASS','007276A0:FAIL','006CE800:PASS']
+  PASS = 7、FAIL = 4；FAIL/行数 = 4/11 = 36.3636 (36.4%)
+  执行器自报 delta 行数：S15_delta.tsv + S16_delta.tsv = 10 + 1 = 11
+源文件: S15S16_3B2\_audit\verdict.tsv（11 数据行）；S15S16_3B2\S15_delta.tsv（10 行）、S16_delta.tsv（1 行）
+→ §12.4「执行器 11 行 vs 审计 7 PASS/4 FAIL ⇒ 虚报率 36.36%」；卡面写 36.4%，同值。
+
+================================================================
+§E  §8.2/§12.2 族事实：34 行、编号缺 17、35 份同一 md5
+================================================================
+命令:
+  python lead\next_re_20261117_r14\COMMON_REFRESH2\work\recompute_refresh2c.py    （§E' / §E'' 段）
+  Select-String -Path ...\TIEBREAK_ENGFAM\EVIDENCE\family.txt -Pattern '9f6770a9cd27b9fa49558adf28c92f10' | Measure-Object
+  Select-String -Path ...\COVERAGE\coverage.tsv -Pattern 'unproven'
+输出摘要:
+  name 含 Save_VectorBlock 的行 = 34
+  编号 = 1..35，共 34 个编号，缺号 = [17]
+  全部 subsystem = ['S17']；grade 分布 = {'[已证]': 34}
+  前 3 / 后 3 = [('0067FDF0','Save_VectorBlock_01'),('0067FE70','_02'),('0067FEF0','_03')] ... [('00680DF0','_33'),('00680E70','_34'),('00680EF0','_35')]
+  family.txt 中同一 md5 出现次数 = 35
+  coverage 全表 'unproven'（不分大小写）命中 = 0 行
+  34 行语义中带「③b②」字面标记的 = 17 行；其余 17 行写作 "HRESULT error-code contract"（同一语义）
+源文件: TIEBREAK_ENGFAM\EVIDENCE\rows34.tsv（34 数据行，语义尾缀全部 'class name unproven (arg .bss obj)'）；
+        TIEBREAK_ENGFAM\VERDICT.md §4（「127 字节体 md5 35/35 全为 9f6770a9…」「全 .text 字节相同副本恰 35 份，步长 0x80」）
+→ §12.2「34 行 / 编号 1..35 缺 17 / 35 份同一 md5」。
+→ §12.2「现盘英文措辞 0 命中 ⇒ 不能被读成那 34 行被证伪」：由 'unproven' 命中 0 行 + 现语义为 HRESULT 契约（17 行带 ③b② 字标）实算得出。
+
+循环体内写 / 非栈写 0（引证，本卡未重跑反汇编）:
+  TIEBREAK_ENGFAM\EVIDENCE\loopbodies.txt 逐指令标注（0067FDF0 段）:
+    +0x31 mov dword ptr [esp+0xc],0   WRITE-STACK
+    +0x40/+0x41/+0x46/+0x53/+0x54/+0x63  push ×6   WRITE-STACK(push)
+    +0x49/+0x55/+0x66  call (mem)     "mem read = fn ptr (no write)"
+  同文件其余 33 槽同形；VERDICT.md §3.1 表列 34 行 ③b④=no。
+  VERDICT.md §2.1: 循环体 +0x2E..+0x74（27 条指令）、失败落点 0x67FE68（= 入口 +0x78，eax 原样）、
+                   成功 0x67FE66 xor eax,eax、调用方 0x67DF0F call / 0x67DF14 test eax,eax / 0x67DF16 jge
+  VERDICT.md §3.4: 正负对照 0x0045A640 体 8 条写 0 条；0x0045A680 体内 0045A6D8 mov [edi+eax*4-4],edx → NON-STACK
+→ §12.2 表中「循环体内写 / 被审方为何判有写 / ③b④ 全族 no / ③b② 成立通道 / 检测器非盲」各行。
+
+================================================================
+§F  §12.1：PANEL M47 快照表被覆写
+================================================================
+命令:
+  Get-Content ...\COVERAGE\PANEL.md | Select-Object -Skip 154 -First 46     （打印 L155–L200）
+源文件原文:
+  PANEL.md L168: > ⚠️ **M61 标记**：本表为 M47 时点快照，其中 S09 / S15 / S16 的 proved 三格已被后续并表的现值覆写
+                 （现显示 114 / 106 / 47，M47 时点应为 106 / 101 / 46），**不可作为历史依据引用**。
+  PANEL.md L170–L192: M47 快照表表体（21 行 S01–S21）
+  PANEL.md L180 S09 行 proved_n 列 = 114；L186 S15 = 106；L187 S16 = 47
+  M47\PROGRESS.md 第 2 节表: S09 106 / S15 101 / S16 46（M47 卡自记「未改历史节」）
+  MERGE_M61\VERIFY.txt §2: 「快照表三格未被改写: 是（S09 114 / S15 106 / S16 47 原样，逆向还原成立）」
+  MERGE_M61\BEFORE_AFTER.txt: 115507 → 115971 B（+464 = L17 备注 135 + M61 标记行 328 + 空行 1）
+→ §12.1 判向证据「三格恰等于今日重算值」（对照 §A 的 114/106/47）与「只加标记不还原」处置。
+  注：卡面写「约 L168–L190」，实测表体为 L170–L192（标记行 L168），已在 §12.1 按实测坐标写。
+
+================================================================
+§G  §12.3：6 行 ④② 同源与 Lead 裁定
+================================================================
+源文件原文:
+  S13_PUSH\EVIDENCE\ROW_0075E0C0.txt 环②: vtable slot@007F6B44, base=007F6B30, slot off=+20
+                                    环④: 活虚表 007F6B30 由构造期 vptr 安装点写入；槽 +20 驻本 entry
+                                          「⚠ 争议：环②与环④共用同一 vtable 槽（D-39『同源』）」
+  S13_PUSH\EVIDENCE\ROW_004684E0.txt 同形（slot@007E470C / base 007E46E4 / off +40）
+  S13_PUSH\REPORT.md L81（第 4 点）: 6 行环④与环②共用同一 vtable 槽；按 D-40 严格口径应全部剔除（delta 变 0）
+  _cards\S1036.md L42（同事实）/ L44（**Lead 判定：该 6 行不予并表**）
+  STATUS_BOARD.md:289 同裁定
+→ §12.3 全部事实；配合 §B 的盘上复核（6 行仍 [静态推断]）。
+
+================================================================
+§H  前缀逐字节校验（HASH.txt §2 的出处）
+================================================================
+命令:
+  python lead\next_re_20261117_r14\COMMON_REFRESH2\work\verify_prefix.py
+输出摘要（work\verify_prefix_out.txt）:
+  改前（备份）= 180772 B；改后 = 200855 B；增量 = 20083（待追加块 20083）
+  (1) 旧长度前缀 sha256 = B54DBD6A0E2587E7634E0C0B0E6DF59A524A1B1B7D478FC283F22B0AC8F0B568  一致 ✅
+  (2) 前缀 × 备份逐字节比较：完全相同 ✅（首个差异偏移 = None）
+  (3) 追加段 sha256 = D4C2E7BADB2CCFCAC5AE35581332C5A5A14A7FD92B73F0628B159469233E8492（= 待追加块）一致 ✅
+  改后全文 sha256 = B64536F0285CCDA7024A465D1A1F2EBDDC4D967AD404A416347F9BF525DF14EA
+  结论：纯尾部追加，旧 180772 字节前缀逐字节未变（前缀校验通过）
+
+================================================================
+§I  未做 / 不做（避免被读成「已核」）
+================================================================
+1. **未重跑反汇编**：本卡不读 gamemd.exe，§12.2 的循环体/写指令/HRESULT 检查点全部引 TIEBREAK_ENGFAM 证据文件，不冒充本卡实测。
+2. **未在 75 行现盘池上重跑 P1∧P2∧P3**：故 §12.4 只报旧截面 82 行池的 23/82=28.05%，并明确标注「今日基础率需重跑，本卡不报未做过数」。
+3. **未复核 PANEL 严格双列表 TOTAL 的 proved_strict_n=1163**：本卡同口径全表复算得 1173，差 10 全部落在 S22 单行
+   （本卡 S22 strict=12，PANEL L126 记 2；PANEL L140 自述 M60 曾把 S22 strict 由 12 改为 2，理由是「55 行已证中 53 行语义自陈未证」，
+   而本卡按「语义栏不含字面 [未证]」只排到 43 行）。**该差异不影响本卡四节任何数字**（S13/S15/S16/TOTAL 无关），
+   故不在 §12 内下结论，仅在此留痕，供 Lead 决定是否另开卡核 S22/TOTAL 的 strict 口径。
+4. 未改 coverage.tsv / PANEL.md / STATUS_BOARD.md / CONFLICTS.tsv / 台账；未 git commit；未建 venv、未 pip install。

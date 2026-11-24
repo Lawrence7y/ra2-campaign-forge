@@ -1,0 +1,9 @@
+=== [1c] Windows Path.write_text 默认换行转换复现 ===
+  写入的 Python 字符串 = 'alpha\nbeta\n' (含LF=2, 含CR=0)
+  实际落盘字节 = b'alpha\r\nbeta\r\n'
+  含CRLF = True  (os.linesep='\r\n')
+  _implement_candidate.py:165 candidate_text = LF.join(candidate_lines)+LF
+  _implement_candidate.py:166 CANDIDATE_PATH.write_text(candidate_text, encoding=utf-8)
+  => 写盘时隐式把每行 LF 转成 CRLF, 这是 9 hunk 之外的整篇字节改动来源。
+  演示文件已删除(仅写域内临时件)
+=== 因果核验结束 ===

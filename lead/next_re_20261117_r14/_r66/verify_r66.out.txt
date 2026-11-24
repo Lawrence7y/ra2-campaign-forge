@@ -1,0 +1,198 @@
+==============================================================================
+R17-R66 实测 · gamemd.exe sha256=73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476 size=4825360
+==============================================================================
+
+[1] PE 段表（手写解析，ImageBase=00400000 nsect=5）
+    .text    va=00401000 vsize=003DF38D rawptr=00001000 rawsize=003E0000 chars=60000020
+    .rdata   va=007E1000 vsize=00030074 rawptr=003E1000 rawsize=00031000 chars=40000040
+    .data    va=00812000 vsize=00367BE4 rawptr=00412000 rawsize=0006C000 chars=C0000040
+    .rsrc    va=00B7A000 vsize=00018128 rawptr=0047E000 rawsize=00019000 chars=40000040
+    .detour  va=00B93000 vsize=00002718 rawptr=00497000 rawsize=00003000 chars=C0000040
+    目标点归属：0x0074836A -> .text ；0x007C8B3D -> .text
+
+[2] 正控：0x0040100A 处应为 E8 调用 0x00407100
+    字节 e8f1600000 -> call 0x407100 ；rel=0x60F1 验算 0x40100A+5+rel=0x00407100  PASS
+
+[3] 目标函数窗口（含 0x007C8B3D） ：0x007C8B00..0x007C8B70
+    007C8B00  d8591b               fcomp dword ptr [ecx + 0x1b]
+    007C8B03  c059f7d8             rcr byte ptr [ecx - 9], 0xd8
+    007C8B07  c20400               ret 4
+    007C8B0A  8b442404             mov eax, dword ptr [esp + 4]
+    007C8B0E  83c109               add ecx, 9
+    007C8B11  83c009               add eax, 9
+    007C8B14  51                   push ecx
+    007C8B15  50                   push eax
+    007C8B16  e8754f0000           call 0x7cda90
+    007C8B1B  59                   pop ecx
+    007C8B1C  59                   pop ecx
+    007C8B1D  33c9                 xor ecx, ecx
+    007C8B1F  85c0                 test eax, eax
+    007C8B21  0f9fc1               setg cl
+    007C8B24  8bc1                 mov eax, ecx
+    007C8B26  c20400               ret 4
+    007C8B29  8d4108               lea eax, [ecx + 8]
+    007C8B2C  c3                   ret 
+    007C8B2D  8bc1                 mov eax, ecx
+    007C8B2F  c70094957f00         mov dword ptr [eax], 0x7f9594
+    007C8B35  c20400               ret 4
+    007C8B38  8bc1                 mov eax, ecx
+    007C8B3A  c20400               ret 4
+    007C8B3D  ff742404             push dword ptr [esp + 4]
+    007C8B41  e8a2080000           call 0x7c93e8
+    007C8B46  59                   pop ecx
+    007C8B47  c3                   ret 
+    007C8B48  55                   push ebp
+    007C8B49  8bec                 mov ebp, esp
+    007C8B4B  81ecf8000000         sub esp, 0xf8
+    007C8B51  53                   push ebx
+    007C8B52  56                   push esi
+    007C8B53  8b750c               mov esi, dword ptr [ebp + 0xc]
+    007C8B56  57                   push edi
+    007C8B57  83fe02               cmp esi, 2
+    007C8B5A  0f8237010000         jb 0x7c8c97
+    007C8B60  837d1000             cmp dword ptr [ebp + 0x10], 0
+    007C8B64  0f842d010000         je 0x7c8c97
+    007C8B6A  8365fc00             and dword ptr [ebp - 4], 0
+    007C8B6E  4e                   dec esi
+    007C8B6F  0f                   .byte 0x0f
+
+[3] 漏点所在窗口（含 0x0074836A，从跳转表起点解起） ：0x00748350..0x00748390
+    00748350  6b827400ad8274       imul eax, dword ptr [edx - 0x7d52ff8c], 0x74
+    00748357  009782740081         add byte ptr [edi - 0x7eff8b7e], dl
+    0074835D  827400a14c           xor byte ptr [eax + eax - 0x5f], 0x4c
+    00748362  d1b10085c074         sal dword ptr [ecx + 0x74c08500], 1
+    00748368  1350e8               adc edx, dword ptr [eax - 0x18]
+    0074836B  ce                   into 
+    0074836C  07                   pop es
+    0074836D  0800                 or byte ptr [eax], al
+    0074836F  83c404               add esp, 4
+    00748372  c7054cd1b10000000000 mov dword ptr [0xb1d14c], 0
+    0074837C  c3                   ret 
+    0074837D  90                   nop 
+    0074837E  90                   nop 
+    0074837F  90                   nop 
+    00748380  8bc2                 mov eax, edx
+    00748382  85c0                 test eax, eax
+    00748384  7e1b                 jle 0x7483a1
+    00748386  56                   push esi
+    00748387  8b354cd1b100         mov esi, dword ptr [0xb1d14c]
+    0074838D  33d2                 xor edx, edx
+    0074838F  66                   .byte 0x66
+
+    ↑ 这段从 0x00748350（跳转表首字节）解起 ⇒ 全是垃圾；真正的代码如下（从 0x00748360 起）：
+
+[3] 0x00748360 起的真实代码（call 0x007C8B3D 所在函数） ：0x00748360..0x00748380
+    00748360  a14cd1b100           mov eax, dword ptr [0xb1d14c]
+    00748365  85c0                 test eax, eax
+    00748367  7413                 je 0x74837c
+    00748369  50                   push eax
+    0074836A  e8ce070800           call 0x7c8b3d
+    0074836F  83c404               add esp, 4
+    00748372  c7054cd1b10000000000 mov dword ptr [0xb1d14c], 0
+    0074837C  c3                   ret 
+    0074837D  90                   nop 
+    0074837E  90                   nop 
+    0074837F  90                   nop 
+
+[3b] 函数体窗口到首个 ret（§2.12）
+    -- 0x007C8B3D
+       007C8B3D  ff742404           push dword ptr [esp + 4]
+       007C8B41  e8a2080000         call 0x7c93e8
+       007C8B46  59                 pop ecx
+       007C8B47  c3                 ret 
+    -- 0x00748360
+       00748360  a14cd1b100         mov eax, dword ptr [0xb1d14c]
+       00748365  85c0               test eax, eax
+       00748367  7413               je 0x74837c
+       00748369  50                 push eax
+       0074836A  e8ce070800         call 0x7c8b3d
+       0074836F  83c404             add esp, 4
+       00748372  c7054cd1b10000000000 mov dword ptr [0xb1d14c], 0
+       0074837C  c3                 ret 
+
+[4] 原始字节普查（.text vsize 窗口）：E8 字节对 = 81715
+    反汇编边界上的 E8 调用对 = 68253（a2_scan.json 记 e8_at_boundary=68253、raw_e8=81715）
+    差值 = 13462（字节是 E8 但不在任何反汇编指令起点）
+
+[5] 四文件调用点集合（纪律 30：归一化前后对照）
+    原始表示：a2=str(hex str)  sm=int(int)  e8=int(int)  sw=int(int)
+    未归一化 a2∩sm = 0（若照此判断会得出『两份完全不同』）
+    归一化后各集合大小：a2=68253 sm=68253 e8=68253 sw=68253
+    归一化后 a2∩sm=68253  sm∩e8=68253  e8∩sw=68253  a2∩sm∩e8∩sw=68253
+    四份是否与『反汇编边界集合』逐对相等：{'a2': True, 'sm': True, 'e8': True, 'sw': True}
+
+[5b] 目标点 (site=0x007C8B3D -> tgt=0x0074836A) 在各份中的出现/缺失
+    a2  正向(site,tgt) False  | 反向(tgt,site) False  | 『以 0x0074836A 为站点』False
+    sm  正向(site,tgt) False  | 反向(tgt,site) False  | 『以 0x0074836A 为站点』False
+    e8  正向(site,tgt) False  | 反向(tgt,site) False  | 『以 0x0074836A 为站点』False
+    sw  正向(site,tgt) False  | 反向(tgt,site) False  | 『以 0x0074836A 为站点』False
+    原始 E8 中『目标落在清单目标集合内、但配对未被记录』= 3 条：
+       0x00679DAD -> 0x00679F70   前 8 字节 f5ff8be8be0100000033db
+       0x0074836A -> 0x007C8B3D   前 8 字节 741350e8ce07080083c404
+       0x00793445 -> 0x00775940   前 8 字节 010000e8f624feff85c074
+    ↑ 逐条判真伪（用 a2 的 bounds 表定位『覆盖该 E8 的那条指令』⇒ 覆盖=假阳性）：
+       0x00679DAD -> 0x00679F70 ：覆盖它的边界指令 00679DAC 8be8               mov ebp, eax（2 字节，止于 00679DAE）⇒ E8 在指令内部=True 假阳性
+       0x0074836A -> 0x007C8B3D ：覆盖它的边界指令 00748368 1350e8             adc edx, dword ptr [eax - 0x18]（3 字节，止于 0074836B）⇒ E8 在指令内部=True 假阳性
+       0x00793445 -> 0x00775940 ：覆盖它的边界指令 00793444 00e8               add al, ch（2 字节，止于 00793446）⇒ E8 在指令内部=True 假阳性
+
+[5c] 0x0074836A 被吞的具体位置
+    0074834C  83c418             add esp, 0x18
+    0074834F  c3                 ret 
+    00748350  6b827400ad8274     imul eax, dword ptr [edx - 0x7d52ff8c], 0x74
+    00748357  009782740081       add byte ptr [edi - 0x7eff8b7e], dl
+    0074835D  827400a14c         xor byte ptr [eax + eax - 0x5f], 0x4c
+    00748362  d1b10085c074       sal dword ptr [ecx + 0x74c08500], 1
+    00748368  1350e8             adc edx, dword ptr [eax - 0x18]  <== 覆盖了 0x0074836A
+    0074836B  ce                 into 
+    0074836C  07                 pop es
+    0074836D  0800               or byte ptr [eax], al
+    0074836F  83c404             add esp, 4
+    0x00748350 起的 4 个 dword = 0074826B 007482AD 00748297 00748281 ⇒ 全部落在 0x007482xx 一带 ⇒ .text 内嵌跳转表（数据，不是代码）
+
+[5d] 第三方裁决：递归下降（roots = .text 首址 + 全部清单调用目标；每函数至多 2,000 条指令）
+    递归下降解出指令 716090 条（去重起点 716100 个）、入口 6728 个
+    两个窗口起点是否在递归下降结果里：0x007C8B3D=True  0x00748360=True  0x0074836A=True
+        0x00679DAD -> 0x00679F70 ：递归下降**从未**把它解成指令起点 ⇒ 假阳性（E8 只是某条真指令的操作数/disp 字节）
+        0x0074836A -> 0x007C8B3D ：递归下降在真实代码路径上解出 call 0x7c8b3d ⇒ **真调用**
+        0x00793445 -> 0x00775940 ：递归下降**从未**把它解成指令起点 ⇒ 假阳性（E8 只是某条真指令的操作数/disp 字节）
+
+[5e] 从文档已确认的函数入口重扫：入口集合 = 清单 6,728 个调用目标（不依赖 bounds，故不受同一失步污染）
+    6,728 个目标中，『边界表里没有把它当指令起点』的 = 36 个（函数入口本就未必在边界表里，仅作参考）
+    重扫函数 6728 个，解出 E8 调用对 31069 个
+    重扫有、清单无 = 1 条：
+        0x0074836A -> 0x007C8B3D  （清单目标集合含 0x007C8B3D=True）
+    清单有、重扫无 = 37185 条（预期大：重扫只进目标函数、且遇 ret 即停，覆盖是子集）
+    ⇒ 关键量是『重扫有、清单无』：这些是清单**必然**漏掉的真实调用（其站点在真实函数体内、且该函数是清单自己认定的调用目标）。
+
+[6] sweep.installs 双控核验（6,226 条全量，非抽样）
+    条数=6226 序列化=248114 B（json.dumps separators=(',',':')）
+    正控（回原址逐字节/逐操作数精确匹配）：PASS=6226 FAIL=0  ⇒ PASS
+    形态计数：C7 05 全局写=1934 ；mov [base+disp],imm=4292
+    负控（imm^1 / mem^0x1000 篡改）：被抓=8160 漏放=0 ⇒ PASS
+    负控二（site+1 偏移）：200 条中不通过 200 条 ⇒ PASS
+    抽样 10 条（回原址字节 + 解码）：
+      [4586995, 'mem(base=30,disp=16,size=4)', 8263344] -> 0045FDF3 c7442410b0167e00       mov dword ptr [esp + 0x10], 0x7e16b0
+      [5485965, 11139760, 2] -> 0053B58D c705b0faa90002000000   mov dword ptr [0xa9fab0], 2
+      [6190275, 11055692, 2] -> 005E74C3 c7054cb2a80002000000   mov dword ptr [0xa8b24c], 2
+      [5199103, 'mem(base=29,disp=0,size=4)', 8298020] -> 004F54FF c706249e7e00           mov dword ptr [esi], 0x7e9e24
+      [6261922, 'mem(base=30,disp=496,size=4)', 8263344] -> 005F8CA2 c78424f0010000b0167e00 mov dword ptr [esp + 0x1f0], 0x7e16b0
+      [5451006, 'mem(base=19,disp=0,size=4)', 8305116] -> 00532CFE c700dcb97e00           mov dword ptr [eax], 0x7eb9dc
+      [5274819, 'mem(base=29,disp=0,size=4)', 8299076] -> 00507CC3 c70644a27e00           mov dword ptr [esi], 0x7ea244
+      [6762298, 'mem(base=30,disp=44,size=4)', 8301064] -> 00672F3A c744242c08aa7e00       mov dword ptr [esp + 0x2c], 0x7eaa08
+      [4699003, 'mem(base=29,disp=4,size=4)', 8277712] -> 0047B37B c74604d04e7e00         mov dword ptr [esi + 4], 0x7e4ed0
+      [7997700, 12025200, 4294967295] -> 007A0904 c705707db700ffffffff   mov dword ptr [0xb77d70], 0xffffffff
+
+[7] sweep.json 体量与 installs 归属
+    盘上字节=1631944 ；json.dump 默认序列化长度=1631944 ⇒ 相等=True
+    instructions  int   n=1392592  ser=7
+    e8_sites      int   n=68253    ser=5
+    e8            list  n=68253    ser=1228582
+    installs      list  n=6226     ser=248114
+    ⇒ installs 的 248,114 B 是 sweep.json 1,631,944 B 的组成部分（键值对同处一个文件），不是第二个文件 ⇒ F24 磁盘体量里已含、不另计。
+    ⇒ 证据独立性口径：installs 的 6,226 条在四份 calls 文件里都不存在（下方实测），属 sweep 独有内容。
+    installs 站点数=6226 ；四份 calls 站点数=68253 ；站点交集=0
+
+[8] 汇总
+  ① 漏点根因：capstone 线性反汇编在 .text 内嵌跳转表（0x00748350 起 4 个 dword 指针）处失步，在 0x00748368 解出一条 3 字节伪指令（adc edx,[eax-0x18]）把 0x0074836A 的 E8 首字节吞入；其后 5 字节为垃圾解码、0x0074836F 才复位 ⇒ 该 call 从未进入 bounds 集合，四份清单同时缺失（同源同扫）。
+  ② 同一缺陷的全局规模：原始 E8 对 81715，边界调用对 68253，差 13462；其中『目标在清单目标集合内却漏记』共 3 条，逐条验真仅 1 条为真调用（0x0074836A），另 2 条是 E8 落在别的指令内部的假阳性。
+  ③ installs：6,226 条全部通过正控（6226/6226），负控 0 漏放；248,114 B 在 sweep.json 内，F24 已含。

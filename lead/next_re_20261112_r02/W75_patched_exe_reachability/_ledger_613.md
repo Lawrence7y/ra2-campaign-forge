@@ -1,0 +1,22 @@
+## §613 · 补登：多包共存互斥、菜单第三条目「运行期可达」实证、B 线统计量的异模型独立复算（2026-11-14）
+
+- **性质**：§612 合入（02:22）之后完成的三项，按同一五级口径补登。起草者 = Lead，全部回对原始产物。条目标号 `§613-1…3`。
+- **§613-1 [已证] 多包共存 = `互斥`（两道独立闸门）** —— 路线 (a) 独占唯一官方入口 `[SOV1]`；v15 的 `ra2forge_install.json` 是单包覆盖写、备份槽单一、`uninstall` 无 `--package`。
+  - 闸门一：装 A 后再装 **inplace** 形态 B ⇒ **EXIT 33** `INPLACE_OFFICIAL_MISMATCH`（`resolve_integration.py:936-972`）。
+  - 闸门二（更深）：装 A 后再装 **append** 形态 B2（绕开一）⇒ **EXIT 3** `package_mismatch`「初版不支持并存 … NOT bypassable」（`install.py:1291-1316/2032-2043` + `cli.py:28,501-507`）。**只放宽 33 不够**。
+  - 4 个逃逸开关 × 2 趟 = 8 次尝试全失败、**零写入**。
+  - **可逆性未被破坏**：被拒后清单逐字节未变、`.bak` 在位、`original_sha256` 仍指官方原值；两种卸载顺序各跑一趟，**最终 `BATTLEMD.INI` 均逐字节 == `7e40691a…0791`**（2,733 B）。
+  - **产品裁决**：「一次一个战役包」立为**明文产品约束**（不是缺陷）；"真做多包共存"**否决**。
+  - 证据：`REVIEW\LEAD_VERIFY_W74.md`；`W74_multi_package\out\`（136 文件）
+- **§613-2 [已证] 菜单第三条目「运行期可达」，但 ≠ 可用** —— 受控 A/B 两趟（唯一差异 = 沙箱 `gamemd.exe` 补丁版 vs 原版）：
+  - 控件总数 **19 vs 18**、可见 **14 vs 13**、`has_1771` **True vs False**、点击后 `sel_ctrl_id` **1771 vs 0** ⇒ 差异恰好一个控件，排除环境巧合。
+  - 补丁 exe **能正常启动并渲染菜单，零新增异常**（`except.txt`/`ra2render.log` 前后同 SHA）。
+  - `id=1771` 可见 Static `rect=[310,37,421,132]`；hover 触发 `STT:CampaignAnimTutorial`、`[0xA8F7A8]=0x6EB`。
+  - 点击后：`0x46CC90` 查 `tut1` 失败 ⇒ 返回 `-1` 静默写 `[Scen+0x34CC]` ⇒ `frame=0`/`mode=0`/`0x125C=""`，**未进入任何战役**、无错误框。
+  - **限定**：画面仍是两枚徽章（第三枚是透明热区，无独立美术）；**不得**写"第三徽章可用"；**不改变**路线 (c) 冻结裁决。
+  - 证据：`REVIEW\LEAD_VERIFY_W75.md`；`W75_patched_exe_reachability\`（`REAL_DIR_PROOF.txt`：`IDENTICAL_TREE=True`、**真目录 `gamemd.exe` 仍 `73201cc0…`**）
+- **§613-3 [已证] B 线统计量的异模型独立复算：逐位吻合** —— `call-agy` / Antigravity `gemini-4-hydrogen-high` 自写纯 stdlib 的 ECDF+双样本 KS+2000 次置换（`seed=20261113`），**Lead 亲跑**（exit 0）：
+  - `n_A=20459`、`n_B=20451`、**`D_ks=0.0000488782`**（与 W69 工具值差 4.4e-11）、**`p=1.000000`** ⇒ 与 W69 的 `SAME_DISTRIBUTION` **逐位吻合**。
+  - 同臂噪声口径差异可解释：agy 半分割（`0.000564`/`0.000316`）vs W69 同臂双轨迹（`0.000493`）—— 同量级、方向一致；**引用须注明口径**。
+  - 证据：`REVIEW\LEAD_VERIFY_V75.md`；`V75_agy_ks\ks_v2_agy.py`
+- **本轮能力边界**：`tut1` 战役数据仍缺（battle 条目/地图/阶段表）；第三徽章美术不存在；多包共存不支持；inplace 的"写不同内容后的行为分布"不可用同图对照回答。

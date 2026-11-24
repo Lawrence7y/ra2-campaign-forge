@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 import sys, os, struct, json
 import sys, os, struct, json
-sys.path.insert(0, r"D:\Project\ra2-campaign-forge\tools")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from re_gap_spysat_deep import read_bytes, read_u32, disasm_func, names, md, base, image
 import capstone as _cs
 

@@ -1,0 +1,138 @@
+[01] next_re_20261112/RE-N02/EVIDENCE/selftest_stdout.txt
+   criterion=对象抄本 O=23 P=2 why=objdom
+    1| ================================================================================================
+    2| NEGATIVE CONTROL / SELFTEST -- run_id NEXT_RE_20261112_R01
+    3| Target A = 0x00a8ed84 ; synthetic byte stream, VA base 0x00401000
+    4| The SAME classify_instruction() used by the main Channel-B scan is used here.
+    5| ================================================================================================
+    6| [A] NEW CLASSIFIER -- 5 mandatory samples
+    7| sample                 disasm                                         kind                         width   rmw    class5
+    8| S1_inc_dword_RMW       inc dword ptr [0xa8ed84]                       write_rmw                    dword   True   write_rmw/dword
+    9| S2_mov_byte_al         mov byte ptr [0xa8ed84], al                    write_direct                 byte    False  write_direct/byte
+   10| S3_mov_word_ax         mov word ptr [0xa8ed84], ax                    write_direct                 word    False  write_direct/word
+   11| S4_lea_esi             lea esi, [0xa8ed84]                            lea                          none    False  lea/none
+   12| S5_add_eax_imm         add eax, 0xa8ed84                              imm_false_positive           none    False  imm_false_positive/none
+
+[02] next_re_20261117_r14/NAMED_PUSH_S05_B3/EVIDENCE/ROW_00748190.txt
+   criterion=对象抄本 O=8 P=1 why=objdom
+    1| # ROW 00748190  S05  UnitTypeClass::slot8
+    2| ## 环① 入口与函数边界
+    3| - entry=00748190（大写十六进制、无 0x；delta entry 列原样写此串）
+    4| - atlas size=141 B，反汇编 n_instr=42，skipdata=0，in_text=True
+    5| - 函数体 [0x00748190,0x0074821D)；入口 16B: 51 56 8B F1 B2 01 C7 06 18 62 7F 00 C7 46 04 FC
+    6|     00748190: push ecx | 51
+    7|     00748191: push esi | 56
+    8|     00748192: mov esi, ecx | 8bf1
+    9|     00748194: mov dl, 1 | b201
+   10| - 边界自洽：末条 0074821A ret 4 (c20400) 落在 [0x748190,0x74821D) 内，body_end_in_text=True
+   11| ## 环② 类身份（独立取证；Class::slotN 的 Class 仅作线索，已由 RTTI/虚表钉死）
+   12| - 槽驻留 007F6238 [.rdata]（实测 [007F6238]=00748190=entry），vtable base=007F6218，slot offset=+32 (=slot#8)
+
+[03] next_re_20261117_r14/NAMED_PUSH_S18_B4/EVIDENCE/ROW_007AB8E0.txt
+   criterion=对象抄本 O=3 P=2 why=objdom
+    1| # ROW 007AB8E0  S18  T_CComObject_VCChatEventSink___ATL::slot33
+    2| ## 环① 入口与函数边界
+    3| - entry=007AB8E0；delta entry 列原样写此串。
+    4| - atlas size=527 B，反汇编 n_insn=154，skipdata=0，in_text=True，body_end=007ABAEF(in_text=True)。
+    5| - 入口字节: 83ec308b4424385333db3bc3885c2407
+    6|     007AB8E0: sub esp, 0x30 | 83ec30
+    7|     007AB8E3: mov eax, dword ptr [esp + 0x38] | 8b442438
+    8|     007AB8E7: push ebx | 53
+    9|     007AB8E8: xor ebx, ebx | 33db
+   10|     007AB8EA: cmp eax, ebx | 3bc3
+   11|     007AB8EC: mov byte ptr [esp + 7], bl | 885c2407
+   12| ## 环② 类身份（RTTI 描述符→类名字串；Class::slotN 的 Class 仅作线索，已由 RTTI 钉死）
+
+[04] next_re_20261117_r14/S09_KPROVED4/_audit/EVIDENCE/audit_disasm_004E2830.txt
+   criterion=对象抄本 O=27 P=0 why=objdom
+    1| +0000 004E2830 53                     push     ebx 
+    2| +0001 004E2831 56                     push     esi 
+    3| +0002 004E2832 8bf1                   mov      esi, ecx 
+    4| +0004 004E2834 57                     push     edi 
+    5| +0005 004E2835 8a462d                 mov      al, byte ptr [esi + 0x2d] 
+    6| +0008 004E2838 84c0                   test     al, al 
+    7| +000A 004E283A 7508                   jne      0x4e2844 ; -> 004E2844
+    8| +000C 004E283C 5f                     pop      edi 
+    9| +000D 004E283D 5e                     pop      esi 
+   10| +000E 004E283E 33c0                   xor      eax, eax 
+   11| +0010 004E2840 5b                     pop      ebx 
+   12| +0011 004E2841 c20c00                 ret      0xc 
+
+[05] next_re_20261112/RE-N05/EVIDENCE/stdout_args.txt
+   criterion=过程输出 O=68 P=5 why=strong-proc-frame
+    1| RUN_ID: NEXT_RE_20261112_R01
+    2| TASK: RE-N05
+    3| COMMAND: python -X utf8 "D:\Project\ra2-campaign-forge\lead\next_re_20261112\RE-N05\EVIDENCE\re_n05_args.py"
+    4| CWD: D:\Project\ra2-campaign-forge
+    5| TIMESTAMP_LOCAL: 2026-11-12T15:13:30+08:00
+    6| EXITCODE: 0
+    7| --- BEGIN RAW STDOUT/STDERR ---
+    8| RE-N05 args | NEXT_RE_20261112_R01 | pure static, zero live process
+    9| capstone 5.0.7 / pefile 2024.8.26
+   10| ==========================================================================================
+   11| gamemd 0x53EB16 PeekMessageA: full argument setup (from verified FPO start 0x53E770)
+   12|   PREF_VA=0x0053E770 RVA=0x0013E770 FOFF=0x0013E770 BYTES=83 EC 34                     sub      esp, 0x34
+
+[06] next_re_20261112_r02/W64_bootcamp_inventory/EVIDENCE/MAIN_stdout.txt
+   criterion=过程输出 O=16 P=10 why=strong-proc-frame
+    1| D:\Project\ra2-campaign-forge\lead\next_re_20261112_r02\W64_bootcamp_inventory\EVIDENCE\w64b_analyze.py:16: SyntaxWarning: invalid escape sequence '\P
+    2|   Reads ONLY: D:\Project\ra2-campaign-forge\{ra2bench,ra2youli,extracted,lead,...}
+    3| W64b MAIN ANALYSIS  run_at=2026-11-13T23:48:57+08:00
+    4| python=3.12.10
+    5| OFFLINE READ-ONLY. I launched 0 / attached 0 (gamemd.exe belongs to other cards; untouched).
+    6| No .game_instance.lock read. No process memory read. No writes outside this card.
+    7| [*] scanning MIX files (recursive, validated) ...
+    8|     done: 33 top-level MIX, 2125 nested containers, 13007 distinct CRC ids, 188.8s
+    9| ====================================================================================================
+   10| === S1 / Q1 : BATTLEMD*.INI + BATTLE.INI inventory ===
+   11|   <ROOT>\ra2bench\BATTLEMD.INI                                                                       2733 B  sha256=7e40691a3480b1e5ffe6d1cdfccb83f67d
+   12|       sections (15): [Battles], [ALL1], [SOV1], [ALL02], [ALL03], [ALL04], [ALL05], [ALL06], [ALL07], [SOV02], [SOV03], [SOV04], [SOV05], [SOV06], [SO
+
+[07] next_re_20261117_r14/P0_ADJ5/_audit/EVIDENCE/three_numbers.txt
+   criterion=过程输出 O=0 P=0 why=tiny-status
+    1| UNDECIDABLE 5598 | already-in-coverage 3929 | not-in-coverage 1669
+    2| identity 3929+1669=5598 confirmed; FUNC 20/20 already in coverage; NOT_FUNC 38
+    3| coverage data rows 18479, unique 18479, dup groups 0
+
+[08] next_re_20261112_r02/W43_b_line_s3/EVIDENCE/gen_s3_artifacts.stdout.txt
+   criterion=无法判定 O=0 P=0 why=tie
+    1| [assert] W38 guard_decision_table has exactly 21 cells ... PASS
+    2| [assert] W38 table covers 3 states x 7 entries ... PASS
+    3| [assert] exactly one E1/KNOWN_GOOD cell ... PASS
+    4| [assert] revised allow-list adds exactly ra2md.csf ... PASS
+    5| [assert] revised table still has 21 cells (no schema change) ... PASS
+    6| [assert] revised table schema_version unchanged (v38-s1-1) ... PASS
+    7| [assert] E1/KNOWN_GOOD cell now carries the sync token ... PASS
+    8| [assert] all other 20 cells byte-identical to W38 ... PASS
+    9| [write] s1_revision\E1_KNOWN_GOOD.json
+   10| [write] s1_revision\guard_decision_table.json
+   11| [write] ra2forge_patched_v13\ra2forge\data\E1_KNOWN_GOOD.json
+   12| [write] ra2forge_patched_v13\ra2forge\data\guard_decision_table.json
+
+[09] next_re_20261117_r14/NAMED_PUSH_S10_B1/EVIDENCE/ROW_0051AA40.txt
+   criterion=无法判定 O=2 P=0 why=tie
+    1| # ROW 0051AA40  InfantryClass::slot288
+    2| 批次：NAMED_PUSH_S10_B1 ｜ 子系统 S10 ｜ 目标 gamemd.exe SHA-256 73201CC0...F67476
+    3| ## ① 入口（.text 内、函数边界自洽）
+    4| - entry=0051AA40 ；in_text=True ；atlas size=1953
+    5| - bytes@entry = 83 ec 2c 53 55 8b e9 56 57 8b 45 00 ff 50 3c 8b
+    6|   0051AA40  83 ec 2c             sub esp, 0x2c
+    7|   0051AA43  53                   push ebx
+    8|   0051AA44  55                   push ebp
+    9|   0051AA45  8b e9                mov ebp, ecx
+   10|   0051AA47  56                   push esi
+   11|   0051AA48  57                   push edi
+   12| - 裁定：PASS
+
+[10] next_re_20261117_r14/S09_KPROVED6/_audit/EVIDENCE/S11_claims.txt
+   criterion=无法判定 O=0 P=0 why=tie
+    1|   S09_KPROVED    rows=8  004AAE90 005BDF70 006A5310 004AB9B0 0063FEA0 006A7780 004ACE70 006ABD30
+    2|   S09_KPROVED2   rows=7  006A5840 006D0680 0063FB20 005BE6D0 004E2690 0069DEB0 00557730
+    3|   S09_KPROVED3   rows=4  004A9840 004A9DD0 004AA050 004AAD30
+    4|   S09_KPROVED4   rows=8  004E2830 00557830 00565B00 00577920 006568A0 006A7D70 00723EC0 006D02B0
+    5|   S09_KPROVED5   rows=8  006D0270 006D04F0 00653850 004F4480 004A8960 006C6680 004F4320 006AC210
+    6| prior rows total=35 distinct=35
+    7| blacklist rows already inside prior deltas: ['0069DEB0']
+    8| distinct exclusion = 36 ; 103 - 36 = 67 candidates (card says 36 -> 67)
+    9| was 005BDA80 (2nd livevt row in A) delivered by a prior S09 card? no
+

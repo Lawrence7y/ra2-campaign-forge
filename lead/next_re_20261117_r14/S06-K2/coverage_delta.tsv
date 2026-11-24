@@ -1,0 +1,14 @@
+entry	subsystem	name	one_line_semantics	grade	evidence_path
+00487E70	S06	CellClass::GetSize	returns 0x148 (328) via B8 48 01 00 00 C3; CellClass primary vtable 0x7E4EEC slot12	[已证]	EVIDENCE/t2_getsize.txt
+0047BBF0	S06	CellClass::CellClass	ctor writes 63 field slots (0x24..0x140) incl rep stosd fills; GetSize 0x148 alloc sites 0x5663C3/0x566B96	[已证]	EVIDENCE/t1_FINAL.txt
+0047BB60	S06	CellClass::~CellClass	dtor: MapCoords check (+0x24/+0x26), virtual-delete +0xFC, clears list heads +0xE4	[已证]	EVIDENCE/cell_methods.txt
+00485020	S06	CellClass::GetOreValue	per-cell ore value: this=CellClass*, read +0x44 typeID -> DVC<TiberiumClass*> 0xB0F4EC; read +0x11E density; return [tib+0xB8]*(density+1)	[已证]	EVIDENCE/cell_methods.txt
+0047E8A0	S06	CellClass::AddContent	link-add: arg2(onBridge) selects head +0xE4(FirstObject)/+0xE8(AltObject); element next = ObjectClass+0x30; WhatAmI==6 append-tail	[已证]	EVIDENCE/t4_lists.txt
+0047EA90	S06	CellClass::RemoveContent	link-del: arg(onBridge) selects head +0xE4/+0xE8; unlinks via ObjectClass+0x30; WhatAmI==0xF/6 special handling	[已证]	EVIDENCE/t4_lists.txt
+0047C620	S06	CellClass::CanPlaceContent	can-place per-cell scan: reads ONLY head +0xE4 (FirstObject) following ObjectClass+0x30; WhatAmI==6(Building) special case	[已证]	EVIDENCE/t4_wrappers.txt
+005683C0	S06	TechnoClass::AttachToCell	attach wrapper: mov dl,[edi+0x8C]=OnBridge -> call 0x47E8A0; cell from GetCellAt singleton 0x87F7E8	[已证]	EVIDENCE/t4_wrappers.txt
+005687F0	S06	TechnoClass::DetachFromCell	detach wrapper: mov dl,[edi+0x8C]=OnBridge -> call 0x47EA90	[已证]	EVIDENCE/t4_wrappers.txt
+005657A0	S06	MapClass::GetCellAt	idx=(short)Y<<9+(short)X in [0,0x40000); cell=[[0x87F7E8+0x13C]+idx*4] (stride 4, byte 8B 04 81); NULL -> InvalidCell 0xABDC50	[已证]	EVIDENCE/map_getcellat.txt
+00565090	S06	MapClass::MapClass	base ctor writes +0x13C=0 at 0x565105; MapClass size 0x1174 (derived-boundary) [静态推断]	[静态推断]	EVIDENCE/t3_map.txt
+0047FF80	S06	CellClass::GetCenterCoords	MapCoords +0x24/+0x26 -> X<<8+128, Y<<8+128; reads height +0x11B (movsx)	[已证]	EVIDENCE/cell_methods.txt
+00485240	S06	CellClass::SetMapCoords	writes MapCoords dword [this+0x24] (4 bytes = X short + Y short); called by ctor path 0x5663E8	[已证]	EVIDENCE/cell_methods.txt

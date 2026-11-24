@@ -1,0 +1,51 @@
+5620:         + "".join(traceback.format_exception(exc)),
+5621:         encoding="utf-8")
+5622: 
+5623: 
+5624: def copy_post_except_evidence(rec: Recorder, carrier_dir: Path,
+5625:                               out_dir: Path) -> dict | None:
+5626:     """★★★ `QC162:W7`：★ 在**还原之前**把本趟跑后的 `except.txt` 原件
+5627:     （★ 与五个载体件的跑后状态）**另存一份证据副本**进 `--out-dir`。
+5628: 
+5629:     ★★ 理由（外部裁定指出）：旧执行序 `restore_carrier` 第一、
+5630:       `except_set_diff` 第三 ⇒ ★ `_restore` 先把跑前旧件写回载体，
+5631:       `_except_diff` 再读时读到的**已是旧内容** ⇒ ★★ 本趟新产生的
+5632:       `except.txt` 崩溃证据被覆盖、集合差失去意义。
+5633:     ★★ 故本函数**必须先于** `restore_carrier` 执行，且副本落
+5634:       **运行期写域**（★ 还原之后仍存在、可复核）。
+5635:     ★ 返回证据元信息（`None` = 载体 `except.txt` 不存在）。
+5636:     """
+5637:     src = carrier_dir / "except.txt"
+5638:     if not src.exists():
+5639:         rec.add("EXCEPT", "evidence_copy", None, f"{src}:path",
+5640:                 note="★ 载体 except.txt 不存在 ⇒ 无原件可副本（如实记账）")
+5641:         return None
+5642:     blob = src.read_bytes()
+5643:     h = hashlib.sha256(blob).hexdigest()
+5644:     dst = out_dir / f"except_post_{datetime.now().strftime('%Y%m%dT%H%M%S%f')}.txt"
+5645:     dst.write_bytes(blob)
+5646:     info = {"source": str(src), "evidence_path": str(dst),
+5647:             "size": len(blob), "sha256": h,
+5648:             "note": "★ QC162:W7：还原**之前**取的跑后原件副本"
+5649:                     "（☆ 还原之后仍存在、可复核）"}
+5650:     rec.add("EXCEPT", "evidence_copy", info, f"{src}:file",
+5651:             note="★★ 跑后 except.txt 原件副本（先于 restore_carrier）")
+5652:     # ★ 跑后载体件快照（★ 供"证据先于还原"复核：证明取的是跑后状态）
+5653:     files: dict = {}
+5654:     for name in CARRIER_FILES:
+5655:         p = carrier_dir / name
+5656:         files[name] = ({"path": str(p), "size": p.stat().st_size,
+5657:                         "sha256": sha256_file(p)} if p.exists() else None)
+5658:     (out_dir / "carrier_post_state.json").write_text(
+5659:         json.dumps(files, ensure_ascii=False, indent=1), encoding="utf-8")
+5660:     rec.add("EXCEPT", "carrier_post_state_path",
+5661:             str(out_dir / "carrier_post_state.json"), "script:copy_post_except_evidence")
+5662:     return info
+5663: 
+5664: 
+5665: # ===========================================================================
+5666: # §13-B · ★★★ 第 1 项：载体**真实所有权** · 证据搬出验 SHA ·
+5667: #          删除**前**不可变清单 · 趟后删除链 · 最终 `MANIFEST.json`
+5668: #   ★ 依据 `EXTERNAL_RULING_PI_FIX_AUTH_3.md` §1 第 1 项 / §2 / §3.5：
+5669: #     ★ 真实新建/交接证明；★ 完整删除前清单；★ 证据移出并验 SHA；
+5670: #     ★ 安全删除及结果复核；★ **不得**因补删除链取得删除共享历史件的权限；

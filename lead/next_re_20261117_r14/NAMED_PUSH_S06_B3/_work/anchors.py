@@ -1,0 +1,32 @@
+# -*- coding: utf-8 -*-
+"""Dump exact bytes at each anchor address for EVIDENCE generation."""
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import recore as R
+
+ADDRS = [
+ # R3 call/test/jcc anchors
+ 0x71E1DB,0x71E1E0,0x71E1E2,0x71E233,0x71E235,       # 37
+ 0x71E24F,0x71E254,0x71E256,                            # 38
+ 0x71E3B9,0x71E3BC,0x71E3BF,                            # 39
+ 0x7220AC,0x7220B1,0x7220B3,0x7220C8,0x7220CA,        # 40
+ 0x7220E1,0x7220E6,0x7220E8,0x722129,0x72212C,        # 41
+ 0x7281AB,0x7281B0,0x7281B2,0x7281DA,0x7281DC,        # 42
+ 0x7281EF,0x7281F4,0x7281F6,                            # 43
+ 0x728793,0x728796,0x728799,                            # 44
+ 0x763DA3,0x763DA8,0x763DAA,0x763DF4,0x763DF6,        # 45
+ 0x763E5A,0x763E5D,0x763E60,                            # 46
+ # callee error-code anchors
+ 0x410389,0x41039E,0x5F9847,0x5F984C,0x5F984E,0x5F993C,0x5F993E,0x5F9948,
+ 0x4103E9,0x4103F8,0x410407,
+ 0x41032B,0x410348,
+ # R4 ctor vptr writes + base ctor
+ 0x71DA89,0x71DAF7,0x7216CA,0x7217A6,0x721888,0x727FD5,0x727FFD,0x763733,0x76375F,
+ # R2 slots
+ 0x7F546C,0x7F5470,0x7F5478,0x7F5744,0x7F5740,0x7F59C4,0x7F59C8,0x7F59D0,0x7F6E88,0x7F6E90,
+]
+for va in ADDRS:
+    b = R.read_va(va, 8)
+    ins = R.disasm(va, b)
+    first = ("%s %s" % (ins[0].mnemonic, ins[0].op_str)) if ins else ""
+    print("%08X  %-17s  %s" % (va, b[:8].hex(" "), first))

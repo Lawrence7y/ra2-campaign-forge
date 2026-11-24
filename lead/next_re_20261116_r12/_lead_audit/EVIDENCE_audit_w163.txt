@@ -1,0 +1,75 @@
+==========================================================================================
+A1 · 脏矩形容器 0xB0CE78 的引用计数
+==========================================================================================
+  Items  00B0CE7C refs=25 (W163: 25) PASS
+  Count  00B0CE88 refs=27 (W163: 27) PASS
+  base(vptr)  00B0CE78 refs=3
+  Capacity    00B0CE80 refs=3
+  Increment   00B0CE8C refs=2
+
+==========================================================================================
+A2 · 0x6D2790 的回边
+==========================================================================================
+  atlas: size=946 n_instr=285 n_callers=56
+  linear insns=285  backedges=2
+     006D29BE -> 006D29A0  jl
+     006D2A15 -> 006D27BF  jl
+  W163 报的两条是否都在: True
+  缺失: [] ; 多出: []
+
+==========================================================================================
+A3 · 深度 3 路径的每个调用点（无对齐假设 + 边界校验）
+==========================================================================================
+  004666E0 -> 00421EA0 : 全镜像 145 个调用点；src 内 ['0x4668b8', '0x467f2d']
+       site 004668B8 boundary=True (ok) insn=call 0x421ea0
+       site 00467F2D boundary=True (ok) insn=call 0x421ea0
+  00421EA0 -> 005F4EC0 : 全镜像 16 个调用点；src 内 ['0x4222e0', '0x422433', '0x4224e0']
+       site 004222E0 boundary=True (ok) insn=call 0x5f4ec0
+       site 00422433 boundary=True (ok) insn=call 0x5f4ec0
+       site 004224E0 boundary=True (ok) insn=call 0x5f4ec0
+  005F4EC0 -> 006D2790 : 全镜像 58 个调用点；src 内 ['0x5f5146']
+       site 005F5146 boundary=True (ok) insn=call 0x6d2790
+
+==========================================================================================
+附 · 0x6D2790 的循环结构（判断 O(k)/O(k^2) 的关键）
+==========================================================================================
+   006D27B1  mov        dword ptr [esp + 0x14], eax
+   006D27B5  jle        0x6d2a28
+   006D27BB  mov        dword ptr [esp + 0x10], eax
+   006D27BF  mov        eax, dword ptr [0xb0ce7c]
+   006D27C4  mov        ecx, dword ptr [esp + 0x10]
+   006D27C8  add        ecx, eax
+   006D27CA  push       0
+   006D27CC  push       0
+   006D27CE  mov        edx, dword ptr [ecx]
+   006D27D0  mov        dword ptr [esp + 0x38], edx
+   006D27D4  mov        eax, dword ptr [ecx + 4]
+   006D27D7  mov        dword ptr [esp + 0x3c], eax
+   006D2990  dec        eax
+   006D2991  mov        edx, ebx
+   006D2993  cmp        ebx, eax
+   006D2995  mov        dword ptr [0xb0ce88], eax
+   006D299A  jge        0x6d29c0
+   006D299C  mov        eax, dword ptr [esp + 0x10]
+   006D29A0  mov        ecx, dword ptr [0xb0ce7c]
+   006D29A6  inc        edx
+   006D29A7  lea        esi, [eax + ecx + 0x14]
+   006D29AB  lea        edi, [eax + ecx]
+   006D29AE  mov        ecx, 5
+   006D29B3  add        eax, 0x14
+   006D29B6  rep movsd  dword ptr es:[edi], dword ptr [esi]
+   006D29B8  cmp        edx, dword ptr [0xb0ce88]
+   006D29BE  jl         0x6d29a0
+   006D29C0  mov        eax, dword ptr [esp + 0x10]
+   006D29C4  dec        ebx
+   006D29C5  sub        eax, 0x14
+   006D29C8  mov        dword ptr [esp + 0x14], ebx
+   006D2A01  mov        ecx, dword ptr [0xb0ce88]
+   006D2A07  inc        eax
+   006D2A08  add        esi, 0x14
+   006D2A0B  cmp        eax, ecx
+   006D2A0D  mov        dword ptr [esp + 0x14], eax
+   006D2A11  mov        dword ptr [esp + 0x10], esi
+   006D2A15  jl         0x6d27bf
+   006D2A1B  mov        eax, dword ptr [esp + 0x18]
+   006D2A1F  cmp        eax, -1

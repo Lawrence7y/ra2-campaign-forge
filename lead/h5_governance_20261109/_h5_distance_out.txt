@@ -1,0 +1,17 @@
+=== 第二步(d) 只检查 distance 不够：实跑反例 ===
+[A 同距~10字] dist=10  r10=negation     neg_count=2 dbl=False | exp=CATCH old=PASS  new=CATCH | 禁止词在前且 <24 字，但它是「未入账」的定语；token 是后半句真断言
+     text = 不得写成未入账的本笔已入账
+[A 同距~10字] dist=13  r10=negation     neg_count=1 dbl=False | exp=PASS  old=PASS  new=PASS  | 禁止词在前且 <24 字，真前向管辖
+     text = 不得宣告 N-4 正式绑定已生效
+[B 长距>24字] dist=12  r10=negation     neg_count=1 dbl=False | exp=PASS  old=CATCH new=PASS  | 距离短但需「宣告→已生效」辖域路径
+     text = 不宣告 N-4 正式绑定已生效
+[B 长距>24字] dist=-8  r10=assertion    neg_count=0 dbl=False | exp=CATCH old=PASS  new=CATCH | 距离短，但禁止词在 token【之后】，纯距离法必然误豁免
+     text = 本笔已入账 0 命中不得写成未入账
+[C 跨子句] dist=15  r10=negation     neg_count=1 dbl=False | exp=CATCH old=CATCH new=CATCH | 「不」距 token 约 13 字且在 24 字窗内，但已跨「，但」另起断言
+     text = 不宣告 N-4 已生效，但本笔已入账
+[C 跨子句] dist=14  r10=assertion    neg_count=0 dbl=False | exp=CATCH old=CATCH new=CATCH | 跨子句；R10 的 CLAUSE_BREAK 不含分号时同样污染
+     text = 不宣告 N-4 已生效；本笔已入账
+[D 双重否定] dist=3   r10=double_neg   neg_count=2 dbl=True | exp=CATCH old=PASS  new=CATCH | 距 token 极近、否定词计数=2（偶数），纯距离/奇偶法误豁免
+     text = 并非不宣告已生效
+[D 双重否定] dist=3   r10=negation     neg_count=1 dbl=False | exp=PASS  old=PASS  new=PASS  | 同型单重否定，应豁免
+     text = 不宣告已生效

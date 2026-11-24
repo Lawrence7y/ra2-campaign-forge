@@ -1,0 +1,42 @@
+[N1] C8a 邻域自由度收口（每个都是 C8a + 一个微观自由度）
+  C8a 基准(默认tie/floor/median)     | dur 15/30 gap 15/30 diff 15/15 (合45/75) | 失败格: 无
+  C8a + tie-break=(dur,mg,fid)   | dur 15/30 gap 15/30 diff 14/15 (合44/75) | 失败格: t55k/w0:diff
+  C8a + upper median             | dur 12/30 gap 15/30 diff 13/15 (合40/75) | 失败格: l1c_/w0:fd,sd,diff l1c_/w1:fd,sd l1d_/w2:sd,diff
+  C8a + lower median             | dur 12/30 gap 14/30 diff 13/15 (合39/75) | 失败格: l1c_/w0:sd l1c_/w1:fd,sd,sg,diff l1d_/w2:sd t55k/w2:diff
+  C8a + k=ceil(n/3)              | dur  9/30 gap 15/30 diff  9/15 (合33/75) | 失败格: l1c_/w0:fd,sd,diff l1d_/w0:fd,sd,diff l1d_/w1:sd,diff l1e_/w1:sd,diff l1e_/w2:fd l3_2/w1:sd,diff t55k/w0:diff
+
+[N2] 排序遗漏 × 错位复合：fwd 空档但按时序切片（未按 dur 重排）
+  fwd+时序三分(k=n//3)               | dur 15/30 gap  1/30 diff  0/15 (合16/75) | 失败格: l1c_/w0:fg,sg,diff l1c_/w1:fg,sg,diff l1c_/w2:fg,sg,diff l1d_/w0:fg,diff l1d_/w1:fg,sg,diff l1d_/w2:fg,sg,diff l1e_/w0:fg,diff l1e_/w1:fg,sg,diff l1e_/w2:fg,sg,diff l3_2/w0:fg,sg,diff l3_2/w1:fg,sg,diff l3_2/w2:fg,sg,diff t55k/w0:fg,sg,diff t55k/w1:sg,diff t55k/w2:diff
+  fwd+时序halves(k=n//2)           | dur 15/30 gap  1/30 diff  0/15 (合16/75) | 失败格: l1c_/w0:fg,sg,diff l1c_/w1:fg,sg,diff l1c_/w2:fg,sg,diff l1d_/w0:fg,sg,diff l1d_/w1:fg,sg,diff l1d_/w2:fg,sg,diff l1e_/w0:sg,diff l1e_/w1:fg,sg,diff l1e_/w2:fg,diff l3_2/w0:fg,diff l3_2/w1:fg,sg,diff l3_2/w2:fg,sg,diff t55k/w0:fg,sg,diff t55k/w1:sg,diff t55k/w2:diff
+
+[N3] 近失候选逐窗失败格（精确证伪依据）
+  C18b 键=E[i]-E[i-1]             | dur  0/30 gap 14/30 diff  7/15 (合21/75) | 失败格: l1c_/w0:fd,sd l1c_/w1:fd,sd,diff l1c_/w2:fd,sd,diff l1d_/w0:fd,sd l1d_/w1:fd,sd,diff l1d_/w2:fd,sd l1e_/w0:fd,sd,diff l1e_/w1:fd,sd l1e_/w2:fd,sd,diff l3_2/w0:fd,sd l3_2/w1:fd,sd,diff l3_2/w2:fd,fg,sd,diff t55k/w0:fd,sd,diff t55k/w1:fd,sd t55k/w2:fd,sd
+  C18b 时长列实值 vs 台账（前 5 窗）:
+    l1c_20261021/w0  fd=87.9130 (台账 65.8)  sd=117.1470 (台账 147.9)  diff=+0.0315 (台账+0.032)
+    l1c_20261021/w1  fd=85.5450 (台账 64.3)  sd=116.0460 (台账 154.8)  diff=+0.0290 (台账+0.028)
+    l1c_20261021/w2  fd=75.6300 (台账 62.8)  sd=111.0900 (台账 138.3)  diff=+0.0310 (台账+0.030)
+    l1d_20261021/w0  fd=76.7740 (台账 60.2)  sd=114.6380 (台账 132.0)  diff=+0.0490 (台账+0.049)
+    l1d_20261021/w1  fd=78.4870 (台账 58.1)  sd=113.0110 (台账 136.1)  diff=+0.0250 (台账+0.022)
+  C20a 末帧dur重复                   | dur 15/30 gap 15/30 diff 15/15 (合45/75) | 失败格: 无
+  C20z 末帧dur重复+gap=0             | dur 15/30 gap 15/30 diff 15/15 (合45/75) | 失败格: 无
+  C29b k=全帧数//3 + C8a            | dur 13/30 gap 15/30 diff 14/15 (合42/75) | 失败格: l1e_/w2:fd l3_2/w1:sd,diff
+  C19a fast错位/slow正确             | dur 15/30 gap  2/30 diff  0/15 (合17/75) | 失败格: l1c_/w0:sg,diff l1c_/w1:sg,diff l1c_/w2:sg,diff l1d_/w0:diff l1d_/w1:diff l1d_/w2:sg,diff l1e_/w0:sg,diff l1e_/w1:sg,diff l1e_/w2:sg,diff l3_2/w0:sg,diff l3_2/w1:sg,diff l3_2/w2:sg,diff t55k/w0:sg,diff t55k/w1:sg,diff t55k/w2:sg,diff
+
+[N4] C8a 与台账逐窗距离（全部 ≤ 显示半格）
+  l1c_20261021/w0  Δfg=-0.0040 Δsg=-0.0025 Δdiff=-0.0005
+  l1c_20261021/w1  Δfg=-0.0025 Δsg=-0.0050 Δdiff=-0.0005
+  l1c_20261021/w2  Δfg=+0.0050 Δsg=+0.0050 Δdiff=+0.0000
+  l1d_20261021/w0  Δfg=-0.0020 Δsg=-0.0030 Δdiff=-0.0000
+  l1d_20261021/w1  Δfg=-0.0010 Δsg=+0.0010 Δdiff=-0.0000
+  l1d_20261021/w2  Δfg=-0.0035 Δsg=+0.0010 Δdiff=-0.0005
+  l1e_20261021/w0  Δfg=+0.0000 Δsg=+0.0030 Δdiff=-0.0000
+  l1e_20261021/w1  Δfg=-0.0010 Δsg=+0.0040 Δdiff=-0.0000
+  l1e_20261021/w2  Δfg=-0.0050 Δsg=+0.0030 Δdiff=-0.0000
+  l3_20261021/w0   Δfg=+0.0020 Δsg=-0.0000 Δdiff=-0.0000
+  l3_20261021/w1   Δfg=-0.0010 Δsg=-0.0040 Δdiff=-0.0000
+  l3_20261021/w2   Δfg=-0.0040 Δsg=-0.0020 Δdiff=+0.0000
+  t55k_20261020/w0 Δfg=-0.0035 Δsg=+0.0035 Δdiff=-0.0000
+  t55k_20261020/w1 Δfg=-0.0010 Δsg=+0.0030 Δdiff=-0.0000
+  t55k_20261020/w2 Δfg=+0.0020 Δsg=+0.0015 Δdiff=-0.0005
+
+[_ex_neighborhood] END

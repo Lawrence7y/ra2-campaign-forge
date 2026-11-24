@@ -1,0 +1,29 @@
+M63 VERIFY — 并表审计 PASS 6 行后盘上复算
+==========================================================================================
+
+数据行数: 18498（表头 1 行逗号 8 字段；数据 TAB 8 列，制表符分隔）
+全表 [已证]: 1502（改前 1,496 → +6）
+atlas 内 [已证]: 1496（改前 1,490 → +6）
+atlas 外 [已证]: 6（改前 6，未变）
+S18（atlas 内）proved: 56（改前 54 → +2）
+S14（atlas 内）proved: 111（改前 107 → +4）
+
+6 行新 grade / evidence_path / 语义:
+  005414C0  S18  grade=[已证]  evidence_path=NAMED_PUSH_AUDIT/VERDICT.md  sem=delta原文  atlas内=True
+  0071F8C0  S18  grade=[已证]  evidence_path=NAMED_PUSH_AUDIT/VERDICT.md  sem=delta原文  atlas内=True
+  0041F580  S14  grade=[已证]  evidence_path=NAMED_PUSH_AUDIT/VERDICT.md  sem=delta原文  atlas内=True
+  00503040  S14  grade=[已证]  evidence_path=NAMED_PUSH_AUDIT/VERDICT.md  sem=delta原文  atlas内=True
+  00512290  S14  grade=[已证]  evidence_path=NAMED_PUSH_AUDIT/VERDICT.md  sem=delta原文  atlas内=True
+  00512480  S14  grade=[已证]  evidence_path=NAMED_PUSH_AUDIT/VERDICT.md  sem=delta原文  atlas内=True
+
+2 行审计 FAIL — grade 未变、整行逐字节未动:
+  005C46E0  S18  grade=[静态推断]（改前 [静态推断]）  evidence_path=EVIDENCE/classification_trace.tsv#005C46E0
+  0065AC40  S14  grade=[静态推断]（改前 [静态推断]）  evidence_path=EVIDENCE/classification_trace.tsv#0065AC40
+
+严格双列表: S18 proved 56 strict 46；S14 proved 111 strict 98；TOTAL strict 1,163→1,169（6 行语义均不含「未证」，strict 同增 +6）
+达标判定: 名义 S15,S16,S17；严格 S17
+有无达标翻转: 无（名义仍 S15/S16/S17，严格仍仅 S17）
+
+校验: audit PASS=6/FAIL=2 与卡片一致；6 行改前 grade（0071F8C0=[未证]，其余 [静态推断]）与卡片一致；
+      6 行全 atlas 内（entry 大写归一）；coverage 仅 6 行第4/5/6列改、第1/2/3/7/8列未动；
+      数据行 18,498 不变、8 列不变；未 git commit；未改其它文件。

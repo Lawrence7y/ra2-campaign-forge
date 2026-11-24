@@ -1,0 +1,41 @@
+rule_id	一句话规则	来源(文件+节号/M号/段号)	索引是否已覆盖	对应fact_id	覆盖判断依据(引索引哪条哪句)
+G01	类名恢复链 vtable[-4]→COL→COL+0xC(pTD)→TD+8 内联名串	R14_COMMON.md(§8.2 技术①;§13)	是	F01	F01 statement 首句逐字为「类名恢复链为 vtable[-4]→COL→COL+0xC(pTD)→TD+8 内联名串」。
+G02	RTTI 装饰名在 TD+8 是内联串而非指针	R14_COMMON.md(§13.2;§8.2 技术⑦)	是	F01	F01 statement 含「TD+8 内联名串；装饰名 988 全在 .data(.?AV 962/.?AU 26)」；卡面此候选题判定为已覆盖、不新增。
+G03	负面结论须自带正控与反控	R14_COMMON.md(§2.8 规则A)	是	F13;F09	F13 limitations「规则一与 §2.8 规则A(负面结论须自带正控与反控)同族」；F09 limitations「须同引 §2.8 规则A 的正控与反控」。
+G04	报「某函数调用了 X」必须说明在哪些路径上调用、哪些不调用	R14_COMMON.md(§2.10 三;§2.8 规则A)	是	F13;F20	F13 statement 硬规则二逐字为该句；F20 规则③同文。
+G05	函数入口判定禁止按字节扫 C3/C2，须用可信入口集+严格解码	R14_COMMON.md(§2.8 规则A)	是	F13;F20	F13 statement 硬规则一「函数入口判定禁止按字节扫 C3/C2(反例 site 0x5A6860…)」。
+G06	VA→文件偏移必须走 PE 节表映射，禁止 va−ImageBase 直读	LEAD_LOCK(AG4);R17_R36_VERIFY_TABLEBASE	是	F20	F20 statement ①「VA → 文件偏移必须走 PE 节表映射，va−ImageBase 只在 VirtualAddress == PointerToRawData 的节内等价」。
+G07	②-b 永久 [静态推断] 收口 + 定谳句与 a–e、(a′) 不可拆	R14_COMMON.md(§2.9;§2.10)	是	F08;F17	F08 statement「②-b 永久以 [静态推断] 收口、依据 D-53(A)、不再投卡探测；书面限制 a–e」；F17 记 (a′) 收窄。
+G08	三条取证路径属「已排除」而非「未尝试」	R14_COMMON.md(§2.9 二)	是	F19	F19 statement 首句逐字「②-b 的三条取证路径已『排除』（非『未尝试』）」。
+G09	全表 [已证] 数量必须与三项限定同引	R14_COMMON.md(§15;§16.1)	是	F22	F22 statement「全表 [已证] 1,654 行；引用时必须与三项限定同框」。
+G10	④ 三口径 A/B/宽并列、不得当四环齐全	PANEL.md(M86–M93)	是	F23	F23 statement「④（第 4 列语义）三口径并列……引用 ④ 必须注明口径」。
+G11	证据可解析度上限 + trace-only 负结论有判别力	R14_COMMON.md(§16.1)	是	F24	F24 statement「证据可解析度：R_OK 863 / 1,654（52.18%）为上限……改指针无解，不再投卡」。
+G12	TOTAL strict 是上界不是下界	PANEL.md(M58)	是	F25	F25 statement「该 1,331 是上界不是下界……不是『合规已证总量』」。
+G13	DoD 上限 3/22 + D-49 判据不改、目标改口径	PENDING_DECISIONS.md(D-49)	是	F26	F26 statement 逐字记「DoD 已证不可达，上限 3/22……用户 D-49 正式裁定『DoD 判据不改』」。判据式本身另见 U09。
+G14	类名双口径 S(严格基名)/C(显式复合名) 必须注明	R17_LEDGER_1062\SECTION.md(事项3)	是	F11	F11 statement「RTTI×coverage 对账第三版双口径并列……引用必须写明口径」。
+G15	433 只说明地址锚定成立、不构成 ② 支持	R17_LEDGER_1062\SECTION.md(事项4)	是	F12	F12 statement「433 只说明地址锚定成立、不说明 entry 属于该类成员、不构成 ② 支持」。
+G16	装表 host/fn_end 的具体实例值（host 不得写错）	STATUS_BOARD.md(R17 第 14–15 轮 段)	是	F04	F04 statement 给 host 0x5A6510、fn_end 0x5A691C；limitations「host 必须写 0x5A6510、不得写 0x5A652D」。规则形态另见 U08。
+G17	覆写并显式调基类实现的 this 传送字节证据	R14_COMMON.md(§2.6)	是	F05	F05 statement 记 0x43F5D8 this 传送与各路径/循环约束。
+U01	atexit 严格形态仅 68 个；其余 call 0x7C978A 是字节误命中	LEAD_LOCK(追加 20:5x 段);HANDOFF_R16.md(R15 技术条 段);BOARD_ARCHIVE.md(第 99–104 轮 段)	否	F27	全表检索 atexit/误命中/0x7C978A/「68 个」命中 0；F13 只覆盖 C3/C2 字节扫，不含 atexit 注册集口径。
+U02	㉓ 析构重装陷阱；删除析构签名可为 test al,1 不止 [esp+X],1	R14_COMMON.md(§8.1 错源㉓;§13.5);NAMED_PUSH_AUDIT10\VERDICT.md(§2)	否	F28	全表检索 ㉓/析构重装/枚举该虚表/test al/test byte 命中 0；F08/F18 的 bit0 唯一写点属 §2.6 闸判据、非 ㉓。
+U03	AddRef/Release 常量桩 + 失败清理走 vt+0x20、桩逐表不逐族	R14_COMMON.md(§13.3);PANEL.md(M71 披露)	否	F29	全表检索 AddRef/Release/vt+0x20/引用计数 命中 0；F01 只给类名链。
+U04	RTTI pTD/pCHD 为绝对 VA、按 RVA 解会越界并 fail-closed 误判	R14_COMMON.md(§13.1)	否	F30	全表检索 绝对VA/按 RVA/pCHD 命中 0；F01 只写类名链与 limitations「类名经 COL→TD 推得」，未含 VA/RVA 读法。
+U05	COL.pSelf 恒为 0、不能用 pSelf 自指判表起点	LEAD_LOCK(追加 20:5x 段);GOAL_THREE_TARGETS_20261018.md(N9 段)	否	F31	F01 虽出现 pSelf，但原句仅「954 个主 COL 的 pSelf=COL−0x10」这一数值口径，未记「恒 0→不可判起点」禁例；全表「判表起点」命中 0。
+U06	lea 中介虚表写入 0 处	LEAD_LOCK(追加 20:5x 段);GOAL_THREE_TARGETS_20261018.md(N9 段)	否	F32	全表检索 lea 中介/虚表写入 命中 0；F01–F26 中所有「lea」命中均为路径串 lead 的子串，非本规则。
+U07	导出表 RVA=0/Size=0，V4 恒不可能	LEAD_LOCK(追加 21:1x 段;追加 22:1x 段)	否	F33	全表检索 导出表/RVA=0 命中 0。
+U08	装表 G1–G5 纪律 + host<=site<fn_end(host) 位置断言；缺断言不算校验	LEAD_LOCK(方法论硬约束 段;R16 遗留段);PANEL.md(M98–M102)	否	F34	全表检索 G1/G2/G3/G4/G5/位置断言/host<= 命中 0；F13 只覆盖入口禁扫 C3/C2，F15 的 host_changed/fn_end_changed/position_assert 是 R28 复归因数据而非规则。
+U09	DoD 判据 named_S(R14)>=ceil(0.9n) 且 proved>=ceil(0.5n)，严格列 proved_strict	PANEL.md(M47;M52;M44)	否	F35	全表检索 ceil/named_S/proved_strict/ceil(0.9 命中 0；F25/F26 只记结果与裁定、未记判据式。
+U10	GATE_MAP 用途（②-b 拒绝闸静态定位产物）与其既有误记	R14_COMMON.md(§2.6 来源段;§2.7);PANEL.md(M103)	否	F36	全表检索 GATE_MAP/S02B_GATE 命中 0；F17 记的是 §2.10 (a′) 另一处更正，不覆盖 §2.7 对 GATE_MAP 的字节更正。
+U11	矛盾分析用单问题裁决卡交第三方自算，禁复用脚本、都不对合法	R14_COMMON.md(§2.8 规则C)	否	F37	F01/F02 limitations 仅「按 §2.8 规则C裁决(取322)」引用规则名，未陈述四要件；全表「裁决卡/第三方自算」命中 0。
+U12	写 N/N 通过前先测基线、对照必须同质	R14_COMMON.md(§8.2 技术④)	否	F38	全表检索 基线/同质 命中 0；F24 的正控是「0 结论有判别力」，不是「N/N 先测基线」。
+U13	证据同源不得双计（同一证据只计一环）	R14_COMMON.md(§8.3 R14-R17)	否	—	F23 的「同源」只出现在「④ 真两链」语境，未记「同源不得双计」纪律；全表「双计/只计一环」命中 0。已知未补。
+U14	单源结论一律降级为推断并标强度与依赖产物	R14_COMMON.md(§2.8 规则B)	否	—	F16 limitations 仅「并带 §2.8 规则B 的推断强度标注」引用规则名，未陈述规则内容；全表未成独立条目。已知未补。
+U15	同族错误须先判口径差与真错再分别处置	R14_COMMON.md(§2.8 实例D)	否	—	全表检索 口径差/替换表 命中 0；F01/F02 只按 §2.8 规则C取 322、未记此分类。已知未补。
+U16	频率/富集判据分母必须是指令边界上的真 call	R14_COMMON.md(§8.2.2 技术⑩)	否	—	全表检索 分母/真 call/原始 E8 命中 0。已知未补。
+U17	族级判据判别力须按「族内随机」算	R14_COMMON.md(§8.1 错源⑳)	否	—	全表检索 族内/族级 命中 0。已知未补。
+U18	合取判据自洽可能是循环论证，须找可分离第三方事实	R14_COMMON.md(§8.1 错源㉑)	否	—	全表检索 循环论证/可分离 命中 0。已知未补。
+U19	RTTI 模板前缀 PAU/PAV 不是类名一部分	R14_COMMON.md(§8.1 错源㉒)	否	—	F01 只记 .?AV/.?AU 装饰名形态，未记 PAU/PAV 前缀陷阱；全表「PAU/PAV」命中 0。已知未补。
+U20	同源系统性错误随机基线恒 0，必须做差分检验	R14_COMMON.md(§8.1 错源㉔)	否	—	全表检索 差分检验/随机基线 命中 0。已知未补。
+U21	P=R=100%/恰命中 N 可能是判据自证	R14_COMMON.md(§8.1 错源㉕)	否	—	全表检索 判据自证/恰命中 命中 0。已知未补。
+U22	自报扫描规模必须给 .text 覆盖百分比且站点落在范围内	R14_COMMON.md(§8.1 错源㉖)	否	—	全表检索 扫描规模/覆盖范围 命中 0。已知未补。
+U23	B8 imm32 C2 04 00(ret 4) 不是 B8 imm32 C3	R14_COMMON.md(§8.3 新增坑)	否	—	全表检索 C2 04 00/常量返回桩 命中 0；F13 的反例是 C3 作 modrm 字节、非 ret 4 形态。已知未补。

@@ -1,0 +1,65 @@
+
+======================================================================
+R1 · 读写语义与失败不补 0 检验
+======================================================================
+[PASS] R1.1.1 reader 返回 None => read_one 返回 None (绝不补 0)
+[PASS] R1.1.2 reader 抛异常 => read_one 返回 None (绝不补 0)
+[PASS] R1.2.1 reader 返回 False => read_one 返回 None (防 False 变 0)
+[PASS] R1.2.2 reader 返回 True => read_one 返回 None (防 True 变 1)
+[PASS] R1.3.1 负数 -1 => read_one 返回 None
+[PASS] R1.3.2 负数 -0xFFFFFFFF => read_one 返回 None
+[PASS] R1.3.3 溢出 0x1_0000_0000 => read_one 返回 None
+[PASS] R1.3.4 大整数 2**64 => read_one 返回 None
+[PASS] R1.4.1 合法 0 接受（0 为合法业务读数）
+[PASS] R1.4.2 合法 0xFFFFFFFF 接受（u32 上界）
+[PASS] R1.5.1 float 0.0 => read_one 返回 None (防 float 0.0 漏入)
+[PASS] R1.5.2 float 123.45 => read_one 返回 None
+[PASS] R1.5.3 float nan => read_one 返回 None
+[PASS] R1.5.4 Decimal(0) => read_one 返回 None
+[PASS] R1.5.5 Decimal(100) => read_one 返回 None
+[PASS] R1.5.6 numpy uint32 => read_one 返回 None (因 isinstance(np.uint32, int) 为 False)
+[PASS] R1.5.7 numpy int32 => read_one 返回 None
+[PASS] R1.5.8 numpy int64 0 => read_one 返回 None
+[PASS] R1.5.9 numpy bool_ False => read_one 返回 None
+[PASS] R1.5.10 字符串 '123' => read_one 返回 None
+[PASS] R1.5.11 复合对象 [] / {} => read_one 返回 None
+[PASS] R1.6.1 失败字段为 None 且不影响其他字段
+[PASS] R1.7.1 RpmReader 默认关闭，open() 返回 False
+[PASS] R1.7.2 open() 失败记录 err
+[PASS] R1.7.3 未开句柄 read_u32 返回 None (绝不补 0)
+
+======================================================================
+R2 · 读序、时间戳与 D-19 起止要求检验
+======================================================================
+[PASS] R2.1 读序严格为帧前 -> 四字段 -> 帧后 (共 6 次读)
+[PASS] R2.2.1 rec['ts'] 包含全部 6 个键
+[PASS] R2.3.1 rec['ts'] 各键值为标量 float (无字段级结束时间戳)
+[PASS] R2.3.2 缺少整段读段结束时间戳 rec['ts_end'] 或 rec['ts']['f_post_end']
+[PASS] R2.3.3 实测验证：ts['f_post'] 只记发起点，无法测量 f_post 自身耗时与读段闭合时刻
+[PASS] R2.4.1 f_pre == f_post => cross_frame=False
+[PASS] R2.4.2 f_pre != f_post => cross_frame=True
+[PASS] R2.4.3 f_post 失败 => cross_frame=None (不可判，绝不猜 False/True)
+
+======================================================================
+R3 · df>1、df<0、f is None 三条边界检验
+======================================================================
+[PASS] R3.1.1 df=5 产出唯一事件，kind='edge_missed', df=5
+[PASS] R3.1.2 df=5 attribution 为 aggregate_over_5_frames (非单帧真值)
+[PASS] R3.1.3 missed_frames_lower_bound 累计增加 4 (df-1 = 4)
+[PASS] R3.1.4 edge_missed 计数加 1，绝未补造帧 101/102/103/104 的插值事件
+[PASS] R3.2.1 df < 0 不产生 edge 事件 (返回 None)
+[PASS] R3.2.2 df < 0 标记 unjudgeable 并使 counts['unjudgeable'] 加 1
+[PASS] R3.2.3 结论：df < 0 在当前单字段无进程生命周期辅助信号下，理论上【当前不可区分】
+[PASS] R3.3.1 f is None 返回 None (不产生事件)
+[PASS] R3.3.2 null_frames 计数加 1
+[PASS] R3.3.3 f is None 不更新 prev_f，下一样本 201 与 200 差分得到 df=1 (产生 edge 事件)
+[PASS] R3.3.4 [200, None, 200] 下一样本与 prev_f 相同，归为 same，不产生 edge 事件
+
+======================================================================
+探针测试汇总
+======================================================================
+TOTAL TESTS: 44
+PASSED:      44
+FAILED:      0
+
+ALL PROBE ASSERTIONS PASSED PERFECTLY.

@@ -44,7 +44,10 @@ try:
 except Exception:
     pass
 
-ROOT = r"D:\Project\ra2-campaign-forge"
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _ra2_paths import resolve_root
+ROOT = str(resolve_root(__file__))
 EXE = os.path.join(ROOT, "ra2youli", "gamemd.exe")
 IMAGE_BASE = 0x400000
 

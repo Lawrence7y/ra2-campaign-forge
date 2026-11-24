@@ -1,0 +1,98 @@
+=== F0 被核对象指纹（本会话 hashlib 实算）===
+被核对象 SHA256 = 8825e115f92bdf407cf20dde724e5633adc4e08e3f97bcee58299b95a8cb6d43，字节数 = 29813    [lead/dtrigger_round2_20261107/_dA_out.txt]
+  对照编排方指纹: MATCH
+被核对象 SHA256 = d5d487a7792da6ce89e143faa05727a4fe484cb66b400622c02511230770e0df，字节数 = 20819    [lead/dtrigger_round2_20261107/_dA_design.md]
+  对照编排方指纹: MATCH
+被核对象 SHA256 = 145d4fa12e0e618f859c8f98305034d0ddb2952ae47b668e7a6a4c37290ca3b7，字节数 = 11204    [lead/dtrigger_round2_20261107/_verify_A_out.txt]
+  对照编排方指纹: MATCH
+被核对象 SHA256 = 5d906aa00069a4b9d484221db37368efe9cb83930cfeee85a4b0c5c53124fd4e，字节数 = 36794    [lead/dtrigger_round2_20261107/_verify_A_recompute.py]
+  对照编排方指纹: MATCH
+被核对象 SHA256 = 7ce09812f7bd905a95114a2cc2cea56b3dc3dbaef3d8e0d14c58685762ecab24，字节数 = 30140    [lead/r2_final_grade_20261108/R2_FINAL_GRADE.md]
+  对照编排方指纹: MATCH
+被核对象 SHA256 = bf426786db82c34dd6b6d21e3022678285e3e22f52dbdaa5085d85c3b6f8fbde，字节数 = 22351    [lead/criteria_r3_verify_20261108/R2_BREAKPOINTS_CLOSURE.md]
+  对照编排方指纹: MATCH
+被核对象 SHA256 = 6448574b92a151f43f637df5ef41f75e22515b13f5429eec1967ad00d725100c，字节数 = 25748    [lead/a_dim_reduced_20261108/_ar_check.py]
+被核对象 SHA256 = 28cd3794a571d0ac8958b2fa98bc7906e61414f749111fc18f02de4294642a72，字节数 = 24614    [lead/a_dim_reduced_20261108/_ar_out.txt]
+F0 六件编排方指纹全 MATCH = True
+
+=== F1 独立重建语料（不 import 被核脚本）===
+files=104 samples=1125992 hz=[500]
+moving windows=64 trips=34
+events all=1737 isRealMatch=1681
+runs=28381 real_aligned=1681 e_valid=28317 e_none=64
+
+=== F2 配额上界 ideal W/T 独立实算 ===
+ideal_w={1: 26, 3: 73, 5: 117} nonempty_windows=26
+ideal_t={1: 12, 3: 31, 5: 47} nonempty_trips=12
+c_w: min=1 med=70.0 max=127 c_w>=5=22
+F2 PASS ideal_w=={1:26,3:73,5:117} :: True
+F2 PASS ideal_t=={1:12,3:31,5:47} :: True
+_dA_out.txt 15 档 W5 max=66 (_cost_quota_data.json 26 档 W5 max=102)
+F2 PASS 41 档无一达 117 :: True
+
+=== F3 EXACT_LOOKUP 独立复现（上界紧性见证）===
+|real_exact_sigs| = 43914
+EXACT_LOOKUP trig=1679 real=1678 falseB=1 precision=0.999404 in50_strict=1619/1681
+EXACT_LOOKUP W={1: 26, 3: 73, 5: 117} T={1: 12, 3: 31, 5: 47}
+F3 PASS W 达理想上界 :: True   T 达理想上界 :: True
+F3 对照 _verify_A_out.txt:119-120 数值一致 :: True
+注：紧性见证谓词的查表内容由同语料 is_real 标签构成（train=test）——本复核据实登记。
+
+=== F4 1621/1681 独立实算（离线可证计数来源）===
+real n=1681  e>50ms n=56  e未验 n=4  e<=50ms n=1621
+F4 PASS (56,4,1621) :: True
+1621/1681 = 96.430696%
+e>50: min=50.066 med=88.112 P90=205.739 max=488.616 ms
+F4 PASS EXACT_LOOKUP in50_strict 1619 <= 1621 :: True
+e = t[runStart]-t[runStart-1] 是外部采样器相邻采样间隔（观测装置产物）；离线 S_hat-S∈[0,e] 夹逼，w+e<=50 才可证 -> 60 条不可判定 -> 1621。
+
+=== F5 LB1 粗签名（限定特征类）独立重算 ===
+tau=18: n_cov=1672 empty_real=9 LB1=4056 UB_naive=26617 precision<=29.1899% falseB母体=26677
+tau=50: n_cov=1678 empty_real=3 LB1=1638 UB_naive=26617 precision<=50.6031% falseB母体=26677
+F5 PASS tau18 LB1=4056 & tau50 LB1=1638 :: True
+F5 PASS tau50 precision<=50.6031% :: True
+
+=== F6 oracle 脱钩检验独立复算 ===
+base_rate tau=10: A=28337 real=1681 falseB=26633 br=5.9322%
+base_rate tau=30: A=16016 real=1681 falseB=14312 br=10.4958%
+base_rate tau=40: A=6031 real=1681 falseB=4327 br=27.8727%
+base_rate tau=50: A=5059 real=1681 falseB=3355 br=33.2279%
+差分算术 1681/(1681+3355*0.01) = 0.980432
+O1a(仍用 oracle 标签建表): 去自身签名后 real 触发=0/1681, falseB 触发=1
+holdout trips=34 train=17 test=17 train_real=1231 test_real=450
+O1b 精确(train 表仍由 oracle 标签构成): test 触发=1 real=0 falseB=1 precision=0.0000% test-real recall=0.00%
+O2 粗(train 表仍由 oracle 标签构成): test 触发=16496 real=450 falseB=16034 precision=2.7299% test-real recall=100.00%
+O3 无标签 C4-t40: trig_real=1681 falseB=4327 precision=27.9794% recall=100.00%
+O3 无标签 D4-burst: trig_real=1681 falseB=26649 precision=5.9336% recall=100.00%
+O3 无标签 D1-word-MMM: trig_real=7 falseB=0 precision=100.0000% recall=0.42%
+O3 构造源码含 'is_real'? cal_abs: False
+O3 构造源码含 'is_real'? d4_burst: False
+O3 构造源码含 'is_real'? word_mmm: False
+
+=== F7 逐字抄录核对：_ar_out.txt S1 段 vs 被核原文 ===
+S1 中带行号的引用行检查数=113  与 _dA_out.txt 原文不一致数=56
+  MISMATCH line 32: orig='  扫描命中=[]（空=通过）；D1..D5 共 11 档，CAL 校准 4 档（仅核对用，不参与新判据比较）' quoted='**本件结论（先给，证据见 §3–§5）**：三者不可兼得，且给出四条**可判定**的形式化计数上/下界；'
+  MISMATCH line 33: orig='' quoted='其中三条（配额硬上界、存活集基准率、e 硬上界）对**任意** `(t,f)` 前缀谓词无条件成立，'
+  MISMATCH line 34: orig='================================================================================' quoted='一条（命中集 LB1）限定于本题给定的「形状/序数/相邻游程」特征类。`_dA_out.txt:191-257` 是全部实跑数字。'
+  MISMATCH line 157: orig='  --- D4-burst [D4] 相邻间隔由短(<0.5ms)突变到长(>=2ms) 的肘点' quoted='**证据① 配额硬上界（谓词无关，`_dA_out.txt:191-201`）**。'
+  MISMATCH line 158: orig='      需求历史: t[runStart..i] 的间隔序数；触发=28353 真实命中=1681/1681 漏检=0 误触发=26649 误报率=0.93' quoted='每游程最多 1 次触发（本 runner 的 `build_trig` 与 `CRITERIA_COMPARE.md:193-194` 同口径），'
+  MISMATCH line 159: orig='      latP50=7.214000 latP95=18.601000 latMax=134.545000 ms（仅真实命中、S_hat 锚、下界）' quoted='每配额组 `(trip,window)` 前 `N` 次触发消耗 `N` 槽，每槽最多对应 1 个真实事件，故'
+  MISMATCH line 160: orig='      :177 严格及时命中 in50_strict=1569/1681 (93.3373%)；其中真实事件 e 未验=4 条（首拍游程，口径 B 保留）' quoted='`captured ≤ Σ_w min(N, c_w) = 26/73/117`（N=1/3/5），与谓词、前缀形状、误触发多少'
+  MISMATCH line 161: orig='      W N=1: captured=    4/1681  captured_strict50=    0/1681  false抢占槽=    60' quoted='**完全无关**（误触发只会让 captured 更小）。实跑 W5 最佳 66/1681（`D5-phase`），'
+  MISMATCH line 162: orig='      W N=3: captured=   23/1681  captured_strict50=   18/1681  false抢占槽=   169' quoted='上确界 117/1681 = 6.96%。**即使存在一个「:177 全合规 + 零误触发」的完美谓词，'
+  MISMATCH line 163: orig='      W N=5: captured=   41/1681  captured_strict50=   35/1681  false抢占槽=   279' quoted='N=5 仍至少放弃 1564/1681 = 93.04% 真实事件**（`:254`）。'
+（注：S1 同时含 _dA_design.md / R2_FINAL_GRADE.md / R2_BREAKPOINTS_CLOSURE.md 引文，其行号不属 _dA_out.txt，上面的比对仅对 <=283 行生效，可能对 design 段行号误比对；下方另做分文件精确核对。）
+  块 lead\dtrigger_round2_20261107\_dA_out.txt: 引用行=57 不一致=0
+  块 lead\dtrigger_round2_20261107\_dA_design.md: 引用行=49 不一致=0
+  块 lead\r2_final_grade_20261108\R2_FINAL_GRADE.md: 引用行=2 不一致=0
+  块 lead\criteria_r3_verify_20261108\R2_BREAKPOINTS_CLOSURE.md: 引用行=5 不一致=0
+
+=== F8 文本扫描（不代裁 / 不拔高）===
+_ar_out.txt 含 '立为新结论': True
+_ar_out.txt 含 '不作裁定': False
+_ar_out.txt 含 '不代裁': True
+_ar_out.txt 含 'necessaryCount': False
+_ar_out.txt 含 'oracleDecouplable': False
+_ar_out.txt 含 '未验': True
+回件（题给补证文本）任务5 原文含『不作裁定』：见题面【任务5·不代裁】。
+

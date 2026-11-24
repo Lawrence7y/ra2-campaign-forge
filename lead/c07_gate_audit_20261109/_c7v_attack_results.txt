@@ -1,0 +1,238 @@
+########## _c7v 复核实跑记录 2026-11-09 03:37:11 ##########
+==== 基线1: gate --selftest ====
+SELFTEST PASS（解析/占位/计划号判定逻辑正常；对照已登ID基数=1）
+EXIT=0
+==== 基线2: gate 未填模板 ====
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — '<来源会话签发角色>'
+  [PASS] H06 reviewerSessionId非空非拒填值  — '<来源会话sessionId>'
+  [PASS] H06 sourceTaskId非空非拒填值  — '<来源会话任务ID>'
+  [FAIL] H07 记录内无占位符残留  — 残留=['<来源会话签发角色>', '<来源会话sessionId>', '<来源会话任务ID>']
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [FAIL] H11 inputHashes四件实算复核  — 格式错(需 64hex/字节数):lead/d13d14_cards_20261108/DECISION_QUESTIONS.md; 格式错(需 64hex/字节数):lead/pending_factpack_20261108/_fp_N10-C07_Q6.md; 格式错(需 64hex/字节数):lead/perf_repair_n11_20261108/PERF_REPAIR_HANDOFF.md; 格式错(需 64hex/字节数):lead/nextstep_plan_20261106/NEXT_STEPS_20261106.md
+  [FAIL] H12 timestamp ISO8601可解析  — '<补登时点 ISO8601，来源会话填时实生成>'
+  [FAIL] H13 容器层无占位符残留  — 残留=['<登记后由来源会话定档：如 REGISTERED；若仍有不可闭合面如实定 PARTIAL，不评高于实际>', '<另一上下文独立复核回件摘要；未做则如实写「未做」——复核只验格式/一致性/非冒用，ID 真值由来源会话自证>', '<来源会话签发角色>']
+GATE FAIL checks=15 failed=4
+被核对象 SHA256 = `3d763a8b679370ade8999a23a18679c7296909bf8a020b71694c0ccca7e8b062`，字节数 = 3812
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+EXIT=1
+==== 基线2b: 独立器 未填模板 ====
+== C07 独立复核校验器（_c7v_independent）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键恰13(无缺无多)  — 缺=[] 多=[]
+  [PASS] I03 schema精确串  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条  — len=1
+  [PASS] I05 9字段名与顺序  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [FAIL] I06 记录层角色非拒填/非占位/非内部角色  — 记录reviewerRole占位/角字符残留:'<来源会话签发角色>'
+  [FAIL] I07 全件无占位/角字符残留(半角+全角)  — 残留=['<登记后由来源会话定档：如 REGISTERED；若仍有不可闭合面如实定 PAR', '<另一上下文独立复核回件摘要；未做则如实写「未做」——复核只验格式/一致性/非冒', '<来源会话签发角色>']
+  [PASS] I08 记录内无拒填值(精确+词级)  — 命中=[]
+  [FAIL] I09/I10 记录层sessionId非冒用(精确+归一)且运行态形制  — 记录sessionId占位/角字符残留:'<来源会话sessionId>'; 记录sessionId非运行态形制(需 sess_dwf-dwfrun-<UUID>-actor_<n>_<m>):'<来源会话sessionId>'
+  [FAIL] I11 容器role非拒填/非占位/非内部角色  — 容器reviewer.role占位/角字符残留:'<来源会话签发角色>'
+  [FAIL] I12 计划号登记(子串触发+登记语必验)  — sourceTaskId占位/角字符残留:'<来源会话任务ID>'
+  [FAIL] I13 inputHashes全键实算(含额外键)  — 格式错(需64hex/字节数):lead/d13d14_cards_20261108/DECISION_QUESTIONS.md; 格式错(需64hex/字节数):lead/pending_factpack_20261108/_fp_N10-C07_Q6.md; 格式错(需64hex/字节数):lead/perf_repair_n11_20261108/PERF_REPAIR_HANDOFF.md; 格式错(需64hex/字节数):lead/nextstep_plan_20261106/NEXT_STEPS_20261106.md
+  [PASS] I14 artifactHashes全键实算
+  [FAIL] I15 timestamp ISO8601且含时间成分  — '<补登时点 ISO8601，来源会话填时实生成>'
+  [FAIL] I16 decision值域{REGISTERED,PARTIAL}  — '<登记决定，如 REGISTERED——来源会话身份补登完成（Q6 行政动作，非技术裁决，不升格技术结论）>'
+  [FAIL] I17 grade定档{REGISTERED,PARTIAL}且禁签署语汇  — '<登记后由来源会话定档：如 REGISTERED；若仍有不可闭合面如实定 PARTIAL，不评高于实际>'
+  [PASS] I18 六固定字段与模板逐字一致  — 不一致=[]
+  [FAIL] I19 writeDomain形制合法  — '<来源会话补登写域（建议 lead/c07_slot_20261109/ 就地填用，或来源会话自指新写域；不得写入任何既有只读域）>'
+  [PASS] I20 revisionOf==null  — None
+  [FAIL] I21 容器sessionId非冒用/运行态形制/与记录一致  — 容器sessionId占位/角字符残留:'<来源会话sessionId>'; 容器sessionId非运行态形制(需 sess_dwf-dwfrun-<UUID>-actor_<n>_<m>):'<来源会话sessionId>'
+  [PASS] I22 itemId固定值  — 'N10-C07-Q6-identity'
+  [PASS] I23 unresolved为字符串列表
+INDEP FAIL checks=22 failed=11
+被核对象 SHA256 = 3d763a8b679370ade8999a23a18679c7296909bf8a020b71694c0ccca7e8b062，字节数 = 3812
+EXIT=1
+==== 基线3: S10 正样本 双器 ====
+--- gate ---
+== C07 身份补登件门禁 ==
+  [PASS] H01 JSON可解析
+  [PASS] H02 容器13键齐（N-1/2形制）
+  [PASS] H03 schema=N-1-ACCEPTANCE-RECORDS/2  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] H04 records恰1条  — len=1
+  [PASS] H05 9字段名与顺序==NEXT:23实文  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] H06 reviewerRole非空非拒填值  — '项目负责人·来源会话签发'
+  [PASS] H06 reviewerSessionId非空非拒填值  — 'sess_dwf-dwfrun-11111111-2222-4333-8444-555555555555-actor_7_2'
+  [PASS] H06 sourceTaskId非空非拒填值  — 'TASK-C07-SRC-01'
+  [PASS] H07 记录内无占位符残留  — 残留=[]
+  [PASS] H08 记录内无unknown/TODO等拒填值  — 命中=[]
+  [PASS] H09 sessionId不冒用他件已登ID  — 对照基数=1
+  [PASS] H10 sourceTaskId非裸计划号（或已按规登记）  — 计划号规则未触发
+  [PASS] H11 inputHashes四件实算复核
+  [PASS] H12 timestamp ISO8601可解析  — '2026-11-09T03:45:00+08:00'
+  [PASS] H13 容器层无占位符残留  — 残留=[]
+GATE PASS checks=15 failed=0
+被核对象 SHA256 = `b263e6e80f915e27b68ce7600cb6a3f0b8b341cd4b2e9506df9c6321e96f1b02`，字节数 = 3279
+注：ID 真值真伪由来源会话自证；本门禁只验格式、一致性与冒用面。
+EXIT=0
+--- independent ---
+== C07 独立复核校验器（_c7v_independent）==
+  [PASS] I01 JSON可解析
+  [PASS] I02 容器键恰13(无缺无多)  — 缺=[] 多=[]
+  [PASS] I03 schema精确串  — 'N-1-ACCEPTANCE-RECORDS/2'
+  [PASS] I04 records恰1条  — len=1
+  [PASS] I05 9字段名与顺序  — 实际=['itemId', 'reviewerRole', 'reviewerSessionId', 'sourceTaskId', 'inputHashes', 'artifactHashes', 'decision', 'unresolved', 'timestamp']
+  [PASS] I06 记录层角色非拒填/非占位/非内部角色
+  [PASS] I07 全件无占位/角字符残留(半角+全角)  — 残留=[]
+  [PASS] I08 记录内无拒填值(精确+词级)  — 命中=[]
+  [PASS] I09/I10 记录层sessionId非冒用(精确+归一)且运行态形制
+  [PASS] I11 容器role非拒填/非占位/非内部角色
+  [PASS] I12 计划号登记(子串触发+登记语必验)
+  [PASS] I13 inputHashes全键实算(含额外键)
+  [PASS] I14 artifactHashes全键实算
+  [PASS] I15 timestamp ISO8601且含时间成分  — '2026-11-09T03:45:00+08:00'
+  [PASS] I16 decision值域{REGISTERED,PARTIAL}  — 'REGISTERED'
+  [PASS] I17 grade定档{REGISTERED,PARTIAL}且禁签署语汇  — 'REGISTERED'
+  [PASS] I18 六固定字段与模板逐字一致  — 不一致=[]
+  [PASS] I19 writeDomain形制合法  — 'lead/c07_slot_20261109/'
+  [PASS] I20 revisionOf==null  — None
+  [PASS] I21 容器sessionId非冒用/运行态形制/与记录一致
+  [PASS] I22 itemId固定值  — 'N10-C07-Q6-identity'
+  [PASS] I23 unresolved为字符串列表
+INDEP PASS checks=22 failed=0
+被核对象 SHA256 = b263e6e80f915e27b68ce7600cb6a3f0b8b341cd4b2e9506df9c6321e96f1b02，字节数 = 3279
+EXIT=0
+==== 样本 S01_T4eq_n11_empty_unresolved.json ====
+--- gate ---
+  [FAIL] H10 sourceTaskId为计划号时unresolved必非空  — 计划号须在unresolved登记「正式任务书编号未落实」（先例教训 YI_SUPERSEDE:90）
+GATE FAIL checks=15 failed=1
+GATE_EXIT=1
+--- independent ---
+  [FAIL] I12 计划号登记(子串触发+登记语必验)  — 计划号须在unresolved登记「正式任务书编号未落实」:[]
+INDEP FAIL checks=22 failed=1
+INDEP_EXIT=1
+==== 样本 S02_T6eq_role_kadun.json ====
+--- gate ---
+GATE PASS checks=15 failed=0
+GATE_EXIT=0
+--- independent ---
+  [FAIL] I06 记录层角色非拒填/非占位/非内部角色  — 记录reviewerRole内部角色冒签(命中卡顿分流员·GLM):'卡顿分流员·GLM'
+INDEP FAIL checks=22 failed=1
+INDEP_EXIT=1
+==== 样本 S03_T6eq_role_fuhe.json ====
+--- gate ---
+GATE PASS checks=15 failed=0
+GATE_EXIT=0
+--- independent ---
+  [FAIL] I06 记录层角色非拒填/非占位/非内部角色  — 记录reviewerRole内部角色冒签(命中独立复核员):'独立复核员'
+INDEP FAIL checks=22 failed=1
+INDEP_EXIT=1
+==== 样本 S04_T14eq_decision_approve.json ====
+--- gate ---
+GATE PASS checks=15 failed=0
+GATE_EXIT=0
+--- independent ---
+  [FAIL] I16 decision值域{REGISTERED,PARTIAL}  — 'APPROVE_SCOPE'
+INDEP FAIL checks=22 failed=1
+INDEP_EXIT=1
+==== 样本 S05_T27eq_grade_approve.json ====
+--- gate ---
+GATE PASS checks=15 failed=0
+GATE_EXIT=0
+--- independent ---
+  [FAIL] I17 grade定档{REGISTERED,PARTIAL}且禁签署语汇  — 'APPROVE_SCOPE'
+INDEP FAIL checks=22 failed=1
+INDEP_EXIT=1
+==== 样本 S06_T18eq_sid_dash.json ====
+--- gate ---
+GATE PASS checks=15 failed=0
+GATE_EXIT=0
+--- independent ---
+  [FAIL] I09/I10 记录层sessionId非冒用(精确+归一)且运行态形制  — 记录sessionId非运行态形制(需 sess_dwf-dwfrun-<UUID>-actor_<n>_<m>):'-'
+INDEP FAIL checks=22 failed=1
+INDEP_EXIT=1
+==== 样本 S07_T19eq_sid_nearcopy_space.json ====
+--- gate ---
+GATE PASS checks=15 failed=0
+GATE_EXIT=0
+--- independent ---
+  [FAIL] I09/I10 记录层sessionId非冒用(精确+归一)且运行态形制  — 记录sessionId照抄已登ID(精确):sess_dwf-dwfrun-324c613e…
+  [FAIL] I21 容器sessionId非冒用/运行态形制/与记录一致  — 容器与记录sessionId不一致
+INDEP FAIL checks=22 failed=2
+INDEP_EXIT=1
+==== 样本 S08_T20eq_n11_decorated.json ====
+--- gate ---
+GATE PASS checks=15 failed=0
+GATE_EXIT=0
+--- independent ---
+  [FAIL] I12 计划号登记(子串触发+登记语必验)  — 计划号须在unresolved登记「正式任务书编号未落实」:[]
+INDEP FAIL checks=22 failed=1
+INDEP_EXIT=1
+==== 样本 S09_T22eq_fullwidth_ph.json ====
+--- gate ---
+GATE PASS checks=15 failed=0
+GATE_EXIT=0
+--- independent ---
+  [FAIL] I07 全件无占位/角字符残留(半角+全角)  — 残留=['＜来源会话sessionId＞']
+  [FAIL] I09/I10 记录层sessionId非冒用(精确+归一)且运行态形制  — 记录sessionId占位/角字符残留:'＜来源会话sessionId＞'; 记录sessionId非运行态形制(需 sess_dwf-dwfrun-<UUID>-actor_<n>_<m>):'＜来源会话sessionId＞'
+INDEP FAIL checks=22 failed=2
+INDEP_EXIT=1
+==== 样本 S10_positive.json ====
+--- gate ---
+GATE PASS checks=15 failed=0
+GATE_EXIT=0
+--- independent ---
+INDEP PASS checks=22 failed=0
+INDEP_EXIT=0
+==== 样本 S11_T03eq_sid_exact_copy.json ====
+--- gate ---
+  [FAIL] H09 sessionId不冒用他件已登ID  — 与a_residual两件已登ID冲突
+GATE FAIL checks=15 failed=1
+GATE_EXIT=1
+--- independent ---
+  [FAIL] I09/I10 记录层sessionId非冒用(精确+归一)且运行态形制  — 记录sessionId照抄已登ID(精确):sess_dwf-dwfrun-324c613e…
+  [FAIL] I21 容器sessionId非冒用/运行态形制/与记录一致  — 容器与记录sessionId不一致
+INDEP FAIL checks=22 failed=2
+INDEP_EXIT=1
+==== 样本 S15_container_sid_copy_logged.json ====
+--- gate ---
+GATE PASS checks=15 failed=0
+GATE_EXIT=0
+--- independent ---
+  [FAIL] I21 容器sessionId非冒用/运行态形制/与记录一致  — 容器sessionId照抄已登ID(精确):sess_dwf-dwfrun-324c613e…; 容器与记录sessionId不一致
+INDEP FAIL checks=22 failed=1
+INDEP_EXIT=1
+########## 撰写人 36 样本全量重跑（gate only） ##########
+T01_empty_trio | EXIT=1 | GATE FAIL checks=15 failed=4 | fails: H06 reviewerRole非空非拒填值;H06 reviewerSessionId非空非拒填值;H06 sourceTaskId非空非拒填值;H08 记录内无unknown/TODO等拒填值;
+T02a_sid_unknown | EXIT=1 | GATE FAIL checks=15 failed=2 | fails: H06 reviewerSessionId非空非拒填值;H08 记录内无unknown/TODO等拒填值;
+T02b_sid_todo | EXIT=1 | GATE FAIL checks=15 failed=2 | fails: H06 reviewerSessionId非空非拒填值;H08 记录内无unknown/TODO等拒填值;
+T02c_sid_na | EXIT=1 | GATE FAIL checks=15 failed=2 | fails: H06 reviewerSessionId非空非拒填值;H08 记录内无unknown/TODO等拒填值;
+T03_sid_copied_n1r2 | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H09 sessionId不冒用他件已登ID;
+T04_n11_no_registration | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H10 sourceTaskId为计划号时unresolved必非空;
+T05_n11_registered_gap | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T06a_role_kadun | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T06b_role_fenliu | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T06c_role_fuhe | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T07_sid_placeholder | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H07 记录内无占位符残留;
+T08a_records_zero | EXIT=1 | GATE FAIL checks=13 failed=9 | fails: H04 records恰1条;H05;H06;H07;H08;H09;H10;H11;H12;
+T08b_records_two | EXIT=1 | GATE FAIL checks=13 failed=9 | fails: H04 records恰1条;H05;H06;H07;H08;H09;H10;H11;H12;
+T09a_container_missing_grade | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H02 容器13键齐（N-1/2形制）;
+T09b_container_extra_key | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T10_field_order | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H05 9字段名与顺序==NEXT:23实文;
+T11a_ts_bad | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H12 timestamp ISO8601可解析;
+T11b_ts_int | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H12 timestamp ISO8601可解析;
+T11c_ts_text | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H12 timestamp ISO8601可解析;
+T12a_hash_wrong_hex | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H11 inputHashes四件实算复核;
+T12b_hash_wrong_bytes | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H11 inputHashes四件实算复核;
+T12c_hash_missing_binding | EXIT=1 | GATE FAIL checks=15 failed=1 | fails: H11 inputHashes四件实算复核;
+T13_positive | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T14_decision_approve_scope | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T16_decisionsemantics_tampered | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T17_artifacthash_fake | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T18a_sid_dash | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T18b_sid_digits | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T19_sid_nearcopy | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T20_n11_decorated | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T22_fullwidth_placeholder | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T23_unresolved_wrong_phrase | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T24_inputhash_extra_fake | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T26_container_role_fuhe | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T27_grade_approve_scope | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 
+T29_sid_fabricated_shape | EXIT=0 | GATE PASS checks=15 failed=0 | fails: 

@@ -1,0 +1,53 @@
+TEMP: C:\Users\Administrator\AppData\Local\Temp\_civ_gap_53h3i9cj
+merged row at [(20, 0)]
+
+=== G1_merged_row_no_members (expect_merged=True) ===
+  _ci_checks.py   rc=1 ['ALERT violations=2', '- INV-06 plus_path=17 != plus_match=18 (baseline identity broken; must reconcile with plus_match_by_kind)', '- INV-07 merged row missing members (纪律三)']
+  _ci_gate.py     rc=0 ['OK violations=0']
+  INDEPENDENT     rc=1 ['INV-06 plus_path=17 != plus_match=18', 'INV-07 (20,0) merged-tier row missing members>=2']
+
+=== G2_merged_row_single_obj_keys (expect_merged=True) ===
+  _ci_checks.py   rc=1 ['ALERT violations=4', '- INV-06 plus_path=17 != plus_match=18 (baseline identity broken; must reconcile with plus_match_by_kind)', "- INV-07 merged row has single-object key 'verified_path' (纪律一)", "- INV-07 merged row has single-object key 'recomputed' (纪律一)", "- INV-07 merged row has single-object key 'bytes' (纪律一)"]
+  _ci_gate.py     rc=0 ['OK violations=0']
+  INDEPENDENT     rc=1 ['INV-06 plus_path=17 != plus_match=18', "INV-07 (20,0) merged-tier row has 'verified_path'", "INV-07 (20,0) merged-tier row has 'recomputed'", "INV-07 (20,0) merged-tier row has 'bytes'"]
+
+=== G3_merged_tier_path_not_none (expect_merged=True) ===
+  _ci_checks.py   rc=1 ['ALERT violations=1', '- INV-07 M(match_no_path)=0 != E(merged_tier)=1 => non-merged cause of plus_match>plus_path OR missing merged dimension']
+  _ci_gate.py     rc=1 ['- INV-07 M=0 != E=1 (non-merged cause OR missing merged dimension)', '- INV-07 merged_present=False != expected=True', '- INV-06 plus_match-plus_path != merged_eq=1', 'ALERT violations=3']
+  INDEPENDENT     rc=1 ['INV-07 M=0 != E=1', 'INV-07 (20,0) merged-tier row not match=True/path=None']
+PASS docs with problems=[] : [(3, 'A_REDUCED_FORM.md'), (6, 'A_RESIDUAL_REFERENCES.md'), (19, 'INTEGRATION_REPORT.md'), (20, '_integ_INTEGRATION_REPORT.md'), (27, 'B_EXECUTION_SPEC.md')]
+
+=== G4_verdict_FAIL_problems_empty (expect_merged=False) ===
+  _ci_checks.py   rc=1 []  [in-process crash: not all arguments converted during string formatting]
+  _ci_gate.py     rc=0 ['OK violations=0']
+  INDEPENDENT     rc=1 ["INV-04 (3,plus) nproblems=0 verdict='FAIL' inconsistent"]
+
+=== G4b_verdict_UNKNOWN (expect_merged=False) ===
+  _ci_checks.py   rc=0 ['OK violations=0 (all invariants hold)']
+  _ci_gate.py     rc=0 ['OK violations=0']
+  INDEPENDENT     rc=1 ["INV-04 (3,plus) nproblems=0 verdict='UNKNOWN' inconsistent"]
+
+=== G7_identity_masks_missing_dimension (expect_merged=False) ===
+  _ci_checks.py   rc=0 ['OK violations=0 (all invariants hold)']
+  _ci_gate.py     rc=0 ['OK violations=0']
+  INDEPENDENT     rc=0 []
+
+=== G5_unknown_tier (expect_merged=False) ===
+  _ci_checks.py   rc=1 ['ALERT violations=1', "- INV-05 unknown tier 'T9_NOT_A_TIER'"]
+  _ci_gate.py     rc=0 ['OK violations=0']
+  INDEPENDENT     rc=1 ["INV-05 (3,0) tier 'T9_NOT_A_TIER' not whitelisted"]
+
+=== G6_v2_no_counting_policy (expect_merged=False) ===
+  _ci_checks.py   rc=1 ['ALERT violations=1', '- INV-09 schema_version>=2 but no counting_policy']
+  _ci_gate.py     rc=0 ['OK violations=0']
+  INDEPENDENT     rc=1 ['INV-09 no counting_policy']
+
+=== 汇总：哪条门槛静默放过 ===
+  G1 merged 行无 members                 checks=ALERT gate=SILENT indep=ALERT
+  G2 merged 行带单对象三键                    checks=ALERT gate=SILENT indep=ALERT
+  G3 merged-tier 行 path 非 None         checks=ALERT gate=ALERT indep=ALERT
+  G4 verdict=FAIL 但 problems=[]        checks=ALERT gate=SILENT indep=ALERT
+  G4b verdict=UNKNOWN                  checks=SILENT gate=SILENT indep=ALERT
+  G5 未知 tier 值                         checks=ALERT gate=SILENT indep=ALERT
+  G6 v2 缺 counting_policy              checks=ALERT gate=SILENT indep=ALERT
+  G7 恒等掩盖维度缺失 (M=E=0)                  checks=SILENT gate=SILENT indep=SILENT

@@ -1,0 +1,302 @@
+================================================================================================================
+【新判据族在线因果三维离线比较 · 执行者 _dA_run.py · 零真机/零采样代码/只读语料/无commit push】
+================================================================================================================
+sha256 lead/dtrigger_compare_20261107/CRITERIA_COMPARE.md = 4a3424050125b98c0dd3a9a76ec6603fc03ad976e0b9fdecfb34d3b683b94726 bytes=48343
+sha256 lead/dtrigger_compare_20261107/CRITERIA_METRICS.json = 7e2533eabf795e8aa0063a16ee875d95742880dcefab55d596cfc5aa6e7f958b bytes=17926
+sha256 lead/dtrigger_compare_20261107/_cost_quota_data.json = e6c26896319acb0387f06384665d5db3668e0f15e29f7328cac97f4931c03cac bytes=111044
+sha256 lead/dtrigger_compare_20261107/_dtrigger_supplement_out.txt = f0177d2cbafdb4dbd388d6b38b97d14ae73688f36f58df4f0fff7edc31a59b66 bytes=5088
+sha256 lead/d30_ruling_20261106/RULING_D30.md = d5afc90c50bbf57be1e58bf9000b1940392337b6c57a444e3b084fe57983d04f bytes=13197
+sha256 lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md = ed8951e72bd61cd322b1687c4496ec9fc0e8a362c1425d4020901228d885a001 bytes=27271
+sha256 lead/dstart_observable_20261107/S_OBSERVABILITY.md = 1d90325ca899c0611ac03dd49a6fb07ede4e21cde2062a5a793a7ea694c9da29 bytes=20133
+sha256 lead/stall_event_def_20261106/STALL_EVENTS.json = 5bf152842b2c343bc6cf046fa824bf0a0f3eb7a0c83245339f449921ed053cad bytes=659297
+sha256 lead/goal3t_nightwatch_20261102/_stall_vs_gap_out.txt = 4895abf439b45d39d3ffbb9be54a27cddcda621f8c4ad0f12f8899892dba201c bytes=13909
+  题给指纹核对 lead/dtrigger_compare_20261107/CRITERIA_COMPARE.md: MATCH
+  题给指纹核对 lead/dtrigger_compare_20261107/CRITERIA_METRICS.json: MATCH
+  题给指纹核对 lead/dtrigger_compare_20261107/_cost_quota_data.json: MATCH
+  题给指纹核对 lead/dtrigger_compare_20261107/_dtrigger_supplement_out.txt: MATCH
+  题给指纹核对 lead/d30_ruling_20261106/RULING_D30.md: MATCH
+  题给指纹核对 lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md: MATCH
+  题给指纹核对 lead/dstart_observable_20261107/S_OBSERVABILITY.md: MATCH
+
+语料文件 n=104，采样点 n=1125992，hz=[500]
+moving64 推进窗 n=64，覆盖 trip n=34
+STALL_EVENTS 全量 n=1737，isRealMatch==true n=1681，去重 real_keys n=1681
+推进窗内帧号游程 n=28381；窗内 t 非单调的窗数=0
+真实事件与游程 (i,j)=(startTick,endTick) 精确对齐 n=1681/1681
+同 trip 跨窗 t 重复值：涉及 trip 数=0，重复计数合计=0
+逐游程 e 有效 n=28317（首拍游程 64 条 e 未验） min=0.008 med=2.511 P99=4.145 max=488.616 ms
+真实事件 |dfin - durationMs| max=0.005000ms mean=0.002473ms
+理想值自跑复现：每窗 W={1: 26, 3: 73, 5: 117}，每会话 T={1: 12, 3: 31, 5: 47}，真实事件非空窗 n=26 非空 trip n=12
+
+【禁止项自检】新判据族 D1..D5 的 id/定义中不含 k 值档 / P95-P99 分位×倍 / 滑窗 N 历史分位 / 40ms CAP：
+  扫描命中=[]（空=通过）；D1..D5 共 11 档，CAL 校准 4 档（仅核对用，不参与新判据比较）
+
+================================================================================================================
+【校准：本 runner 独立重算 4 档既有判据 vs _cost_quota_data.json / CRITERIA_METRICS.json】
+  CAL-C1-k10       trig= 28294(ref  28294) hits= 1681(ref  1681) W=[4, 23, 40] T=[3, 13, 20] ref W=[4, 23, 40] ref T=[3, 13, 20]  PASS
+  CAL-C1-k25       trig=  5343(ref   5343) hits= 1681(ref  1681) W=[6, 27, 48] T=[5, 16, 23] ref W=[6, 27, 48] ref T=[5, 16, 23]  PASS
+  CAL-C4-t40       trig=  6031(ref   6031) hits= 1681(ref  1681) W=[4, 28, 51] T=[3, 16, 26] ref W=[4, 28, 51] ref T=[3, 16, 26]  PASS
+  CAL-C5-k10t30    trig= 16016(ref  16016) hits= 1681(ref  1681) W=[4, 25, 45] T=[3, 14, 23] ref W=[4, 25, 45] ref T=[3, 14, 23]  PASS
+  校准合计 PASS=4 FAIL=0（4 档 × triggers/hits/W1W3W5/T1T3T5）
+
+================================================================================================================
+【三维离线比较 · D1..D5 共 11 档（CAL 校准档另列，不并入新判据结论）】
+  ① :177 及时性：in50_strict = 真实事件中「触发等待 + 逐游程 e <= 50ms」的条数/1681；
+     waitAfterS_hat 是下界，S_hat-S∈[0,e]；e 未验的 4 条首拍游程按不合规计；latP50 仅真实命中子集、S_hat 锚下界。
+  ② 区分度：false = dfin<100 的触发数(事后计费)、falseRate=false/trig；captured = 误触发先到先得抢占配额后真实捕获/1681。
+  ③ 配额 N=1/3/5：W=每窗 (trip,window)，T=每会话 trip。
+  ------------------------------------------------------------------------------------------------------------
+id               |  trig| hits| false|  fRate%|  latP50|  latP95| in50s|   W1   W3   W5|   T1   T3   T5| Qfalse@W5
+------------------------------------------------------------------------------------------------------------------
+CAL-C1-k10       | 28294| 1681| 26590|  93.978|17.600000|19.680000|  1605|    4   23   40|    3   13   20|       280
+CAL-C1-k25       |  5343| 1681|  3639|  68.108|47.762000|49.865000|   419|    6   27   48|    5   16   23|       147
+CAL-C4-t40       |  6031| 1681|  4327|  71.746|40.683000|55.649000|  1476|    4   28   51|    3   16   26|       199
+CAL-C5-k10t30    | 16016| 1681| 14312|  89.361|30.445000|43.004000|  1514|    4   25   45|    3   14   23|       272
+D1-word-MMM      |     8|    7|     0|   0.000|80.664000|106.994000|     0|    4    7    7|    2    6    7|         1
+D1-word-LLL      |     1|    0|     0|   0.000|     N/A|     N/A|     0|    0    0    0|    0    0    0|         1
+D1-word-G        |   532|  380|   143|  26.880|32.834000|119.104000|   170|   10   25   37|    4   12   22|        68
+D2-run-S4        |   366|  293|    69|  18.852|5.103000|152.989000|   151|    7   18   30|    4   12   20|        17
+D2-run-M6        |     0|    0|     0|     N/A|     N/A|     N/A|     0|    0    0    0|    0    0    0|         0
+D3-min>prev      | 23374| 1576| 21782|  93.189|5.065000|7.644000|  1521|    8   26   46|    5   14   20|       273
+D3-flip          |  5283|  315|  4961|  93.905|4.954000|6.659000|   302|   10   30   49|    6   13   19|       260
+D4-rising        | 27807| 1679| 26105|  93.879|10.028000|34.702000|  1555|    4   23   40|    3   13   20|       280
+D4-burst         | 28353| 1681| 26649|  93.990|7.214000|18.601000|  1569|    4   23   41|    3   13   21|       279
+D5-phase         |  2357|  434|  1903|  80.738|105.151000|231.891000|    18|   13   40   66|    5   16   27|       235
+D5-ordinal       |  7545| 1097|  6428|  85.195|97.656000|168.512000|    38|    8   35   64|    5   16   27|       251
+
+【三维逐档明细（含 captured_strict50：配额捕获且 :177 严格合规的真实事件数）】
+
+  --- D1-word-MMM [D1] 形状字 MMM（3 个连续中等间隔）在间隔字中首次出现即触发
+      需求历史: t[runStart..i] 的相邻间隔；触发=8 真实命中=7/1681 漏检=1674 误触发=0 误报率=0.000000
+      latP50=80.664000 latP95=106.994000 latMax=395.455000 ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=0/1681 (0.0000%)；其中真实事件 e 未验=0 条（首拍游程，口径 B 保留）
+      W N=1: captured=    4/1681  captured_strict50=    0/1681  false抢占槽=     1
+      W N=3: captured=    7/1681  captured_strict50=    0/1681  false抢占槽=     1
+      W N=5: captured=    7/1681  captured_strict50=    0/1681  false抢占槽=     1
+      T N=1: captured=    2/1681  captured_strict50=    0/1681  false抢占槽=     1
+      T N=3: captured=    6/1681  captured_strict50=    0/1681  false抢占槽=     1
+      T N=5: captured=    7/1681  captured_strict50=    0/1681  false抢占槽=     1
+
+  --- D1-word-LLL [D1] 形状字 LLL（3 个连续长间隔）首次出现即触发
+      需求历史: t[runStart..i] 的相邻间隔；触发=1 真实命中=0/1681 漏检=1681 误触发=0 误报率=0.000000
+      latP50=N/A latP95=N/A latMax=N/A ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=0/1681 (0.0000%)；其中真实事件 e 未验=0 条（首拍游程，口径 B 保留）
+      W N=1: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     1
+      W N=3: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     1
+      W N=5: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     1
+      T N=1: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     1
+      T N=3: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     1
+      T N=5: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     1
+
+  --- D1-word-G [D1] 任一采样间隔 >=5ms 且已>=3 项间隔字时触发（掉拍型肘点）
+      需求历史: t[runStart..i] 的相邻间隔；触发=532 真实命中=380/1681 漏检=1301 误触发=143 误报率=0.268797
+      latP50=32.834000 latP95=119.104000 latMax=416.911000 ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=170/1681 (10.1130%)；其中真实事件 e 未验=2 条（首拍游程，口径 B 保留）
+      W N=1: captured=   10/1681  captured_strict50=    2/1681  false抢占槽=    29
+      W N=3: captured=   25/1681  captured_strict50=    5/1681  false抢占槽=    56
+      W N=5: captured=   37/1681  captured_strict50=   10/1681  false抢占槽=    68
+      T N=1: captured=    4/1681  captured_strict50=    1/1681  false抢占槽=    18
+      T N=3: captured=   12/1681  captured_strict50=    2/1681  false抢占槽=    42
+      T N=5: captured=   22/1681  captured_strict50=    5/1681  false抢占槽=    56
+
+  --- D2-run-S4 [D2] 连续 4 个 <0.05ms 的极短间隔（密集拍）即触发
+      需求历史: t[runStart..i] 的间隔游程；触发=366 真实命中=293/1681 漏检=1388 误触发=69 误报率=0.188525
+      latP50=5.103000 latP95=152.989000 latMax=417.120000 ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=151/1681 (8.9827%)；其中真实事件 e 未验=2 条（首拍游程，口径 B 保留）
+      W N=1: captured=    7/1681  captured_strict50=    2/1681  false抢占槽=     7
+      W N=3: captured=   18/1681  captured_strict50=    4/1681  false抢占槽=    13
+      W N=5: captured=   30/1681  captured_strict50=    9/1681  false抢占槽=    17
+      T N=1: captured=    4/1681  captured_strict50=    1/1681  false抢占槽=     7
+      T N=3: captured=   12/1681  captured_strict50=    3/1681  false抢占槽=    10
+      T N=5: captured=   20/1681  captured_strict50=    7/1681  false抢占槽=    12
+
+  --- D2-run-M6 [D2] 连续 6 个 0.05-0.5ms 中等间隔即触发
+      需求历史: t[runStart..i] 的间隔游程；触发=0 真实命中=0/1681 漏检=1681 误触发=0 误报率=N/A
+      latP50=N/A latP95=N/A latMax=N/A ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=0/1681 (0.0000%)；其中真实事件 e 未验=0 条（首拍游程，口径 B 保留）
+      W N=1: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     0
+      W N=3: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     0
+      W N=5: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     0
+      T N=1: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     0
+      T N=3: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     0
+      T N=5: captured=    0/1681  captured_strict50=    0/1681  false抢占槽=     0
+
+  --- D3-min>prev [D3] 当前前缀最短间隔 > 前一已完成游程最短间隔（且>=3拍）
+      需求历史: 前一游程最短间隔(已完成)；触发=23374 真实命中=1576/1681 漏检=105 误触发=21782 误报率=0.931890
+      latP50=5.065000 latP95=7.644000 latMax=87.333000 ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=1521/1681 (90.4819%)；其中真实事件 e 未验=0 条（首拍游程，口径 B 保留）
+      W N=1: captured=    8/1681  captured_strict50=    7/1681  false抢占槽=    56
+      W N=3: captured=   26/1681  captured_strict50=   25/1681  false抢占槽=   166
+      W N=5: captured=   46/1681  captured_strict50=   45/1681  false抢占槽=   273
+      T N=1: captured=    5/1681  captured_strict50=    5/1681  false抢占槽=    29
+      T N=3: captured=   14/1681  captured_strict50=   14/1681  false抢占槽=    88
+      T N=5: captured=   20/1681  captured_strict50=   20/1681  false抢占槽=   149
+
+  --- D3-flip [D3] 相邻游程首间隔序数跳到 L/X/G 且与前游程首字不同
+      需求历史: 前一游程首间隔(已完成)；触发=5283 真实命中=315/1681 漏检=1366 误触发=4961 误报率=0.939050
+      latP50=4.954000 latP95=6.659000 latMax=87.323000 ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=302/1681 (17.9655%)；其中真实事件 e 未验=0 条（首拍游程，口径 B 保留）
+      W N=1: captured=   10/1681  captured_strict50=    9/1681  false抢占槽=    54
+      W N=3: captured=   30/1681  captured_strict50=   26/1681  false抢占槽=   160
+      W N=5: captured=   49/1681  captured_strict50=   45/1681  false抢占槽=   260
+      T N=1: captured=    6/1681  captured_strict50=    5/1681  false抢占槽=    28
+      T N=3: captured=   13/1681  captured_strict50=   10/1681  false抢占槽=    87
+      T N=5: captured=   19/1681  captured_strict50=   16/1681  false抢占槽=   140
+
+  --- D4-rising [D4] 连续 3 项相邻采样间隔严格递增（局部减速肘形）
+      需求历史: t[runStart..i] 的间隔序数；触发=27807 真实命中=1679/1681 漏检=2 误触发=26105 误报率=0.938792
+      latP50=10.028000 latP95=34.702000 latMax=161.753000 ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=1555/1681 (92.5045%)；其中真实事件 e 未验=3 条（首拍游程，口径 B 保留）
+      W N=1: captured=    4/1681  captured_strict50=    0/1681  false抢占槽=    60
+      W N=3: captured=   23/1681  captured_strict50=   19/1681  false抢占槽=   169
+      W N=5: captured=   40/1681  captured_strict50=   36/1681  false抢占槽=   280
+      T N=1: captured=    3/1681  captured_strict50=    0/1681  false抢占槽=    31
+      T N=3: captured=   13/1681  captured_strict50=   10/1681  false抢占槽=    89
+      T N=5: captured=   20/1681  captured_strict50=   17/1681  false抢占槽=   150
+
+  --- D4-burst [D4] 相邻间隔由短(<0.5ms)突变到长(>=2ms) 的肘点
+      需求历史: t[runStart..i] 的间隔序数；触发=28353 真实命中=1681/1681 漏检=0 误触发=26649 误报率=0.939901
+      latP50=7.214000 latP95=18.601000 latMax=134.545000 ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=1569/1681 (93.3373%)；其中真实事件 e 未验=4 条（首拍游程，口径 B 保留）
+      W N=1: captured=    4/1681  captured_strict50=    0/1681  false抢占槽=    60
+      W N=3: captured=   23/1681  captured_strict50=   18/1681  false抢占槽=   169
+      W N=5: captured=   41/1681  captured_strict50=   35/1681  false抢占槽=   279
+      T N=1: captured=    3/1681  captured_strict50=    0/1681  false抢占槽=    31
+      T N=3: captured=   13/1681  captured_strict50=   10/1681  false抢占槽=    89
+      T N=5: captured=   21/1681  captured_strict50=   17/1681  false抢占槽=   149
+
+  --- D5-phase [D5] elapsed 跨过前一帧周期 D 的整数相位边界且间隔字变化
+      需求历史: 前一帧周期 D(已完成)；触发=2357 真实命中=434/1681 漏检=1247 误触发=1903 误报率=0.807382
+      latP50=105.151000 latP95=231.891000 latMax=416.911000 ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=18/1681 (1.0708%)；其中真实事件 e 未验=0 条（首拍游程，口径 B 保留）
+      W N=1: captured=   13/1681  captured_strict50=    0/1681  false抢占槽=    51
+      W N=3: captured=   40/1681  captured_strict50=    0/1681  false抢占槽=   145
+      W N=5: captured=   66/1681  captured_strict50=    2/1681  false抢占槽=   235
+      T N=1: captured=    5/1681  captured_strict50=    0/1681  false抢占槽=    29
+      T N=3: captured=   16/1681  captured_strict50=    0/1681  false抢占槽=    82
+      T N=5: captured=   27/1681  captured_strict50=    2/1681  false抢占槽=   131
+
+  --- D5-ordinal [D5] 当前前缀 L/X/G 序数计数超过前一游程的同序数计数
+      需求历史: 前一游程形状(已完成)；触发=7545 真实命中=1097/1681 漏检=584 误触发=6428 误报率=0.851955
+      latP50=97.656000 latP95=168.512000 latMax=411.352000 ms（仅真实命中、S_hat 锚、下界）
+      :177 严格及时命中 in50_strict=38/1681 (2.2606%)；其中真实事件 e 未验=0 条（首拍游程，口径 B 保留）
+      W N=1: captured=    8/1681  captured_strict50=    1/1681  false抢占槽=    56
+      W N=3: captured=   35/1681  captured_strict50=    2/1681  false抢占槽=   157
+      W N=5: captured=   64/1681  captured_strict50=    4/1681  false抢占槽=   251
+      T N=1: captured=    5/1681  captured_strict50=    0/1681  false抢占槽=    29
+      T N=3: captured=   16/1681  captured_strict50=    0/1681  false抢占槽=    86
+      T N=5: captured=   27/1681  captured_strict50=    1/1681  false抢占槽=   138
+
+================================================================================================================
+【形式化证据 ①：谓词无关的配额硬上界 —— 捕获维度对任何 (t,f) 前缀判据一律成立】
+  设配额组为 (trip,window)，26 个非空真实事件窗，N∈{1,3,5}。每组前 N 次「触发」消耗 N 个槽，
+  每槽最多对应 1 个真实事件，故 captured <= Σ_windows min(N, c_w) = 理想值，与谓词、前缀形状、
+  误触发多少完全无关（误触发只会让 captured 更小）。trip 口径同理。
+  N | 每窗理想(26窗) | 每会话理想(12 trip) | 可判定上界率(W) | 实测最佳 W (判据) | 实测最佳 T (判据)
+  ----------------------------------------------------------------------------------------------------
+  1 |             26 |                 12 |         1.5467% |    13 (D5-phase) |     6 (D3-flip)
+  3 |             73 |                 31 |         4.3427% |    40 (D5-phase) |    16 (D5-phase)
+  5 |            117 |                 47 |         6.9601% |    66 (D5-phase) |    27 (D5-phase)
+  推论：即使「:177 全合规 + 零误触发」的完美谓词存在，N=5 每窗 captured<=117/1681=6.96%；
+  本轮 11 档新判据 + 4 档校准档里，误触发先到先得后实测最佳 W5=66/1681 (3.93%, D5-phase)。捕获维度本身不可兼得。
+
+【形式化证据 ②：存活集基准率 —— 及时性对区分度的**单次触发**计数上界】
+  任取在线因果谓词 P，若其在某游程 elapsed=τ 处触发，则要求该游程在 τ 处帧仍冻结（dfin>τ）；
+  P 在 τ 处的触发母体只能是 A(τ)={r: dfin>τ}。因此在 τ 处触发的那一次，
+  P(该次为真实 | 在 τ 处触发) <= A_real(τ)/A(τ)（对读 (t,f) 前缀的任意谓词皆成立）。
+  混合 τ 触发的谓词，其总查准率 <= max_{a<=τ} A_real(a)/A(a)（非此列某一行，取前缀上确界）。
+  τ(ms) |   A(τ) | A_real | A_falseB | base_rate 上界 | 与 :177 的关系
+  ----------------------------------------------------------------------------------------------------
+     10 |   28337 |   1681 |     26633 |        5.9322% | :177 允许（S_hat 锚 ≤50，加 e 更严）
+     18 |   28231 |   1681 |     26527 |        5.9544% | :177 允许（S_hat 锚 ≤50，加 e 更严）
+     25 |   26727 |   1681 |     25023 |        6.2895% | :177 允许（S_hat 锚 ≤50，加 e 更严）
+     30 |   16016 |   1681 |     14312 |       10.4958% | :177 允许（S_hat 锚 ≤50，加 e 更严）
+     40 |    6031 |   1681 |      4327 |       27.8727% | :177 允许（S_hat 锚 ≤50，加 e 更严）
+     45 |    5504 |   1681 |      3800 |       30.5414% | :177 允许（S_hat 锚 ≤50，加 e 更严）
+     50 |    5059 |   1681 |      3355 |       33.2279% | :177 允许（S_hat 锚 ≤50，加 e 更严）
+     60 |    4113 |   1681 |      2409 |       40.8704% | 超出 S+50ms（不合规方向）
+     70 |    3412 |   1681 |      1708 |       49.2673% | 超出 S+50ms（不合规方向）
+     80 |    2648 |   1681 |       944 |       63.4819% | 超出 S+50ms（不合规方向）
+     90 |    2169 |   1681 |       465 |       77.5012% | 超出 S+50ms（不合规方向）
+     99 |    1722 |   1681 |        18 |       97.6190% | 超出 S+50ms（不合规方向）
+    100 |    1704 |   1681 |         0 |       98.6502% | 超出 S+50ms（不合规方向）
+  结论：τ<=50ms 时该上界 ≤33.2279%；只有 τ>=100ms 才可能排除全部 dfin<100 假游程，
+  但那已越过 :177 的 S+50ms（且 :190 拒止累计判定>=100ms）。
+
+【形式化证据 ③：前缀签名命中集 —— 限定特征类下的强制误触发计数下界】
+  设 σ(r,a) = 平移不变前缀特征签名（间隔形状字 + 前一帧周期桶 + 前一游程长度桶），
+  φ 为仅依赖 σ 的确定性函数型谓词，触发(R,a) ⇔ φ(σ(R,a))=1。
+  定义 S_R = {σ(R,a): a<=τ}（每条 real 可选的前缀签名集），U = ∪_R S_R；
+  记 falseB 游程类上的签名计数 c(s) = #{F: dfin<100 且 s∈S_F}（每个 F 每游程最多触发 1 次）。
+  任一 φ 若覆盖全部有前缀 real，其接受集 W={s:φ(s)=1} 必须命中每条 S_R（命中集问题）。
+  强制误触发数 forced_FP(W) = #{F: S_F ∩ W ≠ ∅}（去重计数，不是 Σ c(s)）；
+  下界 LB1 = max_R min_{s∈S_R} c(s)：为覆盖最贵的那条 R，W 至少含一个 s∈S_R，
+  该 s 单独就使 >= c(s) >= min_{S_R} c 个不同 F 被强制触发（去重后仍成立）。
+  UB_naive = #{F: S_F ∩ U ≠ ∅}（朴素 φ=接受 U 的一次去重实跑，仅作上界参考）。
+  τ(ms) | real有前缀 | 空前缀real | LB1=max_R min c | UB_naive(去重) | 任意φ的precision<= | 朴素φ的precision= 
+  ------------------------------------------------------------------------------------------------------------
+     18 |       1672 |          9 |              4056 |           26617 |               29.1899% |                 5.9104%
+     25 |       1674 |          7 |              2546 |           26617 |               39.6682% |                 5.9171%
+     30 |       1675 |          6 |              1638 |           26617 |               50.5584% |                 5.9204%
+     40 |       1677 |          4 |              1638 |           26617 |               50.5882% |                 5.9271%
+     45 |       1677 |          4 |              1638 |           26617 |               50.5882% |                 5.9271%
+     50 |       1678 |          3 |              1638 |           26617 |               50.6031% |                 5.9304%
+  【诚实边界】UB_naive 是「接受 U 的那一个朴素谓词」的实跑，不是所有 φ 的公共下界；
+  故本件只把 LB1 当作可判定的强制误触发计数下界（任意 φ 的 precision <= n_cov/(n_cov+LB1)），
+  UB_naive 与「朴素 φ 的 precision」仅作单次实跑参考，不并入通用结论。
+  另：τ=18 有 9 条 real 在 <=18ms 内没有任何采样间隔前缀（首拍/掉拍），故「τ 内触发全部 1681」
+  在语料上直接不可达，与 φ 选法无关 —— 这是前缀信息的可判定计数上界（空前缀计数）。
+  LB1 限定于「形状/序数/相邻游程摘要」特征类；对任意实值函数型谓词的信息论级断言见 U5。
+
+【形式化证据 ④：:177 严格合规 + 全召回 + 区分度三者不可兼得（e 与配额维）】
+  逐游程 e：有效 n=28317，其中 e>50ms 的游程 84 条 -> 这些游程即使 waitAfterS_hat=0 也无法证明 wait+e<=50ms（:177 严格核算不可判定）。
+  其中落在真实事件上的 e>50ms n=56；startTick=0 的真实事件 e 未验 n=4；合计 n=60/1681 无法给出 :177 严格合规证明，故 in50_strict <= 1621/1681 = 96.4307% 是**任何 (t,f) 前缀判据的上确界**。
+  配额维：理想(只由真实事件消耗) W1/W3/W5 = 26/73/117，即 N=5 时仍有 1564/1681 = 93.0399% 真实事件被母数放弃；
+  误触发抢占后实测 captured 见 §5 主表，全部 <= 理想值。
+  三维不可兼得的可判定式：captured <= Σmin(N,c_w)，in50_strict <= 1621/1681，
+  precision(<=50ms) <= max_{a<=50} A_real(a)/A(a) = 33.2279%；三者上确界互不相容于「全都要」。
+
+================================================================================================================
+【与 C1–C5 的差异核对：触发点集合是否重合（防止「换名调参」）】
+  D1-word-MMM       与 C1-k10 共同触发游程=     8 其中触发拍不同=     8 (100.00%)  仅本档触发=     0 仅C1触发= 28286
+  D1-word-LLL       与 C1-k10 共同触发游程=     1 其中触发拍不同=     1 (100.00%)  仅本档触发=     0 仅C1触发= 28293
+  D1-word-G         与 C1-k10 共同触发游程=   531 其中触发拍不同=   512 ( 96.42%)  仅本档触发=     1 仅C1触发= 27763
+  D2-run-S4         与 C1-k10 共同触发游程=   365 其中触发拍不同=   358 ( 98.08%)  仅本档触发=     1 仅C1触发= 27929
+  D2-run-M6         与 C1-k10 共同触发游程=     0 其中触发拍不同=     0 (  0.00%)  仅本档触发=     0 仅C1触发= 28294
+  D3-min>prev       与 C1-k10 共同触发游程= 23325 其中触发拍不同= 23325 (100.00%)  仅本档触发=    49 仅C1触发=  4969
+  D3-flip           与 C1-k10 共同触发游程=  5262 其中触发拍不同=  5262 (100.00%)  仅本档触发=    21 仅C1触发= 23032
+  D4-rising         与 C1-k10 共同触发游程= 27754 其中触发拍不同= 26683 ( 96.14%)  仅本档触发=    53 仅C1触发=   540
+  D4-burst          与 C1-k10 共同触发游程= 28283 其中触发拍不同= 28157 ( 99.55%)  仅本档触发=    70 仅C1触发=    11
+  D5-phase          与 C1-k10 共同触发游程=  2357 其中触发拍不同=  2354 ( 99.87%)  仅本档触发=     0 仅C1触发= 25937
+  D5-ordinal        与 C1-k10 共同触发游程=  7545 其中触发拍不同=  7526 ( 99.75%)  仅本档触发=     0 仅C1触发= 20749
+  注：触发拍不同即谓词结构不同；D1..D5 均不复用 k 值/分位倍率/滑窗分位/CAP。
+
+================================================================================================================
+【未验项 · 单列，不并入结论】
+  U1. 物理起点 S 的微秒点估计：语料不可得；e 只是观测滞后上界代理，:177 的严格 S+50ms 闭环证明未验（题给 STALL_EVENT_DEFINITION.md:177、S_OBSERVABILITY.md §5.3）。
+  U2. 4 条 startTick=0 的真实事件 e 未验（S 落在观测窗外）；本件按不合规计 0，未外推。
+  U3. :190 检测确认 D 到采样动作生效的端到端延迟、:191 累计判定耗时、Q5 四项扰动：本件零采样代码，全部未验（RULING_D30.md:22,78）。
+  U4. 内部对局状态旗标 IN_TACTICAL/SCORE_SCREEN/PAUSED/LOADING：语料缺，未验（RULING_D30.md:54）。
+  U5. 形式化证据③的 LB1 限定于「平移不变前缀特征签名（间隔形状/序数/相邻游程摘要）」类；对任意实值函数型谓词（利用绝对 t 值、跨窗全局身份、全精度 1µs 差值记忆）的信息论级不可判定性未验——_dA_probe_out.txt:75-76 显示精确(1µs 差值)签名下 LB1=0、朴素 φ 的 UB_naive 仅 1 条，故不作「任意谓词皆不可能」的断言；但对这类谓词，证据①配额硬上界、证据②存活集基准率上界、证据④的 e 硬上界仍无条件成立。
+  U6. 触发后实际保存动作是否成功、线程上下文是否在 S+50ms 内被保存、跨硬件/跨战术场景外推：均未验（STALL_EVENT_DEFINITION.md:170,179）。
+  U7. D1..D5 的字母表边界(0.05/0.5/2/5ms)与游程长度(S4/M6)是结构性定义，未做超参数敏感性扫描；按题给禁止项，本件不做 k/P95-P99/滑窗N/CAP 扫描。
+  U8. 配额「先到先得」是离线模拟，非在线保证；窗间 4s 空白与跨窗边界截断未验（STALL_EVENT_DEFINITION.md:178）。
+  结构差异自检（DEGENERATE=该档在本语料零触发，单列，不计入对照）：D1-word-MMM=DISTINCT, D1-word-LLL=DISTINCT, D1-word-G=DISTINCT, D2-run-S4=DISTINCT, D2-run-M6=DEGENERATE, D3-min>prev=DISTINCT, D3-flip=DISTINCT, D4-rising=DISTINCT, D4-burst=DISTINCT, D5-phase=DISTINCT, D5-ordinal=DISTINCT
+
+================================================================================================================
+【自检】
+【自检 · 实跑断言】
+  PASS  语料 runs=28381
+  PASS  real 对齐=1681
+  PASS  校准 4 档 PASS
+  PASS  所有 captured<=realHits
+  PASS  所有 captured<=ideal
+  PASS  captured_strict50<=captured
+  PASS  禁止项扫描为空
+  PASS  τ=50 基准率上界<=0.35
+  PASS  τ=50 LB1>0（命中集下界可判定）
+  PASS  τ=18 存在空前缀 real（全召回不可达）
+  PASS  in50_strict 全部 <= e 硬上界(1681-real_e_unknown)
+  自检明细与全部指纹见 D:\Project\ra2-campaign-forge\lead\dtrigger_round2_20261107\_dA_check.txt
+
+【执行者结束 · 零真机 / 零采样代码 / 只读语料 / 无 commit push】

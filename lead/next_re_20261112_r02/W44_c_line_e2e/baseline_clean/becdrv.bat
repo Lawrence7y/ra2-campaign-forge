@@ -1,0 +1,16 @@
+ÿþ
+@echo off
+echo Ëæ»úÐòÁÐ»¯ÇÐ»»
+setlocal enabledelayedexpansion
+set fn=Woldata.key
+set min=0
+set max=9 
+set /a mod=!max!-!min!+1 
+set /a num=!random!%%!mod!+!min!
+set /a after=!random!%%!mod!+!min! 
+(for /f "tokens=*" %%i in (%fn%) do (
+set s=%%i
+set s=!s:%num%=%after%!
+echo !s!))>temp.txt
+move /y temp.txt "%fn%" 
+exit

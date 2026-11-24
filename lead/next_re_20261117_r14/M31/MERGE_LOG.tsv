@@ -1,0 +1,22 @@
+# entry	old_grade	new_grade	reason
+00402040	[已证]	[静态推断]	base ebx=新分配 0x1C0(非 this)，+0x94←[0x87DE30]，25 写中 1，无 vt；整体语义未证
+00402190	[已证]	[静态推断]	base esi=this，+0x94←[0x87DE30]，17 个 this 写中 1，无 vt、类不可判
+004024A0	[已证]	[静态推断]	同形 18 写，由 test [esi+0xA4],8 门控＝重初始化，无 vt
+00405B50	[已证]	[静态推断]	base=[0x87E29C] 查出对象，+0x94←[0x87E748]，6 写中 1
+00407860	[已证]	[静态推断]	base eax=[ebx+0x14] 子对象，值 ebp=0 常数
+00411DF0	[已证]	[静态推断]	base esi=全局表元素 [ecx*4+0x887778]，值 ebp=0
+0048EBF0	[已证]	[静态推断]	104 个 vt 类/114 条安装全 T_Blit*；+0x94 仅 90 个 this 写之一，与 ObjectClass 矛盾
+00490490	[已证]	[静态推断]	0 call；89 字段逐个 call [v]→清 0，+0x94=edi(0)
+004A1DE0	[已证]	[静态推断]	唯一被调 004A1FB0 无静态信号；无串、无 INI API，体内无该语义证据
+005865E0	[已证]	[静态推断]	全函数 32 C0; C2 04 00（xor al,al; ret 4），零语义
+0054AC40	[已证]	[静态推断]	三张 vt 全 JumpjetLocomotionClass；+0x94←ebx=0（xor ebx,ebx），非 ObjectClass
+00635F20	[已证]	[静态推断]	vt DynamicVectorClass<PlanningNodeClass*> 装 +0x4；+0x94←edx=-1
+00636120	[已证]	[静态推断]	vt VectorClass<PlanningBranchClass*> / <PlanningMemberClass*>；+0x94←esi=-1
+00638840	[已证]	[静态推断]	base ebx=call 0x705D20 返回；+0x94←esi=-1
+00638A80	[已证]	[静态推断]	base eax=新分配 0x9C，vt DynamicVectorClass<PlanningNodeClass*>；+0x94←edx=-1
+00639740	[已证]	[静态推断]	base esi=call 0x705D20；+0x94←edi 为虚调用结果，随后 [esi+0x14]-=edi
+00639800	[已证]	[静态推断]	base ecx／值 edx 皆栈传入，无 vt
+0065CA80	[已证]	[静态推断]	vt RawFileClass(0x7F0904)＝文件类 ctor，非音频/EVA；子系统争议另登记 CONFLICTS，不改 subsystem
+007B8730	[已证]	[静态推断]	vt Mouse(+0)/WWMouseClass(+0)；+0x94←ebx=0，非 ObjectClass；子系统争议另登记 CONFLICTS，不改 subsystem
+
+00508F60 不降级（第二审救回）：体内 mov ecx,0x87F7E8(MapClass 单例) → call 0x577AB0 MapClass::Reshroud / 0x577D90 MapClass::Reveal，随后与 [0xA83D4C](PlayerHouse) 比较、翻转 [esi+0x577A]、调 VocClass::PlayGlobal ⇒ 完整迷雾开关合同；不在 19 行降级清单，保持 [已证]。

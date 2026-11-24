@@ -1,0 +1,87 @@
+==============================================================================
+[A] 五项 CR 不变量（盘上直读，硬编码期望值）
+  R14_COMMON        545460 B  CR=1081  期望=1081  PASS
+  PASS R14_COMMON CR = 1081  1081
+  LEAD_LOCK         356626 B  CR=137   期望=137   PASS
+  PASS LEAD_LOCK CR = 137  137
+  台账               4675475 B  CR=337   期望=337   PASS
+  PASS 台账 CR = 337  337
+  STATUS_BOARD       59004 B  CR=0     期望=0     PASS
+  PASS STATUS_BOARD CR = 0  0
+  BOARD_ARCHIVE     598161 B  CR=2952  期望=2952  PASS
+  PASS BOARD_ARCHIVE CR = 2952  2952
+
+[B] 看板总行数 <= 300
+  STATUS_BOARD 总行数 = 269（split '\n'；上限 300）
+  PASS 看板总行数 <= 300  269
+  PASS 看板行数 = LF 数 + 1  269
+  PASS 看板无 CR 字符
+  PASS 看板以单换行结尾
+
+[C] 四件套本轮段确已落盘（逐段落标题 + 关键数字命中）
+  PASS common 含段标题「## 2.73」
+  PASS common 段标题恰出现 1 次  1
+  PASS common 含关键数字 4,087
+  PASS common 含关键数字 615,909,180
+  PASS common 含关键数字 611,813,919
+  PASS common 含关键数字 16,711,118
+  PASS common 含关键数字 67a10662007eec7a
+  PASS common 段位于文件末段（其后无同级新节）  tail=9068
+  PASS ledger 含段标题「## §1122」
+  PASS ledger 段标题恰出现 1 次  1
+  PASS ledger 含关键数字 4,087
+  PASS ledger 含关键数字 615,909,180
+  PASS ledger 含关键数字 611,813,919
+  PASS ledger 含关键数字 16,711,118
+  PASS ledger 段位于文件末段（其后无同级新节）  tail=4240
+  PASS lock 含段标题「## CV · R17 第 67 轮」
+  PASS lock 段标题恰出现 1 次  1
+  PASS lock 含关键数字 4,087
+  PASS lock 含关键数字 615,909,180
+  PASS lock 含关键数字 611,813,919
+  PASS lock 段位于文件末段（其后无同级新节）  tail=4414
+  PASS board 含段标题「## 🟢 R17 第 67 轮」
+  PASS board 段标题恰出现 1 次  1
+  PASS board 含关键数字 4,087
+  PASS board 含关键数字 615,909,180
+  PASS board 含关键数字 611,813,919
+  PASS board 段位于文件末段（其后无同级新节）  tail=4215
+
+[D] 归档闭环（看板已无第 59/60 轮原文段标题，归档里有且仅有一份）
+  PASS 看板已无第 59 轮原文段（行首为 '## ' 的标题不存）
+  PASS 看板已无第 60 轮原文段（行首为 '## ' 的标题不存）
+  PASS 看板保留第 59 轮指针（'> 📦 ## ' 打头 + 归档去向）
+  PASS 看板保留第 60 轮指针
+  PASS 第 59 轮指针恰 1 行  1
+  PASS 第 60 轮指针恰 1 行  1
+  PASS 两条指针都写 missing=0
+  PASS 两条指针都记卫生员 H9293
+  PASS 归档含第 59 轮原文
+  PASS 归档含第 60 轮原文
+  PASS 归档第 59 轮标题恰 1 份（未重复归档）  1
+  PASS 归档第 60 轮标题恰 1 份  1
+  PASS 归档仍以 </details> 结尾
+  PASS 看板第 66 轮段仍在（未被误删）
+
+[E] 实测产物可复现（unique_content_4417.tsv 自洽）
+  行数 4417 / sum(bytes) 754228404 / sum(decl_bytes) 737517286 / 唯一 sha 4087
+  PASS 产物行数 = 4417
+  PASS 产物 sum(bytes) = 754,228,404
+  PASS 产物 sum(decl_bytes) = 737,517,286
+  PASS 产物唯一 sha256 数 = 4087
+  PASS 产物唯一内容字节 = 615,909,180
+  PASS 产物含 decl_bytes 列（两口径并列，纪律 31）
+  PASS 产物无 CR（全 LF）
+
+[F] 日志存在且声明 ALL-PASS
+  PASS run.out.txt 存在且 RESULT ALL-PASS
+  PASS run.out.txt 无 FAIL 行
+  PASS verify.out.txt 存在且 RESULT ALL-PASS
+  PASS verify.out.txt 无 FAIL 行
+  PASS archive.out.txt 存在且 RESULT ALL-PASS
+  PASS archive.out.txt 无 FAIL 行
+  PASS write.out.txt 存在且 RESULT ALL-PASS
+  PASS write.out.txt 无 FAIL 行
+
+==============================================================================
+RESULT ALL-PASS

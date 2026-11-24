@@ -1,0 +1,37 @@
+item	value	source	理由（互异）
+fact.count	26	R17_R42_F23_FIX/FACT_INDEX.tsv	按行首 ^F\d\d\t 匹配数据行计数，两版均为 26 条
+fact.contiguous	F01..F26	R17_R42_F23_FIX/FACT_INDEX.tsv	逐行比对 fact_id 与 ordinal，无缺号无重复，连续递增
+fact.diff.line	24	v3 vs v3.1 原始字节逐行比较	以 \n 切行后 Buffer.equals，唯一不等行为第 24 行（F23）
+fact.diff.other	25	v3 vs v3.1 原始字节逐行比较	26 条减去唯一差异行，余 25 条逐字节相同
+cov.bytes	4147334	COVERAGE/coverage.tsv	读取原始字节缓冲长度直接计数，不依赖 stat 缓存
+cov.sha256	c2ee063fd4f61f784585ef2abcc4ff563fa09ec1b1f7f5079643076e359c744a	COVERAGE/coverage.tsv	对原始字节缓冲做 SHA-256，与 R41 numbers.tsv 报值逐字符比对一致
+cov.header_cols	8	COVERAGE/coverage.tsv	表头按逗号切分得 8 个字段名
+cov.data_rows	18498	COVERAGE/coverage.tsv	表头逗号/数据行 Tab 切分后有效数据行计数，空行跳过
+cov.bad_rows	0	COVERAGE/coverage.tsv	字段数不等于 8 的行计数为 0，无静默兜底
+grade.proved	1654	COVERAGE/coverage.tsv 第5列	第 5 列 strip 后字面等于 [已证] 的行数
+grade.infer	5875	COVERAGE/coverage.tsv 第5列	第 5 列字面等于 [静态推断] 的行数，与已证档口径互斥
+grade.unproved	10969	COVERAGE/coverage.tsv 第5列	第 5 列字面等于 [未证] 的行数，三档外另计为 0
+grade.sum	18498	COVERAGE/coverage.tsv	三档相加 1654+5875+10969，回核等于数据行数
+atlas.rows	12916	W130_atlas/function_atlas.tsv	跳过表头后取第 1 列大写归一集合的去重大小
+proved.in.atlas	1648	coverage ∩ atlas	[已证] entry 去 0X 前缀并大写归一后落入 atlas 集合的行数
+proved.out.atlas	6	coverage − atlas	[已证] entry 不在 atlas 集合的行数；1648+6=1654 闭合
+strict.total	1331	coverage ∩ atlas	atlas 内 ∧ [已证] ∧ 第 4 列不含字面 [未证]，复刻 strict_panel.py 第 78 行判据
+strict.panel.total	1331	R17_R41_RECOMPUTE/numbers.tsv	比对 R41 实跑 strict_panel.py 的 TOTAL proved_strict_n，与本卡复算同值
+ring4.A	458	coverage 第4列 [已证]	第 4 列含字符 ④ 的已证行数（形态混杂口径）
+ring4.B	291	coverage 第4列 [已证]	第 4 列含全串 ④ 活表槽位见证 的已证行数
+ring4.W	293	coverage 第4列 [已证]	第 4 列含 ④ 活表槽位见证 或 ④ direct call 的已证行数
+ring4.none	1196	coverage 第4列 [已证]	第 4 列不含字符 ④ 的已证行数；458+1196=1654 闭合
+ring4.A.minus.B	167	coverage 第4列 [已证]	A−B=458−291，A 中非活表槽位见证的形态混杂行
+loose.substring.hits	12	coverage 第4列 [已证]	第 4 列含裸子串 direct call 的已证行数，不限全串不限 ④ 前缀
+loose.full.direct	2	coverage 第4列 [已证]	上面 12 行中含全串 ④ direct call 的行数（004AF540/004B5AB0）
+loose.subtraction	10	12−2 算术读法	减法读法 = 命中 12 减去含全串的 2，即原报读法；集合语义不成立
+loose.setdiff.W	9	12 vs W 集合差	12 个命中行中不属于宽口径 W 的行数，即相对 W=293 的集合差
+loose.already.in.W	3	12−9 反推	12 个命中行中本已在 W 内的行数，含 2 行全串 direct call，故 12−3=9
+s126.col4	323	coverage 第4列 全表	全表第 4 列含子串 §12.6 的行数，不限 grade
+s124.col4	0	coverage 第4列 全表	全表第 4 列含子串 §12.4 的行数，残留为 0
+clsid.none	0	coverage 全字段 全表	全表任一字段含 CLSID None 的行数
+ring4.col6	11	coverage 第6列 全表	全表第 6 列含字符 ④ 的行数，与第 4 列 11 行仅数值巧合、含义不同
+evid.R_OK	863	resolve.py 四类定义纯函数重实现（未跑 main）	[已证] 第 6 列切段后非全 trace 且至少一个段在 bases 下 isfile 命中
+evid.R_MISSING	0	resolve.py 四类定义纯函数重实现（未跑 main）	非 EMPTY/非 TRACE_ONLY/非 OK 的剩余类，段去锚点后三 bases 均未命中
+evid.R_TRACE_ONLY	791	resolve.py 四类定义纯函数重实现（未跑 main）	第 6 列切段后每段都含 classification_trace 的已证行
+evid.R_EMPTY	0	resolve.py 四类定义纯函数重实现（未跑 main）	第 6 列按 [;,|] 切分后无有效段的已证行

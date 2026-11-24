@@ -1,0 +1,70 @@
+[2026-11-06T21:36:46.474079] 开始执行候选合成隔离测试套件...
+候选路径: D:\Project\ra2-campaign-forge\lead\b2b_candidate_20261106\qc151_trip.candidate.py
+用例总数: 29
+----------------------------------------------------------------------
+test_a1_ast_verify_five_early_exits_pre_freshness_is_none (__main__.TestCategoryA_EarlyExits.test_a1_ast_verify_five_early_exits_pre_freshness_is_none)
+A1: AST 静态验证 main() 中 5 个早退路径均在快照采集之前，快照保持 None。 ... ok
+test_a2_finalize_trip_runs_safely_when_snapshot_is_none_no_carrier_file (__main__.TestCategoryA_EarlyExits.test_a2_finalize_trip_runs_safely_when_snapshot_is_none_no_carrier_file)
+A2: 早退场景下（快照为 None 且载体无 except.txt），finalize_trip 不崩溃，落盘 unknown/none。 ... ok
+test_a3_finalize_trip_runs_safely_when_snapshot_is_none_with_carrier_file (__main__.TestCategoryA_EarlyExits.test_a3_finalize_trip_runs_safely_when_snapshot_is_none_with_carrier_file)
+A3: 早退场景下（快照为 None 但载体有残留 except.txt），finalize_trip 不崩溃，落盘 unknown/none。 ... ok
+test_a4_copy_post_except_evidence_early_exits_all_five_paths_simulation (__main__.TestCategoryA_EarlyExits.test_a4_copy_post_except_evidence_early_exits_all_five_paths_simulation)
+A4: 模拟五个早退路径直接调用 copy_post_except_evidence，均输出 unknown/none。 ... ok
+test_b1_make_pre_snapshot_exception_handled_returns_state_error (__main__.TestCategoryB_Exceptions.test_b1_make_pre_snapshot_exception_handled_returns_state_error)
+B1: 快照采集阶段抛异常（如目标是目录）时被捕获，返回 state=error 与 traceback。 ... ok
+test_b2_classify_pre_snapshot_error_gives_independent_error_exit (__main__.TestCategoryB_Exceptions.test_b2_classify_pre_snapshot_error_gives_independent_error_exit)
+B2: classify_except_freshness 收到 state=error 快照时进入独立 error_pre_snapshot 出口。 ... ok
+test_b3_copy_post_evidence_with_pre_snapshot_error_emits_f_and_info (__main__.TestCategoryB_Exceptions.test_b3_copy_post_evidence_with_pre_snapshot_error_emits_f_and_info)
+B3: copy_post_except_evidence 收到 state=error 快照时落盘 error_pre_snapshot 且置信为 none。 ... ok
+test_b4_post_copy_exception_records_error_and_reraises (__main__.TestCategoryB_Exceptions.test_b4_post_copy_exception_records_error_and_reraises)
+B4: 跑后复制写操作抛异常时，必须记录 3 项 ERROR 留痕、落盘 post_read_error 并原样重抛。 ... ok
+test_c1_three_inputs_distinct_in_copy_post_info (__main__.TestCategoryC_UnknownSnapshotStates.test_c1_three_inputs_distinct_in_copy_post_info)
+C1: None / {} / {'exists': False} 三种输入在 copy_post_except_evidence 的 info 中可分。 ... ok
+test_c2_unknown_confidence_is_never_high (__main__.TestCategoryC_UnknownSnapshotStates.test_c2_unknown_confidence_is_never_high)
+C2: 所有未采集/缺失快照形态（None, {}, {'exists': False}, unknown, 脏值）置信绝不是 high。 ... ok
+test_c3_missing_without_state_differs_from_absent_confirmed (__main__.TestCategoryC_UnknownSnapshotStates.test_c3_missing_without_state_differs_from_absent_confirmed)
+C3: 伪快照 {'exists': False} 绝不等于确认无件 absent_confirmed。 ... ok
+test_d1_seven_freshness_fields_exact_match_and_values (__main__.TestCategoryD_FieldOutputs.test_d1_seven_freshness_fields_exact_match_and_values)
+D1: 7 个 FRESHNESS 字段逐个核对，无漏键、无多键，取值约束正确。 ... ok
+test_d2_twelve_info_keys_exact_match_and_disk_persistence (__main__.TestCategoryD_FieldOutputs.test_d2_twelve_info_keys_exact_match_and_disk_persistence)
+D2: 12 键 info 全部落盘，逐键核对，且 carrier_post_state.json 正确写入。 ... ok
+test_d3_seven_freshness_fields_persisted_in_early_return_when_src_missing (__main__.TestCategoryD_FieldOutputs.test_d3_seven_freshness_fields_persisted_in_early_return_when_src_missing)
+D3: 载体无 except.txt 时（早退分支），同样全量落盘 7 个 FRESHNESS 字段。 ... ok
+test_e1_ast_verify_copy_post_call_in_finalize_trip (__main__.TestCategoryE_Wiring.test_e1_ast_verify_copy_post_call_in_finalize_trip)
+E1: :5939 / :6167 调用点确实传了 pre_freshness_snapshot。 ... ok
+test_e2_ast_verify_finalize_trip_signature_has_pre_freshness_snapshot (__main__.TestCategoryE_Wiring.test_e2_ast_verify_finalize_trip_signature_has_pre_freshness_snapshot)
+E2: finalize_trip 签名末尾必须包含 pre_freshness_snapshot 参数。 ... ok
+test_e3_ast_verify_main_pre_freshness_snapshot_lifecycle (__main__.TestCategoryE_Wiring.test_e3_ast_verify_main_pre_freshness_snapshot_lifecycle)
+E3: main() 内 _pre_freshness_snapshot 的完整生命周期：预初始化 -> 采集 -> 传入 finalize_trip。 ... ok
+test_f01_matrix_absent_confirmed (__main__.TestCategoryF_StateMatrix.test_f01_matrix_absent_confirmed)
+F01: absent_confirmed 跑前确认无件 + 跑后在地 ⇒ new_first_appearance / high / is_new=True。 ... ok
+test_f02_matrix_absent_both (__main__.TestCategoryF_StateMatrix.test_f02_matrix_absent_both)
+F02: absent_both 跑前确认无件 + 跑后无件 ⇒ absent_both / low / is_new=False。 ... ok
+test_f03_matrix_leftover_unchanged_mtime_match (__main__.TestCategoryF_StateMatrix.test_f03_matrix_leftover_unchanged_mtime_match)
+F03: leftover_unchanged 跑前在 + 跑后在 + sha同 + mtime同 ⇒ leftover_unchanged / high / is_new=False。 ... ok
+test_f04_matrix_leftover_unchanged_mtime_missing (__main__.TestCategoryF_StateMatrix.test_f04_matrix_leftover_unchanged_mtime_missing)
+F04: leftover_unchanged 跑前在 + 跑后在 + sha同 + mtime缺失 ⇒ leftover_unchanged / medium / is_new=False。 ... ok
+test_f05_matrix_new_write (__main__.TestCategoryF_StateMatrix.test_f05_matrix_new_write)
+F05: new_write 跑前在 + 跑后在 + sha不同 ⇒ new_write / high / is_new=True。 ... ok
+test_f06_matrix_rewritten_same_content_mtime_greater (__main__.TestCategoryF_StateMatrix.test_f06_matrix_rewritten_same_content_mtime_greater)
+F06: rewritten_same_content 跑前在 + 跑后在 + sha同 + mtime变大 ⇒ rewritten_same_content / medium / is_new=True。 ... ok
+test_f07_matrix_rewritten_same_content_mtime_rollback (__main__.TestCategoryF_StateMatrix.test_f07_matrix_rewritten_same_content_mtime_rollback)
+F07: rewritten_same_content 跑前在 + 跑后在 + sha同 + mtime回拨 ⇒ rewritten_same_content / low / is_new=True。 ... ok
+test_f08_matrix_missing_sha_pre (__main__.TestCategoryF_StateMatrix.test_f08_matrix_missing_sha_pre)
+F08: missing_sha 跑前在 + 跑后在 + 缺 pre.sha256 ⇒ error_pre_snapshot / none / is_new=None。 ... ok
+test_f09_matrix_missing_sha_post (__main__.TestCategoryF_StateMatrix.test_f09_matrix_missing_sha_post)
+F09: missing_sha 跑前在 + 跑后在 + 缺 post.sha256 ⇒ post_read_error / none / is_new=None。 ... ok
+test_f10_matrix_vanished (__main__.TestCategoryF_StateMatrix.test_f10_matrix_vanished)
+F10: vanished 跑前在 + 跑后无件 ⇒ vanished / none / is_new=None。 ... ok
+test_f11_matrix_post_read_error (__main__.TestCategoryF_StateMatrix.test_f11_matrix_post_read_error)
+F11: post_read_error 跑后 read_error 非空 ⇒ post_read_error / none / is_new=None。 ... ok
+test_f12_usable_as_crash_evidence_is_always_false (__main__.TestCategoryF_StateMatrix.test_f12_usable_as_crash_evidence_is_always_false)
+F12: 铁纪律 N9/N10：所有状态输出的 usable_as_crash_evidence 恒为 False。 ... ok
+
+----------------------------------------------------------------------
+Ran 29 tests in 1.885s
+
+OK
+----------------------------------------------------------------------
+PASS=29 FAIL=0
+EXIT=0

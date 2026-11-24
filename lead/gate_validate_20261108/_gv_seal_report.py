@@ -1,0 +1,243 @@
+# -*- coding: utf-8 -*-
+# _gv_seal_report.py —— 生成并封存 GATE_TEMPLATE_REGRESSION.md
+# 表格从 _gv_out/*.json 程序化装配；自绑定按模板 R3-1 两阶段算法（字节不动点 → 扣零哈希）。
+import hashlib, json, pathlib, datetime, re
+
+R = pathlib.Path('D:/Project/ra2-campaign-forge')
+GV = R / 'lead/gate_validate_20261108'
+OUT = GV / '_gv_out'
+
+manifest = json.loads((GV / '_gv_gates_manifest.json').read_text(encoding='utf-8'))
+orig = {r['run8']: r for r in json.loads((OUT / '_gv_replay_original.json').read_text(encoding='utf-8'))}
+comp = {r['run8']: r for r in json.loads((OUT / '_gv_compare.json').read_text(encoding='utf-8'))}
+fixj = json.loads((OUT / '_gv_fixtures.json').read_text(encoding='utf-8'))
+
+TYPE = {
+    '01a1190d': '六节+字段/要素+绑定行',
+    '1552e9fe': '六节+要素+绑定+py启动正则',
+    '1893d8fa': '六节+要素+绑定+doc三字面',
+    '1c93b364': '八节+doc13词+py子串+绑定≥4',
+    '289e4267': '六节+要素+绑定+py启动正则',
+    '29dbbd2b': '六节+要素+绑定+py启动正则',
+    '2b4e006c': '六节+八要素+绑定',
+    '324c613e': '六节+标签+JSON记录+绑定+py启动正则',
+    '40c7f252': '六节+数值并列+doc禁词+py子串+绑定',
+    '4285508a': '六节+要素+绑定+py启动正则',
+    '4e0fdea9': '六节+要素+绑定+doc三字面',
+    '62a22c31': '六节+要素+绑定+doc三字面',
+    '673b3560': '六节+要素+绑定+doc三字面（本运行门禁）',
+    '858e5e0b': '六节+七要素+绑定+tpl在场',
+    'a05ccb49': '六节+要素+绑定+doc三字面',
+    'a3231918': '六节+要素+绑定',
+    'aa9b3bc5': '六节+要素+绑定+doc三字面',
+    'c3fa20e3': '六节+doc禁词+py子串+绑定',
+    'cd57bf1c': '六节+doc禁词+py子串+绑定+copies计数',
+    'ce616060': '六节+要素+绑定+doc三字面',
+    'eb56be4f': '六节+三链要素+绑定+py启动正则',
+    'fda7c34e': '六节+要素+绑定+doc三字面',
+}
+
+REASON = {
+    '01a1190d': '同判 ok；修正侧对 9 字段/5 要素保持原严格度，另对场内指纹做 R3-2 现盘回验（均吻合）',
+    '1552e9fe': '同判 ok；py 启动正则升级为 AST 启动边（本域 .py 边=0）',
+    '1893d8fa': '重放具时变性（§6 未验 1）：对照首跑「交付件缺失」，17:36 并发工作流落盘 R2_FINAL_GRADE.md 后，原/修两侧同判 ok=true；doc 三字面扫描降为 R5 警告',
+    '1c93b364': '误报一消除：21 条全为三个复核脚本自写反禁词清单（BANNED_PAT/BANNED/forbid）的字符串字面量，AST 调用边=0 → R4 不采字符串；doc 13 词扫描降 R5 警告；4 条绑定行现盘回验通过',
+    '289e4267': '同判 ok；修正新增 R3-2 回验（场内指纹均吻合）',
+    '29dbbd2b': '同判 ok；修正新增 R3-3/R3-2 回验（:110 绑定与 :43 _w2_matrix.tsv 指纹均现盘吻合）',
+    '2b4e006c': '误报二消除：R2 同义词组中「最小字段」组含任务书权威原词「最少字段」（NEXT_STEPS_20261106.md:103）→ 命中；其余 7 要素原词在场',
+    '324c613e': '同判 ok（原门禁本就无值比对，hexdigest=0）；修正新增 R3-3/R3-2：:130 绑定行缺显式路径（警告需人工锚定），:4 r1 历史指纹按场内就地覆盖声明豁免（警告），其余指纹引用逐件回验吻合',
+    '40c7f252': '同判 ok；:74 「去首行 rest」哈希为派生构造 → 人工锚定警告（原门禁不查值，修正不误判）',
+    '4285508a': '同判 ok',
+    '4e0fdea9': '同判 ok；doc 三字面扫描降 R5 警告',
+    '62a22c31': '同判 ok；修正 R3-3 对 :130 绑定行现盘回验 match=True（被指向 _n10 中间稿在盘且哈希/字节数吻合）',
+    '673b3560': '对照首跑「交付件缺失」；本报告落盘后（占位件→最终件，两态均满足 6 节/7 要素/绑定行/无三字面）原/修两侧同判 ok=true，对照行取占位落盘后时点',
+    '858e5e0b': '同判 ok；修正 R3-1 对 :128 审计报告扣行自锚实算 match=True、:13/:127/:134 模板指纹回验 match=True',
+    'a05ccb49': '同判 ok；doc 三字面扫描降 R5 警告',
+    'a3231918': '同判 ok；修正新增回验：:33/:40 四个指纹逐件吻合、:18 绑定行按引证语境降人工锚定、:90 聚合锚按「五件文件名升序拼接」现盘重算 match=True',
+    'aa9b3bc5': '同判 ok；修正新增回验（:4 两锚现盘吻合）',
+    'c3fa20e3': '同判 ok；py 子串扫描升级为 AST 边（本域 .py 边=0）；archive 引用不可机检降警告',
+    'cd57bf1c': '误报一消除：10 条全为子串字面量/mock 语境（_integ_test/_integ_probe AST 边=0）；qc151_trip.isolated.py 与母本逐字节相同（sha256=ca23c116…/412,759，新增调用边=0）→ R4-2 派生放行；doc 禁词扫描降 R5 警告',
+    'ce616060': '同判 ok；doc 三字面扫描降 R5 警告',
+    'eb56be4f': '同判 ok；py 启动正则升级为 AST 启动边（本域 .py 边=0）',
+    'fda7c34e': '同判 ok；修正新增 R3-2 回验：场内 20+ 指纹引用逐件现盘吻合',
+}
+
+now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+
+def h16(p):
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+tpl_b = (R / 'lead/gate_template_20261108/GATE_TEMPLATE_FIXED.py.txt').read_bytes()
+fp_b = (R / 'lead/gate_template_20261108/GATE_FALSE_POSITIVES.md').read_bytes()
+
+# ---- T1 门禁清单 ----
+t1 = ['| # | 运行 | mjs 落盘时间 | 扫描根（写域） | 门禁码 SHA256 前 12 | 类型 |', '|---|---|---|---|---|---|']
+for i, m in enumerate([x for x in manifest if x.get('decoded')], 1):
+    run8 = m['run_id'].split('-', 1)[1][:8]
+    t1.append('| %d | dwfrun-%s | %s | %s | %s | %s |' % (
+        i, run8, m['mtime'], (m.get('gate_scan_root') or '').replace('D:/Project/ra2-campaign-forge/', ''),
+        m['gate_sha256'][:12], TYPE.get(run8, '')))
+t1 = '\n'.join(t1)
+
+# ---- T2 对照表 ----
+t2 = ['| 门禁 | 原重放 ok / 问题数 | 修正模板 ok / 问题数 / 警告数 | 判定变化 | 变化原因 |', '|---|---|---|---|---|']
+for run8 in sorted(TYPE):
+    o, c = orig[run8], comp[run8]
+    change = '无变化' if o['ok'] == c['fixed_ok'] else ('转通过' if c['fixed_ok'] else '转失败')
+    t2.append('| %s | %s / %d | %s / %d / %d | %s | %s |' % (
+        run8, o['ok'], len(o['problems'] or []), c['fixed_ok'],
+        len(c['fixed_problems'] or []), c['fixed_n_warn'], change, REASON.get(run8, '')))
+t2 = '\n'.join(t2)
+
+# ---- T3 真违规样本 ----
+t3 = ['| 样本 | 期望 | 实判 | 命中规则 |', '|---|---|---|---|']
+for f in fixj:
+    t3.append('| %s | %s | %s | %s |' % (f['case'], 'FAIL' if not f['want_ok'] else 'ok',
+                                         'FAIL' if not f['got_ok'] else 'ok', ','.join(f['rules_hit']) or '—'))
+t3 = '\n'.join(t3)
+
+BODY = '''================================================================================
+GATE_TEMPLATE_REGRESSION.md —— 修正门禁模板实战回归报告（回归员·GLM）
+================================================================================
+
+## 1 目的、边界与方法
+
+被核对象是审计方 r2 版修正模板（本件 §5 绑定行）。审计方自述「修正模板本身未经实战验证（未用它重跑任何工作流）」，本轮即补该验证：用修正模板规则对历史门禁做回归对照，验证误报消除且不放松真违规检出。本轮只做回归验证：不改模板本体、不改任何历史工作流脚本、不改任何已交付 gateOk 结论、不改台账；唯一写域 = `lead/gate_validate_20261108/`（产出件均带 _gv_ 前缀，唯一例外是本报告，因本运行自身门禁 673b3560 要求落盘名为 GATE_TEMPLATE_REGRESSION.md）。全程零真机、零采样代码、不 commit、不 push；所有哈希 hashlib 实算；所有 Python 以 `python -I -X utf8` + 绝对路径运行。
+
+方法（全部实跑，脚本与输出在本写域）：
+1. 指纹核对：编排方给出的 4 份指纹件 4/4 全符（GATE_TEMPLATE_FIXED.py.txt 543e7918…/28,128；GATE_FALSE_POSITIVES.md 2011cb86…/25,841；B_BREAKPOINTS_2_6.md 3aad3bdd…/19,527；CD_BREAKPOINTS.md affaeae0…/24,904）。
+2. 自写提取器 `_gv_extract_gates.py` 解析 `.zcode/workflow-runs/dwfrun-*.mjs`（150 个）的 payload.lowered，定位 `const GATE_CODE = […]` 数组、按 JS 字符串转义逐字解码为可运行 Python（两处解码陷阱：数组尾逗号产生空元素；join("\\n") 的 JS 转义需二次还原），22/22 解码并通过 py_compile 语法检查（门禁数见 §2）。
+3. 原门禁重放 `_gv_replay_original.py`：逐个以工作流原执行方式 `python -I -X utf8 -c <门禁码>` 重放，22/22 exit=0，输出 JSON 与审计方 W2§3 记载逐字一致（含 1c93b364=21 条、cd57bf1c=10 条、2b4e006c=1 条、324c613e/858e5e0b ok）。
+4. 修正模板检查器 `_gv_fixed_rules.py`：按模板 R0–R8 文本逐条落地为可执行实现（R1 节号集合、R2 同义词组、R3 三类锚分治+现盘回验、R4 AST 调用边+派生做差+启动边+getattr 逃逸、R5 报告层字面降警告、R6 双件正本判定+关系声明、R7 输出契约 JSON）。这是该模板第一次以代码形态实跑。
+5. 逐门禁对照 `_gv_compare.py`（§3 表 T2）＋四类误报逐类证据（§4）＋真违规样本回放 `_gv_run_fixtures.py`（§5）。
+6. 独立 AST 边审计 `_gv_ast_edge_audit.py`：不复用审计方实现，独立回答「原门禁命中的 31 条里有没有真调用边」（§5.3）。
+
+## 2 提取结果：门禁数 = 22（自提取，不照抄审计方报数）
+
+本写域提取器实测：150 个 dwfrun-*.mjs 中 **22 个**定义并被执行 `const GATE_CODE`（20 个 `import json,pathlib,re`、2 个多 import hashlib 但 **hexdigest 出现 0 次**——grep 实测 22 个门禁码文件 0 命中，即历史门禁无一做哈希值 vs 现盘重算的比对，误报三的门禁层口径属实）。其中 2 个（dwfrun-673b3560 16:43、dwfrun-1893d8fa 16:44）晚于审计报告封印时点 16:28，属审计后新增运行；20 个与审计方记数一致。
+
+表 T1 门禁清单与类型（全量 22 个）：
+
+''' + t1 + '''
+
+类型分布：py 子串扫描 4（1c93b364/40c7f252/c3fa20e3/cd57bf1c，与审计方一致）；doc 三字面/禁词扫描 12（8 纯 + 4 复合；审计方记 10 = 12 − 审计后新增 2）；py 启动正则 6；copies 计数 1（cd57bf1c）。
+
+## 3 原门禁 vs 修正模板对照表
+
+每个历史门禁各跑一次：原门禁按工作流原执行方式重放（时点 ''' + now + '''，1893d8fa 域在重放窗口内并发落盘，见 §6 未验项），修正侧以 `_gv_fixed_rules.py` 按该门禁的检查项配置（逐字转录自门禁码：节号/要素/绑定下限/JSON 字段/tpl 在场）实跑。
+
+表 T2 对照（22/22）：
+
+''' + t2 + '''
+
+**结论：22 个门禁无一「原 ok → 修正 fail」**；3 个原 fail 域全部转 ok 且原因逐条可追（R4 字符串不采/R4-2 派生做差/R2 同义词组）；修正侧在 19 个同判域上只新增警告与更强的值回验，未发现一例新误报。修正模板在 4 个方向上比原门禁更严：R3-3/R3-2 值回验（原 0 个门禁做哈希比对）、R4 AST 边与 getattr 逃逸、R6 双件关系声明强制、R1 节号集合防 `## 12`/`## 1.1` 字面污染（原字面匹配反而会漏检缺节——如仅有 `## 12` 的文档能骗过原 `## 1` 子串检查）。
+
+实现过程登记（如实）：对照表首版曾出现 5 处「原 ok → 修正 fail」假差异，逐条追查全部为实现层缺陷而非模板缺陷，已修正并复跑：① 行内多「路径+指纹」对交叉错配（MATRIX:33/:40、CD:4）→ 改两阶段配对（≤3 字符紧邻强配+最近邻）；② `.tsv/.diff` 扩展名盲区（SLOW_WINDOW:43、INTEGRATION:125）→ 扩展 PATH_RE；③ 行号引证 `file.py:138` 被当锚目标（FIVE_READ:30）→ 引证排除；④ 引证括注路径被当绑定目标（MATRIX:18）→ 引证语境降级；⑤ 聚合指纹（MATRIX:90 五件拼接哈希）按整件重算失配 → 实现聚合锚回验（按声明构造现盘重算，match=True）。此过程本身即回归的价值：修正模板落地时这些语义边界必须显式定义。
+
+## 4 四类误报逐类验证（误报消除）
+
+**误报一（禁词子串扫到反禁词清单与派生副本）——已消除，证据**：
+- 原门禁重放 1c93b364 ok=false 21 条、cd57bf1c ok=false 10 条（与审计方 W2§3 逐字一致）；21 条全部落在 `_verify_A_recompute.py`/`_verify_C_ast.py`/`_verify_D_recompute.py` 三个复核脚本自写的反禁词机制字符串上（BANNED_PAT 正则串/BANNED 列表/forbid 列表），10 条落在 qc151 孪生件与 _integ 两件的文档串/mock.patch 上（逐条清单见 `_gv_replay_original.json`）。
+- 独立 AST 边审计（`_gv_ast_edge_audit_out.txt`）：上述 5 个 .py 的 AST 真实调用边 = 0（命中全部在字符串常量/mock 拦截串）；qc151_trip.isolated.py 有 7 条真实调用边（call:OpenProcess ×4、call:ReadProcessMemory、call:MiniDumpWriteDump）但与母本 `lead/b2b_candidate_lf_20261107/qc151_trip.candidate_lf.py` **逐字节相同**（双 sha256=ca23c116…/412,759，new_edges=0）。
+- 修正模板实跑：1c93b364 → ok=true（10 警告）、cd57bf1c → ok=true（16 警告），problems=0。
+- 未放松对照（§5 样本 B）：给孪生副本追加 1 条调用边后，修正模板立即 FAIL（8 条边全列），而逐字节孪生件继续放行——消除误报的同时保留了真违规检出。
+
+**误报二（措辞不匹配：最少字段 vs 最小字段）——已消除，证据**：
+- 原门禁 2b4e006c 重放 problems 恰一条「缺要素 最小字段」；权威原文 `lead/nextstep_plan_20261106/NEXT_STEPS_20261106.md:103` 写「列最少字段…」（实读确认），交付件 PERF_REPAIR_HANDOFF.md 六要素齐全。
+- 修正模板 R2 同义词组（组依据=模板 §R2.2 语料频次登记）实跑 → ok=true（5 警告，problems=0）。
+- 未放松对照（§5 样本 E2）：要素真缺席（组内任何变体都不在）时仍判「缺要素 不放行采集」FAIL；组内任一变体命中即放行（最少字段→通过）。
+
+**误报三（版本锚/绑定锚要求现盘比对）——门禁层核实为「原门禁从不比对」，修正模板补上回验且不误伤**：
+- 22 个门禁码 hexdigest 出现 0 次（grep 实测）——原门禁层确无此误报源；误报三的真发生地在编排方 ask 层口径（dwfrun-01a1190d 载荷「绑定锚错位…判定这算 ACCEPT 还是 PARTIAL」）。
+- 修正模板 R3 实跑表现：324c613e 域 A_RESIDUAL_REFERENCES.md:130 绑定行（3343cfbe…/26435）无显式路径 → R3-3b「缺路径需人工锚定」警告而非 fail；:4 r1 历史指纹失配但场内有就地覆盖声明（:159「无独立副本留存…为版本锚」）→ R3-2a 历史锚豁免警告。原判 ok=true 保持不变。
+- 回验的真实战果（均为实算 match=True）：DECISION_QUESTIONS.md:130 → `_n10_D13D14_CARDS_20261108.md`（8a36d60a…/30,122）；PERF_REPAIR_HANDOFF.md:117 → 中间稿（cf73fd80…/22,745）；MATRIX_BINDING_FACTS.md:90 聚合锚按「五件文件名升序拼接」现盘重算（524a98ca…/33,357）；审计报告 :128 R3-1 扣行自锚两阶段校验（78ef8a5f…）——**修正模板的 R3-1 算法在真实交付件上验证通过**。
+- 未放松对照（§5 样本 D）：伪造绑定（哈希错）、静默失配（无声明）、指向仓内缺失对象三类全 FAIL；正确锚对照 d0 PASS。
+
+**误报四（报告层禁词引证自锁）——已消除（门禁层），ask 层残留如实登记**：
+- 本轮提取的 doc 字面扫描门禁 12 个（§2 类型分布）；修正模板 R5 把交付报告/回件/台账类的字面命中一律降为警告、fail 依据只能是 R0 行为差异。
+- 直接演示：让修正模板检查器扫一份主题就是禁词的文档（门禁码 1893d8fa.py 本身，含三字面各 1 次，次数实算 [1,1,1]）→ ok=true + 3 条 R5 警告、problems=0；而原 1893d8fa 门禁扫到同样文本会记 3 条「含禁用词」问题（其门禁码逐字含该 fail 分支）。
+- 与审计方归因一致：858e5e0b 的门禁码（712 字符，`_gv_gates/858e5e0b.py` 在档可验）确无三字面扫描；本运行门禁 673b3560 对本报告的「不得含三字面」约束在 ask 层（本报告因此全程掩码书写）。R5-4 的复发条件（ask 层禁令不改则掩码书写成为常态）原样成立，属模板外的残留。
+
+## 5 ★反向验证：真违规样本与未放松检查
+
+### 5.1 真违规样本回放（10 例，全 FAIL/全符预期，`_gv_fixtures_out.txt`）
+
+样本全部为**静态测试数据**（文件头注明禁止执行；仅被 AST 解析；素材取自仓内既有字节——母本语句复制、既有门禁码字面提取，不新写可运行采样实现）。落盘于本写域 `_gv_fixtures/`。
+
+''' + t3 + '''
+
+其中任务点名的三类必做真违规：
+1. **新建脚本 subprocess 启动游戏进程**（样本 A）：AST 启动边×3（含 `if False:` 死分支内的调用也被抓到——AST 不做可达性折叠）；原口径启动正则同样命中=true（无放松）。
+2. **确实新增母本没有的禁止 API 调用边**（样本 B）：逐字节孪生件放行（provenance=derived-copy, new_edges=0，source=母本 candidate_lf.py）+ 仅追加 1 条复制自母本的既有语句即 FAIL（8 条边全列）。原口径子串扫描对孪生件与+1件**都** FAIL（5 个禁词全命中）——修正模板消除了对前者的误报、保留了对后者的真检出。
+3. **双件并存且都无绑定行**（样本 C）：R6 判 FAIL「双件并存且均无关系声明」；对照真实域 d13d14（有 :130 关系声明）为 warning 不 fail。
+
+补充真违规：伪造绑定行（D1）、静默指纹失配（D2）、绑定指向仓内缺失对象（D3）、缺必填小节（E1）、要素真缺席（E2）、getattr 明文串动态解析（F——修正实现按 getattr-逃逸判边；原口径子串扫描同样命中该串，无放松）。
+
+### 5.2 未放松结论的边界（如实）
+
+- **相对历史门禁家族**：未发现任何「原门禁能检出、修正模板漏检」的真违规类。R1 更准（防 `## 12`/`## 1.1` 污染、同时防以引文骗过子串检查）；R2 仅对登记过语料频次的要素放宽变体；R3 全面更严（原 0 门禁做值比对）；R4 对「行为」的覆盖不小于原子串扫描（调用边+启动边+getattr 逃逸），字符串/momentum/import 的除罪仅限无行为差异语境（R4-1 裸 import 仅警告，benign 反例由审计方实测）。
+- **两处固有限制（两侧同样盲）**：① 拆串 getattr（'Open'+'…' 拼接）静态不可见——原子串扫描同样看不见，登记为残留面；② 模板 R4-1 启动清单仅 subprocess Popen/run/call/check_output 与 os.system，os.startfile/ShellExecute 等向量不在清单内（样本 F 之外的未测面）。
+- **设计性放宽（模板本意，非缺陷）**：报告/回件/台账层取消字面 fail（R5）、裸 import 不判罪（R4-1）、派生副本按新增边判罪（R4-2）——三者都以「行为差异」为唯一 fail 依据（R0），且由 §5.1 样本证明行为类真违规仍 FAIL。
+
+### 5.3 独立 AST 复核（防「修正是建立在假豁免上」）
+
+`_gv_ast_edge_audit_out.txt`：两域（b2b_isolated、dtrigger_round2）全部 21 个 .py 逐一 AST 边扫描——除 qc151 的 7 条继承边外，**其余 20 件调用边全为 0**；getattr 逃逸 0 处。即：历史门禁 31 条真失败里没有一条对应真实新增调用行为，修正模板的放行无一建立在真实违规上。
+
+## 6 判定、残留风险与未验项
+
+**判定：修正模板（R0–R8）可以投入实战使用**——四类误报全部消除（falsePositivesFixed=4）、真违规样本 10/10 仍判 FAIL（relaxedDetection=false）、22 域对照无新误报、且比原门禁新增 4 项更严检查。**附实现注意事项**：采纳方必须把 §3 登记的 5 处语义边界（行内多锚配对、扩展名集、行号引证、引证括注、聚合锚构造）写成明确规范，否则首个可执行实现就会复现本轮首版的 5 处假差异。
+
+**残留风险（按严重度）**：
+1. ask 层复发条件（R5-4 原文）：只要任务书继续写「不得含…字面量」，撰写件只能掩码书写，任何未来报告层字面扫描一旦启用即自锁——门禁改造不能根治，需 ask 层同步。
+2. 拆串 getattr 与模板启动清单外的启动向量（os.startfile 等）静态不可见——两侧同样盲，属静态分析固有面。
+3. R2 词组表仅对 2b4e006c 域做了任务书对齐，其余域按单 token 保持原严格度；模板自述的「全语料重编译」仍未做（种子词去留、高频变体归组待定）。
+4. 跨域时序陈旧：引用对象被他域后续覆盖时，豁免依赖被扫文档自身含覆盖/留存声明；本轮 22 域实测无一例因此误 fail，但机制上如果出现「无声明 + 可唯一定位 + 值失配」的组合会判 fail（这是 R3-2 的设计行为，是否过严由采纳方裁定）。
+5. 性能：R4 派生判定需 lead/ 全树哈希索引（本轮 1,333 个 .py 每次全量重建），工程上需缓存。
+
+**未验项（如实登记）**：
+1. 门禁重放具时变性：1893d8fa 域的 R2_FINAL_GRADE.md 在本轮会话中途（17:36）由并发工作流落盘，其原重放结果从「交付件缺失」变为 ok=true——对照表取 ''' + now + ''' 时点，不是交付时点快照。
+2. 修正模板未改写进任何真实工作流（本轮禁令），「投入实战使用」判定基于 22 域回放 + 10 样本回放，非在线运行。
+3. 修正实现的 R1 节号正则未对「## 一、」「第 7 节」等变体语料实测（模板自述未验项沿用）；R2 种子词组未参与任何真实判定（本轮 22 域无一命中种子词）。
+4. R3-1 两阶段算法的真实件活样 = 2（审计报告自绑定行 + 本报告自绑定行，均 match=True）；模板自述的 25 例合成验证系审计方所为，本轮未重做。
+5. 同族门禁中 40c7f252/c3fa20e3 的写域在本轮对照 ok=true（今日时点），但审计方所称「其写域不在三误报清单内、未复跑」的交付时点状态无法回溯复现（未验）。
+6. _integ_probe_isolated.py 上游派生源未锁定（沿审计登记；其 AST 边=0 的免责已由本轮独立复核补足）。
+
+## 本件绑定（R3-3 引用锚 ×2 + R3-1 扣行自锚 ×1）
+
+- 修正模板（被核对象）：**被核对象 SHA256 = ''' + h16(R / 'lead/gate_template_20261108/GATE_TEMPLATE_FIXED.py.txt') + '''，字节数 = ''' + str(len(tpl_b)) + '''**（`lead/gate_template_20261108/GATE_TEMPLATE_FIXED.py.txt`，可按 R3-3 现盘回验）。
+- 审计报告：**被核对象 SHA256 = ''' + h16(R / 'lead/gate_template_20261108/GATE_FALSE_POSITIVES.md') + '''，字节数 = ''' + str(len(fp_b)) + '''**（`lead/gate_template_20261108/GATE_FALSE_POSITIVES.md`，可按 R3-3 现盘回验）。
+- 本件自绑定（R3-1 两阶段活样）：**本件扣行 SHA256 = ''' + '0' * 64 + '''，本件字节数 = @@N@@**（校验法：把本行 64 位哈希字段替换为 64 个 '0' 后对本件全字节重算 SHA256，应得行内值；字节数按不动点迭代自洽，封存器 `_gv_seal_report.py`）。
+
+—— 回归报告完。门禁数 22、对照 22/22、误报消除 4/4、真违规样本 10/10 FAIL、未验 6 项。
+================================================================================
+'''
+
+md = BODY
+# R3-1 第一阶段：字节不动点
+n = 0
+for _ in range(30):
+    t = md.replace('本件字节数 = @@N@@', '本件字节数 = %d' % n, 1)
+    ln2 = len(t.encode('utf-8'))
+    if ln2 == n:
+        break
+    n = ln2
+md = md.replace('本件字节数 = @@N@@', '本件字节数 = %d' % n, 1)
+assert len(md.encode('utf-8')) == n, (len(md.encode('utf-8')), n)
+# R3-1 第二阶段：扣零哈希（哈希槽已为 64 个 '0'，宽度不变）
+digest = hashlib.sha256(md.encode('utf-8')).hexdigest()
+md2 = md.replace('0' * 64, digest, 1)
+assert len(md2.encode('utf-8')) == n
+# 校验：哈希槽置零后重算应得行内值
+check = md2.replace(digest, '0' * 64, 1)
+assert hashlib.sha256(check.encode('utf-8')).hexdigest() == digest
+# 会话纪律断言：三字面原始字面量不得出现在本报告；要素词必须齐备
+for bad in ('gamemd.exe', 'ra2loader', 'taskkill'):
+    assert bad not in md2, bad
+for k in ('回归', '误报消除', '真违规', '未放松', '门禁数', '对照', '未验'):
+    assert k in md2, k
+out = GV / 'GATE_TEMPLATE_REGRESSION.md'
+out.write_bytes(md2.encode('utf-8'))
+print('sealed:', out)
+print('bytes =', out.stat().st_size, '(fixed point N =', n, ')')
+print('self sha256 =', digest)
+assert out.read_bytes() == md2.encode('utf-8')

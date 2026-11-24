@@ -1,0 +1,140 @@
+=== 0. 全库普查（从 103 份原始 measure_w*.json 重建）===
+  measure_w*.json 总数 = 103
+  趟目录数(按 dirname 计) = 43
+  live_fps 可算(len(frame_edges)>=2 且 dt>0) = 64
+  units0 非空 = 99
+  units0>0 = 94
+  units0 与 live_fps 同时可算 = 64
+  顶层键普查：
+    counters           103
+    error              103
+    frame_edges        101
+    gamemd_sha256      103
+    gate               103
+    h8                 2
+    hz                 103
+    map_sha256         103
+    samples            103
+    schema             103
+    settle_s           103
+    span_s             103
+    stats              103
+    t_abs0             103
+    t_clock            103
+    trip_id            103
+    verdict            103
+    w1                 103
+    window             103
+  含 harness_sha16 的 json 数 = 0
+  含 argv 的 json 数 = 0
+  schema distinct = ['MEASURE_V1']
+  _launch_result.json 份数 = 28  其中带 sha16 = 23
+  无 _launch_result.json 的趟目录数 = 18
+  qc151_fields.json 份数 = 72  含 harness*.py 字样的 value 命中数 = 0
+  gamemd_sha256 distinct = 1 ['73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476']
+  map_sha256 distinct = 10
+  t_clock distinct = ['time.perf_counter']
+  hz distinct = ['500']
+  qc151_fields ts 全 +08:00 ? True  有 ts 的文件数 = 72
+
+=== 1. [V2-A1] §544 点名四时刻：逐窗从原始 frame_edges 重算 ===
+  -- 2026-11-01 16:48 窗数 1
+     2026-11-01 16:48:39 w0  f 920→1699  Δf=779  Δt=24.983436  live=31.180659  units0=1225  pre=30.053  fps_avg=31.161901  max_stall=0.045516  sha16=38244d2907e7f7fa  hlabel=qc151_trip.harness8_v4.py
+        map=f3bb0a4efdedd067  start_frame=800  samples_t=3434.177950..3459.176425  n_samples=12501
+  -- 2026-11-03 11:20 窗数 2
+     2026-11-03 11:20:31 w0  f 925→1707  Δf=782  Δt=24.994881  live=31.286406  units0=1189  pre=31.395  fps_avg=31.280130  max_stall=0.051982  sha16=38244d2907e7f7fa  hlabel=qc151_trip.harness8_v4.py
+        map=f3bb0a4efdedd067  start_frame=800  samples_t=8774.780985..8799.780882  n_samples=12502
+     2026-11-03 11:20:56 w1  f 1707→2487  Δf=780  Δt=24.969578  live=31.238013  units0=1189  pre=31.395  fps_avg=31.202094  max_stall=0.081078  sha16=38244d2907e7f7fa  hlabel=qc151_trip.harness8_v4.py
+        map=f3bb0a4efdedd067  start_frame=800  samples_t=8799.797325..8824.795647  n_samples=12501
+  -- 2026-10-21 19:03 窗数 1
+     2026-10-21 19:03:51 w0  f 957→1186  Δf=229  Δt=24.833701  live=9.221340  units0=881  pre=8.023  fps_avg=9.160346  max_stall=0.246478  sha16=None  hlabel=qc151_trip.harness3.py
+        map=0add791d11aea84d  start_frame=None  samples_t=33488.022500..33513.021557  n_samples=12501
+  -- 2026-10-31 20:15 窗数 2
+     2026-10-31 20:15:34 w0  f 437→606  Δf=169  Δt=24.885573  live=6.791083  units0=1347  pre=6.676  fps_avg=6.787164  max_stall=0.493929  sha16=dd5459fe0cf3461c  hlabel=qc151_trip.harness8.py
+        map=f3bb0a4efdedd067  start_frame=400  samples_t=42546.121799..42571.021743  n_samples=12452
+     2026-10-31 20:15:59 w1  f 607→725  Δf=118  Δt=24.798287  live=4.758393  units0=1347  pre=6.676  fps_avg=4.731722  max_stall=0.749879  sha16=dd5459fe0cf3461c  hlabel=qc151_trip.harness8.py
+        map=f3bb0a4efdedd067  start_frame=400  samples_t=42571.269537..42596.207602  n_samples=12471
+  四组 units0 = [1225, 1189, 1189, 881, 1347, 1347]
+  快组均值 = 1207.0000  慢组均值 = 1114.0000  绝对差 = 93.0000  相对快组 = 7.7051%
+  10-21 19:03 的 units0=881 ∈ [1180,1360] ? False
+  四窗 |fps_avg - live_fps| = ['0.018758', '0.006277', '0.035919', '0.060994', '0.003919', '0.026671']
+  四窗 Δt 范围 = 24.798287 .. 24.994881
+
+=== 2. [V2-A2] 对标带 units0∈[1180,1360] 快/慢 × v4/非v4 ===
+  band n=22 fast(>=28)=8 mid=2 slow(<15)=12  (mid 被 2x2 丢弃)
+  FAST  n=8   trips=['l3_1101v4c', 'l3_1101v4d', 'l3_1101v4e']  {('38244d2907e7f7fa', 'qc151_trip.harness8_v4.py'): 8}
+  MID   n=2   trips=['l3_1101v3b', 'l3_1101v4c']  {('37a7c9cdf2ca97e3', 'qc151_trip.harness8_v3.py'): 1, ('38244d2907e7f7fa', 'qc151_trip.harness8_v4.py'): 1}
+  SLOW  n=12  trips=['l3_1101v3a', 'l3_1101v3b', 'l3_20261021', 'l3_20261031ha', 'l3_20261031hb']  {('37a7c9cdf2ca97e3', 'qc151_trip.harness8_v3.py'): 5, ('None', 'qc151_trip.harness3.py'): 3, ('dd5459fe0cf3461c', 'qc151_trip.harness8.py'): 4}
+  2x2: fast_v4=8 fast_nonv4=0 slow_v4=0 slow_nonv4=12  phi=+1.000000
+  趟级 2x2(去同趟多窗重复): fast_trips_v4=3 fast_trips_nonv4=0 slow_trips_v4=0 slow_trips_nonv4=5  phi=+1.000000  n_trips=8
+  放宽到 units0>=800: n=39 fast=16 slow=21  2x2=(8,8,0,21) phi=+0.601722
+  FAST 非 v4 反例: [('l3_20261023q', 'd019e8beecfb5fd8', 'qc151_trip.harness7.py', 974, '31.135'), ('l3_20261023q', 'd019e8beecfb5fd8', 'qc151_trip.harness7.py', 974, '31.218'), ('l3_20261023q', 'd019e8beecfb5fd8', 'qc151_trip.harness7.py', 974, '31.299'), ('l3_20261023r', 'd019e8beecfb5fd8', 'qc151_trip.harness7.py', 941, '31.099'), ('l3_20261023r', 'd019e8beecfb5fd8', 'qc151_trip.harness7.py', 941, '31.320'), ('t55k_20261020', 'None', 'None', 842, '31.274'), ('t55k_20261020', 'None', 'None', 842, '31.281'), ('t55k_20261020', 'None', 'None', 842, '31.284')]
+  v4 全库窗 n=9 live=18.540..31.286 极差=12.747
+  同 v4 单趟 l3_1101v4c: ['18.540', '28.416', '30.705']  极差=12.1657
+  跨日期档 units0=0      n=3   dates=['2026-10-24', '2026-10-25', '2026-10-26'] live=2.010..10.067 harness=['qc151_trip.harness7.py']
+  跨日期档 units0=1342   n=4   dates=['2026-10-21', '2026-10-31'] live=3.050..11.981 harness=['qc151_trip.harness3.py', 'qc151_trip.harness8.py']
+  具有「跨日期 + 又快又慢」的 units0 档数量 = 0
+  出现>=3 次的 units0 档 = [0, 241, 242, 251, 491, 702, 732, 842, 866, 874, 881, 941, 974, 1189, 1225, 1229, 1342, 1347, 1349, 1352]
+
+=== 3. [V2-A2] map / 母本 / 相位 / 版本来源（原始文件） ===
+  l1c_20261021       has_launch=True  sha16=None               hlabel=qc151_trip.harness3.py       start_frame=None  map=0add791d11aea84d target=0add791d11aea84d
+  l3_20261021        has_launch=True  sha16=None               hlabel=qc151_trip.harness3.py       start_frame=None  map=f3bb0a4efdedd067 target=f3bb0a4efdedd067
+  l3_20261031ha      has_launch=True  sha16=dd5459fe0cf3461c   hlabel=qc151_trip.harness8.py       start_frame=400   map=f3bb0a4efdedd067 target=f3bb0a4efdedd067
+  l3_20261031hb      has_launch=True  sha16=dd5459fe0cf3461c   hlabel=qc151_trip.harness8.py       start_frame=400   map=f3bb0a4efdedd067 target=f3bb0a4efdedd067
+  l3_1101v3a         has_launch=True  sha16=37a7c9cdf2ca97e3   hlabel=qc151_trip.harness8_v3.py    start_frame=400   map=f3bb0a4efdedd067 target=f3bb0a4efdedd067
+  l3_1101v3b         has_launch=True  sha16=37a7c9cdf2ca97e3   hlabel=qc151_trip.harness8_v3.py    start_frame=400   map=f3bb0a4efdedd067 target=f3bb0a4efdedd067
+  l3_1101v4c         has_launch=True  sha16=38244d2907e7f7fa   hlabel=qc151_trip.harness8_v4.py    start_frame=800   map=f3bb0a4efdedd067 target=f3bb0a4efdedd067
+  l3_1101v4d         has_launch=True  sha16=38244d2907e7f7fa   hlabel=qc151_trip.harness8_v4.py    start_frame=800   map=f3bb0a4efdedd067 target=f3bb0a4efdedd067
+  l3_1101v4e         has_launch=True  sha16=38244d2907e7f7fa   hlabel=qc151_trip.harness8_v4.py    start_frame=800   map=f3bb0a4efdedd067 target=f3bb0a4efdedd067
+  h7_measure_start_frame 取值分布 = Counter({'None': 62, '800': 5, '400': 4, '1200': 1})
+  无 launch 的趟目录 = ['(TRIP_ROOT)', 'archive_T32', 'archive_T33', 'archive_T34', 'archive_T36', 'archive_T38', 'archive_T39', 'archive_T40', 'archive_T41', 'archive_T42', 'archive_T43', 'archive_T44', 'archive_T45', 'archive_T47', 'archive_T49_u0800', 'l1_20261023c', 'l1a_20261020', 't55k_20261020']
+  --- 独立 hashlib 复算现存 harness 文件 sha256[:16] ---
+    qc151_trip.harness8_v4.py                                              38244d2907e7f7fa
+    MISSING D:/Project/ra2-campaign-forge/lead/qc151_harness_merge_20261021/qc151_trip.harness3.py
+    qc151_trip.harness8.py                                                 dd5459fe0cf3461c
+    qc151_trip.harness8_v3.py                                              37a7c9cdf2ca97e3
+
+=== 4. [V2-A3] 自实现 Pearson：全库 / 变体 / 去重复计数 ===
+  valid(units0非空 & live>0 & pre非空) n=63 独立趟=34
+  rho(pre,live)  全库                n=63  rho=+0.871733
+  rho(units0,live) 全库              n=63  rho=-0.350093
+  rho(pre,units0) 全库               n=63  rho=-0.457489
+  rho(pre,live) units0>0            n=60  rho=+0.892512  (§544 的 +0.8925 复现?)
+  rho(units0,live) units0>0         n=60  rho=-0.585139
+  rho(pre,live) units0>=800         n=39  rho=+0.943163
+  被 units0>0 排除的窗 = [('l1_20261023e1', 0, 0, 5.342, '2.010'), ('l1_20261023hb', 0, 0, 26.691, '10.067'), ('l1_20261023k', 0, 0, 12.086, '4.517')]
+  --- 固定 harness 版本内 rho(units0,live) ---
+    37a7c9cdf2ca97e3                         n=6   trips=2  rho=+0.443479
+    38244d2907e7f7fa                         n=9   trips=3  rho=-0.370478
+    LABEL:None                               n=22  trips=16 rho=-0.149869
+    LABEL:qc151_trip.harness3.py             n=12  trips=4  rho=-0.244375
+    d019e8beecfb5fd8                         n=10  trips=7  rho=+0.957151
+    dd5459fe0cf3461c                         n=4   trips=2  rho=+0.666494
+  pooled within-harness (demeaned) n=63 rho=+0.591069
+  多窗趟数=16  其中 pre_fps15 全窗相同=16  (独立 pre 值总数=34 / 窗数=63)
+  反例(趟内 pre 不同): []
+  rho(pre,live) 按趟取均值(去重复计数) n=34 rho=+0.813921
+  rho(units0,live) 按趟取均值          n=34 rho=-0.294512
+  |live - pre| 中位数 = 0.5541 均值 = 2.4138
+  趟内极差 中位数=0.5697 均值=2.7023 max=12.1657 (n=16 趟)
+  趟均值 n=34 范围 2.010..33.952 极差=31.942 中位数=31.214
+  两趟均值|差|中位数 = 5.4368 (n=561 对)
+  趟间/趟内 比值 = 9.5438
+
+=== 5. [V2 §7] 停摆尾段稀释：archive_T34 与四组对照 ===
+  archive_T34/measure_w0.json: n_edges=10 fps_avg=0.36000229681454066 fps_p50=31.608659530882008 max_stall_s=24.734761 span_s=25.0
+    samples.t 相邻 dt>10ms 累计缺口 = 0.000000 s (n_samples=12502, t=173225.376..173250.375)
+  四组对照窗尾段: Δt/span_s 分别 = ['0.9993', '0.9998', '0.9988', '0.9933', '0.9954', '0.9919']
+
+=== 6. 源码定义（pre_fps15 / fps_avg / _measure_poll_span）===
+  FILE D:/Project/ra2-campaign-forge/lead/goal1_harness8_20261031/qc151_trip.harness8_v4.py
+    PAT MEASURE_GATE_SPAN_S          hits=3  [(3848, 'MEASURE_GATE_SPAN_S = 1.5'), (5186, 't_cut = t0s + MEASURE_SETTLE_S - MEASURE_GATE_SPAN_S'), (5224, '"gate_span_s": MEASURE_GATE_SPAN_S}')]
+    PAT MEASURE_SETTLE_S             hits=9  [(3846, 'MEASURE_SETTLE_S = 4.0               # 窗 0 前置 settle（§3.3）'), (4955, '"window_s": MEASURE_WINDOW_S, "settle_s": MEASURE_SETTLE_S,'), (5176, 'handle, MEASURE_SETTLE_S, MEASURE_HZ)'), (5186, 't_cut = t0s + MEASURE_SETTLE_S - MEASURE_GATE_SPAN_S'), (5248, '"t_abs0": _settle_wall0, "span_s": MEASURE_SETTLE_S,'), (5249, '"settle_s": MEASURE_SETTLE_S,')]
+    PAT pre_fps15                    hits=11  [(4834, '"gate": {"pre_fps15": None, "units0": None, "ok": False},'), (5184, 'pre_fps15 = None'), (5191, 'pre_fps15 = (gate_pts[-1][1] - gate_pts[0][1]) / _gspan'), (5197, 'gate_ok = bool(pre_fps15 is not None'), (5198, 'and pre_fps15 >= MEASURE_GATE_FPS15_MIN'), (5202, '#   降级为「settle 内帧推进 ≥1 帧 ∧ units0>0」——原 pre_fps15 照常计算、照常入')]
+    PAT fps_avg                      hits=4  [(4733, '★ fps_avg = (f_end − f_start)/实测跨度 —— 主对照指标（R8；总量式，稳健口径）；'), (4748, 'st = {"fps_avg": None, "fps_p50": None, "fps_1pct_low": None,'), (4791, 'st["fps_avg"] = logic / span'), (4843, '#   ★ D-1 帧沿差分统计内核（`_measure_stats`：df 采样 / fps_avg 总量式 /')]
+    PAT def _measure_poll_span       hits=1  [(4004, 'def _measure_poll_span(handle, span_s: float, hz: int):')]
+    PAT def _measure_stats           hits=1  [(4730, 'def _measure_stats(samples):')]
+    PAT _rpm_u32                     hits=55  [(2955, '#   - RPM 只沿用 §10.8 既有 `_rpm_open/_rpm_u32/_rpm_close` 只读模式；'), (3621, 'f = _rpm_u32(handle, MEASURE_CURRENT_FRAME_VA)'), (3893, '#   只读 RPM u32（_rpm_u32），与既有 measure 采样同款；零写入目标进程。'), (3928, 'def _rpm_u32(handle, va: int):'), (3986, 'units = _rpm_u32(handle, MEASURE_UNITS_VA)'), (3987, 'infantry = _rpm_u32(handle, MEASURE_INFANTRY_VA)')]
+    PAT time\.perf_counter           hits=21  [(4007, '★ 同构 bench `poll_frames`（§3.2）；主线程内联 `time.perf_counter` 定拍；'), (4009, '★ 实际到拍节奏照实留痕（samples 的 t = `time.perf_counter()` 浮点；'), (4017, 't0 = time.perf_counter()'), (4022, 't_now = time.perf_counter()'), (4039, 'ahead = t_next - time.perf_counter()'), (4042, 'ahead = t_next - time.perf_counter()')]
+    PAT gate_pts                     hits=4  [(5187, 'gate_pts = [(t, f) for t, f in s_samples if t >= t_cut]'), (5188, 'if len(gate_pts) >= 2:'), (5189, '_gspan = gate_pts[-1][0] - gate_pts[0][0]'), (5191, 'pre_fps15 = (gate_pts[-1][1] - gate_pts[0][1]) / _gspan')]
+    PAT s_samples                    hits=13  [(5175, 't0s, s_samples, s_counters, s_err = _measure_poll_span('), (5178, '(round(s_samples[-1][0] - s_samples[0][0], 3)'), (5179, 'if len(s_samples) >= 2 else None),'), (5185, 'if len(s_samples) >= 2:'), (5187, 'gate_pts = [(t, f) for t, f in s_samples if t >= t_cut]'), (5206, '_h8_frames_adv = bool(s_samples')]

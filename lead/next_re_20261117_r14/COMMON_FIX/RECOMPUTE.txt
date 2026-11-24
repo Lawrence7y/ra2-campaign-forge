@@ -1,0 +1,78 @@
+COMMON-FIX · RECOMPUTE —— 每个数字实际用的命令与输出摘要
+日期：2026-11-20（Asia/Shanghai）　执行者：COMMON-FIX（agent-127，本轮 R14_COMMON 唯一写者）
+主工具：python -I lead\next_re_20261117_r14\COMMON_FIX\work\recompute_commonfix.py
+（stdlib-only、只读盘面；全量输出留档 work\recompute_out.txt；追加与指纹见 work\append_and_hash.py + HASH.txt）
+
+0) R14_COMMON.md 改前指纹（铁律）
+   命令：脚本 §0 —— hashlib 对文件字节
+   输出：bytes_before = 168,048；sha256_before = 669F9137CC9B24168052DF653728405E7CCA260A9094FC35758AA63AE176B715；
+        ends_with_newline = True；无 BOM
+   改后（append_and_hash.py）：bytes_after = 180,772；sha256_after = B54DBD6A0E2587E7634E0C0B0E6DF59A524A1B1B7D478FC283F22B0AC8F0B568；
+        appended = 12,724 B；前缀逐字节一致 = True（旧行 0 变更）；行数 1,082 → 1,146
+
+§A §8.1 ㉚ —— function_atlas.tsv 键格式
+   数字：12,916 / 11,160 / 0
+   命令：脚本 §A —— 读 TSV（utf-8-sig）、数据行 split("\t")[0]、re.search(r"[a-f]"/r"[A-F]")、re.fullmatch(r"[0-9a-f]{8}")
+   输出：atlas data rows = 12916；含小写 a-f = 11160；含大写 A-F = 0；全部 ^[0-9a-f]{8}$ = True
+
+§B §8.1 ㉚ —— coverage.tsv 键格式
+   数字：0 行小写；全部 ^[0-9A-F]{8}$
+   命令：脚本 §B —— 表头按逗号、数据行按 TAB 切 8 列（§7 已载明格式陷阱）
+   输出：cov data rows = 18,498（列数分布 {8: 18498}）；entry 含小写 a-f = 0；含大写 A-F = 15,870；全部 ^[0-9A-F]{8}$ = True
+
+§C §8.1 ㉚ —— S09 交集（未归一 vs 归一）
+   数字：198（未归一）/ 1,051（归一）
+   命令：脚本 §C —— S09 = subsystem 列 == "S09"；naive = entry 原串 ∈ atlas 原串集合；normalized = entry.lower() ∈ atlas 小写集合
+   输出：S09 rows = 1,102；naive = 198；normalized = 1,051；naive 命中中纯数字 entry 数 = 198（⇒ 未归一时能命中的恰是纯数字行）
+
+§D §8.1 ㉗ —— 英文措辞族（第三措辞族）
+   数字：34；全 S17；全 [已证]；全 atlas；族 01–35 缺 17；尾缀与 evidence 全中
+   命令：脚本 §D —— re.compile(r"(?i)unproven|unverified|not proven") 扫第 4 列；atlas 归属用两侧小写归一比对
+   输出：全表命中 = 34；subsystem 分布 {S17: 34}；grade 分布 {[已证]: 34}；atlas 内（归一）= 34；
+        34 行中含中文子串 [未证] = 0；name 匹配 Save_VectorBlock_NN = 34、编号 = 1..35 除 17；
+        语义尾缀 endswith "class name unproven (arg .bss obj)" 全部成立；
+        evidence_path 分布：34 行均为 "lead/next_re_20261117_r14/S17-F1/EVIDENCE/analysis_main.txt;…analysis_deep2.txt"（全部含指 analysis_deep2.txt）
+
+§E §8.1 ㉗ + §8.6 —— N / W / S 与 S17 strict
+   数字：55 / 21 / 51；W = 317；N 的三个时点值
+   命令：脚本 §E —— N = grade=="[已证]" 且 entry（小写）∈ atlas 小写集合；W = N 中语义含子串 "[未证]"；S = N − W；
+        S17 strict = S17 ∩ N ∖ W；门槛 math.ceil(0.5*102)
+   输出（2026-11-20 盘上现值，M58 并表后）：N = 1,484；W = 317；S = 1,167；
+        全表 grade 三分级 {[已证]: 1,489, [静态推断]: 5,985, [未证]: 11,024}；atlas 外 [已证] = 5；
+        S17 atlas_n = 102；S17 [已证]∩atlas = 56；S17 strict 计入英文族 = 55；剔除英文族 = 21；ceil(0.5×102) = 51；
+        措辞 A「（槽语义未证）」∩ grade=[已证] = 10 行、全 S22（该子串全表 4,153 行命中，判据 8 只施于 [已证] 行）
+   对照（卡面点名证据 BOUND_DIR\REPORT.md §1 表）：M52 快照 N=1,455 / W=317 / S=1,138（PANEL 行文）；
+        BOUND_DIR 盘上重算 N=1,476 / W=317 / S=1,159（M58 并表前）。
+        差值闭合：1,159 + 8（M58 升格行，出处 _cards\M58-MERGE.md L22/L36/L39：全表 [已证] 1,481→1,489、atlas 内 1,476→1,484）= 1,167
+
+§F §8.6 —— 界向更正的两个反例行
+   命令：脚本 §F —— 按 entry 精确取行，打印 grade/atlas/语义/evidence；读 F3A_CLASS.tsv、PENDING_DECISIONS.md（D-44）、PANEL.md L134/L138/L139
+   输出：
+   004AB9B0 —— coverage.tsv 行 2651（1-based 含表头）、S09、DisplayClass::LMBUp、[已证]、atlas=True（归一比对）、
+              语义无 [未证] 子串、无英文族措辞 ⇒ ∈ S；③ 内容为 "semantics LMBUp from R8_ui_crt.md §21.1" 文档转述；
+              现行裁决「无 ③b 主张、属 D-44 类」（PANEL L30/L135-136；PENDING D-44 已裁决严格读法）⇒ ∉ G
+   00522340 —— coverage.tsv 行 4483、S10、InfantryClass::ApplyOccupantTargetMissionFallback_behavior、[已证]、atlas=True；
+              语义含字面 "ledger S12/[未证]/sub_"（台账坐标片段、非本行自陈）⇒ 被排出于 S；
+              F3A_CLASS.tsv 该行：判 甲 / CENSUS / deep_checked=Y / 字节③b=① / 理由 "the literal [未证] is a ledger path
+              fragment … not a self-declaration" ⇒ ∈ G ∖ S（W 全量 317 行归类闭合、误排恰 1 行，BOUND_DIR\REPORT.md 命题 3）
+   PANEL 原文摘录：L134「proved_strict 是下界中的下界…」、L138「proved_strict 只是下界——…」、
+              L139「界向更正（M58）……方向标反——它是上界。证明与两个反例见 BOUND_DIR\REPORT.md」
+
+§G §2.6 D-35R —— 可核项复算
+   命令：脚本 §G —— hashlib 对 ra2youli\gamemd.exe；两 exe 全文件逐字节 diff（orig × PATCH_D35R\work\gamemd_r2.exe）；
+        解析 EVIDENCE\sites_wired.tsv、EVIDENCE\hashes.txt、EVIDENCE\smoke_r2_diag_sites.json
+   输出：
+   原 exe SHA-256 = 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476（未变 ✔）
+   两 exe 长度 = 4,825,360 B 相同；全文件差异字节 = 73；sites_wired.tsv 数据行 = 8（8 站点文件偏移区间逐条打印）；
+   洞 [0x3DF781,0x3DF7C0) 内差异 = 49；8 站点 5B 区间内差异 = 24；越界差异 = 0；
+   与执行器 hashes.txt（total 73 / cave 49 / site 24 / outside 0 / r2 SHA 36A87577…C7F4）全值一致
+   桩执行证据 JSON：max_hit_count = 2、distinct_last_rets = ["0x4a8b7a"]、hit_sites = ["4A8B75"]、n_samples = 641
+              （= 0x4A8B75 一处取得桩执行证据；其余 7 处执行器自报「无法证明桩被执行」，SMOKE_TABLE_R2.tsv 逐行）
+   崩溃数 0 / 8 站点全「不崩」：SMOKE_TABLE_R2.tsv（执行器自报）
+
+留痕（诚实记录）：首版脚本 §D/§E/§F 的 atlas 归属用了未归一大小写集合（错得 N=215 / W=26 / S17 strict=14 /
+        004AB9B0 atlas=False——恰是 ㉚ 描述的默认陷阱本身）；发现后改为两侧小写归一比对重跑，
+        本文件所引 §D/§E/§F 数字全部为归一后重跑值。该踩坑记录已一并写入 R14_COMMON §11.1 的 ㉚ 事实栏。
+
+环境与边界：Python 3.12.10（-I 隔离运行，纯 stdlib）；未改动 COVERAGE\coverage.tsv、COVERAGE\PANEL.md、
+        STATUS_BOARD.md、台账；未 git commit；唯一写入 = R14_COMMON.md 尾部追加 + COMMON_FIX\ 交付三件 + _hygiene 备份。

@@ -1,0 +1,42 @@
+=== ASK 7: doc honesty ===
+  REFSYNC_SCOPE_FIX.md contains '掩盖' : False
+  REFSYNC_SCOPE_FIX.md contains '假 PASS' : False
+  REFSYNC_SCOPE_FIX.md contains '假PASS' : False
+  REFSYNC_SCOPE_FIX.md contains '掩蔽' : False
+  REFSYNC_SCOPE_FIX.md contains '不可信' : False
+  _nn_REPORT.md:402 = - 反事实：本次 FAIL 之所以暴露，是**编排方用单 needle 重跑了负控自检**。即自检本身是唯一发现通道；而现行自检又因为覆盖不足，在交付口径下给了假 PASS。结论：**自检必须跑，且自检自身必须有「覆盖度门禁」** —— 只跑一个覆盖不足的自检，等于没跑。
+  NEEDLE_NORMALIZATION.md:364 = 2. **每个 needle 单独跑一次自检**：禁止用双 needle 联合跑替代（§2.3 假 PASS 掩盖效应）。
+
+=== ASK 7: check_d29 OR-gate minimal reproduction (author claim) ===
+  check_d29.py exists, bytes=3906 ; has require_all = True ; has any( = True
+  minimal OR: words=('93.98', '误报率') body='本报告 93.98 与误报率均已复核'
+    any(word in body for word in words) = True
+    after DELETING '误报率' from body: any(...) = True  <-- dead keyword invisible
+
+=== ASK 8: boundary -- final 8/8 fingerprint recheck ===
+  OK  sha=9ccca808d52f44aaee895e30f9a84f6f3b6ae5ee292ea71281e2b46e627a1c57  bytes=16053  lead/refsync_scope_20261109/_rs_carrier_scan.py
+  OK  sha=83b215ccbbf2c3e221c247e7bd9c7c221fddcf9472977d2df8902bf1b94ec65e  bytes=49958  lead/refsync_scope_20261109/REFSYNC_SCOPE_FIX.md
+  OK  sha=aa2dbe945c9d8fdc6aebde849701393f6f8766c51b372329d588616781c2f83f  bytes=35782  lead/refsync_scope_20261109/_rs_CARRIER_MAP.md
+  OK  sha=820db1eb93a630344623fb055449dfbd888cb46294dba3f462d9891a1d91e041  bytes=40549  lead/needle_norm_20261109/_nn_REPORT.md
+  OK  sha=c0e716ec2baaab0082d0c7af83a351b9aa12eb01a4bf2ba6a223c8b81c5de8e6  bytes=41618  lead/needle_norm_20261109/NEEDLE_NORMALIZATION.md
+  OK  sha=058630a1b34a8140ed2b57e796f3d64413e76e0f99a5f7f648fd56347577f9ec  bytes=18980  lead/s604_verdict_entry_20261109/_ve_DRAFT_S609.md
+  OK  sha=3765eddbe96deeb65eeb1f05dc81e1dc171e7ea3b2c826e2692a1d15e1c8f2d7  bytes=52419  lead/PENDING_DECISIONS.md
+  OK  sha=2baa0de45d4125549262eb595d7518c9ce99efeee120384bf640cded8a933ede  bytes=759518  lead/GOAL_THREE_TARGETS_20261018.md
+  TOTAL = 8/8 match baseline (zero modification of absolute-read-only files)
+
+=== ASK 8: write-domain prefix discipline ===
+  files in write domain = 55 ; non _me_/_mev_ names = []
+  my files (prefix _mev_) = 28
+
+=== ASK 8: git status of scanner + absolute-read-only paths ===
+  MM lead/GOAL_THREE_TARGETS_20261018.md
+  MM lead/PENDING_DECISIONS.md
+  ?? lead/gate_fp7_20261108/
+  ?? lead/gate_n13_20261109/
+  ?? lead/gate_pipeline_20261109/
+  ?? lead/masking_effect_20261109/
+  ?? lead/needle_norm_20261109/
+  ?? lead/refsync_scope_20261109/
+  (all these trees are UNTRACKED ?? from before my session; my writes are
+   confined to _mev_ files inside lead/masking_effect_20261109/)
+

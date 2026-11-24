@@ -1,0 +1,314 @@
+================================================================================================
+【_dC_ 塌陷归因独立重算】离线只读 / 零真机 / 零采样代码
+================================================================================================
+被核对象 = D:/Project/ra2-campaign-forge/lead/dtrigger_compare_20261107/_cost_quota_data.json
+被核对象 SHA256 = e6c26896319acb0387f06384665d5db3668e0f15e29f7328cac97f4931c03cac，字节数 = 111044
+指纹算法 = Python hashlib.sha256(read binary)；本机无 sha256sum / wc
+运行方式 = python -I -X utf8 D:/Project/ra2-campaign-forge/lead/dtrigger_round2_20261107/_dC_recompute.py
+路径安全 = validated_path(): normpath + 禁止 '..' 分量 + 读目录白名单；脚本自身不写文件
+
+§1 数据源与口径
+  重算数据源（唯一）：_cost_quota_data.json 的 results / nofalse / upper
+  ideal 取自同文件 meta.idealWindow / meta.idealTrip（并做 §2 内部独立交叉核对）
+  分组复核用同文件 criteria.hits（不参与任何捕获/塌陷数值）
+  未 import _cost_quota.py / _cost_quota_check.py；未读 CRITERIA_METRICS.json
+  本脚本只用标准库 json / hashlib / os / collections
+
+§2 理想值（每情景）与内部独立交叉核对
+  定义：ideal = sum(min(N, 事件数)) over 非空真实事件窗/trip；配额只由真实事件消耗
+        （RULING_D30.md:44-46；CRITERIA_COMPARE.md:277-281）
+  window1  ideal= 26  max(nofalse)= 26  max(upper)= 26  max(captured)= 22  max(nf)==max(up)==ideal: PASS
+  window3  ideal= 73  max(nofalse)= 73  max(upper)= 73  max(captured)= 61  max(nf)==max(up)==ideal: PASS
+  window5  ideal=117  max(nofalse)=117  max(upper)=117  max(captured)=102  max(nf)==max(up)==ideal: PASS
+  trip1    ideal= 12  max(nofalse)= 12  max(upper)= 12  max(captured)=  9  max(nf)==max(up)==ideal: PASS
+  trip3    ideal= 31  max(nofalse)= 31  max(upper)= 31  max(captured)= 29  max(nf)==max(up)==ideal: PASS
+  trip5    ideal= 47  max(nofalse)= 47  max(upper)= 47  max(captured)= 46  max(nf)==max(up)==ideal: PASS
+
+§3 分解式 ideal − captured = (ideal − noFalse) + (noFalse − captured)，逐格整数核算
+  格数 = 156（26 判据 × 6 情景 = 156）
+  分解式不成立的格 = 0 / 156  PASS
+  两项均 >=0 违例 = 0 / 156  PASS
+  0 <= captured <= noFalse <= ideal 且 0 <= captured <= capUpper <= ideal 违例 = 0 / 156  PASS
+  captured == ideal 的格 = 0 / 156（与 CRITERIA_COMPARE.md:281 的 0 格一致）
+
+§4 分组口径：前缀分组 vs 全召回(hits=1681)分组
+  A = C1-/C4-/C5- 前缀 = 54 格；B = C2-/C3- 前缀 = 102 格；未归类 = 0 格
+  A + B = 54 + 102 = 156（= 156：PASS）
+  hits==1681 的格 = 54；hits<1681 的格 = 102；两种分组逐格相同 = PASS
+  A 的 hits 取值集合 = [1681]；B 的 hits 取值集合 = [0, 1, 2, 3, 4, 7, 8, 21, 154, 164, 522, 567, 1170, 1516]
+
+§5 A 族（C1/C4/C5，54 格）塌陷归因
+  noFalse == 理想                = 54 / 54  PASS
+  召回/时序损失 == 0            = 54 / 54  PASS
+  误触发抢占损失 == 0 的格      = 0 / 54（应为 0：PASS）
+  塌陷 >0 的格                  = 54 / 54
+  => 54/54 塌陷 = ideal-noFalse(0) + noFalse-captured(>0)，全部来自误触发抢占：PASS
+  附加结构核对：captured == capUpper = 54 / 54；ideal-capUpper == noFalse-captured = 54 / 54；capUpper == 理想 = 0 / 54
+
+§6 B 族（C2/C3，102 格）高档 71 格核对
+  noFalse == 理想                = 0 / 102
+  召回/时序损失 == 0            = 0 / 102
+  noFalse − captured == 0       = 71 / 102  PASS
+  capUpper == 理想              = 73 / 102
+  两者交集（抢占损失=0 且 capUpper=理想） = 71 / 102  PASS
+  => 71 格中召回损失>0 的有 71 / 71（塌陷全来自判据自身漏检/触发太晚）
+  capUpper==理想 但抢占损失>0 的额外格 = 2，逐格：
+    C3-N16-r2 | trip3 : captured=20 noFalse=22 capUpper=31 ideal=31 preempt=2
+    C3-N16-r2 | trip5 : captured=31 noFalse=34 capUpper=47 ideal=47 preempt=3
+  71 格按判据分布（判据:格数）：
+    C2-N16-P95x2             6 / 6
+    C2-P95x2                 6 / 6
+    C2-P95x3                 6 / 6
+    C2-P99x2                 6 / 6
+    C2-P99x3                 6 / 6
+    C2-abs-P95x2             6 / 6
+    C3-N16-r2                1 / 6
+    C3-r12                   6 / 6
+    C3-r2                    4 / 6
+    C3-r4                    6 / 6
+    C3-r4-clean              6 / 6
+    C3-r8                    6 / 6
+    C3-r8-clean              6 / 6
+  口径差异（重要）：CRITERIA_COMPARE.md:338 括注列举 「C2-P95x3/P99x3、C3-r4/r4-clean/r8/r8-clean/r12」共 7 档，这些档 6 情景共 42 格；
+    而 71 格实际来自 13 档（另含 C2-P95x2/P99x2/abs-P95x2/N16-P95x2、C3-r2 的 4 格、C3-N16-r2 的 1 格），非括注档贡献 29 格。
+    即 71 是「C2/C3 全族中抢占损失=0」的格数，不是括注 7 档 × 6 = 42 格；若按括注档理解则计数不符。此为本轮复核发现的口径歧义，非分解式违例。
+  另：capUpper==理想共 73 格 ≠ 71 格；73 = 71 + 2 个 C3-N16-r2 格（见上）。两计数不可互换。
+
+§7 「触发等待越线」：既有实跑输出的只读交叉核对（非 156 格重算）
+  说明：_cost_quota_data.json 无延迟/等待字段，越线结论无法从本 JSON 重算；
+        此处只把既有稳定实跑输出逐行读回，作为该子句的证据核对。
+  71 格涉及的判据 = 13 档：C2-N16-P95x2, C2-P95x2, C2-P95x3, C2-P99x2, C2-P99x3, C2-abs-P95x2, C3-N16-r2, C3-r12, C3-r2, C3-r4, C3-r4-clean, C3-r8, C3-r8-clean
+  7a _dtrigger_metrics_out.txt（表行 14-39，within50 列为 S_hat 锚下 ≤50ms 触发占比）：
+    C2-N16-P95x2             metrics_out.txt:22  within50=0.0 latP50=168.501ms
+    C2-P95x2                 metrics_out.txt:17  within50=0.0 latP50=196.034ms
+    C2-P95x3                 metrics_out.txt:18  within50=0.0 latP50=104.018ms
+    C2-P99x2                 metrics_out.txt:19  within50=0.0 latP50=78.25ms
+    C2-P99x3                 metrics_out.txt:20  within50=0.0 latP50=108.391ms
+    C2-abs-P95x2             metrics_out.txt:21  within50=0.0 latP50=169.96ms
+    C3-N16-r2                metrics_out.txt:33  within50=0.0 latP50=146.801ms
+    C3-r12                   metrics_out.txt:31  within50=0.0 latP50=0.0ms
+    C3-r2                    metrics_out.txt:26  within50=0.0 latP50=167.933ms
+    C3-r4                    metrics_out.txt:27  within50=0.0 latP50=344.636ms
+    C3-r4-clean              metrics_out.txt:28  within50=0.0 latP50=347.249ms
+    C3-r8                    metrics_out.txt:29  within50=0.0 latP50=257.015ms
+    C3-r8-clean              metrics_out.txt:30  within50=0.0 latP50=259.514ms
+    within50 != 0 的判据 = 0 / 13  PASS
+  7b _dtrigger_supplement_out.txt（>50 列；非 -clean 档）：
+    C2-N16-P95x2             supplement_out.txt:17  nTrig= 45 >50= 45（全部越 50ms） >=100= 18
+    C2-P95x2                 supplement_out.txt:11  nTrig= 27 >50= 27（全部越 50ms） >=100=  4
+    C2-P95x3                 supplement_out.txt:12  nTrig= 19 >50= 19（全部越 50ms） >=100= 19
+    C2-P99x2                 supplement_out.txt:13  nTrig= 24 >50= 24（全部越 50ms） >=100=  1
+    C2-P99x3                 supplement_out.txt:14  nTrig= 18 >50= 18（全部越 50ms） >=100= 18
+    C2-abs-P95x2             无此行（补算表未列该档，含 -clean 变体）
+    C3-N16-r2                supplement_out.txt:24  nTrig=195 >50=195（全部越 50ms） >=100=156
+    C3-r12                   无此行（补算表未列该档，含 -clean 变体）
+    C3-r2                    supplement_out.txt:20  nTrig=180 >50=180（全部越 50ms） >=100=148
+    C3-r4                    supplement_out.txt:21  nTrig= 24 >50= 24（全部越 50ms） >=100= 24
+    C3-r4-clean              无此行（补算表未列该档，含 -clean 变体）
+    C3-r8                    supplement_out.txt:22  nTrig= 16 >50= 16（全部越 50ms） >=100= 16
+    C3-r8-clean              无此行（补算表未列该档，含 -clean 变体）
+  7c _dtrigger_probe_out.txt 主表（>50ms 列，逐行解析；-clean 变体不在该表）：
+    C2-N16-P95x2             无此行（主探针表未列 -clean / N16 / -r2 变体）
+    C2-P95x2                 probe_out.txt:38  nTrig= 27 >50= 27 全部越 50ms waitMed=73.378ms
+    C2-P95x3                 probe_out.txt:39  nTrig= 19 >50= 19 全部越 50ms waitMed=107.699ms
+    C2-P99x2                 probe_out.txt:40  nTrig= 24 >50= 24 全部越 50ms waitMed=75.441ms
+    C2-P99x3                 probe_out.txt:41  nTrig= 18 >50= 18 全部越 50ms waitMed=111.754ms
+    C2-abs-P95x2             probe_out.txt:42  nTrig= 29 >50= 29 全部越 50ms waitMed=70.931ms
+    C3-N16-r2                无此行（主探针表未列 -clean / N16 / -r2 变体）
+    C3-r12                   probe_out.txt:45  nTrig= 15 >50= 15 全部越 50ms waitMed=385.601ms
+    C3-r2                    无此行（主探针表未列 -clean / N16 / -r2 变体）
+    C3-r4                    probe_out.txt:43  nTrig= 24 >50= 24 全部越 50ms waitMed=127.491ms
+    C3-r4-clean              无此行（主探针表未列 -clean / N16 / -r2 变体）
+    C3-r8                    probe_out.txt:44  nTrig= 16 >50= 16 全部越 50ms waitMed=256.261ms
+    C3-r8-clean              无此行（主探针表未列 -clean / N16 / -r2 变体）
+    主表可解析行中「并非全部 >50ms」的判据 = 0  PASS
+  7c-2 probe 细部行：C2-P95x3:106, C2-P99x3:128, C3-r4:150, C3-r8:161, C3-r12:172 均为 nTriggersBeyond50ms=nTrig/nTrig (100.00%)（_dtrigger_probe_out.txt 既有实跑文本）
+  7d 判据 -clean 变体（C3-r4-clean / C3-r8-clean）在 supplement/probe 无独立明细行；仅 metrics_out.txt:28,30 的 latP50=347.249/259.514ms 与 within50=0.000000 可读回。
+  7e C3-r12 特例：metrics_out.txt:31 因 realHits=0 记 latP50=0.000ms（非「不越线」）；probe_out.txt:171-172 记 15/15 >50ms、min=377.385ms、med=385.601ms。
+  7f 门槛定义：STALL_EVENT_DEFINITION.md:190 端到端 <50ms；:191 累积判定 >=100ms 不合格；RULING_D30.md:26,52 不得以等待 P95 突破牺牲时间约束。
+  7g 口径边界（如实登记）：supplement_out.txt:44-45 明写物理起点 S 不可测，现有 waitAfterS_hat 只是下界；因此「越线」为 S_hat 锚下的实测结论，不是相对物理 S 的严格核算。
+  7h 锚语义差异：C2-abs-P95x2 / C3-r4 / r8 / r12 主探针为「上一帧沿锚」，C3-r4-clean / r8-clean 与 C3-r2 为 runStart 锚（metrics_out.txt:21,26-31 的 note 列）；两组延迟数值不可直接互比，但均在 >50ms 一侧。
+
+§8 未验项（单列，不并入 §9 结论）
+  1. 物理起点 S 不可测：无法从 (t,f) 语料重算相对 S 的严格 waitAfterS；supplement_out.txt:44-45 自报数据缺口。本轮未验。
+  2. 156 格的 results/nofalse/upper 三个字段本身是否忠实于 1125992 采样点/28381 游程的原始重放：本轮只做该 JSON 内部一致性的确定性重算，未重放语料、未重跑 _cost_quota.py（且题目禁止 import）；未验。
+  3. 「误触发抢占」与「判据自身漏检」的因果标签：本轮只验证整数分解式与计数，未验证生成这些字段的模拟器语义（先到先得 / 反事实 t[startTick] 锚）；未验。
+  4. C3-r4-clean / C3-r8-clean / C3-r2 的延迟在 supplement/probe 无独立明细，只有 metrics_out 的 within50/latP50 汇总列；逐触发分布未验。
+  5. 真机、进程内存、hook / 栈采样类证据：铁律禁止，零真机、零采样代码，未验。
+  6. 上游 CRITERIA_COMPARE.md:334-335 表中「capUpper == 理想 = 73」与本文 §6 的 73 一致，但该表的分组口径为 hits<1681 而非括注高档名单；括号名单的 42 格口径未在上游表中单列，未验其作者原意。
+
+§9 结论（只含本轮实跑可判定项）
+  9.1 分解式 ideal − captured = (ideal − noFalse) + (noFalse − captured) 在 156/156 格逐格整数成立；两项非负；链式不等式违例 0/156。
+  9.2 分组口径 54 + 102 = 156 成立（前缀分组与 hits==1681 / hits<1681 分组逐格相同）。
+  9.3 C1/C4/C5 族 54/54 格 noFalse == 理想、召回损失 0、抢占损失 >0、塌陷 >0，即塌陷全部来自误触发抢占；附加结构 captured==capUpper 54/54、ideal−capUpper == noFalse−captured 54/54、capUpper==理想 0/54。
+  9.4 C2/C3 族 71/102 格 noFalse−captured = 0，且这 71 格全部 capUpper == 理想、召回损失 >0；塌陷全部来自判据自身漏检/触发太晚。
+  9.5 capUpper==理想 在 B 族共 73 格（≠71）；多出的 2 格是 C3-N16-r2 的 trip3/trip5，其抢占损失分别为 2 和 3。
+  9.6 CRITERIA_COMPARE.md:338 括注的 7 档「高档」只覆盖 71 格中的 42 格；71 是 C2/C3 全族零抢占格数，口径须写清，否则计数不可复现。
+  9.7 「触发等待越线」经既有实跑输出交叉核对：71 格涉及的 13 档判据在 metrics_out.txt 中 within50 全为 0.000000；supplement/probe 中可逐行读回的档全部触发 >50ms、高档 ≥100ms；但这是既有输出的读回，不是从 _cost_quota_data.json 重算。
+  总判定 = PASS（上述 9.1–9.7 均按本轮实跑成立）
+
+被核对象 SHA256 = e6c26896319acb0387f06384665d5db3668e0f15e29f7328cac97f4931c03cac，字节数 = 111044
+================================================================================================
+@@CELLS_BEGIN@@
+被核对象 SHA256 = e6c26896319acb0387f06384665d5db3668e0f15e29f7328cac97f4931c03cac，字节数 = 111044
+逐格明细：c=判据 s=情景 captured=results[c][s].captured nf=nofalse[c][s] up=upper[c][s] ideal=meta 理想值
+列: c | s | captured | noFalse | capUpper | ideal | ideal-noFalse | noFalse-captured | ideal-captured | 分解校验 | hits | 分组
+c                        | s        | captured | noFalse | capUpper | ideal | ideal-noFalse | noFalse-captured | ideal-captured |   decomp |  hits | group
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+C1-k10                   | window1  |        4 |      26 |        4 |    26 |            0 |               22 |             22 |       OK |  1681 | A(C1/C4/C5)
+C1-k10                   | window3  |       23 |      73 |       23 |    73 |            0 |               50 |             50 |       OK |  1681 | A(C1/C4/C5)
+C1-k10                   | window5  |       40 |     117 |       40 |   117 |            0 |               77 |             77 |       OK |  1681 | A(C1/C4/C5)
+C1-k10                   | trip1    |        3 |      12 |        3 |    12 |            0 |                9 |              9 |       OK |  1681 | A(C1/C4/C5)
+C1-k10                   | trip3    |       13 |      31 |       13 |    31 |            0 |               18 |             18 |       OK |  1681 | A(C1/C4/C5)
+C1-k10                   | trip5    |       20 |      47 |       20 |    47 |            0 |               27 |             27 |       OK |  1681 | A(C1/C4/C5)
+C1-k25                   | window1  |        6 |      26 |        6 |    26 |            0 |               20 |             20 |       OK |  1681 | A(C1/C4/C5)
+C1-k25                   | window3  |       27 |      73 |       27 |    73 |            0 |               46 |             46 |       OK |  1681 | A(C1/C4/C5)
+C1-k25                   | window5  |       48 |     117 |       48 |   117 |            0 |               69 |             69 |       OK |  1681 | A(C1/C4/C5)
+C1-k25                   | trip1    |        5 |      12 |        5 |    12 |            0 |                7 |              7 |       OK |  1681 | A(C1/C4/C5)
+C1-k25                   | trip3    |       16 |      31 |       16 |    31 |            0 |               15 |             15 |       OK |  1681 | A(C1/C4/C5)
+C1-k25                   | trip5    |       23 |      47 |       23 |    47 |            0 |               24 |             24 |       OK |  1681 | A(C1/C4/C5)
+C1-k50                   | window1  |       18 |      26 |       18 |    26 |            0 |                8 |              8 |       OK |  1681 | A(C1/C4/C5)
+C1-k50                   | window3  |       61 |      73 |       61 |    73 |            0 |               12 |             12 |       OK |  1681 | A(C1/C4/C5)
+C1-k50                   | window5  |      102 |     117 |      102 |   117 |            0 |               15 |             15 |       OK |  1681 | A(C1/C4/C5)
+C1-k50                   | trip1    |        9 |      12 |        9 |    12 |            0 |                3 |              3 |       OK |  1681 | A(C1/C4/C5)
+C1-k50                   | trip3    |       29 |      31 |       29 |    31 |            0 |                2 |              2 |       OK |  1681 | A(C1/C4/C5)
+C1-k50                   | trip5    |       46 |      47 |       46 |    47 |            0 |                1 |              1 |       OK |  1681 | A(C1/C4/C5)
+C2-P95x2                 | window1  |        4 |       4 |       26 |    26 |           22 |                0 |             22 |       OK |     7 | B(C2/C3)
+C2-P95x2                 | window3  |        7 |       7 |       73 |    73 |           66 |                0 |             66 |       OK |     7 | B(C2/C3)
+C2-P95x2                 | window5  |        7 |       7 |      117 |   117 |          110 |                0 |            110 |       OK |     7 | B(C2/C3)
+C2-P95x2                 | trip1    |        4 |       4 |       12 |    12 |            8 |                0 |              8 |       OK |     7 | B(C2/C3)
+C2-P95x2                 | trip3    |        7 |       7 |       31 |    31 |           24 |                0 |             24 |       OK |     7 | B(C2/C3)
+C2-P95x2                 | trip5    |        7 |       7 |       47 |    47 |           40 |                0 |             40 |       OK |     7 | B(C2/C3)
+C2-P95x3                 | window1  |        2 |       2 |       26 |    26 |           24 |                0 |             24 |       OK |     3 | B(C2/C3)
+C2-P95x3                 | window3  |        3 |       3 |       73 |    73 |           70 |                0 |             70 |       OK |     3 | B(C2/C3)
+C2-P95x3                 | window5  |        3 |       3 |      117 |   117 |          114 |                0 |            114 |       OK |     3 | B(C2/C3)
+C2-P95x3                 | trip1    |        2 |       2 |       12 |    12 |           10 |                0 |             10 |       OK |     3 | B(C2/C3)
+C2-P95x3                 | trip3    |        3 |       3 |       31 |    31 |           28 |                0 |             28 |       OK |     3 | B(C2/C3)
+C2-P95x3                 | trip5    |        3 |       3 |       47 |    47 |           44 |                0 |             44 |       OK |     3 | B(C2/C3)
+C2-P99x2                 | window1  |        3 |       3 |       26 |    26 |           23 |                0 |             23 |       OK |     4 | B(C2/C3)
+C2-P99x2                 | window3  |        4 |       4 |       73 |    73 |           69 |                0 |             69 |       OK |     4 | B(C2/C3)
+C2-P99x2                 | window5  |        4 |       4 |      117 |   117 |          113 |                0 |            113 |       OK |     4 | B(C2/C3)
+C2-P99x2                 | trip1    |        3 |       3 |       12 |    12 |            9 |                0 |              9 |       OK |     4 | B(C2/C3)
+C2-P99x2                 | trip3    |        4 |       4 |       31 |    31 |           27 |                0 |             27 |       OK |     4 | B(C2/C3)
+C2-P99x2                 | trip5    |        4 |       4 |       47 |    47 |           43 |                0 |             43 |       OK |     4 | B(C2/C3)
+C2-P99x3                 | window1  |        1 |       1 |       26 |    26 |           25 |                0 |             25 |       OK |     2 | B(C2/C3)
+C2-P99x3                 | window3  |        2 |       2 |       73 |    73 |           71 |                0 |             71 |       OK |     2 | B(C2/C3)
+C2-P99x3                 | window5  |        2 |       2 |      117 |   117 |          115 |                0 |            115 |       OK |     2 | B(C2/C3)
+C2-P99x3                 | trip1    |        1 |       1 |       12 |    12 |           11 |                0 |             11 |       OK |     2 | B(C2/C3)
+C2-P99x3                 | trip3    |        2 |       2 |       31 |    31 |           29 |                0 |             29 |       OK |     2 | B(C2/C3)
+C2-P99x3                 | trip5    |        2 |       2 |       47 |    47 |           45 |                0 |             45 |       OK |     2 | B(C2/C3)
+C2-abs-P95x2             | window1  |        4 |       4 |       26 |    26 |           22 |                0 |             22 |       OK |     8 | B(C2/C3)
+C2-abs-P95x2             | window3  |        8 |       8 |       73 |    73 |           65 |                0 |             65 |       OK |     8 | B(C2/C3)
+C2-abs-P95x2             | window5  |        8 |       8 |      117 |   117 |          109 |                0 |            109 |       OK |     8 | B(C2/C3)
+C2-abs-P95x2             | trip1    |        4 |       4 |       12 |    12 |            8 |                0 |              8 |       OK |     8 | B(C2/C3)
+C2-abs-P95x2             | trip3    |        8 |       8 |       31 |    31 |           23 |                0 |             23 |       OK |     8 | B(C2/C3)
+C2-abs-P95x2             | trip5    |        8 |       8 |       47 |    47 |           39 |                0 |             39 |       OK |     8 | B(C2/C3)
+C2-N16-P95x2             | window1  |       11 |      11 |       26 |    26 |           15 |                0 |             15 |       OK |    21 | B(C2/C3)
+C2-N16-P95x2             | window3  |       19 |      19 |       73 |    73 |           54 |                0 |             54 |       OK |    21 | B(C2/C3)
+C2-N16-P95x2             | window5  |       21 |      21 |      117 |   117 |           96 |                0 |             96 |       OK |    21 | B(C2/C3)
+C2-N16-P95x2             | trip1    |        7 |       7 |       12 |    12 |            5 |                0 |              5 |       OK |    21 | B(C2/C3)
+C2-N16-P95x2             | trip3    |       14 |      14 |       31 |    31 |           17 |                0 |             17 |       OK |    21 | B(C2/C3)
+C2-N16-P95x2             | trip5    |       17 |      17 |       47 |    47 |           30 |                0 |             30 |       OK |    21 | B(C2/C3)
+C2-cap40-P95x2           | window1  |        4 |      24 |       22 |    26 |            2 |               20 |             22 |       OK |  1170 | B(C2/C3)
+C2-cap40-P95x2           | window3  |       21 |      67 |       68 |    73 |            6 |               46 |             52 |       OK |  1170 | B(C2/C3)
+C2-cap40-P95x2           | window5  |       39 |     108 |      110 |   117 |            9 |               69 |             78 |       OK |  1170 | B(C2/C3)
+C2-cap40-P95x2           | trip1    |        0 |      10 |        9 |    12 |            2 |               10 |             12 |       OK |  1170 | B(C2/C3)
+C2-cap40-P95x2           | trip3    |        6 |      25 |       29 |    31 |            6 |               19 |             25 |       OK |  1170 | B(C2/C3)
+C2-cap40-P95x2           | trip5    |       11 |      39 |       46 |    47 |            8 |               28 |             36 |       OK |  1170 | B(C2/C3)
+C2-N16-P95x2-cap40       | window1  |        8 |      24 |       21 |    26 |            2 |               16 |             18 |       OK |  1516 | B(C2/C3)
+C2-N16-P95x2-cap40       | window3  |       25 |      67 |       61 |    73 |            6 |               42 |             48 |       OK |  1516 | B(C2/C3)
+C2-N16-P95x2-cap40       | window5  |       44 |     108 |       95 |   117 |            9 |               64 |             73 |       OK |  1516 | B(C2/C3)
+C2-N16-P95x2-cap40       | trip1    |        3 |      10 |        8 |    12 |            2 |                7 |              9 |       OK |  1516 | B(C2/C3)
+C2-N16-P95x2-cap40       | trip3    |        8 |      25 |       26 |    31 |            6 |               17 |             23 |       OK |  1516 | B(C2/C3)
+C2-N16-P95x2-cap40       | trip5    |       12 |      39 |       41 |    47 |            8 |               27 |             35 |       OK |  1516 | B(C2/C3)
+C3-r1.5                  | window1  |       21 |      24 |       24 |    26 |            2 |                3 |              5 |       OK |   522 | B(C2/C3)
+C3-r1.5                  | window3  |       60 |      67 |       69 |    73 |            6 |                7 |             13 |       OK |   522 | B(C2/C3)
+C3-r1.5                  | window5  |       98 |     107 |      111 |   117 |           10 |                9 |             19 |       OK |   522 | B(C2/C3)
+C3-r1.5                  | trip1    |        8 |      10 |       11 |    12 |            2 |                2 |              4 |       OK |   522 | B(C2/C3)
+C3-r1.5                  | trip3    |       21 |      25 |       30 |    31 |            6 |                4 |             10 |       OK |   522 | B(C2/C3)
+C3-r1.5                  | trip5    |       34 |      39 |       46 |    47 |            8 |                5 |             13 |       OK |   522 | B(C2/C3)
+C3-r2                    | window1  |       22 |      23 |       25 |    26 |            3 |                1 |              4 |       OK |   154 | B(C2/C3)
+C3-r2                    | window3  |       56 |      56 |       73 |    73 |           17 |                0 |             17 |       OK |   154 | B(C2/C3)
+C3-r2                    | window5  |       83 |      83 |      117 |   117 |           34 |                0 |             34 |       OK |   154 | B(C2/C3)
+C3-r2                    | trip1    |        9 |      10 |       11 |    12 |            2 |                1 |              3 |       OK |   154 | B(C2/C3)
+C3-r2                    | trip3    |       25 |      25 |       31 |    31 |            6 |                0 |              6 |       OK |   154 | B(C2/C3)
+C3-r2                    | trip5    |       37 |      37 |       47 |    47 |           10 |                0 |             10 |       OK |   154 | B(C2/C3)
+C3-r4                    | window1  |        3 |       3 |       26 |    26 |           23 |                0 |             23 |       OK |     8 | B(C2/C3)
+C3-r4                    | window3  |        7 |       7 |       73 |    73 |           66 |                0 |             66 |       OK |     8 | B(C2/C3)
+C3-r4                    | window5  |        8 |       8 |      117 |   117 |          109 |                0 |            109 |       OK |     8 | B(C2/C3)
+C3-r4                    | trip1    |        2 |       2 |       12 |    12 |           10 |                0 |             10 |       OK |     8 | B(C2/C3)
+C3-r4                    | trip3    |        5 |       5 |       31 |    31 |           26 |                0 |             26 |       OK |     8 | B(C2/C3)
+C3-r4                    | trip5    |        7 |       7 |       47 |    47 |           40 |                0 |             40 |       OK |     8 | B(C2/C3)
+C3-r4-clean              | window1  |        3 |       3 |       26 |    26 |           23 |                0 |             23 |       OK |     8 | B(C2/C3)
+C3-r4-clean              | window3  |        7 |       7 |       73 |    73 |           66 |                0 |             66 |       OK |     8 | B(C2/C3)
+C3-r4-clean              | window5  |        8 |       8 |      117 |   117 |          109 |                0 |            109 |       OK |     8 | B(C2/C3)
+C3-r4-clean              | trip1    |        2 |       2 |       12 |    12 |           10 |                0 |             10 |       OK |     8 | B(C2/C3)
+C3-r4-clean              | trip3    |        5 |       5 |       31 |    31 |           26 |                0 |             26 |       OK |     8 | B(C2/C3)
+C3-r4-clean              | trip5    |        7 |       7 |       47 |    47 |           40 |                0 |             40 |       OK |     8 | B(C2/C3)
+C3-r8                    | window1  |        1 |       1 |       26 |    26 |           25 |                0 |             25 |       OK |     1 | B(C2/C3)
+C3-r8                    | window3  |        1 |       1 |       73 |    73 |           72 |                0 |             72 |       OK |     1 | B(C2/C3)
+C3-r8                    | window5  |        1 |       1 |      117 |   117 |          116 |                0 |            116 |       OK |     1 | B(C2/C3)
+C3-r8                    | trip1    |        1 |       1 |       12 |    12 |           11 |                0 |             11 |       OK |     1 | B(C2/C3)
+C3-r8                    | trip3    |        1 |       1 |       31 |    31 |           30 |                0 |             30 |       OK |     1 | B(C2/C3)
+C3-r8                    | trip5    |        1 |       1 |       47 |    47 |           46 |                0 |             46 |       OK |     1 | B(C2/C3)
+C3-r8-clean              | window1  |        1 |       1 |       26 |    26 |           25 |                0 |             25 |       OK |     1 | B(C2/C3)
+C3-r8-clean              | window3  |        1 |       1 |       73 |    73 |           72 |                0 |             72 |       OK |     1 | B(C2/C3)
+C3-r8-clean              | window5  |        1 |       1 |      117 |   117 |          116 |                0 |            116 |       OK |     1 | B(C2/C3)
+C3-r8-clean              | trip1    |        1 |       1 |       12 |    12 |           11 |                0 |             11 |       OK |     1 | B(C2/C3)
+C3-r8-clean              | trip3    |        1 |       1 |       31 |    31 |           30 |                0 |             30 |       OK |     1 | B(C2/C3)
+C3-r8-clean              | trip5    |        1 |       1 |       47 |    47 |           46 |                0 |             46 |       OK |     1 | B(C2/C3)
+C3-r12                   | window1  |        0 |       0 |       26 |    26 |           26 |                0 |             26 |       OK |     0 | B(C2/C3)
+C3-r12                   | window3  |        0 |       0 |       73 |    73 |           73 |                0 |             73 |       OK |     0 | B(C2/C3)
+C3-r12                   | window5  |        0 |       0 |      117 |   117 |          117 |                0 |            117 |       OK |     0 | B(C2/C3)
+C3-r12                   | trip1    |        0 |       0 |       12 |    12 |           12 |                0 |             12 |       OK |     0 | B(C2/C3)
+C3-r12                   | trip3    |        0 |       0 |       31 |    31 |           31 |                0 |             31 |       OK |     0 | B(C2/C3)
+C3-r12                   | trip5    |        0 |       0 |       47 |    47 |           47 |                0 |             47 |       OK |     0 | B(C2/C3)
+C3-N16-r1.5              | window1  |       20 |      24 |       23 |    26 |            2 |                4 |              6 |       OK |   567 | B(C2/C3)
+C3-N16-r1.5              | window3  |       57 |      65 |       67 |    73 |            8 |                8 |             16 |       OK |   567 | B(C2/C3)
+C3-N16-r1.5              | window5  |       92 |     103 |      109 |   117 |           14 |               11 |             25 |       OK |   567 | B(C2/C3)
+C3-N16-r1.5              | trip1    |        7 |      10 |       10 |    12 |            2 |                3 |              5 |       OK |   567 | B(C2/C3)
+C3-N16-r1.5              | trip3    |       20 |      25 |       29 |    31 |            6 |                5 |             11 |       OK |   567 | B(C2/C3)
+C3-N16-r1.5              | trip5    |       32 |      39 |       45 |    47 |            8 |                7 |             15 |       OK |   567 | B(C2/C3)
+C3-N16-r2                | window1  |       20 |      21 |       25 |    26 |            5 |                1 |              6 |       OK |   164 | B(C2/C3)
+C3-N16-r2                | window3  |       52 |      55 |       71 |    73 |           18 |                3 |             21 |       OK |   164 | B(C2/C3)
+C3-N16-r2                | window5  |       84 |      87 |      114 |   117 |           30 |                3 |             33 |       OK |   164 | B(C2/C3)
+C3-N16-r2                | trip1    |        9 |       9 |       12 |    12 |            3 |                0 |              3 |       OK |   164 | B(C2/C3)
+C3-N16-r2                | trip3    |       20 |      22 |       31 |    31 |            9 |                2 |             11 |       OK |   164 | B(C2/C3)
+C3-N16-r2                | trip5    |       31 |      34 |       47 |    47 |           13 |                3 |             16 |       OK |   164 | B(C2/C3)
+C4-t16                   | window1  |        4 |      26 |        4 |    26 |            0 |               22 |             22 |       OK |  1681 | A(C1/C4/C5)
+C4-t16                   | window3  |       24 |      73 |       24 |    73 |            0 |               49 |             49 |       OK |  1681 | A(C1/C4/C5)
+C4-t16                   | window5  |       44 |     117 |       44 |   117 |            0 |               73 |             73 |       OK |  1681 | A(C1/C4/C5)
+C4-t16                   | trip1    |        3 |      12 |        3 |    12 |            0 |                9 |              9 |       OK |  1681 | A(C1/C4/C5)
+C4-t16                   | trip3    |       14 |      31 |       14 |    31 |            0 |               17 |             17 |       OK |  1681 | A(C1/C4/C5)
+C4-t16                   | trip5    |       23 |      47 |       23 |    47 |            0 |               24 |             24 |       OK |  1681 | A(C1/C4/C5)
+C4-t24                   | window1  |        4 |      26 |        4 |    26 |            0 |               22 |             22 |       OK |  1681 | A(C1/C4/C5)
+C4-t24                   | window3  |       24 |      73 |       24 |    73 |            0 |               49 |             49 |       OK |  1681 | A(C1/C4/C5)
+C4-t24                   | window5  |       44 |     117 |       44 |   117 |            0 |               73 |             73 |       OK |  1681 | A(C1/C4/C5)
+C4-t24                   | trip1    |        3 |      12 |        3 |    12 |            0 |                9 |              9 |       OK |  1681 | A(C1/C4/C5)
+C4-t24                   | trip3    |       14 |      31 |       14 |    31 |            0 |               17 |             17 |       OK |  1681 | A(C1/C4/C5)
+C4-t24                   | trip5    |       23 |      47 |       23 |    47 |            0 |               24 |             24 |       OK |  1681 | A(C1/C4/C5)
+C4-t30                   | window1  |        4 |      26 |        4 |    26 |            0 |               22 |             22 |       OK |  1681 | A(C1/C4/C5)
+C4-t30                   | window3  |       25 |      73 |       25 |    73 |            0 |               48 |             48 |       OK |  1681 | A(C1/C4/C5)
+C4-t30                   | window5  |       45 |     117 |       45 |   117 |            0 |               72 |             72 |       OK |  1681 | A(C1/C4/C5)
+C4-t30                   | trip1    |        3 |      12 |        3 |    12 |            0 |                9 |              9 |       OK |  1681 | A(C1/C4/C5)
+C4-t30                   | trip3    |       14 |      31 |       14 |    31 |            0 |               17 |             17 |       OK |  1681 | A(C1/C4/C5)
+C4-t30                   | trip5    |       23 |      47 |       23 |    47 |            0 |               24 |             24 |       OK |  1681 | A(C1/C4/C5)
+C4-t40                   | window1  |        4 |      26 |        4 |    26 |            0 |               22 |             22 |       OK |  1681 | A(C1/C4/C5)
+C4-t40                   | window3  |       28 |      73 |       28 |    73 |            0 |               45 |             45 |       OK |  1681 | A(C1/C4/C5)
+C4-t40                   | window5  |       51 |     117 |       51 |   117 |            0 |               66 |             66 |       OK |  1681 | A(C1/C4/C5)
+C4-t40                   | trip1    |        3 |      12 |        3 |    12 |            0 |                9 |              9 |       OK |  1681 | A(C1/C4/C5)
+C4-t40                   | trip3    |       16 |      31 |       16 |    31 |            0 |               15 |             15 |       OK |  1681 | A(C1/C4/C5)
+C4-t40                   | trip5    |       26 |      47 |       26 |    47 |            0 |               21 |             21 |       OK |  1681 | A(C1/C4/C5)
+C4-t48                   | window1  |        7 |      26 |        7 |    26 |            0 |               19 |             19 |       OK |  1681 | A(C1/C4/C5)
+C4-t48                   | window3  |       30 |      73 |       30 |    73 |            0 |               43 |             43 |       OK |  1681 | A(C1/C4/C5)
+C4-t48                   | window5  |       55 |     117 |       55 |   117 |            0 |               62 |             62 |       OK |  1681 | A(C1/C4/C5)
+C4-t48                   | trip1    |        5 |      12 |        5 |    12 |            0 |                7 |              7 |       OK |  1681 | A(C1/C4/C5)
+C4-t48                   | trip3    |       18 |      31 |       18 |    31 |            0 |               13 |             13 |       OK |  1681 | A(C1/C4/C5)
+C4-t48                   | trip5    |       26 |      47 |       26 |    47 |            0 |               21 |             21 |       OK |  1681 | A(C1/C4/C5)
+C5-k10t30                | window1  |        4 |      26 |        4 |    26 |            0 |               22 |             22 |       OK |  1681 | A(C1/C4/C5)
+C5-k10t30                | window3  |       25 |      73 |       25 |    73 |            0 |               48 |             48 |       OK |  1681 | A(C1/C4/C5)
+C5-k10t30                | window5  |       45 |     117 |       45 |   117 |            0 |               72 |             72 |       OK |  1681 | A(C1/C4/C5)
+C5-k10t30                | trip1    |        3 |      12 |        3 |    12 |            0 |                9 |              9 |       OK |  1681 | A(C1/C4/C5)
+C5-k10t30                | trip3    |       14 |      31 |       14 |    31 |            0 |               17 |             17 |       OK |  1681 | A(C1/C4/C5)
+C5-k10t30                | trip5    |       23 |      47 |       23 |    47 |            0 |               24 |             24 |       OK |  1681 | A(C1/C4/C5)
+@@CELLS_END@@

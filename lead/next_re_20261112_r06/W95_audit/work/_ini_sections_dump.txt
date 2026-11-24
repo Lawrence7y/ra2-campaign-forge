@@ -1,0 +1,128 @@
+#################### 13.5 load order (lines 1354-1425)
+### 13.5 载入顺序（R-021 二次更正）
+
+**⚠ 本节第一版是错的，已撤回。** 第一版把 `Init` 用 0x1600 的窗口扫描，
+越界读进了紧邻的 `Read_File`，于是把 28 个 `Read_*` 调用全算到 `Init` 头上。
+按 `ret` 边界重划后真实结构如下。
+
+**`Init`（`0x6686C0`–`0x668BE5`，`ret 4`）只做三件事**：
+
+```text
+0x00668A27  call Read_File      ; 第 1 份 INI
+0x00668B05  call Read_File      ; 第 2 份
+0x00668BAA  call Read_File      ; 第 3 份
+```
+
+⇒ 与 YRpp 的注释吻合：**`Init` 对第一份 INI 调一次，`Read_File` 对后续
+（gamemode / map）再调两次**。`Init` **不直接调任何 `Read_*`**。
+
+**`Read_File`（`0x668BF0`–`0x668F8D`，`ret 4`）才是那 28 个 loaders 的容器**，
+顺序如下（后读覆盖先读）：
+
+> **★★ R-021 核验（2026-10-22）：上句的范围与「28」都要改。**
+> `Read_File` 有**分离冷块**：体内两条 `je` 跳出首 `ret` 的边界 ——
+> `0x00668F71 je 0x668F90`、`0x00668F76 je 0x668F90`；冷块从 `0x668F90` 起，
+> 到 `0x00668FA2 c2 04 00`（`ret 4`）结束，紧接 `Read_SpecialWeapons`（`0x668FB0`）。
+> ⇒ **真范围 `0x668BF0–0x668FA3`**，不是到 `0x668F8D`。
+> ⇒ 下表「28 个 loader 调用」里第 28 项 `Read_AdvancedCommandBar`（`0x668F81`）
+> 是**主路径**那次；冷块里还有**第 29 次调用**（`0x00668F96`，参数 `0`）。
+> 即 **29 次调用 / 28 个不同 loader**（`Read_AdvancedCommandBar` 调两次）。
+> 方法学教训见 §13.7 第 5 条：**函数范围不能用「首个 `ret`」定**。
+
+| # | 调用点 | loader |
+|--:|:---|:---|
+| 1 | `0x00668BFE` | `Read_Colors` |
+| 2 | `0x00668CDE` | `Read_Sides` |
+| 3 | `0x00668E78` | `Read_BuildingTypes` |
+| 4 | `0x00668E80` | `Read_VehicleTypes` |
+| 5 | `0x00668E88` | `Read_AircraftTypes` |
+| 6 | `0x00668E90` | `Read_InfantryTypes` |
+| 7 | `0x00668E98` | `Read_Animations` |
+| 8 | `0x00668EA0` | `Read_VoxelAnims` |
+| 9 | `0x00668EA8` | `Read_Particles` |
+| 10 | `0x00668EB0` | `Read_ParticleSystems` |
+| 11 | `0x00668EB8` | `Read_JumpjetControls` |
+| 12 | `0x00668EC0` | `Read_MultiplayerDialogSettings` |
+| 13 | `0x00668EC8` | `Read_AI` |
+| 14 | `0x00668ED0` | `Read_Powerups` |
+| 15 | `0x00668ED8` | `Read_LandCharacteristics` |
+| 16 | `0x00668EE0` | `Read_IQ` |
+| 17 | `0x00668EE8` | `Read_General` |
+| 18–20 | `0x00668F02` / `0x00668F14` / `0x00668F26` | `Read_Difficulty` **×3** |
+| 21 | `0x00668F2E` | `Read_CrateRules` |
+| 22 | `0x00668F36` | `Read_CombatDamage` |
+| 23 | `0x00668F3E` | `Read_Radiation` |
+| 24 | `0x00668F46` | `Read_ElevationModel` |
+| 25 | `0x00668F4E` | `Read_WallModel` |
+| 26 | `0x00668F56` | `Read_AudioVisual` |
+| 27 | `0x00668F5E` | `Read_SpecialWeapons` |
+| 28 | `0x00668F81` | `Read_AdvancedCommandBar`（参数 `1` → MP 节，**联机** GameMode 3/4）|
+| 29 | `0x00668F96` | `Read_AdvancedCommandBar`（参数 `0` → `AdvancedCommandBar`，**冷块内**，单机 GameMode 0/5）|
+
+**对编译器有实际意义的两点**：
+
+1. **`Read_File` 会被调三次**（`Init` 里）。所以同一套节会被解析三遍，
+   后一遍覆盖前一遍 ⇒ **想覆盖某个值，可以放到后面的 gamemode/map INI 里**。
+2. **`Read_General` 在 `Read_Difficulty`（×3）之前**，
+   而 `Read_Difficulty` 的三次调用对应三个难度档位。
+
+### 13.6 复跑
+
+`python re_atlas/tools/dump_rules_sections.py`（`evidence/rules_sections.txt`）。
+正对照四项：`Read_Colors→Colors`、`Read_General→General`、`Init` 头 6 字节
+`81 EC D0 00 00 00`、指针表非空项 ≥28。任一不成立即判不可信。
+
+#################### 19.3 same loader reads TWO INI files (lines 2748-2800)
+### 19.3 ★ 同一个 loader 同时读两个 INI 文件
+
+这是对编译器最要紧的一条，也是这批 loader 与 `RulesClass` 自己的
+loader 最大的结构差异。
+
+四个派生类的 `LoadFromINI` **都**在函数体里出现
+`mov ecx, 0x887180` —— `0x887180` 是 **`CCINIClass` 全局实例 `INI_Art`**：
+
+- 依据一（字节，**2026-10-22 核验后修正**）：`0x887180` 落在 `.data` 的
+  **BSS 尾部**（`.data` raw 只覆盖 VA `0x812000..0x87E000`），**静态读 4 字节得空**，
+  所以"直读它的 vptr"这条证据**不成立**。真正成立的是**写入点**：
+  `0x0040E031` 处 `mov dword ptr [0x887180], 0x7E1AF4`（全 `.text` 唯一一处），
+  而 `0x7E1AF4` 的 COL 解出的类名是 `.?AVCCINIClass@@`；
+- 依据二（YRpp）：`CCINIClass.h` 静态成员 `INI_Art{0x887180}`；
+- 依据三（本文 §0）：该结论在 R-015 已双通道核验。
+
+而函数的 `this`（TC）之外的另一个 INIClass 来自**调用方压栈的参数**
+（`mov esi,[esp+0x37C]` 之类），那是 `rulesmd.ini`。
+
+⇒ **同一个 `HTNK` 节，其 `Strength` 必须写进 `rulesmd.ini`，
+其 `TurretAnimX` 必须写进 `artmd.ini`。** 写错文件时引擎**不会报错**，
+只是那个键永远读到默认值。这正是 `BuildingTypeClass` 里
+**151/270 个键属于 artmd** 的原因 —— 建筑的动画/帧偏移几乎全在美术文件里。
+（核验后分母为 **277**，artmd 侧仍为 **151**，见 §19.2。）
+
+工具输出的 `INI` 列即此归属，逐行可查。
+
+### 19.4 两个节名缓冲：`+0x24` 与 `+0x1F8`
+
+派生 loader 的 `section` 实参不总是字面量，而是 `lea reg,[this+0x24]`
+或 `lea reg,[this+0x1F8]` 得到的两个**缓冲区**：
+
+| 偏移 | 内容 | 语义 |
+|:---|:---|:---|
+| `+0x24` | 类型自身名（`HTNK` / `MTNK` …） | 该名字在**两个文件里都可能是节名** |
+| `+0x1F8` | 被 `Image=` 改写后的名字 | **artmd 专用节名** |
+
+据此得到一条**单向不变量**，实测 **613 行里 0 违反**：
+
+> `+0x1F8` 作为 section 的读取，**从不**走 `rulesmd` 的 INIClass。
+
+反向不成立：`+0x24` 既可以配 rulesmd 也可以配 artmd
+（3 个键实测走 artmd），因为类型名在 artmd 里同样是一个节。
+第一版把这条写成双向的，产出 20 条假"节/INI不符"（见 CONFLICTS G-33 的邻条）。
+
+### 19.5 派生类的 loader 会重复读继承字段
+
+`UnitTypeClass` 在 `+0x67C` 读 `SpeedType` —— 那是 `TechnoTypeClass` 的字段。
+这类"继承字段重读"共 1 处（UnitType），不计入派生类自有字段。
+`BuildingTypeClass` 另有 1 处 `+0x67C` 读 **`WaterBound`** ——
+**同名偏移、不同键、不同属性**：建筑不移动，于是基类的 `SpeedType` 槽
+被复用为 `WaterBound`（`WaterBound=yes` → 存 5，`no` → 存 -1，
+见 `0x0045FF85..0x0045FFA9` 的 `cmp eax,5 / sete / and 6 / dec`）。

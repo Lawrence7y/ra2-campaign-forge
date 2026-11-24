@@ -1,0 +1,53 @@
+============================================================================================
+A · 0x55B8F0 边界与阶梯（A1-A8）
+============================================================================================
+  [PASS] A1 0x55B8DE bytes                                    got=c2 08 00 want=c2 08 00
+  [PASS] A2 0x55B8E1..EF is 15x 90                            got=90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 want=90 90 90 90 90 90 90 90 90 90 90 90 90 90 90
+  [PASS] A3 0x55B8F0 bytes                                    got=a1 b8 e9 a8 00 want=a1 b8 e9 a8 00
+  [PASS] A5 0x55B960 bytes                                    got=ff 52 5c want=ff 52 5c
+  [PASS] A8 +0x98 gate bytes at 0x55B9F0                      got=8a 81 98 00 00 00 want=8a 81 98 00 00 00
+  [PASS] A4 0x55B8C3 boundary=False (inside insn at 0055B8C2 size 3 (mov dword ptr [esi + eax*4], ecx)) covering=0055B8C2 mov dword ptr [esi + eax*4], ecx
+       raw: 0x55B8C0 = 86 04 89 0c 86 8b 0d d8 40 8b 00 8b 35 cc 40 8b
+  [PASS] A6 '68 00 00 01 00' hits in [0x55B000,0x55C000)      got=0 want=0
+  [PASS] A7 11 slot-5C call sites                             got=[5617938, 5617977, 5618016, 5618055, 5618094, 5618133, 5618172, 5618211, 5618250, 5618289, 5618328] want=[5617938, 5617977, 5618016, 5618055, 5618094, 5618133, 5618172, 5618211, 5618250, 5618289, 5618328]
+  [PASS] A7 block strides (first 0x28, rest 0x27)             got=['0x28', '0x27', '0x27', '0x27', '0x27', '0x27', '0x27', '0x27', '0x27', '0x27'] want=['0x28', '0x27', '0x27', '0x27', '0x27', '0x27', '0x27', '0x27', '0x27', '0x27']
+
+============================================================================================
+B · 0x55AFB0 与调用链（B1-B2）
+============================================================================================
+  [PASS] B1 0x55DC9E bytes                                    got=e8 0d d3 ff ff want=e8 0d d3 ff ff
+     0x55DC9E decoded: call 0x55afb0
+     B2 0x55AFB0 slot-5C sites = 8
+        0055B595  call dword ptr [edx + 0x5c]   bytes=ff 52 5c
+        0055B5B8  call dword ptr [edx + 0x5c]   bytes=ff 52 5c
+        0055B5E4  call dword ptr [edx + 0x5c]   bytes=ff 52 5c
+        0055B610  call dword ptr [edx + 0x5c]   bytes=ff 52 5c
+        0055B63E  call dword ptr [edx + 0x5c]   bytes=ff 52 5c
+        0055B667  call dword ptr [eax + 0x5c]   bytes=ff 50 5c
+        0055B680  call dword ptr [edx + 0x5c]   bytes=ff 52 5c
+        0055B6A6  call dword ptr [edx + 0x5c]   bytes=ff 52 5c
+     [PASS] B2 expect 7x edx + 1x eax -> got edx=7 eax=1
+
+============================================================================================
+C/D · BulletClass::AI 0x4666E0 回边，与 0x55AFB0 / 0x55D360 回边数
+============================================================================================
+  C1 BulletClass::AI entry=004666E0 size=6422(decimal) insns=1794  backedges=2
+       00466764 -> 0046674E   jl 0x46674e
+       004678F6 -> 00467879   jl 0x467879
+  D1 0x55AFB0 entry=0055AFB0 size=1901(decimal) insns=555  backedges=9
+       0055B177 -> 0055AFE6   jl 0x55afe6
+       0055B580 -> 0055B526   jl 0x55b526
+       0055B59F -> 0055B58C   jl 0x55b58c
+       0055B5BC -> 0055B5AD   jns 0x55b5ad
+       0055B5E8 -> 0055B5D9   jns 0x55b5d9
+       0055B619 -> 0055B608   jl 0x55b608
+       0055B649 -> 0055B634   jl 0x55b634
+       0055B68B -> 0055B675   jl 0x55b675
+       0055B6B1 -> 0055B698   jl 0x55b698
+  D1 0x55D360 entry=0055D360 size=2940(decimal) insns=810  backedges=6
+       0055D3AE -> 0055D38D   je 0x55d38d
+       0055D5ED -> 0055D5D5   jl 0x55d5d5
+       0055D9B7 -> 0055D975   jl 0x55d975
+       0055DA1E -> 0055D9D2   jl 0x55d9d2
+       0055DAEF -> 0055DAAC   jl 0x55daac
+       0055DB83 -> 0055DB24   jl 0x55db24

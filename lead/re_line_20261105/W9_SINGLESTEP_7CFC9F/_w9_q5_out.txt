@@ -1,0 +1,41 @@
+[A] SHA256 / 字节数（hashlib 实算，非引用）
+  gamemd.exe SHA256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+  gamemd.exe bytes  = 4825360
+  EXCEPT   SHA256 = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251
+  EXCEPT   bytes  = 26405
+  回件时刻 = 2026-11-06 02:47:12
+[B] Engine 自证
+  e.sha == 自算 exe sha : True
+  IMAGEBASE = 0x400000
+  COVERAGE = 99.998375677293% / 1394120 insns / 66 resync-fails
+  .text = [0x401000, 0x7E1000) raw=0x1000 size=0x3E0000
+[C] 崩点真实字节（e.rd）
+  fo(0x7CFC9F) = 0x3CFC9F ; VA - 0x400000 = 0x3CFC9F
+  e.rd(VA,32) = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+  EXCEPT L17  = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+  逐字节差异索引 = []  => 32/32 一致
+[D] 指令起始 / 反汇编（真 disasm + by()）
+  0x7CFC9F in e.by() = True
+  by()[VA] bytes=8b0a size=2 mov ecx, dword ptr [edx]
+  e.disasm(VA,0x30) 返回 18 条
+    #1 0x7CFC9F 8b0a       mov ecx, dword ptr [edx]
+    #2 0x7CFCA1 2b4df0     sub ecx, dword ptr [ebp - 0x10]
+    #3 0x7CFCA4 8bf1       mov esi, ecx
+    #4 0x7CFCA6 894df8     mov dword ptr [ebp - 8], ecx
+    #5 0x7CFCA9 c1fe04     sar esi, 4
+    #6 0x7CFCAC 4e         dec esi
+    #7 0x7CFCAD 83fe3f     cmp esi, 0x3f
+    #8 0x7CFCB0 7e03       jle 0x7cfcb5
+[E] 函数边界（自己 e.rd 读序言 + e.func_rets）
+  e.rd(0x7CFB13,5) = 55 8B EC 83 EC
+  e.rd(0x7CFB12,1) = c3 (相邻前一函数 ret)
+  func_rets(0x7CFB13,0x7CFE1C) ret 数 = 1 ; 地址 = ['0x7CFE1B']
+  e.rd(0x7CFE1B,1) = c3 (唯一 ret)
+  函数长度 = 0x309 B (含 ret) / 0x308 B (不含)
+[F] 崩点前序指令（0x7CFC98 起 0x10 字节）
+    0x7CFC98 8b4df4     mov ecx, dword ptr [ebp - 0xc]
+    0x7CFC9B 8b54f904   mov edx, dword ptr [ecx + edi*8 + 4]
+    0x7CFC9F 8b0a       mov ecx, dword ptr [edx]
+    0x7CFCA1 2b4df0     sub ecx, dword ptr [ebp - 0x10]
+    0x7CFCA4 8bf1       mov esi, ecx
+PROBE DONE

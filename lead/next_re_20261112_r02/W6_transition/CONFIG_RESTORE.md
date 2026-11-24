@@ -1,0 +1,48 @@
+# CONFIG_RESTORE.md —— 配置逐字节还原与残留进程核对
+
+- run_id: `NEXT_RE_20261112_R02`；生成时刻(UTC): `2026-11-12T17:01:14.005112+00:00`
+
+## 1. 启动前守卫（实算 SHA-256）
+
+| 文件 | bytes | 实算 SHA-256 | 期望 | 一致 |
+|---|---|---|---|---|
+| RA2MD.INI | 1754 | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | True |
+| ddraw.ini | 14782 | `c983abadc1162a2606243e097719aab557ce6381c040776336d0c746d6df9d52` | `c983abadc1162a2606243e097719aab557ce6381c040776336d0c746d6df9d52` | True |
+| RA2MD.INI.benchbak | 1754 | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | True |
+| gamemd.exe | 4825360 | `73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476` | `73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476` | True |
+| ddraw.dll | 411648 | `85e0f7d530dfda134793a57cb3e76b0287dcc96892ee57162dd68f47283b03a9` | `85e0f7d530dfda134793a57cb3e76b0287dcc96892ee57162dd68f47283b03a9` | True |
+
+## 2. 残留进程核对
+
+- 启动前 gamemd 残留：**0** 个 `[]`
+- 收尾后 gamemd 残留：**0** 个 `[]`
+- 关闭步骤：
+  - WM_CLOSE(hwnd=8917116) -> True
+  - taskkill /PID 4460 (无 /F) rc=0 out='SUCCESS: Sent termination signal to the process with PID 4460.'
+  - taskkill /F /PID 4460 rc=0 out='SUCCESS: The process with PID 4460 has been terminated.'
+  - 最终存活=False
+
+## 3. 配置逐字节还原
+
+| 文件 | 还原前 SHA | 基线副本 SHA | 还原后 SHA | 字节一致 | 哈希一致 |
+|---|---|---|---|---|---|
+| RA2MD.INI | `099904d9345053383e53aa091d3475e14d56b3880695094a4967b9ac337a05c9` | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | True | True |
+| ddraw.ini | `c983abadc1162a2606243e097719aab557ce6381c040776336d0c746d6df9d52` | `c983abadc1162a2606243e097719aab557ce6381c040776336d0c746d6df9d52` | `c983abadc1162a2606243e097719aab557ce6381c040776336d0c746d6df9d52` | True | True |
+| RA2MD.INI.benchbak | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | True | True |
+| gamemd.exe | (仅校验) | `73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476` | `73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476` | — | 未改动=True |
+| ddraw.dll | (仅校验) | `85e0f7d530dfda134793a57cb3e76b0287dcc96892ee57162dd68f47283b03a9` | `85e0f7d530dfda134793a57cb3e76b0287dcc96892ee57162dd68f47283b03a9` | — | 未改动=True |
+
+本卡独立逐字节复核：
+
+| 文件 | 基线 SHA | 目标 SHA | 字节相同 | 与守卫一致 |
+|---|---|---|---|---|
+| RA2MD.INI | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | `c91c6a475b816fab8f4ab45b567c162f6b4ece9cc45d90abd69edab8dcd3c27d` | True | True |
+| ddraw.ini | `c983abadc1162a2606243e097719aab557ce6381c040776336d0c746d6df9d52` | `c983abadc1162a2606243e097719aab557ce6381c040776336d0c746d6df9d52` | True | True |
+
+## 4. 游戏写回文件清单（还原前比对）
+
+- 启动前 647 项 / 收尾 647 项；新增 0 / 删除 0 / 变化 1
+- added (0): （无）
+- removed (0): （无）
+- changed (1): `RA2MD.INI`
+

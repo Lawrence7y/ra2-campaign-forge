@@ -1,0 +1,207 @@
+COMMON-TECH-3 · RECOMPUTE — 每个技术条的实测命令与输出摘要
+==================================================================
+
+口径：能自己复现的必须复现（本卡全部技术条都在本机重跑过）；不能复现或有出入的，
+     逐条注明「引自何卡何行」与「与卡面措辞的差异」。
+
+镜像
+----
+路径  D:\Project\ra2-campaign-forge\ra2youli\gamemd.exe
+大小  4,825,360 B
+SHA256 73201CC021497C9567742F718BF1DC78C22E9AE16C7E7365354B65F3FCF67476
+ImageBase 0x00400000   SizeOfImage 0x00796000
+段     .text 0x00401000 (vsize 0x3DF38D) / .rdata 0x007E1000 (0x30074) /
+       .data 0x00812000 (0x367BE4) / .rsrc 0x00B7A000 / .detour 0x00B93000
+工具  Python 3.12.10 + pefile 2024.8.26 + capstone 5.0.7
+
+复现脚本（本卡自写，只读镜像）：
+  COMMON_TECH3\work\measure.py   -> measure_out.txt     （A/B/C/D/E 段）
+  COMMON_TECH3\work\measure2.py  -> measure2_out.txt    （C2/C3/E2/F 段）
+  COMMON_TECH3\work\measure3.py  -> measure3_out.txt    （G/H/I/J/K 段）
+  COMMON_TECH3\work\measure4.py  -> measure4_out.txt    （K2/L/M/N 段）
+  COMMON_TECH3\work\measure5.py  -> measure5_out.txt    （D-47 两对行 / slot17）
+运行方式：python COMMON_TECH3\work\measure.py  （脚本内硬编码镜像路径）
+
+
+§13.1 RTTI 的 pTD / pCHD 是绝对 VA（不是 RVA）—— 自己复现，成立
+---------------------------------------------------------------
+命令  python COMMON_TECH3\work\measure.py   （A 段）
+取法  COL = u32(vt-4)；结构体 20B：sig / offset / cdOffset / pTD / pCHD
+
+输出（原样）：
+  vt=0x007E88D0 [FactoryClass main vt (006C5210)]
+     vt[-1] -> COL = 0x00800610 ; sig=0 off=0x0 cd=0x0 pTD=0x00822290 pCHD=0x00800600
+     pTD=0x00822290  >=ImageBase? True  in-image? True  RVA-interpretation IB+0x822290 = 0x00C22290 (OUT>=SizeOfImage)
+     pCHD=0x00800600  >=ImageBase? True  in-image? True  RVA-interpretation IB+0x800600 = 0x00C00600 (OUT>=SizeOfImage)
+  vt=0x007F6B30 [WarheadTypeClass main vt (006C5390)]
+     vt[-1] -> COL = 0x0080D360 ; sig=0 off=0x0 cd=0x0 pTD=0x00847C18 pCHD=0x0080D350
+  vt=0x007F3D98 [TClassFactory ctor 006C5140 vt]
+     vt[-1] -> COL = 0x0080B108 ; sig=0 off=0x0 cd=0x0 pTD=0x00841CB8 pCHD=0x0080B0F8
+  vt=0x007E1964 [MouseClass vt (004F45B0)]
+     vt[-1] -> COL = 0x007FAB38 ; sig=0 off=0x0 cd=0x0 pTD=0x00816C90 pCHD=0x007FAB28
+  pefile.get_data(0x00847C18 as RVA): PEFormatError: "data at RVA can't be fetched. Corrupt header?"
+
+四张表全部：pTD / pCHD ∈ [0x007FAB28, 0x00847C18]，均 ≥ ImageBase(0x400000)，
+按 RVA 解释一律落到 0x00B9xxxx~0x00C4xxxx，超 SizeOfImage 上界 0x00B96000 ⇒ 必然越界。
+
+附带实测（卡面未写、本卡新增，属同一判据的前置条件）：
+  COL 不是 vt-4 的四个字节本身，而是 *(vt-4) 这个指针。首轮把 vt-4 当结构体起始，
+  在 0x007E88D0 上读出 sig=0x800410 之类的垃圾值（measure_out.txt 首轮输出，已修正）。
+
+另证（两批独立审计，非本卡）：
+  NAMED_PUSH_AUDIT15\SUMMARY.md:62「本镜像 RTTI 的 pTD/pCHD 存绝对 VA（非 RVA）：按 IB+pTD_rva
+    解会越界（pefile 抛 PEFormatError）。后续脚本若沿用旧 parse_col 会 fail-closed 误判」
+  NAMED_PUSH_AUDIT15\VERDICT.md:37 / :177 同结论（逐字段字节 + .data/.rdata 归属）
+  S05-K1\_audit\VERDICT.md:28「该镜像 RTTI 用绝对 VA（MSVC6 期），按 RVA 解会全盘失败」
+
+
+§13.2 TD+8 是内联装饰名（不是指针）—— 自己复现，成立
+-----------------------------------------------------
+命令  python COMMON_TECH3\work\measure.py   （B 段）
+输出：
+  TD 0x00847C18 [TD of WarheadTypeClass vt 007F6B30]
+     first 32 bytes = 0x94957f00000000002e3f41565761726865616454797065436c61737340400000
+     bytes[+8:+20]  = 2e3f41565761726865616454
+     u32(TD+8) = 0x56413F2E ; mapped as pointer? False
+     inline NUL-terminated string at TD+8 = '.?AVWarheadTypeClass@@'
+  TD 0x00815E18 [TD 0x815E18 (draft 990)]
+     bytes[+8:+20]  = 2e3f4156427566666572494f
+     u32(TD+8) = 0x56413F2E ; mapped as pointer? False
+     inline NUL-terminated string at TD+8 = '.?AVBufferIOFileClass@@'
+
+结构实测：TD+0 = 0x007F9594（TypeDescriptor 的 vftable，.rdata 内可解）、TD+4 = 0，
+          TD+8 起即名字字节（2E 3F 41 56 = ".?AV"，2E 3F 41 55 = ".?AU"）。
+「按指针读会得到空串」的机理：u32(TD+8)=0x56413F2E 不在任何段内，解引用失败/得空；
+          与 §965 错源⑧ 同一形态。
+交叉（非本卡）：R14_COMMON:23（§990 行）记「名在 TD+8 内联读出，.?AVBufferIOFileClass@@ 逐字节命中」。
+
+
+§13.3 AddRef / Release 桩与「失败清理」的真实路径 —— 自己复现，成立（附边界反例）
+-----------------------------------------------------------------------------
+命令  python COMMON_TECH3\work\measure.py（C 段）+ measure2.py（C2/C3/E2 段）+ measure3.py（G/H/I/J 段）
+
+(1) 桩字节（直接读文件）：
+  0x00410300 = b801000000c20400   ->  mov eax,1 ; ret 4
+  0x00410310 = b801000000c20400   ->  mov eax,1 ; ret 4
+  （measure4_out.txt M 段，两处逐字节相同）
+
+(2) 这对桩被多少张表用（全文件扫 imm32，按段归属）：
+  0x00410300  total 74 hits: {'.rdata': 74}
+  0x00410310  total 74 hits: {'.rdata': 74}
+  ⇒ 74 个虚表槽位指向 AddRef 桩、74 个指向 Release 桩（同一批表的 slot1/slot2）。
+
+(3) 失败清理的真实路径（TClassFactory<V>::CreateInstance 0x006C5210）：
+  006C526A  ff10            call dword ptr [eax]        ; CreateInstance 主调用
+  006C5270  7d09            jge 0x6c527b
+  006C5272  8b16            mov edx, dword ptr [esi]    ; edx = 新对象 vptr
+  006C5274  6a01            push 1                      ; delete 标志
+  006C5276  8bce            mov ecx, esi                ; this
+  006C5278  ff5220          call dword ptr [edx + 0x20] ; = vt[8] 删除析构器
+  006C527F  c21000          ret 0x10
+
+(4) vt[8] 目标确实是删除析构器（该表 slot8 = 0x004CA770；measure2_out.txt C3/E2、measure3 G）：
+  007E88D0 slot8 = 0x004CA770
+  004CA776  c706d0887e00      mov [esi], 0x7e88d0        ; 重装 vptr（4 张表，+0/+4/+8/+0xC）
+  004CA791  call 0x7258d0                                 ; 解单例
+  004CA7AA  call dword ptr [edx+0x10]                     ; 从 0xA83E30 注册表摘除
+  004CA86F  f644240c01        test byte ptr [esp+0xc], 1  ; ← 消费 delete 标志
+  004CA877  e8c1e22f00        call 0x7c8b3d               ; operator delete
+  004CA883  c20400            ret 4
+  同类：006DC470（007F4348 slot8）：006DC49D test byte ptr [esp+8],1 / 006DC4A5 call 0x7c8b3d / ret 4
+        0040D290：0040D2D9 test byte ptr [esp+0x10],1 / 0040D2E1 call 0x7c8b3d / ret 4
+
+(5) 边界反例（卡面未写，本卡新增；防「族属性」式外推）：
+  工厂对象自己的表 0x007F3D98 slot1 = 0x006C51C0、slot2 = 0x006C51E0，二者都不是桩：
+  006C51C0  mov eax,[esp+4] / add eax,4 / push eax / call dword ptr [0x7e11c8] / ret 4
+  006C51E0  ... / call dword ptr [0x7e11cc] / 失败时 006C51F7 call 0x7c8b3d（真释放）
+  ⇒ 「mov eax,1; ret 4」是 per-table 属性，不是族属性；必须逐表读 slot1/slot2 字节。
+  另一独立反例（同 S22、不同子族，M70/NAMED_PUSH_AUDIT11）：
+  0x006C2AC0 = 8b442404 83c004 50 ff15c8117e00 c20400 = 对 [this+4] 调 InterlockedIncrement
+  ⇒ 真实 AddRef，不是桩。
+
+引证（非本卡）：NAMED_PUSH_AUDIT12\SUMMARY.md:36（slot2=00410310 桩、Release 不释放）:139（
+  「失败侧 call [reg+0x20] + push 1」是删除析构器，勿写 Release）；_cards\M71-MERGE.md:45；
+  COVERAGE\PANEL.md:159（M71 披露原文）。
+
+
+§13.4 D-47：D-43(A) 与 §12.3 正面冲突 —— 冲突本身照录，未裁
+----------------------------------------------------------
+本卡不重算受影响面，只做两件事：① 盘上核对受影响行的现状；② 复现「两对行共用同一条安装指令」。
+① 只读核（COVERAGE\coverage.tsv，未改一行）：
+   S13 6 行 + NAMED_PUSH_AUDIT2 10 行 = 16 行，当前 grade 全 [已证]，
+   evidence_path 分别指 NAMED_PUSH_AUDIT16/VERDICT.md（6 行）与 NAMED_PUSH_AUDIT2/VERDICT.md（10 行）
+   ⇒ 「按 D-43(A) 先行」已落盘，不是纸面口径。
+② 命令 python COMMON_TECH3\work\measure5.py，输出：
+   vt 0x007F6B30 : slot5=0x0075E0C0 (want 0x0075E0C0)  slot6=0x0075E2C0 (want 0x0075E2C0)
+   install instruction:
+   0075D0BA  c74500306b7f00  mov dword ptr [ebp], 0x7f6b30     ← 一条指令装整表
+   vt 0x007F73B8 : slot5=0x00772CD0 (want 0x00772CD0)  slot6=0x00772EB0 (want 0x00772EB0)
+   install instruction:
+   00771E77  c706b8737f00  mov dword ptr [esi], 0x7f73b8       ← 一条指令装整表
+   ⇒ 两对行各自共用同一条 .text 安装指令（写的是表基址，不是槽），两行间唯一可区分信息只剩槽号。
+
+受影响面（数字引自既有成文，非本卡实算，故逐条标来源）：
+  S13_B1 6 行        <- R14_COMMON:1201–1202（§12.3 逐行列出）+ _cards\M74-MERGE.md:49
+  NAMED_PUSH_AUDIT2 10 行 <- _cards\M74-MERGE.md:49；NAMED_PUSH_AUDIT2\VERDICT.md（PASS 10）
+  M71 所述 ≥21 行    <- COVERAGE\PANEL.md:157（「④ 的严格读法会翻转 ≥21 行」）+ :163
+  合计 ≥37 行        <- _cards\M74-MERGE.md:49「撤销将连带翻转 ≥37 行」
+现行处置（原文，不改写）：_cards\M74-MERGE.md:41–51、COVERAGE\PANEL.md:160–166。
+
+
+§13.5 ㉓（析构重装陷阱）是真判据 —— 自己复现，成立
+-----------------------------------------------
+命令  python COMMON_TECH3\work\measure.py（E 段）+ measure2.py（E2）+ measure4.py（N）
+
+(1) 全镜像扫「表基址」imm32，再在 .text 内定位承载它的指令（= 该表的全部写点）：
+  row 00491210 (ConvertClass, 表 0x007E5358)：
+     site 0x0048E93B  mov dword ptr [esi], 0x7e5358   （构造器侧）
+     site 0x00490404  mov dword ptr [esi], 0x7e5358   （立即数地址 0x00490406，函数 0x00490400）
+     site 0x00491214  mov dword ptr [esi], 0x7e5358   （行自身 0x00491210 体内）
+  row 006DBD20 (Tactical, 表 0x007F4348)：
+     site 0x006D1D54 / 0x006D1E58 / 0x006D1E80 / 0x006DC473（立即数地址 0x006DC475）
+  row 004F45B0 (MouseClass, 表 0x007E1964)：恰 4 个写点
+     site 0x0040D1B2  mov dword ptr [0x87f7e8], 0x7e1964
+     site 0x0040D295  mov dword ptr [ebx], 0x7e1964
+     site 0x005BDA4A  mov dword ptr [esi], 0x7e1964
+     site 0x005BE0AD  mov dword ptr [ebp], 0x7e1964
+
+(2) 两类「死表写点」的字节证据：
+  a) atexit 注册的全局析构器：0x0040D1B0 体内的 0x0040D1B2 写表；注册点在
+     0040D19A  push 0x40d1b0 / 0040D19F  call 0x7c978a      （= atexit）
+     ⇒ 命中 ㉓ 的「死表」定义（R14_COMMON:504）。
+  b) 删除析构器：0x0040D290 体内 0x0040D295 写表，函数尾
+     0040D2D9 test byte ptr [esp+0x10],1 / 0040D2E1 call 0x7c8b3d / 0040D2EE ret 4
+     同类：0x00490400（写 0x7E5358，00490404）无 flag 测试 ⇒ 非删除析构器，但仍是「析构器写点」
+           0x006DC470（写 0x7F4348，006DC473）有 flag 测试 ⇒ 删除析构器（且是该表 slot8）
+
+(3) 反例方向（可机械排除）：
+  S22_B4 11 行，每行工厂构造器 = entry-0xD0，其 vt 字面量在全镜像的计数：
+     entry 0x006C5210 ctor 0x006C5140 vt 0x007F3D98 count=1  vt[3]=0x006C5210
+     entry 0x006C5390 ctor 0x006C52C0 vt 0x007F3DB0 count=1  vt[3]=0x006C5390
+     ...（11/11 全部 count=1，见 measure4_out.txt K2 段）
+  同型 4 指令工厂构造器在 [0x006BEE42, 0x006C6042] 区间共 49 个，逐个 vt 计数全为 1
+  （measure2_out.txt F 段）⇒ 该族**不存在第二个写点**，㉓ 可机械排除。
+
+(4) 边界（卡面未写，本卡新增）：不可外推成「所有表唯一」。
+  同镜像 0x007E88D0（FactoryClass 主表）计数 = 4：004C991C / 004C9A18 / 004CA2C9 / 004CA778，
+  其中 004CA778 在删除析构器 004CA770 体内 ⇒ 这张表恰好是「构造器 + 析构器成对写」的形态。
+  ⇒ ㉓ 必须逐表计数，不能按族套用。
+
+引证（非本卡）：NAMED_PUSH_AUDIT13\SUMMARY.md:44–45,99（2 行真触发㉓）；
+  _cards\M72-MERGE.md:42；COVERAGE\PANEL.md:161（M72 ㉓ 正向记录，逐字入库）；
+  M73 审计对 004F45B0 的 ② 补证（007E1964 slot17 = 0x004F45B0，measure5.py 已复核）。
+
+
+未复现/未自算项（如实登记）
+--------------------------
+1. 受影响面 6 / 10 / ≥21 / ≥37 四个数字：引自 _cards\M74-MERGE.md:49 与 COVERAGE\PANEL.md:157,163，
+   本卡只核了 16 行的 grade 与 evidence_path，未重算「翻转行数」。
+2. §13.3 中「S22 工厂族」的族级归并（哪些 entry 属该族）：引自 NAMED_PUSH_AUDIT12\SUMMARY.md:30
+   与 MERGE_M71\MERGE_LOG.md，本卡只逐字节核了 11 个 entry 的工厂构造器与 vt 计数。
+3. 两对「共用安装指令」的行对是否也共用 (site,slot)：本卡只核了「共用安装指令」这一半，
+   (site,slot) 争抢的成对性引自 _cards\M74-MERGE.md:55 与 NAMED_PUSH_AUDIT16\VERDICT.md:162。
+4. 卡面写「析构器写入 00490406 / 006DC475」：实测这两个数是**立即数地址**，承载它的指令分别在
+   0x00490404 / 0x006DC473。本卡在两处都写「指令地址(立即数地址)」，不改判。
+5. 卡面写「004F45B0 的该表有 4 个写点，其中 2 个是死表写点」：实测 4 个写点与「其中 2 个是
+   析构器侧写点」成立；但 4 个写点里第 3 个是构造器 0x005BDA40（005BDA4A），第 4 个 0x005BE0AD
+   本卡未判其性质（未做调用者分析），故 §13.5 只写「已枚举 4 个写点、其中 2 个属 ㉓ 排除类」。

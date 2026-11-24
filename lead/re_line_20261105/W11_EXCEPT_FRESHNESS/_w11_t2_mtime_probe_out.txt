@@ -1,0 +1,17 @@
+probe run at 2026-11-06T03:19:32.071364
+tmp = D:\Project\ra2-campaign-forge\lead\re_line_20261105\W11_EXCEPT_FRESHNESS\w11_t2_mtime_yg3p5g19
+[0] volume D:\ fs='NTFS' ok=True
+
+[1] 源件 mtime0 = 1793906372.0776098 (2026-11-06 03:19:32.077610)
+[1] write_bytes 复制件 mtime = 1793906372.1286268  != 源 1793906372.0776098 ⇒ 不保留（新 mtime=复制时刻）
+[2] copy2 复制件 mtime = 1793906372.0776098  == 源 ⇒ mtime 保留：陷阱成立
+[3] utime 伪造后 mtime = 946684800.0 (2000-01-01 08:00:00) ⇒ 文件刚写的，mtime 却是 2000 年 ⇒ mtime 可被主动伪造
+[4] 同内容重写：sha 3b8e45935f7e→3b8e45935f7e（相同=True）；mtime 1793906372.1830714→1793906372.2377846（变化=True）
+    ⇒ B 方案（哈希）对「同内容重写」失明；mtime 反而看得见
+[5] 内容变更+utime 拉回：sha 01d09d19c213→9908e9146a43（变化=True）；mtime 1793906372.238833→1793906372.238833（相同=True）
+    ⇒ A 方案对「改内容+伪造 mtime」失明；哈希看得见
+[6] 连写 200 次立即 stat：122 个不同 mtime ⇒ 观测分辨率内同 tick 多次写可分辨（NTFS 名义 100ns，FAT 系 2s）
+[7] 时钟回拨：需要改系统时间权限，本探针不实测（零风险约束）⇒ 判据设计按原理处理：回拨使 写入时刻的 mtime < 跑前锚点 ⇒ A 方案假阴性
+
+cleanup tmp=D:\Project\ra2-campaign-forge\lead\re_line_20261105\W11_EXCEPT_FRESHNESS\w11_t2_mtime_yg3p5g19
+probe done, PASS (exit 0)

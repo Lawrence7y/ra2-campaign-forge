@@ -1,0 +1,307 @@
+==============================================================================
+W9 / Q3_MECHANISM 探针输出（自己实跑，非引用他人文字）
+==============================================================================
+运行时刻 = 2026-11-06 02:05:05
+python = 3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]
+
+[A] 强制头部（hashlib 实算，非引用 TASK.md / 上批回件）
+gamemd.exe SHA256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+gamemd.exe 字节数 = 4825360
+EXCEPT 件 SHA256 = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251
+EXCEPT 件 字节数 = 26405
+
+[A2] Engine 自证
+IMAGEBASE = 0x400000
+COVERAGE = 99.998375677293% / decoded insns = 1394120 / resync fails = 66
+Engine 自证 = COVERAGE 99.998375677293% (1394120 insns, 66 resync-fails) / IMAGEBASE 0x400000
+.text = [0x401000, 0x7E1000) raw=0x1000 size=0x3E0000
+SHA 断言（Engine.__init__ 内 assert sha==EXPECT_SHA）通过 = True
+
+[B] EXCEPT 件逐字段自读（文件:行；按内容标签定位，不硬编码行号）
+文件总行数 = 1046
+  L1   | Error code: EXCEPTION_SINGLE_STEP
+  L2   | 
+  L3   | Description: A trace trap or other single-instruction mechanism signaled that one instruction has been executed.
+  L4   | Exception occurred at 007CFC9F
+  L5   | 
+  L6   | Version zzz
+  L7   | Internal Version 1.001
+  L8   | Release Build: 25 by gsmallwoo - 10/30/2001 - 17:31:36
+  L9   | CPU Pentium 4, MMX Yes, Vendor: AuthenticAMD 
+  L10  | 
+  L11  | Details:
+  L12  | Eip:007CFC9F	Esp:00F9C614	Ebp:00F9C634
+  L13  | Eax:0D94B7B8	Ebx:03BE0610	Ecx:0D94F574
+  L14  | Edx:0E73276C	Esi:7FFFFFFF	Edi:00000001
+  L15  | EFlags:00000286 
+  L16  | CS:0023  SS:002b  DS:002b  ES:002b  FS:0053  GS:002b
+  L17  | 
+  L18  | Bytes at CS:EIP (007CFC9F)  : 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A 
+  L19  | 
+  L20  | Stack dump (* indicates possible code address) :
+* 行号口径说明：Python splitlines() 下寄存器块在 raw L12-L15、EFlags 在 raw L15、Bytes 在 raw L18；
+  Read 工具/旧分析/TASK.md 的「L17」（Bytes 行）是显示口径（少一个首部空行）。两者内容同一行。
+
+  定位 Eip:      -> [(12, 'Eip:007CFC9F\tEsp:00F9C614\tEbp:00F9C634')]
+  定位 EFlags:   -> [(15, 'EFlags:00000286 ')]
+  定位 Bytes...: -> [(18, 'Bytes at CS:EIP (007CFC9F)  : 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A ')]
+机器解析寄存器 = EIP=0x7CFC9F, ESP=0xF9C614, EBP=0xF9C634, EAX=0xD94B7B8, EBX=0x3BE0610, ECX=0xD94F574, EDX=0xE73276C, ESI=0x7FFFFFFF, EDI=0x1, EFLAGS=0x286
+EFLAGS=0x286  ESI=0x7FFFFFFF  EDI=0x1  EIP=0x7CFC9F
+
+[C] EFlags=0x286 逐位分解（bit / mask / name / value）
+  bit0  mask=0x000001 CF Carry                   = 0
+  bit1  mask=0x000002 reserved(always 1)         = 1
+  bit2  mask=0x000004 PF Parity                  = 1
+  bit3  mask=0x000008 reserved(0)                = 0
+  bit4  mask=0x000010 AF Adjust                  = 0
+  bit5  mask=0x000020 reserved(0)                = 0
+  bit6  mask=0x000040 ZF Zero                    = 0
+  bit7  mask=0x000080 SF Sign                    = 1
+  bit8  mask=0x000100 TF Trap Flag  <<<< 本题核心    = 0
+  bit9  mask=0x000200 IF Interrupt Enable        = 1
+  bit10 mask=0x000400 DF Direction               = 0
+  bit11 mask=0x000800 OF Overflow                = 0
+  bit12 mask=0x001000 IOPL[0]                    = 0
+  bit13 mask=0x002000 IOPL[1]                    = 0
+  bit14 mask=0x004000 NT Nested Task             = 0
+  bit15 mask=0x008000 reserved(0)                = 0
+  bit16 mask=0x010000 RF Resume Flag             = 0
+  bit17 mask=0x020000 VM Virtual-8086            = 0
+  bit18 mask=0x040000 AC Alignment Check         = 0
+  bit19 mask=0x080000 VIF Virtual IF             = 0
+  bit20 mask=0x100000 VIP Virtual Interrupt Pending = 0
+  bit21 mask=0x200000 ID CPUID-ident             = 0
+置位 bits = [1, 2, 7, 9]
+0x286 = 0x2(b1) + 0x4(b2) + 0x80(b7) + 0x200(b9)
+TF(bit8)  = 0  -> 报告的标志字里【无 TF】
+IF(bit9)  = 1
+RF(bit16) = 0
+VM(bit17) = 0
+SF(bit7)  = 1 ; ZF(bit6) = 0 ; PF(bit2) = 1 ; CF(bit0) = 0 ; OF(bit11) = 0
+* 勘误对照：旧分析 SINGLESTEP_0x7CFC9F_ANALYSIS.md:51 写「EFlags=0x286（IF|ZF|PF，无 TF）」
+  实测 ZF(bit6)=0、SF(bit7)=1 —— 旧件把 SF 误标成 ZF（0x286=IF|SF|PF|reserved-bit1）。
+
+[D] 证据件字段存在性普查（否定性事实用文件读取，不靠记忆）
+  token 'Dr0'                    命中行 = [] (全文零命中)
+  token 'Dr1'                    命中行 = [] (全文零命中)
+  token 'Dr2'                    命中行 = [] (全文零命中)
+  token 'Dr3'                    命中行 = [] (全文零命中)
+  token 'Dr6'                    命中行 = [] (全文零命中)
+  token 'Dr7'                    命中行 = [] (全文零命中)
+  token 'DR0'                    命中行 = [] (全文零命中)
+  token 'DR6'                    命中行 = [] (全文零命中)
+  token 'DR7'                    命中行 = [] (全文零命中)
+  token 'ExceptionInformation'   命中行 = [] (全文零命中)
+  token 'ExceptionFlags'         命中行 = [] (全文零命中)
+  token 'ExceptionRecord'        命中行 = [] (全文零命中)
+  token 'NumberParameters'       命中行 = [] (全文零命中)
+  token 'ExceptionAddress'       命中行 = [] (全文零命中)
+  token 'EFlags'                 命中行 = [15]
+  token 'SingleStep'             命中行 = [] (全文零命中)
+  token 'Debug'                  命中行 = [] (全文零命中)
+  token 'CONTEXT'                命中行 = [] (全文零命中)
+* 结论：本件只有 Eip/Esp/Ebp/Eax/Ebx/Ecx/Edx/Esi/Edi/EFlags/段寄存器/Bytes/Stack dump，
+       没有 DR0-DR7、没有 DR6、没有 ExceptionInformation/NumberParameters。
+       => 任何需要 DR6(BS/B0..B3) 或 ExceptionRecord 参数的判据，在本件上均为「未验」（查不到 != 不存在）。
+
+[E] 崩点自己重读字节与反汇编（判据③④ 需要：0x7CFC9F 是不是 call 落点 / 有无 CC F1 F0）
+fo(0x7CFC9F) = 0x3CFC9F  (= VA - 0x400000)
+e.rd(0x7CFC9F,32) = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+证据件 Bytes 行（raw L18）抽出字节数 = 32 ; 值 = 8B 0A 2B 4D F0 8B F1 89 4D F8 C1 FE 04 4E 83 FE 3F 7E 03 6A 3F 5E 3B F7 0F 84 0D 01 00 00 8B 4A
+磁盘 rd(32) vs L17 逐字节差异索引 = []
+va in e.by() = True
+by()[0x7CFC9F] = mov ecx, dword ptr [edx] (size=2)
+-- 0x7CFC9F 前 0x20 字节窗口 --
+e.rd(0x7CFC7F,0x20) = CE 75 0D 8B 8C 90 C4 00 00 00 6A 20 23 4D F8 5F 85 C9 7C 05 D1 E1 47 EB F7 8B 4D F4 8B 54 F9 04
+-- 0x7CFC9B..0x7CFCCF 逐条反汇编 --
+  0x7CFC9B  8b54f904     mov      edx, dword ptr [ecx + edi*8 + 4]
+  0x7CFC9F  8b0a         mov      ecx, dword ptr [edx]
+  0x7CFCA1  2b4df0       sub      ecx, dword ptr [ebp - 0x10]
+  0x7CFCA4  8bf1         mov      esi, ecx
+  0x7CFCA6  894df8       mov      dword ptr [ebp - 8], ecx
+  0x7CFCA9  c1fe04       sar      esi, 4
+  0x7CFCAC  4e           dec      esi
+  0x7CFCAD  83fe3f       cmp      esi, 0x3f
+  0x7CFCB0  7e03         jle      0x7cfcb5
+  0x7CFCB2  6a3f         push     0x3f
+  0x7CFCB4  5e           pop      esi
+  0x7CFCB5  3bf7         cmp      esi, edi
+  0x7CFCB7  0f840d010000 je       0x7cfdca
+  0x7CFCBD  8b4a04       mov      ecx, dword ptr [edx + 4]
+  0x7CFCC0  3b4a08       cmp      ecx, dword ptr [edx + 8]
+  0x7CFCC3  7561         jne      0x7cfd26
+  0x7CFCC5  83ff20       cmp      edi, 0x20
+  0x7CFCC8  7d2b         jge      0x7cfcf5
+  0x7CFCCA  bb00000080   mov      ebx, 0x80000000
+-- 前 8 条从 0x7CFC9F 起 --
+  #1 0x7CFC9F  8b0a       mov     ecx, dword ptr [edx]
+  #2 0x7CFCA1  2b4df0     sub     ecx, dword ptr [ebp - 0x10]
+  #3 0x7CFCA4  8bf1       mov     esi, ecx
+  #4 0x7CFCA6  894df8     mov     dword ptr [ebp - 8], ecx
+  #5 0x7CFCA9  c1fe04     sar     esi, 4
+  #6 0x7CFCAC  4e         dec     esi
+  #7 0x7CFCAD  83fe3f     cmp     esi, 0x3f
+  #8 0x7CFCB0  7e03       jle     0x7cfcb5
+-- 崩点前 6 条指令（倒推「哪条刚执行完」；trap-after 的 EIP=下一条） --
+  0x7CFC91  7c05         jl       0x7cfc98   (末址=0x7CFC93)
+  0x7CFC93  d1e1         shl      ecx, 1   (末址=0x7CFC95)
+  0x7CFC95  47           inc      edi   (末址=0x7CFC96)
+  0x7CFC96  ebf7         jmp      0x7cfc8f   (末址=0x7CFC98)
+  0x7CFC98  8b4df4       mov      ecx, dword ptr [ebp - 0xc]   (末址=0x7CFC9B)
+  0x7CFC9B  8b54f904     mov      edx, dword ptr [ecx + edi*8 + 4]   (末址=0x7CFC9F)
+* 关键：0x7CFC9F 是 2 字节 mov ecx,[edx]；紧邻前序 0x7CFC9B 是 4 字节 mov edx,[ecx+edi*8+4]，
+       末址正好 0x7CFC9F。=> 这里【没有任何 call 指令以 0x7CFC9F 为返回地址】。
+
+[F] Esi=0x7FFFFFFF / Edi=0x1 是否特征值 —— 自己反汇编 __sbh_alloc_block 前段
+函数头 0x7CFB13  e.rd(5) = 55 8B EC 83 EC
+前 1 字节 0x7CFB12 = C3
+[0x7CFB13,0x7CFC9F) 重同步流指令数 = 144（disasm 直解）
+[0x7CFB13,0x7CFC9F) by()/stream 内指令数 = 144
+-- 全部涉及 esi/edi/移位/位扫描/[ebp-0xC]/[ebp-0x10] 的指令 --
+  0x7CFB25  56           push       esi
+  0x7CFB29  57           push       edi
+  0x7CFB2A  8d3c82       lea        edi, [edx + eax*4]
+  0x7CFB30  897dfc       mov        dword ptr [ebp - 4], edi
+  0x7CFB39  894df0       mov        dword ptr [ebp - 0x10], ecx
+  0x7CFB3C  c1f904       sar        ecx, 4
+  0x7CFB45  83ceff       or         esi, 0xffffffff
+  0x7CFB48  d3ee         shr        esi, cl
+  0x7CFB4E  8975f4       mov        dword ptr [ebp - 0xc], esi
+  0x7CFB59  33f6         xor        esi, esi
+  0x7CFB5B  d3e8         shr        eax, cl
+  0x7CFB5D  8975f4       mov        dword ptr [ebp - 0xc], esi
+  0x7CFB6A  3bdf         cmp        ebx, edi
+  0x7CFB74  8b3b         mov        edi, dword ptr [ebx]
+  0x7CFB79  23fe         and        edi, esi
+  0x7CFB7B  0bcf         or         ecx, edi
+  0x7CFB9B  8b3b         mov        edi, dword ptr [ebx]
+  0x7CFBA0  23fe         and        edi, esi
+  0x7CFBA2  0bcf         or         ecx, edi
+  0x7CFC22  8b7c9044     mov        edi, dword ptr [eax + edx*4 + 0x44]
+  0x7CFC29  23fe         and        edi, esi
+  0x7CFC2B  0bcf         or         ecx, edi
+  0x7CFC35  8b7044       mov        esi, dword ptr [eax + 0x44]
+  0x7CFC3B  2375f4       and        esi, dword ptr [ebp - 0xc]
+  0x7CFC45  0bd6         or         edx, esi
+  0x7CFC47  8b75f4       mov        esi, dword ptr [ebp - 0xc]
+  0x7CFC5B  8bfe         mov        edi, esi
+  0x7CFC5D  2339         and        edi, dword ptr [ecx]
+  0x7CFC5F  0bd7         or         edx, edi
+  0x7CFC68  33ff         xor        edi, edi
+  0x7CFC77  894df4       mov        dword ptr [ebp - 0xc], ecx
+  0x7CFC7E  23ce         and        ecx, esi
+  0x7CFC8E  5f           pop        edi
+  0x7CFC93  d1e1         shl        ecx, 1
+  0x7CFC95  47           inc        edi
+  0x7CFC98  8b4df4       mov        ecx, dword ptr [ebp - 0xc]
+  0x7CFC9B  8b54f904     mov        edx, dword ptr [ecx + edi*8 + 4]
+  命中条数 = 37
+-- 从函数头起前 40 条（看 class_req 位图掩码的建立链） --
+  0x7CFB13  55           push     ebp
+  0x7CFB14  8bec         mov      ebp, esp
+  0x7CFB16  83ec14       sub      esp, 0x14
+  0x7CFB19  a1948bb700   mov      eax, dword ptr [0xb78b94]
+  0x7CFB1E  8b15988bb700 mov      edx, dword ptr [0xb78b98]
+  0x7CFB24  53           push     ebx
+  0x7CFB25  56           push     esi
+  0x7CFB26  8d0480       lea      eax, [eax + eax*4]
+  0x7CFB29  57           push     edi
+  0x7CFB2A  8d3c82       lea      edi, [edx + eax*4]
+  0x7CFB2D  8b4508       mov      eax, dword ptr [ebp + 8]
+  0x7CFB30  897dfc       mov      dword ptr [ebp - 4], edi
+  0x7CFB33  8d4817       lea      ecx, [eax + 0x17]
+  0x7CFB36  83e1f0       and      ecx, 0xfffffff0
+  0x7CFB39  894df0       mov      dword ptr [ebp - 0x10], ecx
+  0x7CFB3C  c1f904       sar      ecx, 4
+  0x7CFB3F  49           dec      ecx
+  0x7CFB40  83f920       cmp      ecx, 0x20
+  0x7CFB43  7d0e         jge      0x7cfb53
+  0x7CFB45  83ceff       or       esi, 0xffffffff
+  0x7CFB48  d3ee         shr      esi, cl
+  0x7CFB4A  834df8ff     or       dword ptr [ebp - 8], 0xffffffff
+  0x7CFB4E  8975f4       mov      dword ptr [ebp - 0xc], esi
+  0x7CFB51  eb10         jmp      0x7cfb63
+  0x7CFB53  83c1e0       add      ecx, -0x20
+  0x7CFB56  83c8ff       or       eax, 0xffffffff
+  0x7CFB59  33f6         xor      esi, esi
+  0x7CFB5B  d3e8         shr      eax, cl
+  0x7CFB5D  8975f4       mov      dword ptr [ebp - 0xc], esi
+  0x7CFB60  8945f8       mov      dword ptr [ebp - 8], eax
+  0x7CFB63  a18c8bb700   mov      eax, dword ptr [0xb78b8c]
+  0x7CFB68  8bd8         mov      ebx, eax
+  0x7CFB6A  3bdf         cmp      ebx, edi
+  0x7CFB6C  895d08       mov      dword ptr [ebp + 8], ebx
+  0x7CFB6F  7319         jae      0x7cfb8a
+  0x7CFB71  8b4b04       mov      ecx, dword ptr [ebx + 4]
+  0x7CFB74  8b3b         mov      edi, dword ptr [ebx]
+  0x7CFB76  234df8       and      ecx, dword ptr [ebp - 8]
+  0x7CFB79  23fe         and      edi, esi
+  0x7CFB7B  0bcf         or       ecx, edi
+-- 崩点前 24 条（看 Esi/Edi 在崩点时刻的存活状态） --
+  0x7CFC5B  8bfe         mov      edi, esi
+  0x7CFC5D  2339         and      edi, dword ptr [ecx]
+  0x7CFC5F  0bd7         or       edx, edi
+  0x7CFC61  74e9         je       0x7cfc4c
+  0x7CFC63  8b55fc       mov      edx, dword ptr [ebp - 4]
+  0x7CFC66  8bca         mov      ecx, edx
+  0x7CFC68  33ff         xor      edi, edi
+  0x7CFC6A  69c904020000 imul     ecx, ecx, 0x204
+  0x7CFC70  8d8c0144010000 lea      ecx, [ecx + eax + 0x144]
+  0x7CFC77  894df4       mov      dword ptr [ebp - 0xc], ecx
+  0x7CFC7A  8b4c9044     mov      ecx, dword ptr [eax + edx*4 + 0x44]
+  0x7CFC7E  23ce         and      ecx, esi
+  0x7CFC80  750d         jne      0x7cfc8f
+  0x7CFC82  8b8c90c4000000 mov      ecx, dword ptr [eax + edx*4 + 0xc4]
+  0x7CFC89  6a20         push     0x20
+  0x7CFC8B  234df8       and      ecx, dword ptr [ebp - 8]
+  0x7CFC8E  5f           pop      edi
+  0x7CFC8F  85c9         test     ecx, ecx
+  0x7CFC91  7c05         jl       0x7cfc98
+  0x7CFC93  d1e1         shl      ecx, 1
+  0x7CFC95  47           inc      edi
+  0x7CFC96  ebf7         jmp      0x7cfc8f
+  0x7CFC98  8b4df4       mov      ecx, dword ptr [ebp - 0xc]
+  0x7CFC9B  8b54f904     mov      edx, dword ptr [ecx + edi*8 + 4]
+-- 全函数窗口内立即数含 0x7FFFFFFF / 0xFFFFFFFF 的指令 --
+  0x7CFB45  83ceff       or       esi, 0xffffffff   imm=0xFFFFFFFF
+  0x7CFB4A  834df8ff     or       dword ptr [ebp - 8], 0xffffffff   imm=0xFFFFFFFF
+  0x7CFB56  83c8ff       or       eax, 0xffffffff   imm=0xFFFFFFFF
+  0x7CFBFC  8338ff       cmp      dword ptr [eax], -1   imm=0xFFFFFFFF
+  0x7CFC13  83faff       cmp      edx, -1   imm=0xFFFFFFFF
+
+[G] gamemd.exe 导入表（只读 PE） —— 候选①③ 判据
+导入函数总数 = 372
+调试/异常相关导入命中 = 3
+  KERNEL32.dll ! SetUnhandledExceptionFilter
+  KERNEL32.dll ! RaiseException
+  KERNEL32.dll ! UnhandledExceptionFilter
+  含 SetThreadContext                 = False
+  含 GetThreadContext                 = False
+  含 RaiseException                   = True
+  含 SetUnhandledExceptionFilter      = True
+  含 AddVectoredExceptionHandler      = False
+  含 IsDebuggerPresent                = False
+  含 DebugActiveProcess               = False
+  含 SuspendThread                    = False
+
+[H] 打印串定位（有界：raw.find + 单次 stream 扫描做 xref，不逐串全表遍历）
+  串 'Exception occurred at %08X'           VA = 0x821F78
+  串 'Bytes at CS:EIP (%08X)'               VA = 0x821DE6
+  串 'Error code: %s'                       VA = 未找到
+  'Exception occurred at %0' @0x821F78 的立即数 xref（最多列 8 条）= [(5015947, 'push', '0x821f78')]
+  'Bytes at CS:EIP (%08X)' @0x821DE6 的立即数 xref（最多列 8 条）= []
+  参考（Windows x86 CONTEXT 结构，SDK 约定，非本件字节）：Edi+0x9C / Esi+0xA0 / Eip+0xB8 / EFlags+0xC0
+  旧分析 §2#5/§6 称 handler 用 [ebp+0xB8] 同时喂「Exception occurred at」与字节读取；
+  0xB8 恰是 CONTEXT.Eip 偏移 —— 与「打印值来自 CONTEXT 而非 pushf」一致（本探针未亲读 handler 反汇编，标未验）。
+
+[I] 候选判据所依赖的本件可核事实清单
+  F1) EFlags=0x286，TF(bit8)=0，RF(bit16)=0，VM(bit17)=0，IF(bit9)=1
+  F2) 本件无 DR0-DR7 / DR6 / ExceptionInformation 字段（见 [D]）
+  F3) 崩点 0x7CFC9F = mov ecx,[edx]（2B），前序 0x7CFC9B = mov edx,[ecx+edi*8+4]（4B），无 call 以崩点为返回地址（见 [E]）
+  F4) 崩点前 0x20 窗口内 0xCC/0xF1/0xF0/0xCD 出现位置及其是否为指令起始（见 [E]）
+  F5) 导入表调试相关 API 命中（见 [G]）
+  F6) 函数前段 Esi/Edi 位图掩码链（见 [F]）
+  F7) EXCEPT 件 sha256 = 6694b75e46a6e773e1d37c42b0b0de0545cc35eae5a8f5425502e17898aac251（见 [A]）；文件系统事实另由 find+sha256sum 核
+
+耗时 = 140.12 s
+EXIT=0 / 零真机 / 零活进程读取 / 零采样注入 / 唯一写域内

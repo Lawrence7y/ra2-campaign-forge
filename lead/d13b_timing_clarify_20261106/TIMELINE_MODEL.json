@@ -1,0 +1,30 @@
+[
+  {
+    "kind": "offline_classify",
+    "definition": "在采样数据录制完成或游戏进程退出后，离线分析脚本依据完整判定式（含后续帧推进恢复 f_next > f_stall 与非终局计分板排除规则）对恒帧区间完成判定并标记是否为真实停滞事件的时刻。",
+    "hardDeadline": false,
+    "evidence": "lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:33-38; lead/stall_event_def_20261106/_stall_probe.py:86-130; lead/d28_ruling_20261106/RULING_D28.md:30",
+    "verified": false
+  },
+  {
+    "kind": "online_trigger",
+    "definition": "在线监控逻辑检测到逻辑帧满足触发判定条件（如帧号恒定累积达到设定门槛或提前预测条件），向采样执行模块发出现场抓取指令的决策时刻。",
+    "hardDeadline": true,
+    "evidence": "lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190-191; lead/d28_ruling_20261106/RULING_D28.md:30",
+    "verified": false
+  },
+  {
+    "kind": "context_deadline",
+    "definition": "目标线程在物理停滞状态下保持现场执行状态不变的最晚绝对截止时刻；在此之前必须完成原始寄存器上下文（RIP/RSP/EBP）与微型内存页缓冲的保存，超过此点目标线程即恢复推进或现场被覆写。",
+    "hardDeadline": true,
+    "evidence": "lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:177; lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:191; lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:200; lead/d28_ruling_20261106/RULING_D28.md:30,32",
+    "verified": false
+  },
+  {
+    "kind": "offline_parse",
+    "definition": "游戏主进程退出后，离线分析工具对已保存的原始上下文（寄存器与内存快照）完成模块加载、符号反解（PDB 解析）及函数调用栈回溯展开并输出结构化调用栈的时刻。",
+    "hardDeadline": false,
+    "evidence": "lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:199-200; lead/d28_ruling_20261106/RULING_D28.md:30,36",
+    "verified": false
+  }
+]

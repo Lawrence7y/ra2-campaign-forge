@@ -1,0 +1,490 @@
+== D1. 差集中含特异性模式的命中（含 W2 族任意差集）==
+  goal2_wer_observation_20261022/WER_OBSERVATION_REPORT.md:126 [两半]
+    > **本次实测把这个说法拆成两半**：
+  handoff_pack_20261109/APPROVAL_PACK.md:203 [部分同源]
+    > 出处：W2 §5.2:118-124（三选一结论「部分同源」§4.1:82-90；复核 verdict=confirmed §5.1:108）。
+  handoff_pack_20261109/_hp_ap_checks.py:161 [源读面]
+    > "F6源读面": "源读面持续阻断", "F7跑后读取正常": "跑后读取正常", "F8极罕见档": "（均极罕见档；全部为推理、未验）", "F9同趟收尾": "同趟收尾复制"}
+  handoff_pack_20261109/_hp_U8.md:21 [部分同源]
+    > - 源③：`lead/w2_samecause_20261109/W2_SAME_CAUSE.md` §5.2:118-124（三选一结论「部分同源」= §4.1:82-90；R1/R5 判定 §3:73/:77）；复核 verdict=confirmed（§5.1:108）。
+  handoff_pack_20261109/_hp_U9.md:25 [源读面]
+    > - 与 U8 同件同源，**同批为宜**：评级注记「仅限源读面持续阻断子集」的分母依赖 U8 对 :154 链的收窄（源③ §4.2:94）。
+  matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md:75 [两半]
+    > - **实流可达性：可达，但收窄为 (pre=None × read_error) 单格**。控制流依据：① pre 实流取值仅 None / make_pre 三态（§2.2 调用链，两写点 ：6528/:6623）——{}/缺state/脏值 dict **无第三写点可注入**，显式 unknown 不在 make_pre 输出域（out:153）；② read_error 写点唯一 :4786，对任意 pre 生效（异常路径 ：4
+  matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md:181 [两半]
+    > 2. **(pre=None × read_error) 未做 main→finally 整链实跑**（main() 会触真机操作，禁跑）；实证形态 = 两半各自实产（out:159-160 直调 + out:46-48/:7358 链路 + R:153-154 组合经 copy_post）的组合论证，非整链实跑。
+  matrix_reach_20261109/_mr_REACH_EVIDENCE_20261109.md:68 [两半]
+    > - **组合无代码守卫**：pre=None 与 read_error 两半正交（copy_post 不检查 pre 是否 None 才允许失败——C 型异常路径 :4773 对任意 pre 生效；P1 out:159-160 直调证实）。
+  matrix_reach_20261109/_mr_REACH_EVIDENCE_20261109.md:74 [两半]
+    > - **输入可达性（实流）**：两半各有实产路径——pre=error：make_pre 在 :6623 对载体 except.txt 的 exists/stat/sha256_file 抛异常（P4 实跑 4 类输入产 error，out:146-148/151）；read_error：P3 C1-C3 实跑产出。classify 分支序保证两态同现时 read_error 先截（out:26-28）。
+  matrix_reach_20261109/_mr_REACH_EVIDENCE_20261109.md:111 [两半]
+    > **评级：罕见**。两半各自独立现实（进程句柄残留与磁盘满是 Windows 常见故障），但要求「本趟恰好新产 except.txt（即恰好是要保证据的崩溃趟）+ 恰好复制失败」双重小概率叠加。
+  matrix_reach_20261109/_mr_REACH_EVIDENCE_20261109.md:137 [两半]
+    > 2. (pre=None × read_error) 未做 main→finally **整链**实跑（main() 会触真机操作，禁跑）；实证形态 = 两半各自实产（out:159-160 直调 + out:46-48/:7358 链路）+ 组合无代码守卫的**组合论证**，非整链实跑。
+  n10c04_ruling_20261108/RULING_STATIC_ORDER.md:342 [两半]
+    > 运行期读取两半（§3.4/§6.3）。核对依据：PENDING:22-24；RULING:44/:91；NEXT:90/:97-98/:119/:123；
+  oldwording_sweep_20261109/_ow_hits_listing.txt:43 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,持续根因,瞬时锁,横跨]
+    > handoff_pack_20261109/APPROVAL_PACK.md:194 [横跨 pre|AV 瞬时锁|同一持续根因|持续根因|路径异常|瞬时锁]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:44 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,两时点,瞬时锁,横跨]
+    > 2. **W2**：make_pre 在 ：6623 对载体 except.txt 采集抛异常（AV 瞬时锁/ACL/路径异常 → error 态，out:146-148）+ 同趟收尾复制又失败（同一持续根因横跨 pre/post 两时点可一次造成）→ read_error 先截（out:26 vs out:28）→ :4 声称 error_pre_snapshot 与实码 PRE 不符。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:46 [AV 瞬时锁,一因双时点,路径异常,持续根因,游戏句柄,源读面,双时点,瞬时锁]
+    > make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面持续阻断：ACL 拒读〔目录继承 deny-ACE，跨文件重建仍持续——写域探针实证〕/AV 对该路径持续拦截 → error 态；AV 瞬时锁非持续根因，双时点命中需两次独立竞态；路径异常在 py3.12.10 实测〔非法字符/ENOTDIR/超长〕均被 exists() 吞为 absent_confirmed，不产 error 态）+ 同趟收尾复制对同
+  oldwording_sweep_20261109/_ow_hits_listing.txt:50 [AV 瞬时锁,源读面,瞬时锁]
+    > 「罕见」仅限**源读面持续阻断**子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截 ~1e-5–1e-3）；AV 瞬时锁双击 ~1e-6–1e-4、两独立因 ~1e-7–1e-5（均极罕见档；全部为推理、未验）。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:53 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,两时点,横跨]
+    > handoff_pack_20261109/APPROVAL_PACK.md:239 [ACL 横跨|句柄/ACL|同一持续根因|横跨两时点|持续根因|路径异常]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:54 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,造成两半,两时点,源读面,两半,横跨]
+    > - **P10（矛盾登记，指出不调解）**：受核件 :90 载旧措辞「同一持续根因（句柄/ACL 横跨两时点）可一次造成两半」（本轮实跑子串命中 True），与 U8 将 :154 收窄为「源读面持续阻断」后相抵（W2 §3 R1/R6：句柄 T0 结构性不成立/term 成功即句柄关闭；ACL 仅 deny-ACE 持续形态桥接；路径异常不产 error 态）。:90 不在九条内，包不代拟改文，需主管侧决定是否另立订正。grep 定位
+  oldwording_sweep_20261109/_ow_hits_listing.txt:55 [同一持续根因,持续根因]
+    > handoff_pack_20261109/_hp_APPENDIX_FINGERPRINTS.md:48 [同一持续根因|持续根因]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:56 [同一持续根因,持续根因]
+    > 4. `grep -n "W2\|同一持续根因\|罕见" lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md` → 命中 :1/:12/:71/:77-90/:146/:147/:154/:180（定位 P10 之 :90 与 U9 对照格 :147）。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:57 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,持续根因,跨两时点,两时点,横跨]
+    > handoff_pack_20261109/_hp_ap_checks.py:144 [ACL 横跨|句柄/ACL|同一持续根因|横跨两时点|持续根因]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:58 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,持续根因,跨两时点,造成两半,两时点,两半,横跨]
+    > print("[P10] 受核件:90 含旧措辞:", "同一持续根因（句柄/ACL 横跨两时点）可一次造成两半" in rc[89])
+  oldwording_sweep_20261109/_ow_hits_listing.txt:59 [同一持续根因,持续根因]
+    > handoff_pack_20261109/_hp_ap_checks.py:145 [同一持续根因|持续根因]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:60 [同一持续根因,持续根因]
+    > hits = sorted(i + 1 for i, x in enumerate(rc) if re.search(r"W2|同一持续根因|罕见", x))
+  oldwording_sweep_20261109/_ow_hits_listing.txt:63 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,两时点,横跨]
+    > handoff_pack_20261109/_hp_OVERVIEW.md:52 [ACL 横跨|句柄/ACL|同一持续根因|横跨两时点|持续根因|路径异常]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:64 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,造成两半,两时点,两半,横跨]
+    > - **P10（矛盾登记）**：受核件 MATRIX_DEFECT_REACHABILITY.md **:90** 载旧措辞「同一持续根因（句柄/ACL 横跨两时点）可一次造成两半」——U8 收窄 :154 后该句滞留（W2 §3 R1/R6：句柄 T0 结构性不成立；ACL 仅 deny-ACE 持续形态桥接；路径异常不产 error 态）。扩面超出九条，本包不代拟改文，需批准人决定是否另立订正。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:65 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,两时点,横跨]
+    > handoff_pack_20261109/_hp_PENDING_AND_SIGNOFFS.md:18 [ACL 横跨|句柄/ACL|同一持续根因|横跨两时点|持续根因|路径异常]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:66 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,造成两半,两时点,两半,横跨]
+    > | P10 | **矛盾登记：受核件 :90 滞留旧措辞**——「同一持续根因（句柄/ACL 横跨两时点）可一次造成两半」与 U8 收窄后的 :154 相抵（W2 §3 R1/R6：句柄 T0 结构性不成立；ACL 仅 deny-ACE 持续形态桥接；路径异常不产 error 态）。:90 不在九条内，本包不代拟改文 | 本轮 grep 实跑定位 + Read :90；W2 §3/§4.1 | 受核件主管侧（是否另立订正） | U8 的
+  oldwording_sweep_20261109/_ow_hits_listing.txt:67 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,持续根因,瞬时锁,横跨]
+    > handoff_pack_20261109/_hp_U8.md:9 [横跨 pre|AV 瞬时锁|同一持续根因|持续根因|路径异常|瞬时锁]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:68 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,两时点,瞬时锁,横跨]
+    > 2. **W2**：make_pre 在 :6623 对载体 except.txt 采集抛异常（AV 瞬时锁/ACL/路径异常 → error 态，out:146-148）+ 同趟收尾复制又失败（同一持续根因横跨 pre/post 两时点可一次造成）→ read_error 先截（out:26 vs out:28）→ :4 声称 error_pre_snapshot 与实码 PRE 不符。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:70 [AV 瞬时锁,一因双时点,路径异常,持续根因,游戏句柄,源读面,双时点,瞬时锁]
+    > make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面持续阻断：ACL 拒读〔目录继承 deny-ACE，跨文件重建仍持续——写域探针实证〕/AV 对该路径持续拦截 → error 态；AV 瞬时锁非持续根因，双时点命中需两次独立竞态；路径异常在 py3.12.10 实测〔非法字符/ENOTDIR/超长〕均被 exists() 吞为 absent_confirmed，不产 error 态）+ 同趟收尾复制对同
+  oldwording_sweep_20261109/_ow_hits_listing.txt:71 [AV 瞬时锁,同一持续根因,路径异常,持续根因,瞬时锁]
+    > handoff_pack_20261109/_hp_U8.md:22 [AV 瞬时锁|同一持续根因|持续根因|路径异常|瞬时锁]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:72 [AV 瞬时锁,同一持续根因,路径异常,持续根因,源读面,瞬时锁]
+    > - 要点：「同一持续根因」收窄为「源读面（载体 except.txt 的同一路径读面）上的持续阻断」；剔除/修正括号内「AV 瞬时锁」（非持续根因）与「路径异常」（R5 在 py3.12.10 实测不产 error 态）。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:73 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,两时点,横跨]
+    > handoff_pack_20261109/_hp_U8.md:30 [ACL 横跨|句柄/ACL|同一持续根因|横跨两时点|持续根因|路径异常]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:74 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,造成两半,两时点,两半,横跨]
+    > - **矛盾登记（P10，本包新发现）**：同件 **:90** 载旧措辞「同一持续根因（句柄/ACL 横跨两时点）可一次造成两半」——本条收窄后 :90 滞留（句柄 T0 结构性不成立/R6；ACL 仅 deny-ACE 持续形态；路径异常不产 error 态）。:90 **不在九条范围内**，本包不代拟改文，需批准人决定是否另立订正（第二步(c) 核验结论，本轮 `grep -n "W2|同一持续根因|罕见"` 实跑定位 :90/:
+  oldwording_sweep_20261109/_ow_hits_listing.txt:78 [AV 瞬时锁,源读面,瞬时锁]
+    > 「罕见」仅限**源读面持续阻断**子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截 ~1e-5–1e-3）；AV 瞬时锁双击 ~1e-6–1e-4、两独立因 ~1e-7–1e-5（均极罕见档；全部为推理、未验）
+  oldwording_sweep_20261109/_ow_hits_listing.txt:81 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,持续根因,跨两时点,两时点,横跨]
+    > matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md:90 [ACL 横跨|句柄/ACL|同一持续根因|横跨两时点|持续根因]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:82 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,持续根因,跨两时点,造成两半,两时点,两半,横跨]
+    > - **实流可达性：可达，实证成立**。两半各有实产路径：pre=error——make_pre 对载体 except.txt 的 exists/stat/sha256_file 抛异常即产（8 类输入 sweep 中 4 类产 error，out:146-148/151）；read_error——copy_post C1-C3 实跑产出（out:187-203）。同一持续根因（句柄/ACL 横跨两时点）可一次造成两半。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:87 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,持续根因,瞬时锁,横跨]
+    > matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md:154 [横跨 pre|AV 瞬时锁|同一持续根因|持续根因|路径异常|瞬时锁]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:88 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,两时点,瞬时锁,横跨]
+    > 2. **W2**：make_pre 在 ：6623 对载体 except.txt 采集抛异常（AV 瞬时锁/ACL/路径异常 → error 态，out:146-148）+ 同趟收尾复制又失败（同一持续根因横跨 pre/post 两时点可一次造成）→ read_error 先截（out:26 vs out:28）→ :4 声称 error_pre_snapshot 与实码 PRE 不符。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:97 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,句柄被占,路径异常,持续根因,瞬时锁,横跨]
+    > matrix_reach_20261109/_mr_REACH_EVIDENCE_20261109.md:112 [横跨 pre|AV 瞬时锁|同一持续根因|句柄被占|持续根因|路径异常|瞬时锁]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:98 [AV 瞬时锁,同一持续根因,ACL 损坏,横跨 pre,跨 pre,句柄被占,路径异常,持续根因,造成两半,瞬时锁,两半,横跨]
+    > 2. **W2**：pre 侧 make_pre 在 :6623 对载体 except.txt 采集失败（AV 瞬时锁 / ACL / 路径异常 ⇒ P4 所证 error 态）+ 同趟收尾复制又失败。同一持续根因（句柄被占/ACL 损坏横跨 pre 与 post 两个时点）可一次造成两半。**评级：罕见**。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:124 [AV 瞬时锁,路径异常,部分同源,源读面,瞬时锁]
+    > - **结论原文**（W2 §4.1:82-90 实读）：三选一结论 =「**部分同源**」；「同源面 = 同一源读面上的持续阻断；不同源面 = T1 写侧、游戏暴露、两次独立的 AV 瞬时锁事件、以及两腿都点不着的路径异常（R5）。」
+  oldwording_sweep_20261109/_ow_hits_listing.txt:125 [同一持续根因,持续根因]
+    > text_fix_unified_20261109/UNIFIED_TEXT_FIX.md:84 [同一持续根因|持续根因]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:126 [同一持续根因,持续根因,源读面]
+    > - **结论原文**（W2 §5.2:118-124 实读）：「W2 链（:154）需把「同一持续根因」收窄为「**源读面（载体 except.txt 的同一路径读面）上的持续阻断**」，并修正/剔除括号内两个成因。措辞提案：」＋ 引用块（= §4-U8 改后逐字）＋「:146 评级格建议注记：……」（= §4-U9 改后逐字）。§5.2 标题自限：「（只描述，不改那件）」。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:129 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,持续根因,瞬时锁,横跨]
+    > text_fix_unified_20261109/UNIFIED_TEXT_FIX.md:191 [横跨 pre|AV 瞬时锁|同一持续根因|持续根因|路径异常|瞬时锁]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:130 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,两时点,瞬时锁,横跨]
+    > 2. **W2**：make_pre 在 :6623 对载体 except.txt 采集抛异常（AV 瞬时锁/ACL/路径异常 → error 态，out:146-148）+ 同趟收尾复制又失败（同一持续根因横跨 pre/post 两时点可一次造成）→ read_error 先截（out:26 vs out:28）→ :4 声称 error_pre_snapshot 与实码 PRE 不符。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:131 [AV 瞬时锁,同一持续根因,路径异常,持续根因,瞬时锁]
+    > text_fix_unified_20261109/UNIFIED_TEXT_FIX.md:193 [AV 瞬时锁|同一持续根因|持续根因|路径异常|瞬时锁]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:132 [AV 瞬时锁,同一持续根因,路径异常,持续根因,源读面,瞬时锁]
+    > - **改后逐字**（源③ W2 §5.2:122 措辞提案原文，整句替换；要点：「同一持续根因」收窄为「源读面（载体 except.txt 的同一路径读面）上的持续阻断」，剔除/修正括号内「AV 瞬时锁」（非持续根因）与「路径异常」（R5 实测不产 error 态））：
+  oldwording_sweep_20261109/_ow_hits_listing.txt:134 [AV 瞬时锁,一因双时点,路径异常,持续根因,游戏句柄,源读面,双时点,瞬时锁]
+    > make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面持续阻断：ACL 拒读〔目录继承 deny-ACE，跨文件重建仍持续——写域探针实证〕/AV 对该路径持续拦截 → error 态；AV 瞬时锁非持续根因，双时点命中需两次独立竞态；路径异常在 py3.12.10 实测〔非法字符/ENOTDIR/超长〕均被 exists() 吞为 absent_confirmed，不产 error 态）+ 同趟收尾复制对同
+  oldwording_sweep_20261109/_ow_hits_listing.txt:138 [AV 瞬时锁,源读面,瞬时锁]
+    > 「罕见」仅限**源读面持续阻断**子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截 ~1e-5–1e-3）；AV 瞬时锁双击 ~1e-6–1e-4、两独立因 ~1e-7–1e-5（均极罕见档；全部为推理、未验）
+  oldwording_sweep_20261109/_ow_hits_listing.txt:141 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,持续根因,瞬时锁,横跨]
+    > text_fix_unified_20261109/_uf_UNIFIED_FIX_LIST_20261109.md:117 [横跨 pre|AV 瞬时锁|同一持续根因|持续根因|路径异常|瞬时锁]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:142 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,两时点,瞬时锁,横跨]
+    > `2. **W2**：make_pre 在 :6623 对载体 except.txt 采集抛异常（AV 瞬时锁/ACL/路径异常 → error 态，out:146-148）+ 同趟收尾复制又失败（同一持续根因横跨 pre/post 两时点可一次造成）→ read_error 先截（out:26 vs out:28）→ :4 声称 error_pre_snapshot 与实码 PRE 不符。`
+  oldwording_sweep_20261109/_ow_hits_listing.txt:144 [AV 瞬时锁,一因双时点,路径异常,持续根因,游戏句柄,源读面,双时点,瞬时锁]
+    > `make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面持续阻断：ACL 拒读〔目录继承 deny-ACE，跨文件重建仍持续——写域探针实证〕/AV 对该路径持续拦截 → error 态；AV 瞬时锁非持续根因，双时点命中需两次独立竞态；路径异常在 py3.12.10 实测〔非法字符/ENOTDIR/超长〕均被 exists() 吞为 absent_confirmed，不产 error 态）+ 同趟收尾复制对
+  oldwording_sweep_20261109/_ow_hits_listing.txt:145 [AV 瞬时锁,同一持续根因,路径异常,持续根因,游戏句柄,瞬时锁]
+    > text_fix_unified_20261109/_uf_UNIFIED_FIX_LIST_20261109.md:120 [AV 瞬时锁|同一持续根因|游戏句柄|持续根因|路径异常|瞬时锁]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:146 [AV 瞬时锁,同一持续根因,路径异常,持续根因,游戏句柄,源读面,瞬时锁]
+    > - 要点：把「同一持续根因」收窄为「源读面（载体 except.txt 的同一路径读面）上的持续阻断」；剔除/修正括号内「AV 瞬时锁」（非持续根因，双击需两次独立竞态）与「路径异常」（R5 在 py3.12.10 实测被 exists() 吞为 absent_confirmed，不产 error 态）；R1 游戏句柄 T0 结构性不成立（源③ §3 R1/R5、§4.1）。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:150 [AV 瞬时锁,源读面,瞬时锁]
+    > `「罕见」仅限**源读面持续阻断**子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截 ~1e-5–1e-3）；AV 瞬时锁双击 ~1e-6–1e-4、两独立因 ~1e-7–1e-5（均极罕见档；全部为推理、未验）`
+  oldwording_sweep_20261109/_ow_hits_listing.txt:153 [同一持续根因,横跨 pre,跨 pre,持续根因,同根因,同根,横跨]
+    > w2_samecause_20261109/W2_SAME_CAUSE.md:4 [横跨 pre|同一持续根因|持续根因|同根因]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:154 [同一持续根因,横跨 pre,跨 pre,根因横跨,持续根因,两时点,双时点,同根因,同根,横跨]
+    > - 受核假设：lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md §4.2 条 2（:154）W2 最短触发链中的「同一持续根因横跨 pre/post 两时点可一次造成」，及 :146 表行评级「罕见（同根因双时点；评级为推理）」
+  oldwording_sweep_20261109/_ow_hits_listing.txt:156 [持续根因,部分同源,双时点]
+    > **目的（只此一项）**：检验 W2 触发链所依赖的双时点同源假设是否成立——载体 `except.txt` 在 T0（跑前快照 `make_pre_freshness_snapshot`）与 T1（收尾证据副本 `copy_post_except_evidence`）两处读**同一文件**时，能否由**同一个持续根因一次造成两处失败**。结论只允许「同源 / 不同源 / 部分同源」三选一，不许含糊。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:161 [同一持续根因,持续根因]
+    > w2_samecause_20261109/W2_SAME_CAUSE.md:75 [同一持续根因|持续根因]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:162 [同一持续根因,持续根因,部分同源]
+    > - **R3 AV 实时扫描：部分同源形态，非完整同源。** 对该路径的扫描**策略**（配置）持续 ⇒ 形式上同源；但**锁事件**是两次独立瞬时竞态（T0 新建载体件扫描窗口 × T1 崩溃写后扫描窗口），不是同一持续根因一次造成。零真机下无法实证 AV 行为——未验。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:167 [同一持续根因,持续根因,独占句柄]
+    > w2_samecause_20261109/W2_SAME_CAUSE.md:86 [同一持续根因|独占句柄|持续根因]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:168 [同一持续根因,持续根因,独占句柄,两时点]
+    > **判「同源」不成立的依据**——两时点依赖项清单不对等（§2.4）：①T1 的 try 块另含整块写侧依赖（out_dir 存在/写 ACL/磁盘空间/新建副本 AV 扫描，:4771-4772），make_pre 零写完全不经——探针 H 实证写侧失败同样落 read_error，属 T1-only 源；②连评件示例成因「文件被游戏进程独占句柄」（R1）在 T0 结构性不成立；③R4/R6 均只能致 T1。若判全同源，等于宣称 T1
+  oldwording_sweep_20261109/_ow_hits_listing.txt:169 [横跨两时点,独占句柄,跨两时点,两时点,横跨]
+    > w2_samecause_20261109/W2_SAME_CAUSE.md:88 [横跨两时点|独占句柄]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:170 [一因双时点,横跨两时点,独占句柄,跨两时点,两时点,源读面,双时点,横跨]
+    > **判「不同源」不成立的依据**——存在实锤桥接子集：两时点对**同一源路径串**各做一次独立 open 读，源读面依赖（路径串、存在性 stat、读数据 ACL、共享模式、AV 对该路径策略、载体卷）完全重叠；其中「源读面**持续阻断**」类根因（目录继承 deny-ACE、AV 对该路径持续拦截、持续性独占句柄）确实一因双时点命中——探针 E/F 用真 make_pre + 真 copy_post 复现成功（同一 deny ACE 
+  oldwording_sweep_20261109/_ow_hits_listing.txt:172 [AV 瞬时锁,路径异常,部分同源,源读面,瞬时锁]
+    > **⇒ 部分同源**：同源面 = 同一源读面上的持续阻断；不同源面 = T1 写侧、游戏暴露、两次独立的 AV 瞬时锁事件、以及两腿都点不着的路径异常（R5）。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:174 [AV 瞬时锁,路径异常,部分同源,双时点,瞬时锁,同根因,同根]
+    > 任务规则「若不同源则概率重估」的触发条件核对本轮**不成立**（结论为部分同源，非不同源），故不做全面概率重估。但 :146 评级「罕见（同根因双时点；评级为推理）」按其现措辞（括号内含「AV 瞬时锁/ACL/路径异常」）**偏高**，需随 §5 修正措辞收窄后方可维持。分层量级（**全部为量级推理，零真机未实测——未验**）：
+  oldwording_sweep_20261109/_ow_hits_listing.txt:180 [一因双时点,独占句柄,双时点]
+    > 复核轮以独立实现复核本检验：指纹 9/9 MATCH（其 `_w2v_fp.py` 实算，与编排方基线及撰写轮绑定行逐字节一致）；依赖清单实读无误；六类根因独立探针 `_w2v_probe1.py` 14/14 PASS、`_w2v_probe2.py` PASS（E：文件级 deny-(RD) 下真 make_pre=error + 真 copy_post 抛 PermissionError→FRESHNESS verdict=pos
+  oldwording_sweep_20261109/_ow_hits_listing.txt:181 [同一持续根因,持续根因]
+    > w2_samecause_20261109/W2_SAME_CAUSE.md:120 [同一持续根因|持续根因]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:182 [同一持续根因,持续根因,源读面]
+    > W2 链（:154）需把「同一持续根因」收窄为「**源读面（载体 except.txt 的同一路径读面）上的持续阻断**」，并修正/剔除括号内两个成因。措辞提案：
+  oldwording_sweep_20261109/_ow_hits_listing.txt:184 [AV 瞬时锁,一因双时点,路径异常,持续根因,游戏句柄,源读面,双时点,瞬时锁]
+    > > make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面持续阻断：ACL 拒读〔目录继承 deny-ACE，跨文件重建仍持续——写域探针实证〕/AV 对该路径持续拦截 → error 态；AV 瞬时锁非持续根因，双时点命中需两次独立竞态；路径异常在 py3.12.10 实测〔非法字符/ENOTDIR/超长〕均被 exists() 吞为 absent_confirmed，不产 error 态）+ 同趟收尾复制
+  oldwording_sweep_20261109/_ow_hits_listing.txt:186 [AV 瞬时锁,源读面,瞬时锁]
+    > :146 评级格建议注记：「罕见」仅限**源读面持续阻断**子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截 ~1e-5–1e-3）；AV 瞬时锁双击 ~1e-6–1e-4、两独立因 ~1e-7–1e-5（均极罕见档；全部为推理、未验）。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:189 [同一持续根因,横跨 pre,跨 pre,持续根因,同根因,同根,横跨]
+    > w2_samecause_20261109/_w2_conclusion.md:4 [横跨 pre|同一持续根因|持续根因|同根因]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:190 [同一持续根因,横跨 pre,跨 pre,根因横跨,持续根因,两时点,双时点,同根因,同根,横跨]
+    > 中的假设「同一持续根因横跨 pre/post 两时点可一次造成」，及 :146 表行评级「罕见（同根因双时点；评级为推理）」。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:202 [AV 瞬时锁,持续根因,源读面,瞬时锁]
+    > - ⇒ 「罕见」仅在把桥接限定为「源读面持续阻断」时成立；按现措辞（AV 瞬时锁算持续根因）偏高。
+  oldwording_sweep_20261109/_ow_hits_listing.txt:208 [一因双时点,游戏句柄,双时点]
+    > + 同趟收尾复制对**同一源路径**再失败（同一 ACE/拦截持续 ⇒ 一因双时点；游戏句柄〔T0 未启动、
+  oldwording_sweep_20261109/_ow_hits_listing.txt:215 [横跨两时点,跨两时点,两时点,横跨]
+    > w2_samecause_20261109/_w2_probe.py:185 [横跨两时点]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:216 [横跨两时点,跨两时点,两时点,横跨]
+    > sep("E. 同一 deny-(RD) ACE 横跨两时点（同源子集实证：真 make_pre + 真 copy_post）")
+  oldwording_sweep_20261109/_ow_hits_listing.txt:219 [横跨两时点,句柄横跨,独占句柄,跨两时点,两时点,横跨]
+    > w2_samecause_20261109/_w2_probe.py:217 [横跨两时点|独占句柄|句柄横跨]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:220 [横跨两时点,句柄横跨,独占句柄,跨两时点,两时点,横跨]
+    > sep("G. share-mode=0 独占句柄横跨两时点（机理演示；T0 无游戏进程见结论）")
+  oldwording_sweep_20261109/_ow_hits_listing.txt:225 [横跨两时点,跨两时点,两时点,横跨]
+    > w2_samecause_20261109/_w2_probe_out.txt:42 [横跨两时点]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:226 [横跨两时点,跨两时点,两时点,横跨]
+    > E. 同一 deny-(RD) ACE 横跨两时点（同源子集实证：真 make_pre + 真 copy_post）
+  oldwording_sweep_20261109/_ow_hits_listing.txt:227 [横跨两时点,句柄横跨,独占句柄,跨两时点,两时点,横跨]
+    > w2_samecause_20261109/_w2_probe_out.txt:74 [横跨两时点|独占句柄|句柄横跨]
+  oldwording_sweep_20261109/_ow_hits_listing.txt:228 [横跨两时点,句柄横跨,独占句柄,跨两时点,两时点,横跨]
+    > G. share-mode=0 独占句柄横跨两时点（机理演示；T0 无游戏进程见结论）
+  oldwording_sweep_20261109/_ow_raw_hits.json:28 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:30 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:49 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18535 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18540 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,两时点,瞬时锁,横跨]
+    > "text": "2. **W2**：make_pre 在 ：6623 对载体 except.txt 采集抛异常（AV 瞬时锁/ACL/路径异常 → error 态，out:146-148）+ 同趟收尾复制又失败（同一持续根因横跨 pre/post 两时点可一次造成）→ read_error 先截（out:26 vs out:28）→ :4 声称 error_pre_snapshot 与实码 PRE 不符。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18552 [AV 瞬时锁,一因双时点,路径异常,持续根因,游戏句柄,源读面,双时点,瞬时锁]
+    > "text": "make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面持续阻断：ACL 拒读〔目录继承 deny-ACE，跨文件重建仍持续——写域探针实证〕/AV 对该路径持续拦截 → error 态；AV 瞬时锁非持续根因，双时点命中需两次独立竞态；路径异常在 py3.12.10 实测〔非法字符/ENOTDIR/超长〕均被 exists() 吞为 absent_confirmed，不产 error 态）+
+  oldwording_sweep_20261109/_ow_raw_hits.json:18569 [AV 瞬时锁,源读面,瞬时锁]
+    > "text": "「罕见」仅限**源读面持续阻断**子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截 ~1e-5–1e-3）；AV 瞬时锁双击 ~1e-6–1e-4、两独立因 ~1e-7–1e-5（均极罕见档；全部为推理、未验）。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18587 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18588 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18592 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,造成两半,两时点,源读面,两半,横跨]
+    > "text": "- **P10（矛盾登记，指出不调解）**：受核件 :90 载旧措辞「同一持续根因（句柄/ACL 横跨两时点）可一次造成两半」（本轮实跑子串命中 True），与 U8 将 :154 收窄为「源读面持续阻断」后相抵（W2 §3 R1/R6：句柄 T0 结构性不成立/term 成功即句柄关闭；ACL 仅 deny-ACE 持续形态桥接；路径异常不产 error 态）。:90 不在九条内，包不代拟改文，需主管侧决定是否另立订
+  oldwording_sweep_20261109/_ow_raw_hits.json:18598 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18601 [同一持续根因,持续根因]
+    > "text": "4. `grep -n \"W2\\|同一持续根因\\|罕见\" lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md` → 命中 :1/:12/:71/:77-90/:146/:147/:154/:180（定位 P10 之 :90 与 U9 对照格 :147）。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18609 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18610 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18613 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,持续根因,跨两时点,造成两半,两时点,两半,横跨]
+    > "text": "print(\"[P10] 受核件:90 含旧措辞:\", \"同一持续根因（句柄/ACL 横跨两时点）可一次造成两半\" in rc[89])"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18619 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18622 [同一持续根因,持续根因]
+    > "text": "hits = sorted(i + 1 for i, x in enumerate(rc) if re.search(r\"W2|同一持续根因|罕见\", x))"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18638 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18639 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18643 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,造成两半,两时点,两半,横跨]
+    > "text": "- **P10（矛盾登记）**：受核件 MATRIX_DEFECT_REACHABILITY.md **:90** 载旧措辞「同一持续根因（句柄/ACL 横跨两时点）可一次造成两半」——U8 收窄 :154 后该句滞留（W2 §3 R1/R6：句柄 T0 结构性不成立；ACL 仅 deny-ACE 持续形态桥接；路径异常不产 error 态）。扩面超出九条，本包不代拟改文，需批准人决定是否另立订正。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18651 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18652 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18656 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,造成两半,两时点,两半,横跨]
+    > "text": "| P10 | **矛盾登记：受核件 :90 滞留旧措辞**——「同一持续根因（句柄/ACL 横跨两时点）可一次造成两半」与 U8 收窄后的 :154 相抵（W2 §3 R1/R6：句柄 T0 结构性不成立；ACL 仅 deny-ACE 持续形态桥接；路径异常不产 error 态）。:90 不在九条内，本包不代拟改文 | 本轮 grep 实跑定位 + Read :90；W2 §3/§4.1 | 受核件主管侧（是否另立订
+  oldwording_sweep_20261109/_ow_raw_hits.json:18664 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18669 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,两时点,瞬时锁,横跨]
+    > "text": "2. **W2**：make_pre 在 :6623 对载体 except.txt 采集抛异常（AV 瞬时锁/ACL/路径异常 → error 态，out:146-148）+ 同趟收尾复制又失败（同一持续根因横跨 pre/post 两时点可一次造成）→ read_error 先截（out:26 vs out:28）→ :4 声称 error_pre_snapshot 与实码 PRE 不符。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18681 [AV 瞬时锁,一因双时点,路径异常,持续根因,游戏句柄,源读面,双时点,瞬时锁]
+    > "text": "make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面持续阻断：ACL 拒读〔目录继承 deny-ACE，跨文件重建仍持续——写域探针实证〕/AV 对该路径持续拦截 → error 态；AV 瞬时锁非持续根因，双时点命中需两次独立竞态；路径异常在 py3.12.10 实测〔非法字符/ENOTDIR/超长〕均被 exists() 吞为 absent_confirmed，不产 error 态）+
+  oldwording_sweep_20261109/_ow_raw_hits.json:18688 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18693 [AV 瞬时锁,同一持续根因,路径异常,持续根因,源读面,瞬时锁]
+    > "text": "- 要点：「同一持续根因」收窄为「源读面（载体 except.txt 的同一路径读面）上的持续阻断」；剔除/修正括号内「AV 瞬时锁」（非持续根因）与「路径异常」（R5 在 py3.12.10 实测不产 error 态）。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18701 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18702 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18706 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,跨两时点,造成两半,两时点,两半,横跨]
+    > "text": "- **矛盾登记（P10，本包新发现）**：同件 **:90** 载旧措辞「同一持续根因（句柄/ACL 横跨两时点）可一次造成两半」——本条收窄后 :90 滞留（句柄 T0 结构性不成立/R6；ACL 仅 deny-ACE 持续形态；路径异常不产 error 态）。:90 **不在九条范围内**，本包不代拟改文，需批准人决定是否另立订正（第二步(c) 核验结论，本轮 `grep -n \"W2|同一持续根因|罕见\"`
+  oldwording_sweep_20261109/_ow_raw_hits.json:18723 [AV 瞬时锁,源读面,瞬时锁]
+    > "text": "「罕见」仅限**源读面持续阻断**子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截 ~1e-5–1e-3）；AV 瞬时锁双击 ~1e-6–1e-4、两独立因 ~1e-7–1e-5（均极罕见档；全部为推理、未验）"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18741 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18742 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18745 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,持续根因,跨两时点,造成两半,两时点,两半,横跨]
+    > "text": "- **实流可达性：可达，实证成立**。两半各有实产路径：pre=error——make_pre 对载体 except.txt 的 exists/stat/sha256_file 抛异常即产（8 类输入 sweep 中 4 类产 error，out:146-148/151）；read_error——copy_post C1-C3 实跑产出（out:187-203）。同一持续根因（句柄/ACL 横跨两时点）可一次造成两半
+  oldwording_sweep_20261109/_ow_raw_hits.json:18771 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18776 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,两时点,瞬时锁,横跨]
+    > "text": "2. **W2**：make_pre 在 ：6623 对载体 except.txt 采集抛异常（AV 瞬时锁/ACL/路径异常 → error 态，out:146-148）+ 同趟收尾复制又失败（同一持续根因横跨 pre/post 两时点可一次造成）→ read_error 先截（out:26 vs out:28）→ :4 声称 error_pre_snapshot 与实码 PRE 不符。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18816 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18822 [AV 瞬时锁,同一持续根因,ACL 损坏,横跨 pre,跨 pre,句柄被占,路径异常,持续根因,造成两半,瞬时锁,两半,横跨]
+    > "text": "2. **W2**：pre 侧 make_pre 在 :6623 对载体 except.txt 采集失败（AV 瞬时锁 / ACL / 路径异常 ⇒ P4 所证 error 态）+ 同趟收尾复制又失败。同一持续根因（句柄被占/ACL 损坏横跨 pre 与 post 两个时点）可一次造成两半。**评级：罕见**。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18853 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18858 [同一持续根因,ACL 横跨,句柄横跨,路径异常,持续根因,横跨]
+    > "text": "ORCH_PAT = [\"同一持续根因\", \"持续根因\", \"D:\\lead\", \"路径异常\", \"句柄横跨\", \"ACL 横跨\"]"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18865 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18870 [同一持续根因,ACL 横跨,句柄横跨,路径异常,持续根因,横跨]
+    > "text": "ORCH_PAT = [\"同一持续根因\", \"持续根因\", \"D:\\lead\", \"路径异常\", \"句柄横跨\", \"ACL 横跨\"]"
+  oldwording_sweep_20261109/_ow_raw_hits.json:18919 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:18922 [横跨 post,横跨post,横跨 pre,跨 post,横跨两时点,跨 pre,横跨pre,跨两时点,两时点,横跨]
+    > "text": "\"横跨两时点\", \"横跨 pre\", \"横跨 post\", \"横跨pre\", \"横跨post\","
+  oldwording_sweep_20261109/_ow_raw_hits.json:19021 [AV 瞬时锁,路径异常,部分同源,源读面,瞬时锁]
+    > "text": "- **结论原文**（W2 §4.1:82-90 实读）：三选一结论 =「**部分同源**」；「同源面 = 同一源读面上的持续阻断；不同源面 = T1 写侧、游戏暴露、两次独立的 AV 瞬时锁事件、以及两腿都点不着的路径异常（R5）。」"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19027 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19030 [同一持续根因,持续根因,源读面]
+    > "text": "- **结论原文**（W2 §5.2:118-124 实读）：「W2 链（:154）需把「同一持续根因」收窄为「**源读面（载体 except.txt 的同一路径读面）上的持续阻断**」，并修正/剔除括号内两个成因。措辞提案：」＋ 引用块（= §4-U8 改后逐字）＋「:146 评级格建议注记：……」（= §4-U9 改后逐字）。§5.2 标题自限：「（只描述，不改那件）」。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19049 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19054 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,两时点,瞬时锁,横跨]
+    > "text": "2. **W2**：make_pre 在 :6623 对载体 except.txt 采集抛异常（AV 瞬时锁/ACL/路径异常 → error 态，out:146-148）+ 同趟收尾复制又失败（同一持续根因横跨 pre/post 两时点可一次造成）→ read_error 先截（out:26 vs out:28）→ :4 声称 error_pre_snapshot 与实码 PRE 不符。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19061 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19066 [AV 瞬时锁,同一持续根因,路径异常,持续根因,源读面,瞬时锁]
+    > "text": "- **改后逐字**（源③ W2 §5.2:122 措辞提案原文，整句替换；要点：「同一持续根因」收窄为「源读面（载体 except.txt 的同一路径读面）上的持续阻断」，剔除/修正括号内「AV 瞬时锁」（非持续根因）与「路径异常」（R5 实测不产 error 态））："
+  oldwording_sweep_20261109/_ow_raw_hits.json:19078 [AV 瞬时锁,一因双时点,路径异常,持续根因,游戏句柄,源读面,双时点,瞬时锁]
+    > "text": "make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面持续阻断：ACL 拒读〔目录继承 deny-ACE，跨文件重建仍持续——写域探针实证〕/AV 对该路径持续拦截 → error 态；AV 瞬时锁非持续根因，双时点命中需两次独立竞态；路径异常在 py3.12.10 实测〔非法字符/ENOTDIR/超长〕均被 exists() 吞为 absent_confirmed，不产 error 态）+
+  oldwording_sweep_20261109/_ow_raw_hits.json:19095 [AV 瞬时锁,源读面,瞬时锁]
+    > "text": "「罕见」仅限**源读面持续阻断**子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截 ~1e-5–1e-3）；AV 瞬时锁双击 ~1e-6–1e-4、两独立因 ~1e-7–1e-5（均极罕见档；全部为推理、未验）"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19113 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19118 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,两时点,瞬时锁,横跨]
+    > "text": "`2. **W2**：make_pre 在 :6623 对载体 except.txt 采集抛异常（AV 瞬时锁/ACL/路径异常 → error 态，out:146-148）+ 同趟收尾复制又失败（同一持续根因横跨 pre/post 两时点可一次造成）→ read_error 先截（out:26 vs out:28）→ :4 声称 error_pre_snapshot 与实码 PRE 不符。`"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19130 [AV 瞬时锁,一因双时点,路径异常,持续根因,游戏句柄,源读面,双时点,瞬时锁]
+    > "text": "`make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面持续阻断：ACL 拒读〔目录继承 deny-ACE，跨文件重建仍持续——写域探针实证〕/AV 对该路径持续拦截 → error 态；AV 瞬时锁非持续根因，双时点命中需两次独立竞态；路径异常在 py3.12.10 实测〔非法字符/ENOTDIR/超长〕均被 exists() 吞为 absent_confirmed，不产 error 态）
+  oldwording_sweep_20261109/_ow_raw_hits.json:19137 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19143 [AV 瞬时锁,同一持续根因,路径异常,持续根因,游戏句柄,源读面,瞬时锁]
+    > "text": "- 要点：把「同一持续根因」收窄为「源读面（载体 except.txt 的同一路径读面）上的持续阻断」；剔除/修正括号内「AV 瞬时锁」（非持续根因，双击需两次独立竞态）与「路径异常」（R5 在 py3.12.10 实测被 exists() 吞为 absent_confirmed，不产 error 态）；R1 游戏句柄 T0 结构性不成立（源③ §3 R1/R5、§4.1）。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19160 [AV 瞬时锁,源读面,瞬时锁]
+    > "text": "`「罕见」仅限**源读面持续阻断**子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截 ~1e-5–1e-3）；AV 瞬时锁双击 ~1e-6–1e-4、两独立因 ~1e-7–1e-5（均极罕见档；全部为推理、未验）`"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19177 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19181 [同一持续根因,横跨 pre,跨 pre,根因横跨,持续根因,两时点,双时点,同根因,同根,横跨]
+    > "text": "- 受核假设：lead/matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md §4.2 条 2（:154）W2 最短触发链中的「同一持续根因横跨 pre/post 两时点可一次造成」，及 :146 表行评级「罕见（同根因双时点；评级为推理）」"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19189 [持续根因,部分同源,双时点]
+    > "text": "**目的（只此一项）**：检验 W2 触发链所依赖的双时点同源假设是否成立——载体 `except.txt` 在 T0（跑前快照 `make_pre_freshness_snapshot`）与 T1（收尾证据副本 `copy_post_except_evidence`）两处读**同一文件**时，能否由**同一个持续根因一次造成两处失败**。结论只允许「同源 / 不同源 / 部分同源」三选一，不许含糊。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19212 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19215 [同一持续根因,持续根因,部分同源]
+    > "text": "- **R3 AV 实时扫描：部分同源形态，非完整同源。** 对该路径的扫描**策略**（配置）持续 ⇒ 形式上同源；但**锁事件**是两次独立瞬时竞态（T0 新建载体件扫描窗口 × T1 崩溃写后扫描窗口），不是同一持续根因一次造成。零真机下无法实证 AV 行为——未验。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19237 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19241 [同一持续根因,持续根因,独占句柄,两时点]
+    > "text": "**判「同源」不成立的依据**——两时点依赖项清单不对等（§2.4）：①T1 的 try 块另含整块写侧依赖（out_dir 存在/写 ACL/磁盘空间/新建副本 AV 扫描，:4771-4772），make_pre 零写完全不经——探针 H 实证写侧失败同样落 read_error，属 T1-only 源；②连评件示例成因「文件被游戏进程独占句柄」（R1）在 T0 结构性不成立；③R4/R6 均只能致 T1。若判全同
+  oldwording_sweep_20261109/_ow_raw_hits.json:19247 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19250 [一因双时点,横跨两时点,独占句柄,跨两时点,两时点,源读面,双时点,横跨]
+    > "text": "**判「不同源」不成立的依据**——存在实锤桥接子集：两时点对**同一源路径串**各做一次独立 open 读，源读面依赖（路径串、存在性 stat、读数据 ACL、共享模式、AV 对该路径策略、载体卷）完全重叠；其中「源读面**持续阻断**」类根因（目录继承 deny-ACE、AV 对该路径持续拦截、持续性独占句柄）确实一因双时点命中——探针 E/F 用真 make_pre + 真 copy_post 复现成功（同一 
+  oldwording_sweep_20261109/_ow_raw_hits.json:19260 [AV 瞬时锁,路径异常,部分同源,源读面,瞬时锁]
+    > "text": "**⇒ 部分同源**：同源面 = 同一源读面上的持续阻断；不同源面 = T1 写侧、游戏暴露、两次独立的 AV 瞬时锁事件、以及两腿都点不着的路径异常（R5）。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19271 [AV 瞬时锁,路径异常,部分同源,双时点,瞬时锁,同根因,同根]
+    > "text": "任务规则「若不同源则概率重估」的触发条件核对本轮**不成立**（结论为部分同源，非不同源），故不做全面概率重估。但 :146 评级「罕见（同根因双时点；评级为推理）」按其现措辞（括号内含「AV 瞬时锁/ACL/路径异常」）**偏高**，需随 §5 修正措辞收窄后方可维持。分层量级（**全部为量级推理，零真机未实测——未验**）："
+  oldwording_sweep_20261109/_ow_raw_hits.json:19298 [一因双时点,独占句柄,双时点]
+    > "text": "复核轮以独立实现复核本检验：指纹 9/9 MATCH（其 `_w2v_fp.py` 实算，与编排方基线及撰写轮绑定行逐字节一致）；依赖清单实读无误；六类根因独立探针 `_w2v_probe1.py` 14/14 PASS、`_w2v_probe2.py` PASS（E：文件级 deny-(RD) 下真 make_pre=error + 真 copy_post 抛 PermissionError→FRESHNESS ve
+  oldwording_sweep_20261109/_ow_raw_hits.json:19304 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19307 [同一持续根因,持续根因,源读面]
+    > "text": "W2 链（:154）需把「同一持续根因」收窄为「**源读面（载体 except.txt 的同一路径读面）上的持续阻断**」，并修正/剔除括号内两个成因。措辞提案："
+  oldwording_sweep_20261109/_ow_raw_hits.json:19319 [AV 瞬时锁,一因双时点,路径异常,持续根因,游戏句柄,源读面,双时点,瞬时锁]
+    > "text": "> make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面持续阻断：ACL 拒读〔目录继承 deny-ACE，跨文件重建仍持续——写域探针实证〕/AV 对该路径持续拦截 → error 态；AV 瞬时锁非持续根因，双时点命中需两次独立竞态；路径异常在 py3.12.10 实测〔非法字符/ENOTDIR/超长〕均被 exists() 吞为 absent_confirmed，不产 error 态
+  oldwording_sweep_20261109/_ow_raw_hits.json:19328 [AV 瞬时锁,源读面,瞬时锁]
+    > "text": ":146 评级格建议注记：「罕见」仅限**源读面持续阻断**子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截 ~1e-5–1e-3）；AV 瞬时锁双击 ~1e-6–1e-4、两独立因 ~1e-7–1e-5（均极罕见档；全部为推理、未验）。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19343 [同一持续根因,持续根因]
+    > "同一持续根因",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19347 [同一持续根因,横跨 pre,跨 pre,根因横跨,持续根因,两时点,双时点,同根因,同根,横跨]
+    > "text": "中的假设「同一持续根因横跨 pre/post 两时点可一次造成」，及 :146 表行评级「罕见（同根因双时点；评级为推理）」。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19399 [AV 瞬时锁,持续根因,源读面,瞬时锁]
+    > "text": "- ⇒ 「罕见」仅在把桥接限定为「源读面持续阻断」时成立；按现措辞（AV 瞬时锁算持续根因）偏高。"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19423 [一因双时点,游戏句柄,双时点]
+    > "text": "+ 同趟收尾复制对**同一源路径**再失败（同一 ACE/拦截持续 ⇒ 一因双时点；游戏句柄〔T0 未启动、"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19454 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19456 [横跨两时点,跨两时点,两时点,横跨]
+    > "text": "sep(\"E. 同一 deny-(RD) ACE 横跨两时点（同源子集实证：真 make_pre + 真 copy_post）\")"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19470 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19474 [横跨两时点,句柄横跨,独占句柄,跨两时点,两时点,横跨]
+    > "text": "sep(\"G. share-mode=0 独占句柄横跨两时点（机理演示；T0 无游戏进程见结论）\")"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19496 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19498 [横跨两时点,跨两时点,两时点,横跨]
+    > "text": "E. 同一 deny-(RD) ACE 横跨两时点（同源子集实证：真 make_pre + 真 copy_post）"
+  oldwording_sweep_20261109/_ow_raw_hits.json:19504 [横跨两时点,跨两时点,两时点,横跨]
+    > "横跨两时点",
+  oldwording_sweep_20261109/_ow_raw_hits.json:19508 [横跨两时点,句柄横跨,独占句柄,跨两时点,两时点,横跨]
+    > "text": "G. share-mode=0 独占句柄横跨两时点（机理演示；T0 无游戏进程见结论）"
+  oldwording_sweep_20261109/_ow_stderr.txt:4 [同一持续根因,ACL 横跨,句柄横跨,路径异常,持续根因,横跨]
+    > ORCH_PAT = ["同一持续根因", "持续根因", "D:\lead", "路径异常", "句柄横跨", "ACL 横跨"]
+  oldwording_sweep_20261109/_ow_sweep.py:9 [同一持续根因,ACL 横跨,句柄横跨,路径异常,持续根因,横跨]
+    > ORCH_PAT = ["同一持续根因", "持续根因", "D:\lead", "路径异常", "句柄横跨", "ACL 横跨"]
+  oldwording_sweep_20261109/_ow_sweep.py:15 [横跨 post,横跨post,横跨 pre,跨 post,横跨两时点,跨 pre,横跨pre,跨两时点,两时点,横跨]
+    > "横跨两时点", "横跨 pre", "横跨 post", "横跨pre", "横跨post",
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:50 [AV 瞬时锁,同一持续根因,ACL 横跨,句柄横跨,路径异常,持续根因,瞬时锁,横跨]
+    > - 模式 25 个：编排方六模式原样（同一持续根因/持续根因/AV 瞬时锁/路径异常/句柄横跨/ACL 横跨）＋补充 19 个（见 §2）。
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:65 [横跨 pre,横跨两时点,跨 pre,跨两时点,两时点,横跨]
+    > - 横跨变体：`横跨两时点`、`横跨 pre/post`（含无空格）；
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:76 [句柄/ACL,同一持续根因,ACL 横跨,横跨两时点,路径异常,持续根因,部分同源,游戏句柄,跨两时点,造成两半,两时点,源读面,两半,横跨]
+    > | A1 | matrix_reach_20261109/MATRIX_DEFECT_REACHABILITY.md:90 | 同一持续根因/句柄/ACL/ACL 横跨/横跨两时点/持续根因 | §3.2 结论句「实流可达性：可达，实证成立……同一持续根因（句柄/ACL 横跨两时点）可一次造成两半」，现在时主张、无任何修正标注（:70-90 实读；全文 grep「源读面」=0 命中，exit=1，即无新措辞并存的自我调和）。与 W2_S
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:78 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,持续根因,瞬时锁,横跨]
+    > | A3 | MATRIX:154 | 同一持续根因/AV 瞬时锁/路径异常/横跨 pre/瞬时锁/持续根因 | §4.2 触发链第 2 条整句旧措辞——U8 目标（改后文已拟于 APPROVAL_PACK:200，尚未获批执行）。 |
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:79 [AV 瞬时锁,同一持续根因,ACL 损坏,横跨 pre,跨 pre,句柄被占,路径异常,持续根因,造成两半,瞬时锁,两半,横跨]
+    > | A4 | matrix_reach_20261109/_mr_REACH_EVIDENCE_20261109.md:112 | 同一持续根因/句柄被占/AV 瞬时锁/路径异常/横跨 pre/瞬时锁/持续根因 | **本轮新发现**。§4 触发链：「同一持续根因（句柄被占/ACL 损坏横跨 pre 与 post 两个时点）可一次造成两半。评级：罕见。」——比 :154 更老的变体（括号内直书句柄被占/ACL 损坏为桥接成因），无修正标
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:116 [路径异常,部分同源,源读面,双时点]
+    > (a) 冲突：与 U8 将 :154 收窄为「源读面持续阻断」及 W2 §4.1 三选一结论「部分同源」相抵——句柄（R1 T0 结构性不成立/R6 term 成功即内核关句柄）与路径异常（R5）不能作为双时点桥接；ACL 仅 deny-ACE 持续形态桥接。
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:117 [一因双时点,路径异常,双时点]
+    > (b) 不改的误导：读者把已被证伪的句柄/路径异常成因当作「实证成立」的可达依据，高估双时点一因命中概率（把「两次独立竞态」误当「一因双时点」），进而错排 W2 优先级；且与同件 :154（若按 U8 改后）同页两个相反说法。
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:121 [AV 瞬时锁,同一持续根因,横跨 pre,跨 pre,路径异常,根因横跨,持续根因,瞬时锁,横跨]
+    > (a) 冲突：括号内「AV 瞬时锁/ACL/路径异常 → error 态」与「同一持续根因横跨 pre/post」——AV 瞬时锁非持续根因（需两次独立竞态）、路径异常实测不产 error 态。
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:127 [源读面]
+    > (b) 不改的误导：W2 触发优先级按「罕见」全档成立，实际仅「源读面持续阻断」子集（deny-ACE 环境常量）支持该档。
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:131 [ACL 损坏,句柄被占,横跨]
+    > (a) 冲突：同 A1/A2，且为更老变体（直书「句柄被占/ACL 损坏」为横跨成因）。
+  oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:142 [源读面]
+    > (a) 内部矛盾（同一文件新旧措辞同页混存且无标注）：**0 件**。受核件与证据件全文 grep 新措辞「源读面」均 0 命中（exit=1 实录）——两件是纯旧件；含新旧两种措辞的件（APPROVAL_PACK/_hp_U8/_hp_U9/UNIFIED_TEXT_FIX/_uf/W2_SAME_CAUSE/_w2_conclusion）全部是「改前/改后对照」或「受核假设引述＋新结论」结构、有明确标注，属 B/C 不构成自相矛盾；
+  strict_exposure_20261109/STRICT_EXPOSURE.md:70 [两半]
+    > | error × re_true | :4（同上） | PRE | **结构可达未单跑**：两半机制正交（snap.error 与 read_error 分属 :4611/:4786） | 同上 | 否 |
+  strict_exposure_20261109/STRICT_EXPOSURE.md:177 [两半]
+    > 2. none × re_true、error × re_true 两格为**结构可达、组合未单跑**（机制两半各有实跑证据，组合未实跑）。
+  strict_exposure_20261109/_se_report.md:58 [两半]
+    > | error × re_true | :4（W2） | post_read_error/none | **结构可达未单跑**（两半机制正交：snap.error 置 :4611、read_error 置 :4786） | 同上 |
+  strict_exposure_20261109/_se_report.md:103 [两半]
+    > 2. none × re_true、error × re_true 两格为**结构可达、组合未单跑**（无 pre=None/pre=error 与 write_bytes 失败的 copy_post 组合实跑；机制两半各有实跑证据）。
+  text_fix_unified_20261109/UNIFIED_TEXT_FIX.md:198 [部分同源]
+    > - **出处**：源③ §5.2:118-124（三选一结论「部分同源」= §4.1:82-90；R1/R5 判定 §3:73/:77）。
+  text_fix_unified_20261109/_uf_UNIFIED_FIX_LIST_20261109.md:121 [部分同源]
+    > - 出处：源③ §5.2（三选一结论 = 部分同源，§4.1）。
+  w2_samecause_20261109/W2_SAME_CAUSE.md:1 [双时点]
+    > # W2 双时点同源检验报告（交付轮）
+  w2_samecause_20261109/W2_SAME_CAUSE.md:6 [部分同源]
+    > - 三选一结论（见 §4）：**部分同源**
+  w2_samecause_20261109/W2_SAME_CAUSE.md:22 [两时点]
+    > ## 2 上游指纹（九件）与两时点操作对象、依赖项清单
+  w2_samecause_20261109/W2_SAME_CAUSE.md:40 [两时点]
+    > ### 2.2 两时点操作对象（行号均本轮实读核验）
+  w2_samecause_20261109/W2_SAME_CAUSE.md:55 [两时点]
+    > **同一文件：是。** 同一路径串（carrier_dir/"except.txt"）、同一目录（:7325 从 TRIP_CARRIER["dir"] 取回 :5163 登记的同一目录）、同卷同树（载体在 WORKDIR/"ct" :6556，out_dir=WORKDIR :7359）；游戏 cwd=carrier_dir（:1114），except.txt ∈ CARRIER_FILES（:213-214）。**同一句柄：否**—
+  w2_samecause_20261109/W2_SAME_CAUSE.md:57 [两时点]
+    > ### 2.4 依赖项清单（两时点对照）
+  w2_samecause_20261109/W2_SAME_CAUSE.md:74 [一因双时点,双时点]
+    > - **R2 ACL 拒读：能同时致两处——唯一完整桥接根因（探针实锤）。** 探针 E：deny-(RD) ACE 下 T0 真 make_pre → `state="error"`（exists=True，sha256_file open PermissionError，_w2_probe_out.txt:51）；同一 ACE 持续到 T1 真 copy_post → PermissionError → ERROR×3 → FRES
+  w2_samecause_20261109/W2_SAME_CAUSE.md:82 [部分同源]
+    > ### 4.1 三选一结论：**部分同源**
+  w2_samecause_20261109/W2_SAME_CAUSE.md:84 [部分同源]
+    > （三选一限定：同源 / 不同源 / 部分同源。不是「可能同源」。）
+  w2_samecause_20261109/W2_SAME_CAUSE.md:96 [源读面]
+    > 1. 桥接子集「源读面持续阻断」：目录继承 deny-ACE 属**环境常量**——载体每趟由脚本新建、默认继承 ACL，出现 deny 即每趟必现而非随机罕见事件；台账仅 GOAL_THREE_TARGETS_20261018.md:9173-9174 以测试覆盖枚举命中 `post_read_error`/`error_pre_snapshot`，未见真机趟记录（**未验硬证明**）⇒ 现环境大概率 = 0。AV 对该路径持续拦截 
+  w2_samecause_20261109/W2_SAME_CAUSE.md:112 [两时点]
+    > 两时点代码本体 lead/b2b_candidate_lf_20261107/qc151_trip.candidate_lf.py：
+  w2_samecause_20261109/_w2v_probe1.py:2 [双时点]
+    > # _w2v_probe1.py — 复核轮独立探针：R5 路径吞没 / 真函数 ACL 双时点桥接 / 写侧单点 / 正常对照
+  w2_samecause_20261109/_w2_conclusion.md:1 [双时点]
+    > # W2 双时点同源检验结论（lead/w2_samecause_20261109/_w2_conclusion.md）
+  w2_samecause_20261109/_w2_conclusion.md:11 [两时点]
+    > 两时点代码本体 lead/b2b_candidate_lf_20261107/qc151_trip.candidate_lf.py：
+  w2_samecause_20261109/_w2_conclusion.md:14 [部分同源]
+    > ## 结论：部分同源
+  w2_samecause_20261109/_w2_conclusion.md:16 [两时点]
+    > ## 1. 两时点操作与依赖清单
+  w2_samecause_20261109/_w2_conclusion.md:49 [一因双时点,双时点]
+    > verdict=post_read_error（pre_state=error，正是 W2 格）。一因双时点复现成功。
+  w2_samecause_20261109/_w2_conclusion.md:52 [双时点]
+    > 也能双时点拦读；但现实时序 T0 无游戏进程（见 §3-R1）。
+  w2_samecause_20261109/_w2_conclusion.md:66 [双时点]
+    > - R3 AV 实时扫描：**部分**——策略持续同源，锁事件瞬时独立；双时点命中需两次竞态。
+  w2_samecause_20261109/_w2_conclusion.md:75 [源读面]
+    > - 桥接子集「源读面持续阻断」：目录继承 deny-ACE 属**环境常量**（要么 0 要么每趟必现，非罕见
+  w2_samecause_20261109/_w2_conclusion.md:89 [源读面]
+    > 「make_pre 在 :6623 对载体 except.txt 采集抛异常（源读面**持续阻断**：ACL 拒读〔目录继承 deny-ACE，
+  w2_samecause_20261109/_w2_conclusion.md:95 [源读面]
+    > :146 评级格建议注记：「罕见」仅限源读面持续阻断子集（deny-ACE 为环境常量、台账可证伪；AV 持续拦截
+  w2_samecause_20261109/_w2_probe.py:2 [双时点]
+    > """_w2_probe.py — W2 双时点同源检验探针（唯一写域内受控实验）。
+  w2_samecause_20261109/_w2_probe.py:184 [双时点]
+    > # ------------------------------------------ E. deny-RD（拒读数据）双时点
+
+== D2. 深度>=6 的文件清单（父目录深度>=6）及其命中 ==
+  深度>=6 文件数 = 70  按扩展名 = {'.json': 62, '.source': 7, '.txt': 1}
+  深度>=6 命中数 = 0
+
+== D3. 非文本扩展名命中（.dwf.ts/.mimosa 快照族，撰写人报 12 处）==
+  .dwf.ts/.mimosa 族命中总数 = 22 ；其中 同一根因/同根因 = 12 ；其他模式 = 10
+    NT-OTHER .mimosa/hook-state/session_8ecea6b999f33ab29a5b7420cc20d742.mvre7ddh-10860-7983e7e45e.baseline/748a90187fb83016f00308ecbe7f5e86ace18dafdb44595c69cef194e38fa548.source:12 [两时点] G-6 终态两时点：close_last + after_kill（强杀/等待后再读日志/except），迟到终态不丢
+    NT-OTHER .mimosa/hook-state/session_8ecea6b999f33ab29a5b7420cc20d742.mvre7ddh-10860-7983e7e45e.baseline/c9c0b5dfa41c000dddbb127f2005b86c7a9b5031fd0b72c31be30d5d39aa2c7f.source:9 [双时点] "  出厂态主张双时点成立。\r\n"
+    NT-OTHER qc161_u0400_trip/.mimosa/hook-state/session_8ecea6b999f33ab29a5b7420cc20d742.mvs34z8b-64012-c5ee162d06.baseline/9eaf49e96d25592852cd321d8493553841548fc3f72e08a33d7a35fa21defd13.source:9 [双时点] "  出厂态主张双时点成立。\r\n"
+    NT-OTHER qc161_u0400_trip/.mimosa/hook-state/session_8ecea6b999f33ab29a5b7420cc20d742.mvs34z8b-64012-c5ee162d06.baseline/ac063e87469904b3a7835b88619f9fb2f962c91b0c4a640e17289becba8e8caf.source:12 [两时点] G-6 终态两时点：close_last + after_kill（强杀/等待后再读日志/except），迟到终态不丢
+    NT-OTHER qc161_u0400_trip/.mimosa/hook-state/session_8ecea6b999f33ab29a5b7420cc20d742.mvs34z8b-64012-c5ee162d06.baseline/e38c8e0941c93f75e74f2d0eb81c7b20527e7cd7dd688baed804710772ff3e0a.source:15 [两时点] "  与裁决基线及 22 处历史档**完全一致** ⇒ sha（身份判据）两时点相符、三键缺失 ⇒ 出厂态成立，\r\n"
+    NT-OTHER qc161_u0400_trip/.mimosa/hook-state/session_e781cd1a6cb49ba340552912b2213240.mvtnlk73-53852-d6f3091aa5.baseline/200de9942b7de4fb170e30a001e52bd1b48f8cfcc8583e3702a2c0c21789b1e5.source:439 [双时点] check("A-08", "finalize 全套仍跑（a8 清扫 PASS+载体删+双时点证据）",
+    NT-OTHER qc161_u0400_trip/.mimosa/hook-state/session_e781cd1a6cb49ba340552912b2213240.mvtnlk73-53852-d6f3091aa5.baseline/200de9942b7de4fb170e30a001e52bd1b48f8cfcc8583e3702a2c0c21789b1e5.source:574 [双时点] check("C-06", "停止趟 finalize 仍跑（证据双时点+清扫+载体删）",
+    NT-OTHER qc161_u0400_trip/.mimosa/hook-state/session_e781cd1a6cb49ba340552912b2213240.mvtnlk73-53852-d6f3091aa5.baseline/9eaf49e96d25592852cd321d8493553841548fc3f72e08a33d7a35fa21defd13.source:9 [双时点] "  出厂态主张双时点成立。\r\n"
+    NT-OTHER qc161_u0400_trip/.mimosa/hook-state/session_e781cd1a6cb49ba340552912b2213240.mvtnlk73-53852-d6f3091aa5.baseline/ac063e87469904b3a7835b88619f9fb2f962c91b0c4a640e17289becba8e8caf.source:12 [两时点] G-6 终态两时点：close_last + after_kill（强杀/等待后再读日志/except），迟到终态不丢
+    NT-OTHER qc161_u0400_trip/.mimosa/hook-state/session_e781cd1a6cb49ba340552912b2213240.mvtnlk73-53852-d6f3091aa5.baseline/e38c8e0941c93f75e74f2d0eb81c7b20527e7cd7dd688baed804710772ff3e0a.source:15 [两时点] "  与裁决基线及 22 处历史档**完全一致** ⇒ sha（身份判据）两时点相符、三键缺失 ⇒ 出厂态成立，\r\n"
+
+== D4. 提问方点名三词在我方全扫中的分布（排除撰写人写域与 _owv_ 自产）==
+  显然可达: 17 处
+    matrix_reach_20261109/_mr_REACH_EVIDENCE_20261109.md:113 [显然可达] 3. **W1**：需三条件叠加——:6623 之前异常/早退（pre 停在 :6528 的 None）→ finalize 仍在 finally 被调（:7358）→ 载体 except.txt 在场且读取失败（早退趟通常无新产 exce
+    matrix_reach_20261109/_mr_REACH_EVIDENCE_20261109.md:120 [显然可达] | W1 (:2 错盖) | 输入显然可达（只要 post 读失败） | **可达，收窄**：实流可达子集 = (pre=None × read_error)；{}/脏值/显式unknown 变体为 fixture 域 | 实码 16/16
+    oldwording_sweep_20261109/_ow_hits_listing.txt:99 [显然可达] matrix_reach_20261109/_mr_REACH_EVIDENCE_20261109.md:113 [显然可达]
+    oldwording_sweep_20261109/_ow_hits_listing.txt:100 [显然可达] 3. **W1**：需三条件叠加——:6623 之前异常/早退（pre 停在 :6528 的 None）→ finalize 仍在 finally 被调（:7358）→ 载体 except.txt 在场且读取失败（早退趟通常无新产 exce
+    oldwording_sweep_20261109/_ow_hits_listing.txt:101 [显然可达] matrix_reach_20261109/_mr_REACH_EVIDENCE_20261109.md:120 [显然可达]
+    oldwording_sweep_20261109/_ow_hits_listing.txt:102 [显然可达] | W1 (:2 错盖) | 输入显然可达（只要 post 读失败） | **可达，收窄**：实流可达子集 = (pre=None × read_error)；{}/脏值/显式unknown 变体为 fixture 域 | 实码 16/16
+    oldwording_sweep_20261109/_ow_raw_hits.json:35 [显然可达] "显然可达",
+    oldwording_sweep_20261109/_ow_raw_hits.json:18828 [显然可达] "显然可达"
+    oldwording_sweep_20261109/_ow_raw_hits.json:18830 [显然可达] "text": "3. **W1**：需三条件叠加——:6623 之前异常/早退（pre 停在 :6528 的 None）→ finalize 仍在 finally 被调（:7358）→ 载体 except.txt 在场且读取失败（早退趟通
+    oldwording_sweep_20261109/_ow_raw_hits.json:18836 [显然可达] "显然可达"
+    oldwording_sweep_20261109/_ow_raw_hits.json:18838 [显然可达] "text": "| W1 (:2 错盖) | 输入显然可达（只要 post 读失败） | **可达，收窄**：实流可达子集 = (pre=None × read_error)；{}/脏值/显式unknown 变体为 fixture 域 |
+    oldwording_sweep_20261109/_ow_raw_hits.json:18929 [显然可达] "显然可达",
+    oldwording_sweep_20261109/_ow_raw_hits.json:18933 [显然可达,必然可达,必然同源,会虚报] "text": "\"显然可达\", \"必然同源\", \"必然可达\", \"会虚报\","
+    oldwording_sweep_20261109/_ow_sweep.py:16 [显然可达,必然可达,必然同源,会虚报] "显然可达", "必然同源", "必然可达", "会虚报",
+    oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:67 [显然可达,必然可达,必然同源,会虚报] - 提问方点名：`显然可达`（全库仅 2 处，均在 _mr_REACH_EVIDENCE:113/:120，属「引述旧评估口径＋明标收窄」＝C，无活性残留）；`必然同源`、`必然可达`、`会虚报` ——**0 命中**。
+    oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:104 [显然可达] - _mr_REACH_EVIDENCE.md:113/:120（「显然可达」——引述旧评估口径且同句明标「收窄/近乎不可能」，自我修正性质）。
+    oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:149 [显然可达] (c) 置信度：**高**。理由：①编排方六模式复跑为严格超集，全部 54 处命中逐一落位归类；②扩展 19 模式在 7,159 件文本内容上零新增 A 类；③「显然可达」全库 2 处均为引述＋收窄标注，提问方点名的三个词无一活残；④两个盲
+  必然同源: 5 处
+    oldwording_sweep_20261109/_ow_raw_hits.json:32 [必然同源] "必然同源",
+    oldwording_sweep_20261109/_ow_raw_hits.json:18928 [必然同源] "必然同源",
+    oldwording_sweep_20261109/_ow_raw_hits.json:18933 [显然可达,必然可达,必然同源,会虚报] "text": "\"显然可达\", \"必然同源\", \"必然可达\", \"会虚报\","
+    oldwording_sweep_20261109/_ow_sweep.py:16 [显然可达,必然可达,必然同源,会虚报] "显然可达", "必然同源", "必然可达", "会虚报",
+    oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:67 [显然可达,必然可达,必然同源,会虚报] - 提问方点名：`显然可达`（全库仅 2 处，均在 _mr_REACH_EVIDENCE:113/:120，属「引述旧评估口径＋明标收窄」＝C，无活性残留）；`必然同源`、`必然可达`、`会虚报` ——**0 命中**。
+  会虚报: 5 处
+    oldwording_sweep_20261109/_ow_raw_hits.json:43 [会虚报] "会虚报",
+    oldwording_sweep_20261109/_ow_raw_hits.json:18931 [会虚报] "会虚报"
+    oldwording_sweep_20261109/_ow_raw_hits.json:18933 [显然可达,必然可达,必然同源,会虚报] "text": "\"显然可达\", \"必然同源\", \"必然可达\", \"会虚报\","
+    oldwording_sweep_20261109/_ow_sweep.py:16 [显然可达,必然可达,必然同源,会虚报] "显然可达", "必然同源", "必然可达", "会虚报",
+    oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:67 [显然可达,必然可达,必然同源,会虚报] - 提问方点名：`显然可达`（全库仅 2 处，均在 _mr_REACH_EVIDENCE:113/:120，属「引述旧评估口径＋明标收窄」＝C，无活性残留）；`必然同源`、`必然可达`、`会虚报` ——**0 命中**。
+  必然可达: 5 处
+    oldwording_sweep_20261109/_ow_raw_hits.json:41 [必然可达] "必然可达",
+    oldwording_sweep_20261109/_ow_raw_hits.json:18930 [必然可达] "必然可达",
+    oldwording_sweep_20261109/_ow_raw_hits.json:18933 [显然可达,必然可达,必然同源,会虚报] "text": "\"显然可达\", \"必然同源\", \"必然可达\", \"会虚报\","
+    oldwording_sweep_20261109/_ow_sweep.py:16 [显然可达,必然可达,必然同源,会虚报] "显然可达", "必然同源", "必然可达", "会虚报",
+    oldwording_sweep_20261109/_ow_SWEEP_REPORT_20261109.md:67 [显然可达,必然可达,必然同源,会虚报] - 提问方点名：`显然可达`（全库仅 2 处，均在 _mr_REACH_EVIDENCE:113/:120，属「引述旧评估口径＋明标收窄」＝C，无活性残留）；`必然同源`、`必然可达`、`会虚报` ——**0 命中**。

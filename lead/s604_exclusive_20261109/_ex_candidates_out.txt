@@ -1,0 +1,101 @@
+[候选总表] 每行 = 一种机理；75 格 = 时长列 round1 30 + 空档列 round2 30 + 差列 round3 15
+
+[基准]
+  C0 真值(正确配对)                | round: dur 30/30 gap  3/30 diff  0/15 (合33/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:14 负diff: 0 | max|Δgap|=0.0540 max|Δdiff|=0.1010
+  C8a 挂时间后继(上轮筛入)            | round: dur 30/30 gap 30/30 diff 15/15 (合75/75) | 容差 gap 30/30 diff 15/15 | Δfg>0:11 Δsg<0: 9 负diff: 4 | max|Δgap|=0.0050 max|Δdiff|=0.0005
+  C8b 挂时间前继(上轮证伪)            | round: dur 30/30 gap 11/30 diff  1/15 (合42/75) | 容差 gap 11/30 diff  1/15 | Δfg>0: 8 Δsg<0: 9 负diff: 2 | max|Δgap|=0.0320 max|Δdiff|=0.0540
+
+[C13] bisect 边界变体：不用语料 f，而用 t 对 edge 起点重推导帧归属（自然 off-by-one 码形）
+  C13a bisect_left-1(混内+j+1首) | round: dur 30/30 gap  1/30 diff  0/15 (合31/75) | 容差 gap  1/30 diff  0/15 | Δfg>0:15 Δsg<0:15 负diff: 0 | max|Δgap|=0.0590 max|Δdiff|=0.1000
+  C13b bisect_left(混j-1内+首)  | round: dur 21/30 gap 10/30 diff  0/15 (合31/75) | 容差 gap 10/30 diff  0/15 | Δfg>0: 6 Δsg<0:10 负diff: 2 | max|Δgap|=0.0250 max|Δdiff|=0.0480
+  C13c bisect_right-2(整体后移)  | round: dur 30/30 gap 30/30 diff 15/15 (合75/75) | 容差 gap 30/30 diff 15/15 | Δfg>0:11 Δsg<0: 9 负diff: 4 | max|Δgap|=0.0050 max|Δdiff|=0.0005
+  C13d bisect_right(整体前移)    | round: dur 21/30 gap 13/30 diff  2/15 (合36/75) | 容差 gap 13/30 diff  2/15 | Δfg>0: 7 Δsg<0: 9 负diff: 2 | max|Δgap|=0.0330 max|Δdiff|=0.0555
+  C13c vs C8a 五元组逐位相同: True
+
+[C14] 状态机边界样本变体：晚一拍/早一拍 flush 的真实数值含义
+  C14a 晚一拍(含j+1首样本)          | round: dur 30/30 gap  3/30 diff  0/15 (合33/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:15 负diff: 0 | max|Δgap|=0.0590 max|Δdiff|=0.1000
+  C14b 早一拍(含j-1末样本)          | round: dur 30/30 gap  3/30 diff  0/15 (合33/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:15 负diff: 0 | max|Δgap|=0.0590 max|Δdiff|=0.1010
+
+[C15] 两帧错位（gap ← i±2）
+  C15a 挂后继×2                 | round: dur 30/30 gap 11/30 diff  1/15 (合42/75) | 容差 gap 11/30 diff  1/15 | Δfg>0: 8 Δsg<0: 7 负diff: 4 | max|Δgap|=0.0310 max|Δdiff|=0.0410
+  C15b 挂前继×2                 | round: dur 30/30 gap 11/30 diff  0/15 (合41/75) | 容差 gap 11/30 diff  0/15 | Δfg>0: 5 Δsg<0: 6 负diff: 4 | max|Δgap|=0.0240 max|Δdiff|=0.0450
+
+[C16] 平滑/插值类：相邻帧 mg 平均
+  C16a (mg_i+mg_i+1)/2       | round: dur 30/30 gap  6/30 diff  0/15 (合36/75) | 容差 gap  6/30 diff  0/15 | Δfg>0: 8 Δsg<0:15 负diff: 0 | max|Δgap|=0.0463 max|Δdiff|=0.0483
+  C16b (mg_i+1+mg_i+2)/2     | round: dur 21/30 gap  9/30 diff  1/15 (合31/75) | 容差 gap  9/30 diff  1/15 | Δfg>0: 0 Δsg<0:13 负diff: 2 | max|Δgap|=0.0390 max|Δdiff|=0.0310
+  C16c (mg_i-1+mg_i)/2       | round: dur 21/30 gap  9/30 diff  2/15 (合32/75) | 容差 gap  9/30 diff  2/15 | Δfg>0: 9 Δsg<0:15 负diff: 0 | max|Δgap|=0.0725 max|Δdiff|=0.0790
+
+[C17] 跨帧间隔混入：mg' = max(mg, 边界间隔)
+  C17a 混入入口间隔                | round: dur 30/30 gap  3/30 diff  0/15 (合33/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:14 Δsg<0:15 负diff: 0 | max|Δgap|=0.0590 max|Δdiff|=0.1000
+  C17b 混入出口间隔                | round: dur 30/30 gap  3/30 diff  0/15 (合33/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:15 负diff: 0 | max|Δgap|=0.0590 max|Δdiff|=0.1000
+
+[C18] 时长排序键错一帧（空档配对正确）
+  C18a 键=E[i+2]-E[i+1]       | round: dur 21/30 gap 13/30 diff  2/15 (合36/75) | 容差 gap 13/30 diff  2/15 | Δfg>0: 7 Δsg<0: 9 负diff: 2 | max|Δgap|=0.0330 max|Δdiff|=0.0555
+  C18b 键=E[i]-E[i-1]         | round: dur 24/30 gap 29/30 diff 11/15 (合64/75) | 容差 gap 29/30 diff 11/15 | Δfg>0:11 Δsg<0: 9 负diff: 4 | max|Δgap|=0.0080 max|Δdiff|=0.0040
+
+[C19] 单侧错位：fast 分支错位 slow 正确（及反向）
+  C19a fast错位/slow正确         | round: dur 30/30 gap 17/30 diff  0/15 (合47/75) | 容差 gap 17/30 diff  0/15 | Δfg>0:11 Δsg<0:14 负diff: 0 | max|Δgap|=0.0540 max|Δdiff|=0.0560
+  C19b fast正确/slow错位         | round: dur 30/30 gap 16/30 diff  0/15 (合46/75) | 容差 gap 16/30 diff  0/15 | Δfg>0:15 Δsg<0: 9 负diff: 0 | max|Δgap|=0.0490 max|Δdiff|=0.0450
+
+[C20] 末帧特殊处理 × C8a（末帧补 dur / 首帧出局）
+  C20a 末帧dur=前条重复            | round: dur 25/30 gap 29/30 diff 12/15 (合66/75) | 容差 gap 29/30 diff 12/15 | Δfg>0:10 Δsg<0: 9 负diff: 4 | max|Δgap|=0.0060 max|Δdiff|=0.0030
+  C20z 末帧dur重复+gap=0         | round: dur 25/30 gap 30/30 diff 12/15 (合67/75) | 容差 gap 30/30 diff 12/15 | Δfg>0:10 Δsg<0: 9 负diff: 4 | max|Δgap|=0.0050 max|Δdiff|=0.0030
+  C20c 首帧出局+C8a              | round: dur 21/30 gap 30/30 diff  9/15 (合60/75) | 容差 gap 30/30 diff  9/15 | Δfg>0:10 Δsg<0: 9 负diff: 5 | max|Δgap|=0.0050 max|Δdiff|=0.0065
+
+[C21] 记录元组 = (mg, dur) 直接 sort（按空档排序再三分，时长列被迫跟着错）
+  C21 sort按(mg,dur)          | round: dur  0/30 gap  0/30 diff  0/15 (合 0/75) | 容差 gap  0/30 diff  0/15 | Δfg>0:15 Δsg<0:15 负diff: 0 | max|Δgap|=0.2590 max|Δdiff|=0.2940
+
+[C22] 算子混合：一列 median 一列 mean（correct 配对）
+  C22a fg=med sg=mean        | round: dur 30/30 gap  1/30 diff  0/15 (合31/75) | 容差 gap  1/30 diff  0/15 | Δfg>0:15 Δsg<0:15 负diff: 0 | max|Δgap|=0.3238 max|Δdiff|=0.3613
+  C22b fg=mean sg=med        | round: dur 30/30 gap  9/30 diff  0/15 (合39/75) | 容差 gap  9/30 diff  0/15 | Δfg>0: 7 Δsg<0:14 负diff: 3 | max|Δgap|=0.0577 max|Δdiff|=0.0778
+
+[C23] 相邻帧池化：mg' = max(mg_i, mg_i+1)
+  C23 max(mg_i,mg_i+1)       | round: dur 30/30 gap  0/30 diff  0/15 (合30/75) | 容差 gap  0/30 diff  0/15 | Δfg>0: 0 Δsg<0:15 负diff: 0 | max|Δgap|=0.1230 max|Δdiff|=0.0840
+
+[C24] 时长序 rank 错位：rank j 挂 rank j+1 的 mg（上轮 C3 只测了 j-1 方向）
+  C24a rank←rank+1(wrap)     | round: dur 30/30 gap  3/30 diff  0/15 (合33/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:15 负diff: 0 | max|Δgap|=0.0590 max|Δdiff|=0.1050
+  C24b rank←rank+1(drop)     | round: dur 17/30 gap  3/30 diff  0/15 (合20/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:14 负diff: 0 | max|Δgap|=0.0565 max|Δdiff|=0.1030
+
+[C25] 行序错位誊写：表行 w 显示 C8a 行 w±1（trip 内循环）
+  C25 行错位 +1                 | round gap  3/30 diff  0/15
+  C25 行错位 -1                 | round gap  3/30 diff  0/15
+
+[C26] 单位混用：t(秒) 对 edge 起点(毫秒) 做 bisect（漏换算）
+  l1c/w0 前 2000 样本的归属帧索引集合 = [-1]（全部落入 ≤1 个组 ⇒ 30 格空档列无从产生，结构性不可能）
+
+[C27] 复合：次大 gap × 时间后继错位（57 组合扫描未覆盖「定义×错位」交叉）
+  C27 次大×后继错位                | round: dur 30/30 gap  0/30 diff  1/15 (合31/75) | 容差 gap  0/30 diff  1/15 | Δfg>0:15 Δsg<0: 0 负diff: 2 | max|Δgap|=0.0830 max|Δdiff|=0.0420
+
+[C28] 空档定义替换：帧内相邻差「中位」(非最大)、min、span（level 探针，correct 配对）
+  C28a 帧内中位gap               | round: dur 30/30 gap  0/30 diff  0/15 (合30/75) | 容差 gap  0/30 diff  0/15 | Δfg>0:15 Δsg<0: 0 负diff: 6 | max|Δgap|=0.2530 max|Δdiff|=0.0510
+  C28b 帧内mingap              | round: dur 30/30 gap  0/30 diff  0/15 (合30/75) | 容差 gap  0/30 diff  0/15 | Δfg>0:15 Δsg<0: 0 负diff:14 | max|Δgap|=2.7160 max|Δdiff|=0.0520
+  C28c 帧内span                | round: dur 30/30 gap  0/30 diff  0/15 (合30/75) | 容差 gap  0/30 diff  0/15 | Δfg>0: 0 Δsg<0:15 负diff: 0 | max|Δgap|=151.4600 max|Δdiff|=90.6645
+
+[C29] k 分母错位：k = 全帧数//3（含无 dur 末帧）
+  C29a k=全帧数//3 正确配对         | round: dur 28/30 gap  3/30 diff  0/15 (合31/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:14 负diff: 0 | max|Δgap|=0.0540 max|Δdiff|=0.1010
+  C29b k=全帧数//3 + C8a        | round: dur 28/30 gap 30/30 diff 14/15 (合72/75) | 容差 gap 30/30 diff 14/15 | Δfg>0:10 Δsg<0: 9 负diff: 4 | max|Δgap|=0.0050 max|Δdiff|=0.0005
+
+[C30] 跨窗泄漏：窗 w 记录列表混入 w-1 末条 / 丢自家首条（correct 配对）
+  C30a 混入w-1末条               | round: dur 27/30 gap  3/30 diff  0/15 (合30/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:14 负diff: 0 | max|Δgap|=0.0540 max|Δdiff|=0.1010
+  C30b 丢自家首条                 | round: dur 18/30 gap  3/30 diff  0/15 (合21/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:14 负diff: 0 | max|Δgap|=0.0565 max|Δdiff|=0.1030
+
+[C31] groups dict 未重置：全局 fid 键在窗/趟间共享 ⇒ 共享帧样本合并（mg 被跨窗间隔毒化）
+  C31a trip内dict不重置          | round: dur 30/30 gap  3/30 diff  0/15 (合33/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:14 负diff: 0 | max|Δgap|=0.0540 max|Δdiff|=0.1000
+  C31b 全局dict不重置             | round: dur 30/30 gap  1/30 diff  0/15 (合31/75) | 容差 gap  1/30 diff  0/15 | Δfg>0: 9 Δsg<0:15 负diff: 4 | max|Δgap|=7832326.3180 max|Δdiff|=4440920.3410
+
+[C33] 稳健性探针：correct 配对但帧集丢首帧（时长列对 ±1 帧是否敏感）
+  C33 丢首帧+correct            | round: dur 21/30 gap  3/30 diff  0/15 (合24/75) | 容差 gap  3/30 diff  0/15 | Δfg>0:15 Δsg<0:14 负diff: 0 | max|Δgap|=0.0565 max|Δdiff|=0.1030
+
+[C35] 浮点累积类：时长键累计值 / 空档用帧内跨度
+  C35a dur=累计值键              | round: dur  0/30 gap  6/30 diff  0/15 (合 6/75) | 容差 gap  6/30 diff  0/15 | Δfg>0: 5 Δsg<0: 5 负diff: 7 | max|Δgap|=0.0330 max|Δdiff|=0.0550
+  C35b gap=帧内span            | round: dur 30/30 gap  0/30 diff  0/15 (合30/75) | 容差 gap  0/30 diff  0/15 | Δfg>0: 0 Δsg<0:15 负diff: 0 | max|Δgap|=151.4600 max|Δdiff|=90.6645
+
+[诊断1] 时长排序在 k 边界是否存在精确并列（tie-break 自由度）
+  k 边界存在精确 dur 并列的窗数 = 2/15
+
+[诊断2] C8a 与正确配对的逐帧挂接差异量（错位是否「全帧生效」）
+  l1c_20261021/w0  挂接值 ≠ 自身值的帧数 = 228/230
+  l1c_20261021/w1  挂接值 ≠ 自身值的帧数 = 228/229
+  l1c_20261021/w2  挂接值 ≠ 自身值的帧数 = 249/251
+
+[_ex_candidates] END

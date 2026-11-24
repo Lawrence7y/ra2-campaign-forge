@@ -1,0 +1,69 @@
+==============================================================================
+D-13b 纯逻辑状态机离线单测（合成时序）
+命令: python -I -X utf8 D:/Project/ra2-campaign-forge/lead/d13b_design_20261106/_test_state_machine.py
+状态机: D:/Project/ra2-campaign-forge/lead/d13b_design_20261106/_state_machine.py
+口径提醒: n=1681 保留标签数 / n=1737 full97 全部候选(含56 false) 非同口径，不对照
+未验提醒: 系统时延/扰动/资源释放/真实栈可解析性 [未验]；指标 [待论证指标]
+==============================================================================
+
+==== 0 结构性不变量（纯逻辑 / 反扫描 / 口径诚实） ====
+  [PASS] 状态机源码无任何 import / from 语句（零系统接口） | lines=415
+  [PASS] 语义取值集合不含任何『结束态 / 终局 / 长停不存在』真值 | SEMANTIC_VALUES=('UNKNOWN', 'RECOVERED', 'ANOMALY_REWIND', 'BUDGET_STOP_ONLY')
+  [PASS] 源码含 [保守停止预算] / [待论证指标] / [未验] / [估算] 四类定位标记
+  [PASS] 源码含 D-27 三条裁决更正的正确表述（不写长停不存在 / 口径不对照）
+  [PASS] 未验清单覆盖系统时延 / 扰动 / 资源释放 / 栈可解析性四项 | items=6
+  [PASS] 配额/冷却/停止预算/退出预算四项参数均标 [待论证指标]
+
+==== 1 窗内配额上限（quota_cap=3 [待论证指标]） ====
+  [PASS] 单窗 5 个不同停滞 -> 恰好 3 次 CAPTURE | captures=3
+  [PASS] 配额耗尽后 2 次均为 QUOTA_EXHAUSTED | reasons=['QUOTA_EXHAUSTED', 'QUOTA_EXHAUSTED']
+  [PASS] 窗内捕获计数封顶 3 | count=3
+  [PASS] 换窗后窗内配额归零，重新允许 3 次（dedup 注册表不归零）
+
+==== 2 冷却期与冷却回退（cooldown_ms=3000 [待论证指标], >= 边界） ====
+  [PASS] 首次捕获后进入 COOLDOWN
+  [PASS] 冷却期内（t=1000ms）抑制捕获
+  [PASS] 冷却未满 1ms（t=2999ms）仍抑制
+  [PASS] 冷却期满（t=3000ms, >= 边界）回退 COOLDOWN -> ARMED 并放行 | state_before=ARMED
+  [PASS] 合成时钟回退/乱序（t=-50ms）不误判冷却到点 [回退鲁棒性]
+
+==== 3 停止与回退转换 + 正常退出路径 ====
+  [PASS] >1s 观察 -> 保守停止预算，SKIP（非结束态语义真值）
+  [PASS] 状态 -> DISARMED_BUDGET；语义 -> BUDGET_STOP_ONLY | semantic=BUDGET_STOP_ONLY
+  [PASS] 保守停止不写任何结束/终局语义
+  [PASS] 保守停止态下普通短停仍少采（不会把长停误判为不存在）
+  [PASS] [回退A] 新测量窗按窗界解除保守停止预算 DISARMED_BUDGET -> ARMED
+  [PASS] [回退B] 正向恢复证据解除保守停止预算；语义写 RECOVERED（非终局）
+  [PASS] [回退B] 解除后恢复正常捕获能力
+  [PASS] [正常退出路径] 显式请求 -> EXIT / EXITED（不是由未观察到恢复推断）
+  [PASS] 正常退出不写结束态语义真值
+  [PASS] EXITED 后幂等，不再捕获
+  [PASS] 100ms 零残留 / rc=0 标为未验，模型不背书 [待论证指标][未验]
+
+==== 4 事件匹配判定 / 同一停滞多次观察去重 ====
+  [PASS] 门槛下观察不捕获且不占位
+  [PASS] 同一停滞首次达门槛 -> 1 次 CAPTURE
+  [PASS] 其后 3 次（含跨窗）全部 DUP_ALREADY_CAPTURED | reasons=['DUP_ALREADY_CAPTURED', 'DUP_ALREADY_CAPTURED', 'DUP_ALREADY_CAPTURED']
+  [PASS] 5 次原始观察 -> 1 个物理停滞 / 1 次捕获 | report={'distinct_stalls': 1, 'raw_stall_observations': 5, 'captures': 1}
+  [PASS] 跨窗停滞合并为同一身份（避开 _stall_probe.py:169-189 逐窗独立处理）
+  [PASS] 去重按物理身份而非全局抑制，另一停滞仍可捕获
+
+==== 5 六类场景（合成时序）与既有缺陷反向验证 ====
+  [PASS] 100-200ms 平台：模型逻辑上授予 CAPTURE
+       NOTE: 这只是逻辑放行；真实剩余覆盖受端到端预算约束，系统时延/扰动 [未验]，实测覆盖 [未验]（BUDGET_MODEL.json 合计 152.5ms >= 中位 129.93ms）
+  [PASS] 窗末截断 -> 保持开放，不无条件判 false/continue
+  [PASS] 窗末截断语义 UNKNOWN，开放停滞数=1
+  [PASS] 后续窗收到正向恢复 -> RECOVERED 并解析（不看后续窗的缺陷已被避开）
+  [PASS] 缺窗/未观察到恢复 -> UNKNOWN，绝不写终局冻结
+  [PASS] 未观察到恢复时停滞保持开放登记（不判 match_ended_terminal_freeze）
+  [PASS] 帧号回滚 -> 标异常并抑制；不宣称已证非真实停滞（RULING_D27.md:48）
+  [PASS] 数据不足 -> 诚实输出 UNKNOWN，抑制捕获，不改状态
+  [PASS] >1s 观察 5 次全部不捕获（保守停止预算，只少采）
+  [PASS] 保守停止不删除停滞登记 -> 不把长停误判为不存在（TASK.md:66）
+  [PASS] >1s 观察不产出任何结束态 / 长停不存在语义真值
+
+       NOTE: 真实栈格式与可解析性、系统调度时延、采样扰动、资源释放时序
+             均为 [未验]；本单测只验证纯逻辑状态转换，不验证真实运行上界。
+
+==============================================================================
+PASS=43 FAIL=0

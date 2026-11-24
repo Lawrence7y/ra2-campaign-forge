@@ -1,0 +1,35 @@
+{
+  "segments": [
+    {
+      "seg": "event_onset",
+      "label": "停滞开始到首次被观察到。取 [估算] 下界：本次以 python -I -X utf8 纯只读复算 97 个基准窗 samples.t 的 1121892 个相邻间隔，dt 中位 2.4960ms / p90 2.5750ms / p99 2.9260ms / max 488.6160ms / mean 1.9999ms，用中位 2.50ms 作为『事件起点落在两次采样之间→被首次采到』的乐观下界代理；FREEZE_ONSET_20261103.md:18/:93 记引擎满速突然停住、无减速预兆，故无可提前预警量。★ 这是既有离线 harness 的采样节拍代理，不是真实在线探测的系统时延；真实首次观察延迟（中断/调度/系统时延）本阶段零真机列为未验，实际值≥该下界。",
+      "ms": 2.5,
+      "basis": "[估算] 本次实跑：python -I -X utf8 复算 out/re_work/.../qc161_u0400_trip 下 97 窗全量 dt（1121892 间隔）→ median=2.4960ms；下界代理取 2.50ms。参照 lead/goal3t_nightwatch_20261102/FREEZE_ONSET_20261103.md:18、:93；lead/goal3t_nightwatch_20261102/stall_judge.py:36（GAP_THRESH=0.010 帧沿缺口阈值，佐证节拍量级）。真实在线检测延迟 [未验]",
+      "offlineVerifiable": false
+    },
+    {
+      "seg": "threshold_accum",
+      "label": "达到 100ms 判定门槛。口径 B 的累积判定为硬下限：平台首见至末见跨度 d = t[i_end]-t[i_start] 必须 ≥ T=0.100s 才判为事件，故从首次观察到恒帧到『判定成立』至少再耗 100ms，不可写 0、不可压缩。这是判定门槛的定义值，可在既有离线语料上完全复算验证；本次实跑 STALL_EVENTS.json 得 isRealMatch=true 的 min durationMs=100.0、==100.00 的 1 条、<100 的 0 条，与门槛一致。★ 注意 STALL_EVENT_DEFINITION.md:191 自身判定『任何累积判定耗时 ≥100ms 的触发机制均属不合格』—— 即按现 100ms 门槛，触发机制在定义上已不合格。",
+      "ms": 100.0,
+      "basis": "lead/stall_event_def_20261106/_stall_probe.py:28（T_DEFAULT=0.100）、:100（if dur >= thr）、:86-105（extract_platforms 的 dur=ts[j]-ts[i]）；lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:31（d≥T=0.100s）；lead/d27_ruling_20261106/RULING_D27.md:16（『d>=0.100s 只是下限』）。本次实跑 STALL_EVENTS.json：min durationMs=100.0。矛盾提示 STALL_EVENT_DEFINITION.md:191",
+      "offlineVerifiable": true
+    },
+    {
+      "seg": "poll_dispatch",
+      "label": "从判定到发出捕获指令。取 [估算]+[待论证指标]：STALL_EVENT_DEFINITION.md:190 给『检测到→采样动作在目标线程生效』端到端 <50ms（安全裕量 ≤20ms）；按 :200 两段式解耦，在线抓取仅 ≤2ms 归 ④，故本段（轮询/调度/目标线程定位 :201/发指令）取端到端名义上界 50ms 减去 ④ 的 2ms = 48.00ms。★ 文档未单列该段，48ms 是对 :190 名义值的工程拆分 [估算]；真实轮询/调度/系统时延 D-27:42 明列『系统时延…未验』、:67『不背书』、STALL_EVENT_DEFINITION.md:218『完全未验』。",
+      "ms": 48.0,
+      "basis": "[估算] [待论证指标] lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:190（端到端 <50ms，安全裕量 ≤20ms）、:200（在线抓取 ≤2ms 归④）、:201（目标线程精准定位）；拆分依据 50-2=48。lead/d27_ruling_20261106/RULING_D27.md:42、:44、:67；STALL_EVENT_DEFINITION.md:218（真机时延/扰动完全未验）。真实系统时延 [未验]",
+      "offlineVerifiable": false
+    },
+    {
+      "seg": "capture_exec",
+      "label": "从指令到拿到快照。取 [待论证指标]+[估算] 乐观下界：STALL_EVENT_DEFINITION.md:200 规定在线采样阶段仅抓取原始寄存器上下文与微型内存页（限时 ≤2ms），符号反解/栈回溯全部离线化；故在线 capture_exec 以 ≤2ms 的名义值 2.00ms 计入。★ 这是设计指标不是实测；D-27:44/:67 把 ≤2ms/扰动<10ms/100ms 清理/rc=0 一律列为待论证指标且不背书，真实捕获执行耗时、扰动、资源释放、栈格式与可解析性均 [未验]。",
+      "ms": 2.0,
+      "basis": "[待论证指标] [估算] lead/stall_event_def_20261106/STALL_EVENT_DEFINITION.md:200（在线抓取 ≤2ms，两段式解耦）、:199（实时符号解析几十至数百毫秒须离线）、:216/:218（真实栈可解析性/真机扰动未验）；lead/d27_ruling_20261106/RULING_D27.md:44、:67（不背书）。真实捕获执行/扰动/资源释放/栈可解析 [未验]",
+      "offlineVerifiable": false
+    }
+  ],
+  "totalMs": 152.5,
+  "meetsMedian": false,
+  "gapToMedian": "★ 合计 152.50ms ≥ 中位 129.93ms，超出 22.57ms；在当前假设下达不到『在中位短停内拿到快照』。（口径：129.93ms 是 1681 个保留标签事件的时长中位，RULING_D27.md:12；与 1737 个 full97 全部候选不是同口径，不得直接对照。）结构上：②=100ms 是口径 B 硬累积门槛（_stall_probe.py:28/:100、STALL_EVENT_DEFINITION.md:31，离线复算 min durationMs=100.0），不改动判定口径就不可压缩；而 STALL_EVENT_DEFINITION.md:191 自身判定『累积判定耗时≥100ms 不合格』——按现门槛触发机制在定义上已不合格。要在 129.93ms 内拿到快照，①③④ 合计必须 <29.93ms（当前 52.50ms，至少再砍 22.57ms）。需要同时满足的条件：(a) ③+④ 端到端不能取 :190 名义上界 50ms，须兑现 ≤20ms 安全裕量甚至更低；即便乐观取 ③+④=20ms，合计仍 =2.5+100+20=122.5ms，余量仅 7.43ms，且依赖全部未验项取最优、真实系统时延零增长，不可保证。(b) :190 的 <50ms/≤20ms、:195 扰动<10ms、:200 在线≤2ms、:206 配额/冷却、:207 >1s Disarm、:208 100ms 清理/rc=0 全为 [待论证指标]，D-27:67 明确不背书、STALL_EVENT_DEFINITION.md:218『完全未验』，须有真机实测证明真实运行上界成立。(c) D-27:42 四项未验——系统调度时延、扰动、资源释放、真实栈可解析性——须逐项闭合。(d) ① 的真实在线首次观察延迟、:201 目标线程定位须实测不引入额外增长。★ 上述条件本阶段零真机、零采样实现，一律未验；本模型是端到端时间预算（保守停止/捕获预算），不是结束态语义真值；>1s 只可作保守停止预算，不得当终局真值（RULING_D27.md:44、TASK.md:53），否则会再次排除待研究长停。★ 正确表述：当前 97 窗按现规则保留的事件中未识别到 ≥1s 平台，语义漏检及跨场景代表性未闭合；不得据此写『长停不存在』。另一条可能出路是把 100ms 累积门槛改为前馈/预测式触发（不待累积满 100ms 即捕获），但这会引入假阳性、与 :31/:191 冲突、需另有有效裁决授权，本 D-13b 未获授权亦不背书。"
+}

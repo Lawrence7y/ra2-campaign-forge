@@ -1,0 +1,58 @@
+### CORRECTED SCOPE RULE (R1-R6) — executable, reproducible
+R1 root = D:\Project\ra2-campaign-forge\lead ; max-depth = 2 ; exts = .md
+R2 unit = occurrence(file,line) ; files are a derived grouping only
+R3 canonical SHA256 = - ; len = 0
+R3 canonical text = ''
+R4 START/END must match the WHOLE line; unpaired markers = ERROR
+R5 refuting quotes get ROLE + separate section, never silently dropped
+needles = ['TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ']
+
+scanned files = 647 ; carrier occurrences = 3 ; distinct files = 1
+
+=== A. FULL CARRIER MAP (every file, every line, risk-classified) ===
+
+FILE masking_effect_20261109/_me_REPORT.md  bytes=33313  sha256=7fb133c682e08af29b3de58bdd58819312a1d3036a07d7c5eb5ec0be5bf347ac  hits=3  decl_append=False decl_notledger=False
+  :58   role=REFUTING_QUOTE    needs_fix=False NONE: 不随段进台账
+         entry=STANDALONE_DOC (no appendable block)
+         verbatim(canonical==line)=None verbatim(canonical==quote)=None quote_delim=`
+         refutation/analysis signals: 命中
+         text: **决定性反证**（本会话实跑）：`--needle "不能定位当年错误步骤" --needle "TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ"`（把 N1 换成保证零命中的坏串）→ `_me_broken_needle_out.txt`：`EXIT=0`、`SELF_TEST = PASS`、`carrier occurrences = 84`。即**一根 needle
+  :272  role=QUOTED            needs_fix=False NONE: 不随段进台账
+         entry=STANDALONE_DOC (no appendable block)
+         verbatim(canonical==line)=None verbatim(canonical==quote)=None quote_delim=`
+         text: 1. 实测 `--needle "不能定位当年错误步骤" --needle "TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ"` 仍 `EXIT=0` / `SELF_TEST = PASS`（`_me_broken_needle_out.txt`）⇒ 该 PASS 与「N1 是否工作」逻辑无关。
+  :316  role=QUOTED            needs_fix=False NONE: 不随段进台账
+         entry=STANDALONE_DOC (no appendable block)
+         verbatim(canonical==line)=None verbatim(canonical==quote)=None quote_delim=`
+         text: | 7 | 未修改扫描器 `--needle N2 --needle TOTALLY_BROKEN_NEEDLE_SENTINEL_XYZ` | `_me_broken_needle_out.txt` → **`SELF_TEST = PASS`** |
+
+=== B. STRICT INTERSECTION (needs_fix = ASSERTION AND HIGH entry risk) ===
+occurrences = 0 ; distinct files = 0
+
+=== C. NON-FIX OCCURRENCES (refuting / quoted / analysis / no entry path) ===
+occurrences = 3 ; distinct files = 1
+role histogram: {'REFUTING_QUOTE': 1, 'QUOTED': 2}
+   masking_effect_20261109/_me_REPORT.md:58 role=REFUTING_QUOTE neg=命中
+   masking_effect_20261109/_me_REPORT.md:272 role=QUOTED neg=
+   masking_effect_20261109/_me_REPORT.md:316 role=QUOTED neg=
+
+=== D. HOW REFUTING QUOTES ARE EXCLUDED FROM THE FIX LIST (R5) ===
+1) needle inside a paired quote span (「」『』``) AND a negation/update
+   lexicon hit on the SAME line => role != ASSERTION => needs_fix=False.
+2) '改后' samples with 更新：/已定谳为/自该节起不再成立 but no quote => UPDATED_SAMPLE.
+3) grep/命中/验收/逐字/原文逐字/改前/建议改 => ANALYSIS_MENTION, never ASSERTION.
+4) A refuting quote INSIDE an appendable block (e.g. §609 :22) is KEPT in
+   section A with risk=HIGH but role=REFUTING_QUOTE: full audit trail,
+   without inflating the fix count. It is NOT silently dropped.
+5) needs_fix requires BOTH role=ASSERTION AND risk=HIGH.
+   Outside-block assertions (:215 §6.3) and standalone terminal docs
+   get risk=NONE, matching MINHARD_SET_CHECK.md §3.2/§3.3.
+
+=== E. NEGATIVE-CONTROL SELF-TEST (R6) ===
+  FAIL  ledger_appendix_20261108/LEDGER_APPENDIX_DRAFT.md:123 want=ASSERTION        got=<not-scanned>
+  FAIL  ledger_appendix_20261108/_la_draft3_s604_gapdiff.md:25 want=ASSERTION        got=<not-scanned>
+  FAIL  ledger_bound_20261109/LEDGER_BOUND_VOLUME.md:196 want=ASSERTION        got=<not-scanned>
+  FAIL  ledger_bound_20261109/_lb_BOUND_VOLUME.md:129 want=ASSERTION        got=<not-scanned>
+  FAIL  s604_verdict_entry_20261109/_ve_DRAFT_S609.md:22 want=REFUTING_QUOTE   got=<not-scanned>
+  FAIL  ledger_appendix_20261108/LEDGER_APPENDIX_DRAFT.md:215 want=ASSERTION        got=<not-scanned>
+SELF_TEST = FAIL

@@ -1,0 +1,1884 @@
+diff --git a/ra2forge/builder.py b/ra2forge/builder.py
+index 2d480e6..024e54c 100644
+--- a/ra2forge/builder.py
++++ b/ra2forge/builder.py
+@@ -32,10 +32,12 @@ Usage:
+ from __future__ import annotations
+ 
+ import hashlib
++import json
+ import re
+ from pathlib import Path
+ 
+ from . import design as design_mod
++from .install import PACKAGE_MANIFEST_NAME
+ from .maplib import MissionMap, STANDARD_HOUSES, read_basic_section
+ from . import triggers as tg
+ from .mixlib import MixFile, crc_hash, write_mix
+@@ -114,11 +116,53 @@ def build(design: dict, out_dir: str | Path) -> Path:
+     check_lines.append(_verify_mix_contents(mix_path, sorted(mix_files)))
+ 
+     (out / "story.md").write_text("\n".join(story) + "\n", encoding="utf-8")
+-    _write_build_report(out, camp, compiled, chain, battle_id, check_lines)
++    pkg_id_str = _write_package_identity(out, design)
++    _write_build_report(out, camp, compiled, chain, battle_id, check_lines,
++                        pkg_id_str)
+     _write_install_readme(out, len(missions))
+     return mix_path
+ 
+ 
++# ---------------------------------------------------------------------------
++# package identity (PKG-IDENT01)
++# ---------------------------------------------------------------------------
++
++def _write_package_identity(out: Path, design: dict) -> str:
++    """Stamp <out>/ra2forge_package.json when the design declares an optional
++    top-level "package" object: {"id": ..., "version": ...}.
++
++    The id is the STABLE PACKAGE IDENTITY the installer (install.py
++    PKG-IDENT01) judges upgrades and coexistence by - deliberately a different
++    namespace from the campaign's battle id (campaign.id / BATTLEMD*.INI):
++    the battle id decides how the ENGINE merges campaign entries and must
++    stay stable across versions of the same package; the package_id decides
++    whether the INSTALLER treats a directory as this package's own and must
++    differ between different packages. Neither derives from the other, and
++    neither derives from the build path. A design without the "package"
++    object builds an UNDECLARED package (no ra2forge_package.json): installs
++    from it work, but re-installing over such a record requires the explicit
++    --adopt-legacy assertion. Returns the stamped id ("<undeclared>" when
++    absent) for the build report.
++    """
++    pkg = design.get("package")
++    if pkg is None:
++        return "<undeclared>"
++    if not isinstance(pkg, dict):
++        raise BuildError('the optional "package" design field must be an '
++                         f'object with "id" (and optionally "version"), got '
++                         f"{type(pkg).__name__}")
++    pid = str(pkg.get("id") or "").strip()
++    if not pid:
++        raise BuildError('the optional "package" design field declares no '
++                         'usable "id" (non-empty string required)')
++    ver = str(pkg.get("version") or "").strip() or "unknown"
++    payload = {"tool": "ra2forge", "package_id": pid, "package_version": ver}
++    (out / PACKAGE_MANIFEST_NAME).write_text(
++        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
++        encoding="utf-8")
++    return pid
++
++
+ # ---------------------------------------------------------------------------
+ # campaign chain
+ # ---------------------------------------------------------------------------
+@@ -581,7 +625,8 @@ def _artifact_line(path: Path) -> str:
+ 
+ 
+ def _write_build_report(out: Path, camp: dict, compiled, chain, battle_id: str,
+-                        check_lines: list[str]) -> Path:
++                        check_lines: list[str],
++                        package_id: str = "<undeclared>") -> Path:
+     lines = [
+         "RA2 Campaign Forge - build report",
+         f"campaign={camp['name']}",
+@@ -590,6 +635,8 @@ def _write_build_report(out: Path, camp: dict, compiled, chain, battle_id: str,
+         f"battle_id={battle_id}",
+         f"battle_id_source={'campaign.id' if camp.get('id') else 'default RA2F1'}",
+         f"battle_index={BATTLE_INDEX}",
++        f"package_id={package_id}",
++        f"package_id_source={'design.package.id' if package_id != '<undeclared>' else 'undeclared (no ra2forge_package.json written)'}",
+         f"description={design_mod.description_for(camp) or camp['name']}",
+         f"first_scenario={compiled[0][0]}",
+         f"mix={MIX_FILE_NAME} (maps only)",
+@@ -606,6 +653,8 @@ def _write_build_report(out: Path, camp: dict, compiled, chain, battle_id: str,
+     lines.append(_artifact_line(out / BATTLE_FILE_NAME))
+     lines.append(_artifact_line(out / MIX_FILE_NAME))
+     lines.append(_artifact_line(out / "story.md"))
++    if (out / PACKAGE_MANIFEST_NAME).is_file():
++        lines.append(_artifact_line(out / PACKAGE_MANIFEST_NAME))
+     lines.append("")
+     report = out / "BUILD_REPORT.txt"
+     report.write_text("\n".join(lines), encoding="utf-8")
+diff --git a/ra2forge/cli.py b/ra2forge/cli.py
+index e6bbe1d..6e4a1ad 100644
+--- a/ra2forge/cli.py
++++ b/ra2forge/cli.py
+@@ -1,4 +1,4 @@
+-"""Command line interface: validate / build / install / uninstall / inspect / example."""
++"""Command line interface: validate / build / install / uninstall / verify / inspect / example."""
+ 
+ from __future__ import annotations
+ 
+@@ -9,7 +9,43 @@ from pathlib import Path
+ 
+ from . import design as design_mod
+ from .builder import BuildError, build
+-from .install import install_package, uninstall
++from .install import (
++    EXIT_SEAL_MISSING,
++    EXIT_SEAL_MISMATCH,
++    EXIT_VERIFY_DIGEST,
++    EXIT_VERIFY_DRIFT,
++    EXIT_VERIFY_STRUCTURAL,
++    PackageIdentityBlocked,
++    install_package,
++    uninstall,
++)
++from .verify import verify_install
++
++# PKG-IDENT01: distinguishable exit codes for the identity refusals
++# (argparse errors keep the conventional 2, everything else unexpected is 1)
++EXIT_PACKAGE_MISMATCH = 3
++EXIT_LEGACY_ADOPT_REQUIRED = 4
++
++# SEAL-CHAIN01: the exit-code table, quoted in verify --help, uninstall
++# --help and VERIFY.md. 5 > 6 > 7/8 > 9 is the severity order: verify
++# reports every finding and exits with the most severe class present.
++VERIFY_EXIT_CODES_TEXT = """\
++exit codes:
++  0  everything ok (orphans, if any, are listed but do not change the
++     code; a directory with no install record also verifies as 0 -
++     nothing to check)
++  1  the check itself failed to run (unexpected error)
++  2  command-line usage error (argparse)
++  5  manifest structure unusable (not JSON / required fields missing)
++  6  package_digest mismatch - the manifest's own records are not
++     self-consistent
++  7  install seal MISSING for a seal-era manifest (tool >= 0.7)
++  8  install seal MISMATCH / corrupt / aliased
++  9  drift: recorded files changed or missing on disk
++when several classes apply, the exit code is the MOST SEVERE one
++(5 > 6 > 7/8 > 9); every finding is still listed. Old manifests (tool
++< 0.7, no seal) verify in degraded mode: warned, still fully run.
++The seal detects accidents, not attacks - it is not anti-tamper."""
+ 
+ 
+ def main(argv=None):
+@@ -40,13 +76,27 @@ def main(argv=None):
+     p_inst.add_argument("--game", required=True, metavar="GAME_DIR")
+     p_inst.add_argument("--force", action="store_true",
+                         help="accepted for backward compatibility only; it has "
+-                             "no effect on install (release content conflicts "
+-                             "with --allow-content-conflict; everything else "
+-                             "is a hard gate - see DLC-STRICT01)")
++                             "NO effect on install and never overrides any "
++                             "refusal - not the package-identity gate (exit 3 "
++                             "on a different declared package_id, exit 4 when "
++                             "identity is undeclared), not path-safety, "
++                             "corrupt-record, backup-protection or strict-risk "
++                             "blocks; release content conflicts with "
++                             "--allow-content-conflict instead")
+     p_inst.add_argument("--allow-content-conflict", action="store_true",
+                         help="release ONLY definite content conflicts (each one "
+                              "is logged); never releases path-safety, "
+-                             "corrupt-record or backup-protection blocks")
++                             "corrupt-record, backup-protection blocks or the "
++                             "package-identity gate")
++    p_inst.add_argument("--adopt-legacy", action="store_true",
++                        help="assert explicitly that this install is the "
++                             "intended successor of the install record already "
++                             "in the game directory when the identity is "
++                             "undeclared (record has no package_id, or this "
++                             "package has no ra2forge_package.json). Without "
++                             "it those cases are refused with exit 4. Does "
++                             "NOT release the different-package_id refusal "
++                             "(exit 3) or any other gate")
+ 
+     p_un = sub.add_parser("uninstall", help="remove the package and restore backups")
+     p_un.add_argument("--game", required=True, metavar="GAME_DIR")
+@@ -58,7 +108,32 @@ def main(argv=None):
+                            "that has no backup (it is moved to "
+                            "BATTLEMD.INI.ra2forge.removed.bak)")
+     p_un.add_argument("--force", action="store_true",
+-                      help="delete files even when their sha256 changed")
++                      help="delete files even when their sha256 changed. Does "
++                           "NOT bypass the install-seal gate: a seal-era "
++                           "manifest (tool >= 0.7) whose seal is missing "
++                           "(exit 7) or mismatched/corrupt (exit 8) refuses "
++                           "the whole uninstall - nothing removed, nothing "
++                           "restored, record kept. Old manifests (no seal) "
++                           "uninstall as before with a degraded-mode warning. "
++                           "The seal detects accidents, not attacks - it is "
++                           "not anti-tamper")
++
++    p_ver = sub.add_parser(
++        "verify", help="read-only drift check of the installed package record",
++        description="Read-only verification of ra2forge_install.json and the "
++                    "files it recorded: manifest structure, package_digest "
++                    "self-consistency (of the RECORDS only), per-file disk "
++                    "sha256 (ok / changed / missing), ra2forge orphans "
++                    "(*.ra2forge.bak etc. not accounted for by the manifest), "
++                    "and the install seal. Writes NOTHING.",
++        epilog=VERIFY_EXIT_CODES_TEXT,
++        formatter_class=argparse.RawDescriptionHelpFormatter)
++    p_ver.add_argument("--game", required=True, metavar="GAME_DIR",
++                       help="the game directory to check (read-only; "
++                            "gamemd.exe is NOT required)")
++    p_ver.add_argument("--json", dest="as_json", action="store_true",
++                       help="print the full report as a JSON object (same "
++                            "exit codes as the text report)")
+ 
+     p_ex = sub.add_parser("example", help="write an example design JSON")
+     p_ex.add_argument("path", nargs="?", default="demo_campaign.json")
+@@ -127,7 +202,15 @@ def main(argv=None):
+         try:
+             report = install_package(args.package, args.game,
+                                      allow_content_conflict=
+-                                     args.allow_content_conflict)
++                                     args.allow_content_conflict,
++                                     adopt_legacy=args.adopt_legacy)
++        except PackageIdentityBlocked as exc:
++            # PKG-IDENT01: distinguishable exit codes - 3 = a different
++            # declared package_id (never releasable), 4 = undeclared identity
++            # (releasable only by --adopt-legacy)
++            print(f"error: {exc}", file=sys.stderr)
++            return (EXIT_PACKAGE_MISMATCH if exc.kind == "package_mismatch"
++                    else EXIT_LEGACY_ADOPT_REQUIRED)
+         except (OSError, ValueError) as exc:
+             print(f"error: {exc}", file=sys.stderr)
+             return 1
+@@ -143,10 +226,30 @@ def main(argv=None):
+         except (OSError, ValueError) as exc:
+             print(f"error: {exc}", file=sys.stderr)
+             return 1
++        if report.get("refused"):
++            # SEAL-CHAIN01: distinguishable seal-gate refusals - the game
++            # directory was not modified by this run.
++            print("uninstall refused - nothing was removed or restored:")
++            _print_report(report)
++            return (EXIT_SEAL_MISSING
++                    if report["refused"] == "seal_missing"
++                    else EXIT_SEAL_MISMATCH)
+         print(f"uninstalled from {report['game_dir']}:")
+         _print_report(report)
+         return 0
+ 
++    if args.cmd == "verify":
++        try:
++            report = verify_install(args.game)
++        except OSError as exc:
++            print(f"error: {exc}", file=sys.stderr)
++            return 1
++        if args.as_json:
++            print(json.dumps(report, indent=2, ensure_ascii=False))
++        else:
++            _print_verify(report)
++        return report["exit_code"]
++
+     if args.cmd == "inspect":
+         text = _read_map_text(Path(args.map))
+         import re
+@@ -180,6 +283,67 @@ def _print_report(report: dict) -> None:
+             print(f"  warning: {warning}")
+ 
+ 
++def _print_verify(r: dict) -> None:
++    """Human-readable verify report (same facts as the --json object)."""
++    print(f"verify report for {r['game_dir']}")
++    if not r["manifest_present"]:
++        for w in r["warnings"]:
++            print(f"  note: {w}")
++        print(f"  exit code: {r['exit_code']} ({r['exit_code_meaning']})")
++        return
++    era = ("LEGACY / degraded (no seal expected)"
++           if r["legacy_degraded"] else "seal era (tool >= 0.7)")
++    print(f"  manifest: {r['manifest_version'] or '<no version>'}  [{era}]")
++    if r["structural"]:
++        print(f"  structure: FAIL ({len(r['structural'])} finding(s))")
++        for s in r["structural"]:
++            print(f"    - {s}")
++    else:
++        print("  structure: OK")
++    d = r["digest"]
++    if d is None:
++        print("  package_digest: (skipped - legacy manifest has no digest)")
++    elif d["match"] is None:
++        print(f"  package_digest: SKIPPED ({d['note']})")
++    elif d["match"]:
++        print(f"  package_digest: OK  {str(d['recorded'])[:12]}... "
++              "(self-consistency of the records only - not proof of what is "
++              "on disk)")
++    else:
++        print(f"  package_digest: MISMATCH  recorded={str(d['recorded'])[:12]}..."
++              f"  recomputed={str(d['recomputed'])[:12]}...")
++    s = r["seal"]
++    if not s["expected"]:
++        print(f"  seal: not expected ({s['state']})"
++              + (f" - {s['detail']}" if s["detail"] else ""))
++    elif s["state"] == "ok":
++        print(f"  seal: OK ({s['path']})")
++    else:
++        print(f"  seal: {s['state'].upper()} - {s['detail']}")
++    counts = r["counts"]
++    print(f"  files: {counts['ok']} ok, {counts['changed']} changed, "
++          f"{counts['missing']} missing/unreadable  (of "
++          f"{len(r['files'])} recorded)")
++    for f in r["files"]:
++        mark = {"ok": "ok      ", "changed": "CHANGED ",
++                "missing": "MISSING "}.get(f["status"], "ERROR   ")
++        line = f"    {mark} {f['name']}"
++        if f["status"] == "changed":
++            line += (f"  (recorded {str(f['recorded_sha256'])[:12]}..., "
++                     f"disk {str(f['disk_sha256'])[:12]}...)")
++        print(line)
++    if r["orphans"]:
++        print(f"  orphans: {counts['orphans']} (ra2forge files the manifest "
++              "does not account for; listed, do not change the exit code)")
++        for o in r["orphans"]:
++            print(f"    - {o}")
++    else:
++        print("  orphans: none")
++    for w in r["warnings"]:
++        print(f"  note: {w}")
++    print(f"  exit code: {r['exit_code']} ({r['exit_code_meaning']})")
++
++
+ def _load(path: str) -> dict:
+     p = Path(path)
+     if not p.exists():
+diff --git a/ra2forge/install.py b/ra2forge/install.py
+index f5b550d..0e8dddd 100644
+--- a/ra2forge/install.py
++++ b/ra2forge/install.py
+@@ -239,6 +239,120 @@ family closed:
+   gate, deliberately: the engine opens the same name through the same reparse
+   point, and this read selects no write and no delete. What it says now names
+   the slot it read from when that slot is an alias.
++
++Safety rules (ORPHAN-FIX01) - the A -> A' upgrade path. Measured defect: after
++installing A over nothing and then A' (whose package dropped A's map X), X.MAP
++stayed in the game directory while the rewritten ra2forge_install.json no
++longer named it - uninstall could neither see nor remove it, and the backups a
++replacement wrote for files A itself had CREATED held our own previous bytes,
++so uninstall "restored" our old version instead of the true original (which
++never existed). The fix, judged from the record only:
++- preinstall_plan plans the exit of every file the CURRENT record names and
++  the new package dropped ("orphans", read-only like everything else):
++  * file still matches the recorded sha256 -> ours: removed; when a
++    <name>.ra2forge.bak slot is recorded and present, the ORIGINAL the slot
++    holds is restored first and the slot is consumed - unless the entry (or
++    the slot's absence, see below) proves the slot holds our own previous
++    bytes, in which case both are removed;
++  * file changed after install -> nobody's to judge: strict mode refuses with
++    a risk; non-strict keeps the file and its backup slot, with a warning;
++  * malformed or aliased entry names, aliases at the backup slots: hard
++    blockers, like every other slot;
++- ownership is judged ONLY from the manifest record + the recorded sha256.
++  A file the record does not name is never touched; nothing outside the game
++  directory is ever deleted;
++- the new manifest records ONLY the new package's files; the transition is
++  documented under "removed_orphans" (audit trail, not tracked state);
++- when a replacement would create a backup for a file the PREVIOUS record
++  names and no backup slot existed at preflight, that slot would hold OUR
++  previous bytes, not a user original: the new entry is written with
++  "original_absent": true, and uninstall() then removes file and slot instead
++  of restoring our own version back. Manifests without the flag behave
++  exactly as before;
++- every copy this install commits is rolled back best-effort when a later
++  step fails mid-run (created files unlinked; replaced files restored from
++  the backup slot created for them this run, pre-existing slots kept), the
++  rollback uses the same staged primitives, and what it did - and what it
++  could not do - is reported in the raised error.
++
++Safety rules (PKG-IDENT01) - package identity (RE-N10 item 5). The install
++record gains four fields; every identity judgment below reads them, never
++the install path:
++- package_id: the stable identity of the installed package, declared by the
++  package itself in <package>/ra2forge_package.json (written by 'build' when
++  the design declares an optional "package": {"id": ..., "version": ...}
++  object). It is NOT the install path and NOT the campaign's battle id from
++  BATTLEMD*.INI - those are two independent namespaces (the battle id decides
++  how the ENGINE merges campaign entries; package_id decides whether the
++  INSTALLER treats a directory as this package's own). A package without the
++  declaration carries package_id "unknown";
++- package_version: the package's own version string, separate from this
++  tool's `version` field (which tracks install.py itself, not the content);
++- package_digest: SHA-256 over "<name> <sha256-of-package-member>" lines,
++  one line per file package_files() ships (BATTLEMD98.INI, then *.MAP sorted,
++  then expandmd98.mix), lines sorted by name, joined with "\n", UTF-8. It
++  fingerprints exactly the bytes that land in the game directory - build
++  reports and readmes are deliberately excluded, so the digest changes iff
++  the installed content changes;
++- files[].source_package_digest: the package_digest of the package that
++  supplied that entry (multi-generation provenance). The new manifest also
++  records "supersedes" (the previous record's identity) as audit trail only
++  - judgments keep using the per-file record + sha256 discipline above.
++Install-time identity judgment (zero-write, BEFORE any re-verification):
++- no manifest -> fresh install; all new fields written;
++- manifest package_id == this package's declared package_id -> upgrade path
++  (ORPHAN-FIX01 exit planning runs as usual);
++- manifest package_id declared and DIFFERENT -> refused, kind
++  'package_mismatch' (CLI exit 3): this version does not support coexisting
++  packages (初版不支持并存). NEVER releasable - not by --force, not by
++  --allow-content-conflict, not by --adopt-legacy;
++- manifest package_id "unknown" (an old manifest, or one written from an
++  unstamped package), OR this package unstamped while the manifest declares
++  an id -> refused, kind 'legacy_adopt_required' (CLI exit 4), unless the
++  caller passes adopt_legacy=True (--adopt-legacy): the explicit user
++  assertion "this install is the intended successor". Adoption treats the
++  manifest's recorded files as ours so replacing them is not a content
++  conflict; it releases NOTHING else - path safety, corrupt records, backup
++  protection and strict risks still gate as before;
++- --force has never had any effect on install and gains none: it cannot
++  override an identity refusal. On uninstall it still means exactly "delete
++  a recorded file whose bytes changed", nothing more.
++Backward compatibility (reading v0.3/v0.4/v0.5 manifests): the new fields
++are simply absent; missing fields read as "unknown", and uninstall()
++ignores them entirely - a manifest without package_id installs nothing
++differently and uninstalls byte-identically to the pre-PKG-IDENT behavior.
++
++Safety rules (SEAL-CHAIN01) - the W23 trust chain (W21 UNCOVERED §3). The
++manifest is plain-text JSON and uninstall() acts on it, so a hand-edited or
++accidentally mangled manifest can silently drive deletions and restores.
++This family adds a PROTECTED RECORD, not a signature:
++
++- install writes <game>/ra2forge_install.json.seal right after the record it
++  protects: {"kind": "install-seal", "tool_version", "package_id",
++  "package_digest", "manifest_sha256", "sealed_at"}, where manifest_sha256
++  is SHA-256 over the manifest's CANONICAL bytes (UTF-8, BOM tolerated,
++  CRLF/CR normalized to LF). Newline normalization is deliberate: it is the
++  only difference a text editor's re-save can make without touching content.
++  Every content difference - one edited field, one removed entry,
++  re-indented JSON - changes the hash;
++- uninstall() gates on the seal BEFORE the first unlink: a seal-era manifest
++  (written by tool >= 0.7) whose seal is missing (CLI exit 7) or
++  mismatched/corrupt/aliased (CLI exit 8) refuses the WHOLE uninstall -
++  nothing removed, nothing restored, record kept. --force does NOT release
++  this gate: force means "delete a recorded file whose bytes changed", never
++  "trust a record whose seal does not check out". Old manifests (no seal)
++  are uninstalled as before, with an explicit degraded-mode warning;
++- verify (ra2forge/verify.py) reports the same state read-only, plus
++  structure, package_digest self-consistency, per-file disk drift and
++  ra2forge orphans;
++- BOUNDARY, in one sentence: the seal detects ACCIDENTS - it is NOT
++  anti-tamper. Whoever can edit the manifest can recompute the seal; nothing
++  here claims cryptographic trust, signing or attacker resistance. Recovery
++  for an accidentally lost/damaged seal: re-run the install of the SAME
++  package (it rewrites the record and a fresh seal), then uninstall;
++- a failed install rolls the record back to its exact previous bytes if the
++  seal write fails, so an install never leaves a seal-era record standing
++  without its seal (the refused-uninstall state) silently.
+ """
+ 
+ from __future__ import annotations
+@@ -259,7 +373,28 @@ MIX_NAME = "expandmd98.mix"
+ LEGACY_MANIFEST = "ra2forge_uninstall.txt"
+ LEGACY_BATTLE_INI = "BATTLEMD.INI"
+ FORGE_MARKER = b"Generated by RA2 Campaign Forge"
+-TOOL_VERSION = "0.4"
++TOOL_VERSION = "0.7"
++# PKG-IDENT01: the per-package identity declaration. Written by 'build' when
++# the design carries an optional "package" object; its absence is what makes
++# a package (and every manifest installed from it) read as "unknown".
++PACKAGE_MANIFEST_NAME = "ra2forge_package.json"
++UNKNOWN_PACKAGE_ID = "unknown"
++# SEAL-CHAIN01: the protected record next to the manifest. Manifests written
++# by tool versions >= SEAL_ERA_VERSION expect it; older manifests are handled
++# in degraded mode (warned, never refused on the missing seal).
++SEAL_SUFFIX = ".seal"
++SEAL_NAME = MANIFEST_NAME + SEAL_SUFFIX
++SEAL_KIND = "install-seal"
++SEAL_ERA_VERSION = (0, 7)
++
++# SEAL-CHAIN01: distinguishable exit codes for verify and the uninstall seal
++# gate (argparse keeps the conventional 2; 1 stays the generic operational
++# error; 3/4 are the PKG-IDENT01 install refusals).
++EXIT_VERIFY_STRUCTURAL = 5   # manifest structure unusable
++EXIT_VERIFY_DIGEST = 6       # package_digest does not match the records
++EXIT_SEAL_MISSING = 7        # seal-era manifest, seal file absent
++EXIT_SEAL_MISMATCH = 8       # seal present but stale / corrupt / aliased
++EXIT_VERIFY_DRIFT = 9        # recorded files changed or missing on disk
+ 
+ 
+ class InstallBlocked(OSError):
+@@ -278,6 +413,268 @@ class InstallBlocked(OSError):
+         self.report = report if report is not None else {}
+ 
+ 
++class PackageIdentityBlocked(InstallBlocked):
++    """PKG-IDENT01: the identity judgment refused the install before any
++    write. kind is one of:
++      'package_mismatch'       - the directory holds a DIFFERENT declared
++                                 package; coexistence is not supported and
++                                 nothing releasable overrides this (CLI exit 3);
++      'legacy_adopt_required'  - the identity of one side is undeclared
++                                 ("unknown"), so proceeding would be a guess;
++                                 pass adopt_legacy=True (--adopt-legacy) to
++                                 assert this install is the intended successor
++                                 (CLI exit 4).
++    Subclasses InstallBlocked so callers that catch InstallBlocked keep
++    working; the CLI maps the kinds to distinct exit codes.
++    """
++
++
++class PackageIdentityError(ValueError):
++    """PKG-IDENT01: the package's ra2forge_package.json exists but does not
++    declare a usable identity. Refusing beats guessing: a malformed identity
++    declaration is a hard error, never silently "unknown"."""
++
++
++def _read_package_identity(package_dir: Path) -> dict:
++    """Read <package>/ra2forge_package.json (PKG-IDENT01), read-only.
++
++    Returns {"package_id": <str>, "package_version": <str>, "declared": bool}.
++    Without the file the package is UNDECLARED: both fields come back as
++    "unknown". With the file, package_id must be a non-empty string and
++    package_version (optional) a non-empty string; anything else raises
++    PackageIdentityError - a planted-but-garbage identity file must not
++    silently read as "no identity".
++    """
++    path = Path(package_dir) / PACKAGE_MANIFEST_NAME
++    if not path.exists():
++        return {"package_id": UNKNOWN_PACKAGE_ID,
++                "package_version": UNKNOWN_PACKAGE_ID, "declared": False}
++    try:
++        raw = json.loads(path.read_text(encoding="utf-8-sig"))
++    except (OSError, ValueError) as exc:
++        raise PackageIdentityError(
++            f"{PACKAGE_MANIFEST_NAME} in {package_dir} exists but is not "
++            f"readable JSON ({exc}) - refusing to install from a package "
++            "whose identity declaration is garbage") from exc
++    if not isinstance(raw, dict):
++        raise PackageIdentityError(
++            f"{PACKAGE_MANIFEST_NAME} in {package_dir} must be a JSON object")
++    pid = raw.get("package_id")
++    if not isinstance(pid, str) or not pid.strip():
++        raise PackageIdentityError(
++            f"{PACKAGE_MANIFEST_NAME} in {package_dir} lacks a non-empty "
++            "string 'package_id' - fix or remove the file")
++    ver = raw.get("package_version", UNKNOWN_PACKAGE_ID)
++    if ver is None:
++        ver = UNKNOWN_PACKAGE_ID
++    if not isinstance(ver, str) or not ver.strip():
++        raise PackageIdentityError(
++            f"{PACKAGE_MANIFEST_NAME} in {package_dir}: 'package_version' "
++            "must be a non-empty string when present")
++    return {"package_id": pid.strip(),
++            "package_version": ver.strip(), "declared": True}
++
++
++def _manifest_package_id(manifest) -> str:
++    """PKG-IDENT01: the declared identity of an install record, or "unknown".
++
++    Old manifests (v0.3/v0.4/v0.5) and manifests written from unstamped
++    packages have no usable package_id; both read as "unknown". A manifest
++    that carries a non-string or empty value is treated the same way - the
++    install side never trusts the record beyond its shape.
++    """
++    if not isinstance(manifest, dict):
++        return UNKNOWN_PACKAGE_ID
++    pid = manifest.get("package_id")
++    if isinstance(pid, str) and pid.strip():
++        return pid.strip()
++    return UNKNOWN_PACKAGE_ID
++
++
++def _manifest_str_field(manifest, key: str) -> str:
++    """Same leniency as _manifest_package_id for informational fields."""
++    if isinstance(manifest, dict):
++        val = manifest.get(key)
++        if isinstance(val, str) and val.strip():
++            return val.strip()
++    return UNKNOWN_PACKAGE_ID
++
++
++# ---------------------------------------------------------------------------
++# SEAL-CHAIN01: the install seal - a protected record, NOT a signature.
++#
++# The manifest is plain-text JSON and uninstall() acts on it, so a
++# hand-edited manifest can silently drive deletions (W21 UNCOVERED §3). The
++# seal records the canonical hash of the manifest bytes AS THIS INSTALL WROTE
++# THEM, so later edits are detected instead of trusted. BOUNDARY: this
++# guards accidents and honest tooling only - whoever can edit the manifest
++# can recompute the seal too. Nothing here is anti-tamper, and no output of
++# this module may claim otherwise.
++# ---------------------------------------------------------------------------
++
++def _manifest_version_tuple(manifest) -> tuple | None:
++    """Parse the manifest's 'version' (the TOOL version that wrote it) into a
++    comparable tuple, or None when absent/garbage. A manifest with no
++    parseable version predates the seal era."""
++    if not isinstance(manifest, dict):
++        return None
++    ver = manifest.get("version")
++    if not isinstance(ver, str):
++        return None
++    parts = ver.strip().split(".")
++    nums: list[int] = []
++    for part in parts:
++        if not part.isdigit():
++            return None
++        nums.append(int(part))
++    if not nums:
++        return None
++    while len(nums) < 2:
++        nums.append(0)
++    return tuple(nums)
++
++
++def _manifest_is_seal_era(manifest) -> bool:
++    """Does this manifest come from a tool version that writes and expects an
++    install seal (tool >= 0.7)? Old manifests (v0.3/0.4/0.5/0.6, or with a
++    missing/garbage version field) predate the seal and are handled in
++    degraded mode."""
++    ver = _manifest_version_tuple(manifest)
++    return ver is not None and ver >= SEAL_ERA_VERSION
++
++
++def manifest_canonical_sha256(manifest_path) -> str | None:
++    """SHA-256 over the manifest's CANONICAL bytes: the file bytes decoded as
++    UTF-8 (a BOM is tolerated), CRLF and lone CR normalized to LF, re-encoded
++    UTF-8. Returns None when the file cannot be read or decoded."""
++    try:
++        text = Path(manifest_path).read_bytes().decode("utf-8-sig")
++    except (OSError, UnicodeDecodeError, ValueError):
++        return None
++    text = text.replace("\r\n", "\n").replace("\r", "\n")
++    return hashlib.sha256(text.encode("utf-8")).hexdigest()
++
++
++def _seal_slot_error(game: Path) -> str | None:
++    """The seal is a derived name like the record itself: same five identity
++    criteria, never read or written through an alias."""
++    return _derived_slot_error(game, SEAL_NAME, "install seal")
++
++
++def evaluate_seal(game, manifest, manifest_path) -> dict:
++    """Judge the install seal for a manifest that was read from game/.
++    Read-only. Returns {"state", "detail", "recorded", "path"} with state:
++      ok          - seal present, parses, and its manifest_sha256 matches the
++                    canonical hash of the manifest bytes on disk (and its
++                    package_digest agrees with the manifest's, when both
++                    sides carry one);
++      missing     - seal-era manifest but the seal file is absent;
++      mismatch    - seal present but its hashes disagree (manifest edited
++                    after install, or a stale/tampered seal);
++      corrupt     - seal present but not readable JSON / not a seal object;
++      aliased     - the seal slot is not a plain file - refusing to read it;
++      not_expected- the manifest predates the seal era; a seal file may still
++                    exist (stale residue), reported as detail - never a
++                    refusal on its own.
++    """
++    game = Path(game)
++    seal_path = game / SEAL_NAME
++    if not _manifest_is_seal_era(manifest):
++        stray = seal_path.is_file()
++        return {"state": "not_expected",
++                "detail": (f"a {SEAL_NAME} is present but the manifest "
++                           "predates the seal era (tool version "
++                           f"{manifest.get('version')!r}) - treated as "
++                           "stale residue")
++                if stray else None,
++                "recorded": None, "path": str(seal_path)}
++    err = _seal_slot_error(game)
++    if err:
++        return {"state": "aliased", "detail": err, "recorded": None,
++                "path": str(seal_path)}
++    if not seal_path.is_file():
++        return {"state": "missing",
++                "detail": f"{SEAL_NAME} is absent for a seal-era manifest "
++                          f"(tool version {manifest.get('version')!r})",
++                "recorded": None, "path": str(seal_path)}
++    try:
++        seal = json.loads(seal_path.read_text(encoding="utf-8"))
++    except (OSError, ValueError) as exc:
++        return {"state": "corrupt",
++                "detail": f"{SEAL_NAME} is not readable JSON ({exc})",
++                "recorded": None, "path": str(seal_path)}
++    if not isinstance(seal, dict) or seal.get("kind") != SEAL_KIND:
++        return {"state": "corrupt",
++                "detail": f"{SEAL_NAME} is not a {SEAL_KIND!r} seal object",
++                "recorded": None, "path": str(seal_path)}
++    manifest_sha = manifest_canonical_sha256(manifest_path)
++    if manifest_sha is None:
++        return {"state": "corrupt",
++                "detail": "the manifest bytes cannot be read/decoded for the "
++                          "seal check",
++                "recorded": seal, "path": str(seal_path)}
++    recorded_sha = seal.get("manifest_sha256")
++    if recorded_sha != manifest_sha:
++        return {"state": "mismatch",
++                "detail": f"the manifest's canonical sha256 "
++                          f"{manifest_sha[:12]}... does not match the seal's "
++                          f"recorded manifest_sha256 "
++                          f"{str(recorded_sha)[:12]}... - the manifest "
++                          "changed after install (or the seal is "
++                          "stale/tampered)",
++                "recorded": seal, "path": str(seal_path)}
++    rec_digest = seal.get("package_digest")
++    man_digest = manifest.get("package_digest")
++    if (isinstance(rec_digest, str) and isinstance(man_digest, str)
++            and rec_digest != man_digest):
++        return {"state": "mismatch",
++                "detail": f"the seal's package_digest {str(rec_digest)[:12]}"
++                          f"... disagrees with the manifest's "
++                          f"{str(man_digest)[:12]}...",
++                "recorded": seal, "path": str(seal_path)}
++    return {"state": "ok", "detail": None, "recorded": seal,
++            "path": str(seal_path)}
++
++
++def write_install_seal(game, manifest: dict) -> None:
++    """Write the install seal next to the manifest, through the same staged,
++    alias-proof primitive as the record itself.
++
++    The seal must hash EXACTLY what the record write puts on disk, so it is
++    computed over the LF form of the manifest JSON (what
++    manifest_canonical_sha256() reconstructs from the CRLF file). Call it
++    only AFTER the record write has landed.
++    """
++    canonical_lf = json.dumps(manifest, indent=2, ensure_ascii=False)
++    seal = {
++        "tool": "ra2forge",
++        "kind": SEAL_KIND,
++        "tool_version": TOOL_VERSION,
++        "package_id": manifest.get("package_id"),
++        "package_digest": manifest.get("package_digest"),
++        "manifest_sha256": hashlib.sha256(canonical_lf.encode("utf-8"))
++                           .hexdigest(),
++        "sealed_at": datetime.now().isoformat(timespec="seconds"),
++    }
++    _stage_text_and_replace(json.dumps(seal, indent=2, ensure_ascii=False),
++                            Path(game) / SEAL_NAME, "install seal")
++
++
++def package_digest_from_steps(steps: list) -> str:
++    """PKG-IDENT01: content fingerprint of the package this plan ships.
++
++    SHA-256 over one UTF-8 line per shipped file, "<name> <sha256>",
++    sorted by name, joined with "\n" (no trailing newline). Built from the
++    plan's steps so the digest and the bytes actually copied can never
++    disagree; package_files() defines the shipped set (BATTLEMD98.INI, the
++    *.MAP files, expandmd98.mix) - build reports and readmes are excluded
++    on purpose because they never land in the game directory.
++    """
++    lines = [f"{s['name']} {s['new_sha']}"
++             for s in sorted(steps, key=lambda s: s["name"])]
++    return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
++
++
+ def sha256_of(path) -> str:
+     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+ 
+@@ -598,17 +995,117 @@ def preinstall_warnings(game) -> list[str]:
+     return risks + notices
+ 
+ 
+-def preinstall_plan(package_dir, game_dir) -> dict:
++def _plan_orphans(game: Path, old_entries: dict, package_names: set) -> list:
++    """ORPHAN-FIX01: plan the exit of files the CURRENT record names that the
++    new package no longer contains. Read-only; every dangerous shape lands in
++    blockers via the caller's classes, never in the plan.
++
++    Each orphan dict: {name, mode, backup, sha256}; mode is
++      restore       - our file is still installed (sha matches the record);
++                      the recorded backup holds the pre-install ORIGINAL, so
++                      restore it over our file and consume the slot;
++      remove_absent - like restore, but the record proves the slot holds OUR
++                      own previous version (original_absent, or the slot was
++                      already gone at preflight): remove file + slot;
++      remove        - our file, no backup ever made (we created it): delete;
++      changed       - the bytes no longer match the record: keep file and
++                      backup slot, refuse in strict mode (a risk), warn in
++                      non-strict; never deleted, never adopted;
++      missing       - nothing left to clean (the slot may still restore an
++                      original - see restore below); no write planned here.
++    """
++    orphans: list[dict] = []
++    for entry in reversed(list(old_entries.values())):
++        name = entry["name"]
++        if name in package_names:
++            continue
++        if (name in (".", "..") or Path(name).name != name
++                or "/" in name or "\\" in name
++                or os.path.normcase(name.rstrip(". "))
++                == os.path.normcase(MANIFEST_NAME)):
++            # the caller turns this into a corrupt-manifest blocker
++            orphans.append({"name": name, "mode": "invalid_name",
++                            "backup": entry.get("backup"),
++                            "sha256": entry.get("sha256")})
++            continue
++        err = _dest_safety_error(game, name)
++        if err:
++            orphans.append({"name": name, "mode": "unsafe_slot", "reason": err,
++                            "backup": entry.get("backup"),
++                            "sha256": entry.get("sha256")})
++            continue
++        backup = entry.get("backup")
++        absent = bool(entry.get("original_absent"))
++        dest = game / name
++        dest_exists = dest.is_file()
++        dest_sha = sha256_of(dest) if dest_exists else None
++        ours = dest_exists and dest_sha == entry.get("sha256")
++        bak_ok = True
++        bak_exists = False
++        if backup:
++            if backup != name + BACKUP_SUFFIX:
++                orphans.append({"name": name, "mode": "invalid_backup",
++                                "backup": backup, "sha256": entry.get("sha256")})
++                continue
++            bak_exists = (game / backup).is_file()
++            if bak_exists:
++                bak_err = _bak_safety_error(game, name)
++                if bak_err:
++                    orphans.append({"name": name, "mode": "unsafe_backup",
++                                    "reason": bak_err, "backup": backup,
++                                    "sha256": entry.get("sha256")})
++                    continue
++            elif not dest_exists:
++                bak_ok = False  # recorded slot gone and nothing to restore
++        if dest_exists and not ours:
++            orphans.append({"name": name, "mode": "changed", "backup": backup,
++                            "sha256": entry.get("sha256"),
++                            "dest_sha": dest_sha})
++            continue
++        if not dest_exists and not bak_exists:
++            orphans.append({"name": name, "mode": "missing", "backup": backup,
++                            "sha256": entry.get("sha256")})
++            continue
++        if backup and bak_exists and not absent:
++            orphans.append({"name": name, "mode": "restore", "backup": backup,
++                            "sha256": entry.get("sha256")})
++        elif backup and bak_exists:
++            orphans.append({"name": name, "mode": "remove_absent",
++                            "backup": backup, "sha256": entry.get("sha256")})
++        else:
++            # no slot (we created it), or the recorded slot is already gone
++            orphans.append({"name": name, "mode": "remove", "backup": backup,
++                            "sha256": entry.get("sha256"), "bak_ok": bak_ok})
++    return orphans
++
++
++def preinstall_plan(package_dir, game_dir, *, adopt_legacy: bool = False) -> dict:
+     """Read-only preflight for install_package(): classify BEFORE any write.
+ 
+     Returns a dict with:
+       blockers / conflicts / risks / notices : list[str]
+       steps : the write plan - dicts {name, src, action, backup, conflict,
+-              recorded_backup, new_sha, dest_sha, size}; action is one of
+-              created/unchanged/replaced, backup is None/'create'/'keep'
++              recorded_backup, new_sha, dest_sha, size, original_absent};
++              action is one of created/unchanged/replaced, backup is
++              None/'create'/'keep'
+       manifest / corrupt_manifest : parsed record or why it was rejected
++      orphans : ORPHAN-FIX01 - planned exit of files the current record names
++                that this package dropped (see _plan_orphans); entries whose
++                name or slots fail the identity gates come back as
++                invalid_name / unsafe_slot / invalid_backup / unsafe_backup
++                and the caller turns them into hard blockers
++      identity : PKG-IDENT01 - {verdict, old_package_id, new_package_id,
++                new_package_version, package_digest, adopt_legacy, message};
++                verdict is one of fresh / upgrade / adopt / reject_mismatch /
++                reject_legacy. reject_* verdicts are raised by
++                install_package() as PackageIdentityBlocked before any write;
++                adopt (only with adopt_legacy=True) treats the current
++                record's files as ours; package_digest is computed from the
++                steps (see package_digest_from_steps).
+     Raises FileNotFoundError exactly like before when the game directory does
+-    not look like one or the package is unusable (still zero writes).
++    not look like one or the package is unusable (still zero writes), and
++    PackageIdentityError when the package's ra2forge_package.json exists but
++    is garbage (still zero writes).
+     """
+     package = Path(package_dir)
+     game = Path(game_dir)
+@@ -617,6 +1114,9 @@ def preinstall_plan(package_dir, game_dir) -> dict:
+             f"{game} does not look like a Yuri's Revenge directory "
+             f"(gamemd.exe not found)")
+     files = package_files(package)
++    # PKG-IDENT01: the package's own identity declaration, read before
++    # anything is planned. A planted-but-garbage declaration is a hard error.
++    pkg_ident = _read_package_identity(package)
+ 
+     blockers: list[str] = []
+     conflicts: list[str] = []
+@@ -664,11 +1164,77 @@ def preinstall_plan(package_dir, game_dir) -> dict:
+         for e in manifest.get("files", []):
+             if isinstance(e, dict) and e.get("name"):
+                 old_entries[e["name"]] = e
+-    same_install = (manifest is not None and manifest.get("package") is not None
+-                    and str(manifest["package"]) == str(package.resolve()))
++    # PKG-IDENT01: the install-time identity judgment. The old path-equality
++    # test (manifest["package"] == this directory) is GONE - from two
++    # different paths, or the same path,先后两个不同包 was indistinguishable;
++    # the identity now comes from the declared package_id on both sides.
++    old_pkg_id = _manifest_package_id(manifest)
++    new_pkg_id = pkg_ident["package_id"]
++    if manifest is None:
++        verdict = "fresh"
++    elif old_pkg_id == UNKNOWN_PACKAGE_ID:
++        # an old manifest (v0.3/0.4/0.5), or one written from an unstamped
++        # package: identity undeclared, so any install here would be a guess
++        verdict = "adopt" if adopt_legacy else "reject_legacy"
++    elif new_pkg_id == UNKNOWN_PACKAGE_ID:
++        # this package declares no identity while the record names one:
++        # it cannot be proven to be that package's successor
++        verdict = "adopt" if adopt_legacy else "reject_legacy"
++    elif new_pkg_id == old_pkg_id:
++        verdict = "upgrade"
++    else:
++        verdict = "reject_mismatch"
++    identity_msg: str | None = None
++    if verdict == "reject_mismatch":
++        identity_msg = (
++            f"package identity mismatch: {MANIFEST_NAME} records package_id "
++            f"{old_pkg_id!r}, but this package declares package_id "
++            f"{new_pkg_id!r}. This version does not support coexisting "
++            "packages (初版不支持并存) - uninstall the recorded package "
++            "first ('python -m ra2forge uninstall --game <dir>'). This "
++            "refusal is NOT bypassable: not by --force, not by "
++            "--allow-content-conflict, not by --adopt-legacy.")
++    elif verdict == "reject_legacy":
++        if old_pkg_id == UNKNOWN_PACKAGE_ID:
++            side = (f"{MANIFEST_NAME} in this directory declares no "
++                    "package_id (an old ra2forge manifest, or an install "
++                    "made from an unstamped package)")
++        else:
++            side = (f"{MANIFEST_NAME} in this directory records package_id "
++                    f"{old_pkg_id!r}, but this package declares no "
++                    f"package_id (no {PACKAGE_MANIFEST_NAME} in the package)")
++        identity_msg = (
++            f"package identity undeclared: {side}, so installing here "
++            "without more information would be a guess. Re-run with "
++            "--adopt-legacy to assert explicitly that this install is the "
++            "intended successor of whatever is recorded (its recorded files "
++            "are then treated as ours and upgraded over), or uninstall the "
++            "recorded package first. --force does NOT bypass this.")
++    # "recorded entries are ours" for the per-file conflict classification:
++    # true for a same-id upgrade and for an explicit adoption only. (The
++    # pre-PKG-IDENT path-equality semantics die here - see the verdict block.)
++    same_install = verdict in ("upgrade", "adopt")
+ 
+     risks, notices = _scan_environment(game)
+ 
++    # SEAL-CHAIN01: install REPLACES the trust anchor (a fresh seal is written
++    # with the new record), so the previous record's seal is NOT a gate here -
++    # but a seal-era record whose seal does not check out is disclosed as a
++    # notice, never silently consumed.
++    if manifest is not None:
++        prev_seal = evaluate_seal(game, manifest, manifest_path)
++        if prev_seal["state"] == "not_expected":
++            if prev_seal["detail"]:
++                notices.append(f"install seal note: {prev_seal['detail']}")
++        elif prev_seal["state"] != "ok":
++            notices.append(
++                f"the existing {MANIFEST_NAME} is seal-era (tool version "
++                f"{manifest.get('version')!r}) but its install seal is "
++                f"{prev_seal['state']} ({prev_seal['detail']}) - this "
++                "install replaces the record and writes a fresh seal "
++                "WITHOUT gating on the old one; run 'python -m ra2forge "
++                "verify --game <dir>' first if you did not expect this")
++
+     for src in files:
+         name = src.name
+         new_sha = sha256_of(src)
+@@ -710,10 +1276,11 @@ def preinstall_plan(package_dir, game_dir) -> dict:
+                     conflict = True
+                     conflicts.append(
+                         f"{name}: a previous ra2forge install (recorded in "
+-                        f"{MANIFEST_NAME}, package {manifest['package']!r}) "
+-                        "would be replaced by a DIFFERENT package - uninstall "
+-                        "it first, or pass --allow-content-conflict to "
+-                        "release this one conflict")
++                        f"{MANIFEST_NAME}, package "
++                        f"{manifest.get('package')!r}) would be replaced by "
++                        "a DIFFERENT package - uninstall it first, or pass "
++                        "--allow-content-conflict to release this one "
++                        "conflict")
+             elif name in old_entries:
+                 risks.append(
+                     f"{name} changed after our install (its sha256 no longer "
+@@ -748,14 +1315,80 @@ def preinstall_plan(package_dir, game_dir) -> dict:
+                     blockers.append(
+                         f"backup-protection: backup slot {bak.name} exists but "
+                         "is not a regular file; refusing to create the backup")
++        # ORPHAN-FIX01: does the backup this replacement would write hold a
++        # USER original (a slot already existed -> backup="keep") or OUR OWN
++        # previous bytes (no slot existed and the previous record names this
++        # file)? Drives the original_absent flag the new entry carries, which
++        # makes uninstall() remove file + slot instead of "restoring" our own
++        # earlier version over a file that never had an original.
++        original_absent = bool(name in old_entries
++                               and not (game / (name + BACKUP_SUFFIX)).is_file())
++        if action == "unchanged":
++            original_absent = bool(previous.get("original_absent"))
+         steps.append({"name": name, "src": src, "action": action,
+                       "backup": backup, "conflict": conflict,
+                       "recorded_backup": recorded_backup, "new_sha": new_sha,
+-                      "dest_sha": dest_sha, "size": src.stat().st_size})
++                      "dest_sha": dest_sha, "size": src.stat().st_size,
++                      "original_absent": original_absent})
++
++    # ORPHAN-FIX01: plan the exit of files the CURRENT record names and this
++    # package dropped. Read-only; dangerous shapes become hard blockers here,
++    # a file changed after install becomes a risk (strict refuses), the rest
++    # is executed by install_package() after the copies, before the record.
++    orphans = _plan_orphans(game, old_entries, {src.name for src in files})
++    for o in orphans:
++        if o["mode"] == "invalid_name":
++            blockers.append(
++                f"corrupt-manifest: the record names {o['name']!r}, which is "
++                "not a plain file name inside the game directory, and the "
++                "new package does not include it - refusing to plan its "
++                "removal instead of guessing")
++        elif o["mode"] in ("unsafe_slot", "unsafe_backup"):
++            blockers.append(
++                f"path-safety: recorded file {o['name']} is no longer the "
++                f"plain file/slot this record recorded ({o['reason']}) - "
++                "refusing to remove or restore it")
++        elif o["mode"] == "invalid_backup":
++            blockers.append(
++                f"corrupt-manifest: entry {o['name']} records backup "
++                f"{o['backup']!r}, which is not the "
++                f"{o['name'] + BACKUP_SUFFIX} slot this tool writes - "
++                "refusing to act on it")
++        elif o["mode"] == "changed":
++            risks.append(
++                f"{o['name']} is recorded in {MANIFEST_NAME} but this package "
++                "does not include it, and its sha256 no longer matches the "
++                "record - it changed after install. Keeping it would leave an "
++                "untracked file (and an untracked backup slot); deleting it "
++                "would delete bytes nobody recorded. Resolve it manually "
++                "('uninstall --force' to drop it, or remove/restore it by "
++                "hand) and re-run the install.")
++        elif o["mode"] == "missing":
++            notices.append(
++                f"{o['name']} is recorded in {MANIFEST_NAME} but already gone "
++                "and this package does not include it - nothing to clean")
++        elif o["mode"] == "remove" and not o.get("bak_ok", True):
++            notices.append(
++                f"the backup {o['name'] + BACKUP_SUFFIX} recorded for "
++                f"{o['name']} is missing - {o['name']} will be removed "
++                "without restoring anything")
+ 
+     return {"blockers": blockers, "conflicts": conflicts, "risks": risks,
+             "notices": notices, "steps": steps, "manifest": manifest,
+-            "corrupt_manifest": corrupt}
++            "corrupt_manifest": corrupt, "orphans": orphans,
++            "identity": {
++                "verdict": verdict,
++                "old_package_id": old_pkg_id,
++                "old_package_version": _manifest_str_field(manifest,
++                                                           "package_version"),
++                "old_package_digest": _manifest_str_field(manifest,
++                                                          "package_digest"),
++                "new_package_id": new_pkg_id,
++                "new_package_version": pkg_ident["package_version"],
++                "adopt_legacy": bool(adopt_legacy),
++                "message": identity_msg,
++            },
++            "package_digest": package_digest_from_steps(steps)}
+ 
+ 
+ def _refusal_text(plan: dict, allowed: list[str] | None = None) -> str:
+@@ -959,9 +1592,145 @@ def _write_step(game: Path, step: dict) -> tuple[str, str]:
+     return backup_name, _copy_verified(step["src"], dest, name)
+ 
+ 
++def _execute_orphan_plan(game: Path, plan: dict, actions: list[str],
++                         undo: list) -> list[dict]:
++    """ORPHAN-FIX01: execute the planned exit of the old record's dropped
++    files. Runs AFTER the package copies landed and BEFORE the record is
++    written, so a copy failure rolls back to the exact pre-run state and the
++    new record never names a file that is already gone. Every slot is
++    re-checked here, at the instant of its write or removal (same discipline
++    as _write_step). Returns the removed_orphans audit list for the manifest.
++    """
++    removed: list[dict] = []
++    old_pkg = (plan.get("manifest") or {}).get("package")
++    for o in plan.get("orphans", []):
++        mode = o["mode"]
++        if mode in ("missing", "changed"):
++            continue  # planned notes only; nothing to write, never adopted
++        name = o["name"]
++        dest = game / name
++        err = _dest_safety_error(game, name)
++        if err:
++            raise OSError(
++                f"orphan slot identity check failed right before the write: "
++                f"{err} - nothing was written for {name}")
++        backup = o.get("backup")
++        if backup:
++            bak_err = _bak_safety_error(game, name)
++            if bak_err:
++                raise OSError(
++                    f"orphan backup slot identity check failed right before "
++                    f"the write: {bak_err} - nothing was written for {name}")
++        # journal BEFORE acting, so a failure anywhere below rolls this back
++        undo.append({"kind": "orphan", "name": name,
++                     "sha": o.get("sha256"), "old_pkg": old_pkg})
++        if mode == "restore":
++            bak = game / backup
++            if not dest.is_file():
++                raise OSError(
++                    f"state changed under the preflight: orphan {name} is "
++                    "gone; re-run the install")
++            _stage_and_replace(bak, dest, None, "orphan-restore")
++            bak.unlink()
++            actions.append(
++                f"restored   {backup} -> {name} (orphan: this package no "
++                "longer includes it; the pre-install original is back)")
++            removed.append({"name": name, "action": "restored_backup",
++                            "backup": backup})
++        elif mode == "remove_absent":
++            if dest.is_file():
++                dest.unlink()
++            if backup:
++                bak = game / backup
++                if bak.is_file():
++                    bak.unlink()
++            actions.append(
++                f"removed    {name} (orphan: this package no longer includes "
++                "it; its backup slot held our own previous version - the "
++                "file never had an original, both are gone)")
++            removed.append({"name": name, "action": "removed_with_own_backup"})
++        else:  # remove
++            if dest.is_file():
++                dest.unlink()
++                actions.append(
++                    f"removed    {name} (orphan: recorded by the previous "
++                    "install, absent from this package)")
++                removed.append({"name": name, "action": "removed"})
++            else:
++                actions.append(
++                    f"missing    {name} (orphan already gone; its recorded "
++                    "backup slot is missing too)")
++                removed.append({"name": name, "action": "already_gone"})
++    return removed
++
++
++def _rollback(game: Path, undo: list) -> list[str]:
++    """ORPHAN-FIX01: best-effort undo of what a FAILED install already wrote.
++
++    Replaced files are restored from the backup slot created for them THIS run
++    (pre-existing "keep" slots are restored but kept); created files are
++    unlinked; an orphan removal is undone by re-installing the file from the
++    previous package the old record names, when that package still holds bytes
++    matching the recorded sha256. Everything goes through the same staged
++    primitives; a rollback that cannot restore something says so instead of
++    pretending. Returns report lines for the raised error.
++    """
++    lines: list[str] = []
++    for u in reversed(undo):
++        try:
++            if u["kind"] == "copy_step":
++                step = u["step"]
++                name = step["name"]
++                dest = game / name
++                if step["backup"] in ("create", "keep"):
++                    slot = name + BACKUP_SUFFIX
++                    bak = game / slot
++                    if bak.is_file():
++                        _stage_and_replace(bak, dest, None, "rollback-restore")
++                        if step["backup"] == "create":
++                            bak.unlink()
++                        lines.append(
++                            f"rolled back {name} (restored from {slot})")
++                        continue
++                    lines.append(
++                        f"could not roll back {name}: its backup slot {slot} "
++                        "is missing - the file is left as this failed install "
++                        "wrote it")
++                elif step["action"] == "created":
++                    if dest.is_file():
++                        dest.unlink()
++                    lines.append(f"rolled back {name} (created file removed)")
++                else:
++                    lines.append(
++                        f"could not roll back {name}: a replaced file without "
++                        "a backup slot cannot be restored - left as written")
++            elif u["kind"] == "orphan":
++                name = u["name"]
++                dest = game / name
++                old_pkg = u.get("old_pkg")
++                src = (Path(old_pkg) / name) if old_pkg else None
++                if (src is not None and src.is_file()
++                        and u.get("sha")
++                        and sha256_of(src) == u["sha"]):
++                    _stage_and_replace(src, dest, u["sha"], "rollback-orphan")
++                    lines.append(
++                        f"rolled back the orphan removal of {name} "
++                        f"(re-installed from the previous package {old_pkg})")
++                else:
++                    lines.append(
++                        f"could not roll back the orphan removal of {name}: "
++                        "the previous package is gone or does not match the "
++                        "recorded sha256 - whatever the pre-upgrade state "
++                        "was for this file, it is not restored by this run")
++        except OSError as exc:
++            lines.append(f"rollback of {u.get('name', '?')} failed: {exc}")
++    return lines
++
++
+ def install_package(package_dir, game_dir, force: bool = False, *,
+                     strict: bool = True,
+-                    allow_content_conflict: bool = False) -> dict:
++                    allow_content_conflict: bool = False,
++                    adopt_legacy: bool = False) -> dict:
+     """Copy a built package into a game directory, backing up what it replaces.
+ 
+     DLC-STRICT01: everything is preflighted read-only first (preinstall_plan).
+@@ -971,10 +1740,32 @@ def install_package(package_dir, game_dir, force: bool = False, *,
+     allow_content_conflict=True releases ONLY the definite-content-conflict
+     class; each released file is printed and recorded under
+     precheck.allowed_content_conflicts in the manifest. force is accepted for
+-    signature compatibility but has never had an effect in this function.
++    signature compatibility but has never had an effect in this function -
++    in particular it can NEVER override a package-identity refusal
++    (PKG-IDENT01). adopt_legacy=True (--adopt-legacy) is the explicit
++    assertion that this install is the intended successor of a record whose
++    package_id is undeclared ("unknown"); it releases the identity gate ONLY,
++    nothing else.
+     """
+     game = Path(game_dir)
+-    plan = preinstall_plan(package_dir, game)
++    plan = preinstall_plan(package_dir, game, adopt_legacy=adopt_legacy)
++    identity = plan["identity"]
++
++    # PKG-IDENT01: the identity verdict gates BEFORE the conflict/risk
++    # machinery (after the corrupt-record/path-safety blockers, which must
++    # stay first - a record that failed its shape checks proves no identity).
++    if identity["verdict"] in ("reject_mismatch", "reject_legacy"):
++        kind = ("package_mismatch" if identity["verdict"] == "reject_mismatch"
++                else "legacy_adopt_required")
++        lines = ["install blocked by package identity - no file has been "
++                 "written:", f"  - {identity['message']}"]
++        report = _refusal_text(plan)
++        if report:
++            lines.append("  full preflight report (informational; releasing "
++                         "these classes would still NOT pass the identity "
++                         "gate):")
++            lines += [f"    {ln}" for ln in report.splitlines()[1:]]
++        raise PackageIdentityBlocked("\n".join(lines), kind=kind, report=plan)
+ 
+     if plan["blockers"]:
+         kind = "corrupt_manifest" if plan["corrupt_manifest"] else "path_safety"
+@@ -1065,52 +1856,129 @@ def install_package(package_dir, game_dir, force: bool = False, *,
+             "- re-run the install", kind="corrupt_manifest", report=plan)
+ 
+     # ---- first filesystem write happens below this line ----
++    # ORPHAN-FIX01: the whole write phase is journaled; any failure from here
++    # to the record write rolls back what this run already committed
++    # (best-effort, reported) instead of leaving an unrecorded half-install.
+     actions: list[str] = []
+     entries: list[dict] = []
+-    for step in plan["steps"]:
+-        name = step["name"]
+-        if step["action"] == "unchanged":
+-            entries.append({"name": name, "action": "unchanged",
+-                            "bytes": step["size"], "sha256": step["new_sha"],
+-                            "backup": step["recorded_backup"]})
+-            actions.append(f"unchanged  {name} (already up to date)")
+-            continue
+-        if step["backup"] == "keep":
+-            actions.append(f"kept       {name + BACKUP_SUFFIX} (original "
+-                           "backup of a previous install, not overwritten)")
+-        elif step["backup"] == "create":
+-            actions.append(f"backup     {name} -> {name + BACKUP_SUFFIX}")
+-        backup_name, landed = _write_step(game, step)
+-        entries.append({"name": name, "action": step["action"],
+-                        "bytes": step["size"], "sha256": landed,
+-                        "backup": backup_name})
+-        actions.append(f"{step['action']:10s} {name} ({step['size']} bytes)")
+-        if step["conflict"]:
+-            actions.append(f"ALLOWED    {name}: content conflict released by "
+-                           "--allow-content-conflict (recorded in the manifest)")
+-
+-    warnings = plan["risks"] + plan["notices"]
+-    manifest = {
+-        "tool": "ra2forge",
+-        "version": TOOL_VERSION,
+-        "installed_at": datetime.now().isoformat(timespec="seconds"),
+-        "package": str(Path(package_dir).resolve()),
+-        "game_dir": str(game.resolve()),
+-        "files": entries,
+-        "warnings": warnings,
+-        "precheck": {
+-            "strict": strict,
+-            "allowed_content_conflicts": allowed,
+-            "risks": plan["risks"],
+-            "notices": plan["notices"],
+-            "conflicts_seen": plan["conflicts"],
+-            "blockers": [],
+-        },
+-    }
+-    manifest_path = game / MANIFEST_NAME
+-    _stage_text_and_replace(
+-        json.dumps(manifest, indent=2, ensure_ascii=False), manifest_path,
+-        "install record")
++    undo: list = []
++    try:
++        for step in plan["steps"]:
++            name = step["name"]
++            if step["action"] == "unchanged":
++                entry = {"name": name, "action": "unchanged",
++                         "bytes": step["size"], "sha256": step["new_sha"],
++                         "backup": step["recorded_backup"]}
++                if step["original_absent"]:
++                    entry["original_absent"] = True
++                entries.append(entry)
++                actions.append(f"unchanged  {name} (already up to date)")
++                continue
++            if step["backup"] == "keep":
++                actions.append(f"kept       {name + BACKUP_SUFFIX} (original "
++                               "backup of a previous install, not overwritten)")
++            elif step["backup"] == "create":
++                actions.append(f"backup     {name} -> {name + BACKUP_SUFFIX}")
++            undo.append({"kind": "copy_step", "step": step, "name": name})
++            backup_name, landed = _write_step(game, step)
++            entry = {"name": name, "action": step["action"],
++                     "bytes": step["size"], "sha256": landed,
++                     "backup": backup_name}
++            if step["original_absent"]:
++                entry["original_absent"] = True
++            entries.append(entry)
++            actions.append(f"{step['action']:10s} {name} ({step['size']} bytes)")
++            if step["conflict"]:
++                actions.append(f"ALLOWED    {name}: content conflict released by "
++                               "--allow-content-conflict (recorded in the manifest)")
++
++        # ORPHAN-FIX01: the old record's dropped files leave AFTER the copies
++        # landed, BEFORE the record is written.
++        removed_orphans = _execute_orphan_plan(game, plan, actions, undo)
++
++        warnings = plan["risks"] + plan["notices"]
++        # PKG-IDENT01: every entry carries the digest of the package version
++        # that supplied it; the record gains the package's declared identity.
++        pkg_digest = plan["package_digest"]
++        for entry in entries:
++            entry["source_package_digest"] = pkg_digest
++        manifest = {
++            "tool": "ra2forge",
++            "version": TOOL_VERSION,
++            "package_id": identity["new_package_id"],
++            "package_version": identity["new_package_version"],
++            "package_digest": pkg_digest,
++            "installed_at": datetime.now().isoformat(timespec="seconds"),
++            "package": str(Path(package_dir).resolve()),
++            "game_dir": str(game.resolve()),
++            "files": entries,
++            "warnings": warnings,
++            "precheck": {
++                "strict": strict,
++                "allowed_content_conflicts": allowed,
++                "risks": plan["risks"],
++                "notices": plan["notices"],
++                "conflicts_seen": plan["conflicts"],
++                "blockers": [],
++            },
++        }
++        if manifest is not None and plan["manifest"] is not None:
++            # audit trail only - judgments never read this block (they keep
++            # using the per-file record + sha256 discipline of ORPHAN-FIX01)
++            manifest["supersedes"] = {
++                "package_id": identity["old_package_id"],
++                "package_version": identity["old_package_version"],
++                "package_digest": identity["old_package_digest"],
++                "package": plan["manifest"].get("package"),
++                "adopted_legacy": identity["verdict"] == "adopt",
++            }
++        if removed_orphans:
++            manifest["removed_orphans"] = removed_orphans
++        manifest_path = game / MANIFEST_NAME
++        # SEAL-CHAIN01: this install REPLACES the record; keep its previous
++        # bytes so a seal-write failure can restore them exactly. The
++        # preflight already parsed this record as UTF-8 JSON, so the decode
++        # below cannot fail for the state this function was planned from.
++        prev_record_text: str | None = None
++        if manifest_path.is_file():
++            prev_record_text = (manifest_path.read_bytes()
++                                .decode("utf-8-sig")
++                                .replace("\r\n", "\n").replace("\r", "\n"))
++        _stage_text_and_replace(
++            json.dumps(manifest, indent=2, ensure_ascii=False), manifest_path,
++            "install record")
++        # SEAL-CHAIN01: the seal is written AFTER the record it protects. If
++        # it cannot be written, the fresh record is rolled back to the exact
++        # previous bytes (or removed, when there was none) rather than left
++        # standing without its seal - a seal-era record without a seal is the
++        # REFUSED state (CLI exit 7 on uninstall), so an install must never
++        # manufacture one silently.
++        try:
++            write_install_seal(game, manifest)
++        except BaseException as seal_exc:
++            try:
++                if prev_record_text is None:
++                    manifest_path.unlink()
++                else:
++                    _stage_text_and_replace(prev_record_text, manifest_path,
++                                            "install record restore")
++            except OSError:
++                pass
++            raise OSError(
++                f"the install seal ({SEAL_NAME}) could not be written "
++                f"({seal_exc}) - the install record was rolled back to its "
++                "previous bytes, the package files are UNCHANGED; nothing "
++                "was left in the unsealed state") from seal_exc
++        actions.append(f"written    {SEAL_NAME}")
++    except BaseException as exc:
++        report = _rollback(game, undo)
++        if report:
++            if isinstance(exc, Exception):
++                raise OSError(
++                    f"{exc}\n  install aborted mid-write; best-effort "
++                    "rollback of what this run wrote:\n    "
++                    + "\n    ".join(report)) from exc
++        raise
+     actions.append(f"written    {MANIFEST_NAME}")
+     return {"game_dir": game, "manifest": manifest_path, "actions": actions,
+             "warnings": warnings, "files": entries, "risks": plan["risks"],
+@@ -1123,12 +1991,22 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+ 
+     With legacy=True it also cleans the artefacts of ra2forge <= FORGE-1
+     (BATTLEMD.INI override, loose maps, mix, ra2forge_uninstall.txt).
++
++    SEAL-CHAIN01: before the first unlink, the install seal is judged. A
++    seal-era manifest (tool >= 0.7) whose seal is MISSING, MISMATCHED,
++    CORRUPT or ALIASED refuses the whole uninstall - nothing removed, nothing
++    restored, the record kept - and the report carries
++    refused="seal_missing" / "seal_mismatch" (CLI exits 7 / 8). --force does
++    NOT release this gate. Old manifests (no seal) uninstall as before, with
++    an explicit degraded-mode warning. On a completed uninstall the seal is
++    removed together with the record it protects.
+     """
+     game = Path(game_dir)
+     if not game.is_dir():
+         raise FileNotFoundError(f"game directory not found: {game}")
+     actions: list[str] = []
+     warnings: list[str] = []
++    seal_removed = False
+ 
+     manifest_path = game / MANIFEST_NAME
+     # DLC-HIGH3-FIX01 (A1 / HIGH-4 read side / LOW-8): the install record is
+@@ -1145,7 +2023,43 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+     elif manifest is None:
+         warnings.append(f"no {MANIFEST_NAME} in {game}: nothing recorded to remove "
+                         f"(use --legacy for installs made by an older ra2forge)")
++        if (game / SEAL_NAME).is_file():
++            warnings.append(
++                f"a {SEAL_NAME} is present without an install record - left "
++                "in place (this tool only removes it as part of the "
++                "record's completed lifecycle); delete it by hand if it is "
++                "stale")
+     else:
++        # SEAL-CHAIN01: the seal gate, BEFORE the first unlink. uninstall()
++        # deletes and restores exactly what this record names, so on an
++        # unverified record that is the W21 UNCOVERED §3 forgery surface -
++        # refuse instead of trusting it. --force never releases this: force
++        # means "delete a recorded file whose bytes changed", never "trust a
++        # record whose seal does not check out".
++        seal_info = evaluate_seal(game, manifest, manifest_path)
++        if seal_info["state"] == "not_expected":
++            if seal_info["detail"]:
++                warnings.append(f"install seal note: {seal_info['detail']}")
++            warnings.append(
++                f"legacy manifest (tool version "
++                f"{manifest.get('version')!r}): no install seal expected - "
++                "proceeding WITHOUT seal protection (degraded mode; the "
++                "record is not verified against a seal)")
++        elif seal_info["state"] != "ok":
++            kind = ("seal_missing" if seal_info["state"] == "missing"
++                    else "seal_mismatch")
++            warnings.append(
++                f"uninstall REFUSED: install seal {seal_info['state']} - "
++                f"{seal_info['detail']}. The manifest and every recorded "
++                "file and backup slot are UNTOUCHED. Run 'python -m "
++                "ra2forge verify --game <dir>' for the drift report; if "
++                "the manifest is the one you want, re-run the install of "
++                "the SAME package to re-establish the seal, then uninstall "
++                "again. --force does NOT bypass this refusal.")
++            return {"game_dir": game, "actions": actions,
++                    "warnings": warnings, "seal": seal_info,
++                    "refused": kind}
++        seal_removed = seal_info["state"] == "ok"
+         refused = False
+         for entry in reversed(manifest.get("files", [])):
+             name = entry.get("name", "")
+@@ -1225,6 +2139,12 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+                 # refusal guarantees is the refused entry's own file - the other
+                 # entries of the same record are still processed. Measured:
+                 # DLC-HARDEN4-FIX02 raw/MB_*_post.txt, fsdiff 2, not 0.)
++            # ORPHAN-FIX01: the record can prove the backup slot holds OUR own
++            # previous version (the file was created by an earlier install and
++            # later replaced) - such a slot is removed with the file, never
++            # "restored" over a file that never had an original. Old manifests
++            # without the flag behave exactly as before.
++            absent = bool(entry.get("original_absent"))
+             if not dest.is_file():
+                 actions.append(f"missing    {name} (already gone)")
+             elif force or sha256_of(dest) == entry.get("sha256"):
+@@ -1241,26 +2161,32 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+                 continue
+             if backup:
+                 if bak.is_file():
+-                    # DLC-HIGH1-FIX01: identity re-check immediately before
+-                    # the restore write - the slot must still be empty, never
+-                    # a link or a file that appeared after the recorded file
+-                    # was removed (a restore through it would write into
+-                    # whatever that alias points at).
+-                    if dest.is_symlink() or dest.exists():
+-                        warnings.append(
+-                            f"cannot restore {backup} -> {name}: something "
+-                            f"now occupies the slot after the recorded file "
+-                            f"was removed - backup {backup} kept, resolve "
+-                            f"the slot manually")
+-                        refused = True
+-                        continue
+-                    # expected_sha=None: the staged bytes are verified against
+-                    # the backup itself - the manifest records the sha of what
+-                    # was INSTALLED, not of the original the backup holds.
+-                    _stage_and_replace(bak, dest, None, "restore")
+-                    bak.unlink()
+-                    actions.append(f"restored   {backup} -> {name}")
+-                else:
++                    if absent:
++                        bak.unlink()
++                        actions.append(
++                            f"removed    {backup} (original absent - the slot "
++                            "held our own previous version, nothing to restore)")
++                    else:
++                        # DLC-HIGH1-FIX01: identity re-check immediately before
++                        # the restore write - the slot must still be empty, never
++                        # a link or a file that appeared after the recorded file
++                        # was removed (a restore through it would write into
++                        # whatever that alias points at).
++                        if dest.is_symlink() or dest.exists():
++                            warnings.append(
++                                f"cannot restore {backup} -> {name}: something "
++                                f"now occupies the slot after the recorded file "
++                                f"was removed - backup {backup} kept, resolve "
++                                f"the slot manually")
++                            refused = True
++                            continue
++                        # expected_sha=None: the staged bytes are verified against
++                        # the backup itself - the manifest records the sha of what
++                        # was INSTALLED, not of the original the backup holds.
++                        _stage_and_replace(bak, dest, None, "restore")
++                        bak.unlink()
++                        actions.append(f"restored   {backup} -> {name}")
++                elif not absent:
+                     warnings.append(
+                         f"backup {backup} is missing - {name} was not restored")
+         if refused:
+@@ -1277,6 +2203,13 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+         else:
+             manifest_path.unlink()
+             actions.append(f"removed    {MANIFEST_NAME}")
++            # SEAL-CHAIN01: the seal completes its lifecycle together with
++            # the record it protects - only when the seal itself was verified
++            # (a stale seal on a legacy record is left for the user, never
++            # silently consumed).
++            if seal_removed and (game / SEAL_NAME).is_file():
++                (game / SEAL_NAME).unlink()
++                actions.append(f"removed    {SEAL_NAME}")
+ 
+     if legacy:
+         # files already handled by the manifest (removed + restored to their
+@@ -1284,7 +2217,8 @@ def uninstall(game_dir, legacy: bool = False, drop_legacy_battlemd: bool = False
+         handled = {e.get("name", "") for e in (manifest or {}).get("files", [])}
+         _uninstall_legacy(game, actions, warnings, drop_legacy_battlemd, handled)
+ 
+-    return {"game_dir": game, "actions": actions, "warnings": warnings}
++    return {"game_dir": game, "actions": actions, "warnings": warnings,
++            "refused": None}
+ 
+ 
+ def _uninstall_legacy(game: Path, actions: list[str], warnings: list[str],
+diff --git a/ra2forge/verify.py b/ra2forge/verify.py
+new file mode 100644
+index 0000000..4dd01b6
+--- /dev/null
++++ b/ra2forge/verify.py
+@@ -0,0 +1,293 @@
++"""verify - read-only drift detection for an installed ra2forge package.
++
++SEAL-CHAIN01 (W23): the manifest is plain-text JSON and uninstall acts on
++it, so a hand-edited or accidentally mangled manifest can silently drive
++deletions and restores (W21 UNCOVERED §3). `verify` reports - without
++writing anything:
++
++  1. manifest structure   - JSON parses, required fields present and
++                            well-formed (plain file name + 64-hex sha256 per
++                            entry, package_digest present for seal-era
++                            manifests);
++  2. package_digest       - recomputed over the manifest's OWN files[]
++                            records vs the recorded package_digest. NOTE:
++                            this proves the manifest's INTERNAL consistency
++                            only - the records could still disagree with
++                            the disk (check 3 is what looks at the disk);
++  3. per-file disk check  - the actual sha256 of every recorded file vs the
++                            recorded one: ok / changed / missing (a file
++                            that cannot be read is reported as unreadable
++                            and counts as drift);
++  4. orphans              - ra2forge-characteristic files on disk that the
++                            manifest does not account for (*.ra2forge.bak,
++                            *.ra2forge.removed.bak, *.ra2forge-stage*),
++                            minus the manifest/seal pair itself. Orphans
++                            are listed but do NOT change the exit code;
++  5. install seal         - for seal-era manifests (tool >= 0.7) the seal
++                            must exist and match the manifest's canonical
++                            bytes; older manifests run in DEGRADED mode
++                            (warned, still fully executed).
++
++BOUNDARY (do not widen when quoting this): the seal detects ACCIDENTS - it
++is NOT anti-tamper and NOT a security boundary. Whoever can edit the
++manifest can recompute the seal. Nothing here is cryptographic trust.
++"""
++
++from __future__ import annotations
++
++import hashlib
++import json
++import os
++from pathlib import Path
++
++from .install import (
++    MANIFEST_NAME,
++    SEAL_NAME,
++    _derived_slot_error,
++    evaluate_seal,
++    _manifest_is_seal_era,
++    sha256_of,
++    EXIT_VERIFY_STRUCTURAL,
++    EXIT_VERIFY_DIGEST,
++    EXIT_SEAL_MISSING,
++    EXIT_SEAL_MISMATCH,
++    EXIT_VERIFY_DRIFT,
++)
++
++EXIT_OK = 0
++
++# most severe first; verify reports every finding and exits with the worst
++_SEVERITY_ORDER = (EXIT_VERIFY_STRUCTURAL, EXIT_VERIFY_DIGEST,
++                   EXIT_SEAL_MISSING, EXIT_SEAL_MISMATCH, EXIT_VERIFY_DRIFT)
++
++EXIT_MEANINGS = {
++    EXIT_OK: "everything ok (orphans, if any, are listed without changing "
++             "the code; a directory with no install record also verifies "
++             "as 0 - nothing to check)",
++    1: "the check itself failed to run (unexpected error)",
++    2: "command-line usage error (argparse)",
++    EXIT_VERIFY_STRUCTURAL: "manifest structure unusable (not JSON, required "
++                            "fields missing/malformed)",
++    EXIT_VERIFY_DIGEST: "package_digest mismatch - the manifest's own "
++                        "records are not self-consistent",
++    EXIT_SEAL_MISSING: "install seal MISSING for a seal-era manifest "
++                       "(tool >= 0.7)",
++    EXIT_SEAL_MISMATCH: "install seal MISMATCH / corrupt / aliased",
++    EXIT_VERIFY_DRIFT: "drift: recorded files changed or missing on disk",
++}
++
++_ORPHAN_MARKERS = (".ra2forge.bak", ".ra2forge.removed.bak", ".ra2forge-stage")
++
++
++def _is_orphan_name(name: str) -> bool:
++    low = name.lower()
++    return any(low.endswith(m) or m in low for m in _ORPHAN_MARKERS)
++
++
++def _entry_structural_error(entry, idx: int) -> str | None:
++    """Why this files[] entry is structurally unusable, or None."""
++    where = f"files[{idx}]"
++    if not isinstance(entry, dict):
++        return f"{where}: not a JSON object"
++    name = entry.get("name")
++    if not isinstance(name, str) or not name:
++        return f"{where}: 'name' missing or not a string"
++    if (name in (".", "..") or Path(name).name != name
++            or "/" in name or "\\" in name):
++        return (f"{where}: {name!r} is not a plain file name inside the "
++                "game directory")
++    sha = entry.get("sha256")
++    if not isinstance(sha, str) or len(sha) != 64:
++        return f"{where} ({name}): 'sha256' missing or not a 64-char string"
++    if any(ch not in "0123456789abcdef" for ch in sha.lower()):
++        return f"{where} ({name}): 'sha256' is not 64 hex digits"
++    return None
++
++
++def verify_install(game_dir) -> dict:
++    """Read-only verification of the install record in game_dir.
++
++    Returns a JSON-serialisable report; report["exit_code"] is the CLI exit
++    code (see EXIT_MEANINGS / verify --help). Never writes, never deletes.
++    """
++    game = Path(game_dir)
++    manifest_path = game / MANIFEST_NAME
++    report: dict = {
++        "tool": "ra2forge",
++        "command": "verify",
++        "game_dir": str(game),
++        "manifest_present": False,
++        "manifest_version": None,
++        "legacy_degraded": False,
++        "structural": [],
++        "digest": None,
++        "seal": None,
++        "files": [],
++        "orphans": [],
++        "warnings": [],
++        "counts": {"ok": 0, "changed": 0, "missing": 0, "orphans": 0},
++        "exit_code": EXIT_OK,
++        "exit_code_meaning": EXIT_MEANINGS[EXIT_OK],
++    }
++
++    def worst_of(codes) -> int:
++        for code in _SEVERITY_ORDER:
++            if code in codes:
++                return code
++        return EXIT_OK
++
++    def finalize(codes) -> None:
++        code = worst_of(codes)
++        report["exit_code"] = code
++        report["exit_code_meaning"] = EXIT_MEANINGS.get(
++            code, f"exit {code}")
++
++    if not manifest_path.is_file():
++        report["warnings"].append(
++            f"no {MANIFEST_NAME} in {game} - nothing to verify "
++            "(an install with 'python -m ra2forge install' writes it)")
++        return report
++    report["manifest_present"] = True
++
++    # the record is never read through an alias - same criteria as
++    # install/uninstall use for the record slot
++    rec_err = _derived_slot_error(game, MANIFEST_NAME, "install record")
++    if rec_err:
++        report["structural"].append(f"install record unusable: {rec_err}")
++        finalize([EXIT_VERIFY_STRUCTURAL])
++        return report
++    try:
++        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
++    except (OSError, UnicodeDecodeError) as exc:
++        report["structural"].append(f"{MANIFEST_NAME} is not readable "
++                                    f"UTF-8 text ({exc})")
++        finalize([EXIT_VERIFY_STRUCTURAL])
++        return report
++    except ValueError as exc:
++        report["structural"].append(f"{MANIFEST_NAME} is not valid JSON "
++                                    f"({exc})")
++        finalize([EXIT_VERIFY_STRUCTURAL])
++        return report
++    if not isinstance(manifest, dict):
++        report["structural"].append("malformed structure (expected a JSON "
++                                    "object)")
++        finalize([EXIT_VERIFY_STRUCTURAL])
++        return report
++    version = manifest.get("version")
++    report["manifest_version"] = version if isinstance(version, str) else None
++
++    legacy = not _manifest_is_seal_era(manifest)
++    report["legacy_degraded"] = legacy
++    if legacy:
++        report["warnings"].append(
++            f"legacy manifest (tool version {manifest.get('version')!r}): "
++            "predates the install seal - verifying in DEGRADED mode (no "
++            "package_digest / seal checks; file-level checks still run)")
++
++    entries = manifest.get("files")
++    if not isinstance(entries, list):
++        report["structural"].append("malformed structure (expected a "
++                                    "'files' list)")
++        finalize([EXIT_VERIFY_STRUCTURAL])
++        return report
++
++    # -- 1. structure
++    bad_indexes: set[int] = set()
++    for idx, entry in enumerate(entries):
++        err = _entry_structural_error(entry, idx)
++        if err:
++            report["structural"].append(err)
++            bad_indexes.add(idx)
++    if not legacy and not isinstance(manifest.get("package_digest"), str):
++        report["structural"].append("seal-era manifest lacks a string "
++                                    "'package_digest' field")
++        bad_indexes.add(-1)  # marker: digest checks are meaningless
++    structural_any = bool(report["structural"])
++
++    # -- 2. package_digest (self-consistency of the RECORDS ONLY)
++    if legacy:
++        report["digest"] = None
++    elif structural_any:
++        report["digest"] = {"recorded": manifest.get("package_digest"),
++                            "recomputed": None, "match": None,
++                            "note": "skipped - structural failures above "
++                                    "make the records unusable"}
++    else:
++        lines = sorted(f"{e['name']} {e['sha256'].lower()}" for e in entries)
++        recomputed = hashlib.sha256("\n".join(lines).encode("utf-8")) \
++            .hexdigest()
++        recorded = manifest.get("package_digest")
++        report["digest"] = {"recorded": recorded, "recomputed": recomputed,
++                            "match": recorded == recomputed,
++                            "note": "self-consistency of the manifest's own "
++                                    "records only - NOT proof of what is on "
++                                    "disk (see files[])"}
++
++    # -- 5. seal (independent of JSON validity: hashes the canonical bytes)
++    seal_info = evaluate_seal(game, manifest, manifest_path)
++    seal_state = seal_info["state"]
++    report["seal"] = {"expected": not legacy, "state": seal_state,
++                      "detail": seal_info["detail"],
++                      "path": seal_info["path"]}
++    if seal_state == "not_expected" and seal_info["detail"]:
++        report["warnings"].append(f"install seal note: {seal_info['detail']}")
++    seal_codes: set[int] = set()
++    if seal_state == "missing":
++        seal_codes.add(EXIT_SEAL_MISSING)
++    elif seal_state in ("mismatch", "corrupt", "aliased"):
++        seal_codes.add(EXIT_SEAL_MISMATCH)
++
++    # -- 3. per-file disk check (structurally valid entries only)
++    for idx, entry in enumerate(entries):
++        if idx in bad_indexes:
++            continue
++        name = entry["name"]
++        recorded_sha = entry["sha256"].lower()
++        dest = game / name
++        if not dest.is_file():
++            status, disk_sha = "missing", None
++        else:
++            try:
++                disk_sha = sha256_of(dest)
++                status = "ok" if disk_sha == recorded_sha else "changed"
++            except OSError as exc:
++                disk_sha = None
++                status = f"unreadable ({exc})"
++        report["files"].append({"name": name, "recorded_sha256": recorded_sha,
++                                "disk_sha256": disk_sha, "status": status})
++    counts = report["counts"]
++    counts["ok"] = sum(1 for f in report["files"] if f["status"] == "ok")
++    counts["changed"] = sum(1 for f in report["files"]
++                            if f["status"] == "changed")
++    counts["missing"] = sum(1 for f in report["files"]
++                            if f["status"].startswith(("missing",
++                                                       "unreadable")))
++
++    # -- 4. orphans (listed; never change the exit code)
++    accounted = {os.path.normcase(MANIFEST_NAME),
++                 os.path.normcase(SEAL_NAME)}
++    for idx, entry in enumerate(entries):
++        if idx in bad_indexes or not isinstance(entry, dict):
++            continue
++        if isinstance(entry.get("name"), str):
++            accounted.add(os.path.normcase(entry["name"]))
++        backup = entry.get("backup")
++        if isinstance(backup, str) and backup:
++            accounted.add(os.path.normcase(backup))
++    for p in sorted(game.iterdir()):
++        if not p.is_file() or not _is_orphan_name(p.name):
++            continue
++        if os.path.normcase(p.name) in accounted:
++            continue
++        report["orphans"].append(p.name)
++    counts["orphans"] = len(report["orphans"])
++
++    codes: set[int] = set(seal_codes)
++    if structural_any:
++        codes.add(EXIT_VERIFY_STRUCTURAL)
++    if report["digest"] and report["digest"]["match"] is False:
++        codes.add(EXIT_VERIFY_DIGEST)
++    if counts["changed"] or counts["missing"]:
++        codes.add(EXIT_VERIFY_DRIFT)
++    finalize(codes)
++    return report

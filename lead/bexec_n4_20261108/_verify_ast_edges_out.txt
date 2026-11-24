@@ -1,0 +1,59 @@
+BASE sha256=517889c68f037ab63f9c38300e627d34457b7be9fab0362e425783c7ec5ba636 bytes=399508
+CAND sha256=ca23c116064b25a61d6072f93458673990b0bf766b2430524f1980addd3c76d2 bytes=412759
+
+== 禁止集合逐符号（独立 ast.Call/Name/Attribute/Assign 口径） ==
+symbol                 | base call/load/attr/dyn/alias | cand call/load/attr/dyn/alias | delta
+-----------------------------------------------------------------------------------------------
+MiniDumpWriteDump      | 1/0/3/0/0        | 1/0/3/0/0        | UNCHANGED
+SuspendThread          | 0/0/0/0/0        | 0/0/0/0/0        | UNCHANGED
+StackWalk              | 0/0/0/0/0        | 0/0/0/0/0        | UNCHANGED
+StackWalk64            | 0/0/0/0/0        | 0/0/0/0/0        | UNCHANGED
+ReadProcessMemory      | 1/0/3/0/0        | 1/0/3/0/0        | UNCHANGED
+WriteProcessMemory     | 0/0/0/0/0        | 0/0/0/0/0        | UNCHANGED
+VirtualAllocEx         | 0/0/0/0/0        | 0/0/0/0/0        | UNCHANGED
+CreateRemoteThread     | 0/0/0/0/0        | 0/0/0/0/0        | UNCHANGED
+SetWindowsHookEx       | 0/0/0/0/0        | 0/0/0/0/0        | UNCHANGED
+OpenProcess            | 5/0/15/0/0       | 5/0/15/0/0       | UNCHANGED
+TerminateProcess       | 0/0/0/0/0        | 0/0/0/0/0        | UNCHANGED
+候选有差异的禁止符号: 无
+
+== 禁止集合调用边明细（base / cand）==
+  MiniDumpWriteDump      base=[(3658, 'dbgh.MiniDumpWriteDump')]
+                         cand=[(3673, 'dbgh.MiniDumpWriteDump')]
+  SuspendThread          base=[]
+                         cand=[]
+  StackWalk              base=[]
+                         cand=[]
+  StackWalk64            base=[]
+                         cand=[]
+  ReadProcessMemory      base=[(2917, 'k32.ReadProcessMemory')]
+                         cand=[(2932, 'k32.ReadProcessMemory')]
+  WriteProcessMemory     base=[]
+                         cand=[]
+  VirtualAllocEx         base=[]
+                         cand=[]
+  CreateRemoteThread     base=[]
+                         cand=[]
+  SetWindowsHookEx       base=[]
+                         cand=[]
+  OpenProcess            base=[(782, 'k32.OpenProcess'), (859, 'k32.OpenProcess'), (2896, 'k32.OpenProcess'), (3640, 'k32.OpenProcess'), (4353, '_k32.OpenProcess')]
+                         cand=[(797, 'k32.OpenProcess'), (874, 'k32.OpenProcess'), (2911, 'k32.OpenProcess'), (3655, 'k32.OpenProcess'), (4368, '_k32.OpenProcess')]
+  TerminateProcess       base=[]
+                         cand=[]
+
+== 字符串字面量命中禁止名（仅旁证，不代替 call 边）==
+  （若无输出则两版均无此类字面量）
+
+== proc / ctypes / 动态 ==
+  proc_edges base=1 cand=1
+    base :1099 subprocess.Popen args=[] marks=[]
+    cand :1114 subprocess.Popen args=[] marks=[]
+  ctypes 链合计 base=220 cand=220 种类 base=24 cand=24
+  import 语句数 base=22 cand=24；目标集合差: NEW=[] GONE=[]
+
+== 调用边差集 ==
+  新增边 10 种 / 消失边 0 种；总种类 base=536 cand=546
+  新增边: [('_emit_f', 3), ('_finish', 13), ('classify_except_freshness', 3), ('make_pre_freshness_snapshot', 1), ('out.update', 1), ('post.get', 4), ('post_observed.get', 2), ('post_observed.update', 1), ('pre.get', 4), ('src.stat', 2)]
+  消失边: []
+
+独立判定：禁止集合新增调用/引用/动态解析/别名 = 无 → PASS(该项)
