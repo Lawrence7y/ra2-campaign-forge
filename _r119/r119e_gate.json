@@ -1,0 +1,213 @@
+{
+ "e2_new_exit": {
+  "107": 1,
+  "108": 1,
+  "109": 1,
+  "110": 1,
+  "111": 1,
+  "112": 1,
+  "113": 1,
+  "114": 1,
+  "115": 1,
+  "116": 1,
+  "117": 1,
+  "118": 1,
+  "119": 1,
+  "120": 1,
+  "121": 1,
+  "122": 1,
+  "123": 1
+ },
+ "checks": [
+  {
+   "name": "E7 新 gate 的 C16_FLOORS 覆盖 117 个节，与盘上 117 节逐个相同（7..123，缺号 none）",
+   "ok": true,
+   "detail": {
+    "n": 117,
+    "on_disk": 117
+   }
+  },
+  {
+   "name": "E8 GATE_VER = R119，与 DISC_RECHECK 第 20 行登记的 R119 一致（C10 独立性：两处必须同改）",
+   "ok": true,
+   "detail": {
+    "row20_col6": "grep=(?m)^GATE_VER = 'R119'"
+   }
+  },
+  {
+   "name": "E1 基线：新 gate 在未变异树上 exit 0",
+   "ok": true,
+   "detail": {
+    "exit": 0,
+    "fails": [
+     "  NOTE  C11b loadable-registry: declared=12 rows, gap(claims-none, can never FAIL)=7 ids=[11, 12, 13, 14, 15, 17, 26]"
+    ]
+   }
+  },
+  {
+   "name": "E2 【缺口一已堵】C15 覆盖集之外的全部 17 节逐节清空：旧 gate 漏检 16/17（exit 0），新 gate 漏检 0/17",
+   "ok": true,
+   "detail": {
+    "new_exit": {
+     "107": 1,
+     "108": 1,
+     "109": 1,
+     "110": 1,
+     "111": 1,
+     "112": 1,
+     "113": 1,
+     "114": 1,
+     "115": 1,
+     "116": 1,
+     "117": 1,
+     "118": 1,
+     "119": 1,
+     "120": 1,
+     "121": 1,
+     "122": 1,
+     "123": 1
+    },
+    "old_leaks": [
+     "107",
+     "108",
+     "109",
+     "110",
+     "111",
+     "112",
+     "113",
+     "114",
+     "115",
+     "116",
+     "117",
+     "118",
+     "119",
+     "120",
+     "121",
+     "122"
+    ],
+    "outside": [
+     107,
+     108,
+     109,
+     110,
+     111,
+     112,
+     113,
+     114,
+     115,
+     116,
+     117,
+     118,
+     119,
+     120,
+     121,
+     122,
+     123
+    ]
+   }
+  },
+  {
+   "name": "E3 【缺口二已堵】清空单节 2.50（在 C15 覆盖集内）：新 gate exit 1 且 FAIL 点名 C16；旧 gate 在同一变异上 exit 0（其 FAIL 行如实抄录：['  NOTE  C11b loadable-registry: declared=12 rows, gap(claims-none, can never FAIL)=7 ids=[11, 12, 13, 14, 15, 17, 26]']）",
+   "ok": true,
+   "detail": {
+    "old": 0,
+    "new": 1,
+    "fail_line": [
+     "  NOTE  C16d floor-table pin: df02e3169aa109b2 (OK)",
+     "  NOTE  C16 per-section floors: 117 sections measured (pinned 117), hollow/deficient 1, missing 0, unpinned 0, min margin -1279"
+    ],
+    "old_fails": [
+     "  NOTE  C11b loadable-registry: declared=12 rows, gap(claims-none, can never FAIL)=7 ids=[11, 12, 13, 14, 15, 17, 26]"
+    ]
+   }
+  },
+  {
+   "name": "E4 正控（不误伤合法改写）：2.80 删末尾 10%% 行 ⇒ 新 gate 仍 exit 0",
+   "ok": true,
+   "detail": {
+    "exit": 0,
+    "fails": [
+     "  NOTE  C11b loadable-registry: declared=12 rows, gap(claims-none, can never FAIL)=7 ids=[11, 12, 13, 14, 15, 17, 26]"
+    ]
+   }
+  },
+  {
+   "name": "E5 正控（不误伤增节）：追加非空新节 ⇒ 新 gate 仍 exit 0",
+   "ok": true,
+   "detail": {
+    "exit": 0,
+    "fails": [
+     "  NOTE  C11b loadable-registry: declared=12 rows, gap(claims-none, can never FAIL)=7 ids=[11, 12, 13, 14, 15, 17, 26]"
+    ]
+   }
+  },
+  {
+   "name": "E6 反控（C16 有牙且有名字）：清空中位节 2.65 ⇒ exit 1，FAIL 行含 C16：['  NOTE  C16d floor-table pin: df02e3169aa109b2 (OK)']",
+   "ok": true,
+   "detail": {
+    "fail": [
+     "  NOTE  C11b loadable-registry: declared=12 rows, gap(claims-none, can never FAIL)=7 ids=[11, 12, 13, 14, 15, 17, 26]",
+     "  FAIL  C16 section(s) hollowed out (body below per-section floor): [(65, 130, 1172)] (a section must not lose more than half its pinned body; if a section legitimately shrank, re-pin C16_FLOORS deliberately)",
+     "[exit 1] 1 FAIL"
+    ]
+   }
+  },
+  {
+   "name": "E10 反控（C16b 有牙）：追加 3 个表外新节（上限 2）⇒ exit 1 且 FAIL 点名 C16b",
+   "ok": true,
+   "detail": {
+    "exit": 1,
+    "fail": [
+     "  FAIL  C16b unpinned sections 3 > 2 (ids [997, 998, 999]): new sections must be pinned into C16_FLOORS deliberately, otherwise each new section silently acquires a permanent no-check ticket (same shape as claims-none)"
+    ]
+   }
+  },
+  {
+   "name": "E11 正控（C16b 不误伤）：只追加 1 个表外新节 ⇒ 仍 exit 0",
+   "ok": true,
+   "detail": {
+    "exit": 0,
+    "fails": [
+     "  NOTE  C11b loadable-registry: declared=12 rows, gap(claims-none, can never FAIL)=7 ids=[11, 12, 13, 14, 15, 17, 26]"
+    ]
+   }
+  },
+  {
+   "name": "E12 反控（C16c 有牙，审计②）：追加只有标题行的表外新节 ⇒ exit 1 且 FAIL 点名 C16c",
+   "ok": true,
+   "detail": {
+    "exit": 1,
+    "fail": [
+     "  FAIL  C16c unpinned section(s) with no body text: [998] (a new section must carry at least one non-empty, non-heading line; a title-only shell is not a section)"
+    ]
+   }
+  },
+  {
+   "name": "E13 正控（C16c 不误伤）：带 1 行正文的表外新节 ⇒ 仍 exit 0",
+   "ok": true,
+   "detail": {
+    "exit": 0,
+    "fails": [
+     "  NOTE  C11b loadable-registry: declared=12 rows, gap(claims-none, can never FAIL)=7 ids=[11, 12, 13, 14, 15, 17, 26]"
+    ]
+   }
+  },
+  {
+   "name": "E14 反控（C16d 有牙，审计③）：只改 2.50 的 floor 不同步改 sha ⇒ exit 1 且 FAIL 点名 C16d",
+   "ok": true,
+   "detail": {
+    "exit": 1,
+    "fail": [
+     "  NOTE  C16d floor-table pin: 319c83a184b39c51 (TAMPERED)"
+    ]
+   }
+  },
+  {
+   "name": "E9 反控（新 gate 不恒 FAIL）：原样重跑仍 exit 0",
+   "ok": true,
+   "detail": {
+    "exit": 0
+   }
+  }
+ ]
+}

@@ -19,7 +19,7 @@ R47 落地；R48 装下半截（C7）；R49 关闭 T4 审计查出的 6 处「�
 退出码：0 全通过；1 有 FAIL。
 说明：本脚本**不使用**任何非 ASCII 打印字符（规避 GBK 控制台 UnicodeEncodeError）。
 """
-import io, os, re, sys, hashlib, hashlib
+import io, os, re, sys, hashlib, hashlib, json
 
 ROOT = r'D:\Project\ra2-campaign-forge'
 if not os.path.isdir(ROOT):                      # R73：POSIX 上按本文件位置反推三层
@@ -30,7 +30,7 @@ DR   = os.path.join(R14, 'DISC_RECHECK.tsv')
 BRD  = os.path.join(R14, 'STATUS_BOARD.md')
 LED  = os.path.join(ROOT, 'lead', 'GOAL_THREE_TARGETS_20261018.md')
 SELF = os.path.abspath(__file__)
-GATE_VER = 'R103'
+GATE_VER = 'R120'
 FREEZE_SHA256 = '0ffeeff5acb825cd5204abd013fcbe0a98a0d1df47b9a20c6a8f35c7b72aab61'   # DISC_UNVERIFIABLE.tsv 的 sha256（防静默篡改）
 
 # 阈值（可用命令行覆盖：--c6max=120）
@@ -445,6 +445,187 @@ if len(_secs15) < C15_FLOOR_HEAD:
     fails.append('C15 R14_COMMON 2.x headings %d < floor %d' % (len(_secs15), C15_FLOOR_HEAD))
 notes.append('C15 content floor: 2.x sections %d (pinned %d), last %s (pinned %d), bytes %d (floor %d)'
              % (len(_secs15), len(C15_SECS), max(_secs15) if _secs15 else 'none', C15_LAST, _bytes15, C15_FLOOR_BYTES))
+
+# ---- C16 (R119 新增) 逐节字节下界：补 C15 的两处结构性缺口 ----
+# R119 实测（_r119/r119a_hole.py，8/8 PASS）：
+#   缺口一 C15_SECS 硬编码 7..106 共 100 节，而盘上已有 116 节（7..122）⇒ 2.107..2.122 共 16 节、
+#     168,835 B（占 2.x 正文 21.7 个百分点）完全不在覆盖集内。沙箱实证：把这 16 节逐节清空成
+#     「只剩标题行」，未装 C16 的门禁 16/16 全部 exit 0（整节内容丢失不可见）。
+#   缺口二 C15 四条子项都只看总量：覆盖集内连续清空 8 节才跌破 byte floor ⇒ 单节空壳照样过
+#     （R115 已证「清空 1 节 ⇒ exit 0」，本轮给出精确节数 8 与逐节字节表）。
+# C16 只加下界、不改任何行：每节正文必须 >= 登记下界（= 建表时实测字节的一半），
+# 新节（id 不在表里）必须 >= 400 B。允许小节内改写、允许正常增节；不允许「留标题、清正文」。
+# 边界（如实声明，与纪律 31 同族）：下界是表里的常量，同改表与常量者仍可过；它的价值是把
+# 116 节「完全不被读」变成 116 节「缩到一半必被看见」。
+C16_FLOORS = {
+    7: 595, 8: 937, 9: 1361, 10: 671, 11: 385, 12: 1144, 13: 923, 14: 1020, 15: 812, 16: 710,
+    17: 860, 18: 1518, 19: 1006, 20: 1037, 21: 710, 22: 1520, 23: 991, 24: 1699, 25: 1320,
+    26: 2660, 27: 1185, 28: 1398, 29: 1283, 30: 1200, 31: 1403, 32: 1103, 33: 1345, 34: 1259,
+    35: 1294, 36: 979, 37: 970, 38: 1144, 39: 1066, 40: 982, 41: 1143, 42: 1286, 43: 1051,
+    44: 1298, 45: 1064, 46: 870, 47: 1239, 48: 992, 49: 1010, 50: 1385, 51: 1104, 52: 1299,
+    53: 903, 54: 925, 55: 1169, 56: 1067, 57: 992, 58: 826, 59: 1281, 60: 1179, 61: 1071, 62: 809,
+    63: 933, 64: 842, 65: 1172, 66: 1039, 67: 922, 68: 1223, 69: 908, 70: 1115, 71: 1116, 72: 3440,
+    73: 3596, 74: 1871, 75: 1616, 76: 2848, 77: 2709, 78: 1884, 79: 3264, 80: 1520, 81: 3460,
+    82: 2096, 83: 1843, 84: 2318, 85: 3034, 86: 1607, 87: 2508, 88: 1910, 89: 2745, 90: 3120,
+    91: 2000, 92: 1864, 93: 2044, 94: 866, 95: 1295, 96: 1584, 97: 2244, 98: 1437, 99: 1173,
+    100: 1397, 101: 1595, 102: 4028, 103: 2914, 104: 2985, 105: 2986, 106: 2748, 107: 3312,
+    108: 1628, 109: 1992, 110: 2381, 111: 2796, 112: 2931, 113: 2827, 114: 2981, 115: 2911,
+    116: 2214, 117: 3359, 118: 2911, 119: 2857, 120: 2547, 121: 1854, 122: 2701, 123: 2355
+}
+# 🐞 自错 S-61（成对回归 E5 当场抓出）：初稿给**新节**也设了 400 B 下限，
+# 于是「追加一个合法的短新节」被误判 FAIL —— 这是把「不许清空」误扩成「不许写短」。
+# 新节不是被钉对象（C15 已保证 7..106 存在、末节号不回退），故新节不设下限。
+C16_FLOORS_SHA256 = 'df02e3169aa109b2faff66660f3030f7737ec39f210f5dd1b42d62fd123ed299'   # 上表的 sha256（逐 id:floor 规范化）；审计 R119 ③ 成立：
+# 无摘要时「同改表与常量」只需把一个十进制数改小，diff 与正常重钉无法区分；加钉后至少要改这个 64 hex。
+C16_NEW_MIN = 0
+# C16b：表外新节不设字节下限 ⇒ 若不加约束，「每轮新增一节」就等于「每轮白得一张永久免检票」，
+# 与本门禁历史上被咬过的「claims-无 即免检」同构（R68 CW8 ③）。故给未钉节数设上限：
+# 超过 C16_UNPINNED_MAX 必须由 Lead 显式重钉 C16_FLOORS（把新节也纳进来）。
+C16_UNPINNED_MAX = 2
+_c16_b = []
+b16_lines = {}
+_cur16 = None
+_buf16 = []
+for _l in rc.split('\n'):
+    _m16 = re.match(r'^##\s+2\.(\d+)\b', _l)
+    if _m16:
+        if _cur16 is not None:
+            _c16_b.append((_cur16, len('\n'.join(_buf16).encode('utf-8'))))
+            b16_lines[_cur16] = _buf16
+        _cur16 = int(_m16.group(1))
+        _buf16 = [_l]
+    elif _cur16 is not None:
+        _buf16.append(_l)
+if _cur16 is not None:
+    _c16_b.append((_cur16, len('\n'.join(_buf16).encode('utf-8'))))
+    b16_lines[_cur16] = _buf16
+_c16_seen = set()
+# 审计 R119 ③ 成立：无钉时「把某节 floor 改小 1 个数」与正常重钉在 diff 上不可区分。
+# 加 sha 钉：表内容（逐 id:floor 规范化串）必须与 C16_FLOORS_SHA256 一致，否则 FAIL。
+_c16_norm = '\n'.join('%d:%d' % (k, C16_FLOORS[k]) for k in sorted(C16_FLOORS))
+_c16_sha = hashlib.sha256(_c16_norm.encode('utf-8')).hexdigest()
+if _c16_sha != C16_FLOORS_SHA256:
+    fails.append('C16d floor table TAMPERED: sha256 ' + _c16_sha[:16] + ' != registered '
+                 + C16_FLOORS_SHA256[:16] + ' (editing a single floor requires re-pinning this '
+                   'constant deliberately; that is the point)')
+notes.append('C16d floor-table pin: ' + _c16_sha[:16] + ' ('
+             + ('OK' if _c16_sha == C16_FLOORS_SHA256 else 'TAMPERED') + ')')
+_c16_bad = []
+for _n16, _sz16 in _c16_b:
+    _c16_seen.add(_n16)
+    _want16 = C16_FLOORS.get(_n16, C16_NEW_MIN)
+    if _sz16 < _want16:
+        _c16_bad.append((_n16, _sz16, _want16))
+if _c16_bad:
+    fails.append('C16 section(s) hollowed out (body below per-section floor): ' + repr(_c16_bad[:8])
+                 + ' (a section must not lose more than half its pinned body; if a section '
+                   'legitimately shrank, re-pin C16_FLOORS deliberately)')
+_miss16 = sorted(set(C16_FLOORS) - _c16_seen)
+if _miss16:
+    fails.append('C16 R14_COMMON section(s) gone: ' + str(len(_miss16)) + ' missing '
+                 + repr(_miss16[:12]) + ' (deleting a whole section is never a valid edit)')
+_unp16 = sorted(_c16_seen - set(C16_FLOORS))
+# 审计 R119 ② 成立：表外新节只受「张数上限 2」约束、票上没有内容约束 ⇒ 一个「只有标题行」的空壳
+# 新节永远不被看见。修法：表外新节必须至少有 1 行正文（非空、非标题）。实测现有 116 节的正文
+# 行数最少为 6（2.11）⇒ 该约束不会误伤任何正常短节（_r119/r119g_audit.py A2b）。
+_c16_shell = []
+for _n16 in _unp16:
+    _ls = [x for x in b16_lines.get(_n16, []) if x.strip() and not x.lstrip().startswith('#')]
+    if not _ls:
+        _c16_shell.append(_n16)
+if _c16_shell:
+    fails.append('C16c unpinned section(s) with no body text: ' + repr(_c16_shell[:8])
+                 + ' (a new section must carry at least one non-empty, non-heading line; '
+                   'a title-only shell is not a section)')
+if len(_unp16) > C16_UNPINNED_MAX:
+    fails.append('C16b unpinned sections ' + str(len(_unp16)) + ' > ' + str(C16_UNPINNED_MAX)
+                 + ' (ids ' + repr(_unp16[:8]) + '): new sections must be pinned into '
+                   'C16_FLOORS deliberately, otherwise each new section silently acquires '
+                   'a permanent no-check ticket (same shape as claims-none)')
+_marg16 = [_sz16 - C16_FLOORS.get(_n16, C16_NEW_MIN) for _n16, _sz16 in _c16_b]
+notes.append('C16 per-section floors: ' + str(len(_c16_b)) + ' sections measured (pinned '
+             + str(len(C16_FLOORS)) + '), hollow/deficient ' + str(len(_c16_bad))
+             + ', missing ' + str(len(_miss16)) + ', unpinned ' + str(len(_unp16))
+             + ', min margin '
+             + (str(min(_marg16)) if _marg16 else 'n/a'))
+
+# ---- C17 (R120 新增) C11 的五条「ok」到底是真回跑还是跨轮复制？----
+# R120 实测（_r120/r120a_anachrony.py，9/9 PASS）：C11 只校验自述行的**跨字段自洽**
+# （discipline/round/at/anchors 与 DISC_ESTABLISH 上界、ROUND_WINDOWS 窗口一致），
+# 但**从不校验这条行所在的产物在它声称的那一刻是否可能存在**。两个互不共用字节的量：
+#   量一 路径轮次：产物路径里的 R<n> token 是「它所在轮次」的下界。声称轮次 < 路径轮次
+#        ⇒ 该行不可能由它声称的轮次产出。5/5 命中（3/4 在 R61、22 在 R84、27 在 R81、28 在 R88
+#        的产物里，全都声称 R55）。
+#   量二 时刻复用：同一 at 秒值出现在 4 个不同轮次目录的产物里。真回跑是本轮为**本轮**产物
+#        各写一条，不可能让 3 个不同轮次的产物共享同一秒；只有复制粘贴会产生该复用。
+# 且这与 R90 的结论独立得出（R90 用派发卡 mtime 当外部时钟，本段不用任何 mtime）。
+# C17 只在**表这一层**加两道：C17a 时间不可能性、C17b 跨轮复用；
+# 它们不改任何自述行（那是裁定，须单独裁），只把「已存在的 5 条不可能行」钉住，
+# 使「悄悄把它们改成诚实行」或「再添一条同类行」都必须显式改本段的常量。
+C17_PIN = {
+    (3, 55, '2026-11-22T17:39:19+08:00'),
+    (4, 55, '2026-11-22T17:40:02+08:00'),
+    (22, 55, '2026-11-22T17:39:19+08:00'),
+    (27, 55, '2026-11-22T17:39:19+08:00'),
+    (28, 55, '2026-11-22T17:39:19+08:00'),
+}
+C17_PIN_SHA256 = '642c9cd8b9176f4e8dffd0c744e651d26e5465186a79bcaace70cadbc7a59288'
+C17_REUSED_ATS = {'2026-11-22T17:39:19+08:00': 4}   # at -> 复用的不同轮次目录数（下限）
+_PATHR = re.compile(r'(?:^|[/\\])R(?:17_)?R?(\d+)_')
+_LINERE = re.compile(r'^DISC_RECHECK discipline=(\d+) round=(R\d+) at=(\S+) '
+                     r'anchors=(sha256:[0-9a-f]{64}) conclusion=(\S+?)\r?$')
+_c17_imposs, _c17_atmap, _c17_checked = [], {}, 0
+for _r in rows:
+    if len(_r) != 7 or not _r[0].strip().isdigit():
+        continue
+    if not _r[6].strip().startswith('\u6709'):
+        continue
+    _p17 = _r[4].strip()
+    _prs = sorted(set(int(m.group(1)) for m in _PATHR.finditer(_p17.replace('\\', '/'))))
+    if not _prs:
+        continue
+    _ap17 = os.path.join(ROOT, _p17.replace('\\', '/'))
+    if not os.path.isfile(_ap17):
+        continue
+    try:
+        _txt17 = io.open(_ap17, encoding='utf-8', errors='replace').read()
+    except OSError:
+        continue
+    for _l17 in _txt17.splitlines():
+        _m17 = _LINERE.match(_l17)
+        if not _m17 or int(_m17.group(1)) != int(_r[0]):
+            continue
+        _c17_checked += 1
+        _rn17 = int(_m17.group(2)[1:])
+        _at17 = _m17.group(3)
+        if _rn17 < min(_prs):
+            _c17_imposs.append((int(_r[0]), _rn17, _at17))
+        _c17_atmap.setdefault(_at17, set()).add(tuple(_prs))
+_c17_imposs = sorted(_c17_imposs)
+_c17_reuse = {k: len(v) for k, v in _c17_atmap.items() if len(v) > 1}
+_c17_pin_now = '\n'.join('%d|%d|%s' % t for t in _c17_imposs)
+_c17_pin_sha = hashlib.sha256(_c17_pin_now.encode('utf-8')).hexdigest()
+if set(_c17_imposs) != C17_PIN:
+    fails.append('C17a 时间上不可能的自述行集合变了：实测 %s != 钉住 %s '
+                 '(adding or silently fixing such a row must be a deliberate re-pin)'
+                 % (repr(_c17_imposs[:8]), repr(sorted(C17_PIN)[:8])))
+if _c17_pin_sha != C17_PIN_SHA256:
+    fails.append('C17a pin TAMPERED: sha256 %s != registered %s'
+                 % (_c17_pin_sha[:16], C17_PIN_SHA256[:16]))
+for _at17, _n17 in C17_REUSED_ATS.items():
+    if _c17_reuse.get(_at17, 0) < _n17:
+        fails.append('C17b at=%s 的跨轮复用数降到 %d (< pinned %d)：要么真回跑补了行，'
+                     '要么行被删 —— 两者都必须显式改 C17_REUSED_ATS'
+                     % (_at17, _c17_reuse.get(_at17, 0), _n17))
+_bad17 = {k: v for k, v in _c17_reuse.items() if k not in C17_REUSED_ATS}
+if _bad17:
+    fails.append('C17b 出现新的跨轮复用 at 值 %s（同一秒值落在多个轮次目录 = 复制粘贴特征）'
+                 % repr(sorted(_bad17)[:4]))
+notes.append('C17 self-produced-line anachrony: checked=%d impossible=%d (pinned %d), '
+             'reused-at=%s, pin=%s'
+             % (_c17_checked, len(_c17_imposs), len(C17_PIN),
+                json.dumps(_c17_reuse, ensure_ascii=False) if False else repr(_c17_reuse),
+                _c17_pin_sha[:16]))
 
 # ---- C5 CR 抽查 ----
 for name, p, exp in (('R14_COMMON', RC, 1081), ('STATUS_BOARD', BRD, 0), ('LEDGER', LED, 337)):

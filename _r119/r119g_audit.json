@@ -1,0 +1,338 @@
+{
+ "A1_group": [
+  8,
+  9,
+  12,
+  13,
+  14,
+  15,
+  17,
+  18,
+  19,
+  20,
+  22,
+  23,
+  25,
+  27,
+  28,
+  29,
+  30,
+  31,
+  32,
+  33,
+  34,
+  35,
+  36,
+  37,
+  38,
+  39,
+  40,
+  41,
+  42,
+  43,
+  44,
+  45,
+  46,
+  47,
+  48,
+  49,
+  50,
+  51,
+  52,
+  53,
+  54,
+  55,
+  56,
+  57,
+  58,
+  59,
+  60,
+  61,
+  62,
+  63,
+  64,
+  65,
+  66,
+  67,
+  68,
+  69,
+  70,
+  71,
+  80,
+  94,
+  95,
+  98,
+  99,
+  100
+ ],
+ "A2_free_ticket": true,
+ "A3_same_edit_passes": true,
+ "A4_preamble": 230247,
+ "A5": [
+  "0x7f9594",
+  "0x7f9594",
+  "0x59524753"
+ ],
+ "A6": [
+  [
+   "0x413dd8",
+   "call dword ptr [0x7e15fc]",
+   "0x413de2"
+  ],
+  [
+   "0x41c271",
+   "call dword ptr [0x7e15fc]",
+   "0x41c27d"
+  ],
+  [
+   "0x437f58",
+   "call dword ptr [0x7e15fc]",
+   "0x437f6e"
+  ],
+  [
+   "0x517b6b",
+   "call dword ptr [0x7e15fc]",
+   "0x517b74"
+  ],
+  [
+   "0x67d0d0",
+   "call dword ptr [0x7e15fc]",
+   "0x67d0dd"
+  ],
+  [
+   "0x67e5b4",
+   "call dword ptr [0x7e15fc]",
+   "0x67e5c1"
+  ],
+  [
+   "0x6bedd1",
+   "call dword ptr [0x7e15fc]",
+   "0x6beddd"
+  ],
+  [
+   "0x6bedfd",
+   "call dword ptr [ecx]",
+   "0x6bee05"
+  ],
+  [
+   "0x6bee1f",
+   "call dword ptr [0x7e15fc]",
+   "0x6bee2b"
+  ]
+ ],
+ "A7": {
+  "ff15": 8,
+  "ff11": 1
+ },
+ "content_lines_min": 6,
+ "checks": [
+  {
+   "name": "A1a 复算审计①的分母：[3072,6144) 区间共 64 节（审计报 64）",
+   "ok": true,
+   "detail": {
+    "n": 64,
+    "ids": [
+     8,
+     9,
+     12,
+     13,
+     14,
+     15,
+     17,
+     18,
+     19,
+     20,
+     22,
+     23,
+     25,
+     27,
+     28,
+     29,
+     30,
+     31,
+     32,
+     33,
+     34,
+     35,
+     36,
+     37,
+     38,
+     39,
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52,
+     53,
+     54,
+     55,
+     56,
+     57,
+     58,
+     59,
+     60,
+     61,
+     62,
+     63,
+     64,
+     65,
+     66,
+     67,
+     68,
+     69,
+     70,
+     71,
+     80,
+     94,
+     95,
+     98,
+     99,
+     100
+    ]
+   }
+  },
+  {
+   "name": "A1b 复算 2.8 = 3749 B（审计报 3749），其 50% 下界 = 1874；2.11 = 1540 B（审计报 1540），下界 = 770",
+   "ok": true,
+   "detail": {
+    "2.8": 3749,
+    "2.11": 1540
+   }
+  },
+  {
+   "name": "A1c 复算审计①并验证修复：2.8 保留 40% 行 ⇒ exit 0（不误伤）；保留 10% ⇒ exit 1（有牙）",
+   "ok": true,
+   "detail": {
+    "keep40": 0,
+    "keep10": 1,
+    "fail10": [
+     "  FAIL  C16 section(s) hollowed out (body below per-section floor): [(8, 233, 937)] (a section must not lose more than half its pinned body; if a section legitimately shrank, re-pin C16_FLOORS deliberately)"
+    ]
+   }
+  },
+  {
+   "name": "A2 复算审计②并验证修复（C16c）：追加只有标题行的表外新节 ⇒ exit 1 且 FAIL 点名 C16c",
+   "ok": true,
+   "detail": {
+    "exit": 1,
+    "fail": [
+     "  FAIL  C16c unpinned section(s) with no body text: [998] (a new section must carry at least one non-empty, non-heading line; a title-only shell is not a section)"
+    ]
+   }
+  },
+  {
+   "name": "A3 复算审计③并验证修复（C16d）：把 2.50 的 floor 由 1385 改小为 1 而不同步改 sha 并清空该节 ⇒ exit 1 且 FAIL 点名 C16d",
+   "ok": true,
+   "detail": {
+    "exit": 1,
+    "fail": [
+     "  NOTE  C16d floor-table pin: 0868d76d44b61946 (TAMPERED)"
+    ]
+   }
+  },
+  {
+   "name": "A4 复算审计④：preamble = 230247 B（审计报 230247），preamble+116 节 = 1008332，文件 1008448，差 116（审计称 116 B = 1 个节前 LF + 115 个节间 LF）",
+   "ok": true,
+   "detail": {
+    "preamble": 230247,
+    "diff": 116
+   }
+  },
+  {
+   "name": "A4b 复算审计④：116 节内部的 CR 个数 = 0（审计报 0）；全文 CR = 1081",
+   "ok": true,
+   "detail": {
+    "cr_in_sections": 0,
+    "cr_total": 1081
+   }
+  },
+  {
+   "name": "A5 复算审计⑤：+0x10 值 0x818858→0x7f9594、0x820270→0x7f9594、0x817bc0→0x59524753（审计报 0x7f9594 / 0x7f9594 / 0x59524753）",
+   "ok": true,
+   "detail": {
+    "three": [
+     "0x7f9594",
+     "0x7f9594",
+     "0x59524753"
+    ]
+   }
+  },
+  {
+   "name": "A6 复算审计⑥：0x817bc0 的 9 个 push 站点中，第一条 call = [0x7e15fc] 的 8 个、= [ecx] 的 1 个（审计报 9 / 8 / 1）",
+   "ok": true,
+   "detail": {
+    "after": [
+     [
+      "0x413dd8",
+      "call dword ptr [0x7e15fc]",
+      "0x413de2"
+     ],
+     [
+      "0x41c271",
+      "call dword ptr [0x7e15fc]",
+      "0x41c27d"
+     ],
+     [
+      "0x437f58",
+      "call dword ptr [0x7e15fc]",
+      "0x437f6e"
+     ],
+     [
+      "0x517b6b",
+      "call dword ptr [0x7e15fc]",
+      "0x517b74"
+     ],
+     [
+      "0x67d0d0",
+      "call dword ptr [0x7e15fc]",
+      "0x67d0dd"
+     ],
+     [
+      "0x67e5b4",
+      "call dword ptr [0x7e15fc]",
+      "0x67e5c1"
+     ],
+     [
+      "0x6bedd1",
+      "call dword ptr [0x7e15fc]",
+      "0x6beddd"
+     ],
+     [
+      "0x6bedfd",
+      "call dword ptr [ecx]",
+      "0x6bee05"
+     ],
+     [
+      "0x6bee1f",
+      "call dword ptr [0x7e15fc]",
+      "0x6bee2b"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "A7 复算审计⑦：9 个站点从 push 起 32 字节内出现 ff 15 的 8 个、出现 ff 11 的 1 个（审计报 8 / 1）",
+   "ok": true,
+   "detail": {
+    "ff15": 8,
+    "ff11": 1
+   }
+  },
+  {
+   "name": "A2b 反证「修法可行」：现有 116 节的非空非标题正文行数最少为 6（2.11），若给表外新节加「>= 1 行正文」约束，title-only 空壳必被抓住而正常短节不受影响",
+   "ok": true,
+   "detail": {
+    "min_id": 11,
+    "min_lines": 6
+   }
+  }
+ ]
+}
