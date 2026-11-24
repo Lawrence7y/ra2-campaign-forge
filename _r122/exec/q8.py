@@ -162,6 +162,22 @@ stores_raw = list(stores)
 stores = [s for s in stores_raw if s[0] in boundaries]
 dropped = [s for s in stores_raw if s[0] not in boundaries]
 
+# --- corroboration strength: does a target also appear as an edx imm32 fed to a call?
+# The 35 have that corroboration (a 128-byte-identical body called with edx). For the
+# outside-35 set we test the same pattern independently: find `ba <imm32>` immediately
+# followed (within 8 bytes) by a call, i.e. mov edx,imm32 ; ... ; call.
+edx_call_targets = set()
+j = tb.find(b"\xba")
+while j != -1:
+    if j + 5 <= len(tb):
+        imm = struct.unpack_from("<I", tb, j + 1)[0]
+        # look for a leading-byte e8 within the next 8 bytes on a real boundary
+        for k in range(j + 5, min(j + 13, len(tb) - 5)):
+            if tb[k] == 0xE8 and (TV + k) in boundaries:
+                edx_call_targets.add(imm)
+                break
+    j = tb.find(b"\xba", j + 1)
+
 bss_targets = {}
 for site_rva, addr, val in stores:
     if BSS_LO_RVA <= addr - IB < BSS_HI_RVA:
@@ -238,6 +254,13 @@ res = {
         "outside_35": ["%#x" % a for a in dual_outside],
         "all": {("%#x" % a): v for a, v in sorted(dual.items())},
     },
+    "corroboration": {
+        "n_edx_imm32_call_targets_global": len(edx_call_targets),
+        "n_of_35_corroborated": len(the35 & edx_call_targets),
+        "n_outside_35_corroborated": len(set(outside) & edx_call_targets),
+        "note": "corroborated = address also appears as a mov-edx-imm32 followed by a call",
+        "outside_35_corroborated": ["%#x" % a for a in sorted(set(outside) & edx_call_targets)],
+    },
     "cross_check": {"n_pathB_vector_names": len(pathB_vec_names),
                     "n_pathA_vector_names": len(pathA_names),
                     "n_pathB_names_absent_from_pathA": xcheck,
@@ -258,6 +281,8 @@ print("Path A: TD total=%d plausible=%d VectorClass=%d DynamicVectorClass=%d"
 print("Path B: c705 raw=%d boundary-valid=%d dropped=%d  BSS targets written=%d  vector-family targets=%d  in35=%d  outside35=%d"
       % (len(stores_raw), len(stores), len(dropped), len(bss_targets), len(vec_by_target),
          len(set(vec_by_target) & the35), len(outside)))
+print("targets with independent edx-imm32-into-call corroboration: in35=%d outside35=%d"
+      % (len(the35 & edx_call_targets), len(set(outside) & edx_call_targets)))
 print("dual-vtable same-elem: total=%d outside35=%d" % (len(dual), len(dual_outside)))
 print("35 not found by path B:", res["path_B"]["the35_not_in_pathB"])
 print("pathB names missing from pathA:", xcheck)

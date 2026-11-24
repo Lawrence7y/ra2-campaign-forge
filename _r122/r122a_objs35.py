@@ -140,7 +140,21 @@ ds = [x for x in SECS if x['name'] == '.data'][0]
 BSS_LO, BSS_HI = ds['va'] + ds['rs'], ds['va'] + ds['vs']
 ck('S1c BSS 区边界', all(BSS_LO <= a < BSS_HI for a in EDX),
    '[%08x,%08x) size=%d' % (BSS_LO, BSS_HI, BSS_HI - BSS_LO))
-ck('S1d 读 BSS 字节必须被拒', rd(EDX[0], 4) is None, 'rd()=%r' % (rd(EDX[0], 4),))
+# S1d（原为假反控，已改）：不再断言 rd() 对 BSS 返回 None（那只是自家 helper 行为）。
+# 改成二进制事实断言：这些地址必须落在 .data 的「无文件字节」侧，即
+# 地址本身 >= va+SizeOfRawData，且该地址换算出的文件偏移必须越过文件尾或不在该节 raw 内。
+ds_pr, ds_rs = ds['pr'], ds['rs']
+
+
+def _no_file_bytes(va):
+    off = ds_pr + (va - ds['va'])
+    return va >= ds['va'] + ds_rs and (off >= len(DATA) or va - ds['va'] >= ds_rs)
+
+
+ck('S1d 35 个 edx 在二进制上确实无文件字节（不是 helper 行为）',
+   all(_no_file_bytes(a) for a in EDX),
+   'no_file_bytes=%d/35 ; .data raw=[%08x,+%d)' % (
+       sum(1 for a in EDX if _no_file_bytes(a)), ds['va'], ds_rs))
 
 # ---------------- S2 全量：所有 c7 05 写 BSS 的站点 ----------------
 writes = {}
@@ -152,7 +166,8 @@ while i < n - 10:
         if BSS_LO <= t < BSS_HI:
             writes.setdefault(t, []).append(TBASE + i)
     i += 1
-ck('S2g c7 05 写 BSS 的目标总数 > 1000（说明这不是 35 个特例）', len(writes) > 1000,
+ck('S2g c7 05 写 BSS 的目标总数 == 1159 且站点数 == 1777（精确值，非 >1000）',
+   len(writes) == 1159 and sum(len(v) for v in writes.values()) == 1777,
    'targets=%d sites=%d' % (len(writes), sum(len(v) for v in writes.values())))
 ck('S2h 35 个目标全被 c7 05 写过', all(a in writes for a in EDX),
    'covered=%d/35' % sum(1 for a in EDX if a in writes))
@@ -207,49 +222,80 @@ ck('S3b 70 个类名互不相同（基类/派生类各一份）',
    len({w['name'] for o in objs for w in o['writes']}) == 70,
    'distinct=%d' % len({w['name'] for o in objs for w in o['writes']}))
 
-# 每个对象：先写 Dynamic 再写 Vector（构造链 基类->派生类）
-order_ok = 0
+# 审计必修 #7：显式断言每对象恰 2 站，后面 S3c/S3d/S3e 才允许依赖 w[0]/w[1]
+ck('S3p 每个对象恰有 2 个写入站点（使后续 w[0]/w[1] 访问合法）',
+   all(len(o['writes']) == 2 for o in objs),
+   'hist=%s' % dict(__import__('collections').Counter(len(o['writes']) for o in objs)))
+
+
+def is_dyn(nm):
+    return 'DynamicVectorClass@' in (nm or '')
+
+
+def is_vec(nm):
+    return bool(nm) and 'DynamicVectorClass@' not in nm and 'VectorClass@' in nm
+
+
+# 每个对象：按名字集合判定（不依赖排序假设）恰 1 Dynamic + 1 Vector
+name_ok = sum(1 for o in objs
+              if sum(1 for w in o['writes'] if is_dyn(w['name'])) == 1
+              and sum(1 for w in o['writes'] if is_vec(w['name'])) == 1)
+# 站点 VA 排序下的次序（按字节实证报告，不改称执行序）
+low_first_dyn = 0
 pairs = []
 for o in objs:
-    w = o['writes']
-    a, b2 = w[0]['name'], w[1]['name']
-    dyn = 'DynamicVectorClass@' in a
-    vec = 'DynamicVectorClass@' not in a and 'VectorClass@' in a
-    dyn2 = 'DynamicVectorClass@' in b2
-    vec2 = 'DynamicVectorClass@' not in b2 and 'VectorClass@' in b2
-    if dyn and vec2:
-        order_ok += 1
+    ws = sorted(o['writes'], key=lambda w: int(w['site'], 16))
+    a, b2 = ws[0]['name'], ws[1]['name']
+    if is_dyn(a) and is_vec(b2):
+        low_first_dyn += 1
     pairs.append((o['obj'], a, b2))
-ck('S3c 70 次写入全部是 VectorClass/DynamicVectorClass 这一族',
-   all('VectorClass@' in (o['writes'][0]['name'] or '') and
-       'VectorClass@' in (o['writes'][1]['name'] or '') for o in objs),
-   'sample=%r' % (pairs[0],))
-ck('S3d 每对象 = 一个 Dynamic 体 + 一个 Vector 体（同一元素类型）', order_ok == 35,
-   'order_ok=%d' % order_ok)
+ck('S3c 每个对象恰 1 个 Dynamic 名 + 1 个 Vector 名（按名字集合判定，非排序）',
+   name_ok == 35,
+   'name_ok=%d/35 ; sample=%r' % (name_ok, pairs[0]))
+ck('S3d 35 个对象中「低址站点写 Dynamic、高址站点写 Vector」的个数'
+   '（字节实证，不代表执行序）', low_first_dyn == 35, 'count=%d/35' % low_first_dyn)
+# S3e：遍历全部名字，不只看前两站（审计必修 #7）
 same_elem = 0
 for o in objs:
-    a = o['writes'][0]['name']
-    b2 = o['writes'][1]['name']
-    ea = a.split('VectorClass@')[1].split('@@@')[0]
-    eb = b2.split('VectorClass@')[1].split('@@@')[0]
-    if ea == eb:
+    es = {w['name'].split('VectorClass@')[1].split('@@@')[0]
+          for w in o['writes'] if w['name']}
+    if len(es) == 1:
         same_elem += 1
-ck('S3e 同一对象的两个 vtable 元素类型相同', same_elem == 35, 'same=%d' % same_elem)
+ck('S3e 同一对象内全部 vtable 的元素类型相同（遍历全部站点，非只看前两站）',
+   same_elem == 35, 'same=%d/35' % same_elem)
 
-elems = sorted({o['writes'][1]['name'].split('VectorClass@')[1].split('@@@')[0] for o in objs})
-ck('S3f 元素类型全为 PAV*（指针类型）', all(e.startswith('PAV') for e in elems),
-   'n=%d elems=%s' % (len(elems), elems[:6]))
-ck('S3g 35 个元素类型互不相同', len(elems) == 35, 'n=%d' % len(elems))
+# S3f/S3g：对全部 70 个名字解析元素类型（审计必修 #8，原只取第二站）
+all_elems = sorted({w['name'].split('VectorClass@')[1].split('@@@')[0]
+                    for o in objs for w in o['writes'] if w['name']})
+obj_elems = sorted({o['writes'][0]['name'].split('VectorClass@')[1].split('@@@')[0]
+                    for o in objs if o['writes'][0]['name']})
+ck('S3f 全部 70 个类名的元素类型全为 PAV*（非只取第二站）',
+   len(all_elems) == 35 and all(e.startswith('PAV') for e in all_elems),
+   'distinct_elems=%d elems=%s' % (len(all_elems), all_elems[:6]))
+ck('S3g 35 个对象各自元素类型互不相同（物件侧去重后 n==35）',
+   len(obj_elems) == 35, 'n=%d' % len(obj_elems))
 
 # ---------------- S5 反控 ----------------
-# 反控 1：把 edx 平移 +1 去解析 RTTI，必须解不出类名
-c1 = [name_of_vtable(u32(a + 1) or 0) for a in EDX[:10]]
-ck('S5a 反控：edx+1 处的「vptr」解不出合法类名', all(x[0] is None for x in c1),
+# 反控 1（原为假反控，已重做）：原写法 name_of_vtable(u32(edx+1) or 0) 对 BSS 恒返回
+# None→0，验证的是 helper 而不是错位解析。改成对真实 vptr 做 +1 错位（与 S5b 的 +4 平行）。
+c1 = [name_of_vtable(int(o['writes'][1]['vptr'], 16) + 1) for o in objs[:10]]
+ck('S5a 反控：真实 vptr+1 当 vtable 起点解不出合法类名', all(x[0] is None for x in c1),
    'ok_names=%d/10' % sum(1 for x in c1 if x[0]))
-# 反控 2：把真实 vptr 加 4 当 vtable 起点，必须解不出
-c2 = [name_of_vtable(v + 4) for v in [int(o['writes'][0]['vptr'], 16) for o in objs[:10]]]
-ck('S5b 反控：vptr+4 当 vtable 起点解不出合法类名', all(x[0] is None for x in c2),
-   'ok_names=%d/10' % sum(1 for x in c2 if x[0]))
+# 反控 2（原为假反控，已重做）：vptr+4 落在本案里恰好解不出名，但那只是数据集性质，
+# 不能把「None」当作解析器正确性的证据。改成两条独立可证伪的断言：
+#   (a) vptr+4 必须仍在 .rdata 内（说明它不是节外乱地址，而是真实的 vtable 槽位）
+#   (b) 若 vptr+4 能解出名，该名必须不同于原类名（若不能解出，也不构成矛盾）
+c2 = []
+for o in objs[:10]:
+    v = int(o['writes'][0]['vptr'], 16)
+    nm_next, _ = name_of_vtable(v + 4)
+    c2.append((v + 4, nm_next, o['writes'][0]['name']))
+ck('S5b 反控：真实 vptr+4 仍落在 .rdata 内，且若解出类名必须与原类名不同',
+   all(sec_of(a) is not None and sec_of(a)['name'] == '.rdata' for a, _, _ in c2)
+   and all(n is None or n != orig for _, n, orig in c2),
+   'in_rdata=%d/10 ; diff_or_none=%d/10 ; sample=%r'
+   % (sum(1 for a, _, _ in c2 if sec_of(a) and sec_of(a)['name'] == '.rdata'),
+      sum(1 for _, n, o in c2 if n is None or n != o), c2[:2]))
 # 反控 3：正控 —— 真实 vptr 必须解得出，且加 0x40（跳进另一个对象）名字不同
 c3 = [name_of_vtable(int(o['writes'][1]['vptr'], 16)) for o in objs[:10]]
 ck('S5c 正控：真实 vptr 解得出类名', all(x[0] for x in c3),
@@ -267,7 +313,7 @@ summary = dict(
     bss_targets_written=len(writes),
     writes_per_obj=dict(per),
     n_distinct_class_names=len({w['name'] for o in objs for w in o['writes']}),
-    elem_types=elems,
+    elem_types=obj_elems,
 )
 json.dump(dict(summary=summary, objects=objs, checks=RES,
                all_ok=all(r['ok'] for r in RES)),

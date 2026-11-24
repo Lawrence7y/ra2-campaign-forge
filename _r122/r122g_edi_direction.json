@@ -1,0 +1,145 @@
+{
+ "exe_sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+ "n_all_sites": 37,
+ "n_twin_sites": 35,
+ "n_twin_entries": 35,
+ "twin_len": [
+  127
+ ],
+ "twin_distinct_sha256": 1,
+ "alias_ok": 35,
+ "twin_dirs": {
+  "read": 70
+ },
+ "twin_disps": {
+  "16": 35,
+  "4": 35
+ },
+ "main25_n": 25,
+ "inline_blocks_located": 25,
+ "inline_reads": 250,
+ "inline_writes": 0,
+ "inline_read_sample": [
+  [
+   "0x67d35d",
+   "mov",
+   "eax, dword ptr [0x8b4154]"
+  ],
+  [
+   "0x67d366",
+   "lea",
+   "edx, [esp + 0x10]"
+  ],
+  [
+   "0x67d36a",
+   "mov",
+   "eax, dword ptr [eax + ebx*4]"
+  ],
+  [
+   "0x67d374",
+   "mov",
+   "ecx, dword ptr [eax]"
+  ],
+  [
+   "0x67d376",
+   "call",
+   "dword ptr [ecx]"
+  ],
+  [
+   "0x67d380",
+   "mov",
+   "eax, dword ptr [esp + 0x10]"
+  ]
+ ],
+ "inline_write_sample": [],
+ "selftest": [
+  {
+   "name": "st1 \u6b63\u63a7\uff1amov eax,[edi+0x10] \u5224\u4e3a read \u4e14 disp=0x10",
+   "ok": true,
+   "detail": "[{'addr': '0x00001000', 'mnem': 'mov', 'ops': 'eax, dword ptr [edi + 0x10]', 'direction': 'read', 'disp': 16}]"
+  },
+  {
+   "name": "st2 \u6b63\u63a7\uff1amov [edi+0x4],eax \u5224\u4e3a write \u4e14 disp=0x4",
+   "ok": true,
+   "detail": "[{'addr': '0x00001000', 'mnem': 'mov', 'ops': 'dword ptr [edi + 4], eax', 'direction': 'write', 'disp': 4}]"
+  },
+  {
+   "name": "st3 \u53cd\u63a7\uff1a\u4e0d\u542b mov edi,edx \u7684\u5e8f\u5217\uff0c\u522b\u540d\u68c0\u6d4b\u5fc5\u987b\u4e3a False",
+   "ok": true,
+   "detail": "[(4096, 2, 'mov', 'eax, ecx'), (4098, 1, 'nop', '')]"
+  },
+  {
+   "name": "st4 \u6b63\u63a7\uff1amov edi,edx \u5e8f\u5217\u522b\u540d\u68c0\u6d4b\u5fc5\u987b\u4e3a True",
+   "ok": true,
+   "detail": "[(4096, 2, 'mov', 'edi, edx')]"
+  },
+  {
+   "name": "st5 \u53cd\u63a7\uff1a\u5408\u6210\u4f53\u542b\u4e00\u6761 mov [edi+4],eax \u65f6\uff0c\u68c0\u6d4b\u5668\u5fc5\u987b\u62a5 write",
+   "ok": true,
+   "detail": "writes=1 reads=1 ins=[('0x1000', 'mov', 'edi, edx'), ('0x1002', 'mov', 'dword ptr [edi + 4], eax'), ('0x1005', 'mov', 'eax, dword ptr [edi + 0x10]'), ('0x1008', 'ret', '')]"
+  },
+  {
+   "name": "st6 \u53cd\u63a7\uff1amov eax,[esi+0x10] \u4e0d\u88ab edi \u53e3\u5f84\u7edf\u8ba1",
+   "ok": true,
+   "detail": "[(4096, 3, 'mov', 'eax, dword ptr [esi + 0x10]')]"
+  }
+ ],
+ "checks": [
+  {
+   "check": "G1a \u91cd\u626b call rel32 \u5f97\u5230 37 \u7ad9 / 36 \u5165\u53e3",
+   "ok": true,
+   "detail": "sites=37 entries=36"
+  },
+  {
+   "check": "G1b 35 \u4e2a\u5b6a\u751f\u7ad9\u5bf9\u5e94\u7684\u5165\u53e3\u53bb\u91cd\u540e == 35 \u4e2a",
+   "ok": true,
+   "detail": "sites=35 distinct_entries=35"
+  },
+  {
+   "check": "G2a 35 \u4e2a\u5b6a\u751f\u4f53\u90fd\u80fd\u89e3\u5230 ret\uff0c\u4e14\u957f\u5ea6\u96c6\u5408\u5355\u4e00",
+   "ok": true,
+   "detail": "n_none=0 lens=[127]"
+  },
+  {
+   "check": "G2b 35 \u4e2a\u5b6a\u751f\u4f53\u5b57\u8282\u5168\u540c\uff08\u4e0d\u540c sha256 \u6570 == 1\uff09",
+   "ok": true,
+   "detail": "n_bodies=35 distinct_sha256=1"
+  },
+  {
+   "check": "G3a 35 \u4e2a\u5b6a\u751f\u4f53\u90fd\u5b58\u5728 mov edi, edx\uff08edx \u5b9e\u53c2\u88ab\u522b\u540d\u5230 edi\uff09",
+   "ok": true,
+   "detail": "ok=35/35"
+  },
+  {
+   "check": "G3b 35 \u4e2a\u5b6a\u751f\u4f53\u5bf9 [edi...] \u7684\u5168\u90e8\u8bbf\u95ee\u4e2d\uff0c\u5199 = 0\uff08\u5373 edx \u6307\u5411\u7684\u5bf9\u8c61\u53ea\u88ab\u8bfb\uff09",
+   "ok": true,
+   "detail": "read=70 write=0"
+  },
+  {
+   "check": "G3c \u5b6a\u751f\u4f53\u8bfb\u53d6 edi \u7684\u504f\u79fb\u96c6\u5408\u6070\u4e3a {0x4, 0x10}\uff08\u5b57\u8282\u5b9e\u8bc1\uff09",
+   "ok": true,
+   "detail": "disps={16: 35, 4: 35}"
+  },
+  {
+   "check": "G4a \u4e3b\u51fd\u6570 0x67d300 \u5185 push 0x7f7c80 \u7684\u7ad9\u6570 == 25\uff08r122e \u53e3\u5f84\uff09",
+   "ok": true,
+   "detail": "n=25"
+  },
+  {
+   "check": "G4b 25 \u7ad9\u7684\u5185\u8054\u5757\u4e0a\u4e0b\u754c\u5168\u90e8\u5b9a\u4f4d\u5230\uff08\u56de\u8fb9 jl \u76ee\u6807 == \u5757\u8d77\u70b9\uff09",
+   "ok": true,
+   "detail": "located=25/25"
+  },
+  {
+   "check": "G4c 25 \u4e2a\u5185\u8054\u5757\u5185\u5bf9\u975e\u6808\u5185\u5b58\u7684\u5199 == 0\uff08\u6808\u6ea2\u51fa\u69fd 25 \u6761\u5df2\u5355\u5217\uff09",
+   "ok": true,
+   "detail": "heap/heap-like writes=0 ; stack spills=25 ; reads=250 ; write_sample=[]"
+  },
+  {
+   "check": "G5 \u88c1\u51b3\uff1a\u5b6a\u751f\u4f53\u5bf9 edx \u6307\u5411\u5bf9\u8c61\u53ea\u8bfb\uff0870 \u8bfb / 0 \u5199\uff09\uff0c\u4e3b\u51fd\u6570\u5185\u8054\u5757\u4ea6\u65e0\u5185\u5b58\u5199 => \u53ef\u6392\u9664\u300cedx \u662f\u8f93\u51fa\u7f13\u51b2\u300d\uff0c\u652f\u6301\u300cedx \u662f\u53ea\u8bfb\u5b9e\u53c2\uff08\u5bb9\u5668\u6301\u6709\u8005\uff09\u300d",
+   "ok": true,
+   "detail": "twin r/w=70/0 ; inline blocks read=250 write=0"
+  }
+ ],
+ "all_ok": true
+}

@@ -85,6 +85,7 @@ for i in range(len(TDATA) - 5):
     tgt = va + 5 + rel
     if 0x67fdf0 <= tgt <= 0x680f80:
         calls.setdefault(tgt, []).append(va)
+ALL_SITES37 = sorted(s for t, ss in calls.items() for s in ss)
 R121_TWINS = sorted([s for s, t in
                      [(s, t) for t, ss in calls.items() for s in ss] if s != 0x67d193 and s != 0x67e62b])
 OBJ35 = {}
@@ -110,9 +111,10 @@ VECRE = re.compile(r'^\.\?AV\?\$(Dynamic)?VectorClass@')
 VECRE2 = re.compile(r'^\.\?AV\?\$(Dynamic)?VectorCursor@')
 VEC_TD = {a: s for a, s in TD_NAMES.items() if VECRE.match(s)}
 VCUR_TD = {a: s for a, s in TD_NAMES.items() if VECRE2.match(s)}
-ck('A1 VectorClass 族 TypeDescriptor 数量 > 300', len(VEC_TD) > 300,
+ck('A1 VectorClass 族 TypeDescriptor 数 == 396（精确值，非阈值）', len(VEC_TD) == 396,
    'n=%d (另 VectorCursor %d)' % (len(VEC_TD), len(VCUR_TD)))
-ck('A2 VectorClass 族 TD 占全部 RTTI 名的比例', len(VEC_TD) < len(TD_NAMES),
+ck('A2 全部 RTTI 名 == 634，族 TD 是它的真子集（精确计数，非恒真比较）',
+   len(TD_NAMES) == 634 and len(VEC_TD) < len(TD_NAMES),
    'vec=%d / all=%d' % (len(VEC_TD), len(TD_NAMES)))
 
 # TD 地址 -> 名字；再建 vtable->名字：c7 05 写入的 imm 指向 vtable，vtable-4 -> COL -> +12 -> TD
@@ -165,7 +167,8 @@ for tgt, sites in BSS_WRITES.items():
             b_vec['VectorCursor'] += 1
         else:
             b_vec['other-RTTI'] += 1
-ck('B1 写入侧扫到 c7 05 写 BSS 的站点数', sum(len(v) for v in BSS_WRITES.values()) > 1000,
+ck('B1 写入侧扫到 c7 05 写 BSS：目标 == 1159 且站点 == 1777（精确值）',
+   sum(len(v) for v in BSS_WRITES.values()) == 1777 and len(BSS_WRITES) == 1159,
    'sites=%d targets=%d classes=%s' % (sum(len(v) for v in BSS_WRITES.values()),
                                        len(BSS_WRITES), dict(b_vec)))
 
@@ -193,8 +196,10 @@ for _t, _sites in BSS_WRITES.items():
         else:
             _land['inter-section gap'] += 1
             _outs.append(_vt)
-ck('B1b UNRESOLVED 的归因：不是「全部落在节外」，而是多数是 0/0xffffffff 哨兵值',
-   _land['sentinel(0/0xffffffff)'] > 0 and _land['above-all-sections'] > 0,
+ck('B1b UNRESOLVED 归因：0/0xffffffff 哨兵是最多的一类，且节内失败确实存在',
+   _land['sentinel(0/0xffffffff)'] == max(_land.values())
+   and _land['sentinel(0/0xffffffff)'] > 0
+   and len([v for v in _outs if v not in (0, 0xffffffff)]) > 0,
    'landing=%s ; non-sentinel-outside=%d (n=%d..%d)'
    % (dict(_land), len([v for v in _outs if v not in (0, 0xffffffff)]),
       min([v for v in _outs if v not in (0, 0xffffffff)] or [0]),
@@ -202,12 +207,14 @@ ck('B1b UNRESOLVED 的归因：不是「全部落在节外」，而是多数是 
 
 # 全集：所有「至少一次被写入 VectorClass 族 vptr」的 BSS 目标
 ALL_VEC_OBJS = sorted(b_class)
-ck('B2 全库 VectorClass 族全局静态对象数', len(ALL_VEC_OBJS) >= 35,
-   'n=%d' % len(ALL_VEC_OBJS))
+# B2（原为 >=35 的弱断言，已改）：把 142 变成可证伪的精确断言。
+# 口径限定：只覆盖「c7 05 直接写 BSS vptr」这条扫描路径，不是「全库所有 VectorClass 对象」。
+ck('B2 本扫描路径可观测的 VectorClass 族 BSS 目标数 == 142（精确值，不是 >=35）',
+   len(ALL_VEC_OBJS) == 142, 'n=%d (口径: c7 05 写 BSS vptr 路径)' % len(ALL_VEC_OBJS))
 ck('B3 r122a 的 35 个是它的子集', set(OBJ35) <= set(ALL_VEC_OBJS),
    'missing=%s' % [hex(x) for x in sorted(set(OBJ35) - set(ALL_VEC_OBJS))])
 EXTRA = sorted(set(ALL_VEC_OBJS) - set(OBJ35))
-ck('B4 存在 35 之外的其他 VectorClass 全局对象（故 35 != 全库）', len(EXTRA) > 0,
+ck('B4 35 之外的 VectorClass 族 BSS 目标数 == 107（精确值，非 >0）', len(EXTRA) == 107,
    'extra_n=%d' % len(EXTRA))
 
 # 那 35 个的独特性质是什么？r122a: 恰好 2 次写入 = Dynamic 体 + Vector 体，元素同一 PAV*
@@ -243,18 +250,30 @@ for t in EXTRA:
         e2 = dyn[0].split('VectorClass@')[1].split('@@@')[0]
         if e1 == e2:
             extra_dual.append((t, e1))
-ck('B6 35 之外的「Dynamic+Vector 同元素」形态对象数（决定 35 是否=全体该形态）',
-   len(extra_dual) > 0,
-   'n=%d ; sample=%s' % (len(extra_dual),
-                         [(hex(a), b) for a, b in extra_dual[:8]]))
+# B6（原为 True 占位断言，已改）：把 103 变成可证伪的断言，并给出占 EXTRA 的比例。
+ck('B6 35 之外「恰 1 Dynamic + 恰 1 Vector 且元素同型」的对象数 == 103（精确值）',
+   len(extra_dual) == 103,
+   'n=%d / EXTRA=%d = %.1f%% ; sample=%s'
+   % (len(extra_dual), len(EXTRA),
+      100.0 * len(extra_dual) / len(EXTRA) if EXTRA else 0.0,
+      [(hex(a), b) for a, b in extra_dual[:8]]))
 # B7 真条件：把这 103 个「形态相同但不在这 35 里」的对象拿去问同一个问题——
-# 它们有没有被那批字节全同的孪生函数调用过？若一个都没有，则 35 的特异性确实在调用点。
+# 它们有没有被那批字节全同的孪生函数调用过？若一个都没有，则形态不足以单独区分 35 个。
+# 审计必修 #13：原 detail 说「37 个孪生调用站」，但 invoked 只收集 35 个有效前导的站。
+# 这里把 37 站全量收进来（前导形态合法的记 edx，非法站记 None 并单列），文案与实现对齐。
 invoked = set()
-for s in R121_TWINS:
+bad_lead = []
+for s in ALL_SITES37:
     b = rd(s - 7, 7)
     if b and b[0] == 0xba:
         invoked.add(struct.unpack_from('<I', b, 1)[0])
-ck('B7 35 之外的同形态对象没有一个被这 37 个孪生调用站调用过（故特异性在调用点）',
+    else:
+        bad_lead.append(s)
+ck('B7a 37 站中前导形态合法（ba imm32）的站数 == 35，另 2 站形态非法（即 R121 排除的那两站）',
+   len(invoked) == 35 and len(bad_lead) == 2,
+   'invoked_n=%d bad_lead=%s' % (len(invoked), [hex(x) for x in bad_lead]))
+ck('B7b 35 之外的 103 个同形态对象没有一个被这 35 个合法前导站调用过'
+   '（故形态不足以单独区分 35 个；是否调用点特异需另证）',
    not (set(a for a, b in extra_dual) & invoked),
    'intersect=%s ; invoked_n=%d ; extra_dual_n=%d'
    % ([hex(x) for x in sorted(set(a for a, b in extra_dual) & invoked)][:5],

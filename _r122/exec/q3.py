@@ -35,15 +35,24 @@ wanted = {s["site_rva"]: s for s in q2["pass2_resync_sweep"]["sites"]}
 md = Cs(CS_ARCH_X86, CS_MODE_32)
 md.detail = False
 
+# Mnemonics whose FIRST operand is a true destination (i.e. the register is written).
+# Whitelist, not blacklist: `push edx`/`call`/`cmp` etc. name edx as an operand but
+# do NOT write it. A blacklist bug made `push edx` look like an edx write.
+WRITES_DST = {
+    "mov", "movzx", "movsx", "lea", "xor", "add", "sub", "and", "or", "adc", "sbb",
+    "imul", "not", "neg", "shl", "shr", "sar", "rol", "ror", "pop", "inc", "dec",
+    "xchg", "setne", "sete", "setl", "setg", "seta", "setb",
+}
+
 def classify_write(mn, ops):
     """If this instruction writes edx, return (kind, detail)."""
     parts = ops.split(",")
     dst = parts[0].strip()
-    if dst != "edx" and not dst.startswith("edx,"):
-        # also catches 'edx' spelled without spaces
-        if dst != "edx":
-            return None
     if dst != "edx":
+        return None
+    if mn == "cdq":                      # cdq sign-extends eax into edx
+        return ("other", "cdq")
+    if mn not in WRITES_DST:
         return None
     if len(parts) == 1:
         return ("other", "%s %s" % (mn, ops))
@@ -58,7 +67,7 @@ def classify_write(mn, ops):
         if src.startswith("["):
             return ("mem", src)
         return ("reg", src)
-    if mn == "xor" and src == "edx":
+    if mn in ("xor", "sub") and src == "edx":
         return ("zero", 0)
     return ("other", "%s %s" % (mn, ops))
 
@@ -159,6 +168,13 @@ ctl1 = len(R3) == 1 and edx_source(R3) is None
 R4 = [{"rva": 0, "edx_write": ("imm32", 0x111111)},
       {"rva": 1, "edx_write": ("imm32", 0x222222)}]
 ctl2 = edx_source(R4)["edx_write"][1] == 0x222222
+# 4b) regression control: `push edx` must NOT count as an edx write (this exact bug
+#     made the 0x27e62b site look like a writer of edx in an earlier version).
+R5 = [{"rva": 0, "edx_write": classify_write("push", "edx")},
+      {"rva": 1, "edx_write": classify_write("mov", "edx, 0x111111")}]
+ctl2b = edx_source([{"rva": 0, "edx_write": classify_write("push", "edx")}]) is None and \
+        edx_source(R5)["edx_write"][1] == 0x111111
+assert ctl2b
 # 5) control: VA->RVA conversion must place a known absolute VA in .data BSS and must
 #    NOT place it there if we forget the subtract. Guards the RVA/VA bug above.
 probe_va = IB + DATA_FILE[1] + 0x100          # a point just inside .data BSS

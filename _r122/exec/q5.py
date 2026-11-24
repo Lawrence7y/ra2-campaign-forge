@@ -42,7 +42,29 @@ def scan(buf, base_rva, want):
         i = buf.find(b"\xc7\x05", i + 1)
     return hits
 
-hits = scan(tb, TV, tset)
+hits_raw = scan(tb, TV, tset)
+
+# --- instruction-boundary validation ---
+# A raw byte scan can match `c7 05` bytes that live inside another instruction's
+# immediate/displacement. Validate every hit against real instruction starts from a
+# streaming resync sweep, and report how many were dropped.
+from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+_md = Cs(CS_ARCH_X86, CS_MODE_32); _md.detail = False
+boundaries = set()
+_o = 0
+while _o < len(tb):
+    _p = False
+    for _a, _sz, _mn, _ops in _md.disasm_lite(tb[_o:], TV + _o):
+        _p = True
+        boundaries.add(_a)
+        _n = _a + _sz - TV
+        if _n <= _o:
+            break
+        _o = _n
+    if not _p:
+        _o += 1
+hits = [h for h in hits_raw if h[0] in boundaries]
+dropped = [h for h in hits_raw if h[0] not in boundaries]
 
 groups = {}
 for site, addr, val in hits:
@@ -69,6 +91,9 @@ assert pos_a and neg_b and neg_c and neg_d and ctl_e, (pos_a, neg_b, neg_c, neg_
 
 res = {
     "n_sites": len(hits),
+    "n_sites_raw": len(hits_raw),
+    "n_sites_dropped_not_on_boundary": len(dropped),
+    "dropped_sites": ["%#x" % d[0] for d in dropped],
     "n_targets_hit": len(groups),
     "n_targets_requested": len(targets),
     "targets_with_zero_writes": ["%#x" % t for t in targets if written[t] == 0],
