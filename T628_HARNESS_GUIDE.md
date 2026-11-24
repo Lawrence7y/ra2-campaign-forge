@@ -222,3 +222,53 @@ ssh -i C:\Users\Administrator\.ssh\t628_ed25519 t628@192.168.1.68 "ls -lt /home/
 - **R17 进度**：已完成至 **R108**（累计自动压缩 39 次），五项 CR 不变量 **5/5 PASS**（看板 256/300 行），当时正在执行 **R109**（`#183` 主会话）。
 - **节点状态**：`t628`（`online`）与 `win-main`（`online`，`WIN-B7KIC1TNL6R`）均在线。
 - **后台优化基线**：`t628-re-guardian` 已集成 `Mem-Guard`、`Stall-Watchdog` 与 `Harness-Watchdog`；Jellyfin 已关闭 Trickplay / 章节图提取与 SMB 实时监控，日常待机占用约 54 MB，不与 `t628-harness` 争抢资源。
+
+---
+
+## 8. 成果定时回传与 GitHub 归档（本机 `win-main` 侧）
+
+### 8.1 链路与调度
+
+本机每 **2 小时** 由 Windows 计划任务 `RA2-T628-Sync` 执行 `tools\t628_sync.ps1`，把 t628 的 R17 文本成果拉回本仓 `lead/` 并推送到
+`https://github.com/Lawrence7y/ra2-campaign-forge`（**PUBLIC**，`main`）。
+
+```powershell
+# 手动跑一次
+pwsh -NoProfile -File D:\Project\ra2-campaign-forge\tools\t628_sync.ps1
+
+# 只采集解包、不提交（排查用）
+pwsh -NoProfile -File D:\Project\ra2-campaign-forge\tools\t628_sync.ps1 -DryRun
+
+# 看调度状态与最近日志
+schtasks /query /tn RA2-T628-Sync /fo LIST /v
+Get-Content D:\Project\ra2-campaign-forge\.sync\sync.log -Tail 20
+```
+
+脚本行为：`ssh bash -s` 送 `tools\remote_collect.sh` 到远端 → 远端按白名单 `tar czf -` → 本机 `bsdtar` 解包覆盖 →
+生成路径清单 → `git add --pathspec-from-file` → `commit` → `push --no-verify`。
+无变更时只记日志不提交；`.sync\run.lock` 互斥，锁龄超 90 分钟视为陈旧并接管。
+
+### 8.2 入库口径（与 `.gitignore` 一致，双向同规则）
+
+| 收 | 不收 |
+|---|---|
+| `lead/**` 与 `_r1xx/**` 的 `md py tsv txt json sh` | 写前备份：`*.bak*`、`SUPERSEDED*`、`*.before_*`、`*.broken_*`、`R17_LEAD_BASELINE/` |
+| 仓库根级 `*.md` | 证据大件：`EVIDENCE/`、`_audit/` |
+| 单文件 < 1 MB | 单文件 ≥ 1 MB（dump 级）、游戏资源（`ini map mpr mmp wav shp csf png` 等 EA 版权件） |
+
+实测规模：首次全量 **21,503 文件 / 301 MB**；单轮增量约 **700 文件 / 15 MB**（压缩后）。
+
+### 8.3 两个环境坑（已处理，勿踩）
+
+1. **git 的 schannel 后端拿不到证书容器** —— 报 `schannel: AcquireCredentialsHandle failed: SEC_E_NO_CREDENTIALS`（HTTP 401/403 之外的一种失败）。
+   已在本仓 `.git/config` 固定 `http.sslBackend=openssl` 并挂 `credential.https://github.com.helper = !gh auth git-credential`。
+   **换机器或重装 git 后要重设**，否则 `git ls-remote` 直接失败而 `gh api` 却正常（易误判成网络问题）。
+2. **`pre-commit` / `pre-push` 是失效的 mimosa 僵尸 hook** —— 指向 `…\mimosa\1.0.4\payload\dist\cli.js`（文件已不存在），
+   任何 commit/push 都会 `MODULE_NOT_FOUND`。已改名为 `*.disabled-mimosa-zombie-20261124` 保留可恢复；
+   若日后重装 mimosa，需重新生成 hook 并去掉脚本里的 `--no-verify`。
+
+### 8.4 不可写入仓的内容（红线不变）
+
+`gamemd.exe`、`ra2bench/`、`ra2youli/`、`*.mix/*.yrm/*.exe/*.pkl`、`out/`、`scratch/`、凭据（`01-凭据.md` 等）一律不入库；
+`*.cpp/*.h` 按既有铁律 2 也保持排除。回传只走文本结论层。
+
