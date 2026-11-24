@@ -16,6 +16,17 @@ trap 'rm -f "$LIST"' EXIT
 cd "$ROOT"
 
 {
+  # 五件套无条件收（体积豁免）：结论台账是本库核心交付物，
+  # GOAL_THREE_TARGETS 已达 4.8 MB，若被 1 MB 阈值挡住则永远同步不到。
+  for f in ./lead/next_re_20261117_r14/R14_COMMON.md \
+           ./lead/next_re_20261117_r14/STATUS_BOARD.md \
+           ./lead/next_re_20261117_r14/BOARD_ARCHIVE.md \
+           ./lead/next_re_20261117_r14/COMPACT_STATE.md \
+           ./lead/LEAD_LOCK \
+           ./lead/GOAL_THREE_TARGETS_20261018.md ; do
+    [ -f "$f" ] && echo "$f"
+  done | sed 's|^\./||'
+
   find ./lead -type f \
     \( -name '*.md' -o -name '*.py' -o -name '*.tsv' -o -name '*.txt' \
        -o -name '*.json' -o -name '*.sh' \) \
@@ -45,7 +56,7 @@ cd "$ROOT"
 
   # 仓库根级说明文档
   find . -maxdepth 1 -type f -name '*.md' -size -1048576c 2>/dev/null || true
-} > "$LIST"
+} | sed 's|^\./||' | sort -u > "$LIST"
 
 COUNT=$(wc -l < "$LIST")
 echo "[remote] files=$COUNT" >&2

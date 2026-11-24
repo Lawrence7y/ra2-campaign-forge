@@ -147,12 +147,23 @@ try {
     })
 
     $maxBytes = $MaxFileMB * 1MB
+    # 五件套体积豁免：结论台账是本库核心交付物
+    # （GOAL_THREE_TARGETS 已达 4.8 MB，被阈值挡掉则永远同步不到）
+    $alwaysInclude = @(
+        'lead/GOAL_THREE_TARGETS_20261018.md',
+        'lead/LEAD_LOCK',
+        'lead/next_re_20261117_r14/R14_COMMON.md',
+        'lead/next_re_20261117_r14/STATUS_BOARD.md',
+        'lead/next_re_20261117_r14/BOARD_ARCHIVE.md',
+        'lead/next_re_20261117_r14/COMPACT_STATE.md'
+    )
     $keep = New-Object System.Collections.Generic.List[string]
     foreach ($p in $changed) {
         if (-not (Test-Path -LiteralPath $p)) { continue }
         $item = Get-Item -LiteralPath $p -ErrorAction SilentlyContinue
         if ($null -eq $item) { continue }
-        if ($item.Length -ge $maxBytes) {
+        $norm = $p -replace '\\', '/'
+        if ($item.Length -ge $maxBytes -and $alwaysInclude -notcontains $norm) {
             Write-Log ("跳过超大文件（{0:N1} MB）：{1}" -f ($item.Length / 1MB), $p) 'WARN'
             continue
         }
