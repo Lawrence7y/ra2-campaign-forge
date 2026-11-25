@@ -1,0 +1,97 @@
+# -*- coding: utf-8 -*-
+"""R129n：本轮自审 —— 逐条列出我自己可能犯、且本轮确实踩过的错，并各给一条可执行的判据。
+
+原则（与历轮同）：自错必须留案，且一条自错必须换来一条**能失败**的判据，否则下轮还会犯。
+"""
+import sys, os, json, hashlib, io
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '_r128'))
+from peek import ROOT
+
+OUT = os.path.join(ROOT, '_r129', 'r129n_selfaudit.json')
+R14 = os.path.join(ROOT, 'lead', 'next_re_20261117_r14')
+ck = []
+def add(n, ok, d=''):
+    ck.append({'name': n, 'ok': bool(ok), 'detail': d if not isinstance(d, (dict, list)) else json.dumps(d, ensure_ascii=False)})
+
+ERRS = [
+    ('S-184', 'r129a A12 用 0x16 字节窗口读 0x6be131 起的三条指令，10 字节 mov 被切断、capstone 报 .byte 而误判 FAIL',
+     '窗口必须覆盖到「下一条指令起点」，本轮实测 0x6be144 的 c7 05 ... 共 10 字节 ⇒ 窗口取 0x24'),
+    ('S-185', 'r129b B1 按 call dword ptr [0x7e15d8] 写断言，实测是 mov esi,[...] + call esi',
+     '断言按盘上字节写，不按我记忆里的形态写'),
+    ('S-186', 'r129b B11 反控误用 0x7ea6e8 当 vtable（它是 IID 常量），col_of 返 None',
+     '反控对象必须本身可解，否则反控是空转'),
+    ('S-187', 'r129c C9 写成 `... or True` 恒真断言，等于没查',
+     '任何断言里出现 or True / and False 即视为无判据'),
+    ('S-188', 'r129f F4 用「产物路径」当替换目标，但 id 11 与 12 共用同一产物 ⇒ 出现 2 次',
+     '替换目标必须整行唯一，不能拿「碰巧只出现一次的子串」当目标'),
+    ('S-189', 'r129k 把撤回行原文原样塞进存档表，其中一条原行是 CRLF ⇒ 存档表混进 1 个 CR',
+     '跨文件搬运文本时必须显式处理行尾，且对目标文件断言 LF-only'),
+    ('S-190', 'r129k2 用 basename.split("_")[2] 取 key，实际文件名是 r129_retract_<key>.<ts>.bak',
+     '从文件名取字段必须用切片前缀或正则，不靠 split 下标'),
+    ('S-191', 'r129k2 L4 按单行断言字节差，但 id 3 与 4 共用产物且删行还带走行尾换行',
+     '字节差断言必须按「文件」汇总，且把行尾换行计入'),
+    ('S-192', 'r129m od_hits 只匹配零填充 007e9520，objdump 输出 0x7e9520 ⇒ 全 0 命中',
+     '跨工具比文本必须两种数值形式都收，且加边界断言防子串误配'),
+    ('S-193', 'r129m INS 解析用 [0-9a-f]{8}，objdump 不补前导零 ⇒ INS 全空',
+     '解析外部工具输出必须先用实测样例行验证，不假设格式'),
+    ('S-194', 'r129m 直接比 capstone 字节命中与 objdump 指令起点，交集恒 0，我差点写成「两译码器分歧」',
+     '跨译码器比集合前必须归一化到同一口径（指令起点）'),
+    ('S-195', 'r129m 归一化时从 a-10 起自求指令边界，300 处落到非边界（差 1 字节）—— 与 R127 S-170 同一个坑',
+     '归一化必须用权威边界表（objdump 的指令列表），不自己求'),
+    ('S-196', 'r129j 只降级第 7 列、不删产物里的假声称，门禁立刻 5 条 FAIL',
+     '「撤回声称」必须同时撤回声称所依据的那行字，只改一列等于半撤'),
+    ('S-197', 'r129k 的 K3 又写了一条 or True 恒真断言 —— S-187 的同类错在同一轮里犯第二次',
+     '同族错必须在同一轮内落成自动检查（N1 就是它），否则「留案」只是记了一笔'),
+    ('S-198', 'r129n 的 N3 把自身旧 JSON 也统计进去，自指导致「越跑越红」',
+     '统计口径必须排除自身产物，否则判据会随运行次数漂移'),
+    ('S-199', 'r129k 是改盘脚本，重跑时它在写存档表之后、在改门禁常量之前 assert 失败（C17_REUSED_ATS 已被改过）'
+              ' ⇒ 存档表被覆写成只剩表头。一次性改盘脚本不幂等，重跑会吃掉已完成产物',
+     '改盘脚本必须幂等或加「已完成则跳过」的前置断言；一旦中途失败，落盘顺序要保证'
+     '「先写可重建物、后写不可重建物」；本次靠 r129k2 从 wx 备份重建存档表',),
+]
+for sid, what, lesson in ERRS:
+    add('%s 留案' % sid, True, {'what': what, 'lesson': lesson})
+
+# 逐条把「教训」落成可执行检查
+srcs = {}
+for f in ('r129a_ebx_target.py', 'r129b_clsid_factory.py', 'r129c_dll_table.py',
+          'r129d_tautology_probe.py', 'r129e_gate_fix_apply.py', 'r129f_gate_ctrl.py',
+          'r129g_gatever_bump.py', 'r129h_five_rows.py', 'r129i_ruling_design.py',
+          'r129j_ruling_apply.py', 'r129k_retract_lines.py', 'r129k2_rebuild_archive.py',
+          'r129l_ruling_ctrl.py', 'r129m_objdump_arbitrate.py'):
+    p = os.path.join(ROOT, '_r129', f)
+    srcs[f] = io.open(p, encoding='utf-8').read()
+add('N0 本轮 14 套脚本都在盘上', len(srcs) == 14, sorted(srcs))
+
+TAUT = []
+for f, t in srcs.items():
+    for i, l in enumerate(t.split('\n'), 1):
+        if 'or True' in l and 'assert' not in l and not l.strip().startswith('#'):
+            TAUT.append((f, i, l.strip()[:70]))
+add('N1 S-187 的教训落成检查：本目录脚本里不得再出现裸 or True 恒真断言', not TAUT, TAUT)
+
+# 每个脚本都必须带一份 JSON 产物（除 k2 这类重建脚本外）
+import glob
+js = sorted(os.path.basename(p) for p in glob.glob(os.path.join(ROOT, '_r129', '*.json')))
+add('N2 产物 JSON 清单（证明每步都落盘；门禁改盘与重建脚本不产 JSON 是正常的）', len(js) >= 8, js)
+
+# 关键：本轮所有断言合计
+tot_ok = tot = 0
+# S-198：首版把本脚本自己的旧 JSON 也统计进去 ⇒ 自指：上一轮的 FAIL 会被算成这一轮的失败。
+# 排除自身。
+_SELF = os.path.join(ROOT, '_r129', 'r129n_selfaudit.json')
+for p in sorted(glob.glob(os.path.join(ROOT, '_r129', 'r129*.json'))):
+    if p == _SELF: continue
+    d = json.load(open(p))
+    if 'checks' in d:
+        tot += d.get('total', len(d['checks']))
+        tot_ok += d.get('pass', sum(1 for c in d['checks'] if c['ok']))
+add('N3 本轮断言合计 %d 项，全 PASS' % tot, tot_ok == tot, {'pass': tot_ok, 'total': tot})
+
+ok = sum(1 for x in ck if x['ok'])
+json.dump({'checks': ck, 'pass': ok, 'total': len(ck), 'errors': ERRS},
+          open(OUT, 'w'), ensure_ascii=False, indent=1)
+for x in ck:
+    print(('  PASS ' if x['ok'] else '  FAIL ') + x['name'] + (('  | ' + str(x['detail'])) if not x['ok'] else ''))
+print('%d/%d PASS' % (ok, len(ck)))
+print('自错 %d 条：%s' % (len(ERRS), ', '.join(e[0] for e in ERRS)))

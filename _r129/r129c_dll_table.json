@@ -1,0 +1,74 @@
+{
+ "checks": [
+  {
+   "name": "C0 exe sha256 未变",
+   "ok": true,
+   "detail": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
+  },
+  {
+   "name": "C1 循环头 0x6bc342 mov esi,0x7f3710；步长 0x6bc409 add esi,8；上界 0x6bc40c cmp esi,0x7f3718；回边 0x6bc412 jl 0x6bc34d",
+   "ok": true,
+   "detail": "[\"006bc342 mov esi, 0x7f3710\", \"006bc409 add esi, 8\", \"006bc40c cmp esi, 0x7f3718\"]"
+  },
+  {
+   "name": "C2 循环内 +0 处是 CoCreateInstance 的 rclsid 实参、+4 处是 LoadLibraryA 的实参：0x6bc35b mov edx,[esi] 后 push edx 给 0x6bedb0；0x6bc37f mov eax,[esi+4] 后 push eax 给 [0x7e1220]",
+   "ok": true,
+   "detail": "[\"006bc342 mov esi, 0x7f3710\", \"006bc35b mov edx, dword ptr [esi]\", \"006bc37f mov eax, dword ptr [esi + 4]\", \"006bc3a1 mov ecx, dword ptr [esi]\", \"006bc409 add esi, 8\", \"006bc40c cmp esi, 0x7f3718\"]"
+  },
+  {
+   "name": "C3 0x7e1220 = KERNEL32!LoadLibraryA（循环内 call ebx 的 ebx 就来自这个槽）",
+   "ok": true,
+   "detail": [
+    "KERNEL32.dll",
+    "LoadLibraryA"
+   ]
+  },
+  {
+   "name": "C4 0x6bedb0 的体内调 ole32!CoCreateInstance（0x7e15fc）与 ole32!OleRun（0x7e1600），并在成功后 call [obj+8] 释放",
+   "ok": true,
+   "detail": "{\"CoCreateInstance\": [\"ole32.dll\", \"CoCreateInstance\"], \"OleRun\": [\"ole32.dll\", \"OleRun\"]}"
+  },
+  {
+   "name": "C5 0x6bedb0 里 0x6beddd call [0x7e15fc]（CoCreateInstance）、0x6bedec call [0x7e1600]（OleRun）、0x6bee05 call [ecx]（TrySetForegroundWindow 式的首个虚槽）、0x6bee10 call [edx+8]（Release）",
+   "ok": true,
+   "detail": "006bedb0 push esi | 006bedb1 push edi | 006bedb2 mov edi, ecx | 006bedb4 mov eax, dword ptr [edi] | 006bedb6 test eax, eax | 006bedb8 je 0x6bedc0 | 006bedba mov ecx, dword ptr [eax] | 006bedbc push eax | 006bedbd call dword ptr [ecx + 8] | 006bedc0 mov eax, dword ptr [esp + 0x14] | 006bedc4 test al, 0x14 | 006bedc6 je 0x6bee1a | 006bedc8 mov ecx, dword ptr [esp + 0xc] | 006bedcc lea edx, [esp + 0x"
+  },
+  {
+   "name": "C6 表 = 0x7f3710 起 1 条 8 字节项（上界 0x7f3718 ⇒ 恰 1 项，不是我数的）",
+   "ok": true,
+   "detail": "[[\"0x007f3710\", \"0x007e9500\", \"0x00840a78\"]]"
+  },
+  {
+   "name": "C7 唯一那项的 +0 是 .rdata GUID {1440AD10-6AA8-11D1-B6F9-00A024DDAFD1}（0x7e9500）",
+   "ok": true,
+   "detail": "{1440AD10-6AA8-11D1-B6F9-00A024DDAFD1}"
+  },
+  {
+   "name": "C8 唯一那项的 +4 是 .data 里的 ASCII 串，正文是 blowfish.dll",
+   "ok": true,
+   "detail": "blowfish.dll"
+  },
+  {
+   "name": "C9 上界 0x7f3718 处若被当成第 2 项，给不出「.rdata 指针 + 可打印 ASCII 串」这一对（故表恰 1 项）",
+   "ok": true,
+   "detail": "{\"at_0x7f3718\": \"0xffffffff\", \"at_0x7f371c\": \"0x6be068\", \"str\": \"Uì\\u0002\\bél¯àÿÃeè\"}"
+  },
+  {
+   "name": "C10 反控 N1：步长 4 给出 1 条「GUID 指针 + 可打印串」项，步长 8 给出 1 条；只有 8 与 0x6bc409 的 add esi,8 一致",
+   "ok": true,
+   "detail": "{\"step4\": 1, \"step8\": 1}"
+  },
+  {
+   "name": "C11 反控 N2：表上界由字节 81 fe 18 37 7f 00（cmp esi,0x7f3718）在 0x6bc40c 给出，不是我数的",
+   "ok": true,
+   "detail": "81fe18377f00"
+  },
+  {
+   "name": "C12 反控 N3：0x7e9520 与表项的 0x7e9500 是两个不同 GUID（差 Data1 末字节），不能互相替代当「同一个 dll 的 CLSID」",
+   "ok": true,
+   "detail": "{\"c1\": \"{1440AD10-6AA8-11D1-B6F9-00A024DDAFD1}\", \"c2\": \"{B45A4A81-86DA-11D1-B706-00A024DDAFD1}\"}"
+  }
+ ],
+ "pass": 13,
+ "total": 13
+}

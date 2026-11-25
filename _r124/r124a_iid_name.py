@@ -97,10 +97,27 @@ add('S2 interface names (structs) carried by the binary RTTI', len(iface_names) 
     '%d :: %s' % (len(iface_names), ', '.join(x[4:-2] for x in iface_names)))
 
 # ---- S3: class-set biconditional IID <-> interface name ----
+# R124: the IID class-sets come from a FULL QI-function scan, not from R110's list.
+# R110 truncates at byte 120 of the QI body and thereby drops three of HouseClass's
+# six comparisons (offsets 130/161/182).  r124f proves it and names the class.
+import capstone as _cs
+_md = _cs.Cs(_cs.CS_ARCH_X86, _cs.CS_MODE_32)
+def _qi_iids(fn, win=0x400):
+    out, pend = [], None
+    for ins in _md.disasm(rd(fn, win), fn):
+        mn = ins.mnemonic
+        if mn == 'mov' and ins.op_str.startswith('edi, 0x'):
+            try: pend = int(ins.op_str.split(', ', 1)[1], 16)
+            except ValueError: pend = None
+        elif 'cmpsd' in mn:
+            if pend is not None: out.append(pend); pend = None
+        elif mn in ('ret', 'retn') and out:
+            break
+    return out
 iid_classes = collections.defaultdict(set)
 for r in qi:
-    for i in r['iids']:
-        iid_classes[i['ptr']].add(r['cls'])
+    for iid in _qi_iids(int(r['slot0'], 16)):
+        iid_classes['0x%x' % iid].add(r['cls'])
 
 # R124 self-error S-115: the first draft tested EQUALITY of class sets.  That is
 # the wrong predicate: a class whose QI is inherited compares fewer IIDs than its
@@ -130,8 +147,8 @@ add('S3 containment: every QI IID class-set is contained in at least one interfa
 named = {r['iid_ptr']: r['exact_name_matches'] for r in rows}
 uniq  = {k: v for k, v in named.items() if len(v) == 1}
 ambig = {k: v for k, v in named.items() if len(v) != 1}
-add('S4 class-set containment alone leaves 13/17 unique and 4 genuinely tied',
-    len(uniq) == 13 and len(ambig) == 4,
+add('S4 class-set containment alone leaves 13/18 unique and 5 genuinely tied',
+    len(uniq) == 13 and len(ambig) == 5,
     'unique=%d tied=%s' % (len(uniq), json.dumps(ambig, ensure_ascii=False)))
 
 # ---- S5: controls ----
@@ -164,7 +181,7 @@ add('S6b IPersistStream and IPersist are indistinguishable by member offset',
 carry = len(name_classes['.?AUIPersistStream@@'])
 cmp70 = len(iid_classes['0x7f7c70']); cmp80 = len(iid_classes['0x7f7c80'])
 add('S7 classes carrying IPersist/IPersistStream in RTTI != classes whose QI compares the IIDs',
-    carry == 90 and cmp70 == cmp80 == 76,
+    carry == 90 and cmp70 == cmp80 == 77,
     'rtti=%d qi70=%d qi80=%d (delta=%d = classes inheriting the QI body)' % (carry, cmp70, cmp80, carry - cmp70))
 add('S8 the two IIDs are always compared by exactly the same class set',
     iid_classes['0x7f7c70'] == iid_classes['0x7f7c80'],

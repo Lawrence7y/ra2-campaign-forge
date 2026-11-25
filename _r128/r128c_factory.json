@@ -1,0 +1,64 @@
+{
+ "checks": [
+  {
+   "name": "C0 exe sha256 未变",
+   "ok": true,
+   "detail": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
+  },
+  {
+   "name": "C1 0x7ea564 前五槽的 ret 字节是 4/4/12/16/8 —— 若 these 走 ecx（__thiscall），AddRef 与 Release 必须是 ret 0；实测 4，故本构建 this 显式占第一个栈参数（这才是 R127「CreateInstance ret 0x10 不符」的真因）",
+   "ok": true,
+   "detail": "{'slots': ['0x00429210', '0x004e8240', '0x004e8250', '0x00429270', '0x004e8260'], 'rets': [12, 4, 4, 16, 8]}"
+  },
+  {
+   "name": "C2 0x7ea564 的 COL = .?AVTiberianSunClassFactory@@，基类 .?AUIClassFactory@@ (ncb 1) 与 .?AUIUnknown@@ (ncb 0)，三者 mdisp 全 0",
+   "ok": true,
+   "detail": ".?AVTiberianSunClassFactory@@"
+  },
+  {
+   "name": "C3 三处实参取值位置与 this-on-stack 约定逐位自洽：ppv 在 [esp+0x10]、pUnkOuter 在 [esp+0x18]（4 次 push 后即原始 +8）、riid 在 [esp+0x1c]（原始 +0xc）",
+   "ok": true,
+   "detail": "{'arg_ppv_test': [('0x429270', 'eax, dword ptr [esp + 0x10]')], 'zero_ppv': [('0x42928c', 'dword ptr [eax], 0')], 'arg_punkouter': [('0x429288', 'ecx, dword ptr [esp + 0x18]')], 'arg_riid': [('0x4292a2', 'ebp, dword ptr [esp + 0x1c]')]}"
+  },
+  {
+   "name": "C4 四条 HRESULT 常量：E_INVALIDARG 0x80070057（ppv 空，直接 mov eax）、CLASS_E_NOAGGREGATION 0x80040110（pUnkOuter 非空，直接 mov eax）、E_OUTOFMEMORY 0x8007000e（两处）、E_NOINTERFACE 0x80004002 —— 后者走 mov ebx，末尾 mov eax, ebx 返回（S-180：我第一版只在 eax 里找它，漏了 ebx 这条通道）",
+   "ok": true,
+   "detail": "{'eax': ['eax, 0x80040110', 'eax, 0x8007000e', 'eax, 0x80070057'], 'ebx': ['ebx, 0x80004002']}"
+  },
+  {
+   "name": "C5 两处转交都是 call dword ptr [edx]，edx 分别取自 0x89a29c 与 0x87f7e8 的 +0 处（即内层对象的 vptr），实参顺序 push ppv / push riid / push <对象地址>",
+   "ok": true,
+   "detail": "[('0x4292f1', 'dword ptr [edx]'), ('0x42933e', 'dword ptr [edx]')]"
+  },
+  {
+   "name": "C6 两处转交都把内层对象地址本身作为 QI 的 this 压栈（0x4292ec -> 0x89a29c、0x429339 -> 0x87f7e8），另两处同址 push（0x4292f9 / 0x429346）是失败清理 helper 的实参 —— 故它调的是内层对象的 slot0（QueryInterface），不是自己的 ppv",
+   "ok": true,
+   "detail": "{'qi_this': [('0x4292ec', '0x89a29c'), ('0x429339', '0x87f7e8')], 'cleanup': [('0x4292f9', '0x89a29c'), ('0x429346', '0x87f7e8')]}"
+  },
+  {
+   "name": "C7 分支里比较的三个 IID：0x7e36c0（IApplication）、0x7f7c90（IID_IUnknown）、0x7ea6e8 —— 前两个走 0x89a29c，第三个走 0x87f7e8",
+   "ok": true,
+   "detail": "['0x7e36c0', '0x7ea6e8', '0x7f7c90']"
+  },
+  {
+   "name": "C8 三处 repe cmpsd 的比较常量按地址序为 0x7e36c0 / 0x7f7c90 / 0x7ea6e8，与 R127 定的 IApplication、IID_IUnknown 一致，第三个待定名",
+   "ok": true,
+   "detail": "[('0x4292ab', '0x7e36c0'), ('0x4292c2', '0x7f7c90'), ('0x42930f', '0x7ea6e8')]"
+  },
+  {
+   "name": "C9 0x89a29c 是 BSS（映像内无静态字节），其 vptr 由 0x429200 的唯一 mov [0x89a29c],0x7e36d4 写入；0x7e36d4 的 COL = .?AVApplicationClass@@",
+   "ok": true,
+   "detail": ".?AVApplicationClass@@"
+  },
+  {
+   "name": "C10 0x87f7e8 同为 BSS，vptr 由 0x40d1b2 的唯一写入 0x7e1964 决定；0x7e1964 的 COL = .?AVMouseClass@@ —— 故 CreateInstance 的两个内层对象分别是全局 ApplicationClass 与全局 MouseClass 单例",
+   "ok": true,
+   "detail": ".?AVMouseClass@@"
+  },
+  {
+   "name": "C11 两个失败分支都 push <对象地址> / call 0x7c8b3d / add esp,4 —— 0x7c8b3d 是单实参的释放/清理 helper（与 R123 的 atexit 注册器 0x7c978a 不同地址，不混用）",
+   "ok": true,
+   "detail": "[('0x7c8b3d', 'push', 'dword ptr [esp + 4]'), ('0x7c8b41', 'call', '0x7c93e8'), ('0x7c8b46', 'pop', 'ecx'), ('0x7c8b47', 'ret', ''), ('0x7c8b48', 'push', 'ebp'), ('0x7c8b49', 'mov', 'ebp, esp'), ('0x7c8b4b', 'sub', 'esp, 0xf8'), ('0x7c8b51', 'push', 'ebx')]"
+  }
+ ]
+}

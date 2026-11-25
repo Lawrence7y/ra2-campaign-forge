@@ -1,0 +1,66 @@
+{
+ "checks": [
+  {
+   "name": "B0 exe sha256 未变",
+   "ok": true,
+   "detail": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
+  },
+  {
+   "name": "B1 逐字节口径 3700 与指令级口径 3700 一致 —— 该地址每次出现都落在一条已译码指令的立即数/位移字段里，没有一次是巧合子串（S-179：我原先预判指令级远少于字节级，反了）",
+   "ok": true,
+   "detail": "raw=3700 ins=3700"
+  },
+  {
+   "name": "B2 形态分布：3693 处 mov ecx,<S> 是全局单例的 this 传递，真正的 vptr 写入只有 1 处",
+   "ok": true,
+   "detail": "{'mov ecx,<S> (this 传递)': 3693, 'mov [S],imm (写 vptr)': 1, 'mov reg,[S] (读字段)': 2, 'push imm': 3, 'mov [S],reg': 1}"
+  },
+  {
+   "name": "B3 0x87f7e8 落在 .data 的非 raw 区（BSS），映像文件里没有任何静态字节，故 R127 待办② 的字面做法「静态读 0x87f7e8 的 vptr」必然读到 0，不可行",
+   "ok": true,
+   "detail": "rd=b'' sect=.data"
+  },
+  {
+   "name": "B4 以 mov dword ptr [0x87f7e8], imm32 形态写它的站点恰 1 处，写入值 0x7e1964",
+   "ok": true,
+   "detail": "[(4247986, 'mov', 'dword ptr [0x87f7e8], 0x7e1964')]"
+  },
+  {
+   "name": "B5 反控：相邻地址 0x87f7e4 的写入 0 处、0x87f7ec 与主对象无关的写入见明细；判据不是「凡 .data 地址都命中」",
+   "ok": true,
+   "detail": "{'87f7e4': [], '87f7ec': [(4624634, 'dword ptr [0x87f7ec], eax')], '89a29c': [(4362752, 'dword ptr [0x89a29c], 0x7e36d4')], 'b0c110': [(7139528, 'dword ptr [0xb0c110], 0x7f4108'), (7139574, 'dword ptr [0xb0c110], 0x7f4108')]}"
+  },
+  {
+   "name": "B6 0x7e1964 的 COL 解出类名 .?AVMouseClass@@（12 条基类）",
+   "ok": true,
+   "detail": ".?AVMouseClass@@"
+  },
+  {
+   "name": "B7 该 COL 末条基类 .?AVINoticeSink@@ 的 mdisp = 21784 = 0x5518",
+   "ok": true,
+   "detail": "[('.?AVINoticeSink@@', 21784)]"
+  },
+  {
+   "name": "B8 静态初始化 0x40d190 是 mov ecx,0x87f7e8 / call 0x5bda40 / push 0x40d1b0 / call 0x7c978a / ret（ctor 后立刻 atexit 注册析构 0x40d1b0）",
+   "ok": true,
+   "detail": "[('0x40d190', 'mov', 'ecx, 0x87f7e8'), ('0x40d195', 'call', '0x5bda40'), ('0x40d19a', 'push', '0x40d1b0'), ('0x40d19f', 'call', '0x7c978a'), ('0x40d1a4', 'pop', 'ecx'), ('0x40d1a5', 'ret', ''), ('0x40d1a6', 'nop', ''), ('0x40d1a7', 'nop', ''), ('0x40d1a8', 'nop', ''), ('0x40d1a9', 'nop', ''), ('0x40d1aa', 'nop', ''), ('0x40d1ab', 'nop', ''), ('0x40d1ac', 'nop', ''), ('0x40d1ad', 'nop', ''), ('0x40d1ae', 'nop', ''), ('0x40d1af', 'nop', ''), ('0x40d1b0', 'push', 'esi')]"
+  },
+  {
+   "name": "B9 ctor 0x5bda40 体写 [esi] <- 0x7e1964 与 [esi + 0x5518] <- 0x7e195c，偏移与 RTTI 的 mdisp 0x5518 逐位一致",
+   "ok": true,
+   "detail": "{'[esi]': [('0x5bda4a', 'dword ptr [esi], 0x7e1964')], '[esi+0x5518]': [('0x5bda68', 'dword ptr [esi + 0x5518], 0x7e195c')]}"
+  },
+  {
+   "name": "B10 0x7e195c 的 COL 也解出 .?AVMouseClass@@，但 COL 指针与主 vtable 的不同（主 0x7fa9b8 / 子对象 0x7fab38）—— 两条 COL 各自 12 条基类，证实是同一类的两个 vtable",
+   "ok": true,
+   "detail": "{'main_COL': '0x007fab38', 'sub_COL': '0x007fa9b8', 'main_class': '.?AVMouseClass@@', 'sub_class': '.?AVMouseClass@@'}"
+  }
+ ],
+ "shapes": {
+  "mov ecx,<S> (this 传递)": 3693,
+  "mov [S],imm (写 vptr)": 1,
+  "mov reg,[S] (读字段)": 2,
+  "push imm": 3,
+  "mov [S],reg": 1
+ }
+}

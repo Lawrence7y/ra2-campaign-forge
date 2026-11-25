@@ -1,0 +1,59 @@
+{
+ "checks": [
+  {
+   "name": "D0 exe sha256 未变",
+   "ok": true,
+   "detail": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
+  },
+  {
+   "name": "D1 0x7ea6e8 在全 .text 的指令级引用恰 3 处，三处都是 mov edi,0x7ea6e8（QI 的比较常量）（S-181：我先用 grep 得 2 处，是因为 capstone 的 skipdata 没在 disasm 前生效、漏掉了 0x4f4273；三处口径才是对的）",
+   "ok": true,
+   "detail": "[('0x42930f', 'mov', 'edi, 0x7ea6e8'), ('0x4293a5', 'mov', 'edi, 0x7ea6e8'), ('0x4f4273', 'mov', 'edi, 0x7ea6e8')]"
+  },
+  {
+   "name": "D2 三处引用落在三个 QI 体内：0x42930f（TiberianSunClassFactory::CreateInstance）、0x4293a5（0x429360 ApplicationClass::QI）、0x4f4273（0x4f4240 MouseClass::QI）—— 再无第三处，故「谁认这个 IID」的宿主集合完整；三者恰好构成 认->转交->自认 的闭环",
+   "ok": true,
+   "detail": "['0x42930f', '0x4293a5', '0x4f4273']"
+  },
+  {
+   "name": "D3 0x429360 第三分支接受 0x7ea6e8 后写 ppv = 0x87f7e8（常量，不是 this）——这正是 R127 判「mdisp 判据无效」的那一处",
+   "ok": true,
+   "detail": "[('0x4293b2', 'dword ptr [edx], 0x87f7e8')]"
+  },
+  {
+   "name": "D4 0x429270 第三分支：比 0x7ea6e8 通过后 mov ecx,0x87f7e8 / mov edx,[0x87f7e8] / push ppv / push riid / push 0x87f7e8 / call [edx] —— 即把该 IID 转交给全局 MouseClass 的 QI",
+   "ok": true,
+   "detail": "{'cmp': [('0x42930f', 'edi, 0x7ea6e8')], 'obj': [('0x42931c', 'ecx, 0x87f7e8')], 'load_vptr': [('0x429331', 'edx, dword ptr [0x87f7e8]')], 'call': [('0x42933e', 'dword ptr [edx]')]}"
+  },
+  {
+   "name": "D5 0x87f7e8 的 vptr 静态读为 0（BSS），但其唯一写入值是 0x7e1964，slot0 = 0x4f4240；故 D4 的 call [edx] 实际进入 MouseClass::QI 0x4f4240",
+   "ok": true,
+   "detail": "slot0=0x004f4240"
+  },
+  {
+   "name": "D6 MouseClass::QI 0x4f4240 只比较两个 IID：0x7f7c90（IID_IUnknown）与 0x7ea6e8；两条接受分支都写 ppv = this（eax 取自 [esp+0xc]，即 this）",
+   "ok": true,
+   "detail": "{'cmps': [('0x4f425e', 'edi, 0x7f7c90'), ('0x4f4273', 'edi, 0x7ea6e8')], 'ppv_write': [('0x4f428c', 'dword ptr [edx], eax')]}"
+  },
+  {
+   "name": "D7 MouseClass 的 COL 在 mdisp 0 处只有两个 .?AU 接口：IGameMap 与 IUnknown（INoticeSink 在 mdisp 0x5518，被 D6 的 ppv=this 排除）⇒ 0x7ea6e8 = .?AUIGameMap@@，唯一解",
+   "ok": true,
+   "detail": "{'au_at_0': ['.?AUIGameMap@@'], 'INoticeSink_mdisp': [21784]}"
+  },
+  {
+   "name": "D8 全库 954 个可解 COL 的类里，9 个声明了 .?AUIGameMap@@；其中「mdisp 0 处唯一的非 IUnknown 接口就是 IGameMap」的只有 9 个 —— MouseClass 在其中，故 D7 的判据不是巧合(反控：判据对多接口类给出空集，不强行凑答案)",
+   "ok": true,
+   "detail": "{'n_cls': 954, 'n_ig': 9, 'n_unique_ok': 9, 'unique_ok_sample': ['.?AVDisplayClass@@', '.?AVGScreenClass@@', '.?AVMapClass@@', '.?AVMouseClass@@', '.?AVPowerClass@@', '.?AVRadarClass@@', '.?AVScrollClass@@', '.?AVSidebarClass@@', '.?AVTabClass@@'], 'ig_sample': ['.?AVDisplayClass@@', '.?AVGScreenClass@@', '.?AVMapClass@@', '.?AVMouseClass@@', '.?AVPowerClass@@', '.?AVRadarClass@@', '.?AVScrollClass@@', '.?AVSidebarClass@@', '.?AVTabClass@@']}"
+  },
+  {
+   "name": "D9 反控：同一个 MouseClass::QI 对 0x7f7c90 也接受并返回 this，但 0x7f7c90 已在 R124 由 IID_IUnknown 常量（全 0 的 Data1）独立定名 —— 判据对两个常量给出不同名字，不是恒等判据",
+   "ok": true,
+   "detail": "{00000000-0000-0000-C000-000000000046}"
+  },
+  {
+   "name": "D10 反控：0x7ea6e8 = {96F02EC7-...} 与 0x7e36c0 = {96F02EC3-...} 仅 Data1 末字节不同，是两个不同常量；0x7e36c0 已在 R127 由「mdisp 0 处非 IUnknown 唯一」定为 IApplication",
+   "ok": true,
+   "detail": "['{96F02EC3-6FE8-11D1-B6FD-00A024DDAFD1}', '{96F02EC7-6FE8-11D1-B6FD-00A024DDAFD1}']"
+  }
+ ]
+}

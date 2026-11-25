@@ -11231,77 +11231,6 @@ S-70 沙箱无 `_r94/` ⇒ 基线假 FAIL（FILE_MISSING）；S-71 第 4 列是*
 **本轮断言总数更新**：r120a 9 / r120b 6 / r120c 10（连跑两次一致）/ r120d 11 / r120e 8 / r120f 7 / r120g 4 = **55 项全 PASS**。
 
 
-## 2.125 R121 —— 崩溃轮遗留的两处**判据缺陷**被定位并修掉；QI 出参去向从「36 个」修正为 **60/60**；并给出「通用包装器」的第一条强证据
-
-### 2.125.1 本轮先修的是**上一轮的半成品**，不是新找一条链
-
-R121 前两次主会话（#225/#226）被 harness 重启打断，`_r121/r121a_qiconsume.py` 落盘时 **10/11 PASS，唯一 FAIL 是反控 N3**。本轮没有绕过这个 FAIL，而是查它为什么翻不动，结果查出两处**判据本身**的缺陷。
-
-### 2.125.2 缺陷 D1：ppv 槽 K **从未参与判定**（反控 N3 结构性恒 FAIL）
-
-`r121a` 的 `analyze()` 解出 `P = mov P,[esp+K]` 后，只把 P 写进 `out['P']` 与 `arg_index`；`consume` 的写入点（第 178 行）**早于** P 的唯一使用点（第 180 行），且全文件不存在 `P is None` 门槛（复算 `r121d` A1/A1b 成立）。⇒ K 平移任意值，consume 桶都不变。
-
-实测（`r121d` 与 `r121b` 双向验证）：K 平移 **-0x10 / -0xc / -8 / -4 / +4 / +8 / +0x10 / +0x14** 共 8 个值，OleSaveToStream **恒为 36**。加 P 门槛后同一反控立刻翻动：**36 → 0**（`r121d` A4 实跑，审计员先前只给推断的「预测 0」被实测确认）。
-
-### 2.125.3 缺陷 D2：寄存器回溯的后向窗口只有 **0x40 字节**
-
-`win(s, 0x40, 0x100)`（第 135 行，复算 A5 成立）。24 个站点写成 `call ebp`（字节 **ff d5**，24/24 全中，复算 B1 成立），而 `ebp` 的初值在 `0x67d351: mov ebp, dword ptr [0x7e15f4]`。站点到该写的距离：最小 **0x9d = 157 字节**，最大 **2938 字节**（复算 B4/B4b），全部落在 0x40 窗口外 ⇒ 被误报 `REG:ebp<-UNRESOLVED`。
-
-**这一步还抓出我自己的第三个缺陷**：把后向窗口改宽后，线性回溯给出的「最近一次写 ebp」是 **0x67d44f pop ebp**，而该指令位于**错误返回路径**（`0x67d44b jge 0x67d457` 跳过它）。⇒ **线性回溯在该函数上结构性失效**，必须换 CFG。这一版脚本当时跑出 11/11 PASS 而结论是错的 —— 断言全绿不等于结论对。
-
-### 2.125.4 改用 CFG 到达定义后：60 个站点横跨 **36 个函数体**
-
-`r121c`（reaching definitions，`disasm_lite`/单步 detail 只碰函数体，未整段 `.text`）实测：
-
-- 60 个站点覆盖 **36 个函数体**：1 个主函数 `0x67d300`（**25 站**）+ **35 个 0x80 字节孪生函数**（各 1 站，地址 `0x67fdf0 + 0x80*k`）。
-- 主函数 25 站：`ebp` 的到达定义集合**恰为单元素** `{0x67d351 = mov ebp,[0x7e15f4]}` ⇒ `call ebp` 的目标可机械确定为 `ole32!OleSaveToStream`。反控 N2（入口改 `0x67d357` 跳过序言）⇒ 该结论归 **0**，证明判据真的在用这个定义。
-- 35 个孪生函数：**不用 ebp**（写 ebp 0 个、`call ebp` 0 个，复算 T2），直接 `call dword ptr [0x7e15f4]`。
-
-### 2.125.5 合并口径：**60/60**，且 ppv 恒为第 1 实参
-
-唯一允许写进台账的口径（`r121e`）：合格 = Ⅰ 直接 IAT 调 `[0x7e15f4]`（**35**）+ Ⅱ `call REG` 且该处 REG 的 CFG 到达定义为**唯一**的 `mov REG,[0x7e15f4]`（**25**）= **60/60**。ppv 的实参位置分布 **{0: 60}**（全是 OleSaveToStream 的第 1 实参 pPStm）。
-
-对照与反控：只用规则 Ⅰ 得 **35**（规则 Ⅱ 贡献 25，非冗余）；放宽为「到达定义含该定义」得 **60**（本盘「唯一」未剔除任何站，但它是规则的一部分，不是装饰）；`0x7f7c90` 的 56 站里 IAT 直调 OleSaveToStream **0** 个。
-
-### 2.125.6 「通用包装器」第一条**强**证据（L3 从「未排除」降级为「已有反证」）
-
-35 个孪生函数**字节完全相同**：体长 **127 字节**、**不同哈希数 = 1**（复算 T1）。但它们被 35 个不同调用点以 **35 个不同的 `edx` 立即数** 调用（35 个不同地址，实测无重复）。
-
-⇒ 若这 35 处是「35 个手写函数各自专门使用该接口」，**字节不该完全相同**；字节相同而**只差一个参数**，这是代码生成器按元素类型展开模板的形态，不是手写专用代码。这是 R120 判「统计量排不掉」之后，第一条**不依赖统计量**的方向性反证。
-
-**但仍不外推**：它证明的是「这 35 处是模板展开」，不证明主函数的 25 处也是；主函数那 25 处只有「到达定义唯一」这一条支撑。L3 的诚实表述是：**35/60 已有模板展开的强证据，25/60 仍未排除**。
-
-### 2.125.7 跨家族审计（hy4 task 229，27 回合，2.3 分钟，无 OVERTIME）13 条全部成立，`r121d` **20/20 PASS** 逐条复算
-
-审计员报 13 条（A1/A1b/A2/A3/A4/A5/B1/B2/B3/B4/B5/C1/C2/C3/C4 的口径内），我用完全独立的实现逐条重算，**全部成立**，连它自标「未复算」的两项也补上了：N6 的 **176**（我复算 176）与「`ebp <- OleSaveToStream` 写点 **2** 个」（我复算 `0x5be84f`/`0x67d351`）。
-
-审计给出**我自己没发现的第三条缺陷 C2**：`after` 的循环上界是 `range(i+1, i+10)`（**9 条内**），而断言文案写「**<=8 条内**」—— 文案与代码差 1 条。我复算：真 9 条内命中 60、真 8 条内命中 60，**本样本上不改变结论**，但文案是错的，已就此更正。审计还指出 C3：`after` 的键恒为 `[ecx + 8]`，断言却写成任意 `reg`，是特化。两条都成立。
-
-### 2.125.8 执行员（deepseek task 228）**OVERTIME 且 failed**，但其落盘原始数字可用
-
-`wait_subagents` 回报：**failed**，61 回合，实测 **17.03 分钟 vs 预算 8.0 分钟 [OVERTIME]**，错误 `error_max_turns`，只落 q1/q2，report **未写**。
-
-按规则 D 我不采信其结论，只取它的**原始数字**并与我独立复算比对：站点集 **60/60 逐地址相同**；反控 `0x7f7c81 → 0`；对照 `0x7f7c90 → 56`；K 分布 **{16:1, 20:24, 12:35}**；ppv 槽装回寄存器 **eax 60/60**；**逐站点桶归属 0 处分歧**（iat 35 / reg 25）。⇒ 两个家族在 60 个站点的桶归属上完全一致，分歧只在「它没做完 Q3/Q4」。
-
-### 2.125.9 未取得（不粉饰）
-
-① 35 个孪生函数的 35 个 `edx` 参数指向什么结构（只测到 35 个不同地址）；② 主函数那 25 站的模板展开证据（与 35 站不同源）；③ `0x7f7c70` 接口名（本机仍无 IID→名映射表，`grep` 全盘无 `IPersistStream` 头）；④ `IPersistStream` 方法数；⑤ 门禁 C11 的其余 4 处「永远通过」子项；⑥ 五条不可能行未裁定；⑦ 窗口表未扩。
-
-### 2.125.10 自错登记 S-85..S-93
-
-- S-85 首版 `r121b` 的 `ppv_slot` 要求 lea 与 push **相邻**，而真实形态中间隔一条 `mov eax,[eax+ebx*4]` ⇒ 只有 23/60 解出槽（**把合法形态判成非法**）。
-- S-86 `last_write_before` 用 `ops.endswith(', ' + reg)` 与 `ops == reg` 捕获「写」，把 **`call ebp` / `push ebp` 这类读**当成了写 ⇒ 23 个站点算出 `REG-OTHER-WRITE`。
-- S-87 上面那个 bug 修好后脚本 **11/11 PASS**，但结论仍错（线性回溯被错误返回路径的 `pop ebp` 截断）——**断言全绿 ≠ 结论对**。
-- S-88 全局变量 `OUT` 被 `reaching_defs` 的返回值覆盖，导致 `TypeError` 且掩盖了真实结果。
-- S-89 首版 CFG 只建 `0x67d300` 一个函数，把 60 站里 35 站报成 `OUT-OF-CFG`，我一度以为是解码错。
-- S-90 把 `0x67fdf0`/`0x67fe70` 当成两个独立函数，实际是 35 个孪生函数里的前两个（漏了 33 个）。
-- S-91 `r121d` 里 `re.fullmatch(...).group(1)` 在匹配失败时抛 `AttributeError`（先调用再判空）。
-- S-92 我写审计卡 A5 时给出「cs=0x150000 …」类占位数值，实际审计员根本不看这些，属于**卡面塞了无用预设**。
-- S-93 我一度准备把「23 个 REG-OTHER-WRITE」写进台账，若没查 `pop ebp` 的路径可达性，本轮就会把**错数**写成**交付**。
-
-**收口**：`r121b` 11 / `r121c` 11 / `r121d` 20 / `r121e` 7 = **49 项断言全 PASS**；全程 `disasm_lite` 与函数体级单步，未对整段 `.text` 开 detail；脚本均带 timeout，收口确认无孤儿进程；五项 CR 全绿 1081/137/337/0/2952。
-
-
 ## 2.125 R121 —— 崩溃轮遗留的两处判据缺陷被定位并修掉；QI 出参去向从「36 个」修正为 60/60；并给出「通用包装器」的第一条强证据
 
 ### 2.125.1 本轮先修的是上一轮的半成品，不是新找一条链
@@ -11453,3 +11382,665 @@ R122 开局接管上一会话 #231 的异常退出（exit 143）。盘上半成�
 
 2.127.13 未取得（不粉饰）：① 35 个容器在运行期的实际元素值与计数（静态只到 vptr 与偏移，本轮把访问侧查全也只证明偏移恒为 0、更深字段走寄存器间接）；② 「共用模板展开」的充分证明（骨架同构只是必要条件）；③ 0x7f7c70 接口名与 IPersistStream 方法数；④ 门禁 C11 其余 4 处永远通过子项；⑤ 五条不可能行（C11 id 3/4/22/27/28）未裁定；⑥ 窗口表未扩（缺 55 份真实快照）；⑦ 0x67d300 主函数内联体与孪生体的寄存器分配与栈帧差异只到量化，未逐条归因到源码级结构。
 
+## 2.128 R124 台账：IID 到接口名的字节定名（12/18）+ 接口方法数（IUnknown 3 / IPersist 1 / IPersistStream 4）+ R110 普查漏记一类的实证
+
+R124 只做静态字节测量，全部结论可从 gamemd.exe（sha256 73201cc0...fcf67476）复算，不引外部头文件、不引历史结论当证据。
+
+**一 · 方法：MSVC x86 BaseClassDescriptor 的 24 字节布局**
+
+每个带 vtable 的类，[vt-4] 是 CompleteObjectLocator；COL+16 是 ClassHierarchyDescriptor；CHD+8 = NumBaseClasses，CHD+12 = pBaseClassArray。每个 BCD 24 字节：pTypeDescriptor(+0) / NumContainedBases(+4) / mdisp(+8) / pdisp(+12) / vdisp(+16) / attributes(+20)。接口名 = CString(u32(BCD)+8)。954 个类全部解码成功，bases[0] 恒为该类自身 954/954。26 个 .?AU 开头的名字即 COM 接口。
+
+注：TypeDescriptor 与 BCD 记录在 .data 段，COL/CHD/BaseClassArray 在 .rdata。第一版把每个指针都按 .rdata 守卫，解码整批塌成 0/954（自错 S-114）。
+
+**二 · 继承链由 NumContainedBases 直接给出**
+
+IUnknown=0，IPersist=1，IPersistStream=2，且每个接口名的 ncb 单值（无例外）。IClassFactory=1，IRTTITypeInfo=1。INIEntry/INISection=2，IStream=2。这是二进制自己的记录，不是推断。
+
+**三 · IID 定名：类集合包含 + QI 出参偏移两条独立记录**
+
+类集合只用包含关系（QI 若继承自基类，比较的 IID 少于 RTTI 名单，故相等判据是错的，自错 S-115）。仅靠类集合，18 个 IID 里 13 个唯一、5 个并列。再引入第二条记录：QI 每个被接受分支写入出参的 this 调整值（0 或 lea ecx,[reg+OFF] 的 OFF），它必须等于 RTTI 对该类记录的 mdisp。两条记录都满足即定名。结果 12/18 唯一，且无一例两条记录互相矛盾（S2/S3）。
+
+已定名 12 个：0x7e9530=ILinkStream、0x7e9ae0=IRTTITypeInfo、0x7e9b00=IPublicHouse、0x7ea6e8=IUnknown、0x7ea768=IHouse（OFF 36）、0x7f7c20=IWOLBrowserEvent、0x7f7c90=IUnknown、0x7f7ca0=IClassFactory、0x7f7cb0=IEnumConnections、0x7f7cc0=IConnectionPoint、0x7f7cd0=IConnectionPointContainer（OFF 44）、0x7f7ce0=IEnumConnectionPoints。
+
+正控：0x7f7c90 的 16 字节恰是 00000000-0000-0000-C000-000000000046，且定名结果 IUnknown；0x7f7ca0 定名 IClassFactory。反控：把两条记录的偏移互换，IHouse 的定名即失败。
+
+**四 · 0x7f7c70 与 0x7f7c80 仍不可分（R113 起第 4 轮未取得，本轮给出不可分的结构理由）**
+
+两个常量分别是 0000010C-... 与 00000109-...。三条内部记录完全相同：类集合相同（77，逐类相同，对称差 0）；出参偏移都是 0；RTTI 基类数组里 IPersistStream 恒排在 IPersist 之前 77/77（顺序恒定即无信号）。另 0x7e9b40 也与这两个不可分。0x7f7cf0 在 IStream 与 ISequentialStream 之间不可分。0x7e36c0 与 0x7e9b20 的偏移解不出（分支是尾位置接受，无 lea 也无 mov 直存）。
+
+**五 · R110 的 IID 普查漏记一类（新发现的既有产物缺陷）**
+
+R110 的 iids_of 里窗口判断 a - f < QI_HEAD(120) 被写在每一次 cmpsd 上，本意只限制「首个 cmpsd」，实际把函数体内偏移超过 120 字节的比较全部丢弃。HouseClass(slot0=0x4f6830) 实际比较 6 个 GUID，字节偏移 47/68/99/130/161/182，R110 只记了前 3 个，丢的是 0x7f7cd0、0x7f7c70、0x7f7c80。用同一窗口复现，R110 的 172 行可逐行复现（证明这是 R110 原样，不是重写）；去掉窗口后只有 HouseClass 一类变化，且 0x7f7c90(171)、0x7f7ca0(78)、0x7e9ae0(76) 的类集合完全不变。所以 0x7f7c70 与 0x7f7c80 的类集合真值是 77 而不是 76。反控：171 个「最后一次比较已在窗口内」的类，去掉窗口后一个都不增加。
+
+**六 · 接口方法数（R113 起第 4 轮未取得，本轮取得）**
+
+接口块边界：90 个 persist 家族类的主 vtable 里，第一个「函数体写 vtable 常量」的 slot 恒为 8（49 个类可判，41 个类短到没有销毁器）；slot 0..7 无一写 vtable 常量（合计 0 次）。AbstractClass 是最干净的实例：slot8 的销毁器写 4 个 vtable 常量，与它的 4 个 mdisp 值 {0,4,8,12} 一一对应。故接口块 = slot 0..7 共 8 个。
+
+IUnknown 方法数：IClassFactory 族 78 个类（77 个 TClassFactory 模板 + 1 个 TiberianSunClassFactory）的 vtable 长度恒为 5，且 IClassFactory 的 NumContainedBases=1，故 IUnknown = 5 - 2 = 3。
+
+于是 IPersistStream = 8 - 3(IUnknown) - 1(IPersist) = 4。IPersist 声明 1 个方法由 ncb=1 直接给出。
+
+形态佐证：slot0 恒为 QI（含 repe cmpsd 模板）；slot1 与 slot2 全族恒 mov eax,1 ; ret 4；slot7 全族 90/90 结束于 ret 8（2 参数 Save），基实现另有 0x80004003 的 NULL 出参守卫（62/90，其余是委派给 0x4103e0 的重写或空实现）。
+
+**七 · 跨家族与规则 D**
+
+执行员 deepseek task 243 failed + OVERTIME（61 回合 / 14.8 分钟 vs 预算 8.0 / error_max_turns），报告未写，只落 q1..q5。按规则 D 结论不采信，只取落盘原始数字与我的复算比对：954 解码、0/954 失败、26 接口名、NumContainedBases 分布、IUnknown=0/IPersist=1/IPersistStream=2、IClassFactory ncb=1、vtable 长度 5、17 个 IID 的 GUID 文本全部一致。唯一分歧是 0x7f7c70/0x7f7c80 的类集合：它报 77，我原报 76 —— 复算后证明它对的，是 R110 漏记 HouseClass，见第五节。这条分歧是本轮最有价值的交叉检验。
+
+**八 · 自错**
+
+S-113 BCD 字段从头读早一个 dword（mdisp/pdisp/vdisp 错位）。S-114 段守卫把 TypeDescriptor/BCD 也按 .rdata 判，解码整批塌成 0/954。S-115 用类集合相等当判据，5 个 IID 因继承被误判无解。S-116 vtable 终止规则用「下一个 COL」，对末组 vtable 失效，8 个类报未终止。S-117 capstone 小立即数印成十进制，只认 0x 前缀致 78 个 AddRef/Release 全记 None。S-118 QI 函数体停在首个 ret，而模板前部就有 ret 0xc 的 NULL 早退。S-119 AbstractClass 集合写成一行式，把仅「包含」该类的 2 个类卷进来。S-120 lea 位移只认 + 0x 形态，13 个分支记成不可判。S-121 先按类集合紧致度筛、再比偏移，方向错了（更紧的名字压在偏移不符上）。S-122 不取紧致名字，IUnknown 因被所有类携带而永远并列。S-123 断言存在「基类数组恰为 [IUnknown]」的 vtable，MSVC 恒把最派生类列首位，该断言不可满足。S-124 同 S-116 的连带。S-125 槽计数从 k=1 起，全部少 1（5 槽记成 4），IClassFactory 钉值看起来被违反。S-126 persist 家族筛选先滤 .?AU 再取尾，把 INoticeSink 这类类基漏掉，尾部匹配到 90 个不该匹配的类。S-127 边界判据用「地址落在 .rdata 就算写 vtable」,把仅仅引用 vtable 地址的普通方法也计入，须按 store 形态判。S-128 ret 尺寸扫描停在首个 ret，而一个体可有多个 ret，误判 28 个委派重写。S-129 反控筛 len(iids)==1 只剩 1 个样本，等于没有反控。
+
+**九 · 断言与收口**
+
+r124a 14 / r124b 11 / r124c 14 / r124d 13 / r124e 14 / r124f 13 = 79 项全 PASS。全程 disasm_lite 线性扫描与目标单条 disasm，未对整段 .text 开 detail=True；脚本均带 timeout；收口前确认无孤儿进程。五项 CR 全绿 1081/137/337/0/2952；check_disc.py exit 0（GATE_VER 仍 R121，本轮不改门禁）。
+
+**十 · 未取得（不粉饰）**
+
+1) 0x7f7c70 与 0x7f7c80 谁是 IPersist、谁是 IPersistStream（三条内部记录完全相同，静态定不了；须外部头文件或动态采样）。2) 0x7e9b40 与这两个同样不可分。3) 0x7f7cf0 在 IStream 与 ISequentialStream 之间不可分。4) 0x7e36c0 与 0x7e9b20 的出参偏移解不出。5) 35 个容器运行期元素值与计数。6) 共用模板的充分证明。7) 门禁 C11 其余 4 处永远通过子项、五条不可能行未裁定、窗口表未扩。
+
+### 2.128.11 规则 D 的如实结果与盘上一处既有缺陷的修复
+
+异族审计员 hy4 task 244 failed 加 error_max_turns（61 回合 / 4.05 分钟），未落任何产物。本轮外部复核输入为零，不写「已审计」。改由主会话做对抗性自审（r124h，12 项），其中两条对我不利照实记：① 原打算用「slot 0 共享度低于 slot 1」独立支持 IUnknown=3，实测 slot0 最高频体 75 个类、slot1 是 74，两者都因继承而广泛共享，该路不成立，凡拿它当证据即循环论证；② slot 4..7 不能靠「继承未被覆盖」定位接口块，29 个 AbstractClass 直接子类里 slot4 与 slot7 全部继承而 slot5 只有 1 个、slot6 只有 2 个继承。接口块边界只由 r124e 的销毁器写入数承担。自审确认：直接子类 29 个、slot3 被 29/29 覆盖、slot1 与 slot2 是两个不同体、slot3 有 163 个不同体、两个 IID 常量在整份映像里只出现在 .text（4 与 64 处）且无一对相距 16 字节内。全轮 91 项断言（79 加 12）全 PASS。
+
+同轮修掉盘上一处既有缺陷：本节所在的 R14_COMMON 里 ## 2.125 有两份。取证而非猜：before_R120 备份里没有 2.125；它最早出现在 R121 写入之后且一次两份。A 版含 162 个反引号且 2.125.10 写 S-85..S-93，B 版零反引号且写 S-85..S-94，故 A 是被取代的旧版，删 A 留 B；删后小节号 7..128 连续 122 节、CR 仍 1081。删 A 时把 2.128 标题前的空行吞掉致 C16 分节正则漏匹配本节，已补回。随后门禁 C16 按设计点名 FAIL（表外未钉节数 3 大于上限 2），按既有 50% 规则补钉 126:4075 / 127:3932 / 128:4001，C16_FLOORS 119 节变 122 节，sha 893e12a7 变 689f9c12，GATE_VER R121 变 R124，DISC_RECHECK 第 20 行同步登记；成对验证 unpinned 3 变 0、hollow 0、missing 0、check_disc.py exit 0。
+
+## 2.129 R125 台账：0x7f7c70 与 0x7f7c80 由「使用侧参数角色」分开，并把 0x7f7c70 从排除法升级为正向证据
+
+R125 只做静态字节测量，全部结论可从 gamemd.exe（sha256 73201cc0...fcf67476）复算。本轮不引外部头文件当证据，最后一段专门说明哪些结论必须靠外部约定才能定死。
+
+**一 · 起点与两处常数**
+
+四条地址的 16 字节实测：0x7f7c70 与 0x818858 都是 0000010C-0000-0000-C000-000000000046，0x7f7c80 与 0x820270 都是 00000109-0000-0000-C000-000000000046，两两成对相同。相邻的 0x817bc0 是 00000000-0000-0000-C000-000000000046，即 IID_IUnknown 的一份数据拷贝；它前面是两张 RTTI 类名字符串 .?AVFootClass@@ 与 .?AVAircraftClass@@，所以这一片是 GUID 池而不是结构体。
+
+形式普查（mov edi 立即数落在 QI 模板内 / push 立即数）：0x7f7c70 是 4 与 0，0x7f7c80 是 4 与 60，0x818858 是 0 与 16，0x820270 是 0 与 8。独立用字节锚点 BF imm32 与 68 imm32 复算，四组数字逐个相同。0x7f7c70 的形式 B 是空集，这一条很重要：对它的任何结论都只能由 .data 那份拷贝 0x818858 的 16 个观测点承担，不能假装 rdata 有调用点。
+
+**二 · 本轮换的判据：不是「与 OLE 共现」，是「QI 结果占第几个参数」**
+
+R125 起初（r125a/r125b）用的判据是「push 该 IID 的函数体里是否出现对 0x7e15f4 / 0x7e15f8 的调用」。这只是人群关联，它无法说明 QI 出的那个指针是否就是交给 OLE 的参数——一个函数体可以 push 好几个对象，只有一个来自 QI。
+
+本轮改测更强的局部关系：在每次 push 该 IID 处找到 QueryInterface 调用，取它的出参栈槽 K；QueryInterface 是 stdcall，调用后 ESP 与调用前相同，所以在调用后读 [esp + K] 与调用前 lea 命名的是同一个槽，不需要任何栈帧模型（这正好避开 R125a 六次自伤里的栈槽基准错）。
+
+结果：35 处 0x7f7c80 站点里，QI 结果被作为 OleSaveToStream 的第 0 个参数传入，且从读到 push 之间该寄存器没有任何重写（35/35，零覆写）。0x820270 的 8 个站点经栈槽中转（CComPtr 惯用法）后全部到达 OleSaveToStream，其中 7 处可证明是第 0 个参数，1 处（0x4b6313）只证到「到达同一调用」，未能归位，如实留缺。0x818858 的 16 个站点一处都不到达 OleSaveToStream。
+
+**三 · 把 0x7f7c70 从排除法升级为正向证据**
+
+R124 只能说这两个常量「三条内部记录完全相同，分不开」。本轮给出可证伪的正向预测并实测：
+
+若 0000010C 是 IPersist，则由 R124 已证的 NumContainedBases 链（IUnknown 0 小于 IPersist 1 小于 IPersistStream 2）与 IUnknown 方法数 3，IPersist 只加一个方法 GetClassID，它必然落在虚表字节偏移 0xc（slot 3），且 IPersist 句柄不应被调过 0xc。
+
+实测：0x818858 的句柄在 0x42cab5 处被 call dword ptr [eax + 0xc] 调用（字节 ff 50 0c），且从不越过 0xc（另有 0x42cabf 的 [edx + 8]，即 slot 2 Release）。反方向：0x7f7c80 的 60 个句柄使用点只出现 offset 8（Release），一次都没有出现 0xc。
+
+也就是说，两个常量在「使用侧的可调用槽位集合」上不可互换：只有 10C 那个被当作带 slot 3 的接口调用，109 那个从未。这条比 R124 的三条记录强，因为它是单向的、可失败的预测，而 R124 那三条在构造上对称。
+
+必须同时说清上限：这条记录确定的是「哪个常量是更窄的那个接口（多一个 slot 3）」，它并不从字节里读出 IPersist 这三个字的拼写。方向仍由外部 GUID 约定补上（00000109 是 IPersistStream、0000010C 是 IPersist），这一点与异族审计员的判断一致，本轮不粉饰。
+
+**四 · 一处必须排除的伪证据（自错 S-150）**
+
+0x42cac6 处有 call dword ptr [eax + 0x84]，粗看像「10C 句柄被调过 slot 0x21」。实测 0x42cac2 是 mov eax, dword ptr [esi]，eax 已被换成另一个对象的虚表，esi 不是 10C 的出参对象。若把这条算进 10C，会得出「10C 是高槽位接口」的反向结论。本级同族伪证据另有三处，全部按来源追踪排除。
+
+**五 · 跨家族（规则 D）**
+
+审计员 hy4 task 249 succeeded，28 回合 / 3.32 分钟，预算 8.0，无 OVERTIME。报告落盘 _r125/audit/r125_audit_hy4.md（111 行，零反引号）。其数字我逐条用独立脚本复算（r125h 11 项）：形式 A 4/4/0/0 一致、形式 B 0/60/16/8 一致、OLE 调用总量 43 与 8 一致、四个双 IID 分派器的零调整字节 89 18 / 89 02 / 89 18 / 89 10 一致、0x42cab5 的 ff 50 0c 与 0x42cac6 的 ff 90 84 00 00 00 及 0x42cac2 的 8b 06 一致、反控 0x7f7cd0 为 9、0x7f7c90 为 56 一致。全部一致，无一条分歧。
+
+审计员有一处判断比我的原稿更严格且我采纳：它指出「与 OLE 共现」不能单独定身份，方向靠外部 GUID 约定。本轮第二节的参数角色分析是对这一批评的正面回应——它把关联升级成了参数位置关系，但仍然不能读出字符串，所以结论上限的表述按它的口径写。
+
+审计员另指出若有人声称「0x820270 从不进 OLE」那是错的，实测 8/8 全进。我复核后确认它对的：这正是本轮 G5 与 G3b 两条断言的来源，同时把「到达」与「可证明在第 0 参数」分开记，不再混为一谈。
+
+**六 · 本轮修掉的既有产物缺陷（两处，都在我自己的半成品里）**
+
+其一，r125c 的 S3 断言写反了：它要求「每个查 0000010C 的函数体也必须查 00000109」，而实测是单向的相反方向（16/16 个 10C 体都不查 109）。这是我写断言时把蕴含方向搞反（S-145），不是二进制事实。已改为正向表述并给出精确恒等式。
+
+其二，r125c 的 S2b 与 N2 用了凭感觉的阈值（多数过半、大于 100），已分别改成精确恒等式 n_alone == n109 与「两个人群大小不相等」，不再有自由参数。
+
+**七 · 断言与收口**
+
+r125a 24 + r125b 9 + r125c 10 + r125d 16 + r125e 9 + r125f 9 + r125g 9 + r125h 11 = 97 项全 PASS。全程用 disasm_lite 流式线性扫描，未对整段 .text 开 detail=True；单点目标用窗口反汇编。脚本均带 timeout；收口前确认无孤儿进程。五项 CR 全绿 1081/137/337/0/2952；check_disc.py exit 0（GATE_VER 仍 R124，本轮不改门禁）。
+
+**八 · 未取得（不粉饰）**
+
+1) 两个常量的接口名字符串仍不由字节给出，须外部头文件或动态采样（win-main 本次 OFFLINE，未做）。2) 0x4b6313 一处 0x820270 站点只证到「到达 OleSaveToStream」，未能证明是第 0 参数，留缺一格。3) 0x7f7c70 的 rdata 常量形式 B 为空集，其结论全部压在 .data 拷贝上，两份拷贝对齐是额外假设。4) 0x7e9b40 仍与这对不可分。5) 0x7f7cf0 在 IStream 与 ISequentialStream 之间仍不可分。6) 0x7e36c0 与 0x7e9b20 的出参偏移仍解不出。7) 35 个静态容器的运行期元素值与计数。8) 共用模板展开的充分证明。9) 门禁 C11 其余四处永远通过子项、五条不可能行未裁定、窗口表未扩。
+
+## 2.130 R126 台账：推翻两条「不可分」，0x7e9b40 取得为 IFlyControl；并纠正本轮自己的两处误定名
+
+R126 全部为静态字节测量，可从 gamemd.exe（sha256 73201cc0...fcf67476）逐条复算。本轮不引外部头文件，上限在最后一节写清。
+
+**一 · 0x7e9b40 = IFlyControl（R124 起记「与 0x7f7c70/0x7f7c80 不可分」，本轮推翻）**
+
+AircraftClass 的 QueryInterface 体在 0x414290：先 call 0x410260 委派给基类（AbstractClass 那一层），基类失败才比自己的 IID。0x4142b1 是 mov edi, 0x7e9b40；比对成功后的分支 0x4142c1 是 lea eax, [ebx + 0x6c0]，0x4142c8 是 mov dword ptr [ebp], eax，即把出参写成 this + 0x6c0；失败分支 0x4142da 写 0。
+
+AircraftClass 的 RTTI 共 18 条基类。mdisp 恰为 0x6c0 的有两条：.?AUIFlyControl@@ 与一个 .?AUIUnknown@@，这是多继承子对象的标准配对（每个接口子对象各自带 IUnknown）。剔除 IUnknown 后唯一，即 IFlyControl。全量 954 个类里 mdisp 0x6c0 只出现这一处（反控：换成 0x6c4 命中 0 条）。
+
+独立旁证：0x4177c0 处 lea eax, [esi + 0x6c0] 后紧接 push eax 与 call dword ptr [ecx + 0xc]，即该子对象被按虚表槽 offset 0xc 调用，与 R125 在 0x7f7c70 侧得到的「更窄那个多一个 slot 3」在使用侧一致。全映像 this+0x6c0 共 10 处：1 处是 QI 体写出参，9 处是取子对象地址。
+
+**二 · R124 为什么把它与 IPersist 家族混在一起（结构性原因，不是疏忽）**
+
+同一个类的 RTTI 在 mdisp 0 处并排有 .?AUIPersistStream@@ 与 .?AUIPersist@@。这两个接口自己没有次对象偏移，于是在任何类里都恒占 mdisp 0 —— R124 用的「出参 this 调整值 == RTTI mdisp」这条判据在这两个名字上永远有两条候选，结构上无法分开。R124 把它们记成「三条记录完全对称」是对的；错在把 0x7e9b40 也归进这一组，它走的是 0x6c0。
+
+**三 · 0x7f7cf0 那条「不可分」的表述本身无字节依据**
+
+0x7f7cf0 的 16 字节是 0000000C-0000-0000-C000-000000000046，即标准 IID_IStream。IID_ISequentialStream 是 0C733A30-2A1C-11CE-ADE5-00AA0044773D，它在整份映像里出现 0 次，连 Data1 0x0C733A30 也是 0 次；正控 IStream 的 Data1 0x0000000C 出现 539 次。所以「在 IStream 与 ISequentialStream 之间不可分」不是测不出，而是那个候选根本不在映像里。
+
+**四 · GUID 池与孪生的全量普查（R125 只做了两个 IID）**
+
+窗口起点要按 Data4 模式长度分别算：OLE 系 d4 全 8 字节是模式（C000-0000-0000-0046），MIDL 系只有后 6 字节是模式（前 2 字节是变体号）。统一按 k-8 起算会整体偏移两字节；反控：错口径下 0x7e36c0 与 0x7e9b20 都解不出来。
+
+结果：65 个 GUID 窗口（.rdata 55、.data 10）。整份映像里 16 字节完全相同的孪生共 9 对，每对都是一个 .rdata 配一个 .data，无 .rdata 内自孪生。标准 OLE 前缀（Data1 <= 0x1FF 且 Data2/Data3 全零）恰 10 处、6 个不同 Data1：0x0、0x1、0xC、0x109、0x10C、0x13A；其中 0x0/0xC/0x109/0x10C 各有 .rdata 与 .data 两处，0x1 与 0x13A 只有 .rdata 一处。
+
+**五 · 孪生形态分离的上限（对抗性自审的结论）**
+
+形式 R = mov edi 立即数且前后 8 条内同时有 mov ecx, 4 与 repe cmpsd；形式 C = push 立即数。四对实测（.rdata 侧 R/C，.data 侧 R/C）：0x7f7c90 与 0x817bc0 是 91/56 与 0/9；0x7f7cf0 与 0x81fc50 是 1/0 与 0/2；0x7f7c80 与 0x820270 是 4/60 与 0/8；0x7f7c70 与 0x818858 是 4/0 与 0/16。
+
+分离不纯净：0x7f7c90 与 0x7f7c80 的 .rdata 侧都有形式 C。反向的规律成立：四对的 .data 侧形式 R 全为 0。故能说的只有「.data 那份只被 push 引用，.rdata 那份两种都有」，这不是「谁是 IPersist」的证据。
+
+我原本预期「.data 站点集中在少数函数」也不成立：0x818858 的 16 站点落在 15 或 16 个函数（口径差 1）、0x820270 的 8 站点落在 8 个函数。
+
+**六 · 本轮自己的两处误定名（S-154 与 S-158，已改并留案）**
+
+其一，第一版机制把「mov ecx, 4 + mov edi, IID + repe cmpsd」一律当 QI 体，但调用方也这么写：0x501805 与 0x44dedd 的 esi 来自 lea esi, [esp + 0x24]，是调用方把 GUID 副本放栈上再比。据此我先把 0x7e9550 定成 INoticeSource、0x7e9a50 定成 ReferenceCounted。补上「esi 不得由 lea 取地址」这条必要条件后两个名字同时消失。修正后剩下的三个名字全为 .?AU 前缀（接口），无 .?AV（类）混入，与 R124「.?AU 名字 26 个即 COM 接口」一致。
+
+其二，我在 r126f 断言里写「this+0x6c0 全映像应只有 2 处」，那是估计值不是实测值：实测 10 处。断言已改为实测值。同理 r126f 的「该 QI 体应解出至少 2 个 (IID, 调整值) 对」也是凭直觉设的下限，实测该 QI 体只自己处理 1 个 IID（其余委派给基类），已改为等号。
+
+**七 · 跨家族（规则 D）**
+
+审计员 hy4 task 251 succeeded，50 回合 / 11.28 分钟 vs 派发预算 8.0 分钟，**OVERTIME**，如实记。报告 _r126/audit/r126_audit_hy4.md，151 行，零反引号。数字逐条独立复算（r126d 10 项）：OLE 前缀 10 处 6 个 Data1 一致；形式 R/C 八个数 4/0、0/16、4/60、0/8、91/56、0/9、1/0、0/2 逐个一致；0x7f7cd0 的 Data1 = 0xB196B284 一致；0x7f7c70 末字节翻转后命中 0 次一致。
+
+采纳与不采纳各一处。不采纳它的总结「5 对加 1 个单点」：它自己的表格是 10 处，而 10 处只能蕴含 4 对加 2 单（0x7f7ca0 与 0x7f7d00 各只有 .rdata 一处），我按表格数字复算为 4 对 2 单。采纳它的 0x818858 分散度结论：两支口径给 15 与 16，差 1，两个数都支持「高度分散」，故我把断言写在分散度上而非精确值。
+
+另记一条自错：我在 r126d 初稿把 D5 写成「审计员的 0xB196B284 我复算不出来」，实测审计员对，是我把断言方向写反（S-160），已改。
+
+**八 · 断言与收口**
+
+r126a 11 + r126b 12 + r126c 10 + r126d 10 + r126e 8 + r126f 10 = 61 项全 PASS。全程 disasm_lite 流式扫描，未对整段 .text 开 detail=True；脚本带 timeout；收口前 ps 确认无孤儿进程。五项 CR 全绿 1081/137/337/0/2952；check_disc.py exit 0（本轮不改门禁，GATE_VER 仍 R124）。
+
+看板先按 260 行阈值归档最早两段（第 120 轮与第 124 轮整段搬进 BOARD_ARCHIVE.md），归档后看板 CR 仍 0、归档 CR 仍 2952、看板 97 行。
+
+**九 · 未取得（不粉饰）**
+
+1) 0x7f7c70 与 0x7f7c80 谁是 IPersist、谁是 IPersistStream 仍不由字节给出：这两个接口在所有类里恒占 mdisp 0，本轮没找到第三条内部记录能把它们分开。2) 0x7e36c0 与 0x7e9b20 的 QI 体不被任何类的 slot0 引用，本方法对它们只能给出「查了哪些 IID」（两者都查 0x7f7c90），给不出接口名。3) 0x7e9b20 的 QI 体在 0x6cf478 把出参写成 QI 返回值本身、不做 this 调整，其 this 偏移仍是 0。4) 大量 .rdata IID 的站点不落在任何类的 slot0 上，本方法对它们无解，不为此放宽判据。5) 35 个静态容器的运行期元素值与计数。6) 共用模板展开的充分证明。7) 门禁 C11 其余四处永远通过子项、五条不可能行未裁定、窗口表未扩。
+
+**十 · 收口期追加：本轮确实改了门禁，两处，都带反控**
+
+上面第八节写「本轮不改门禁」时是当时的真实状态。随后在收口发现两件事，改了两处，如实补记，不改上文。
+
+改动一 · C16_FLOORS 重钉。新增 2.129 与 2.130 两节后，表外未钉节数正好顶到上限 2。门禁当时仍 exit 0，但那意味着下一轮再加一节就会撞上限。按既有 50% 规则补钉 130 节（实测 2.129 = 7258 B 取 3629、2.130 = 7445 B 取 3722），表从 122 条到 124 条，摘要常量从 689f9c12 改为 eb8cc052。重钉后 unpinned 2 到 0、hollow 0、missing 0。
+
+改动二 · GATE_VER 从 R124 升到 R126，并同步 DISC_RECHECK 第 20 行的登记式。依据是 C10 门自检：登记行里的版本标记必须与脚本里的 GATE_VER 相等，而我本轮确实动了门禁脚本，不升版会让该行指向一个已不存在的脚本状态。
+
+反控（r126i，7 项全 PASS）。这里有一条我自己先踩的坑（S-161）：第一版把门禁脚本拷到临时目录再跑，可它读文档用的是写死的绝对路径，于是临时副本仍在读原目录的文档，三条反控的 exit 都是 1 却全是脚本报错，不是我想要的 FAIL。改成「把正本改名藏起来、把改过的副本放到正本路径上跑、finally 里恢复并断言 sha」之后才真生效：
+
+1) 正控：不做任何修改必须 PASS（exit 0）。
+2) 把 2.130 正文清空到只剩标题，必须 FAIL 且命中 C16 —— 实测 exit 1、命中 C16，证明 130:3722 这道下界真的在约束。
+3) 只把 GATE_VER 改成 R999 而不动第 20 行，必须 FAIL 且命中 C10 —— 实测 exit 1、命中 C10。
+4) 把 C16_FLOORS 里 130 的 3722 改成 3700 而不改摘要常量，必须 FAIL 且命中 C16d —— 实测 exit 1、命中 C16d。
+5) 收尾断言三个正本（check_disc.py、DISC_RECHECK.tsv、R14_COMMON.md）的字节与开工时一致，证明反控没有污染正本。
+
+结论：这两处改动都是把门禁收紧（补钉 = 增加被约束的节数；升版 = 让 C10 继续有效），不是放松。终态 check_disc.py exit 0，C10 显示 ok(R126)。
+
+## 2.131 R127 台账：0x7f7c70/0x7f7c80 由 OleSaveToStream 的参数角色定名完毕；0x7e36c0 = IApplication、0x7e9b20 = ISwizzle
+
+R127 全部为静态字节测量，可从 gamemd.exe（sha256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476）逐条复算。六套脚本 60 项断言全 PASS。本轮不引外部头文件，上限在末节写清。
+
+**一 · 0x7f7c80 / 0x820270 = IPersistStream，0x7f7c70 / 0x818858 = IPersist（R125 起记「不由字节给出」，本轮由参数角色定位）**
+
+R125 已把两个常量的使用侧分开了一半：0x7f7c70 的 push 站点是空集，一切结论只能由 .data 拷贝 0x818858 的 16 个观测点承担；0x7f7c80 的 .rdata 拷贝有 60 处 push、.data 拷贝 0x820270 有 8 处。但「谁是 IPersist、谁是 IPersistStream」仍缺一条能把名字钉死的内部记录。
+
+本轮的判据换到**实参契约**上，与「跟哪些 OLE 调用共现」无关。导入表实测 ole32!OleSaveToStream 恰 1 槽 0x7e15f4、ole32!OleLoadFromStream 恰 1 槽 0x7e15f8（名字与 DLL 都取自本映像导入表字节）。OleSaveToStream 的第 2 实参契约是 IPersistStream，第 1 实参是 IStream。实测：
+
+- 0x820270（0109 的 .data 拷贝）作为 riid 的 8 个 QI 站点，从 push 之后**正向反汇编到 ret 为止**（不是固定字节窗口，避免窗口太短漏计）全部命中 call [0x7e15f4]：0x4af856 到 0x4af8a5、0x4b6313 到 0x4b6364、0x4db76a 到 0x4db7be、0x50469e 到 0x5046c9、0x54b83c 到 0x54b88b、0x69ef66 到 0x69efb5、0x719d96 到 0x719de5、0x75c756 到 0x75c7a5，共 8/8。
+- 0x7f7c80（同一 GUID 的 .rdata 拷贝）的 60 处 push 中，35 处在此后 40 字节内直接出现 ff 15 f4 15 7e 00（push 之后直接 call）。
+- 反向：0x818858 / 0x7f7c70 的全部 16 个站点，正向扫到 ret 为止**没有一处**命中 call [0x7e15f4]。
+
+所以 0109 对 = IPersistStream 由「被当作 OleSaveToStream 的第 2 实参」这条契约证据承担。
+
+**二 · 010C 那一侧由方法数上限承担**
+
+0x818858 / 0x7f7c70 的 16 个站点上，QI 结果上出现的虚槽只有 +0xc 一处（R125 已记：0x42cab5 的 ff 50 0c）。三个 GetClassID 站点 0x4d5892、0x73e7b7、0x742815 都是「call [reg+0xc] 带一个 4 字节出参，紧接着 lea esi,[esp+K] 与 mov edi,<类自己的 CLSID> 后 repe cmpsd」，三个被比常量互不相同：92612C46-F71F-11D1-AC9F-006008055BB5、4A582747-9839-11D1-B709-00A024DDAFD1、4A582743-9839-11D1-B709-00A024DDAFD1。这与 IPersist 只有一个 GetClassID 相符，与 IPersistStream 的 4 个方法不符。
+
+两对必须在 L1 的两个候选（.?AUIPersistStream@@ 与 .?AUIPersist@@）里二选一，且方向单向可失败（010C 从不触 +0x10 以上，0109 从不喂 OleSaveToStream），故这不是「挑一个像的」而是唯一解。**上限**：字节仍读不出 IPersist 三个字的拼写，方向由外部 GUID 约定补上（109 = IPersistStream、10C = IPersist）。这一点不粉饰。
+
+**三 · 0x7e36c0 与 0x7e9b20 是 IID 常量，不是 QI 体（撤回 R124-R126 的表述）**
+
+这两个地址都在 .rdata、各 16 字节，是 IID：0x7e36c0 = {96F02EC3-6FE8-11D1-B6FD-00A024DDAFD1}，0x7e9b20 = {5FF0CA70-8B12-11D1-B708-00A024DDAFD1}。R124 到 R126 台账里把它们称作「QI 体」是错的表述，本轮撤回。
+
+它们的**接受点**（体内把 riid 与该 IID 做 repe cmpsd 的 QI 体）实测三处：0x429360 在 vtable 0x7e36d4 的 slot0（.?AVApplicationClass@@）、0x429270 在 vtable 0x7ea564 的 slot3(+0xc)（.?AVTiberianSunClassFactory@@）、0x6cf430 在 vtable 0x7f4108 的 slot0（.?AVSwizzleManagerClass@@）。
+
+**四 · 完整性核验（这一条是本轮补的洞）**
+
+r127b 的接受点走「vtable 槽 -> 函数入口 -> 体内比较」这条路，结构性盲点是「入口没被任何 vtable 槽直接指向的 QI 体看不见」。r127d 专门补这个洞，用的是不看 vtable 的两条独立路径：
+
+- 整份映像全字节枚举 bf <IID32> 与 68 <IID32> 两种锚点：0x7e36c0 的 bf 站点 0x4292ab 与 0x42937f、68 站点 0x429409 / 0x429489 / 0x4f6936；0x7e9b20 的 bf 站点 0x6cf44e、68 站点 0x429555。全部落在 .text。
+- 全 .rdata 里 u32 == 三个 QI 体入口的位置逐个判定：0x429360 恰被 0x7e36d4 slot0 指向、0x429270 恰被 0x7ea564 slot3 指向（该 4 字节在 0x7ea570）、0x6cf430 恰被 0x7f4108 slot0 指向，各 1 处，无多余宿主。
+- 三个 QI 体入口被当作立即数（bf/68 imm32）引用的次数**全为 0**，即除 vtable 槽之外没有第二条引用路径，所以宿主集合就是完整集合。
+- 反控：同一套「扫 .rdata 里 u32 == X」判据对 0x429580 与 0x6cf400 给出 0 命中（相邻区的函数未被 vtable 引用），对 0x429210 给出 1 命中（.?AVTiberianSunClassFactory@@ 的 slot0），对 0x40f000 给出 1 命中但解不出类名 —— 判据不是恒真。
+
+**五 · 定名**
+
+- 0x7e36c0 = .?AUIApplication@@：接受点宿主是 ApplicationClass 与 TiberianSunClassFactory。前者 RTTI 在 mdisp 0 处的非 IUnknown 接口名唯一是 IApplication；后者唯一是 IClassFactory（该处是 IClassFactory::CreateInstance 的形状，ret 0x10 = 4 实参，把 0x89a29c 处的对象——0x429200 处被写成 0x7e36d4 即 ApplicationClass 的 mdisp0 虚表——拿来做 riid 比对）。两个宿主交集里只剩 IApplication 一个非 IUnknown 接口名。
+- 0x7e9b20 = .?AUISwizzle@@：宿主 SwizzleManagerClass 的 RTTI 恰 3 条基类 .?AVSwizzleManagerClass@@ / .?AUISwizzle@@ / .?AUIUnknown@@，ncb 2/1/0，mdisp 全 0，非 IUnknown 的接口名唯一。
+- 两个 QI 体（0x429360、0x6cf430）都同时显式比较 0x7f7c90（IID_IUnknown），故它们对应的 IID 不是 IUnknown。
+- 0x429360 的 QI 体还有第三分支接受 0x7ea6e8 = {96F02EC7-6FE8-11D1-B6FD-00A024DDAFD1}，出参写成 .data 单例 0x87f7e8 而不是 this。**本轮不给它定名**：接受值不是本对象，mdisp 判据对它无效。
+
+**六 · 本轮自己的判据错误（S-167 到 S-176，全部留案）**
+
+- S-167：自审卡把 repe cmpsd 写成 F3 A5（那是 repe movsd），实际字节 F3 A7。改后重扫。
+- S-168：接受点判据用 rd(f, 300) 读固定 300 字节窗口，跨过函数边界，把 0x429210 / 0x6cf410 也算成接受点。
+- S-169：改用「向前找 0xC2/0xC3 后接连续 >=2 个 90/CC」求函数入口，但 0xC2/0xC3 会以立即数字节形式出现，仍算错。
+- S-170：改用 disasm_lite 指令对齐求入口 —— .text 里嵌着数据（.byte 伪指令 65 处），线性反汇编在数据上错位，求出的入口与末端都不可靠。最终改为不自己求函数边界，只做纯字节枚举并与 r127b 的站点集合做双向差集。
+- S-171：r127d 第一版把段基址存成 RVA 而非 VA，D1 报出的锚点整体少 0x400000。
+- S-172：r127e 的 E4 第一版把「站点之后窗口内所有 call [reg+off]」都算进来，把 0x742899 的 call [edx+0x1c8]（ebp 另一个对象的虚调用）当成 QI 结果的虚槽调用。
+- S-173（最重的一条）：我派给审计员的卡 R127-AUDIT-IPERSIST.md 第 5 条写「复算 0x7ea564 与 0x7e36d4 两个 vtable 的 +0xc 槽值是否等于 0x429270 与 0x429360」。实测 0x7e36d4 的 slot0 = 0x429360、slot3(+0xc) = 0x429420。卡面是我写错的；r127b 的产物写 slot_index 0 与 3，它对。审计员若照卡面核 +0xc 会得到 0x429420 并对不上，这不是它的错。
+- S-174：r127e 的 E6 第一版取 bcd+16 当 ncb，那是 vdisp（全 0），于是三条基类 ncb 全报 0。MSVC x86 BC 布局是 +0 sig / +4 numContainedBases / +8 mdisp / +12 pdisp / +16 vdisp。
+- S-175：r127e 的 E4 第二版改成的简单寄存器跟踪在 16 个站点上追到 0 处 —— 真实代码先把 ppv 槽值与 setl/dec/and 合成再解引用（0x42ca82 mov edx,[esp+0x4c] -> 0x42ca8c and ebx,edx -> 0x42caad mov eax,[ebx] -> 0x42cab5 call [eax+0xc]）。故 E4 不构成对 r127a「槽只到 +0xc」的独立复核，如实记方法无解。
+- S-176：r127e 的 E7 第一版同样被 S-172 的口径污染，把 +0x1c8 当反例；改为「窗口内 off >= 0x10 的虚调用是否以 ppv 槽装出的寄存器为基址」，实测每一条都不是。
+- S-177：r127h 的 H6 第一版用「COL 的 +20 处 pSelf 必须等于 COL 自身地址」当校验，但该构建所有 COL 的 +20 全为 0，判据恒假。改用 signature + pTypeDescriptor + pClassDescriptor 三个字段定位。
+- S-178：我把审计员中途落盘的 7215 字节版本当成最终报告，据此写了「裁决分歧」的 H6/H7 两条；回收最终版（273 行）后它自己已改对，两条分歧都不存在。教训：等 wait_subagents 返回再读报告。
+
+**七 · 跨家族（规则 D，两次派发，一失败一成功）**
+
+第一次派 deepseek（task 256）：status failed，error = error_max_turns，61 回合 / 15.17 分钟，派发预算 5.0 分钟，**OVERTIME** 如实记，result 为空、未落任何报告。所以那一次的外部复核输入为零，不能写「已审计」。
+
+第二次派 hy4（task 257）：succeeded，39 回合 / 3.15 分钟，预算 4.0 分钟，无 OVERTIME。报告 273 行 / 11111 字节、零反引号，收进 _r127/audit/r127_audit_hy4.md。它四条主张全判 PASS，未发现推翻性证据。
+
+规则 D 的复算由 r127h（14 项）承担，逐条按审计卡口径重算：IAT 两个槽、四组 IID 字节与 GUID 文本、0x820270 的 8 个站点与 8 对命中地址、0x818858 的 16 个站点与 0 命中、三个 vtable 槽值、0x7f4108 的 COL 五个字段与三条基类四列、三处宿主槽位、两个 IID 的 5 处与 2 处出现位置。全部与它逐个相同，无一条分歧。
+
+过程中有一条要如实说：我第一次读到的是它**中途**写下的 7215 字节版本，那一版第 6 条报 ValueError 并把宿主全判 unknown，我据此写了「裁决分歧」。随后回收最终版（273 行），它自己已改对，结论与我一致 —— 所以「分歧」这个前提是我读早了造成的，不虚构分歧。
+
+它给的一条证据我原来漏了，采纳并复算（H10）：存在两个「固定参数包装器」直接 call QI 体 —— 0x4f6930 是 push ecx / lea eax,[esp] / push eax / push 0x7e36c0 / push 0x89a29c / call 0x429360 / ret 4；0x429550 是 mov eax,[esp+8] / push eax / push 0x7e9b20 / push 0xb0c110 / call 0x6cf430 / ret 8。这两处比 vtable 槽更硬：IID 与对象都写死，只留出参，直接证「这个 IID 就是交给这个 QI 体比的」。反控：同一判据对 0x429480（IClassFactory::CreateInstance 的包装器）给否。
+
+**八 · 断言与收口**
+
+r127a 15 + r127b 9 + r127c 9 + r127d 5 + r127e 8 + r127h 14 = 60 项全 PASS。全程 disasm_lite 流式扫描与单点窗口 disasm，未对整段 .text 开 detail=True；脚本带 timeout；收口前 ps 确认无孤儿进程。五项 CR 全绿 1081/137/337/0/2952；check_disc.py exit 0。**收口期追加（如实记）**：本轮确实改了门禁两处，都带反控（r127j，10 项全 PASS）。其一 C16_FLOORS 从 124 条补钉到 125 条 —— 新增 2.131 实测 11916 B，按半量规则取 5958，摘要常量 eb8cc052 改为 a87a240c，重钉后 unpinned 1 到 0、hollow 0、missing 0、min margin 1155。其二 GATE_VER 由 R126 升到 R127 并同步 DISC_RECHECK 第 20 行登记式（C10 门自检要求二者一致，而本轮确实动了门禁脚本）。反控三条：正控 exit 0；清空 2.131 正文 exit 1 命中 C16 并报 (131, 15, 5958)；只改 GATE_VER 不改登记行 exit 1 命中 C7 id 20 与 C10；改 131 的下界不改摘要 exit 1 命中 C16d；收尾断言三个正本字节与改动完成时一致。两处改动方向都是收紧。终态 check_disc.py exit 0、C10 显示 ok(R127)。看板 107 行未到 260 行阈值，本轮不归档。
+
+**九 · 未取得（不粉饰）**
+
+1) 010C = IPersist 的方向仍由外部 GUID 约定补上，字节只给出「更窄那个多一个 slot 3」。2) 0x7ea6e8 未定名（接受值不是 this，mdisp 判据无效）。3) 0x429270 是转交型（把 pUnkOuter 交给内层对象的 QI，不写自己的 ppv），本卡如实分两类记，不把它当失败。4) 010C 站点的 ppv 槽值经 setl/dec/and 合成后解引用，简单寄存器跟踪追不到，故「槽只到 +0xc」仍只由 r127a 的符号执行承担。5) 若 QI 结果被存进堆结构体后再取用，本轮所有判据都看不见。6) 35 个静态容器的运行期元素值与计数。7) 共用模板展开的充分证明。8) 门禁 C11 其余四处永远通过子项、五条不可能行未裁定、窗口表未扩。
+## 2.132 R128：三个 BSS 单例的 vptr 写入者全部唯一命中；0x7ea6e8 = IGameMap 由「认-转交-自认」闭环定名；C11 的 claims-none 免检通道真修成可失败
+
+**起点。** R127 台账 GY 留了八条未取得，本轮取其中两条 plus 一条 R127 明确记为「方法无解」的补测：① 0x429270 转交链落成字节；② 0x7ea6e8 定名（R127 记为 mdisp 判据对它无效、故不定名）；④ 010C 的「槽只到 +0xc」补第二条独立证据。第④条**方法失败并如实留缺**，不在下面四条里充数。
+
+**一 · 一个前提被推翻。** R127 待办② 的字面做法是「静态读 0x87f7e8 处的 vptr 指向哪张虚表」。实测 0x87f7e8 落在 .data 的非 raw 区（BSS）：段内偏移 0x6d7e8 远超 SizeOfRawData 0x6c000，映像文件里没有任何静态字节，静态读必然得 0。这不是「读不到所以不知道」，是**方法在结构上不可行**。改走反向路径：找谁写它的 vptr。
+
+**二 · 三个单例的 vptr 写入者各恰一处（含反控）。** 全 .text 扫 C7 05 形态（mov dword ptr [abs], imm32，共 1971 处）：
+
+- 0x87f7e8 <- 0x7e1964 只在 0x40d1b2（1 处），写入点属静态初始化函数 0x40d1b0，由 0x40d190 的 mov ecx,0x87f7e8 / call 0x5bda40 / push 0x40d1b0 / call 0x7c978a 注册（ctor 后立即 atexit 注册析构 0x40d1b0）。
+- 0x89a29c <- 0x7e36d4 只在 0x429200（1 处），是一个三字节函数 mov [0x89a29c],0x7e36d4 / ret。
+- 0xb0c110 <- 0x7f4108 有两处（0x6cf0c8 与 0x6cf0f6），同一函数 0x6cf0f0 的 ctor 与其 atexit 注册点，指向同一张表，故仍是单一写入目标。
+
+反控：相邻地址 0x87f7e4 的 C7 05 写入 0 处、0x87f7ec 的写入是 mov [0x87f7ec],eax（与 vptr 无关）；0x89a2a0 的写入 0 处。判据不是「凡 .data 地址都命中」。
+
+**三 · 0x87f7e8 的类型。** 0x7e1964 的 COL 在 0x7fab38，TypeDescriptor 0x816c90 解出 .?AVMouseClass@@，12 条基类，末条 .?AVINoticeSink@@ 的 mdisp = 21784 = 0x5518。ctor 0x5bda40 体内恰好写两处：0x5bda4a mov [esi],0x7e1964（主 vptr）与 0x5bda68 mov [esi+0x5518],0x7e195c（INoticeSink 子对象 vptr）—— 偏移与 RTTI 的 mdisp 逐位一致。0x7e195c 的 COL 也解出 .?AVMouseClass@@（COL 0x7fa9b8，与主表的 0x7fab38 不同）⇒ 两条 vtable、两张 COL、同一个类，多继承的标准形态。
+
+**四 · 0x87f7e8 是全局单例，不是数组。** 指令级引用 3700 处：3693 处 mov ecx,0x87f7e8（this 传递）、3 处 push 0x87f7e8、2 处 mov edx,[0x87f7e8]、1 处写 vptr、1 处 mov [edx],0x87f7e8（写别人的出参）。lea reg,[0x87f7e8] 站点 0 处 ⇒ 没有「先取地址再写 vptr」的第二条路径。对 [0x87f7e8+4k] 的写只有 +0，无 +4/+8/+0x10 ⇒ 单个对象不是数组。
+
+**五 · IClassFactory::CreateInstance 全链。** vtable 0x7ea564 的 COL = .?AVTiberianSunClassFactory@@（基类 IClassFactory ncb 1、IUnknown ncb 0，三者 mdisp 全 0）。前五槽 ret 字节 = 12/4/4/16/8：AddRef 与 Release 是 ret 4，故本构建的 COM 方法一律 **this 显式占第一个栈参数**（若走 ecx 约定它们必须是 ret 0）。这正是 R127 困惑的「CreateInstance ret 0x10 与 3 实参不符」的真因：this+pUnkOuter+riid+ppv 恰 4 实参。实参取值逐位自洽：[esp+0x10] 是 ppv、四次 push 后 [esp+0x18] 是原始 +8 的 pUnkOuter、[esp+0x1c] 是原始 +0xc 的 riid。四条失败路径：ppv 空 E_INVALIDARG 0x80070057、pUnkOuter 非空 CLASS_E_NOAGGREGATION 0x80040110、E_OUTOFMEMORY 0x8007000e 两处、E_NOINTERFACE 0x80004002（走 ebx 通道，末尾 mov eax,ebx 返回）。
+
+**六 · 认-转交-自认的闭环，0x7ea6e8 = IGameMap。** 0x7ea6e8 在全 .text 的指令级引用恰 3 处，三处都是 mov edi,0x7ea6e8：
+
+1. 0x42930f 在 TiberianSunClassFactory::QI 里 —— 认了之后 mov ecx,0x87f7e8 / mov edx,[0x87f7e8] / push ppv / push riid / push 0x87f7e8 / call [edx]，即**转交**给全局 MouseClass 的 QI；
+2. 0x4293a5 在 0x429360（ApplicationClass::QI）里 —— 认了之后把 ppv 写成常量 0x87f7e8（不是 this），这正是 R127 判「mdisp 判据无效」的那一处；
+3. 0x4f4273 在 0x4f4240（MouseClass::QI）里 —— 自己认，ppv = this。
+
+第三处是 R127 没有的。R127 只找到前两处，因为它的扫描漏了这一处（见第十条）。0x4f4240 只比较两个 IID：0x7f7c90（IID_IUnknown）与 0x7ea6e8，两条接受分支都写 ppv=this，第一条 ret 在 0x4f4298（ret 0xc），其后全是 nop，无后续分支。MouseClass 的 COL 在 mdisp 0 处的非 IUnknown 接口名唯一 = .?AUIGameMap@@（INoticeSink 在 0x5518，被 ppv=this 排除）⇒ 0x7ea6e8 = IGameMap，唯一解。
+
+判据的四条反控：① 把 mdisp 换成 0x5518 做同一统计，全库命中集为空（100 个类在 mdisp 0 有解，0 个在 0x5518 有解），说明判据只在 mdisp 0 给解、不是随便挑名字；② 去掉「非 IUnknown」过滤后 MouseClass 得两个候选，唯一性消失，过滤是必要的；③ 同一个 MouseClass::QI 对 0x7f7c90 也接受并返回 this，但 0x7f7c90 已由 IID_IUnknown 常量（Data1 全 0）独立定名，判据给出不同名字不是恒等判据；④ 0x7ea6e8 与 0x7e36c0 仅 Data1 末字节不同（C7 vs C3），是两个常量。全库 954 个可解 COL 的类里，9 个声明 .?AUIGameMap@@，全部是窗口族（Display/GScreen/Map/Mouse/Power/Radar/Scroll/Sidebar/Tab）。
+
+**七 · 两处方法失败，如实留缺。** 其一，010C 的「槽只到 +0xc」想补第二条独立证据：不用符号执行、改用「IID 引用点附近出现的虚调用偏移」当判据。±0x200 窗口下 010C 侧与 0109 侧最大偏移都是 0x1c8，判据无分辨力；收到 +0x80 后 010C 侧给 {16,36}、0109 侧给 {16}，但 IPersist 只有 1 个方法不可能出现 +0x24，只能是噪声。**方法失败，不产出证据**，R127 GY ④ 保持原样。这与 R127 S-170（三次自算函数边界全失败）是同一教训：不自己求函数边界，就不能按窗口对调用偏移下结论。本轮不再试第三次。其二，0xb0c110 <- 0x7f4108 的两处写入同址，虽指向同一张表，但「该对象是与 ApplicationClass 同级的全局单例」这一句仍只是形态推断，没有第二条记录。
+
+**八 · 规则 D 两次派发，都成功。** hy4 task 260 succeeded（15 回合 / 1.47 分钟 / 预算 8.0 / 无 OVERTIME），报告 128 行 / 7340 B 零反引号；deepseek task 261 succeeded（439 行 / 22146 B 零反引号）。两边都有数字错，都按规则 D 用两译码器仲裁后判定：
+
+- hy4 报「含该地址的指令 498 条」「0x7ea6e8 引用 2 处」，实测 3700 条与 3 处。用 capstone 与 i686-w64-mingw32-objdump 各出一份**地址集合**（不比总数）逐地址比对：3700/3700 交集 3700、仅 C 0、仅 O 0；0x7ea6e8 三处两个译码器完全一致。498 不对应 objdump 里任何一个可数的量（mov $0x87f7e8,%ecx 是 3693 行、任何提及是 3700 行、mov 0x87f7e8,%reg 是 2 行）。
+- deepseek 报「单遍 disasm_lite 会在 0x46f59d 停住、只解码 155215 条」。实测那个 155215/0x46f59d 恰是 **skipdata=False** 的结果，而 skipdata=True 的 disasm_lite 给 1394186 条、最后一条 0x7e0fff、覆盖 100.00%
+（.text raw 到 0x7e1000，差 1 字节是对齐尾巴）。它把两种口径混为一谈。
+- deepseek 十三条主张逐条复算**全部一致**（r128o 13/13）：c705e8f78700 唯一命中且立即数 0x7e1964、前缀字节分布 3693/3/2/1/1、push 0x87f7e8 三处地址、mov edx,[0x87f7e8] 两处地址、0x40d1bc 写 0x884d00<-0x7e195c 的原始字节、三个 GUID 文本、三处 mov edi,0x7ea6e8、call [edx] 两条与 ff 12 字节、push 立即数四条、edx 写入五处、ApplicationClass 的 COL 0x7fbc18 / TD 0x8186c8 / n 3 / slot0 0x429360。它报的是**文件偏移** 0xd1b2、我算的是**段内偏移** 0xc1b2，两者对应同一 VA。
+- 采纳它一条我漏的事实并复算：0x6bd940 是第三处 push 0x87f7e8，上下文 push 0x840a74 / push 1 / push 0x7e9520 / push 0x87f7e8 / call ebx。我先前只报两处。
+- 它的中间产物里 TOTAL 498 与主会话真值 3700 差 3202，成因是它的扫描器逐字节重同步；但它最终报告改成了重同步口径的 3700，与真值一致，故最终报告无此错。
+
+**九 · 自错五条全留案。** S-179：我先预判「指令级引用远少于字节级」，实测两者都是 3700，方向反了。S-180：C4 第一版只在 eax 里找 E_NOINTERFACE，漏了它走 ebx 通道。S-181：D1 第一版用 rg 得 2 处，因为 md.skipdata 设在 disasm 之后才生效；三处才对。S-182：N0 拿 Misc_VirtualSize 0x3df38d 当 .text 长度，实际 raw 是 0x3e0000。S-183：O1 断言 p == 0xd1b2，但 raw 是段内偏移、应为 0xc1b2（0xc1b2+0x401000 = 0x40d1b2）。另有一次 OOM：r128e 第一版把 139 万条指令物化成 list，被 cgroup kill（exit 137），改成 disasm_lite 生成器单遍流式后通过 —— 这正是本仓 CLAUDE.md 与每轮提示词都写明的红线，我自己踩了。
+
+**十 · 门禁真修一处（带四条反控）。** R127 与 R128 的待办都点了「C11 的永远通过子项」。本轮不猜是哪几处，先全量测（r128f 6/6）：31 行按第 7 列分「声明不补」14 行、「声明回跑」17 行；14 行的产物全部存在且都没有本纪律的自述行（声明与事实一致，不是逃逸）；校验式是 rows=N 的 4 行（22/26/27/28）实测行数与期望逐一相符，但 rows=N 只数行数、对内容无感。挑 claims-none 做真修：主循环原来对它们直接 continue 计入 claims-none，永不 FAIL；现在改成先核「该行产物里不得出现本纪律的自述行」，违反即 FAIL。
+
+反控（r128k 6/6，用「正本改名藏起 + 改过的副本放到正本路径 + finally 恢复并断言 sha」做，避开 R126 S-161 的临时目录陷阱）：正控 exit 0 且 C10 显示 ok(R128)；GATE_VER 改回 R127 而第 20 行仍登记 R128 -> exit 1 命中 C10；只改第 20 行不改 GATE_VER -> exit 1 命中 C7 id 20；给 id 11 的产物塞一条它自己的自述行 -> exit 1 命中新判据「C11 id 11 claims-none but its product carries 1 self-description line」。GATE_VER 由 R127 升到 R128 并同步 DISC_RECHECK 第 20 行登记式（C10 门自检要求二者一致，而本轮确实动了门禁脚本）。两处改动方向都是收紧。终态 check_disc.py exit 0、C10 显示 ok(R128)。
+
+**十一 · 断言与收口。** 十五套脚本 130 项断言全 PASS（r128a 16 + r128b 11 + r128c 12 + r128d 11 + r128e 9 + r128f 6 + r128g 6 + r128h 7 + r128i 9 + r128j 8 + r128k 6 + r128l 5 + r128m 4 + r128n 7 + r128o 13）。全程 disasm_lite 流式扫描，未对整段 .text 开 detail=True；脚本带 timeout；收口前 ps 确认无孤儿进程（唯一残留是本会话自己的 shell 包装，已处理）。五项 CR 全绿 1081/137/337/0/2952；看板 187 行未到 260 行阈值，本轮不归档（归档 CR 仍 2952）。
+
+**十二 · 未取得（不粉饰）。** ① 0xb0c110 的「与 ApplicationClass 同级全局单例」仍只是形态推断，无第二条记录。② 010C 的「槽只到 +0xc」仍只由 R127 r127a 的符号执行承担，本轮方法失败未补上（见第七条）。③ 若 QI 结果被存进堆结构体后再取用，本轮所有判据都看不见。④ 0x6bd940 处的 call ebx 的 ebx 来源未追（该处是第三处 push，但被调函数未定）。⑤ 35 个静态容器的运行期元素值与计数。⑥ 共用模板展开的充分证明。⑦ 门禁还有三处未修：C7 的 bytes=N 死分支、C11 的 frozen 分支、C10 门自检；五条不可能行 C11 id 3/4/22/27/28 未裁定；窗口表未扩。⑧ 已判死线不再投入：具名池、无名池、direct-only(D2)、D4结构性无、静态④、动态④、证据指针791行、D-48攻②-b。
+
+**十三 · 收口期追加（如实记，不改上文）。** 除第九条之外，收口时还动了三处，全部带反控，方向都是收紧。
+
+其一，看板归档。写入第 128 轮段后看板达 284 行，越过了 300 行上限，按阈值把最早的**第 125 轮与第 126 轮**两段整段搬进 BOARD_ARCHIVE（108 行）：搬前归档 993936 B / 6630 行 / CR=2952，搬后 1007724 B / 6738 行 / **CR 仍 2952**；看板 284 行降到 **176 行**、CR 仍 **0**。归档是纯 LF 追加，不引入任何 CR —— 这是 CR 不变量的关键，若用 Windows 默认换行写就会把归档 CR 从 2952 顶上去。两份正本都先做了 wx 独占备份。
+
+其二，C16 重钉 2.132。新增 2.132 后 C16 的表外未钉节数从 0 变成 1。按半量规则把 132 纳进 C16_FLOORS：实测正文 **11997 B**，取半 **5998**。表条目从 125 涨到 **126**，逐 id:floor 规范化串的摘要从 a87a240c10947077 改为 **2c6db9b43151f7ff**。重钉后 C16 五项全清：pinned 126、hollow 0、missing 0、unpinned **0**、min margin 1155。
+
+其三，收尾反控 r128t 共 6 项全 PASS，用的是「正本改名藏起 + 改过的副本放到正本路径 + finally 恢复并断言 sha」（沿用 r128k 已修好的做法，不再踩 R126 S-161 的临时目录陷阱）：正控 exit 0 且 C10 显示 ok(R128)、C16 显示 unpinned 0 与 pinned 126；GATE_VER 改回 R127 而第 20 行仍登记 R128 -> exit 1 命中 C10；把 132 的下界改成 1000 而不改摘要 -> exit 1 命中 C16d（NOTE 行显示 TAMPERED，FAIL 行报 38b283096f1326ba != 2c6db9b43151f7ff）；把 2.132 正文清成只剩标题行 -> exit 1 命中 C16 并报 **(132, 185, 5998)**。收尾断言 check_disc.py（fefe48219c8ed9b0）与 R14_COMMON.md（9ae35ee2281c6384）的字节都回到改动完成时的值。
+
+终态：check_disc.py **exit 0**、C10 显示 **ok(R128)**、C16 unpinned 0。本轮动门禁共三处（C11 claims-none 真修、GATE_VER R127->R128 并同步第 20 行、C16 重钉 126 条），三处都有反控，没有一处是放松。
+## 2.133 R129：0x6bd940 的 call ebx 定名成 RegisterActiveObject，并把 CLSID <-> 类工厂 <-> 类名串成四段链；C11 的 claims-none 校验式接上真跑；C17 五条不可能行裁定为撤回
+
+**起点。** R128 台账 HJ 的第四项「0x6bd940 的 call ebx 目标未定」本轮取得；另两条待办（C11 其余永远通过子项、C17 五条不可能行的裁定）本轮各推进一格。第十七套脚本 109 项断言全 PASS。
+
+**一 · call ebx 的目标不是「附近有 mov ebx」，而是三条同时成立。** 0x6bd6c2 的字节是 8b 1d 70 13 7e 00，即 mov ebx, dword ptr [0x7e1370]；0x7e1370 在本映像导入表里解析出 OLEAUT32.dll 的 RegisterActiveObject。三条判据：① 定义点唯一且 IAT 槽可解析出名字；② 从定义点到调用点的每条可达路径上没有其它 ebx 写（本轮实测 1 条无写路径、0 条带写路径）；③ 定义点是必经点（dominance）—— 分别切断 0x6bd6c2、0x6bc347、0x6bb9c3 后 0x6bd945 全部不可达。反控：相邻槽 0x7e1374 解析出 VariantChangeType 而非同名；同函数另外两个 ebx 定义（0x6bbee9 OpenMutexA、0x6bc347 LoadLibraryA）都不能冒充。
+
+**二 · 调用点的实参形状与 API 契约一致。** 0x6bd934 起四条 push：0x840a74、1、0x7e9520、0x87f7e8，随后 call ebx。RegisterActiveObject(punk, rclsid, dwFlags, lpdwRegister) 的第二个实参是 CLSID 指针，实测 0x7e9520 = .rdata 常量 {B45A4A81-86DA-11D1-B706-00A024DDAFD1}；第四个实参 0x840a74 是 .data 原始区里的一个 DWORD，静态初值 0xFFFFFFFF，其后紧跟 ASCII 串 blowfish.dll。撤销侧成对存在：0x6be131 读 0x840a74、与 -1 比较、非 -1 则 call [0x7e1384]（OLEAUT32!RevokeActiveObject）并把 0x840a74 写回 -1；0x6bec9d 是同一形状的第二处。0x840a74 的 imm32 引用全库恰 5 处，无第六处。
+
+**三 · CLSID 到类名是可走的四段链，每段都由字节给出。** 段一：0x6bc42a 起把四个实参压栈（&局部、1、1、0xa8e8c8），第五个 0x7e9520 由 0x6bc43a 压入，随后 mov esi,[0x7e15d8] + call esi，0x7e15d8 = ole32!CoRegisterClassObject。段二：0xa8e8c8 在 .data 的 BSS 区（段内偏移 0x6d8c8 > SizeOfRawData 0x6c000），映像内无静态字节，故必须走写入者反查；其 imm32 全库恰 2 处，写入者是 0x4e7ce0 的 c7 05 c8 e8 a8 00 64 a5 7e 00 c3，把 vptr 写成 0x7ea564。段三：0x7ea564 的 COL 解出 .?AVTiberianSunClassFactory@@，基类 IClassFactory ncb 1、IUnknown ncb 0，三者 mdisp 全 0。段四：0x7e9520 的 imm32 引用全库 5 处，其中 0x6bc43b 是类对象注册的 rclsid、0x6bd93c 是活动对象注册的 rclsid —— 同一个 CLSID 的两个面。反控三条：相邻常量 0x7e9510 与 0x7e9520 只差 Data1 末字节；把段二 vptr 换成另一张真实类表 0x7f4108，段三给出 .?AVSwizzleManagerClass@@（不同类）；0xa8e8c8 无静态字节，故不存在「静态读 vptr」的旁路。
+
+**四 · 0x7f3710 起的表不是猜的。** 循环头 0x6bc342 mov esi,0x7f3710、步长 0x6bc409 add esi,8、上界 0x6bc40c cmp esi,0x7f3718、回边 0x6bc412 jl 0x6bc34d，四条都在字节里。表恰 1 项：+0 = .rdata 0x7e9500 = {1440AD10-6AA8-11D1-B6F9-00A024DDAFD1}（作为 CoCreateInstance 的 rclsid 传给封装 0x6bedb0），+4 = .data 的 ASCII 串 blowfish.dll（作为 LoadLibraryA 的实参）。封装 0x6bedb0 体内：0x6beddd call [0x7e15fc]（CoCreateInstance）、0x6bedec call [0x7e1600]（OleRun）、0x6bee05 call [ecx]、0x6bee10 call [edx+8]（Release）。反控三条：步长 4 与 8 各扫一遍，只有 8 与指令字节一致；上界由字节给出而非我数的；上界处的 8 字节若被当成第 2 项，给不出「.rdata 指针 + 可打印串」这一对。
+
+**五 · 门禁真修第二处：claims-none 的校验式接上真跑。** R128 已把 claims-none 从「直接 continue」改成「产物里不得出现本纪律自述行」，那闭合的是「把有偷偷改成无、产物里还留着自述行」。另一种仍敞开：把校验式改成当前不成立的式子、同时把第 7 列写成无，门禁照样 exit 0。先实测（r129d 8/8）：14 条 claims-none 的校验式在真产物上 14/14 成立、在空产物上 0/14 成立 ⇒ 有分辨力且零误伤。改法：claims-none 行的校验式必须真跑通过。反控 7/7：正控 exit 0 + C10 ok(R129)；把 id 11 的式子改坏 ⇒ exit 1 命中新判据；改成 rows=0（恒真式）⇒ 同样命中；把产物路径指向不存在 ⇒ exit 1；收尾三份正本字节回基线。
+
+**六 · 五条不可能行裁定为撤回，这是本轮唯一「净损失」的决定。** C17 钉住的五条（id 3/4/22/27/28）声称 R55 回跑，但产物路径轮次分别是 61/81/84/88，全部晚于 R55。三条路先逐条验算（r129i 12/12）：改行不可行——只改 round 到路径轮次，五条 at 仍落在 R55 窗口外，要过 R4 就必须改 at，而 at 无外部时钟，改它就是编造时刻；撤回与降级在机制上同形，都要动第 7 列。取撤回：第 7 列 有 -> 无，同时把那五条假声称从产物里删掉（只改一列不删行会被 R128 判据当场抓住，r129j 实测 5 条 FAIL 正是这个）。删前把原文逐字存进 R129_RETRACTED.tsv（撤回不等于抹掉记录），四份产物各建 wx 备份。三处常量同步重钉：C11B_PIN_GAP 由 7 个 id 涨到 12 个、C17_PIN 由 5 条塌成空集并换摘要（空集摘要 = hashlib 对空串实测值 e3b0c442...，非手填）、C17_REUSED_ATS 清空。
+
+**七 · 代价如实量出来。** C11 的 ok 计数由 5 降到 0 —— 因为撤回的五条恰是全表唯一五条能通过 recheck_verify 的行。也就是说本轮把「5 条自洽但不可能的凭证」换成了「0 条凭证」，不是「5 条真凭证」。这是净损失。换来的是两条真判据：不再有假声称躺在产物里；claims-none 的校验式必须有分辨力。裁定反控 10/10：正控 exit 0 + ok(R129) + pinned 0 + gap 12；塞回假声称 ⇒ exit 1；塞回假声称并改回有 ⇒ exit 1；改坏 claims-none 式子 ⇒ exit 1；C17_PIN 改回非空不改摘要 ⇒ exit 1；C11B_PIN_GAP 改回 7 个 ⇒ exit 1；改回有但不补行 ⇒ exit 1；收尾三份正本回基线。
+
+**八 · 第二译码器仲裁（沿用 R128 规则）。** 四组地址集合各用 capstone 与 i686-w64-mingw32-objdump 出一份，比集合不比总数。原始口径下交集恒 0，原因是我把「capstone 的字节命中（立即数起点）」与「objdump 的指令起点」直接比；归一化到指令起点后：0xa8e8c8 2/2 交集 2、0x7e9520 5/5 交集 5、0x840a74 5/5 交集 5、0x87f7e8 3700/3700 交集 3700，四组均无单边独有。归一化用的是 objdump 的指令边界表，不是我自己求的边界。
+
+**九 · 规则 D 一次失败一次成功，如实记。** hy4 task 264 failed 加 error_max_turns（61 回合 / 5.22 分钟 vs 预算 10.0 ⇒ OVERTIME），result 为空、零报告，那次外部输入为零、不能写「已审计」。deepseek 侧派发时撞上实时内存上限 MAX_SUBAGENTS 由 2 降到 1（MemAvailable 796.5 MB），按本仓纪律不并发、等内存回落。故本轮审计以主会话自审（r129n）+ 第二译码器仲裁（r129m）承担，不假称已过跨家族审计。
+
+**十 · 自错十五条全留案，其中两条同族。** S-184 窗口 0x16 切断 10 字节指令；S-185 断言按记忆写而非按字节；S-186 反控对象自身不可解（拿 IID 当 vtable）；S-187 与 S-197 是同一族——都写了 or True 恒真断言，第二轮由 r129n 的 N1 自动抓到；S-188 拿「碰巧只出现一次的子串」当替换目标；S-189 跨文件搬文本没处理行尾 CR；S-190 用 split 下标取文件名字段；S-191 字节差断言没按文件汇总、没计行尾换行；S-192 跨工具比文本只收一种数值形式；S-193 解析 objdump 地址假设 8 位补零；S-194 跨译码器比集合未归一化；S-195 归一化时自求指令边界，300 处落到非边界（与 R127 S-170 同一个坑）；S-196 只降级不删行等于半撤；S-198 统计口径含自身产物导致自指漂移。
+
+**十一 · 断言与收口。** 十七套脚本 109 项断言全 PASS（r129a 17 + r129b 13 + r129c 13 + r129d 8 + r129e 8 + r129f 7 + r129g 10 + r129h 8 + r129i 12 + r129j 13 + r129k 26 + r129k2 22 + r129l 10 + r129m 21 + r129n 19，另有 r129o 本次写入自校验）。全程 disasm_lite 流式扫描与 objdump 单遍，未对整段 .text 开 detail=True；脚本带 timeout；收口前 ps 确认无孤儿进程。五项 CR 全绿 1081/137/337/0/2952；check_disc.py exit 0、C10 ok(R129)。
+
+**十二 · 未取得（不粉饰）。** ① 0xb0c110 的「与 ApplicationClass 同级全局单例」仍无第二条记录。② 010C 的「槽只到 +0xc」仍只由 R127 符号执行承担。③ QI 结果存进堆结构体后再取用的路径所有判据都看不见。④ 0x7e9500 那个 CLSID 对应的 dll 只有 blowfish.dll 一项，表为何只有一项（不是八项）未解。⑤ 35 个静态容器运行期元素值与计数。⑥ 共用模板展开的充分证明。⑦ 门禁另两处未修（C7 bytes=N 死分支、C11 frozen 分支）、窗口表未扩（ROUND_WINDOWS 只有 r36..r65 共 28 轮，r66 以后全部不可验证 —— 本轮降级的五条正因为落表外才只靠 C17 的路径轮次判据抓到）。⑧ 已判死线不投。
+
+## 2.134
+
+R130 。本节记一个可复现的字节结论与两个方法坑。
+
+一、gamemd.exe 中，包装器 0x6bedb0（0x6beddd call CoCreateInstance、0x6bedec call OleRun、0x6bee05 call [ecx]、0x6bee10 call [edx+8]）在全库**只有 2 个调用点**：0x6bc364 与 0x6bc3aa。三种独立方式给出同一结果：capstone disasm_lite 线性扫描（1394186 条）、objdump 第二译码器（1401544 条）、原始字节 E8 rel32 扫描。两个调用点均落在 0x6bc34d 循环体内（回边 0x6bc412）。
+
+二、全库「表头 mov + add 步长 + cmp 上界 + 条件回边」形态的循环共 117 个（表头在 .rdata 9 个、在 .data 108 个）。只有 1 个循环喂给上述包装器，它走的表头 0x7f3710 、上界 0x7f3718、步长 8，故表内恰 1 项：+0 = 0x7e9500（CLSID {1440AD10-6AA8-11D1-B6F9-00A024DDAFD1}），+4 = 0x840a78（ASCII blowfish.dll）。
+
+三、方法坑 S-200：capstone 对**小立即数打印十进制**（add esi, 8），对大的才打 0x（cmp esi, 0x7f3718）。若立即数解析器只接受 0x 前缀，已知循环会被判为不匹配、全库得 0 个。必须同时接受两种形式，且必须写「必须找到已知循环」这条正控。
+
+四、方法坑 S-201：匹配 objdump 的 call 行时，[0-9a-f]+ 会先吃掉 '0x' 的 '0' 并在 'x' 处停下，后随的空白类或否定 lookahead 永远不满足，于是一条也匹不上。必须显式写 (?:0x)?。两版错正则都会让人以为「objdump 找不到调用」。
+
+五、结论的边界：「全库没有第二张类工厂表」是字节事实；「所以设计上只需要一个」不是，后者需要运行期路径证据。另：0x7e1b78 与 0x7e1b88 这两张 .rdata 「步长 112」的表是地形名字符串序列（TEMPERATE / SNOW / URBAN / DESERT / NEWURBAN / LUNAR），不是指针表，不能用它们反驳上述结论。
+
+六、门禁收口（R130）：新增的 2.134 必须入 C16_FLOORS，否则「新增一节」就白得一张永久免检票。写完当场报 unpinned 1 即为此。按半量规则重钉：实测正文 1882 B 取 941，条目 127->128，摘要 d7d41af110a692d8 -> 9bc92f2c05c797ef。反控 11/11，含「清空 2.134 正文 -> exit 1 报 (134,9,941)」与「只改下界不改摘要 -> TAMPERED」。GATE_VER 同步 R129 -> R130 并改登记行，终态 ok(R130)。
+
+七、事故未发一条（S-203）：恢复块不得依赖磁盘状态。r130k 初版把「读回退文件再写入」当恢复手段，若命中会把 R14_COMMON.md 写成空。改为先把正本字节读进内存、finally 只从内存恢复。改好后一次崩溃中该块实际执行，两文件 sha 均回基线。
+## 2.135
+
+R131 把 R129/R130 给 0x6bedb0 起的名字改掉了，并且用字节证明改得对。另外把门禁里一处「静默的空转」变成可失败的钉。
+
+一、改名：0x6bedb0 不是类工厂包装器，是**被 IID 参数化的 COM 实例化助手**。它的 106 字节里没有 IClassFactory、没有 DllGetClassObject，全库也没有这两个名字指向它的任何引用。它的三条栈参数是 rclsid、pUnkOuter 与 ppv 合用的那个槽、dwClsContext（ret 0xc 给边界）。这一点不是读调用点读出来的，是把 [esp+N] 全部按 CFG 解到函数入口 esp 上算出来的：九条 [esp+N] 读全部落在三个参数槽里，一条不落。栈模型由两条独立推导互证——把每个 call 当 cdecl 时模型在恰好两个合并点自相矛盾（0x6bedbd 到 0x6bedc0、0x6bee07 到 0x6bee09），而按调用前 push 条数给 4*nargs 时全模型一致。两条推导给出的结论相同，不是一条推导换两种说法。
+
+二、模板：全库存在**两个**这样的实例，0x6bedb0 与 0x41c250。两者 106 字节里只有偏移 0x4e 一个字节不同（c0 对 b0），差异是它们推给 QueryInterface 的 IID：前者推 IID_IUnknown {00000000-0000-0000-C000-000000000046}，后者推 {070F3290-9841-11D1-B709-00A024DDAFD1}。所以这是同一个模板的两次实例化，实例参数就是「创建之后再 QI 一次要什么接口」。R130 说「0x6bedb0 全库只有 2 个调用点」在字面上对（该实例确实只有 2 个调用点），但**不是**「这个包装器只被用两次」：另一个实例被 13 处调用，两个实例合计 15 个调用点。R130 的措辞需要按这一条订正。
+
+三、0x6bc34d 那个循环不是类工厂注册循环，是**惰性自注册 COM 服务器的加载器**。字节顺序是：先 push 7 / push 0 / push [esi] 调 0x6bedb0 试创建；失败则 mov eax,[esi+4] 交给 LoadLibraryA（0x7e1220）；再 push 0x840de4（该地址的字符串实测就是 DllRegisterServer，全库恰 1 处引用）交给 GetProcAddress（0x7e1250）；call eax 调它；然后用同一组实参重试 0x6bedb0；最后 FreeLibrary（0x7e1224）把句柄放掉。表 0x7f3710 每项 8 字节 = (rclsid 指针, dll 名字指针)，恰 1 项 {0x7e9500, blowfish.dll}。
+
+四、R130 的未取得项「为什么类工厂表只有 1 项」在这一条下**消失**，不是被回答：它根本不是类工厂表，是「本构建自带哪些需要自带注册的 DLL 宿主 COM 服务器」的清单，而本构建只带一个（blowfish.dll）。把它当类工厂表追问「为何不是 8 项」是问错了对象。
+
+五、dwClsContext 实测在全部 15 个调用点都是 7（INPROC_SERVER|INPROC_HANDLER|LOCAL_SERVER）。包装器里 test al,0x14 的 0x14 是 LOCAL_SERVER|REMOTE_SERVER；7 与 0x14 相与得 4，非零，所以 je 不跳、CoCreateInstance 确实被调用。我第一次把这一位算反了（写成「7 不碰 0x14」），是被 7 & 0x14 = 4 这个算术纠正的，记作 S-206。另一个实例 13 个调用点也全部传 7，故 OleRun 那条分支在这个二进制里**从未被走到**，是模板层面的死分支——这是实测 15/15，不是推断。
+
+六、门禁真修：新增 C18，把 C17 的空转从「静默的 0」变成「必须显式登记、一变就 FAIL」。因果链实测：C17 只扫第 7 列以「有」开头的行；这 12 行恰好等于 DISC_UNVERIFIABLE.tsv 的 12 行；而冻结档的语义就是「结构上不可能自产出凭证行」。于是 C17 的输入集按定义不可能含自述行，checked 恒 0；C11 同理，19 个 claims-none 加 12 个 frozen 等于 31，没有一行能到 ok=1。这不是「恰好没有」，是构造上不可能有，与 R68 CW8 ③、R102 C11b 是同一形状的永久免检票。故 C18 钉住五个实测值（c17_checked=0 / c11_ok=0 / claims_有=12 / frozen=12 / claims_none=19）并另钉一条因果（claims-有 集合必须仍等于 frozen 集合）。修法不是「要求 checked>0」——那要真回跑，做不到也不该伪造。
+
+七、C18 的反控 9/9（r131v）：正控 exit 0 且打 C18 note；把 c17_checked 改成 1、c11_ok 改成 5、frozen_rows 改成 13，三次各自 exit 1 并命中 C18；只关掉因果那一条而计数不动时仍然 exit 0（证明它是独立的第二个条件，不是把同一个判断写两遍）；六次改盘后门禁字节与改前逐字节相同。恢复只从内存，不读任何回退文件（S-203 的修法沿用）。
+
+八、方法坑两条。S-204：capstone 对**小立即数打十进制**（push 7 / push 0），我的立即数解析器只吃 0x 前缀，于是把 7 和 0 判成「寄存器或内存」，四条断言假失败；与 R130 S-200 同族，正控是「这条必须是立即数 7」。S-207：按 ff 15 形式找 IAT 引用时，我把 data[i-2] 当成操作码字节，但 ff 15 <imm32> 里 0xff 在 i-2、0x15 在 i-1，于是两个槽都报 0 处引用；而反汇编明明白白在调它们——「对一个明摆着被调用的槽报 0」就是窗口错位的信号，改成同时校验 i-2==0xff 与 i-1∈{15,25,35,05} 后得 22 处与 8 处。
+
+九、第二译码器：0x6bedb0 的 2 个调用点用 capstone（skipdata）与 objdump 各自得出，站点集相同；原始 E8 rel32 字节扫描给出同一集合。反控最有价值的一条：**不开 skipdata 时 capstone 的 disasm_lite 会在 0x46f5a0 静默停住**，只解出 155215 条指令，0x6bedb0 的两个调用点直接消失——那一版会得出「无人调用」的错结论。R130 的普查脚本是开着 skipdata 的，所以 R130 的 117 个循环数没有踩这个坑；本条由跨家族审计员独立发现，主会话复算确认。
+
+十、结论的边界（不粉饰）：本节给出的都是字节事实与从字节算出的算术。「为何本构建只带一个自注册 DLL」仍未得——那是构建配置问题，静态字节里没有答案。blowfish.dll 的运行期是否真的走完 LoadLibrary→DllRegisterServer→重试成功，静态只能看到这条路径存在，看不到它被执行。
+
+十一、收口期追加（如实记，不改上文）。写完 2.135 后门禁当场报 unpinned 1——新增一节就白得一张永久免检票，正是本仓被咬过多次的那件事。按半量规则重钉：2.135 正文实测 6118 B，取 3059；表条目 128 -> 129；摘要 9bc92f2c05c797ef -> 0241a4666162ba57。重钉后 pinned 129 / unpinned 0 / hollow 0 / missing 0 / min margin 1155。
+
+十二、C16 重钉的反控 11/11（r131z）：正控 exit 0 且 C16 显示 pinned 129、unpinned 0；把 135 的下界从 3059 改成 1，exit 1 命中 C16d（摘要不对）；改成 99999，exit 1 同时命中 C16d 与 C16 hollowed out [(135, 6118, 99999)]；把 135 条目整条删掉，exit 1 命中 C16d——注意此时未钉节数是 1，仍在阈值 2 以内，所以**只有摘要那一道拦得住**，这就是加摘要钉的意义；把 2.135 正文换成单个字符，exit 1 命中 C16 hollowed out [(135, 10, 3059)]；每次恢复都只从内存写回，R14_COMMON 与 check_disc 的字节与 CR 均回基线。
+
+十三、C18 的独立反控 9/9（r131v）：正控 exit 0；把 c17_checked 改 1、c11_ok 改 5、frozen_rows 改 13，三次各自 exit 1 并命中 C18；只把因果那一行关掉而三个计数不动时仍 exit 0——这一条是关键，它证明 C18 是两个条件（计数 + 因果），不是把同一个判断写两遍；六次改盘后门禁字节逐字节回原。
+
+十四、自错再四条留案。S-205：把调用点窗口取成「站点减 0x30」，落在指令中间，解出 aam 0xf5，args 直接为空；改从循环自己的指令边界 0x6bc342 起解。S-206：把 7 & 0x14 算成 0（其实是 4），于是把「CoCreateInstance 确实被调」写成了反的。S-208：判断门禁有无失败时用了 'FAIL' not in out，而 NOTE 文本里就有 "can never FAIL" 这个短语，于是永远判有失败；改成只看行首 'FAIL '。S-209：把正文分节的正则套在门禁源码上用，当然找不到 2.135 标题，随后在 None 上取 .start() 崩掉。另有 S-211：r131y 是幂等性坏的——重跑一次会在 C16_FLOORS 里再追加一条 135，而摘要仍算「OK」，因为重复项被 normalize 成同一个字典键。这一条最值得记：**摘要校验挡不住重复条目**，靠的是人看一眼 C16 打印的条目数（129 而不是 130）。
+
+十五、边界重申：本节全部结论是「字节是什么」与「字节算出来是什么」。blowfish.dll 在运行期是否真的被注册成功，静态看不到；「为何只带一个自注册 DLL」是构建配置问题，静态也没有答案。
+
+## 2.136
+
+R132 不是修修补补，是把 R131 一条**承重的结论**推翻，并给出推翻它的字节依据。R131 说 0x6bedb0 与 0x41c250 的「106 字节里只有偏移 0x4e 一字节不同」，据此论证这是同一个模板的两次实例化、差别只在 QI 的 IID。这个数字来自一个启发式：从入口向下反汇编到**第一条 ret** 为止。R132 用控制流可达性遍历替代它，得到的真实长度是 **136 字节**，差异是 **两处**（0x4e 与 0x70），而不是一处。
+
+一、截断是真的，且能精确定位。0x6bedb0 的 je 在 0x6bedc6 跳到 0x6bee1a，而 0x6bee1a 正是第一条 ret（0x6bee17 结束）之后的地址；另一条 jl 在 0x6bede5 跳到 0x6bee33。所以「到第一条 ret 为止」在结构上必然截断一个**可达**的 else 块。反控：把 else 块入口 0x6bee1a 单独做 CFG 遍历，得 12 条指令、恰好 30 字节，收在同一个结束地址 0x6bee38；106 + 30 = 136，无缝无叠。第二个实例同样：0x41c266 跳 0x41c2ba，0x41c285 跳 0x41c2d3，真实长度同为 136，else 块同构。另有一条独立边界证据：两个函数体结束后都正好是 8 个 0x90 nop，然后才是下一个函数入口——边界不是靠长度猜的。
+
+二、于是 R131 的模板结论要按字节订正。在完整的 136 字节上逐字节比较，两处不同：偏移 0x4e（c0 对 b0）与偏移 0x70（c0 对 b0）。前者是 if 路径推给 QueryInterface 的 IID，后者是 **else 路径**做 CoCreateInstance 时用的 IID——那一处整个落在 R131 的 106 字节截断之外，所以 R131 看不见它，只好写成「只有一处不同」。这不是笔误，是截断的必然后果；反控给出对照：只用前 106 字节比较**确实**只有一处差异，正是 R131 的数字。两件事同时为真，恰好说明口径才是分歧源。
+
+三、实例化个数仍是 2，这次是三重掩码互证。掩码口径一（只掩三个 IID push 立即数）命中 2 处；口径二（掩掉体内**全部** imm32，共 40 字节）命中**同样** 2 处——这排除了「第三份副本只在别的立即数上不同因而躲开掩码」这一逃逸路径；口径三（完全不掩码）只命中源实例 1 处，证明掩码确实在起作用而不是恒真。反控另加一条：把掩码外一个字节翻掉做的诱饵，全库命中 0。调用点也复核了：0x6bedb0 两个、0x41c250 十三个，与 R131 一致。
+
+四、R131 的分支判读被推翻，且是**方向反了**，不是细节偏差。R131 同一段里写了两句话：一是「7 & 0x14 = 4 ≠ 0 故 je 不跳」——算术正确；二是「OleRun 分支 15/15 处均为死分支」——这句反了。je 不跳意味着**顺序落入** if 路径，而 OleRun 恰在 if 路径里（0x6bedec，偏移 +0x3c），所以 OleRun 是**活**的；真正走不到的是 je 的目标分支（0x6bee2b，那次 CoCreateInstance 后面没有 OleRun）。可达性遍历给出机械判据：按 ZF=0 走，可达集含 if 臂的 CoCreateInstance 与 OleRun、**不含** else 臂的 CoCreateInstance（两个实例各 4 项断言全过）；反控是「若 ZF=1 则 OleRun 不在可达集」——说明这条臂确实是条件分支而不是恒执行。
+
+五、承重的那一步单独加固：`test al,0x14` 到底看哪个参数。这一步决定第四条的结论，不能靠手感。体里九条 [esp+N] 读全部列出；关键在于 +0x18 处读 [esp+0xc] 进 ecx、随后作为 CoCreateInstance 的**第一个**实参（rclsid）压栈。若深度取 12，该读会落到入口相对 +0x0，即**返回地址**；把返回地址当 rclsid 是荒谬的。若深度取 8，它落到 +0x4 = arg1。独立佐证：15 个调用点里有 10 个把常量传给 arg1，这 10 个常量（0x7e9a30/0x7e9a60/0x7e9a70/0x7e9a90）**全部**落在 .rdata/.data 内，10/10——是 GUID 指针该有的样子，而返回地址是代码地址。故深度 8 被强制，[esp+0x14] 解到入口相对 +0xc，即 arg3。arg3 在 15/15 个调用点实测都是 7，故 ZF=0、je 不跳，如第四条。
+
+六、跨家族审计（规则 D）。deepseek task 272 succeeded，55 回合 / 6.0 分钟 / 预算 2.0（OVERTIME 如实记）——注：本轮派发时 budget-min 填的是 2 而非惯例的 8，故 OVERTIME 标注的绝对值不具可比性，下一轮按 8 重设。hy4 task 273 succeeded，27 回合 / 3.17 分钟 / 预算 2.0（同样受此影响）。两家独立报出的数字与主会话复算一致：真实长度 136（而非 106）、差异两处（0x4e 与 0x70）、实例恰 2 个、else 块 30 字节、两体结束后各 8 个 nop、0x6bedb0 与 0x41c250 的调用点各 2 与 13。hy4 另报 dwClsContext 分布 7 出现 11 次、1 出现 6 次、eax 出现 4 次，与我复算的 11/6/4 逐项相同；我第一版得 10 是因为有一处站点（0x469f4b）窗口太窄没解出 5 个 push，属我的口径漏项，已由放宽窗口后修正。
+
+七、deepseek 报的一条**跨轮次**风险已采纳并复算：不开 skipdata 时 capstone 的 disasm_lite 会在 0x46f5a0 静默停住，只解出 155215 条。R131 已记过这一条。R132 的全部普查都开着 skipdata，并加了一条断言直接盯住这件事：线性扫描的最大指令起始地址必须 > 0x7e0000（实测 0x7e0fff），否则命令行统计会静默少算而不报错。这条断言的价值在于它能在别处出问题时先响。
+
+八、自错五条留案。S-212：把 OleRun 的字节模式写成 ff 16，实际是 ff 15（call 间接），于是全库 OleRun 报 0 处，而反汇编明明在调它——与 R131 S-207 同族，都是「对一个明摆着被调用的槽报 0」；改正后 7 处。S-213：栈深度遍历里把每个 call 当成不改变深度，于是 [esp+N] 全部解到负偏移或 argNone，得到「九条读全部越界」的荒谬结论；改为识别被调方弹参后，arg1 常量 10/10 落在数据节，模型自洽。S-214：按 op_str.startswith('al,') 匹配寄存器，而 capstone 打印的是 'al, 0x14'（逗号后有空格），两条断言假失败；与前两轮 S-200/S-204 同族，都是解析器的空格/进制假设。S-215：把「第一条 ret 之后都是填充」当成事实，于是 objdump 的断言写成「0x6bee38 之后不得有指令起始」，而那里是 8 个合法 nop；改成「恰好 8 个 0x90 且第 9 个不是」。S-216：r132d 的回溯窗口取 10 条指令，而 0x469f4b 站在 push 与 call 之间夹了七条填充 mov，于是漏解、21 站点只解出 20；与 S-205 同族（都是窗口宽度拍小了），改正方向是「窗口宽度必须由最坏情况站点决定，不能由典型站点决定」。
+
+九、断言与收口，含一条**故意留着的 FAIL**。十二套脚本共产出 94 项断言：r132a 9 + r132b 8 + r132c 6 + r132d 4 + r132e 9 + r132f 4 + r132g 5 + r132h 15 + r132i 4 + r132j 6 + r132k 16 + r132l 8。其中 **93 PASS、1 FAIL**。那条 FAIL 是 r132d 的「21 个站点是否都解出 5 个 push」——实得 20，漏的是 0x469f4b，原因是该脚本的回溯窗口只有 10 条指令，而这一站在 push 与 call 之间夹了七条填充 mov。不是结论错，是我的**窗口太窄**，属 S-216，与 R131 S-205（窗口落在指令中间）同族。r132g 用 16 条指令的窗口重解同一张表，得 21/21，两表除该站外逐项相同。这条 FAIL 我留在产物里没有抹掉，因为「断言全绿」比「一条已知 FAIL 且被解释清楚」更危险。全程 disasm_lite 流式（分块 0x10000）与有界窗口 detail=False，未对整段 .text 开 detail=True；objdump 单遍；脚本均带 timeout；收口前 ps 确认无孤儿。五项 CR 1081/137/337/0/2952 全绿。
+
+十、未取得（不粉饰）。① R131 那句「OleRun 是死分支」的**动机**无从复原——只知结论反了，不知当时为何把臂名扣错；本轮只订正结论，不臆测成因。② else 臂在运行期是否**永不**执行，静态只能证明「在 15 个调用点都传 7 的既定事实下不可达」，不能证明「任何输入都不进 else 臂」——若有别处直接调用这两个函数并传低位 bit2 为 0 的值，else 臂会执行；本轮未找到这样的调用点，但「未找到」不等于「不存在」。③ 0x70 处那第二个 IID 常量（else 臂的 riid）在 R131 口径下从未被读到，它的具体 GUID 值本轮只知与 0x4e 同形（均为 c0/b0 单字节差），完整 16 字节未逐一展开。④ blowfish.dll 运行期是否真走完 LoadLibrary→DllRegisterServer，静态仍只能看到路径存在。⑤ 门禁另两处未修（C7 的 exists/bytes=/none 三个分支在本轮实测 31 行覆盖 0 行，即死分支；C11 frozen 分支）。⑥ 窗口表仍需 r66 以后主快照，一份都没有。⑦ 35 个静态容器的运行期元素值与计数。
+## 2.137
+
+R133 修的是 R132 留在地板上的第一处门禁漏洞，并顺手把 R132 的两条承重结论做成主会话独立复算。
+
+**一 · 门禁 C7 三个死分支的修法不是造产物，而是钉住普查。** R132 实测 C7 的 exists / bytes= / none 三个分支在 31 行里各覆盖 0 行；R133 r133g 复测仍是 0/0/0（8/8 PASS），r133h 证明注入一行对应形态会把计数从 0 推到 1，即钉有分辨力。修法是新增 C7b：把整张形态普查 24/3/4/0/0/0 显式钉住，漂移即 FAIL，逼下一个人先裁定再改数据。不为不可达形态硬造产物——那会制造一条只为过门禁而存在的行。
+
+**二 · 该修法的正反控 13/13 PASS（r133j2）。** PC1 未改副本 exit 0；PC2 普查六键全打印；PC3 C7 结果行也带普查。三个 NC 各把一条 grep 行改成 exists / bytes=999 / none，三次都 exit 1 且报 drifted；NC4 删掉零值播种行后零值键报 vanished，exit 1；NC5 把表与钉同时改动后 C7b 不再报漂移（证明可重钉、不是不可过的死闸）。RES1/RES2 证明注入一行 none 会把计数 0 推到 1（有分辨力）。真实树字节未被控制跑动过（前后 sha 相同）。
+
+**三 · 一条控制脚本自身的方法事故，如实记（S-224 族）。** 第一版 r133j 用 shutil.copytree 复制整个 R14 目录做控制，而 R14 有 811 MB（其中 R17_LEAD_BASELINE 独 766 MB，门禁一个字节都不读），六次复制写进 tmpfs 约 4.8 GB，撞上自己 600 秒的 timeout（exit 143），一个断言都没跑出来。这不是对门禁的判决，是控制脚本的缺陷，故重跑而不改写结论。第二版改为按实测文件集暂存；文件集先用手写清单，漏了 place_r87.py（门禁第 74 行 import），于是每个暂存副本都在 import 阶段就失败、13 项全报 FAIL，而原因与 C7b 无关。最终改为用 io.open/builtins.open 探针在现场推导文件集，并补上 R14 顶层全部 .py（importlib 走 _io.open_code，绕过两个探针）。教训与 R132 S-216 同族：**控制失败的第一次读数必须先归因到控制本身，不能当成被测对象的结论。**
+
+**四 · 用实验判定，而不是用读代码判定。** hy4 审计员称 C7b 的 exists/bytes=/none 三键是「惰性键」（因播种后恒为 0==0，不可能触发）。我没有接受也没有反驳，而是直接把钉住的 exists 从 0 改成 1 而表不动：门禁 exit 1 并打印「C7b shape census drifted: exists=0 but pinned 1」。**三键是决策相关的，hy4 这一条错。**
+
+**五 · 但 hy4 的另一条对，且是我代码注释里的错。** 我原注释写「播种是让 exists=0 成为可检查事实的原因」。hy4 指出不播种时 loop1 仍能通过 C7_SHAPE_PIN.get(k) != measured 抓到新出现的一行，故播种不是「可检查」的原因；播种真正修的是相反的 bug——不播种时 loop2 会把三个零值形态报成 vanished，即在健康表上伪造三条失败。我复算确认后改了注释（这是本轮第二次改门禁，方向是改错别字级的事实错误，不改逻辑），改后门禁 exit 0、控制套件仍 13/13。
+
+**六 · 主会话独立复算 R132 的两条承重结论，22/22 PASS。** 我自己写 PE 解析、GUID 格式化与逐字节比较，不复用 _r133 的代码：(1) 两处差异确为 0x4e 与 0x70，均为 c0/b0，且都是 push imm32 的立即数字节 0（操作码 0x68 在 +0x4d / +0x6f，差值 1）；(2) 指针差 1 字节而所指 GUID 差 15 字节，两件事同时为真；(3) 0x817bc0 是 IID_IUnknown {00000000-0000-0000-C000-000000000046}，0x817bb0 是 {070F3290-9841-11D1-B709-00A024DDAFD1}，两常量相距恰 0x10，同在 .data。
+
+**七 · 分支结构独立复算 22/22 PASS。** 两实例各 136 字节、各 56 条指令、末条均为 ret 0xc；test al,0x14 在 +0x14、je 在 +0x16，目标 A=0x6bee1a / B=0x41c2ba；该目标在体内恰被 1 条分支指向（就是那条 je），其前一字节结束于 ret 0xc（无直落）；else 臂恰 1 条 call 且为 [0x7e15fc]，不含 0x7e1600；if 臂含 0x7e1600，故 OleRun 在活臂。
+
+**八 · arg3 在 15 个调用点全为 7，由主会话独立解出。** 我第一版把「最近的三条 push」取反了（拿成最远三条），得出一堆 GUID 指针当 arg3；第二版还犯了一个元组索引错（t[1] 是 size 不是 mnemonic），walk 全空——两条都在反控里当场暴露，记 S-224/S-225。修正后 15/15 都是 7，且 arg3 所在地址与 hy4 独立解出的 15 个地址**逐个相同**，是两家方法不同的强互证。
+
+**九 · 规则 D 如实记。** deepseek task 278 failed 加 error_max_turns（61 回合 / 6.87 分钟 / 预算 8.0），result 为空、未落报告，故本轮 deepseek 侧无外部输入。hy4 task 279 succeeded（27 回合 / 3.47 分钟）。按 §2.12 规则 D，hy4 的每条结论都由主会话复算：C1-C6、C8、C9、C11a、C11c 复算一致；C7/C10 的「仅在窄口径下成立」复算确认（if 臂实为 4 条 call 而非 1 条，原卡表述过宽）；C11b 的 DISAGREE 成立且是**我的卡写错了**（我用 0x817bc0 做大小端反控，而它 Data1/Data2/Data3 全零故两种端序同形，应改用 0x817bb0）；G1 由实验判定为 hy4 错；G2 为 hy4 对、我注释错；G3 为 hy4 对，且是实质漏洞（普查只看第 6 列首个 token，改第 5 列产品路径则普查不变而 C7 实际检查对象已变）；G4 机制成立但后果不成立（实测暂存副本与真实树 15 条 NOTE 逐行相同、exit 码相同）。
+
+**十 · 未修，如实记。** hy4 的 G3 指出的漏洞本轮只证实不修：普查不读第 5 列，故「换产品路径而保持形态头不变」能瞒过 C7b。修法不能是往普查里加计数——那还是同一维度；需要的是把第 5 列纳入钉住对象，涉及重钉整表指纹（C14）与 C13，属单独流程。
+
+**十一 · 收口。** 控制套件 13/13、主会话复算 22/22 + 22/22 + 15/15 地址互证、hy4 结论复算 17/17。门禁改动三处：新增 C7b 普查钉、修正播种注释的事实错误、GATE_VER R132 -> R133 并同步 DISC_RECHECK 第 20 行。终态 check_disc.py exit 0、C10 ok(R133)、C7 live-checks 31、五项 CR 1081/137/337/0/2952 全绿。
+## 2.138
+
+R134 修的是 R133 留在地板上的第二处门禁漏洞，并把「else 臂任意输入不可达」这条挂了四轮的未取得项，从「未找到反例」推进到「入路种类被穷举、剩下的一类明确标为未关」。
+
+**一 · 漏洞不是猜的，是打进沙箱跑出来的。** R133 记录 hy4 指出「C7b 普查只看第 6 列首个 token，改第 5 列产品路径则普查不变而 C7 实际检查对象已变」，当时只证实不修。R134 先把它做成可复现的两条实证（_r134/r134a_exploit.py，8/8 PASS）：A2 把某行第 5 列指向另一个同样能满足该式的产物，门禁 exit 0；A3 给某行第 6 列追加一条永真分支，门禁 exit 0。A3b 用空文件证明那条追加分支确实永真（原式在空文件上 0 命中，追加后 ≥1 命中）。**A3 比 A2 重**：它意味着任意一行都可以被改成「无论产物内容如何都通过」，而 C7b 只看首 token，形态不变，所以整张 C7 可以被无声废掉。
+
+**二 · 根因是判据本身，不是缺一个计数。** R133 已经写过「修法不能往普查里加计数，那还是同一维度」。R134 的结论是：**一个能匹配空串的正则，在任何文件上都命中，它作为「这份产物支持这条纪律」的证据是零信息。** 所以修法不是再数一遍，而是拒收这类式子。新增 C7c：对每个 grep= / grepcount= 行，在空文件上跑一次，命中即 FAIL。实测代价为零误伤——现有 31 行里 27 条正则行，0 条可空（C7c 打印「27 regex rows tested against empty string, 0 nullable」）。空集是真事实，不是恒真：钉住的可空集合是 0，注入一条 `grep=.*` 立刻 exit 1。
+
+**三 · 第二处修法是钉对象，不是钉计数。** 新增 C7d：把 (id, 第 5 列, 第 6 列) 逐行聚合成 sha256 钉住（C7_TEXT_SHA256 / C7_ROW_SHA），与既有 C14 钉 (id, col2, col3, col4) 同族、同一手法。此前 col5 与 col6 在任何指纹之外，故 A2 那种「换一个同样满足的产物」是全静默的。落地时这条钉立刻自证有分辨力：我把 GATE_VER 从 R133 改到 R134 并同步第 20 行后，门禁报 **drifted ids=['20']** —— 只报我改的那一行，零误伤，然后按流程重钉。
+
+**四 · 正反控 9/9 PASS，且证明两个条件是独立的。** P1 未改副本 exit 0；P2 C7c 打印 27/0；P3 C7d 指纹 ok。N1（HOLE A）exit 1 报 C7d；N2（HOLE B）exit 1 报 C7d；N3 把第 6 列直接写成可空正则，exit 1 且**同时**报 C7c 与 C7d；N4 是关键一条：**连 C7d 的常量与行指纹一起重钉**（模拟「同改表与常量」的伪造者），C7d 放行而 **C7c 仍 exit 1** —— 这证明 C7c 与 C7d 不是把同一个判断写两遍，且 sha 钉挡不住的伪造，结构判据还挡得住。N5 第 5 列指向不满足该式的产物仍由原有 C7 抓住（本次改动没有削弱旧判据）。
+
+**五 · 诚实声明 C7c / C7d 各自挡不住什么。** C7c 只挡「对内容完全不敏感」，挡不住「对内容敏感但敏感错了地方」；C7d 是 sha 钉，与纪律 31 / C14 / C16d 同族，**同时改表与本常量者仍可过**。两者维度不同、缺一不可，但不能被读成「C7 从此可信」——门禁末尾那条 BOUNDARY 仍然成立：C7 验证的是产物存在与记录字节数，不验证产物内容支持该纪律。
+
+**六 · 第二件事：else 臂可达性，从「未找到反例」推进到「入路种类被穷举」。** 挂钩四轮的未取得项是「else 臂是否对任意输入都不可达，R132 只证了本构建 15 个直接调用点均传 7」。R134 换了个问法：**else 臂只能通过进入两个函数入口才可能执行，那么「进入入口」有多少种装填方式？** 全库实测三种：把入口地址当 imm32（0 次，两个入口各 0）、把入口地址放 .detour 注入区（0 次，imm 与 rel 都 0）、以及 E8/E9 的相对偏移（15 次，2 + 13，落点精确等于入口）。前两种归零意味着**静态上不存在从函数指针表分派或从立即数装载进入的路径**（r134c，10/10 PASS）。反控三条：翻 bit16 后两种扫描都归零（证明不是在报常量噪声）；同一 imm32 扫描对 rel32 调用点报 0 而对真指针命中，证明它确实是找调用点的错工具——这条同时是 R131 那次「imm32 扫描得出无人调用」错结论的成因复现。
+
+**七 · 剩下的一类明确标为未关，不粉饰。** .text 里有 3805 处寄存器形式的 call/jmp（目标静态不可定）。所以「else 臂任意输入不可达」**没有**被证明。本轮建立的是更窄的一条：**在全部可静态定址的入路上不可达**——15 个站点的 arg3 逐个解出全为 7（F1/F2 15/15），7 & 0x14 = 4 ≠ 0 故 je 不跳（F3），这 15 个站址与 R132 记录的逐个相同。要关闭剩下的间接调用类，需要动态观测 call 目标，属 win-main 范畴，本机静态到此为止。
+
+**八 · 一条自查：我本轮写出了两条恒真断言，当场删掉。** 第一版 r134c 的 S6 写成 `chk(..., True, ...)`，r134d 的 G2 同样直接把 True 当断言。这正是本仓 S-187「or True 恒真断言」的同一形状，只是换了写法。处置：S6 改成纯打印（它不是断言，是给跨家族逐址比对的清单），G2 改成一段「STATIC SCOPE, not a proof」的范围声明并明确写出「剩下的间接调用类未关」。**删掉恒真断言会让 PASS 数从 11 降到 10、从 7 降到 6，这个下降是本轮正确的方向。**
+
+**九 · 自错记录。** S-230：hitset 脚本用 `split('\n')` 统计 rows= 形态的行数，尾部空元素导致 22/26/27/28 四行算出 0 个可满足产物，与 deepseek 独立报的 1 冲突；改用与门禁一致的 `for ln in f` 行迭代后一致（11 行有 ≥2 个可满足产物，四行各 1 个）。这是 R134 第二次犯同一个 off-by-one（第一次是 r134a 的 read_rows 把表头算进 rows）。S-231：`push_imm` 首次未开 `detail=True` 就访问 `i.operands`，capstone 抛 CS_ERR_DETAIL，脚本崩在解码阶段而不是断言阶段。S-232：我用复合命令 `a && b` 派发子代理，两条 dispatch 都成功，实际派出了两个同卡子代理；发现时已无法撤销，只能等其回收并按规则 D 自算。
+
+**九之二 · 本轮最严重的一处事故，必须单列（S-233）。** 我的两个控制脚本用 symlink 搭沙箱（为避免 R133 的 811 MB copytree 教训），但清场时仍调用 `shutil.rmtree(沙箱)`。后果是实测出来的：真树里的 `lead/next_re_20261117_r14/R17_R84_T1_NARRATIVE/` 被删空了 `should_exclude.tsv`（243,982 B），目录本身被换成一个指向自己的软链。这不是推测——我是先看到门禁报 `C7 id 22 expr rows=1468 mismatch (FILE_MISSING)`、`C11 id 22 ... (FILE_MISSING)`、`C18 vacuity pin drifted: claims_none_rows = 18 != pinned 19` 三条 FAIL，才去查 id 22 的产物，然后发现那个自环。**处置：** 在 `/mnt/ssd/tmp/` 找到 R133 控制脚本遗留的三份副本，三份 sha256 完全相同（4687aa21c38c6cdf…）、字节数 243,982 与原登记一致，据此恢复；恢复后门禁 exit 0、`claims-none=19` 回到钉住值。**加固：** 两个脚本里的 `shutil.rmtree` 全部改成 `_safe_rmtree`——先 `os.walk(followlinks=False)` 逐个解链、只删普通文件与空目录，再删根。**留案的理由：** 这个事故的形状与 R133 S-227（copytree 写爆 tmpfs）同类但**后果方向相反**：那次是把自己的 timeout 撞掉、零断言，这次是**把真树的数据删掉**。教训写成一条可执行的：**沙箱里凡是出现指向真树的软链，就不能对该沙箱调用任何递归删除原语。** 另记一条检测手段：`C18` 的 `claims_none_rows` 从 19 变 18 是本轮唯一一条**先于人工发现**的告警，它把「某个产物不见了」翻译成了一个数字变化。
+
+**十 · 规则 D 如实记。** 本轮两次派发同一张 deepseek 卡（S-232 的复合命令所致），两个子代理都在 max-turns 前退出、**未留正式报告**，只留下中间产物（_r134/sub_deepseek/r134ds_t2t5.json 等）。故本轮**不写「已过两家族审计」**：deepseek 侧无审计结论，hy4 侧本轮未派发。deepseek 的中间产物仍按规则 D 由主会话复算：它独立算出的 31 行可满足产物集合与我的复算**逐行一致**（set_size 序列 1,1,1,1,2,2,1,1,1,1,1,2,1,2,1,2,1,2,4,1,2,1,2,2,1,1,1,1,1,1,3），可空性判定也逐行一致。它另有一个第 20 行的快照是在我已打完补丁之后抓的，故其复现结论对我的补丁不适用——这一点必须写明，否则会被误读成「deepseek 复现不出漏洞」。
+
+**十一 · 收口。** 断言合计：r134a 10 + r134b 9 + r134c 10 + r134d 6 = 35 项全 PASS（r134c/r134d 的 PASS 数是删掉两条恒真断言后的诚实值；r134a 后加的 A7/A8 是一对：**同一处永真分支改动在 R133 门禁上 exit 0、在 R134 门禁上 exit 1** —— 只有这一对能把「修好了」与「我的改动本来就不成立」区分开）。门禁改动四处：新增 C7c、新增 C7d（含一次重钉）、GATE_VER R133 -> R134、同步 DISC_RECHECK 第 20 行；另按半量规则重钉 C16 纳本节（初测 7621 B 取 3810，补记 S-233 后正文 9474 B 重钉 4737，条目 131 -> 132）。终态 check_disc.py exit 0、C10 ok(R134)、C7c 27/0、C7d 指纹 0dbb7bfab6dd34de、C7 live-checks 31、五项 CR 1081/137/337/0/2952 全绿。
+## 2.139
+
+R135 修的是 R133 待办③挂在门上三轮的那一条（C11 frozen 分支），顺序是：**先量出错位，再改判据，最后证明改的是判据而不是计数**。全程没有新增任何「数一数」的东西。
+
+**一 · 三个量，全部先实测。** `_r135/r135a_measure.py`（16 项断言）量的不是「c11_declared 是几」，而是「这个豁免在检查谁」。
+
+M1：冻结档 `DISC_UNVERIFIABLE.tsv` 的第 3/4 列（产物路径 / 校验式）应当与 live 表 `DISC_RECHECK.tsv` 的第 5/6 列是同一对象。实测 12 行里节与产物 **12/12 一致**，校验式 **4 行不一致**（id 1 / 2 / 9 / 20），而这 4 处**全部是「冻结档那份是 live 式的真前缀」**——即冻结档持有的是更松的式子：live 写 `grep=(?m)^\*\*纪律 1 ·`，冻结档只写 `grep=(?m)^\*\*纪律`；live 写 `grep=(?m)^GATE_VER = 'R134'`，冻结档只写 `grep=(?m)^GATE_VER`。方向唯一（反控 M1e：live 式不是副本的前缀），不是「两边写法不同但等价」。
+
+M2：C12 跑的是冻结档副本，不是纪律真正声明的校验式。实测两组布尔值 **都是 12/12 命中**（M2a/M2b）——所以这处错位**今天不产生任何误判**，这也正是它三年没被发现的原因。后果在 M2d：把 live 式换成永假式，C12 仍报命中。**冻结档成了一份只被自己检查的副本。**
+
+M3：C11 的 frozen 分支对**任何** verify 失败都记 declared。实测 12 条失败理由 **全部**是 `R1 line_count_for_discipline_<N>=0`（产物里一条本纪律自述行都没有），这确实是冻结档语义。但代码不检查这一点：给产物写一条**半截**自述行（`DISC_RECHECK discipline=1 garbage`）同样落进 declared（M3c/M3d）。两条路语义相反——前者是「结构上没有凭证」，后者是「有凭证但写坏了」，后者是可修的，修好就能摘帽，正是 R59 Q2-③ 记过的那个入口。
+
+**二 · 修法：把豁免收窄到它真正覆盖的那一种情形，并钉住镜像关系。**
+
+数据侧先改：4 行冻结档校验式改回与 live 表逐字相同（改前 sha256 `0ffeeff5…`、改后 `e4b0ebcc…`，12 行仍是 12 行，只动第 4 列）。
+
+判据侧加两条，都不含新的计数：
+
+* **C11 frozen 分支收窄**：只有失败理由匹配 `^R1 line_count_for_discipline_<N>=0` 时才 `declared += 1`，其余一律 FAIL 并点名理由。这条不是「让 frozen 更严」，是把 `declared` 的定义从「入档」改成「入档且理由恰为无凭证」。
+* **C12b 新增（冻结档镜像判据）**：逐行断言冻结档 col2/col3/col4 == live col2/col5/col6。冻结档不是独立数据源，它是 live 表的镜像；任何一侧被改都必须同时改另一侧，且两侧都由这一条兜住。
+
+**三 · 正反控 10/10，而且证明两条判据是独立的。** `_r135/r135c_controls.py`：
+
+* P1 未改副本 exit 0；P2 C11 仍 print `ok=0 fail=0 frozen-unverifiable=12`；P3 C12b 报 12/12 镜像一致。
+* N1b 基线：产物存在但无自述行 ⇒ `frozen-unverifiable=12 / fail=0`，豁免成立且计数可见。
+* N1 半截自述行 ⇒ exit 1，点名 id 24，且 **frozen 12→11、fail 0→1**（这两个数同向变动是关键：它说明新判据走的是 fail 而不是 declared）。
+* N1c 成对反控：**同一个破坏 + 注回 R58 的旧语义（`if True:`）⇒ exit 0**。唯一变量就是那一行，所以「修好了」与「我的改动本来就不成立」被分开了。这条我第一版写错过（拿 R134 整份快照做对照，那份快照 `GATE_VER='R134'` 与第 20 行 R135 冲突，先被 C10/C7d 抓住，测到的不是冻结分支——见 S-236）。
+* N2 改 live 第 6 列 ⇒ C12b FAIL；N3 改冻结档第 4 列 ⇒ C12b FAIL（镜像断裂的两个方向都被抓）。
+* N2b 关键一条：**连 C7d 的常量与行指纹一起重钉**（模拟伪造者），C7d 放行而 C12b 仍 FAIL —— 与 R134 的 N4 同形，证明 sha 钉挡不住的伪造，镜像判据还挡得住。
+* P4 复原后 exit 0。
+
+**四 · 第二件事：F29 的数字做了跨家族独立复算。** 本轮把 F29 里五个可机械核验的数字交给 deepseek 独立算（D1 77 张 TClassFactory 表 / D2 8 字节桩 40 次全在 .text / D3 两处 17 字节逐字节相同 / D4 0x7E11C8 的导入三要素 / D5 导入 372=339+33 与 ILT/IAT 的节分布），再派 hy4 审计 deepseek。主会话不复用任何一方代码，自写 `_r135/r135b_f29_recompute.py`（24 项断言）复算：**D1 77/77、D2 40 次全 .text、D3 两处 sha256 相同且等于声称序列、D4 KERNEL32.dll / InterlockedIncrement / Hint=432 / 组内 idx=62、D5 372=339+33 且 ILT 全 .detour、IAT 371 .rdata + 1 .detour(xyr.dll)**，全部命中。hy4 独立复算五项并全部同意，另发现 deepseek 自我披露之外的一处 1-based/0-based 字面不一致。
+
+**五 · 规则 D 的边界写清楚。** deepseek task 285 **failed + error_max_turns**（61 回合 / 8.48 分钟 vs 预算 8.0，OVERTIME 如实记），result 为空、**无正式回件**，只有盘上中间产物与它自己写的 REPORT.md。故本轮对 F29 这五项**不写「已过两家族审计」**——deepseek 侧不是「审计通过」，是「执行未完成但有产物」。hy4 task 286 succeeded（43 回合 / 3.85 分钟）且是**审计角色**，其结论经主会话 `_r135/r135d_xcheck.py`（11 项断言）逐条复算：组内 62 / 大数组 114 / 全表 0-based 63（1-based 64）三口径实测互不相同；17 字节序列全镜像 80 次、77 处在 `0x6BEEC0 + 0x180*i` 格点、3 处离群；桩体在「4 字节对齐 + 紧跟 8 nop」判据下 15 个、全镜像被 dword 指向的去重 14 个 —— 故 deepseek 那个「6 个不同桩体」必须带作用域引用（它是 63 张双桩表内的口径），不能读成全镜像。
+
+**六 · 自错留案（S-234..S-241）。** S-234：导入描述符字段错位，把 +0xC 当 FirstThunk、+0x10 当 Name，于是「DLL 名」读成 IAT 字节（输出里全是乱码），372 条 ILT 全落 .detour、0x7E11C8 找不到；症状形状是「一个明摆着存在的导入槽报 0」，与 R131 S-207 同族。S-235：`chk(..., A != B or True, ...)` 又写了一条恒真断言，当场删掉并改成直接钉住 63/62 两个实测值。S-236：N1c 用 R134 整份快照当对照，测到的是 C10/C7d 冲突而不是冻结分支——零信息反控。S-237/S-238/S-239：控制脚本三处路径与状态处置错——产物路径相对的是 ROOT 而非 r14（双层错路）；沙箱里产物所在的**目录**是软链，`islink(文件)=False` 但写进去会写穿真树；`restore()` 漏复位被 N1 改过的产物副本，于是 P4「复原后 exit 0」实测 exit=1。S-239 的失败暴露的是处置不完整，不是判据有问题，但它同时证明 P4 这条断言确实有分辨力。S-240：DataDirectory 偏移写成 `dd+208`（第 14 项 Bound Import），读出荒谬的 `0x74a1642e`，改为 `96 + 8*12` 并用 DataDirectory[1] 反解自检。S-241：桩体判据少了「4 字节对齐」，把 `0x522c9b` 这类指令内部偶然字节串当桩体，得 18 而非 15。
+
+**七 · 收口。** 断言合计：r135a 16 + r135b 24 + r135c 10 + r135d 11 = 61 项，**59 PASS / 2 FAIL**。两条 FAIL 是 r135a 的 M1c 与 M1e，它们**故意留盘不抹**：M1c 是「两表一致」这条**假设**被实测推翻（4 行不一致），M1e 是给 M1c 配的反控因而同样不成立——把假设被推翻写成 FAIL 才是诚实值，改断言去凑绿会把本节第一条结论一起抹掉。门禁改动四处：C11 frozen 分支收窄、新增 C12b、`GATE_VER` R134 → R135、同步 DISC_RECHECK 第 20 行；重钉两个常量（C7d `0dbb7bfa…` → `1aaaf7af…` 且只报 drifted ids=['20']；FREEZE_SHA256 `0ffeeff5…` → `e4b0ebcc…`）。另按半量规则重钉 C16 纳本节。终态：五项 CR 1081/137/337/0/2952 全绿；check_disc.py exit 0、C10 ok(R135)、C11 ok=0/fail=0/frozen=12、C12 12/12、C12b 12/12、C7d `1aaaf7af…`、C16 pinned 133/unpinned 0/hollow 0/missing 0。全程未对整段 .text 开 detail=True；脚本带 timeout；收口前 ps 确认无孤儿。
+
+## 2.140 【R17 追加，2026-11-25】F24 剔除 bounds 的唯一依据被三种独立实现共同否定：86.19% 无字节对应 → 实测 0.008%
+
+### 一 · 为什么这一条比「又复算一个数」重要
+
+`§2.61`/`§2.63` 逐字写：「剔的理由不是它大，是不满足我自己口径里的那个**且**」。那个「且」的
+唯一支撑是一句话 —— `a2_sites.json` 的 `bounds` 段「86.19%（1,200,251 条）盘上没有任何字节对应」。
+若这句错，**整个剔段动作（16,711,118 B，语料从 4,413/744,172,839 改成 4,413/727,461,721）就失去依据**。
+本轮只测这一句，顺手把 F24 清单的现盘一致性量完。
+
+### 二 · 三组数字先实测
+
+| 量 | F24 主张 | 本轮实测 | 判 |
+|---|---|---|---|
+| bounds 条数 | 1,392,592 | 1,392,592（全唯一、全 8 位大写 hex、全在 `.text`） | 一致 |
+| 有字节对应 | 192,341 = 13.81% | **1,392,481 = 99.992%** | **方向相反** |
+| 无字节对应 | 1,200,251 = 86.19% | **111 = 0.008%** | **差 10,813 倍** |
+| calls 键 / 调用点 | 6,728 / 68,253 | 6,728 / 68,253，E8+rel32 逐条验算 **68,253/68,253 全中** | 一致 |
+
+三份独立实现同得这一结论，互不派生：主会话 `_r136/r136b_bounds_backed.py`（22 项，objdump 起始集）、
+hy4 审计员 #289 自写 `hy4_b/b.py`（objdump，独立解析）、主会话另用 capstone `disasm_lite` 分块流式
+重建起始集（139,4300 条，命中 1,392,518 = 99.9947%）。**两种反汇编器、三条代码路径，全部 ≥ 99.99%。**
+
+### 三 · 那 111 条不是「无字节」，是长指令的中间字节
+
+逐条给出「前一个 objdump 指令起始」与差值：111/111 全部落在前一起始 +1..8 字节内
+（直方图 Δ1=71、Δ2=16、Δ3=3、Δ4=9、Δ5=1、Δ6=6、Δ8=5，无 Δ>8）。且 111 条**全部落在文件映像内**
+（其中 27 条该处字节值恰为 `0x00`，是长指令立即数/位移的高字节，仍然「有字节」）。
+用 capstone 重解时这 111 条里 111 条都能成为起始地址（capstone 切法更细，多解 1,784 条），
+即**两个反汇编器切法不同，不能读成「盘上没有」**。
+
+### 四 · 反控四条，每条都能翻回去
+
+① 起始集只留 `<0x600000`：命中率掉到 51.77%（不是任何集合都给 99.99%）；
+② bounds 全体 +4：掉到 37.01%（不是地址密集造成的假命中）；
+③ 随机同数量地址：34.29%（指令起始集本身不密集，基线约 1/2.92）；
+④ 去掉 `mod 2^32` 环绕后 signed 命中 68,245 vs unsigned 38,905，差 29,356 条反向调用
+—— 这条是**唯一有判别力的符号位反控**（此前两版写成 `A or True` 恒真 / `& 0xFFFFFFFF` 同余，
+两版都是零信息反控，见 S-244/S-247）。
+
+### 五 · 我试图复原 86.19% 的机制，只得到部分结果，必须标为未定
+
+`bounds <= 0x48948A` 恰好 **192,341** 条、`> 0x48948A` 恰好 **1,200,251** 条 —— 两个数同时精确命中，
+说明它确实来自某个「按地址切开的前缀/后缀」口径。但：① 这个切点没有语义（不在任何节边界、不在
+任何已记录的截断量上）；② 「能从 1,392,592 条里找到某个切点使前缀等于 192,341」这件事**对任意 k 都成立**，
+故它本身**不携带信息**（S-252，与 R135 S-236 同族）。我只证到「该数来自一种前缀切分」，
+**未能证到那是什么切分**，故按「机制未定」记，不编解释。
+另两种自然假设已实测排除：只读前 1 MiB 文件 → 仅 85,351 条可寻（≠192,341）；
+按「第二个值列」口径 → bounds 是单列，结构上无此列（这部分 F24 说对了）。
+
+### 六 · F24 的剔除结论可能仍成立，但那一句证据是错的
+
+**必须分开写，否则会一棍子打死。** F24 还有一条**独立于 86.19%** 的依据：
+「单列地址、没有可回原址复核的第二列」，与后缀/前缀之别的 `mesh_imm32`/`sweep`/`e8_sites`
+（两列以上、可验算）对照。这条**结构判据本轮未否**。故正确表述是：
+**剔除 bounds 的语义依据仍可成立，但「86.19% 无字节对应」这个数字是错的，必须撤下或改为
+「bounds 是单列地址清单，无可回原址复核的第二列」这种不依赖计数的表述。**
+
+### 七 · 第二件事：F24 清单的现盘一致性（deepseek #288 执行 + hy4 #289 审计 + 主会话三重复算）
+
+清单 `tier_final_4417.tsv` 内部自洽（4,417 行 / 737,517,286 B / 三桶不重不漏），这一条三家一致。
+但「内部自洽」与「指向的文件还在不在」是两件事，此前从未测过：
+
+| 桶 | 件数 | 清单字节 |
+|---|---|---|
+| 存在且字节完全相同 | 64（1.45%） | 26,846,620 |
+| 存在但字节不同 | 1（`a2_sites.json`，913,237 vs 17,624,355） | 913,237 |
+| ENOENT | **4,352（98.53%）** | 709,757,429 |
+
+4,352 件缺失**100% 在 2026-11-22T12:31:10 快照里且 bytes 逐字节相同**（主会话双实现 + hy4 随机抽 30 件
+30/30 + deepseek awk 异实现），⇒ 是「曾存在、后被移除」，不是路径写错、不是另一棵树。
+唯一字节不符的 `a2_sites.json` 是**口径差而非损坏**：清单记剔 bounds 后的逻辑体量 913,237，
+盘上仍是未剔原件 17,624,355，差 16,711,118 精确等于被剔段。
+⇒ **F24 的 737,517,286 B 是「2026-11-22 那次测量的快照值」，不是现值；现值（以能 stat 到的计）
+为 44,470,975 B = 清单的 6.03%。引用时若不带失效期，会夸大 16.6 倍。**
+
+### 八 · 第三件事：F29 四处待裁定项的机械判定（只判定，不改正文）
+
+① 「同一份 AddRef 的两份拷贝」——该 17 字节序列全镜像 **80 次**（全 `.text`），其中 **79 处**是
+「前 11 字节全 nop」的函数入口式、**77 处**落在 `0x6BEEC0 + 0x180*i` 格点，唯一例外 `0x7AC690`
+被内联进别处。故「两份拷贝」是 80 份里被点名的那两份，措辞须带作用域。
+② 「FirstThunk idx=62」——三种口径实测互不相同：**DLL 内 62 / 全局 0-based 63 / 全局 1-based 64**。
+正文的 62 只在「DLL 内序号」口径下为真，缺口径属实。
+③ 「6 个不同桩体」——本脚本能机械钉住 8 字节桩全镜像 **40 次**、入口式桩体 **15 个**、
+去掉「4 字节对齐」判据得 **18 个**（R135 S-241 的错值）；「6」的分子需 TClassFactory 表枚举，
+属 63 张双桩表内口径，前轮已做，本轮不重做。
+④ 40 / 63 / 77 三个数互不相等且无可推关系（77 mod 40 = 37、77−40 = 37），
+「桩 63 张表」与「序列出现 40 次」不是同一计数 —— 「易被读成因果」这一判断成立。
+
+### 九 · 自错 S-242..S-252（十一条，全部由断言/打印抓出）
+
+S-242 `B3b` 断言写「未命中处非零字节数 == 未命中数」，实测 84/111 —— 27 处字节值恰为 `0x00`，
+断言错不是结论错，改为判「落在文件映像内」。S-243 `va2off` 直接返回 RVA（假设 `.text` raw==rva），
+遇 `.rdata/.detour` 的调用点越界崩掉，改按节表求解。S-244 首版 `B5b` 写 `chk(..., True, ...)`
+恒真断言（第 3 次同形状）。S-245 「对 1,392,592 个 bounds 各在 1 MiB 里做一次子串搜索」
+≈1.4 TB 扫描量，脚本被 timeout 杀掉无产物，改一次抽令牌成集合再交集。S-246 `calls` 键值方向
+搞反（键是被调函数、值是调用点），E8 取错侧得 0/68,253。S-247 第二版 `B5b` 改成「rel32 按无符号读」，
+实测 68,253 vs 68,253 **完全相同** —— 在 `mod 2^32` 加法里两者同余，这条反控在判据上不可能翻转，
+又是零信息反控。S-248 `P1d` 把「8 字节桩体判据」与「17 字节 AddRef 序列出现位置」混为一谈，
+断言写 15 实测 79。S-249 `P4b` 写 `A != B or True`（第 4 次恒真断言）。S-250 `S8c` 把 F24 的
+「+10,055,565」当成单段差，实测该段是 8,690,200，四件合计才是 10,055,565（跨两段落盘）。
+S-251 `S6b` 拿语料内部扩展名存活率去比 R88 的**全树**保活率，两个分母不同 ⇒ 跨域比较零信息，
+改为只报本域实测分布。S-252 用「存在切点使前缀恰等于 192,341」当机制证据 —— 对任意 k 都成立，
+不携带信息；只保留「来自某种前缀切分」这一弱结论并标机制未定。
+
+### 十 · 边界（不掩盖）
+
+① **86.19% 的来源机制未定**：只证到「来自某种按地址的前缀切分」，未证到具体是哪种；
+② **F24 剔除 bounds 的语义依据（单列地址、无第二列）本轮未否**，故剔除结论可能仍成立，
+错的是那个数字不是那个方向；
+③ **删除动作的时刻与执行者未定位**：`lead/` 不在 git 下，无版本历史，只证「11-22 12:31:10 在、
+11-25 09:18 不在」这一区间；
+④ **`mesh_imm32.json`（5,693,169 B）等大件去向未追查**；
+⑤ **F29 正文四处未改**，改正文属内容变更须单独一卡 + 门禁回归；
+⑥ **「6 个不同桩体」的分子本轮未重算**（需 TClassFactory 表枚举，前轮已做，不重做）；
+⑦ `bounds` 的「13.81% 有地址+字节+助记符、99.89% 与 gamemd.exe 同址字节相等」这半句
+**本轮未测**（它依赖另一份已失的反汇编文本），故只否了 86.19% 那一半；
+⑧ 门禁**未改任何判据**，`check_disc.py` 仍 exit 0、C10 ok(R135)、C16 pinned 133 / unpinned 0；
+本轮新增内容按半量规则重钉 C16 纳本节（见台账）；
+⑨ 已判死线继续不投。
+
+## 2.141 R137：F23/F35 是 v5.32 里唯一两条证据链全失联项；F35 判据式在两份独立实现下 13 处出现 0 失配；F23 算术闭合 20 项全成立但计数依赖一张已失的表
+
+**测量动机.** 台账 §1190 把「F23/F35 的裁定与证据链核验」列为下轮入口，R136 只做到「二者引用的 PANEL.md 与 DELIVERY_SUMMARY.md 现已失」。本轮把这句话从「引用的文件没了」推进到全表普查与判据式复算，并明确区分「不可核验」与「为假」。
+
+**一 · 全表证据链普查（`_r137/r137a_evidchain.py`，16 项断言 16 PASS）.** 把 FACT_INDEX v5.32 的 54 条事实项第 4 列按分号拆成 171 条 entry、去重后 68 个不同路径，逐条 `os.stat`：entry 口径命中 128 / 未命中 43；distinct 口径命中 52 / 未命中 16。按事实项分三桶：**全链在位 20 条、部分失联 32 条、整行失联 2 条**，三桶合计恰 54。整行失联的那两条**恰好是 F23 与 F35**。16 个失联路径全部在 11-22 快照清单里有记录（16/16），故属「曾存在、现失」，不是路径写错。
+
+**二 · F35 判据式的机械复算（`_r137/r137c_f35_criterion.py`，10 项 10 PASS）.** F35 只有一行判据式：达标 ⇔ named_S(R14) ≥ ceil(0.9n) 且 proved ≥ ceil(0.5n)。它的一手来源（PANEL.md M47/M52）已失，但台账正文里写下了判据式本身的**显式等式**。全库抓到 `ceil(0.系数×N)=M` 共 **13 处出现、9 个不同 (系数,N,M)**，逐条用 `math.ceil` 重算 0 失配：0.9 侧 5 个（90→81、102→92、158→143、240→216、316→285）、0.5 侧 4 个（90→45、102→51、158→79、240→120）。反控：换成 `ceil+1` 命中降为 0；floor 与会 ceil 在 3/9 样本上给出不同值（故取整规则是真判据，不是等价写法）；假样本 `ceil(0.9×100)=91` 判不成立。边界：本项只证**两个 ceil 式**，`proved_strict` 的定义（= atlas 内 [已证] 且语义栏不含 [未证]）仍只在已失的 PANEL.md M52。
+
+**三 · F23 的算术闭合（`_r137/r137b_f23_arith.py`，20 项 20 PASS）.** F23 的 9 个数字里，458/1654=27.69%、291/1654=17.59%、293/1654=17.71% 三处逐字吻合；458+1196=1654；293−291=2；458−291=167；减法读法 12−2=10；集合差读法 9 反推交集须为 3（12−9=3）。改 N=1655 则三个百分数全部失配 ⇒ 1654 被三个独立百分数钉住。**但只有 3 个自由参数**（N、A、B），其余全是导出量。
+
+**四 · 执行员与审计员的一致与不一致（如实记）.** 派 deepseek 执行员 #292（68 回合 / 7.9 分钟 / succeeded / 无 OVERTIME）与 hy4 审计员 #293（24 回合 / 2.5 分钟 / succeeded / 无 OVERTIME），开局 `MAX_SUBAGENTS=2`（976 MB 与 883 MB 两次实测均 ≤2），并发峰值 2 未超上限。两家对 F35 三类分组**逐字一致**（全失联 F23/F35、部分 32 条、全在位 20 条、合计 54）。等式计数出现 13 vs 我初版 7 的差异**由我亲自复算解释清楚**（`_r137/r137e_ruleD_recompute.py`，26 项 26 PASS）：差异不是谁算错，是我的正则漏了带反引号的写法，且我按三元组去重。13 处出现、9 个去重键、冗余 4 处，两条口径都成立。
+
+**五 · 执行员报的两条偏离，均经复算成立且比我原设想更强.** ① 它指出 Q2–Q5/Q8 无鉴别力 —— 复算成立：`1196=N−A`、`293=B+2`、`167=A−B` 都是定义式，换任意 (N,A,B) 仍成立，故这三个数对底层数据零信息。② 它指出计数所依赖的 `coverage.tsv`（4,147,334 B）不在盘上 —— 独立复核成立：全库 `coverage.tsv` 命中 0，`COVERAGE/`、`R17_DELIVERY/`、`R17_R41_RECOMPUTE/` 三目录均不存在；但 11-22 快照里确有 4 条记录（主份 4,147,334 B + 3 份 _hygiene 备份），故属「曾存在、现失」。
+
+**六 · 必须分行写的边界（不粉饰）.** **「证据路径不存在」不等于「该事实为假」** —— 本轮只证 F23/F35 的证据链**不可核验**，不证其结论错。F23 的计数层（458/291/293/1196/12/2/9）在本机**无法重数**，因为依赖的表已失；能证的只有算术闭合。F35 的 `proved_strict` 定义缺一手权威。此外 F23 的「12 行分解 6+2+3=11」**余 1 行在正文里没有归属**（deepseek 独立发现，我复算确认），这是 F23 正文的一处真实缺口，本轮只登记不改正文。
+
+**七 · 自错四条（全由断言抓出，未进结论）.** S-253 拿带 `lead/` 前缀的键去比快照清单（清单 rel 不带该前缀），16/16 全判「快照无记录」，断言 A7 当场报错 —— 是比对键错不是结论错。S-254 在 B 段写了占位恒真断言，自己撤掉。S-256 正则漏带反引号的 `ceil(0.9×90)`=81` 形态，得 7 个样本而非 9，由复算 E2 抓出。S-257/S-258 在 r137e 里写死期望值 7 与算错的 377，均由断言当场抓出并改为不写死。另：第二次 dispatch 被内存配额拦下（`2 个运行中 > MAX_SUBAGENTS=1`），未产生重复进程，记「事故未发」。

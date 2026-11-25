@@ -1,0 +1,195 @@
+{
+ "exe_sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+ "correction": "0x7e36c0 / 0x7e9b20 are IID constants in .rdata, not QI bodies",
+ "iids": {
+  "0x7e36c0": "{96F02EC3-6FE8-11D1-B6FD-00A024DDAFD1}",
+  "0x7e9b20": "{5FF0CA70-8B12-11D1-B708-00A024DDAFD1}"
+ },
+ "acceptors": {
+  "0x7e36c0": [
+   {
+    "func": "0x429360",
+    "site": "0x42937f",
+    "vtable": "0x7e36d4",
+    "slot_index": 0,
+    "class": ".?AVApplicationClass@@"
+   },
+   {
+    "func": "0x429270",
+    "site": "0x4292ab",
+    "vtable": "0x7ea564",
+    "slot_index": 3,
+    "class": ".?AVTiberianSunClassFactory@@"
+   }
+  ],
+  "0x7e9b20": [
+   {
+    "func": "0x6cf430",
+    "site": "0x6cf44e",
+    "vtable": "0x7f4108",
+    "slot_index": 0,
+    "class": ".?AVSwizzleManagerClass@@"
+   }
+  ]
+ },
+ "owners": {
+  "0x7e36c0": [
+   {
+    "body": "0x429360",
+    "vtable": "0x7e36d4",
+    "slot_index": 0,
+    "class": ".?AVApplicationClass@@",
+    "bases": [
+     {
+      "name": ".?AVApplicationClass@@",
+      "mdisp": 0,
+      "ncb": 2
+     },
+     {
+      "name": ".?AUIApplication@@",
+      "mdisp": 0,
+      "ncb": 1
+     },
+     {
+      "name": ".?AUIUnknown@@",
+      "mdisp": 0,
+      "ncb": 0
+     }
+    ]
+   },
+   {
+    "body": "0x429270",
+    "vtable": "0x7ea564",
+    "slot_index": 3,
+    "class": ".?AVTiberianSunClassFactory@@",
+    "bases": [
+     {
+      "name": ".?AVTiberianSunClassFactory@@",
+      "mdisp": 0,
+      "ncb": 2
+     },
+     {
+      "name": ".?AUIClassFactory@@",
+      "mdisp": 0,
+      "ncb": 1
+     },
+     {
+      "name": ".?AUIUnknown@@",
+      "mdisp": 0,
+      "ncb": 0
+     }
+    ]
+   }
+  ],
+  "0x7e9b20": [
+   {
+    "body": "0x6cf430",
+    "vtable": "0x7f4108",
+    "slot_index": 0,
+    "class": ".?AVSwizzleManagerClass@@",
+    "bases": [
+     {
+      "name": ".?AVSwizzleManagerClass@@",
+      "mdisp": 0,
+      "ncb": 2
+     },
+     {
+      "name": ".?AUISwizzle@@",
+      "mdisp": 0,
+      "ncb": 1
+     },
+     {
+      "name": ".?AUIUnknown@@",
+      "mdisp": 0,
+      "ncb": 0
+     }
+    ]
+   }
+  ]
+ },
+ "accept_disp": {
+  "0x7e36c0": {
+   "0x429360": 0,
+   "0x429270": null
+  },
+  "0x7e9b20": {
+   "0x6cf430": 0
+  }
+ },
+ "naming_detail": {
+  "0x7e36c0": {
+   "candidates": [
+    [
+     ".?AVApplicationClass@@",
+     ".?AUIApplication@@"
+    ]
+   ],
+   "unique": [
+    ".?AUIApplication@@"
+   ]
+  },
+  "0x7e9b20": {
+   "candidates": [
+    [
+     ".?AVSwizzleManagerClass@@",
+     ".?AUISwizzle@@"
+    ]
+   ],
+   "unique": [
+    ".?AUISwizzle@@"
+   ]
+  }
+ },
+ "named": {
+  "0x7e36c0": ".?AUIApplication@@",
+  "0x7e9b20": ".?AUISwizzle@@"
+ },
+ "checks": [
+  {
+   "name": "B0 exe sha256 是钉住的那个构建",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "B1 纠错项：0x7e36c0 与 0x7e9b20 都不在 .text 里（不是函数体），它们是 .rdata 里的16 字节 IID 常量；R124-R126 记录里的「QI 体」是错的表述，本轮撤回",
+   "ok": true,
+   "detail": "{'0x7e36c0': 'IID {96F02EC3-6FE8-11D1-B6FD-00A024DDAFD1}', '0x7e9b20': 'IID {5FF0CA70-8B12-11D1-B708-00A024DDAFD1}'}"
+  },
+  {
+   "name": "B2 每个目标 IID 在映像里被哪些函数体显式比较（形态 mov edi,<IID> 后接 repe cmpsd）",
+   "ok": true,
+   "detail": "{'0x7e36c0': ['0x429360@slot0', '0x429270@slot3'], '0x7e9b20': ['0x6cf430@slot0']}"
+  },
+  {
+   "name": "B3 每个接受点都能给出宿主 vtable、槽号与类名（vtable 索引口径：.rdata 里 u32(P-4) 能解出 .?AV/.?AU 类名且 u32(P) 落在 .text 的 P）",
+   "ok": true,
+   "detail": "{'0x7e36c0': [('0x429360', '0x7e36d4', 0, '.?AVApplicationClass@@'), ('0x429270', '0x7ea564', 3, '.?AVTiberianSunClassFactory@@')], '0x7e9b20': [('0x6cf430', '0x7f4108', 0, '.?AVSwizzleManagerClass@@')]}"
+  },
+  {
+   "name": "B4 接受分支的 this 调整值：本对象自己的 QI（0x429360、0x6cf430）都是 0；0x429270 是转交型（不写 ppv，把 pUnkOuter 交给内层对象的 QI），不参与 mdisp 判据 —— 如实分两类记，不把「转交」当「失败」",
+   "ok": true,
+   "detail": "{'0x7e36c0': {'0x429360': 0, '0x429270': None}, '0x7e9b20': {'0x6cf430': 0}}"
+  },
+  {
+   "name": "B5 定名：两个 IID 各自在「宿主类 + mdisp 0」交集里只剩一个非 IUnknown 接口名。留两个以上就不定名（本卡不猜）",
+   "ok": true,
+   "detail": "{'0x7e36c0': ('.?AUIApplication@@', {'candidates': [('.?AVApplicationClass@@', '.?AUIApplication@@')], 'unique': ['.?AUIApplication@@']}), '0x7e9b20': ('.?AUISwizzle@@', {'candidates': [('.?AVSwizzleManagerClass@@', '.?AUISwizzle@@')], 'unique': ['.?AUISwizzle@@']})}"
+  },
+  {
+   "name": "B6 与 R126c 已定名的三项不冲突（同一判据、同一族，名字必须逐个对上）",
+   "ok": true,
+   "detail": "{'0x7e36c0': '.?AUIApplication@@', '0x7e9b20': '.?AUISwizzle@@'}"
+  },
+  {
+   "name": "B7 0x7e36c0 有两处接受点：ApplicationClass 的 slot0（自己的 QI）与 TiberianSunClassFactory 的 slot3。后者 ret 0x10 = 4 实参，且把 0x89a29c 处的对象（0x429200 处被写成 0x7e36d4 = ApplicationClass 的 mdisp0 虚表）拿来 QI，故它是 IClassFactory::CreateInstance(pUnkOuter, riid, ppv) 的形状",
+   "ok": true,
+   "detail": "{'acceptors': [('0x429360', '0x7e36d4', 0, '.?AVApplicationClass@@'), ('0x429270', '0x7ea564', 3, '.?AVTiberianSunClassFactory@@')], '0x89a29c static value': '0x0', 'written_at': '0x429200 -> 0x7e36d4 (ApplicationClass mdisp0 vtable)'}"
+  },
+  {
+   "name": "B8 ApplicationClass 的 QI 体除 IApplication/IUnknown 外还接受第三个 IID 0x7ea6e8，并在该分支把出参写成 .data 单例 0x87f7e8（而不是 this）—— 这一条本轮不定名，因为它的接受值不是本对象，不能用 mdisp 判据",
+   "ok": true,
+   "detail": "{'0x7ea6e8': '{96F02EC7-6FE8-11D1-B6FD-00A024DDAFD1}', 'accept branch writes': '0x87f7e8 singleton'}"
+  }
+ ],
+ "all_ok": true
+}

@@ -1,0 +1,24 @@
+{
+ "checks": [
+  {
+   "name": "M0 审计员中间产物存在且声明 TOTAL 498",
+   "ok": true,
+   "detail": "TOTAL 498"
+  },
+  {
+   "name": "M1 它列出的 5 条非 ecx 形态与主会话实测逐字相同（这 5 条它是对的）",
+   "ok": true,
+   "detail": "{'theirs': ['0x40d1b2 mov dword ptr [0x87f7e8], 0x7e1964', '0x429331 mov edx, dword ptr [0x87f7e8]', '0x429339 push 0x87f7e8', '0x429346 push 0x87f7e8', '0x4293b2 mov dword ptr [edx], 0x87f7e8'], 'mine': ['0x40d1b2 mov dword ptr [0x87f7e8], 0x7e1964', '0x429331 mov edx, dword ptr [0x87f7e8]', '0x429339 push 0x87f7e8', '0x429346 push 0x87f7e8', '0x4293b2 mov dword ptr [edx], 0x87f7e8']}"
+  },
+  {
+   "name": "M2 主会话实测：mov ecx,0x87f7e8 共 3693 条、含该地址的指令共 3700 条 —— 审计员报的 493 比真值少 3200 条，TOTAL 498 比真值少 3202 条",
+   "ok": true,
+   "detail": "{'ecx': 3693, 'all': 3700, 'auditor_ecx': 493, 'auditor_total': 498}"
+  },
+  {
+   "name": "M3 成因定位：审计员的 deepseek_scan.py 用的是「解码失败就前进 1 字节」的重同步线性扫描。本映像 .text 含大量内嵌数据表，重同步会把后续一长段当数据跳过，指令被系统性漏掉。主会话与 i686-w64-mingw32-objdump 两个译码器给出同一地址集合（r128e E2：3700/3700、交集 3700），故 3693/3700 是真值",
+   "ok": true,
+   "detail": "skipdata=True 的单遍线性扫描 vs 逐字节重同步"
+  }
+ ]
+}

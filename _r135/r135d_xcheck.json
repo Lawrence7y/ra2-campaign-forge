@@ -1,0 +1,134 @@
+{
+ "asserts": [
+  {
+   "name": "X0 0x7E11C8 唯一命中，属于 KERNEL32",
+   "ok": true,
+   "detail": "hit=1 dll=KERNEL32.dll name=InterlockedIncrement in_dll=62"
+  },
+  {
+   "name": "X1a 组内相对下标 = 62（相对 KERNEL32 自己的 FirstThunk 0x7e10d0）",
+   "ok": true,
+   "detail": "group_base=0x7e10d0 by_group=62"
+  },
+  {
+   "name": "X1b 整个 IAT 数组下标 = 114（相对 DataDirectory[12] 的 0x7e1000，size=1544）",
+   "ok": true,
+   "detail": "iat_va=0x7e1000 by_bigarray=114"
+  },
+  {
+   "name": "X1c 全表序号：0-based 63 / 1-based 64（deepseek 写 63、hy4 指出 1-based 字面不一致）",
+   "ok": true,
+   "detail": "flat0=63 flat1=64"
+  },
+  {
+   "name": "X1d 反控：三个口径互不相同（口径分歧是真实的，不是文字游戏）",
+   "ok": true,
+   "detail": "group=62 bigarray=114 flat0=63"
+  },
+  {
+   "name": "X2 两处字面若都按 0-based 读则一致、若后者按 1-based 读则应为 64（故须显式标 base）",
+   "ok": true,
+   "detail": "实测 flat0=63 flat1=64 ; d4='flat 0-based 63' ; 6.1='全表 372 条中第 63 条'"
+  },
+  {
+   "name": "X3a 全镜像 80 次、其中 77 处在 0x6BEEC0 + 0x180*i 格点",
+   "ok": true,
+   "detail": "total=80 grid=77 off=3"
+  },
+  {
+   "name": "X3b 反控：格点判据被放宽到 ±1 字节后仍 77（不是靠松弛凑数）",
+   "ok": true,
+   "detail": "strict=77"
+  },
+  {
+   "name": "X4a 加固判据（4 字节对齐 + 紧跟 8 nop）下桩体 15 个",
+   "ok": true,
+   "detail": "bodies=['0x40d230', '0x40d240', '0x410300', '0x410310', '0x4293e0', '0x4293f0', '0x4e8240', '0x4e8250', '0x50e340', '0x50e350', '0x512740', '0x512750', '0x661f80', '0x6cf4b0', '0x6cf4c0']"
+  },
+  {
+   "name": "X4b 反控：不加 nop 条件时地址数 = 40 != 加固后 15（条件有分辨力）",
+   "ok": true,
+   "detail": "hardened=15"
+  },
+  {
+   "name": "X4c 全镜像口径下被 dword 指向的桩体去重 = 14 个（deepseek 的「6」是 63 张表内口径，引用时必须带作用域）",
+   "ok": true,
+   "detail": "distinct=14 max_ref=74"
+  }
+ ],
+ "out": {
+  "X1": {
+   "group": 62,
+   "bigarray": 114,
+   "flat0": 63,
+   "flat1": 64,
+   "group_base": "0x7e10d0",
+   "iat_va": "0x7e1000",
+   "iat_size": 1544
+  },
+  "X2": {
+   "flat0": 63,
+   "flat1": 64
+  },
+  "X3": {
+   "total": 80,
+   "on_grid": 77,
+   "off_grid_vas": [
+    "0x7ac690",
+    "0x7ac800",
+    "0x7ad620"
+   ]
+  },
+  "X4": {
+   "aligned_bodies": [
+    "0x40d230",
+    "0x40d240",
+    "0x410300",
+    "0x410310",
+    "0x4293e0",
+    "0x4293f0",
+    "0x4e8240",
+    "0x4e8250",
+    "0x50e340",
+    "0x50e350",
+    "0x512740",
+    "0x512750",
+    "0x661f80",
+    "0x6cf4b0",
+    "0x6cf4c0"
+   ],
+   "referenced_bodies": [
+    "0x40d230",
+    "0x40d240",
+    "0x410300",
+    "0x410310",
+    "0x4293e0",
+    "0x4293f0",
+    "0x4e8240",
+    "0x4e8250",
+    "0x50e340",
+    "0x50e350",
+    "0x512740",
+    "0x512750",
+    "0x6cf4b0",
+    "0x6cf4c0"
+   ],
+   "refs": {
+    "0x410300": 74,
+    "0x410310": 74,
+    "0x40d230": 9,
+    "0x40d240": 9,
+    "0x4293e0": 1,
+    "0x4293f0": 1,
+    "0x4e8240": 1,
+    "0x4e8250": 1,
+    "0x50e340": 1,
+    "0x50e350": 1,
+    "0x512740": 1,
+    "0x512750": 1,
+    "0x6cf4b0": 1,
+    "0x6cf4c0": 1
+   }
+  }
+ }
+}

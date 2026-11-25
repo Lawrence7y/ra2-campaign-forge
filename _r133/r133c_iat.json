@@ -1,0 +1,170 @@
+{
+ "dlls": {
+  "xyr.dll": 1,
+  "KERNEL32.dll": 162,
+  "USER32.dll": 96,
+  "GDI32.dll": 22,
+  "ADVAPI32.dll": 9,
+  "SHELL32.dll": 1,
+  "ole32.dll": 15,
+  "OLEAUT32.dll": 11,
+  "WINMM.dll": 5,
+  "WSOCK32.dll": 19,
+  "DDRAW.dll": 1,
+  "DSOUND.dll": 1,
+  "VERSION.dll": 3,
+  "COMCTL32.dll": 7,
+  "IMM32.dll": 6,
+  "binkw32.dll": 13
+ },
+ "iat_slots": 372,
+ "iat_sections": {
+  ".detour": 1,
+  ".rdata": 371
+ },
+ "calls": {
+  "A": [
+   {
+    "off": "0xd",
+    "ops": "dword ptr [ecx + 8]",
+    "vtable": "ecx+8"
+   },
+   {
+    "off": "0x2d",
+    "ops": "dword ptr [0x7e15fc]",
+    "iat_va": "0x7e15fc",
+    "slot_sec": ".rdata",
+    "imp": "ole32.dll!CoCreateInstance"
+   },
+   {
+    "off": "0x3c",
+    "ops": "dword ptr [0x7e1600]",
+    "iat_va": "0x7e1600",
+    "slot_sec": ".rdata",
+    "imp": "ole32.dll!OleRun"
+   },
+   {
+    "off": "0x55",
+    "ops": "dword ptr [ecx]",
+    "vtable": "ecx"
+   },
+   {
+    "off": "0x60",
+    "ops": "dword ptr [edx + 8]",
+    "vtable": "edx+8"
+   },
+   {
+    "off": "0x7b",
+    "ops": "dword ptr [0x7e15fc]",
+    "iat_va": "0x7e15fc",
+    "slot_sec": ".rdata",
+    "imp": "ole32.dll!CoCreateInstance"
+   }
+  ],
+  "B": [
+   {
+    "off": "0xd",
+    "ops": "dword ptr [ecx + 8]",
+    "vtable": "ecx+8"
+   },
+   {
+    "off": "0x2d",
+    "ops": "dword ptr [0x7e15fc]",
+    "iat_va": "0x7e15fc",
+    "slot_sec": ".rdata",
+    "imp": "ole32.dll!CoCreateInstance"
+   },
+   {
+    "off": "0x3c",
+    "ops": "dword ptr [0x7e1600]",
+    "iat_va": "0x7e1600",
+    "slot_sec": ".rdata",
+    "imp": "ole32.dll!OleRun"
+   },
+   {
+    "off": "0x55",
+    "ops": "dword ptr [ecx]",
+    "vtable": "ecx"
+   },
+   {
+    "off": "0x60",
+    "ops": "dword ptr [edx + 8]",
+    "vtable": "edx+8"
+   },
+   {
+    "off": "0x7b",
+    "ops": "dword ptr [0x7e15fc]",
+    "iat_va": "0x7e15fc",
+    "slot_sec": ".rdata",
+    "imp": "ole32.dll!CoCreateInstance"
+   }
+  ]
+ },
+ "placeholder_probe": {
+  "slot": "0x7e15fc",
+  "file_value": "0x410840",
+  "section": ".text",
+  "is_instruction_start": true
+ },
+ "assertions": [
+  {
+   "assert": "IAT resolves to the same 372 slots as reported by the loader view",
+   "pass": true,
+   "detail": "372"
+  },
+  {
+   "assert": "every IAT slot lies inside .rdata (VA consistently used, no RVA mix-up)",
+   "pass": false,
+   "detail": "{'.detour': 1, '.rdata': 371}"
+  },
+  {
+   "assert": "pefile imp.address is already an ABSOLUTE VA for this image (0x7e15fc sits in .rdata)",
+   "pass": true,
+   "detail": "{'direct': '.rdata', 'plus_base': None}"
+  },
+  {
+   "assert": "0x7e15fc is ole32!CoCreateInstance",
+   "pass": true,
+   "detail": "ole32.dll!CoCreateInstance"
+  },
+  {
+   "assert": "0x7e1600 is ole32!OleRun",
+   "pass": true,
+   "detail": "ole32.dll!OleRun"
+  },
+  {
+   "assert": "every IAT-directed call in both bodies resolves to a named import",
+   "pass": true,
+   "detail": "[('A', '0x7e15fc', 'ole32.dll!CoCreateInstance'), ('A', '0x7e1600', 'ole32.dll!OleRun'), ('A', '0x7e15fc', 'ole32.dll!CoCreateInstance'), ('B', '0x7e15fc', 'ole32.dll!CoCreateInstance'), ('B', '0x7e1600', 'ole32.dll!OleRun'), ('B', '0x7e15fc', 'ole32.dll!CoCreateInstance')]"
+  },
+  {
+   "assert": "STRUCTURE IDENTICAL: A and B call the same IAT slots at the same offsets",
+   "pass": true,
+   "detail": "[('0x2d', '0x7e15fc'), ('0x3c', '0x7e1600'), ('0x7b', '0x7e15fc')]"
+  },
+  {
+   "assert": "instance A/B: 3 IAT calls each = CoCreate(create arm) + OleRun + CoCreate(else arm)",
+   "pass": true,
+   "detail": "['ole32.dll!CoCreateInstance', 'ole32.dll!OleRun', 'ole32.dll!CoCreateInstance']"
+  },
+  {
+   "assert": "vtable calls hit IUnknown slot 0 (QI) then slot 2 (Release)",
+   "pass": false,
+   "detail": "['ecx+8', 'ecx', 'edx+8']"
+  },
+  {
+   "assert": "ANTI: 0x7e15f8 and 0x7e1604 are NOT CoCreateInstance (lookup has resolution)",
+   "pass": true,
+   "detail": "('ole32.dll!OleLoadFromStream', None)"
+  },
+  {
+   "assert": "ANTI: the on-disk dword at the IAT slot is the pre-load placeholder value, not a real thunk",
+   "pass": false,
+   "detail": "{'value': '0x410840', 'section': '.text', 'is_instruction_start': True}"
+  }
+ ],
+ "summary": {
+  "pass": 8,
+  "total": 11
+ }
+}

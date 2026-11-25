@@ -115,9 +115,19 @@ for k, v in sym.items():
     cls_bases[k] = b['bases']
     for e in b['bases']:
         name_classes[e['name']].add(k)
+# R124: build the IID class-sets from a FULL function scan, not from R110's list.
+# R110 drops every comparison past byte 120 of the QI function (r124f proves it:
+# HouseClass compares 6 GUIDs at offsets 47/68/99/130/161/182 and R110 recorded 3),
+# which undercounts 0x7f7c70 and 0x7f7c80 by one class each.
+def qi_iids_full(fn, win=0x400):
+    out = []
+    for iid, adj in qi_branches(fn):
+        out.append(iid)
+    return out
 iid_classes = collections.defaultdict(set)
 for r in qi:
-    for i in r['iids']: iid_classes[i['ptr']].add(r['cls'])
+    for iid in qi_iids_full(int(r['slot0'], 16)):
+        iid_classes['0x%x' % iid].add(r['cls'])
 
 # ---- S3: QI offset must be recorded by RTTI for that class (independent records agree)
 incons = []
@@ -173,8 +183,8 @@ add('S4 offset + class-set resolves groups that the class-set alone left ambiguo
     'IHouse' in resolved.values() and 'IRTTITypeInfo' in resolved.values()
     and 'IClassFactory' in resolved.values(),
     json.dumps(resolved, ensure_ascii=False))
-add('S5 the offset record resolves 11 of 17, and the 6 residuals are a specific named set',
-    len(resolved) == 11 and len(unresolved) == 6,
+add('S5 the offset record resolves 12 of 18; the 6 residuals are a specific named set',
+    len(resolved) == 12 and len(unresolved) == 6,
     'resolved=%d/%d residual=%s' % (len(resolved), len(iid_classes), json.dumps(unresolved, ensure_ascii=False)))
 add('S6a POSITIVE control 0x7f7c90 resolves to IUnknown', resolved.get('0x7f7c90') == 'IUnknown', resolved.get('0x7f7c90'))
 add('S6b POSITIVE control 0x7f7ca0 resolves to IClassFactory', resolved.get('0x7f7ca0') == 'IClassFactory', resolved.get('0x7f7ca0'))
@@ -201,16 +211,17 @@ add('S7 IPersist and IPersistStream are identical on every internal record (not 
     pair['0x7f7c70']['offset'].get('0') == 77 and pair['0x7f7c80']['offset'].get('0') == 77
     and pair['0x7f7c70']['classset_sha'] == pair['0x7f7c80']['classset_sha'],
     json.dumps(pair, ensure_ascii=False))
-add('S8 both of them sit at member offset 0 and both are compared in every one of the 76 classes',
-    pair['0x7f7c70']['n_classes'] == pair['0x7f7c80']['n_classes'] == 76,
-    '%d / %d' % (pair['0x7f7c70']['n_classes'], pair['0x7f7c80']['n_classes']))
+add('S8 both sit at member offset 0 and both are compared by the same 77 classes',
+    pair['0x7f7c70']['n_classes'] == pair['0x7f7c80']['n_classes'] == 77,
+    '%d / %d (R110 said 76 -- r124f proves the missing class is HouseClass)'
+    % (pair['0x7f7c70']['n_classes'], pair['0x7f7c80']['n_classes']))
 # their RTTI order is constant, so ordering cannot break the tie either
 orders = collections.Counter()
 for k in iid_classes['0x7f7c70']:
     ns = [e['name'] for e in cls_bases.get(k, [])]
     if '.?AUIPersistStream@@' in ns and '.?AUIPersist@@' in ns:
         orders[ns.index('.?AUIPersistStream@@') < ns.index('.?AUIPersist@@')] += 1
-add('S9 their RTTI base order is constant too (no ordering signal)', dict(orders) == {True: 76}, dict(orders))
+add('S9 their RTTI base order is constant too (no ordering signal)', dict(orders) == {True: 77}, dict(orders))
 
 res = {'exe_sha256': exe_sha, 'checks': ck, 'resolved': resolved, 'unresolved': unresolved,
        'iid_mdisp': {k: dict(v) for k, v in iid_mdisp.items()}, 'pair': pair,

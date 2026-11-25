@@ -1,0 +1,230 @@
+{
+ "asserts": [
+  {
+   "name": "P1 PE32 magic 0x10b / ImageBase 0x400000 / 5 节",
+   "ok": true,
+   "detail": "magic=0x10b base=0x400000 nsec=5"
+  },
+  {
+   "name": "P2 va2off 分辨 .text/.data（非恒等）",
+   "ok": true,
+   "detail": "0x401000->.text raw=0x1000 ; 0x840f70->.data raw=0x440f70"
+  },
+  {
+   "name": "D1a 命中 77 次、不同 X 77 个",
+   "ok": true,
+   "detail": "hits=77 distinct=77"
+  },
+  {
+   "name": "D1b 每个 X 只出现一次",
+   "ok": true,
+   "detail": "max_count=1"
+  },
+  {
+   "name": "D1c 全在 .data",
+   "ok": true,
+   "detail": "dist={'.data': 77}"
+  },
+  {
+   "name": "D1d 反控：尾部恰好 4 个 @ 时仍 77 命中",
+   "ok": true,
+   "detail": "strict4=77"
+  },
+  {
+   "name": "D1e 反控：模板名改一字 -> 0 命中",
+   "ok": true,
+   "detail": "mutated=0"
+  },
+  {
+   "name": "D2a 全镜像 40 次",
+   "ok": true,
+   "detail": "count=40"
+  },
+  {
+   "name": "D2b 全在 .text（0 次在数据节）",
+   "ok": true,
+   "detail": "dist={'.text': 40}"
+  },
+  {
+   "name": "D2c 反控：按 i+8 不重叠步进仍 40（无自重叠命中）",
+   "ok": true,
+   "detail": "nonoverlap=40"
+  },
+  {
+   "name": "D2d 反控：仅 mov eax,1 前缀计数 != 40（桩计数有分辨力）",
+   "ok": true,
+   "detail": "prefix_count=1098"
+  },
+  {
+   "name": "D3a 两处都能落在 .text 且读得到 17 字节",
+   "ok": true,
+   "detail": "secs={'0x6c2ac0': '.text', '0x6c51c0': '.text'}"
+  },
+  {
+   "name": "D3b 两处 17 字节逐字节相同",
+   "ok": true,
+   "detail": "sha_a=998d39e476261293 sha_b=998d39e476261293"
+  },
+  {
+   "name": "D3c 两处字节等于 F29 声称的序列",
+   "ok": true,
+   "detail": "claim=8B44240483C00450FF15C8117E00C20400"
+  },
+  {
+   "name": "D3d 反控：该 17 字节序列全镜像出现次数 >= 2（「两份拷贝」可能低估）",
+   "ok": true,
+   "detail": "total_occurrences=80"
+  },
+  {
+   "name": "D4a 导入描述符个数 > 0 且首项有名字",
+   "ok": true,
+   "detail": "ndesc=16 first=xyr.dll"
+  },
+  {
+   "name": "D4b 0x7E11C8 是某个导入槽",
+   "ok": true,
+   "detail": "present=True"
+  },
+  {
+   "name": "D4c 该槽属于 KERNEL32.dll、名字 InterlockedIncrement、Hint 432",
+   "ok": true,
+   "detail": "dll=KERNEL32.dll name=InterlockedIncrement hint=432 idx_in_dll=62 kind=name"
+  },
+  {
+   "name": "D4d 反控：全局序号(从 0 起) = 63 而 DLL 内序号 = 62（「62」必须带起点口径）",
+   "ok": true,
+   "detail": "global_idx0=63 inDLL_idx=62"
+  },
+  {
+   "name": "D5a 导入共 372 条 = 按名 339 + 按序数 33",
+   "ok": true,
+   "detail": "total=372 named=339 ord=33"
+  },
+  {
+   "name": "D5b ILT 372 条全在 .detour",
+   "ok": true,
+   "detail": "ilt={'.detour': 372}"
+  },
+  {
+   "name": "D5c IAT 371 条在 .rdata、1 条在 .detour",
+   "ok": true,
+   "detail": "iat={'.detour': 1, '.rdata': 371}"
+  },
+  {
+   "name": "D5d 那条在 .detour 的 IAT 槽属于 xyr.dll 且是按序数导入",
+   "ok": true,
+   "detail": "odd=[('xyr.dll', 'ord', 1, '0xb93758')]"
+  },
+  {
+   "name": "D5e 反控：改用 vsz 判据后 IAT 分布不变（结论对边界口径不敏感）",
+   "ok": true,
+   "detail": "iat_vsz={'.detour': 1, '.rdata': 371}"
+  }
+ ],
+ "out": {
+  "sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+  "size": 4825360,
+  "sections": [
+   {
+    "name": ".text",
+    "vsz": 4060045,
+    "rva": 4096,
+    "rsz": 4063232,
+    "raw": 4096
+   },
+   {
+    "name": ".rdata",
+    "vsz": 196724,
+    "rva": 4067328,
+    "rsz": 200704,
+    "raw": 4067328
+   },
+   {
+    "name": ".data",
+    "vsz": 3570660,
+    "rva": 4268032,
+    "rsz": 442368,
+    "raw": 4268032
+   },
+   {
+    "name": ".rsrc",
+    "vsz": 98600,
+    "rva": 7839744,
+    "rsz": 102400,
+    "raw": 4710400
+   },
+   {
+    "name": ".detour",
+    "vsz": 10008,
+    "rva": 7942144,
+    "rsz": 12288,
+    "raw": 4812800
+   }
+  ],
+  "D1": {
+   "hits": 77,
+   "distinct": 77,
+   "tail_at": {
+    "4": 77
+   },
+   "secs": {
+    ".data": 77
+   }
+  },
+  "D2": {
+   "count": 40,
+   "secs": {
+    ".text": 40
+   },
+   "prefix_b8_1": 1098
+  },
+  "D3": {
+   "equal": true,
+   "seq_occurrences_total": 80,
+   "seq_occurrences_vas": [
+    "0x6beec0",
+    "0x6bf040",
+    "0x6bf1c0",
+    "0x6bf340",
+    "0x6bf4c0",
+    "0x6bf640",
+    "0x6bf7c0",
+    "0x6bf940",
+    "0x6bfac0",
+    "0x6bfc40",
+    "0x6bfdc0",
+    "0x6bff40"
+   ]
+  },
+  "D4": {
+   "found": {
+    "dll": "KERNEL32.dll",
+    "slot": 8262088,
+    "kind": "name",
+    "ord": null,
+    "hint": 432,
+    "name": "InterlockedIncrement",
+    "idx_in_dll": 62
+   },
+   "global_idx0": 63,
+   "in_dll_idx": 62,
+   "nslots": 372
+  },
+  "D5": {
+   "total": 372,
+   "named": 339,
+   "ord": 33,
+   "ilt_secs": {
+    ".detour": 372
+   },
+   "iat_secs": {
+    ".detour": 1,
+    ".rdata": 371
+   },
+   "iat_secs_vsz": {
+    ".detour": 1,
+    ".rdata": 371
+   }
+  }
+ }
+}

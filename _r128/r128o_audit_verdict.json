@@ -1,0 +1,76 @@
+{
+ "checks": [
+  {
+   "name": "O1 A1 字节模式 c7 05 e8 f7 87 00 在 .text 中命中 1 处，VA 0x40d1b2（段内偏移 0xc1b2 = 文件偏移 0xd1b2，审计员报的是文件偏移，两者一致），立即数 0x7e1964",
+   "ok": true,
+   "detail": "{'section_off': '0xc1b2', 'va': '0x40d1b2', 'file_off': '0xd1b2', 'imm': '0x7e1964'}"
+  },
+  {
+   "name": "O2 A1 前缀字节分布：0xb9(mov ecx,imm32) 3693 处、0x68(push) 3、0x15(mov edx,[abs]) 2、0x05(mov [abs],imm32) 1、0x02(c7 02..) 1",
+   "ok": true,
+   "detail": "{'0x2': 1, '0x5': 1, '0x15': 2, '0x68': 3, '0xb9': 3693}"
+  },
+  {
+   "name": "O3 A1 报告说 push 0x87f7e8 三处 = 0x429339/0x429346/0x6bd940 —— 复算得到 ['0x429339', '0x429346', '0x6bd940']",
+   "ok": true,
+   "detail": "['0x429339', '0x429346', '0x6bd940']"
+  },
+  {
+   "name": "O3b A1 采纳审计员一条我漏的事实：0x6bd940 是第三处 push 0x87f7e8，上下文是 push 0x840a74 / push 1 / push 0x7e9520 / push 0x87f7e8 / call ebx —— 四个实参，最后一个为该全局单例地址",
+   "ok": true,
+   "detail": "[('0x6bd934', 'push', '0x840a74'), ('0x6bd939', 'push', '1'), ('0x6bd93b', 'push', '0x7e9520'), ('0x6bd940', 'push', '0x87f7e8'), ('0x6bd945', 'call', 'ebx'), ('0x6bd947', 'or', 'eax, 0xffffffff')]"
+  },
+  {
+   "name": "O4 A1 报告说 mov edx,[0x87f7e8] 两处 = 0x429331/0x6933a4 —— 复算得到 ['0x429331', '0x6933a4']",
+   "ok": true,
+   "detail": "['0x429331', '0x6933a4']"
+  },
+  {
+   "name": "O5 A3 它列出 0x40d1bc 的 mov dword ptr [0x884d00], 0x7e195c —— 复算字节 5657c705e8f7870064197e00c705004d88005c197e00be844b8800bf0400000081ee940f00006860d240006a4b6a348d",
+   "ok": true,
+   "detail": "5657c705e8f7870064197e00c705004d88005c197e00be844b8800bf0400000081ee940f00006860d240006a4b6a348d"
+  },
+  {
+   "name": "O6 B 三个 GUID 文本逐字符与它的表相同",
+   "ok": true,
+   "detail": "{'0x7ea6e8': '{96F02EC7-6FE8-11D1-B6FD-00A024DDAFD1}', '0x7e36c0': '{96F02EC3-6FE8-11D1-B6FD-00A024DDAFD1}', '0x7f7c90': '{00000000-0000-0000-C000-000000000046}'}"
+  },
+  {
+   "name": "O7 C 三处 mov edi,0x7ea6e8 = ['0x42930f', '0x4293a5', '0x4f4273']（它报 0x42930f/0x4293a5/0x4f4273）",
+   "ok": true,
+   "detail": "['0x42930f', '0x4293a5', '0x4f4273']"
+  },
+  {
+   "name": "O8 D call dword ptr [reg] 共 2 条，都在 edx 上，文本 dword ptr [edx]",
+   "ok": true,
+   "detail": "[('0x4292f1', 'dword ptr [edx]'), ('0x42933e', 'dword ptr [edx]')]"
+  },
+  {
+   "name": "O9 D push 立即数共 4 条：0x4292ec/0x4292f9 -> 0x89a29c、0x429339/0x429346 -> 0x87f7e8",
+   "ok": true,
+   "detail": "[('0x4292ec', '0x89a29c'), ('0x4292f9', '0x89a29c'), ('0x429339', '0x87f7e8'), ('0x429346', '0x87f7e8')]"
+  },
+  {
+   "name": "O10 D 函数内 edx 写入点 5 处：0x4292b2/0x4292c9/0x4292e4/0x429316/0x429331",
+   "ok": true,
+   "detail": "['0x4292b2', '0x4292c9', '0x4292e4', '0x429316', '0x429331']"
+  },
+  {
+   "name": "O11 D 两条 call 的字节都是 ff 12",
+   "ok": true,
+   "detail": "['ff12', 'ff12']"
+  },
+  {
+   "name": "O12 D 旁证：0x7e36d4 的 COL=0x7fbc18、TD=0x8186c8、类名 .?AVApplicationClass@@、numBaseClasses=3、slot0=0x429360 —— 复算 0x007fbc18 / 0x008186c8 / 3 / 0x00429360",
+   "ok": true,
+   "detail": "{'COL': '0x007fbc18', 'TD': '0x008186c8', 'n': 3, 'slot0': '0x00429360'}"
+  }
+ ],
+ "prev": {
+  "0xb9": 3693,
+  "0x5": 1,
+  "0x15": 2,
+  "0x68": 3,
+  "0x2": 1
+ }
+}

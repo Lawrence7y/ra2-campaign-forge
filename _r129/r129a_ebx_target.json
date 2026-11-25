@@ -1,0 +1,100 @@
+{
+ "checks": [
+  {
+   "name": "A0 exe sha256 未变",
+   "ok": true,
+   "detail": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
+  },
+  {
+   "name": "A1 函数体起止由字节锚点给出（55 8b ec 6a ff + 64 a1 00 00 00 00 在 0x6bb9a0/0x6bb9af）",
+   "ok": true,
+   "detail": "{\"prologue\": \"558bec\", \"seh\": \"64a100000000\"}"
+  },
+  {
+   "name": "A2 0x6bd6c2 的字节是 8b 1d <imm32>（mov ebx, dword ptr [imm32]），imm32 = IAT 槽",
+   "ok": true,
+   "detail": "{\"iat\": \"0x007e1370\", \"bytes\": \"8b1d70137e00\"}"
+  },
+  {
+   "name": "A3 IAT 槽 0x7e1370 在导入表里解析出 OLEAUT32!RegisterActiveObject",
+   "ok": true,
+   "detail": [
+    "OLEAUT32.dll",
+    "RegisterActiveObject"
+   ]
+  },
+  {
+   "name": "A4 从 0x6bd6c2 到 0x6bd945 的每条路径上都没有其它 ebx 写（走完 1 条无写路径，带写路径 0 条）",
+   "ok": true,
+   "detail": "{\"ok_paths\": 1, \"bad_paths\": []}"
+  },
+  {
+   "name": "A5 函数入口可达 0x6bd945",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "A6 切断 0x6bd6c2（0x6bd6c2 定义点）后 0x6bd945 不可达",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "A6 切断 0x6bc347（0x6bc347 LoadLibraryA 装入）后 0x6bd945 不可达",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "A6 切断 0x6bb9c3（0x6bb9c3 push ebx 序言）后 0x6bd945 不可达",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "A7 反控：相邻 IAT 槽 0x7e1374 解析出的是 VariantChangeType，不是 RegisterActiveObject",
+   "ok": true,
+   "detail": [
+    "OLEAUT32.dll",
+    "VariantChangeType"
+   ]
+  },
+  {
+   "name": "A8 反控：同一函数里另外两个 ebx 定义（0x6bbee9 OpenMutexA、0x6bc347 LoadLibraryA）与调用点之间都隔着 ebx 写或不可达，不能冒充",
+   "ok": true,
+   "detail": "{\"0x6bbee9\": [\"KERNEL32.dll\", \"OpenMutexA\"], \"0x6bc347\": [\"KERNEL32.dll\", \"LoadLibraryA\"]}"
+  },
+  {
+   "name": "A9 调用点前四条 push 依次是 0x840a74 / 1 / 0x7e9520 / 0x87f7e8",
+   "ok": true,
+   "detail": "[\"push 0x840a74\", \"push 1\", \"push 0x7e9520\", \"push 0x87f7e8\", \".byte 0xff\"]"
+  },
+  {
+   "name": "A10 0x7e9520 是 .rdata 里 16 字节 GUID {B45A4A81-86DA-11D1-B706-00A024DDAFD1}",
+   "ok": true,
+   "detail": "{B45A4A81-86DA-11D1-B706-00A024DDAFD1}"
+  },
+  {
+   "name": "A11 0x840a74 是 .data 原始区里的一个 DWORD，静态初值 0xFFFFFFFF，其后紧跟字符串 blowfish.dll",
+   "ok": true,
+   "detail": "{\"u32\": \"0xffffffff\", \"str\": \"blowfish.dll\"}"
+  },
+  {
+   "name": "A12 停机侧读 0x840a74、与 -1 比较、非 -1 则 call [0x7e1384] 并把 0x840a74 写回 -1",
+   "ok": true,
+   "detail": "[\"006be131 mov eax, dword ptr [0x840a74]\", \"006be136 cmp eax, -1\", \"006be139 je 0x6be14e\", \"006be13b push 0\", \"006be13d push eax\", \"006be13e call dword ptr [0x7e1384]\", \"006be144 mov dword ptr [0x840a74], 0xffffffff\", \"006be14e push 0\", \"006be150 push 0x89a29c\"]"
+  },
+  {
+   "name": "A13 IAT 0x7e1384 = OLEAUT32!RevokeActiveObject（与 A3 配对：注册/撤销同一对 API）",
+   "ok": true,
+   "detail": [
+    "OLEAUT32.dll",
+    "RevokeActiveObject"
+   ]
+  },
+  {
+   "name": "A14 0x840a74 的 imm32 引用全库恰 5 处（0x6bd935 注册实参、0x6be132/0x6be146/0x6bec9e/0x6becb2 撤销与置 -1），无第六处",
+   "ok": true,
+   "detail": "[\".text:0x006bd935\", \".text:0x006be132\", \".text:0x006be146\", \".text:0x006bec9e\", \".text:0x006becb2\"]"
+  }
+ ],
+ "pass": 17,
+ "total": 17
+}

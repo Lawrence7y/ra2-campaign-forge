@@ -1,0 +1,74 @@
+{
+ "checks": [
+  {
+   "name": "B0 exe sha256 未变",
+   "ok": true,
+   "detail": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476"
+  },
+  {
+   "name": "B1 段一：0x6bc42a 起 4 条 push 依次为 &local / 1 / 1 / 0xa8e8c8，第五个实参 0x7e9520 由 0x6bc43a 的 push 压入，随后 mov esi,[0x7e15d8] + call esi 调用 CoRegisterClassObject",
+   "ok": true,
+   "detail": "[\"006bc425 call 0x6bb390\", \"006bc42a lea eax, [ebp - 0xa34]\", \"006bc430 push eax\", \"006bc431 push 1\", \"006bc433 push 1\", \"006bc435 push 0xa8e8c8\", \"006bc43a push 0x7e9520\", \"006bc43f mov esi, dword ptr [0x7e15d8]\", \"006bc445 call esi\", \"006bc447 lea ecx, [ebp - 0xa34]\", \"006bc44d push ecx\", \"006bc44e mov ecx, 0xb0bc88\", \"006bc453 .byte 0xe8\", \"006bc454 .byte 0xa8\"]"
+  },
+  {
+   "name": "B2 0x7e15d8 = ole32!CoRegisterClassObject（名字取自本映像导入表字节）",
+   "ok": true,
+   "detail": [
+    "ole32.dll",
+    "CoRegisterClassObject"
+   ]
+  },
+  {
+   "name": "B3 段一 rclsid = .rdata 0x7e9520 = {B45A4A81-86DA-11D1-B706-00A024DDAFD1}，16 字节",
+   "ok": true,
+   "detail": "{B45A4A81-86DA-11D1-B706-00A024DDAFD1}"
+  },
+  {
+   "name": "B4 0xa8e8c8 在 .data BSS（段内偏移 0x6d8c8 > SizeOfRawData 0x6c000）⇒ 映像内无静态字节",
+   "ok": true,
+   "detail": "{\"off\": \"0x27c8c8\", \"raw\": \"0x6c000\"}"
+  },
+  {
+   "name": "B5 0xa8e8c8 的 imm32 出现 2 处：0x4e7ce2（写 vptr）与 0x6bc436（作为 pUnk 传给注册）",
+   "ok": true,
+   "detail": "[\"0x004e7ce2\", \"0x006bc436\"]"
+  },
+  {
+   "name": "B6 段二：0x4e7ce0 的字节是 c7 05 c8 e8 a8 00 64 a5 7e 00 + c3（mov [0xa8e8c8],0x7ea564 / ret），即唯一写入者把 vptr 写成 0x7ea564",
+   "ok": true,
+   "detail": "{\"bytes\": \"c705c8e8a80064a57e00c3\"}"
+  },
+  {
+   "name": "B7 段三：0x7ea564 的 COL 解出 .?AVTiberianSunClassFactory@@，基类 .?AUIClassFactory@@ ncb 1 与 .?AUIUnknown@@ ncb 0，三者 mdisp 全 0",
+   "ok": true,
+   "detail": ".?AVTiberianSunClassFactory@@"
+  },
+  {
+   "name": "B8 段四：0x7e9520 的 imm32 引用全库 5 处，含 0x6bc43a（注册 pUnk）与 0x6bd93c（RegisterActiveObject 的 rclsid）",
+   "ok": true,
+   "detail": "[\"0x006bb3c5\", \"0x006bb773\", \"0x006bc43b\", \"0x006bd6b9\", \"0x006bd93c\"]"
+  },
+  {
+   "name": "B9 段四：两处注册用的是同一个 CLSID 常量（0x6bc43a 与 0x6bd93c 都指向 0x7e9520），故「类工厂注册」与「活动对象注册」是同一个 CLSID 的两个面",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "B10 反控 N1：相邻常量 0x7e9510 = {B45A4A80-...} 与 0x7e9520 只差 Data1 末字节",
+   "ok": true,
+   "detail": "{B45A4A80-86DA-11D1-B706-00A024DDAFD1}"
+  },
+  {
+   "name": "B11 反控 N2：把段二的 vptr 换成另一张真实类表 0x7f4108，段三给出的是 .?AVSwizzleManagerClass@@（与 0x7ea564 不同类），故段三不是恒等判据",
+   "ok": true,
+   "detail": ".?AVSwizzleManagerClass@@"
+  },
+  {
+   "name": "B12 反控 N3：0x7e9520 的 5 处引用里没有一处是「读 0xa8e8c8 处的静态 vptr」，因为该地址无静态字节（与 B4 一致）",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "pass": 13,
+ "total": 13
+}

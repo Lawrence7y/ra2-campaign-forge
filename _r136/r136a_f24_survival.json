@@ -1,0 +1,240 @@
+{
+ "asserts": [
+  {
+   "name": "S1a 清单 4,417 行",
+   "ok": true,
+   "detail": "rows=4417"
+  },
+  {
+   "name": "S1b sum(bytes) == 737,517,286",
+   "ok": true,
+   "detail": "sum=737517286"
+  },
+  {
+   "name": "S1c 737,517,286 = 0.737517 GB(10^9) = 0.686866 GiB(2^30)（口径可换算）",
+   "ok": true,
+   "detail": "GB=0.737517286 GiB=0.686866"
+  },
+  {
+   "name": "S1d 反控：均值×件数近似 != 真求和（不是估算值）",
+   "ok": true,
+   "detail": "mean*n=737515324 vs 737517286"
+  },
+  {
+   "name": "S2a 三桶件数之和 == 清单件数（不重不漏）",
+   "ok": true,
+   "detail": "same=64 diff=1 miss=4352 total=4417"
+  },
+  {
+   "name": "S2b 三桶字节之和 == 清单 sum(bytes)（不重不漏）",
+   "ok": true,
+   "detail": "26846620 + 913237 + 709757429"
+  },
+  {
+   "name": "S2c 「逐字节不变」的件数远小于 4,417（清单不是现盘枚举）",
+   "ok": true,
+   "detail": "same=64 / 4417 = 1.45%"
+  },
+  {
+   "name": "S2d 字节数不同的件数极少且可逐件列出",
+   "ok": true,
+   "detail": "diff=1 :: [('a2_sites.json', 913237, 17624355)]"
+  },
+  {
+   "name": "S3a size-changed 恰为 1 件",
+   "ok": true,
+   "detail": "n=1"
+  },
+  {
+   "name": "S3b 该件是 a2_sites.json（F24 正文点名剔 bounds 段的件）",
+   "ok": true,
+   "detail": "rel=next_re_20261117_r14/D41_SUBST/_audit/EVIDENCE/a2_sites.json"
+  },
+  {
+   "name": "S3c 清单值 913,237 现值 17,624,355 差 +16,711,118（== F24 写的 bounds 剔段量）",
+   "ok": true,
+   "detail": "manifest=913237 disk=17624355 delta=+16711118"
+  },
+  {
+   "name": "S3d 磁盘上的文件未被实际剔段（现值 == 全量 17,624,355，不是 913,237）",
+   "ok": true,
+   "detail": "disk=17624355"
+  },
+  {
+   "name": "S4a P1a 桶件数 3,786 / 714,228,639 B（与 F24 正文一致）",
+   "ok": true,
+   "detail": "{'n': 3786, 'bytes': 714228639, 'alive_n': 61, 'alive_bytes': 22484224, 'miss_n': 3725}"
+  },
+  {
+   "name": "S4b rejudge 桶 627 件（4417 版为 13,233,082 B，4413 版才是 29,944,200 B）",
+   "ok": true,
+   "detail": "{'n': 627, 'bytes': 13233082, 'alive_n': 0, 'alive_bytes': 0, 'miss_n': 627}"
+  },
+  {
+   "name": "S4c R62R63 3 件 8,690,200 B + R64 1 件 1,365,365 B == 10,055,565（F24 的 +10,055,565）",
+   "ok": true,
+   "detail": "8690200 + 1365365"
+  },
+  {
+   "name": "S4d 存活件数最多的桶也只有个位数（没有任何一类是「现盘还在」的）",
+   "ok": true,
+   "detail": "max_alive=61"
+  },
+  {
+   "name": "S5a 缺失件 100% 在 2026-11-22T12:31:10 快照里（不是路径拼错）",
+   "ok": true,
+   "detail": "in_snap_same=4352 in_snap_diff=0 not_in_snap=0"
+  },
+  {
+   "name": "S5b 快照里的 bytes 与清单逐字节相同（快照不是另一棵树）",
+   "ok": true,
+   "detail": "diff=0 []"
+  },
+  {
+   "name": "S5c 反控：把快照键前缀改坏后命中 0（S5a 的命中不是空匹配）",
+   "ok": true,
+   "detail": "mutated_hits=0"
+  },
+  {
+   "name": "S6a .txt 存活率 <= 5%（R88 记 .txt 保活 0.1%，方向一致）",
+   "ok": true,
+   "detail": ".txt 59/3347"
+  },
+  {
+   "name": "S6b 语料内部的扩展名存活分布：.txt 59/3347、.tsv 2/936、.json 4/27、.log 0/99、.md 0/8 —— 只报本域实测，不与 R88 的全树保活率跨域相减",
+   "ok": true,
+   "detail": ".txt 59/3347 .tsv 2/936 .json 4/27 .log 0/99 .md 0/8"
+  },
+  {
+   "name": "S6c 反控：把存活判据换成 isfile() 且忽略字节数，存活数只会更多（S2 的口径不虚高）",
+   "ok": true,
+   "detail": "isfile_only=65 >= exact=64"
+  },
+  {
+   "name": "S7 反控：把 rel 根从 lead/ 换成工程根，命中数显著下降（根选择有判别力）",
+   "ok": true,
+   "detail": "root=proj hits=0 vs root=lead hits=64"
+  },
+  {
+   "name": "S8a 四份清单件数 4,413 / 4,413 / 4,416 / 4,417",
+   "ok": true,
+   "detail": "[4413, 4413, 4416, 4417]"
+  },
+  {
+   "name": "S8b 四份清单字节 744,172,839 / 727,461,721 / 736,151,921 / 737,517,286",
+   "ok": true,
+   "detail": "[744172839, 727461721, 736151921, 737517286]"
+  },
+  {
+   "name": "S8c 三段递进差 = 16,711,118 / 8,690,200 / 1,365,365",
+   "ok": true,
+   "detail": "16711118 / 8690200 / 1365365"
+  },
+  {
+   "name": "S8e F24 写的「+10,055,565」= R62R63 三件 8,690,200 + R64 一件 1,365,365（四件合计，跨两段落盘）",
+   "ok": true,
+   "detail": "8690200 + 1365365 = 10055565"
+  },
+  {
+   "name": "S8d 反控：4413 -> 4413b 件数不变而字节 -16,711,118（件数等权会看不见这一刀）",
+   "ok": true,
+   "detail": "n_same=4413 dB=-16711118"
+  }
+ ],
+ "note": "unchanged 64 / 4417 = 1.45% ; missing 4352 / 4417 = 98.53% (709757429 B) ; size-changed 1",
+ "out": {
+  "manifest_rows": 4417,
+  "same": {
+   "n": 64,
+   "bytes": 26846620
+  },
+  "diff": {
+   "n": 1,
+   "items": [
+    [
+     "next_re_20261117_r14/D41_SUBST/_audit/EVIDENCE/a2_sites.json",
+     913237,
+     17624355,
+     "rejudge_R53_对象抄本"
+    ]
+   ],
+   "delta": 16711118
+  },
+  "miss": {
+   "n": 4352,
+   "bytes": 709757429
+  },
+  "by_source": {
+   "P1a_前8KiB行首VA>=60%": {
+    "n": 3786,
+    "bytes": 714228639,
+    "alive_n": 61,
+    "alive_bytes": 22484224,
+    "miss_n": 3725
+   },
+   "R62R63_重判对象侧": {
+    "n": 3,
+    "bytes": 8690200,
+    "alive_n": 2,
+    "alive_bytes": 2997031,
+    "miss_n": 1
+   },
+   "R64_重判对象侧": {
+    "n": 1,
+    "bytes": 1365365,
+    "alive_n": 1,
+    "alive_bytes": 1365365,
+    "miss_n": 0
+   },
+   "rejudge_R53_对象抄本": {
+    "n": 627,
+    "bytes": 13233082,
+    "alive_n": 0,
+    "alive_bytes": 0,
+    "miss_n": 627
+   }
+  },
+  "snapshot_rows": 24723,
+  "by_ext": {
+   ".txt": {
+    "n": 3347,
+    "alive": 59
+   },
+   ".tsv": {
+    "n": 936,
+    "alive": 2
+   },
+   ".log": {
+    "n": 99,
+    "alive": 0
+   },
+   ".md": {
+    "n": 8,
+    "alive": 0
+   },
+   ".json": {
+    "n": 27,
+    "alive": 4
+   }
+  },
+  "alt_root_hits": 0,
+  "chain": {
+   "4413": [
+    4413,
+    744172839
+   ],
+   "4413b": [
+    4413,
+    727461721
+   ],
+   "4416": [
+    4416,
+    736151921
+   ],
+   "4417": [
+    4417,
+    737517286
+   ]
+  }
+ }
+}

@@ -1,0 +1,62 @@
+{
+ "gate_ver": "R127",
+ "floor_added": {
+  "131": 5958
+ },
+ "floor_table_n": 125,
+ "old_sha16": "eb8cc052f0d4a062",
+ "new_sha16": "a87a240c10947077",
+ "checks": [
+  {
+   "name": "J0 起点核对：GATE_VER 为 R126、C16_FLOORS 共 124 条、表与摘要常量一致（eb8cc052f0d4a062）",
+   "ok": true,
+   "detail": "{'n': 124, 'sha': 'eb8cc052f0d4a062'}"
+  },
+  {
+   "name": "J1 改动一生效：C16_FLOORS 从 124 条到 125 条，新增 131: 5958，摘要常量从 eb8cc052f0d4a062 改为 a87a240c10947077 且与表一致",
+   "ok": true,
+   "detail": "{'n': 125, 'entry': 5958, 'sha': 'a87a240c10947077'}"
+  },
+  {
+   "name": "J2 改动二生效：GATE_VER = R127，DISC_RECHECK 登记行也是 R127",
+   "ok": true,
+   "detail": "{'gate_ver': 'R127'}"
+  },
+  {
+   "name": "J3 正控：改完后不修改直接跑，必须 exit 0",
+   "ok": true,
+   "detail": "{'rc': 0, 'tail': ['            it does NOT verify that the product content supports the discipline.', '            PASS != all 28 disciplines proven.  Row-7 truth is NOT machine-verified.', '[exit 0]']}"
+  },
+  {
+   "name": "J4 改完后 C16 显示 125 节全部被钉、unpinned 为 0（如实核对实际输出的四个计数）",
+   "ok": true,
+   "detail": "NOTE  C16 per-section floors: 125 sections measured (pinned 125), hollow/deficient 0, missing 0, unpinned 0, min margin 1155"
+  },
+  {
+   "name": "J5 反控 A：把 2.131 正文清空到只剩标题，必须 exit 1 且命中 C16 —— 证明新补的 131:5958 这道下界真的在约束",
+   "ok": true,
+   "detail": "{'rc': 1, 'c16_hit': True, 'fail_lines': ['  FAIL  C16 section(s) hollowed out (body below per-section floor): [(131, 15, 5958)] (a section must not lose more than half its pinned body; if a section legitimately shrank, re-pin C16_FLOORS deliberately)']}"
+  },
+  {
+   "name": "J6 反控 B：只把 GATE_VER 改成 R999 而不动 DISC_RECHECK 第 20 行，必须 exit 1 且命中 C10",
+   "ok": true,
+   "detail": "{'rc': 1, 'c10_hit': True, 'fail_lines': ['  FAIL  C7 id 20 expr grep=(?m)^GATE_VER mismatch (grep hits=0)', '  FAIL  C10 self GATE_VER registered R127 != actual R999']}"
+  },
+  {
+   "name": "J7 反控 C：把 131 的下界从 5958 改成 5700 而不改摘要常量，必须 exit 1 且命中 C16d",
+   "ok": true,
+   "detail": "{'rc': 1, 'c16d_hit': True, 'fail_lines': ['  FAIL  C16d floor table TAMPERED: sha256 ad4140e3dc723d71 != registered a87a240c10947077 (editing a single floor requires re-pinning this constant deliberately; that is the point)']}"
+  },
+  {
+   "name": "J8 收尾：三个正本（check_disc.py / DISC_RECHECK.tsv / R14_COMMON.md）的字节与改动完成时一致 —— 反控没有污染正本",
+   "ok": true,
+   "detail": "{'check_disc_sha': 'c81b5638a6ab0d7d', 'R14_COMMON_sha': 'f585989d20ab7389'}"
+  },
+  {
+   "name": "J9 终态：再跑一次门禁，exit 0 且 C10 显示 ok(R127)",
+   "ok": true,
+   "detail": "{'rc': 0, 'c10': ['C10 self-check: ok(R127)']}"
+  }
+ ],
+ "all_ok": true
+}

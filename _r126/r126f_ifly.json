@@ -1,0 +1,152 @@
+{
+ "exe_sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+ "owner": [
+  {
+   "class": "AircraftClass",
+   "vtable": 8266404
+  }
+ ],
+ "qi_table": [
+  {
+   "iid": "0x7e9b40",
+   "disp": 1728
+  }
+ ],
+ "disp0_names": [
+  ".?AVAircraftClass@@",
+  ".?AVFootClass@@",
+  ".?AVTechnoClass@@",
+  ".?AVRadioClass@@",
+  ".?AVMissionClass@@",
+  ".?AVObjectClass@@",
+  ".?AVAbstractClass@@",
+  ".?AUIPersistStream@@",
+  ".?AUIPersist@@",
+  ".?AUIUnknown@@"
+ ],
+ "hits_6c0": [
+  {
+   "at": "0x4142c1",
+   "kind": "qi_body"
+  },
+  {
+   "at": "0x4177c0",
+   "kind": "subobject_addr"
+  },
+  {
+   "at": "0x4180e6",
+   "kind": "subobject_addr"
+  },
+  {
+   "at": "0x4182c5",
+   "kind": "subobject_addr"
+  },
+  {
+   "at": "0x41865d",
+   "kind": "subobject_addr"
+  },
+  {
+   "at": "0x418694",
+   "kind": "subobject_addr"
+  },
+  {
+   "at": "0x4197e3",
+   "kind": "subobject_addr"
+  },
+  {
+   "at": "0x41aa36",
+   "kind": "subobject_addr"
+  },
+  {
+   "at": "0x4d01a4",
+   "kind": "subobject_addr"
+  },
+  {
+   "at": "0x521ab7",
+   "kind": "subobject_addr"
+  }
+ ],
+ "ctrl": {
+  "0x7e9b20": {
+   "start": "0x6cf444",
+   "table": [
+    {
+     "iid": "0x7e9b20",
+     "disp": 0
+    },
+    {
+     "iid": "0x7f7c90",
+     "disp": null
+    }
+   ],
+   "n_classes_using_as_slot0": 0
+  },
+  "0x7e36c0": {
+   "start": "0x4292a2",
+   "table": [
+    {
+     "iid": "0x7e36c0",
+     "disp": 0
+    },
+    {
+     "iid": "0x7f7c90",
+     "disp": null
+    }
+   ],
+   "n_classes_using_as_slot0": 0
+  }
+ },
+ "checks": [
+  {
+   "name": "F0 exe sha256 是钉住的那个构建",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F1 恰有一个类把 0x414290 用作 slot0（不是靠地址窗口猜的）",
+   "ok": true,
+   "detail": "[{'class': 'AircraftClass', 'vtable': 8266404}]"
+  },
+  {
+   "name": "F1b 该类 RTTI 可完整解码",
+   "ok": true,
+   "detail": "18"
+  },
+  {
+   "name": "F2 该 QI 体逐分支解出 1 个 (IID, this 调整值) 对（它先把基类 QI 委派出去，只自己处理一个 IID，故 1 条即完整）",
+   "ok": true,
+   "detail": "[{'iid': '0x7e9b40', 'disp': 1728}]"
+  },
+  {
+   "name": "F2b 0x7e9b40 在该 QI 体里解析出的 this 调整值为 0x6c0",
+   "ok": true,
+   "detail": "[{'iid': '0x7e9b40', 'disp': 1728}]"
+  },
+  {
+   "name": "F3 该类 RTTI 在 mdisp 0 处同时有 IPersist 与 IPersistStream（这两个接口本身没有次对象偏移，故 R124 的对称记录永远分不开它们俩）；而 0x6c0 处只有 IFlyControl 与一个 IUnknown",
+   "ok": true,
+   "detail": "{'disp0': ['.?AVAircraftClass@@', '.?AVFootClass@@', '.?AVTechnoClass@@', '.?AVRadioClass@@', '.?AVMissionClass@@', '.?AVObjectClass@@', '.?AVAbstractClass@@', '.?AUIPersistStream@@', '.?AUIPersist@@', '.?AUIUnknown@@'], 'disp6c0': [('.?AUIFlyControl@@', 1728), ('.?AUIUnknown@@', 1728)]}"
+  },
+  {
+   "name": "F3b this+0x6c0 全映像共 10 处：恰 1 处是 QI 体写出参，9 处是取子对象地址（后者独立印证同一偏移，不是反例）",
+   "ok": true,
+   "detail": "{'total': 10, 'qi_body': 1, 'subobject_addr': 9, 'hits': [{'at': '0x4142c1', 'kind': 'qi_body'}, {'at': '0x4177c0', 'kind': 'subobject_addr'}, {'at': '0x4180e6', 'kind': 'subobject_addr'}, {'at': '0x4182c5', 'kind': 'subobject_addr'}, {'at': '0x41865d', 'kind': 'subobject_addr'}, {'at': '0x418694', 'kind': 'subobject_addr'}, {'at': '0x4197e3', 'kind': 'subobject_addr'}, {'at': '0x41aa36', 'kind': 'subobject_addr'}, {'at': '0x4d01a4', 'kind': 'subobject_addr'}, {'at': '0x521ab7', 'kind': 'subobject_addr'}]}"
+  },
+  {
+   "name": "F3c 其中至少 1 处（0x4177c0）紧接 call dword ptr [reg+0xc]，即该子对象被按 IPersist 的 slot 3 调用 —— 与 0x7f7c70 侧 R125 得到的槽位集合一致",
+   "ok": true,
+   "detail": "{'slot3_sites': ['0x4177c0']}"
+  },
+  {
+   "name": "F4 反控：0x7e9b20 与 0x7e36c0 的 QI 体也能被同一方法解析（不是只有 0x7e9b40 特例）",
+   "ok": true,
+   "detail": "{'0x7e9b20': {'start': '0x6cf444', 'table': [{'iid': '0x7e9b20', 'disp': 0}, {'iid': '0x7f7c90', 'disp': None}], 'n_classes_using_as_slot0': 0}, '0x7e36c0': {'start': '0x4292a2', 'table': [{'iid': '0x7e36c0', 'disp': 0}, {'iid': '0x7f7c90', 'disp': None}], 'n_classes_using_as_slot0': 0}}"
+  },
+  {
+   "name": "F4b 如实记录：这两个 QI 体不被任何类的 slot0 引用，故本方法对它们只能给出「查了哪些 IID」，不能给出接口名 —— 不为了让覆盖率好看而放宽判据",
+   "ok": true,
+   "detail": "{'0x7e9b20': 0, '0x7e36c0': 0}"
+  }
+ ],
+ "all_ok": true
+}

@@ -1,0 +1,77 @@
+{
+ "exe_sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+ "formA": {
+  "0x7f7c70": 4,
+  "0x7f7c80": 4,
+  "0x818858": 0,
+  "0x820270": 0
+ },
+ "formB": {
+  "0x7f7c70": 0,
+  "0x7f7c80": 60,
+  "0x818858": 16,
+  "0x820270": 8
+ },
+ "ole_calls": {
+  "OleSaveToStream": 43,
+  "OleLoadFromStream": 8
+ },
+ "checks": [
+  {
+   "name": "D0 exe sha256 is the pinned build",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "D1a form-A counts recompute to 4 / 4 / 0 / 0",
+   "ok": true,
+   "detail": "{'0x7f7c70': 4, '0x7f7c80': 4, '0x818858': 0, '0x820270': 0}"
+  },
+  {
+   "name": "D1b the independent BF imm32 byte anchor agrees with the disassembly count (the two .data copies never appear as a mov edi immediate)",
+   "ok": true,
+   "detail": "{'0x7f7c70': 4, '0x7f7c80': 4, '0x818858': 0, '0x820270': 0}"
+  },
+  {
+   "name": "D2a form-B counts recompute to 0 / 60 / 16 / 8",
+   "ok": true,
+   "detail": "{'0x7f7c70': 0, '0x7f7c80': 60, '0x818858': 16, '0x820270': 8}"
+  },
+  {
+   "name": "D2b the independent push-imm32 byte anchor agrees with the disassembly count",
+   "ok": true,
+   "detail": "{'0x7f7c70': 0, '0x7f7c80': 60, '0x818858': 16, '0x820270': 8}"
+  },
+  {
+   "name": "D3 the 0000010C .rdata constant has NO push callsite at all, so every claim about it rests on the .data copy",
+   "ok": true,
+   "detail": "{'0x7f7c70': 0, '0x818858': 16}"
+  },
+  {
+   "name": "D4 the OLE call population recomputes to 43 OleSaveToStream and 8 OleLoadFromStream (51 total, which bounds the 43 hits)",
+   "ok": true,
+   "detail": "save=43 load=8"
+  },
+  {
+   "name": "D5 all four dual-IID dispatchers write the this-pointer back with no adjustment, so the QI return value carries no offset signal",
+   "ok": true,
+   "detail": "{'0x4102be': ('89 18', True), '0x4f68d6': ('89 02', True), '0x5125e9': ('89 18', True), '0x55aa3a': ('89 10', True)}"
+  },
+  {
+   "name": "D6 0x42CAB5 is FF 50 0C (slot 3) and 0x42CAC6 is FF 90 84 00 00 00, and 0x42CAC2 reloads eax from esi so the +0x84 call is a different object",
+   "ok": true,
+   "detail": "{'0x42cab5': 'ff 50 0c', '0x42cac2': '8b 06', '0x42cac6': 'ff 90 84 00 00 00'}"
+  },
+  {
+   "name": "D7 controls: IConnectionPointContainer has 9 pushes and the IUnknown bytes have 56, both different from the 109 population",
+   "ok": true,
+   "detail": "{'0x7f7cd0': 9, '0x7f7c90': 56}"
+  },
+  {
+   "name": "D8 the auditor says 00000109 handles are 35/60 in the tight window; my argument-role tracker places 42 of 43 at argument 0 of OleSaveToStream, so the auditor UNDER-counts the strength of the use-side record, not the direction. Both agree the direction needs an external GUID convention.",
+   "ok": true,
+   "detail": "auditor: tight-window 35/60 association ; lead: 42/43 placed at arg0"
+  }
+ ],
+ "all_ok": true
+}

@@ -1,0 +1,132 @@
+{
+ "asserts": [
+  {
+   "name": "P0 PE 自解析：ImageBase 0x400000 / 5 节",
+   "ok": true,
+   "detail": "base=0x400000 secs=['.text', '.rdata', '.data', '.rsrc', '.detour']"
+  },
+  {
+   "name": "P1a 该 17 字节序列全镜像出现 80 次（F29 正文说「两份拷贝」）",
+   "ok": true,
+   "detail": "occurrences=80"
+  },
+  {
+   "name": "P1b 80 次全部落在 .text",
+   "ok": true,
+   "detail": "in_text=80"
+  },
+  {
+   "name": "P1c 被点名的 0x6C2AC0 与 0x6C51C0 两处都在 80 次之内",
+   "ok": true,
+   "detail": "named=[True, True]"
+  },
+  {
+   "name": "P1d 80 次里 79 个是「前 11 字节全 nop」的函数入口式，唯一例外 0x7AC690 被内联进别处（「两份拷贝」是这 80 份里被点名的那两份）",
+   "ok": true,
+   "detail": "entry_like=79 / 80 ; outlier=[('0x7ac690', '8b0185c074068b0850ff5108c3909090')]"
+  },
+  {
+   "name": "P1e 80 处中 77 处落在 0x6BEEC0 + 0x180*i 格点上（批量实例化，不是零散巧合）",
+   "ok": true,
+   "detail": "on_lattice=77 / 80"
+  },
+  {
+   "name": "P2a 0x7E11C8 是导入槽，属 KERNEL32.dll",
+   "ok": true,
+   "detail": "found=1 dll=KERNEL32.dll"
+  },
+  {
+   "name": "P2b 三种下标口径互不相同：DLL 内 62 / 全局 0-based 63 / 全局 1-based 64",
+   "ok": true,
+   "detail": "in_dll=62 global0=63 global1=64"
+  },
+  {
+   "name": "P2c 名字 InterlockedIncrement / Hint 432（正文另外两个数）",
+   "ok": true,
+   "detail": "name=InterlockedIncrement hint=432"
+  },
+  {
+   "name": "P2d 结论：正文写「FirstThunk idx=62」在「DLL 内序号」口径下为真，在「全局下标」口径下为假 —— 缺口径属实，须写明是哪一种",
+   "ok": true,
+   "detail": "in_dll=62 vs global0=63"
+  },
+  {
+   "name": "P3a 8 字节桩全镜像 40 次（F29 正文的 40）",
+   "ok": true,
+   "detail": "stub_occurrences=40"
+  },
+  {
+   "name": "P3b 「4 字节对齐 + 紧跟 8 nop」判据下 15 个桩体（R135 修正值）",
+   "ok": true,
+   "detail": "bodies=15"
+  },
+  {
+   "name": "P3c 反控：去掉「4 字节对齐」判据得 18 个（R135 S-241 记的错值），证明该条是必要判据",
+   "ok": true,
+   "detail": "naive=18 aligned=15"
+  },
+  {
+   "name": "P3d 结论：15 / 18 / 40 三个数各有口径，「6 个不同桩体」必须在「63 张双桩表内」口径下引用 —— 本脚本能机械钉住 15/18/40，钉不住「6」的分子（需 TClassFactory 表枚举，前轮已做）",
+   "ok": true,
+   "detail": "aligned15 / naive18 / total40"
+  },
+  {
+   "name": "P4a TClassFactory 类型名 77 个不同 X",
+   "ok": true,
+   "detail": "hits=77 distinct=77"
+  },
+  {
+   "name": "P4b 反控：77（类型名数）与 40（桩序列出现次数）之间不存在可推关系 —— 77 不是 40 的倍数、也不是 40 减去任何已测量的结果",
+   "ok": true,
+   "detail": "names=77 stub_occ=40 ; 77mod40=37 77-40=37"
+  },
+  {
+   "name": "P4c 40 != 63 != 77 三个数互不相等，「桩 63 张表」与「序列出现 40 次」不是同一计数",
+   "ok": true,
+   "detail": "40 / 63 / 77"
+  }
+ ],
+ "out": {
+  "P1": {
+   "occurrences": 80,
+   "entry_like": 79,
+   "on_lattice": 77,
+   "outlier": [
+    [
+     "0x7ac690",
+     "8b0185c074068b0850ff5108c3909090"
+    ]
+   ],
+   "first_vas": [
+    "0x6beec0",
+    "0x6bf040",
+    "0x6bf1c0",
+    "0x6bf340",
+    "0x6bf4c0",
+    "0x6bf640",
+    "0x6bf7c0",
+    "0x6bf940",
+    "0x6bfac0",
+    "0x6bfc40",
+    "0x6bfdc0",
+    "0x6bff40"
+   ]
+  },
+  "P2": {
+   "in_dll": 62,
+   "global0": 63,
+   "hint": 432,
+   "name": "InterlockedIncrement",
+   "total_slots": 372
+  },
+  "P3": {
+   "total": 40,
+   "aligned_entry_like": 15,
+   "naive": 18
+  },
+  "P4": {
+   "names": 77,
+   "stub_occ": 40
+  }
+ }
+}

@@ -1,0 +1,96 @@
+{
+ "checks": [
+  {
+   "name": "H0 全库可解 COL 的类数",
+   "ok": true,
+   "detail": "954"
+  },
+  {
+   "name": "H1 全库 mdisp 0 处「非 IUnknown 的 .?AU 接口名恰好 1 个」的类共 100 个；MouseClass 在其中且该接口名 = .?AUIGameMap@@",
+   "ok": true,
+   "detail": "{'n': 100, 'mouse': '.?AUIGameMap@@', 'sample': {'.?AV?$CComObject@VCChatEventSink@@@ATL@@': '.?AUIChatEvent@WOL@@', '.?AV?$CComObject@VCDownloadEventSink@@@ATL@@': '.?AUIDownloadEvent@WOL@@', '.?AV?$CComObject@VCNetUtilEventSink@@@ATL@@': '.?AUINetUtilEvent@WOL@@', '.?AV?$TClassFactory@VAITriggerTypeClass@@@@': '.?AUIClassFactory@@', '.?AV?$TClassFactory@VAircraftClass@@@@': '.?AUIClassFactory@@', '.?AV?$TClassFactory@VAircraftTypeClass@@@@': '.?AUIClassFactory@@', '.?AV?$TClassFactory@VAirstrikeClass@@@@': '.?AUIClassFactory@@', '.?AV?$TClassFactory@VAlphaShapeClass@@@@': '.?AUIClassFactory@@'}}"
+  },
+  {
+   "name": "H2 反控一：把 mdisp 换成 0x5518 后，全库没有任何类在该偏移上恰有 1 个 .?AU 接口（命中集为空，MouseClass 取不到名字）—— 故判据不是「随便挑一个接口名都能凑」，它只在 mdisp 0 这个位置上给出解，且此位置上不是所有类都有解",
+   "ok": true,
+   "detail": "{'mouse_at_5518': None, 'n': 0}"
+  },
+  {
+   "name": "H3 反控二：去掉「非 IUnknown」这层过滤后，MouseClass 在 mdisp 0 处得到两个候选（IGameMap 与 IUnknown），唯一性消失 —— 过滤是必要的、不是装饰",
+   "ok": true,
+   "detail": "{'mouse_with_unknown': None, 'n': 2}"
+  },
+  {
+   "name": "H4 被该判据选中的接口名分布（共 13 种）：MouseClass 命中的 IGameMap 有 9 个类共享 —— 共享不削弱结论，因为判决对象是「名字」不是「类」",
+   "ok": true,
+   "detail": "{'.?AUIClassFactory@@': 78, '.?AUIGameMap@@': 9, '.?AUIChatEvent@WOL@@': 2, '.?AUINetUtilEvent@WOL@@': 2, '.?AUIDownloadEvent@WOL@@': 1, '.?AUIApplication@@': 1, '.?AUIConnectionPoint@@': 1, '.?AUIEnumConnectionPoints@@': 1, '.?AUIEnumConnections@@': 1, '.?AUINIEntry@INIClass@@': 1}"
+  },
+  {
+   "name": "H5 声明 .?AUIGameMap@@ 的类共 9 个，全部是窗口族（Display/GScreen/Map/Mouse/Power/Radar/Scroll/Sidebar/Tab）—— 与 GDI 侧窗口对象模型自洽",
+   "ok": true,
+   "detail": "['.?AVDisplayClass@@', '.?AVGScreenClass@@', '.?AVMapClass@@', '.?AVMouseClass@@', '.?AVPowerClass@@', '.?AVRadarClass@@', '.?AVScrollClass@@', '.?AVSidebarClass@@', '.?AVTabClass@@']"
+  },
+  {
+   "name": "H6 反控三：IID_IUnknown 常量 0x7f7c90 = {00000000-...} 的 Data1 全 0，而 0x7ea6e8 = {96F02EC7-...} 的 Data1 非 0 —— 两者不是同一常量的两个拷贝",
+   "ok": true,
+   "detail": "['{00000000-0000-0000-C000-000000000046}', '{96F02EC7-6FE8-11D1-B6FD-00A024DDAFD1}']"
+  }
+ ],
+ "u0": {
+  ".?AV?$CComObject@VCChatEventSink@@@ATL@@": ".?AUIChatEvent@WOL@@",
+  ".?AV?$CComObject@VCDownloadEventSink@@@ATL@@": ".?AUIDownloadEvent@WOL@@",
+  ".?AV?$CComObject@VCNetUtilEventSink@@@ATL@@": ".?AUINetUtilEvent@WOL@@",
+  ".?AV?$TClassFactory@VAITriggerTypeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VAircraftClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VAircraftTypeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VAirstrikeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VAlphaShapeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VAnimClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VAnimTypeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VBombClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VBuildingClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VBuildingLightClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VBuildingTypeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VBulletClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VBulletTypeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VCStreamClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VCampaignClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VCaptureManagerClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VCellClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VDiskLaserClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VDriveLocomotionClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VDropPodLocomotionClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VEMPulseClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VFactoryClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VFlyLocomotionClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VFoggedObjectClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VHouseClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VHouseTypeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VHoverLocomotionClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VInfantryClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VInfantryTypeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VIsometricTileTypeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VJumpjetLocomotionClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VLightSourceClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VMechLocomotionClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VNeuronClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VOverlayTypeClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VParasiteClass@@@@": ".?AUIClassFactory@@",
+  ".?AV?$TClassFactory@VParticleClass@@@@": ".?AUIClassFactory@@"
+ },
+ "dist": {
+  ".?AUIChatEvent@WOL@@": 2,
+  ".?AUIDownloadEvent@WOL@@": 1,
+  ".?AUINetUtilEvent@WOL@@": 2,
+  ".?AUIClassFactory@@": 78,
+  ".?AUIApplication@@": 1,
+  ".?AUIConnectionPoint@@": 1,
+  ".?AUIGameMap@@": 9,
+  ".?AUIEnumConnectionPoints@@": 1,
+  ".?AUIEnumConnections@@": 1,
+  ".?AUINIEntry@INIClass@@": 1,
+  ".?AUINISection@INIClass@@": 1,
+  ".?AUISwizzle@@": 1,
+  ".?AUIWOLBrowserEvent@@": 1
+ }
+}

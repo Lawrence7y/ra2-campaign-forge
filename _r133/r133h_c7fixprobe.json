@@ -1,0 +1,88 @@
+{
+ "census": {
+  "grep=": 24,
+  "grepcount=": 3,
+  "rows=": 4
+ },
+ "gate_mentions": {
+  "exists_branch_in_notes": true,
+  "bytes_branch_in_notes": true,
+  "none_branch_in_notes": true
+ },
+ "c7_note_shape": [
+  "C7 live-checks passed %d ; none-skipped %d"
+ ],
+ "dispatcher_probe": {
+  "exists (123 B)": "exists",
+  "bytes=456": "bytes=",
+  "none": "none",
+  "grep=x": "grep=",
+  "rows=7": "rows="
+ },
+ "decision": {
+  "fix_a": "pin the coverage census (exists=0, bytes==0, none=0) and FAIL on drift",
+  "fix_b": "report the census in the C7 note so 31/31 cannot be read as all-shapes-exercised",
+  "recommended": "both, since neither requires manufacturing a product for an unused shape"
+ },
+ "assertions": [
+  {
+   "assert": "the census accounts for all 31 rows",
+   "pass": true,
+   "detail": "31"
+  },
+  {
+   "assert": "three C7 shapes have ZERO coverage: exists, bytes=, none",
+   "pass": true,
+   "detail": "{'exists': 0, 'bytes=': 0, 'none': 0}"
+  },
+  {
+   "assert": "the shapes actually in use are grep= / rows= / grepcount=",
+   "pass": true,
+   "detail": "['grep=', 'grepcount=', 'rows=']"
+  },
+  {
+   "assert": "the gate source contains all three dead branches (they are live code, not removed)",
+   "pass": true,
+   "detail": "{'exists_branch_in_notes': True, 'bytes_branch_in_notes': True, 'none_branch_in_notes': True}"
+  },
+  {
+   "assert": "FIX-A has resolution: injecting one 'exists' row moves its census count from 0 to 1",
+   "pass": true,
+   "detail": "{'exists': 1}"
+  },
+  {
+   "assert": "FIX-A has resolution: injecting one 'bytes=' row moves its census count from 0 to 1",
+   "pass": true,
+   "detail": "{'bytes=': 1}"
+  },
+  {
+   "assert": "FIX-A has resolution: injecting one 'none' row moves its census count from 0 to 1",
+   "pass": true,
+   "detail": "{'none': 1}"
+  },
+  {
+   "assert": "the C7 result line reports only two numbers (passed / none-skipped) and no shape census",
+   "pass": true,
+   "detail": "['C7 live-checks passed %d ; none-skipped %d']"
+  },
+  {
+   "assert": "therefore a shape census is NOT already reported -- FIX-B would add information, not restate it",
+   "pass": true,
+   "detail": "True"
+  },
+  {
+   "assert": "ANTI: the dispatch logic classifies every shape including the three dead ones (code path live)",
+   "pass": true,
+   "detail": "{'exists (123 B)': 'exists', 'bytes=456': 'bytes=', 'none': 'none', 'grep=x': 'grep=', 'rows=7': 'rows='}"
+  },
+  {
+   "assert": "ANTI: an unrecognised head is classified BAD (classifier is not permissive)",
+   "pass": true,
+   "detail": "BAD"
+  }
+ ],
+ "summary": {
+  "pass": 11,
+  "total": 11
+ }
+}

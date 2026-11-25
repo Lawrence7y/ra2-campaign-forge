@@ -1,0 +1,34 @@
+{
+ "checks": [
+  {
+   "name": "K0 开工 sha（收尾必须回落）",
+   "ok": true,
+   "detail": "{'gate': '883da56f15624956'}"
+  },
+  {
+   "name": "K1 正控：不改任何东西，exit 0 且 C10 显示 ok(R128)",
+   "ok": true,
+   "detail": "{'rc': 0, 'c10': True}"
+  },
+  {
+   "name": "K2 反控二：GATE_VER 改回 R127 而第 20 行仍登记 R128 -> exit 1，命中 C10",
+   "ok": true,
+   "detail": "{'rc': 1, 'hit': ['  FAIL  C10 self GATE_VER registered R128 != actual R127']}"
+  },
+  {
+   "name": "K3 反控三：只改第 20 行不改 GATE_VER -> exit 1，命中 C7 id 20 的 grep 不匹配",
+   "ok": true,
+   "detail": "{'rc': 1, 'hit': ['  FAIL  C7 id 20 expr grep=(?m)^GATE_VER mismatch (grep hits=0)']}"
+  },
+  {
+   "name": "K4 反控一：给 id 11（claims-none）的产物塞一条自己的自述行 -> exit 1，命中 C11 新判据「claims-none but its product carries 1 self-description line」",
+   "ok": true,
+   "detail": "{'rc': 1, 'hit': ['FAIL  C11 id 11 claims-none but its product carries 1 self-description line(s) for this discipline (R128)']}"
+  },
+  {
+   "name": "K5 收尾：check_disc.py 与 DISC_RECHECK.tsv 的 sha 与开工时一致",
+   "ok": true,
+   "detail": "{'gate': '883da56f15624956', 'dr': 'bf80fbe8d9699a65'}"
+  }
+ ]
+}

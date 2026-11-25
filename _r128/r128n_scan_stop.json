@@ -1,0 +1,57 @@
+{
+ "checks": [
+  {
+   "name": "N0 .text 原始字节数 = 0x3e0000（S-182：我先按 Misc_VirtualSize 0x3df38d 断言，实测按 raw 读到 0x3e0000，两者差 0xc73 是对齐尾巴；本脚本用 raw 长度，故断言改成 raw 界）",
+   "ok": true,
+   "detail": "{'raw': '0x3e0000', 'vsize': '0x3df38d'}"
+  },
+  {
+   "name": "N1 口径 1（disasm + skipdata=False，最省事写法）：解出 155215 条，最后一条在 0x0046f59d，只覆盖 .text 的 11.1%",
+   "ok": true,
+   "detail": "{'n': 155215, 'last': 4650397, 'first_byte_at': None, 'coverage': 0.11124075612714214}"
+  },
+  {
+   "name": "N2 口径 2（disasm + skipdata=True）：解出 1394186 条，最后一条在 0x007e0fff，覆盖 100.0%；首个 .byte 出现在 0x0046f5a0",
+   "ok": true,
+   "detail": "{'n': 1394186, 'last': 8261631, 'first_byte_at': 4650400, 'coverage': 0.999999753890499}"
+  },
+  {
+   "name": "N3 口径 3（disasm_lite + skipdata=True，本轮全程在用）：解出 1394186 条，最后一条在 0x007e0fff，覆盖 100.0%，首个 .byte 在 0x0046f5a0",
+   "ok": true,
+   "detail": "{'n': 1394186, 'last': 8261631, 'first_byte_at': 4650400, 'coverage': 0.999999753890499}"
+  },
+  {
+   "name": "N4 复算 deepseek 的这条主张：「单遍 disasm_lite 会在 0x46f59d 停住、只解码 155215 条」。实测：那个 155215/0x46f59d 恰好是**口径 1（skipdata=False）**的结果（见 N1），而口径 3（disasm_lite + skipdata=True）给 1394186 条、最后一条 0x7e0fff。它把两种口径混成一谈 —— 结论「必须重同步才能找全」对 skipdata=False 成立、对 skipdata=True 不成立",
+   "ok": true,
+   "detail": "{'auditor_claimed': {'n': 155215, 'stop': '0x46f59d'}, 'measured_no_skipdata': {'n': 155215, 'stop': '0x46f59d'}, 'measured_lite_skipdata': {'n': 1394186, 'stop': '0x7e0fff'}}"
+  },
+  {
+   "name": "N5 它关心的机制确实存在：口径 1（无 skipdata）只覆盖 11.1% 就停住了 —— 这不是全 .text 扫描，但本仓历史脚本用的是口径 3（有 skipdata），r128a/r128b/r128d/r128e 的 A1 断言都显式写了「skipdata = True 的 disasm_lite」",
+   "ok": true,
+   "detail": "{'coverage_pct': 11.12}"
+  },
+  {
+   "name": "N6 口径 3 的覆盖率 100.00%，最后一条指令在 0x007e0fff，.text 结束于 0x007e1000 —— 差额 1 字节是尾部对齐填充，不是漏扫",
+   "ok": true,
+   "detail": "{'tail_gap': 1}"
+  }
+ ],
+ "r1": {
+  "n": 155215,
+  "last": 4650397,
+  "first_byte_at": null,
+  "coverage": 0.11124075612714214
+ },
+ "r2": {
+  "n": 1394186,
+  "last": 8261631,
+  "first_byte_at": 4650400,
+  "coverage": 0.999999753890499
+ },
+ "r3": {
+  "n": 1394186,
+  "last": 8261631,
+  "first_byte_at": 4650400,
+  "coverage": 0.999999753890499
+ }
+}

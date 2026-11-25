@@ -1,0 +1,158 @@
+{
+ "instances": {
+  "A": {
+   "entry": "0x6bedb0",
+   "len": 136,
+   "push_imm32": [
+    {
+     "off": "0x21",
+     "imm": "0x817bc0",
+     "section": ".data"
+    },
+    {
+     "off": "0x4d",
+     "imm": "0x817bc0",
+     "section": ".data"
+    },
+    {
+     "off": "0x6f",
+     "imm": "0x817bc0",
+     "section": ".data"
+    }
+   ]
+  },
+  "B": {
+   "entry": "0x41c250",
+   "len": 136,
+   "push_imm32": [
+    {
+     "off": "0x21",
+     "imm": "0x817bc0",
+     "section": ".data"
+    },
+    {
+     "off": "0x4d",
+     "imm": "0x817bb0",
+     "section": ".data"
+    },
+    {
+     "off": "0x6f",
+     "imm": "0x817bb0",
+     "section": ".data"
+    }
+   ]
+  }
+ },
+ "diff_resolution": {
+  "0x4e": {
+   "A": {
+    "byte": "0xc0",
+    "inside_push_at": "0x4d",
+    "imm_va": "0x817bc0",
+    "imm_byte_index": 0
+   },
+   "B": {
+    "byte": "0xb0",
+    "inside_push_at": "0x4d",
+    "imm_va": "0x817bb0",
+    "imm_byte_index": 0
+   }
+  },
+  "0x70": {
+   "A": {
+    "byte": "0xc0",
+    "inside_push_at": "0x6f",
+    "imm_va": "0x817bc0",
+    "imm_byte_index": 0
+   },
+   "B": {
+    "byte": "0xb0",
+    "inside_push_at": "0x6f",
+    "imm_va": "0x817bb0",
+    "imm_byte_index": 0
+   }
+  }
+ },
+ "guids": {
+  "A@0x4e": {
+   "const_va": "0x817bc0",
+   "section": ".data",
+   "bytes": "0000000000000000c000000000000046",
+   "guid": "{00000000-0000-0000-C000-000000000046}"
+  },
+  "B@0x4e": {
+   "const_va": "0x817bb0",
+   "section": ".data",
+   "bytes": "90320f074198d111b70900a024ddafd1",
+   "guid": "{070F3290-9841-11D1-B709-00A024DDAFD1}"
+  },
+  "A@0x70": {
+   "const_va": "0x817bc0",
+   "section": ".data",
+   "bytes": "0000000000000000c000000000000046",
+   "guid": "{00000000-0000-0000-C000-000000000046}"
+  },
+  "B@0x70": {
+   "const_va": "0x817bb0",
+   "section": ".data",
+   "bytes": "90320f074198d111b70900a024ddafd1",
+   "guid": "{070F3290-9841-11D1-B709-00A024DDAFD1}"
+  }
+ },
+ "assertions": [
+  {
+   "assert": "both instances decode 136 bytes",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "assert": "effective-diff byte 0x4e is the low byte of a push imm32 in BOTH instances",
+   "pass": true,
+   "detail": "('0x4d', '0x4d')"
+  },
+  {
+   "assert": "effective-diff byte 0x70 is the low byte of a push imm32 in BOTH instances",
+   "pass": true,
+   "detail": "('0x6f', '0x6f')"
+  },
+  {
+   "assert": "0x4e differs in imm32 byte index 0 (little-endian low byte)",
+   "pass": true,
+   "detail": "0"
+  },
+  {
+   "assert": "0x70 differs in imm32 byte index 0 (little-endian low byte)",
+   "pass": true,
+   "detail": "0"
+  },
+  {
+   "assert": "both IID constants live in a data section (not .text)",
+   "pass": true,
+   "detail": "{'A@0x4e': '.data', 'B@0x4e': '.data', 'A@0x70': '.data', 'B@0x70': '.data'}"
+  },
+  {
+   "assert": "0x4e pair: 16-byte constants differ in exactly one byte",
+   "pass": false,
+   "detail": "('{00000000-0000-0000-C000-000000000046}', '{070F3290-9841-11D1-B709-00A024DDAFD1}')"
+  },
+  {
+   "assert": "0x70 pair: 16-byte constants differ in exactly one byte",
+   "pass": false,
+   "detail": "('{00000000-0000-0000-C000-000000000046}', '{070F3290-9841-11D1-B709-00A024DDAFD1}')"
+  },
+  {
+   "assert": "the 0x4e and 0x70 constants are DIFFERENT GUIDs (so they are two distinct interfaces)",
+   "pass": false,
+   "detail": "('{00000000-0000-0000-C000-000000000046}', '{00000000-0000-0000-C000-000000000046}')"
+  },
+  {
+   "assert": "ANTI: reading the same constant at +4 yields a different string (reader has resolution)",
+   "pass": true,
+   "detail": "{00000000-00C0-0000-0000-004653475259}"
+  }
+ ],
+ "summary": {
+  "pass": 7,
+  "total": 10
+ }
+}

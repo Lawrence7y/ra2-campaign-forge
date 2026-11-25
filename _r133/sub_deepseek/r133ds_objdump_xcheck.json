@@ -1,0 +1,530 @@
+{
+ "tool": "i686-w64-mingw32-objdump",
+ "asserts": [
+  {
+   "assert": "X1 objdump 语义解码的 call 站点总数 == 15",
+   "pass": true,
+   "detail": "15"
+  },
+  {
+   "assert": "X2 每个站点原始字节都是 E8（call rel32）",
+   "pass": true,
+   "detail": "['0xe8', '0xe8', '0xe8', '0xe8', '0xe8', '0xe8', '0xe8', '0xe8', '0xe8', '0xe8', '0xe8', '0xe8', '0xe8', '0xe8', '0xe8']"
+  },
+  {
+   "assert": "X3 每个站点的 rel32 解析后目标就是入口",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "assert": "X4 objdump 未发现任何 E9(jmp rel32) 形式",
+   "pass": true,
+   "detail": "{'0x6bedb0': 0, '0x41c250': 0}"
+  },
+  {
+   "assert": "X5 每个站点前最后三条 push 里的第三条都是立即数 0x7",
+   "pass": true,
+   "detail": "['push   $0x7']"
+  },
+  {
+   "assert": "X6 三条 push 之间无 esp 调整指令",
+   "pass": false,
+   "detail": "[('0x416bc2', 'lea    0x1c(%esp),%ecx'), ('0x416bc2', 'mov    %ebx,0x1c(%esp)'), ('0x44e02c', 'lea    0x28(%esp),%ecx'), ('0x4db8cc', 'lea    0x14(%esp),%ecx'), ('0x4df85c', 'lea    0x1c(%esp),%ecx'), ('0x4df85c', 'mov    %edi,0x1c(%esp)'), ('0x51b064', 'lea    0x20(%esp),%ecx'), ('0x51b064', 'mov    %edi,0x20(%esp)'), ('0x521fc2', 'lea    0x1c(%esp),%ecx'), ('0x521fc2', 'mov    %esi,0x1c(%esp)'), ('0x5230dc', 'lea    0x1c(%esp),%ecx'), ('0x5230dc', 'mov    %ebx,0x1c(%esp)'), ('0x65f092', 'lea    0x28(%esp),%ecx'), ('0x6cc999', 'lea    0x3c(%esp),%ecx'), ('0x6cc999', 'mov    %ebp,0x3c(%esp)'), ('0x710213', 'lea    0x38(%esp),%eax'), ('0x710213', 'lea    0x3c(%esp),%ecx'), ('0x710213', 'mov    %ebp,0x3c(%esp)'), ('0x7354f2', 'lea    0x30(%esp),%ecx'), ('0x742699', 'lea    0x34(%esp),%ecx'), ('0x742a94', 'lea    0x28(%esp),%ecx')]"
+  },
+  {
+   "assert": "X7 imm32 全文件出现次数对两个入口都是 0",
+   "pass": true,
+   "detail": "{'0x6bedb0': 0, '0x41c250': 0}"
+  }
+ ],
+ "objdump_lines": 1401556,
+ "insn_count": 1401544,
+ "calls": {
+  "0x6bedb0": [
+   "0x6bc364",
+   "0x6bc3aa"
+  ],
+  "0x41c250": [
+   "0x416bc2",
+   "0x44e02c",
+   "0x4db8cc",
+   "0x4df85c",
+   "0x51b064",
+   "0x521fc2",
+   "0x5230dc",
+   "0x65f092",
+   "0x6cc999",
+   "0x710213",
+   "0x7354f2",
+   "0x742699",
+   "0x742a94"
+  ]
+ },
+ "jmps": {
+  "0x6bedb0": [],
+  "0x41c250": []
+ },
+ "sites": [
+  {
+   "site": "0x416bc2",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   %eax",
+    "push   %ebx",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x416bb6",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   %ebx",
+    "push   %eax",
+    "lea    0x1c(%esp),%ecx",
+    "mov    %ebx,0x1c(%esp)"
+   ]
+  },
+  {
+   "site": "0x44e02c",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   $0x7e9a30",
+    "push   $0x0",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x44e017",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   $0x0",
+    "push   $0x7e9a30",
+    "lea    0x28(%esp),%ecx",
+    "movl   $0x0,0x28(%esp)",
+    ""
+   ]
+  },
+  {
+   "site": "0x4db8cc",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   $0x7e9a70",
+    "push   $0x0",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x4db8b7",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   $0x0",
+    "push   $0x7e9a70",
+    "lea    0x14(%esp),%ecx",
+    "movl   $0x0,0x14(%esp)",
+    ""
+   ]
+  },
+  {
+   "site": "0x4df85c",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   $0x7e9a90",
+    "push   %edi",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x4df84c",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   %edi",
+    "push   $0x7e9a90",
+    "lea    0x1c(%esp),%ecx",
+    "mov    %edi,0x1c(%esp)"
+   ]
+  },
+  {
+   "site": "0x51b064",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   $0x7e9a60",
+    "push   %edi",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x51b054",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   %edi",
+    "push   $0x7e9a60",
+    "lea    0x20(%esp),%ecx",
+    "mov    %edi,0x20(%esp)"
+   ]
+  },
+  {
+   "site": "0x521fc2",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   $0x7e9a60",
+    "push   %esi",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x521fb2",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   %esi",
+    "push   $0x7e9a60",
+    "lea    0x1c(%esp),%ecx",
+    "mov    %esi,0x1c(%esp)"
+   ]
+  },
+  {
+   "site": "0x5230dc",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   $0x7e9a90",
+    "push   %ebx",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x5230cc",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   %ebx",
+    "push   $0x7e9a90",
+    "lea    0x1c(%esp),%ecx",
+    "mov    %ebx,0x1c(%esp)"
+   ]
+  },
+  {
+   "site": "0x65f092",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   $0x7e9a90",
+    "push   $0x0",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x65f07d",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   $0x0",
+    "push   $0x7e9a90",
+    "lea    0x28(%esp),%ecx",
+    "movl   $0x0,0x28(%esp)",
+    ""
+   ]
+  },
+  {
+   "site": "0x6bc364",
+   "target": "0x6bedb0",
+   "push_near_to_far": [
+    "push   %edx",
+    "push   $0x0",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x6bc357",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   $0x0",
+    "mov    (%esi),%edx",
+    "push   %edx",
+    "lea    -0xa3c(%ebp),%ecx"
+   ]
+  },
+  {
+   "site": "0x6bc3aa",
+   "target": "0x6bedb0",
+   "push_near_to_far": [
+    "push   %ecx",
+    "push   $0x0",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x6bc39d",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   $0x0",
+    "mov    (%esi),%ecx",
+    "push   %ecx",
+    "lea    -0xa3c(%ebp),%ecx"
+   ]
+  },
+  {
+   "site": "0x6cc999",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   $0x7e9a90",
+    "push   %ebp",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x6cc989",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   %ebp",
+    "push   $0x7e9a90",
+    "lea    0x3c(%esp),%ecx",
+    "mov    %ebp,0x3c(%esp)"
+   ]
+  },
+  {
+   "site": "0x710213",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   %eax",
+    "push   %ebp",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x710203",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "lea    0x38(%esp),%eax",
+    "push   %ebp",
+    "push   %eax",
+    "lea    0x3c(%esp),%ecx",
+    "mov    %ebp,0x3c(%esp)"
+   ]
+  },
+  {
+   "site": "0x7354f2",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   %eax",
+    "push   $0x0",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x7354e1",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   $0x0",
+    "push   %eax",
+    "lea    0x30(%esp),%ecx",
+    "movl   $0x0,0x30(%esp)",
+    ""
+   ]
+  },
+  {
+   "site": "0x742699",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   $0x7e9a30",
+    "push   $0x0",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x742684",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   $0x0",
+    "push   $0x7e9a30",
+    "lea    0x34(%esp),%ecx",
+    "movl   $0x0,0x34(%esp)",
+    ""
+   ]
+  },
+  {
+   "site": "0x742a94",
+   "target": "0x41c250",
+   "push_near_to_far": [
+    "push   $0x7e9a30",
+    "push   $0x0",
+    "push   $0x7"
+   ],
+   "third_arg_asm": "push   $0x7",
+   "third_arg_va": "0x742a7f",
+   "insns_between_oldest_push_and_call": [
+    "push   $0x7",
+    "push   $0x0",
+    "push   $0x7e9a30",
+    "lea    0x28(%esp),%ecx",
+    "movl   $0x0,0x28(%esp)",
+    ""
+   ]
+  }
+ ],
+ "esp_adjust_between": [
+  [
+   "0x416bc2",
+   "lea    0x1c(%esp),%ecx"
+  ],
+  [
+   "0x416bc2",
+   "mov    %ebx,0x1c(%esp)"
+  ],
+  [
+   "0x44e02c",
+   "lea    0x28(%esp),%ecx"
+  ],
+  [
+   "0x4db8cc",
+   "lea    0x14(%esp),%ecx"
+  ],
+  [
+   "0x4df85c",
+   "lea    0x1c(%esp),%ecx"
+  ],
+  [
+   "0x4df85c",
+   "mov    %edi,0x1c(%esp)"
+  ],
+  [
+   "0x51b064",
+   "lea    0x20(%esp),%ecx"
+  ],
+  [
+   "0x51b064",
+   "mov    %edi,0x20(%esp)"
+  ],
+  [
+   "0x521fc2",
+   "lea    0x1c(%esp),%ecx"
+  ],
+  [
+   "0x521fc2",
+   "mov    %esi,0x1c(%esp)"
+  ],
+  [
+   "0x5230dc",
+   "lea    0x1c(%esp),%ecx"
+  ],
+  [
+   "0x5230dc",
+   "mov    %ebx,0x1c(%esp)"
+  ],
+  [
+   "0x65f092",
+   "lea    0x28(%esp),%ecx"
+  ],
+  [
+   "0x6cc999",
+   "lea    0x3c(%esp),%ecx"
+  ],
+  [
+   "0x6cc999",
+   "mov    %ebp,0x3c(%esp)"
+  ],
+  [
+   "0x710213",
+   "lea    0x38(%esp),%eax"
+  ],
+  [
+   "0x710213",
+   "lea    0x3c(%esp),%ecx"
+  ],
+  [
+   "0x710213",
+   "mov    %ebp,0x3c(%esp)"
+  ],
+  [
+   "0x7354f2",
+   "lea    0x30(%esp),%ecx"
+  ],
+  [
+   "0x742699",
+   "lea    0x34(%esp),%ecx"
+  ],
+  [
+   "0x742a94",
+   "lea    0x28(%esp),%ecx"
+  ]
+ ],
+ "encoding": [
+  {
+   "site": "0x416bc2",
+   "opcode": "0xe8",
+   "rel32": 22153,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x44e02c",
+   "opcode": "0xe8",
+   "rel32": -204257,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x4db8cc",
+   "opcode": "0xe8",
+   "rel32": -784001,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x4df85c",
+   "opcode": "0xe8",
+   "rel32": -800273,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x51b064",
+   "opcode": "0xe8",
+   "rel32": -1043993,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x521fc2",
+   "opcode": "0xe8",
+   "rel32": -1072503,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x5230dc",
+   "opcode": "0xe8",
+   "rel32": -1076881,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x65f092",
+   "opcode": "0xe8",
+   "rel32": -2371143,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x6bc364",
+   "opcode": "0xe8",
+   "rel32": 10823,
+   "dst": "0x6bedb0"
+  },
+  {
+   "site": "0x6bc3aa",
+   "opcode": "0xe8",
+   "rel32": 10753,
+   "dst": "0x6bedb0"
+  },
+  {
+   "site": "0x6cc999",
+   "opcode": "0xe8",
+   "rel32": -2819918,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x710213",
+   "opcode": "0xe8",
+   "rel32": -3096520,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x7354f2",
+   "opcode": "0xe8",
+   "rel32": -3248807,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x742699",
+   "opcode": "0xe8",
+   "rel32": -3302478,
+   "dst": "0x41c250"
+  },
+  {
+   "site": "0x742a94",
+   "opcode": "0xe8",
+   "rel32": -3303497,
+   "dst": "0x41c250"
+  }
+ ],
+ "imm32_hex": {
+  "0x6bedb0": 0,
+  "0x41c250": 0
+ },
+ "pass": 6,
+ "total": 7
+}

@@ -1,0 +1,837 @@
+{
+ "asserts": [
+  {
+   "name": "B0a bounds 恰 1,392,592 条",
+   "ok": true,
+   "detail": "n=1392592"
+  },
+  {
+   "name": "B0b bounds 全为 8 位大写 hex 且全在 .text [0x401000,0x7E038D]",
+   "ok": true,
+   "detail": "min=0x401000 max=0x7e038c"
+  },
+  {
+   "name": "B0c bounds 无重复（是 set 大小的 1.0 倍）",
+   "ok": true,
+   "detail": "distinct=1392592"
+  },
+  {
+   "name": "B0d 该件顶层只有 calls / bounds 两个键（F24 的结构描述成立）",
+   "ok": true,
+   "detail": "keys=['bounds', 'calls']"
+  },
+  {
+   "name": "B0e calls 6,728 键 / 68,253 调用点（F24 的另外两个数）",
+   "ok": true,
+   "detail": "keys=6728 edges=68253"
+  },
+  {
+   "name": "B1a objdump 退出码 0",
+   "ok": true,
+   "detail": "rc=0"
+  },
+  {
+   "name": "B1b 指令起始数 = 1,392,516（R91 DR12 记的 objdump 值，独立复现）",
+   "ok": true,
+   "detail": "starts=1392516 (lines=1392528)"
+  },
+  {
+   "name": "B1c 起始集覆盖 .text 首尾（0x401000 与 >=0x7E0300 都在集内）",
+   "ok": true,
+   "detail": "max=0x7e038c"
+  },
+  {
+   "name": "B1d 反控：宽松正则与严格正则条数相同（说明没有把操作数行当起始行）",
+   "ok": true,
+   "detail": "loose=1392516 strict=1392516"
+  },
+  {
+   "name": "B2a bounds 命中指令起始集 >= 99%（F24 说 13.81% 有对应，方向相反）",
+   "ok": true,
+   "detail": "hit=1392481/1392592 = 99.9920% ; miss=111 = 0.0080%"
+  },
+  {
+   "name": "B2b 未命中数 <= 200（若 F24 对，未命中应约 1,200,251）",
+   "ok": true,
+   "detail": "miss=111 (F24 主张 1,200,251)"
+  },
+  {
+   "name": "B2c 反控：F24 的 86.19% 若成立，未命中应 >= 1,200,000 —— 实测差三个数量级",
+   "ok": true,
+   "detail": "observed_miss=111 vs claimed=1200251 (ratio 10813.1x)"
+  },
+  {
+   "name": "B3a 未命中者 100% 落在「前一条指令起始 +1..15 字节」内（是长指令的内部字节，不是无字节）",
+   "ok": true,
+   "detail": "in_insn=111 / 111 ; max_delta=8"
+  },
+  {
+   "name": "B3b 未命中地址 100% 落在文件映像内（那里确实有字节；27 个字节值为 0x00）",
+   "ok": true,
+   "detail": "in_image=111 / 111 ; nonzero=84 ; zero=27"
+  },
+  {
+   "name": "B4a 反控：起始集只留 < 0x600000 时命中率大幅下降（B2 的命中不是任何集合都给）",
+   "ok": true,
+   "detail": "hit=720943 = 51.77%"
+  },
+  {
+   "name": "B4b 反控：bounds 全体 +4 后命中率大幅下降（命中不是地址密集的副产品）",
+   "ok": true,
+   "detail": "hit=515409 = 37.01%"
+  },
+  {
+   "name": "B4c 反控：随机同数量地址命中率 < 40%（指令起始集本身不密集）",
+   "ok": true,
+   "detail": "hit=477457 = 34.29%"
+  },
+  {
+   "name": "B5a calls 的 68,253 条调用点全部真回原址命中（E8 + rel32 验算）",
+   "ok": true,
+   "detail": "ok=68253 bad=0 []"
+  },
+  {
+   "name": "B5b 反控：去掉 mod 2^32 环绕后，signed 读命中 68,245 而 unsigned 读只有 38,905（29,356 条反向调用被无符号读全部丢失 ⇒ signed 是真判据）",
+   "ok": true,
+   "detail": "signed=68245 unsigned=38905 backward=29356 forward=38897"
+  },
+  {
+   "name": "B5c 反控：signed 无环绕命中 68,245 < 有环绕 68,253，差 8 条确为跨 32 位边界环绕调用",
+   "ok": true,
+   "detail": "wrap_edges=8"
+  },
+  {
+   "name": "B6a 只读前 1 MiB 文件时 bounds 命中数远小于 total（截断会系统性少算）",
+   "ok": true,
+   "detail": "in_1MiB=85351 / 1392592"
+  },
+  {
+   "name": "B6b F24 的 192,341 不等于「前 1 MiB 内可寻到」的数（该假设被证伪）",
+   "ok": true,
+   "detail": "in_1MiB=85351 vs claimed_covered=192341"
+  }
+ ],
+ "out": {
+  "bounds_n": 1392592,
+  "calls_keys": 6728,
+  "call_edges": 68253,
+  "objdump_lines": 1392528,
+  "starts_n": 1392516,
+  "hit": 1392481,
+  "miss": 111,
+  "miss_detail": [
+   {
+    "va": "0x46f5a1",
+    "prev_start": "0x46f5a0",
+    "delta_from_prev": 1,
+    "next_start": "0x46f5a3"
+   },
+   {
+    "va": "0x48db26",
+    "prev_start": "0x48db25",
+    "delta_from_prev": 1,
+    "next_start": "0x48db28"
+   },
+   {
+    "va": "0x48db27",
+    "prev_start": "0x48db25",
+    "delta_from_prev": 2,
+    "next_start": "0x48db28"
+   },
+   {
+    "va": "0x48dd19",
+    "prev_start": "0x48dd18",
+    "delta_from_prev": 1,
+    "next_start": "0x48dd1c"
+   },
+   {
+    "va": "0x4c8115",
+    "prev_start": "0x4c8114",
+    "delta_from_prev": 1,
+    "next_start": "0x4c8116"
+   },
+   {
+    "va": "0x5001e5",
+    "prev_start": "0x5001e4",
+    "delta_from_prev": 1,
+    "next_start": "0x5001e6"
+   },
+   {
+    "va": "0x58bda5",
+    "prev_start": "0x58bda4",
+    "delta_from_prev": 1,
+    "next_start": "0x58bdaa"
+   },
+   {
+    "va": "0x69b15d",
+    "prev_start": "0x69b15c",
+    "delta_from_prev": 1,
+    "next_start": "0x69b162"
+   },
+   {
+    "va": "0x69b15f",
+    "prev_start": "0x69b15c",
+    "delta_from_prev": 3,
+    "next_start": "0x69b162"
+   },
+   {
+    "va": "0x69b166",
+    "prev_start": "0x69b162",
+    "delta_from_prev": 4,
+    "next_start": "0x69b168"
+   },
+   {
+    "va": "0x69b16c",
+    "prev_start": "0x69b16a",
+    "delta_from_prev": 2,
+    "next_start": "0x69b170"
+   },
+   {
+    "va": "0x69b16d",
+    "prev_start": "0x69b16a",
+    "delta_from_prev": 3,
+    "next_start": "0x69b170"
+   },
+   {
+    "va": "0x69b16e",
+    "prev_start": "0x69b16a",
+    "delta_from_prev": 4,
+    "next_start": "0x69b170"
+   },
+   {
+    "va": "0x69b16f",
+    "prev_start": "0x69b16a",
+    "delta_from_prev": 5,
+    "next_start": "0x69b170"
+   },
+   {
+    "va": "0x6a92ce",
+    "prev_start": "0x6a92cd",
+    "delta_from_prev": 1,
+    "next_start": "0x6a92d1"
+   },
+   {
+    "va": "0x6a92d0",
+    "prev_start": "0x6a92cd",
+    "delta_from_prev": 3,
+    "next_start": "0x6a92d1"
+   },
+   {
+    "va": "0x6a92d2",
+    "prev_start": "0x6a92d1",
+    "delta_from_prev": 1,
+    "next_start": "0x6a92d3"
+   },
+   {
+    "va": "0x6a92d4",
+    "prev_start": "0x6a92d3",
+    "delta_from_prev": 1,
+    "next_start": "0x6a92d5"
+   },
+   {
+    "va": "0x6a92d6",
+    "prev_start": "0x6a92d5",
+    "delta_from_prev": 1,
+    "next_start": "0x6a92d7"
+   },
+   {
+    "va": "0x6a92d8",
+    "prev_start": "0x6a92d7",
+    "delta_from_prev": 1,
+    "next_start": "0x6a92d9"
+   },
+   {
+    "va": "0x6a92da",
+    "prev_start": "0x6a92d9",
+    "delta_from_prev": 1,
+    "next_start": "0x6a92db"
+   },
+   {
+    "va": "0x6a92dc",
+    "prev_start": "0x6a92db",
+    "delta_from_prev": 1,
+    "next_start": "0x6a92dd"
+   },
+   {
+    "va": "0x6a92de",
+    "prev_start": "0x6a92dd",
+    "delta_from_prev": 1,
+    "next_start": "0x6a92df"
+   },
+   {
+    "va": "0x6a92e4",
+    "prev_start": "0x6a92e3",
+    "delta_from_prev": 1,
+    "next_start": "0x6a92e7"
+   },
+   {
+    "va": "0x6a92e5",
+    "prev_start": "0x6a92e3",
+    "delta_from_prev": 2,
+    "next_start": "0x6a92e7"
+   },
+   {
+    "va": "0x6adbe1",
+    "prev_start": "0x6adbe0",
+    "delta_from_prev": 1,
+    "next_start": "0x6adbe3"
+   },
+   {
+    "va": "0x6adbe4",
+    "prev_start": "0x6adbe3",
+    "delta_from_prev": 1,
+    "next_start": "0x6adbe5"
+   },
+   {
+    "va": "0x6b0249",
+    "prev_start": "0x6b0248",
+    "delta_from_prev": 1,
+    "next_start": "0x6b024a"
+   },
+   {
+    "va": "0x6dfe1a",
+    "prev_start": "0x6dfe19",
+    "delta_from_prev": 1,
+    "next_start": "0x6dfe1b"
+   },
+   {
+    "va": "0x6dfe42",
+    "prev_start": "0x6dfe41",
+    "delta_from_prev": 1,
+    "next_start": "0x6dfe43"
+   },
+   {
+    "va": "0x6dfee6",
+    "prev_start": "0x6dfee5",
+    "delta_from_prev": 1,
+    "next_start": "0x6dfee8"
+   },
+   {
+    "va": "0x6dfee7",
+    "prev_start": "0x6dfee5",
+    "delta_from_prev": 2,
+    "next_start": "0x6dfee8"
+   },
+   {
+    "va": "0x6dfee9",
+    "prev_start": "0x6dfee8",
+    "delta_from_prev": 1,
+    "next_start": "0x6dfeea"
+   },
+   {
+    "va": "0x6dfef6",
+    "prev_start": "0x6dfef5",
+    "delta_from_prev": 1,
+    "next_start": "0x6dfef8"
+   },
+   {
+    "va": "0x6dfef7",
+    "prev_start": "0x6dfef5",
+    "delta_from_prev": 2,
+    "next_start": "0x6dfef8"
+   },
+   {
+    "va": "0x6dfefe",
+    "prev_start": "0x6dfefd",
+    "delta_from_prev": 1,
+    "next_start": "0x6dff00"
+   },
+   {
+    "va": "0x6dfeff",
+    "prev_start": "0x6dfefd",
+    "delta_from_prev": 2,
+    "next_start": "0x6dff00"
+   },
+   {
+    "va": "0x6dff59",
+    "prev_start": "0x6dff58",
+    "delta_from_prev": 1,
+    "next_start": "0x6dff5a"
+   },
+   {
+    "va": "0x708d56",
+    "prev_start": "0x708d55",
+    "delta_from_prev": 1,
+    "next_start": "0x708d58"
+   },
+   {
+    "va": "0x708d59",
+    "prev_start": "0x708d58",
+    "delta_from_prev": 1,
+    "next_start": "0x708d5f"
+   },
+   {
+    "va": "0x708d5a",
+    "prev_start": "0x708d58",
+    "delta_from_prev": 2,
+    "next_start": "0x708d5f"
+   },
+   {
+    "va": "0x708d5c",
+    "prev_start": "0x708d58",
+    "delta_from_prev": 4,
+    "next_start": "0x708d5f"
+   },
+   {
+    "va": "0x708d5e",
+    "prev_start": "0x708d58",
+    "delta_from_prev": 6,
+    "next_start": "0x708d5f"
+   },
+   {
+    "va": "0x708d60",
+    "prev_start": "0x708d5f",
+    "delta_from_prev": 1,
+    "next_start": "0x708d62"
+   },
+   {
+    "va": "0x708d61",
+    "prev_start": "0x708d5f",
+    "delta_from_prev": 2,
+    "next_start": "0x708d62"
+   },
+   {
+    "va": "0x71f296",
+    "prev_start": "0x71f294",
+    "delta_from_prev": 2,
+    "next_start": "0x71f29e"
+   },
+   {
+    "va": "0x71f298",
+    "prev_start": "0x71f294",
+    "delta_from_prev": 4,
+    "next_start": "0x71f29e"
+   },
+   {
+    "va": "0x71f29a",
+    "prev_start": "0x71f294",
+    "delta_from_prev": 6,
+    "next_start": "0x71f29e"
+   },
+   {
+    "va": "0x71f29c",
+    "prev_start": "0x71f294",
+    "delta_from_prev": 8,
+    "next_start": "0x71f29e"
+   },
+   {
+    "va": "0x71f2c6",
+    "prev_start": "0x71f2c5",
+    "delta_from_prev": 1,
+    "next_start": "0x71f2c8"
+   },
+   {
+    "va": "0x71f2ca",
+    "prev_start": "0x71f2c9",
+    "delta_from_prev": 1,
+    "next_start": "0x71f2cc"
+   },
+   {
+    "va": "0x71f2e2",
+    "prev_start": "0x71f2e1",
+    "delta_from_prev": 1,
+    "next_start": "0x71f2e4"
+   },
+   {
+    "va": "0x71f32a",
+    "prev_start": "0x71f329",
+    "delta_from_prev": 1,
+    "next_start": "0x71f32c"
+   },
+   {
+    "va": "0x71f32e",
+    "prev_start": "0x71f32d",
+    "delta_from_prev": 1,
+    "next_start": "0x71f330"
+   },
+   {
+    "va": "0x71f33e",
+    "prev_start": "0x71f33d",
+    "delta_from_prev": 1,
+    "next_start": "0x71f340"
+   },
+   {
+    "va": "0x71f77d",
+    "prev_start": "0x71f77c",
+    "delta_from_prev": 1,
+    "next_start": "0x71f77e"
+   },
+   {
+    "va": "0x71f78c",
+    "prev_start": "0x71f78a",
+    "delta_from_prev": 2,
+    "next_start": "0x71f794"
+   },
+   {
+    "va": "0x71f78e",
+    "prev_start": "0x71f78a",
+    "delta_from_prev": 4,
+    "next_start": "0x71f794"
+   },
+   {
+    "va": "0x71f790",
+    "prev_start": "0x71f78a",
+    "delta_from_prev": 6,
+    "next_start": "0x71f794"
+   },
+   {
+    "va": "0x71f792",
+    "prev_start": "0x71f78a",
+    "delta_from_prev": 8,
+    "next_start": "0x71f794"
+   },
+   {
+    "va": "0x71f98a",
+    "prev_start": "0x71f988",
+    "delta_from_prev": 2,
+    "next_start": "0x71f992"
+   },
+   {
+    "va": "0x71f98c",
+    "prev_start": "0x71f988",
+    "delta_from_prev": 4,
+    "next_start": "0x71f992"
+   },
+   {
+    "va": "0x71f98e",
+    "prev_start": "0x71f988",
+    "delta_from_prev": 6,
+    "next_start": "0x71f992"
+   },
+   {
+    "va": "0x71f990",
+    "prev_start": "0x71f988",
+    "delta_from_prev": 8,
+    "next_start": "0x71f992"
+   },
+   {
+    "va": "0x71f9e1",
+    "prev_start": "0x71f9e0",
+    "delta_from_prev": 1,
+    "next_start": "0x71f9e2"
+   },
+   {
+    "va": "0x71f9e5",
+    "prev_start": "0x71f9e4",
+    "delta_from_prev": 1,
+    "next_start": "0x71f9e6"
+   },
+   {
+    "va": "0x728e0d",
+    "prev_start": "0x728e0c",
+    "delta_from_prev": 1,
+    "next_start": "0x728e12"
+   },
+   {
+    "va": "0x728e10",
+    "prev_start": "0x728e0c",
+    "delta_from_prev": 4,
+    "next_start": "0x728e12"
+   },
+   {
+    "va": "0x728e16",
+    "prev_start": "0x728e15",
+    "delta_from_prev": 1,
+    "next_start": "0x728e18"
+   },
+   {
+    "va": "0x7291b2",
+    "prev_start": "0x7291b1",
+    "delta_from_prev": 1,
+    "next_start": "0x7291b4"
+   },
+   {
+    "va": "0x792af7",
+    "prev_start": "0x792af5",
+    "delta_from_prev": 2,
+    "next_start": "0x792aff"
+   },
+   {
+    "va": "0x792af9",
+    "prev_start": "0x792af5",
+    "delta_from_prev": 4,
+    "next_start": "0x792aff"
+   },
+   {
+    "va": "0x792afb",
+    "prev_start": "0x792af5",
+    "delta_from_prev": 6,
+    "next_start": "0x792aff"
+   },
+   {
+    "va": "0x792afd",
+    "prev_start": "0x792af5",
+    "delta_from_prev": 8,
+    "next_start": "0x792aff"
+   },
+   {
+    "va": "0x792bcf",
+    "prev_start": "0x792bcd",
+    "delta_from_prev": 2,
+    "next_start": "0x792bd7"
+   },
+   {
+    "va": "0x792bd1",
+    "prev_start": "0x792bcd",
+    "delta_from_prev": 4,
+    "next_start": "0x792bd7"
+   },
+   {
+    "va": "0x792bd3",
+    "prev_start": "0x792bcd",
+    "delta_from_prev": 6,
+    "next_start": "0x792bd7"
+   },
+   {
+    "va": "0x792bd5",
+    "prev_start": "0x792bcd",
+    "delta_from_prev": 8,
+    "next_start": "0x792bd7"
+   },
+   {
+    "va": "0x79f029",
+    "prev_start": "0x79f028",
+    "delta_from_prev": 1,
+    "next_start": "0x79f02b"
+   },
+   {
+    "va": "0x79f02a",
+    "prev_start": "0x79f028",
+    "delta_from_prev": 2,
+    "next_start": "0x79f02b"
+   },
+   {
+    "va": "0x79f02c",
+    "prev_start": "0x79f02b",
+    "delta_from_prev": 1,
+    "next_start": "0x79f02d"
+   },
+   {
+    "va": "0x7b0085",
+    "prev_start": "0x7b0084",
+    "delta_from_prev": 1,
+    "next_start": "0x7b0086"
+   },
+   {
+    "va": "0x7c5eeb",
+    "prev_start": "0x7c5eea",
+    "delta_from_prev": 1,
+    "next_start": "0x7c5eef"
+   },
+   {
+    "va": "0x7c5eec",
+    "prev_start": "0x7c5eea",
+    "delta_from_prev": 2,
+    "next_start": "0x7c5eef"
+   },
+   {
+    "va": "0x7c8fd6",
+    "prev_start": "0x7c8fd5",
+    "delta_from_prev": 1,
+    "next_start": "0x7c8fd9"
+   },
+   {
+    "va": "0x7c90e2",
+    "prev_start": "0x7c90e1",
+    "delta_from_prev": 1,
+    "next_start": "0x7c90e5"
+   },
+   {
+    "va": "0x7c91ae",
+    "prev_start": "0x7c91ad",
+    "delta_from_prev": 1,
+    "next_start": "0x7c91b0"
+   },
+   {
+    "va": "0x7c91c2",
+    "prev_start": "0x7c91c1",
+    "delta_from_prev": 1,
+    "next_start": "0x7c91c4"
+   },
+   {
+    "va": "0x7cbef2",
+    "prev_start": "0x7cbef1",
+    "delta_from_prev": 1,
+    "next_start": "0x7cbef5"
+   },
+   {
+    "va": "0x7cbf1a",
+    "prev_start": "0x7cbf19",
+    "delta_from_prev": 1,
+    "next_start": "0x7cbf1d"
+   },
+   {
+    "va": "0x7cefe1",
+    "prev_start": "0x7cefe0",
+    "delta_from_prev": 1,
+    "next_start": "0x7cefe7"
+   },
+   {
+    "va": "0x7cf064",
+    "prev_start": "0x7cf063",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf06a"
+   },
+   {
+    "va": "0x7cf0bb",
+    "prev_start": "0x7cf0ba",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf0c1"
+   },
+   {
+    "va": "0x7cf0d2",
+    "prev_start": "0x7cf0d1",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf0d8"
+   },
+   {
+    "va": "0x7cf0e6",
+    "prev_start": "0x7cf0e5",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf0ec"
+   },
+   {
+    "va": "0x7cf0f8",
+    "prev_start": "0x7cf0f7",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf0fa"
+   },
+   {
+    "va": "0x7cf10c",
+    "prev_start": "0x7cf10b",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf10e"
+   },
+   {
+    "va": "0x7cf139",
+    "prev_start": "0x7cf138",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf13c"
+   },
+   {
+    "va": "0x7cf196",
+    "prev_start": "0x7cf195",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf19c"
+   },
+   {
+    "va": "0x7cf1fd",
+    "prev_start": "0x7cf1fc",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf203"
+   },
+   {
+    "va": "0x7cf215",
+    "prev_start": "0x7cf214",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf21b"
+   },
+   {
+    "va": "0x7cf44c",
+    "prev_start": "0x7cf44b",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf44e"
+   },
+   {
+    "va": "0x7cf4a5",
+    "prev_start": "0x7cf4a4",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf4a7"
+   },
+   {
+    "va": "0x7cf4e1",
+    "prev_start": "0x7cf4e0",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf4e3"
+   },
+   {
+    "va": "0x7cf50a",
+    "prev_start": "0x7cf509",
+    "delta_from_prev": 1,
+    "next_start": "0x7cf50c"
+   },
+   {
+    "va": "0x7d7fe7",
+    "prev_start": "0x7d7fe6",
+    "delta_from_prev": 1,
+    "next_start": "0x7d7feb"
+   },
+   {
+    "va": "0x7dbc5f",
+    "prev_start": "0x7dbc5e",
+    "delta_from_prev": 1,
+    "next_start": "0x7dbc62"
+   },
+   {
+    "va": "0x7dbc7c",
+    "prev_start": "0x7dbc7b",
+    "delta_from_prev": 1,
+    "next_start": "0x7dbc7f"
+   },
+   {
+    "va": "0x7dbcb7",
+    "prev_start": "0x7dbcb6",
+    "delta_from_prev": 1,
+    "next_start": "0x7dbcb9"
+   },
+   {
+    "va": "0x7dbcc3",
+    "prev_start": "0x7dbcc2",
+    "delta_from_prev": 1,
+    "next_start": "0x7dbcc6"
+   },
+   {
+    "va": "0x7dbcc4",
+    "prev_start": "0x7dbcc2",
+    "delta_from_prev": 2,
+    "next_start": "0x7dbcc6"
+   }
+  ],
+  "sections": [
+   [
+    ".text",
+    "0x1000",
+    "0x3e0000",
+    "0x1000"
+   ],
+   [
+    ".rdata",
+    "0x3e1000",
+    "0x31000",
+    "0x3e1000"
+   ],
+   [
+    ".data",
+    "0x412000",
+    "0x6c000",
+    "0x412000"
+   ],
+   [
+    ".rsrc",
+    "0x77a000",
+    "0x19000",
+    "0x47e000"
+   ],
+   [
+    ".detour",
+    "0x793000",
+    "0x3000",
+    "0x497000"
+   ]
+  ],
+  "ctrl": {
+   "half": 720943,
+   "shift4": 515409,
+   "rand": 477457
+  },
+  "calls": {
+   "ok": 68253,
+   "bad": 0,
+   "nomask_signed": 68245,
+   "nomask_unsigned": 38905,
+   "backward": 29356,
+   "forward": 38897
+  },
+  "in_first_1mib": 85351
+ }
+}

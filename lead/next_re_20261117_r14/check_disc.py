@@ -30,8 +30,8 @@ DR   = os.path.join(R14, 'DISC_RECHECK.tsv')
 BRD  = os.path.join(R14, 'STATUS_BOARD.md')
 LED  = os.path.join(ROOT, 'lead', 'GOAL_THREE_TARGETS_20261018.md')
 SELF = os.path.abspath(__file__)
-GATE_VER = 'R121'
-FREEZE_SHA256 = '0ffeeff5acb825cd5204abd013fcbe0a98a0d1df47b9a20c6a8f35c7b72aab61'   # DISC_UNVERIFIABLE.tsv 的 sha256（防静默篡改）
+GATE_VER = 'R137'
+FREEZE_SHA256 = 'd72a199b73c4324f39673fdc815221fcaf3ebd9ede76799ca977d5d77be2b799'   # DISC_UNVERIFIABLE.tsv 的 sha256（防静默篡改）
 
 # 阈值（可用命令行覆盖：--c6max=120）
 C6MAX = 120
@@ -213,6 +213,117 @@ for r in rows:
     elif ok: c7_ok += 1
     else: fails.append('C7 id %s expr %s mismatch (%s)' % (r[0], expr.split(' ')[0], detail))
 
+# ---- C7c 【R134 新增】校验式的结构判据：空文件即真 / 命中数不唯一 的式子不是「检查」----
+# R134 承重实测（_r134/r134a_exploit.py，8/8 PASS）：C7b 只把 col6 的**首 token 形态**钉住了，
+# 而 col6 的**正则全文**与 col5 的**产物路径**都没有任何检查在读。两条实测漏洞：
+#   HOLE A（A2）：把某行 col5 指向另一个同样能满足该式的产物 -> 门禁 exit 0。
+#   HOLE B（A3）：给某行 col6 追加一条永真分支（如 grep=...|(?m:^)）-> 门禁 exit 0，
+#                 即该行此后**无论产物内容如何都通过**。A3b 用空文件证明那条分支确实永真。
+# 这不是「再加一个计数」能修的（R133 已记：普查加计数还是同一维度）。根因是**判据本身**：
+# 一个能匹配空串的正则，在任何文件上都命中，它作为「这份产物支持这条纪律」的证据是零信息。
+# 故 C7c 改为拒收这类式子：对每个 grep= / grepcount= 行，在**空文件**上跑一次，
+# 命中即 FAIL —— 它证明不了任何东西，不该被当作检查存在。
+# 边界（如实声明）：C7c 只挡「对内容完全不敏感」，挡不住「对内容敏感但敏感错了地方」；
+# 后者由 C7d 的路径指纹承担，两者维度不同、缺一不可。
+C7C_EMPTY_NULLABLE = []      # 实测该集合为空，见下
+_c7c_bad = []
+for r in rows:
+    if len(r) != 7: continue
+    expr = r[5].strip()
+    head = expr.split(' ')[0]
+    if head.startswith('grep='):
+        pat = expr[len('grep='):].strip()
+    else:
+        _m7c = re.fullmatch(r'grepcount=(.*)=(\d+)$', expr, re.S)
+        pat = _m7c.group(1) if _m7c else None
+    if pat is None:
+        continue
+    try:
+        _null_hit = re.search(pat, '', re.M) is not None
+    except re.error:
+        continue                       # 语法错由 C7 自己报，C7c 不重复计
+    if _null_hit:
+        _c7c_bad.append(r[0])
+if _c7c_bad:
+    fails.append('C7c vacuous check expression(s) on ids ' + repr(_c7c_bad[:8])
+                 + ': the pattern matches the EMPTY STRING, so it would pass on any file '
+                   'and proves nothing about the product. Replace it with a pattern that '
+                   'cannot match empty (R134)')
+notes.append('C7c vacuity pre-filter: %d regex rows tested against empty string, '
+             '%d nullable (pinned 0)' % (sum(1 for r in rows if len(r) == 7 and
+                                             r[5].strip().startswith(('grep=', 'grepcount='))),
+                                         len(_c7c_bad)))
+
+# ---- C7d 【R134 新增】第 5 列与第 6 列的整表指纹（对象钉，不是计数钉）----
+# 为什么必须另加一格：C14 只钉 (col2, col3, col4)，col5/col6 在任何指纹之外，
+# 故 HOLE A 那种「换一个同样满足的产物」是全静默的。把 (id, col5, col6) 逐行聚合成
+# 一个 sha256 钉住，任何对这两列的改动都必须显式重钉本常量 —— 与 C14 同族、同一手法。
+# 边界（如实声明，与纪律 31 / C14 / C16d 同族）：sha 钉只能抬高成本，不能防伪造；
+# 同时改表与改常量者仍可过。它的价值是把 col5/col6 从「完全不被钉」变成「改动必被看见」。
+C7_TEXT_SHA256 = 'b49da74951713c7a002ff172be28b3c808c30c4eeebc5a7c40359cf57277b8d6'
+C7_ROW_SHA = {'1': '3bd8f1296faa2b5b7fd2e20363e76264f825a988abec3dc8e7b0c7d898ecbf79', '2': '6b3d25928b9ea324365306391f21168d7d3e284957d4f0ee376a431b46c0b233', '3': '791141f5134b0fadc741ca92d25d54c2633fa14c5a8f3e270a53948fb6bd8dd9', '4': '04522bd92abbd261759037dcd3abb20cdb344eb7452f70000c61de1c1b4af6fc', '5': 'e2650359b2cb6db4ad22207caabf88dabb3c260b899805729cb63aa6049afa93', '6': '1c3eda16b711b4b5d9bc2d8a2c865418add8ee02d3592ce789838395d837197e', '7': 'd4b731366633b4fe2b91a4b8990ac36b1d730e208130f7a3ea54295dc5f04781', '8': '085e4dc29160640a80c1595279b4f50507a683fb01b20422785299740f84b91e', '9': '765ff166b62273cba5a08d1a69057fef00e632768773ff001ebd3ac87e4b562f', '10': '6a803a9389a5f8160c55ca529cbad811a76d94d784eb1731054a4d400ee0557e', '11': 'b80c3d58cb8df7ed267fde46aaaf35caaf079082d8a06339352719cf622d0579', '12': 'b1ca293c585977af8fd48d7c63785fcdeb2a88575ab1c008827e08309bc0c3c1', '13': '4c89128afb2d16dc00e0c2a378c74bf4916d911530bca2b8f28a65e6ed99aa22', '14': '6a348503052a806a2b3459989be2a58066f567292eb2f63f59b698a755f764d2', '15': 'adc80803543ec09040fbb425c8c117f40d1a87d5e85f5fbc3b475c642bbdffc6', '16': '92bacd450df54b06c63133f8a46f54360d27f8aaee2d0372aa114e4cee84d976', '17': '61f073607d461d7415f8d76de536922e7cf5c10ec897ea1cfb8ebdcfda72e716', '18': '945463c31bc8f7b88fb6b92cfc0a104a01b3393113bfc0a0cad519d2c97b19bd', '19': '8f32f05826be040cc24ac9fe09137b1b93dc425c919ad20146fb040a0d49ebf1', '20': '0ea1a532c7cb457dea916e78ace08627a3715cc0f1a2a42836612dcefe61035b', '21': 'ad68a5c24394fb293c08dd336283e9c1ffe7c56ca052349b69c4bdf6be0f80ff', '22': 'cf8eb1bd09c06bf06e25208384b58bf14fa9e3cdf366b8ca2a95e9c3c06b03ee', '23': '6500c688c068215f7cfa007ed8f35c3d5cf4bab26b821b7681ceab7d30f92a1c', '24': 'b034a698090af1c6d9de32cb4ad493b14e4386d17fe718ef3c2808e5dfcc6fe5', '25': '4c60e5e491b111c62d925e3bcd4fc258ef9f4a4bf767608d25ae48ebbc0de76e', '26': '207b19e4c796d6b92ec3acd9c0b7c59e41e8625f2361beeee3121ae60205f5a1', '27': 'e11c12663acb17113d3f17da716e1968990f02e2b5b950ce14da9a74bbd1fd5c', '28': 'd11694c1ad038217d1d7043d6f21857ba2978b356ecccbc860912dc215b4df03', '31': '074782d1b6ba50287e448caa8b56676d0a1168335e7e29df7cafa0220cf11c54', '32': '94d99bce1cca88243b1e519f6bff375f96de658eaa9ae8c7bbdb9eb5c156aeda', '33': 'f45c47e13897d0b747f0f7401f0688e56d5f1d166d565826e7359412422654d6'}
+_c7d_blob = '\n'.join('%s\t%s\t%s' % (r[0], r[4].strip(), r[5].strip())
+                      for r in rows if len(r) == 7)
+_c7d_now = hashlib.sha256(_c7d_blob.encode('utf-8')).hexdigest()
+if _c7d_now != C7_TEXT_SHA256:
+    _c7d_drift = []
+    for r in rows:
+        if len(r) != 7:
+            continue
+        _h7 = hashlib.sha256(('%s\t%s\t%s' % (r[0], r[4].strip(), r[5].strip()))
+                             .encode('utf-8')).hexdigest()
+        if C7_ROW_SHA.get(r[0]) != _h7:
+            _c7d_drift.append(r[0])
+    fails.append('C7d product/expression table changed: sha256 %s != pinned %s ; drifted ids=%s '
+                 '(col5 and col6 are now pinned; re-pin C7_TEXT_SHA256/C7_ROW_SHA deliberately)'
+                 % (_c7d_now[:16], C7_TEXT_SHA256[:16], _c7d_drift[:12]))
+else:
+    notes.append('C7d product/expression fingerprint ok: 31 rows, sha256=%s' % _c7d_now[:16])
+
+# ---- C7b 【R133 新增】形态覆盖普查：31/31 passed 不等于「所有分支形态都被走过了」----
+# R132 测得 C7 的 exists / bytes= / none 三个分支在 31 行里各覆盖 0 行；R133 r133g 复测
+# 仍是 0/0/0（8/8 PASS），r133h 证明注入一行对应形态会把计数从 0 推到 1（钉有分辨力）。
+# 修法不用「为不可达形态硬造产物」——那会制造一条只为过门禁而存在的行。改为把普查本身
+# 显式钉住：形态计数一旦漂移就 FAIL，逼下一个人先做裁定再改数据。
+C7_SHAPE_PIN = {'grep=': 24, 'grepcount=': 3, 'rows=': 4,
+                'exists': 0, 'bytes=': 0, 'none': 0}
+c7_shape = dict((_k, 0) for _k in C7_SHAPE_PIN)   # S-226, corrected wording S-225:
+# a zero count is ABSENT from a frequency dict, not present-with-value-zero. Seeding every
+# pinned shape at 0 is NOT what makes "exists=0" checkable -- the first loop below already
+# catches an appearing row via C7_SHAPE_PIN.get(k) != measured, seeding or no seeding.
+# What seeding actually fixes is the OPPOSITE bug: without it, loop 2 would report every
+# zero-count shape as "vanished from the table entirely", i.e. manufacture three fake
+# failures on a healthy table. So the seeding prevents a false alarm, not a false pass.
+# (hy4 cross-family audit G2 raised this; lead recomputed and agreed, see _r133/LEAD_v_hy4.json)
+for _r in rows:
+    if len(_r) != 7:
+        continue
+    _h = _r[5].strip().split(' ')[0]
+    _k = ('none' if _h in ('none', '') else
+          'bytes=' if _h.startswith('bytes=') else
+          'rows=' if _h.startswith('rows=') else
+          'grepcount=' if _h.startswith('grepcount=') else
+          'grep=' if _h.startswith('grep=') else
+          'exists' if _h == 'exists' else 'BAD:' + _h)
+    c7_shape[_k] = c7_shape.get(_k, 0) + 1
+c7_shape_pin_ok = True
+for _k, _v in sorted(c7_shape.items()):
+    if C7_SHAPE_PIN.get(_k) != _v:
+        c7_shape_pin_ok = False
+        fails.append('C7b shape census drifted: %s=%d but pinned %s '
+                     '(a new shape needs a deliberate decision, not a silent addition)'
+                     % (_k, _v, C7_SHAPE_PIN.get(_k)))
+for _k, _v in sorted(C7_SHAPE_PIN.items()):
+    if _k not in c7_shape:
+        c7_shape_pin_ok = False
+        fails.append('C7b pinned shape %s=%d vanished from the table entirely' % (_k, _v))
+# (seeded above, so this loop only fires if a future edit removes the seeding)
+notes.append('C7b shape census: %s ; three of six shapes have ZERO rows '
+             '(exists/bytes=/none are live code with no data behind them -- 31/31 passed '
+             'MUST NOT be read as all shapes exercised)%s'
+             % (', '.join('%s=%d' % (k, v) for k, v in sorted(c7_shape.items())),
+                '' if c7_shape_pin_ok else ' [DRIFTED]'))
+
 # ---- C8 节号存在性 ----
 secs = set(re.findall(r'(?m)^##\s*(\d+(?:\.\d+)*)', rc))
 c8_ok = 0
@@ -247,7 +358,7 @@ C11_LANDABLE = {3, 4, 11, 12, 13, 14, 15, 17, 22, 26, 27, 28}
 # ---- C11b 【R102 新增】C11_LANDABLE 载重：死常量变成可核的缺口量与钉住 ----
 # R102 实测：该常量此前 Load 次数 = 0（纯死代码），且它列的 12 个 id 里有 7 个写着「无」——声明不需要回跑，故永远不可能 FAIL。那 7 行不是「还未补」是「声明不补」。
 # 本段不修那 7 行（那是写入变更，须单独一卡），只把缺口显式化并钉住。
-C11B_PIN_GAP = [11, 12, 13, 14, 15, 17, 26]
+C11B_PIN_GAP = [3, 4, 11, 12, 13, 14, 15, 17, 22, 26, 27, 28]
 c11b_gap = []
 for _r in rows:
     if len(_r) == 7 and _r[0].strip().isdigit() and int(_r[0]) in C11_LANDABLE:
@@ -291,7 +402,42 @@ for r in rows:
         continue
     n = int(r[0]) if r[0].isdigit() else -1
     later = r[6].strip()
-    if not later.startswith('\u6709'):
+    if not later.startswith('有'):
+        # R128 真修：claims-none 此前是「声明不补」的免检通道，永不 FAIL。
+        # 实测 14 行现状诚实（_r128/r128f_gate_probe.py F2），但无机制阻止有人把
+        # 「有」悄悄改成「无」而产物里仍留着自述行。故此处补一条可失败的判据：
+        # claims-none 行的产物里不得出现本纪律的自述行。
+        _p_none = os.path.join(ROOT, r[4].strip().replace('\\', '/'))
+        if os.path.isfile(_p_none):
+            try:
+                _t_none = io.open(_p_none, encoding='utf-8', errors='replace').read()
+            except OSError:
+                _t_none = ''
+            _hits_none = 0
+            for _l_none in _t_none.splitlines():
+                if not _l_none.startswith('DISC_RECHECK '):
+                    continue
+                _m_none = re.search(r'\bdiscipline=(\d+)\b', _l_none)
+                if _m_none and int(_m_none.group(1)) == int(r[0]):
+                    _hits_none += 1
+            if _hits_none > 0:
+                c11_fail += 1
+                fails.append('C11 id %s claims-none but its product carries %d '
+                             'self-description line(s) for this discipline (R128)'
+                             % (r[0], _hits_none))
+                continue
+        # R129 真修：claims-none 的第二道口子。R128 只挡住了「产物里还留着自述行」，
+        # 没挡「校验式本身已经不成立」。实测（_r129/r129d_tautology_probe.py，8/8 PASS）
+        # 14 条 claims-none 的校验式在真产物上 14/14 成立、在空产物上 0/14 成立 ⇒
+        # 接上它零误伤、且有分辨力。判据：claims-none 行的校验式必须真跑通过。
+        _e_none = r[5].strip()
+        if _e_none not in ('', 'none') and not _e_none.startswith('none'):
+            _ok_none, _det_none = run_expr(r[4].strip(), _e_none)
+            if _ok_none is not True:
+                c11_fail += 1
+                fails.append('C11 id %s claims-none but its check expression no longer holds '
+                             '(%s) :: %s (R129)' % (r[0], _det_none, _e_none[:40]))
+                continue
         c11_unver += 1
         continue
     if _vmod is None:
@@ -314,7 +460,24 @@ for r in rows:
         c11_ok += 1
     elif n in C11_FROZEN:
         # R58：冻結类——在冻结档里，结构性不可验证 ⇒ 不 FAIL，但显式计入
-        c11_declared += 1
+        # ---- R135 真修：此前这里是「入档即 declared」，任何失败理由都走这条路 ----
+        # 实测（_r135/r135a_measure.py，M3b 12/12）：12 条冻结行的 verify 失败理由**全部**是
+        # R1 line_count_for_discipline_<N>=0，即「产物里一条本纪律自述行都没有」——这正是冻结
+        # 档语义（结构上不可能自产出凭证）。但代码并不检查这一点：给产物写一条**半截**自述行
+        # （实测 DISC_RECHECK discipline=1 garbage ⇒ 理由 R1 bad_token(no =)）同样落进 declared。
+        # 两条路在语义上相反：前者是「结构上没有凭证」，后者是「有凭证但写坏了」——后者是可修的，
+        # 修好它就能摘帽（R59 Q2-③ 记过的那条「补一行即摘帽」漏洞的同一个入口）。
+        # 故冻结豁免只对「凭证行不存在」成立；其它任何失败理由一律 FAIL。
+        _reason = str(detail)
+        _absent = re.match(r'^R1 line_count_for_discipline_%d=0\b' % n, _reason) is not None
+        if _absent:
+            c11_declared += 1
+        else:
+            c11_fail += 1
+            fails.append('C11 id %s frozen-class row failed verification for a reason that is '
+                         'NOT "no self-description line exists" (%s): the freeze only exempts '
+                         'the structural absence of a credential, not a malformed one (R135)'
+                         % (r[0], _reason[:70]))
     else:
         c11_fail += 1
         fails.append('C11 id %s claims recheck but has no valid self-description line (%s)'
@@ -360,6 +523,46 @@ if os.path.exists(_FREEZE):
         if not re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}', _at):
             fails.append('%s frozen timestamp not strict ISO8601(+HH:MM): %r' % (_fid, _at))
 notes.append('C12 frozen-anchor live-check: %d frozen rows, %d anchors hit' % (len(_fbody), c12))
+
+# ---- C12b 【R135 新增】冻结档是 live 表的**副本**还是**另一个对象**？----
+# R135 实测（_r135/r135a_measure.py，M1a..M1d 与 M2a..M2d）：C12 检的是冻结档自己的
+# 第 3/4 列，而纪律的「产物路径 / 校验式」在 live 表里是第 5/6 列。两表逐行比对，12 行里
+# **4 行不一致**（id 1 / 2 / 9 / 20），且四处全部是「冻结档那份是 live 式的真前缀」——
+# 即冻结档持有的是**更松**的式子（例如 live 写 `grep=(?m)^\*\*纪律 1 ·`，冻结档只写
+# `grep=(?m)^\*\*纪律`；live 写 `grep=(?m)^GATE_VER = 'R134'`，冻结档只写 `grep=(?m)^GATE_VER`）。
+# 后果不是「今天算错」（M2b 实测：按 live 式求值同样 12/12 命中，故当前零误判），而是
+# **改 live 式在 C12 上完全静默**（M2d：把 live 式换成永假式，C12 仍报命中）——冻结档成了
+# 一份只被自己检查的副本，这与 C7d 修的是同一个病（HOLE A：检查对象可被无声替换）。
+# 故 C12b 只做一件事：钉住两表同一性，不一致即 FAIL。冻结档不是独立数据源，它是 live 表的
+# 镜像；任何一侧被改都必须同时改另一侧，且两侧都由本判据兜住。
+_c12b_bad = []
+for _c in (_fbody if os.path.exists(_FREEZE) else []):
+    if not (_c and _c[0].strip().isdigit()):
+        continue
+    _id = int(_c[0])
+    _live = None
+    for _r in rows:
+        if len(_r) == 7 and _r[0].strip() == _c[0].strip():
+            _live = _r
+            break
+    if _live is None:
+        _c12b_bad.append((_id, 'missing-in-live-table'))
+        continue
+    if len(_c) < 8:
+        continue                      # 列数不足由 C12 自己报
+    _d1 = _c[1].strip() != _live[1].strip()
+    _d2 = _c[2].strip() != _live[4].strip()
+    _d3 = _c[3].strip() != _live[5].strip()
+    if _d1 or _d2 or _d3:
+        _c12b_bad.append((_id, 'sec' if _d1 else '', 'path' if _d2 else '', 'expr' if _d3 else ''))
+if _c12b_bad:
+    fails.append('C12b frozen registry is not a faithful copy of the live table: %s '
+                 '(frozen col2/col3/col4 must equal live col2/col5/col6; the registry is a '
+                 'mirror, not a second source of truth -- edit both or neither) (R135)'
+                 % repr(_c12b_bad[:8]))
+else:
+    notes.append('C12b frozen registry mirrors the live table: %d/%d rows identical on '
+                 '(sec, product, expr)' % (len(_fbody), len(_fbody)))
 
 # ---- C13 【R103 新增】第 2 列「节」必须与纪律号对应，不能只求「存在」 ----
 # R103 实测（_r103/r103a_freetext.json）：31 行第 2 列全改成真实存在的 §2.14 ⇒ exit 0。
@@ -458,25 +661,38 @@ notes.append('C15 content floor: 2.x sections %d (pinned %d), last %s (pinned %d
 # 边界（如实声明，与纪律 31 同族）：下界是表里的常量，同改表与常量者仍可过；它的价值是把
 # 116 节「完全不被读」变成 116 节「缩到一半必被看见」。
 C16_FLOORS = {
-    7: 595, 8: 937, 9: 1361, 10: 671, 11: 385, 12: 1144, 13: 923, 14: 1020, 15: 812, 16: 710,
-    17: 860, 18: 1518, 19: 1006, 20: 1037, 21: 710, 22: 1520, 23: 991, 24: 1699, 25: 1320,
-    26: 2660, 27: 1185, 28: 1398, 29: 1283, 30: 1200, 31: 1403, 32: 1103, 33: 1345, 34: 1259,
-    35: 1294, 36: 979, 37: 970, 38: 1144, 39: 1066, 40: 982, 41: 1143, 42: 1286, 43: 1051,
-    44: 1298, 45: 1064, 46: 870, 47: 1239, 48: 992, 49: 1010, 50: 1385, 51: 1104, 52: 1299,
-    53: 903, 54: 925, 55: 1169, 56: 1067, 57: 992, 58: 826, 59: 1281, 60: 1179, 61: 1071,
-    62: 809, 63: 933, 64: 842, 65: 1172, 66: 1039, 67: 922, 68: 1223, 69: 908, 70: 1115,
-    71: 1116, 72: 3440, 73: 3596, 74: 1871, 75: 1616, 76: 2848, 77: 2709, 78: 1884, 79: 3264,
-    80: 1520, 81: 3460, 82: 2096, 83: 1843, 84: 2318, 85: 3034, 86: 1607, 87: 2508, 88: 1910,
-    89: 2745, 90: 3120, 91: 2000, 92: 1864, 93: 2044, 94: 866, 95: 1295, 96: 1584, 97: 2244,
-    98: 1437, 99: 1173, 100: 1397, 101: 1595, 102: 4028, 103: 2914, 104: 2985, 105: 2986,
-    106: 2748, 107: 3312, 108: 1628, 109: 1992, 110: 2381, 111: 2796, 112: 2931, 113: 2827,
-    114: 2981, 115: 2911, 116: 2214, 117: 3359, 118: 2911, 119: 2857, 120: 2547, 121: 1854,
-    122: 2701, 123: 2355, 124: 2331, 125: 2018
+    7: 595, 8: 937, 9: 1361, 10: 671, 11: 385,
+    12: 1144, 13: 923, 14: 1020, 15: 812, 16: 710,
+    17: 860, 18: 1518, 19: 1006, 20: 1037, 21: 710,
+    22: 1520, 23: 991, 24: 1699, 25: 1320, 26: 2660,
+    27: 1185, 28: 1398, 29: 1283, 30: 1200, 31: 1403,
+    32: 1103, 33: 1345, 34: 1259, 35: 1294, 36: 979,
+    37: 970, 38: 1144, 39: 1066, 40: 982, 41: 1143,
+    42: 1286, 43: 1051, 44: 1298, 45: 1064, 46: 870,
+    47: 1239, 48: 992, 49: 1010, 50: 1385, 51: 1104,
+    52: 1299, 53: 903, 54: 925, 55: 1169, 56: 1067,
+    57: 992, 58: 826, 59: 1281, 60: 1179, 61: 1071,
+    62: 809, 63: 933, 64: 842, 65: 1172, 66: 1039,
+    67: 922, 68: 1223, 69: 908, 70: 1115, 71: 1116,
+    72: 3440, 73: 3596, 74: 1871, 75: 1616, 76: 2848,
+    77: 2709, 78: 1884, 79: 3264, 80: 1520, 81: 3460,
+    82: 2096, 83: 1843, 84: 2318, 85: 3034, 86: 1607,
+    87: 2508, 88: 1910, 89: 2745, 90: 3120, 91: 2000,
+    92: 1864, 93: 2044, 94: 866, 95: 1295, 96: 1584,
+    97: 2244, 98: 1437, 99: 1173, 100: 1397, 101: 1595,
+    102: 4028, 103: 2914, 104: 2985, 105: 2986, 106: 2748,
+    107: 3312, 108: 1628, 109: 1992, 110: 2381, 111: 2796,
+    112: 2931, 113: 2827, 114: 2981, 115: 2911, 116: 2214,
+    117: 3359, 118: 2911, 119: 2857, 120: 2547, 121: 1854,
+    122: 2701, 123: 2355, 124: 2331, 125: 2018, 126: 4075,
+    127: 3932, 128: 4001, 129: 3629, 130: 3722, 131: 5958,
+    132: 5998, 133: 4747, 134: 941, 135: 3059, 136: 4444,
+    137: 3159, 138: 4803, 139: 4118, 140: 4782, 141: 2548,
 }
 # 🐞 自错 S-61（成对回归 E5 当场抓出）：初稿给**新节**也设了 400 B 下限，
 # 于是「追加一个合法的短新节」被误判 FAIL —— 这是把「不许清空」误扩成「不许写短」。
 # 新节不是被钉对象（C15 已保证 7..106 存在、末节号不回退），故新节不设下限。
-C16_FLOORS_SHA256 = '893e12a72d364a7e76a930127c821d792a2739ae41236a019939c41839b06beb'   # 上表的 sha256（逐 id:floor 规范化）；审计 R119 ③ 成立：
+C16_FLOORS_SHA256 = '192795a25a25defac583cdb496a8752c2d42a9a84ba4640971e7ea02656d4f16'   # 上表的 sha256（逐 id:floor 规范化）；审计 R119 ③ 成立：
 # 无摘要时「同改表与常量」只需把一个十进制数改小，diff 与正常重钉无法区分；加钉后至少要改这个 64 hex。
 C16_NEW_MIN = 0
 # C16b：表外新节不设字节下限 ⇒ 若不加约束，「每轮新增一节」就等于「每轮白得一张永久免检票」，
@@ -563,15 +779,13 @@ notes.append('C16 per-section floors: ' + str(len(_c16_b)) + ' sections measured
 # C17 只在**表这一层**加两道：C17a 时间不可能性、C17b 跨轮复用；
 # 它们不改任何自述行（那是裁定，须单独裁），只把「已存在的 5 条不可能行」钉住，
 # 使「悄悄把它们改成诚实行」或「再添一条同类行」都必须显式改本段的常量。
-C17_PIN = {
-    (3, 55, '2026-11-22T17:39:19+08:00'),
-    (4, 55, '2026-11-22T17:40:02+08:00'),
-    (22, 55, '2026-11-22T17:39:19+08:00'),
-    (27, 55, '2026-11-22T17:39:19+08:00'),
-    (28, 55, '2026-11-22T17:39:19+08:00'),
-}
-C17_PIN_SHA256 = '642c9cd8b9176f4e8dffd0c744e651d26e5465186a79bcaace70cadbc7a59288'
-C17_REUSED_ATS = {'2026-11-22T17:39:19+08:00': 4}   # at -> 复用的不同轮次目录数（下限）
+# R129 裁定（_r129/r129i_ruling_design.py 12/12 PASS）：这五条已从「声称有」降级成「无」，
+# 自述行本身仍留在原产物里（不删别人的产物），但第 7 列不再声称它们回跑过 ⇒ C17 扫不到它们。
+# 故集合由 5 条塌成 0 条。空集不是「关掉检查」：判据仍是「实测集合必须等于这个集合」，
+# 只要有人再写一条时间上不可能的自述行并声称有，集合就 ≠ 空集 ⇒ FAIL。
+C17_PIN = set()
+C17_PIN_SHA256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+C17_REUSED_ATS = {}   # R129：五条假声称已撤回，复用随之消失（重钉见 _r129/r129k）   # at -> 复用的不同轮次目录数（下限）
 _PATHR = re.compile(r'(?:^|[/\\])R(?:17_)?R?(\d+)_')
 _LINERE = re.compile(r'^DISC_RECHECK discipline=(\d+) round=(R\d+) at=(\S+) '
                      r'anchors=(sha256:[0-9a-f]{64}) conclusion=(\S+?)\r?$')
@@ -622,6 +836,49 @@ _bad17 = {k: v for k, v in _c17_reuse.items() if k not in C17_REUSED_ATS}
 if _bad17:
     fails.append('C17b 出现新的跨轮复用 at 值 %s（同一秒值落在多个轮次目录 = 复制粘贴特征）'
                  % repr(sorted(_bad17)[:4]))
+
+# ---- C18 【R131 新增】C17 空转的机检：checked=0 不许是「静默的 0」----
+# R131 实测（_r131/r131p_c17vac.py 8 项 + _r131/r131s_closings.py 9 项）：
+#   C17 只扫 col7 以「有」开头的行；那 12 行恰好 == DISC_UNVERIFIABLE.tsv 的 12 行；
+#   而冻结档的语义就是「结构上不可能自产出凭证行」。于是 C17 的输入集按定义不可能含
+#   任何自述行 ⇒ checked 恒 0。C11 同理：19 claims-none + 12 frozen = 31，无一能到 ok。
+# 这不是「恰好没有」，是「构造上不可能有」。若不把它变成可失败的判据，它就是一张永久
+# 免检票 —— 与本仓被咬过多次的「claims-无 即免检」同构（R68 CW8 ③、R102 C11b）。
+# 判据不是「要求 checked>0」（那要求真回跑，是业务动作，做不到也不该伪造），
+# 而是：空转必须**被显式登记**，且一旦空转消失（有人真补了行）就必须显式改本常量。
+# 三个量都是实测值，不是手填。
+C18_VACUOUS = {
+    'c17_checked': 0,        # C17 实际扫过的自述行数
+    'c11_ok': 0,             # C11 实际通过的 claims-有 行数
+    'claims_you_rows': 12,   # 声称「有」的行数
+    'frozen_rows': 12,       # 冻结档行数
+    'claims_none_rows': 19,  # 声称「无」的行数
+}
+_c18_now = {'c17_checked': _c17_checked, 'c11_ok': c11_ok,
+            'claims_you_rows': sum(1 for _r in rows
+                                   if len(_r) == 7 and _r[6].strip().startswith('有')),
+            'frozen_rows': len(C11_FROZEN),
+            'claims_none_rows': c11_unver}
+for _k18, _want18 in C18_VACUOUS.items():
+    if _c18_now[_k18] != _want18:
+        fails.append('C18 vacuity pin drifted: %s = %d != pinned %d (if a real DISC_RECHECK '
+                     'line was produced, this is good news -- re-pin C18_VACUOUS deliberately; '
+                     'do NOT let the count move silently)'
+                     % (_k18, _c18_now[_k18], _want18))
+# 结构判据：空转的根因是「claims-有 集合」与「冻结档集合」完全相同。
+# 若两者不再相同，空转已被真修，本常量必须重钉（上面那条会先 FAIL）；这条把因果也钉住，
+# 防止有人只改上面的数字而留下一个仍然恒真的空转。
+_c18_you = set(int(_r[0]) for _r in rows
+               if len(_r) == 7 and _r[0].strip().isdigit() and _r[6].strip().startswith('有'))
+if _c18_you != C11_FROZEN:
+    fails.append('C18 vacuity cause changed: claims-有 set %s != frozen set %s '
+                 '(the two being equal is exactly why C11 ok and C17 checked are both 0; '
+                 'if they diverged, re-derive C18_VACUOUS from measurement)'
+                 % (repr(sorted(_c18_you)[:8]), repr(sorted(C11_FROZEN)[:8])))
+notes.append('C18 vacuity: C17 checked=%d, C11 ok=%d pinned (claims-有==frozen==%d, '
+             'claims-none=%d) -- zero is STRUCTURAL, not incidental'
+             % (_c17_checked, c11_ok, len(C11_FROZEN), c11_unver))
+
 notes.append('C17 self-produced-line anachrony: checked=%d impossible=%d (pinned %d), '
              'reused-at=%s, pin=%s'
              % (_c17_checked, len(_c17_imposs), len(C17_PIN),
@@ -637,7 +894,8 @@ for name, p, exp in (('R14_COMMON', RC, 1081), ('STATUS_BOARD', BRD, 0), ('LEDGE
 print('--- check_disc.py (%s) ---' % GATE_VER)
 print('discipline defs %d ; DISC_RECHECK rows %d' % (len(defs), len(rows)))
 for n in notes: print('  NOTE  ' + n)
-print('C7 live-checks passed %d ; none-skipped %d' % (c7_ok, c7_none))
+print('C7 live-checks passed %d ; none-skipped %d ; shape census %s'
+      % (c7_ok, c7_none, ', '.join('%s=%d' % (k, v) for k, v in sorted(c7_shape.items()))))
 print('C8 section-exists passed %d' % c8_ok)
 print('C10 self-check: %s' % c10)
 if fails:

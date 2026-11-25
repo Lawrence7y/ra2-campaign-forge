@@ -1,0 +1,125 @@
+{
+ "exe_sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+ "disp_names": {
+  "0x4": {
+   ".?AV?$CComObjectRootEx@VCComMultiThreadModel@ATL@@@ATL@@|.?AVCComObjectRootBase@ATL@@": 5,
+   ".?AUIRTTITypeInfo@@": 78,
+   ".?AUILinkStream@@": 1,
+   ".?AUILocomotion@@": 12
+  },
+  "0x8": {
+   ".?AVINoticeSink@@": 78
+  },
+  "0xc": {
+   ".?AVINoticeSource@@": 78
+  },
+  "0xf0": {
+   ".?AVFlasherClass@@": 6
+  },
+  "0xf8": {
+   ".?AVStageClass@@": 6
+  },
+  "0x6c0": {
+   ".?AUIFlyControl@@": 1
+  },
+  "0xac": {
+   ".?AVStageClass@@": 2
+  },
+  "0x18": {
+   ".?AUIPiggyback@@": 6
+  },
+  "0x24": {
+   ".?AVStageClass@@": 1,
+   ".?AUIHouse@@": 1
+  },
+  "0x28": {
+   ".?AUIPublicHouse@@": 1
+  },
+  "0x2c": {
+   ".?AUIConnectionPointContainer@@": 1
+  },
+  "0x5518": {
+   ".?AVINoticeSink@@": 3
+  },
+  "0xb0": {
+   ".?AVBounceClass@@": 1
+  }
+ },
+ "pairs_table": [
+  {
+   "rdata": "0x7f7c90",
+   "R_rdata": 91,
+   "C_rdata": 56,
+   "data": "0x817bc0",
+   "R_data": 0,
+   "C_data": 9
+  },
+  {
+   "rdata": "0x7f7cf0",
+   "R_rdata": 1,
+   "C_rdata": 0,
+   "data": "0x81fc50",
+   "R_data": 0,
+   "C_data": 2
+  },
+  {
+   "rdata": "0x7f7c80",
+   "R_rdata": 4,
+   "C_rdata": 60,
+   "data": "0x820270",
+   "R_data": 0,
+   "C_data": 8
+  },
+  {
+   "rdata": "0x7f7c70",
+   "R_rdata": 4,
+   "C_rdata": 0,
+   "data": "0x818858",
+   "R_data": 0,
+   "C_data": 16
+  }
+ ],
+ "checks": [
+  {
+   "name": "E0 exe sha256 是钉住的那个构建",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "E1 非零 mdisp 处的「非 IUnknown 接口名」不是全局一对一 —— 该判据只在单类内一对一，不能跨类套用",
+   "ok": true,
+   "detail": "decoded=954 distinct_disp=13 一对多 disp={'0x4': {('.?AV?$CComObjectRootEx@VCComMultiThreadModel@ATL@@@ATL@@', '.?AVCComObjectRootBase@ATL@@'): 5, ('.?AUIRTTITypeInfo@@',): 78, ('.?AUILinkStream@@',): 1, ('.?AUILocomotion@@',): 12}, '0x24': {('.?AVStageClass@@',): 1, ('.?AUIHouse@@',): 1}}"
+  },
+  {
+   "name": "E1b 单类内不是一对一：同一个类的同一个非零 disp 下可以并排出现两个不同的非 IUnknown 名字（ATL 基类与接口同名同址），所以「disp 唯一解出接口名」这条只能用于接口名白名单，不能无条件当恒等式",
+   "ok": true,
+   "detail": "单类内一对多的情形=5 例，前 5 [('?$CComObject@VCChatEventSink@@@ATL', '0x4', ['.?AV?$CComObjectRootEx@VCComMultiThreadModel@ATL@@@ATL@@', '.?AVCComObjectRootBase@ATL@@']), ('?$CComObject@VCDownloadEventSink@@@ATL', '0x4', ['.?AV?$CComObjectRootEx@VCComMultiThreadModel@ATL@@@ATL@@', '.?AVCComObjectRootBase@ATL@@']), ('?$CComObject@VCNetUtilEventSink@@@ATL', '0x4', ['.?AV?$CComObjectRootEx@VCComMultiThreadModel@ATL@@@ATL@@', '.?AVCComObjectRootBase@ATL@@']), ('CChatEventSink', '0x4', ['.?AV?$CComObjectRootEx@VCComMultiThreadModel@ATL@@@ATL@@', '.?AVCComObjectRootBase@ATL@@']), ('CNetUtilEventSink', '0x4', ['.?AV?$CComObjectRootEx@VCComMultiThreadModel@ATL@@@ATL@@', '.?AVCComObjectRootBase@ATL@@'])]"
+  },
+  {
+   "name": "E1c 0x6c0 在全量 954 个类里只出现 1 次，且其非 IUnknown 名字唯一为 IFlyControl",
+   "ok": true,
+   "detail": "{'0x6c0': {('.?AUIFlyControl@@',): 1}}"
+  },
+  {
+   "name": "E2 反例存在：有四对里 .rdata 那份也被当调用点（形式 C 非 0）⇒ 分离不是全称规律",
+   "ok": true,
+   "detail": "rdata 侧有形式 C 的对=[('0x7f7c90', 56), ('0x7f7c80', 60)]"
+  },
+  {
+   "name": "E2b .data 那份从不出现形式 R（4 对全部 0）",
+   "ok": true,
+   "detail": "data 侧有形式 R 的对=[]"
+  },
+  {
+   "name": "E3 逐对四数表",
+   "ok": true,
+   "detail": "[{'rdata': '0x7f7c90', 'R_rdata': 91, 'C_rdata': 56, 'data': '0x817bc0', 'R_data': 0, 'C_data': 9}, {'rdata': '0x7f7cf0', 'R_rdata': 1, 'C_rdata': 0, 'data': '0x81fc50', 'R_data': 0, 'C_data': 2}, {'rdata': '0x7f7c80', 'R_rdata': 4, 'C_rdata': 60, 'data': '0x820270', 'R_data': 0, 'C_data': 8}, {'rdata': '0x7f7c70', 'R_rdata': 4, 'C_rdata': 0, 'data': '0x818858', 'R_data': 0, 'C_data': 16}]"
+  },
+  {
+   "name": "E4 形态结论的正确表述：.data 份只被 push（形式 C）引用，.rdata 份两种都被引用；这不是「谁是 IPersist」的证据，只是「两份拷贝的引用形态不同」",
+   "ok": true,
+   "detail": "[{'rdata': '0x7f7c90', 'R_rdata': 91, 'C_rdata': 56, 'data': '0x817bc0', 'R_data': 0, 'C_data': 9}, {'rdata': '0x7f7cf0', 'R_rdata': 1, 'C_rdata': 0, 'data': '0x81fc50', 'R_data': 0, 'C_data': 2}, {'rdata': '0x7f7c80', 'R_rdata': 4, 'C_rdata': 60, 'data': '0x820270', 'R_data': 0, 'C_data': 8}, {'rdata': '0x7f7c70', 'R_rdata': 4, 'C_rdata': 0, 'data': '0x818858', 'R_data': 0, 'C_data': 16}]"
+  }
+ ],
+ "all_ok": true
+}

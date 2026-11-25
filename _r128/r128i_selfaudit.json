@@ -1,0 +1,141 @@
+{
+ "checks": [
+  {
+   "name": "I1 反例一（0x87f7e8 是数组基址？）：全 .text 里对 [0x87f7e8+4k] 的写，偏移只出现 +0（共 1 处），没有任何 +4/+8/+0x10 的 vptr 写 ⇒ 它是单个对象不是数组",
+   "ok": true,
+   "detail": "[('0x40d1b2', 'dword ptr [0x87f7e8], 0x7e1964')]"
+  },
+  {
+   "name": "I2 反例二（间接写 vptr）：lea reg,[0x87f7e8] 的站点数 = 0 ⇒ 不存在「先取地址再写 vptr」的路径，故 C7 05 形态的 1 处就是全部 vptr 写入点（这一支的否定是硬的）",
+   "ok": true,
+   "detail": "{'lea_sites': 0}"
+  },
+  {
+   "name": "I3 反例三（还有别的比较形态？）：3 处 mov edi,0x7ea6e8 之后 0x18 字节内都出现 repe cmpsd，三处都是「4 次 dword 比较」这一种形态，无 sub/cmp 变体",
+   "ok": true,
+   "detail": "{'n': 3, 'detail': [{'at': '0x42930f', 'next_cmpsd': True, 'after': [('0x42930f', 'mov edi, 0x7ea6e8'), ('0x429314', 'mov esi, ebp'), ('0x429316', 'xor edx, edx'), ('0x429318', 'repe cmpsd dword ptr [esi], dword ptr es:[edi]'), ('0x42931a', 'jne 0x429353'), ('0x42931c', 'mov ecx, 0x87f7e8')]}, {'at': '0x4293a5', 'next_cmpsd': True, 'after': [('0x4293a5', 'mov edi, 0x7ea6e8'), ('0x4293aa', 'xor eax, eax'), ('0x4293ac', 'repe cmpsd dword ptr [esi], dword ptr es:[edi]'), ('0x4293ae', 'jne 0x4293bc'), ('0x4293b0', 'pop edi'), ('0x4293b1', 'pop esi')]}, {'at': '0x4f4273', 'next_cmpsd': True, 'after': [('0x4f4273', 'mov edi, 0x7ea6e8'), ('0x4f4278', 'xor eax, eax'), ('0x4f427a', 'repe cmpsd dword ptr [esi], dword ptr es:[edi]'), ('0x4f427c', 'je 0x4f4288'), ('0x4f427e', 'pop edi'), ('0x4f427f', 'mov eax, 0x80004002')]}]}"
+  },
+  {
+   "name": "I4 反例四（QI 体还有后续分支？）：0x4f4240 的第一条 ret 在 0x4f4298（ret 0xc），其后到 0x4f42a0 全是 nop，下一条真实指令 0x4f42a0 是 mov dword ptr [0xa8ef54],0 —— 不是同一函数的分支，故该 QI 体只有两个 IID 比较",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "I5 反例五（转交型是不是我读错、其实写了 ppv？）：0x429270 体内对 riid 寄存器 ebp 的写 0 处；对出参寄存器 eax 的写只有入口处的清零（mov [eax],0）与失败路径 —— 成功路径从不写自己的 ppv，ppv 一律经 push 交给内层对象的 QI",
+   "ok": true,
+   "detail": "{'ebp_writes': [], 'eax_zero': [('0x42928c', 'dword ptr [eax], 0')]}"
+  },
+  {
+   "name": "I6 反例六（this-on-stack 只是特例？）：三个 vtable 的 slot0..2（QI/AddRef/Release）ret 值都为 (0xc, 4, 4) ⇒ 约定在该构建里一致，不是单点特例",
+   "ok": true,
+   "detail": "{'0x7ea564 (IClassFactory)': [12, 4, 4], '0x7e36d4 (IApplication)': [12, 4, 4], '0x7f4108 (ISwizzle)': [12, 4, 4]}"
+  },
+  {
+   "name": "I71 反例七（0x0089a29c 有第二个 vptr 写入者？）：以 C7 05 / mov [abs],imm 形态的写共 1 处，全为 mov [abs],0x... 立即数形态",
+   "ok": true,
+   "detail": "[('0x429200', 'dword ptr [0x89a29c], 0x7e36d4')]"
+  },
+  {
+   "name": "I72 反例七（0x00b0c110 有第二个 vptr 写入者？）：以 C7 05 / mov [abs],imm 形态的写共 2 处，全为 mov [abs],0x... 立即数形态",
+   "ok": true,
+   "detail": "[('0x6cf0c8', 'dword ptr [0xb0c110], 0x7f4108'), ('0x6cf0f6', 'dword ptr [0xb0c110], 0x7f4108')]"
+  },
+  {
+   "name": "I8 反例八（写常量 0x87f7e8 是 this 折叠？）：0x429360 有两条写 ppv 的路径 ——0x4293b2 写常量 0x87f7e8、0x4293cb 写 eax（eax 取自 [esp+0x10] 即 this）。两条并存 ⇒ 前者不是折叠，是「该 IID 由另一个全局对象实现」的真分支",
+   "ok": true,
+   "detail": "[('0x4293b2', 'dword ptr [edx], 0x87f7e8'), ('0x4293cb', 'dword ptr [edx], eax')]"
+  }
+ ],
+ "I3": [
+  {
+   "at": "0x42930f",
+   "next_cmpsd": true,
+   "after": [
+    [
+     "0x42930f",
+     "mov edi, 0x7ea6e8"
+    ],
+    [
+     "0x429314",
+     "mov esi, ebp"
+    ],
+    [
+     "0x429316",
+     "xor edx, edx"
+    ],
+    [
+     "0x429318",
+     "repe cmpsd dword ptr [esi], dword ptr es:[edi]"
+    ],
+    [
+     "0x42931a",
+     "jne 0x429353"
+    ],
+    [
+     "0x42931c",
+     "mov ecx, 0x87f7e8"
+    ]
+   ]
+  },
+  {
+   "at": "0x4293a5",
+   "next_cmpsd": true,
+   "after": [
+    [
+     "0x4293a5",
+     "mov edi, 0x7ea6e8"
+    ],
+    [
+     "0x4293aa",
+     "xor eax, eax"
+    ],
+    [
+     "0x4293ac",
+     "repe cmpsd dword ptr [esi], dword ptr es:[edi]"
+    ],
+    [
+     "0x4293ae",
+     "jne 0x4293bc"
+    ],
+    [
+     "0x4293b0",
+     "pop edi"
+    ],
+    [
+     "0x4293b1",
+     "pop esi"
+    ]
+   ]
+  },
+  {
+   "at": "0x4f4273",
+   "next_cmpsd": true,
+   "after": [
+    [
+     "0x4f4273",
+     "mov edi, 0x7ea6e8"
+    ],
+    [
+     "0x4f4278",
+     "xor eax, eax"
+    ],
+    [
+     "0x4f427a",
+     "repe cmpsd dword ptr [esi], dword ptr es:[edi]"
+    ],
+    [
+     "0x4f427c",
+     "je 0x4f4288"
+    ],
+    [
+     "0x4f427e",
+     "pop edi"
+    ],
+    [
+     "0x4f427f",
+     "mov eax, 0x80004002"
+    ]
+   ]
+  }
+ ]
+}

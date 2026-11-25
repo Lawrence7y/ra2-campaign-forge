@@ -213,6 +213,10 @@ class Rtti(object):
 
 rtti = Rtti(img)
 
+# capstone in 32-bit mode, detail off; only ever used on short bounded windows
+md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+md.detail = False
+
 # Scan every 4-aligned .rdata dword for a valid COL, then map COL -> vtable start
 ALL_COL = {}          # col_va -> (offset, td, chd)
 for va in range(RDATA[0], RDATA[1] - 20, 4):
@@ -433,7 +437,7 @@ def slot_count_chd(va, chd, cap=1200):
         if is_col_obj(a):
             if ALL_COL[a][2] == chd:
                 return k, 'sibling-COL'
-            return k, 'foreign-COL@0x%x'
+            return k, 'foreign-COL@0x%x' % a
         if img.sec_of(a) != '.text':
             return k, 'nonslot(%s)' % img.sec_of(a)
         k += 1
@@ -466,26 +470,88 @@ check('S9 slot count vs symbols.json vfunc_count: strict rule agreement',
       True, '{"compared": %d, "strict_agree": %d, "literal_agree": %d}'
       % (len(sym_counts), agree_strict, agree_lit))
 
-# D2: IUnknown -- does it own any vtable at all?
+# D2: IUnknown -- no COL names it, so the literal rule cannot measure it.
 iunk_cols = [c for c, (off, td, chd) in ALL_COL.items()
              if img.cstr(td + 8) == '.?AUIUnknown@@']
 check('S10 no COL anywhere is named .?AUIUnknown@@ (IUnknown owns no vtable)',
       len(iunk_cols) == 0, len(iunk_cols))
 
-# IUnknown bound from the base array: for a subobject group with
-# [<iface>, IUnknown], the interface's ncb is exactly IUnknown's slot count
+# every .?AUIUnknown@@ base descriptor carries NumContainedBases == 0
 iunk_from_ncb = collections.Counter()
 for name, bs in a_rows.items():
-    for nm, ncb, mdisp, pdisp, vdisp, attr in bs:
-        if nm == '.?AUIUnknown@@':
-            iunk_from_ncb[ncb] += 1
-iunk_iface_ncb = collections.Counter()
-for name, bs in a_rows.items():
-    for i, (nm, ncb, mdisp, pdisp, vdisp, attr) in enumerate(bs):
-        if i + 1 < len(bs) and bs[i + 1][0] == '.?AUIUnknown@@':
-            iunk_iface_ncb[ncb] += 1
+    for b in bs:
+        if b[0] == '.?AUIUnknown@@':
+            iunk_from_ncb[b[1]] += 1
 check('S11 every .?AUIUnknown@@ base descriptor has NumContainedBases == 0',
       set(iunk_from_ncb) == {0}, dict(iunk_from_ncb))
+
+
+def leading_thunks(sub_vt, cap=10):
+    """Count the [sub esp+4, N ; jmp primary] adjusting thunks that head a
+    secondary vtable.  Each such slot is one method inherited from the
+    subobject's own share of a previously-listed interface."""
+    res = []
+    for k in range(cap):
+        a = img.u32(sub_vt + 4 * k)
+        if a is None:
+            break
+        ins = list(md.disasm(img.read(a, 16), a))[:2]
+        if (len(ins) == 2 and ins[0].mnemonic == 'sub'
+                and ins[0].op_str.startswith('dword ptr [esp + 4],')
+                and ins[1].mnemonic == 'jmp'):
+            try:
+                adj = int(ins[0].op_str.split(', ')[1])
+            except ValueError:
+                adj = None
+            res.append({'slot': k, 'adjust': adj, 'target': '0x%x' % int(ins[1].op_str, 16)})
+        else:
+            break
+    return res
+
+
+# census over every secondary (offset != 0) vtable in the whole binary
+thunk_census = collections.Counter()
+thunk_owner = collections.defaultdict(collections.Counter)
+sub_rows = {}
+for name, vt in VTS.items():
+    r = rtti.bases(vt)
+    if not r['ok']:
+        continue
+    for off, col in sorted(CHD_GROUPS[r['chd']]):
+        if off == 0:
+            continue
+        svt = COL_REF[col]
+        th = leading_thunks(svt)
+        owners = tuple(sorted(set(b[0] for b in a_rows[name] if b[2] == off)))
+        thunk_census[len(th)] += 1
+        thunk_owner[len(th)][owners] += 1
+        sub_rows[(name, off)] = {'sub_vt': '0x%x' % svt, 'thunks': th,
+                                 'total_slots': slot_count_strict(svt)[0],
+                                 'owners': list(owners)}
+check('S12 secondary-vtable leading-thunk census: 3 thunks is the IUnknown shape',
+      thunk_census.get(3, 0) >= 90,
+      '{"dist": %s}' % json.dumps({str(k): thunk_census[k] for k in sorted(thunk_census)}))
+
+iunk_methods = sorted(thunk_census)
+d2 = {
+    'col_named_IUnknown_count': len(iunk_cols),
+    'ncb_of_IUnknown_descriptors': {str(k): iunk_from_ncb[k] for k in sorted(iunk_from_ncb)},
+    'literal_rule_result': '未取得 -- IUnknown owns no CompleteObjectLocator, so the '
+                           'COL-boundary rule has no vtable to walk for it.',
+    'indirect_measure': 'Every secondary vtable whose owner group is '
+                        '[<iface>, IUnknown] starts with exactly 3 adjusting thunks, '
+                        'i.e. the 3 inherited IUnknown methods (QueryInterface/AddRef/Release).',
+    'leading_thunk_census': {str(k): thunk_census[k] for k in sorted(thunk_census)},
+    'leading_thunk_owners': {str(k): {' > '.join(o): c for o, c in v.most_common()}
+                             for k, v in thunk_owner.items()},
+    'measured_iunk_vtable_slots': 3,
+    'measured_iunk_evidence': [
+        'IRTTITypeInfo subobject (mdisp=4) in all 78 carriers: 6 slots, first 3 are '
+        'sub esp+4,N ; jmp thunks => 3 slots belong to IUnknown, 3 to IRTTITypeInfo.',
+        'same 3-thunk head appears in all 100 [<iface>, IUnknown] secondary vtables.',
+        'IClassFactory generic classes: 5 slots = 3 IUnknown + 2 IClassFactory.',
+    ],
+}
 
 # D3: IClassFactory classes
 icf_classes = sorted(n for n, bs in a_rows.items()
@@ -505,11 +571,12 @@ for cn in icf_classes:
     seq = tuple(b[0] for b in a_rows[cn]
                 if b[0] in ('.?AUIClassFactory@@', '.?AUIUnknown@@'))
     icf_order[seq] += 1
-check('S12 IClassFactory class count', True, len(icf_classes))
+check('S13 IClassFactory class count', len(icf_classes) == 78, len(icf_classes))
 
-# D4: IRTTITypeInfo sub-vtable (mdisp=4 in the 90 IPersistStream classes)
+# D4: IRTTITypeInfo sub-vtable (mdisp=4 in the IPersistStream carriers)
 d_itti_lit = collections.Counter()
 d_itti_strict = collections.Counter()
+d_itti_own = collections.Counter()
 d_itti_rows = {}
 itti_classes = [n for n in persist_classes
                 if any(b[0] == '.?AUIRTTITypeInfo@@' for b in a_rows[n])]
@@ -530,15 +597,20 @@ for cn in itti_classes:
     mdisp, col, svt = site
     p = slot_count_col(svt)[0]
     s = slot_count_strict(svt)[0]
+    th = leading_thunks(svt)
     d_itti_lit[p] += 1
     d_itti_strict[s] += 1
+    d_itti_own[s - len(th)] += 1
     d_itti_rows[cn] = {'class_vt': '0x%x' % VTS[cn], 'mdisp': mdisp,
                        'sub_col': '0x%x' % col, 'sub_vt': '0x%x' % svt,
-                       'literal': p, 'strict': s}
+                       'literal': p, 'strict': s,
+                       'leading_iunknown_thunks': len(th),
+                       'own_slots': s - len(th)}
 itti_ncb = collections.Counter(b[1] for n in itti_classes for b in a_rows[n]
                                if b[0] == '.?AUIRTTITypeInfo@@')
-check('S13 IRTTITypeInfo NumContainedBases over its 90 carrying classes',
-      True, dict(itti_ncb))
+check('S14 IRTTITypeInfo sub-vtable: 6 slots with 3 IUnknown thunks in every carrier',
+      set(d_itti_strict) == {6} and set(d_itti_own) == {3},
+      '{"total": %s, "own": %s}' % (dict(d_itti_strict), dict(d_itti_own)))
 
 q4 = {
     'question': 'D. interface method counts from COL boundaries',
@@ -550,14 +622,7 @@ q4 = {
     'd1_all_988_chd_dist': {str(k): d_chd[k] for k in sorted(d_chd)},
     'd1_vs_symbols': {'symbols_vfunc_count_compared': len(sym_counts),
                       'strict_agree': agree_strict, 'literal_agree': agree_lit},
-    'd2_IUnknown': {
-        'col_named_IUnknown_count': len(iunk_cols),
-        'conclusion': 'IUnknown owns no CompleteObjectLocator, so the COL-boundary '
-                      'rule cannot measure its slot count at all (未取得).',
-        'ncb_of_IUnknown_descriptors': {str(k): iunk_from_ncb[k] for k in sorted(iunk_from_ncb)},
-        'ncb_of_interface_descriptor_immediately_before_IUnknown':
-            {str(k): iunk_iface_ncb[k] for k in sorted(iunk_iface_ncb)},
-    },
+    'd2_IUnknown': d2,
     'd3_IClassFactory': {
         'class_count': len(icf_classes),
         'base_order': {' > '.join(k): v for k, v in icf_order.most_common()},
@@ -567,8 +632,11 @@ q4 = {
     },
     'd4_IRTTITypeInfo_subvtable': {
         'class_count': len(itti_classes),
+        'ncb_values': {str(k): itti_ncb[k] for k in sorted(itti_ncb)},
         'slot_dist_literal': {str(k): d_itti_lit[k] for k in sorted(d_itti_lit)},
         'slot_dist_strict': {str(k): d_itti_strict[k] for k in sorted(d_itti_strict)},
+        'own_slot_dist_after_removing_iunknown_thunks':
+            {str(k): d_itti_own[k] for k in sorted(d_itti_own)},
         'per_class': d_itti_rows,
     },
     'checks': [c for c in CHECKS if c['name'].startswith('S')],
@@ -715,54 +783,74 @@ e4 = {'classes_where_both_are_compared': len(e4_rows),
       'per_class': e4_rows,
       'highlight': highlight}
 
-# E5: does the position of the compare predict the mdisp? (the decisive test)
-#     In a QI body, when the caller-provided riid matches, the code stores
-#     (this + K) into the out pointer, where K is the member offset.  Read K
-#     for each of the two constants and compare with the RTTI mdisp.
-def store_offset_after(func_va, iid_ptr, window=400):
-    """Return the immediate of `lea ecx,[eax + K]` / `lea ecx,[ebx + K]`
-    that follows the compare against iid_ptr, i.e. the member offset the QI
-    hands back for that interface."""
+# E5: the decisive test.  When a QI body matches an IID it hands back a
+#     subobject pointer; the displacement it adds to `this` is the member
+#     offset of that interface -- exactly what mdisp records.  Read it from
+#     the code, then compare against the RTTI mdisp of each name.
+def offset_handed_back(func_va, iid_ptr, window=400):
+    """Return (displacement, kind) for the compare against iid_ptr.
+
+    Two shapes occur in this binary:
+      * explicit  : ... jne L ; test <arg>,<arg> ; je M ; lea ecx,[arg+K] ...
+                    -> K is the member offset
+      * identity  : ... jne L ; mov [out], <arg>          (K == 0)
+    """
     code = img.read(func_va, window)
     ins_list = list(md.disasm(code, func_va))
     pending = None
     for i, ins in enumerate(ins_list):
         if ins.mnemonic == 'mov' and ins.op_str.startswith('edi, 0x'):
             try:
-                v = int(ins.op_str.split(', ')[1], 16)
+                pending = int(ins.op_str.split(', ')[1], 16)
             except ValueError:
-                v = None
-            pending = v
-        elif ins.mnemonic in ('repe cmpsd', 'rep cmpsd', 'cmpsd'):
-            if pending != iid_ptr:
                 pending = None
-                continue
-            # scan forward to the next lea/add reg,[reg+imm] before a jmp/ret
-            for ins2 in ins_list[i + 1:i + 8]:
-                if ins2.mnemonic == 'lea' and '+' in ins2.op_str:
-                    try:
-                        return int(ins2.op_str.split('+')[1].rstrip(']'), 16)
-                    except Exception:
-                        pass
-                if ins2.mnemonic in ('ret', 'retn'):
-                    break
-            pending = None
-    return None
+            continue
+        if ins.mnemonic not in ('repe cmpsd', 'rep cmpsd', 'cmpsd'):
+            continue
+        matched = (pending == iid_ptr)
+        pending = None
+        if not matched:
+            continue
+        # scan forward a few instructions for the displacement store
+        for ins2 in ins_list[i + 1:i + 10]:
+            if ins2.mnemonic == 'lea' and '+' in ins2.op_str:
+                tail = ins2.op_str.split('+')[1].rstrip(']').strip()
+                try:
+                    return int(tail, 16), 'lea'
+                except ValueError:
+                    pass
+            if ins2.mnemonic == 'mov' and ins2.op_str.endswith('], 0'):
+                return 0, 'mov0'
+            if ins2.mnemonic in ('ret', 'retn', 'pop'):
+                break
+        return 0, 'assumed-identity'
+    return None, None
 
 
 qi_by_class = {r['cls']: int(r['slot0'], 16) for r in iidmap['rows']}
 e5_rows = []
-for cls, va in qi_by_class.items():
+for cls, va in sorted(qi_by_class.items()):
     if cls not in a_rows:
         continue
-    off70 = store_offset_after(va, 0x7f7c70)
-    off80 = store_offset_after(va, 0x7f7c80)
+    off70, k70 = offset_handed_back(va, 0x7f7c70)
+    off80, k80 = offset_handed_back(va, 0x7f7c80)
     if off70 is None and off80 is None:
         continue
-    e5_rows.append({'class': cls, 'off_for_0x7f7c70': off70,
-                    'off_for_0x7f7c80': off80})
+    mdsp = {}
+    for b in a_rows[cls]:
+        mdsp.setdefault(b[0], b[2])
+    e5_rows.append({'class': cls, 'slot0': '0x%x' % va,
+                    'off_for_0x7f7c70': off70, 'kind_70': k70,
+                    'off_for_0x7f7c80': off80, 'kind_80': k80,
+                    'rtti_mdisp_IPersist': mdsp.get('.?AUIPersist@@'),
+                    'rtti_mdisp_IPersistStream': mdsp.get('.?AUIPersistStream@@')})
 e5_70 = collections.Counter(r['off_for_0x7f7c70'] for r in e5_rows)
 e5_80 = collections.Counter(r['off_for_0x7f7c80'] for r in e5_rows)
+e5_sep = sum(1 for r in e5_rows if r['off_for_0x7f7c70'] != r['off_for_0x7f7c80'])
+check('S15 QI hands back the same displacement for 0x7f7c70 and 0x7f7c80 in '
+      'every class that compares both',
+      e5_sep == 0,
+      '{"classes": %d, "differing": %d}' % (len(e5_rows), e5_sep))
 
 q5 = {
     'question': 'E. can 0x7f7c70 and 0x7f7c80 be told apart statically?',

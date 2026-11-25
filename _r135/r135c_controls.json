@@ -1,0 +1,61 @@
+{
+ "asserts": [
+  {
+   "name": "P1 unmodified copy exit 0",
+   "ok": true,
+   "detail": "exit=0 fails=[]"
+  },
+  {
+   "name": "P2 C11 still reports ok=0 fail=0 frozen-unverifiable=12",
+   "ok": true,
+   "detail": "C11 note"
+  },
+  {
+   "name": "P3 C12b reports 12/12 mirror-identical",
+   "ok": true,
+   "detail": "C12b note"
+  },
+  {
+   "name": "N1b 基线：无自述行 -> frozen-unverifiable=12 / fail=0（豁免成立且计数可见）",
+   "ok": true,
+   "detail": "exit=0 C11 col7 machine-check: ok=0 fail=0 frozen-unverifiable=12"
+  },
+  {
+   "name": "N1 半截自述行 -> exit 1，点名 id 24，且 frozen 12->11 / fail 0->1",
+   "ok": true,
+   "detail": "exit=1 hits=1 C11 col7 machine-check: ok=0 fail=1 frozen-unverifiable=11"
+  },
+  {
+   "name": "N1c 成对反控：同一破坏 + 旧分支语义 -> exit 0（修正方向可分辨，唯一变量是那一行）",
+   "ok": true,
+   "detail": "exit=0 C11 col7 machine-check: ok=0 fail=0 frozen-unverifiable=12"
+  },
+  {
+   "name": "N2 改 live 第 6 列 -> exit 1 且报 C12b",
+   "ok": true,
+   "detail": "id=1 exit=1 C12b=True"
+  },
+  {
+   "name": "N3 改冻结档第 4 列 -> exit 1 且报 C12b（镜像另一方向）",
+   "ok": true,
+   "detail": "exit=1 C12b=True"
+  },
+  {
+   "name": "N2b 重钉 C7d 后：C7d 放行而 C12b 仍 FAIL（两个独立条件）",
+   "ok": true,
+   "detail": "C7d_ok=True C12b_hits=1 exit=1"
+  },
+  {
+   "name": "P4 复原后 exit 0（沙箱无残留污染）",
+   "ok": true,
+   "detail": "exit=0 fails=[]"
+  }
+ ],
+ "out": {
+  "N1": "{'exit': 1, 'hits': 1, 'c11': 'C11 col7 machine-check: ok=0 fail=1 frozen-unverifiable=11'}",
+  "N1c": "{'exit_old_semantics': 0, 'c11': 'C11 col7 machine-check: ok=0 fail=0 frozen-unverifiable=12'}",
+  "N2": "{'exit': 1}",
+  "N3": "{'exit': 1}",
+  "N2b": "{'c7d_ok': True, 'c12b_hits': 1, 'exit': 1}"
+ }
+}

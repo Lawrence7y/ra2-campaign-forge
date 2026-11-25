@@ -1,0 +1,95 @@
+{
+ "P0": 0,
+ "P1": {
+  "rc": 1,
+  "fails": [
+   "FAIL  C16d floor table TAMPERED: sha256 04c2434e4d9aa248 != registered 0241a4666162ba57 (editing a single floor requires re-pinning this constant deliberately; that is the point)"
+  ]
+ },
+ "P2": 1,
+ "P3": {
+  "rc": 1,
+  "fails": [
+   "FAIL  C16d floor table TAMPERED: sha256 9bc92f2c05c797ef != registered 0241a4666162ba57 (editing a single floor requires re-pinning this constant deliberately; that is the point)"
+  ]
+ },
+ "P4": {
+  "rc": 1,
+  "fails": [
+   "FAIL  C16 section(s) hollowed out (body below per-section floor): [(135, 10, 3059)] (a section must not lose more than half its pinned body; if a section legitimately shrank, re-pin C16_FLOORS deliberately)"
+  ]
+ },
+ "P5": 0,
+ "gate_sha": "f0da53170e2fd1f145c543bd62d45041c5898e53c881320d6250b33b33b2113a",
+ "assertions": [
+  {
+   "assert": "P0 baseline gate is green with the 2.135 pin in place",
+   "ok": true,
+   "detail": 0
+  },
+  {
+   "assert": "P1 lowering the 2.135 floor to 1 must be caught by the sha guard (C16d)",
+   "ok": true,
+   "detail": [
+    "FAIL  C16d floor table TAMPERED: sha256 04c2434e4d9aa248 != registered 0241a4666162ba57 (editing a single floor requires re-pinning this constant deliberately; that is the point)"
+   ]
+  },
+  {
+   "assert": "P2 floor above the body FAILs (C16 hollow or C16d tampered)",
+   "ok": true,
+   "detail": [
+    "FAIL  C16d floor table TAMPERED: sha256 a393aad63e07b8dd != registered 0241a4666162ba57 (editing a single floor requires re-pinning this constant deliberately; that is the point)",
+    "FAIL  C16 section(s) hollowed out (body below per-section floor): [(135, 6118, 99999)] (a section must not lose more than half its pinned body; if a section legitimately shrank, re-pin C16_FLOORS deliberately)"
+   ]
+  },
+  {
+   "assert": "P3 deleting the 135 entry leaves 1 unpinned section (within the cap of 2) so only the sha guard fires -- which is exactly the loudness required",
+   "ok": true,
+   "detail": [
+    "FAIL  C16d floor table TAMPERED: sha256 9bc92f2c05c797ef != registered 0241a4666162ba57 (editing a single floor requires re-pinning this constant deliberately; that is the point)"
+   ]
+  },
+  {
+   "assert": "found the 2.135 body block inside R14_COMMON.md",
+   "ok": true,
+   "detail": "regex ran against R14_COMMON, not against the gate"
+  },
+  {
+   "assert": "the 2.135 body block is the last section (ends at EOF)",
+   "ok": true,
+   "detail": "''"
+  },
+  {
+   "assert": "P4 hollowing out the 2.135 body makes the gate FAIL on C16",
+   "ok": true,
+   "detail": [
+    "FAIL  C16 section(s) hollowed out (body below per-section floor): [(135, 10, 3059)] (a section must not lose more than half its pinned body; if a section legitimately shrank, re-pin C16_FLOORS deliberately)"
+   ]
+  },
+  {
+   "assert": "P4b R14_COMMON restored byte-identically from memory",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "assert": "P5 gate bytes identical to the pinned baseline",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "assert": "P5b final run green",
+   "ok": true,
+   "detail": 0
+  },
+  {
+   "assert": "P5c CR of every touched file still at baseline",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "summary": {
+  "total": 11,
+  "pass": 11,
+  "fail": []
+ }
+}
