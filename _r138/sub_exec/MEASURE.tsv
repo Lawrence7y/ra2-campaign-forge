@@ -1,0 +1,24 @@
+项	值	口径	正控	负控
+F23_limitations_total	12	F23(FACT_INDEX.tsv v532)col4原文正则「命中(\d+)行」	regex「命中\s*(\d+)\s*行」在col4命中=>True	regex「ZZZZ_NOT_PRESENT_(\d+)行」在col4无命中=>True
+F23_parts	6,2,3	col4原话:6行为否定式/2行为callers计数/真正非否定多计仅3行	同正则集在col4分别命中6/2/3	col4无「ZZZZ行为否定式」→正则无命中
+F23_sum	11	6+2+3	算术正控6+2+3=11	算术负控6+2+3!=12
+F23_diff	1	12-(6+2+3)	12>11差额为正1	12-12=0可作零差负控
+F23_fullstr	2	col4:「减去含全串④direct call的2行」	regex命中2	无命中ZZZZ的负控
+F23_W	293	col4:「相对宽口径W=293」	regex命中293	无命中ZZZZ的负控
+F23_setdiff	9	col4:「为9(因其中3行本已在W内)」	regex命中9	无命中ZZZZ的负控
+coverage_filename_hits	0	os.walk全库精确文件名==coverage.tsv(忽略大小写)	walk能找到FACT_INDEX.tsv(真实存在)	walk找不到ZZZ_ABSENT_R138.coverage.tsv(人为构造不存在)
+coverage_content_hits	919	全库文件内容含字面串coverage.tsv(跳过>5MB与二进制)	同一字节搜法在 tier_final_4417.tsv 中命中 b'coverage.tsv'=>True	对 ZZZ_ABSENT_R138 路径 open(...,rb)=>FileNotFoundError(0命中)
+dir_COVERAGE_exists	False	os.path.isdir(lead/next_re_20261117_r14/COVERAGE)	os.path.isdir(lead/next_re_20261117_r14/R17_R104_FACTINDEX_V532)=True	os.path.isdir(lead/next_re_20261117_r14/ZZZ_ABSENT_R138)=False
+dir_R17_DELIVERY_exists	False	os.path.isdir(lead/next_re_20261117_r14/R17_DELIVERY)	同上已知存在目录=True	同上人造不存在目录=False
+dir_R17_R41_RECOMPUTE_exists	False	os.path.isdir(lead/next_re_20261117_r14/R17_R41_RECOMPUTE)	同上已知存在目录=True	同上人造不存在目录=False
+F24_base	cwd/lead	rel相对工作目录? 实测cwd根0命中/cwd/lead有65命中/cwd/lead/next_re_r14为0命中	brev_b.txt在cwd/lead下os.stat成功size=12274	brev_b.txt在cwd根下os.stat抛FileNotFoundError
+F24_data_lines	4417	清单数据行数(去掉表头)	表头四列=rel/bytes/source/why_content	非表头行数4417与声明总字节配套
+F24_declared_bytes	737517286	sum(col1 bytes)	sum=737,517,286与F24正文主引值一致	若sum!=主引值则为不一致(此处不成立)
+F24_equal_count	64	存在且字节相同(os.stat(base=cwd/lead))	pos_control FACT_INDEX.tsv os.stat成功	neg_control cwd/lead/NO_SUCH_FILE_R138_CONTROL_zzz FileNotFoundError
+F24_equal_bytes	26846620	equal桶声明字节合计	等于4件*声明字节和	等差负控
+F24_diff_count	1	存在但字节不同	a2_sites.json: declared=17624355 actual=913237(剔bounds后)	同路径declared==actual则为equal(非diff)
+F24_diff_bytes	913237	diff桶声明字节合计	diff仅1件	diff为0件则此值为0(负控情景)
+F24_missing_count	4352	不存在	pos_control同上	neg_control同上
+F24_missing_bytes	709757429	missing桶声明字节合计	等于declared-equal-diff	若三桶合计!=declared则为漏算
+F35_evidence_path_count	1	F35 col3按分号拆分非空项	split(;)对「a;b」得2项(正控)	split(;)对单一路径得分1项(负控情景;本次就是1项)
+F35_path_exists	False	唯一路径lead\...\COVERAGE\PANEL.md(M47/M52/严格双列表)去(...)后os.path.exists	os.path.exists(lead/next_re_20261117_r14)=True	os.path.exists(ZZZ_NO_SUCH_R138)=False

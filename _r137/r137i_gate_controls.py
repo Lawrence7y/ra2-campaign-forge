@@ -51,22 +51,51 @@ def chk(name, cond, detail=''):
 
 
 def build_sandbox():
-    """三段式最小 ROOT：lead/ + R14/ + 关键文件 + LEAD_LOCK/台账（部分判据要读）。"""
-    sb = tempfile.mkdtemp(prefix='r137sbx_')
-    r14 = os.path.join(sb, R14REL)
-    os.makedirs(r14, exist_ok=True)
-    for fn in FILES:
-        src = os.path.join(ROOT, R14REL, fn)
-        if os.path.exists(src):
-            shutil.copy2(src, os.path.join(r14, fn))
-    # check_disc.py 里 ROOT 的推导依赖层级：lead/next_re_.../  的上两级
-    for rel in ('lead/LEAD_LOCK', 'lead/GOAL_THREE_TARGETS_20261018.md'):
-        src = os.path.join(ROOT, rel)
-        if os.path.exists(src):
-            dst = os.path.join(sb, rel)
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copy2(src, dst)
-    return sb, r14
+    """三段式 ROOT：实件拷贝会被改的文件；其余目录软链挂入（R135 S-238 教训：
+    被改的文件必须拷实件，改软链会写穿真树）。
+
+    S-261（本脚本首跑当场抓出）：初版只复制了 11 个数据文件，沙箱里 C7/C11/C12
+    引用的几十个产物路径全部 FILE_MISSING ⇒ 基线 P0 就 rc=1，此后所有「exit 1」
+    都不再能归因于破坏动作。改用 R136 已验证的做法：整个 lead/ 与工程根下的
+    _rNN 目录软链挂入，被改动的少数文件拷实件。
+    """
+    root = tempfile.mkdtemp(prefix='r137sbx_', dir='/tmp')
+    r14d = os.path.join(root, 'lead', 'next_re_20261117_r14')
+    os.makedirs(r14d)
+    # 会被改动的：拷实件
+    for f in FILES:
+        s = os.path.join(ROOT, R14REL, f)
+        if os.path.isfile(s):
+            shutil.copy2(s, os.path.join(r14d, f))
+    for f in ('GOAL_THREE_TARGETS_20261018.md', 'LEAD_LOCK'):
+        s = os.path.join(ROOT, 'lead', f)
+        if os.path.isfile(s):
+            shutil.copy2(s, os.path.join(root, 'lead', f))
+    # 其余 lead/ 下条目软链
+    for base in (os.path.join(ROOT, R14REL), os.path.join(ROOT, 'lead')):
+        if not os.path.isdir(base):
+            continue
+        for f in os.listdir(base):
+            s = os.path.join(base, f)
+            rel = os.path.relpath(s, os.path.join(ROOT, 'lead'))
+            t = os.path.join(root, 'lead', rel)
+            if os.path.exists(t) or os.path.islink(t):
+                continue
+            if os.path.isdir(s) and f != 'sbx':
+                os.symlink(s, t)
+            elif os.path.isfile(s) and f.endswith('.py'):
+                os.symlink(s, t)
+    # 工程根下的 _rNN 与 ra2bench 等软链（部分纪律产物路径相对 ROOT）
+    for f in os.listdir(ROOT):
+        s = os.path.join(ROOT, f)
+        t = os.path.join(root, f)
+        if os.path.exists(t) or os.path.islink(t):
+            continue
+        if os.path.isdir(s) and f not in ('lead', 'sbx'):
+            os.symlink(s, t)
+        elif os.path.isfile(s) and f.endswith('.md'):
+            os.symlink(s, t)
+    return root, r14d
 
 
 def run_gate(r14):
