@@ -39,7 +39,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if not os.path.isdir(os.path.join(ROOT, 'lead')):
     ROOT = '/home/t628/projects/ra2-campaign-forge'
 TIER = os.path.join(ROOT, 'lead', 'next_re_20261117_r14')
-EXPECT_CUR = os.path.join(TIER, 'R17_R121_FACTINDEX_V549', 'FACT_INDEX.tsv')
+EXPECT_CUR = os.path.join(TIER, 'R17_R128_FACTINDEX_V556', 'FACT_INDEX.tsv')
 CUR = EXPECT_CUR
 IGNORE_PIN = False
 for a in sys.argv[1:]:
@@ -48,8 +48,8 @@ for a in sys.argv[1:]:
 if IGNORE_PIN:
     print('  !! WARNING --ignore-pin: sha256/master-pin assertions DISABLED (self-test only)')
 
-CUR_SHA256 = 'f1d3212715a23d9da5189a6c0630a0955d4a722a7f7ae10ce07791b2f8f4c085'
-TOTAL_BYTES = 117545
+CUR_SHA256 = 'eac22c67683179436d47db864600dd2e9fa69a59105644ec05f1976fb595886f'
+TOTAL_BYTES = 125538
 GRADES = {
     'F01': '[已证]',
     'F02': '[已证]',
@@ -73,7 +73,7 @@ GRADES = {
     'F20': '[流程]',
     'F21': '[已证]',
     'F22': '[已证]',
-    'F23': '[已证]',
+    'F23': '未取得',
     'F24': '[已证]',
     'F25': '[流程]',
     'F26': '[流程]',
@@ -129,19 +129,19 @@ FLOORS = {
     'F20': (427, 56),
     'F21': (318, 252),
     'F22': (377, 91),
-    'F23': (1785, 5711),
-    'F24': (10520, 31158),
+    'F23': (1785, 8200),
+    'F24': (10613, 33011),
     'F25': (301, 125),
     'F26': (190, 73),
     'F27': (230, 146),
     'F28': (348, 193),
-    'F29': (3432, 13343),
+    'F29': (3435, 14222),
     'F30': (305, 169),
     'F31': (221, 291),
     'F32': (246, 216),
     'F33': (196, 133),
     'F34': (348, 174),
-    'F35': (1751, 6020),
+    'F35': (1751, 8695),
     'F36': (367, 320),
     'F37': (349, 154),
     'F38': (175, 176),
@@ -296,7 +296,7 @@ LOST_ITEMS = 43
 LOST_UNIQ = 16
 ITEMS = 178
 UNIQ = 74
-MASTER_SHA256 = '2fa2eb2fd66cdf7034290a20c045e5377b9b055f6793706410cf8200f5303bfb'
+MASTER_SHA256 = '9ec2296e8ad2929f592a311c68f10142a6c998e242775c43e9acdf2860218833'
 
 fails = []
 def F(m): fails.append(m)

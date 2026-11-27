@@ -1,0 +1,159 @@
+{
+ "script": "r174e_identity.py",
+ "file_sha256": "7a8447d1d816cdc36db59158f28d71a733f33f94e1c1ee8ef0c0ecdbe2970532",
+ "member_len": 913237,
+ "member_head": "\"calls\": {\"00407100\": [\"",
+ "member_tail": "007E01D2\": [\"007E0266\"]}",
+ "ser_len": 913239,
+ "prefix_len": 913238,
+ "marker_offset": 913237,
+ "identity": "member_len + 2 == ser_len; member_len == marker_offset (tautology for first member)",
+ "assertions": [
+  {
+   "id": "U1a len(member) == 913,237",
+   "ok": true,
+   "detail": "913237"
+  },
+  {
+   "id": "U1b member 以 b'\"calls\": ' 开头",
+   "ok": true,
+   "detail": "b'\"calls\": {\"0'"
+  },
+  {
+   "id": "U1c member 以 b'}' 结尾",
+   "ok": true,
+   "detail": "b'6\"]}'"
+  },
+  {
+   "id": "U1d member 不含外层左花括号",
+   "ok": true,
+   "detail": "b'\"c'"
+  },
+  {
+   "id": "U2a b\"{\" + member + b\"}\" 是合法 JSON",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "id": "U2b 该串可 json.loads",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "U2c 该串与 dumps({\"calls\": V}) 逐字节相同",
+   "ok": true,
+   "detail": "(913239, 913239)"
+  },
+  {
+   "id": "U2d 该串长度 == 913,239",
+   "ok": true,
+   "detail": "913239"
+  },
+  {
+   "id": "U2e 磁盘前缀 d[:len(SER)-1] + b\"}\" == SER",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "U3a member + 1 == 913,238（分段前缀）",
+   "ok": true,
+   "detail": "913238"
+  },
+  {
+   "id": "U3b member + 2 == 913,239（整份文件）",
+   "ok": true,
+   "detail": "913239"
+  },
+  {
+   "id": "U3c 差恰为外层两个花括号",
+   "ok": true,
+   "detail": "2"
+  },
+  {
+   "id": "U4a 913,237 可由 member 复现",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "U4b 913,238 可由 SER[:-1] 复现",
+   "ok": true,
+   "detail": "913238"
+  },
+  {
+   "id": "U4c 913,239 可由 SER 复现",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "N1a calls 为第二成员时 len(member) != 成员终点偏移",
+   "ok": true,
+   "detail": "(21, 38)"
+  },
+  {
+   "id": "N1b 差值恰为「起点 − 1」",
+   "ok": true,
+   "detail": "(17, 17)"
+  },
+  {
+   "id": "N1c 盘上 calls 起点 == 1（首成员）",
+   "ok": true,
+   "detail": "b'\"calls\": '"
+  },
+  {
+   "id": "N1d 首成员 ⇒ 终点偏移 == 成员长度（913,237 两读法同一整数）",
+   "ok": true,
+   "detail": "(913237, 913237)"
+  },
+  {
+   "id": "N1e 两读法都能得到 913,239：member+2 与 OFF+2 均 == SER 长度",
+   "ok": true,
+   "detail": "(913239, 913239, 913239)"
+  },
+  {
+   "id": "N1f 故偏移读法不可判死；判别力来自「成员文本本身可 json.loads 成 {calls:…}」",
+   "ok": true,
+   "detail": "['calls']"
+  },
+  {
+   "id": "N2.1 成员文本 + 2 == 整份序列化长度",
+   "ok": true,
+   "detail": "(21, 23)"
+  },
+  {
+   "id": "N2.1 b\"{\" + 成员 + b\"}\" == 整份序列化",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "N2.2 成员文本 + 2 == 整份序列化长度",
+   "ok": true,
+   "detail": "(11, 13)"
+  },
+  {
+   "id": "N2.2 b\"{\" + 成员 + b\"}\" == 整份序列化",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "N2.3 成员文本 + 2 == 整份序列化长度",
+   "ok": true,
+   "detail": "(47, 49)"
+  },
+  {
+   "id": "N2.3 b\"{\" + 成员 + b\"}\" == 整份序列化",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "N3a 用 913,237 表示「整份 calls-only 文件」会少 2 B",
+   "ok": true,
+   "detail": "2"
+  },
+  {
+   "id": "N3b 磁盘上真实存在的前缀长度恰为 913,238（= 913,239 − 末尾花括号）",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "fail": 0
+}
