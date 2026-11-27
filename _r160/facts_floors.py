@@ -16,6 +16,9 @@ C7 证据产物之外的**零接触**。所以台账的任何改动对既有门�
   D7  **逐 fid 的证据项清单** + 第 4 列字节不许缩 + 失联多重集（v1 只钉全局计数）。
   D8  总字节不许缩（v1 用一半为下界）。
   D9  **单一主指纹覆盖全部常量**（含 grade/EVID/EVIDB/字节/GATE 计数）。
+  D10 **当前版指针**必须与本文件 CUR_SHA256/TOTAL_BYTES 及 CUR 实物 sha 一致。
+      （R180 新增：此前该指针在 check_disc / gate_runner / 本脚本三者中读取次数各 0，
+      静默漂移时三门全绿；判据是两条独立事实的相等，不是文本相似。）
 
 如实声明的边界：
   1) 所有 pin 都是本文件里的常量。**同时改数据与常量**仍能过 —— 这是所有指纹/下界类
@@ -32,6 +35,7 @@ import csv
 import hashlib
 import io
 import os
+import re
 import sys
 from collections import Counter
 
@@ -39,7 +43,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if not os.path.isdir(os.path.join(ROOT, 'lead')):
     ROOT = '/home/t628/projects/ra2-campaign-forge'
 TIER = os.path.join(ROOT, 'lead', 'next_re_20261117_r14')
-EXPECT_CUR = os.path.join(TIER, 'R17_R128_FACTINDEX_V556', 'FACT_INDEX.tsv')
+EXPECT_CUR = os.path.join(TIER, 'R17_R131_FACTINDEX_V563', 'FACT_INDEX.tsv')
 CUR = EXPECT_CUR
 IGNORE_PIN = False
 for a in sys.argv[1:]:
@@ -48,8 +52,8 @@ for a in sys.argv[1:]:
 if IGNORE_PIN:
     print('  !! WARNING --ignore-pin: sha256/master-pin assertions DISABLED (self-test only)')
 
-CUR_SHA256 = 'eac22c67683179436d47db864600dd2e9fa69a59105644ec05f1976fb595886f'
-TOTAL_BYTES = 125538
+CUR_SHA256 = '28423e7928d8414216b6a09f8ea56ef60d484dbd121cf9e5d673ffc3bc45db46'
+TOTAL_BYTES = 133310
 GRADES = {
     'F01': '[已证]',
     'F02': '[已证]',
@@ -130,18 +134,18 @@ FLOORS = {
     'F21': (318, 252),
     'F22': (377, 91),
     'F23': (1785, 8200),
-    'F24': (10613, 33011),
+    'F24': (11349, 36140),
     'F25': (301, 125),
     'F26': (190, 73),
     'F27': (230, 146),
     'F28': (348, 193),
-    'F29': (3435, 14222),
+    'F29': (3435, 15256),
     'F30': (305, 169),
     'F31': (221, 291),
     'F32': (246, 216),
     'F33': (196, 133),
     'F34': (348, 174),
-    'F35': (1751, 8695),
+    'F35': (1751, 11500),
     'F36': (367, 320),
     'F37': (349, 154),
     'F38': (175, 176),
@@ -296,7 +300,7 @@ LOST_ITEMS = 43
 LOST_UNIQ = 16
 ITEMS = 178
 UNIQ = 74
-MASTER_SHA256 = '9ec2296e8ad2929f592a311c68f10142a6c998e242775c43e9acdf2860218833'
+MASTER_SHA256 = 'eab670346cd14b6ee5b311e6d20cd36eec04dafc3e3aa1c12211f3be945df1cf'
 
 fails = []
 def F(m): fails.append(m)
@@ -421,8 +425,49 @@ _master = hashlib.sha256(('\n'.join([CUR_SHA256, str(TOTAL_BYTES), canon_g(GRADE
                                       canon_e(EVID), canon_eb(EVIDB), canon_l(LOST),
                                       str(ITEMS), str(UNIQ), str(LOST_ITEMS), str(LOST_UNIQ)])).encode()).hexdigest()
 if not IGNORE_PIN and _master != MASTER_SHA256:
-    F('D9 MASTER pin drifted: constants were edited together with data')
-print('  D9 master pin: %s' % _master[:16])
+    # R180 修正（审计 #429 的 D1/D2，主会话 r180f 复算成立）：原文只打前 16 位且 FAIL
+    # 消息完全不含 sha ⇒ 末位被改的漂移在日志里与基线逐字相同。此处补全文。
+    F('D9 MASTER pin drifted: recomputed %s != pinned %s (constants were edited together with data)'
+      % (_master, MASTER_SHA256))
+print('  D9 master pin: %s (pinned %s)' % (_master, MASTER_SHA256))
+
+# ---- D10 [R180 新增] 当前版指针必须与 CUR 常量/实物一致 ----
+# 存在理由（实测，连续 8 轮登记未闭合）：D0/D9 只钉 CUR 指向的那份文件；
+# FACT_INDEX_CURRENT.md 承载「哪一份是当前版」的声明，却在 check_disc / gate_runner /
+# 本脚本三者中读取次数各 0（_r180/r180a A 段实测）⇒ 指针静默漂移时三门全绿。
+# 判据是两条**独立**事实的相等，不是文本相似：
+#   (A) 指针声明的 sha256 == CUR 这份文件**现盘实测** sha256（声明 vs 实物）
+#   (B) 指针声明的字节数 == 本文件 TOTAL_BYTES（规模声明 vs 规模常量）
+# 另有第三条 (C) 指针 sha256 == 本文件 CUR_SHA256，但它**不独立**：D0 已保证
+#   sha(CUR) == CUR_SHA256，故 (A) 绿 + D0 绿 ⇒ (C) 必绿，三者同真同假。
+#   R180 审计 #429 的 B4 指出卡面写「三条相等」夸大了独立性，主会话 r180f 复算成立，
+#   此处按源码口径订正为「两条独立 + 一条连带」，判定逻辑不变（多留一条是防御性冗余）。
+# 任一条不等即 FAIL。文件缺失同样 FAIL（不得因读不到就跳过而假通过）。
+PTR_FILE = os.path.join(TIER, 'FACT_INDEX_CURRENT.md')
+print('  D10 pointer file: %s' % ('present' if os.path.exists(PTR_FILE) else 'MISSING'))
+if not os.path.exists(PTR_FILE):
+    F('D10 pointer file missing: %s' % PTR_FILE)
+else:
+    _pt = io.open(PTR_FILE, encoding='utf-8', newline='').read()
+    _ms = re.search(r'\| sha256 \| ([0-9a-f]{64}) \|', _pt)
+    _mb = re.search(r'\| 字节数 \| (\d+) \|', _pt)
+    if not _ms or not _mb:
+        F('D10 pointer fields unparseable (sha256_found=%r bytes_found=%r)' % (bool(_ms), bool(_mb)))
+    else:
+        _ps, _pb = _ms.group(1), int(_mb.group(1))
+        _ds = hashlib.sha256(open(CUR, 'rb').read()).hexdigest()
+        # 打印与 FAIL 消息一律用**全文** sha：R180 自测发现只打前 16 位时，
+        # 末位被改的漂移在日志里与基线逐字相同（判据仍会 FAIL，但事后无法从日志分辨）。
+        if not IGNORE_PIN and _ps != CUR_SHA256:
+            F('D10 pointer sha %s != CUR_SHA256 %s (pointer names a different version)'
+              % (_ps, CUR_SHA256))
+        if not IGNORE_PIN and _pb != TOTAL_BYTES:
+            F('D10 pointer bytes %d != TOTAL_BYTES %d' % (_pb, TOTAL_BYTES))
+        if not IGNORE_PIN and _ps != _ds:
+            F('D10 pointer sha %s != on-disk sha of CUR %s (declared version is not this file)'
+              % (_ps, _ds))
+        print('  D10 pointer sha=%s bytes=%d vs CUR %s/%d (on-disk %s)'
+              % (_ps, _pb, CUR_SHA256, TOTAL_BYTES, _ds))
 
 if fails:
     for m in fails: print('  FAIL  ' + m)

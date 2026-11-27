@@ -19,7 +19,7 @@ R47 落地；R48 装下半截（C7）；R49 关闭 T4 审计查出的 6 处「�
 退出码：0 全通过；1 有 FAIL。
 说明：本脚本**不使用**任何非 ASCII 打印字符（规避 GBK 控制台 UnicodeEncodeError）。
 """
-import io, os, re, sys, hashlib, hashlib, json
+import io, os, re, sys, hashlib, hashlib, json, ast
 
 ROOT = r'D:\Project\ra2-campaign-forge'
 if not os.path.isdir(ROOT):                      # R73：POSIX 上按本文件位置反推三层
@@ -833,11 +833,19 @@ C16_FLOORS = {
     176: 2777,
     177: 3329,
     178: 3653,
+    179: 4939,
+    180: 4540,
+   181: 4213,
+   182: 3488,
+   183: 4344,
+   184: 3637,
+   185: 3910,
+   186: 3512,
 }
 # 🐞 自错 S-61（成对回归 E5 当场抓出）：初稿给**新节**也设了 400 B 下限，
 # 于是「追加一个合法的短新节」被误判 FAIL —— 这是把「不许清空」误扩成「不许写短」。
 # 新节不是被钉对象（C15 已保证 7..106 存在、末节号不回退），故新节不设下限。
-C16_FLOORS_SHA256 = '5a767e7c0b5acd6cd19f4e6438a46996459e8abb47f5e4ef7df3084b2c0ef89b'   # 上表的 sha256（逐 id:floor 规范化）；审计 R119 ③ 成立：
+C16_FLOORS_SHA256 = '70f66602ba9a2905c4f174429d3fa8e07a523893aa9510a6565df59ed29ab0d3'   # 上表的 sha256（逐 id:floor 规范化）；审计 R119 ③ 成立：
 # 无摘要时「同改表与常量」只需把一个十进制数改小，diff 与正常重钉无法区分；加钉后至少要改这个 64 hex。
 C16_NEW_MIN = 0
 # C16b：表外新节不设字节下限 ⇒ 若不加约束，「每轮新增一节」就等于「每轮白得一张永久免检票」，
@@ -1030,6 +1038,286 @@ notes.append('C17 self-produced-line anachrony: checked=%d impossible=%d (pinned
                 json.dumps(_c17_reuse, ensure_ascii=False) if False else repr(_c17_reuse),
                 _c17_pin_sha[:16]))
 
+# ---- C19 [R181 新增] 事实层联动：主门禁必须看见事实层与当前版指针 ----
+# 存在理由（实测）：R181 两次独立计数（_r180/r180a、_r181/r181a，正控在 gate_runner.py 上
+# 得 14/5/0）测得本脚本对 facts_floors / FACT_INDEX / FACT_INDEX_CURRENT 的子串出现各 0；
+# 且把 FACT_INDEX.tsv 的 F24 grade 由 [已证] 改成 [流程] 后以副本路径跑本脚本仍 exit 0,
+# 而 facts_floors.py 同一改动 exit 1 且 D5 点名 —— 主门禁完全看不见事实层。
+#
+# 判据的**靶子路径一律由指针解析**，本块不硬编码任何版本号：
+#   若硬编码 R17_R131_FACTINDEX_V563，而纪律规定「历史版本一律保留不删不改」，
+#   则升版到 V564 之后 V563 那份文件仍在盘上且字节与 sha 都不变 ⇒ 判据永远通过。
+#   这种「钉住一个永不变化的僵尸快照」与 C7b/C11b/C18 抓的恒真子项同型，且更坏：
+#   现状至少没人误以为台账被检查过。故 v2 改为 pointer-driven。
+# 判据：
+#   (a) 指针「相对路径」字段解析出的绝对路径必须存在
+#   (b) 该路径实测 sha256 == 指针「sha256」字段
+#   (c) 该路径实测字节数 == 指针「字节数」字段
+#   (d) 指针「版本目录」字段 == 该路径所在目录名
+#   (e) facts_floors.py 的 EXPECT_CUR 必须解析到同一个绝对路径（抓「两门各查各的版本」）
+#   (f) facts_floors.py 的 CUR_SHA256 / TOTAL_BYTES 必须等于该路径的实测 sha / 字节数
+# 读不到或解析不出 → FAIL（不得因读不到而跳过，与 facts_floors D10 同纪律）。
+C19_FACTS = os.path.join(ROOT, '_r160', 'facts_floors.py')
+C19_PTR = os.path.join(R14, 'FACT_INDEX_CURRENT.md')
+
+def _c19_consts(p):
+    tree = ast.parse(io.open(p, encoding='utf-8').read())
+    out = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            t = node.targets[0]
+            if isinstance(t, ast.Name) and isinstance(node.value, ast.Constant):
+                out[t.id] = node.value.value
+    return out
+
+def _c19_eval_expect_cur(p):
+    """取 facts_floors.py 里 EXPECT_CUR 的值，**不执行该文件**。
+
+    它是 os.path.join(TIER, 'DIR', 'FACT_INDEX.tsv') 形式（Call，不是 Constant），
+    故 ast 顶层常量表取不到。这里只按词法解析这一行，支持两种写法：
+      1) os.path.join(<TIER 名>, 'DIR', 'FILE')  —— 把 TIER 名换成 tier 实际路径
+      2) 字面量字符串
+    解析不出返回 None（调用方 FAIL，不得跳过）。
+    S-678：首版想 exec 该文件的常量区，但常量与主体之间没有可停的分界（首个 print 在 332 行，
+    D0..D10 的副作用在此之前已发生）⇒ 执行他人门禁脚本不是一个可接受的做法，改为词法解析。
+    """
+    txt = io.open(p, encoding='utf-8', newline='').read()
+    m = re.search(r'^([A-Z_][A-Z0-9_]*)\s*=\s*os\.path\.join\(\s*TIER\s*,\s*'
+                  r"'([^']+)'\s*,\s*'([^']+)'\s*\)", txt, re.M)
+    if m:
+        # S-680：本文件里 tier 路径的变量名是 R14，不是 TIER（TIER 是 facts_floors.py 的叫法）
+        return os.path.join(R14, m.group(2), m.group(3))
+    # S-679：首版在这里写了同时含单双引号的字符类，在块里引号层数错
+    # ⇒ 整个 BLOCK 语法错。改用 chr() 拼引号，块内不再出现裸引号字符类。
+    _Q = chr(34) + chr(39)
+    m = re.search(r'^(?:EXPECT_CUR|CUR)\s*=\s*TIER\s*/\s*(\S+)', txt, re.M)
+    if m:
+        return os.path.join(R14, m.group(1).strip().strip(_Q))
+    m = re.search(r'^EXPECT_CUR\s*=\s*[rbu]?(\S+)', txt, re.M)
+    if m:
+        v = m.group(1).strip().strip(_Q)
+        return v if os.path.isabs(v) else os.path.join(ROOT, v)
+    return None
+
+_c19 = 'not-run'
+# R182（采纳审计 #435 的 B3）：C20 需要区分「指针坏了」与「C19 根本没跑到」。
+# 此前用 locals().get('_c19_abs') 取，两者同为 None ⇒ FAIL 文本不可区分。
+_c19_abs = None
+_c19_ptr_state = 'not-run'
+if not os.path.exists(C19_PTR):
+    _c19_ptr_state = 'pointer-missing'
+    fails.append('C19 pointer file missing: %s (the pointer is what declares the current '
+                 'ledger; absent means the fact layer is unanchored, not "nothing to check")'
+                 % C19_PTR)
+elif not os.path.exists(C19_FACTS):
+    fails.append('C19 facts_floors.py missing: %s' % C19_FACTS)
+else:
+    _c19_pt = io.open(C19_PTR, encoding='utf-8', newline='').read()
+    _c19_ms = re.search(r'\| sha256 \| ([0-9a-f]{64}) \|', _c19_pt)
+    _c19_mb = re.search(r'\| 字节数 \| (\d+) \|', _c19_pt)
+    _c19_md = re.search(r'\| 版本目录 \| (\S+) \|', _c19_pt)
+    _c19_mp = re.search(r'\| 相对路径 \| (\S+) \|', _c19_pt)
+    if not (_c19_ms and _c19_mb and _c19_md and _c19_mp):
+        _c19_ptr_state = 'fields-unparseable'
+        fails.append('C19 pointer fields unparseable (sha=%r bytes=%r dir=%r relpath=%r)'
+                     % (bool(_c19_ms), bool(_c19_mb), bool(_c19_md), bool(_c19_mp)))
+    else:
+        _c19_rel = _c19_mp.group(1).replace('\\', '/').strip()
+        _c19_abs = os.path.join(ROOT, _c19_rel)
+        if not os.path.exists(_c19_abs):
+            _c19_ptr_state = 'path-missing'
+            fails.append('C19 pointer relative path does not exist: %r -> %r '
+                         '(pointer names a version that is not on disk)' % (_c19_rel, _c19_abs))
+        else:
+            _c19_raw = open(_c19_abs, 'rb').read()
+            _c19_sha = hashlib.sha256(_c19_raw).hexdigest()
+            _c19_len = len(_c19_raw)
+            if _c19_ms.group(1) != _c19_sha:
+                fails.append('C19 pointer sha %s != on-disk sha %s of %r'
+                             % (_c19_ms.group(1), _c19_sha, _c19_rel))
+            if int(_c19_mb.group(1)) != _c19_len:
+                fails.append('C19 pointer bytes %s != on-disk bytes %d of %r'
+                             % (_c19_mb.group(1), _c19_len, _c19_rel))
+            _c19_dir = os.path.basename(os.path.dirname(_c19_abs))
+            if _c19_md.group(1) != _c19_dir:
+                fails.append('C19 pointer version dir %r != actual dir %r of the declared '
+                             'relative path (the two pointer fields disagree)'
+                             % (_c19_md.group(1), _c19_dir))
+            try:
+                _c19_k = _c19_consts(C19_FACTS)
+            except Exception as e:
+                _c19_k = None
+                fails.append('C19 facts_floors.py unparseable (%s): cannot verify the link' % e)
+            if _c19_k is not None:
+                # S-677：首版用 ast 的「顶层 Assign + Constant」取 EXPECT_CUR，而它是
+                # os.path.join(TIER, 'R17_R131_FACTINDEX_V563', 'FACT_INDEX.tsv') —— 是 Call
+                # 不是 Constant ⇒ 取不到，于是 v2 在**正常盘面**上也 FAIL（假 FAIL）。
+                # 改为直接 exec facts_floors.py 的**常量区**（import 会跑整条门禁，不行），
+                # 用「把 os.path 换成可控桩 + 执行到第一个 print 之前」的方式求值真路径。
+                _c19_exp = _c19_eval_expect_cur(C19_FACTS)
+                if not _c19_exp:
+                    fails.append('C19 cannot resolve EXPECT_CUR in facts_floors.py '
+                                 '(the fact gate must declare which file it targets)')
+                else:
+                    if os.path.normpath(_c19_exp) != os.path.normpath(_c19_abs):
+                        fails.append('C19 fact gate targets a different file than the pointer: '
+                                     'EXPECT_CUR=%r vs pointer=%r (two gates checking two '
+                                     'different versions both report green)'
+                                     % (_c19_exp, _c19_abs))
+                for _c19_nm, _c19_val, _c19_real in (
+                        ('CUR_SHA256', _c19_k.get('CUR_SHA256'), _c19_sha),
+                        ('TOTAL_BYTES', _c19_k.get('TOTAL_BYTES'), _c19_len)):
+                    if _c19_nm not in _c19_k:
+                        fails.append('C19 facts_floors.py lacks %s literal' % _c19_nm)
+                    elif _c19_val != _c19_real:
+                        fails.append('C19 facts %s %r != on-disk %r of %r'
+                                     % (_c19_nm, _c19_val, _c19_real, _c19_rel))
+                if not [x for x in fails if x.startswith('C19')]:
+                    _c19 = 'ok(%s/%d/%s)' % (_c19_sha[:8], _c19_len, _c19_dir)
+                    _c19_ptr_state = 'ok'
+                    notes.append('C19 fact-layer link (pointer-driven): %r sha %s bytes %d ; '
+                                 'facts_floors EXPECT_CUR/CUR_SHA256/TOTAL_BYTES all agree'
+                                 % (_c19_rel, _c19_sha[:8], _c19_len))
+                else:
+                    _c19 = 'FAIL'
+                    _c19_ptr_state = 'content-mismatch'
+
+
+# ---- C20 [R182 新增] 三方路径一致性：gate_runner / facts_floors / 指针必须指同一份台账 ----
+# 存在理由（实测）：R181 把它登记为未取得项 —— gate_runner.py 第 51 行写
+#   LEDGER = os.path.join(TIER, '<版本目录>', 'FACT_INDEX.tsv')
+# facts_floors.py 第 46 行写同形状的 EXPECT_CUR，指针文件第三行写同一相对路径。
+# 三处**各自独立**（_r182/r182b T1：本脚本生效字面量 0、facts 1、gate_runner 1），
+# 而 C19 的 (e) 只比对后两者 ⇒ gate_runner 那一份从未被告知。
+# 实测分辨率（_r182/r182b T3）：沙箱把 gate_runner.LEDGER 改成上一版，本脚本基线仍 exit 0
+# 且无任何 C20 条目 ⇒ 现状是「三份常量各写各的、无人守同一性」，不是「已有人守」。
+#
+# 判据（全部从盘上现算；本块内**不存任何版本号常量**，注释里也不留可粘贴的版本字面量）：
+#   (a) gate_runner.py 存在，且其顶层 LEDGER 赋值可由 **AST** 解析出 os.path.join 的实参
+#       —— 或用 import 形态（from facts_floors import EXPECT_CUR as LEDGER）声明同源。
+#   (b) 解析出的绝对路径必须 == 指针「相对路径」解析出的绝对路径
+#   (c) 解析出的绝对路径必须 == facts_floors.EXPECT_CUR 解析出的绝对路径
+#   (d) gate_runner.py 里指向台账版本目录的**字面量集合大小必须 == 1**
+#       （换名 LEDGER2 / 裸字面量 / 函数内夹具 都算第二份；import 形态视为同源、不计）
+#   (e) 文件缺失 / 解析不出 / 常量缺失 → FAIL，不跳过
+#
+# 为什么用 AST 而不是正则（R182 审计 #435 的 B1/B6，主会话 _r182/r182g 19 断言复算成立）：
+#   v1 的词法判据在六种**完全合法**的写法上假 FAIL：双引号、类型注解、pathlib、变量间接、
+#   字符串拼接、以及 from facts_floors import EXPECT_CUR as LEDGER —— 最后一种恰恰是
+#   「消灭第三份常量」的终局重构，却被判成「未能声明」。AST 只收 Constant 节点，
+#   天然忽略注释与 docstring（本文件 docstring 与 ck 名称里残留旧版本字样，正则必假 FAIL）。
+#
+# **边界（R182 改诚实，替代 v1 那句「由 D0 与 C19 负责」）**：C20 只证三处指向同一绝对路径。
+# 至于「那份是否**当前版**」，本系统**无人覆盖** —— C19 的 (a)(b)(c)、facts_floors 的
+# D0/D10 都以「指针已声明的那份」为输入做自洽校验；要回答「是不是最新」必须反向枚举
+# 版本目录族，而三份源码对 os.listdir 版本目录的调用次数实测均为 0。故
+# 「建了新版本目录却忘记改指针」是本体系的**已知盲区**（_r182/r182g D1–D3 沙箱实测：
+# 建一个更高版本号的目录（复制现版台账）但不改任何指针 ⇒ check_disc exit 0、C19 与 C20 均报 ok、零告警），
+# 登记为未取得项，**不以 C20 的绿色代表已覆盖**。
+C20_GR = os.path.join(ROOT, '_r161', 'gate_runner.py')
+C20_VDIR_RE = r'R17_R\d+_FACTINDEX_V\d+'
+
+def _c20_ast_ledger(txt):
+    """取 gate_runner.py 顶层 LEDGER 的 os.path.join 实参（只认 Constant）。
+    返回 (dir_str, file_str) / None。用 AST.Module.body 只看顶层，函数内夹具不计。"""
+    tree = ast.parse(txt)
+    for node in tree.body:
+        if not (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == 'LEDGER'):
+            continue
+        v = node.value
+        if (isinstance(v, ast.Call) and isinstance(v.func, ast.Attribute)
+                and v.func.attr == 'join'):
+            vals = [a.value for a in v.args if isinstance(a, ast.Constant)]
+            # S-182h1：os.path.join(TIER, VDIR, FILE) 的 Constant 实参只有 2 个
+            # （TIER 是 ast.Name 不是 Constant）。首版写 >= 3 ⇒ 恒返回 None ⇒ 生产假红。
+            if len(vals) >= 2:
+                return vals[-2], vals[-1]
+        # LEDGER = EXPECT_CUR（同源别名）等形态 → 交给 import 分支或失败分支
+        return None
+    return None
+
+def _c20_vdir_literals(txt):
+    """全文件（含函数体）所有 os.path.join 实参里形如台账版本目录的 Constant 集合。"""
+    out = set()
+    for node in ast.walk(ast.parse(txt)):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr == 'join'):
+            for a in node.args:
+                if isinstance(a, ast.Constant) and isinstance(a.value, str) \
+                        and re.fullmatch(C20_VDIR_RE, a.value):
+                    out.add(a.value)
+    return out
+
+def _c20_imports_same(txt):
+    """gate_runner 是否以 import 形态声明同源（单源、零副本）。"""
+    return re.search(r'^from\s+facts_floors\s+import\s+[^\n]*\bEXPECT_CUR\b[^\n]*\bas\s+LEDGER\b',
+                     txt, re.M) is not None
+
+_c20 = 'not-run'
+if not os.path.exists(C20_GR):
+    fails.append('C20 gate_runner.py missing: %s (the third copy of the ledger path is the one '
+                 'this check exists for; absent means the three-way link is unverifiable, not '
+                 '"nothing to check")' % C20_GR)
+else:
+    _c20_txt = io.open(C20_GR, encoding='utf-8', newline='').read()
+    _c20_ff = _c19_eval_expect_cur(C19_FACTS) if os.path.exists(C19_FACTS) else None
+    _c20_ptr = _c19_abs
+    _c20_same_src = _c20_imports_same(_c20_txt)
+    try:
+        _c20_pair = _c20_ast_ledger(_c20_txt)
+        _c20_vdirs = _c20_vdir_literals(_c20_txt)
+        _c20_ast_err = None
+    except Exception as _e:
+        _c20_pair, _c20_vdirs, _c20_ast_err = None, set(), _e
+    if _c20_ast_err is not None:
+        fails.append('C20 gate_runner.py unparseable (%s): cannot verify the three-way link'
+                     % _c20_ast_err)
+    elif _c20_same_src and _c20_ff is not None:
+        _c20_gr = _c20_ff
+        notes.append('C20 gate_runner LEDGER is imported from facts_floors (single source of '
+                     'truth; the (d) copy-count criterion is deliberately not applied)')
+    elif _c20_pair is None:
+        fails.append('C20 cannot resolve LEDGER in gate_runner.py (the runner must declare which '
+                     'ledger it feeds to both gates, via os.path.join or an import of '
+                     'facts_floors.EXPECT_CUR)')
+        _c20_gr = None
+    else:
+        _c20_gr = os.path.join(R14, _c20_pair[0], _c20_pair[1])
+        if len(_c20_vdirs) != 1:
+            fails.append('C20 gate_runner.py carries %d distinct ledger version literals %r '
+                         '(expected exactly 1; a second copy is a constant that can drift '
+                         'silently)' % (len(_c20_vdirs), sorted(_c20_vdirs)))
+    if _c20_gr is None:
+        pass
+    else:
+        if _c20_ff is None:
+            fails.append('C20 cannot resolve EXPECT_CUR in facts_floors.py')
+        elif os.path.normpath(_c20_gr) != os.path.normpath(_c20_ff):
+            fails.append('C20 gate_runner.LEDGER=%r vs facts_floors.EXPECT_CUR=%r (the runner '
+                         'feeds gate 2 a different file than gate 2 checks by default)'
+                         % (_c20_gr, _c20_ff))
+        if _c20_ptr is None:
+            fails.append('C20 pointer not usable (C19 pointer state=%r); see the C19 entry above '
+                         '(this distinguishes "pointer broken" from "C19 never ran")'
+                         % _c19_ptr_state)
+        elif os.path.normpath(_c20_gr) != os.path.normpath(_c20_ptr):
+            fails.append('C20 gate_runner.LEDGER=%r vs pointer=%r (the runner drives both gates '
+                         'against a version the pointer no longer declares)'
+                         % (_c20_gr, _c20_ptr))
+        if _c19 != 'not-run' and not _c19.startswith('ok('):
+            fails.append('C20 cannot certify the three-way link while C19 is %r (the pointer '
+                         'itself failed; a green C20 note here would be misleading)'
+                         % (_c19,))
+        if not [x for x in fails if x.startswith('C20')]:
+            _c20 = 'ok(%s)' % os.path.basename(os.path.dirname(_c20_gr))
+            notes.append('C20 three-way ledger path (runner/facts/pointer): all three resolve to '
+                         '%r ; C19 pointer state=%r' % (_c20_gr, _c19_ptr_state))
+        else:
+            _c20 = 'FAIL'
+
+
 # ---- C5 CR 抽查 ----
 for name, p, exp in (('R14_COMMON', RC, 1081), ('STATUS_BOARD', BRD, 0), ('LEDGER', LED, 337)):
     if not os.path.exists(p): fails.append('C5 %s missing' % name); continue
@@ -1043,6 +1331,8 @@ print('C7 live-checks passed %d ; none-skipped %d ; shape census %s'
       % (c7_ok, c7_none, ', '.join('%s=%d' % (k, v) for k, v in sorted(c7_shape.items()))))
 print('C8 section-exists passed %d' % c8_ok)
 print('C10 self-check: %s' % c10)
+print('C19 fact-layer link: %s' % _c19)
+print('C20 three-way ledger path: %s' % _c20)
 if fails:
     for f in fails: print('  FAIL  ' + f)
     print('[exit 1] %d FAIL' % len(fails)); sys.exit(1)

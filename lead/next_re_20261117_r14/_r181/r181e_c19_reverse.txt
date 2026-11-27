@@ -1,0 +1,27 @@
+--- 基线（无改动）：确认 C19 在镜像里绿 ---
+  PASS  N0 无改动时 FAIL 集合不含任何 C19 条目  (1, ['FAIL  C7 id 31 expr grep=G2 mismatch (FILE_MISSING)', 'FAIL  C11 id 31 claims-none but its check expression no long', 'FAIL  C18 vacuity pin drifted: claims_none_rows = 18 != pinn'])
+  PASS  N0b 无改动时 C19 ok 行在场
+--- 反向 1：指针 sha 末位改坏 ⇒ C19 必须 FAIL ---
+  PASS  N1 指针 sha 末位改坏 ⇒ exit 1  1
+  PASS  N2 ⇒ 出现 C19 pointer sha FAIL  ['FAIL  C7 id 31 expr grep=G2 mismatch (FILE_MISSING)', 'FAIL  C11 id 31 claims-none but its check expression no longer holds (FILE_MISSING) :: gre', 'FAIL  C18 vacuity pin drifted: claims_none_rows = 18 != pinned 19 (if a real DISC_RECHECK ', 'FAIL  C19 pointer sha 28423e7928d8414216b6a09f8ea56ef60d484dbd121cf9e5d673ffc3bc45db40 != ']
+--- 反向 2：指针字节数改坏 ⇒ C19 必须 FAIL ---
+  PASS  N3 指针字节数改坏 ⇒ exit 1  1
+  PASS  N4 ⇒ 出现 C19 pointer bytes FAIL  4
+--- 反向 3：指针版本目录改坏 ⇒ C19 必须 FAIL（这条是 gate_runner 没有的）---
+  PASS  N5 版本目录改坏 ⇒ exit 1  1
+  PASS  N6 ⇒ 出现 C19 version dir FAIL  4
+--- 反向 4：指针文件删除 ⇒ C19 必须 FAIL（不得跳过）---
+  PASS  N7 指针删除 ⇒ exit 1  1
+  PASS  N8 ⇒ 出现 C19 pointer file missing FAIL  4
+--- 反向 5：台账改 1 字节 ⇒ C19 必须 FAIL（事实层常量与实物脱钩）---
+  PASS  N9 台账改 1 字节 ⇒ exit 1  1
+  PASS  N10 ⇒ 出现 C19 facts CUR_SHA256 FAIL  5
+--- 反向 6：facts_floors.py 的 CUR_SHA256 与现盘脱钩 ⇒ C19 必须 FAIL ---
+  PASS  N11 facts 常量脱钩 ⇒ exit 1  1
+  PASS  N12 ⇒ 出现 C19 facts CUR_SHA256 FAIL  4
+--- 反向 7：facts_floors.py 文件删除 ⇒ C19 必须 FAIL ---
+  PASS  N13 facts_floors 删除 ⇒ exit 1  1
+  PASS  N14 ⇒ 出现 C19 facts_floors.py missing FAIL  4
+--- 汇总 ---
+FAILs=0
+[exit 0]
