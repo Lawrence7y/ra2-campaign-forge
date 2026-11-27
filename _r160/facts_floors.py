@@ -9,8 +9,8 @@ C7 证据产物之外的**零接触**。所以台账的任何改动对既有门�
   D0  sha256 指针。**无论 argv 指向哪里都比**（v1 在 argv 模式下恒不触发，是假门）。
   D1  LF-only。
   D2  表头 5 列逐字。
-  D3  54 数据行 / 每行恰 5 列。
-  D4  fact_id 恰为 F01..F54 有序无重。
+  D3  56 数据行 / 每行恰 5 列。
+  D4  fact_id 恰为 F01..F56 有序无重。
   D5  **逐 fid 的 grade**（v1 只钉普查，F01<->F13 互换可过）。
   D6  **逐 fid 的 statement/limitations 字节不许缩**（v1 用一半为下界，截断一半可过）。
   D7  **逐 fid 的证据项清单** + 第 4 列字节不许缩 + 失联多重集（v1 只钉全局计数）。
@@ -43,7 +43,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if not os.path.isdir(os.path.join(ROOT, 'lead')):
     ROOT = '/home/t628/projects/ra2-campaign-forge'
 TIER = os.path.join(ROOT, 'lead', 'next_re_20261117_r14')
-EXPECT_CUR = os.path.join(TIER, 'R17_R131_FACTINDEX_V568', 'FACT_INDEX.tsv')
+EXPECT_CUR = os.path.join(TIER, 'R17_R131_FACTINDEX_V576', 'FACT_INDEX.tsv')
 CUR = EXPECT_CUR
 IGNORE_PIN = False
 for a in sys.argv[1:]:
@@ -52,8 +52,8 @@ for a in sys.argv[1:]:
 if IGNORE_PIN:
     print('  !! WARNING --ignore-pin: sha256/master-pin assertions DISABLED (self-test only)')
 
-CUR_SHA256 = '335b403d8f71a2d3af42a7f6c1cea071d79ca421d0f00e0afa57f1373647c6be'
-TOTAL_BYTES = 144718
+CUR_SHA256 = '50efc7281c9a20ecb7d37f1006dc34425e225f4a5ad233fde93e289407d81485'
+TOTAL_BYTES = 171758
 GRADES = {
     'F01': '[已证]',
     'F02': '[已证]',
@@ -109,9 +109,11 @@ GRADES = {
     'F52': '[流程]',
     'F53': '[流程]',
     'F54': '[流程]',
+    'F55': '[已证]',
+    'F56': '[流程]',
 }
 FLOORS = {
-    'F01': (458, 12239),
+    'F01': (458, 14490),
     'F02': (292, 192),
     'F03': (287, 217),
     'F04': (317, 226),
@@ -139,7 +141,7 @@ FLOORS = {
     'F26': (190, 73),
     'F27': (230, 146),
     'F28': (348, 193),
-    'F29': (3435, 16840),
+    'F29': (3435, 20898),
     'F30': (305, 169),
     'F31': (221, 291),
     'F32': (246, 216),
@@ -165,6 +167,8 @@ FLOORS = {
     'F52': (337, 90),
     'F53': (251, 377),
     'F54': (375, 211),
+    'F55': (10455, 7691),
+    'F56': (519, 1601),
 }
 EVID = {
     'F01': ['lead/next_re_20261117_r14/BOARD_ARCHIVE.md', 'lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/R17_R50_ADJ_PSELF/VERDICT.md'],
@@ -221,6 +225,8 @@ EVID = {
     'F52': ['lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/NAMED_PUSH_AUDIT10/VERDICT.md'],
     'F53': ['lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/R17_R56_FACTINDEX_V53/lead_byte_checks.tsv'],
     'F54': ['lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/NAMED_PUSH_AUDIT15/VERDICT.md'],
+    'F55': ['lead/next_re_20261117_r14/R14_COMMON.md', '_r188/r188d_resync.py', '_r188/r188d.log', '_r188/r188d.json', '_r188/r188c.log', '_r189/r189c_adjacency.py', '_r189/r189d_packing.py', '_r189/r189e_thunk_oob.py', '_r190/r190a_groups.py', '_r190/r190b_thunks.py', '_r190/r190c_rtti.py', '_r191/r191g_deliver.py', '_r191/r191d_td.py', '_r191/r191b_recheck.py'],
+    'F56': ['lead/next_re_20261117_r14/R14_COMMON.md', '_r188/r188d_resync.py', '_r188/r188d.log', '_r186/r186d_audit_recheck.py', '_r186/r186d.log'],
 }
 EVIDB = {
     'F01': 183,
@@ -277,6 +283,8 @@ EVIDB = {
     'F52': 196,
     'F53': 126,
     'F54': 145,
+    'F55': 311,
+    'F56': 122,
 }
 LOST = {
     'lead/next_re_20261117_r14/COVERAGE/PANEL.md': 8,
@@ -298,9 +306,9 @@ LOST = {
 }
 LOST_ITEMS = 43
 LOST_UNIQ = 16
-ITEMS = 178
-UNIQ = 74
-MASTER_SHA256 = '7ee9f8aceabd019b43bdc46e8a7cd9c49268a1b52f0f0f53429c935f54552154'
+ITEMS = 197
+UNIQ = 89
+MASTER_SHA256 = '86874cbe556744085a13eb4d7ae7c1fd9bc0780a574f0aaf0ef8e4339ae86281'
 
 fails = []
 def F(m): fails.append(m)
@@ -357,17 +365,17 @@ EXP = ['fact_id', 'statement', 'grade', 'evidence_paths', 'limitations']
 if hdr != EXP: F('D2 header differs: %r' % (hdr,))
 print('  D2 header: %s' % ('ok' if hdr == EXP else 'MISMATCH'))
 
-if len(data) != 54: F('D3 data rows = %d != 54' % len(data))
+if len(data) != 56: F('D3 data rows = %d != 56' % len(data))
 bad = [i for i, r in enumerate(data) if len(r) != 5]
 if bad: F('D3 rows with !=5 cols at %r' % bad[:8])
 print('  D3 rows=%d all-5-col=%s' % (len(data), 'yes' if not bad else 'NO'))
 
 ids = [r[0] for r in data]
-exp_ids = ['F%02d' % i for i in range(1, 55)]
+exp_ids = ['F%02d' % i for i in range(1, 57)]
 if ids != exp_ids:
     F('D4 fact_id sequence broke at %r'
       % next((('idx%d %s!=%s' % (i, a, b)) for i, (a, b) in enumerate(zip(ids, exp_ids)) if a != b), 'length'))
-print('  D4 fact_id F01..F54: %s' % ('ok' if ids == exp_ids else 'BROKEN'))
+print('  D4 fact_id F01..F56: %s' % ('ok' if ids == exp_ids else 'BROKEN'))
 
 # ---- D5 v2：逐 fid 钉 grade ----
 g_now = {r[0]: r[2] for r in data}

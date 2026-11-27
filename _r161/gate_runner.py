@@ -48,7 +48,7 @@ GATE = os.path.join(TIER, 'check_disc.py')
 FACTS = os.path.join(ROOT, '_r160', 'facts_floors.py')
 DR = os.path.join(TIER, 'DISC_RECHECK.tsv')
 UN = os.path.join(TIER, 'DISC_UNVERIFIABLE.tsv')
-LEDGER = os.path.join(TIER, 'R17_R131_FACTINDEX_V568', 'FACT_INDEX.tsv')
+LEDGER = os.path.join(TIER, 'R17_R131_FACTINDEX_V576', 'FACT_INDEX.tsv')
 
 fails = []
 QUIET = [False]

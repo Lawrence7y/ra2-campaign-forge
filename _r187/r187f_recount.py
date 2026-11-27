@@ -145,16 +145,19 @@ for vt, c in VTS.items():
         if None in f: continue
         wide[f[0]].add(f[2])
 
-obj = [h for h in HITS if h[1] not in ('esp', 'ebp') and h[2] is None]
+obj = [h for h in HITS if h[1] not in ('esp', 'ebp') and h[2] is None and h[1] is not None]
 stk = [h for h in HITS if h[1] in ('esp', 'ebp')]
 idxh = [h for h in HITS if h[2] is not None]
-ck('F2a 全口径对象寄存器 store 条数（基址非 esp/ebp、无索引）', len(obj) > 0, len(obj))
-print('   构成：对象 %d / 栈基址 %d / 带索引 %d（合计 %d）'
-      % (len(obj), len(stk), len(idxh), len(obj) + len(stk) + len(idxh)))
-ck('F2b 三类合计 == 5,731', len(obj) + len(stk) + len(idxh) == 5731,
-   len(obj) + len(stk) + len(idxh))
-ck('F2c 全口径对象寄存器 store 比 R186 交集口径多（收缩被撤掉的量）',
+absn = [h for h in HITS if h[1] is None]
+ck('F2a 全口径对象寄存器 store 条数（基址为通用寄存器、非 esp/ebp、无索引）', len(obj) > 0, len(obj))
+print('   构成：对象寄存器 %d / 栈基址 %d / 绝对址 %d / 带索引 %d（合计 %d）'
+      % (len(obj), len(stk), len(absn), len(idxh), len(obj) + len(stk) + len(absn) + len(idxh)))
+ck('F2b 四类合计 == 5,731', len(obj) + len(stk) + len(absn) + len(idxh) == 5731,
+   len(obj) + len(stk) + len(absn) + len(idxh))
+ck('F2c 全口径对象寄存器 store 比 R186c 交集口径多（收缩被撤掉的量）',
    len(obj) > 3666, (len(obj), 3666))
+ck('F2d 全口径对象寄存器 store 命中 R186d 的 4,053（同一口径，独立复算）',
+   len(obj) == 4053, len(obj))
 
 eq = [h for h in obj if h[3] == VTS[h[4]]['mdisp']]
 covb = [h for h in obj if h[3] in own[VTS[h[4]]['ptd']]]

@@ -1,0 +1,26 @@
+=== R189 EXEC HY4 SUMMARY (independent, from PE header) ===
+binary=ra2bench/gamemd.exe sha256=73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+imagebase=0x400000 sections=.text@0x401000+0x3e0000,.rdata@0x7e1000+0x31000,.data@0x812000+0x6c000,.rsrc@0xb7a000+0x19000,.detour@0xb93000+0x3000
+
+Q1 COL records = 1214 ; vtable heads = 1214 ; total slot instances = 14044
+    COL sig counts = {0: 1214} ; shared col addresses = 0 ; heads with k>=2 = 1015
+Q2 k histogram = {"1": 199, "10": 20, "11": 6, "12": 1, "122": 10, "123": 1, "124": 1, "125": 1, "15": 2, "157": 1, "16": 2, "161": 1, "17": 6, "18": 4, "2": 14, "22": 1, "23": 2, "24": 26, "25": 3, "27": 13, "28": 1, "3": 82, "30": 1, "309": 1, "31": 1, "322": 1, "33": 4, "34": 6, "341": 2, "343": 1, "344": 1, "35": 1, "36": 3, "38": 2, "39": 1, "4": 12, "40": 7, "41": 3, "42": 1, "44": 1, "45": 1, "46": 1, "48": 6, "49": 1, "5": 160, "50": 13, "51": 2, "52": 8, "53": 1, "54": 2, "55": 4, "6": 85, "7": 412, "8": 10, "9": 62}
+    max_k=344 ; k=0 count=0 ; k=1 count=199
+Q3 terminator classes = {"col": 979, "other_data": 4, "other_rdata_or_other": 45, "other_zero": 186} ; col-terminated = 979
+    samples: {"other_data": ["0x7e1b44", "0x7e38f0", "0x7f022c", "0x7f7624"], "other_rdata_or_other": ["0x7e1a64", "0x7e1e4c", "0x7e2198", "0x7e37ec", "0x7e3844", "0x7e3a2c", "0x7e4444", "0x7e5144"], "other_zero": ["0x7e16b0", "0x7e177c", "0x7e188c", "0x7e192c", "0x7e1b0c", "0x7e1ea4", "0x7e1ef4", "0x7e1fbc"]}
+Q4 Q4 hit = 979 / 979 ; counterexamples = 0
+Q5 relations = {"identical": 260, "template_nested": 2, "unrelated": 717} ; examples:
+    vt=0x7e1668 k=17 next=0x7e16b0 colA=0x7fa4d8 nameA=.?AVCDFileClass@@ colB=0x7fa590 nameB=.?AVCCFileClass@@ rel=unrelated
+    vt=0x7e17ac k=7 next=0x7e17cc colA=0x7fa640 nameA=.?AV?$DynamicVectorClass@PAVTechnoClass@@@@ colB=0x7fa6a8 nameB=.?AV?$DynamicVectorClass@PAVBombClass@@@@ rel=unrelated
+    vt=0x7e17cc k=7 next=0x7e17ec colA=0x7fa6a8 nameA=.?AV?$DynamicVectorClass@PAVBombClass@@@@ colB=0x7fa708 nameB=.?AV?$VectorClass@PAVBombClass@@@@ rel=unrelated
+    vt=0x7e17ec k=7 next=0x7e180c colA=0x7fa708 nameA=.?AV?$VectorClass@PAVBombClass@@@@ colB=0x7fa6d8 nameB=.?AV?$VectorClass@PAVTechnoClass@@@@ rel=unrelated
+    vt=0x7e180c k=7 next=0x7e182c colA=0x7fa6d8 nameA=.?AV?$VectorClass@PAVTechnoClass@@@@ colB=0x7fa770 nameB=.?AV?$DynamicVectorClass@PBVCommandClass@@@@ rel=unrelated
+    vt=0x7e182c k=7 next=0x7e184c colA=0x7fa770 nameA=.?AV?$DynamicVectorClass@PBVCommandClass@@@@ colB=0x7fa7a0 nameB=.?AV?$VectorClass@PBVCommandClass@@@@ rel=unrelated
+    vt=0x7e184c k=7 next=0x7e186c colA=0x7fa7a0 nameA=.?AV?$VectorClass@PBVCommandClass@@@@ colB=0x7fa808 nameB=.?AV?$DynamicVectorClass@PAVLightConvertClass@@@@ rel=unrelated
+    vt=0x7e186c k=7 next=0x7e188c colA=0x7fa808 nameA=.?AV?$DynamicVectorClass@PAVLightConvertClass@@@@ colB=0x7fa838 nameB=.?AV?$VectorClass@PAVLightConvertClass@@@@ rel=unrelated
+Q6 CONCLUSION: 紧排 (tightly packed COL/vtable pairs in .rdata). vt+4k lands on the NEXT table's COL pointer, not a nested subobject truncation. Q4 979/979 confirms; N2/N3 collapse to 0/0 and 0. The prefix length IS the real slot count.
+
+N1 relaxed "next slot lands .text" = 979 ; strict Q4 hit = 979
+    note: with tight packing, +4 slot is always the next table's first vfunc, so these two are necessarily equal; this control is INVALID. Effective replacement (next two dwords both .text) = 847 / 979 colterm tables
+N2 shift +8 hit = 0 ; shift -4 hit = 0 (strict Q4 979)
+N3 prefix-1 hit = 0 (strict Q4 979)
