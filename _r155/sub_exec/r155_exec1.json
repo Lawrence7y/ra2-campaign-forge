@@ -1,0 +1,124 @@
+{
+  "a1": {
+    "question": "strict_panel.py 里有没有任何代码解析表头（读第0行/比对列名字符串/用列名查下标）",
+    "answer": "没有。代码级表头解析命中 0 处。",
+    "evidence": {
+      "file": "lead/next_re_20261117_r14/RULING_R15_20261119/work/strict_panel.py",
+      "hits_count": 0,
+      "word_counts": {
+        "header": 0,
+        "列名": 0,
+        "表头字面串逐字比较": 0,
+        "表头一词出现": 1
+      },
+      "命中行说明": [
+        "第9行：'定义（与 PANEL.md 表头口径逐条对齐，脚本自证复现现有三列）：' —— 散文 docstring，不是代码解析",
+        "第55行：'cov = list(csv.reader(f, delimiter=\"\\t\"))[1:]' —— 仅丢弃第0行，不读取/比对首行内容",
+        "第50行：'p = line.rstrip(\"\\r\\n\").split(\"\\t\")' —— 作用在 ATLAS(function_atlas.tsv)，不是 coverage.tsv 表头",
+        "第51-52行：'if p and p[0].strip(): atlas.add(ne(p[0]))' —— 同上，取 ATLAS 第0列，不涉及列名查下标"
+      ],
+      "positive_control": "同一检索式 header|one_line_semantics|csv.reader 在 verify.py 命中第48、50、92、117、130、131行，判据可翻转（非恒假）。",
+      "negative_control": "本脚本中 header/列名 计数恒为 0，而 r[3] 计数为 1，证明检索式不恒真。"
+    }
+  },
+  "a2": {
+    "question": "strict_panel.py 里 r[3] 的全部出现处",
+    "count": 1,
+    "file": "lead/next_re_20261117_r14/RULING_R15_20261119/work/strict_panel.py",
+    "hits": [
+      {
+        "line": 67,
+        "text": "        sem = r[3]"
+      }
+    ],
+    "note": "唯一一处；sem 绑定为位置硬编码，无 by-name 查表。"
+  },
+  "a3": {
+    "question": "脚本 docstring 里对 sem 的散文描述所在行与原文",
+    "file": "lead/next_re_20261117_r14/RULING_R15_20261119/work/strict_panel.py",
+    "hits": [
+      {
+        "line": 14,
+        "text": "  proved_strict_n    proved_n 中 one_line_semantics 不含 [未证]"
+      },
+      {
+        "line": 9,
+        "text": "定义（与 PANEL.md 表头口径逐条对齐，脚本自证复现现有三列）："
+      }
+    ],
+    "note": "第14行把语义栏直呼为 one_line_semantics（散文陈述）；第9行声称与 PANEL.md 表头口径对齐，但 PANEL.md 已失且代码无表头解析。第78行 'if \"[未证]\" not in sem:' 是代码判据，不属于散文。"
+  },
+  "a4": {
+    "question": "三个伙伴脚本里有没有对 coverage.tsv 表头做逐字字符串机检",
+    "files_checked": [
+      "lead/next_re_20261117_r14/_cards/M59-MERGE/precheck.py",
+      "lead/next_re_20261117_r14/_cards/M59-MERGE/simulate.py",
+      "lead/next_re_20261117_r14/_cards/M59-MERGE/verify.py"
+    ],
+    "machined_header_check_found": true,
+    "count": 1,
+    "hit": {
+      "file": "lead/next_re_20261117_r14/_cards/M59-MERGE/verify.py",
+      "line": 50,
+      "text": "check(header==\"entry,subsystem,name,one_line_semantics,grade,evidence_path,n_sources,conflict\",",
+      "header_literal": "entry,subsystem,name,one_line_semantics,grade,evidence_path,n_sources,conflict",
+      "literal_delimiter": "逗号（该字面串自身无 TAB；数据行用 TAB 分隔，见第54行 split(\"\\t\")）",
+      "input_variable": "header = parts[0]（第47-48行，raw.split(\"\\n\") 首行）"
+    },
+    "input_file_on_disk": {
+      "path_as_written_in_script": "D:\\Project\\ra2-campaign-forge\\lead\\next_re_20261117_r14\\COVERAGE\\coverage.tsv （Windows 绝对路径，verify.py:7）",
+      "in_disk": false,
+      "evidence": "全盘 find . -name coverage.tsv 返回 0 个文件；相对路径 lead/next_re_20261117_r14/COVERAGE/coverage.tsv 与 COVERAGE/coverage.tsv 均 MISSING；COVERAGE/PANEL.md 同样不在盘。"
+    },
+    "negative_control": "precheck.py 与 simulate.py 中同类机检命中 0 处（仅用 [1:] 丢首行），证明该判据并非在三个脚本中恒真。"
+  },
+  "a5": {
+    "question": "表头字面串拆开后第4个字段及 sem 绑定方式",
+    "literal_source": "lead/next_re_20261117_r14/_cards/M59-MERGE/verify.py:50",
+    "literal": "entry,subsystem,name,one_line_semantics,grade,evidence_path,n_sources,conflict",
+    "split_by_TAB": {
+      "result": "该字面串不含 TAB，按 TAB 拆只有 1 个字段，取不到第4个字段",
+      "field_4": null
+    },
+    "split_by_actual_delimiter_comma": {
+      "field_4": "one_line_semantics",
+      "fields": ["entry", "subsystem", "name", "one_line_semantics", "grade", "evidence_path", "n_sources", "conflict"]
+    },
+    "binding": "位置硬编码 r[3]。证据：strict_panel.py:67 'sem = r[3]'（唯一出现），全程无 header.index('one_line_semantics') 或等价查名逻辑；verify.py:50 的逐字表头机检只在 verify.py 内，未把列名传给 strict_panel.py 使用。",
+    "positive_control": "字段拆分函数对 verify.py:119 的列表字面串 ['entry','subsystem','verdict',...] 同样能取出第4项 'check_at'，说明拆分判据可翻转。",
+    "negative_control": "对同一字面串按 TAB 拆只得到 1 字段，说明『按 TAB 拆表头字面串』这一操作在本仓库该处不成立。"
+  },
+  "a6": {
+    "question": "反控：把 sem 的列下标从 3 改成别的数字，strict_panel.py 会不会报错或自行发现不一致",
+    "answer": "不会。脚本没有任何能发现列错位的自检/断言。",
+    "reasoning": [
+      "strict_panel.py 全文无 assert / raise / check(...) 类校验（assert/raise/check 命中 0 处）。",
+      "唯一的守卫是 strict_panel.py:59 'if len(r) < 8: continue' —— 只校验列数下界，不校验列语义；改成 r[2]/r[5] 等仍在 len>=8 范围内，不会触发。",
+      "第9行的『与 PANEL.md 表头口径逐条对齐』是 docstring 散文，PANEL.md 已失，代码未读取也未比对表头（见 a1）。",
+      "推演：把 sem = r[3] 改为 sem = r[2]（name 列）后，脚本会静默用错误列计算 proved_strict_n，输出无异常、无警告。"
+    ],
+    "file": "lead/next_re_20261117_r14/RULING_R15_20261119/work/strict_panel.py",
+    "evidence_lines": [9, 59, 67, 78],
+    "positive_control": "verify.py:50 的 check(header==...) 与 verify.py:119 的 check(vhdr==[...]) 证明『列口径机检』在本仓库可实现；若 strict_panel.py 有同类代码，此处应命中但未命中。",
+    "negative_control": "strict_panel.py 内 grade 比对（第76行）与 len(r) 守卫（第59行）证明条件判断存在，但都非列语义自检，反证该脚本缺乏该能力。"
+  },
+  "a7": {
+    "question": "正控：表头被代码逐字检查的正面例子",
+    "file": "lead/next_re_20261117_r14/_cards/M59-MERGE/verify.py",
+    "line": 50,
+    "text": "check(header==\"entry,subsystem,name,one_line_semantics,grade,evidence_path,n_sources,conflict\",",
+    "additional_positive_examples": [
+      {
+        "file": "lead/next_re_20261117_r14/_cards/M59-MERGE/verify.py",
+        "line": 119,
+        "text": "check(vhdr==[\"entry\",\"subsystem\",\"verdict\",\"check_at\",\"branch_at\",\"consumed_at\",\"reason\"],"
+      },
+      {
+        "file": "_r154/r154b_triage_recheck.py",
+        "line": 60,
+        "text": "chk(thdr == ['fid','lost_primary','lost_side','alive_paths','verdict','basis'], 'TRIAGE header = %r' % (thdr,))"
+      }
+    ],
+    "conclusion": "本仓库存在多处表头逐字机检，证明第4项判据不是恒假；但 strict_panel.py 不在其中。"
+  }
+}

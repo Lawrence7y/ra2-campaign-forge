@@ -1,0 +1,104 @@
+# R152-AUDIT-SCOPE · deepseek 只读复核（实测）
+生成：主会话在本机实测；本文件为唯一写入物（含 /tmp 亦未另写）。
+被测对象 sha256（复核时点现盘）：
+  R14_COMMON.md        1,306,879 B / 12,817 行 / 6605880af4ccb6c0b2966c4a12d0c3015e640adbf6841c4bc1dc85ff9bd0c6db
+  LEAD_LOCK            1,018,981 B /  6,984 行 / 481be27eef833713cfd088e3913f86d738b5556edf08b9d61709a91aca150c96
+  GOAL_THREE_TARGETS   5,143,685 B / 47,408 行 / 4feeb10e9b34896d27915d9a18530f9618a93759fc26aed75ee80ed09859e402
+  BOARD_ARCHIVE.md     1,187,913 B /  8,348 行 / 67831ebda430138ceca629f8d76cae8adf5e4a58f6f40df3b8c9173aeea38fee
+  FACT_INDEX v5.40        88,786 B /     56 行（54 数据行，全 5 列）/ fabd1e5702814b5c6f89737d905e40a01da241981c8d84361869b2243821d07a
+
+--------------------------------------------------------------------
+## 主张1 —— 部分成立（矛盾实存，但「互相矛盾」与「为假」两处措辞需限定）
+实测（v5.40 F35，column2 = statement / column5 = limitations）：
+  statement @934 「本条 evidence_paths **5 项里只有 `COVERAGE/PANEL.md` 失联**、其余 4 项在盘」
+  statement @1002「⇒ 本条**不再是整行证据链失联项**，与 F23（2/2 全失联）必须分开表述」
+  limitations @364「本条 evidence_paths 唯一一项即该已失文件」
+  limitations @396「故 F35 是本表里与 F23 并列的**两条整行证据链失联项**之一（该普查的时点是 v5.32 全表，R138 复查未变）」
+  ⇒ 两列同一条目内并存相反断言：成立。
+偏差一：limitations 该句**自带作用域**「（该普查的时点是 v5.32 全表，R138 复查未变）」，与串同句。
+  ⇒ 它不是一条 关于 v5.40 的无作用域假断言，而是一条「标了 v5.32 时点、R138 之后未同步」的残留句；
+    只有把它**脱作用域引用**时才是假。主张1 把 limitations 一律称「在 v5.40 事实为假」略过了这一限定量词。
+偏差二：真正的问题形态是**同一行两列时序倒置**（statement 的第④点是 R148 新增、limitations 的 R138 段是旧段且未删），
+  而非两列各说各话；limitations 内已有 R139 更正段（@697）把「定义缺失」撤回，却未触及「唯一一项 / 两条整行」这句。
+  即该行内部有三段（R138 / R139 / R148）互相打架，主张1 只点了两处。
+我的实测数：v5.40 F35 第4列 5 项、在盘 4、失联 1（COVERAGE/PANEL.md）；故若以 v5.40 为口径，limitations 那句为假。
+
+## 主张2 —— 成立（事实层），字面层需修正一处
+逐版实测 F35 第4列项数 / 存活（目录 lead/next_re_20261117_r14/R17_R1xx_FACTINDEX_V5xx）：
+  V530 1 项 0 活 1 失 | V531 1/0/1 | V532 1/0/1 | V533 1/0/1
+  V534 5 项 4 活 1 失 | V535 5/4/1 | V536 5/4/1 | V537 5/4/1 | V538 5/4/1 | V539 5/4/1 | V540 5/4/1
+  （V511 目录存在但无 FACT_INDEX.tsv，不可用于本判据）
+⇒ 「只在 V530..V533 四版成立」「V534 起变 5 项」：相符。
+修正：**字面**「唯一一项即 / 两条整行」在 V530/V531/V532 的 limitations 里 **0 次**（三版 limitations 均 184 字符），
+  首次出现于 **V533**（695 字符）。且该表述在 V534..V540 **仍在**（各 1 次），只是事实不再成立。
+  ⇒ 主张2 若指「事实成立」则成立；若读成「表述只存在于那四版」则不成立。
+v5.40 全表零存活行 = 恰 F23（2 项全失）；全表 54 行 / 178 项 / 43 失联 / 16 唯一失联路径 —— 与主张2 后段一致。
+
+## 主张3 —— 成立（9 / 2 / 7 逐项复算相符），补注一句
+三串「唯一一项即 / 两条整行 / 整行证据链失联」逐文件逐行命中：
+  R14_COMMON.md        2 行：L12061（三串全中，无作用域）、L12529（无作用域）
+  LEAD_LOCK            2 行：L6647（三串全中，无作用域）、L6923（无作用域）
+  GOAL_THREE_TARGETS   3 行：L47073（带 v5.32）、L47102（三串全中，无作用域）、L47284（无作用域）
+  BOARD_ARCHIVE.md     2 行：L7388（带 v5.32）、L7527（三串全中，无作用域）
+  合计 9 行；同行同句带 v5.2x/v5.3x 的 **2** 行（GOAL L47073、BOARD L7388）；不带 **7** 行。与主张3 完全相符。
+补注：不带的 7 行里有 **3 行是 R148 后的否定句**（R14 L12529 / LEAD_LOCK L6923 / GOAL L47284，均写「已不再是整行证据链失联项」），
+  它们「不带作用域」但语义正确；过期且无作用域的**肯定句**实为 **4 行**（R14 L12061、LEAD_LOCK L6647、GOAL L47102、BOARD L7527）。
+  ⇒ 主张3 的计数成立，但「7 行不带作用域」若被当作「7 行待修」会高估 3 行。
+
+## 主张4 —— 部分成立（前半成立，后半不成立）
+前半（F24 行内无 sha / 无 64hex）：成立。
+  F24 statement len 5,375：`sha256` 0 次、`sha` 0 次、64hex 0 个
+  F24 limitations len 7,502：`sha256` 0 次、`sha` 0 次、64hex 0 个
+  F24 全 5 列合并：`sha` 合计 0 次
+后半（「至今没有『清单 sha + 测量时刻』的可重跑入口」）：不成立。
+  a) F24 statement 自带测量时刻：`快照 2026-11-22T04:31Z`（唯一时刻串），并点名清单 `files_tier_A_snap2.tsv`。
+  b) 该清单在盘，且**库内已有其完整 64 位 sha**：R14_COMMON.md L12752
+     「R17_R72_T1_CLEANSCALE/files_tier_A_snap2.tsv：2,351,479 B / sha256 `bc780bdd0b74cb8e6311b1966c661f9f0120cd7c0d77c337d49d528a3ba6dd26` / 24,723 数据行」
+  c) 我的独立复算：同名件 81 份，首份 bytes 2,351,479 / 24,724 行 / sha256 bc780bdd…3a6dd26（与台账逐字符相等）/ mtime 2026-11-22T04:31:10Z（与 statement 时刻同秒级）。
+  d) 语料侧清单 `tier_final_4417.tsv` 亦在盘：696,579 B / 4,418 行 / sha256 363a1199efa752292de684100ea6632abb145e7e031a4fbaf820db08aff7598c。
+  ⇒ 「sha + 时刻」的可重跑入口存在，缺的是**把入口写进 F24 行内**（行内仅引文件名，未引 sha，未写复算命令）；
+    但 F24 亦缺「65 / 64 / 4,352 三桶」的专项入口 —— 该桶数确无可重跑脚本（STATUS_BOARD L130 自述同）。
+
+## 主张5 —— 成立（逐项 + 被引行逐字复核）
+v5.40 F35 第4列 5 项在盘判定：
+  MISS  lead/next_re_20261117_r14/COVERAGE/PANEL.md            （父目录 COVERAGE/ 亦不存在）
+  OK    .../RULING_R15_20261119/work/strict_panel.py           6,481 B / 145 行 / 731c98ea4910f5e9… 非符号链接
+  OK    .../_cards/M59-MERGE/precheck.py                       3,177 B /  94 行 / bd0a3ff023bf76bb…
+  OK    .../_cards/M59-MERGE/simulate.py                       3,299 B /  99 行 / fb325686be0ec68f…
+  OK    .../_cards/M59-MERGE/verify.py                         6,315 B / 151 行 / 98ea5d6032bf7544…
+  被引行逐字命中（4/4）：strict_panel.py:78 = `if "[未证]" not in sem:`；precheck.py:60 同串；
+    simulate.py:72 = `if "[未证]" not in r[3]: d[s]["strict"]+=1`；verify.py:83 = `if "[未证]" not in r[3]: strict[s]+=1`；
+    四件内该串均恰 1 次（与 statement「同血缘克隆、只互证判据串」的定性一致）。
+⇒ 4 活 1 失，F35 不是整行失联项；主张5 成立。
+
+--------------------------------------------------------------------
+## 需回给主会话的三处「措辞与实测方向相反」
+1. 主张1「limitations 那处在 v5.40 事实为假」——该句同句自带 v5.32 作用域；作为 v5.40 描述为假，作为 v5.32 描述为真（V530–V533 实测 1 项且该项失联）。判「部分成立」。
+2. 主张2「该表述只在 V530–V533 成立」——字面串在 V530–V532 的 limitations 中 0 次，且 V534–V540 仍残留该串（各 1 次）；只有「事实」在 V530–V533 成立。判「成立（事实层）+ 一处字面修正」。
+3. 主张4「至今没有清单 sha + 测量时刻的可重跑入口」——与实测方向相反：R14_COMMON L12752 有完整 64hex sha，清单在盘且我复算的 sha 与台账逐字相等、mtime 与 statement 快照时刻一致。判「部分成立」。
+
+## 最小可复算命令（单条即可复现全部数字）
+cd /home/t628/projects/ra2-campaign-forge   # 必须在库根跑：col4 路径以 lead\ 开头
+python3 - <<'PY'
+import os,re,glob,hashlib
+b="lead/next_re_20261117_r14"
+def items(s): return [x.strip().split("(")[0].strip() for x in s.split(";") if x.strip()]
+for d in sorted(glob.glob(b+"/R17_R*_FACTINDEX_V5*")):
+    f=d+"/FACT_INDEX.tsv"
+    if not os.path.exists(f): continue
+    rows=[l.split("\t") for l in open(f,encoding='utf-8').read().split("\n") if l.strip()]
+    r=[x for x in rows[1:] if x[0].strip()=="F35"]
+    if not r: continue
+    it=items(r[0][3]); al=[p for p in it if os.path.exists(p.replace("\\","/"))]
+    print(os.path.basename(d), "items=%d alive=%d dead=%d"%(len(it),len(al),len(it)-len(al)),
+          "lim『唯一一项』=%d『两条整行』=%d"%(r[0][4].count("唯一一项"),r[0][4].count("两条整行")))
+PY
+# 主张3：rg -c '唯一一项即|两条整行|整行证据链失联' R14_COMMON.md LEAD_LOCK ../GOAL_THREE_TARGETS_20261018.md BOARD_ARCHIVE.md
+# 主张4：rg -c 'sha' 该行 + rg -n 'files_tier_A_snap2.tsv.*sha256' R14_COMMON.md
+
+## 复算命令自检（已实跑，2026-11-27）
+库根运行输出（与正文逐项相符）：
+  V530 1/0/1 | V531 1/0/1 | V532 1/0/1 | V533 1/0/1 | V534..V540 均 5/4/1
+  rg -c '唯一一项即|两条整行|整行证据链失联' → R14_COMMON 2 / LEAD_LOCK 2 / GOAL 3 / BOARD_ARCHIVE 2（合计 9）
+注意：该 py 片段若在 lead/next_re_20261117_r14 内部运行，col4 的 lead\ 前缀会解析失败而给出 alive=0，
+  必须 cd 到库根 /home/t628/projects/ra2-campaign-forge 再跑（已在上一行写明）。

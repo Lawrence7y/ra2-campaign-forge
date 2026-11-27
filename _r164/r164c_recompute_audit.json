@@ -1,0 +1,173 @@
+{
+ "round": "R164",
+ "script": "r164c_recompute_audit.py",
+ "fail": 0,
+ "asserts": [
+  {
+   "id": "T1a r164a 原文含 `or True`（恒真尾缀）",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "id": "T1b r164a 原文含 `ck(…, True, …)` 硬编码 PASS",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "id": "T1c 审计员说 D1b/D1c 是有序比较 ⇒ 复算：源码同时含 == 序列比较与 all(...==)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "T1d 反控：集合比较对「交换两键顺序」无分辨力（set 相等）⇒ 必须用序列比",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "id": "T2a len(ser)=913,239 / len(calls_txt)=913,238",
+   "ok": true,
+   "detail": "(913239, 913238)"
+  },
+  {
+   "id": "T2b 差的 1 B 就是外层右花括号",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "T2c 反控：ser 中部插 1 B ⇒ ser[:-1] 长度 913,239 ≠ 913,238（净长度差先被长度比抓住）",
+   "ok": true,
+   "detail": "913239"
+  },
+  {
+   "id": "T3a raw 起点 1394186 / VS 起点 1392592 / 差 1594",
+   "ok": true,
+   "detail": "1594"
+  },
+  {
+   "id": "T3b 差集全部落在 [VS 尾界, raw 尾界) 内",
+   "ok": true,
+   "detail": "('0x7e038d', '0x7e0fff', '0x7e038d', '0x7e1000')"
+  },
+  {
+   "id": "T3c 差集 < VS_END 的条数 == 0（审计员说的这一点 r164a 原来只写在注释里）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "T3d 该区间字节全 0x00（3,187 B）",
+   "ok": true,
+   "detail": "3187"
+  },
+  {
+   "id": "T3e 反控：把起点集 >= VS_END 的条数写死为 0 是恒真（starts 来自长度=VSZ 的 blob）",
+   "ok": true,
+   "detail": "0x7e038c"
+  },
+  {
+   "id": "T4a callgraph.json 顶层键 6,273 / 条目 57,577",
+   "ok": true,
+   "detail": "(6273, 57577)"
+  },
+  {
+   "id": "T4b a2 对数 68,253",
+   "ok": true,
+   "detail": "68253"
+  },
+  {
+   "id": "T4c 交集 57,576",
+   "ok": true,
+   "detail": "57576"
+  },
+  {
+   "id": "T4d a2 独有 10,677 / cg 独有 1",
+   "ok": true,
+   "detail": "(10677, 1)"
+  },
+  {
+   "id": "T4e cg 独有那 1 对就是 (007C8B3D 目标, 0074836A 站点)；cg 的 src 是**调用者**、顶层键才是目标",
+   "ok": true,
+   "detail": "[('007C8B3D', '0074836A')]"
+  },
+  {
+   "id": "T4f cg ⊆ a2 不成立（cg 有 1 对不在 a2）⇒「口径不同」不能简化成「只差跳过策略」",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "T4g 反控：a2 独有的 10,677 对里，站点全在 bounds 起点集内",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "id": "T5a EXPECT_CUR 行号存在且是唯一带 V544 版本串的常量",
+   "ok": true,
+   "detail": "42"
+  },
+  {
+   "id": "T5b CUR 是别名（指向 EXPECT_CUR）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "T5c CUR_SHA256 / TOTAL_BYTES / MASTER_SHA256 三个 pin 都在",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "T5d 反控：全文无任何 GATE_ 常量（审计员报的 docstring 与实现不符 —— 复算成立）",
+   "ok": true,
+   "detail": "['  D9  **单一主指纹覆盖全部常量**（含 grade/EVID/EVIDB/字节/GATE 计数）。', '     若某轮确需缩短，必须**显式重钉**（与 GATE_VER 重钉同纪律），不得静默。']"
+  },
+  {
+   "id": "T5e D9 拼入 11 项且顺序如审计员所列",
+   "ok": true,
+   "detail": "['CUR_SHA256', 'TOTAL_BYTES', 'canon_g(GRADES)', 'canon_f(FLOORS)', 'canon_e(EVID)', 'canon_eb(EVIDB)', 'canon_l(LOST)', 'ITEMS', 'UNIQ', 'LOST_ITEMS', 'LOST_UNIQ']"
+  },
+  {
+   "id": "T5f D9 **不含** EXPECT_CUR（只改路径不改内容时 D9 不变）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "T5g 反控：D9 输入里也没有任何 GATE 计数",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "T6a FLOORS 与现台账逐条相等 54/54（⇒ 事实等值 pin，不是宽松下界）",
+   "ok": true,
+   "detail": "54"
+  },
+  {
+   "id": "T6b 反控：D6 是「<」判据 ⇒ 追加不触发（不是 bug）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "T6c D8 是「len(raw) < TOTAL_BYTES」判据 ⇒ 追加不触发",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "T6d D0 是等值 sha ⇒ 追加必被它抓住（真正拦截路径）",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "facts": {
+  "a2_pairs": 68253,
+  "cg_pairs": 57577,
+  "inter": 57576,
+  "a2_only": 10677,
+  "cg_only": 1,
+  "cg_only_pair": [
+   [
+    "007C8B3D",
+    "0074836A"
+   ]
+  ],
+  "raw_starts": 1394186,
+  "vs_starts": 1392592,
+  "extra": 1594
+ }
+}

@@ -1,0 +1,30 @@
+=== 审1 复算：FACT 大小写敏感 vs 不敏感 ===
+  PASS 1a grep -c FACT == 0
+  PASS 1b 不敏感 fact 计数（审计员说=1）  1
+   line 295: ...e as "vanished from the table entirely", i.e. manufacture three fake # failures on a healthy table. ...
+
+=== 审2-D0 复算：沙箱是否 10/10 带 argv（D0 恒不触发）===
+  PASS 2a 沙箱中带 argv 的调用数（审计员说 10）  10
+  PASS 2b 沙箱中不带 argv 的调用数（审计员说 0）
+   => D0 断言体在沙箱里一次都没执行过: True
+
+=== 审2-D5 复算：grade 两两互换是否仍 exit 0 ===
+  PASS 2c grade 互换 F01<=>F13 -> 仍 exit 0（审计员成立）  exit=0
+  PASS 2d 且 D5 报的普查未变  ["  D5 grade census: {'[流程]': 24, '[已证]': 27, '[静态推断]': 1, '未取得': 2}"]
+
+=== 审2-D6 复算：把每列截到恰好等于下界 ===
+--- facts_floors.py (R160) ---
+  D0 current version: R17_R115_FACTINDEX_V543 sha=6b00f95581fa938d pinned=6b00f95581fa938d
+  D1 LF-only: CR=0
+  D2 header: ok
+  D3 rows=54 all-5-col=yes
+  D4 fact_id F01..F54: ok
+  D5 grade census: {'[已证]': 27, '[静态推断]': 1, '未取得': 2, '[流程]': 24}
+  D6 per-fact floors: 54 facts checked, 0 breaches
+  D7 evidence chain: items=178 uniq=74 lost_items=43 lost_uniq=16
+  D8 total bytes: 96765 (floor 48382)
+  D9 constant-table pins: floors=dd6110d41d0bb422 lost=323ac345d8cd1da2
+  PASS  structure/size/evidence-chain all ok
+  BOUNDARY: this guard pins STRUCTURE and SCALE, not truth. It cannot tell
+            whether a fact is correct, only whether the ledger was silently shrunk.
+[exit 0]

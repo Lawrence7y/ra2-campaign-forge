@@ -1,0 +1,167 @@
+{
+ "checks": [
+  {
+   "name": "A1a 0x52BA9B 是 jmp 目标而非 call 目标",
+   "ok": true,
+   "got": false,
+   "want": false
+  },
+  {
+   "name": "A1b 0x52BADF 是 jmp 目标而非 call 目标",
+   "ok": true,
+   "got": false,
+   "want": false
+  },
+  {
+   "name": "A1c 0x52BA60 是 call 目标且唯一调用者 0x48CCCF",
+   "ok": true,
+   "got": [
+    "0x48CCCF"
+   ],
+   "want": [
+    "0x48CCCF"
+   ]
+  },
+  {
+   "name": "A2a 无 SIB 变址写（[reg*scale+0x8871E0]）",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "A2b 无带位移形态（[reg+0x8871E0]）",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "A2c 无取地址指令（lea/push/mov reg,0x8871E0）",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "A2d 槽位于 .data 原始数据之外（BSS 尾部，零初始化）",
+   "ok": true,
+   "got": {
+    "sec": ".data",
+    "rva": 479712,
+    "virt_size": 3570660,
+    "raw_size": 442368,
+    "in_raw": false
+   },
+   "want": "in_raw False"
+  },
+  {
+   "name": "A3 0x52BAD8 之前无 [0x8871E0] 读-判-跳守卫（非运行期强制单例）",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "钉1 .text 段 sha256 与审计员一致",
+   "ok": true,
+   "got": "c0368a179f6e1a0f",
+   "want": "c0368a179f6e1a0f"
+  },
+  {
+   "name": "钉2 整文件 sha256 与审计员一致",
+   "ok": true,
+   "got": "73201cc021497c95",
+   "want": "73201cc021497c95"
+  }
+ ],
+ "fails": [],
+ "A1": {
+  "0x52BA9B": {
+   "call": false,
+   "jmp": true,
+   "jmp_from": [
+    "0x52BABC"
+   ]
+  },
+  "0x52BADF": {
+   "call": false,
+   "jmp": true,
+   "jmp_from": [
+    "0x52BB00"
+   ]
+  },
+  "0x52BA60": {
+   "call": true,
+   "jmp": false,
+   "call_from": [
+    "0x48CCCF"
+   ]
+  }
+ },
+ "A2": {
+  "sib": 0,
+  "disp": 0,
+  "addr": 0,
+  "bss": {
+   "sec": ".data",
+   "rva": 479712,
+   "virt_size": 3570660,
+   "raw_size": 442368,
+   "in_raw": false
+  },
+  "adjacent": {
+   "0x8871D0": {
+    "n": 0,
+    "sample": []
+   },
+   "0x8871D4": {
+    "n": 0,
+    "sample": []
+   },
+   "0x8871D8": {
+    "n": 1,
+    "sample": [
+     {
+      "va": "0x40DF22",
+      "op": "qwordptr[0x8871d8]"
+     }
+    ]
+   },
+   "0x8871DC": {
+    "n": 0,
+    "sample": []
+   },
+   "0x8871E4": {
+    "n": 0,
+    "sample": []
+   },
+   "0x8871E8": {
+    "n": 1,
+    "sample": [
+     {
+      "va": "0x40DE3C",
+      "op": "qwordptr[0x8871e8]"
+     }
+    ]
+   },
+   "0x8871EC": {
+    "n": 0,
+    "sample": []
+   },
+   "0x8871F0": {
+    "n": 1,
+    "sample": [
+     {
+      "va": "0x40DE1C",
+      "op": "qwordptr[0x8871f0]"
+     }
+    ]
+   }
+  }
+ },
+ "A3_guard": {
+  "loads_before_write": [],
+  "n": 0
+ },
+ "text_sha": "c0368a179f6e1a0f85bf94ebeb3a3e62efc8b1a2000abe164e5e1c61714eb738",
+ "file_sha": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+ "n_insns": 1394120,
+ "secs": 87.3
+}

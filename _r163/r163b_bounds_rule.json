@@ -1,0 +1,182 @@
+{
+ "round": "R163",
+ "script": "r163b_bounds_rule.py",
+ "fail": 0,
+ "asserts": [
+  {
+   "id": "B0 ImageBase == 0x400000",
+   "ok": true,
+   "detail": "0x400000"
+  },
+  {
+   "id": "B1 .text VA=0x401000 / rsz=4,063,232 / vsz=4,060,045",
+   "ok": true,
+   "detail": "va=0x401000 rsz=4063232 vsz=4060045"
+  },
+  {
+   "id": "B2 VirtualSize 尾界 0x7E038D / raw 尾界 0x7E1000",
+   "ok": true,
+   "detail": "0x7e038d / 0x7e1000"
+  },
+  {
+   "id": "B3 bounds = 1,392,592 条、严格升序、零重复",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "B4 bounds 全在 .text、≥0x401000、≤0x7E038C",
+   "ok": true,
+   "detail": "0x401000..0x7e038c"
+  },
+  {
+   "id": "B5 位图自校验：置位数 == len(bounds)",
+   "ok": true,
+   "detail": "1392592"
+  },
+  {
+   "id": "B6 P1 起点数在 1.30M..1.50M（R162 的 r162d 独立实现同量级）",
+   "ok": true,
+   "detail": "1394120"
+  },
+  {
+   "id": "B7 P2 起点数 = 1,394,186（= S21_DIRECT/scan_mine.json 自述 n_raw）",
+   "ok": true,
+   "detail": "1394186"
+  },
+  {
+   "id": "B8 bounds ⊆ P2（缺 0 条）",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "id": "B9 P2 − bounds = 1594 条，且**全部** ≥ VirtualSize 尾界 ⇒ 差额恰是尾填充区",
+   "ok": true,
+   "detail": "below_vs_end=0"
+  },
+  {
+   "id": "B10 尾填充区 P2 起点 = 1594 条、范围 0x7e038d..0x7e0fff（= VS_END .. RAW_END-1）",
+   "ok": true,
+   "detail": "0x7e038d..0x7e0fff"
+  },
+  {
+   "id": "B11 bounds 条数 + 尾填充区条数 == P2 总起点数（1392592 + 1594 == 1394186）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "B12 ⇒ H2 成立：bounds 逐条等于「P2 起点中地址 < 0x7E038D 者」，两侧差集全空",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "B13 复现 R162 口径①：bounds − P1 全部起点 = 65 条（R162 记 65）",
+   "ok": true,
+   "detail": "65"
+  },
+  {
+   "id": "B14 复现 R162 口径②：P1 全部起点 − bounds = 1593 条（R162 记 1,593）",
+   "ok": true,
+   "detail": "1593"
+  },
+  {
+   "id": "B15 ②那 1,593 条**全部** ≥ VirtualSize 尾界",
+   "ok": true,
+   "detail": "below=0"
+  },
+  {
+   "id": "B16 ①那 65 条在 P2 口径下**全部**是起点 ⇒ 它们不是「指令内位移」，是数据区被 skipdata 单字节跳过的位置",
+   "ok": true,
+   "detail": "65"
+  },
+  {
+   "id": "B17 65 条「相对前一条 P1 起点」位移分布 = {1: 22, 2: 20, 3: 14, 4: 1, 5: 1, 6: 6, 7: 1}（R162 记 1:22 2:20 3:14 6:6 7:1 5:1 4:1）",
+   "ok": true,
+   "detail": "{1: 22, 2: 20, 3: 14, 4: 1, 5: 1, 6: 6, 7: 1}"
+  },
+  {
+   "id": "B17b 65 条 ≤ P1 最大位移 7（全部落在一条 P1 指令内部）",
+   "ok": true,
+   "detail": "7"
+  },
+  {
+   "id": "B18 P3 = 1,401,544 起点（第三方，不是 capstone）",
+   "ok": true,
+   "detail": "1401544"
+  },
+  {
+   "id": "B19 P3 − bounds = 9063 条（第三方反汇编器在数据区同样产出伪起点，故差集更大）",
+   "ok": true,
+   "detail": "9063 vs P2 的 1594"
+  },
+  {
+   "id": "B20 反控：只有 P2 使「截到 VS 尾界后」与 bounds 逐条相等；P1/P3 都不行",
+   "ok": true,
+   "detail": "P1=1394120 P3=1401544"
+  },
+  {
+   "id": "B21 _r131/_audit/deepseek/a2_callsites.py 在盘",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "B22 它写 disasm_lite 且 detail=False（内存纪律合规）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "B23 它**不含** skipdata 字样 ⇒ R95 转述「md.disasm + skipdata=True」与其在盘文本不符",
+   "ok": true,
+   "detail": "count=0"
+  },
+  {
+   "id": "B24 它只扫 TARGETS=(0x6bedb0, 0x41c250)、不产出 6,728 键 calls 全表 ⇒ 不是 a2_sites 生成器",
+   "ok": true,
+   "detail": "calls keys=6728"
+  },
+  {
+   "id": "C1 反控：P1 ⊆ P2（skipdata 只多不少）",
+   "ok": true,
+   "detail": "extra_in_P1=0"
+  },
+  {
+   "id": "C2 反控：尾界改成 VS_END+1 ⇒ P2 侧多交出恰 1 条；尾界改成 VS_END-1 ⇒ bounds 侧缺恰 1 条",
+   "ok": true,
+   "detail": "extra=1 missing=1"
+  },
+  {
+   "id": "C3 反控：不截断（到 RAW_END）⇒ 多交出 1,594 条",
+   "ok": true,
+   "detail": "1594"
+  },
+  {
+   "id": "C5 正控：尾界恰取 VirtualSize 尾界时应交出 0 条",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "C4 正控：P2 起点 100% 落在 [0x401000, 0x7E1000)",
+   "ok": true,
+   "detail": "1394186 / 1394186"
+  }
+ ],
+ "facts": {
+  "p1_plain_resync": 1394120,
+  "p2_skipdata": 1394186,
+  "p3_objdump": 1401544,
+  "bounds": 1392592,
+  "p2_minus_bounds": 1594,
+  "p2_below_vs_end": 0,
+  "p1_diff65": 65,
+  "p1_lost": 1593,
+  "disp65": {
+   "1": 22,
+   "2": 20,
+   "3": 14,
+   "4": 1,
+   "5": 1,
+   "6": 6,
+   "7": 1
+  },
+  "p3_minus_bounds": 9063
+ }
+}

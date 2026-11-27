@@ -1,0 +1,208 @@
+{
+ "checks": [
+  {
+   "name": "写入点恰 3 个",
+   "ok": true,
+   "got": 3,
+   "want": 3
+  },
+  {
+   "name": "非空写入恰 1 个且为 0x52BAD8",
+   "ok": true,
+   "got": [
+    "0x52BAD8"
+   ],
+   "want": [
+    "0x52BAD8"
+   ]
+  },
+  {
+   "name": "归零写入恰 2 个且为 0x52BAFA/0x6BEABD",
+   "ok": true,
+   "got": [
+    "0x52BAFA",
+    "0x6BEABD"
+   ],
+   "want": [
+    "0x52BAFA",
+    "0x6BEABD"
+   ]
+  },
+  {
+   "name": "D1 0x52BAF9 = ret",
+   "ok": true,
+   "got": [
+    "ret",
+    ""
+   ],
+   "want": "ret"
+  },
+  {
+   "name": "D2 0x52BA82 = xor ebx,ebx",
+   "ok": true,
+   "got": [
+    "xor",
+    "ebx,ebx"
+   ],
+   "want": [
+    "xor",
+    "ebx,ebx"
+   ]
+  },
+  {
+   "name": "D3 0x6BE1C8 = xor ebx,ebx",
+   "ok": true,
+   "got": [
+    "xor",
+    "ebx,ebx"
+   ],
+   "want": [
+    "xor",
+    "ebx,ebx"
+   ]
+  },
+  {
+   "name": "D4 0x52BACD = je 0x52bafa",
+   "ok": true,
+   "got": [
+    "je",
+    "0x52bafa"
+   ],
+   "want": [
+    "je",
+    "0x52bafa"
+   ]
+  },
+  {
+   "name": "NEG 反控：0x52BAFA 的 eax 不判零",
+   "ok": true,
+   "got": {
+    "site": "0x52BAFA",
+    "reg": "eax",
+    "proved_zero": false,
+    "lattice": "UNKNOWN"
+   },
+   "want": "False"
+  },
+  {
+   "name": "POS 反控：0x52BAD8 的 eax 不判零（call 返回值）",
+   "ok": true,
+   "got": {
+    "site": "0x52BAD8",
+    "reg": "eax",
+    "proved_zero": false,
+    "lattice": "UNKNOWN"
+   },
+   "want": "False"
+  },
+  {
+   "name": "两写入函数各至少 1 条入边",
+   "ok": true,
+   "got": {
+    "0x52BAD8": 1,
+    "0x52BAFA": 1,
+    "0x6BEABD": 1
+   },
+   "want": ">=1 each"
+  }
+ ],
+ "fails": [],
+ "writes": [
+  {
+   "va": "0x52BAD8",
+   "mn": "mov",
+   "src": "eax",
+   "func": "0x52BA60",
+   "proved_zero": false,
+   "lattice": "UNKNOWN",
+   "via": "dataflow",
+   "callers": [
+    "0x48CCCF"
+   ],
+   "caller_funcs": [
+    "0x48CCC0"
+   ]
+  },
+  {
+   "va": "0x52BAFA",
+   "mn": "mov",
+   "src": "ebx",
+   "func": "0x52BA60",
+   "proved_zero": true,
+   "lattice": "ZERO",
+   "via": "dataflow",
+   "callers": [
+    "0x48CCCF"
+   ],
+   "caller_funcs": [
+    "0x48CCC0"
+   ]
+  },
+  {
+   "va": "0x6BEABD",
+   "mn": "mov",
+   "src": "ebx",
+   "func": "0x6BE1C0",
+   "proved_zero": true,
+   "lattice": "ZERO",
+   "via": "dataflow",
+   "callers": [
+    "0x6BED48"
+   ],
+   "caller_funcs": [
+    "0x6BEC60"
+   ]
+  }
+ ],
+ "facts": {
+  "D1_ret_52BAF9": {
+   "va": "0x52BAF9",
+   "got": [
+    "ret",
+    ""
+   ]
+  },
+  "D2_xor_52BA82": {
+   "va": "0x52BA82",
+   "got": [
+    "xor",
+    "ebx,ebx"
+   ]
+  },
+  "D3_xor_6BE1C8": {
+   "va": "0x6BE1C8",
+   "got": [
+    "xor",
+    "ebx,ebx"
+   ]
+  },
+  "D4_je_52BACD": {
+   "va": "0x52BACD",
+   "got": [
+    "je",
+    "0x52bafa"
+   ]
+  },
+  "D5_cmp_52BAD6": {
+   "va": "0x52BAD6",
+   "got": [
+    "cmp",
+    "eax,ebx"
+   ]
+  }
+ },
+ "neg": {
+  "site": "0x52BAFA",
+  "reg": "eax",
+  "proved_zero": false,
+  "lattice": "UNKNOWN"
+ },
+ "pos": {
+  "site": "0x52BAD8",
+  "reg": "eax",
+  "proved_zero": false,
+  "lattice": "UNKNOWN"
+ },
+ "n_insns": 1394120,
+ "secs": 30.7
+}

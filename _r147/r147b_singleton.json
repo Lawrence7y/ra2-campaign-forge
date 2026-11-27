@@ -1,0 +1,197 @@
+{
+ "checks": [
+  {
+   "name": "V1 原始字节命中数 == 指令边界命中数（无漏检）",
+   "ok": true,
+   "got": [
+    1423,
+    1423
+   ],
+   "want": "相等"
+  },
+  {
+   "name": "V1b 原始命中全部落在 .text 原始区间",
+   "ok": true,
+   "got": [
+    1423,
+    1423
+   ],
+   "want": "相等"
+  },
+  {
+   "name": "V2 写入点恰 3 个",
+   "ok": true,
+   "got": 3,
+   "want": 3
+  },
+  {
+   "name": "V2 写非空值恰 1 个",
+   "ok": false,
+   "got": 2,
+   "want": 1
+  },
+  {
+   "name": "V2 写零恰 2 个",
+   "ok": false,
+   "got": 1,
+   "want": 2
+  },
+  {
+   "name": "V3 构造点所在函数 0x52BA60 入边 >= 1",
+   "ok": true,
+   "got": 1,
+   "want": ">=1"
+  },
+  {
+   "name": "V3 析构函数 0x6BE1C0 入边 >= 1",
+   "ok": true,
+   "got": 1,
+   "want": ">=1"
+  },
+  {
+   "name": "V3 三个写入点收敛到 2 个函数（同一 ctor 的失败分支 + teardown）",
+   "ok": true,
+   "got": [
+    "0x52BA60",
+    "0x6BE1C0"
+   ],
+   "want": 2
+  },
+  {
+   "name": "V4 POS 0x886380 原始命中 > 0",
+   "ok": true,
+   "got": 8,
+   "want": ">0"
+  },
+  {
+   "name": "V4 NEG 0x8871E4 原始命中 == 0",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "V4 NEG 0x8871DC 原始命中 == 0",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "V4 读点后有成员访问跟随（指针语义）",
+   "ok": true,
+   "got": 83,
+   "want": ">=1"
+  },
+  {
+   "name": "V4 读点数 1420 与 r147a 一致（独立复算）",
+   "ok": true,
+   "got": 1420,
+   "want": 1420
+  }
+ ],
+ "fails": [
+  "V2 写非空值恰 1 个",
+  "V2 写零恰 2 个"
+ ],
+ "raw_n": 1423,
+ "raw_in_text": 1423,
+ "insn_hits": 1423,
+ "writes": [
+  {
+   "va": "0x52BAD8",
+   "mn": "mov",
+   "op": "dwordptr[0x8871e0],eax",
+   "src": "eax",
+   "func": "0x52BA60",
+   "src_is_zero": false,
+   "zero_evidence": "assigned@0x52BA60"
+  },
+  {
+   "va": "0x52BAFA",
+   "mn": "mov",
+   "op": "dwordptr[0x8871e0],ebx",
+   "src": "ebx",
+   "func": "0x52BA60",
+   "src_is_zero": false,
+   "zero_evidence": "assigned@0x52BAF2"
+  },
+  {
+   "va": "0x6BEABD",
+   "mn": "mov",
+   "op": "dwordptr[0x8871e0],ebx",
+   "src": "ebx",
+   "func": "0x6BE1C0",
+   "src_is_zero": true,
+   "zero_evidence": "0x6BE1C8"
+  }
+ ],
+ "inbound": {
+  "0x52BA60": {
+   "n": 1,
+   "from": [
+    "0x48CCCF"
+   ],
+   "from_funcs": [
+    "0x48CCC0"
+   ],
+   "body_len": 1169
+  },
+  "0x6BE1C0": {
+   "n": 1,
+   "from": [
+    "0x6BED48"
+   ],
+   "from_funcs": [
+    "0x6BEC60"
+   ],
+   "body_len": 805
+  }
+ },
+ "ctrl": {
+  "pos_886380": {
+   "addr": "0x886380",
+   "raw_count": 8
+  },
+  "pos_8871e0": {
+   "addr": "0x8871E0",
+   "raw_count": 1423
+  },
+  "neg_8871e4": {
+   "addr": "0x8871E4",
+   "raw_count": 0
+  },
+  "neg_8871dc": {
+   "addr": "0x8871DC",
+   "raw_count": 0
+  }
+ },
+ "follow_n": 83,
+ "follow_sample": [
+  {
+   "load_at": "0x438FD1",
+   "access_at": "0x438FD7",
+   "access": "dwordptr[eax+0x210],-1"
+  },
+  {
+   "load_at": "0x43EBE2",
+   "access_at": "0x43EBED",
+   "access": "dwordptr[ecx+0x16b8]"
+  },
+  {
+   "load_at": "0x43ECB0",
+   "access_at": "0x43ECBE",
+   "access": "dwordptr[edx+0x16b8]"
+  },
+  {
+   "load_at": "0x441C21",
+   "access_at": "0x441C28",
+   "access": "dwordptr[ecx+0x5c8]"
+  },
+  {
+   "load_at": "0x44D06A",
+   "access_at": "0x44D074",
+   "access": "dwordptr[eax+0x16b8]"
+  }
+ ],
+ "n_insns": 1394120,
+ "secs": 35.958580493927
+}

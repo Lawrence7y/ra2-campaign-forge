@@ -1,0 +1,218 @@
+{
+ "round": "R163",
+ "script": "r163h_recompute_audit.py",
+ "fail": 0,
+ "asserts": [
+  {
+   "id": "B0 exe 4,825,360 B / sha256 73201cc0…",
+   "ok": true,
+   "detail": "4825360"
+  },
+  {
+   "id": "B1 .text VA=0x401000 VSZ=4,060,045 RSZ=4,063,232",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "B2 VS 尾界 0x7E038D / raw 尾界 0x7E1000",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "A3a 尾填充区长度 = raw尾界 − VS尾界 = 3,187",
+   "ok": true,
+   "detail": "3187"
+  },
+  {
+   "id": "A3b 尾填充区 distinct 字节值 = {0x00} ⇒ 全零",
+   "ok": true,
+   "detail": "{'0x0': 3187}"
+  },
+  {
+   "id": "A3c 反控：.text 前 3,187 字节 distinct 远多于 1",
+   "ok": true,
+   "detail": "213"
+  },
+  {
+   "id": "A1a VS-blob skipdata 起点数 = 1,392,592",
+   "ok": true,
+   "detail": "1392592"
+  },
+  {
+   "id": "A1b VS-blob skipdata 起点集**逐位等于** bounds（流式逐位比对，非仅集合相等）",
+   "ok": true,
+   "detail": "eq_pos=True n=1392592"
+  },
+  {
+   "id": "A1c raw-blob skipdata 起点数 = 1,394,186",
+   "ok": true,
+   "detail": "1394186"
+  },
+  {
+   "id": "A1d raw-blob 起点 − bounds = 1,594 且全部 ≥ 0x7E038D",
+   "ok": true,
+   "detail": "only=1594 above=1594"
+  },
+  {
+   "id": "A1e ⇒ 两种表述等价；审计员的正位表述更简（少一个截断条件）且判据更强（逐位相等）",
+   "ok": true,
+   "detail": "bounds == skipdata(VS blob)  [逐位]  ==  skipdata(raw blob) ∩ [..,0x7E038D)  [集合]"
+  },
+  {
+   "id": "A1f 尾填充区 skipdata 伪指令 = 1594 条，尺寸分布 {2: 1593, 1: 1}",
+   "ok": true,
+   "detail": "{2: 1593, 1: 1}"
+  },
+  {
+   "id": "A1g 尾段 1,593×2 + 1×1 = 3,187 = 尾填充全长",
+   "ok": true,
+   "detail": "3187"
+  },
+  {
+   "id": "A2a plain 单过起点数 = 155,215",
+   "ok": true,
+   "detail": "155215"
+  },
+  {
+   "id": "A2b 末条指令**结束** = 0x46F5A0（审计员把「结束」写成了「起点」）",
+   "ok": true,
+   "detail": "0x46f5a0"
+  },
+  {
+   "id": "A2b2 末条指令起点 = 0x46F59D（不是 0x46F5A0）",
+   "ok": true,
+   "detail": "0x46f59d"
+  },
+  {
+   "id": "A2d 覆盖率 = 11.12%（审计员报 11.1%）",
+   "ok": true,
+   "detail": "0.1112"
+  },
+  {
+   "id": "A2e plain 起点集 ⊂ bounds（155,215 全在 bounds 内）",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "id": "A2f 从 0x46F5A0 起 disasm_lite 解不出任何指令（停死点确凿）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "A2g bounds − plain单过起点 = 1,237,377（审计员报这个数）",
+   "ok": true,
+   "detail": "1237377"
+  },
+  {
+   "id": "A2h R162/R163 的「65 条」不是「bounds − plain单过」，而是「bounds − plain重对齐后起点」（基准不同，两个数都对）",
+   "ok": true,
+   "detail": "plain单过=1237377 ; 本轮的 65 用重对齐基准"
+  },
+  {
+   "id": "A6a 作用域 lead/next_re_20261117_r14 → 大写 EVIDENCE 目录 5 / 文件 5",
+   "ok": true,
+   "detail": "(5, 5)"
+  },
+  {
+   "id": "A6b 作用域全库 → 大写 EVIDENCE 目录 6 / 文件 52（审计员报的）",
+   "ok": true,
+   "detail": "(6, 52)"
+  },
+  {
+   "id": "A6c 两作用域差集 = 1 个目录 / 47 个文件，全部在 _ghidra/S08-KPROVED2/EVIDENCE",
+   "ok": true,
+   "detail": "['EVIDENCE']"
+  },
+  {
+   "id": "A4a DISASM_FN_* 子集里含 disasm 行的文件 = 14 个（审计员报 **9**，实测 14）",
+   "ok": true,
+   "detail": "14"
+  },
+  {
+   "id": "A4b 该子集地址并集 = 141 条且**全部**落在 bounds 内（审计员报 141 —— 这个数对）",
+   "ok": true,
+   "detail": "141 / in_bounds 141"
+  },
+  {
+   "id": "A4c ⇒ R163 说「现存语料覆盖 0 条」是**作用域错**（只走 lead/，漏了 _ghidra 子树）",
+   "ok": true,
+   "detail": "真值 141 条（FN 子集），不是 0"
+  },
+  {
+   "id": "A4c2 放宽到全部 47 个 EVIDENCE 文件 ⇒ 覆盖 1556 条（仍全部在 bounds 内）",
+   "ok": true,
+   "detail": "1556"
+  },
+  {
+   "id": "A4d 量级结论不变：141 × 1000 = 141,000 < 192,341 ⇒ 仍差约三个数量级",
+   "ok": true,
+   "detail": "141 × 1000 = 141000 < 192,341"
+  },
+  {
+   "id": "A4e DISASM_FN_* 的 141 条**唯一地址**与 gamemd.exe 同址字节全等；按**行**计 141 行、不等 0",
+   "ok": true,
+   "detail": "(141, 141, 0)"
+  },
+  {
+   "id": "A5a slice_disasm.txt 不存在",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "A5b C01_census/EVIDENCE 现只有 callgraph.json",
+   "ok": true,
+   "detail": "['callgraph.json']"
+  },
+  {
+   "id": "A5c R95 REPORT 正文提到 slice_disasm.txt 与 204 条不等",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "C1 反控：把 blob 换成长度 1 的片段 ⇒ skipdata 起点数 = 1（不是恒 1,392,592）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "C2 反控：把 VS 减 1 字节 ⇒ skipdata 起点数随之变化（判据对 blob 长度敏感）",
+   "ok": true,
+   "detail": "1392591"
+  },
+  {
+   "id": "C3 正控：bounds 自身与 bounds 相等",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "facts": {
+  "tail_fill_bytes": 3187,
+  "tail_fill_distinct": 1,
+  "skip_vs": 1392592,
+  "skip_raw": 1394186,
+  "skip_vs_eq_bounds": true,
+  "tail_pseudoinsn": 1594,
+  "tail_sizes": {
+   "2": 1593,
+   "1": 1
+  },
+  "plain_single_starts": 155215,
+  "plain_stop_at": "0x46f59d",
+  "plain_coverage_pct": 11.1241,
+  "bounds_minus_plain_single": 1237377,
+  "evid_dirs_lead": 5,
+  "evid_files_lead": 5,
+  "evid_dirs_all": 6,
+  "evid_files_all": 52,
+  "disasm_files_all": 35,
+  "cov_union": 1556,
+  "cov_in_bounds": 141,
+  "cov_fn": 141,
+  "fn_files": 14,
+  "cov_all_files": 35,
+  "cov_all_union": 1556,
+  "in_bounds_all": 1556,
+  "bytes_ok_rows": 141,
+  "bytes_bad_rows": 0,
+  "slice_disasm_exists": false
+ }
+}

@@ -1,0 +1,225 @@
+{
+ "checks": [
+  {
+   "name": "写入点恰 3 个",
+   "ok": true,
+   "got": 3,
+   "want": 3
+  },
+  {
+   "name": "归零写入恰 2 个",
+   "ok": false,
+   "got": 1,
+   "want": 2
+  },
+  {
+   "name": "非空写入恰 1 个（且是 0x52BAD8）",
+   "ok": false,
+   "got": [
+    "0x52BAD8",
+    "0x6BEABD"
+   ],
+   "want": [
+    "0x52BAD8"
+   ]
+  },
+  {
+   "name": "归零点恰为 0x52BAFA 与 0x6BEABD",
+   "ok": false,
+   "got": [
+    "0x52BAFA"
+   ],
+   "want": [
+    "0x52BAFA",
+    "0x6BEABD"
+   ]
+  },
+  {
+   "name": "F1 0x52BAF9 是 ret（pop 路径不同支）",
+   "ok": true,
+   "got": [
+    "ret",
+    ""
+   ],
+   "want": [
+    "ret"
+   ]
+  },
+  {
+   "name": "F2 0x52BA82 xor ebx,ebx",
+   "ok": true,
+   "got": [
+    "xor",
+    "ebx,ebx"
+   ],
+   "want": [
+    "xor",
+    "ebx,ebx"
+   ]
+  },
+  {
+   "name": "F3 0x6BE1C8 xor ebx,ebx",
+   "ok": true,
+   "got": [
+    "xor",
+    "ebx,ebx"
+   ],
+   "want": [
+    "xor",
+    "ebx,ebx"
+   ]
+  },
+  {
+   "name": "F4 0x52BACD je 0x52baFA（0x52BAFA 的唯一前驱是 jcc）",
+   "ok": true,
+   "got": [
+    "je",
+    "0x52bafa"
+   ],
+   "want": [
+    "je",
+    "0x52bafa"
+   ]
+  },
+  {
+   "name": "F5 0x52BAD6 cmp eax,ebx",
+   "ok": true,
+   "got": [
+    "cmp",
+    "eax,ebx"
+   ],
+   "want": [
+    "cmp",
+    "eax,ebx"
+   ]
+  },
+  {
+   "name": "反控 0x52BAD8 不是任何 jcc 的目标（无条件存返回值）",
+   "ok": true,
+   "got": false,
+   "want": false
+  },
+  {
+   "name": "两写入函数各 1 条入边（ctor / teardown 均被真实调用）",
+   "ok": true,
+   "got": [
+    "0x52BA60",
+    "0x6BE1C0"
+   ],
+   "want": 2
+  }
+ ],
+ "fails": [
+  "归零写入恰 2 个",
+  "非空写入恰 1 个（且是 0x52BAD8）",
+  "归零点恰为 0x52BAFA 与 0x6BEABD"
+ ],
+ "writes": [
+  {
+   "va": "0x52BAD8",
+   "mn": "mov",
+   "src": "eax",
+   "func": "0x52BA60",
+   "func_callers": [],
+   "null": false,
+   "ev_A": "block-top",
+   "ev_A_raw": {
+    "at": "block-top"
+   },
+   "ev_B": {
+    "reason": "not-a-jcc-target"
+   }
+  },
+  {
+   "va": "0x52BAFA",
+   "mn": "mov",
+   "src": "ebx",
+   "func": "0x52BA60",
+   "func_callers": [],
+   "null": true,
+   "ev_A": "clobber@0x52BAF2",
+   "ev_A_raw": {
+    "at": "clobber@0x52BAF2"
+   },
+   "ev_B": {
+    "jcc": "0x52BACD",
+    "cmp": "eax,ebx",
+    "call": "0x52BAC3"
+   }
+  },
+  {
+   "va": "0x6BEABD",
+   "mn": "mov",
+   "src": "ebx",
+   "func": "0x6BE1C0",
+   "func_callers": [],
+   "null": false,
+   "ev_A": "block-top",
+   "ev_A_raw": {
+    "at": "block-top"
+   },
+   "ev_B": {
+    "reason": "not-a-jcc-target"
+   }
+  }
+ ],
+ "facts": {
+  "F1": {
+   "va": "0x52BAF9",
+   "got": [
+    "ret",
+    ""
+   ],
+   "want": [
+    "ret",
+    ""
+   ]
+  },
+  "F2": {
+   "va": "0x52BA82",
+   "got": [
+    "xor",
+    "ebx,ebx"
+   ],
+   "want": [
+    "xor",
+    "ebx,ebx"
+   ]
+  },
+  "F3": {
+   "va": "0x6BE1C8",
+   "got": [
+    "xor",
+    "ebx,ebx"
+   ],
+   "want": [
+    "xor",
+    "ebx,ebx"
+   ]
+  },
+  "F4": {
+   "va": "0x52BACD",
+   "got": [
+    "je",
+    "0x52bafa"
+   ],
+   "want": [
+    "je",
+    "0x52bafa"
+   ]
+  },
+  "F5": {
+   "va": "0x52BAD6",
+   "got": [
+    "cmp",
+    "eax,ebx"
+   ],
+   "want": [
+    "cmp",
+    "eax,ebx"
+   ]
+  }
+ },
+ "n_insns": 1394120,
+ "secs": 32.9
+}

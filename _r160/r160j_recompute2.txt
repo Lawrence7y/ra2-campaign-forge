@@ -1,0 +1,47 @@
+parsed FLOORS=54 entries
+
+=== D6 复算：把每列截到恰好等于下界，看能否过 ===
+  exit=0  bytes=54372 (orig 96765)
+    D0 current version: r160j_1fnfcc5_ sha=9e373adf6ef37fc6 pinned=6b00f95581fa938d
+    D1 LF-only: CR=0
+    D2 header: ok
+    D3 rows=54 all-5-col=yes
+    D4 fact_id F01..F54: ok
+    D5 grade census: {'[已证]': 27, '[静态推断]': 1, '未取得': 2, '[流程]': 24}
+    D6 per-fact floors: 54 facts checked, 0 breaches
+    D7 evidence chain: items=178 uniq=74 lost_items=43 lost_uniq=16
+    D8 total bytes: 54372 (floor 48382)
+    D9 constant-table pins: floors=dd6110d41d0bb422 lost=323ac345d8cd1da2
+    PASS  structure/size/evidence-chain all ok
+  PASS 2e 全部截到下界 -> 仍 exit 0（审计员成立）
+  PASS 2f 字节大幅缩水  54372
+
+=== D8 为何没拦住？D8 下界是原字节的一半 ===
+  TOTAL_BYTES_FLOOR=48382  orig=96765  截断后=54372
+  PASS 2f2 下界确为原字节一半（审计员说 slack 大）  ('48382', 48382)
+  PASS 2f3 截断后仍高于下界
+
+=== D6b：6 条 limitations 下界=1 ===
+   ['F41', 'F42', 'F43', 'F44', 'F47', 'F48']
+    F41 lim='—' bytes=3 floor=1
+    F42 lim='—' bytes=3 floor=1
+    F43 lim='—' bytes=3 floor=1
+    F44 lim='—' bytes=3 floor=1
+    F47 lim='—' bytes=3 floor=1
+    F48 lim='—' bytes=3 floor=1
+  PASS 2g 6 条 limitations 下界=1  6
+
+=== D7：剥掉第4列全部括号注解 ===
+  exit=0 bytes=94032 (delta -2733)
+  PASS 2h 剥注解 -> 仍 exit 0（审计员成立）
+
+=== D5 归属不钉：grade 互换 ===
+  PASS 2c grade 互换 -> exit 0（审计员成立）
+
+=== D9 只覆盖 FLOORS/LOST，不覆盖 GRADES ===
+  PASS 2i 无 GRADES_SHA
+  PASS 2j 无 TOTAL_BYTES_SHA
+  PASS 2k 无 ITEMS/UNIQ 指纹
+
+FAILS: NONE
+SB: /tmp/r160j_1fnfcc5_

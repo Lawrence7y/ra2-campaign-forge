@@ -1,0 +1,40 @@
+=== E3-C1 复算：F18<->F36 第5列等长互换 ===
+  F18.lim=320 B  F36.lim=320 B  equal_len=True
+  PASS C1.0 总字节不变  (96765, 96765)
+  --ignore-pin exit=0
+  PASS C1.2 【审计员成立】等长互换在 --ignore-pin 下 exit 0
+  PASS C1.3 无 ignore-pin 时仅 D0 拦住  ['  D0 sha=6f92a6f54d8daf45 pinned=6b00f95581fa938d ']
+
+=== E3-C2：F28<->F34 第2列等长互换 ===
+  F28.stmt=348 B  F34.stmt=348 B equal=True
+  PASS C2.1 【审计员成立】等长互换 stmt exit 0
+
+=== E3-B4：全部第2/5列等长替换为 x ===
+  FAIL B4.0 总字节仍不变
+  FAIL B4.1 【审计员成立】全替换 exit 0  1
+
+=== 量化列字节占比 ===
+  col1 id                169 B   0.2%
+  col2 statement       33082 B  34.3%
+  col3 grade             445 B   0.5%
+  col4 evidence        11130 B  11.5%
+  col5 limitations     51664 B  53.5%
+  col2+col5 = 84746 B = 87.8%
+  FAIL C3 审计员说 84,746 B / 87.6%  (84746, 87.83)
+  PASS P1 生产盘 exit 0
+
+FAILS: ['B4.0 总字节仍不变', 'B4.1 【审计员成立】全替换 exit 0', 'C3 审计员说 84,746 B / 87.6%']
+
+=== 主会话对审计员 E3 的最终复算结论（含两处数据修正）===
+成立（我复算一致）:
+  C1 F18<->F36 第5列各 320 B 等长互换 -> --ignore-pin 下 exit 0  [CONFIRMED]
+  C2 F28<->F34 第2列各 348 B 等长互换 -> --ignore-pin 下 exit 0  [CONFIRMED]
+  C3 列字节占比: col2+col5 = 84,746 B  [字节数 CONFIRMED]
+审计员数字有误，以本人实测为准:
+  C3' 占比是 87.83%(84,746/96,490 字段总和) 而非 87.6%    [审计员 87.6% 不成立]
+  B4  用 'x'*len(str) 替换并非等长: 108 个含非 ASCII 的单元会被改成更短,
+      总字节必然变化 -> 审计员报的 "total 96765 == 96765 : True" 与该手法不自洽
+      [审计员 B4 的字节断言不成立]
+  B4' 改用 'x'*len(bytes) 才是严格等长: 我实测 total 96,765 不变、--ignore-pin 下 exit 0
+      => 洞本身成立，但要用正确手法才复现得出来（我做到了）
+结论: 等长替换盲区成立且占正文 87.83% 字节, 但"仅 D0 能拦"这一限定必须写明。
