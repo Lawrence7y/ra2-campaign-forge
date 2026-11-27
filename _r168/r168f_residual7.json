@@ -1,0 +1,94 @@
+{
+ "rows": [
+  {
+   "va": "0x723e27",
+   "bytes": "0f 0f 13 03 13 13 13 10 10 13 13 03 11 12 13 13 13 10 00 10 01 90 90 90 90 33 c0 a3 98 f5 b0 00",
+   "incrun": 3,
+   "first_byte": "0f"
+  },
+  {
+   "va": "0x793455",
+   "bytes": "fe ff c3 90 90 90 90 90 90 90 90 3b 0d 84 da a8 00 7d 1a 8d 04 8d b4 3b b7 00 56 57 8b 3c 8d e0",
+   "incrun": 2,
+   "first_byte": "fe"
+  },
+  {
+   "va": "0x7c5d92",
+   "bytes": "fe ff 00 01 f7 f8 fa fb fc fd fe ff 00 01 02 03 04 05 06 08 cc cc cc cc cc cc cc cc cc cc 55 8b",
+   "incrun": 7,
+   "first_byte": "fe"
+  },
+  {
+   "va": "0x7c5d9c",
+   "bytes": "fe ff 00 01 02 03 04 05 06 08 cc cc cc cc cc cc cc cc cc cc 55 8b ec 53 51 52 56 57 8b 75 08 8b",
+   "incrun": 7,
+   "first_byte": "fe"
+  },
+  {
+   "va": "0x7c80f2",
+   "bytes": "fe ff 00 01 f7 f8 fa fb fc fd fe ff 00 01 02 03 04 05 06 08 cc cc cc cc cc cc cc cc cc cc 55 8b",
+   "incrun": 7,
+   "first_byte": "fe"
+  },
+  {
+   "va": "0x7c80fc",
+   "bytes": "fe ff 00 01 02 03 04 05 06 08 cc cc cc cc cc cc cc cc cc cc 55 8b ec 83 c4 ec 53 51 52 56 57 8b",
+   "incrun": 7,
+   "first_byte": "fe"
+  },
+  {
+   "va": "0x7d0cba",
+   "bytes": "8f 1c 8b 44 8e 18 89 44 8f 18 8b 44 8e 14 89 44 8f 14 8b 44 8e 10 89 44 8f 10 8b 44 8e 0c 89 44",
+   "incrun": 1,
+   "first_byte": "8f"
+  }
+ ],
+ "sample16_count": 2,
+ "sample16_at": [
+  "0x7c5d92",
+  "0x7c80f2"
+ ],
+ "rand_incrun6_rate": 0.0,
+ "rev_incrun": 1,
+ "assertions": [
+  {
+   "id": "F1 四条 0x7c5d9x/0x7c80fx 的 incrun >= 6",
+   "ok": true,
+   "detail": "[('0x723e27', 3), ('0x793455', 2), ('0x7c5d92', 7), ('0x7c5d9c', 7), ('0x7c80f2', 7), ('0x7c80fc', 7), ('0x7d0cba', 1)]"
+  },
+  {
+   "id": "F2 反控 2000 个随机 .text 段 incrun>=6 的比例 < 3%",
+   "ok": true,
+   "detail": "0/2000=0.0000"
+  },
+  {
+   "id": "F3 反控 同一 16 字节样本反转后 incrun <= 2（判据不是恒真）",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "id": "F4 该 16 字节样本在镜像里出现 2 次且恰对应 0x7c5d92/0x7c80f2 前 16 B",
+   "ok": true,
+   "detail": "2 ['0x7c5d92', '0x7c80f2']"
+  },
+  {
+   "id": "F5 0x7c5d9c / 0x7c80fc 是该样本 +10 处（同一查表的不同落点）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "F6 0x723e27 首二字节 0f 0f（capstone 解不出）",
+   "ok": true
+  },
+  {
+   "id": "F7 0x793455 前 21 字节是一段完整函数尾 + 填充（c3 90*9 其后才是洞）",
+   "ok": false,
+   "detail": "09 33 d2 8b c8 e9 89 23"
+  },
+  {
+   "id": "F8 七条互不相同（无重复地址）",
+   "ok": true
+  }
+ ],
+ "fail": 1
+}

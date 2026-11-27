@@ -85,6 +85,10 @@ if lines and lines[-1] == '':
     lines = lines[:-1]
 ck('A3 V545 行数 == 55（表头 + 54 事实）', len(lines) == 55, len(lines))
 rows = [l.split('\t') for l in lines]
+# S-530（自错，本轮当场抓出）：首版写 new = list(rows) —— 那是**浅拷贝**，改 new 里某行的第 5 列
+# 同时改了 rows 里的同一个 list 对象 ⇒ 差分基准被就地污染，drift 恒为空、B4/B6 假 FAIL。
+# 正确做法是对每行做独立拷贝（深一层即可，行内是 str 不可变）。
+rows_base = [list(r) for r in rows]
 ck('A4 每行 5 列', all(len(r) == 5 for r in rows), {len(r) for r in rows})
 
 d = dict((r[0], r) for r in rows[1:])
@@ -106,12 +110,12 @@ ck('B1 新件 CR == 0', out_b.count(b'\r') == 0, out_b.count(b'\r'))
 ck('B2 行数仍 55', len(out_txt.rstrip('\n').split('\n')) == 55,
    len(out_txt.rstrip('\n').split('\n')))
 ck('B3 F24 statement / grade / evidence 三列逐字节不变',
-   new[[r[0] for r in new].index('F24')][1:4] == rows[[r[0] for r in rows].index('F24')][1:4],
+   new[[r[0] for r in new].index('F24')][1:4] == rows_base[[r[0] for r in rows_base].index('F24')][1:4],
    len(new[[r[0] for r in new].index('F24')][1]))
-drift = [a[0] for a, b in zip(rows, new) if a != b]
+drift = [a[0] for a, b in zip(rows_base, new) if a != b]
 ck('B4 差分行恰 1 行且是 F24（整文件逐行差分，不靠行号）', drift == ['F24'], drift)
 cell = 0
-for a, b in zip(rows, new):
+for a, b in zip(rows_base, new):
     for i in range(5):
         if a[i] != b[i]:
             cell += 1

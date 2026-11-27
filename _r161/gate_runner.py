@@ -15,8 +15,8 @@
           R161 审计员 #376 指出我原稿写成「第 20 行」是错口径，已按实测改正）
       b) 同一版本 == DISC_UNVERIFIABLE 中「纪律号 20」那一行的 col4 登记的版本
       c) check_disc.py 的 FREEZE_SHA256 == 现盘 sha256(DISC_UNVERIFIABLE.tsv)
-      d) facts_floors.py 的 CUR_SHA256 == 现盘 sha256(V545/FACT_INDEX.tsv)
-      e) facts_floors.py 的 TOTAL_BYTES == 现盘 len(V545/FACT_INDEX.tsv)
+      d) facts_floors.py 的 CUR_SHA256 == 现盘 sha256(V549/FACT_INDEX.tsv)
+      e) facts_floors.py 的 TOTAL_BYTES == 现盘 len(V549/FACT_INDEX.tsv)
       f) check_disc.py 的 C16_FLOORS_SHA256 == 由 C16_FLOORS 表规范化重算的 sha
       g) facts_floors.py 的 MASTER_SHA256 == 由其常量规范化重算的 sha
       a/b/c 三条合起来正是「R159/R160 两轮各踩过一次」的联动坑；d/e 是台账侧的同类坑。
@@ -48,7 +48,7 @@ GATE = os.path.join(TIER, 'check_disc.py')
 FACTS = os.path.join(ROOT, '_r160', 'facts_floors.py')
 DR = os.path.join(TIER, 'DISC_RECHECK.tsv')
 UN = os.path.join(TIER, 'DISC_UNVERIFIABLE.tsv')
-LEDGER = os.path.join(TIER, 'R17_R117_FACTINDEX_V545', 'FACT_INDEX.tsv')
+LEDGER = os.path.join(TIER, 'R17_R121_FACTINDEX_V549', 'FACT_INDEX.tsv')
 
 fails = []
 QUIET = [False]
@@ -184,12 +184,12 @@ def g3(gate_path, facts_path, dr_path, un_path, ledger_path, quiet=False):
                   ((mz.group(1)[:16] if mz else None), actual_un[:16])))
     msha = re.search(r"^CUR_SHA256 = '([0-9a-f]{64})'", ft, re.M)
     actual_led = sha(rb(ledger_path))
-    res.append(ck('G3c facts CUR_SHA256 == 现盘 V545 sha256',
+    res.append(ck('G3c facts CUR_SHA256 == 现盘 V549 sha256',
                   msha and msha.group(1) == actual_led,
                   ((msha.group(1)[:16] if msha else None), actual_led[:16])))
     mtb = re.search(r'^TOTAL_BYTES = (\d+)$', ft, re.M)
     actual_len = len(rb(ledger_path))
-    res.append(ck('G3d facts TOTAL_BYTES == 现盘 V545 字节数',
+    res.append(ck('G3d facts TOTAL_BYTES == 现盘 V549 字节数',
                   mtb and int(mtb.group(1)) == actual_len,
                   ((mtb.group(1) if mtb else None), actual_len)))
     new_c16, n16 = c16_recompute(gt)

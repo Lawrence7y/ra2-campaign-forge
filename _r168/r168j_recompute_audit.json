@@ -1,0 +1,107 @@
+{
+ "aud1": {
+  "def_line": 140,
+  "return_line": 162,
+  "lines": 23,
+  "mod4": true,
+  "lo_minus4": true,
+  "hi_plus4": true,
+  "div4": true
+ },
+ "aud2_w3": {
+  "0x48db25": [
+   1,
+   1,
+   "0x48db24",
+   "0x48db27"
+  ],
+  "0x62fe4c": [
+   1,
+   0,
+   "0x62fe4c",
+   "0x62fe4f"
+  ],
+  "0x7d0cba": [
+   0,
+   null,
+   null,
+   null
+  ]
+ },
+ "aud3_table_0x7d0cb0": [
+  "0x7d0cf7",
+  "0x1c8e448b",
+  "0x1c8f4489",
+  "0x188e448b",
+  "0x188f4489",
+  "0x148e448b",
+  "0x148f4489",
+  "0x108e448b"
+ ],
+ "aud3_refsite": "0x7d0be2",
+ "aud3_n": 1,
+ "aud3_n2": 7,
+ "exec_clean": 1150117,
+ "exec_ok": 1392527,
+ "resync": [
+  0,
+  66
+ ],
+ "assertions": [
+  {
+   "id": "J1 best_table 实际行 140-162（审计员说 140-161，差 1 行在 return）+ 四点俱全",
+   "ok": true,
+   "detail": "{'def_line': 140, 'return_line': 162, 'lines': 23, 'mod4': True, 'lo_minus4': True, 'hi_plus4': True, 'div4': True}"
+  },
+  {
+   "id": "J2 反控 for w in (4, 3) 与 rd(b, w) 确按 w 读",
+   "ok": true
+  },
+  {
+   "id": "J3 步进=宽度 后三条 w=3 命中的 3 字节表 k 分别为 1/1/0（全部失效）",
+   "ok": true,
+   "detail": "{'0x48db25': (1, '0x48db24', '0x48db27'), '0x62fe4c': (1, '0x62fe4c', '0x62fe4f'), '0x7d0cba': (0, None, None)}"
+  },
+  {
+   "id": "J4 但按「是否仍落在任意表内」计，只有 0x7d0cba 掉出去（两种说法并存，不互斥）",
+   "ok": true,
+   "detail": "见 r168e：fixed in=55、lost=[0x7d0cba]"
+  },
+  {
+   "id": "J5 0x7d0cb0 是一张 4 字节表且首槽 0x007d0cf7 落 .text",
+   "ok": true,
+   "detail": "['0x7d0cf7', '0x1c8e448b', '0x1c8f4489', '0x188e448b', '0x188f4489', '0x148e448b', '0x148f4489', '0x108e448b']"
+  },
+  {
+   "id": "J6 引用点 ff 24 8d 0x7d0cb0 存在，地址 0x7d0be2（审计员写 ff 24 9d 是 modrm 笔误）",
+   "ok": true,
+   "detail": "0x7d0be2"
+  },
+  {
+   "id": "J7 该表真实条目数 = 7（0x7d0cb0..0x7d0cb3），洞 0x7d0cba 在表外 >= 1 条目",
+   "ok": true,
+   "detail": "n_from_0x7d0cb0=1 ; 洞-表首=10"
+  },
+  {
+   "id": "J8 从 0x7d0c98 起连续落在 .text 的槽数（含前置 7 条）>= 7",
+   "ok": true,
+   "detail": "n2=7 [0x7d0cbc, 0x7d0cc4, 0x7d0ccc, 0x7d0cd4, 0x7d0cdc, 0x7d0ce4, 0x7d0cf7]"
+  },
+  {
+   "id": "J9 正确口径起点 = 1,392,527（第三次主会话独立复算）",
+   "ok": true,
+   "detail": "1392527"
+  },
+  {
+   "id": "J10 执行员 #393 的 1,390,966 已由 r168k 复现；口径差 = VA 基址用 tva+pos + end_va 过滤丢末 4,096 B",
+   "ok": true,
+   "detail": "见 r168k K1/K5：diff 1,561 == 末 4,096 B 内起点数"
+  },
+  {
+   "id": "J11 反控：两种口径下重对齐点均为 65，洞集合不变（结论对口径不敏感）",
+   "ok": true,
+   "detail": "r168k K2/K6：symdiff=0"
+  }
+ ],
+ "fail": 0
+}
