@@ -43,7 +43,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if not os.path.isdir(os.path.join(ROOT, 'lead')):
     ROOT = '/home/t628/projects/ra2-campaign-forge'
 TIER = os.path.join(ROOT, 'lead', 'next_re_20261117_r14')
-EXPECT_CUR = os.path.join(TIER, 'R17_R131_FACTINDEX_V599', 'FACT_INDEX.tsv')
+EXPECT_CUR = os.path.join(TIER, 'R17_R131_FACTINDEX_V601', 'FACT_INDEX.tsv')
 CUR = EXPECT_CUR
 IGNORE_PIN = False
 for a in sys.argv[1:]:
@@ -52,8 +52,8 @@ for a in sys.argv[1:]:
 if IGNORE_PIN:
     print('  !! WARNING --ignore-pin: sha256/master-pin assertions DISABLED (self-test only)')
 
-CUR_SHA256 = '616a86e251fd88e5d4fa7a3c488c15d65ce2c6e1bceb62de6d639ee1dca374e9'
-TOTAL_BYTES = 277566
+CUR_SHA256 = '54ff04190b015ca13847191e194a47c1263241f5fa8eedd20db00b89b5f83111'
+TOTAL_BYTES = 284839
 GRADES = {
     'F01': '[已证]',
     'F02': '[已证]',
@@ -308,7 +308,7 @@ LOST_ITEMS = 43
 LOST_UNIQ = 16
 ITEMS = 322
 UNIQ = 213
-MASTER_SHA256 = 'b058464c0dcf194f0bd4db3fc292dcbc2d9ef11a1ceae1389810fc2a91667138'
+MASTER_SHA256 = '03a5ce793a92c9b4a9cacbc2c7d5a053779b0c7eba85172703f5421bd6a4d65f'
 
 fails = []
 def F(m): fails.append(m)

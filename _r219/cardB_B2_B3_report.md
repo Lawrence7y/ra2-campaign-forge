@@ -1,0 +1,48 @@
+# R219-B distribution + controls
+
+Sweep convention: 64KB chunks, capstone skipdata=True (invalid bytes become 1-byte .byte, equivalent to byte-resync +1).
+Positive controls: insns=1394300 (card expected 1394120; +180 = 60 chunk-boundary .byte artifacts); mem=18935 (+9 esp-excluded); s>=256=931 distinct=91; domain=925; s-top matches card exactly.
+R218 口径: card reports 18930 (R218) and 18935 (alt); this sweep yields 18935 allowed-base + 9 esp-excluded = 18944 total. The 18930 vs 18935 delta of 5 is a rounding/filter口径 difference in R218 not reproducible from present data; 18935 matches this sweep exactly.
+
+## B2
+
+- 925 domain sites resolved into 311 distinct caller functions (unresolved=528).
+- resolver kinds: {'unresolved': 528, 'ret': 397}
+- Top-10 caller functions:
+  - 0x44e29d : 5
+  - 0x414fdf : 4
+  - 0x415290 : 4
+  - 0x4155d7 : 4
+  - 0x416c5a : 3
+  - 0x443eb6 : 3
+  - 0x4d4a56 : 3
+  - 0x4d4b8f : 3
+  - 0x4d4db9 : 3
+  - 0x4d53c3 : 3
+- Functions consuming >=5 distinct s: 0
+
+## B3 control 1 (s<256)
+
+- s<256 sites=18002 resolved into 4135 distinct caller functions.
+- Top-10 caller functions:
+  - 0x490489 : 15
+  - 0x7162da : 14
+  - 0x4e2859 : 12
+  - 0x50177a : 11
+  - 0x5018dd : 11
+  - 0x53988f : 11
+  - 0x4025f5 : 10
+  - 0x44c836 : 10
+  - 0x539ad9 : 10
+  - 0x730d79 : 10
+
+## B3 control 2 (site-as-entry)
+
+- distinct site addresses in domain=925 (expect 925 only if domain=925).
+
+## Anomalies & uncertainty
+
+- unresolved caller entries=528 sites
+- sites inside 0xCC byte=0
+- Insn count 1394300 vs card 1394120: +180 from 60 chunk-boundary synthetic .byte (skipdata) at 0x10000 steps; single-buffer decode yields 1394186 (+66). All downstream filters/domain counts match card exactly.
+- 18930 vs 18935 discrepancy between R218 and alt口径: 5-site delta not reproducible from binary; card requires both numbers reported, done above.

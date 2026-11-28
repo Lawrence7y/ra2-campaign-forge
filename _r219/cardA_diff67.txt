@@ -1,0 +1,206 @@
+[0] 正控 COL=1214 VT=1218 real(.text首槽)=1214 phantom=4 max_slots=344 total_slots=14044
+    vt=007f5c70 n=344 expect=344 PASS
+    vt=007eb058 n=343 expect=343 PASS
+    vt=007e22a4 n=341 expect=341 PASS
+    vt=007e8c94 n=341 expect=341 PASS
+    vt=007e3ebc n=322 expect=322 PASS
+    vt=007f4960 n=309 expect=309 PASS
+[0b] 父类视图推导 vs 期望: PASS
+    vt=007f5c70 slots>=256=88 same=73 diff=12 oob=3
+    vt=007eb058 slots>=256=87 same=63 diff=22 oob=2
+    vt=007e22a4 slots>=256=85 same=80 diff=5 oob=0
+    vt=007e8c94 slots>=256=85 same=37 diff=16 oob=32
+    vt=007e3ebc slots>=256=66 same=41 diff=12 oob=13
+    vt=007f4960 slots>=256=53 same=0 diff=0 oob=53
+[0c] slot>=256 比对合计 same=294 diff=67 oob=103 (应 294/67/103, 和=464)
+[0d] diff 槽 67 个, 去重目标地址数=67
+
+==============================================================================================================
+A1: 67 个 diff 目标逐目标前缀归类
+目标         前12字节                    前3条指令                                        前缀类别           解码确定
+0x004176f0 5355568bf1578b06ff90fc01 push ebx | push ebp | push esi               other          True
+0x0041aa80 5356578b7c241085ff8bf10f push ebx | push esi | push edi               other          True
+0x0041b890 568bf18b86b402000085c074 push esi | mov esi, ecx | mov eax, dword ptr other          True
+0x0041b9e0 8a81d5060000c39090909090 mov al, byte ptr [ecx + 0x6d5] | ret  | nop  other          True
+0x0041bbd0 568bf18b86c40600008a880d push esi | mov esi, ecx | mov eax, dword ptr other          True
+0x0044d6a0 8a4424045684c08bf17431a1 mov al, byte ptr [esp + 4] | push esi | test other          True
+0x00454db0 83ec445355568bf133ed578b sub esp, 0x44 | push ebx | push ebp          other          True
+0x00455d50 568bf183beac000000137437 push esi | mov esi, ecx | cmp dword ptr [esi other          True
+0x00456580 53568bf157b9e8f787008b86 push ebx | push esi | mov esi, ecx           other          True
+0x004565e0 55568bf157b9e8f787008b86 push ebp | push esi | mov esi, ecx           push_ebp       True
+0x00456640 83ec085356578bf9b9e8f787 sub esp, 8 | push ebx | push esi             other          True
+0x00456f80 8b81f000000083e0023c028b mov eax, dword ptr [ecx + 0xf0] | and eax, 2 other          True
+0x004581f0 8b8194060000c39090909090 mov eax, dword ptr [ecx + 0x694] | ret  | no other          True
+0x00458a80 83ec345355568bf133db578b sub esp, 0x34 | push ebx | push ebp          other          True
+0x00458dd0 8b81200500008a907b150000 mov eax, dword ptr [ecx + 0x520] | mov dl, b other          True
+0x00458e00 568bf1576a008b8e20050000 push esi | mov esi, ecx | push edi           other          True
+0x00459900 83ec1c5355568bf1578b8620 sub esp, 0x1c | push ebx | push ebp          other          True
+0x004d82b0 83ec1853568bf1578a86b306 sub esp, 0x18 | push ebx | push esi          other          True
+0x004d8560 83ec0c568bf18b06ff908401 sub esp, 0xc | push esi | mov esi, ecx       other          True
+0x004d94a0 8b4424048981a0050000c204 mov eax, dword ptr [esp + 4] | mov dword ptr mov_eax_arg    True
+0x004d94b0 83ec1c53558be933db568b74 sub esp, 0x1c | push ebx | push ebp          other          True
+0x004dc060 83ec245355568bf1578bbeb4 sub esp, 0x24 | push ebx | push ebp          other          True
+0x004df0e0 535556578b7c24148bf10fbe push ebx | push ebp | push esi               other          True
+0x004df1a0 33c0c781c4050000ffffffff xor eax, eax | mov dword ptr [ecx + 0x5c4],  other          True
+0x004df1c0 8b91c405000033c083faff0f mov edx, dword ptr [ecx + 0x5c4] | xor eax,  other          True
+0x004df1d0 8a81d1050000c39090909090 mov al, byte ptr [ecx + 0x5d1] | ret  | nop  other          True
+0x004df1e0 8b81c4050000c39090909090 mov eax, dword ptr [ecx + 0x5c4] | ret  | no other          True
+0x004df1f0 8b81c805000083ec0c85c056 mov eax, dword ptr [ecx + 0x5c8] | sub esp,  other          True
+0x004df310 8b91c405000033c083fa1d0f mov edx, dword ptr [ecx + 0x5c4] | xor eax,  other          True
+0x004df320 53568bf1b3018b86c8050000 push ebx | push esi | mov esi, ecx           other          True
+0x004df3a0 83ec0c568bf18b86c8050000 sub esp, 0xc | push esi | mov esi, ecx       other          True
+0x004df4b0 568bf132c083bec40500001d push esi | mov esi, ecx | xor al, al         other          True
+0x004df510 83ec3853558be9568b4c2448 sub esp, 0x38 | push ebx | push ebp          other          True
+0x0051aa40 83ec2c53558be956578b4500 sub esp, 0x2c | push ebx | push ebp          other          True
+0x0051cba0 8b44240853568bf18b4c240c mov eax, dword ptr [esp + 8] | push ebx | pu mov_eax_arg    True
+0x0051cdb0 83ec24568bf1578b06ff9074 sub esp, 0x24 | push esi | mov esi, ecx      other          True
+0x0051daf0 83ec10568bf18b86c4060000 sub esp, 0x10 | push esi | mov esi, ecx      other          True
+0x0051dbd0 558bec83e4f883ec4453568b push ebp | mov ebp, esp | and esp, 0xfffffff push_ebp       True
+0x0051f330 83ec0c568bf1576a008b06ff sub esp, 0xc | push esi | mov esi, ecx       other          True
+0x005216d0 568bf1e808831e0084c07502 push esi | mov esi, ecx | call 0x7099e0      other          True
+0x00521b20 8b81c406000083f806740a83 mov eax, dword ptr [ecx + 0x6c4] | cmp eax,  other          True
+0x00521b40 8a81e406000084c074158b01 mov al, byte ptr [ecx + 0x6e4] | test al, al other          True
+0x00521c10 568bf18b86c00600008a88bc push esi | mov esi, ecx | mov eax, dword ptr other          True
+0x00521c40 8b81c00600008a90bc0e0000 mov eax, dword ptr [ecx + 0x6c0] | mov dl, b other          True
+0x00521c60 8b4424044874118b016a006a mov eax, dword ptr [esp + 4] | dec eax | je  mov_eax_arg    True
+0x00521d80 568bf1e81894fbff8bc88a86 push esi | mov esi, ecx | call 0x4db1a0      other          True
+0x00521dd0 83ec18568bf1e855a2fbff8b sub esp, 0x18 | push esi | mov esi, ecx      other          True
+0x00521eb0 83ec1c538bd955568b83a405 sub esp, 0x1c | push ebx | mov ebx, ecx      other          True
+0x005220f0 c681d806000001c390909090 mov byte ptr [ecx + 0x6d8], 1 | ret  | nop   other          True
+0x00522340 53568bf18b86b402000085c0 push ebx | push esi | mov esi, ecx           other          True
+0x00522700 568b742408578bf985f67466 push esi | mov esi, dword ptr [esp + 8] | pu other          True
+0x00522780 8b81c00600008a90300d0000 mov eax, dword ptr [ecx + 0x6c0] | mov dl, b other          True
+0x005228b0 e9bbc71e0090909090909090 jmp 0x70f070 | nop  | nop                    jmp_rel        True
+0x005228c0 e9cbc71e0090909090909090 jmp 0x70f090 | nop  | nop                    jmp_rel        True
+0x00522fe0 83ec085355568bf1578b06ff sub esp, 8 | push ebx | push ebp             other          True
+0x00736ca0 83ec0c56578bf98b87c40600 sub esp, 0xc | push esi | push edi           other          True
+0x00736d50 83ec0c568bf18b86c4060000 sub esp, 0xc | push esi | mov esi, ecx       other          True
+0x00738970 83ec0c8b442414538b5c2414 sub esp, 0xc | mov eax, dword ptr [esp + 0x1 other          True
+0x007414e0 568bf1578b8e1c020000e841 push esi | mov esi, ecx | push edi           other          True
+0x007416a0 8b44240483ec1c5356578bf9 mov eax, dword ptr [esp + 4] | sub esp, 0x1c mov_eax_arg    True
+0x00741970 81ec8000000053558be98b9c sub esp, 0x80 | push ebx | push ebp          other          True
+0x00746420 83ec0c5356578b7c241c8bf1 sub esp, 0xc | push ebx | push esi           other          True
+0x007464e0 83ec0c53568b7424185785f6 sub esp, 0xc | push ebx | push esi           other          True
+0x00746670 568b742408578bf985f60f84 push esi | mov esi, dword ptr [esp + 8] | pu other          True
+0x00746720 568bf18b06c686d801000000 push esi | mov esi, ecx | mov eax, dword ptr other          True
+0x00746cb0 e9bb83fcff90909090909090 jmp 0x70f070 | nop  | nop                    jmp_rel        True
+0x00746cc0 e9cb83fcff90909090909090 jmp 0x70f090 | nop  | nop                    jmp_rel        True
+A1 汇总: {'other': 57, 'push_ebp': 2, 'mov_eax_arg': 4, 'jmp_rel': 4} 合计=67 (应=67)
+
+==============================================================================================================
+A2: 67 个 diff 目标反查命中数 (.rdata+.data 全 dword)
+被引用 1 次: 53 ; 被引用 0 次: 0 ; 被引用多次(>1): 14
+被多次引用的目标（地址, 次数, 全部宿主虚表）:
+  0x004d8560  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004d94a0  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004dc060  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df0e0  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df1a0  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df1c0  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df1d0  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df1e0  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df1f0  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df310  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df320  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df3a0  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df4b0  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+  0x004df510  count=4  hosts=['0x7e22a4', '0x7e8c94', '0x7eb058', '0x7f5c70']
+被引用 1 次的目标（本表专属新增槽候选）共 53 个:
+  0x004176f0 @0x7e2728
+  0x0041aa80 @0x7e2724
+  0x0041b890 @0x7e2780
+  0x0041b9e0 @0x7e26d4
+  0x0041bbd0 @0x7e27cc
+  0x0044d6a0 @0x7e4340
+  0x00454db0 @0x7e42cc
+  0x00455d50 @0x7e433c
+  0x00456580 @0x7e4350
+  0x004565e0 @0x7e4354
+  0x00456640 @0x7e4358
+  0x00456f80 @0x7e4320
+  0x004581f0 @0x7e42c4
+  0x00458a80 @0x7e434c
+  0x00458dd0 @0x7e42bc
+  0x00458e00 @0x7e42c0
+  0x00459900 @0x7e4324
+  0x004d82b0 @0x7e9118
+  0x004d94b0 @0x7e9114
+  0x0051aa40 @0x7eb4d8
+  0x0051cba0 @0x7eb4dc
+  0x0051cdb0 @0x7eb4d0
+  0x0051daf0 @0x7eb558
+  0x0051dbd0 @0x7eb554
+  0x0051f330 @0x7eb480
+  0x005216d0 @0x7eb4cc
+  0x00521b20 @0x7eb5a0
+  0x00521b40 @0x7eb5a4
+  0x00521c10 @0x7eb570
+  0x00521c40 @0x7eb574
+  0x00521c60 @0x7eb578
+  0x00521d80 @0x7eb590
+  0x00521dd0 @0x7eb54c
+  0x00521eb0 @0x7eb550
+  0x005220f0 @0x7eb56c
+  0x00522340 @0x7eb594
+  0x00522700 @0x7eb4c4
+  0x00522780 @0x7eb4c8
+  0x005228b0 @0x7eb514
+  0x005228c0 @0x7eb518
+  0x00522fe0 @0x7eb560
+  0x00736ca0 @0x7f6094
+  0x00736d50 @0x7f6154
+  0x00738970 @0x7f60f4
+  0x007414e0 @0x7f61ac
+  0x007416a0 @0x7f61a4
+  0x00741970 @0x7f60f0
+  0x00746420 @0x7f6144
+  0x007464e0 @0x7f6148
+  0x00746670 @0x7f60dc
+  0x00746720 @0x7f60e0
+  0x00746cb0 @0x7f612c
+  0x00746cc0 @0x7f6130
+
+==============================================================================================================
+A3: 随机 20 个 same 目标前缀类别分布（反控）
+  0x004d3710 dd442404dc1d18177e00dfe0 fld qword ptr [esp + 4] | fcom other
+  0x0041bfe0 c39090909090909090909090 ret  | nop  | nop              ret_stub
+  0x004dba30 c39090909090909090909090 ret  | nop  | nop              ret_stub
+  0x004d9ff0 8b0183ec0c8d5424005652ff mov eax, dword ptr [ecx] | sub other
+  0x004db1a0 83ec0c568bf1578b06ff9084 sub esp, 0xc | push esi | mov  other
+  0x004df0e0 535556578b7c24148bf10fbe push ebx | push ebp | push esi other
+  0x004de7b0 83ec2855568bf1578b06ff90 sub esp, 0x28 | push ebp | pus other
+  0x004df1a0 33c0c781c4050000ffffffff xor eax, eax | mov dword ptr [ other
+  0x006fb170 a14c3da80083ec2085c0568b mov eax, dword ptr [0xa83d4c]  other
+  0x0041c040 32c0c3909090909090909090 xor al, al | ret  | nop        other
+  0x0041bfc0 33c0c3909090909090909090 xor eax, eax | ret  | nop      other
+  0x0070f110 32c0c3909090909090909090 xor al, al | ret  | nop        other
+  0x004df1c0 8b91c405000033c083faff0f mov edx, dword ptr [ecx + 0x5c other
+  0x004de760 c20400909090909090909090 ret 4 | nop  | nop             ret_stub
+  0x004de750 c20400909090909090909090 ret 4 | nop  | nop             ret_stub
+  0x006fb740 83ec245355568bf133db5739 sub esp, 0x24 | push ebx | pus other
+  0x0070f070 8b01ff90840000008b108bc8 mov eax, dword ptr [ecx] | cal other
+  0x0041c130 c20800909090909090909090 ret 8 | nop  | nop             ret_stub
+  0x00705ca0 83ec0c568bf18b06ff908401 sub esp, 0xc | push esi | mov  other
+  0x0070f0f0 32c0c3909090909090909090 xor al, al | ret  | nop        other
+A3 same 反控汇总: {'other': 15, 'ret_stub': 5} 合计=20
+A3 对比: diff 分布={'other': 57, 'push_ebp': 2, 'mov_eax_arg': 4, 'jmp_rel': 4} ; same 分布={'other': 15, 'ret_stub': 5}
+
+==============================================================================================================
+异常与不确定
+首条指令无法线性解码确定的 diff 目标数: 0 []
+67 个 diff 槽指向重叠（同一地址被多个槽引用）: 0 组
+diff 目标落 .text 之外: 0 []
+线性解码说明: 使用 md.disasm(字节切片, addr)，detail=False, skipdata=True；
+  "无法线性解码" 指该地址起始 64 字节内无有效指令流。
+
+[E] 与 R218 粗分布的关系（判据差异，来源不确定）
+  R218 粗分布: other=58 jmp_rel=4 mov_eax_arg=4 push_ebp=1 (合计 67)。
+  本卡判据结果: other=57 jmp_rel=4 mov_eax_arg=4 push_ebp=2 ret_stub=0 cc_pad=0 (合计 67)。
+  本卡逐字节事实: 首字节 0x55 的目标恰有 2 个 (0x004565e0=55 56 8b f1, 0x0051dbd0=55 8b ec);
+  首字节 0xe9 的目标恰有 4 个 (0x005228b0/0x005228c0/0x00746cb0/0x00746cc0, 均落 .text 0x70f070/0x70f090);
+  首条为 mov eax, dword ptr [esp+...] 的目标恰有 4 个 (0x004d94a0/0x0051cba0/0x00521c60/0x007416a0)。
+  因此 jmp_rel 与 mov_eax_arg 两类与 R218 数字一致；push_ebp 差 1、other 差 1（方向相反）。
+  调度卡未给出 R218 粗判据的具体代码，且 0x55 首字节实为 2 个而非 1 个，故两者差异的精确映射
+  无法仅凭卡片复现 —— 记为不确定，不以臆测填补。本卡一律以「首条指令」判据（卡片定义）为准。
+
+[done] -> _r219/cardA_diff67.txt / .json
