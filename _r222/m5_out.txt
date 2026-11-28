@@ -1,0 +1,130 @@
+=== 0x7c7b3c..0x7c7bc0（stereo 遍一收尾 + 遍二派发候选区） ===
+007c7b3c  a9777c00c0           test eax, 0xc0007c77
+007c7b41  777c                 ja 0x7c7bbf
+007c7b43  00d0                 add al, dl
+007c7b45  777c                 ja 0x7c7bc3
+007c7b47  00e0                 add al, ah
+007c7b49  777c                 ja 0x7c7bc7
+007c7b4b  005553               add byte ptr [ebp + 0x53], dl
+007c7b4e  8b7508               mov esi, dword ptr [ebp + 8]
+007c7b51  8b7d0c               mov edi, dword ptr [ebp + 0xc]
+007c7b54  83c702               add edi, 2
+007c7b57  8b5518               mov edx, dword ptr [ebp + 0x18]
+007c7b5a  c1ea03               shr edx, 3
+007c7b5d  03f2                 add esi, edx
+007c7b5f  33d2                 xor edx, edx
+007c7b61  8b4306               mov eax, dword ptr [ebx + 6]
+007c7b64  668b530a             mov dx, word ptr [ebx + 0xa]
+007c7b68  8b6d18               mov ebp, dword ptr [ebp + 0x18]
+007c7b6b  d1ed                 shr ebp, 1
+007c7b6d  83fd10               cmp ebp, 0x10
+007c7b70  7c07                 jl 0x7c7b79
+007c7b72  8bde                 mov ebx, esi
+007c7b74  83e303               and ebx, 3
+007c7b77  750d                 jne 0x7c7b86
+007c7b79  55                   push ebp
+007c7b7a  c1ed04               shr ebp, 4
+007c7b7d  33db                 xor ebx, ebx
+007c7b7f  0bed                 or ebp, ebp
+007c7b81  e9b3010000           jmp 0x7c7d39
+007c7b86  ff249d107f7c00       jmp dword ptr [ebx*4 + 0x7c7f10]
+007c7b8d  8d4900               lea ecx, [ecx]
+007c7b90  83ed0c               sub ebp, 0xc
+007c7b93  55                   push ebp
+007c7b94  c1ed04               shr ebp, 4
+007c7b97  33db                 xor ebx, ebx
+007c7b99  45                   inc ebp
+007c7b9a  e915030000           jmp 0x7c7eb4
+007c7b9f  90                   nop 
+007c7ba0  83ed08               sub ebp, 8
+007c7ba3  55                   push ebp
+007c7ba4  c1ed04               shr ebp, 4
+007c7ba7  33db                 xor ebx, ebx
+007c7ba9  45                   inc ebp
+007c7baa  e9c9020000           jmp 0x7c7e78
+007c7baf  90                   nop 
+007c7bb0  83ed04               sub ebp, 4
+007c7bb3  55                   push ebp
+007c7bb4  c1ed04               shr ebp, 4
+007c7bb7  33db                 xor ebx, ebx
+007c7bb9  45                   inc ebp
+007c7bba  e985020000           jmp 0x7c7e44
+007c7bbf  90                   nop 
+
+=== 遍二入口头 0x7c7bc0..0x7c7c10 ===
+007c7bc0  030455309b8700       add eax, dword ptr [edx*2 + 0x879b30]
+007c7bc7  668b9270b18700       mov dx, word ptr [edx + 0x87b170]
+007c7bce  3dff7f0000           cmp eax, 0x7fff
+007c7bd3  0f8f93010000         jg 0x7c7d6c
+007c7bd9  3d0080ffff           cmp eax, 0xffff8000
+007c7bde  0f8c94010000         jl 0x7c7d78
+007c7be4  0a9390bd8700         or dl, byte ptr [ebx + 0x87bd90]
+007c7bea  668907               mov word ptr [edi], ax
+007c7bed  8add                 mov bl, ch
+007c7bef  030455309b8700       add eax, dword ptr [edx*2 + 0x879b30]
+007c7bf6  668b9270b18700       mov dx, word ptr [edx + 0x87b170]
+007c7bfd  3dff7f0000           cmp eax, 0x7fff
+007c7c02  0f8f7c010000         jg 0x7c7d84
+007c7c08  3d0080ffff           cmp eax, 0xffff8000
+007c7c0d  0f                   .byte 0x0f
+007c7c0e  8c                   .byte 0x8c
+007c7c0f  7d                   .byte 0x7d
+
+=== 遍二尾部 0x7c7d2a..0x7c7d60 ===
+007c7d2a  f20000               add byte ptr [eax], al
+007c7d2d  006689               add byte ptr [esi - 0x77], ah
+007c7d30  47                   inc edi
+007c7d31  1c83                 sbb al, 0x83
+007c7d33  c60483c7             mov byte ptr [ebx + eax*4], 0xc7
+007c7d37  204d7e               and byte ptr [ebp + 0x7e], cl
+007c7d3a  0f8b0e8ad90a         jnp 0xb56074e
+007c7d40  93                   xchg ebx, eax
+007c7d41  90                   nop 
+007c7d42  bc8700e976           mov esp, 0x76e90087
+007c7d47  fe                   .byte 0xfe
+007c7d48  ff                   .byte 0xff
+007c7d49  ff750d               push dword ptr [ebp + 0xd]
+007c7d4c  59                   pop ecx
+007c7d4d  d1e9                 shr ecx, 1
+007c7d4f  83e107               and ecx, 7
+007c7d52  ff248df07e7c00       jmp dword ptr [ecx*4 + 0x7c7ef0]
+007c7d59  5b                   pop ebx
+007c7d5a  5d                   pop ebp
+007c7d5b  894306               mov dword ptr [ebx + 6], eax
+007c7d5e  66                   .byte 0x66
+007c7d5f  89                   .byte 0x89
+
+=== 遍一尾部 0x7c7955..0x7c797a（已知）与 0x7c7989..0x7c79a0 ===
+007c7989  5b                   pop ebx
+007c798a  5d                   pop ebp
+007c798b  8903                 mov dword ptr [ebx], eax
+007c798d  66895304             mov word ptr [ebx + 4], dx
+007c7991  e9b6010000           jmp 0x7c7b4c
+007c7996  8bff                 mov edi, edi
+007c7998  b8ff7f0000           mov eax, 0x7fff
+007c799d  e9                   .byte 0xe9
+007c799e  72fe                 jb 0x7c799e
+
+=== P3 store 偏移实测 ===
+遍一 0x7c77f0 偏移: [0, 12, 16, 20, 24, 28]
+遍二 0x7c7bc0 偏移: [0, 12, 16, 20, 24, 28]
+遍一 == 遍二 ? True
+并集: [0, 12, 16, 20, 24, 28]
+交集: [0, 12, 16, 20, 24, 28]
+并集是否恰为 0..0x1e 偶数步 16 项: False
+
+=== P2 nibble 出口表实测 ===
+遍一出口表序列: [('0x7c7814', '87bd90'), ('0x7c7843', '87bc90'), ('0x7c7874', '87bd90'), ('0x7c78a4', '87bc90'), ('0x7c78d2', '87bd90'), ('0x7c7902', '87bc90'), ('0x7c7930', '87bd90'), ('0x7c796f', '87bc90')]
+遍二出口表序列: [('0x7c7be4', '87bd90'), ('0x7c7c13', '87bc90'), ('0x7c7c44', '87bd90'), ('0x7c7c74', '87bc90'), ('0x7c7ca2', '87bd90'), ('0x7c7cd2', '87bc90'), ('0x7c7d00', '87bd90'), ('0x7c7d3f', '87bc90')]
+遍一 低半字节/nibble 移位指令: [('0x7c781d', 'bl, ch'), ('0x7c784d', 'ecx, 0x10'), ('0x7c787e', 'bl, cl'), ('0x7c78dc', 'bl, ch'), ('0x7c796b', 'ecx, dword ptr [esi]'), ('0x7c796d', 'bl, cl')]
+遍二 低半字节/nibble 移位指令: [('0x7c7bed', 'bl, ch'), ('0x7c7c1d', 'ecx, 0x10'), ('0x7c7c4e', 'bl, cl'), ('0x7c7cac', 'bl, ch'), ('0x7c7d3b', 'ecx, dword ptr [esi]'), ('0x7c7d3d', 'bl, cl')]
+
+=== P1/P4 入边核对（0x7c7350..0x7c7f30 内所有直接分支） ===
+007c7788 入边: [('0x7c73b4', 'jmp')]
+007c7b4c 入边: [('0x7c7991', 'jmp')]
+007c7bc0 入边: [('0x7c7d45', 'jmp')]
+007c7f10 入边: [('0x7c7f0e', 'jl')]
+007c7ef0 入边: NONE（间接或段外）
+007c7b1c 入边: NONE（间接或段外）
+  间接跳转 007c73ef: dword ptr [ebx*4 + 0x7c7778]
+  间接跳转 007c75ba: dword ptr [ecx*4 + 0x7c7758]

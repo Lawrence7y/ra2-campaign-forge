@@ -1,0 +1,11 @@
+PASS A1a 0x7c6000..0x7c7000 内 mov ax,word[esi] 0 条（审计 #582 修正成立） | []
+PASS A1b 同区间 lodsw 0 条 | []
+PASS A2a 副本 2/3 复用字段 mov ax,word[ebx+0x1c]/[ebx+0x30] 至少 3 处 | [('0x7c62f5', 'ax, word ptr [ebx + 0x1c]'), ('0x7c63f5', 'ax, word ptr [ebx + 0x1c]'), ('0x7c6514', 'ax, word ptr [ebx + 0x30]')]
+PASS A3 0x7c75cc = 5a 59 5b 5f 5e c9 c3（pop edx/ecx/ebx/edi/esi; leave; ret） | 5a595b5f5ec9c3
+PASS A4a cx!=8 且 cx!=0x10 -> 0x7c73a8 jne 0x7c75cc | [(8156064, 'sub', 'byte ptr [edx], al'), (8156066, 'add', 'byte ptr [eax], al'), (8156068, 'cmp', 'cx, 0x10'), (8156072, 'jne', '0x7c75cc')]
+PASS A4b 直达尾声中 eax 未被置值（返回值为调用方残留） | []
+PASS A5 0x7c635b mov eax,[ebx+0x14] 长 3 B，卡片终止地址 0x7c635d 确实切在指令中间 | [(8151894, 2, 'je', '0x7c635b'), (8151896, 3, 'neg', 'dword ptr [ebx + 0x18]'), (8151899, 3, 'mov', 'eax, dword ptr [ebx + 0x14]'), (8151902, 1, '.byte', '0x03'), (8151903, 1, 'inc', 'ebx')]
+PASS A6a 两表零间隙：0x7c7778 == 0x7c7758 + 0x20
+PASS A6b 4 项表后紧跟代码：0x7c7788=555333d2 / 0x7c77f0=03045530 / 0x7c7f20=558bec | ['555333d28b03668b53048b75088b7d0c', '030455309b8700668b9270b187003dff', '558bec83c4f853515256579cfcc745f8']
+
+FAIL 数 = 0 []

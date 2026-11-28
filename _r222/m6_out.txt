@@ -1,0 +1,54 @@
+gamemd.exe sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+PASS C1 编码器内联 delta ≡ 表 0x879b30 1424/1424 | 1424/1424
+PASS C1b step 表 89 项、首项 7、末项 32767 | (7, 32767)
+PASS C2 n&8 与 n>=8 在 n∈0..15 上等价 | (True, 1424)
+PASS C3a 索引表 0x8758c4 = (-1,-1,-1,-1,2,4,6,8) | [-1, -1, -1, -1, 2, 4, 6, 8]
+PASS C3b idx 更新对全部 89x16 组合留在 [0,0x58] | []
+PASS C3c 0x58 == 88 == step 表末下标（独立确认 89 项） | (88, 88)
+PASS C3d 反控 上钳 0x57 => 与 0x58 版差异 > 0 | 48
+PASS C3e 门限指令 cmp 0x8000 / jb 与 cmp 0x58 / jbe 存在 | [(8151970, 'add', 'word ptr [ebx + 0x22], ax'), (8151974, 'cmp', 'word ptr [ebx + 0x22], 0x8000'), (8151980, 'jb', '0x7c63b6'), (8151982, 'mov', 'word ptr [ebx + 0x22], 0'), (8151988, 'jmp', '0x7c63c3'), (8151990, 'cmp', 'word ptr [ebx + 0x22], 0x58'), (8151995, 'jbe', '0x7c63c3'), (8151997, 'mov', 'word ptr [ebx + 0x22], 0x58'), (8152003, '.byte', '0x33')]
+PASS C4a mono 入口读 [ebx] dword + [ebx+4] word | [(8156099, 'push', 'ebp'), (8156100, 'push', 'ebx'), (8156101, 'xor', 'edx, edx'), (8156103, 'mov', 'eax, dword ptr [ebx]'), (8156105, 'mov', 'dx, word ptr [ebx + 4]'), (8156109, 'mov', 'esi, dword ptr [ebp + 8]'), (8156112, 'mov', 'edi, dword ptr [ebp + 0xc]'), (8156115, 'mov', 'ebp, dword ptr [ebp + 0x18]'), (8156118, 'cmp', 'ebp, 0x10'), (8156121, 'jl', '0x7c73e2'), (8156123, 'mov', 'ebx, esi'), (8156125, 'and', 'ebx, 3')]
+PASS C4b stereo 遍一读 [ebx] dword + [ebx+4] word | [(8157064, 'push', 'ebp'), (8157065, 'push', 'ebx'), (8157066, 'xor', 'edx, edx'), (8157068, 'mov', 'eax, dword ptr [ebx]'), (8157070, 'mov', 'dx, word ptr [ebx + 4]'), (8157074, 'mov', 'esi, dword ptr [ebp + 8]'), (8157077, 'mov', 'edi, dword ptr [ebp + 0xc]'), (8157080, 'mov', 'ebp, dword ptr [ebp + 0x18]'), (8157083, 'shr', 'ebp, 1'), (8157085, 'cmp', 'ebp, 0x10')]
+PASS C4c stereo 遍二读 [ebx+6] dword + [ebx+0xa] word | [(8158028, 'push', 'ebp'), (8158029, 'push', 'ebx'), (8158030, 'mov', 'esi, dword ptr [ebp + 8]'), (8158033, 'mov', 'edi, dword ptr [ebp + 0xc]'), (8158036, 'add', 'edi, 2'), (8158039, 'mov', 'edx, dword ptr [ebp + 0x18]'), (8158042, 'shr', 'edx, 3'), (8158045, 'add', 'esi, edx'), (8158047, 'xor', 'edx, edx'), (8158049, 'mov', 'eax, dword ptr [ebx + 6]'), (8158052, 'mov', 'dx, word ptr [ebx + 0xa]'), (8158056, 'mov', 'ebp, dword ptr [ebp + 0x18]'), (8158059, 'shr', 'ebp, 1'), (8158061, 'cmp', 'ebp, 0x10')]
+PASS C4d 回写遍一 [ebx]/[ebx+4]、遍二 [ebx+6]/[ebx+0xa] | ([(8156609, 'pop', 'ebx'), (8156610, 'pop', 'ebp'), (8156611, 'mov', 'dword ptr [ebx], eax'), (8156613, 'mov', 'word ptr [ebx + 4], dx'), (8156617, '.byte', '0x8b'), (8156618, 'inc', 'ebp')], [(8158553, 'pop', 'ebx'), (8158554, 'pop', 'ebp'), (8158555, 'mov', 'dword ptr [ebx + 6], eax'), (8158558, 'mov', 'word ptr [ebx + 0xa], dx')])
+PASS C4e 记录 6 B ⇒ stereo 12 B；+4 与 +6 跨界不重叠
+PASS C5a mono 体 8 store / 偏移 0,2,..,e | [0, 2, 4, 6, 8, 10, 12, 14]
+PASS C5b stereo 遍一 8 store / 偏移 0,4,..,1c | [0, 4, 8, 12, 16, 20, 24, 28]
+PASS C5c stereo 遍二 8 store / 偏移 0,4,..,1c | [0, 4, 8, 12, 16, 20, 24, 28]
+PASS C5d mono add edi,0x10 / add esi,4 | ([16], [4])
+PASS C5e stereo 两遍 add edi,0x20 / add esi,4 | ([32], [32])
+PASS C5f 反控：stereo 偏移序列 != mono 偏移序列 | ([0, 4, 8, 12, 16, 20, 24, 28], [0, 2, 4, 6, 8, 10, 12, 14])
+PASS C5g 遍二入口 add edi,2 + mov edx,[ebp+0x18]; shr edx,3; add esi,edx | [(8158028, 'push', 'ebp'), (8158029, 'push', 'ebx'), (8158030, 'mov', 'esi, dword ptr [ebp + 8]'), (8158033, 'mov', 'edi, dword ptr [ebp + 0xc]'), (8158036, 'add', 'edi, 2'), (8158039, 'mov', 'edx, dword ptr [ebp + 0x18]'), (8158042, 'shr', 'edx, 3'), (8158045, 'add', 'esi, edx'), (8158047, 'xor', 'edx, edx'), (8158049, '.byte', '0x8b')]
+PASS C6 8 项表 007c7758 八项全在 .text | ['0x7c75c1', '0x7c7694', '0x7c76ac', '0x7c76c4', '0x7c76e0', '0x7c76f8', '0x7c771c', '0x7c7740']
+PASS C6 8 项表 007c7b1c 八项全在 .text | ['0x7c7989', '0x7c7a58', '0x7c7a70', '0x7c7a88', '0x7c7aa4', '0x7c7abc', '0x7c7ae0', '0x7c7b04']
+PASS C6 8 项表 007c7ef0 八项全在 .text | ['0x7c7d59', '0x7c7e2c', '0x7c7e44', '0x7c7e5c', '0x7c7e78', '0x7c7e90', '0x7c7eb4', '0x7c7ed8']
+PASS C6 4 项表 007c7778 前 4 项在 .text、后 4 项不是地址 | {'head': ['0x7c73e2', '0x7c73f8', '0x7c7408', '0x7c7418'], 'tail': ['0xd2335355', '0x8b66038b', '0x758b0453', '0xc7d8b08']}
+PASS C6 4 项表 007c7b3c 前 4 项在 .text、后 4 项不是地址 | {'head': ['0x7c77a9', '0x7c77c0', '0x7c77d0', '0x7c77e0'], 'tail': ['0x758b5355', '0xc7d8b08', '0x8b02c783', '0xeac11855']}
+PASS C6 4 项表 007c7f10 前 4 项在 .text、后 4 项不是地址 | {'head': ['0x7c7b79', '0x7c7b90', '0x7c7ba0', '0x7c7bb0'], 'tail': ['0x83ec8b55', '0x5153f8c4', '0x9c575652', '0xf845c7fc']}
+PASS C6 反控 4 项表 8 项读必出段外
+   blk1_dec  007c6808..007c6b38 {'0x8759b4': 8, '0x876ff4': 8, '0x877b14': 7, '0x877c14': 8}
+   mono0     007c7428..007c75b2 {'0x879b30': 8, '0x87b170': 8, '0x87bc90': 4, '0x87bd90': 4}
+   align0    007c7694..007c77f0 {'0x87bc90': 3, '0x87bd90': 4}
+   pass1     007c77f0..007c7982 {'0x879b30': 8, '0x87b170': 8, '0x87bc90': 4, '0x87bd90': 4}
+   align1    007c79a4..007c7b1c {'0x87bc90': 3, '0x87bd90': 4}
+   pass2     007c7bc0..007c7d4a {'0x879b30': 8, '0x87b170': 8, '0x87bc90': 4, '0x87bd90': 4}
+   align2    007c7d6c..007c7ef0 {'0x87bc90': 3, '0x87bd90': 4}
+PASS C7a 块1 解码器只用块1 表（0x8759b4/0x876ff4/0x877b14/0x877c14） | {'0x8759b4': 8, '0x876ff4': 8, '0x877b14': 7, '0x877c14': 8}
+PASS C7b 块2 三个展开体各自 8/8/4/4（0x879b30/0x87b170/0x87bd90/0x87bc90） | {'mono0': {'0x879b30': 8, '0x87b170': 8, '0x87bc90': 4, '0x87bd90': 4}, 'pass1': {'0x879b30': 8, '0x87b170': 8, '0x87bc90': 4, '0x87bd90': 4}, 'pass2': {'0x879b30': 8, '0x87b170': 8, '0x87bc90': 4, '0x87bd90': 4}}
+PASS C7c 三个对齐块只引抖动表（4/3），不引差分/状态表 | {'align0': {'0x87bc90': 3, '0x87bd90': 4}, 'align1': {'0x87bc90': 3, '0x87bd90': 4}, 'align2': {'0x87bc90': 3, '0x87bd90': 4}}
+PASS C8a cx==8 两支都跳 0x7c75cc（不支持 8 位） | ['0x7c75cc', '0x7c75cc']
+PASS C8b cx==0x10 且 dx==2 -> 0x7c7788（stereo 入口） | ['0x7c7788']
+PASS C8c cx==0x10 且 dx==1 -> 顺序落入 0x7c73c3（mono 入口） | ['0x7c73c3', '0x7c73c4', '0x7c73c5']
+PASS C8d 0x7c7371 调用点恰 2 个：0x7c24a2 / 0x7c2557 | ['0x7c24a2', '0x7c2557']
+PASS C8e 调用点一 push 源 = &[ebx+0x7d0], ebp, byte[ebx+0x3e], byte[ebx+0x3f], [ebx+0x78c], esi | ['edx', 'ebp', 'eax', 'ecx', 'edx', 'esi']
+PASS C8f 调用点二 push 源 = &[ebx+0x7d0], ebp, byte[ebx+0x3e], byte[ebx+0x3f], [ebx+0x7a8], esi | ['eax', 'ebp', 'ecx', 'edx', 'eax', 'esi']
+PASS C9a 0x7c6270 置两声道 step=7（+0x20/+0x34）与 index=0（+0x22/+0x36） | [(8151664, 'push', 'ebp'), (8151665, 'mov', 'ebp, esp'), (8151667, 'mov', 'eax, dword ptr [ebp + 8]'), (8151670, 'mov', 'word ptr [eax + 0x22], 0'), (8151676, 'mov', 'word ptr [eax + 0x20], 7'), (8151682, 'mov', 'dword ptr [eax + 0x14], 0'), (8151689, 'mov', 'dword ptr [eax + 0x10], 0'), (8151696, 'mov', 'word ptr [eax + 0x36], 0'), (8151702, 'mov', 'word ptr [eax + 0x34], 7'), (8151708, 'mov', 'dword ptr [eax + 0x28], 0'), (8151715, 'mov', 'dword ptr [eax + 0x24], 0'), (8151722, 'leave', ''), (8151723, 'ret', '')]
+PASS C9b 0x7c6730 不置 step=7（只清 index 与 predictor） | [(8152880, 'push', 'ebp'), (8152881, 'mov', 'ebp, esp'), (8152883, 'mov', 'eax, dword ptr [ebp + 8]'), (8152886, 'mov', 'word ptr [eax + 0x22], 0'), (8152892, 'mov', 'dword ptr [eax + 0x14], 0'), (8152899, 'mov', 'word ptr [eax + 0x36], 0'), (8152905, 'mov', 'dword ptr [eax + 0x28], 0'), (8152912, 'leave', ''), (8152913, 'ret', '')]
+PASS C10a 反控 step 表基址 +2 => 命中远小于 1424 | 64/1424
+PASS C10b 反控 错表 0x87b170 当 dword => 近 0 | 2/1424
+PASS C10c 反控 nibble 反序（n^7）=> 命中远小于 1424 | 0/1424
+PASS C10d 反控 step 右移 1 => 命中远小于 1424 | 2/1424
+
+=== 结论摘要 ===
+diff 表命中 1424/1424 ; 索引表 [-1, -1, -1, -1, 2, 4, 6, 8] ; 0x58=88 ; 调用点 ['0x7c24a2', '0x7c2557']
+FAIL 数 = 0 []

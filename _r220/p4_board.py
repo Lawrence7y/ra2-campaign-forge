@@ -1,0 +1,40 @@
+# -*- coding: utf-8 -*-
+"""R220 p4：STATUS_BOARD 第 220 轮（CR 保持 0，行数 <= 300，>= 260 则先归档）。"""
+import os, hashlib
+ROOT='/home/t628/projects/ra2-campaign-forge'; BASE=ROOT+'/R17_LEAD_BASELINE'
+T=ROOT+'/lead/next_re_20261117_r14'
+P=T+'/STATUS_BOARD.md'; A=T+'/BOARD_ARCHIVE.md'
+def bak(path,tag):
+    b=open(path,'rb').read()
+    base='%s/%s.before_r220_%s'%(BASE,os.path.basename(path),tag)
+    for i in range(10):
+        dst=base+(('_%d'%i) if i else '')+'_20261128.bak'
+        if os.path.exists(dst):
+            if open(dst,'rb').read()==b: return b
+            continue
+        fd=os.open(dst,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o644)
+        with os.fdopen(fd,'wb') as f: f.write(b)
+        return b
+    raise SystemExit('bak exhausted')
+b0=bak(P,'BOARD'); a0=bak(A,'ARCH')
+assert b0.count(b'\r')==0 and a0.count(b'\r')==2952
+n0=b0.count(b'\n'); print('board lines before =',n0)
+SEC="""
+## 第 220 轮（2026-11-28）0x87c484 = CRT locale 类别表 6 条 + 162 记录表真实跨度 2592 B + IMA ADPCM 三表互锁 + .text 段界口径订正
+
+- **0x87c484 定性推翻 R219**：不是「12 B 派发表 5 条」，是 **MSVC CRT locale 类别表 6 条 × 12 B**——rec0..rec5 的 `+8` 依次为 `LC_COLLATE / LC_CTYPE / LC_MONETARY / LC_NUMERIC / LC_TIME / (null)`，后 5 条 `+0` 全指向 `0x87c370` 的字符串 `C`。上界 `0x7cdd08 = 81 ff c0 c4 87 00`（`cmp edi,0x87c4c0`）+ `0x7cdd0e = 7e`（`jle`，**含末条**）⇒ `(0x87c4c0−0x87c484)/12 = 5` 余 0，**共 6 条**。调用点 `0x7cde2b = ff 96 88 c4 87 00`（`call [esi+0x87c488]`）的 `esi = edi*12`（`0x7cddac = 8d 34 7f` / `0x7cddb6 = c1 e6 02`）⇒ 实际调 **rec[edi].+4**。正反控 **10/10 PASS**。
+- **162 记录表真实跨度 = 2592 B（162×16）**，R219 的 2576 B 是 161 条截断：两副本 2592 B **逐字节相同**，sha256 `0cf1a637…`；记录形态 `[a,a,a,a,a+d,a+d+64,a+d+128,a+d+192]`（`d=96` 占 160 条、前 2 条 `d=64`），`a` = 0 四次后 32k 各 2 条，全表字皆 32 的倍数、max **2816**。引用 `0x87b170` **24** 条 / `0x876ff4` **8** 条，均按字取值。
+- **IMA ADPCM 三表互锁（本轮最强证据）**：①`0x8758e4` = **89 项 16 位 step table**，与标准 IMA 表 **89/89 逐项相同**，`.text` 引用 **3** 条（`0x7c63cd/0x7c64d1/0x7c65f0`，皆 `mov ax,word[ecx+0x8758e4]`），上界 `cmp word [ebx+0x22],0x58` 的 **0x58 = 88** 恰为末项下标；②`0x879b30` = **89 块 × 16 dword = 5696 B**，每块前 8 严格递增、后 8 为前 8 相反数（89/89），引用 **24** 条全为 `add eax,dword[edx*2+0x879b30]`，且 **`0x879b30+5696 == 0x87b170` 零间隙**；③`0x87bd90` = 16×16 = **256 B**（第 r 行全 2r），引用 **24** 条全为 `or dl,byte[ebx+0x87bd90]`。生成律如实分级：`floor(s*(2i+1)/8)` 且 `s=IMA[k]` 命中 **44/89**，放宽口径 **67/89**，反解 s* **78/89** 落 IMA 表内且 `s*−IMA[k]` 恒 **0**（44/44）⇒ 关系成立、**舍入口径未定（余 22 块）**。
+- **.text 段界口径订正（新事实）**：rawsize 口径 **1,394,186** 条（末 `0x7e0fff`），vsize 口径 **1,392,592** 条（末 `0x7e038c`），差 **1594** = 尾部 `[0x7e038d,0x7e1000)` 共 **3187 B 全 0x00**。R219 的数字有效但含填充伪指令，今后引用必须写明口径。
+- **四 offset 口径复证**：`+0x77c/+0x780/+0x784` = **9/9/12**（和 30），imm32→`.text` = **2/3/7**（和 **12**，与 R219 一致）；加入 `+0x788`（30 条引用）后和 **60**、imm32→.text = **21**。负控 `+0x7a4`=**15**（非 0）、`+0x778`=**19**、`+0x78c`=**32**。「imm 落 .text」限定**只在 +0x788 起作用**，丢掉会把 21 算成 22。
+- **门禁现态**：`check_disc.py` **exit 0，31 项全 PASS / 0 FAIL / 0 SKIP**（R137「5 FAIL」已失效，`id 3/4/22/27/28` 现全 PASS）；恒 PASS 根因是 `:357 C11_LANDABLE` 的 12 个 id 第 7 列声明「无」→ 走 `:405` claims-none 通道（挡板 `:415`/`:432`，`:441-442` 计 unver 后 continue），**不是判据写错**；C20 比较 `os.path.normpath` 字符串（`:1336`/`:1344`），非 realpath/inode/sha256。正控把指针 V601→V999 后新增 **2 FAIL**（C19+C20），反控 31 PASS 一致。
+- **跨家族**：card A(#573 hy4 exec 22 回合 12.47′ vs 12，**[OVERTIME]**)、card B(#574 hy4 exec 22 回合 12.47′ vs 12，**[OVERTIME]**)、card C(#575 hy4 exec 14 回合 2.55′ vs 12)、审计 #576（deepseek 18 回合 succeeded）。10/10 数值主会话独立复算一致；审计独立发现 3 条口径问题（P1 段界 1594 条伪指令、P2 2576→2592、P3 imm-in-text 仅 +0x788）**全部成立并已采纳**。card A 的「DXT/调色板」推断**不采纳**（已由 IMA 三表互锁定性为 ADPCM 音频路径）。
+- **自错 5 条 0 进结论**：E1 `m2` 硬编码序列误得 161 条；E2 `m25` 结构体格式串非法；E3 `m16` SKIPDATA 下读 operands 抛异常；E4 卡面 imm32 预期未区分第四 offset（子代理报 21 属正确）；E5 卡面负控 `0x7a4` 预期 0 为错（实测 15）。
+- **收口**：R14 §2.228 CR 1081（1943574→1949638 B）、GOAL §1278 CR 337（5475522→5479361 B）、本段 QN CR 137（1517313→1522365 B）、本段 CR 0（232→240 行，**< 260 不触发归档**）。判据脚本 `_r220/m14_verify.py`（38 断言）/ `m21_locale_ctl.py`（10）/ `m23_extent2.py` / `m24_span.py` / `m25_law.py` / `m26_blocklaw.py` / `m27_final.py`（14）/ `m28_imalaw.py` / `m31_rev.py`。
+"""
+new=b0+SEC.encode('utf-8')
+assert new.count(b'\r')==0, new.count(b'\r')
+assert new.count(b'\n')<=300, new.count(b'\n')
+open(P,'wb').write(new); chk=open(P,'rb').read()
+assert chk.startswith(b0) and chk==new and chk.count(b'\r')==0
+print('[OK] BOARD %d -> %d lines, CR=%d, ARCH CR=%d'%(n0,chk.count(b'\n'),chk.count(b'\r'),open(A,'rb').read().count(b'\r')))

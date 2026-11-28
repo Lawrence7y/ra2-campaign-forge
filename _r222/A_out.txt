@@ -1,0 +1,180 @@
+=== R222-A ADPCM codec forensics (measured) ===
+source_sha256 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+range 0x7c6000..0x7c8000 len 8192 insns 2661
+
+=== T1 prologue hits (55 8b ec) ===
+count 22
+addresses 0x7c6064 0x7c6072 0x7c60c0 0x7c61cf 0x7c6270 0x7c62ac 0x7c6620 0x7c6730 0x7c6752 0x7c6b70 0x7c6c79 0x7c6d40 0x7c6dd6 0x7c6e94 0x7c6f2e 0x7c6fc8 0x7c70c4 0x7c7174 0x7c726a 0x7c7350 0x7c7371 0x7c7f20
+
+=== T2 jump tables ===
+table 0x7c7758 count 8
+  [0] 0x007c75c1 dec 8156609 sec .text
+  [1] 0x007c7694 dec 8156820 sec .text
+  [2] 0x007c76ac dec 8156844 sec .text
+  [3] 0x007c76c4 dec 8156868 sec .text
+  [4] 0x007c76e0 dec 8156896 sec .text
+  [5] 0x007c76f8 dec 8156920 sec .text
+  [6] 0x007c771c dec 8156956 sec .text
+  [7] 0x007c7740 dec 8156992 sec .text
+table 0x7c7778 count 4
+  [0] 0x007c73e2 dec 8156130 sec .text
+  [1] 0x007c73f8 dec 8156152 sec .text
+  [2] 0x007c7408 dec 8156168 sec .text
+  [3] 0x007c7418 dec 8156184 sec .text
+
+=== T3 add eax,[edx*2+0x879b30] ===
+count 24
+addresses 0x7c7428 0x7c7457 0x7c7488 0x7c74b8 0x7c74e6 0x7c7516 0x7c7544 0x7c7572 0x7c77f0 0x7c781f 0x7c7850 0x7c7880 0x7c78ae 0x7c78de 0x7c790c 0x7c793a 0x7c7bc0 0x7c7bef 0x7c7c20 0x7c7c50 0x7c7c7e 0x7c7cae 0x7c7cdc 0x7c7d0a
+diff_histogram 46:9 47:3 48:6 49:3 638:1 646:1
+
+=== T4 three unrolled bodies isomorphism ===
+candidate_bases 0x7c7428 0x7c77f0 0x7c7bc0
+body[0] 0x7c7428..0x7c75b2 insns 75
+body[1] 0x7c77f0..0x7c7982 insns 79
+body[2] 0x7c7bc0..0x7c7d4a insns 75
+cmp 0-1 same 50/75 first_diff 3
+  at 3: body0=('jg', '0xABS_7c75d4') body1=('jg', '0xABS_7c7998')
+cmp 0-2 same 50/75 first_diff 3
+  at 3: body0=('jg', '0xABS_7c75d4') body2=('jg', '0xABS_7c7d6c')
+cmp 1-2 same 58/75 first_diff 3
+  at 3: body1=('jg', '0xABS_7c7998') body2=('jg', '0xABS_7c7d6c')
+body sample offsets (T3 measured): [0]0x0,0x2f,0x60,0x90,0xbe,0xee,0x11c,0x14a [1]0x0,0x2f,0x60,0x90,0xbe,0xee,0x11c,0x14a [2]0x0,0x2f,0x60,0x90,0xbe,0xee,0x11c,0x14a
+
+=== T5 dispatch matrix 0x7c7371..0x7c73d3 ===
+  0x7c7371  push     ebp
+  0x7c7372  mov      ebp, esp
+  0x7c7374  push     esi
+  0x7c7375  push     edi
+  0x7c7376  push     ebx
+  0x7c7377  push     ecx
+  0x7c7378  push     edx
+  0x7c7379  mov      ebx, dword ptr [ebp + 0x1c]
+  0x7c737c  mov      cx, word ptr [ebp + 0x10]
+  0x7c7380  mov      dx, word ptr [ebp + 0x14]
+  0x7c7384  cmp      cx, 8
+  0x7c7388  jne      0x7c73a4
+  0x7c738a  cmp      dx, 2
+  0x7c738e  jne      0x7c7395
+  0x7c7390  jmp      0x7c75cc
+  0x7c7395  cmp      dx, 1
+  0x7c7399  jne      0x7c75cc
+  0x7c739f  jmp      0x7c75cc
+  0x7c73a4  cmp      cx, 0x10
+  0x7c73a8  jne      0x7c75cc
+  0x7c73ae  cmp      dx, 2
+  0x7c73b2  jne      0x7c73b9
+  0x7c73b4  jmp      0x7c7788
+  0x7c73b9  cmp      dx, 1
+  0x7c73bd  jne      0x7c75cc
+  0x7c73c3  push     ebp
+  0x7c73c4  push     ebx
+  0x7c73c5  xor      edx, edx
+  0x7c73c7  mov      eax, dword ptr [ebx]
+  0x7c73c9  mov      dx, word ptr [ebx + 4]
+  0x7c73cd  mov      esi, dword ptr [ebp + 8]
+  0x7c73d0  mov      edi, dword ptr [ebp + 0xc]
+--- dispatch epilogue/replay from 0x7c75a1 ---
+  0x7c75a1  jle      0x7c75b2
+  0x7c75a3  mov      ecx, dword ptr [esi]
+  0x7c75a5  mov      bl, cl
+  0x7c75a7  or       dl, byte ptr [ebx + 0x87bc90]
+  0x7c75ad  jmp      0x7c7428
+  0x7c75b2  jne      0x7c75c1
+  0x7c75b4  pop      ecx
+  0x7c75b5  shr      ecx, 1
+  0x7c75b7  and      ecx, 7
+  0x7c75ba  jmp      dword ptr [ecx*4 + 0x7c7758]
+  0x7c75c1  pop      ebx
+  0x7c75c2  pop      ebp
+  0x7c75c3  mov      dword ptr [ebx], eax
+  0x7c75c5  mov      word ptr [ebx + 4], dx
+  0x7c75c9  mov      eax, dword ptr [ebp + 0x18]
+  0x7c75cc  pop      edx
+  0x7c75cd  pop      ecx
+  0x7c75ce  pop      ebx
+  0x7c75cf  pop      edi
+  0x7c75d0  pop      esi
+  0x7c75d1  leave    
+  0x7c75d2  ret      
+  0x7c75d3  nop      
+  0x7c75d4  mov      eax, 0x7fff
+  0x7c75d9  jmp      0x7c744c
+  0x7c75de  mov      edi, edi
+  0x7c75e0  mov      eax, 0xffff8000
+  0x7c75e5  jmp      0x7c744c
+  0x7c75ea  mov      edi, edi
+  0x7c75ec  mov      eax, 0x7fff
+  0x7c75f1  jmp      0x7c747b
+  0x7c75f6  mov      edi, edi
+  0x7c75f8  mov      eax, 0xffff8000
+  0x7c75fd  jmp      0x7c747b
+  0x7c7602  mov      edi, edi
+  0x7c7604  mov      eax, 0x7fff
+  0x7c7609  jmp      0x7c74ac
+  0x7c760e  mov      edi, edi
+  0x7c7610  mov      eax, 0xffff8000
+  0x7c7615  jmp      0x7c74ac
+  0x7c761a  mov      edi, edi
+  0x7c761c  mov      eax, 0x7fff
+  0x7c7621  jmp      0x7c74dc
+  0x7c7626  mov      edi, edi
+  0x7c7628  mov      eax, 0xffff8000
+
+=== T6 replay dispatch targets ===
+index 0 target 0x7c75c1 sec .text
+  sub_edi NONE sub_esi 0 jmp 0x7c744c
+index 1 target 0x7c7694 sec .text
+  sub_edi 14 sub_esi 3 jmp 0x7c7572
+index 2 target 0x7c76ac sec .text
+  sub_edi 12 sub_esi 3 jmp 0x7c7544
+index 3 target 0x7c76c4 sec .text
+  sub_edi 10 sub_esi 2 jmp 0x7c7514
+index 4 target 0x7c76e0 sec .text
+  sub_edi 8 sub_esi 2 jmp 0x7c74e6
+index 5 target 0x7c76f8 sec .text
+  sub_edi 6 sub_esi 1 jmp 0x7c74b6
+index 6 target 0x7c771c sec .text
+  sub_edi 4 sub_esi 1 jmp 0x7c7488
+index 7 target 0x7c7740 sec .text
+  sub_edi 2 sub_esi 0 jmp 0x7c7455
+
+=== T7 inline delta vs table 0x879b30 ===
+bit: hits 1424/1424 first_mismatch None
+ge: hits 1424/1424 first_mismatch None
+C2 shifted step base 0x8758e6 hits 64/1424
+C3 T3 with 0x87b170 hits 0
+
+=== T8 index update vs 0x8758c4 ===
+0x8758c4 words -1 -1 -1 -1 2 4 6 8
+0x8758c4 bytes ffffffffffffffff0200040006000800
+0x8758d4 bytes ffffffffffffffff0200040006000800
+16B_equal_0x8758c4_vs_0x8758d4 True
+  0x7c639b  mov      ax, word ptr [ecx + 0x8758c4]
+  0x7c63a2  add      word ptr [ebx + 0x22], ax
+  0x7c63a6  cmp      word ptr [ebx + 0x22], 0x8000
+  0x7c63ac  jb       0x7c63b6
+  0x7c63ae  mov      word ptr [ebx + 0x22], 0
+  0x7c63b4  jmp      0x7c63c3
+  0x7c63b6  cmp      word ptr [ebx + 0x22], 0x58
+  0x7c63bb  jbe      0x7c63c3
+  0x7c63bd  mov      word ptr [ebx + 0x22], 0x58
+
+=== T9 absolute-disp references in .text ===
+0x8758c4 count 3 first3 0x7c639b,0x7c649f,0x7c65be
+0x8758d4 count 0 first3 
+0x8758e4 count 3 first3 0x7c63cd,0x7c64d1,0x7c65f0
+0x8759b4 count 8 first3 0x7c6808,0x7c6837,0x7c6868
+0x876ff4 count 8 first3 0x7c680f,0x7c683e,0x7c686f
+0x877b14 count 7 first3 0x7c685b,0x7c68bc,0x7c691a
+0x877c14 count 8 first3 0x7c682c,0x7c688c,0x7c68ea
+0x879b30 count 24 first3 0x7c7428,0x7c7457,0x7c7488
+0x87b170 count 24 first3 0x7c742f,0x7c745e,0x7c748f
+0x87bc90 count 21 first3 0x7c747b,0x7c74dc,0x7c753a
+0x87bd90 count 24 first3 0x7c744c,0x7c74ac,0x7c750a
+0x7c7758 count 1 first3 0x7c75ba
+0x7c7778 count 1 first3 0x7c73ef
+
+=== T10 anti-controls summary ===
+C1 sign test n&8 vs n>=8 equivalent: True (1424 vs 1424 of 1424)
+C2 step base 0x8758e6 shifted: 64/1424
+C3 T3 operand table 0x87b170 instead of 0x879b30: 0 hits

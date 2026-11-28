@@ -1,0 +1,958 @@
+# R220-A 实测取证报告（exec hy4；脚本 `A_scan.py`）
+
+PE RAW=4825360 B；.text=[0x401000,0x7e1000)，文件长度 4063232 B；全扫描耗时 182.22 s。
+
+## T1 双副本一致性 `A_scan.py:L70`
+- 0x876ff4 起 2576 B sha256 `7b724b01645c0758b55811f5331e2a1b76ddf91280e3f200bc7472c05d11e7fa`
+- 0x87b170 起 2576 B sha256 `7b724b01645c0758b55811f5331e2a1b76ddf91280e3f200bc7472c05d11e7fa`
+- 同 sha256=True；逐字节相同=True；差异字节数=0
+- 0x87bb80 起 16 B = `e009e009e009e009400a800ac00a000b`
+
+## T2 表结构 `A_scan.py:L82`
+- 1288 个 word；按 16 B/8word 分 = 161 条记录
+- 前 48 word 十进制：`[0, 0, 0, 0, 64, 128, 192, 256, 0, 0, 0, 0, 64, 128, 192, 256, 0, 0, 0, 0, 96, 160, 224, 288, 0, 0, 0, 0, 96, 160, 224, 288, 32, 32, 32, 32, 128, 192, 256, 320, 32, 32, 32, 32, 128, 192, 256, 320]`
+- 前 12 dword：`['0x0', '0x0', '0x800040', '0x10000c0', '0x0', '0x0', '0x800040', '0x10000c0', '0x0', '0x0', '0xa00060', '0x12000e0']`；words[4]=0x0040 与 words[5]=0x0080 被小端拼成 dword 0x00800040
+- 各分量跨记录恒定差=[False, False, False, False, False, False, False, False]；记录内 8 word 等差=0/161
+  - 分量 1 distinct=2, `[0, 32]`
+  - 分量 2 distinct=2, `[0, 32]`
+  - 分量 3 distinct=2, `[0, 32]`
+  - 分量 4 distinct=2, `[0, 32]`
+  - 分量 5 distinct=2, `[0, 32]`
+  - 分量 6 distinct=2, `[0, 32]`
+  - 分量 7 distinct=2, `[0, 32]`
+  - 分量 8 distinct=2, `[0, 32]`
+- 全表统计：{'records_total': 161, 'records_nonzero': 161, 'distinct_record_patterns': 81, 'word_max': 2816, 'word_min': 0, 'word_multiple_of_32_ratio': 1.0, 'reference_spans': {'0x87b170': {'ref_count': 24, 'ref_addr_min': '0x7c742f', 'ref_addr_max': '0x7c7d11', 'insn_forms': ['edx + 0x87b170'], 'index2_count': 0}, '0x876ff4': {'ref_count': 8, 'ref_addr_min': '0x7c680f', 'ref_addr_max': '0x7c6959', 'insn_forms': ['edx + 0x876ff4'], 'index2_count': 0}, '0x879b30': {'ref_count': 24, 'ref_addr_min': '0x7c7428', 'ref_addr_max': '0x7c7d0a', 'insn_forms': ['edx*2 + 0x879b30'], 'index2_count': 24}, '0x87c484': {'ref_count': 16, 'ref_addr_min': '0x7cdb72', 'ref_addr_max': '0x7cdf20', 'insn_forms': ['0x87c484', 'eax*4 + 0x87c484', 'esi + 0x87c484'], 'index2_count': 0}}}
+
+## T3 孪生表 0x879b30 `A_scan.py:L101`
+- 64 dword：`['0x0', '0x1', '0x3', '0x4', '0x7', '0x8', '0xa', '0xb', '0x0', '0xffffffff', '0xfffffffd', '0xfffffffc', '0xfffffff9', '0xfffffff8', '0xfffffff6', '0xfffffff5', '0x1', '0x3', '0x5', '0x7', '0x9', '0xb', '0xd', '0xf', '0xffffffff', '0xfffffffd', '0xfffffffb', '0xfffffff9', '0xfffffff7', '0xfffffff5', '0xfffffff3', '0xfffffff1', '0x1', '0x3', '0x5', '0x7', '0xa', '0xc', '0xe', '0x10', '0xffffffff', '0xfffffffd', '0xfffffffb', '0xfffffff9', '0xfffffff6', '0xfffffff4', '0xfffffff2', '0xfffffff0', '0x1', '0x3', '0x6', '0x8', '0xb', '0xd', '0x10', '0x12', '0xffffffff', '0xfffffffd', '0xfffffffa', '0xfffffff8', '0xfffffff5', '0xfffffff3', '0xfffffff0', '0xffffffee']`
+- H1_word_mul_65536 = 2/64
+- H2_word_mul_256 = 2/64
+- H3_word_shl16_or_lowcopy = 2/64
+- d_eq_word2i = 2/64
+- d_eq_word2i_plus1 = 2/64
+- d_eq_word2i_sub_word2i1 = 2/64
+- d_eq_word2i1_sub_word2i = 2/64
+- d_eq_word2i_div_64 = 3/64
+- d_eq_word2i1_div_64 = 4/64
+- d[8..15] = -d[0..7]（32 位补码）：True
+- 引用跨度（指令地址 min..max / 形态 / index2 条数）：{'0x87b170': {'ref_count': 24, 'ref_addr_min': '0x7c742f', 'ref_addr_max': '0x7c7d11', 'insn_forms': ['edx + 0x87b170'], 'index2_count': 0}, '0x876ff4': {'ref_count': 8, 'ref_addr_min': '0x7c680f', 'ref_addr_max': '0x7c6959', 'insn_forms': ['edx + 0x876ff4'], 'index2_count': 0}, '0x879b30': {'ref_count': 24, 'ref_addr_min': '0x7c7428', 'ref_addr_max': '0x7c7d0a', 'insn_forms': ['edx*2 + 0x879b30'], 'index2_count': 24}, '0x87c484': {'ref_count': 16, 'ref_addr_min': '0x7cdb72', 'ref_addr_max': '0x7cdf20', 'insn_forms': ['0x87c484', 'eax*4 + 0x87c484', 'esi + 0x87c484'], 'index2_count': 0}}
+
+## T4 全 .text 引用扫描 `A_scan.py:L123`
+- 扫描 1394186 条指令；命中 7188 条；四表计数 {'0x87b170': 24, '0x876ff4': 8, '0x879b30': 24, '0x87c484': 16}；访问宽度 {'4': 2703, '8': 105, '2': 49, 'None': 4146, '1': 170, '10': 15}
+  - 0x4020da | mov eax, dword ptr [0x87de30] | hit=0x87de30 form=mem_disp width=4 index2=False
+  - 0x4021eb | mov eax, dword ptr [0x87de30] | hit=0x87de30 form=mem_disp width=4 index2=False
+  - 0x402516 | mov ecx, dword ptr [0x87de30] | hit=0x87de30 form=mem_disp width=4 index2=False
+  - 0x402900 | mov eax, dword ptr [0x87de2c] | hit=0x87de2c form=mem_disp width=4 index2=False
+  - 0x40296e | mov dword ptr [0x87de30], ecx | hit=0x87de30 form=mem_disp width=4 index2=False
+  - 0x402979 | mov dword ptr [0x87de2c], 1 | hit=0x87de2c form=mem_disp width=4 index2=False
+  - 0x402990 | mov eax, dword ptr [0x87de2c] | hit=0x87de2c form=mem_disp width=4 index2=False
+  - 0x402ad3 | mov dword ptr [0x87de28], ebp | hit=0x87de28 form=mem_disp width=4 index2=False
+  - 0x402adf | mov dword ptr [0x87de2c], ebp | hit=0x87de2c form=mem_disp width=4 index2=False
+  - 0x402b72 | mov dword ptr [0x87de28], edi | hit=0x87de28 form=mem_disp width=4 index2=False
+  - 0x402ba0 | mov dword ptr [0x87de28], 0 | hit=0x87de28 form=mem_disp width=4 index2=False
+  - 0x402bed | mov dword ptr [0x87de28], 0 | hit=0x87de28 form=mem_disp width=4 index2=False
+  - 0x403cfe | fstp qword ptr [0x87e1a0] | hit=0x87e1a0 form=mem_disp width=8 index2=False
+  - 0x403d10 | fld qword ptr [0x87e1a0] | hit=0x87e1a0 form=mem_disp width=8 index2=False
+  - 0x403d1c | fstp qword ptr [0x87e280] | hit=0x87e280 form=mem_disp width=8 index2=False
+  - 0x403d36 | fdiv qword ptr [0x87e280] | hit=0x87e280 form=mem_disp width=8 index2=False
+  - 0x403d3c | fstp qword ptr [0x87e268] | hit=0x87e268 form=mem_disp width=8 index2=False
+  - 0x403d5c | fstp qword ptr [0x87e260] | hit=0x87e260 form=mem_disp width=8 index2=False
+  - 0x403d7c | fstp qword ptr [0x87e1a8] | hit=0x87e1a8 form=mem_disp width=8 index2=False
+  - 0x403d9c | fstp qword ptr [0x87e190] | hit=0x87e190 form=mem_disp width=8 index2=False
+  - 0x403db0 | fld qword ptr [0x87e190] | hit=0x87e190 form=mem_disp width=8 index2=False
+  - 0x403db6 | fsub qword ptr [0x87e1a8] | hit=0x87e1a8 form=mem_disp width=8 index2=False
+  - 0x403dc7 | fmul qword ptr [0x87e1a0] | hit=0x87e1a0 form=mem_disp width=8 index2=False
+  - 0x403ddb | mov dword ptr [0x87e288], eax | hit=0x87e288 form=mem_disp width=4 index2=False
+  - 0x403df0 | fild dword ptr [0x87e288] | hit=0x87e288 form=mem_disp width=4 index2=False
+  - 0x403e07 | fstp qword ptr [0x87e1b0] | hit=0x87e1b0 form=mem_disp width=8 index2=False
+  - 0x403e21 | mov eax, dword ptr [0x87e288] | hit=0x87e288 form=mem_disp width=4 index2=False
+  - 0x403e34 | fdiv qword ptr [0x87e1a0] | hit=0x87e1a0 form=mem_disp width=8 index2=False
+  - 0x403e42 | fstp qword ptr [0x87e248] | hit=0x87e248 form=mem_disp width=8 index2=False
+  - 0x403e51 | mov eax, dword ptr [0x87e288] | hit=0x87e288 form=mem_disp width=4 index2=False
+  - 0x403e70 | mov dword ptr [0x87e27c], eax | hit=0x87e27c form=mem_disp width=4 index2=False
+  - 0x403e82 | mov word ptr [0x87e198], ax | hit=0x87e198 form=mem_disp width=2 index2=False
+  - 0x403e88 | mov word ptr [0x87e19a], ax | hit=0x87e19a form=mem_disp width=2 index2=False
+  - 0x403e92 | mov dword ptr [0x87e238], eax | hit=0x87e238 form=mem_disp width=4 index2=False
+  - 0x403e97 | mov dword ptr [0x87e23c], eax | hit=0x87e23c form=mem_disp width=4 index2=False
+  - 0x403e9c | mov dword ptr [0x87e240], eax | hit=0x87e240 form=mem_disp width=4 index2=False
+  - 0x403eb5 | mov dword ptr [0x87e278], 0 | hit=0x87e278 form=mem_disp width=4 index2=False
+  - 0x403ebf | mov dword ptr [0x87e270], eax | hit=0x87e270 form=mem_disp width=4 index2=False
+  - 0x403ec4 | mov dword ptr [0x87e274], eax | hit=0x87e274 form=mem_disp width=4 index2=False
+  - 0x403ed6 | mov ecx, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x403ee0 | mov ecx, 0x87e250 | hit=0x87e250 form=imm_or_base width=None index2=False
+  - 0x403eea | mov ecx, 0x87e1b8 | hit=0x87e1b8 form=imm_or_base width=None index2=False
+  - 0x403eef | mov dword ptr [0x87e294], esi | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x403ef5 | mov dword ptr [0x87e29c], edi | hit=0x87e29c form=mem_disp width=4 index2=False
+  - 0x403f00 | mov ecx, dword ptr [0x87e294] | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x403f0f | mov dword ptr [0x87e290], esi | hit=0x87e290 form=mem_disp width=4 index2=False
+  - 0x403f15 | mov dword ptr [0x87e28c], esi | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x403f1b | mov dword ptr [0x87e2a0], edi | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x403f47 | mov dword ptr [0x87e298], eax | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x403f51 | mov dword ptr [0x87e2a8], eax | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x403f65 | mov ecx, dword ptr [0x87e294] | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x403f6e | cmp dword ptr [0x87e298], esi | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x403f7a | cmp dword ptr [0x87e29c], esi | hit=0x87e29c form=mem_disp width=4 index2=False
+  - 0x403f82 | cmp dword ptr [0x87e2a8], esi | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x403f8a | mov dword ptr [0x87e2a4], edi | hit=0x87e2a4 form=mem_disp width=4 index2=False
+  - 0x403fa0 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x403fb2 | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x403fb8 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x40403d | mov ecx, dword ptr [0x87e2a8] | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x40404a | mov ecx, dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x404053 | cmp ebx, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x404059 | mov dword ptr [0x87e28c], ecx | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x404065 | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x40406c | cmp dword ptr [0x87e2a0], ebp | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x404074 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x4040a8 | mov ecx, dword ptr [0x87e2a8] | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x4040b5 | dec dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x4040bb | cmp edi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x4040c7 | mov ecx, 0x87e250 | hit=0x87e250 form=imm_or_base width=None index2=False
+  - 0x4040e7 | mov ecx, 0x87e250 | hit=0x87e250 form=imm_or_base width=None index2=False
+  - 0x4040f7 | mov ecx, dword ptr [0x87e298] | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x404106 | mov dword ptr [0x87e298], ebp | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x40410c | mov ecx, dword ptr [0x87e2a8] | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x40411b | mov dword ptr [0x87e2a8], ebp | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x404122 | mov dword ptr [0x87e2a4], ebp | hit=0x87e2a4 form=mem_disp width=4 index2=False
+  - 0x404128 | mov dword ptr [0x87e2a0], ebp | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x4041d0 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x4041e0 | mov eax, dword ptr [0x87e2b4] | hit=0x87e2b4 form=mem_disp width=4 index2=False
+  - 0x4041ed | mov ecx, dword ptr [0x87e2ac] | hit=0x87e2ac form=mem_disp width=4 index2=False
+  - 0x4041f6 | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x4041fd | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x404204 | mov dword ptr [0x87e2b4], 1 | hit=0x87e2b4 form=mem_disp width=4 index2=False
+  - 0x40420e | mov dword ptr [0x87e2ac], ecx | hit=0x87e2ac form=mem_disp width=4 index2=False
+  - 0x40421f | mov ecx, dword ptr [0x87e2ac] | hit=0x87e2ac form=mem_disp width=4 index2=False
+  - 0x404245 | mov ecx, dword ptr [0x87e2ac] | hit=0x87e2ac form=mem_disp width=4 index2=False
+  - 0x404343 | cmp ebp, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x40434f | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x404355 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x404369 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x404371 | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x40437f | mov edi, 0x87de38 | hit=0x87de38 form=imm_or_base width=None index2=False
+  - 0x40439e | mov ecx, dword ptr [0x87e2b0] | hit=0x87e2b0 form=mem_disp width=4 index2=False
+  - 0x4043a5 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x4043ab | mov dword ptr [0x87e2b0], ecx | hit=0x87e2b0 form=mem_disp width=4 index2=False
+  - 0x404449 | mov eax, dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x404452 | mov dword ptr [0x87e28c], eax | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x40445c | mov ecx, dword ptr [0x87e2a8] | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x404469 | dec dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x4044ca | lea ebx, [eax*8 + 0x87de38] | hit=0x87de38 form=mem_disp width=4 index2=False
+  - 0x4044d1 | mov eax, dword ptr [0x87e2b0] | hit=0x87e2b0 form=mem_disp width=4 index2=False
+  - 0x404559 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x404580 | mov ecx, 0x87e1b8 | hit=0x87e1b8 form=imm_or_base width=None index2=False
+  - 0x40458a | mov ecx, 0x87e1b8 | hit=0x87e1b8 form=imm_or_base width=None index2=False
+  - 0x404594 | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x40459a | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x404610 | mov edi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x404616 | cmp edi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x40463d | cmp ebp, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x4046ca | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x4046d6 | mov dword ptr [0x87e2b4], edi | hit=0x87e2b4 form=mem_disp width=4 index2=False
+  - 0x4046e6 | mov dword ptr [0x87e2b4], edi | hit=0x87e2b4 form=mem_disp width=4 index2=False
+  - 0x404927 | mov ecx, dword ptr [0x87e298] | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x404982 | mov ecx, dword ptr [0x87e298] | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x4049fd | mov ecx, dword ptr [0x87e298] | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x404a32 | mov ecx, dword ptr [0x87e298] | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x404a8f | mov ecx, dword ptr [0x87e298] | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x404b0e | mov ecx, dword ptr [0x87e298] | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x404b65 | mov ecx, dword ptr [0x87e298] | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x404def | mov eax, dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x404df8 | mov dword ptr [0x87e28c], eax | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x404dff | mov ecx, dword ptr [0x87e2a8] | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x404e0c | mov eax, dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x404e13 | mov dword ptr [0x87e28c], eax | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x404e2d | mov ebx, 0x87de38 | hit=0x87de38 form=imm_or_base width=None index2=False
+  - 0x404e71 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x404e82 | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x404e88 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x404f94 | mov ecx, dword ptr [0x87e2a8] | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x404fa1 | mov ecx, dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x404faa | cmp edi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x404fb0 | mov dword ptr [0x87e28c], ecx | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x404fd0 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x404fda | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x404fe0 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x40502b | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x405040 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x40504a | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x405050 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x4050b3 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x4050c0 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x4050ca | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x4050d0 | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x405105 | mov ecx, dword ptr [0x87e2a8] | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x405112 | dec dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x405118 | cmp edi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x405130 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x405140 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x405160 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x405170 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x4051aa | cmp dword ptr [0x87e2a4], ebp | hit=0x87e2a4 form=mem_disp width=4 index2=False
+  - 0x4051bf | mov ecx, dword ptr [0x87e2a8] | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x4051d0 | cmp dword ptr [0x87e2a0], ebp | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x4051d8 | mov esi, dword ptr [0x87e180] | hit=0x87e180 form=mem_disp width=4 index2=False
+  - 0x4051de | cmp esi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x405210 | mov ecx, dword ptr [0x87e2a8] | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x40521d | dec dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x405223 | cmp edi, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x405231 | mov ecx, dword ptr [0x87e2a8] | hit=0x87e2a8 form=mem_disp width=4 index2=False
+  - 0x405246 | mov eax, dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x40524b | mov ecx, dword ptr [0x87e290] | hit=0x87e290 form=mem_disp width=4 index2=False
+  - 0x405254 | mov dword ptr [0x87e28c], eax | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x40525b | mov dword ptr [0x87e290], eax | hit=0x87e290 form=mem_disp width=4 index2=False
+  - 0x4052a3 | mov ecx, 0x87e180 | hit=0x87e180 form=imm_or_base width=None index2=False
+  - 0x40570e | mov dword ptr [ecx + 0x98], 0x87e1b8 | hit=0x87e1b8 form=mem_disp width=4 index2=False
+  - 0x40571e | mov eax, dword ptr [0x87e758] | hit=0x87e758 form=mem_disp width=4 index2=False
+  - 0x405806 | cmp dword ptr [0x87e2a0], ebx | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x40580e | cmp dword ptr [eax + 0xc], 0x87e294 | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x405b55 | mov ecx, dword ptr [0x87e29c] | hit=0x87e29c form=mem_disp width=4 index2=False
+  - 0x405b91 | mov eax, dword ptr [0x87e748] | hit=0x87e748 form=mem_disp width=4 index2=False
+  - 0x405b9c | mov ecx, dword ptr [0x87e758] | hit=0x87e758 form=mem_disp width=4 index2=False
+  - 0x405be2 | mov dword ptr [ecx + 0xc], 0x87e294 | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x405c04 | mov ecx, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x405c19 | cmp dword ptr [eax + 0xc], 0x87e294 | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x405d44 | mov ecx, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x405d59 | cmp dword ptr [eax + 0xc], 0x87e294 | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x405e84 | mov ecx, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x405e9a | cmp dword ptr [eax + 0xc], 0x87e294 | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x405fd0 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x405fe0 | cmp dword ptr [edi + 0xc], 0x87e294 | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x406060 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x406070 | cmp dword ptr [esi + 0xc], 0x87e294 | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x4060f0 | cmp dword ptr [ecx + 0xc], 0x87e294 | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x406130 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x406139 | cmp dword ptr [ecx + 0xc], 0x87e294 | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x406170 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x406179 | cmp dword ptr [ecx + 0xc], 0x87e294 | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x406340 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x406360 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x40636d | mov ecx, 0x87e250 | hit=0x87e250 form=imm_or_base width=None index2=False
+  - 0x4063b0 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x4063c2 | mov ecx, 0x87e250 | hit=0x87e250 form=imm_or_base width=None index2=False
+  - 0x40646e | mov ecx, 0x87e250 | hit=0x87e250 form=imm_or_base width=None index2=False
+  - 0x4064b4 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x4064bd | mov ecx, dword ptr [0x87e294] | hit=0x87e294 form=mem_disp width=4 index2=False
+  - 0x406670 | mov eax, dword ptr [0x87e2a0] | hit=0x87e2a0 form=mem_disp width=4 index2=False
+  - 0x406684 | mov ecx, 0x87e250 | hit=0x87e250 form=imm_or_base width=None index2=False
+  - 0x406760 | mov eax, dword ptr [0x87e298] | hit=0x87e298 form=mem_disp width=4 index2=False
+  - 0x406772 | mov eax, dword ptr [0x87e290] | hit=0x87e290 form=mem_disp width=4 index2=False
+  - 0x406777 | mov ecx, dword ptr [0x87e28c] | hit=0x87e28c form=mem_disp width=4 index2=False
+  - 0x40693e | fstp qword ptr [0x87e448] | hit=0x87e448 form=mem_disp width=8 index2=False
+  - 0x406950 | fld qword ptr [0x87e448] | hit=0x87e448 form=mem_disp width=8 index2=False
+  - 0x40695c | fstp qword ptr [0x87e698] | hit=0x87e698 form=mem_disp width=8 index2=False
+  - 0x406976 | fdiv qword ptr [0x87e698] | hit=0x87e698 form=mem_disp width=8 index2=False
+  - 0x40697c | fstp qword ptr [0x87e680] | hit=0x87e680 form=mem_disp width=8 index2=False
+  - 0x40699c | fstp qword ptr [0x87e678] | hit=0x87e678 form=mem_disp width=8 index2=False
+  - 0x4069bc | fstp qword ptr [0x87e4d0] | hit=0x87e4d0 form=mem_disp width=8 index2=False
+  - 0x4069dc | fstp qword ptr [0x87e2b8] | hit=0x87e2b8 form=mem_disp width=8 index2=False
+  - 0x4069f0 | fld qword ptr [0x87e2b8] | hit=0x87e2b8 form=mem_disp width=8 index2=False
+  - 0x4069f6 | fsub qword ptr [0x87e4d0] | hit=0x87e4d0 form=mem_disp width=8 index2=False
+  - 0x406a07 | fmul qword ptr [0x87e448] | hit=0x87e448 form=mem_disp width=8 index2=False
+  - 0x406a1b | mov dword ptr [0x87e720], eax | hit=0x87e720 form=mem_disp width=4 index2=False
+  - 0x406a30 | fild dword ptr [0x87e720] | hit=0x87e720 form=mem_disp width=4 index2=False
+  - 0x406a47 | fstp qword ptr [0x87e4d8] | hit=0x87e4d8 form=mem_disp width=8 index2=False
+  - 0x406a61 | mov eax, dword ptr [0x87e720] | hit=0x87e720 form=mem_disp width=4 index2=False
+  - 0x406a74 | fdiv qword ptr [0x87e448] | hit=0x87e448 form=mem_disp width=8 index2=False
+  - 0x406a82 | fstp qword ptr [0x87e570] | hit=0x87e570 form=mem_disp width=8 index2=False
+  - 0x406a91 | mov eax, dword ptr [0x87e720] | hit=0x87e720 form=mem_disp width=4 index2=False
+  - 0x406ab0 | mov dword ptr [0x87e694], eax | hit=0x87e694 form=mem_disp width=4 index2=False
+  - 0x406ac2 | mov word ptr [0x87e440], ax | hit=0x87e440 form=mem_disp width=2 index2=False
+  - 0x406ac8 | mov word ptr [0x87e442], ax | hit=0x87e442 form=mem_disp width=2 index2=False
+  - 0x406ad2 | mov dword ptr [0x87e560], eax | hit=0x87e560 form=mem_disp width=4 index2=False
+  - 0x406ad7 | mov dword ptr [0x87e564], eax | hit=0x87e564 form=mem_disp width=4 index2=False
+  - 0x406adc | mov dword ptr [0x87e568], eax | hit=0x87e568 form=mem_disp width=4 index2=False
+  - 0x406af5 | mov dword ptr [0x87e690], 0 | hit=0x87e690 form=mem_disp width=4 index2=False
+  - 0x406aff | mov dword ptr [0x87e688], eax | hit=0x87e688 form=mem_disp width=4 index2=False
+  - 0x406b04 | mov dword ptr [0x87e68c], eax | hit=0x87e68c form=mem_disp width=4 index2=False
+  - 0x406b1f | mov ecx, 0x87e2c0 | hit=0x87e2c0 form=imm_or_base width=None index2=False
+  - 0x406b29 | mov ecx, 0x87e4e0 | hit=0x87e4e0 form=imm_or_base width=None index2=False
+  - 0x406b2e | mov dword ptr [0x87e73c], 0x87e2c0 | hit=0x87e73c form=mem_disp width=4 index2=False
+  - 0x406b2e | mov dword ptr [0x87e73c], 0x87e2c0 | hit=0x87e2c0 form=mem_disp width=4 index2=False
+  - 0x406b3d | mov ecx, 0x87e578 | hit=0x87e578 form=imm_or_base width=None index2=False
+  - 0x406b42 | mov dword ptr [0x87e744], 0x87e4e0 | hit=0x87e744 form=mem_disp width=4 index2=False
+  - 0x406b42 | mov dword ptr [0x87e744], 0x87e4e0 | hit=0x87e4e0 form=mem_disp width=4 index2=False
+  - 0x406b51 | mov ecx, 0x87e450 | hit=0x87e450 form=imm_or_base width=None index2=False
+  - 0x406b56 | mov dword ptr [0x87e740], 0x87e578 | hit=0x87e740 form=mem_disp width=4 index2=False
+  - 0x406b56 | mov dword ptr [0x87e740], 0x87e578 | hit=0x87e578 form=mem_disp width=4 index2=False
+  - 0x406b65 | mov ecx, 0x87e340 | hit=0x87e340 form=imm_or_base width=None index2=False
+  - 0x406b6a | mov dword ptr [0x87e748], 0x87e450 | hit=0x87e748 form=mem_disp width=4 index2=False
+  - 0x406b6a | mov dword ptr [0x87e748], 0x87e450 | hit=0x87e450 form=mem_disp width=4 index2=False
+  - 0x406b79 | mov ecx, 0x87e6a0 | hit=0x87e6a0 form=imm_or_base width=None index2=False
+  - 0x406b7e | mov dword ptr [0x87e74c], 0x87e340 | hit=0x87e74c form=mem_disp width=4 index2=False
+  - 0x406b7e | mov dword ptr [0x87e74c], 0x87e340 | hit=0x87e340 form=mem_disp width=4 index2=False
+  - 0x406b8d | mov ecx, 0x87e5f8 | hit=0x87e5f8 form=imm_or_base width=None index2=False
+  - 0x406b92 | mov dword ptr [0x87e754], 0x87e6a0 | hit=0x87e754 form=mem_disp width=4 index2=False
+  - 0x406b92 | mov dword ptr [0x87e754], 0x87e6a0 | hit=0x87e6a0 form=mem_disp width=4 index2=False
+  - 0x406ba1 | mov ecx, 0x87e3c0 | hit=0x87e3c0 form=imm_or_base width=None index2=False
+  - 0x406ba6 | mov dword ptr [0x87e750], 0x87e5f8 | hit=0x87e750 form=mem_disp width=4 index2=False
+  - 0x406ba6 | mov dword ptr [0x87e750], 0x87e5f8 | hit=0x87e5f8 form=mem_disp width=4 index2=False
+  - 0x406bb7 | mov dword ptr [0x87e758], 0x87e3c0 | hit=0x87e758 form=mem_disp width=4 index2=False
+  - 0x406bb7 | mov dword ptr [0x87e758], 0x87e3c0 | hit=0x87e3c0 form=mem_disp width=4 index2=False
+  - 0x406c1a | mov dword ptr [0x87e728], eax | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406c3a | mov eax, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406c4c | mov dword ptr [0x87e73c], eax | hit=0x87e73c form=mem_disp width=4 index2=False
+  - 0x406cb0 | mov dword ptr [0x87e734], eax | hit=0x87e734 form=mem_disp width=4 index2=False
+  - 0x406cd4 | mov dword ptr [0x87e734], eax | hit=0x87e734 form=mem_disp width=4 index2=False
+  - 0x406cdb | mov dword ptr [0x87e734], edi | hit=0x87e734 form=mem_disp width=4 index2=False
+  - 0x406cef | mov dword ptr [0x87e724], eax | hit=0x87e724 form=mem_disp width=4 index2=False
+  - 0x406cfd | mov edx, dword ptr [0x87e724] | hit=0x87e724 form=mem_disp width=4 index2=False
+  - 0x406d03 | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406d1e | mov dword ptr [0x87e72c], esi | hit=0x87e72c form=mem_disp width=4 index2=False
+  - 0x406d40 | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406d75 | mov ecx, dword ptr [0x87e724] | hit=0x87e724 form=mem_disp width=4 index2=False
+  - 0x406d84 | mov dword ptr [0x87e724], esi | hit=0x87e724 form=mem_disp width=4 index2=False
+  - 0x406d8a | mov ecx, dword ptr [0x87e734] | hit=0x87e734 form=mem_disp width=4 index2=False
+  - 0x406d9a | mov dword ptr [0x87e734], esi | hit=0x87e734 form=mem_disp width=4 index2=False
+  - 0x406da0 | mov ecx, dword ptr [0x87e738] | hit=0x87e738 form=mem_disp width=4 index2=False
+  - 0x406db0 | mov dword ptr [0x87e738], esi | hit=0x87e738 form=mem_disp width=4 index2=False
+  - 0x406db6 | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406dc5 | mov dword ptr [0x87e728], esi | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406e33 | mov dword ptr [0x87e728], eax | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406e60 | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406e6f | mov dword ptr [0x87e728], 0 | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406e80 | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406ea0 | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406eca | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406ee0 | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406f09 | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406f54 | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406f70 | mov eax, dword ptr [0x87e75c] | hit=0x87e75c form=mem_disp width=4 index2=False
+  - 0x406f7c | mov eax, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x406f87 | mov dword ptr [0x87e75c], 1 | hit=0x87e75c form=mem_disp width=4 index2=False
+  - 0x406f96 | mov ecx, dword ptr [0x87e760] | hit=0x87e760 form=mem_disp width=4 index2=False
+  - 0x406fa0 | mov edx, dword ptr [0x87e764] | hit=0x87e764 form=mem_disp width=4 index2=False
+  - 0x406fd5 | mov dword ptr [0x87e760], esi | hit=0x87e760 form=mem_disp width=4 index2=False
+  - 0x406fdb | mov dword ptr [0x87e764], edi | hit=0x87e764 form=mem_disp width=4 index2=False
+  - 0x406fe2 | mov dword ptr [0x87e75c], 0 | hit=0x87e75c form=mem_disp width=4 index2=False
+  - 0x407000 | mov ecx, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x407010 | mov eax, dword ptr [0x87e728] | hit=0x87e728 form=mem_disp width=4 index2=False
+  - 0x407020 | mov eax, dword ptr [0x87e730] | hit=0x87e730 form=mem_disp width=4 index2=False
+  - 0x40702e | inc dword ptr [0x87e730] | hit=0x87e730 form=mem_disp width=4 index2=False
+  - 0x407040 | mov eax, dword ptr [0x87e730] | hit=0x87e730 form=mem_disp width=4 index2=False
+  - 0x40704a | mov dword ptr [0x87e730], eax | hit=0x87e730 form=mem_disp width=4 index2=False
+  - 0x407556 | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x407561 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x40756e | mov dword ptr [0x87e770], esi | hit=0x87e770 form=mem_disp width=4 index2=False
+  - 0x407574 | mov dword ptr [0x87e778], esi | hit=0x87e778 form=mem_disp width=4 index2=False
+  - 0x40757a | mov dword ptr [0x87e788], esi | hit=0x87e788 form=mem_disp width=4 index2=False
+  - 0x407580 | mov dword ptr [0x87e780], 0x3e8 | hit=0x87e780 form=mem_disp width=4 index2=False
+  - 0x40758a | mov dword ptr [0x87e784], esi | hit=0x87e784 form=mem_disp width=4 index2=False
+  - 0x407590 | mov dword ptr [0x87e774], esi | hit=0x87e774 form=mem_disp width=4 index2=False
+  - 0x407596 | mov ecx, 0x87e790 | hit=0x87e790 form=imm_or_base width=None index2=False
+  - 0x4075a0 | mov eax, dword ptr [0x87e780] | hit=0x87e780 form=mem_disp width=4 index2=False
+  - 0x4075a5 | mov ecx, dword ptr [0x87e784] | hit=0x87e784 form=mem_disp width=4 index2=False
+  - 0x4075ad | mov ecx, 0x87e790 | hit=0x87e790 form=imm_or_base width=None index2=False
+  - 0x4075b7 | mov edx, dword ptr [0x87e780] | hit=0x87e780 form=mem_disp width=4 index2=False
+  - 0x4075bd | mov eax, dword ptr [0x87e784] | hit=0x87e784 form=mem_disp width=4 index2=False
+  - 0x4075cc | mov ecx, 0x87e790 | hit=0x87e790 form=imm_or_base width=None index2=False
+  - 0x4075d8 | mov ecx, dword ptr [0x87e780] | hit=0x87e780 form=mem_disp width=4 index2=False
+  - 0x4075de | mov edx, dword ptr [0x87e784] | hit=0x87e784 form=mem_disp width=4 index2=False
+  - 0x4075ee | mov ecx, 0x87e790 | hit=0x87e790 form=imm_or_base width=None index2=False
+  - 0x4075fa | push 0x87e7f4 | hit=0x87e7f4 form=imm_or_base width=None index2=False
+  - 0x407600 | push 0x87e770 | hit=0x87e770 form=imm_or_base width=None index2=False
+  - 0x407618 | mov dword ptr [0x87e7f0], eax | hit=0x87e7f0 form=mem_disp width=4 index2=False
+  - 0x40766d | mov dword ptr [0x87e820], eax | hit=0x87e820 form=mem_disp width=4 index2=False
+  - 0x407672 | mov dword ptr [0x87e81c], eax | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x4076b4 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x4076bb | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x4076d1 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407723 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x40773b | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407780 | mov eax, dword ptr [0x87e81c] | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x40778d | mov eax, dword ptr [0x87e820] | hit=0x87e820 form=mem_disp width=4 index2=False
+  - 0x407797 | mov dword ptr [0x87e770], 1 | hit=0x87e770 form=mem_disp width=4 index2=False
+  - 0x4077a1 | mov eax, dword ptr [0x87e778] | hit=0x87e778 form=mem_disp width=4 index2=False
+  - 0x4077b4 | mov eax, dword ptr [0x87e778] | hit=0x87e778 form=mem_disp width=4 index2=False
+  - 0x4077bd | mov eax, dword ptr [0x87e7f0] | hit=0x87e7f0 form=mem_disp width=4 index2=False
+  - 0x4077ce | mov ecx, dword ptr [0x87e7f0] | hit=0x87e7f0 form=mem_disp width=4 index2=False
+  - 0x4077db | mov dword ptr [0x87e820], 0 | hit=0x87e820 form=mem_disp width=4 index2=False
+  - 0x4077e5 | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x407814 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407823 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407831 | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x407843 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x40784e | mov dword ptr [0x87e81c], 0 | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x407991 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x40799e | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x4079a8 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407aa6 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407ab4 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407acc | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407adb | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407b7d | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407b90 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407d5f | mov ecx, dword ptr [0x87e780] | hit=0x87e780 form=mem_disp width=4 index2=False
+  - 0x407d65 | mov edx, dword ptr [0x87e784] | hit=0x87e784 form=mem_disp width=4 index2=False
+  - 0x407d80 | mov eax, dword ptr [0x87e780] | hit=0x87e780 form=mem_disp width=4 index2=False
+  - 0x407d85 | mov ecx, dword ptr [0x87e784] | hit=0x87e784 form=mem_disp width=4 index2=False
+  - 0x407daf | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407e25 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407f54 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407f67 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407fc4 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x407fe5 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x408039 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x40805a | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x408150 | mov eax, dword ptr [0x87e81c] | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x40815a | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x408166 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x40818b | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x4081a0 | mov eax, dword ptr [0x87e81c] | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x4081aa | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x4081d9 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x4081e8 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x408200 | mov eax, dword ptr [0x87e81c] | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x408209 | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x408230 | mov eax, dword ptr [0x87e81c] | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x408239 | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x408270 | mov eax, dword ptr [0x87e81c] | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x40827a | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x4082a9 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x4082c6 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x4082f0 | mov eax, dword ptr [0x87e81c] | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x4082fe | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x408352 | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x40836f | push 0x87e7f8 | hit=0x87e7f8 form=imm_or_base width=None index2=False
+  - 0x408390 | mov eax, dword ptr [0x87e81c] | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x40839a | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x4083d0 | mov eax, dword ptr [0x87e81c] | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x4083da | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x408410 | mov eax, dword ptr [0x87e81c] | hit=0x87e81c form=mem_disp width=4 index2=False
+  - 0x40841a | mov ecx, 0x87e810 | hit=0x87e810 form=imm_or_base width=None index2=False
+  - 0x409388 | mov dword ptr [0x87e828], eax | hit=0x87e828 form=mem_disp width=4 index2=False
+  - 0x40938d | mov dword ptr [0x87e82c], edx | hit=0x87e82c form=mem_disp width=4 index2=False
+  - 0x409393 | mov dword ptr [0x87e848], 0x4093c0 | hit=0x87e848 form=mem_disp width=4 index2=False
+  - 0x4093a1 | mov dword ptr [0x87e848], 0x4093f0 | hit=0x87e848 form=mem_disp width=4 index2=False
+  - 0x4093b0 | mov eax, dword ptr [0x87e848] | hit=0x87e848 form=mem_disp width=4 index2=False
+  - 0x4093ce | mov ecx, dword ptr [0x87e82c] | hit=0x87e82c form=mem_disp width=4 index2=False
+  - 0x4093d4 | mov edx, dword ptr [0x87e828] | hit=0x87e828 form=mem_disp width=4 index2=False
+  - 0x4093f4 | mov eax, dword ptr [0x87e84c] | hit=0x87e84c form=mem_disp width=4 index2=False
+  - 0x4093fa | mov dword ptr [0x87e84c], eax | hit=0x87e84c form=mem_disp width=4 index2=False
+  - 0x4093ff | mov esi, dword ptr [0x87e84c] | hit=0x87e84c form=mem_disp width=4 index2=False
+  - 0x409415 | mov eax, dword ptr [0x87e84c] | hit=0x87e84c form=mem_disp width=4 index2=False
+  - 0x40941e | mov esi, dword ptr [0x87e84c] | hit=0x87e84c form=mem_disp width=4 index2=False
+  - 0x409424 | mov eax, dword ptr [0x87e84c] | hit=0x87e84c form=mem_disp width=4 index2=False
+  - 0x40944a | mov eax, dword ptr [0x87e84c] | hit=0x87e84c form=mem_disp width=4 index2=False
+  - 0x409453 | mov esi, dword ptr [0x87e84c] | hit=0x87e84c form=mem_disp width=4 index2=False
+  - 0x40947a | push 0x87e880 | hit=0x87e880 form=imm_or_base width=None index2=False
+  - 0x409488 | push 0x87e89c | hit=0x87e89c form=imm_or_base width=None index2=False
+  - 0x4094a5 | mov eax, dword ptr [0x87e89c] | hit=0x87e89c form=mem_disp width=4 index2=False
+  - 0x4094c0 | mov eax, dword ptr [0x87e898] | hit=0x87e898 form=mem_disp width=4 index2=False
+（完整清单见 A_result.json 的 T4_all_hits）
+
+## T5 宿主函数 `A_scan.py:L174`
+- start=0x7c7350 end=0x7c8106 长度=3510 B，指令数=1010
+- 前向 CC=[['0x7c672a', '0x7c6730', '0x6'], ['0x7c6b68', '0x7c6b70', '0x8'], ['0x7c734e', '0x7c7350', '0x2']]；后向 CC=[['0x7c8106', '0x7c8110', '0xa'], ['0x7c8d16', '0x7c8d20', '0xa'], ['0x7c8eb1', '0x7c8ec0', '0xf']]
+- 目标访问上下文 48 处；前 12 处：
+  - at 0x7c7428: add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c7421 inc ebp
+    - 007c7422 jmp 0x7c76ac
+    - 007c7427 nop 
+    - 007c7428 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c742f mov dx, word ptr [edx + 0x87b170]
+    - 007c7436 cmp eax, 0x7fff
+    - 007c743b jg 0x7c75d4
+  - at 0x7c742f: mov dx, word ptr [edx + 0x87b170]
+    - 007c7422 jmp 0x7c76ac
+    - 007c7427 nop 
+    - 007c7428 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c742f mov dx, word ptr [edx + 0x87b170]
+    - 007c7436 cmp eax, 0x7fff
+    - 007c743b jg 0x7c75d4
+    - 007c7441 cmp eax, 0xffff8000
+  - at 0x7c7457: add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c744c or dl, byte ptr [ebx + 0x87bd90]
+    - 007c7452 mov word ptr [edi], ax
+    - 007c7455 mov bl, ch
+    - 007c7457 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c745e mov dx, word ptr [edx + 0x87b170]
+    - 007c7465 cmp eax, 0x7fff
+    - 007c746a jg 0x7c75ec
+  - at 0x7c745e: mov dx, word ptr [edx + 0x87b170]
+    - 007c7452 mov word ptr [edi], ax
+    - 007c7455 mov bl, ch
+    - 007c7457 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c745e mov dx, word ptr [edx + 0x87b170]
+    - 007c7465 cmp eax, 0x7fff
+    - 007c746a jg 0x7c75ec
+    - 007c7470 cmp eax, 0xffff8000
+  - at 0x7c7488: add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c747b or dl, byte ptr [ebx + 0x87bc90]
+    - 007c7481 mov word ptr [edi + 2], ax
+    - 007c7485 shr ecx, 0x10
+    - 007c7488 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c748f mov dx, word ptr [edx + 0x87b170]
+    - 007c7496 cmp eax, 0x7fff
+    - 007c749b jg 0x7c7604
+  - at 0x7c748f: mov dx, word ptr [edx + 0x87b170]
+    - 007c7481 mov word ptr [edi + 2], ax
+    - 007c7485 shr ecx, 0x10
+    - 007c7488 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c748f mov dx, word ptr [edx + 0x87b170]
+    - 007c7496 cmp eax, 0x7fff
+    - 007c749b jg 0x7c7604
+    - 007c74a1 cmp eax, 0xffff8000
+  - at 0x7c74b8: add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c74ac or dl, byte ptr [ebx + 0x87bd90]
+    - 007c74b2 mov word ptr [edi + 4], ax
+    - 007c74b6 mov bl, cl
+    - 007c74b8 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c74bf mov dx, word ptr [edx + 0x87b170]
+    - 007c74c6 cmp eax, 0x7fff
+    - 007c74cb jg 0x7c761c
+  - at 0x7c74bf: mov dx, word ptr [edx + 0x87b170]
+    - 007c74b2 mov word ptr [edi + 4], ax
+    - 007c74b6 mov bl, cl
+    - 007c74b8 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c74bf mov dx, word ptr [edx + 0x87b170]
+    - 007c74c6 cmp eax, 0x7fff
+    - 007c74cb jg 0x7c761c
+    - 007c74d1 cmp eax, 0xffff8000
+  - at 0x7c74e6: add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c74d6 jl 0x7c7628
+    - 007c74dc or dl, byte ptr [ebx + 0x87bc90]
+    - 007c74e2 mov word ptr [edi + 6], ax
+    - 007c74e6 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c74ed mov dx, word ptr [edx + 0x87b170]
+    - 007c74f4 cmp eax, 0x7fff
+    - 007c74f9 jg 0x7c7634
+  - at 0x7c74ed: mov dx, word ptr [edx + 0x87b170]
+    - 007c74dc or dl, byte ptr [ebx + 0x87bc90]
+    - 007c74e2 mov word ptr [edi + 6], ax
+    - 007c74e6 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c74ed mov dx, word ptr [edx + 0x87b170]
+    - 007c74f4 cmp eax, 0x7fff
+    - 007c74f9 jg 0x7c7634
+    - 007c74ff cmp eax, 0xffff8000
+  - at 0x7c7516: add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c750a or dl, byte ptr [ebx + 0x87bd90]
+    - 007c7510 mov word ptr [edi + 8], ax
+    - 007c7514 mov bl, ch
+    - 007c7516 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c751d mov dx, word ptr [edx + 0x87b170]
+    - 007c7524 cmp eax, 0x7fff
+    - 007c7529 jg 0x7c764c
+  - at 0x7c751d: mov dx, word ptr [edx + 0x87b170]
+    - 007c7510 mov word ptr [edi + 8], ax
+    - 007c7514 mov bl, ch
+    - 007c7516 add eax, dword ptr [edx*2 + 0x879b30]
+    - 007c751d mov dx, word ptr [edx + 0x87b170]
+    - 007c7524 cmp eax, 0x7fff
+    - 007c7529 jg 0x7c764c
+    - 007c752f cmp eax, 0xffff8000
+- edx 初始化（函数入口 30 条内）：['007c7378 push edx', '007c7380 mov dx, word ptr [ebp + 0x14]', '007c738a cmp dx, 2', '007c7395 cmp dx, 1', '007c73ae cmp dx, 2']
+- 写回 word [edi...] 指令数=25，偏移集合=['[edi + 0x10]', '[edi + 0x14]', '[edi + 0x18]', '[edi + 0x1c]', '[edi + 0xa]', '[edi + 0xc]', '[edi + 0xe]', '[edi]']
+- E8 调用站点数=5（站点前 60：['0x7c2323', '0x7c23d3', '0x7c24a2', '0x7c2557', '0x7c2a74']）
+- 全指令前 400：
+  - 007c7350 push ebp
+  - 007c7351 mov ebp, esp
+  - 007c7353 mov eax, dword ptr [ebp + 8]
+  - 007c7356 mov word ptr [eax + 4], 0
+  - 007c735c mov dword ptr [eax], 0
+  - 007c7362 mov word ptr [eax + 0xa], 0
+  - 007c7368 mov dword ptr [eax + 6], 0
+  - 007c736f leave 
+  - 007c7370 ret 
+  - 007c7371 push ebp
+  - 007c7372 mov ebp, esp
+  - 007c7374 push esi
+  - 007c7375 push edi
+  - 007c7376 push ebx
+  - 007c7377 push ecx
+  - 007c7378 push edx
+  - 007c7379 mov ebx, dword ptr [ebp + 0x1c]
+  - 007c737c mov cx, word ptr [ebp + 0x10]
+  - 007c7380 mov dx, word ptr [ebp + 0x14]
+  - 007c7384 cmp cx, 8
+  - 007c7388 jne 0x7c73a4
+  - 007c738a cmp dx, 2
+  - 007c738e jne 0x7c7395
+  - 007c7390 jmp 0x7c75cc
+  - 007c7395 cmp dx, 1
+  - 007c7399 jne 0x7c75cc
+  - 007c739f jmp 0x7c75cc
+  - 007c73a4 cmp cx, 0x10
+  - 007c73a8 jne 0x7c75cc
+  - 007c73ae cmp dx, 2
+  - 007c73b2 jne 0x7c73b9
+  - 007c73b4 jmp 0x7c7788
+  - 007c73b9 cmp dx, 1
+  - 007c73bd jne 0x7c75cc
+  - 007c73c3 push ebp
+  - 007c73c4 push ebx
+  - 007c73c5 xor edx, edx
+  - 007c73c7 mov eax, dword ptr [ebx]
+  - 007c73c9 mov dx, word ptr [ebx + 4]
+  - 007c73cd mov esi, dword ptr [ebp + 8]
+  - 007c73d0 mov edi, dword ptr [ebp + 0xc]
+  - 007c73d3 mov ebp, dword ptr [ebp + 0x18]
+  - 007c73d6 cmp ebp, 0x10
+  - 007c73d9 jl 0x7c73e2
+  - 007c73db mov ebx, esi
+  - 007c73dd and ebx, 3
+  - 007c73e0 jne 0x7c73ef
+  - 007c73e2 push ebp
+  - 007c73e3 shr ebp, 4
+  - 007c73e6 xor ebx, ebx
+  - 007c73e8 or ebp, ebp
+  - 007c73ea jmp 0x7c75a1
+  - 007c73ef jmp dword ptr [ebx*4 + 0x7c7778]
+  - 007c73f6 mov edi, edi
+  - 007c73f8 sub ebp, 0xc
+  - 007c73fb push ebp
+  - 007c73fc shr ebp, 4
+  - 007c73ff xor ebx, ebx
+  - 007c7401 inc ebp
+  - 007c7402 jmp 0x7c771c
+  - 007c7407 nop 
+  - 007c7408 sub ebp, 8
+  - 007c740b push ebp
+  - 007c740c shr ebp, 4
+  - 007c740f xor ebx, ebx
+  - 007c7411 inc ebp
+  - 007c7412 jmp 0x7c76e0
+  - 007c7417 nop 
+  - 007c7418 sub ebp, 4
+  - 007c741b push ebp
+  - 007c741c shr ebp, 4
+  - 007c741f xor ebx, ebx
+  - 007c7421 inc ebp
+  - 007c7422 jmp 0x7c76ac
+  - 007c7427 nop 
+  - 007c7428 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c742f mov dx, word ptr [edx + 0x87b170]
+  - 007c7436 cmp eax, 0x7fff
+  - 007c743b jg 0x7c75d4
+  - 007c7441 cmp eax, 0xffff8000
+  - 007c7446 jl 0x7c75e0
+  - 007c744c or dl, byte ptr [ebx + 0x87bd90]
+  - 007c7452 mov word ptr [edi], ax
+  - 007c7455 mov bl, ch
+  - 007c7457 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c745e mov dx, word ptr [edx + 0x87b170]
+  - 007c7465 cmp eax, 0x7fff
+  - 007c746a jg 0x7c75ec
+  - 007c7470 cmp eax, 0xffff8000
+  - 007c7475 jl 0x7c75f8
+  - 007c747b or dl, byte ptr [ebx + 0x87bc90]
+  - 007c7481 mov word ptr [edi + 2], ax
+  - 007c7485 shr ecx, 0x10
+  - 007c7488 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c748f mov dx, word ptr [edx + 0x87b170]
+  - 007c7496 cmp eax, 0x7fff
+  - 007c749b jg 0x7c7604
+  - 007c74a1 cmp eax, 0xffff8000
+  - 007c74a6 jl 0x7c7610
+  - 007c74ac or dl, byte ptr [ebx + 0x87bd90]
+  - 007c74b2 mov word ptr [edi + 4], ax
+  - 007c74b6 mov bl, cl
+  - 007c74b8 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c74bf mov dx, word ptr [edx + 0x87b170]
+  - 007c74c6 cmp eax, 0x7fff
+  - 007c74cb jg 0x7c761c
+  - 007c74d1 cmp eax, 0xffff8000
+  - 007c74d6 jl 0x7c7628
+  - 007c74dc or dl, byte ptr [ebx + 0x87bc90]
+  - 007c74e2 mov word ptr [edi + 6], ax
+  - 007c74e6 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c74ed mov dx, word ptr [edx + 0x87b170]
+  - 007c74f4 cmp eax, 0x7fff
+  - 007c74f9 jg 0x7c7634
+  - 007c74ff cmp eax, 0xffff8000
+  - 007c7504 jl 0x7c7640
+  - 007c750a or dl, byte ptr [ebx + 0x87bd90]
+  - 007c7510 mov word ptr [edi + 8], ax
+  - 007c7514 mov bl, ch
+  - 007c7516 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c751d mov dx, word ptr [edx + 0x87b170]
+  - 007c7524 cmp eax, 0x7fff
+  - 007c7529 jg 0x7c764c
+  - 007c752f cmp eax, 0xffff8000
+  - 007c7534 jl 0x7c7658
+  - 007c753a or dl, byte ptr [ebx + 0x87bc90]
+  - 007c7540 mov word ptr [edi + 0xa], ax
+  - 007c7544 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c754b mov dx, word ptr [edx + 0x87b170]
+  - 007c7552 cmp eax, 0x7fff
+  - 007c7557 jg 0x7c7664
+  - 007c755d cmp eax, 0xffff8000
+  - 007c7562 jl 0x7c7670
+  - 007c7568 or dl, byte ptr [ebx + 0x87bd90]
+  - 007c756e mov word ptr [edi + 0xc], ax
+  - 007c7572 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c7579 mov dx, word ptr [edx + 0x87b170]
+  - 007c7580 cmp eax, 0x7fff
+  - 007c7585 jg 0x7c767c
+  - 007c758b cmp eax, 0xffff8000
+  - 007c7590 jl 0x7c7688
+  - 007c7596 mov word ptr [edi + 0xe], ax
+  - 007c759a add esi, 4
+  - 007c759d add edi, 0x10
+  - 007c75a0 dec ebp
+  - 007c75a1 jle 0x7c75b2
+  - 007c75a3 mov ecx, dword ptr [esi]
+  - 007c75a5 mov bl, cl
+  - 007c75a7 or dl, byte ptr [ebx + 0x87bc90]
+  - 007c75ad jmp 0x7c7428
+  - 007c75b2 jne 0x7c75c1
+  - 007c75b4 pop ecx
+  - 007c75b5 shr ecx, 1
+  - 007c75b7 and ecx, 7
+  - 007c75ba jmp dword ptr [ecx*4 + 0x7c7758]
+  - 007c75c1 pop ebx
+  - 007c75c2 pop ebp
+  - 007c75c3 mov dword ptr [ebx], eax
+  - 007c75c5 mov word ptr [ebx + 4], dx
+  - 007c75c9 mov eax, dword ptr [ebp + 0x18]
+  - 007c75cc pop edx
+  - 007c75cd pop ecx
+  - 007c75ce pop ebx
+  - 007c75cf pop edi
+  - 007c75d0 pop esi
+  - 007c75d1 leave 
+  - 007c75d2 ret 
+  - 007c75d3 nop 
+  - 007c75d4 mov eax, 0x7fff
+  - 007c75d9 jmp 0x7c744c
+  - 007c75de mov edi, edi
+  - 007c75e0 mov eax, 0xffff8000
+  - 007c75e5 jmp 0x7c744c
+  - 007c75ea mov edi, edi
+  - 007c75ec mov eax, 0x7fff
+  - 007c75f1 jmp 0x7c747b
+  - 007c75f6 mov edi, edi
+  - 007c75f8 mov eax, 0xffff8000
+  - 007c75fd jmp 0x7c747b
+  - 007c7602 mov edi, edi
+  - 007c7604 mov eax, 0x7fff
+  - 007c7609 jmp 0x7c74ac
+  - 007c760e mov edi, edi
+  - 007c7610 mov eax, 0xffff8000
+  - 007c7615 jmp 0x7c74ac
+  - 007c761a mov edi, edi
+  - 007c761c mov eax, 0x7fff
+  - 007c7621 jmp 0x7c74dc
+  - 007c7626 mov edi, edi
+  - 007c7628 mov eax, 0xffff8000
+  - 007c762d jmp 0x7c74dc
+  - 007c7632 mov edi, edi
+  - 007c7634 mov eax, 0x7fff
+  - 007c7639 jmp 0x7c750a
+  - 007c763e mov edi, edi
+  - 007c7640 mov eax, 0xffff8000
+  - 007c7645 jmp 0x7c750a
+  - 007c764a mov edi, edi
+  - 007c764c mov eax, 0x7fff
+  - 007c7651 jmp 0x7c753a
+  - 007c7656 mov edi, edi
+  - 007c7658 mov eax, 0xffff8000
+  - 007c765d jmp 0x7c753a
+  - 007c7662 mov edi, edi
+  - 007c7664 mov eax, 0x7fff
+  - 007c7669 jmp 0x7c7568
+  - 007c766e mov edi, edi
+  - 007c7670 mov eax, 0xffff8000
+  - 007c7675 jmp 0x7c7568
+  - 007c767a mov edi, edi
+  - 007c767c mov eax, 0x7fff
+  - 007c7681 jmp 0x7c7596
+  - 007c7686 mov edi, edi
+  - 007c7688 mov eax, 0xffff8000
+  - 007c768d jmp 0x7c7596
+  - 007c7692 mov edi, edi
+  - 007c7694 xor ecx, ecx
+  - 007c7696 mov ch, byte ptr [esi]
+  - 007c7698 shl ch, 4
+  - 007c769b mov bl, ch
+  - 007c769d sub edi, 0xe
+  - 007c76a0 or dl, byte ptr [ebx + 0x87bd90]
+  - 007c76a6 jmp 0x7c7572
+  - 007c76ab nop 
+  - 007c76ac xor ecx, ecx
+  - 007c76ae mov ch, byte ptr [esi]
+  - 007c76b0 mov bl, ch
+  - 007c76b2 sub edi, 0xc
+  - 007c76b5 sub esi, 3
+  - 007c76b8 or dl, byte ptr [ebx + 0x87bc90]
+  - 007c76be jmp 0x7c7544
+  - 007c76c3 nop 
+  - 007c76c4 xor ecx, ecx
+  - 007c76c6 mov cx, word ptr [esi]
+  - 007c76c9 shl cx, 4
+  - 007c76cd mov bl, cl
+  - 007c76cf sub edi, 0xa
+  - 007c76d2 or dl, byte ptr [ebx + 0x87bd90]
+  - 007c76d8 jmp 0x7c7514
+  - 007c76dd lea ecx, [ecx]
+  - 007c76e0 xor ecx, ecx
+  - 007c76e2 mov cx, word ptr [esi]
+  - 007c76e5 mov bl, cl
+  - 007c76e7 sub edi, 8
+  - 007c76ea sub esi, 2
+  - 007c76ed or dl, byte ptr [ebx + 0x87bc90]
+  - 007c76f3 jmp 0x7c74e6
+  - 007c76f8 xor ecx, ecx
+  - 007c76fa mov cl, byte ptr [esi + 2]
+  - 007c76fd shl ecx, 0x10
+  - 007c7700 mov cx, word ptr [esi]
+  - 007c7703 mov bl, cl
+  - 007c7705 shr ecx, 4
+  - 007c7708 shl bl, 4
+  - 007c770b sub edi, 6
+  - 007c770e or dl, byte ptr [ebx + 0x87bd90]
+  - 007c7714 jmp 0x7c74b6
+  - 007c7719 lea ecx, [ecx]
+  - 007c771c xor ecx, ecx
+  - 007c771e mov cl, byte ptr [esi + 2]
+  - 007c7721 shl ecx, 0x10
+  - 007c7724 mov cx, word ptr [esi]
+  - 007c7727 mov bl, cl
+  - 007c7729 shr ecx, 8
+  - 007c772c sub esi, 1
+  - 007c772f sub edi, 4
+  - 007c7732 or dl, byte ptr [ebx + 0x87bc90]
+  - 007c7738 jmp 0x7c7488
+  - 007c773d lea ecx, [ecx]
+  - 007c7740 xor ecx, ecx
+  - 007c7742 mov ecx, dword ptr [esi]
+  - 007c7744 shl ecx, 4
+  - 007c7747 mov bl, cl
+  - 007c7749 sub edi, 2
+  - 007c774c or dl, byte ptr [ebx + 0x87bd90]
+  - 007c7752 jmp 0x7c7455
+  - 007c7757 nop 
+  - 007c7758 sal dword ptr [ebp + 0x7c], 0
+  - 007c775c xchg esp, eax
+  - 007c775d jbe 0x7c77db
+  - 007c775f add byte ptr [esi + esi*2 + 0x76c4007c], ch
+  - 007c7766 jl 0x7c7768
+  - 007c7768 loopne 0x7c77e0
+  - 007c776a jl 0x7c776c
+  - 007c776c clc 
+  - 007c776d jbe 0x7c77eb
+  - 007c776f add byte ptr [edi + esi*2], bl
+  - 007c7772 jl 0x7c7774
+  - 007c7774 inc eax
+  - 007c7775 ja 0x7c77f3
+  - 007c7777 add dl, ah
+  - 007c7779 jae 0x7c77f7
+  - 007c777b add al, bh
+  - 007c777d jae 0x7c77fb
+  - 007c777f add byte ptr [eax], cl
+  - 007c7781 je 0x7c77ff
+  - 007c7783 add byte ptr [eax], bl
+  - 007c7785 je 0x7c7803
+  - 007c7787 add byte ptr [ebp + 0x53], dl
+  - 007c778a xor edx, edx
+  - 007c778c mov eax, dword ptr [ebx]
+  - 007c778e mov dx, word ptr [ebx + 4]
+  - 007c7792 mov esi, dword ptr [ebp + 8]
+  - 007c7795 mov edi, dword ptr [ebp + 0xc]
+  - 007c7798 mov ebp, dword ptr [ebp + 0x18]
+  - 007c779b shr ebp, 1
+  - 007c779d cmp ebp, 0x10
+  - 007c77a0 jl 0x7c77a9
+  - 007c77a2 mov ebx, esi
+  - 007c77a4 and ebx, 3
+  - 007c77a7 jne 0x7c77b6
+  - 007c77a9 push ebp
+  - 007c77aa shr ebp, 4
+  - 007c77ad xor ebx, ebx
+  - 007c77af or ebp, ebp
+  - 007c77b1 jmp 0x7c7969
+  - 007c77b6 jmp dword ptr [ebx*4 + 0x7c7b3c]
+  - 007c77bd lea ecx, [ecx]
+  - 007c77c0 sub ebp, 0xc
+  - 007c77c3 push ebp
+  - 007c77c4 shr ebp, 4
+  - 007c77c7 xor ebx, ebx
+  - 007c77c9 inc ebp
+  - 007c77ca jmp 0x7c7ae0
+  - 007c77cf nop 
+  - 007c77d0 sub ebp, 8
+  - 007c77d3 push ebp
+  - 007c77d4 shr ebp, 4
+  - 007c77d7 xor ebx, ebx
+  - 007c77d9 inc ebp
+  - 007c77da jmp 0x7c7aa4
+  - 007c77df nop 
+  - 007c77e0 sub ebp, 4
+  - 007c77e3 push ebp
+  - 007c77e4 shr ebp, 4
+  - 007c77e7 xor ebx, ebx
+  - 007c77e9 inc ebp
+  - 007c77ea jmp 0x7c7a70
+  - 007c77ef nop 
+  - 007c77f0 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c77f7 mov dx, word ptr [edx + 0x87b170]
+  - 007c77fe cmp eax, 0x7fff
+  - 007c7803 jg 0x7c7998
+  - 007c7809 cmp eax, 0xffff8000
+  - 007c780e jl 0x7c79a4
+  - 007c7814 or dl, byte ptr [ebx + 0x87bd90]
+  - 007c781a mov word ptr [edi], ax
+  - 007c781d mov bl, ch
+  - 007c781f add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c7826 mov dx, word ptr [edx + 0x87b170]
+  - 007c782d cmp eax, 0x7fff
+  - 007c7832 jg 0x7c79b0
+  - 007c7838 cmp eax, 0xffff8000
+  - 007c783d jl 0x7c79bc
+  - 007c7843 or dl, byte ptr [ebx + 0x87bc90]
+  - 007c7849 mov word ptr [edi + 4], ax
+  - 007c784d shr ecx, 0x10
+  - 007c7850 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c7857 mov dx, word ptr [edx + 0x87b170]
+  - 007c785e cmp eax, 0x7fff
+  - 007c7863 jg 0x7c79c8
+  - 007c7869 cmp eax, 0xffff8000
+  - 007c786e jl 0x7c79d4
+  - 007c7874 or dl, byte ptr [ebx + 0x87bd90]
+  - 007c787a mov word ptr [edi + 8], ax
+  - 007c787e mov bl, cl
+  - 007c7880 add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c7887 mov dx, word ptr [edx + 0x87b170]
+  - 007c788e cmp eax, 0x7fff
+  - 007c7893 jg 0x7c79e0
+  - 007c7899 cmp eax, 0xffff8000
+  - 007c789e jl 0x7c79ec
+  - 007c78a4 or dl, byte ptr [ebx + 0x87bc90]
+  - 007c78aa mov word ptr [edi + 0xc], ax
+  - 007c78ae add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c78b5 mov dx, word ptr [edx + 0x87b170]
+  - 007c78bc cmp eax, 0x7fff
+  - 007c78c1 jg 0x7c79f8
+  - 007c78c7 cmp eax, 0xffff8000
+  - 007c78cc jl 0x7c7a04
+  - 007c78d2 or dl, byte ptr [ebx + 0x87bd90]
+  - 007c78d8 mov word ptr [edi + 0x10], ax
+  - 007c78dc mov bl, ch
+  - 007c78de add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c78e5 mov dx, word ptr [edx + 0x87b170]
+  - 007c78ec cmp eax, 0x7fff
+  - 007c78f1 jg 0x7c7a10
+  - 007c78f7 cmp eax, 0xffff8000
+  - 007c78fc jl 0x7c7a1c
+  - 007c7902 or dl, byte ptr [ebx + 0x87bc90]
+  - 007c7908 mov word ptr [edi + 0x14], ax
+  - 007c790c add eax, dword ptr [edx*2 + 0x879b30]
+  - 007c7913 mov dx, word ptr [edx + 0x87b170]
+  - 007c791a cmp eax, 0x7fff
+  - 007c791f jg 0x7c7a28
+  - 007c7925 cmp eax, 0xffff8000
+  - 007c792a jl 0x7c7a34
+  - 007c7930 or dl, byte ptr [ebx + 0x87bd90]
+  - 007c7936 mov word ptr [edi + 0x18], ax
+  - 007c793a add eax, dword ptr [edx*2 + 0x879b30]
+
+## T6 写入端 `A_scan.py:L123`
+- 全 .text 写入 [0x876ff4,0x880000) 区间候选数=564；地址清单 `['0x40296e', '0x402979', '0x402ad3', '0x402adf', '0x402b72', '0x402ba0', '0x402bed', '0x403ddb', '0x403e70', '0x403e82', '0x403e88', '0x403e92', '0x403e97', '0x403e9c', '0x403eb5', '0x403ebf', '0x403ec4', '0x403eef', '0x403ef5', '0x403f0f', '0x403f15', '0x403f1b', '0x403f47', '0x403f51', '0x403f8a', '0x404059', '0x404106', '0x40411b', '0x404122', '0x404128', '0x404204', '0x40420e', '0x4043ab', '0x404452', '0x4046d6', '0x4046e6', '0x404df8', '0x404e13', '0x404fb0', '0x405254', '0x40525b', '0x40570e', '0x405be2', '0x406a1b', '0x406ab0', '0x406ac2', '0x406ac8', '0x406ad2', '0x406ad7', '0x406adc', '0x406af5', '0x406aff', '0x406b04', '0x406b2e', '0x406b2e', '0x406b42', '0x406b42', '0x406b56', '0x406b56', '0x406b6a', '0x406b6a', '0x406b7e', '0x406b7e', '0x406b92', '0x406b92', '0x406ba6', '0x406ba6', '0x406bb7', '0x406bb7', '0x406c1a', '0x406c4c', '0x406cb0', '0x406cd4', '0x406cdb', '0x406cef', '0x406d1e', '0x406d84', '0x406d9a', '0x406db0', '0x406dc5']`
+
+## T7 正反控 `A_scan.py:L210`
+- 正控 0x7c7428 `[edx*2+0x879b30]` 命中（index2）：True；[{'addr': '0x7c7428', 'insn': 'add eax, dword ptr [edx*2 + 0x879b30]', 'hit': '0x879b30', 'form': 'mem_disp', 'width': 4, 'index2': True, 'write_candidate': False}]
+- 反控 VA [0x880000,0x890000) 命中数=0（与主表引用 7188 无关另计）
+- 反控常量改 0x87b180（文本检索）命中=0（原 0x87b170=24）
+
+## 一句话结论（依据实测数字的推断，需复核）
+从 word 表 16 B=8word 等差结构（每分量跨记录差值 distinct=2）、dword 表首 8 项 0,1,3,4,7,8,10,11 及其 32 位负值对、宿主函数内 24 次 `add eax,[edx*2+0x879b30]` 与 24 次 `mov dx,[edx+0x87b170]` 成对出现、edx 源自 16 位输入 `[ebp+0x14]`、输出为 [edi] 连续 word 且带 0x7fff/-0x8000 饱和裁剪，以及同函数 dl 初值 0x80 的 DXT 风格字节/字解压流程判断：这两张表最可能是**图像块解码的调色板/色差增量表（S3TC/DXT 类插值/掩码表）**，而不是坐标、尺寸、角度或三角函数表；依据数字：word 值最大 2816、为 32 倍数的占比 1.000，dword 表前 64 项成对正负，引用均集中在 0x7c7428..0x7c7d11 的同一像素解码函数内。

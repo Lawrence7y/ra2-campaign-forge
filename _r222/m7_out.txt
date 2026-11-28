@@ -1,0 +1,30 @@
+sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+PASS N1a 0x7c62ac 入口读 byte[esi]（1 B = 2 nibble） | [(8151815, 'mov', 'al, byte ptr [esi]')]
+PASS N1b 出口写样本 word[edi],ax（16 位路径） | [(8151939, 'mov', 'word ptr [edi], ax')]
+PASS N1c 出口写样本 byte[edi],ah（8 位路径，xor ah,0x80 后） | [(8151950, 'mov', 'byte ptr [edi], ah')]
+PASS N1d 用 test dword[ebx+0x10],1 选半字节 + shr eax,4 取高半字节 | ([(8151786, 'test', 'dword ptr [ebx + 0x10], 1')], [(8151801, 'shr', 'eax, 4')])
+PASS N1e nibble 被 and eax,0xf 截到 0..15 | [(8151804, 'and', 'eax, 0xf'), (8151822, 'and', 'eax, 0xf')]
+PASS N1f 0x7c62ac 全函数 0x879b30 引用 0 条（in-line delta） | []
+PASS N2a nibble 15 的查表地址 >= 0x8758d4 | 0x8758e2
+PASS N2b nibble 0..7 落在 0x8758c4..0x8758d3 | 0x8758d3
+PASS N2c 16 项 = IDX[n&7] 两遍 | [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8]
+PASS N2d 0x8758d4 处 16 B 与 0x8758c4 处 16 B 逐字节相同
+PASS N2e 16 项表语义等价于 IDX[n&7]（反控：字面引用 0 但确被读到）
+PASS N2f 读取指令为 mov ax,word[ecx+0x8758c4]，ecx=2*nibble（shl ecx,1） | [(8151959, 'xor', 'eax, eax'), (8151961, 'shl', 'ecx, 1'), (8151963, 'mov', 'ax, word ptr [ecx + 0x8758c4]')]
+PASS N3a 0x7c6752 (cx==8,dx==2) -> 0x7c69ad | ['0x7c69ad']
+PASS N3b 0x7c6752 (cx==8,dx==1) -> 0x7c69ad | ['0x7c69ad']
+PASS N3c 0x7c6752 (cx==0x10,dx==2) -> 0x7c69ad（拒 stereo） | ['0x7c69ad']
+PASS N3d 0x7c6752 (cx==0x10,dx==1) 顺序落入 0x7c67a4（0x7c679e jne 6 B 后即 0x7c67a4） | [('0x7c679a', 4, 'cmp', 'dx, 1'), ('0x7c679e', 6, 'jne', '0x7c69ad'), ('0x7c67a4', 1, 'push', 'ebp'), ('0x7c67a5', 1, 'push', 'ebx'), ('0x7c67a6', 2, 'xor', 'edx, edx'), ('0x7c67a8', 3, 'mov', 'eax, dword ptr [ebx + 0x14]'), ('0x7c67ab', 4, 'mov', 'dx, word ptr [ebx + 0x22]'), ('0x7c67af', 1, '.byte', '0x8b')]
+PASS N3e 0x7c7371 (cx==0x10,dx==2) -> 0x7c7788（收 stereo） | ['0x7c7788']
+   0x7c69ad 内容: [('0x7c69ad', 'pop', 'edx'), ('0x7c69ae', 'pop', 'ecx'), ('0x7c69af', 'pop', 'ebx'), ('0x7c69b0', 'pop', 'edi'), ('0x7c69b1', 'pop', 'esi'), ('0x7c69b2', 'leave', ''), ('0x7c69b3', 'ret', ''), ('0x7c69b4', 'mov', 'eax, 0x7fff')]
+PASS N3f 0x7c69ad 是尾声（pop/leave/ret 序列，不是解码分支） | [('0x7c69ad', 'pop'), ('0x7c69ae', 'pop'), ('0x7c69af', 'pop'), ('0x7c69b0', 'pop'), ('0x7c69b1', 'pop'), ('0x7c69b2', 'leave')]
+PASS N4a 0x7c62ac 内 0x8758c4 引用 3 条 | ['0x7c639b', '0x7c649f', '0x7c65be']
+PASS N4b 0x7c62ac 内 0x8758e4 引用 3 条 | ['0x7c63cd', '0x7c64d1', '0x7c65f0']
+PASS N4c 三条 jne 回边 => 三份展开副本 | [('0x7c63df', '0x7c62ea'), ('0x7c64e4', '0x7c63ea'), ('0x7c6603', '0x7c6509')]
+   table 007c6b58: ['0x7c67c3', '0x7c67d8', '0x7c67e8', '0x7c67f8', '0xcccccccc', '0xcccccccc', '0x83ec8b55', '0x5153ecc4']  有效 4/8
+   table 007c6b38: ['0x7c69a1', '0x7c6a74', '0x7c6a8c', '0x7c6aa4', '0x7c6ac0', '0x7c6ad8', '0x7c6afc', '0x7c6b20']  有效 8/8
+   table 007c6b78: ['0xd1575652', '0x458b1c65', '0x2e0c11c', '0x8bf44589']  有效 0/4
+PASS N5a 0x7c6b58 只有前 4 项是地址
+PASS N5b 0x7c6b38 八项全是地址
+
+FAIL 数 = 0 []

@@ -1,0 +1,33 @@
+=== 三份展开副本结构 ===
+copy1 007c62ea..007c63e8 insns 78
+   read byte[esi] ['0x7c6307'] | word[edi] ['0x7c6383'] | byte[edi],ah ['0x7c638e']
+   esi step [('0x7c630d', 'inc', 'esi')]
+   edi step [('0x7c6386', 'add', 'edi, 2'), ('0x7c6390', 'inc', 'edi')]
+   nibble select ['0x7c62ea'] | 0x879b30 refs [] | back-edge [('0x7c63df', '0x7c62ea')]
+copy2 007c63ea..007c6509 insns 88
+   read byte[esi] ['0x7c6407'] | word[edi] ['0x7c6485'] | byte[edi],ah ['0x7c6490']
+   esi step [('0x7c640d', 'add', 'esi, 2'), ('0x7c64f5', 'inc', 'esi')]
+   edi step [('0x7c6488', 'add', 'edi, 4'), ('0x7c6492', 'add', 'edi, 2'), ('0x7c64f6', 'inc', 'edi'), ('0x7c6505', 'inc', 'edi')]
+   nibble select ['0x7c63ea'] | 0x879b30 refs [] | back-edge [('0x7c64e4', '0x7c63ea')]
+copy3 007c6509..007c6609 insns 75
+   read byte[esi] ['0x7c6526'] | word[edi] ['0x7c65a4'] | byte[edi],ah ['0x7c65af']
+   esi step [('0x7c652c', 'add', 'esi, 2')]
+   edi step [('0x7c65a7', 'add', 'edi, 4'), ('0x7c65b1', 'add', 'edi, 2')]
+   nibble select [] | 0x879b30 refs [] | back-edge [('0x7c6603', '0x7c6509')]
+PASS D1a 三份副本各读 1 次 byte[esi] | {'copy1': [8151815], 'copy2': [8152071], 'copy3': [8152358]}
+PASS D1b 三份副本各写 1 次 word[edi] + 1 次 byte[edi],ah
+PASS D3a 三份副本 0x879b30 引用全 0 | {'copy1': [], 'copy2': [], 'copy3': []}
+PASS D3b copy1 有 nibble 选择 test（bit0 切换） | [8151786]
+PASS D3c 三份副本各有 1 条回边（jne 向前） | {'copy1': [(8152031, '0x7c62ea')], 'copy2': [(8152292, '0x7c63ea')], 'copy3': [(8152579, '0x7c6509')]}
+PASS R1 反控：全函数无 mov [esi],.. 也无把 [edi] 读进累加器 | ([], [])
+PASS D4a 16 位模式样本数 shr 1（cmp word[ebx+0x38],0x10 -> shr eax,1） | [(8151758, 'cmp', 'word ptr [ebx + 0x38], 0x10'), (8151763, 'jne', '0x7c62d7'), (8151765, 'shr', 'eax, 1'), (8151767, 'mov', 'dword ptr [ebp - 8], eax')]
+PASS R2 反控：copy2/copy3 的 edi 步进与 copy1 不同 | ([(8151942, 'add', 'edi, 2'), (8151952, 'inc', 'edi')], [(8152200, 'add', 'edi, 4'), (8152210, 'add', 'edi, 2'), (8152310, 'inc', 'edi'), (8152325, 'inc', 'edi')], [(8152487, 'add', 'edi, 4'), (8152497, 'add', 'edi, 2')])
+
+=== 两个初始化函数的字段集 ===
+init2 0x7c6270 [('[eax + 0x22]', '0'), ('[eax + 0x20]', '7'), ('d[eax + 0x14]', '0'), ('d[eax + 0x10]', '0'), ('[eax + 0x36]', '0'), ('[eax + 0x34]', '7'), ('d[eax + 0x28]', '0'), ('d[eax + 0x24]', '0')]
+init1 0x7c6730 [('[eax + 0x22]', '0'), ('d[eax + 0x14]', '0'), ('[eax + 0x36]', '0'), ('d[eax + 0x28]', '0')]
+PASS I1 init2 清 8 个字段（+0x22/+0x20/+0x14/+0x10/+0x36/+0x34/+0x28/+0x24）
+PASS I2 init1 只清 4 个字段（+0x22/+0x14/+0x36/+0x28）
+PASS I3 init2 设两声道 step=7（+0x20/+0x34），init1 不设
+
+FAIL 数 = 0 []
