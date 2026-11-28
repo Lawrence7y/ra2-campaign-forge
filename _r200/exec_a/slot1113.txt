@@ -1,0 +1,156 @@
+=== BASE RECONSTRUCTION (byte reads only) ===
+PASS B1 COL==1214 | 1214
+PASS B2 VT==1214 | 1214
+PASS B3 slot total==14044 | 14044
+PASS B4 MAIN==954 | 954
+PASS B5 pairs==603 | 603
+PASS B6 pairs unique==603 | 603
+PASS B7 MAIN order reproducible | 954
+
+=== Q1 DENOMINATOR / SLOT 11 12 13 ===
+  slot 11 den=125  match=47   mismatch=78   match_rate=37.60% (mismatch_rate=62.40%)
+PASS Q1 slot11 den/mis matches R199 | (125, 78, [78, 125])
+  slot 12 den=125  match=47   mismatch=78   match_rate=37.60% (mismatch_rate=62.40%)
+PASS Q1 slot12 den/mis matches R199 | (125, 78, [78, 125])
+  slot 13 den=125  match=47   mismatch=78   match_rate=37.60% (mismatch_rate=62.40%)
+PASS Q1 slot13 den/mis matches R199 | (125, 78, [78, 125])
+  unique pairs with n_d>=14 and n_b>=14: 125
+PASS Q1 both>=14 equals comparable-13 den | (125, 125)
+PASS Q1 match+mis==den all slots
+
+=== Q2 TRIPLE STATES (11,12,13) ===
+  MMM = 38
+  MMX = 9
+  MXM = 0
+  MXX = 0
+  XMM = 0
+  XMX = 0
+  XXM = 9
+  XXX = 69
+  triple comparable pairs = 125 ; isomorphism (MMM+XXX) = 107 (85.60%)
+  R199 recorded 107 -> independent value 107 ; reproduced = True
+PASS Q2 eight states sum==den | 125
+PASS Q2 iso == R199 107 | 107
+
+=== Q3 IMPLEMENTATION ADDRESS DISTRIBUTIONS ===
+  slot 11: match-side vt_b Top5:
+      0x4e1570     19
+      0x4f43f0     8
+      0x4c9150     8
+      0x5d5dc0     7
+      0x7ba610     2
+  slot 11: all 1214 VT Top5:
+      0x410260     75
+      0x410450     74
+      0x410310     73
+      0x0          30
+      0x4e1570     20
+  slot 11: 954 MAIN Top5; distinct_impl_on_MAIN=806; distinct_all_VT=833
+      0x0          30
+      0x4e1570     20
+      0xa2529d39   17
+      0x4c9150     17
+      0x3f91df46   16
+PASS Q3 slot11 match-side count==Q1 match | (47, 47)
+  slot 12: match-side vt_b Top5:
+      0x4e14c0     19
+      0x4f4410     8
+      0x4c9150     8
+      0x5d5dd0     7
+      0x7ba5e0     2
+  slot 12: all 1214 VT Top5:
+      0x410300     74
+      0x4c9150     28
+      0x0          25
+      0x4105e0     22
+      0x404e0000   21
+  slot 12: 954 MAIN Top5; distinct_impl_on_MAIN=788; distinct_all_VT=947
+      0x0          25
+      0x4105e0     22
+      0x404e0000   21
+      0x4e14c0     20
+      0x3f91df46   17
+PASS Q3 slot12 match-side count==Q1 match | (47, 47)
+  slot 13: match-side vt_b Top5:
+      0x4e1920     19
+      0x4f4450     8
+      0x5f6250     7
+      0x5d5de0     7
+      0x410410     2
+  slot 13: all 1214 VT Top5:
+      0x410450     76
+      0x410310     74
+      0x4105f0     21
+      0xa2529d39   21
+      0x4e1920     20
+  slot 13: 954 MAIN Top5; distinct_impl_on_MAIN=793; distinct_all_VT=889
+      0x4105f0     21
+      0xa2529d39   21
+      0x4e1920     20
+      0x0          18
+      0x404e0000   12
+PASS Q3 slot13 match-side count==Q1 match | (47, 47)
+
+=== Q4 DERIVED-SIDE ADDRESS REUSE ACROSS SLOTS ===
+  |S11|=84 |S12|=84 |S13|=83
+  |S11&S12|=1 |S11&S13|=0 |S12&S13|=0 |S11&S12&S13|=0 |union|=250
+PASS Q4 pairwise intersections <= min set sizes | (1, 0, 0)
+PASS Q4 triple intersection <= every pairwise intersection | 0
+PASS Q4 union <= sum of set sizes | 250
+
+=== Q5 BASE-SIDE TRIPLE VALUES ===
+  (a11,a12,a13) Top5:
+      (0x4c9150, 0x4c9150, 0x410410) = 29
+      (0x4c9150, 0x4c9150, 0x410be0) = 24
+      (0x4e1570, 0x4e14c0, 0x4e1920) = 19
+      (0x4c9150, 0x4c9150, 0x5f6250) = 13
+      (0x4f43f0, 0x4f4410, 0x4f4450) = 8
+  a11==a12==a13 pairs = 6 / 125
+  distinct in-.text target addresses = 33; first 16 bytes (<=5):
+      0x4c9150     occ=172 bytes16=33c0c390909090909090909090909090
+      0x410410     occ=29  bytes16=568bf1578b7c240c8b46108bcf50e82d
+      0x410be0     occ=24  bytes16=56578b7c240c8bf157e822f8ffff8d46
+      0x4e1570     occ=19  bytes16=568bf185f67421578b7c240c81e7ff00
+      0x4e14c0     occ=19  bytes16=568bf18b06ff500885c074148b168bce
+PASS Q5 tuple counts sum==triple den | 125
+PASS Q5 equal-triple <= den | 6
+
+=== Q6 CONTROL GROUPS ===
+  group (8, 9, 10)   : s8 den=202 M=42 X=160 rate=20.79% | s9 den=145 M=112 X=33 rate=77.24% | s10 den=128 M=73 X=55 rate=57.03%
+       triple_den=128  MMM=28  XXX=17  iso=45   iso_ratio=35.16%
+PASS Q6 group (8, 9, 10) state sum==den | 128
+  group (11, 12, 13) : s11 den=125 M=47 X=78 rate=37.60% | s12 den=125 M=47 X=78 rate=37.60% | s13 den=125 M=47 X=78 rate=37.60%
+       triple_den=125  MMM=38  XXX=69  iso=107  iso_ratio=85.60%
+PASS Q6 group (11, 12, 13) state sum==den | 125
+  group (14, 15, 16) : s14 den=125 M=113 X=12 rate=90.40% | s15 den=125 M=112 X=13 rate=89.60% | s16 den=123 M=90 X=33 rate=73.17%
+       triple_den=123  MMM=87  XXX=8   iso=95   iso_ratio=77.24%
+PASS Q6 group (14, 15, 16) state sum==den | 123
+  iso_ratio deltas vs (8,9,10)=50.44 pp (z=8.19), vs (14,15,16)=8.36 pp (z=1.69)
+  two-sided p: z>1.96 significant at 0.05; |z8|=8.19 |z14|=1.69
+  VERDICT: 11/12/13 仅与部分对照显著不同，证据不足以下定论
+
+=== R1 ORDER PERMUTATION CONTROLS ===
+  (11,12,14): triple_den=125 iso=51 ratio=40.80%
+  (11,13,12): triple_den=125 iso=107 ratio=85.60%
+PASS R1 permutation invariance (11,13,12)==(11,12,13) | (107, 107)
+
+=== R2 SHUFFLED PAIRING CONTROL ===
+  slot 11 shuffled den=16 match=1 rate=6.25% | real match=47 rate=37.60%
+  slot 12 shuffled den=15 match=1 rate=6.67% | real match=47 rate=37.60%
+  slot 13 shuffled den=15 match=1 rate=6.67% | real match=47 rate=37.60%
+PASS R2 shuffle match < real on all 3 slots | {11: (1, 47), 12: (1, 47), 13: (1, 47)}
+
+=== R3 SHORT-N SLOT HANDLING ===
+  pairs with min(n_d,n_b) < 14 = 478
+  slot 11: SKIP match=47 den=125 rate=37.60% | ZERO match=47 den=603 rate=7.79%
+  slot 12: SKIP match=47 den=125 rate=37.60% | ZERO match=47 den=603 rate=7.79%
+  slot 13: SKIP match=47 den=125 rate=37.60% | ZERO match=47 den=603 rate=7.79%
+PASS R3 skip match == zero match (short pairs counted mismatch) | {11: (47, 47), 12: (47, 47), 13: (47, 47)}
+PASS R3 skip den == Q1 den
+
+=== PROCESS HYGIENE ===
+orphan slot1113 python processes at close: 0 []
+PASS no orphan slot1113 python processes | 0
+
+=== FINAL ===
+PASS asserts >= 12 | 30

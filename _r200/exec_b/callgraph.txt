@@ -1,0 +1,215 @@
+PASS A1 COL==1214 (measured 1214)
+PASS A2 VT==1214 (measured 1214)
+PASS A3 slot total==14044 (measured 14044)
+PASS A4 main tables==954 (measured 954)
+PASS A5 pairs==603 (measured 603)
+PASS A6 derived slot0 mismatch==516 (measured 516)
+PASS A7 all 516 bodies disassembled
+PASS A8 T nonempty and bounded (measured 51)
+[P4] first-body-call T=51  per-store next-call events=538 (R199 expects 538)
+PASS A8b per-store next-call events==538 (measured 538)
+[Q1] CALLAT total=68236, distinct call targets=6719, disasm resync events=139
+PASS A9 CALLAT>10000 (measured 68236)
+PASS A10 distinct call targets>1000 (measured 6719)
+[Q1] call 0x7C8B3D: disasm_lite sites=4498 (R199 ref >=503)
+PASS A11 disasm_lite call-0x7c8b3d sites>=503 (measured 4498)
+[Q1] call 0x7C8B3D: byte-scan(E8+rel32) sites=4499
+PASS A12 byte-scan call sites>0 (measured 4499)
+[Q1/R2] two口径 DIFFER: disasm=4498 byte=4499; disasm-only=0 byte-only=1
+   byte-only site 0x74836a
+[Q2] |T|=51; call-point histogram 1=11 2..3=10 4..10=16 >10=14
+PASS A13 histogram sums to |T|
+[Q2] top10 by call points: [('0x7c8b3d', 4498, 1229), ('0x7b46f0', 883, 176), ('0x7b6760', 384, 116), ('0x43ae50', 279, 148), ('0x431b80', 251, 133), ('0x7c93e8', 172, 64), ('0x65d460', 123, 48), ('0x5256f0', 85, 55), ('0x420270', 38, 2), ('0x6c9850', 35, 22)]
+[Q2s] 516 impls first-body-call target frequency Top20: [('0x7c8b3d', 360), ('0x420270', 37), ('0x65d460', 17), ('0x4e1390', 11), ('0x7b46f0', 8), ('0x55a9b0', 6), ('0x5d5d20', 6), ('0x43ae50', 5), ('0x437fc0', 4), ('0x5d8c80', 4), ('0x7b6760', 4), ('0x5565a0', 2), ('0x631c80', 2), ('0x6c9850', 2), ('0x6b1d00', 2), ('0x432700', 2), ('0x65d660', 2), ('0x5cb6c0', 2), ('0x624130', 2), ('0x431b80', 1)]
+[Q2s] first call == 0x7C8B3D: 360/510; distinct targets excluding it: 50; singleton targets (freq==1): 32
+PASS A13b first-call frequency sums to >=|T|
+[Q3] in-vtable after-store-first calls=3 (task P5 expects 3); body-first calls=9
+PASS A14 in-vtable after-store-first calls==3 (measured 3)
+   impl=0x4886e0 target=0x557ac0 store_imm=0x7e4f84 slots=[['0x7e5054', 40], ['0x7ed10c', 40]] verdict=巧合地址出现在某个槽里
+   impl=0x58a5b0 target=0x40b270 store_imm=0x7ed500 slots=[['0x7e177c', 3]] verdict=巧合地址出现在某个槽里
+   impl=0x58a5b0 target=0x40b270 store_imm=0x7e177c slots=[['0x7e177c', 3]] verdict=装表后 call 槽 3
+PASS A15 Top15 size==15 (measured 15)
+[Q4] Top15:
+   0x7c8b3d calls=4498 hosts=1229 inVT=False
+       007c8b3d  push    dword ptr [esp + 4]
+       007c8b41  call    0x7c93e8
+       007c8b46  pop     ecx
+       007c8b47  ret     
+   0x7b46f0 calls=883 hosts=176 inVT=False
+       007b46f0  push    esi
+       007b46f1  mov     esi, ecx
+       007b46f3  mov     eax, dword ptr [esi]
+       007b46f5  test    eax, eax
+       007b46f7  je      0x7b4702
+       007b46f9  push    eax
+       007b46fa  call    0x7c8b3d
+       007b46ff  add     esp, 4
+       007b4702  mov     dword ptr [esi], 0
+       007b4708  pop     esi
+       007b4709  ret     
+   0x7b6760 calls=384 hosts=116 inVT=False
+       007b6760  push    esi
+       007b6761  mov     esi, ecx
+       007b6763  mov     eax, dword ptr [esi]
+       007b6765  test    eax, eax
+       007b6767  je      0x7b6772
+       007b6769  push    eax
+       007b676a  call    0x7c8b3d
+       007b676f  add     esp, 4
+       007b6772  mov     dword ptr [esi], 0
+       007b6778  pop     esi
+       007b6779  ret     
+   0x43ae50 calls=279 hosts=148 inVT=False
+       0043ae50  push    esi
+       0043ae51  mov     esi, ecx
+       0043ae53  mov     al, byte ptr [esi + 8]
+       0043ae56  test    al, al
+       0043ae58  je      0x43ae65
+       0043ae5a  mov     eax, dword ptr [esi]
+       0043ae5c  push    eax
+       0043ae5d  call    0x7c8b3d
+       0043ae62  add     esp, 4
+       0043ae65  mov     dword ptr [esi], 0
+       0043ae6b  mov     dword ptr [esi + 4], 0
+       0043ae72  mov     byte ptr [esi + 8], 0
+   0x431b80 calls=251 hosts=133 inVT=False
+       00431b80  push    ebx
+       00431b81  push    esi
+       00431b82  mov     esi, ecx
+       00431b84  xor     ebx, ebx
+       00431b86  mov     eax, dword ptr [esi + 0x30]
+       00431b89  mov     dword ptr [esi], 0x7e3a2c
+       00431b8f  cmp     eax, ebx
+       00431b91  je      0x431ba7
+       00431b93  cmp     byte ptr [esi + 0x24], bl
+       00431b96  je      0x431ba4
+       00431b98  push    eax
+       00431b99  call    0x7c8b3d
+   0x7c93e8 calls=172 hosts=64 inVT=False
+       007c93e8  push    esi
+       007c93e9  mov     esi, dword ptr [esp + 8]
+       007c93ed  test    esi, esi
+       007c93ef  je      0x7c942e
+       007c93f1  push    9
+       007c93f3  call    0x7cd9f5
+       007c93f8  push    esi
+       007c93f9  call    0x7cf7bd
+       007c93fe  pop     ecx
+       007c93ff  test    eax, eax
+       007c9401  pop     ecx
+       007c9402  je      0x7c9417
+   0x65d460 calls=123 hosts=48 inVT=False
+       0065d460  mov     eax, ecx
+       0065d462  mov     ecx, dword ptr [eax + 4]
+       0065d465  mov     dword ptr [eax], 0x7f094c
+       0065d46b  test    ecx, ecx
+       0065d46d  je      0x65d47b
+       0065d46f  mov     dword ptr [eax + 4], 0
+       0065d476  mov     eax, dword ptr [ecx]
+       0065d478  jmp     dword ptr [eax + 8]
+       0065d47b  ret     
+   0x5256f0 calls=85 hosts=55 inVT=False
+       005256f0  push    ebx
+       005256f1  push    esi
+       005256f2  xor     ebx, ebx
+       005256f4  mov     esi, ecx
+       005256f6  push    ebx
+       005256f7  push    ebx
+       005256f8  mov     dword ptr [esi], 0x7ea5f4
+       005256fe  call    0x5257c0
+       00525703  mov     eax, dword ptr [esi + 0x28]
+       00525706  push    eax
+       00525707  call    0x7c8b3d
+       0052570c  mov     dword ptr [esi + 0x28], ebx
+   0x420270 calls=38 hosts=2 inVT=False
+       00420270  mov     eax, dword ptr [esp + 4]
+       00420274  test    eax, eax
+       00420276  je      0x4202eb
+       00420278  mov     dword ptr [esp + 4], eax
+       0042027c  mov     edx, dword ptr [eax + 0x20004]
+       00420282  dec     edx
+       00420283  mov     dword ptr [eax + 0x20004], edx
+       00420289  mov     eax, dword ptr [esp + 4]
+       0042028d  mov     ecx, dword ptr [eax + 0x20004]
+       00420293  test    ecx, ecx
+       00420295  jne     0x4202eb
+       00420297  mov     edx, dword ptr [0x88a080]
+   0x6c9850 calls=35 hosts=22 inVT=False
+       006c9850  push    esi
+       006c9851  mov     esi, ecx
+       006c9853  push    edi
+       006c9854  xor     edi, edi
+       006c9856  mov     eax, dword ptr [esi + 4]
+       006c9859  mov     dword ptr [esi], 0x7e61f0
+       006c985f  cmp     eax, edi
+       006c9861  je      0x6c9869
+       006c9863  mov     ecx, dword ptr [esi + 8]
+       006c9866  mov     dword ptr [eax + 8], ecx
+       006c9869  mov     ecx, dword ptr [esi + 8]
+       006c986c  cmp     ecx, edi
+   0x624130 calls=28 hosts=16 inVT=False
+       00624130  mov     dword ptr [ecx], 0x7ef720
+       00624136  ret     
+   0x631c80 calls=26 hosts=19 inVT=False
+       00631c80  push    esi
+       00631c81  mov     esi, ecx
+       00631c83  push    edi
+       00631c84  xor     edi, edi
+       00631c86  mov     eax, dword ptr [esi + 4]
+       00631c89  mov     dword ptr [esi], 0x7e6218
+       00631c8f  cmp     eax, edi
+       00631c91  je      0x631c99
+       00631c93  mov     ecx, dword ptr [esi + 8]
+       00631c96  mov     dword ptr [eax + 8], ecx
+       00631c99  mov     ecx, dword ptr [esi + 8]
+       00631c9c  cmp     ecx, edi
+   0x4e1390 calls=19 hosts=17 inVT=False
+       004e1390  mov     dword ptr [ecx], 0x7e92bc
+       004e1396  mov     eax, dword ptr [0x8b3e90]
+       004e139b  xor     edx, edx
+       004e139d  cmp     ecx, eax
+       004e139f  jne     0x4e13b1
+       004e13a1  mov     eax, dword ptr [ecx + 0x20]
+       004e13a4  and     ah, 0xfe
+       004e13a7  mov     dword ptr [ecx + 0x20], eax
+       004e13aa  xor     eax, eax
+       004e13ac  mov     dword ptr [0x8b3e90], eax
+       004e13b1  push    esi
+       004e13b2  mov     esi, dword ptr [0x8b3e88]
+   0x65d660 calls=19 hosts=17 inVT=False
+       0065d660  mov     dword ptr [ecx], 0x7f0954
+       0065d666  ret     
+   0x557ac0 calls=10 hosts=1 inVT=True
+       00557ac0  mov     eax, dword ptr [ecx + 0x44]
+       00557ac3  test    eax, eax
+       00557ac5  jne     0x557aca
+       00557ac7  ret     4
+PASS A16 all Top15 bodies readable
+[Q5] strict criterion: first-call target body contains mov [reg{+disp}],imm32 -> 77 records
+PASS A17 reload count==77 (measured 77)
+[Q5] buckets={'eq_vt_b': 48, 'other_main': 37, 'eq_vt_d': 15, 'not_in_vt': 2} (sum=102)
+PASS A18 bucket sum>=77
+[Q6] identity clues:
+   0x7c8b3d cc_tail=0 nop_tail=0 rets=[['0x7c8b47', 'ret', '']] strings=无字符串引用
+   0x7b46f0 cc_tail=0 nop_tail=6 rets=[['0x7b4709', 'ret', '']] strings=无字符串引用
+   0x7b6760 cc_tail=0 nop_tail=6 rets=[['0x7b6779', 'ret', '']] strings=无字符串引用
+   0x43ae50 cc_tail=0 nop_tail=8 rets=[['0x43ae77', 'ret', '']] strings=无字符串引用
+   0x431b80 cc_tail=0 nop_tail=0 rets=[['0x431bbf', 'ret', '']] strings=['0x7e3a2c', '.&C']
+   0x7c93e8 cc_tail=0 nop_tail=0 rets=[['0x7c9416', 'ret', '']] strings=无字符串引用
+   0x65d460 cc_tail=0 nop_tail=4 rets=[['0x65d47b', 'ret', '']] strings=['0x7f094c', '..e']
+   0x5256f0 cc_tail=0 nop_tail=8 rets=[['0x5257b7', 'ret', '']] strings=['0x7ea5f4', '.(O']
+   0x420270 cc_tail=0 nop_tail=2 rets=[['0x4202eb', 'ret', '4']] strings=无字符串引用
+   0x6c9850 cc_tail=0 nop_tail=14 rets=[['0x6c9881', 'ret', '']] strings=['0x7e61f0', '..J']
+   0x624130 cc_tail=0 nop_tail=9 rets=[['0x624136', 'ret', '']] strings=['0x7ef720', '.Db']
+   0x631c80 cc_tail=0 nop_tail=14 rets=[['0x631cb1', 'ret', '']] strings=['0x7e6218', '..J']
+   0x4e1390 cc_tail=0 nop_tail=0 rets=[['0x4e1430', 'ret', '0x14']] strings=['0x7e92bc', '`.N']
+   0x65d660 cc_tail=0 nop_tail=9 rets=[['0x65d666', 'ret', '']] strings=['0x7f0954', '..e']
+   0x557ac0 cc_tail=0 nop_tail=0 rets=[['0x557ac7', 'ret', '4']] strings=无字符串引用
+PASS A19 most Top15 have ret
+[R1] total distinct hosts over T: primary(nearest callable entry)=2165  alt(prev CC/90 pad+1)=4357
+PASS A20 R1 primary total reproducible
+[R3] |T first1|=51  |T first3|=59  targets with >10 call points=15
+PASS A21 first3 superset of first1
+PASS A22 R3 >10 count computed
+
+SUMMARY asserts=24 fails=0 []

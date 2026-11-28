@@ -43,7 +43,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if not os.path.isdir(os.path.join(ROOT, 'lead')):
     ROOT = '/home/t628/projects/ra2-campaign-forge'
 TIER = os.path.join(ROOT, 'lead', 'next_re_20261117_r14')
-EXPECT_CUR = os.path.join(TIER, 'R17_R131_FACTINDEX_V583', 'FACT_INDEX.tsv')
+EXPECT_CUR = os.path.join(TIER, 'R17_R131_FACTINDEX_V588', 'FACT_INDEX.tsv')
 CUR = EXPECT_CUR
 IGNORE_PIN = False
 for a in sys.argv[1:]:
@@ -52,8 +52,8 @@ for a in sys.argv[1:]:
 if IGNORE_PIN:
     print('  !! WARNING --ignore-pin: sha256/master-pin assertions DISABLED (self-test only)')
 
-CUR_SHA256 = '28cf9df1cbab7c4591c26e8458c309b1cd198454e365f412f72cfec7e9debf64'
-TOTAL_BYTES = 213323
+CUR_SHA256 = 'bfad05b0a5d95dbc9e9862d15fdd43f0427f02c276476319a2760b5835bc20b4'
+TOTAL_BYTES = 239742
 GRADES = {
     'F01': '[已证]',
     'F02': '[已证]',
@@ -113,7 +113,7 @@ GRADES = {
     'F56': '[流程]',
 }
 FLOORS = {
-    'F01': (458, 14490),
+    'F01': (6847, 15247),
     'F02': (292, 192),
     'F03': (287, 217),
     'F04': (317, 226),
@@ -167,11 +167,11 @@ FLOORS = {
     'F52': (337, 90),
     'F53': (251, 377),
     'F54': (375, 211),
-    'F55': (33927, 24540),
+    'F55': (45252, 24935),
     'F56': (519, 1601),
 }
 EVID = {
-    'F01': ['lead/next_re_20261117_r14/BOARD_ARCHIVE.md', 'lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/R17_R50_ADJ_PSELF/VERDICT.md'],
+    'F01': ['lead/next_re_20261117_r14/BOARD_ARCHIVE.md', 'lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/R17_R50_ADJ_PSELF/VERDICT.md', '_r204/m1_chd.py', '_r204/m1_chd.json', '_r204/m5_pool.py', '_r204/m5_pool.json', '_r204/m6_verify.py', '_r204/m6_verify.json', '_r204/m8_laws.py', '_r204/m8_laws.json', '_r204/m10_final2.py', '_r204/m10_final2.json', '_r204/m11_ctl.py', '_r204/m11_ctl.json', '_r204/m12_audit.py', '_r204/m12_audit.json', '_r204/hy4_layout.py', '_r204/hy4_layout.json', 'lead/next_re_20261117_r14/R14_COMMON.md', '_r205/m7_final.py', '_r205/m7_final.json', '_r205/m12_ctl2.py', '_r205/m12_ctl2.json', '_r205/m16_final_vti.py', '_r205/m16_final_vti.json', '_r205/m17_runs.py', '_r205/m17_runs.json', '_r205/m18_e8.py', '_r205/m18_e8.json'],
     'F02': ['lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/BOARD_ARCHIVE.md'],
     'F03': ['lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/BOARD_ARCHIVE.md'],
     'F04': ['lead/next_re_20261117_r14/BOARD_ARCHIVE.md', 'lead/next_re_20261117_r14/BOARD_ARCHIVE.md', 'lead/next_re_20261117_r14/R17_LEDGER_1062/SECTION.md'],
@@ -225,11 +225,11 @@ EVID = {
     'F52': ['lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/NAMED_PUSH_AUDIT10/VERDICT.md'],
     'F53': ['lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/R17_R56_FACTINDEX_V53/lead_byte_checks.tsv'],
     'F54': ['lead/next_re_20261117_r14/R14_COMMON.md', 'lead/next_re_20261117_r14/NAMED_PUSH_AUDIT15/VERDICT.md'],
-    'F55': ['lead/next_re_20261117_r14/R14_COMMON.md', '_r188/r188d_resync.py', '_r188/r188d.log', '_r188/r188d.json', '_r188/r188c.log', '_r189/r189c_adjacency.py', '_r189/r189d_packing.py', '_r189/r189e_thunk_oob.py', '_r190/r190a_groups.py', '_r190/r190b_thunks.py', '_r190/r190c_rtti.py', '_r191/r191g_deliver.py', '_r191/r191d_td.py', '_r191/r191b_recheck.py', '_r192/r192e_deliver.py', '_r192/r192c_layers.py', '_r192/r192b_why.py', '_r193/r193c_slot4_lin.py', '_r193/r193d_recon.py', '_r193/r193e_recheck.py', '_r193/r193f_pad.py', '_r193/r193g_closure.py', '_r193/r193h_fields.py', '_r194/r194a_crcpath.py', '_r194/r194e_slotmap.py', '_r194/r194f_verify.py', '_r194/r194h_bracket.py', '_r194/r194i_mechanism.py', '_r194/r194j_core.py', '_r194/r194k_controls.py', '_r194/r194l_twokey.py', '_r194/r194m_strcrc.py', '_r194/r194n_final.py', '_r195/m12_final.py', '_r195/m12_final.json', '_r195/m15_state.py', '_r195/m16_ctor.py', '_r195/m17_seal.py', '_r195/m18_cross.py', '_r195/m19_final.py', '_r195/audit_r195_core.txt', '_r198/m1_vtslot.py', '_r198/m1_vtslot.json', '_r198/m2_vtslot2.py', '_r198/m3_slotuniq.py', '_r198/m4_locality.py', '_r198/m5_crctree.py', '_r198/m6_hosts.py', '_r198/m7_recon.py', '_r198/m8_crcinit2.py', '_r198/m9b_alloc.py', '_r198/m10_origin.py', '_r198/m11_origin2.py', '_r198/m12_final.py', '_r198/m13_bss.py', '_r198/m14_bss2.py', '_r198/m15_final_verify.py', '_r198/m16_selfcheck.py', '_r198/m17_stack2.py', '_r198/exec_a/vtslot.txt', '_r199/m1_pair.py', '_r199/m2_profile.py', '_r199/m3_bodies.py', '_r199/m4_coverage.py', '_r199/m5_slot0.py', '_r199/m6_slot0b.py', '_r199/m7_dtor.py', '_r199/m8_shape.py', '_r199/m9_exact.py', '_r199/m10_stubcheck.py', '_r199/m11_stubq5.py', '_r199/m12_final.py', '_r199/exec_a/prefix.json', '_r199/exec_b/stub.json'],
+    'F55': ['lead/next_re_20261117_r14/R14_COMMON.md', '_r188/r188d_resync.py', '_r188/r188d.log', '_r188/r188d.json', '_r188/r188c.log', '_r189/r189c_adjacency.py', '_r189/r189d_packing.py', '_r189/r189e_thunk_oob.py', '_r190/r190a_groups.py', '_r190/r190b_thunks.py', '_r190/r190c_rtti.py', '_r191/r191g_deliver.py', '_r191/r191d_td.py', '_r191/r191b_recheck.py', '_r192/r192e_deliver.py', '_r192/r192c_layers.py', '_r192/r192b_why.py', '_r193/r193c_slot4_lin.py', '_r193/r193d_recon.py', '_r193/r193e_recheck.py', '_r193/r193f_pad.py', '_r193/r193g_closure.py', '_r193/r193h_fields.py', '_r194/r194a_crcpath.py', '_r194/r194e_slotmap.py', '_r194/r194f_verify.py', '_r194/r194h_bracket.py', '_r194/r194i_mechanism.py', '_r194/r194j_core.py', '_r194/r194k_controls.py', '_r194/r194l_twokey.py', '_r194/r194m_strcrc.py', '_r194/r194n_final.py', '_r195/m12_final.py', '_r195/m12_final.json', '_r195/m15_state.py', '_r195/m16_ctor.py', '_r195/m17_seal.py', '_r195/m18_cross.py', '_r195/m19_final.py', '_r195/audit_r195_core.txt', '_r198/m1_vtslot.py', '_r198/m1_vtslot.json', '_r198/m2_vtslot2.py', '_r198/m3_slotuniq.py', '_r198/m4_locality.py', '_r198/m5_crctree.py', '_r198/m6_hosts.py', '_r198/m7_recon.py', '_r198/m8_crcinit2.py', '_r198/m9b_alloc.py', '_r198/m10_origin.py', '_r198/m11_origin2.py', '_r198/m12_final.py', '_r198/m13_bss.py', '_r198/m14_bss2.py', '_r198/m15_final_verify.py', '_r198/m16_selfcheck.py', '_r198/m17_stack2.py', '_r198/exec_a/vtslot.txt', '_r199/m1_pair.py', '_r199/m2_profile.py', '_r199/m3_bodies.py', '_r199/m4_coverage.py', '_r199/m5_slot0.py', '_r199/m6_slot0b.py', '_r199/m7_dtor.py', '_r199/m8_shape.py', '_r199/m9_exact.py', '_r199/m10_stubcheck.py', '_r199/m11_stubq5.py', '_r199/m12_final.py', '_r199/exec_a/prefix.json', '_r199/exec_b/stub.json', '_r200/m1_other42.py', '_r200/m2_store_off.py', '_r200/m3_off0out.py', '_r200/m4_base_owner.py', '_r200/m5_relation.py', '_r200/m6_store_fix.py', '_r200/m7_verify.py', '_r200/m8_final.py', '_r200/m9_supp.py', '_r200/m10_dispsub.py', '_r200/m11_subfill.py', '_r200/exec_a/slot1113.json', '_r200/exec_b/callgraph.txt', '_r200/m12_audit503.py', '_r200/m12_audit503.json', '_r202/m8_verify.py', '_r202/m8_verify.json', '_r202/m9_final.py', '_r202/m9_final.json', '_r202/m13_layout.py', '_r202/m13_layout.json', '_r202/m14_authority.py', '_r202/m14_authority.json', '_r202/m15_prolog.py', '_r202/m15_prolog.json', '_r202/m12_overwrite.py', '_r202/m10_inotice.py', '_r202/m11_inotice2.py', '_r202/m7_deadbranch.py', '_r202/m1_realfunc.py', '_r202/m3_caliber.py', '_r202/m4_both689.py', '_r202/m5_funcgrid.py', '_r202/m6_selfpollute.py', '_r202/b_nonehost.py', '_r202/b_nonehost.log', '_r202/audit_c.py', '_r202/audit_c.log'],
     'F56': ['lead/next_re_20261117_r14/R14_COMMON.md', '_r188/r188d_resync.py', '_r188/r188d.log', '_r186/r186d_audit_recheck.py', '_r186/r186d.log'],
 }
 EVIDB = {
-    'F01': 183,
+    'F01': 725,
     'F02': 112,
     'F03': 116,
     'F04': 187,
@@ -283,7 +283,7 @@ EVIDB = {
     'F52': 196,
     'F53': 126,
     'F54': 145,
-    'F55': 1555,
+    'F55': 2360,
     'F56': 122,
 }
 LOST = {
@@ -306,9 +306,9 @@ LOST = {
 }
 LOST_ITEMS = 43
 LOST_UNIQ = 16
-ITEMS = 257
-UNIQ = 149
-MASTER_SHA256 = '3f8dbb74d1cc0b55d4b4bbe6f7b934bfefaa32b84312edb3c0eb6948d5d95dc6'
+ITEMS = 322
+UNIQ = 213
+MASTER_SHA256 = '5e1e94dd3487332160ee2ce7ac04eace44ad65197c6e1228291bc7cfcdbdf6f8'
 
 fails = []
 def F(m): fails.append(m)
