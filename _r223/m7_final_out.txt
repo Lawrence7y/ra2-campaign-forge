@@ -1,0 +1,42 @@
+=== F1 record field usage inside 0x7c6620 ===
+PASS F1.1 only offsets 0 and 4 of the 8B record are touched [0, 4]
+PASS F1.2 record stride 8 confirmed by lea esi,[esi+eax*8] 
+PASS F1.3 no byte-level access ([esi+5..7] never read) 
+   allocator 0x6b2756..0x6b2764 touches rec+0(dword),+4(byte),+5(byte) -> 6 of 8 bytes; +6/+7 untouched
+PASS F1.4 allocator clears only rec+0..+5 (6 of 8 bytes) 0x6b2759 c641ff00 mov byte[ecx-1],0 ; 0x6b275d c60100 mov byte[ecx],0 ; ecx=rec+5
+PASS F2.1 row count global 0x8759a0 = dword[0x87f918]+1 store at 0x6b2784
+PASS F2.2 col count global 0x8759a4 = dword[0x87f914]+1 stores at 0x6b27ec / 0x6b2b3b
+PASS F2.3 alloc bytes = (rows)*(cols)*8 via lea edx,[esi*8] 0x6b2731 lea esi,[eax+1] / 0x6b2734 imul esi,ecx / 0x6b2737 lea edx,[esi*8]
+PASS F2.4 clear loop count = rows*cols-1 (esi-1, inc edx, dec/jne) 0x6b274b lea edx,[esi-1]
+
+=== F3 neighbour iteration ===
+PASS F3.1 3x3 neighbourhood: edi,ecx from -1, cmp<2 
+PASS F3.2 (0,0) skipped: single or eax,ecx at 0x7c6651 then test+je or=['0x7c6651'] test=['0x7c6653', '0x7c66f9']
+PASS F3.3 inner loop ecx closes first (0x7c670c) then outer edi (0x7c6716) ['0x7c670c', '0x7c6716']
+PASS F4.1 bit0 set + arg3!=0 -> hard return 0 (no repair) 
+PASS F4.2 bit0 clear path repairs by +/-0xc and or bit1 
+PASS F4.3 direction depends on arg2==1 (cmp [ebp+0x10],1) 
+PASS F4.4 repair = +/-0xc applied to the copied record value then written back [('0x7c66bf', 'mov', 'eax, dword ptr [ebp - 4]'), ('0x7c66c2', 'sub', 'eax, 0xc'), ('0x7c66c5', 'mov', 'dword ptr [esi], eax'), ('0x7c66d4', 'mov', 'eax, dword ptr [ebp - 4]'), ('0x7c66d7', 'add', 'eax, 0xc'), ('0x7c66da', 'mov', 'dword ptr [esi], eax')]
+
+=== F5 four-family alignment + nibble tables ===
+PASS F5.blk1 family table index mapping = [6,4,2] [6, 4, 2]
+PASS F5.blk1 4t at 8t+0x20 0x20
+PASS F5.blk2A family table index mapping = [6,4,2] [6, 4, 2]
+PASS F5.blk2A 4t at 8t+0x20 0x20
+PASS F5.blk2B family table index mapping = [6,4,2] [6, 4, 2]
+PASS F5.blk2B 4t at 8t+0x20 0x20
+PASS F5.blk2C family table index mapping = [6,4,2] [6, 4, 2]
+PASS F5.blk2C 4t at 8t+0x20 0x20
+PASS F5.5 all four families share one skeleton (verified in m4: 12/12 byte-equal with rel masked) 
+PASS F5.6 negative: if index were [2,4,6] the mapping would be reversed 
+
+=== F6 reachability summary ===
+PASS F6.1 0x7c7371 live: 2 callers 0x7c24a2/0x7c2557 
+PASS F6.2 0x7c6752 has no external call caller (self-recursion allowed) all=[] ext=[]
+PASS F6.2 0x7c6808 has no external call caller (self-recursion allowed) all=[] ext=[]
+PASS F6.2 0x7c6620 has no external call caller (self-recursion allowed) all=['0x7c66ee'] ext=[]
+PASS F6.2 0x7c62ac has no external call caller (self-recursion allowed) all=[] ext=[]
+PASS F6.2 0x7c6270 has no external call caller (self-recursion allowed) all=[] ext=[]
+PASS F6.2 0x7c6730 has no external call caller (self-recursion allowed) all=[] ext=[]
+   0x7c7371 body jmps: [('0x7c7390', '0x7c75cc'), ('0x7c739f', '0x7c75cc'), ('0x7c73b4', '0x7c7788')]
+FAILS 0 []

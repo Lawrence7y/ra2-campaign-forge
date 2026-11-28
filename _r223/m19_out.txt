@@ -1,0 +1,35 @@
+instr count (skipdata): 1394186
+  blk1   4t=0x7c6b58 ['0x7c67c3', '0x7c67d8', '0x7c67e8', '0x7c67f8']  8t=0x7c6b38 (8 entries) dec=0x7c6808
+  blk2A  4t=0x7c7778 ['0x7c73e2', '0x7c73f8', '0x7c7408', '0x7c7418']  8t=0x7c7758 (8 entries) dec=0x7c7428
+  blk2B  4t=0x7c7b3c ['0x7c77a9', '0x7c77c0', '0x7c77d0', '0x7c77e0']  8t=0x7c7b1c (8 entries) dec=0x7c77f0
+  blk2C  4t=0x7c7f10 ['0x7c7b79', '0x7c7b90', '0x7c7ba0', '0x7c7bb0']  8t=0x7c7ef0 (8 entries) dec=0x7c7bc0
+PASS K1 4 tables + 4 nibble tables, each family has one of each 
+
+=== state block (ebx = &obj[0x7d0]) offsets used inside 0x7c7371..0x7c8000 ===
+  obj+0x7d0  (4 sites)  eax, dword ptr [ebx]
+  obj+0x7d4  (4 sites)  dx, word ptr [ebx + 4]
+  obj+0x7d6  (2 sites)  eax, dword ptr [ebx + 6]
+  obj+0x7da  (2 sites)  dx, word ptr [ebx + 0xa]
+PASS K2 state block fields = obj+0x7d0/d4/d6/da (4 offsets, 12 B) [0, 4, 6, 10]
+
+  0x7c7350 clears: ['word ptr [eax + 4], 0', 'dword ptr [eax], 0', 'word ptr [eax + 0xa], 0', 'dword ptr [eax + 6], 0']
+PASS K3 initializer clears exactly obj+0x7d0/d4/d6/da ['word ptr [eax + 4], 0', 'dword ptr [eax], 0', 'word ptr [eax + 0xa], 0', 'dword ptr [eax + 6], 0']
+
+PASS K4 0x7c7350 sole caller 0x7c2a74 ['0x7c2a74']
+PASS K5 0x7c7371 exactly two callers ['0x7c24a2', '0x7c2557']
+
+PASS K6 blk1_family has no incoming rel32 []
+PASS K6 gridchk has no incoming rel32 []
+PASS K6 unpacker has no incoming rel32 []
+PASS K6 reset8 has no incoming rel32 []
+PASS K6 reset4 has no incoming rel32 []
+
+=== grid descriptor 0x8759a0..0x8759af ===
+  0x8759a0 refs=4 writes=[('0x6b2784', 'dword ptr [0x8759a0], edx'), ('0x6b2b40', 'dword ptr [0x8759a0], ecx')]
+  0x8759a4 refs=18 writes=[('0x6b27ec', 'dword ptr [0x8759a4], eax'), ('0x6b2b3b', 'dword ptr [0x8759a4], eax')]
+  0x8759a8 refs=10 writes=[('0x6b27fe', 'dword ptr [0x8759a8], esi'), ('0x6b2ae8', 'dword ptr [0x8759a8], edx')]
+  0x8759ac refs=10 writes=[('0x6b2790', 'dword ptr [0x8759ac], edx'), ('0x6b2afa', 'dword ptr [0x8759ac], edx')]
+PASS K7 0x8759a4 has exactly 2 writers 
+PASS K8 grid descriptor 0x8759a0/a4/a8/ac all written by the same allocator family 0x6b2784/0x6b27ec/0x6b27fe/0x6b2790
+PASS K9 live blk2 family never reads grid descriptor 
+FAILS 0 []

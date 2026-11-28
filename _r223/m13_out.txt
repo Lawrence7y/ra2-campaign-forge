@@ -1,0 +1,62 @@
+rel32 edges: 85307
+
+=== incoming reference audit per group [lo,hi) ===
+  blk1_family [0x7c6752,0x7c6b68)
+     incoming rel32 : []
+     incoming ind   : []
+     incoming dword : [('data', '0x874998', '0x7c6789'), ('data', '0x87499c', '0x7c6990')]
+     outgoing rel32 : [('0x7c6866', 'jmp', '0x55806b7b'), ('0x7c6996', 'jmp', '0xff844b1e'), ('0x7c6ae6', 'jmp', '0x5602aef'), ('0x7c6b0a', 'jmp', '0x26aee17'), ('0x7c6b60', 'call', '0xf87ce7cc')]
+FAIL X-blk1_family has zero incoming reference (dead) 
+  blk2_family [0x7c7371,0x7c7f20)
+     incoming rel32 : [('0x7c24a2', 'call', '0x7c7371'), ('0x7c2557', 'call', '0x7c7371')]
+     incoming ind   : []
+     incoming dword : [('data', '0x8749b0', '0x7c73b4'), ('data', '0x8749b4', '0x7c75bb'), ('data', '0x8749b8', '0x7c77c3'), ('data', '0x8749bc', '0x7c79ca'), ('data', '0x8749c0', '0x7c7bd1'), ('data', '0x8749c4', '0x7c7dd8')]
+     outgoing rel32 : [('0x7c7486', 'jmp', '0x5580779b'), ('0x7c75b6', 'jmp', '0xff84573e'), ('0x7c7706', 'jmp', '0x560370f'), ('0x7c772a', 'jmp', '0x26afa37'), ('0x7c784e', 'jmp', '0x55807b63'), ('0x7c797e', 'jmp', '0xff845b06'), ('0x7c7aca', 'jmp', '0x5603ad3'), ('0x7c7aee', 'jmp', '0x26afdfb'), ('0x7c7c1e', 'jmp', '0x55807f33'), ('0x7c7d4e', 'jmp', '0xff845ed6'), ('0x7c7e9e', 'jmp', '0x5603ea7'), ('0x7c7ec2', 'jmp', '0x26b01cf')]
+PASS X-blk2 incoming = exactly 2 calls from 0x7c24a2/0x7c2557 [('0x7c24a2', 'call', '0x7c7371'), ('0x7c2557', 'call', '0x7c7371')]
+  gridchk     [0x7c6620,0x7c672a)
+     incoming rel32 : []
+     incoming ind   : []
+     incoming dword : []
+     outgoing rel32 : [('0x7c66c3', 'call', '0x8382efd4')]
+PASS X-gridchk has zero incoming reference (dead) 
+  unpacker    [0x7c62ac,0x7c6613)
+     incoming rel32 : []
+     incoming ind   : []
+     incoming dword : [('data', '0x874990', '0x7c637a'), ('data', '0x874994', '0x7c6581')]
+     outgoing rel32 : [('0x7c62d6', 'call', '0x8c74a864'), ('0x7c62fa', 'call', '0x105ce603'), ('0x7c63fa', 'call', '0x105ce703'), ('0x7c6504', 'call', '0xf8c1ee50'), ('0x7c6519', 'call', '0x105ce822')]
+FAIL X-unpacker has zero incoming reference (dead) 
+  reset8      [0x7c6270,0x7c62ac)
+     incoming rel32 : []
+     incoming ind   : []
+     incoming dword : []
+     outgoing rel32 : []
+PASS X-reset8 has zero incoming reference (dead) 
+  reset4      [0x7c6730,0x7c6752)
+     incoming rel32 : []
+     incoming ind   : []
+     incoming dword : []
+     outgoing rel32 : []
+PASS X-reset4 has zero incoming reference (dead) 
+  stateclear  [0x7c7350,0x7c7371)
+     incoming rel32 : [('0x7c2a74', 'call', '0x7c7350')]
+     incoming ind   : []
+     incoming dword : []
+     outgoing rel32 : []
+PASS X-stateclear incoming = 1 call from 0x7c2a74 [('0x7c2a74', 'call', '0x7c7350')]
+
+=== function-boundary proof: each group entry is preceded by ret/int3/nop, never fallthrough ===
+  blk1_family entry 0x7c6752  prev_byte=0xc3  padding_run=0  byte_before_pad=0xc3
+PASS B-blk1_family entry not reachable by fallthrough (prev is ret 0xc3/0xc2 or padding run) 0xc3 pad=0
+  blk2_family entry 0x7c7371  prev_byte=0xc3  padding_run=0  byte_before_pad=0xc3
+PASS B-blk2_family entry not reachable by fallthrough (prev is ret 0xc3/0xc2 or padding run) 0xc3 pad=0
+  gridchk     entry 0x7c6620  prev_byte=0xcc  padding_run=13  byte_before_pad=0xc3
+PASS B-gridchk entry not reachable by fallthrough (prev is ret 0xc3/0xc2 or padding run) 0xc3 pad=13
+  unpacker    entry 0x7c62ac  prev_byte=0xc3  padding_run=0  byte_before_pad=0xc3
+PASS B-unpacker entry not reachable by fallthrough (prev is ret 0xc3/0xc2 or padding run) 0xc3 pad=0
+  reset8      entry 0x7c6270  prev_byte=0xcc  padding_run=13  byte_before_pad=0xc3
+PASS B-reset8 entry not reachable by fallthrough (prev is ret 0xc3/0xc2 or padding run) 0xc3 pad=13
+  reset4      entry 0x7c6730  prev_byte=0xcc  padding_run=6  byte_before_pad=0xc3
+PASS B-reset4 entry not reachable by fallthrough (prev is ret 0xc3/0xc2 or padding run) 0xc3 pad=6
+  stateclear  entry 0x7c7350  prev_byte=0xcc  padding_run=2  byte_before_pad=0xc3
+PASS B-stateclear entry not reachable by fallthrough (prev is ret 0xc3/0xc2 or padding run) 0xc3 pad=2
+FAILS 2 ['X-blk1_family has zero incoming reference (dead)', 'X-unpacker has zero incoming reference (dead)']

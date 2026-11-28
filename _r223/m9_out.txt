@@ -1,0 +1,37 @@
+=== S1 stub bodies (masked) byte-equal across families ===
+  stub0 lens [13, 13, 13, 13] equal-to-blk1 [True, True, True, True]
+  stub1 lens [15, 15, 15, 15] equal-to-blk1 [True, True, True, True]
+  stub2 lens [15, 15, 15, 15] equal-to-blk1 [True, True, True, True]
+  stub3 lens [15, 15, 15, 15] equal-to-blk1 [True, True, True, True]
+PASS S1 16/16 stub bodies byte-identical (rel32 + table-disp masked) 
+
+=== S2 inter-stub padding (only structural difference) ===
+  blk1   [('90', 1), ('90', 1), ('90', 1)]
+  blk2A  [('8bff', 2), ('90', 1), ('90', 1)]
+  blk2B  [('8d4900', 3), ('90', 1), ('90', 1)]
+  blk2C  [('8d4900', 3), ('90', 1), ('90', 1)]
+PASS S2.1 blk1 pads = 90 / 90 / 90 [('90', 1), ('90', 1), ('90', 1)]
+PASS S2.2 blk2A stub0 pad = 8bff then 90 / 90 [('8bff', 2), ('90', 1), ('90', 1)]
+PASS S2.3 blk2B & blk2C stub0 pad = 8d4900 then 90 / 90 
+PASS S2.4 pad width at stub0 = 1 / 2 / 3 / 3 for blk1 / 2A / 2B / 2C (max 3B alignment fill) {'blk1': 1, 'blk2A': 2, 'blk2B': 3, 'blk2C': 3}
+
+=== S3 table address vs entry deltas (measured, no equality assumed) ===
+  blk2A  4t+0xc20 8t+0xc20 | entry deltas ['0xc1f', '0xc20', '0xc20', '0xc20'] | entry_delta - table_delta = ['-0x1', '0x0', '0x0', '0x0']
+  blk2B  4t+0xfe4 8t+0xfe4 | entry deltas ['0xfe6', '0xfe8', '0xfe8', '0xfe8'] | entry_delta - table_delta = ['0x2', '0x4', '0x4', '0x4']
+  blk2C  4t+0x13b8 8t+0x13b8 | entry deltas ['0x13b6', '0x13b8', '0x13b8', '0x13b8'] | entry_delta - table_delta = ['-0x2', '0x0', '0x0', '0x0']
+PASS S3.1 |entry delta - family table delta| <= 4 (alignment jitter only) 
+PASS S3.2 8-table deltas == 4-table deltas 
+PASS S3.3 8-table exactly 0x20 before the 4-table in all families 
+
+=== S4 stub3 ends flush before family decoder ===
+PASS S4.blk1 stub3 end +1 == decoder entry gap 1
+PASS S4.blk2A stub3 end +1 == decoder entry gap 1
+PASS S4.blk2B stub3 end +1 == decoder entry gap 1
+PASS S4.blk2C stub3 end +1 == decoder entry gap 1
+
+=== S5 negative controls ===
+PASS S5.1 unmasked stub0 bytes differ across families (mask is necessary) 
+PASS S5.2 instruction right after stub0 body is jmp dword ptr [ebx*4+tbl] jmp dword ptr [ebx*4 + 0x7c6b58]
+PASS S5.3 stub1..3 terminate with rel jmp 
+PASS S5.4 stub0 length 13 B in all families; stub1..3 15 B 
+FAILS 0 []

@@ -1,0 +1,36 @@
+=== A1: per-stub masked bytes (imm32+disp32 masked) ===
+  blk1   k=0 0x7c67c3  len=13 instrs=5  55c1ed0433db0bede900000000
+  blk1   k=1 0x7c67d8  len=15 instrs=6  83ed0c55c1ed0433db45e900000000
+  blk1   k=2 0x7c67e8  len=15 instrs=6  83ed0855c1ed0433db45e900000000
+  blk1   k=3 0x7c67f8  len=15 instrs=6  83ed0455c1ed0433db45e900000000
+  blk2A  k=0 0x7c73e2  len=13 instrs=5  55c1ed0433db0bede900000000
+  blk2A  k=1 0x7c73f8  len=15 instrs=6  83ed0c55c1ed0433db45e900000000
+  blk2A  k=2 0x7c7408  len=15 instrs=6  83ed0855c1ed0433db45e900000000
+  blk2A  k=3 0x7c7418  len=15 instrs=6  83ed0455c1ed0433db45e900000000
+  blk2B  k=0 0x7c77a9  len=13 instrs=5  55c1ed0433db0bede900000000
+  blk2B  k=1 0x7c77c0  len=15 instrs=6  83ed0c55c1ed0433db45e900000000
+  blk2B  k=2 0x7c77d0  len=15 instrs=6  83ed0855c1ed0433db45e900000000
+  blk2B  k=3 0x7c77e0  len=15 instrs=6  83ed0455c1ed0433db45e900000000
+  blk2C  k=0 0x7c7b79  len=13 instrs=5  55c1ed0433db0bede900000000
+  blk2C  k=1 0x7c7b90  len=15 instrs=6  83ed0c55c1ed0433db45e900000000
+  blk2C  k=2 0x7c7ba0  len=15 instrs=6  83ed0855c1ed0433db45e900000000
+  blk2C  k=3 0x7c7bb0  len=15 instrs=6  83ed0455c1ed0433db45e900000000
+PASS A1 k=0 cross-table identical (4/4) distinct=1
+PASS A1 k=1 cross-table identical (4/4) distinct=1
+PASS A1 k=2 cross-table identical (4/4) distinct=1
+PASS A1 k=3 cross-table identical (4/4) distinct=1
+PASS A1b group count = 4 (k0..k3 differ from each other) 
+=== A2: after masking imm8 too, distinct patterns = 2 ===
+   55c1ed0033db0bede900000000  <- [('blk1', 0), ('blk2A', 0), ('blk2B', 0), ('blk2C', 0)]
+   83ed0055c1ed0033db45e900000000  <- [('blk1', 1), ('blk1', 2), ('blk1', 3), ('blk2A', 1), ('blk2A', 2), ('blk2A', 3), ('blk2B', 1), ('blk2B', 2), ('blk2B', 3), ('blk2C', 1), ('blk2C', 2), ('blk2C', 3)]
+PASS A2 masking imm8 too => exactly 2 distinct patterns with membership 4 / 12 [4, 12]
+PASS A2b so the correct wording is same-index-across-tables (4 groups of 4), not 16/16 identical 
+=== A3 padding after stub0 (i.e. after the jmp [reg*4+tbl] instruction) ===
+  blk1   stub0 body end 0x7c67d0 ; from there: ff249d586b7c0090 (8 B) until 0x7c67d8
+  blk2A  stub0 body end 0x7c73ef ; from there: ff249d78777c008bff (9 B) until 0x7c73f8
+  blk2B  stub0 body end 0x7c77b6 ; from there: ff249d3c7b7c008d4900 (10 B) until 0x7c77c0
+  blk2C  stub0 body end 0x7c7b86 ; from there: ff249d107f7c008d4900 (10 B) until 0x7c7b90
+PASS A3 padding sizes 1/2/3/3 as claimed 
+  corrected padding after the indirect jmp: [('blk1', '90', 1), ('blk2A', '8bff', 2), ('blk2B', '8d4900', 3), ('blk2C', '8d4900', 3)]
+PASS A3b pads = 90 / 8bff / 8d4900 / 8d4900 ['90', '8bff', '8d4900', '8d4900']
+FAILS 0 []

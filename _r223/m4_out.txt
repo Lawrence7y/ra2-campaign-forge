@@ -1,0 +1,33 @@
+=== stub spans (entry k start -> next entry start) ===
+blk1 ['0x7c67c3', '0x7c67d8', '0x7c67e8', '0x7c67f8'] spans [21, 16, 16, 15]
+blk2A ['0x7c73e2', '0x7c73f8', '0x7c7408', '0x7c7418'] spans [22, 16, 16, 15]
+blk2B ['0x7c77a9', '0x7c77c0', '0x7c77d0', '0x7c77e0'] spans [23, 16, 16, 15]
+blk2C ['0x7c7b79', '0x7c7b90', '0x7c7ba0', '0x7c7bb0'] spans [23, 16, 16, 15]
+FAIL U1 blk1 spans == blk2B/2C spans {'blk1': [21, 16, 16, 15], 'blk2A': [22, 16, 16, 15], 'blk2B': [23, 16, 16, 15], 'blk2C': [23, 16, 16, 15]}
+FAIL U2 blk2A spans = blk1 spans + 1 for all k [22, 16, 16, 15]
+
+=== byte-level stub compare (rel32 + table disp masked) ===
+  blk1 vs blk2A k=0 len 13/13 equal=True
+  blk1 vs blk2A k=1 len 15/15 equal=True
+  blk1 vs blk2A k=2 len 15/15 equal=True
+  blk1 vs blk2A k=3 len 15/15 equal=True
+  blk1 vs blk2B k=0 len 13/13 equal=True
+  blk1 vs blk2B k=1 len 15/15 equal=True
+  blk1 vs blk2B k=2 len 15/15 equal=True
+  blk1 vs blk2B k=3 len 15/15 equal=True
+  blk1 vs blk2C k=0 len 13/13 equal=True
+  blk1 vs blk2C k=1 len 15/15 equal=True
+  blk1 vs blk2C k=2 len 15/15 equal=True
+  blk1 vs blk2C k=3 len 15/15 equal=True
+
+blk1 pad after each stub: [('0x7c67d0', 8, 'ff249d586b7c0090'), ('0x7c67e7', 1, '90'), ('0x7c67f7', 1, '90')]
+blk2A pad after each stub: [('0x7c73ef', 9, 'ff249d78777c008bff'), ('0x7c7407', 1, '90'), ('0x7c7417', 1, '90')]
+
+blk1_8 ['0x7c69a1', '0x7c6a74', '0x7c6a8c', '0x7c6aa4', '0x7c6ac0', '0x7c6ad8', '0x7c6afc', '0x7c6b20']
+blk2_8 ['0x7c75c1', '0x7c7694', '0x7c76ac', '0x7c76c4', '0x7c76e0', '0x7c76f8', '0x7c771c', '0x7c7740']
+per-entry delta: ['0xc20', '0xc20', '0xc20', '0xc20', '0xc20', '0xc20', '0xc20', '0xc20']
+PASS U3 8-entry table deltas all 0xc20 ['0xc20', '0xc20', '0xc20', '0xc20', '0xc20', '0xc20', '0xc20', '0xc20']
+4-entry table deltas: [['0xc1f', '0xc20', '0xc20', '0xc20'], ['0xfe6', '0xfe8', '0xfe8', '0xfe8'], ['0x13b6', '0x13b8', '0x13b8', '0x13b8']]
+FAIL U4 4-entry table deltas all 0xc1f [['0xc1f', '0xc20', '0xc20', '0xc20'], ['0xfe6', '0xfe8', '0xfe8', '0xfe8'], ['0x13b6', '0x13b8', '0x13b8', '0x13b8']]
+PASS U5 8-entry delta 0xc20 != 4-entry delta 0xc1f (1-byte nop padding) 
+FAILS 3 ['U1 blk1 spans == blk2B/2C spans', 'U2 blk2A spans = blk1 spans + 1 for all k', 'U4 4-entry table deltas all 0xc1f']

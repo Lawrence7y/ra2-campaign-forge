@@ -1,0 +1,109 @@
+=== stores/loads to the 4-dword grid descriptor ===
+instrs: 1394186
+-- 0x8759a0  refs=4
+   0x6b2784 mov dword ptr [0x8759a0], edx   [W]
+   0x6b2b40 mov dword ptr [0x8759a0], ecx   [W]
+   0x6b2f08 mov ecx, dword ptr [0x8759a0]   [R]
+   0x6b3b1d cmp ebp, dword ptr [0x8759a0]   [R]
+-- 0x8759a4  refs=18
+   0x6b24cb imul esi, dword ptr [0x8759a4]   [R]
+   0x6b27ec mov dword ptr [0x8759a4], eax   [W]
+   0x6b2a3c mov eax, dword ptr [0x8759a4]   [R]
+   0x6b2b3b mov dword ptr [0x8759a4], eax   [W]
+   0x6b2ef6 mov eax, dword ptr [0x8759a4]   [R]
+   0x6b30ae mov edx, dword ptr [0x8759a4]   [R]
+   0x6b3894 mov edi, dword ptr [0x8759a4]   [R]
+   0x6b3a83 mov eax, dword ptr [0x8759a4]   [R]
+   0x6b3ac6 mov eax, dword ptr [0x8759a4]   [R]
+   0x6b3ae0 mov eax, dword ptr [0x8759a4]   [R]
+   0x6b3d7f mov edx, dword ptr [0x8759a4]   [R]
+   0x6b3f1a mov eax, dword ptr [0x8759a4]   [R]
+   0x6b4061 imul edi, dword ptr [0x8759a4]   [R]
+   0x6b40a3 imul edi, dword ptr [0x8759a4]   [R]
+   0x6b410c mov ebx, dword ptr [0x8759a4]   [R]
+   0x6b4248 mov ebp, dword ptr [0x8759a4]   [R]
+   0x7c6633 imul eax, dword ptr [0x8759a4]   [R]
+   0x7c666b imul ebx, dword ptr [0x8759a4]   [R]
+-- 0x8759a8  refs=10
+   0x6b27fe mov dword ptr [0x8759a8], esi   [W]
+   0x6b2877 mov eax, dword ptr [0x8759a8]   [R]
+   0x6b2ae8 mov dword ptr [0x8759a8], edx   [W]
+   0x6b2b8e mov eax, dword ptr [0x8759a8]   [R]
+   0x6b3076 mov edx, dword ptr [0x8759a8]   [R]
+   0x6b387a mov edi, dword ptr [0x8759a8]   [R]
+   0x6b3d28 mov edi, dword ptr [0x8759a8]   [R]
+   0x6b3ebf mov eax, dword ptr [0x8759a8]   [R]
+   0x6b4116 mov esi, dword ptr [0x8759a8]   [R]
+   0x6b4254 mov ecx, dword ptr [0x8759a8]   [R]
+-- 0x8759ac  refs=10
+   0x6b2790 mov dword ptr [0x8759ac], edx   [W]
+   0x6b287c mov ecx, dword ptr [0x8759ac]   [R]
+   0x6b2afa mov dword ptr [0x8759ac], edx   [W]
+   0x6b2b93 mov ecx, dword ptr [0x8759ac]   [R]
+   0x6b3071 mov eax, dword ptr [0x8759ac]   [R]
+   0x6b3880 mov esi, dword ptr [0x8759ac]   [R]
+   0x6b3d22 mov edx, dword ptr [0x8759ac]   [R]
+   0x6b3e9f mov ebp, dword ptr [0x8759ac]   [R]
+   0x6b4105 mov edx, dword ptr [0x8759ac]   [R]
+   0x6b4262 mov eax, dword ptr [0x8759ac]   [R]
+
+=== callers of the allocator 0x6b2700 and refresher 0x6b2a70 ===
+  0x6b2700 -> [('0x6b3d1d', 'call')]
+  0x6b2a70 -> [('0x5a3605', 'call')]
+
+=== alloc arithmetic (bytes) ===
+  eax=[0x87f918]; ecx=[0x87f914]; lea esi,[eax+1]; imul esi,ecx(ecx already +1); lea edx,[esi*8]
+PASS G1 alloc size = (d[0x87f918]+1)*(d[0x87f914]+1)*8 0x6b2731 lea esi,[eax+1] / 0x6b2730 inc ecx / 0x6b2734 imul esi,ecx / 0x6b2737 lea edx,[esi*8]
+PASS G2 clear loop runs esi-1 times (last record untouched) 0x6b274b lea edx,[esi-1] / 0x6b2755 inc edx / 0x6b2764 jne
+PASS G3 0x8759a0 <- d[0x87f918]+1 at 0x6b2784 
+PASS G4 0x8759a4 <- d[0x87f914]+1 at 0x6b27ec and 0x6b2b3b 
+PASS G5 0x8759ac <- d[0x87f910] at 0x6b278c 
+PASS G6 0x8759a8 <- d[0x87f90c] at 0x6b27fe (first store) ['0x6b27fe', '0x6b2ae8']
+
+=== context 0x6b2773..0x6b2810 ===
+   0x6b2773 8b1518f98700 mov edx, dword ptr [0x87f918]
+   0x6b2779 8b5c2442 mov ebx, dword ptr [esp + 0x42]
+   0x6b277d 42 inc edx
+   0x6b277e 8b0d14f98700 mov ecx, dword ptr [0x87f914]
+   0x6b2784 8915a0598700 mov dword ptr [0x8759a0], edx
+   0x6b278a 8b1510f98700 mov edx, dword ptr [0x87f910]
+   0x6b2790 8915ac598700 mov dword ptr [0x8759ac], edx
+   0x6b2796 8b542440 mov edx, dword ptr [esp + 0x40]
+   0x6b279a 8d6bf2 lea ebp, [ebx - 0xe]
+   0x6b279d 83c30e add ebx, 0xe
+   0x6b27a0 8d7af2 lea edi, [edx - 0xe]
+   0x6b27a3 66896c2416 mov word ptr [esp + 0x16], bp
+   0x6b27a8 66897c2414 mov word ptr [esp + 0x14], di
+   0x6b27ad 8b6c2414 mov ebp, dword ptr [esp + 0x14]
+   0x6b27b1 83c20e add edx, 0xe
+   0x6b27b4 66895c2416 mov word ptr [esp + 0x16], bx
+   0x6b27b9 6689542414 mov word ptr [esp + 0x14], dx
+   0x6b27be 8b5c2414 mov ebx, dword ptr [esp + 0x14]
+   0x6b27c2 895c2424 mov dword ptr [esp + 0x24], ebx
+   0x6b27c6 33db xor ebx, ebx
+   0x6b27c8 6685ff test di, di
+   0x6b27cb 0f9cc3 setl bl
+   0x6b27ce 4b dec ebx
+   0x6b27cf 8b350cf98700 mov esi, dword ptr [0x87f90c]
+   0x6b27d5 23dd and ebx, ebp
+   0x6b27d7 896c2434 mov dword ptr [esp + 0x34], ebp
+   0x6b27db 668beb mov bp, bx
+   0x6b27de 8b7c2436 mov edi, dword ptr [esp + 0x36]
+   0x6b27e2 33db xor ebx, ebx
+   0x6b27e4 8d4101 lea eax, [ecx + 1]
+   0x6b27e7 66395c2436 cmp word ptr [esp + 0x36], bx
+   0x6b27ec a3a4598700 mov dword ptr [0x8759a4], eax
+   0x6b27f1 0fbfd2 movsx edx, dx
+   0x6b27f4 0f9cc3 setl bl
+   0x6b27f7 4b dec ebx
+   0x6b27f8 2bce sub ecx, esi
+   0x6b27fa 23df and ebx, edi
+   0x6b27fc 3bca cmp ecx, edx
+   0x6b27fe 8935a8598700 mov dword ptr [0x8759a8], esi
+   0x6b2804 668bfb mov di, bx
+   0x6b2807 7c03 jl 0x6b280c
+   0x6b2809 668bca mov cx, dx
+   0x6b280c 8b .byte 0x8b
+   0x6b280d 35 .byte 0x35
+   0x6b280e 18f9 sbb cl, bh
+FAILS 0 []
