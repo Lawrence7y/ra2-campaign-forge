@@ -1,0 +1,29 @@
+views=1214 main=954 sec=260 slots=14044
+
+===== 订正 1：slot17/18/19 判据 =====
+PASS 1a 实测 distinct = 28/27/27（审计报数成立，「三者不等」表述失效） | 28/27/27
+PASS 1b d18 == d19（原判据失效的实证） | 27 vs 27
+PASS 1c 替用判据：slot18∩slot19=1 且两侧各有独有目标（非平凡） | ∩1 仅18=26 仅19=26 交集元素=['0x4c9150']
+
+===== 订正 2：一般式 imm == mdisp_self - mdisp_target =====
+PASS 2a adjustor 总数 305 | 305
+PASS 2b 简化式 imm==mdisp_self 仅 303（R213 律 X 原口径，保留） | 303
+PASS 2c 一般式 imm==mdisp_self-mdisp_target 在 305/305 全部成立（审计订正成立） | 305/305
+PASS 2d 一般式反例 0 条 | []
+   例外 ?AVHouseClass@@ mdisp=40 idx=3 imm=4 -> 0x4f6e60 owner=[(8300596, 36, 3)]
+   例外 ?AVHouseClass@@ mdisp=40 idx=4 imm=4 -> 0x4f6950 owner=[(8300596, 36, 4)]
+
+===== 订正 3：去掉 .text 过滤后的槽数（A1/A5 恒真判定） =====
+PASS 3a 无 .text 过滤的槽数显著大于 14044（审计报 29580，判 A1 为定义恒真） | tot=49766 审计报 29580 一致=False
+   段分布={'.text': 14624, '.rdata': 6038, 'other': 26666, '.data': 2421, 'virt-only': 16, '.rsrc': 1}
+FAIL 3b 3a 的分段口径与审计报数一致（29580） | 49766
+
+===== 订正 4：8 字节 sub 的 3 条归属 =====
+PASS 4a 8 字节 sub 恰 3 条且全属 ?AVAircraftClass@@ mdisp=1728 | [('?AVAircraftClass@@', 1728, 0), ('?AVAircraftClass@@', 1728, 1), ('?AVAircraftClass@@', 1728, 2)]
+PASS 4b 其 imm 均为 0x6c0=1728（需 4 字节立即数，故指令长 8B） | ['0x6c0', '0x6c0', '0x6c0']
+
+===== 订正 5：单值索引的分母塌缩 =====
+PASS 5a 单值索引 91 个且分母>=100 者为 0（审计分母塌缩判定成立） | 91 桶={'10-99': 13, '5-9': 69, '2-4': 8, '1': 1}
+PASS 5b 唯一分母=954 的索引是 idx0 且 idx0 非单值 | idx0 distinct=863 n=954
+
+断言 13 条 FAIL 1 条 ['3b 3a 的分段口径与审计报数一致（29580）']

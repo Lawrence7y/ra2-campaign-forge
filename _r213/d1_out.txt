@@ -1,0 +1,67 @@
+COL=1214 CHD=954
+不同 pBCA 数组=954 ; 不同 BCA 元素地址=1002 ; 被引用 TD 数=988
+口径A 总引用=2615  口径B 总引用=2615
+
+=== onlysec 34 条的两种引用口径 ===
+  .?AUIUnknown@@                                             A=290  B=290 C=True
+  .?AUIGameMap@@                                             A=9    B=9   C=True
+  .?AUIRTTITypeInfo@@                                        A=78   B=78  C=True
+  .?AUIPersist@@                                             A=90   B=90  C=True
+  .?AUIPersistStream@@                                       A=90   B=90  C=True
+  .?AUIFlyControl@@                                          A=1    B=1   C=True
+  .?AVStageClass@@                                           A=9    B=9   C=True
+  .?AVFlasherClass@@                                         A=6    B=6   C=True
+  .?AUIApplication@@                                         A=1    B=1   C=True
+  .?AVDiskSwap@@                                             A=1    B=1   C=True
+  .?AUIEnumConnections@@                                     A=1    B=1   C=True
+  .?AUIConnectionPoint@@                                     A=1    B=1   C=True
+  .?AUIEnumConnectionPoints@@                                A=1    B=1   C=True
+  .?AUILinkStream@@                                          A=1    B=1   C=True
+  .?AUISequentialStream@@                                    A=1    B=1   C=True
+  .?AUIStream@@                                              A=1    B=1   C=True
+  .?AUIPiggyback@@                                           A=6    B=6   C=True
+  .?AUILocomotion@@                                          A=12   B=12  C=True
+  .?AUIClassFactory@@                                        A=78   B=78  C=True
+  .?AUIConnectionPointContainer@@                            A=1    B=1   C=True
+  .?AUIPublicHouse@@                                         A=1    B=1   C=True
+  .?AUIHouse@@                                               A=1    B=1   C=True
+  .?AV?$Node@PAUINIEntry@INIClass@@@@                        A=1    B=1   C=True
+  .?AV?$Node@PAVMixFileClass@@@@                             A=1    B=1   C=True
+  .?AV?$DynamicVectorClass@W4DiskID@@@@                      A=1    B=1   C=True
+  .?AUISwizzle@@                                             A=1    B=1   C=True
+  .?AVBounceClass@@                                          A=1    B=1   C=True
+  .?AUIWOLBrowserEvent@@                                     A=1    B=1   C=True
+  .?AUINetUtilEvent@WOL@@                                    A=2    B=2   C=True
+  .?AUIChatEvent@WOL@@                                       A=2    B=2   C=True
+  .?AVCComObjectRootBase@ATL@@                               A=5    B=5   C=True
+  .?AV?$CComObjectRootEx@VCComMultiThreadModel@ATL@@@ATL@@   A=5    B=5   C=True
+  .?AUIDownloadEvent@WOL@@                                   A=1    B=1   C=True
+  .?AVCDownloadEventSink@@                                   A=1    B=1   C=True
+  次数==1：口径A 20 条 / 口径B 20 条 ; 被引用总数 口径C 34 条
+PASS D1 onlysec 34 条全部被 BCA 引用（三条口径同真） | 34
+PASS D2 口径B 下「恰被 1 条 BCD 引用」== 20 条（审计员报 32 ⇒ 其 G12 附注错，漏 14 条多引用） | 20
+PASS D3 我方 xa.py 的 20 条是口径A（CHD×元素展开）下的数，非同一把尺 | 20
+PASS D4 BCA 数组无共享（不同 pBCA 954 == CHD 954）⇒ 审计员「共享 BCA 致口径差」假设被证伪 | 954 vs 954
+PASS D4b 口径A 与口径B 总引用数相同（2615==2615）⇒ 两口径无差 | (2615, 2615)
+
+.rsrc 内 0x11c8 字面命中 = 1 处 ['0xb7a8bc']
+PASS D5 .rsrc 内 0x11c8 命中且非立即数（资源载荷） | ['0xb7a8bc']
+
+0x7f9594 在 .data/.rdata 的字面出现 = 988 次（TD+0 槽位 988 + 其他）
+PASS D6 0x7f9594 出现次数 == TD 数 988 + 非 TD 引用（.rdata 内可能另有） | 988 vs TD=988
+  .text 内 0x7f9594 字面=2 ; 0x7f9598 字面=3
+PASS D7 .text 内 0x7f9594 字面 == 2 处（审计员数） | 2
+PASS D8 .text 内 0x7f9598 字面 == 3 处（审计员数） | 3
+   0x007c8a95 前一条起始附近: mov esi, ecx ; push 0x1b ; mov dword ptr [esi], 0x7f9594
+   0x007c8b31 前一条起始附近: or bl, al ; mov eax, ecx ; mov dword ptr [eax], 0x7f9594
+   0x007ca957 前一条起始附近: rol ebx, 0x8b ; call 0x801241c2 ; add byte ptr [ebp + 0xee8dc4d], cl
+   0x007caab1 前一条起始附近: rol ebx, 0x8b ; call 0x8012431c ; add byte ptr [ebp - 0x4b173fb3], cl
+   0x007cabe1 前一条起始附近: rol ebx, 0x8b ; call 0x8012444c ; add byte ptr [ebp - 0x7b1747b3], cl
+
+vftable 位点段分布 = {'.rdata': 1214}
+PASS D9 vftable 位点全在 .rdata（1214），.data 内 0 | {'.rdata': 1214}
+PASS D10 COL==1214 且 CHD==954 | (1214, 954)
+PASS D11 TD==988 且 onlysec==34 | (988, 34)
+PASS D12 mdisp 分布 == {0:954,4:91,8:78,12:78,24:6,36:1,40:1,44:1,1728:1,21784:3} | [(0, 954), (4, 91), (8, 78), (12, 78), (24, 6), (36, 1), (40, 1), (44, 1), (1728, 1), (21784, 3)]
+
+断言 13 / FAIL 0 []

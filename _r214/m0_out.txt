@@ -1,0 +1,62 @@
+COL=1214 CHD=954 VIEW=1214 MAIN=954 SEC=260
+MAIN slots=12726 SEC slots=1318 total=14044
+
+===== G1 全槽目标面 =====
+PASS G1-1 槽总数 == 主+次 | 14044
+PASS G1-2 槽目标全部落 .text | sec分布={'.text': 14044}
+   distinct target=6692  top20=[(5017936, 205), (4261264, 78), (4260384, 78), (4260400, 78), (4260944, 77), (4261184, 77), (4260368, 76), (4261248, 75), (4261344, 75), (4260448, 75), (4261360, 74), (4261376, 74), (4260608, 74), (4260624, 74), (4261104, 73), (4260976, 72), (4261008, 72), (4261024, 72), (4260832, 61), (4261040, 59)]
+
+===== G2 主视图 vs 次视图目标集 =====
+PASS G2-1 主视图 distinct target 与次视图 distinct target | main=6345 sec=348 both=1 onlymain=6344 onlysec=347
+
+===== G3 同 slot 索引跨类一致性 =====
+  idx 槽出现次数 distinct 最高频项（前25索引）
+     0    954     863  0x410260 x75
+     1    914     520  0x410300 x74
+     2    900     714  0x410310 x74
+     3    818     716  0x4c9150 x22
+     4    806     655  0x410450 x77
+     5    648     546  0x535bd0 x42
+     6    641     327  0x535be0 x45
+     7    229      57  0x4103e0 x61
+     8    225     178  0x5565f0 x21
+     9    165      47  0x410470 x72
+    10    145      68  0x410480 x35
+    11    139      88  0x4e1570 x20
+    12    138      87  0x4e14c0 x20
+    13    138      88  0x4e1920 x20
+    14    138      23  0x410490 x72
+    15    137      23  0x4104a0 x72
+    16    135      43  0x4104b0 x59
+    17    129      16  0x410440 x57
+    18    125      15  0x4104c0 x56
+    19    125      17  0x4104f0 x73
+    20    125      16  0x410520 x56
+    21    125      13  0x410530 x57
+    22    124      11  0x410540 x77
+    23    122      39  0x410570 x46
+    24     96      16  0x410c20 x28
+  单值索引（该索引所有类同目标）个数=91 / 索引总数=344
+PASS G3-1 存在单值索引（可作为虚槽语义稳定的判据候选） | mono=91 前5=[(59, '0x5f4160', 21), (74, '0x5f4730', 21), (77, '0x5f4d10', 21), (84, '0x5f44a0', 21), (98, '0x41be90', 21)]
+PASS G3-2 索引 0 非单值（各类首槽不同） | idx0 distinct=863
+
+===== G4 高复用目标小窗口反汇编（只 12 个） =====
+   0x4c9150 x205 : xor eax, eax ; ret  ; nop 
+   0x410590 x78 : ret 4 ; nop  ; nop 
+   0x410220 x78 : mov eax, dword ptr [esp + 4] ; mov eax, dword ptr [eax + 0xc] ; ret 4
+   0x410230 x78 : mov ecx, dword ptr [0xa8b230] ; test ecx, ecx ; jne 0x410246
+   0x410450 x77 : mov ecx, dword ptr [esp + 4] ; xor eax, eax ; mov dl, byte ptr [ecx + 0x20]
+   0x410540 x77 : mov eax, dword ptr [ecx] ; sub esp, 0xc ; lea edx, [esp]
+   0x410210 x76 : mov eax, dword ptr [esp + 4] ; mov edx, dword ptr [eax - 4] ; lea ecx, [eax - 4]
+   0x410580 x75 : xor al, al ; ret 8 ; nop 
+   0x4105e0 x75 : sub dword ptr [esp + 4], 4 ; jmp 0x410260 ; int3 
+   0x410260 x75 : mov eax, dword ptr [esp + 0xc] ; push ebx ; test eax, eax
+   0x4105f0 x74 : sub dword ptr [esp + 4], 4 ; jmp 0x410300 ; int3 
+   0x410600 x74 : sub dword ptr [esp + 4], 4 ; jmp 0x410310 ; int3 
+PASS G4-1 top12 目标全部可反汇编
+
+===== G5 反控 =====
+PASS G5-1 反控：主视图起点+4（错位）仍有 .text 指针（说明槽序列非平凡对齐） | nontext=11/200
+PASS G5-2 反控：COL+4 口径取到 .text 指针数应为 0 | 0/954
+
+断言 8 条，FAIL 0 条 

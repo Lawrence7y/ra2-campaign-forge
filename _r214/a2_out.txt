@@ -1,0 +1,46 @@
+=== 1. slot18 / slot19 落点集重叠（替代“三者不等”的有效非平凡性判据）===
+  slot17 n=141 distinct=28 set=['0x00410440', '0x0048e610', '0x004aeba0', '0x004afd40', '0x004b6040', '0x004c9150', '0x004ccc80', '0x004f45b0', '0x00514d90', '0x00540110', '0x00540d60', '0x0054b1c0', '0x0055ac50', '0x005b0080', '0x005c1cc0', '0x005d6370', '0x005f6690', '0x0062fe60', '0x006632e0', '0x0069f450', '0x00718100', '0x00728af0', '0x0075acb0', '0x007740a0', '0x007a8fc0', '0x007b26d0', '0x007b9d90', '0x007bab90']
+  slot18 n=137 distinct=27 set=['0x004104c0', '0x00422be0', '0x00447ac0', '0x00486840', '0x004afe00', '0x004b63a0', '0x004c9150', '0x004ccfd0', '0x004e1960', '0x00516320', '0x00540d80', '0x0054b4d0', '0x00557fd0', '0x0055ac40', '0x005b0120', '0x005bda80', '0x005d6450', '0x005f65a0', '0x006633c0', '0x0069f510', '0x00718230', '0x00728c00', '0x0075ada0', '0x007aa6a0', '0x007b1740', '0x007b4140', '0x007ba8c0']
+  slot19 n=137 distinct=27 set=['0x004104f0', '0x00447e90', '0x0048e650', '0x004b0ef0', '0x004b50c0', '0x004c0750', '0x004c9150', '0x004cfc10', '0x004dbdf0', '0x00516370', '0x00541070', '0x0054b6e0', '0x00557b10', '0x0055ac30', '0x005b0170', '0x005bdc80', '0x005c3b10', '0x005d64c0', '0x006a05c0', '0x006b2160', '0x007192c0', '0x0072a0e0', '0x0075ae00', '0x007aa6d0', '0x007b1750', '0x007b4150', '0x007bab30']
+  slot17∩slot18 = 1 |['0x004c9150']|  仅17独有=27
+  slot18∩slot19 = 1 |['0x004c9150']|  仅18独有=26
+  slot17∩slot19 = 1 |['0x004c9150']|  仅17独有=27
+  逐视图同址(同一张视图 slot18==slot19) 的视图数=9 ; slot17==slot18=1
+  slot18 top6=[('0x004104c0', 56), ('0x005f65a0', 19), ('0x004e1960', 17), ('0x004c9150', 9), ('0x005d6450', 8), ('0x007ba8c0', 3)]
+  slot19 top6=[('0x004104f0', 73), ('0x0048e650', 15), ('0x004c9150', 9), ('0x005d64c0', 7), ('0x004dbdf0', 4), ('0x00557b10', 3)]
+
+=== 2. 0x723ea0 / 0x723eb0 的目标边界性质 ===
+  linear @0x00723e80: ['0x00723e80:mov ecx, esi', '0x00723e82:call 0x48e520', '0x00723e87:xor eax, eax', '0x00723e89:mov dword ptr [esi], 0x7e8118', '0x00723e8f:mov byte ptr [esi + 0x2c], al', '0x00723e92:mov byte ptr [esi + 0x2d], al', '0x00723e95:mov dword ptr [esi + 0x30], eax', '0x00723e98:mov eax, esi']
+  linear @0x00723e90: ['0x00723e90:inc esi', '0x00723e91:sub al, 0x88', '0x00723e93:inc esi', '0x00723e94:sub eax, 0x8b304689']
+  linear @0x00723ea0: ['0x00723ea0:mov eax, dword ptr [ecx]', '0x00723ea2:mov byte ptr [ecx + 0x2d], 1', '0x00723ea6:jmp dword ptr [eax + 0x48]', '0x00723ea9:nop ', '0x00723eaa:nop ', '0x00723eab:nop ', '0x00723eac:nop ', '0x00723ead:nop ']
+  linear @0x00723eb0: ['0x00723eb0:mov eax, dword ptr [ecx]', '0x00723eb2:mov byte ptr [ecx + 0x2d], 0', '0x00723eb6:jmp dword ptr [eax + 0x48]', '0x00723eb9:nop ', '0x00723eba:nop ', '0x00723ebb:nop ', '0x00723ebc:nop ', '0x00723ebd:nop ']
+  .text 内 e8/e9 直接指向 [0x723e00,0x723f40) 的落点分布=[('0x00723e60', 4), ('0x00723ea0', 10), ('0x00723eb0', 9), ('0x00723ec0', 2)]
+  0x723ea0 前 16 字节=462c88462d8946308bc65ec214009090
+  0x723ea0 本身 16 字节=8b01c6412d01ff604890909090909090
+
+=== 3. A4 mono 索引的分母分布 ===
+  mono=91 分母分桶={'10-99': 13, '5-9': 69, '2-4': 8, '1': 1}
+  mono 中分母=1（仅一类有该槽）的 idx 数=1 明细=[(343, '0x0073b140')]
+  mono 中分母>=100 的：（idx,分母,值）=[]
+  全部 954 张主视图都有的索引=[0]
+
+=== 4. m1 断言恒真检查（源码层）===
+  L9   def s32(v): return struct.unpack('<i',struct.pack('<I',v&0xffffffff))[0]   <=恒真=False
+  L38  def ck(n,c,d=''):   <=恒真=False
+  L76  ck('H1-1 每类至多一个长度最大前缀父', AMB==0 or True,'歧义类数=%d'%AMB)   <=恒真=True
+  L79  ck('H1-2 存在根类', len(roots)>0,'根数=%d'%len(roots))   <=恒真=False
+  L92  ck('H1-3 深度分布合理（存在深度>=2 的继承链）', max(DEP.values())>=2,'max=%d'%max(DEP.values()))   <=恒真=False
+  L103 ck('H1-4 反控：篡改一项后不再等于自身', bad==0,'%d/%d'%(bad,chk))   <=恒真=False
+  L113 ck('H1-5 父子对存在（非空继承边）', len(SAMP)>0,'边数=%d'%len(SAMP))   <=恒真=False
+  L119 ck('H1-6 存在多个类共享完全相同主视图（纯前缀无法区分）', True,'组数=%d 涉及类=%d'%(len(dup),sum(len(x) for x in dup)))   <=恒真=True
+  参考 m0/ex1/ex2 恒真检查（or True / 无条件字面量）:
+    m0.py 疑似恒真=0
+    ex1.py 疑似恒真=0
+    ex2.py 疑似恒真=0
+
+=== 5. R213 A/F 槽位模板口径来源检索 ===
+  rg -l 'FFF", "AAA' -> ['/home/t628/projects/ra2-campaign-forge/_r214/a2.py']
+  rg -l "'F'"        -> ['/home/t628/projects/ra2-campaign-forge/_r213/x8_out.txt', '/home/t628/projects/ra2-campaign-forge/_r213/x8.py', '/home/t628/projects/ra2-campaign-forge/_r214/a2.py', '/home/t628/projects/ra2-campaign-forge/_r213/xa.py', '/home/t628/projects/ra2-campaign-forge/_r214/ex2.py']
+  rg -l '"F"'        -> ['/home/t628/projects/ra2-campaign-forge/_r214/a2.py']
+  rg -l 'atmpl'      -> ['/home/t628/projects/ra2-campaign-forge/_r214/a2.py', '/home/t628/projects/ra2-campaign-forge/_r214/ex2.py']
+  rg -l 'AAA'        -> ['/home/t628/projects/ra2-campaign-forge/_r213/p7_board.py', '/home/t628/projects/ra2-campaign-forge/_r213/x8_out.txt', '/home/t628/projects/ra2-campaign-forge/_r213/p6_lock_board.py', '/home/t628/projects/ra2-campaign-forge/_r213/xa.py', '/home/t628/projects/ra2-campaign-forge/_r214/a2_out.txt', '/home/t628/projects/ra2-campaign-forge/_r214/ex2.py', '/home/t628/projects/ra2-campaign-forge/_r214/ex2.json', '/home/t628/projects/ra2-campaign-forge/_r214/ex2_out.txt', '/home/t628/projects/ra2-campaign-forge/_r214/a2.py', '/home/t628/projects/ra2-campaign-forge/_r213/p1_factindex_v596.py', '/home/t628/projects/ra2-campaign-forge/_r213/p5_common_2221.py', '/home/t628/projects/ra2-campaign-forge/_r213/xa_out.txt']

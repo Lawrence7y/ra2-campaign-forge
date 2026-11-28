@@ -1,0 +1,73 @@
+=== A) 0x7f9594 = 全部 954 TD 的 +0；它是什么 ===
+  where=.rdata r2o=4167060
+  0x7f9580..0x7f95c0 bytes: bcf8821a8b3fd211b7740060083316c130ee8000b78a7c004163636573732076696f6c6174696f6e202d206e6f20525454492064617461210000000000000000
+  words from 0x7f9580: [('0x7f9580', '0x1a82f8bc'), ('0x7f9584', '0x11d23f8b'), ('0x7f9588', '0x600074b7'), ('0x7f958c', '0xc1163308'), ('0x7f9590', '0x80ee30'), ('0x7f9594', '0x7c8ab7'), ('0x7f9598', '0x65636341'), ('0x7f959c', '0x76207373'), ('0x7f95a0', '0x616c6f69'), ('0x7f95a4', '0x6e6f6974'), ('0x7f95a8', '0x6e202d20'), ('0x7f95ac', '0x5452206f'), ('0x7f95b0', '0x64204954'), ('0x7f95b4', '0x21617461'), ('0x7f95b8', '0x0'), ('0x7f95bc', '0x0')]
+  字符串 @0x7f9598 = b'Access violation - no RTTI data!'
+
+=== B) 0x7f9594 的 4 个槽反汇编（type_info vftable 期望 ~dtor/name）===
+  slot0 = 0x007c8ab7 where=.text  bytes=568bf1e8cfffffff
+        007c8ab7 push esi
+        007c8ab8 mov esi, ecx
+        007c8aba call 0x7c8a8e
+        007c8abf test byte ptr [esp + 8], 1
+        007c8ac4 je 0x7c8acd
+        007c8ac6 push esi
+  slot1 = 0x65636341 where=other  bytes=None
+  slot2 = 0x76207373 where=other  bytes=None
+  slot3 = 0x616c6f69 where=other  bytes=None
+
+=== C) 0x11c7/0x11c8 是否还出现在 .rdata/.data（接口 ID 表）===
+
+=== D) 0x6d1770 完整（含分支2 到 0x6d17ef）===
+  006d17b1  cmp eax, 0x11c8
+  006d17b6  jne 0x6d17ef
+  006d17b8  mov ecx, dword ptr [0xb0cc1c]
+  006d17be  mov eax, dword ptr [ecx*4 + 0xb0cb78]
+  006d17c5  test eax, eax
+  006d17c7  jl 0x6d17ea
+  006d17c9  cmp eax, 0x19
+  006d17cc  jge 0x6d17ea
+  006d17ce  lea ecx, [eax + eax*2]
+  006d17d1  shl ecx, 5
+  006d17d4  add ecx, 0xb0c1c0
+  006d17da  test ecx, ecx
+  006d17dc  je 0x6d17ea
+  006d17de  mov al, byte ptr [ecx + 0x2d]
+  006d17e1  test al, al
+  006d17e3  je 0x6d17ea
+  006d17e5  call 0x723eb0
+  006d17ea  mov al, 1
+  006d17ec  ret 8
+  006d17ef  xor al, al
+  006d17f1  ret 8
+  006d17f4  nop 
+  006d17f5  nop 
+  006d17f6  nop 
+  006d17f7  nop 
+  006d17f8  nop 
+  006d17f9  nop 
+  006d17fa  nop 
+  006d17fb  nop 
+  006d17fc  nop 
+  006d17fd  nop 
+  006d17fe  nop 
+  006d17ff  nop 
+  006d1800  mov eax, dword ptr [esp + 4]
+  006d1804  push eax
+  006d1805  call 0x6ac210
+  006d180a  ret 4
+  006d180d  nop 
+  006d180e  nop 
+  006d180f  nop 
+
+=== E) 0x6d1770 是否被 .text 直接 call/jmp ===
+  target 0x006d1770 : call(e8)=0 jmp(e9)=0
+  target 0x006d17b1 : call(e8)=0 jmp(e9)=0
+  target 0x00723ea0 : call(e8)=0 jmp(e9)=0
+
+=== F) 0xb0cb78 / 0xb0cc1c / 0xb0c1c0 段归属与初值 ===
+  0x00b0cb78 where=virt-only dw=None
+  0x00b0cc1c where=virt-only dw=None
+  0x00b0c1c0 where=virt-only dw=None
+
+=== G) 0x123 结构 stride 96：0xb0c1c0 + 0x19*96 = 0xb0cb20 ===

@@ -1,0 +1,33 @@
+COL=1214  CHD=954  own=954  不同 pTD=954  BCA 记录=2615
+
+===== T1 vftable-COL-TD 三角闭环 =====
+PASS T1-1 每条 COL 恰有 1 个前驱位点 | min=1 max=1 覆盖 1214/1214
+PASS T1-2 前驱位点总数 == COL 数（无一对多） | 1214
+FAIL T1-3 全部 COL 的 +4 指向 .text（vftable 起于 COL+4） | 0/1214
+PASS T1-4 COL+12 == COL.pTD（pTD 字段位置） | 1214/1214
+PASS T1-5 COL+8 == 0（cdOffset 恒 0） | 1214/1214
+PASS T1-6 TD+8 内联名 == COL 名 | 1214/1214
+PASS T1-7 前驱位点 word == 该 COL 地址本身 | 逐点校验
+   vftable 长度分布(前8) = [(0, 1214)] ; 总槽数 = 0 ; 表数 = 1214
+FAIL T1-8 每个 vftable 长度 >= 1 | min=0 max=0
+
+===== T2 TD+0(pVFTable) 与视图偏移的对应 =====
+   mdisp==0 记录=954   mdisp!=0 记录=260
+FAIL T2-1 主视图(mdisp=0) TD+0 == COL+4 | 0/954
+   主视图 TD+0 段分布 = [('.rdata', 954)]
+FAIL T2-2 次视图(mdisp!=0) TD+0 指向某个主视图 vftable | 0/260
+   次视图 TD+0 段分布 = [('.rdata', 260)]
+   多记录 pTD 数=94 ; 每个 TD 只有 1 个 +0 值(恒真检) =954/954
+
+===== T3 mdisp 记录分布（含 0） =====
+   nz 值分布 = [(4, 91), (8, 78), (12, 78), (24, 6), (36, 1), (40, 1), (44, 1), (1728, 1), (21784, 3)]
+PASS T3-1 COL 记录数 == 954 + 260 | 1214
+PASS T3-2 mdisp==0 记录数 == CHD 数 | 954 vs 954
+
+===== T4 正反控：放宽任一判据后的计数 =====
+   A9 去掉 +8==0 后 COL 计数 = 1214 (基准 1214)
+   A10 去掉名字约束（+8==0 且 pTD/pCHD 段对）计数 = 1214
+   A11 去掉 |pTD 在 .data| 计数 = 1214
+   反控 sig 分布 = [(0, 1214)]
+
+断言 12 条 / FAIL 4 ['T1-3 全部 COL 的 +4 指向 .text（vftable 起于 COL+4）', 'T1-8 每个 vftable 长度 >= 1', 'T2-1 主视图(mdisp=0) TD+0 == COL+4', 'T2-2 次视图(mdisp!=0) TD+0 指向某个主视图 vftable']

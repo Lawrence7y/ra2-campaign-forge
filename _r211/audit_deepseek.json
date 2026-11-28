@@ -1,0 +1,529 @@
+{
+ "_meta": {
+  "auditor": "R17 subagent role=audit family=deepseek provider=magpie-anthropic model=work/cn:deepseek-v4.1-flash",
+  "target": "ra2bench/gamemd.exe",
+  "sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+  "image_base": "0x400000",
+  "sections_source": "pefile raw_ptr/raw_size 口径（首发用 raw_ptr/vsz 曾致 pCHD 全判不可映，COL=0，已修正）",
+  "type_descriptors_total": 988,
+  "td_header_delta": 8,
+  "type_info_vftable": "0x007f9594",
+  "col_rule": "dword==pTD 命中位置-12 即 COL；校验 sig∈(0,1,2) 且 cdOffset(+8)==0 且 pCHD 可映 且 numBaseClasses>=1 且 BCA[0].pTD∈TD 表",
+  "V_rule": "V(c)={mdisp(r): r 为同 pCHD 下全部 COL 记录, mdisp!=0}（未用 vftable 扫描）",
+  "addr_convention": "卡内 G9/G11/G12 的 0x802a18 类地址实际是 CHD 地址，own COL 在 CHD+16（HouseClass own COL=0x802a28）",
+  "prior_file_collision": "写入前该路径已存在另一份 deepseek 审计（sha256 8ed4e10…46f2b19，mtime 2026-11-28T16:39:36）；本文件是独立复算后的覆盖版本，12 条结论与之一致，差异已记入各条 note",
+  "verified": "G1..G6 已用文件内 _recompute_minimal_command 原样实跑复现（TD988/COL1214/CHD954/BCA2615/非零387；G2=0,G3=0,G4=15,G5=91,G6=81）"
+ },
+ "G1": {
+  "pass": true,
+  "values": {
+   "col_records": 1214,
+   "chd_distinct": 954,
+   "bca_elements": 2615,
+   "bca_distinct_bcd": 1002,
+   "bca_elements_mdisp_nonzero": 387,
+   "col_records_mdisp_nonzero": 260,
+   "col_records_mdisp_zero_own": 954,
+   "note": "1214/954/2615 复算一致；387 仅 BCA 元素口径成立（1214 条 COL 记录口径非零=260，去重 BCD 非零=24）"
+  }
+ },
+ "G2": {
+  "pass": true,
+  "values": {
+   "classes_checked": 954,
+   "mismatch": 0,
+   "INTERFACE_count": 26,
+   "TD_OWN_count": 954,
+   "union_count": 978
+  }
+ },
+ "G3": {
+  "pass": true,
+  "values": {
+   "classes_checked": 954,
+   "mismatch": 0
+  }
+ },
+ "G4": {
+  "pass": true,
+  "values": {
+   "mismatch": 15,
+   "expected": 15,
+   "classes": [
+    ".?AVAircraftClass@@",
+    ".?AVAnimClass@@",
+    ".?AVBuildingClass@@",
+    ".?AVFactoryClass@@",
+    ".?AVFootClass@@",
+    ".?AVInfantryClass@@",
+    ".?AVTechnoClass@@",
+    ".?AVTerrainClass@@",
+    ".?AVUnitClass@@",
+    ".?AVVoxelAnimClass@@",
+    ".?AV?$CComObject@VCNetUtilEventSink@@@ATL@@",
+    ".?AV?$CComObject@VCChatEventSink@@@ATL@@",
+    ".?AVCNetUtilEventSink@@",
+    ".?AVCChatEventSink@@",
+    ".?AV?$CComObject@VCDownloadEventSink@@@ATL@@"
+   ]
+  }
+ },
+ "G5": {
+  "pass": true,
+  "values": {
+   "mismatch": 91,
+   "expected": 91
+  }
+ },
+ "G6": {
+  "pass": true,
+  "values": {
+   "mismatch": 81,
+   "expected": 81
+  }
+ },
+ "G7": {
+  "pass": true,
+  "values": {
+   "union_mdisp": [
+    4,
+    8,
+    12,
+    24,
+    36,
+    40,
+    44,
+    172,
+    176,
+    240,
+    248,
+    1728,
+    21784
+   ],
+   "union_size": 13,
+   "classes_equal_union": 0
+  }
+ },
+ "G8": {
+  "pass": true,
+  "values": {
+   "distinct_ptd": 5,
+   "excluded_bcd_records": 26,
+   "detail": [
+    {
+     "pTD": "0x00817ab8",
+     "name": ".?AVStageClass@@",
+     "av_prefix": true,
+     "col_refs": 0,
+     "bca_refs": 9,
+     "excluded_bcd_records": 9
+    },
+    {
+     "pTD": "0x00817ad8",
+     "name": ".?AVFlasherClass@@",
+     "av_prefix": true,
+     "col_refs": 0,
+     "bca_refs": 6,
+     "excluded_bcd_records": 6
+    },
+    {
+     "pTD": "0x0084a860",
+     "name": ".?AV?$CComObjectRootEx@VCComMultiThreadModel@ATL@@@ATL@@",
+     "av_prefix": true,
+     "col_refs": 0,
+     "bca_refs": 5,
+     "excluded_bcd_records": 5
+    },
+    {
+     "pTD": "0x0084a838",
+     "name": ".?AVCComObjectRootBase@ATL@@",
+     "av_prefix": true,
+     "col_refs": 0,
+     "bca_refs": 5,
+     "excluded_bcd_records": 5
+    },
+    {
+     "pTD": "0x00845e30",
+     "name": ".?AVBounceClass@@",
+     "av_prefix": true,
+     "col_refs": 0,
+     "bca_refs": 1,
+     "excluded_bcd_records": 1
+    }
+   ],
+   "onlysec_note": "5 个 pTD 均为 0 条 COL 引用（onlysec 成立），但被 BCA 引用 9/6/1/5/5 次——onlysec 指无 COL(即无 vftable)，不是无引用"
+  }
+ },
+ "G9": {
+  "pass": true,
+  "values": {
+   "finding": "结论实质成立，字面有两处偏差",
+   "literal_issues": [
+    "8 个地址是 CHD 而非 COL（own COL=CHD+16）",
+    "mdisp=4 的两条记录按 BCA 顺序为 idx#n=IRTTITypeInfo/ILocomotion、idx#n+1=IUnknown；『第二记录』若按 BCA 序则是 IUnknown，IRTTITypeInfo/ILocomotion 是第一条"
+   ],
+   "detail": [
+    {
+     "addr": "0x00802a18",
+     "class": ".?AVHouseClass@@",
+     "is_chd_not_col": true,
+     "own_col": "0x00802a28",
+     "V": [
+      4,
+      8,
+      12,
+      36,
+      40,
+      44
+     ],
+     "m4_records_in_bca_order": [
+      {
+       "bca_idx": 5,
+       "bcd": "0x007fb068",
+       "pTD": "0x00817770",
+       "name": ".?AUIRTTITypeInfo@@",
+       "numContainedBases": 1,
+       "attr": "0x0"
+      },
+      {
+       "bca_idx": 6,
+       "bcd": "0x007fb050",
+       "pTD": "0x00816b70",
+       "name": ".?AUIUnknown@@",
+       "numContainedBases": 0,
+       "attr": "0x2"
+      }
+     ]
+    },
+    {
+     "addr": "0x007fb4b0",
+     "class": ".?AVAircraftClass@@",
+     "is_chd_not_col": true,
+     "own_col": "0x007fb4c0",
+     "V": [
+      4,
+      8,
+      12,
+      1728
+     ],
+     "m4_records_in_bca_order": [
+      {
+       "bca_idx": 10,
+       "bcd": "0x007fb068",
+       "pTD": "0x00817770",
+       "name": ".?AUIRTTITypeInfo@@",
+       "numContainedBases": 1,
+       "attr": "0x0"
+      },
+      {
+       "bca_idx": 11,
+       "bcd": "0x007fb050",
+       "pTD": "0x00816b70",
+       "name": ".?AUIUnknown@@",
+       "numContainedBases": 0,
+       "attr": "0x2"
+      }
+     ]
+    },
+    {
+     "addr": "0x007ffea0",
+     "class": ".?AVDriveLocomotionClass@@",
+     "is_chd_not_col": true,
+     "own_col": "0x007ffeb0",
+     "V": [
+      4,
+      24
+     ],
+     "m4_records_in_bca_order": [
+      {
+       "bca_idx": 5,
+       "bcd": "0x007ffe30",
+       "pTD": "0x00820208",
+       "name": ".?AUILocomotion@@",
+       "numContainedBases": 1,
+       "attr": "0x0"
+      },
+      {
+       "bca_idx": 6,
+       "bcd": "0x007fb050",
+       "pTD": "0x00816b70",
+       "name": ".?AUIUnknown@@",
+       "numContainedBases": 0,
+       "attr": "0x2"
+      }
+     ]
+    },
+    {
+     "addr": "0x00800098",
+     "class": ".?AVDropPodLocomotionClass@@",
+     "is_chd_not_col": true,
+     "own_col": "0x008000a8",
+     "V": [
+      4,
+      24
+     ],
+     "m4_records_in_bca_order": [
+      {
+       "bca_idx": 5,
+       "bcd": "0x007ffe30",
+       "pTD": "0x00820208",
+       "name": ".?AUILocomotion@@",
+       "numContainedBases": 1,
+       "attr": "0x0"
+      },
+      {
+       "bca_idx": 6,
+       "bcd": "0x007fb050",
+       "pTD": "0x00816b70",
+       "name": ".?AUIUnknown@@",
+       "numContainedBases": 0,
+       "attr": "0x2"
+      }
+     ]
+    },
+    {
+     "addr": "0x00804ce0",
+     "class": ".?AVJumpjetLocomotionClass@@",
+     "is_chd_not_col": true,
+     "own_col": "0x00804cf0",
+     "V": [
+      4,
+      24
+     ],
+     "m4_records_in_bca_order": [
+      {
+       "bca_idx": 5,
+       "bcd": "0x007ffe30",
+       "pTD": "0x00820208",
+       "name": ".?AUILocomotion@@",
+       "numContainedBases": 1,
+       "attr": "0x0"
+      },
+      {
+       "bca_idx": 6,
+       "bcd": "0x007fb050",
+       "pTD": "0x00816b70",
+       "name": ".?AUIUnknown@@",
+       "numContainedBases": 0,
+       "attr": "0x2"
+      }
+     ]
+    },
+    {
+     "addr": "0x008093f8",
+     "class": ".?AVShipLocomotionClass@@",
+     "is_chd_not_col": true,
+     "own_col": "0x00809408",
+     "V": [
+      4,
+      24
+     ],
+     "m4_records_in_bca_order": [
+      {
+       "bca_idx": 5,
+       "bcd": "0x007ffe30",
+       "pTD": "0x00820208",
+       "name": ".?AUILocomotion@@",
+       "numContainedBases": 1,
+       "attr": "0x0"
+      },
+      {
+       "bca_idx": 6,
+       "bcd": "0x007fb050",
+       "pTD": "0x00816b70",
+       "name": ".?AUIUnknown@@",
+       "numContainedBases": 0,
+       "attr": "0x2"
+      }
+     ]
+    },
+    {
+     "addr": "0x0080c1d0",
+     "class": ".?AVTeleportLocomotionClass@@",
+     "is_chd_not_col": true,
+     "own_col": "0x0080c1e0",
+     "V": [
+      4,
+      24
+     ],
+     "m4_records_in_bca_order": [
+      {
+       "bca_idx": 5,
+       "bcd": "0x007ffe30",
+       "pTD": "0x00820208",
+       "name": ".?AUILocomotion@@",
+       "numContainedBases": 1,
+       "attr": "0x0"
+      },
+      {
+       "bca_idx": 6,
+       "bcd": "0x007fb050",
+       "pTD": "0x00816b70",
+       "name": ".?AUIUnknown@@",
+       "numContainedBases": 0,
+       "attr": "0x2"
+      }
+     ]
+    },
+    {
+     "addr": "0x0080d298",
+     "class": ".?AVWalkLocomotionClass@@",
+     "is_chd_not_col": true,
+     "own_col": "0x0080d2a8",
+     "V": [
+      4,
+      24
+     ],
+     "m4_records_in_bca_order": [
+      {
+       "bca_idx": 5,
+       "bcd": "0x007ffe30",
+       "pTD": "0x00820208",
+       "name": ".?AUILocomotion@@",
+       "numContainedBases": 1,
+       "attr": "0x0"
+      },
+      {
+       "bca_idx": 6,
+       "bcd": "0x007fb050",
+       "pTD": "0x00816b70",
+       "name": ".?AUIUnknown@@",
+       "numContainedBases": 0,
+       "attr": "0x2"
+      }
+     ]
+    }
+   ],
+   "common_iunknown": {
+    "bcd": "0x007fb050",
+    "pTD": "0x00816b70",
+    "name": ".?AUIUnknown@@",
+    "numContainedBases": 0,
+    "pdisp": "0xffffffff",
+    "vdisp": 0,
+    "attr": "0x2"
+   }
+  }
+ },
+ "G10": {
+  "pass": true,
+  "values": {
+   "total_classes_with_mdisp4": 96,
+   "groups": [
+    {
+     "pTD_set": [
+      ".?AUIRTTITypeInfo@@",
+      ".?AUIUnknown@@"
+     ],
+     "classes": 78
+    },
+    {
+     "pTD_set": [
+      ".?AUILocomotion@@",
+      ".?AUIUnknown@@"
+     ],
+     "classes": 12
+    },
+    {
+     "pTD_set": [
+      ".?AV?$CComObjectRootEx@VCComMultiThreadModel@ATL@@@ATL@@",
+      ".?AVCComObjectRootBase@ATL@@"
+     ],
+     "classes": 5
+    },
+    {
+     "pTD_set": [
+      ".?AUILinkStream@@",
+      ".?AUIUnknown@@"
+     ],
+     "classes": 1
+    }
+   ]
+  }
+ },
+ "G11": {
+  "pass": true,
+  "values": {
+   "classes_4_in_V": 91,
+   "classes_4_in_B": 96,
+   "B_minus_V": 5,
+   "V_minus_B": 0,
+   "diff_classes": [
+    {
+     "chd": "0x0080e680",
+     "name": ".?AV?$CComObject@VCNetUtilEventSink@@@ATL@@",
+     "V": []
+    },
+    {
+     "chd": "0x0080e740",
+     "name": ".?AV?$CComObject@VCChatEventSink@@@ATL@@",
+     "V": []
+    },
+    {
+     "chd": "0x0080e780",
+     "name": ".?AVCNetUtilEventSink@@",
+     "V": []
+    },
+    {
+     "chd": "0x0080e7c0",
+     "name": ".?AVCChatEventSink@@",
+     "V": []
+    },
+    {
+     "chd": "0x0080e998",
+     "name": ".?AV?$CComObject@VCDownloadEventSink@@@ATL@@",
+     "V": []
+    }
+   ]
+  }
+ },
+ "G12": {
+  "pass": true,
+  "values": {
+   "chd": "0x802a18",
+   "own_col": "0x00802a28",
+   "V": [
+    4,
+    8,
+    12,
+    36,
+    40,
+    44
+   ],
+   "col_records": [
+    {
+     "col": "0x008028a0",
+     "mdisp": 44
+    },
+    {
+     "col": "0x008028b8",
+     "mdisp": 40
+    },
+    {
+     "col": "0x008028d0",
+     "mdisp": 36
+    },
+    {
+     "col": "0x008028e8",
+     "mdisp": 12
+    },
+    {
+     "col": "0x00802900",
+     "mdisp": 8
+    },
+    {
+     "col": "0x00802918",
+     "mdisp": 4
+    },
+    {
+     "col": "0x00802a28",
+     "mdisp": 0
+    }
+   ],
+   "vtable": "0x007ea8a0",
+   "vtable_ref_site": "0x007ea89c",
+   "slot0": "0x004f6830"
+  }
+ },
+ "_recompute_minimal_command": "cd /home/t628/projects/ra2-campaign-forge && timeout 120 python3 - <<'EOF'\nimport struct,re,collections,pefile\nP='ra2bench/gamemd.exe';d=open(P,'rb').read();IB=0x400000\nS=[(s.VirtualAddress,max(s.Misc_VirtualSize,s.SizeOfRawData),s.PointerToRawData) for s in pefile.PE(P,fast_load=True).sections]\ndef r2o(v):\n    for va,sz,ro in S:\n        if va<=v-IB<va+sz: return ro+v-IB-va\ndef o2v(o):\n    for va,sz,ro in S:\n        if ro<=o<ro+sz: return va+IB+o-ro\nu=lambda v:(lambda o: None if o is None or o+4>len(d) else struct.unpack_from('<I',d,o)[0])(r2o(v))\nidx=collections.defaultdict(list)\nfor o in range(0,len(d)-3,4): idx[struct.unpack_from('<I',d,o)[0]].append(o)\nT={}\nfor m in re.finditer(rb'\\.\\?A(V|U)[^\\x00]{1,220}@@',d):\n    v=o2v(m.start())\n    if v and u(v-8)==0x7F9594: T[v-8]=d[m.start():d.find(b'\\x00',m.start())].decode('latin-1')\nC={}\nfor td in T:\n    for o in idx.get(td,[]):\n        col=o2v(o)-12\n        if col is None or u(col) not in (0,1,2) or u(col+8)!=0: continue\n        ch=u(col+16)\n        if ch is not None and r2o(ch) is not None: C[col]=(td,u(col+4),ch)\nB={}\nfor ch in {v[2] for v in C.values()}:\n    lst=[]\n    for i in range(u(ch+8)):\n        e=u(u(ch+12)+4*i)\n        if e and r2o(e) is not None and u(e) in T: lst.append((u(e),u(e+4),u(e+8),u(e+20)))\n    B[ch]=lst\nV={ch:{md for td,md,c2 in C.values() if c2==ch and md} for ch in B}\nO={td for td,md,ch in C.values() if md==0};I={t for t,n in T.items() if n.startswith('.?AU')}\nf=lambda ch,flt:{x[2] for x in B[ch] if x[2] and flt(x)}\nprint('TD',len(T),'COL',len(C),'CHD',len(B),'BCAelems',sum(map(len,B.values())),'BCA_mdis_nonzero',sum(1 for v in B.values() for x in v if x[2]))\nfor k,flt in (('G2',lambda x:x[0] in I or x[0] in O),('G3',lambda x:not T[x[0]].startswith('.?AV') or x[0] in O),('G4',lambda x:1),('G5',lambda x:x[0] in O),('G6',lambda x:T[x[0]].startswith('.?AU'))):\n    print(k,'mismatch',sum(1 for ch in V if V[ch]!=f(ch,flt)))\nEOF\n"
+}

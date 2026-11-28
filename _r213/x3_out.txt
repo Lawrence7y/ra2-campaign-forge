@@ -1,0 +1,47 @@
+=== A) S3 (mdisp=21784) 三表共享 slot0 = 0x6d1770 ===
+  006d1770  mov eax, dword ptr [esp + 4]
+  006d1774  cmp eax, 0x11c7
+  006d1779  jne 0x6d17b1
+  006d177b  mov eax, dword ptr [0xb0cc1c]
+  006d1780  mov eax, dword ptr [eax*4 + 0xb0cb78]
+  006d1787  test eax, eax
+  006d1789  jl 0x6d17ac
+  006d178b  cmp eax, 0x19
+  006d178e  jge 0x6d17ac
+  006d1790  lea ecx, [eax + eax*2]
+  006d1793  shl ecx, 5
+  006d1796  add ecx, 0xb0c1c0
+  006d179c  test ecx, ecx
+  006d179e  je 0x6d17ac
+  006d17a0  mov al, byte ptr [ecx + 0x2d]
+  006d17a3  test al, al
+  006d17a5  jne 0x6d17ac
+  006d17a7  call 0x723ea0
+  006d17ac  mov al, 1
+  006d17ae  ret 8
+  006d17b1  cmp eax, 0x11c8
+  006d17b6  jne 0x6d17ef
+  006d17b8  mov ecx, dword ptr [0xb0cc1c]
+  006d17be  mov eax, dword ptr [ecx*4 + 0xb0cb78]
+  006d17c5  test eax, eax
+  006d17c7  jl 0x6d17ea
+  006d17c9  cmp eax, 0x19
+  006d17cc  jge 0x6d17ea
+  006d17ce  lea ecx, [eax + eax*2]
+  006d17d1  shl ecx, 5
+
+=== B) 三个 21784 视图的完整槽表 ===
+  MouseClass/TabClass/ScrollClass 各自 slot0 = 0x6d1770（长度均 1）
+
+=== C) 0x6d1770 函数体内的 0x11c7/0x11c8 立即数（磁盘字节普查给的行）===
+  imm 0x11c7 全 .text 命中 2 处: ['0x6379fb', '0x6d1775']
+  imm 0x11c8 全 .text 命中 5 处: ['0x4a87f0', '0x5e0bc5', '0x637a8e', '0x6d17b2', '0x784ed5']
+
+=== D) 命中点上下文反汇编（每处前 4 条，确认是 cmp/and 而非数据）===
+  -- imm=0x11c7 @006379fb : call dword ptr [edx] | ret  | nop  | nop 
+  -- imm=0x11c7 @006d1775 : cmp eax, 0x11c7 | jne 0x6d17b1 | mov eax, dword ptr [0xb0cc1c] | mov eax, dword ptr [eax*4 + 0xb0cb78]
+  -- imm=0x11c8 @004a87f0 : mov dword ptr [esi + 0x11c4], eax | mov dword ptr [esi + 0x11c8], eax | mov byte ptr [esi + 0x11cc], al | mov byte ptr [esi + 0x11cd], al
+  -- imm=0x11c8 @005e0bc5 : jne 0x5e0bd7 | push 0x11c8 | push 0x831288 | xor edx, edx
+  -- imm=0x11c8 @00637a8e : call dword ptr [edx] | pop edi | pop esi | pop ebx
+  -- imm=0x11c8 @006d17b2 : cmp eax, 0x11c8 | jne 0x6d17ef | mov ecx, dword ptr [0xb0cc1c] | mov eax, dword ptr [ecx*4 + 0xb0cb78]
+  -- imm=0x11c8 @00784ed5 : push eax | push 0x11c8 | push 0x84a430 | xor edx, edx

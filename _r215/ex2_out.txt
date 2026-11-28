@@ -1,0 +1,126 @@
+=== ASSERT 视图表重建 ===
+VIEWS=1214 MAIN=954 SEC=260 SLOTS=14044 DISTINCT=6692
+PASS A0-1 views==1214 | 1214
+PASS A0-2 main==954 | 954
+PASS A0-3 sec==260 | 260
+PASS A0-4 slots==14044 | 14044
+PASS A0-5 distinct==6692 | 6692
+
+=== ADJUSTOR 全表 ===
+stub_total=70 ; imm 分布=[(4, 40), (24, 18), (1728, 3), (36, 3), (40, 3), (44, 3)]
+
+=== A.1 ?AVINoticeSink@@ 全部视图 ===
+count=1
+  start=0x007e1fbc col=0x007fafc0 mdisp=0 nslots=1 slot0=0x004c9150 slots=0x004c9150
+PASS A1-1 存在 INoticeSink 视图 | 1
+
+=== A.2 指向 INoticeSink 视图任一槽的 adjustor ===
+count=0
+
+=== A.3 mdisp=8 / 21784 出现位置 ===
+  value=8 (0x8): COL.mdisp 字段=78 ; adjustor.IMM=0 ; .rdata/.data 等值 dword=221
+    [mdisp=8] 78 张 1 槽视图（其中 ?AVAircraftClass@@ mdisp=8 视图 start=0x007e2280）；列前 8:
+      COL 0x007faff0 field=0x007faff4 bytes=08000000 cls=?AVAbstractClass@@
+      COL 0x007fb190 field=0x007fb194 bytes=08000000 cls=?AVAbstractTypeClass@@
+      COL 0x007fb340 field=0x007fb344 bytes=08000000 cls=?AVAircraftClass@@
+      COL 0x007fb4f0 field=0x007fb4f4 bytes=08000000 cls=?AVAircraftTypeClass@@
+      COL 0x007fb678 field=0x007fb67c bytes=08000000 cls=?AVAirstrikeClass@@
+      COL 0x007fb728 field=0x007fb72c bytes=08000000 cls=?AVAITriggerTypeClass@@
+      COL 0x007fb910 field=0x007fb914 bytes=08000000 cls=?AVAlphaShapeClass@@
+      COL 0x007fb9c0 field=0x007fb9c4 bytes=08000000 cls=?AVAnimClass@@
+      DWORD 0x007e64e4 bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e65e4 bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e6778 bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e6828 bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e6f20 bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e7108 bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e7294 bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e742c bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e754c bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e7954 bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e7b3c bytes=08000000 tag=other_dword sec=.rdata
+      DWORD 0x007e7b48 bytes=08000000 tag=other_dword sec=.rdata
+      ... 其余 209 处已写入 JSON
+  value=21784 (0x5518): COL.mdisp 字段=3 ; adjustor.IMM=0 ; .rdata/.data 等值 dword=4
+      COL 0x007fa9b8 field=0x007fa9bc bytes=18550000 cls=?AVMouseClass@@
+      COL 0x00805e48 field=0x00805e4c bytes=18550000 cls=?AVTabClass@@
+      COL 0x00809008 field=0x0080900c bytes=18550000 cls=?AVScrollClass@@
+      DWORD 0x007fa9bc bytes=18550000 tag=COL.mdisp sec=.rdata
+      DWORD 0x007fa9d8 bytes=18550000 tag=other_dword sec=.rdata
+      DWORD 0x00805e4c bytes=18550000 tag=COL.mdisp sec=.rdata
+      DWORD 0x0080900c bytes=18550000 tag=COL.mdisp sec=.rdata
+  结论: 8/21784 均是 COL.mdisp 字段的立即数（小端 08000000 / 18550000），未见任何 adjustor IMM 等于 8 或 21784。
+
+=== A.4 律 X: imm == mdisp_self - mdisp_target （INoticeSink 相关）===
+  判决: 在 0/0 条组合上成立 ; 0 条不成立 ; 0 条无法判定（缺 self/target 视图）
+  不成立条目单列: []
+PASS A4-1 INoticeSink 相关 adjustor 命中数如实上报 | 0
+
+=== B.1 ?AVAircraftClass@@ 全部视图（卡片 ?AVIAircraftClass@@ 在二进制中无 I）===
+count=5
+  start=0x007e2250 col=0x007fb310 mdisp=1728 nslots=9
+  start=0x007e2278 col=0x007fb328 mdisp=12 nslots=1
+  start=0x007e2280 col=0x007fb340 mdisp=8 nslots=1
+  start=0x007e2288 col=0x007fb358 mdisp=4 nslots=6
+  start=0x007e22a4 col=0x007fb4c0 mdisp=0 nslots=341
+PASS B1-1 存在 AircraftClass 视图（?AVAircraftClass@@） | 5
+PASS B1-2 含 mdisp=1728 视图 | [1728, 12, 8, 4, 0]
+
+=== B.2 三个地址的字节与反汇编 ===
+  a=0x007e2250 sec=.rdata bytes16=70 c6 41 00 80 c6 41 00 90 c6 41 00 a0 b6 41 00
+    0x007e2250 jo     0x7e2218                     bytes=70c6
+    0x007e2252 inc    ecx                          bytes=41
+    0x007e2253 add    byte ptr [eax - 0x6fffbe3a], al bytes=0080c6410090
+    dword=0x0041c670 @0x007e2250 反汇编=[('sub', 'dword ptr [esp + 4], 0x6c0', '816c2404c0060000'), ('jmp', '0x414290', 'e9137cffff'), ('int3', '', 'cc')]
+    kind=vftable_slot_location (槽地址，非桩) | dword=0x0041c670 是 adjustor 桩 imm=1728 jmp=0x00414290 codelen=13B
+    as slot value=[]
+    as slot location=['0x007e2250 ?AVAircraftClass@@ mdisp=1728 slot=0']
+  a=0x007e2254 sec=.rdata bytes16=80 c6 41 00 90 c6 41 00 a0 b6 41 00 60 b7 41 00
+    0x007e2254 add    dh, 0x41                     bytes=80c641
+    0x007e2257 add    byte ptr [eax - 0x5fffbe3a], dl bytes=0090c64100a0
+    0x007e225d mov    dh, 0x41                     bytes=b641
+    dword=0x0041c680 @0x007e2254 反汇编=[('sub', 'dword ptr [esp + 4], 0x6c0', '816c2404c0060000'), ('jmp', '0x4142f0', 'e9637cffff'), ('int3', '', 'cc')]
+    kind=vftable_slot_location (槽地址，非桩) | dword=0x0041c680 是 adjustor 桩 imm=1728 jmp=0x004142f0 codelen=13B
+    as slot value=[]
+    as slot location=['0x007e2250 ?AVAircraftClass@@ mdisp=1728 slot=1']
+  a=0x007e2258 sec=.rdata bytes16=90 c6 41 00 a0 b6 41 00 60 b7 41 00 d0 b7 41 00
+    0x007e2258 nop                                 bytes=90
+    0x007e2259 mov    byte ptr [ecx], 0xa0         bytes=c64100a0
+    0x007e225d mov    dh, 0x41                     bytes=b641
+    dword=0x0041c690 @0x007e2258 反汇编=[('sub', 'dword ptr [esp + 4], 0x6c0', '816c2404c0060000'), ('jmp', '0x414300', 'e9637cffff'), ('int3', '', 'cc')]
+    kind=vftable_slot_location (槽地址，非桩) | dword=0x0041c690 是 adjustor 桩 imm=1728 jmp=0x00414300 codelen=13B
+    as slot value=[]
+    as slot location=['0x007e2250 ?AVAircraftClass@@ mdisp=1728 slot=2']
+PASS B2-1 三地址均在文件映射内 | ['.rdata', '.rdata', '.rdata']
+
+=== B.4 槽表反查与空隙边界 ===
+  a=0x007e2250 in_slot_value=[] in_slot_location=['0x007e2250 ?AVAircraftClass@@ mdisp=1728 slot=0']
+    位置是视图起点本身；前视图=起点自身 cls=?AVAircraftClass@@ mdisp=1728 nslots=9 槽表末=0x007e2274 ; 后视图起点=0x007e2278
+  a=0x007e2254 in_slot_value=[] in_slot_location=['0x007e2250 ?AVAircraftClass@@ mdisp=1728 slot=1']
+    位置是视图起点本身；前视图=起点自身 cls=?AVAircraftClass@@ mdisp=1728 nslots=9 槽表末=0x007e2274 ; 后视图起点=0x007e2278
+  a=0x007e2258 in_slot_value=[] in_slot_location=['0x007e2250 ?AVAircraftClass@@ mdisp=1728 slot=2']
+    位置是视图起点本身；前视图=起点自身 cls=?AVAircraftClass@@ mdisp=1728 nslots=9 槽表末=0x007e2274 ; 后视图起点=0x007e2278
+
+=== B.5 三条 adjustor 落点与律 X ===
+  a=0x007e2250 body=0x0041c670 imm=1728(0x6c0) jmp=0x00414290 code=816c2404c0060000e9137cffff len=13B
+    landing(slot value)=['0x007e22a4 ?AVAircraftClass@@ mdisp=0 slot=0']
+    landing(slot location)=[]
+    body as slot value=['0x007e2250 ?AVAircraftClass@@ mdisp=1728 slot=0']
+  a=0x007e2254 body=0x0041c680 imm=1728(0x6c0) jmp=0x004142f0 code=816c2404c0060000e9637cffff len=13B
+    landing(slot value)=['0x007e22a4 ?AVAircraftClass@@ mdisp=0 slot=1']
+    landing(slot location)=[]
+    body as slot value=['0x007e2250 ?AVAircraftClass@@ mdisp=1728 slot=1']
+  a=0x007e2258 body=0x0041c690 imm=1728(0x6c0) jmp=0x00414300 code=816c2404c0060000e9637cffff len=13B
+    landing(slot value)=['0x007e22a4 ?AVAircraftClass@@ mdisp=0 slot=2']
+    landing(slot location)=[]
+    body as slot value=['0x007e2250 ?AVAircraftClass@@ mdisp=1728 slot=2']
+  stub=0x0041c670 imm=1728 self=1728 target=0 rhs=1728 ok=True self_view=0x007e2250 slot=0 target_view=0x007e22a4 slot=0
+  stub=0x0041c680 imm=1728 self=1728 target=0 rhs=1728 ok=True self_view=0x007e2250 slot=1 target_view=0x007e22a4 slot=1
+  stub=0x0041c690 imm=1728 self=1728 target=0 rhs=1728 ok=True self_view=0x007e2250 slot=2 target_view=0x007e22a4 slot=2
+  判决: 在 3/3 条组合上成立 ; 0 条不成立 ; 0 条无法判定
+  不成立条目单列: []
+PASS B5-1 三条 adjustor 均为 13B (81 6c 24 04 imm32 e9 rel32) | [('0x0041c670', 13, '816c2404c0060000e9137cffff'), ('0x0041c680', 13, '816c2404c0060000e9637cffff'), ('0x0041c690', 13, '816c2404c0060000e9637cffff')]
+
+=== SUMMARY ===
+断言 11 条 ; FAIL 0 []
+JSON=45014 bytes ; OUT=/home/t628/projects/ra2-campaign-forge/_r215/ex2_out.txt

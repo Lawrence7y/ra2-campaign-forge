@@ -1,0 +1,41 @@
+次视图=260 主视图=954
+
+=== T1 次视图 slot0 形态 ===
+  分类 = [('other', 159), ('adjustor', 101)]
+  adjustor 的 mdisp 分布 = [(4, 91), (24, 6), (36, 1), (40, 1), (44, 1), (1728, 1)]
+  非 adjustor 的 mdisp 分布 = [(8, 78), (12, 78), (21784, 3)]
+PASS T1-1 adjustor 条数 == 101 | 101
+PASS T1-2 非 adjustor 恰为 mdisp 8/12/21784 三类 | [8, 12, 21784]
+PASS T1-3 非 adjustor 条数 == 159 | 159
+
+=== T2 律 X：adjustor 立即数 == mdisp ===
+  imm==mdisp 的条数 = 101 / 101
+PASS T2-1 imm == mdisp 全 101 条 | 101/101
+  反例 = []
+  mdisp -> 观测到的 imm 集合 = {4: [4], 24: [24], 36: [36], 40: [40], 44: [44], 1728: [1728]}
+PASS T2-2 每个 mdisp 值对应的 imm 唯一且相等 | {4: [4], 1728: [1728], 24: [24], 44: [44], 40: [40], 36: [36]}
+
+=== T3 adjustor 视图内全部槽的同构性 ===
+FAIL T3-1 adjustor 视图内每个槽都是同 imm 的 adjustor
+  adjustor 视图槽数分布 = [(6, 78), (50, 12), (8, 6), (9, 2), (5, 2), (15, 1)]
+FAIL T3-2 adjustor 视图槽数恒 == 3 或更多且 <=3（除 Locomotion 50 槽组） | [5, 6, 8, 9, 15, 50]
+  同一视图内 jmp 目标数分布 = [(4, 100), (6, 1)]
+
+=== T4 反控：主视图 slot0 从不为 adjustor ===
+PASS T4-1 主视图 954 条中 slot0 为 adjustor 的条数 == 0 | 0
+  主视图 slot0 首指令助记符分布(前8) = [('push', 614), ('mov', 334), ('xor', 5), ('sub', 1)]
+
+=== T5 mdisp 值域 ===
+   [(4, 91), (8, 78), (12, 78), (24, 6), (36, 1), (40, 1), (44, 1), (1728, 1), (21784, 3)]
+PASS T5-1 adjustor 组 mdisp 集合 == {4,24,36,40,44,1728} | [4, 24, 36, 40, 44, 1728]
+PASS T5-2 六值条数合计 == 101 | 101
+
+=== T6 非 adjustor 三类 slot0 明细 ===
+  mdisp=21784  slot0=006d1770 len=1  : mov eax, dword ptr [esp + 4] ; cmp eax, 0x11c7 ; jne 0x6d17b1 ; mov eax, dword ptr [0xb0cc1c]
+  mdisp=12     slot0=00410590 len=1  : ret 4 ; nop  ; nop  ; nop 
+  mdisp=8      slot0=00410580 len=1  : xor al, al ; ret 8 ; nop  ; nop 
+  mdisp=8      slot0=0041bc30 len=1  : sub esp, 0x20 ; push esi ; mov esi, ecx ; mov dword ptr [esp + 8], esi
+  mdisp=8      slot0=00522a60 len=1  : sub esp, 0x10 ; push ebx ; push esi ; push edi
+  mdisp=8      slot0=00746100 len=1  : sub esp, 0x18 ; push ebx ; push esi ; push edi
+
+断言 10 / FAIL 2 ['T3-1 adjustor 视图内每个槽都是同 imm 的 adjustor', 'T3-2 adjustor 视图槽数恒 == 3 或更多且 <=3（除 Locomotion 50 槽组）']

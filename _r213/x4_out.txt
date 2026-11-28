@@ -1,0 +1,96 @@
+=== A) 0x6d1770 完整函数体（到 ret 8 为止）===
+  006d1770  mov eax, dword ptr [esp + 4]
+  006d1774  cmp eax, 0x11c7
+  006d1779  jne 0x6d17b1
+  006d177b  mov eax, dword ptr [0xb0cc1c]
+  006d1780  mov eax, dword ptr [eax*4 + 0xb0cb78]
+  006d1787  test eax, eax
+  006d1789  jl 0x6d17ac
+  006d178b  cmp eax, 0x19
+  006d178e  jge 0x6d17ac
+  006d1790  lea ecx, [eax + eax*2]
+  006d1793  shl ecx, 5
+  006d1796  add ecx, 0xb0c1c0
+  006d179c  test ecx, ecx
+  006d179e  je 0x6d17ac
+  006d17a0  mov al, byte ptr [ecx + 0x2d]
+  006d17a3  test al, al
+  006d17a5  jne 0x6d17ac
+  006d17a7  call 0x723ea0
+  006d17ac  mov al, 1
+  006d17ae  ret 8
+
+=== B) 两分支指令序列是否同构（除立即数外逐条相同）===
+  分支1(15条) = ['mov eax, dword ptr [0xb0cc1c]', 'mov eax, dword ptr [eax*4 + 0xb0cb78]', 'test eax, eax', 'jl 0x6d17ac', 'cmp eax, 0x19', 'jge 0x6d17ac', 'lea ecx, [eax + eax*2]', 'shl ecx, 5', 'add ecx, 0xb0c1c0', 'test ecx, ecx', 'je 0x6d17ac', 'mov al, byte ptr [ecx + 0x2d]', 'test al, al', 'jne 0x6d17ac', 'call 0x723ea0']
+  分支2(0条) = []
+
+=== C) 被调 0x723ea0 前 20 条 ===
+  00723ea0  mov eax, dword ptr [ecx]
+  00723ea2  mov byte ptr [ecx + 0x2d], 1
+  00723ea6  jmp dword ptr [eax + 0x48]
+  00723ea9  nop 
+  00723eaa  nop 
+  00723eab  nop 
+  00723eac  nop 
+  00723ead  nop 
+  00723eae  nop 
+  00723eaf  nop 
+  00723eb0  mov eax, dword ptr [ecx]
+  00723eb2  mov byte ptr [ecx + 0x2d], 0
+  00723eb6  jmp dword ptr [eax + 0x48]
+  00723eb9  nop 
+  00723eba  nop 
+  00723ebb  nop 
+  00723ebc  nop 
+  00723ebd  nop 
+  00723ebe  nop 
+  00723ebf  nop 
+
+=== D) 另两处 push 0x11c8/push 0x11c7 上下文 + 推进字符串 ===
+  005e0bc0  inc byte ptr [edx]
+  005e0bc2  jne 0x5e0bd7
+  005e0bc4  push 0x11c8
+  005e0bc9  push 0x831288
+  005e0bce  xor edx, edx
+  005e0bd0  mov ecx, 0x82c6e4
+  005e0bd5  jmp 0x5e0c35
+  005e0bd7  cmp esi, 3
+   ---
+  00784ed0  inc esp
+  00784ed1  and al, 0x3c
+  00784ed3  push eax
+  00784ed4  push 0x11c8
+  00784ed9  push 0x84a430
+  00784ede  xor edx, edx
+  00784ee0  mov ecx, 0x84a6c0
+  00784ee5  mov dword ptr [esp + 0x20], 3
+   ---
+  str@00831288 = b'D:\\ra2mdpost\\netdlg2.cpp'
+  str@0084a430 = b'D:\\ra2mdpost\\wonline.cpp'
+
+=== E) 0x6379fb / 0x637a8e 命中是否为「上一条指令的立即数字节」（假命中）===
+  006379f0  lodsb al, byte ptr [esi]
+  006379f1  add byte ptr [ebp - 0x74f48b37], al
+  006379f7  adc dword ptr [edx], ebp
+  006379fa  push 0x11c7
+  006379ff  call dword ptr [edx]
+  00637a01  ret 
+  00637a02  nop 
+  00637a03  nop 
+   ---
+  00637a80  mov ecx, dword ptr [0xac4b80]
+  00637a86  cmp ecx, ebx
+  00637a88  je 0x637a94
+  00637a8a  mov edx, dword ptr [ecx]
+  00637a8c  push ebx
+  00637a8d  push 0x11c8
+  00637a92  call dword ptr [edx]
+  00637a94  pop edi
+   ---
+
+=== F) 全部 1214 条 COL 的 TD+0 是否恒 0x7f9594 ===
+  TD+0 取值分布 = [('0x7f9594', 1214)]  TD 数=954
+
+=== G) 0x7f9594 处 16 字节 + 其前驱 ===
+  bytes: 083316c130ee8000b78a7c004163636573732076696f6c6174696f6e202d206e6f20525454492064
+  words: ['0xc1163308', '0x80ee30', '0x7c8ab7', '0x65636341', '0x76207373', '0x616c6f69', '0x6e6f6974', '0x6e202d20', '0x5452206f', '0x64204954', '0x21617461', '0x0']
