@@ -1,0 +1,199 @@
+# R194 跨家族审计（只读复核，家族=deepseek）：78 类血统集合的正面判据候选
+
+- 复算对象：`ra2bench/gamemd.exe`（531890 -> 4825360 B，sha256 见下）
+- 工具：`_r185/pe185.py`（P.SECS / sec_of / dw / cstr / r2o），capstone 仅对 5 个单址开 <=96 B 窗口
+- 脚本：全部内联 python3（无落盘脚本），本卡唯一写盘文件即本文件
+
+## 0. 前置事实复核（先说明一处卡面标签错误）
+
+| 事实 | 卡面 | 我的复算 | 判定 |
+|---|---|---|---|
+| P1 COL 总数 / 主表 / 子表 | 1214 / 954 / 260 | 1214 / 954 / 260 | **成立** |
+| P1 判据字面 "d0 in {0,1}" | d0==0 主表，d0!=0 子表 | **COL+0 在 1214 条上恒为 0**（{0:1214}），954/260 的分界在 **COL+4（mdisp）** | **标签错**：卡面 "d0" 指的是 `dword[COL+4]` |
+| P1 其余项（d2==0 / d3 在 .data / d4 在 .rdata / d3+8 为 .?A…@@） | 成立 | 1214/1214 | 成立 |
+| P2 表数 / 槽总数 | 1214 / 14044 | 1214 / 14044（多表头 COL = 0） | **成立** |
+| P2 方向 | "dword 落 .text 且其前 4 字节是 COL" | 等价表述：存在 H 使 `dword[H]==COL` 且 `dword[H+4]` 在 .text | 成立 |
+| P3 L 张数 | 78 | 78 | **成立** |
+| P4 "宿主=78，与 L 严格相等" | 78/78，双向差集 0 | 命中 0x410220 的 **COL 地址集合**与 L 交集为 **0**；但 **TD 名字集合**双向差集 0 | **地址口径不成立 / 名字口径成立**，详见 Q4 |
+
+P4 精确表述（我复算）：`0x410220` 出现在 78 张 **mdisp==4** 的 COL 表里，位置恒为 **1-based 第 5 槽**（0-based idx 4）。
+这 78 张 COL 是 L 那 78 个类名的 **mdisp==4 子表**，与 L 的主表 COL 地址是**不同对象**：
+`|L_addr \ host_addr| = 78`，`|host_addr \ L_addr| = 78`，而 `|L_name \ host_name| = 0`、`|host_name \ L_name| = 0`。
+
+## Q1 L 的独立复算 —— 成立，78 张
+
+- 全 COL 1214；主表（`dword[COL+4]==0`）**954**；L = 主表且 pCHD 基类数组含 `.?AVAbstractClass@@` 者 = **78**。
+- 78 张全部有闭合表头（`cwd[COL-4 -1]==COL` 方向正确，78/78）。
+- 类名集合 sha256 = `c0ad99a115427fb4...`；COL 地址集合 sha256 = `43b1cedf1c9ab483d0adfc7d0fb57fa8002109017642f19f72d6bfe581c15d90`。
+
+字母序列出 78 个（去 `.?AV` / `@@`）：
+
+```
+AITriggerTypeClass AbstractClass AbstractTypeClass AircraftClass AircraftTypeClass
+AirstrikeClass AlphaShapeClass AnimClass AnimTypeClass BombClass BuildingClass
+BuildingLightClass BuildingTypeClass BulletClass BulletTypeClass CampaignClass
+CaptureManagerClass CellClass DiskLaserClass EMPulseClass FactoryClass
+FoggedObjectClass FootClass HouseClass HouseTypeClass InfantryClass InfantryTypeClass
+IsometricTileClass IsometricTileTypeClass LightSourceClass MissionClass NeuronClass
+ObjectClass ObjectTypeClass OverlayClass OverlayTypeClass ParasiteClass ParticleClass
+ParticleSystemClass ParticleSystemTypeClass ParticleTypeClass RadSiteClass RadioClass
+ScriptClass ScriptTypeClass SideClass SlaveManagerClass SmudgeClass SmudgeTypeClass
+SpawnManagerClass SuperClass SuperWeaponTypeClass TActionClass TEventClass Tactical
+TagClass TagTypeClass TaskForceClass TeamClass TeamTypeClass TechnoClass
+TechnoTypeClass TemporalClass TerrainClass TerrainTypeClass TiberiumClass
+TriggerClass TriggerTypeClass TubeClass UnitClass UnitTypeClass VeinholeMonsterClass
+VoxelAnimClass VoxelAnimTypeClass WarheadTypeClass WaveClass WaypointPathClass
+WeaponTypeClass
+```
+
+COL 地址（按类名序，便于逐条核）：`AITriggerTypeClass:7FB7B0 AbstractClass:7FB118 AbstractTypeClass:7FB210 AircraftClass:7FB4C0 AircraftTypeClass:7FB5B0 AirstrikeClass:7FB6F8 AlphaShapeClass:7FB990 AnimClass:7FBA60 AnimTypeClass:7FBBB0 BombClass:7FC0F0 BuildingClass:7FC360 BuildingLightClass:7FC040 BuildingTypeClass:7FC618 BulletClass:7FC7B0 BulletTypeClass:7FC868 CampaignClass:7FC920 CaptureManagerClass:7FCB60 CellClass:7FD078 DiskLaserClass:7FFBF0 EMPulseClass:8004D8 FactoryClass:800610 FoggedObjectClass:800768 FootClass:800948 HouseClass:802A28 HouseTypeClass:8030D8 InfantryClass:8033B8 InfantryTypeClass:803478 IsometricTileClass:804A70 IsometricTileTypeClass:804BC0 LightSourceClass:8050F0 MissionClass:805D28 NeuronClass:7FC1A0 ObjectClass:807448 ObjectTypeClass:807580 OverlayClass:807638 OverlayTypeClass:8076F0 ParasiteClass:807B30 ParticleClass:807BE8 ParticleSystemClass:807CA0 ParticleSystemTypeClass:808238 ParticleTypeClass:8082F0 RadSiteClass:8086D8 RadioClass:808590 ScriptClass:808F38 ScriptTypeClass:808FF0 SideClass:8094C0 SlaveManagerClass:809700 SmudgeClass:8098E8 SmudgeTypeClass:8099A0 SpawnManagerClass:809AE8 SuperClass:80B610 SuperWeaponTypeClass:80B6C8 TActionClass:80BAF0 TEventClass:80C5E0 Tactical:80B9A8 TagClass:80BBA0 TagTypeClass:80BCF0 TaskForceClass:80BDA8 TeamClass:80BE58 TeamTypeClass:80BF10 TechnoClass:80C058 TechnoTypeClass:80C148 TemporalClass:80C328 TerrainClass:80C3E0 TerrainTypeClass:80C498 TiberiumClass:80C7D8 TriggerClass:80C968 TriggerTypeClass:80CA20 TubeClass:80CAD0 UnitClass:80CC68 UnitTypeClass:80CD28 VeinholeMonsterClass:80D048 VoxelAnimClass:80CDF8 VoxelAnimTypeClass:80CEB0 WarheadTypeClass:80D360 WaveClass:80D418 WaypointPathClass:80D5C8 WeaponTypeClass:80E460`
+
+## Q2 补集 876 —— ObjectClass 不能作区分判据
+
+| 组 | n | pCHD 数组含**精确** `.?AVObjectClass@@` | 含**任意** `.?A…@@` 基类 |
+|---|---|---|---|
+| 补集 | 876 | **0** | **876**（100%） |
+| L | 78 | **21** | **78**（100%） |
+
+附加（更宽口径，为避免"精确串"过窄）：以 `endswith('ObjectClass@@')` 计
+（把 `ObjectTypeClass` / `TechnoClass` 之类也算进来）：L = 22，补集 = **0**。
+但补集里完全没有"某类 ObjectClass"链——补集的基类 Top10 是
+`UIUnknown 130 / IClassFactory 78 / Blitter 58 / RLEBlitter 52 / CommandClass 47 / LinkClass 22 / GadgetClass 20 / rc_ptr_base 15 / ReferenceCounted 15 / ControlClass 14`。
+
+**回答**：不能。补集 876 张里含 ObjectClass 的是 **0**，含任意 .?A 基类的是 **876**；
+反向判据（"有 .?A 基类"）对两组都是 100%，零信息量；"精确含 ObjectClass"灵敏度 21/78=26.9%、特异度 876/876=100%，
+只能当**必要条件的弱佐证**，不能当正面判据（漏 57 张）。
+
+## Q3 槽数分布 —— L 明显更长，但不构成阈值判据
+
+槽数口径：表头 `H`（`dword[H]==COL`、`dword[H+4]` 在 .text）起连续落 .text 的 dword 前缀长度。
+
+| 组 | n | 中位数 | 最小 | 最大 | ≥13 | ≥14 | Q1 | Q3 | 均值 | 总和 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| L | 78 | **27.0** | **24** | **344** | **78/78** | 78/78 | 24 | 122 | 71.88 | 5607 |
+| 补集 | 876 | **7.0** | 1 | 55 | **60/876** | 60/876 | 5 | 7 | 8.13 | 7119 |
+
+L 槽数直方图：`24:26, 25:2, 27:13, 28:1, 40:7, 41:3, 48:4, 49:1, 122:10, 123:1, 124:1, 125:1, 157:1, 161:1, 309:1, 322:1, 341:2, 343:1, 344:1`
+补集槽数直方图（主峰）：`7:412, 5:158, 3:82, 9:60, 1:40, 2:14, 4:12, 10:20, …最长 55:4`
+
+**数字结论（不做因果推断）**：
+- L 的最小值 24 **高于**补集中位数 7，L 的 Q1(24) **等于** L 的最小值。
+- "槽数 ≥ 13"：L 78/78，补集 60/876（6.8%）⇒ 该阈值特异度 93.2%，灵敏度 100%，但补集仍有 60 张误报。
+- "槽数 ≥ 24"：L 78/78，补集 **44/876（5.0%）** ⇒ 更紧，MCC 意义上的最佳可分离阈值在 24~48 之间，但**任何单一槽数阈值都不能把 L 与补集切成两半**（L∈[24,344] 与补集∈[1,55] 在 [24,55] 区间重叠 44 张）。
+
+## Q4 槽 13 目标分布 —— 卡面"槽 13"是 1-based，与 0x410410 不在同一槽
+
+先说口径歧义：**1-based 第 13 槽 = 0-based idx 12；0-based idx 13 = 1-based 第 14 槽。**
+两者结论完全不同，两边都给。
+
+### L 的 78 张
+
+- **1-based 第 13 槽（idx 12）**：可达 78/78，distinct 目标 70。
+  Top5：`0x004C9150 (9)`, `0x0041C170 (1)`, `0x0041CFC0 (1)`, `0x0041DD30 (1)`, `0x0041FFE0 (1)`
+  目标 == `0x410410` 的张数：**0**。
+  （`0x4C9150` 的反汇编体是 `33 c0 c3` = `xor eax,eax; ret`，即"返回 0"的共享桩。）
+- **0-based idx 13（1-based 第 14 槽）**：可达 78/78，distinct 目标 68。
+  Top5：`0x005F6250 (8)`, `0x00410410 (3)`, `0x00410BE0 (2)`, `0x0041B610 (1)`, `0x0041CDB0 (1)`
+  目标 == `0x410410` 的张数：**3**（`AbstractClass` / `CellClass` / `Tactical`）。
+
+### 补集的 876 张
+
+- 槽 13 只有 **60 张可达**（其余 816 张槽数 < 13，无法读该槽）。
+- **1-based 第 13 槽（idx 12）** Top5：`0x004E14C0 (20)`, `0x004F4410 (9)`, `0x005D5DD0 (8)`, `0x004C9150 (4)`, `0x007BA5E0 (3)`；`0x410410` = **0**。
+- **0-based idx 13** Top5：`0x004E1920 (20)`, `0x004F4450 (9)`, `0x005D5DE0 (8)`, `0x004C9150 (4)`, `0x004325C0 (2)`；`0x410410` = **0**。
+
+### 关键：`0x410410` 在**全镜像**只出现在 3 处
+
+`[('AbstractClass', mdisp 0, 1-based 槽 14), ('CellClass', 0, 14), ('Tactical', 0, 14)]`
+即 `0x410410` 是 **L ∩ 0-based idx13** 的 3 张；在 876 张补集里出现 **0** 次。
+它的体是 `push esi; mov esi,ecx; push edi; mov edi,[esp+0xc]; mov eax,[esi+0x10]; push eax; call 0x4A1D50; mov cl,[esi+0x20]; push ecx; call 0x4A1CA0 …`
+（写字 + 字节写的两段拷贝，签名 `(ecx=this, [esp+8]=dst)`），**不是 Load/Save 序列化**。
+而 `0x5F6250`（L idx13 的 8 张共享）开头即 `call 0x410410`。
+
+**卡面 P4 那一条**：`0x410220`（体 = `mov eax,[esp+4]; mov eax,[eax+0xc]; ret 4`，典型 `get_某字段`）出现在
+78 张 **mdisp==4 子表**的 1-based 第 5 槽（同名类的子表），不是 L 主表 COL 的 vtable。
+所以卡面"宿主类名集合 == L"这句在**类名**上成立（78/78 双向），在**COL 地址**上不成立（交集 0）。
+
+## 反控
+
+- **R1** 把主表判据换成字面 `d0 == 0`（即 `dword[COL]==0`）：主表张数 **1214**（`d0!=0` 为 **0**，该字段全零，判据失效），
+  L 张数 **316**（多出 238 张，全是 mdisp ∈ {4,8,12,36,40,44,1728} 的同类子表）。
+  ⇒ 卡面 P1 的"d0 in {0,1}"是笔误，真实字段是 `COL+4`；不改则 954/260 分家不成立。
+- **R2** 把判据从"链含 AbstractClass"改成"链含 ObjectClass"：主表集上 **21** 张（全 1214 上 **85** 张）。
+  ⇒ 与 78 差 57 张，不能替换。
+- **R3** 把口径从 pCHD 数组改成只看 `COL+12`（类型描述符名）本身：
+  主表里 TD 名**精确等于** `.?AVAbstractClass@@` 的只有 **1** 张（`0x7FB118`）；
+  含 "AbstractClass" 子串的 **3** 张（多出 `?$DynamicVectorClass@PAVAbstractClass@@@@`、`?$VectorClass@PAVAbstractClass@@@@` 两个模板实例）；
+  全 1214 上分别是 **4** 和 **6**。
+  ⇒ 1 vs 78。**链口径是必需的**：TD 名只标"自己是谁"，血统只能从 pCHD 基类数组读。
+
+## 判定汇总
+
+| 项 | 判定 | 数 |
+|---|---|---|
+| P1 主/子表分家（字段应为 COL+4） | **成立** | 1214 = 954 + 260 |
+| P1 字面 "d0 in {0,1}" | **不成立（字段标签错）** | d0 全 0；换成 d0 后 1214/0，L=316 |
+| P2 表数 / 槽数 | **成立** | 1214 / 14044 |
+| P3 L = 78 | **成立** | 78（类名 sha256 `c0ad99a115427fb4…`） |
+| P4 宿主名集合 == L | **成立（限类名口径）** | 78 name, 双向差集 0 |
+| P4 宿主 COL 集合 == L | **不成立** | 地址交集 0；宿主全是 mdisp==4 子表，槽位恒为 1-based 5 |
+| Q2 ObjectClass 可区分 | **不成立** | 补集 0/876，L 21/78 |
+| Q3 L 槽更多 | **成立（描述性）** | 中位数 27 vs 7；但 [24,55] 重叠 44 张，无单一阈值可分 |
+| Q4 "槽 13 == 0x410410" | **取决于口径** | 1-based 槽13：0 张；0-based idx13：3 张（AbstractClass/CellClass/Tactical） |
+| 未测 | — | 未判断这些槽的真实语义（无动态采样，本卡禁止）；未核 symbols.json 的类表映射（json 只有 classes 键，函数名不在其中，`near()` 对 5 个地址全空） |
+
+## 最小可复算命令（单条，一次出全部数字）
+
+```bash
+cd /home/t628/projects/ra2-campaign-forge && python3 - <<'PY'
+import sys,struct,collections; sys.path.insert(0,'_r185'); import pe185 as P
+sec=P.sec_of; dw=P.dw; S=P.SECS; RAW=P.RAW
+def tdn(t):
+    if not t or not sec(t): return None
+    b=P.cstr(t+8,256); s=b.decode('latin1') if b else ''
+    return s if s.startswith('.?A') and s.endswith('@@') else None
+COLS={}
+for s in S:
+    if s['name']=='.text': continue
+    a=s['lo']; hi=min(s['hi_file'],s['hi_virt'])
+    while a+20<=hi:
+        if dw(a) in (0,1) and dw(a+8)==0 and sec(dw(a+12))=='.data' and sec(dw(a+16))=='.rdata':
+            n=tdn(dw(a+12))
+            if n: COLS[a]=(dw(a),dw(a+4),n,dw(a+16))
+        a+=4
+idx=collections.defaultdict(list)
+for s in S:
+    if s['name']=='.text': continue
+    a=s['lo']; n=(min(s['hi_file'],s['hi_virt'])-a)//4
+    for i,v in enumerate(struct.unpack_from('<%dI'%n,RAW,s['rawptr'])):
+        if v in COLS: idx[v].append(a+4*i)
+H={c:idx[c][0] for c in COLS if idx[c]}
+def sl(h):
+    n=0
+    while n<4096 and sec(dw(h+4+4*n))=='.text': n+=1
+    return n
+SL={c:sl(h) for c,h in H.items()}
+def ch(c):
+    n=dw(COLS[c][3]+8); arr=dw(COLS[c][3]+12)
+    return [tdn(dw(dw(arr+4*i))) for i in range(n or 0)]
+main=[c for c in COLS if COLS[c][1]==0]
+L=[c for c in main if '.?AVAbstractClass@@' in ch(c)]
+cp=[c for c in main if c not in set(L)]
+print('COL=%d main=%d L=%d comp=%d hdr=%d slots=%d'%(len(COLS),len(main),len(L),len(cp),len(H),sum(SL.values())))
+print('names=%s'%sorted(COLS[c][2][4:-2] for c in L))
+print('Q2 comp OC=%d compAny=%d LOC=%d'%(sum(1 for c in cp if '.?AVObjectClass@@' in ch(c)),sum(1 for c in cp if any(ch(c))),sum(1 for c in L if '.?AVObjectClass@@' in ch(c))))
+for t,g in (('L',L),('comp',cp)):
+    v=sorted(SL[c] for c in g); print('Q3 %s med=%s min=%d max=%d ge13=%d'%(t,v[len(v)//2] if len(v)%2 else (v[len(v)//2-1]+v[len(v)//2])/2,v[0],v[-1],sum(1 for x in v if x>=13)))
+for t,g in (('L',L),('comp',cp)):
+    for i in (12,13):
+        d=collections.Counter(dw(H[c]+4+4*i) for c in g if SL[c]>i)
+        print('Q4 %s idx%d n=%d top5=%s 410410=%d'%(t,i,sum(d.values()),[('0x%08X'%a,k) for a,k in d.most_common(5)],d.get(0x410410,0)))
+PY
+```
+
+## 边界声明
+
+- 本卡禁止动态采样：**槽 13 的函数语义、L 与补集的运行时行为差异，我未测**，只给了静态字节与地址分布。
+- `symbols.json` 顶层键为 `source/image_base/text_sha256/diagnostics/classes`，无函数名表，故 5 个目标地址
+  （`0x410410 / 0x4C9150 / 0x5F6250 / 0x410220 / 0x4E1920`）在符号侧均无名字，我只用 capstone 现场反汇编。
+- 我只写了本文件；未触碰 R14_COMMON / LEAD_LOCK / LEDGER / STATUS_BOARD / FACT_INDEX / R17_LEAD_BASELINE / _r18x / _r19x。

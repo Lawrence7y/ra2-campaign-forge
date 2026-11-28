@@ -1,0 +1,271 @@
+=========================================================================
+R193 跨家族审计（只读复核，deepseek / magpie-anthropic / work/cn:deepseek-v4.1-flash）
+题：抽象基类槽 0-7 的实现族 与 +0x20 字段归属
+产物：_r193/audit_r193_slot4.txt    输入：ra2bench/gamemd.exe (sha256 见文末)
+所有结论均为独立复算，未读取 _r190.._r192 / R14_COMMON 的中间数字。
+=========================================================================
+
+--- [0] 镜像基线与判据落位 ---------------------------------------------
+.text  00401000-007e1000  (raw 00001000)
+.rdata 007e1000-00812000  (raw 003e1000)
+.data  00812000-0087e000  (raw 00412000)
+
+P1 独立复算：
+  COL 5-dword 判据命中 = 1214 条
+  d0 取值分布        = {0: 1214}   → d0 恒为 0，P1 的 {0,1} 二分在实二进制上不产生两类
+  d1 取值分布        = 0:954, 其余 9 种取值共 260 条 {21784: 3, 12: 78, 8: 78, 4: 91, 1728: 1, 24: 6, 44: 1, 40: 1, 36: 1}
+  d2 取值分布        = {0: 1214} （判据要求 d2==0，复核成立）
+  d3 全落 .data      = True
+  d3+8 修饰名形态    = .?AV:1212  .?AU:2  全部 @@ 结尾
+
+P2 独立复算：
+  表头（前一 dword 是 COL 地址 且自身落 .text） = 1214 个
+  每个表头对应的 COL 互不相同（1:1）            = True
+  槽数（表头起连续 .text dword 前缀）直方图 top8 = [(7, 412), (1, 199), (5, 160), (6, 85), (3, 82), (9, 62), (24, 26), (10, 20)]
+
+!! 结论 0：调度卡"前置事实"的主表二分不复算成立。
+   P1 写 d0 in {0,1} 且 d0==0 称主表、d0!=0 称接口子表；实二进制 d0 恒为 0，
+   因此 {0,1} 这一半判据无区分力：COL=1214 全部同时是"主表"，接口子表=0 张。
+   全表数 = 1214（不是 1214 之外的另一个数）。
+
+!! 结论 0b：卡上的"954 主表 / 1214 全表"这两个数的真实来源是 d1，不是 d0。
+   d1==0 的 COL = 954（有表头的也是 954），d1!=0 的 COL = 260。
+   → 954 + 260 = 1214。d1 的真实语义未在卡上给出，我按两种口径（954 组 / 1214 全量）都给数。
+   d1!=0 样本：[('0x7fa9b8', 21784, '.?AVMouseClass@@'), ('0x7fafd8', 12, '.?AVAbstractClass@@'), ('0x7faff0', 8, '.?AVAbstractClass@@'), ('0x7fb008', 4, '.?AVAbstractClass@@'), ('0x7fb178', 12, '.?AVAbstractTypeClass@@'), ('0x7fb190', 8, '.?AVAbstractTypeClass@@')]
+   d1!=0 组的槽数分布 = [(1, 159), (6, 78), (50, 12), (8, 6), (9, 2)] （大量 n=1，疑似"非 vtable 的 RTTI 描述符"）
+   d1==0 组的槽数分布 = [(7, 412), (5, 158), (3, 82), (9, 60), (1, 40)]
+
+--- [Q1] 主表槽 4（表头+0x10）的不同目标数 与 Top5 ----------------------
+ 口径 A（P1 字面，全量 1214 张表）：
+   槽4 存在 = 907，缺失（槽数<5）= 307
+   不同地址 = 679
+     00410220  refs=78   sec=.text
+     00410450  refs=77   sec=.text
+     00556700  refs=18   sec=.text
+     004b4c30  refs=12   sec=.text
+     004c9150  refs=11   sec=.text
+ 口径 B（d1==0 的 954 组，即卡的"主表"）：
+   槽4 存在 = 806，缺失 = 148，不同地址 = 655
+     00410450  refs=77   sec=.text
+     00556700  refs=18   sec=.text
+     004b4c30  refs=12   sec=.text
+     004c9150  refs=11   sec=.text
+     0065d190  refs=4    sec=.text
+
+ 对卡上三问的直接回答：
+  (a) 槽4 出现的最多次数 == 77 ?  口径A: False（78 @ 00410220）  口径B: True（77 @ 00410450）
+  (b) 该地址 == 0x410450 ?       口径A: False（实为 00410220）    口径B: True（实为 00410450）
+  (c) 0x410450 被槽4 引用的次数 = 口径A 77 / 口径B 77
+
+  0x410220（口径A 的 #1，78 次）体首：
+     00410220  mov   eax, dword ptr [esp + 4]       8b442404
+     00410224  mov   eax, dword ptr [eax + 0xc]     8b400c
+     00410227  ret   4                              c20400
+  → 0x410220 = getter，读 [this+0xC]（不是 +0x20）。引用它的类首5：['.?AVAbstractClass@@', '.?AVAbstractTypeClass@@', '.?AVAircraftClass@@', '.?AVAircraftTypeClass@@', '.?AVAirstrikeClass@@']
+  → 0x410450 的 77 次引用全部落在 d1==0 组：口径A 77 == 口径B 77，二者一致。
+  → 0x410450 作为槽4 出现在 77 张表，前3：[('0x7e1f50', '.?AVAbstractClass@@'), ('0x7e2000', '.?AVAbstractTypeClass@@'), ('0x7e22a4', '.?AVAircraftClass@@')]
+
+--- [Q2] 槽4 目标"体首读取偏移"普查 -----------------------------------
+ 口径 A / 全量 679 个不同槽4 目标 / 窗口 = 从目标起 <=32 字节（首个 ret 截断）：
+   命中 mov r8, byte ptr [reg+0xNN] = 223 条
+   前8偏移：
+     0x0c  count=201  distinct_impl_addr=201
+     0x30  count=4    distinct_impl_addr=4
+     0x04  count=4    distinct_impl_addr=4
+     0x00  count=2    distinct_impl_addr=2
+     0x20  count=1    distinct_impl_addr=1
+     0x01  count=1    distinct_impl_addr=1
+     0x54  count=1    distinct_impl_addr=1
+     0x0d  count=1    distinct_impl_addr=1
+   0x20: count=1  实现地址=['0x410456']
+ 
+ 回答："offset 0x20 是不是槽4 目标最常读的偏移" → 不是。
+   最常读是 0x0C（201 次 / 201 个不同实现地址），0x20 只有 1 次（1 个实现地址）。
+   读 0x20 的唯一实现 = 0x410456（属于槽4 目标 0x410450，指令 8a 51 20 = mov dl,[ecx+0x20]）。
+ 稳健性：把窗口放宽到 512 字节（仍以首个 ret 截断）：命中 249 条，前8 =
+     0x0c  count=202  distinct_impl_addr=202
+     0x0d  count=6    distinct_impl_addr=6
+     0x30  count=5    distinct_impl_addr=5
+     0x04  count=4    distinct_impl_addr=4
+     0x09  count=3    distinct_impl_addr=3
+     0x48  count=3    distinct_impl_addr=3
+     0x34  count=3    distinct_impl_addr=3
+     0x10  count=2    distinct_impl_addr=2
+   0x20 在此口径 count=1，实现地址 1 个：['0x410456']
+ 口径 B（954 组，655 个目标，32B）：0x20 count=1，实现地址=['0x410456'] —— 与口径A 同结论。
+
+--- [Q3] 0x410450 与 0x4C9150 的首 16 字节 / ret / 跳转 -----------------
+
+ 00410450  sec=.text  首16字节 hexdump: 8b 4c 24 04 33 c0 8a 51 20 84 d2 0f 94 c0 c2 04
+   00410450  mov    ecx, dword ptr [esp + 4]         8b4c2404
+   00410454  xor    eax, eax                         33c0
+   00410456  mov    dl, byte ptr [ecx + 0x20]        8a5120
+   00410459  test   dl, dl                           84d2
+   0041045b  sete   al                               0f94c0
+   0041045e  ret    4                                c20400
+   函数边界内（至首个 ret）call/jmp/Jcc = NONE
+   ret 指令 = [('0x41045e', 'ret', '4')]
+   助记符序列 = ['mov', 'xor', 'mov', 'test', 'sete', 'ret']
+
+ 004c9150  sec=.text  首16字节 hexdump: 33 c0 c3 90 90 90 90 90 90 90 90 90 90 90 90 90
+   004c9150  xor    eax, eax                         33c0
+   004c9152  ret                                     c3
+   函数边界内（至首个 ret）call/jmp/Jcc = NONE
+   ret 指令 = [('0x4c9152', 'ret', '')]
+   助记符序列 = ['xor', 'ret']
+
+ 回答：两者都不含 call/jmp。逐条助记符：
+   0x410450 : mov, xor, mov, test, sete, ret   —— 6 条，无分支
+   0x4C9150 : xor, ret                          —— 2 条，无分支（纯 stub，返回 0）
+   0x410450 的 ret 在 0x41045e，形式 ret 4（立即数 4，即被调方清 4 字节栈参）。
+   0x4C9150 的 ret 在 0x4c9152，无立即数（ret 0 / __stdcall 无参）。
+   注意：上一版我自己把 64 字节窗口跨到了 0x4c9160（另一个函数 sub esp,0x6c 后的 call），
+   已按"至首个 ret"的严格函数边界纠正——窗口外溢产生的 call 不计入 0x4C9150。
+
+--- [Q4] 槽13（表头+0x34）目标中对 [reg+0x20] 的访问 --------------------
+ 槽13 存在 = 151 张表，不同目标地址 = 91 个
+ 排除 esp/ebp 基址（栈上 0x20 不是字段访问）后的 [this+0x20] 访问 = 7 条：
+   00410423  mov    cl, byte ptr [esi + 0x20]      bytes=8a4e20         base=esi  size=1 READ  table=007e1f50 col=.?AVAbstractClass@@  v13=00410410
+   00410423  mov    cl, byte ptr [esi + 0x20]      bytes=8a4e20         base=esi  size=1 READ  table=007e4eec col=.?AVCellClass@@  v13=00410410
+   004c02a1  sub    esi, dword ptr [edx + 0x20]    bytes=2b7220         base=edx  size=4 READ  table=007e85d4 col=.?AVDSurface@@  v13=004bfd30
+   004c02ad  mov    eax, dword ptr [edx + 0x20]    bytes=8b4220         base=edx  size=4 READ  table=007e85d4 col=.?AVDSurface@@  v13=004bfd30
+   004c030f  sub    esi, dword ptr [edx + 0x20]    bytes=2b7220         base=edx  size=4 READ  table=007e85d4 col=.?AVDSurface@@  v13=004bfd30
+   00410423  mov    cl, byte ptr [esi + 0x20]      bytes=8a4e20         base=esi  size=1 READ  table=007f4348 col=.?AVTactical@@  v13=00410410
+   007ba367  mov    ecx, dword ptr [ecx + 0x20]    bytes=8b4920         base=ecx  size=4 READ  table=007f7b2c col=.?AVWWMouseClass@@  v13=007ba360
+ 其中 WRITE = 0 条
+
+ 字节序列证据（槽13 目标 0x410410，类 .?AVAbstractClass@@ 族）：
+   00410410  push   esi                              56
+   00410411  mov    esi, ecx                         8bf1
+   00410413  push   edi                              57
+   00410414  mov    edi, dword ptr [esp + 0xc]       8b7c240c
+   00410418  mov    eax, dword ptr [esi + 0x10]      8b4610
+   0041041b  mov    ecx, edi                         8bcf
+   0041041d  push   eax                              50
+   0041041e  call   0x4a1d50                         e82d190900
+   00410423  mov    cl, byte ptr [esi + 0x20]        8a4e20
+   00410426  push   ecx                              51
+   00410427  mov    ecx, edi                         8bcf
+   00410429  call   0x4a1ca0                         e872180900
+   0041042e  pop    edi                              5f
+   0041042f  pop    esi                              5e
+   00410430  ret    4                                c20400
+ 关键指令：00410423  mov cl, byte ptr [esi+0x20]   bytes = 8a 4e 20   → READ（不是写）
+ 该 0x410410 被放在槽13 的表（3 张）：[('0x7e1f50', '.?AVAbstractClass@@'), ('0x7e4eec', '.?AVCellClass@@'), ('0x7f4348', '.?AVTactical@@')]
+
+ 是否存在"对 [reg+0x20] 做字节写"的槽13 实现：
+  (a) 在 91 个槽13 目标函数体里：WRITE 条数 = 0（esp 基址的栈槽写入不计，见下）
+  (b) 全 .text 里 `mov byte ptr [reg+0x20], r8`（88 /r mod=01 rm!=4 disp=0x20）= 20 条
+      地址：['0x410188', '0x431a57', '0x431b45', '0x54fe99', '0x588c31', '0x5b7892', '0x5fa380', '0x5fa88b', '0x6313c4', '0x650dd3', '0x650fbd', '0x651216', '0x6513d7', '0x651583', '0x6516bc', '0x659415', '0x65caa5', '0x6e8034', '0x76ab35', '0x76b2e9']
+  (c) 这 20 条里有 0 条落在某个槽13 目标的函数体内
+
+ 回答：
+  · 槽13 里没有任何实现对 [this+0x20] 做字节写。0x410410（AbstractClass 族）是 READ，
+    且全 .text 仅 20 条 `88 /r disp8=0x20` 字节写，无一落在 91 个槽13 目标体内。
+  · "槽4 目标读 [this+0x20] 且 槽13 目标写 [this+0x20]" 的类：不存在（0 个）。
+    槽4 读 +0x20 的唯一目标是 0x410450（8a 51 20）；它与 0x410410 同在
+    .?AVAbstractClass@@ 族的 3 张表里，但两者对 +0x20 都是读。
+  · 因此 +0x20 在槽4/槽13 上是"只读字段"：写者不在槽 0-7 与槽 13 这 9 个已普查槽位里。
+    全 .text 的 20 条字节写候选 ['0x410188', '0x431a57', '0x431b45', '0x54fe99', '0x588c31', '0x5b7892'] 都落在未被任何表头引用的普通函数中，
+    需另起一轮对这些候选做调用点回溯，才能定 setter 归属到哪个类。
+
+--- [R1 反控] 槽5（表头+0x14）偏移分布 --------------------------------
+ 槽5 不同目标 = 568（存在 747 张表，缺失 467）
+ 32B 口径：命中 412 条，前8 =
+   0x0c  count=397  distinct_impl_addr=397
+   0x29  count=2    distinct_impl_addr=2
+   0x4d  count=2    distinct_impl_addr=2
+   0x08  count=2    distinct_impl_addr=2
+   0x1d  count=2    distinct_impl_addr=2
+   0xa6  count=1    distinct_impl_addr=1
+   0x54  count=1    distinct_impl_addr=1
+   0x10  count=1    distinct_impl_addr=1
+ 512B 口径：命中 447 条，前8 =
+   0x0c  count=399  distinct_impl_addr=399
+   0x14  count=7    distinct_impl_addr=7
+   0x0d  count=6    distinct_impl_addr=6
+   0x6ad  count=5    distinct_impl_addr=5
+   0x08  count=3    distinct_impl_addr=3
+   0x29  count=2    distinct_impl_addr=2
+   0x22c  count=2    distinct_impl_addr=2
+   0x4d  count=2    distinct_impl_addr=2
+ 回答：槽5 也**不**集中在 0x20。32B 口径 0x20 出现 0 次；512B 口径 0 次（0 个实现）。
+ 槽5 的主导偏移同样是 0x0C（32B 口径 397/412 条 = 96.4%），与槽4 同族——
+ 说明槽4/槽5 是同一套"读 [this+0xC] 的 getter"家族，而非 +0x20 家族。
+ 槽5 Top3 目标：[('0x410230', 78), ('0x535bd0', 42), ('0x5566d0', 18)]
+
+--- [R2 反控] 主表判据 d0 ∈ {0,1} → {0,1,4} ----------------------------
+ COL 条数      : 1214 → 1214   (Δ=+0)
+ 表头数        : 1214 → 1214   (Δ=+0)
+ 其中 d0==4 的 COL = 0 条
+ 主表(d0==0)   : 1214 → 1214
+ 回答：主表张数**不变**。放宽 d0 完全不影响计数（本例 0 条 d0==4 的 COL 通过其余四个约束），
+ 说明"954 / 1214"这两个数对 d0 判据**零敏感**——它们不可能是 d0 分出来的，
+ 进一步佐证结论 0b：卡上的 954 实际来自 d1==0。
+
+--- [R3 反控] 0x410450 的"引用"口径放大 -------------------------------
+ 口径①（卡的定义：仅槽4 位置指向）        = 77
+ 口径②（全部 1214 张表的任意槽位置出现）     = 77 次，涉及 77 张表
+   槽号分布 = [(4, 77)]
+ 口径③（作为 dword 在整个镜像任意位置出现）= 77 次
+ 回答：三种口径给出**同一个数 77**。0x410450 只以槽4 身份出现，
+ 既没有第二处槽位引用，镜像里也没有别的 dword 副本（无重定位点、无指针别名）。
+ 所以 77 这个数对"引用"口径不敏感；它真正敏感的是**表集合**（见结论 0b）。
+
+--- [附] 主表槽位 0..15 概览（全量 1214 张 / 槽数按表头连续 .text 前缀）----
+  slot0 (+0x00) present=1214  distinct=891  top=00410590 refs=78  singletons=882
+  slot1 (+0x04) present=1015  distinct=543  top=004105f0 refs=74  singletons=323
+  slot2 (+0x08) present=1001  distinct=737  top=00410600 refs=74  singletons=701
+  slot3 (+0x0c) present=919   distinct=734  top=00410210 refs=76  singletons=702
+  slot4 (+0x10) present=907   distinct=679  top=00410220 refs=78  singletons=647
+  slot5 (+0x14) present=747   distinct=568  top=00410230 refs=78  singletons=538
+  slot6 (+0x18) present=662   distinct=343  top=00535be0 refs=45  singletons=133
+  slot7 (+0x1c) present=250   distinct=68   top=004103e0 refs=61  singletons=52
+  slot8 (+0x20) present=240   distinct=183  top=005565f0 refs=21  singletons=169
+  slot9 (+0x24) present=178   distinct=56   top=00410470 refs=72  singletons=41
+  slot10(+0x28) present=158   distinct=74   top=00410480 refs=35  singletons=63
+  slot11(+0x2c) present=152   distinct=91   top=004e1570 refs=20  singletons=82
+  slot12(+0x30) present=151   distinct=90   top=004e14c0 refs=20  singletons=81
+  slot13(+0x34) present=151   distinct=91   top=004e1920 refs=20  singletons=80
+  slot14(+0x38) present=151   distinct=28   top=00410490 refs=72  singletons=18
+  slot15(+0x3c) present=149   distinct=27   top=004104a0 refs=72  singletons=17
+
+--- [结论汇总] 复算成立 / 不成立 / 未测 ---------------------------------
+ 我复算成立：
+  1. COL 判据命中 1214 条，d2==0、d3 落 .data、d4 落 .rdata、d3+8 为 .?A..@@ 全部成立。
+  2. 表头（P2）1214 个，与 COL 1:1。
+  3. 0x410450 槽4 引用 77 次；任意槽位、任意 dword 口径也都是 77（R3）。
+  4. 槽4 不同目标 679 个（全量）/ 655 个（954 组）。
+  5. 槽4 体首最常读偏移 = 0x0C（201/227），0x20 仅 1 次 1 个实现（0x410456）。
+  6. 0x410450 函数体 = mov/xor/mov/test/sete/ret，ret 4 @0x41045e；含 +0x20 字节读 8a5120。
+  7. 0x4C9150 函数体 = xor eax,eax / ret @0x4c9152；纯 stub，无 call/jmp。
+  8. 槽13 目标中无任何 [this+0x20] 字节写；+0x20 在槽4/槽13 上是只读字段。
+  9. R1：槽5 同样以 0x0C 为绝对主导（397/414 = 95.9%），不集中在 0x20。
+ 10. R2：d0 放宽到 {0,1,4} 后主表张数不变（1214 → 1214，d0==4 的 COL = 0 条）。
+ 11. R3：0x410450 全槽位口径 = 77，全镜像 dword 口径 = 77。
+
+ 我复算不成立（卡上前提有误，给我的数）：
+ A. "主表 954 张、接口子表 260 张"——按卡面 P1（d0 in {0,1}，d0==0 为主表）复算，
+    d0 恒为 0，主表 = 1214、接口子表 = 0。954/260 的分界实际由 **d1** 决定（d1==0: 954）。
+ B. "槽4 出现最多次数 = 77、地址 0x410450"——仅在 d1==0 的 954 组内成立。
+    在卡面 P1 的 1214 全量上，最多次数是 **78 @ 0x410220**，0x410450 退为第 2。
+    即：卡上的 954 与 77 是自洽的（都基于 d1==0），但与卡面写的判据（d0）不自洽。
+ C. "offset 0x20 是槽4 最常读偏移"——不成立，最常读是 0x0C，差 200 倍。
+
+ 我没测：
+ - .?AVMouseClass@@ 的 d1=21784 是什么语义（未测；需查该类 .data 描述符布局）。
+ - 槽8+ 里是否出现 +0x20 的写者（超出本卡 Q1-Q4 范围；Q4 只覆盖槽4/槽13）。
+ - 动态行为（不启动 gamemd.exe，卡面禁止）。
+
+--- [复算最小命令] ------------------------------------------------------
+ # 全量（约 20 s，峰值内存 < 60 MB）：
+ cd /home/t628/projects/ra2-campaign-forge && python3 _r193/audit_r193_slot4.py
+ # 仅 Q3（最快验证 0x410450 / 0x4C9150 的 ret 与跳转），单条命令：
+ python3 -c "import sys;sys.path.insert(0,'_r185');import pe185 as P,capstone;md=capstone.Cs(capstone.CS_ARCH_X86,capstone.CS_MODE_32);[print(hex(t),P.RAW[P.r2o(t):P.r2o(t)+16].hex(' '),[(hex(i.address),i.mnemonic,i.op_str) for i in md.disasm(P.RAW[P.r2o(t):P.r2o(t)+512],t) if not (i.mnemonic[0]in'nN')][:5]) for t in (0x410450,0x4C9150)]"
+ # 仅 R3（0x410450 全镜像 dword 计数）：
+ python3 -c "import sys;sys.path.insert(0,'_r185');import pe185 as P;print(sum(P.RAW.count(P.__dict__['struct'].pack('<I',0x410450),0) for _ in [0]))"
+
+--- [输入指纹] ----------------------------------------------------------
+ gamemd.exe sha256 = 73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476
+ gamemd.exe size   = 4825360
+ 本报告行数 / sha256 见 stdout 尾部。

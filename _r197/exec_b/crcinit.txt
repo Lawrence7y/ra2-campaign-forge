@@ -1,0 +1,72 @@
+=== Q1 函数边界 ===
+resync 指令数=55 字节长=134 末地址=0x4a1d23 末指令=ret 4 字节=c20400 对照P1=True
+ASSERT Q1_count_55                              PASS  
+ASSERT Q1_ret4                                  PASS  
+ASSERT Q1_end_4A1D23                            PASS  
+=== Q2 槽位读写（共 13 条）===
+  0x4a1ca0 8b4104             mov     eax, dword ptr [ecx + 4]         +0x4  R
+  0x4a1ca9 895108             mov     dword ptr [ecx + 8], edx         +0x8  W
+  0x4a1cbb 8b7904             mov     edi, dword ptr [ecx + 4]         +0x4  R
+  0x4a1cc1 897904             mov     dword ptr [ecx + 4], edi         +0x4  W
+  0x4a1cc9 8a4104             mov     al, byte ptr [ecx + 4]           +0x4  R
+  0x4a1ccc 88410c             mov     byte ptr [ecx + 0xc], al         +0xC  W
+  0x4a1ccf 8b4104             mov     eax, dword ptr [ecx + 4]         +0x4  R
+  0x4a1cd7 8a5908             mov     bl, byte ptr [ecx + 8]           +0x8  R
+  0x4a1cda 885c0108           mov     byte ptr [ecx + eax + 8], bl     +0x8  W
+  0x4a1ce4 8b4108             mov     eax, dword ptr [ecx + 8]         +0x8  R
+  0x4a1cec 8b01               mov     eax, dword ptr [ecx]             +0x0  R
+  0x4a1d1b 8901               mov     dword ptr [ecx], eax             +0x0  W
+  0x4a1d1d 895104             mov     dword ptr [ecx + 4], edx         +0x4  W
++0 写=['0x4a1d1b']
++0 读=['0x4a1cec']
+ASSERT Q2_unique_plus0_write                    PASS  
+ASSERT Q2_has_plus0_read                        PASS  
+=== P3 调用点 ===
+E8+rel32 命中=331；宿主函数识别=331/331
+Top20 宿主函数: 00464AF0:51, 007170A0:37, 00454260:17, 0046C560:16, 0070C270:15, 0075DEC0:15, 00772AE0:15, 004289D0:12, 006EC5A0:12, 004DBAD0:11, 00524840:11, 0068B940:10, 006F1C80:10, 005F6250:9, 00747F70:9, 006CE910:7, 00425410:6, 00502A80:6, 0041CDB0:5, 0041E5E0:5
+ASSERT P3_331                                   PASS  
+ASSERT P3_hosts_all                             PASS  
+=== Q3 调用者 +0 写入 ===
+  窗口 16B: 命中调用点 0/331
+  窗口 64B: 命中调用点 0/331
+  窗口 256B: 命中调用点 0/331
+ASSERT Q3_no_caller_plus0_write_64              PASS  
+=== Q4 对象构造判据 ===
+全 .text 相邻槽(+4/+8/+C)写入点=894；mov [ecx/esi],0 全段=138
+初筛构造候选(±32B 同对象清零)=8；其中宿主函数调用 CRC 例程族的=0
+初筛候选明细(均属其它对象类型：+4 为 size/count、+8 为指针、+C 为 sentinel):
+  0x540588 mov dword ptr [esi + 0xc], 0x2c70000 near_zero=0x5405a8  host_crc_calls=[]
+  0x5405a5 mov dword ptr [esi + 0xc], eax near_zero=0x5405a8  host_crc_calls=[]
+  0x5405bc mov dword ptr [esi + 0xc], 0x2c70000 near_zero=0x5405a8  host_crc_calls=[]
+  0x5a200a mov dword ptr [esi + 0xc], 0 near_zero=0x5a2018  host_crc_calls=[]
+  0x5a463f mov dword ptr [esi + 0xc], 0 near_zero=0x5a464e  host_crc_calls=[]
+  0x60064c mov dword ptr [esi + 0xc], eax near_zero=0x600646  host_crc_calls=[]
+  0x6357f6 mov dword ptr [ecx + 0xc], 0 near_zero=0x6357e2  host_crc_calls=[]
+  0x74c4fe mov dword ptr [esi + 0xc], 0 near_zero=0x74c50c  host_crc_calls=[]
+ASSERT Q4_no_crc_ctor                           PASS  
+=== Q5 全局/静态对象 ===
+调用点前64B mov ecx,imm32 命中调用点=9（原始命中指令条数=80）
+R3 mov ecx,[abs] 命中调用点=4（原始命中指令条数=32）
+说明：imm32 样例 0x51000016 / 0x38a1ffea / 0x868affea / 0x8e8affea / 0x968affea，其中 0x38a1ffea 等为错位反汇编产物（紧随 mov ecx, edi 重置），均非 .data/.bss 合法对象地址。
+  IMM site=0x464e73 hits=1 first=[{'addr': '0x464e42', 'bytes': 'b916000051', 'insn': 'mov ecx, 0x51000016'}]
+  IMM site=0x464e81 hits=1 first=[{'addr': '0x464e42', 'bytes': 'b916000051', 'insn': 'mov ecx, 0x51000016'}]
+  IMM site=0x5f62cb hits=2 first=[{'addr': '0x5f62a3', 'bytes': 'b9eaffa138', 'insn': 'mov ecx, 0x38a1ffea'}, {'addr': '0x5f62bf', 'bytes': 'b9eaff8a86', 'insn': 'mov ecx, 0x868affea'}]
+  IMM site=0x5f62d9 hits=16 first=[{'addr': '0x5f62a3', 'bytes': 'b9eaffa138', 'insn': 'mov ecx, 0x38a1ffea'}, {'addr': '0x5f62bf', 'bytes': 'b9eaff8a86', 'insn': 'mov ecx, 0x868affea'}]
+  IMM site=0x5f62e7 hits=23 first=[{'addr': '0x5f62bf', 'bytes': 'b9eaff8a86', 'insn': 'mov ecx, 0x868affea'}, {'addr': '0x5f62cd', 'bytes': 'b9eaff8a8e', 'insn': 'mov ecx, 0x8e8affea'}]
+  IMM site=0x5f62f5 hits=16 first=[{'addr': '0x5f62bf', 'bytes': 'b9eaff8a86', 'insn': 'mov ecx, 0x868affea'}, {'addr': '0x5f62cd', 'bytes': 'b9eaff8a8e', 'insn': 'mov ecx, 0x8e8affea'}]
+  IMM site=0x5f6303 hits=5 first=[{'addr': '0x5f62cd', 'bytes': 'b9eaff8a8e', 'insn': 'mov ecx, 0x8e8affea'}, {'addr': '0x5f62cd', 'bytes': 'b9eaff8a8e', 'insn': 'mov ecx, 0x8e8affea'}]
+  IMM site=0x5f6311 hits=7 first=[{'addr': '0x5f62e9', 'bytes': 'b9eaff8a86', 'insn': 'mov ecx, 0x868affea'}, {'addr': '0x5f62db', 'bytes': 'b9eaff8a96', 'insn': 'mov ecx, 0x968affea'}]
+  IMM site=0x5f631f hits=9 first=[{'addr': '0x5f62e9', 'bytes': 'b9eaff8a86', 'insn': 'mov ecx, 0x868affea'}, {'addr': '0x5f62e9', 'bytes': 'b9eaff8a86', 'insn': 'mov ecx, 0x868affea'}]
+  ABS site=0x521cee hits=13 first=[{'addr': '0x521cbd', 'bytes': '8b0d84eda800', 'insn': 'mov ecx, dword ptr [0xa8ed84]', 'mem': '0xa8ed84', 'section': 'virt-only'}, {'addr': '0x521cbd', 'bytes': '8b0d84eda800', 'insn': 'mov ecx, dword ptr [0xa8ed84]', 'mem': '0xa8ed84', 'section': 'virt-only'}]
+  ABS site=0x521cfc hits=1 first=[{'addr': '0x521cbd', 'bytes': '8b0d84eda800', 'insn': 'mov ecx, dword ptr [0xa8ed84]', 'mem': '0xa8ed84', 'section': 'virt-only'}]
+  ABS site=0x6ec687 hits=5 first=[{'addr': '0x6ec64e', 'bytes': '8b0d84eda800', 'insn': 'mov ecx, dword ptr [0xa8ed84]', 'mem': '0xa8ed84', 'section': 'virt-only'}, {'addr': '0x6ec64e', 'bytes': '8b0d84eda800', 'insn': 'mov ecx, dword ptr [0xa8ed84]', 'mem': '0xa8ed84', 'section': 'virt-only'}]
+  ABS site=0x70c341 hits=13 first=[{'addr': '0x70c310', 'bytes': '8b0d84eda800', 'insn': 'mov ecx, dword ptr [0xa8ed84]', 'mem': '0xa8ed84', 'section': 'virt-only'}, {'addr': '0x70c310', 'bytes': '8b0d84eda800', 'insn': 'mov ecx, dword ptr [0xa8ed84]', 'mem': '0xa8ed84', 'section': 'virt-only'}]
+ASSERT Q5_ecx_imm32_measured                    PASS  实测 9 个调用点（不预设 0）
+=== R2 单次连续 disasm_lite（不重同步）条数=55（resync=55）===
+=== Q6 结论 === {'category': 'd', 'answer': '实测找不到任何 +0 初值写入点（候选 d）', 'coverage': '331/331 调用点（100.0%）', 'support': {'caller_writes_64B': 0, 'ctor_candidates_crc_confirmed': 0, 'ctor_candidates_initial': 8, 'ecx_imm32_sites': 9, 'ecx_abs_mem_sites': 4}, 'caveat': '(c) BSS 零初始化无法由静态调用面排除：ecx 指向的对象分配点未在本次扫描口径内定位。'}
+=== R1 窗口敏感度 === {'16': 0, '64': 0, '256': 0}
+=== R3 放宽口径 === {'ecx_imm32': 9, 'ecx_abs_mem': 4}
+ASSERT R1_monotone                              PASS  
+ASSERT R2_counts_positive                       PASS  
+ASSERT R3_both_measured                         PASS  imm32=9 调用点; abs_mem=4 调用点（不预设单调）
+ASSERT Q6_category_d                            PASS  

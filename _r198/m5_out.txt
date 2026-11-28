@@ -1,0 +1,50 @@
+PASS A1 .text 大小 4063232 | 4063232
+PASS A2 call 目标集 | 14806
+PASS A3 call 指令数 | 55419
+PASS A4 0x410410 在目标集 | True
+PASS A5 0x410BE0 在目标集 | True
+PASS A6 0x4A1CA0 在目标集 | True
+PASS B1 0x4A1CA0==331 | 331
+PASS B2 0x410410==27 | 27
+PASS B3 0x410BE0==23 | 23
+PASS C1 BYHOST 规模 | 9579
+PASS C2 0x410410 的 27 个调用点落在 27 个宿主入口 | ['0x410be0', '0x41d585', '0x420c35', '0x438a70', '0x43a130', '0x472640', '0x4a7a30', '0x4c58c0', '0x4ca1a0', '0x4d2790', '0x502d30', '0x554fe4', '0x5f6250', '0x6292b0', '0x65b2f0', '0x68ca50', '0x6b1020', '0x6b7d80', '0x6cc2a0', '0x6e3b60', '0x6e5560', '0x6ec3d0', '0x71a4e0', '0x71f2a0', '0x726720', '0x727fd0', '0x763ba0']
+PASS R1a 两入口判据对称差 | {'n': 48, 'samples': ['0x41d585', '0x41d6e0', '0x420c35', '0x420da0', '0x43a130', '0x43a5d0', '0x472640', '0x4726f0']}
+PASS D1 第一层宿主零写命中 | {'n': 3, 'hosts': 3}
+   D2 0x65b2f0 : [('0x65b33d', 'dword ptr [esi + 0x24], 0')]
+   D2 0x726720 : [('0x726723', 'byte ptr [esi + 0x30], 1')]
+   D2 0x727fd0 : [('0x727ff3', 'dword ptr [esi + 0x1c0], 0')]
+PASS R3a 放宽到任何 mov [reg],0 | 2
+   E1 L1 入口数=27
+   E1 L2 入口数=99
+   E1 L3 入口数=94
+   E1 L4 入口数=65
+   E1 L5 入口数=39
+PASS E2 层入口数序列 | [27, 99, 94, 65, 39]
+PASS E3 5 层累计入口数 | 279
+PASS E4 5 层内零写命中 | {'n': 296, 'hosts': 106}
+   E5 0x41ec90 [('0x41eca5', 'byte ptr [esp + 0xf], 0')]
+   E5 0x41fb7c [('0x41fbbe', 'byte ptr [ebx], 0')]
+   E5 0x4287ab [('0x4287bc', 'dword ptr [esi + 0x2e8], 0')]
+   E5 0x439b00 [('0x439b0f', 'dword ptr [esp + 0x10], 0'), ('0x439c19', 'byte ptr [esp + 0x13], 0'), ('0x439c1e', 'byte ptr [esp + 0x12], 0'), ('0x439c5c', 'byte ptr [esp + 0x12], 1'), ('0x439c67', 'byte ptr [esp + 0x13], 1'), ('0x439c70', 'byte ptr [esp + 0x11], 0')]
+   E5 0x43bcf0 [('0x43be34', 'byte ptr [esi + 0x80], 1'), ('0x43be3b', 'byte ptr [esi + 0x6ec], 1'), ('0x43bf11', 'byte ptr [ecx + 0x5778], 1'), ('0x43c02e', 'byte ptr [esi + 0x90], 0'), ('0x43c08e', 'byte ptr [edi + 0xd], 0'), ('0x43c0b8', 'byte ptr [ebp + 0xd], 0')]
+   E5 0x44019d [('0x440221', 'byte ptr [esp + 0x13], 0'), ('0x4402cb', 'byte ptr [esp + 0x13], 1'), ('0x440320', 'byte ptr [esi + 0x6df], 0'), ('0x440327', 'dword ptr [esi + 0x540], 0')]
+   E5 0x448e6e [('0x4492b7', 'byte ptr [esi + 0x418], 1'), ('0x4492c3', 'byte ptr [ecx + 0x418], 1'), ('0x449344', 'byte ptr [ecx + 0x5778], 1'), ('0x449351', 'byte ptr [edx + 0x5779], 1'), ('0x44936e', 'byte ptr [ebx + 0x1fc], 1'), ('0x449379', 'byte ptr [ebp + 0x1fc], 1')]
+   E5 0x44aa90 [('0x44ab0e', 'byte ptr [ecx + 0x5778], 1'), ('0x44ab1b', 'byte ptr [edx + 0x5779], 1')]
+   E5 0x46121f [('0x461425', 'dword ptr [esp + 0x10], 1')]
+   E5 0x4767c0 [('0x476811', 'dword ptr [esp + 0x24], 0'), ('0x476984', 'dword ptr [esp + 0x10], 0'), ('0x47699b', 'byte ptr [esp + 0x15], 0'), ('0x4769a2', 'dword ptr [esp + 0x10], 0')]
+PASS R2a 只 2 层 | {'two': 125, 'hits': 116}
+PASS E6 5 层内 stosd 宿主 | 0
+PASS F1 上溯入口里作为虚表实现的个数 | 10
+   F2 0x410be0 [('0x7e2000', '.?AVAbstractTypeClass@@', 13), ('0x7ef2d8', '.?AVObjectTypeClass@@', 13)]
+   F2 0x4d82b0 [('0x7e8c94', '.?AVFootClass@@', 289)]
+   F2 0x4e2690 [('0x7e9384', '.?AVGaugeClass@@', 27)]
+   F2 0x4f4480 [('0x7e1964', '.?AVMouseClass@@', 15), ('0x7e6114', '.?AVDisplayClass@@', 15), ('0x7ea6fc', '.?AVGScreenClass@@', 15)]
+   F2 0x557830 [('0x7e5054', '.?AVColorListClass@@', 31), ('0x7ed10c', '.?AVListClass@@', 31)]
+   F2 0x5b3970 [('0x7edcc0', '.?AVMissionClass@@', 13)]
+   F2 0x5f6250 [('0x7e46e4', '.?AVBulletClass@@', 13), ('0x7ec258', '.?AVIsometricTileClass@@', 13), ('0x7ef060', '.?AVObjectClass@@', 13)]
+   F2 0x65aac0 [('0x7f0508', '.?AVRadioClass@@', 10)]
+   F2 0x7077c0 [('0x7f4960', '.?AVTechnoClass@@', 10)]
+   F2 0x7171a0 [('0x7f4ed8', '.?AVTechnoTypeClass@@', 13)]
+
+SUMMARY asserts=20 fails=0 []

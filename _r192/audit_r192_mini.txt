@@ -1,0 +1,11 @@
+成立（非主表 260 张 / 槽 1318 / 命中 305 + 其余 1013）
+
+复跑命令（cwd=/home/t628/projects/ra2-campaign-forge，纯只读单行；依赖 _r185/pe185.py 的 RAW/B/dw/r2o/cstr/sec_of）：
+python3 -c "import sys;sys.path.insert(0,'_r185');from pe185 import RAW,B,sec_of,dw,r2o,cstr;sc=lambda s:[va for va in range(B[s]['lo'],B[s]['hi_file']-19,4) if (lambda w: w[0]in(0,1) and w[2]==0 and sec_of(w[3])=='.data' and sec_of(w[4])=='.rdata' and (cstr(w[3]+8)or b'')[:3]==b'.?A' and (cstr(w[3]+8)or b'')[-2:]==b'@@')([dw(va+4*i) for i in range(5)])];cols=sorted(sc('.rdata')+sc('.data'));ott={c:dw(c+4) for c in cols};vt=sorted((va,dw(va-4)) for s in('rdata','data') for va in range(B['.'+s]['lo'],B['.'+s]['hi_file']-3,4) if dw(va)is not None and sec_of(dw(va))=='.text' and dw(va-4)in ott);sl=lambda h:next((n for n in range(4096) if dw(h+4*n)is None or sec_of(dw(h+4*n))!='.text'),0);nms=[(h,ott[p]) for h,p in vt if ott[p]!=0];h4=[RAW[r2o(dw(h+4*i)):r2o(dw(h+4*i))+4] for h,_ in nms for i in range(sl(h))];k=sum(1 for b in h4 if b in(b'\x83\x6C\x24\x04',b'\x81\x6C\x24\x04'));print('COL',len(cols),'VT',len(vt),'SLOTS',sum(sl(h) for h,_ in vt),'NONMAIN_VT',len(nms),'NONMAIN_SLOTS',sum(sl(h) for h,_ in nms),'HIT',k,'REST',len(h4)-k)"
+
+实测输出（gamemd.exe sha256=73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476, size=4825360）：
+COL 1214 VT 1214 SLOTS 14044 NONMAIN_VT 260 NONMAIN_SLOTS 1318 HIT 305 REST 1013
+
+命中拆分：83 6C 24 04 = 302，81 6C 24 04 = 3，合计 305；305 + 1013 = 1318，与主张逐项一致。
+口径自校：COL 1214（主表 954 + 非主表 260）、vtable 1214、总槽 14044，与调度卡预期值全部吻合。
+判定依据：offset_to_top 取 COL 记录第 2 个 dword，命中判定取槽 dword 所指代码地址起的原始 4 字节（非槽内字节），dword 落 .text 才算槽。
