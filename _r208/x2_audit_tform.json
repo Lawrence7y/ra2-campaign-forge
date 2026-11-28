@@ -1,0 +1,140 @@
+{
+ "card": "R208B_I8_AUDIT",
+ "role": "auditor",
+ "family": "deepseek",
+ "input": {
+  "exe": "ra2bench/gamemd.exe",
+  "sha256": "73201cc021497c9567742f718bf1dc78c22e9ae16c7e7365354b65f3fcf67476",
+  "size": 4825360
+ },
+ "note": "_r208/x1_tform.json 在本机不存在，本复核全程自建，未依赖他人 json",
+ "reconstruction": {
+  "col_count": 1214,
+  "col_primary_col_eq_chd16": 954,
+  "col_extra_col_ne_chd16": 260,
+  "vftable_count": 1214,
+  "vftable_locator_unique": true,
+  "cols_with_0_vt": 0
+ },
+ "extra_slot0_dist": {
+  "8B 44 24 04": 3,
+  "C2 04 00": 78,
+  "32 C0 C2 08 00": 75,
+  "83 6C 24 04": 100,
+  "81 6C 24 04": 1,
+  "OTHER": 3
+ },
+ "all_slot0_dist": {
+  "OTHER": 955,
+  "8B 44 24 04": 5,
+  "C2 04 00": 78,
+  "32 C0 C2 08 00": 75,
+  "83 6C 24 04": 100,
+  "81 6C 24 04": 1
+ },
+ "T": {
+  "total": 101,
+  "in_extra": 101,
+  "in_primary": 0,
+  "form_83": 100,
+  "form_81": 1,
+  "imm_eq_mdisp_pass": 101,
+  "imm_eq_mdisp_fail": 0,
+  "exceptions": [],
+  "op_E9_all": true,
+  "jmp_target_in_text": 101,
+  "mdisp_83_min": 4,
+  "mdisp_83_max": 44,
+  "mdisp_83_value_set": [
+   4,
+   24,
+   36,
+   40,
+   44
+  ],
+  "distinct_thunk_addrs_83": 21
+ },
+ "text_anchor_census": {
+  "83_6C2404": 67,
+  "81_6C2404": 3,
+  "83_used_as_extra_slot0": 21,
+  "83_used_as_other_vtable_slot": 46,
+  "81_all_sites": [
+   {
+    "addr": "0x41c670",
+    "hex": "816c2404c0060000e9137cffff",
+    "imm32": 1728,
+    "op_E9": true,
+    "jmp_target": "0x414290"
+   },
+   {
+    "addr": "0x41c680",
+    "hex": "816c2404c0060000e9637cffff",
+    "imm32": 1728,
+    "op_E9": true,
+    "jmp_target": "0x4142f0"
+   },
+   {
+    "addr": "0x41c690",
+    "hex": "816c2404c0060000e9637cffff",
+    "imm32": 1728,
+    "op_E9": true,
+    "jmp_target": "0x414300"
+   }
+  ]
+ },
+ "imm8_overflow": {
+  "mdisp_gt127_total": 4,
+  "detail": [
+   {
+    "col": "0x7fa9b8",
+    "vt": "0x7e195c",
+    "thunk": "0x6d1770",
+    "form": "8B 44 24 04",
+    "mdisp": 21784,
+    "name": ".?AVMouseClass@@",
+    "hex": "8b442404"
+   },
+   {
+    "col": "0x7fb310",
+    "vt": "0x7e2250",
+    "thunk": "0x41c670",
+    "form": "81 6C 24 04",
+    "mdisp": 1728,
+    "name": ".?AVAircraftClass@@",
+    "hex": "816c2404c0060000e9137cffff"
+   },
+   {
+    "col": "0x805e48",
+    "vt": "0x7edfac",
+    "thunk": "0x6d1770",
+    "form": "8B 44 24 04",
+    "mdisp": 21784,
+    "name": ".?AVTabClass@@",
+    "hex": "8b442404"
+   },
+   {
+    "col": "0x809008",
+    "vt": "0x7f108c",
+    "thunk": "0x6d1770",
+    "form": "8B 44 24 04",
+    "mdisp": 21784,
+    "name": ".?AVScrollClass@@",
+    "hex": "8b442404"
+   }
+  ],
+  "mdisp_1728": [
+   {
+    "col": "0x7fb310",
+    "vt": "0x7e2250",
+    "thunk": "0x41c670",
+    "form": "81 6C 24 04",
+    "bytes": "816c2404c0060000e9137cffff",
+    "jtgt": "0x414290",
+    "name": ".?AVAircraftClass@@"
+   }
+  ]
+ },
+ "correction": "主张应订正为：额外视图 slot0 为 this 调整 thunk 者共 101 条，其中 100 条编码为 83 6C 24 04 <imm8> E9 <rel32>（mdisp∈{4,24,36,40,44}），另 1 条（COL 0x7fb310 / .?AVAircraftClass@@，vftable 0x7e2250，thunk 0x41c670）因 mdisp=1728 超 imm8 而编码为 81 6C 24 04 <imm32> E9 <rel32>（字节 81 6C 24 04 C0 06 00 00 E9 13 7C FF FF），故不是\"统一为 83\"，而是\"83 为主、81 兜底\"。",
+ "repro": "timeout 300 python3 /tmp/x2_final2.py"
+}
