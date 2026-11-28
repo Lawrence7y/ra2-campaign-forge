@@ -225,28 +225,40 @@ ssh -i C:\Users\Administrator\.ssh\t628_ed25519 t628@192.168.1.68 "ls -lt /home/
 
 ---
 
-## 8. 成果定时回传与 GitHub 归档（本机 `win-main` 侧）
+## 8. 成果定时回传与 GitHub 归档（`t628` 侧）
+
+> **归属变更（2026-11-28）**：定时上传已从 `win-main` 迁到 `t628` 本机执行。`win-main` 的 Windows 计划任务
+> `RA2-T628-Sync` 已 **Disable**（保留可回退），不再重复推送。旧脚本 `tools\t628_sync.ps1` 仅作历史备份。
 
 ### 8.1 链路与调度
 
-本机每 **2 小时** 由 Windows 计划任务 `RA2-T628-Sync` 执行 `tools\t628_sync.ps1`，把 t628 的 R17 文本成果拉回本仓 `lead/` 并推送到
-`https://github.com/Lawrence7y/ra2-campaign-forge`（**PUBLIC**，`main`）。
+`t628` 每 **2 小时**（`17 */2 * * *`）由 cron 执行 `/home/t628/apps/t628-publish/t628_publish.sh`：
 
-```powershell
-# 手动跑一次
-pwsh -NoProfile -File D:\Project\ra2-campaign-forge\tools\t628_sync.ps1
+1. `git fetch --depth 1 origin main` → `git reset --hard FETCH_HEAD` → `git clean -fdq`（发布检出每次重置为干净态）
+2. 本地执行 `collect.sh`（与 `tools/remote_collect.sh` 同一白名单口径）打包文本成果
+3. 解包进发布检出 → `git add -A` → commit → `git push origin HEAD:refs/heads/main`
+4. 无变更时只记日志；`flock` 互斥，重入直接跳过
 
-# 只采集解包、不提交（排查用）
-pwsh -NoProfile -File D:\Project\ra2-campaign-forge\tools\t628_sync.ps1 -DryRun
+| 项 | 位置 / 值 |
+|---|---|
+| 发布脚本 | `/home/t628/apps/t628-publish/t628_publish.sh` |
+| 采集脚本 | `/home/t628/apps/t628-publish/collect.sh` |
+| 发布检出 | `/home/t628/projects/ra2-campaign-forge-publish`（浅克隆 640 MB） |
+| 权威数据源 | `/home/t628/projects/ra2-campaign-forge` |
+| 运行日志 | `/home/t628/apps/t628-publish/publish.log`（2 MB 轮转） |
+| 认证 | 仓库级部署密钥 `t628-publish`（ed25519，`read_only=false`，仅此仓库）；私钥 `~/.ssh/t628_publish_ed25519`，`~/.ssh/config` 中 `Host github.com` 固定使用 |
 
-# 看调度状态与最近日志
-schtasks /query /tn RA2-T628-Sync /fo LIST /v
-Get-Content D:\Project\ra2-campaign-forge\.sync\sync.log -Tail 20
+```bash
+# 手动跑一次（t628 上）
+/home/t628/apps/t628-publish/t628_publish.sh
+
+# 看调度与日志
+crontab -l
+tail -n 20 /home/t628/apps/t628-publish/publish.log
+journalctl -t t628-publish -n 20 --no-pager
 ```
 
-脚本行为：`ssh bash -s` 送 `tools\remote_collect.sh` 到远端 → 远端按白名单 `tar czf -` → 本机 `bsdtar` 解包覆盖 →
-生成路径清单 → `git add --pathspec-from-file` → `commit` → `push --no-verify`。
-无变更时只记日志不提交；`.sync\run.lock` 互斥，锁龄超 90 分钟视为陈旧并接管。
+实测：单轮 23 秒，增量提交（首次迁移时 12 文件），重复运行输出「无变更，跳过提交」。
 
 ### 8.2 入库口径（与 `.gitignore` 一致，双向同规则）
 
@@ -257,15 +269,21 @@ Get-Content D:\Project\ra2-campaign-forge\.sync\sync.log -Tail 20
 | 单文件 < 1 MB | 单文件 ≥ 1 MB（dump 级）、游戏资源（`ini map mpr mmp wav shp csf png` 等 EA 版权件） |
 
 实测规模：首次全量 **21,503 文件 / 301 MB**；单轮增量约 **700 文件 / 15 MB**（压缩后）。
+t628 侧全量打包约 **28 MB / 5,952 文件**，单轮运行 23 秒。
 
-### 8.3 两个环境坑（已处理，勿踩）
+### 8.3 环境坑（已处理，勿踩）
 
-1. **git 的 schannel 后端拿不到证书容器** —— 报 `schannel: AcquireCredentialsHandle failed: SEC_E_NO_CREDENTIALS`（HTTP 401/403 之外的一种失败）。
+1. **`win-main` 的 schannel 后端拿不到证书容器** —— 报 `schannel: AcquireCredentialsHandle failed: SEC_E_NO_CREDENTIALS`（HTTP 401/403 之外的一种失败）。
    已在本仓 `.git/config` 固定 `http.sslBackend=openssl` 并挂 `credential.https://github.com.helper = !gh auth git-credential`。
    **换机器或重装 git 后要重设**，否则 `git ls-remote` 直接失败而 `gh api` 却正常（易误判成网络问题）。
+   （迁到 t628 后该坑只影响 `win-main` 上的手动排查。）
 2. **`pre-commit` / `pre-push` 是失效的 mimosa 僵尸 hook** —— 指向 `…\mimosa\1.0.4\payload\dist\cli.js`（文件已不存在），
    任何 commit/push 都会 `MODULE_NOT_FOUND`。已改名为 `*.disabled-mimosa-zombie-20261124` 保留可恢复；
    若日后重装 mimosa，需重新生成 hook 并去掉脚本里的 `--no-verify`。
+3. **t628 上没有 `gh` CLI，且 `ra2-campaign-forge` 目录本身不是 git 仓** —— 上传改用独立浅克隆
+   `ra2-campaign-forge-publish` + 仓库级部署密钥，不把权威目录变成仓库（避免 `reset`/`clean` 误伤逆向产物）。
+4. **t628 的 `git@github.com:443` 可能超时、22 端口正常** —— 部署密钥走 22 端口即可；若日后网络限制 22，
+   在 `~/.ssh/config` 的 `Host github.com` 段补 `Port 443` + `HostName ssh.github.com`。
 
 ### 8.4 不可写入仓的内容（红线不变）
 

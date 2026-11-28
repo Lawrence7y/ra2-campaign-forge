@@ -46,13 +46,24 @@ cd "$ROOT"
     ! -name 'nul.*' \
     2>/dev/null || true
 
-  # 各轮次产物目录（_r100 .. _r199）
-  find ./_r1[0-9][0-9] -type f \
-    \( -name '*.md' -o -name '*.py' -o -name '*.tsv' -o -name '*.txt' -o -name '*.json' \) \
-    -size -1048576c \
-    ! -name '*.pkl' ! -name '*.pyc' \
-    ! -name 'com[0-9]*' ! -name 'lpt[0-9]*' \
-    2>/dev/null || true
+  # 按交接摘要的已完成轮次收集产物，避开仍在写入的下一轮目录。
+  completed_round=$(sed -nE 's/.*当前已完成轮次：[[:space:]]*R([0-9]+).*/\1/p' \
+    ./lead/next_re_20261117_r14/COMPACT_STATE.md)
+  if [[ ! $completed_round =~ ^[0-9]+$ ]]; then
+    echo '[remote] could not determine the latest completed round' >&2
+    exit 1
+  fi
+  for dir in ./_r[0-9]*; do
+    [[ -d $dir && $dir =~ ^\./_r([1-9][0-9]{2,})$ ]] || continue
+    if (( BASH_REMATCH[1] <= completed_round )); then
+      find "$dir" -type f \
+        \( -name '*.md' -o -name '*.py' -o -name '*.tsv' -o -name '*.txt' -o -name '*.json' \) \
+        -size -1048576c \
+        ! -path '*/EVIDENCE/*' ! -path '*/_audit/*' ! -path '*/R17_LEAD_BASELINE/*' \
+        ! -name '*.bak*' ! -name '*SUPERSEDED*' ! -name '*.before_*' ! -name '*.broken_*' \
+        ! -name 'com[0-9]*' ! -name 'lpt[0-9]*' ! -name 'con.*' ! -name 'prn.*' ! -name 'aux.*' ! -name 'nul.*'
+    fi
+  done
 
   # 仓库根级说明文档
   find . -maxdepth 1 -type f -name '*.md' -size -1048576c 2>/dev/null || true

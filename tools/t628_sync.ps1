@@ -1,11 +1,17 @@
 <#
 .SYNOPSIS
-    从 t628 回传 R17 逆向成果文本，提交并推送到 GitHub。
+    【已停用 · 2026-11-28】从 t628 回传 R17 逆向成果文本，提交并推送到 GitHub。
+
+.NOTES
+    定时上传已迁到 t628 本机执行（cron `17 */2 * * *` →
+    `/home/t628/apps/t628-publish/t628_publish.sh`），本机计划任务
+    `RA2-T628-Sync` 已 Disable。保留本脚本仅供手动排查/回退：
+    若要恢复本机推送，先停掉 t628 的 cron，避免两个节点同时推 main。
 
 .DESCRIPTION
     流程：
       1) 通过 ssh 把远端白名单文件打成 tar.gz（stdin 传脚本，stdout 二进制落盘）
-      2) 本机 bsdtar 解包覆盖到仓库根
+      2) 本机 bsdtar 解包到独立发布工作树
       3) 用与 .gitignore 一致的口径生成路径清单（单文件 < 1 MB）
       4) git add --pathspec-from-file -> commit -> push --no-verify
 
@@ -42,6 +48,7 @@ $Repo      = 'D:\Project\ra2-campaign-forge'
 $SshKey    = 'C:\Users\Administrator\.ssh\t628_ed25519'
 $Remote    = 't628@192.168.1.68'
 $SyncDir   = Join-Path $Repo '.sync'
+$PublishDir = Join-Path $SyncDir 'publish'
 $Collector = Join-Path $Repo 'tools\remote_collect.sh'
 $TarPath   = Join-Path $SyncDir 'payload.tar.gz'
 $LockPath  = Join-Path $SyncDir 'run.lock'
@@ -82,7 +89,21 @@ try {
 
 $exitCode = 0
 try {
-    Set-Location $Repo
+    # 使用独立工作树，避免覆盖主工作区或把本地编辑带入同步提交。
+    git -C $Repo fetch origin main
+    if ($LASTEXITCODE -ne 0) { throw "git fetch 失败（exit=$LASTEXITCODE）" }
+    if (-not (Test-Path -LiteralPath $PublishDir)) {
+        git -C $Repo worktree add --detach $PublishDir origin/main
+        if ($LASTEXITCODE -ne 0) { throw "创建同步工作树失败（exit=$LASTEXITCODE）" }
+    }
+    $publishRoot = git -C $PublishDir rev-parse --show-toplevel
+    if ($LASTEXITCODE -ne 0 -or [IO.Path]::GetFullPath($publishRoot) -ne $PublishDir -or
+        -not (Test-Path -LiteralPath (Join-Path $PublishDir '.git') -PathType Leaf)) {
+        throw "同步工作树位置异常：$PublishDir"
+    }
+    Set-Location $PublishDir
+    git merge --ff-only origin/main
+    if ($LASTEXITCODE -ne 0) { throw "同步工作树无法快进到 origin/main（exit=$LASTEXITCODE）" }
 
     # ---------- 1. 采集 ----------
     if (-not (Test-Path $Collector)) { throw "缺少远端采集脚本：$Collector" }
@@ -134,8 +155,8 @@ try {
     Write-Log ("payload: {0:N1} MB" -f ($tarSize / 1MB))
 
     # ---------- 2. 解包 ----------
-    & tar -xzf $TarPath -C $Repo
-    if ($LASTEXITCODE -ne 0) { Write-Log "tar 解包返回 $LASTEXITCODE（部分文件可能跳过）" 'WARN' }
+    & tar -xzf $TarPath -C $PublishDir
+    if ($LASTEXITCODE -ne 0) { throw "tar 解包失败（exit=$LASTEXITCODE）" }
     Write-Log '解包完成'
 
     if ($DryRun) { Write-Log 'DryRun：跳过提交' 'WARN'; return }
@@ -170,7 +191,15 @@ try {
         $keep.Add($p)
     }
 
-    if ($keep.Count -eq 0) { Write-Log '无变更，跳过提交'; return }
+    if ($keep.Count -eq 0) {
+        Write-Log '无新增成果，检查待推送提交'
+        if (-not $NoPush -and (git rev-list --count origin/main..HEAD) -ne '0') {
+            git push --no-verify origin HEAD:refs/heads/main
+            if ($LASTEXITCODE -ne 0) { throw "重试推送失败（exit=$LASTEXITCODE）" }
+            Write-Log '待推送提交已同步'
+        }
+        return
+    }
     Write-Log "待提交 $($keep.Count) 个文件"
 
     $bytes = New-Object System.Collections.Generic.List[byte]
@@ -188,7 +217,7 @@ try {
 
     # ---------- 4. 提交 ----------
     $round = 'R?'
-    $compact = Join-Path $Repo 'lead\next_re_20261117_r14\COMPACT_STATE.md'
+    $compact = Join-Path $PublishDir 'lead\next_re_20261117_r14\COMPACT_STATE.md'
     if (Test-Path $compact) {
         $m = Select-String -Path $compact -Pattern '当前已完成轮次：\s*(R\d+)' -Encoding utf8 |
              Select-Object -First 1
@@ -215,7 +244,7 @@ sync(t628): $round 回传（$($staged.Count) 文件）
     # ---------- 5. 推送 ----------
     if ($NoPush) { Write-Log 'NoPush：跳过推送' 'WARN'; return }
 
-    git push --no-verify origin main 2>&1 | Select-Object -Last 3 | ForEach-Object { Write-Log $_ }
+    git push --no-verify origin HEAD:refs/heads/main 2>&1 | Select-Object -Last 3 | ForEach-Object { Write-Log $_ }
     if ($LASTEXITCODE -ne 0) { throw "git push 失败（exit=$LASTEXITCODE）" }
     Write-Log "推送成功：$round / $($staged.Count) 文件"
 
